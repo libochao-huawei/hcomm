@@ -657,10 +657,12 @@ TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
     HcclResult ret = HCCL_SUCCESS;
-    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();;
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();
     InitCollComm(hcclCommPtr);
     hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
+    ASSERT_NE(collComm, nullptr);
     hccl::MyRank* myRank = collComm->GetMyRank();
+    ASSERT_NE(myRank, nullptr);
     CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
     ret = collCommConfigConsistency.AddExchangeInfo(localData.data(), localData.size());
@@ -670,13 +672,8 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
     MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
         .stubs()
         .will(returnValue(Hccl::SocketStatus(Hccl::SocketStatus::OK)));
-    // mock SendAsync/RecvAsync成功
-    MOCKER_CPP(&Hccl::Socket::SendAsync)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::Socket::RecvAsync)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::SendAsync).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&Hccl::Socket::RecvAsync).stubs().will(ignoreReturnValue());
     // mock 超时配置
     MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
         .stubs()
