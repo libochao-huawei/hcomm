@@ -5,6 +5,7 @@
 #include "rank_graph_interface.h"
 #include "rank_graph_v2.h"
 #include "hccl/hccl_res.h"
+#include <hccl/hccl_comm.h>
 #include "hcomm_c_adpt.h"
 #include "channel_process.h"
 #include "base_config.h"
@@ -74,7 +75,7 @@ protected:
     Hccl::RankIpPortMapPtr rankIpPortMap;
 };
 
-void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
+HcclResult InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
 {
     RankGraphStub rankGraphStub;
     std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
@@ -86,10 +87,11 @@ void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
     cclBuffer.addr = (void*)0x1000;
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
     HcclCommConfig config;
+    HcclCommConfigInit(&config);
     config.hcclOpExpansionMode = 1;
     config.hcclRdmaTrafficClass = 0xFFFFFFFF;
     config.hcclRdmaServiceLevel = 0xFFFFFFFF;
-    hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    return hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
 }
 
 TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
@@ -658,7 +660,7 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
     HcclResult ret = HCCL_SUCCESS;
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();
-    InitCollComm(hcclCommPtr);
+    ASSERT_EQ(InitCollComm(hcclCommPtr), HCCL_SUCCESS);
     hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
     ASSERT_NE(collComm, nullptr);
     hccl::MyRank* myRank = collComm->GetMyRank();

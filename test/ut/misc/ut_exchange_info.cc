@@ -26,6 +26,7 @@
 #include "llt_hccl_stub_sal_pub.h"
 #include "calc_crc.h"
 #include "hccl_res_expt.h"
+#include <hccl/hccl_comm.h>
 #include "llt_hccl_stub_rank_graph.h"
 
 using namespace std;
@@ -71,6 +72,7 @@ HcclResult InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
     cclBuffer.addr = (void*)0x1000;
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
     HcclCommConfig config;
+    HcclCommConfigInit(&config);
     config.hcclOpExpansionMode = 1;
     config.hcclRdmaTrafficClass = 0xFFFFFFFF;
     config.hcclRdmaServiceLevel = 0xFFFFFFFF;
