@@ -1536,4 +1536,38 @@ aclrtBinHandle hcclComm::GetBinHandle()
     return binHandle_;
 }
 
+HcclResult hcclComm::LocalGather(const std::string &tag, void** sendBufs, u64* counts, u32 numBufs,
+                                  void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream)
+{
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], numBufs[%u], splitNum[%u], data_type[%s]",
+        tag.c_str(), numBufs, splitNum, GetDataTypeEnumStr(dataType).c_str());
+
+    CHK_PTR_NULL(stream);
+    CHK_PTR_NULL(gatheredBuf);
+
+    HcclResult ret = communicator_->LocalGather(tag, sendBufs, counts, numBufs, gatheredBuf, splitNum, dataType, stream);
+    if (ret != HCCL_SUCCESS) {
+        PrintSubmittedOpCnt(tag, ret);
+        return ret;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::LocalScatter(const std::string &tag, void** recvBufs, u64* counts, u32 numBufs,
+                                   void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream)
+{
+    HCCL_INFO("HCCL_KEY_INFO: tag[%s], numBufs[%u], splitNum[%u], data_type[%s]",
+        tag.c_str(), numBufs, splitNum, GetDataTypeEnumStr(dataType).c_str());
+
+    CHK_PTR_NULL(stream);
+    CHK_PTR_NULL(gatheredBuf);
+
+    HcclResult ret = communicator_->LocalScatter(tag, recvBufs, counts, numBufs, gatheredBuf, splitNum, dataType, stream);
+    if (ret != HCCL_SUCCESS) {
+        PrintSubmittedOpCnt(tag, ret);
+        return ret;
+    }
+    return HCCL_SUCCESS;
+}
+
 }  // namespace hccl
