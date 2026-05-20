@@ -587,7 +587,7 @@ HcclResult ChannelProcess::ChannelGetNotifyNum(ChannelHandle channelHandle, uint
     });
 }
 
-HcclResult ChannelProcess::ChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult ChannelProcess::ChannelGetRemoteMems(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     HcclMem **remoteMemConverted = reinterpret_cast<HcclMem **>(remoteMem);
 
