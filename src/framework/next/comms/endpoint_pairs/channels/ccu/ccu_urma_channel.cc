@@ -290,7 +290,7 @@ HcclResult CcuUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
 
 HcclResult CcuUrmaChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
-    return impl_->GetUserRemoteMems(remoteMem, memNum, memTags);
+    return impl_->GetRemoteMems(remoteMem, memNum, memTags);
 }
 
 HcclResult CcuUrmaChannel::Clean()
