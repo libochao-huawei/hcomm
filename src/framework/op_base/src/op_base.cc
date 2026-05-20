@@ -5334,6 +5334,82 @@ HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymW
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclLocalGatherInner(void** sendBufs, uint64_t* counts, uint32_t numBufs, void* gatheredBuf,
+    uint32_t splitNum, HcclDataType dataType, HcclComm comm, aclrtStream stream)
+{
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcclLocalGatherInner", "nullptr", "comm", "non-null pointer"}));
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(sendBufs == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcclLocalGatherInner", "nullptr", "sendBufs", "non-null pointer"}));
+    CHK_PTR_NULL(sendBufs);
+    RPT_INPUT_ERR(counts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcclLocalGatherInner", "nullptr", "counts", "non-null pointer"}));
+    CHK_PTR_NULL(counts);
+    RPT_INPUT_ERR(gatheredBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcclLocalGatherInner", "nullptr", "gatheredBuf", "non-null pointer"}));
+    CHK_PTR_NULL(gatheredBuf);
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcclLocalGatherInner", "nullptr", "stream", "non-null pointer"}));
+    CHK_PTR_NULL(stream);
+
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_LOCAL_GATHER;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclLocalGather] Finish taskAppend, numBufs [%u] splitNum [%u]", numBufs, splitNum);
+        return HCCL_SUCCESS;
+    }
+
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
+    StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
+    const std::string tag = "LocalGather_" + hcclComm->GetIdentifier();
+    CHK_RET_AND_PRINT_IDE(hcclComm->LocalGather(tag, sendBufs, reinterpret_cast<u64*>(counts), numBufs, gatheredBuf, splitNum, dataType, stream),
+        tag.c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclLocalScatterInner(void** recvBufs, uint64_t* counts, uint32_t numBufs, void* gatheredBuf,
+    uint32_t splitNum, HcclDataType dataType, HcclComm comm, aclrtStream stream)
+{
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcclLocalScatterInner", "nullptr", "comm", "non-null pointer"}));
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(recvBufs == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcclLocalScatterInner", "nullptr", "recvBufs", "non-null pointer"}));
+    CHK_PTR_NULL(recvBufs);
+    RPT_INPUT_ERR(counts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcclLocalScatterInner", "nullptr", "counts", "non-null pointer"}));
+    CHK_PTR_NULL(counts);
+    RPT_INPUT_ERR(gatheredBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcclLocalScatterInner", "nullptr", "gatheredBuf", "non-null pointer"}));
+    CHK_PTR_NULL(gatheredBuf);
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcclLocalScatterInner", "nullptr", "stream", "non-null pointer"}));
+    CHK_PTR_NULL(stream);
+
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_LOCAL_SCATTER;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclLocalScatter] Finish taskAppend, numBufs [%u] splitNum [%u]", numBufs, splitNum);
+        return HCCL_SUCCESS;
+    }
+
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
+    StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
+    const std::string tag = "LocalScatter_" + hcclComm->GetIdentifier();
+    CHK_RET_AND_PRINT_IDE(hcclComm->LocalScatter(tag, recvBufs, reinterpret_cast<u64*>(counts), numBufs, gatheredBuf, splitNum, dataType, stream),
+        tag.c_str());
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclGetCcuTaskInfo(HcclComm comm, void *tilingData, void *ccuTaskGroup)
 {
     CHK_PTR_NULL(comm);

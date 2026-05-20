@@ -194,6 +194,22 @@ struct OpParam {
             u32 queueNum;
             u32 queueIdx;
         } BatchWriteDataDes;
+        struct {
+            void** sendBufs;     // array of N pointers to source device buffers
+            u64* counts;         // array of N counts per part
+            u32 numBufs;         // N
+            void* gatheredBuf;   // output buffer
+            u32 splitNum;        // number of uniform parts per sendBuf
+            HcclDataType dataType;
+        } LocalGatherDataDes;
+        struct {
+            void** recvBufs;     // array of N pointers to destination device buffers
+            u64* counts;         // array of N counts per part
+            u32 numBufs;         // N
+            void* gatheredBuf;   // input buffer
+            u32 splitNum;        // number of uniform parts in gatheredBuf
+            HcclDataType dataType;
+        } LocalScatterDataDes;
     };
     HcclCMDType opType = HcclCMDType::HCCL_CMD_INVALID;
     bool supportZeroCopy = false;
@@ -221,6 +237,12 @@ struct OpParam {
     {
         if (opType == HcclCMDType::HCCL_CMD_ALLGATHER_V || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V) {
             return VDataDes.dataType;
+        }
+        if (opType == HcclCMDType::HCCL_CMD_LOCAL_GATHER) {
+            return LocalGatherDataDes.dataType;
+        }
+        if (opType == HcclCMDType::HCCL_CMD_LOCAL_SCATTER) {
+            return LocalScatterDataDes.dataType;
         }
         return DataDes.dataType;
     }
