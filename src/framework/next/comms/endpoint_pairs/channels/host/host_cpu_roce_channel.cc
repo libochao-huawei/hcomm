@@ -574,6 +574,71 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
     return HCCL_SUCCESS;
 }
 
+HcclResult HostCpuRoceChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+{
+    CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetUserRemoteMem] remoteMem is nullptr"), HCCL_E_PTR);
+    CHK_PRT_RET(memTag == nullptr, HCCL_ERROR("[GetUserRemoteMem] memTag is nullptr"), HCCL_E_PTR);
+    CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetUserRemoteMem] memNum is nullptr"), HCCL_E_PTR);
+
+    *remoteMem = nullptr;
+    *memTag = nullptr;
+    *memNum = 0;
+
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+
+    if (rmtRmaBuffers_.size() <= 1) {
+        HCCL_INFO("[GetUserRemoteMem] No user remote memory found, rmtRmaBuffers_ size=%zu",
+            rmtRmaBuffers_.size());
+        return HCCL_SUCCESS;
+    }
+
+    uint32_t userMemCount = static_cast<uint32_t>(rmtRmaBuffers_.size() - 1);
+
+    if (!userRemoteMemCacheValid_) {
+        userRemoteMems_.resize(userMemCount);
+        tagCopies_.clear();
+        tagCopies_.reserve(userMemCount);
+        tagPointers_.clear();
+        tagPointers_.reserve(userMemCount);
+
+        for (uint32_t i = 0; i < userMemCount; ++i) {
+            auto &rmtBuffer = rmtRmaBuffers_[i + 1]; // skip cclBuffer at index 0
+            if (rmtBuffer == nullptr) {
+                userRemoteMems_[i].type = COMM_MEM_TYPE_INVALID;
+                userRemoteMems_[i].addr = nullptr;
+                userRemoteMems_[i].size = 0;
+                tagCopies_.emplace_back();
+                tagPointers_.push_back(const_cast<char *>(tagCopies_.back().c_str()));
+                continue;
+            }
+
+            switch (rmtBuffer->GetMemType()) {
+                case HCCL_MEM_TYPE_DEVICE:
+                    userRemoteMems_[i].type = COMM_MEM_TYPE_DEVICE;
+                    break;
+                case HCCL_MEM_TYPE_HOST:
+                    userRemoteMems_[i].type = COMM_MEM_TYPE_HOST;
+                    break;
+                default:
+                    userRemoteMems_[i].type = COMM_MEM_TYPE_INVALID;
+            }
+            userRemoteMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+            userRemoteMems_[i].size = rmtBuffer->GetSize();
+
+            tagCopies_.emplace_back(rmtBuffer->GetMemTag());
+            tagPointers_.push_back(const_cast<char *>(tagCopies_.back().c_str()));
+        }
+
+        userRemoteMemCacheValid_ = true;
+    }
+
+    *remoteMem = userRemoteMems_.data();
+    *memTag = tagPointers_.data();
+    *memNum = userMemCount;
+
+    return HCCL_SUCCESS;
+}
+
 std::vector<Hccl::QpInfo> HostCpuRoceChannel::GetQpInfos() const
 {
     std::vector<Hccl::QpInfo> qpInfos;
