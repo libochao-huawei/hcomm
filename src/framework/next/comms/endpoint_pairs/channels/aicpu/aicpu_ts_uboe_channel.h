@@ -139,8 +139,8 @@ private:
     u32 bufferNum_{0};
     u32 connNum_{0};
     u32 recvDataSize_{0};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localMemTag_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteMemTag_{};
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{};
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> rmtMemTagTemp_{};
 
     RemoteBufferVec rmtNotifyVec_;     // 远端 notify
@@ -159,7 +159,7 @@ private:
 
     std::mutex remoteMemsMutex_; // 远端内存列表互斥锁
     bool cacheValid_ = false; // 当前缓存是否有效
-    std::vector<HcclMem>         remoteMems_;     // 内存基本信息缓存
+    std::vector<HcclMem>         remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>           tagPointers_;        // Tag 缓存
     const Hccl::SocketConfig*    socketConfig_{nullptr};
