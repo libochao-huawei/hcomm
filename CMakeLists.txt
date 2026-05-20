@@ -117,6 +117,7 @@ elseif(BUILD_OPEN_PROJECT)
     find_cann_package(msprof MODULE REQUIRED)
     find_cann_package(runtime MODULE REQUIRED)
     find_cann_package(securec MODULE REQUIRED)
+    find_cann_package(tsdclient MODULE REQUIRED)
     find_cann_package(unified_dlog MODULE REQUIRED)
     # 检查构建依赖
     check_pkg_build_deps("hcomm")
