@@ -28,6 +28,7 @@ namespace hcomm {
 class AicpuTsUrmaChannel : public Channel {
 public:
     AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
+    ~AicpuTsUrmaChannel();
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
@@ -90,6 +91,8 @@ private:
     std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
     Hccl::IpAddress     locAddr_;
     Hccl::IpAddress     rmtAddr_;
+    const Hccl::SocketConfig*                                   socketConfig_{nullptr};
+    uint32_t                                                    devicePhyId_{};
 };
 
 } // namespace hcomm

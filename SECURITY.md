@@ -7,8 +7,8 @@
 ## 文件权限控制
 
 - 建议用户在主机（包括宿主机）及容器中设置运行系统 umask 值为 0027 及以上，保障新增文件夹默认最高权限为 750，新增文件默认最高权限为 640。
-- 建议用户对个人隐私数据、商业资产、源文件等敏感内容做好权限控制等安全措施。例如涉及本项目安装目录权限管控、输入公共数据文件权限管控，设定的权限建议参考[A-文件（夹）各场景权限管控推荐最大值](#A-文件（夹）各场景权限管控推荐最大值)。
-- 用户安装和使用过程需要做好权限控制，建议参考[A-文件（夹）各场景权限管控推荐最大值](#A-文件（夹）各场景权限管控推荐最大值)文件权限参考进行设置。
+- 建议用户对个人隐私数据、商业资产、源文件等敏感内容做好权限控制等安全措施。例如涉及本项目安装目录权限管控、输入公共数据文件权限管控，设定的权限建议参考[A-文件（夹）各场景权限管控推荐最大值](#a-文件夹各场景权限管控推荐最大值)。
+- 用户安装和使用过程需要做好权限控制，建议参考[A-文件（夹）各场景权限管控推荐最大值](#a-文件夹各场景权限管控推荐最大值)文件权限参考进行设置。
 
 ## 构建安全声明
 
@@ -30,8 +30,9 @@
 | 依赖 |    不涉及    | cmake/third_party/gtest.cmake          | https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz                          | 从 gitcode 下载 googletest 源码，作为编译依赖 |
 | 依赖 |    不涉及    | cmake/third_party/mockcpp.cmake          |  https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h4/mockcpp-2.7.tar.gz                         | 从 gitcode 下载 mockcpp 源码，作为编译依赖 |
 | 依赖 |    不涉及    | cmake/third_party/protobuf.cmake          |  https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz                         | 从 gitcode 下载 protobuf 源码，作为编译依赖 |
-| 依赖 |    不涉及    | rdma-core      | https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.tar.gz.gz                  | 从 gitcode 下载 rdma-core 源码，作为编译依赖 |                                                                                     |
-| 依赖 |    不涉及    | rdma-core-patch      | https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.patch.gz                            | 从 gitcode 下载 rdma-core-patch 源码，作为编译依赖 |
+| 依赖 |    不涉及    | rdma-core      | https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.tar.gz                  | 从 gitcode 下载 rdma-core 源码，作为编译依赖 |                                                                                     |
+| 依赖 |    不涉及    | rdma-core-patch      | https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.patch                            | 从 gitcode 下载 rdma-core-patch 源码，作为编译依赖 |
+
 ---
 
 ## 端口声明

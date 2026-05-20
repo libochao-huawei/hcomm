@@ -154,6 +154,8 @@ protected:
         MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&SocketMgr::PutSocket).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     std::unique_ptr<hcomm::HostCpuRoceChannel> CreateInitAndConnect(uint32_t notifyNum = 4)
@@ -483,7 +485,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ModifyQp_Failed_Expect_FAILED)
     EXPECT_EQ(status, ChannelStatus::FAILED);
 }
 
-TEST_F(HostCpuRoceChannelTest, Ut_When_GetRemoteMem_NullParam__Expect_HCCL_E_PTR)
+TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMem_When_NullParam_Expect_HCCL_E_PTR)
 {
     DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
@@ -503,6 +505,33 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_GetRemoteMem_NullParam__Expect_HCCL_E_PTR
     EXPECT_EQ(memNum, 0);
     ret = impl_->GetRemoteMem(&remoteMem, (uint32_t *)nullptr, memTagsArray);
     EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMem_When_RemoteMemExists_Expect_Success)
+{
+    DevType devType = DevType::DEV_TYPE_950;
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
+    // construct
+    void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
+    // Init
+    EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    Hccl::ExchangeRdmaBufferDto rmtBufDto(0x2000000, 1024, 1000,"tag1");
+    auto rmtBuf = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, rmtBufDto);
+    impl_->rmtRmaBuffers_.emplace_back(std::move(rmtBuf));
+    Hccl::ExchangeRdmaBufferDto rmtBufDto2(0x3000000, 2048, 1000,"tag2");
+    auto rmtBuf2 = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, rmtBufDto2);
+    impl_->rmtRmaBuffers_.emplace_back(std::move(rmtBuf2));
+    // GetRemoteMem
+    uint32_t memNum = 0;  // 接收内存块数量
+    std::vector<HcclMem *> remoteMemList(5);
+    std::vector<char *> memTags(5);
+    HcclResult ret = impl_->GetRemoteMem(remoteMemList.data(), &memNum, memTags.data());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 2);
 }
 
 TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)

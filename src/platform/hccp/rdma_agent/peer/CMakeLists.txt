@@ -55,16 +55,6 @@ if(NOT BUILD_OPEN_PROJECT)
     )
 endif()
 
-target_link_directories(ra_peer PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
-if (DEVICE_MODE)
-    target_link_directories(ra_peer PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
-endif()
-
-
 target_compile_options(ra_peer PRIVATE
     -Werror -std=gnu11 -fno-common -Wfloat-equal -Wextra
     -fstack-protector-strong
@@ -90,7 +80,10 @@ target_compile_definitions(ra_peer PRIVATE
     LOG_CPP
 )
 
-install(TARGETS  ra_peer
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
-    COMPONENT hcomm
-)
+# 安装
+if((NOT BUILD_OPEN_PROJECT) OR (PRODUCT_SIDE STREQUAL "host"))
+    install(TARGETS ra_peer
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+endif()

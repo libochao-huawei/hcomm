@@ -7,25 +7,27 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2
-        PRIVATE
-        stream_lite.cc
-        hccl_sqe_v82.cc
-        hccl_sqe.cc
-        sqe_mgr.cc
-        sqe_build_a5.cc
-        rtsq_a5.cc
-        rtsq_base.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2
+            PRIVATE
+            stream_lite.cc
+            hccl_sqe_v82.cc
+            hccl_sqe.cc
+            sqe_mgr.cc
+            sqe_build_a5.cc
+            rtsq_a5.cc
+            rtsq_base.cc
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
-target_sources(ccl_kernel PRIVATE
-        stream_lite.cc
-        hccl_sqe_v82.cc
-        hccl_sqe.cc
-        sqe_mgr.cc
-        sqe_build_a5.cc
-        rtsq_a5.cc
-        rtsq_base.cc
-)
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+            stream_lite.cc
+            hccl_sqe_v82.cc
+            hccl_sqe.cc
+            sqe_mgr.cc
+            sqe_build_a5.cc
+            rtsq_a5.cc
+            rtsq_base.cc
+    )
 endif()

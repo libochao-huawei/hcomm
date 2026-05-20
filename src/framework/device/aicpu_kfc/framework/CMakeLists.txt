@@ -17,4 +17,6 @@ set(srcs
     aicpu_kfc_prof.cc
 )
 
-target_sources(ccl_kernel PRIVATE ${srcs})
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE ${srcs})
+endif()

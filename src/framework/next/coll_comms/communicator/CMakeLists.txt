@@ -12,15 +12,15 @@ set(src_list
     coll_comm_mgr.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/ns_recovery
+    )
+endif()
 
 add_subdirectory(aicpu)
 add_subdirectory(ns_recovery)
-
-target_include_directories(hcomm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/ns_recovery
-)
-
-
