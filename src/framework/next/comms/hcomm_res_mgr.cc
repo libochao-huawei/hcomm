@@ -64,7 +64,7 @@ HcommResMgr& HcommResMgr::GetInstance(const uint32_t devicePhyId)
     HccpTlvHdcMgr::GetInstance(devicePhyId);
     TpMgr::GetInstance(devicePhyId);
     CcuComponent::GetInstance(devicePhyId);
-    Hccl::CcuResBatchAllocator::GetInstance(devicePhyId);
+    CcuResBatchAllocator::GetInstance(devicePhyId);
     CcuKernelMgr::GetInstance(devicePhyId);
     SocketProcess::GetInstance(devicePhyId);
 
