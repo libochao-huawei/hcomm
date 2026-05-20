@@ -207,6 +207,10 @@ HcclResult HostCpuRoceChannel::BuildBuffer()
 
 HcclResult HostCpuRoceChannel::Init()
 {
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+
     CHK_RET(ParseInputParam());
     if (channelDesc_.exchangeAllMems) {  // true for HIXL, false for HCCL
         CHK_RET(StartListen());
@@ -215,9 +219,6 @@ HcclResult HostCpuRoceChannel::Init()
     CHK_RET(BuildConnection());
     CHK_RET(BuildNotify());
     CHK_RET(BuildBuffer());
-    s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
 
     return HCCL_SUCCESS;
 }
@@ -1469,10 +1470,14 @@ HcclResult HostCpuRoceChannel::ParseRecvExchangeDataHybird()
 HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needStop)
 {
     auto qpInfo = connections_[0]->GetQpInfo();
-
-    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(*socketConfig_, socket_));
+    bool hasSocket = socket_ == nullptr ? false : true;
+    if (!hasSocket) {
+        CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(*socketConfig_, socket_));
+    }
     CHK_RET(HrtRaQpConnectAsync(qpInfo.qpHandle, socket_->GetFdHandle(), needStop));
-    SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+    if (!hasSocket) {
+        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+    }
     
     // 查询QP建链是否成功
     s32 qpStatus = 0;

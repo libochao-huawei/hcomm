@@ -239,15 +239,16 @@ HcclResult AicpuTsUboeChannel::BuildSocket()
 
 HcclResult AicpuTsUboeChannel::Init()
 {
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    
     CHK_RET(ParseInputParam());
     CHK_RET(BuildSocket());
     CHK_RET(BuildNotify());
     localRmaBuffers_.clear();
     commonRes_.bufferVec.clear();
     CHK_RET(BuildBuffer(bufs_));
-    s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
 
     return HCCL_SUCCESS;
 }

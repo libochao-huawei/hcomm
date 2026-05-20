@@ -192,6 +192,10 @@ HcclResult AicpuTsP2pChannel::BuildSocket()
 
 HcclResult AicpuTsP2pChannel::Init()
 {
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    
     CHK_RET(ParseInputParam());
     CHK_RET(BuildSocket());
     CHK_RET(BuildAttr());
@@ -201,9 +205,7 @@ HcclResult AicpuTsP2pChannel::Init()
     commonRes_.bufferVec.clear();
     CHK_RET(BuildBuffer(bufs_));
     CHK_RET(BuildP2pMemTransport());
-    s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    
     return HCCL_SUCCESS;
 }
 
