@@ -456,6 +456,25 @@ STATIC int RaHdcLiteGetCqQpAttr(struct RaQpHandle *qpHdc, struct rdma_lite_cq_at
     return 0;
 }
 
+int RaHdcLiteCqCreate(struct RaRdmaHandle *rdmaHandle,
+    struct rdma_lite_device_cq_attr *deviceCqAttr, struct rdma_lite_cq **liteCq)
+{
+    struct rdma_lite_cq_attr liteCqAttr;
+
+    if (rdmaHandle->supportLite == 0) {
+        return 0;
+    }
+
+    liteCqAttr.device_cq_attr = *deviceCqAttr;
+    liteCqAttr.mem_idx = 0;
+
+    *liteCq = RaRdmaLiteCreateCq(rdmaHandle->liteCtx, &liteCqAttr);
+    CHK_PRT_RETURN(*liteCq == NULL,
+        hccp_err("[create][ra_hdc_lite_cq]RaRdmaLiteCreateCq failed, errno(%d)", errno), -EFAULT);
+
+    return 0;
+}
+
 int RaHdcLiteQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
     struct rdma_lite_qp_cap *cap)
 {
@@ -866,6 +885,19 @@ int RaHdcLitePollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEnt
     }
 
     *pollCqeNum += (unsigned int)ret;
+    return ret;
+}
+
+int RaHdcLiteTypicalCqPoll(struct rdma_lite_cq *liteCq, unsigned int numEntries,
+    struct rdma_lite_wc_v2 *liteWc)
+{
+    int ret;
+
+    ret = RaRdmaLitePollCqV2(liteCq, (int)numEntries, liteWc);
+    CHK_PRT_RETURN(ret < 0, hccp_err("ra_rdma_lite_poll_cq_v2 failed, ret %d", ret), ret);
+    CHK_PRT_RETURN(ret > (int)numEntries,
+        hccp_err("ra_rdma_lite_poll_cq_v2 failed, expect maximum numEntries:%u but got %d", numEntries, ret), -EIO);
+
     return ret;
 }
 

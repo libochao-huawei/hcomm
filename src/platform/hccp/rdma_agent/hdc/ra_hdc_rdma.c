@@ -373,6 +373,24 @@ int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, 
     }
 
     *cqn = cqCreateData.rxData.cqn;
+
+    if (cqCreateData.rxData.hasDeviceAttr) {
+        struct rdma_lite_cq *liteCq = NULL;
+        ret = RaHdcLiteCqCreate(rdmaHandle, &cqCreateData.rxData.deviceCqAttr, &liteCq);
+        if (ret) {
+            hccp_err("[create][ra_hdc_typical_cq]RaHdcLiteCqCreate failed, ret(%d) cqn(%u)", ret, *cqn);
+            return ret;
+        }
+
+        RA_PTHREAD_MUTEX_LOCK(&rdmaHandle->rdevMutex);
+        if (rdmaHandle->cqCount < RA_MAX_CQ_NUM) {
+            rdmaHandle->cqEntries[rdmaHandle->cqCount].cqn = *cqn;
+            rdmaHandle->cqEntries[rdmaHandle->cqCount].liteCq = liteCq;
+            rdmaHandle->cqCount++;
+        }
+        RA_PTHREAD_MUTEX_UNLOCK(&rdmaHandle->rdevMutex);
+    }
+
     return 0;
 }
 
@@ -1265,6 +1283,30 @@ int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries
         qpHdc->qpn, qpHdc->qpMode, qpHdc->supportLite);
 
     return -ENOTSUPP;
+}
+
+int RaHdcTypicalCqPoll(struct RaRdmaHandle *rdmaHandle, unsigned int cqn, unsigned int numEntries, void *wc)
+{
+    struct rdma_lite_cq *liteCq = NULL;
+    struct rdma_lite_wc_v2 *liteWc = (struct rdma_lite_wc_v2 *)wc;
+    unsigned int i;
+
+    CHK_PRT_RETURN(rdmaHandle == NULL || wc == NULL,
+        hccp_err("[poll][ra_hdc_typical_cq]rdmaHandle or wc is NULL"), -EINVAL);
+
+    RA_PTHREAD_MUTEX_LOCK(&rdmaHandle->rdevMutex);
+    for (i = 0; i < rdmaHandle->cqCount; i++) {
+        if (rdmaHandle->cqEntries[i].cqn == cqn) {
+            liteCq = rdmaHandle->cqEntries[i].liteCq;
+            break;
+        }
+    }
+    RA_PTHREAD_MUTEX_UNLOCK(&rdmaHandle->rdevMutex);
+
+    CHK_PRT_RETURN(liteCq == NULL,
+        hccp_err("[poll][ra_hdc_typical_cq]cqn[%u] not found", cqn), -ENOENT);
+
+    return RaHdcLiteTypicalCqPoll(liteCq, numEntries, liteWc);
 }
 
 int RaHdcNotifyCfgSet(unsigned int phyId, unsigned long long va, unsigned long long size)

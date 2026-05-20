@@ -61,6 +61,7 @@ struct RaRdmaOps {
     int (*raTypicalQpCreate)(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, struct TypicalQp *qpInfo,
         void **qpHandle);
     int (*raTypicalCqCreate)(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn);
+    int (*raTypicalCqPoll)(struct RaRdmaHandle *rdmaHandle, unsigned int cqn, unsigned int numEntries, void *wc);
     int (*raTypicalQpCreateWithCq)(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode,
         unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
         struct TypicalQp *qpInfo, void **qpHandle);

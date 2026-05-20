@@ -29,6 +29,12 @@
 #endif
 
 #define RA_MAX_PHY_ID_NUM 64
+#define RA_MAX_CQ_NUM 256
+
+struct RaCqEntry {
+    unsigned int cqn;
+    struct rdma_lite_cq *liteCq;
+};
 
 #define MAX_SUPPORT_IFNUM 65536
 #define SOCKET_SEND_MAXLEN 2048
@@ -146,6 +152,8 @@ struct RaRdmaHandle {
     uint8_t gid[HCCP_GID_RAW_LEN];
     uint64_t notifyVa;
     uint64_t notifySize;
+    struct RaCqEntry cqEntries[RA_MAX_CQ_NUM];
+    unsigned int cqCount;
 };
 
 struct RaSocketHandle {

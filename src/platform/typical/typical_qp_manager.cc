@@ -153,4 +153,17 @@ HcclResult TypicalQpManager::GetQpHandleByQpn(u32 qpn, QpHandle& qpHandle)
         HCCL_E_NOT_FOUND);
     return HCCL_SUCCESS;
 }
+
+HcclResult TypicalQpManager::PollCq(u32 cqn, u32 num, u32 *polledNum, void *wc)
+{
+    CHK_RET(RdmaResourceManager::GetInstance().GetRdmaHandle(rdmaHandle_));
+    CHK_PTR_NULL(rdmaHandle_);
+
+    s32 ret = hrtRaTypicalCqPoll(rdmaHandle_, cqn, num, wc);
+    CHK_PRT_RET(ret < 0,
+        HCCL_ERROR("[TypicalQpManager][PollCq] PollCq fail, ret[%d], cqn[%u]", ret, cqn),
+        HCCL_E_INTERNAL);
+    *polledNum = static_cast<u32>(ret);
+    return HCCL_SUCCESS;
+}
 } // namespace hccl

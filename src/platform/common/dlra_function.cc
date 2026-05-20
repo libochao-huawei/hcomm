@@ -155,6 +155,9 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
     dlRaTypicalCqCreate =
         (int(*)(RdmaHandle, unsigned int, unsigned int*))HcclDlsym(handle_, "RaTypicalCqCreate");
     CHK_SMART_PTR_NULL(dlRaTypicalCqCreate);
+    dlRaTypicalCqPoll =
+        (int(*)(RdmaHandle, unsigned int, unsigned int, void*))HcclDlsym(handle_, "RaTypicalCqPoll");
+    CHK_SMART_PTR_NULL(dlRaTypicalCqPoll);
     dlRaTypicalQpCreateWithCq =
         (int(*)(RdmaHandle, int, int, unsigned int, unsigned int, struct ibv_qp_cap*, int, int,
         struct TypicalQp*, QpHandle*))HcclDlsym(handle_, "RaTypicalQpCreateWithCQ");

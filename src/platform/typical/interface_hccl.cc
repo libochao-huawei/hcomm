@@ -27,6 +27,7 @@
 #include "send_recv_executor.h"
 #include "adapter_hccp.h"
 #include "adapter_rts.h"
+#include <vector>
 
 using namespace hccl;
 constexpr u32 DEVISOR_VALUE_FOUR = 4;
@@ -211,6 +212,52 @@ HcclResult hcclModifyAscendQPEx(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQ
     }
     remoteQp.psn = remoteQPInfo->psn;
     CHK_RET(TypicalQpManager::GetInstance().ModifyQp(localQp, remoteQp));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclPollAscendCQ(AscendCQInfo* cqInfo, uint32_t num, uint32_t *polledNum, struct AscendWc *wc)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(cqInfo);
+    CHK_PTR_NULL(polledNum);
+    CHK_PTR_NULL(wc);
+    CHK_PRT_RET(num == 0, HCCL_ERROR("[hcclPollAscendCQ] num is 0"), HCCL_E_PARA);
+
+    struct RdmaLiteWcV2Compat {
+        uint64_t wrId;
+        uint32_t status;
+        uint32_t opcode;
+        uint32_t vendorErr;
+        uint32_t byteLen;
+        uint32_t qpNum;
+        uint32_t wcFlags;
+        uint32_t immData;
+        uint16_t resv[5];
+        uint32_t version;
+    };
+
+    std::vector<RdmaLiteWcV2Compat> wcBuf(num);
+    CHK_RET(TypicalQpManager::GetInstance().PollCq(cqInfo->cqn, num, polledNum, wcBuf.data()));
+
+    for (u32 i = 0; i < *polledNum; i++) {
+        wc[i].wrId = wcBuf[i].wrId;
+        wc[i].status = static_cast<enum AscendWcStatus>(wcBuf[i].status);
+        wc[i].opcode = static_cast<enum AscendWcOpcode>(wcBuf[i].opcode);
+        wc[i].vendorErr = wcBuf[i].vendorErr;
+        wc[i].byteLen = wcBuf[i].byteLen;
+        wc[i].immData = wcBuf[i].immData;
+        wc[i].qpNum = wcBuf[i].qpNum;
+        wc[i].srcQp = 0;
+        wc[i].wcFlags = static_cast<enum AscendWcFlags>(wcBuf[i].wcFlags);
+        wc[i].pkeyIndex = 0;
+        wc[i].slid = 0;
+        wc[i].sl = 0;
+        wc[i].dlidPathBits = 0;
+    }
+
+    HCCL_INFO("hcclPollAscendCQ success! cqn[%u], num[%u], polledNum[%u]",
+        cqInfo->cqn, num, *polledNum);
     return HCCL_SUCCESS;
 }
 
