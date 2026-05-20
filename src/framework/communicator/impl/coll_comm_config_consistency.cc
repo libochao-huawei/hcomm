@@ -40,10 +40,12 @@ HcclResult CollCommConfigConsistency::AddExchangeInfo(const void* data, uint32_t
 
 HcclResult CollCommConfigConsistency::GetExchangeInfo(uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength)
 {
+    HCCL_INFO("[GetExchangeInfo] begin");
     CHK_PTR_NULL(data);
     auto iter = remoteExchangeInfoMap_.find(remoteRank);
     if (iter == remoteExchangeInfoMap_.end()) {
         *actualLength = 0;
+        HCCL_INFO("[GetExchangeInfo] 000");
         return HCCL_SUCCESS;
     }
     *actualLength = static_cast<uint32_t>(iter->second.size());

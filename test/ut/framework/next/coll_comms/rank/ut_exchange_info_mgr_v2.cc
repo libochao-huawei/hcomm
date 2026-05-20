@@ -80,8 +80,8 @@ TEST_F(ExchangeInfoMgrV2Test, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
     // 构造socket列表（指针值仅用于mock匹配，不实际调用）
     std::vector<Hccl::Socket*> sockets = {(Hccl::Socket*)0x1, (Hccl::Socket*)0x2};
     std::vector<u32> remoteRanks = {1, 2};
-
-    HcclResult ret = myRank.WaitAllAsyncComplete(sockets, remoteRanks);
+    ExchangeInfoMgrV2 exchangeInfoMgrV2;
+    HcclResult ret = exchangeInfoMgrV2.WaitAllAsyncComplete(sockets, remoteRanks);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
