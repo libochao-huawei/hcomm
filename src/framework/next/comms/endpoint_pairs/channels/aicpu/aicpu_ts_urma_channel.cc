@@ -271,7 +271,7 @@ HcclResult AicpuTsUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUrmaChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsUrmaChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     return memTransport_->GetRemoteMems(remoteMem, memNum, memTags);
 }
