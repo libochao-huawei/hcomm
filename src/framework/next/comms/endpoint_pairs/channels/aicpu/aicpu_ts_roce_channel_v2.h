@@ -49,6 +49,7 @@ public:
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
+    HcclResult ProcessStatus();
     HcommChannelKind GetChannelKind() const override;
 
     std::string Describe() const;
@@ -128,9 +129,10 @@ private:
     EndpointDesc localEp_;
     EndpointDesc remoteEp_;
     uint32_t notifyNum_{0};
-    std::unique_ptr<SocketMgr>                              socketMgr_{nullptr};
     Hccl::Socket*                                           socket_{nullptr};
+    const Hccl::SocketConfig*                               socketConfig_{nullptr};
     RdmaHandle                                              rdmaHandle_{nullptr};
+    uint32_t                                                devicePhyId_{};
 
     std::vector<std::unique_ptr<DevRdmaConnectionV2>>         connections_{};
     std::vector<Hccl::LocalRdmaRmaBuffer *>                 localRmaBuffers_{};

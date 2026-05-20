@@ -37,6 +37,10 @@ AicpuTsRoceChannelV2::AicpuTsRoceChannelV2(EndpointHandle endpointHandle, HcommC
 AicpuTsRoceChannelV2::~AicpuTsRoceChannelV2()
 {
     FreeDeviceMemories();
+    if (socket_ != nullptr) {
+        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        socket_ = nullptr;
+    }
 }
 
 HcclResult AicpuTsRoceChannelV2::ParseInputParam()
@@ -53,9 +57,6 @@ HcclResult AicpuTsRoceChannelV2::ParseInputParam()
     remoteEp_ = channelDesc_.remoteEndpoint;
     socket_ = reinterpret_cast<Hccl::Socket*>(channelDesc_.socket);
     notifyNum_ = channelDesc_.notifyNum;
-
-    // 3. 初始化 socketMgr_
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
 
     return HCCL_SUCCESS;
 }
@@ -90,7 +91,7 @@ HcclResult AicpuTsRoceChannelV2::BuildSocket()
     }
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
+    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
     HCCL_INFO("[AicpuTsRoceChannelV2::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
 }
@@ -195,6 +196,9 @@ HcclResult AicpuTsRoceChannelV2::BuildNotifyValueBuffer()
 
 HcclResult AicpuTsRoceChannelV2::Init()
 {
+    s32 devLogicId = Hccl::HrtGetDevice();
+    devicePhyId_ = Hccl::HrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId));
+
     CHK_RET(ParseInputParam());
     if (channelDesc_.exchangeAllMems) {
         CHK_RET(StartListen());
@@ -217,6 +221,22 @@ ChannelStatus AicpuTsRoceChannelV2::GetStatus()
         return ChannelStatus::FAILED;
     }
     return status;
+}
+
+HcclResult AicpuTsRoceChannelV2::ProcessStatus()
+{
+    switch (channelStatus_) {
+        case ChannelStatus::READY:
+            if (socket_ != nullptr) {
+                SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+            }
+            return HCCL_SUCCESS;
+        case ChannelStatus::SOCKET_TIMEOUT:
+            HCCL_ERROR("[AicpuTsRoceChannelV2::ProcessStatus] get socket timeout");
+            return HCCL_E_ROCE_CONNECT;
+        default:
+            return HCCL_E_AGAIN;
+    }
 }
 
 HcclResult AicpuTsRoceChannelV2::GetStatus(ChannelStatus &status) {
@@ -245,14 +265,7 @@ HcclResult AicpuTsRoceChannelV2::GetStatus(ChannelStatus &status) {
     }
 
     status = channelStatus_;
-    switch (channelStatus_) {
-        case ChannelStatus::READY:
-            return HCCL_SUCCESS;
-        case ChannelStatus::SOCKET_TIMEOUT:
-            return HCCL_E_ROCE_CONNECT;
-        default:
-            return HCCL_E_AGAIN;
-    }
+    return ProcessStatus();
 }
 
 HcclResult AicpuTsRoceChannelV2::CheckSocketStatus() {
@@ -749,7 +762,9 @@ std::string AicpuTsRoceChannelV2::Describe() const
     }
     msg += "]";
     msg += Hccl::StringFormat(", rdmaHandle:%p, %s, ", rdmaHandle_, channelStatus_.Describe().c_str());
-    msg += socket_->Describe();
+    if (socket_ != nullptr) {
+            msg += socket_->Describe();
+        }
     msg += "}";
     return msg;
 }
