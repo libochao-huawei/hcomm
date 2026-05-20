@@ -188,6 +188,7 @@ HcclResult HrtRaGetQpDepth(RdmaHandle rdmaHandle, unsigned int *tempDepth, unsig
 HcclResult HrtRaSetQpDepth(RdmaHandle rdmaHandle, unsigned int tempDepth, unsigned int *qpNum);
 HcclResult HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle &qpHandle);
 HcclResult HrtRaQpDestroy(QpHandle handle);
+HcclResult hrtRaVerbsQpDestroy(QpHandle handle);
 HcclResult HrtRaQpNonBlockConnectAsync(QpHandle handle, const SocketHandle sockHandle);
 HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle,
     std::function<bool()> needStop = []() { return false; }, u32 timeout = 0);
@@ -329,6 +330,7 @@ HcclResult hrtRaQpBatchModify(RdmaHandle rdmaHandle, QpHandle qpHandle[], unsign
 HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     int qpMode, struct TypicalQp* qpInfo, QpHandle &qpHandle);
 HcclResult hrtRaTypicalCqCreate(RdmaHandle rdmaHandle, unsigned int cqDepth, unsigned int &cqn);
+HcclResult hrtRaTypicalCqDestroy(RdmaHandle rdmaHandle, unsigned int cqn);
 s32 hrtRaTypicalCqPoll(RdmaHandle rdmaHandle, unsigned int cqn, unsigned int numEntries, void *wc);
 HcclResult hrtRaTypicalQpCreateWithCq(RdmaHandle rdmaHandle, int flag, int qpMode,
     unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,

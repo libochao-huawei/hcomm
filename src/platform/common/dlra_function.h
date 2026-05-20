@@ -130,6 +130,7 @@ public:
         int qpMode, struct TypicalQp *qpInfo, QpHandle* qpHandle)> dlRaTypicalQpCreate;
     std::function<int(RdmaHandle rdmaHandle, unsigned int cqDepth,
         unsigned int *cqn)> dlRaTypicalCqCreate;
+    std::function<int(RdmaHandle rdmaHandle, unsigned int cqn)> dlRaTypicalCqDestroy;
     std::function<int(RdmaHandle rdmaHandle, unsigned int cqn,
         unsigned int numEntries, void *wc)> dlRaTypicalCqPoll;
     std::function<int(RdmaHandle rdmaHandle, int flag, int qpMode,
@@ -138,6 +139,7 @@ public:
     std::function<int(RdmaHandle rdmaHandle,
         struct TypicalQp *localQpInfo, struct TypicalQp *remoteQpInfo)> dlRaTypicalQpModify;
     std::function<int(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp)> dlRaTypicalSendWr;
+    std::function<int(QpHandle handle)> dlRaVerbsQpDestroy;
  
     std::function<int(RdmaHandle rdmaHandle, struct QpExtAttrs *ext_attrs, struct AiQpInfo *info, \
     QpHandle *qpHandle)> dlRaAiQpCreate;

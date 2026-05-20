@@ -203,6 +203,24 @@ HcclResult hrtRaTypicalCqCreate(RdmaHandle rdmaHandle, unsigned int cqDepth, uns
     return HCCL_SUCCESS;
 }
 
+HcclResult hrtRaTypicalCqDestroy(RdmaHandle rdmaHandle, unsigned int cqn)
+{
+    CHK_PTR_NULL(rdmaHandle);
+
+    s32 ret = DlRaFunction::GetInstance().dlRaTypicalCqDestroy(rdmaHandle, cqn);
+
+    CHK_PRT_RET(ret != 0, HCCL_ERROR("[%s][%s]errNo[0x%016llx] ra typical cq destroy fail. "\
+        "params: cqn[%u]. return: ret[%d]", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(),
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), cqn, ret), HCCL_E_NETWORK);
+
+    s32 deviceId = 0;
+    if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
+        deviceId = -1;
+    }
+    PLF_CONFIG_DEBUG(PLF_RES, "Destroy Cq para: deviceId[%d] cqn[%u]", deviceId, cqn);
+    return HCCL_SUCCESS;
+}
+
 s32 hrtRaTypicalCqPoll(RdmaHandle rdmaHandle, unsigned int cqn, unsigned int numEntries, void *wc)
 {
     CHK_PTR_NULL(rdmaHandle);
@@ -313,6 +331,37 @@ HcclResult HrtRaQpDestroy(QpHandle handle)
             HCCL_ERROR("[Destroy][RaQp]errNo[0x%016llx] ra qp destroy fail. return[%d].", \
                 HCCL_ERROR_CODE(HCCL_E_NETWORK), ret);
             return HCCL_E_NETWORK;  // 非ra限速场景错误，不轮询，直接退出
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult hrtRaVerbsQpDestroy(QpHandle handle)
+{
+    struct QpAttr attr{};
+    CHK_RET(hrtRaGetQpAttr(handle, &attr));
+    s32 deviceId = 0;
+    if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
+        deviceId = -1;
+    }
+    PLF_CONFIG_DEBUG(PLF_RES, "Destroy Verbs Qp para: deviceId[%d] qpn[%u]", deviceId, attr.qpn);
+
+    s32 ret = 0;
+    auto startTime = chrono::steady_clock::now();
+    auto timeout = chrono::seconds(GetExternalInputHcclLinkTimeOut());
+    while (true) {
+        ret = DlRaFunction::GetInstance().dlRaVerbsQpDestroy(handle);
+        if (!ret) {
+            break;
+        } else if (ret == ROCE_EAGAIN) {
+            bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeout);
+            CHK_PRT_RET(bTimeout, HCCL_ERROR("[Destroy][RaQp]errNo[0x%016llx] ra verbs qp destroy timeout[%d s]. "\
+                "return[%d].", HCCL_ERROR_CODE(HCCL_E_NETWORK), timeout, ret), HCCL_E_NETWORK);
+            SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+        } else {
+            HCCL_ERROR("[Destroy][RaQp]errNo[0x%016llx] ra verbs qp destroy fail. return[%d].", \
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), ret);
+            return HCCL_E_NETWORK;
         }
     }
     return HCCL_SUCCESS;

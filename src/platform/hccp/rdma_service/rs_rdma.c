@@ -1828,6 +1828,37 @@ RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevInd
     return 0;
 }
 
+RS_ATTRI_VISI_DEF int RsTypicalCqDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn)
+{
+    struct RsRdevCb *rdevCb = NULL;
+    int ret;
+    int found = 0;
+
+    RS_QP_PARA_CHECK(phyId);
+
+    ret = RsQpQueryInfo(phyId, rdevIndex, &rdevCb, RA_RS_NOR_QP_MODE);
+    CHK_PRT_RETURN(ret, hccp_err("query qp info failed:%d", ret), ret);
+
+    for (unsigned int i = 0; i < rdevCb->typicalCqCnt; i++) {
+        if (rdevCb->typicalCqTable[i].cqn == cqn) {
+            (void)RsIbvDestroyCq(rdevCb->typicalCqTable[i].ibCq);
+            rdevCb->typicalCqTable[i] = rdevCb->typicalCqTable[rdevCb->typicalCqCnt - 1];
+            rdevCb->typicalCqCnt--;
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found) {
+        hccp_err("cq not found cqn[%u]", cqn);
+        return -EINVAL;
+    }
+
+    hccp_info("destroy cq success, cqn[%u]", cqn);
+
+    return 0;
+}
+
 RS_ATTRI_VISI_DEF int RsGetTypicalCqAttr(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
     struct rdma_lite_device_cq_attr *deviceCqAttr)
 {
@@ -2250,6 +2281,36 @@ STATIC void RsQpRelease(struct RsQpCb *qpCb)
 
     // dereg mr
     RsMrRelease(qpCb);
+}
+
+RS_ATTRI_VISI_DEF int RsVerbsQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn)
+{
+    struct RsQpCb *qpCb = NULL;
+    int ret;
+
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret != 0 || qpCb == NULL, hccp_err("get qp cb failed! qpn %u, ret %d", qpn, ret), ret);
+
+    RsQpRelease(qpCb);
+
+    // destroy qp only, skip CQ destroy for externally-owned CQs
+    RsDrvQpDestroy(qpCb);
+    RsDeinitMemPool(qpCb);
+
+    qpCb->rdevCb->qpCnt--;
+    ret = RsQpcbDeinit(qpCb->rdevCb, qpCb);
+    if (ret) {
+        hccp_err("rs_qpcb_deinit failed! ret[%d]", ret);
+    }
+
+    pthread_mutex_destroy(&qpCb->cqeErrInfo.mutex);
+    pthread_mutex_destroy(&qpCb->qpMutex);
+    hccp_info("qp %d destroy verbs qp, send wr[%u].", qpn, qpCb->sendWrNum);
+
+    free(qpCb);
+    qpCb = NULL;
+    return ret;
 }
 
 RS_ATTRI_VISI_DEF int RsQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn)

@@ -54,6 +54,7 @@ struct RsOps {
     int (*qpCreateWithAttrs)(unsigned int phyId, unsigned int rdevIndex,
         struct RsQpNormWithAttrs *qpNorm, struct RsQpRespWithAttrs *qpResp);
     int (*qpDestroy)(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn);
+    int (*verbsQpDestroy)(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn);
     int (*typicalQpModify)(unsigned int phyId, unsigned int rdevIndex, struct TypicalQp localQpInfo,
         struct TypicalQp remoteQpInfo, unsigned int *udpSport);
     int (*qpBatchModify)(unsigned int phyId, unsigned int rdevIndex, int status, int qpn[], int qpnNum);
@@ -100,6 +101,7 @@ struct RsOps {
     int (*getSecRandom)(int *value);
     int (*getHccnCfg)(unsigned int phyId, enum HccnCfgKey key, char *value, unsigned int *valueLen);
     int (*cqCreate)(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth, unsigned int *cqn);
+    int (*cqDestroy)(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn);
     int (*getTypicalCqAttr)(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
         struct rdma_lite_device_cq_attr *deviceCqAttr);
     int (*qpCreateWithCq)(unsigned int phyId, unsigned int rdevIndex, struct RsQpNormWithCq qpNorm,
@@ -114,6 +116,7 @@ struct RsOps gRaRsOps = {
     .qpCreate = RsQpCreate,
     .qpCreateWithAttrs = RsQpCreateWithAttrs,
     .qpDestroy = RsQpDestroy,
+    .verbsQpDestroy = RsVerbsQpDestroy,
     .typicalQpModify = RsTypicalQpModify,
     .qpBatchModify = RsQpBatchModify,
     .qpConnectAsync = RsQpConnectAsync,
@@ -148,6 +151,7 @@ struct RsOps gRaRsOps = {
     .getSecRandom = RsDrvGetRandomNum,
     .getHccnCfg = RsGetHccnCfg,
     .cqCreate = RsTypicalCqCreate,
+    .cqDestroy = RsTypicalCqDestroy,
     .getTypicalCqAttr = RsGetTypicalCqAttr,
     .qpCreateWithCq = RsQpCreateWithCq,
 };
@@ -543,6 +547,23 @@ STATIC int RaRsTypicalCqCreate(char *inBuf, char *outBuf, int *outLen, int *opRe
     return 0;
 }
 
+STATIC int RaRsTypicalCqDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpTypicalCqDestroyData *cqDestroyData = (union OpTypicalCqDestroyData *)(inBuf +
+        sizeof(struct MsgHead));
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTypicalCqDestroyData), sizeof(struct MsgHead), rcvBufLen,
+        opResult);
+
+    *opResult = gRaRsOps.cqDestroy(cqDestroyData->txData.phyId, cqDestroyData->txData.rdevIndex,
+        cqDestroyData->txData.cqn);
+    if (*opResult != 0) {
+        hccp_err("cq destroy failed ret[%d].", *opResult);
+    }
+
+    return 0;
+}
+
 STATIC int RaRsTypicalQpCreateWithCq(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
     union OpTypicalQpCreateWithCqData *createData = (union OpTypicalQpCreateWithCqData *)(inBuf +
@@ -595,6 +616,21 @@ STATIC int RaRsQpDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, 
         qpDestroyData->txData.qpn);
     if (*opResult != 0) {
         hccp_err("qp destroy failed ret[%d].", *opResult);
+    }
+
+    return 0;
+}
+
+STATIC int RaRsVerbsQpDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpQpDestroyData *qpDestroyData = (union OpQpDestroyData *)(inBuf + sizeof(struct MsgHead));
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpQpDestroyData), sizeof(struct MsgHead), rcvBufLen, opResult);
+
+    *opResult = gRaRsOps.verbsQpDestroy(qpDestroyData->txData.phyId, qpDestroyData->txData.rdevIndex,
+        qpDestroyData->txData.qpn);
+    if (*opResult != 0) {
+        hccp_err("verbs qp destroy failed ret[%d].", *opResult);
     }
 
     return 0;
@@ -1621,8 +1657,10 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_AI_QP_CREATE_WITH_ATTRS, RaRsAiQpCreateWithData, sizeof(union OpAiQpCreateWithAttrsData)},
     {RA_RS_TYPICAL_QP_CREATE, RaRsTypicalQpCreate, sizeof(union OpTypicalQpCreateData)},
     {RA_RS_TYPICAL_CQ_CREATE, RaRsTypicalCqCreate, sizeof(union OpTypicalCqCreateData)},
+{RA_RS_TYPICAL_CQ_DESTROY, RaRsTypicalCqDestroy, sizeof(union OpTypicalCqDestroyData)},
     {RA_RS_TYPICAL_QP_CREATE_WITH_CQ, RaRsTypicalQpCreateWithCq, sizeof(union OpTypicalQpCreateWithCqData)},
     {RA_RS_QP_DESTROY, RaRsQpDestroy, sizeof(union OpQpDestroyData)},
+{RA_RS_VERBS_QP_DESTROY, RaRsVerbsQpDestroy, sizeof(union OpQpDestroyData)},
     {RA_RS_TYPICAL_QP_MODIFY, RaRsTypicalQpModify, sizeof(union OpTypicalQpModifyData)},
     {RA_RS_QP_BATCH_MODIFY, RaRsQpBatchModify, sizeof(union OpQpBatchModifyData)},
     {RA_RS_QP_CONNECT, RaRsQpConnectAsync, sizeof(union OpQpConnectData)},

@@ -134,6 +134,8 @@ enum OpType {
     RA_RS_CTX_GET_UB_CONTEXT = 111,
     RA_RS_TYPICAL_CQ_CREATE = 112,
     RA_RS_TYPICAL_QP_CREATE_WITH_CQ = 113,
+    RA_RS_VERBS_QP_DESTROY,
+    RA_RS_TYPICAL_CQ_DESTROY,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode

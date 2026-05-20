@@ -84,6 +84,17 @@ HcclResult TypicalQpManager::CreateCq(unsigned int cqDepth, unsigned int &cqn)
     return HCCL_SUCCESS;
 }
 
+HcclResult TypicalQpManager::DestroyCq(unsigned int cqn)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    CHK_RET(RdmaResourceManager::GetInstance().GetRdmaHandle(rdmaHandle_));
+    CHK_PTR_NULL(rdmaHandle_);
+    std::unique_lock<std::mutex> lock(qpMutex_);
+    ret = hrtRaTypicalCqDestroy(rdmaHandle_, cqn);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TypicalQpManager][DestroyCq] Destroy cq failed."), HCCL_E_INTERNAL);
+    return HCCL_SUCCESS;
+}
+
 HcclResult TypicalQpManager::CreateQpWithCq(unsigned int sendCqn, unsigned int recvCqn,
     struct ibv_qp_cap *cap, int qpType, int sqSigAll, struct TypicalQp& qpInfo)
 {
@@ -125,6 +136,21 @@ HcclResult TypicalQpManager::DestroyQp(struct TypicalQp& qpInfo)
     std::unique_lock<std::mutex> lock(qpMutex_);
     HcclResult ret = HrtRaQpDestroy(qpHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TypicalQpManager][DestroyQp] Destroy qp failed."), HCCL_E_INTERNAL);
+    qpMap_.erase(qpInfo.qpn);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TypicalQpManager::DestroyVerbsQp(struct TypicalQp& qpInfo)
+{
+    CHK_PRT_RET((qpInfo.qpn == 0), HCCL_ERROR("[TypicalQpManager][DestroyVerbsQp] The qpinfo is wrong, qpn is 0."),
+        HCCL_E_PARA);
+    QpHandle qpHandle;
+    CHK_RET(GetQpHandleByQpn(qpInfo.qpn, qpHandle));
+    CHK_PTR_NULL(qpHandle);
+    std::unique_lock<std::mutex> lock(qpMutex_);
+    HcclResult ret = hrtRaVerbsQpDestroy(qpHandle);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TypicalQpManager][DestroyVerbsQp] Destroy verbs qp failed."),
+        HCCL_E_INTERNAL);
     qpMap_.erase(qpInfo.qpn);
     return HCCL_SUCCESS;
 }

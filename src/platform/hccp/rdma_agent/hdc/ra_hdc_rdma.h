@@ -199,6 +199,18 @@ union OpTypicalCqCreateData {
     } rxData;
 };
 
+union OpTypicalCqDestroyData {
+    struct {
+        unsigned int phyId;
+        unsigned int rdevIndex;
+        unsigned int cqn;
+    } txData;
+
+    struct {
+        unsigned int rsvd;
+    } rxData;
+};
+
 union OpTypicalQpCreateWithCqData {
     struct {
         unsigned int phyId;
@@ -547,12 +559,14 @@ int RaHdcAiQpCreateWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs 
 int RaHdcTypicalQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, struct TypicalQp *qpInfo,
     void **qpHandle);
 int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn);
+int RaHdcTypicalCqDestroy(struct RaRdmaHandle *rdmaHandle, unsigned int cqn);
 int RaHdcTypicalQpCreateWithCq(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode,
     unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
     struct TypicalQp *qpInfo, void **qpHandle);
 int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries, void *wc);
 int RaHdcTypicalCqPoll(struct RaRdmaHandle *rdmaHandle, unsigned int cqn, unsigned int numEntries, void *wc);
 int RaHdcQpDestroy(struct RaQpHandle *qpHdc);
+int RaHdcVerbsQpDestroy(struct RaQpHandle *qpHdc);
 int RaHdcTypicalQpModify(struct RaQpHandle *qpHdc, struct TypicalQp *localQpInfo,
     struct TypicalQp *remoteQpInfo);
 int RaHdcQpConnectAsync(struct RaQpHandle *qpHdc, const void *sockHandle);

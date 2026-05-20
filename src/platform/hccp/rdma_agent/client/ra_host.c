@@ -86,10 +86,12 @@ struct RaRdmaOps gRaHdcRdmaOps = {
     .raAiQpCreateWithAttrs = RaHdcAiQpCreateWithAttrs,
     .raTypicalQpCreate = RaHdcTypicalQpCreate,
     .raTypicalCqCreate = RaHdcTypicalCqCreate,
+    .raTypicalCqDestroy = RaHdcTypicalCqDestroy,
     .raTypicalCqPoll = RaHdcTypicalCqPoll,
     .raTypicalQpCreateWithCq = RaHdcTypicalQpCreateWithCq,
     .raLoopbackQpCreate = NULL,
     .raQpDestroy = RaHdcQpDestroy,
+    .raVerbsQpDestroy = RaHdcVerbsQpDestroy,
     .raTypicalQpModify = RaHdcTypicalQpModify,
     .raQpBatchModify = RaHdcQpBatchModify,
     .raSetQpLbValue = NULL,
@@ -141,9 +143,11 @@ struct RaRdmaOps gRaPeerRdmaOps = {
     .raAiQpCreateWithAttrs = NULL,
     .raTypicalQpCreate = NULL,
     .raTypicalCqCreate = NULL,
+    .raTypicalCqDestroy = NULL,
     .raTypicalQpCreateWithCq = NULL,
     .raLoopbackQpCreate = RaPeerLoopbackQpCreate,
     .raQpDestroy = RaPeerQpDestroy,
+    .raVerbsQpDestroy = NULL,
     .raTypicalQpModify = RaPeerTypicalQpModify,
     .raQpBatchModify = NULL,
     .raSetQpLbValue = RaPeerSetQpLbValue,
@@ -1309,6 +1313,31 @@ HCCP_ATTRI_VISI_DEF int RaTypicalCqCreate(void *rdevHandle, unsigned int cqDepth
     return 0;
 }
 
+HCCP_ATTRI_VISI_DEF int RaTypicalCqDestroy(void *rdevHandle, unsigned int cqn)
+{
+    struct RaRdmaHandle *rdmaHandleTmp = (struct RaRdmaHandle *)rdevHandle;
+    unsigned int phyId;
+    int ret;
+
+    CHK_PRT_RETURN(rdevHandle == NULL || rdmaHandleTmp->rdmaOps == NULL ||
+        rdmaHandleTmp->rdmaOps->raTypicalCqDestroy == NULL,
+        hccp_err("[destroy][ra_typical_cq]rdev_handle is NULL or func is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    phyId = rdmaHandleTmp->rdevInfo.phyId;
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
+        hccp_err("[destroy][ra_typical_cq]phyId(%u) must greater or equal to 0 and less than %d!", phyId,
+        RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    hccp_run_info("Input parameters: phyId[%u], cqn[%u]", phyId, cqn);
+
+    ret = rdmaHandleTmp->rdmaOps->raTypicalCqDestroy(rdmaHandleTmp, cqn);
+    CHK_PRT_RETURN(ret != 0,
+        hccp_err("[destroy][ra_typical_cq]destroy cq failed, ret(%d) cqn(%u)", ret, cqn),
+        ConverReturnCode(RDMA_OP, ret));
+
+    return 0;
+}
+
 HCCP_ATTRI_VISI_DEF int RaTypicalCqPoll(void *rdevHandle, unsigned int cqn, unsigned int numEntries, void *wc)
 {
     struct RaRdmaHandle *rdmaHandleTmp = (struct RaRdmaHandle *)rdevHandle;
@@ -1426,6 +1455,26 @@ HCCP_ATTRI_VISI_DEF int RaQpDestroy(void *qpHandle)
         raQpHandle->qpn, raQpHandle->phyId, raQpHandle->rdevIndex, raQpHandle->qpMode, raQpHandle->flag);
 
     ret = raQpHandle->rdmaOps->raQpDestroy(raQpHandle);
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaVerbsQpDestroy(void *qpHandle)
+{
+    struct RaQpHandle *raQpHandle = (struct RaQpHandle *)qpHandle;
+    int ret;
+
+    CHK_PRT_RETURN(qpHandle == NULL,
+        hccp_err("[destroy][ra_qp]qp_handle is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(raQpHandle->rdmaOps == NULL || raQpHandle->rdmaOps->raVerbsQpDestroy == NULL,
+        hccp_err("[destroy][ra_qp]rdma_ops is NULL or ra_qp_handle->rdma_ops->ra_verbs_qp_destroy is NULL, invalid"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    hccp_run_info("Input parameters: qpn[%u], phyId[%u], rdevIndex[%u] qpMode[%d] flag[%d]",
+        raQpHandle->qpn, raQpHandle->phyId, raQpHandle->rdevIndex, raQpHandle->qpMode, raQpHandle->flag);
+
+    ret = raQpHandle->rdmaOps->raVerbsQpDestroy(raQpHandle);
     return ConverReturnCode(RDMA_OP, ret);
 }
 

@@ -92,6 +92,23 @@ STATIC int RaHdcCmdQpDestroy(struct RaQpHandle *qpHdc)
     return ret;
 }
 
+STATIC int RaHdcCmdVerbsQpDestroy(struct RaQpHandle *qpHdc)
+{
+    int ret;
+    union OpQpDestroyData qpDestroyData = {0};
+
+    qpDestroyData.txData.qpn = qpHdc->qpn;
+    qpDestroyData.txData.phyId = qpHdc->phyId;
+    qpDestroyData.txData.rdevIndex = qpHdc->rdevIndex;
+    ret = RaHdcProcessMsg(RA_RS_VERBS_QP_DESTROY, qpHdc->phyId, (char *)&qpDestroyData,
+        sizeof(union OpQpDestroyData));
+    if (ret) {
+        hccp_err("[destroy][ra_hdc_qp]hdc_send_recv_pkt failed ret(%d) phyId(%u)", ret, qpHdc->phyId);
+    }
+
+    return ret;
+}
+
 int RaHdcQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, void **qpHandle)
 {
     unsigned int phyId = rdmaHandle->rdevInfo.phyId;
@@ -394,6 +411,39 @@ int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, 
     return 0;
 }
 
+int RaHdcTypicalCqDestroy(struct RaRdmaHandle *rdmaHandle, unsigned int cqn)
+{
+    union OpTypicalCqDestroyData cqDestroyData = {0};
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    int ret;
+
+    RA_PTHREAD_MUTEX_LOCK(&rdmaHandle->rdevMutex);
+    for (unsigned int i = 0; i < rdmaHandle->cqCount; i++) {
+        if (rdmaHandle->cqEntries[i].cqn == cqn) {
+            if (rdmaHandle->cqEntries[i].liteCq != NULL) {
+                (void)RaRdmaLiteDestroyCq(rdmaHandle->cqEntries[i].liteCq);
+            }
+            rdmaHandle->cqEntries[i] = rdmaHandle->cqEntries[rdmaHandle->cqCount - 1];
+            rdmaHandle->cqCount--;
+            break;
+        }
+    }
+    RA_PTHREAD_MUTEX_UNLOCK(&rdmaHandle->rdevMutex);
+
+    cqDestroyData.txData.phyId = phyId;
+    cqDestroyData.txData.rdevIndex = rdmaHandle->rdevIndex;
+    cqDestroyData.txData.cqn = cqn;
+
+    ret = RaHdcProcessMsg(RA_RS_TYPICAL_CQ_DESTROY, phyId, (char *)&cqDestroyData,
+        sizeof(union OpTypicalCqDestroyData));
+    if (ret) {
+        hccp_err("[destroy][ra_hdc_typical_cq]ra hdc message process failed ret(%d) cqn(%u)", ret, cqn);
+        return ret;
+    }
+
+    return 0;
+}
+
 int RaHdcTypicalQpCreateWithCq(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode,
     unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
     struct TypicalQp *qpInfo, void **qpHandle)
@@ -476,6 +526,21 @@ int RaHdcQpDestroy(struct RaQpHandle *qpHdc)
     ret = RaHdcCmdQpDestroy(qpHdc);
     if (ret) {
         hccp_err("[destroy][ra_hdc_qp]ra_hdc_cmd_qp_destroy failed ret(%d) phyId(%u)", ret, qpHdc->phyId);
+    }
+
+    free(qpHdc);
+    qpHdc = NULL;
+    return ret;
+}
+
+int RaHdcVerbsQpDestroy(struct RaQpHandle *qpHdc)
+{
+    int ret;
+
+    RaHdcLiteQpDestroy(qpHdc);
+    ret = RaHdcCmdVerbsQpDestroy(qpHdc);
+    if (ret) {
+        hccp_err("[destroy][ra_hdc_qp]ra_hdc_cmd_verbs_qp_destroy failed ret(%d) phyId(%u)", ret, qpHdc->phyId);
     }
 
     free(qpHdc);
