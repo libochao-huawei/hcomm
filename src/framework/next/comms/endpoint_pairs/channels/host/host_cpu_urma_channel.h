@@ -33,7 +33,7 @@ public:
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
+    HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags) override;
     ChannelStatus GetStatus() override;
 
     // 数据面接口

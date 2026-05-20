@@ -951,7 +951,7 @@ HcclResult UbMemTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, 
         HCCL_ERROR("[UbMemTransport][GetRemoteMems] bufferNum is 0.");
         return HCCL_E_PARA;
     }
-    uint32_t userMemCount = rmtBufferVec.size();
+    uint32_t memCount = rmtBufferVec.size();
     auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         if (rmtBuffer == nullptr) {
@@ -962,9 +962,9 @@ HcclResult UbMemTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, 
         remoteMemCtx.remoteMems[index].size = rmtBuffer->GetSize();
     };
     RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferVec, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memTags, memNum};
-    CHK_RET(GetRemoteUserMem(remoteMemCtx));
+        memCount, cacheValid_, rmtBufferVec, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
+        cacheBuilder, remoteMem, memNum, memTags};
+    CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 
