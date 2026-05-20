@@ -44,6 +44,7 @@ hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identi
 
 hcclComm::~hcclComm()
 {
+    HCCL_ERROR("TEST [hcclComm][~hcclComm] start to destroy hcclComm, commId[%s]", identifier_.c_str());
     RealeaseBarrierMemory();
     (void)UnRegistTaskAbortHandler();
     BinaryUnLoad();

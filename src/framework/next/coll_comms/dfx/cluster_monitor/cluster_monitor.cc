@@ -741,6 +741,7 @@ HcclResult ClusterMonitor::UnRegisterToClusterMonitor(hccl::CollComm* collComm)
             return HCCL_SUCCESS;
         }
 
+        HCCL_ERROR("TEST [%s]commId[%s] socket start destory", __func__, commId.c_str());
         for (const auto& remRank : commIdMap_[commId]) {
             ClusterUIDType rem = remRank.first;
             uid2FrameStatusMap_.erase(rem);

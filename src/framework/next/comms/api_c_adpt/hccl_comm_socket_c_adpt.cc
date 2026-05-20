@@ -27,6 +27,7 @@ HcclResult SocketDestroy(SocketHandler socketHandle)
     CHK_PTR_NULL(socketHandle);
     s32 devLogicId;
     CHK_RET(hrtGetDevice(&devLogicId));
+    HCCL_ERROR("TEST [%s] socketHandle[%p] devLogicId[%d]", __func__, socketHandle, devLogicId);
     return hcomm::SocketProcess::GetInstance(devLogicId).DestroySocketHandle(socketHandle);
 }
 
