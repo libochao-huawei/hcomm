@@ -304,7 +304,11 @@ TEST_F(RankGraphV1DirectTest, Ut_GetDevicePort_When_RankExists_Expect_Success)
     RankInfo_t rankInfo;
     rankInfo.rankId = 0;
     rankInfo.deviceInfo.port = 123;
-    rankGraph.rankGraph_.push_back(rankInfo);
+
+    // GetDevicePort uses FindRank which looks up in rankIndex_, not rankGraph_
+    RankGraphV1::RankGraphInfo graphInfo;
+    graphInfo.rankInfo = rankInfo;
+    rankGraph.rankIndex_[0] = graphInfo;
 
     uint32_t devPort = 0;
     HcclResult ret = rankGraph.GetDevicePort(0, &devPort);
