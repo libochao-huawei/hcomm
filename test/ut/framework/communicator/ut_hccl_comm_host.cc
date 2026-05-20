@@ -163,7 +163,10 @@ TEST_F(HcclCommHostTest, Ut_InitCollCommInner_When_Success_Expect_Success)
 {
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, "test_comm");
 
-    MOCKER_CPP(&hcclComm::GetConnectMode).stubs().will(returnValue(1));
+    MOCKER_CPP(&HcclCommunicator::GetConnectMode).stubs().will(returnValue(1));
+    MOCKER_CPP(&HcclCommunicator::GetRankGraphV1).stubs().will(returnValue(reinterpret_cast<void*>(0x1000)));
+    MOCKER_CPP(&HcclCommunicator::GetInCCLbuffer).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::CreateCommCCLbuffer).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CollComm::Init).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CollComm::GetHDCommunicate).stubs().will(returnValue(HCCL_SUCCESS));
 
