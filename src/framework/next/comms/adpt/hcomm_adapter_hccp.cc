@@ -169,12 +169,12 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
     attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
     /* errTime配置值：0-31
-       0-7代表芯片配置值b00:128ms
+       0-7代表芯片配置值b00:512ms
        8-15代表芯片配置值b01:1s
        16-23代表芯片配置值b10:8s
-       24-31代表芯片配置值b11:64s
+       24-31代表芯片配置值b11:32s
     */
-    attr.ub.errTimeout       = 16;
+    attr.ub.errTimeout       = in.errTimeout;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority          = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
@@ -202,10 +202,10 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
         "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
         "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u].",
+        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], timeout[%u].",
         attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode,
         attr.ub.mode, attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa,
-        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType);
+        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType, attr.ub.errTimeout);
 
     struct QpCreateInfo info {};
     void *qpHandle = nullptr;
@@ -262,7 +262,7 @@ HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreate
        16-23代表芯片配置值b10:8s
        24-31代表芯片配置值b11:64s
     */
-    attr.ub.errTimeout       = 16;
+    attr.ub.errTimeout       = in.errTimeout;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority          = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
@@ -290,10 +290,10 @@ HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreate
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
               "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
               "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], priority[%u].",
+              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], priority[%u], timeout[%u].",
               attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode, attr.ub.mode,
               attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa, attr.ub.extMode.sq.buffSize,
-              attr.ub.extMode.piType, attr.ub.priority);
+              attr.ub.extMode.piType, attr.ub.priority, attr.ub.errTimeout);
 
     void *raReqHandle = nullptr;
     out.resize(sizeof(QpCreateInfo));
