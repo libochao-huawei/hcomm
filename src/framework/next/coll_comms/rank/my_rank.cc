@@ -700,7 +700,7 @@ HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteM
     CHK_PTR_NULL(memTags);
     CHK_PTR_NULL(memNum);
 
-    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &remoteMem, &memNum, &memTags)));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, remoteMem, memNum, memTags)));
     // 添加空指针检查，防止返回的指针为空
     if (memNum - 1 > 0) {
         CHK_PTR_NULL(*remoteMem);
