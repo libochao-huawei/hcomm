@@ -12,6 +12,8 @@ set(src_list
     hccn_rping.cc
 )
  
-target_sources(hccl_plf PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${src_list}
+    )
+endif()

@@ -73,6 +73,116 @@ static uint16_t ReadSlAvailableMask16(const struct TpAttr &attr)
     return static_cast<uint16_t>(attr.slBitmap);
 }
 
+constexpr uint32_t kUboeEightTpPolicyCount = 8U;
+
+static uint32_t ResolveSlAvailableCntForPolicy(uint16_t slMask, uint32_t slLevelCount)
+{
+    uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
+    if (slLevelCount != 0U) {
+        slAvailableCnt = std::min(slLevelCount, slAvailableCnt);
+    }
+    return slAvailableCnt;
+}
+
+static uint32_t MapUboeEightTpSlFromMask(uint32_t qos, uint16_t slMask, uint32_t slAvailableCnt)
+{
+    const uint32_t q = qos & 7U;
+    if (slAvailableCnt == 0U) {
+        return 0U;
+    }
+    if (slAvailableCnt == 1U) {
+        return SlValueAtRankInMask16(slMask, 0U);
+    }
+    if (slAvailableCnt == 2U) {
+        const uint32_t slRank = (q >= 4U) ? 0U : 1U;
+        return SlValueAtRankInMask16(slMask, slRank);
+    }
+    uint32_t slRank = 0U;
+    if (q >= 5U) {
+        slRank = 0U;
+    } else if (q >= 3U) {
+        slRank = (slAvailableCnt - 1U) / 2U;
+    } else {
+        slRank = slAvailableCnt - 1U;
+    }
+    if (slRank >= slAvailableCnt) {
+        slRank = slAvailableCnt - 1U;
+    }
+    return SlValueAtRankInMask16(slMask, slRank);
+}
+
+static bool ApplyUbcQosTpSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
+    uint32_t &tpListIndexOut, uint32_t &mappedSlOut);
+
+static bool TryApplyUboeEightTpQosPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
+    uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
+{
+    if (param.tpProtocol != TpProtocol::UBOE || param.loopFirstTpLowestSl) {
+        return false;
+    }
+    const uint32_t slAvailableCnt = ResolveSlAvailableCntForPolicy(slMask, param.slLevelCount);
+    if (nTp != kUboeEightTpPolicyCount || slAvailableCnt == 0U) {
+        return false;
+    }
+    const uint32_t qos = param.qos & 7U;
+    static constexpr uint8_t kUboeEightTpIndexByQos[8] = {7U, 6U, 5U, 4U, 3U, 2U, 1U, 0U};
+    tpListIndexOut = kUboeEightTpIndexByQos[qos];
+    mappedSlOut = MapUboeEightTpSlFromMask(qos, slMask, slAvailableCnt);
+    HCCL_INFO("[TpManager][TryApplyUboeEightTpQosPolicy] qos[%u] tpListIndex[%u] mappedSl[%u] slMask[0x%x] "
+              "slAvailableCnt[%u] param[%s].",
+        qos, tpListIndexOut, mappedSlOut, static_cast<unsigned>(slMask), slAvailableCnt, param.Describe().c_str());
+    return true;
+}
+
+static bool ApplyTpQosSlPolicy(const RaUbGetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
+    uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
+{
+    if (TryApplyUboeEightTpQosPolicy(param, nTp, slMask, tpListIndexOut, mappedSlOut)) {
+        return true;
+    }
+    return ApplyUbcQosTpSlPolicy(param, nTp, slMask, tpListIndexOut, mappedSlOut);
+}
+
+static uint32_t ResolveUbcGroupFirstHcclQos(uint32_t qos, uint32_t nTp, uint32_t slAvailableCnt)
+{
+    const uint32_t q = qos & 7U;
+    if (nTp == 0U || slAvailableCnt == 0U) {
+        return q;
+    }
+    const uint32_t k = std::min(nTp, slAvailableCnt);
+    const uint32_t numGroups = std::min(8U, k);
+    const uint32_t groupIdx =
+        (k == 3U) ? (q < 3U ? 0U : (q < 5U ? 1U : 2U)) : ((q * numGroups) / 8U);
+    if (k == 3U) {
+        static constexpr uint8_t kUboeGroupFirstQos[3] = {0U, 3U, 5U};
+        return (groupIdx < 3U) ? static_cast<uint32_t>(kUboeGroupFirstQos[groupIdx]) : 0U;
+    }
+    for (uint32_t candidate = 0U; candidate <= 7U; ++candidate) {
+        if (((candidate * numGroups) / 8U) == groupIdx) {
+            return candidate;
+        }
+    }
+    return q;
+}
+
+static uint8_t ResolveUboeDscpLookupQos(const RaUbGetTpInfoParam &param, uint32_t nTp, uint16_t slMask)
+{
+    const uint8_t requestQos = static_cast<uint8_t>(param.qos & 0xFFU);
+    uint32_t dummyTpIdx = 0U;
+    uint32_t dummySl = 0U;
+    if (TryApplyUboeEightTpQosPolicy(param, nTp, slMask, dummyTpIdx, dummySl)) {
+        return requestQos;
+    }
+    if (param.loopFirstTpLowestSl) {
+        return 0U;
+    }
+    uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
+    if (param.slLevelCount != 0U) {
+        slAvailableCnt = std::min(param.slLevelCount, slAvailableCnt);
+    }
+    return static_cast<uint8_t>(ResolveUbcGroupFirstHcclQos(param.qos, nTp, slAvailableCnt));
+}
+
 static bool ApplyLoopFirstTpLowestSl(const RaUbGetTpInfoParam &param, const uint32_t nTp, const uint16_t slMask,
     const uint32_t slRawCnt, const uint32_t slAvailableCnt, uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
 {
@@ -263,20 +373,23 @@ static HcclResult CommitUboeDscpToTpAttr(const uint32_t devPhyId, const IpAddres
 }
 
 static HcclResult CommitTpAttrsAfterSlMapping(const uint32_t devPhyId, const RaUbGetTpInfoParam &param,
-    const TpAttr &tpAttr, uint64_t tpHandle, uint32_t mappedSl)
+    const TpAttr &tpAttr, uint64_t tpHandle, uint32_t mappedSl, uint32_t nTp, uint16_t slMask)
 {
-    // TP / UBOE：将 ApplyUbcQosTpSlPolicy 得到的 mapped SL 写回 TP；CTP 不向 TP 写 SL（与 Next TpMgr 一致）
+    // TP / UBOE：将 TP QoS/SL 策略得到的 mapped SL 写回 TP；CTP 不向 TP 写 SL（与 Next TpMgr 一致）
     if (param.tpProtocol == TpProtocol::TP || param.tpProtocol == TpProtocol::UBOE) {
         CHK_RET(CommitMappedSlToTpAttr(devPhyId, param.locAddr, tpHandle, mappedSl));
     }
     if (param.tpProtocol == TpProtocol::UBOE && tpAttr.dscpConfigMode == 0) {
         const uint8_t dscpBefore = static_cast<uint8_t>(tpAttr.dscp & 0x3FU);
-        const uint8_t qos = static_cast<uint8_t>(param.qos & 0xFFU);
+        const uint8_t requestQos = static_cast<uint8_t>(param.qos & 0xFFU);
+        const uint8_t dscpLookupQos = ResolveUboeDscpLookupQos(param, nTp, slMask);
         uint8_t dscp = 33U;
-        (void)GetDscpByQosFromHccnCfg(devPhyId, qos, dscp);
+        (void)GetDscpByQosFromHccnCfg(devPhyId, dscpLookupQos, dscp);
         CHK_RET(CommitUboeDscpToTpAttr(devPhyId, param.locAddr, tpHandle, dscp));
-        HCCL_INFO("[TpManager][%s] UBOE dscp updated: tpHandle[%llu] qos[%u] dscpBefore[%u] dscpAfter[%u].", __func__,
-            tpHandle, static_cast<unsigned>(qos), static_cast<unsigned>(dscpBefore), static_cast<unsigned>(dscp));
+        HCCL_INFO("[TpManager][%s] UBOE dscp updated: tpHandle[%llu] requestQos[%u] dscpLookupQos[%u] dscpBefore[%u] "
+                  "dscpAfter[%u].",
+            __func__, tpHandle, static_cast<unsigned>(requestQos), static_cast<unsigned>(dscpLookupQos),
+            static_cast<unsigned>(dscpBefore), static_cast<unsigned>(dscp));
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -568,8 +681,8 @@ HcclResult TpManager::MapTpInfoFromTpAttr(const RaUbGetTpInfoParam &param, const
     }
     uint32_t tpListIndex = 0;
     uint32_t mappedSl = 0;
-    if (!ApplyUbcQosTpSlPolicy(param, tpInfoNum, slMask, tpListIndex, mappedSl)) {
-        HCCL_ERROR("[TpManager][%s] ApplyUbcQosTpSlPolicy failed, param[%s] nTp[%u] slAvailableCnt[%u] mask[%u].",
+    if (!ApplyTpQosSlPolicy(param, tpInfoNum, slMask, tpListIndex, mappedSl)) {
+        HCCL_ERROR("[TpManager][%s] ApplyTpQosSlPolicy failed, param[%s] nTp[%u] slAvailableCnt[%u] mask[%u].",
             __func__, param.Describe().c_str(), tpInfoNum, slAvailableCnt, static_cast<unsigned>(slMask));
         return HcclResult::HCCL_E_INTERNAL;
     }
@@ -581,7 +694,8 @@ HcclResult TpManager::MapTpInfoFromTpAttr(const RaUbGetTpInfoParam &param, const
     outTpInfo.mappedJettyPriority = mappedSl & 0xFU;
     outTpInfo.hasMappedJettyPriority = true;
 
-    CHK_RET(CommitTpAttrsAfterSlMapping(devPhyId, param, reqCtx.tpAttr, outTpInfo.tpHandle, mappedSl));
+    CHK_RET(CommitTpAttrsAfterSlMapping(devPhyId, param, reqCtx.tpAttr, outTpInfo.tpHandle, mappedSl, tpInfoNum,
+        slMask));
 
     HCCL_INFO("[TpManager][%s] tp qos mapping ok: tpInfoNum[%u] tpHandle[%llu] tpListIndex[%u] "
               "mappedJettyPriority[%u] qos[%u] param[%s].",

@@ -9,8 +9,10 @@
 # -----------------------------------------------------------------------------------------------------------
 file(GLOB_RECURSE CCU_REP_SOURCES "*.cpp")
 
-target_sources(hccl_v2
-    PRIVATE
-
-    ${CCU_REP_SOURCES}
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2
+        PRIVATE
+    
+        ${CCU_REP_SOURCES}
+    )
+endif()

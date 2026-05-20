@@ -7,17 +7,19 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(hccl_v2 PRIVATE
-        task_info.cc
-        global_mirror_tasks.cc
-        mirror_task_manager.cc
-        mc2_global_mirror_tasks.cc
-)
+if(TARGET hccl_v2)
+    target_sources(hccl_v2 PRIVATE
+            task_info.cc
+            global_mirror_tasks.cc
+            mirror_task_manager.cc
+            mc2_global_mirror_tasks.cc
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
-target_sources(ccl_kernel PRIVATE
-        task_info.cc
-        global_mirror_tasks.cc
-        mirror_task_manager.cc
-)
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+            task_info.cc
+            global_mirror_tasks.cc
+            mirror_task_manager.cc
+    )
 endif()

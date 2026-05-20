@@ -63,9 +63,11 @@ HcclResult ChannelManager::CheckChannelParam(CommEngine engine,
             HCCL_E_PARA);
         // 检查是否有不支持协议
         CHK_PRT_RET(channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_HCCS &&
-            channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_ROCE,
+            channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_ROCE &&
+            channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_HCCS_ONLY &&
+            channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_SIO,
             HCCL_ERROR("[%s]Unsupported protocol[%d] found in channeldesc, protocol: %d.", __func__,
-                    channelDesc[descIdx].channelProtocol), HCCL_E_PARA);
+                descIdx, channelDesc[descIdx].channelProtocol), HCCL_E_PARA);
         
         // 检查engine支持情况
         if (engine != COMM_ENGINE_CPU && engine != COMM_ENGINE_CPU_TS && 
@@ -89,7 +91,7 @@ HcclResult ChannelManager::RegisterHandle(const std::string &tag, CommEngine eng
     channelHandleMap_[channelKey] = channelHandle;
     keyMap_[channelHandle] = channelKey;
     engineMap_[channelHandle] = engine;
-    HCCL_INFO("[%s]Register channel handle[%llu]", __func__, channelHandle);
+    HCCL_INFO("[%s]Register channel handle[%llu], channelKey[%s]", __func__, channelHandle, channelKey.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -120,7 +122,7 @@ HcclResult ChannelManager::IsChannelExist(ChannelHandle channel)
 {
     CHK_PRT_RET((keyMap_.find(channel) == keyMap_.end()),
         HCCL_ERROR("[%s]ChannelHandle is not exist.", __func__), HCCL_E_PARA);
-    HCCL_INFO("[%s]ChannelHandle exist, ChannelHandle[%llu]", __func__, channel);
+    HCCL_INFO("[%s]ChannelHandle exist, ChannelHandle[%llu], channelKey[%s]", __func__, channel, keyMap_[channel].c_str());
     return HCCL_SUCCESS;
 }
 
@@ -271,6 +273,13 @@ OpCommTransport ChannelManager::BuildChannelRequests(const std::vector<HcclChann
         tmpTransport.inputMemType = TransportMemType::CCL_INPUT;
         tmpTransport.outputMemType = TransportMemType::CCL_OUTPUT;
         tmpTransport.isUsedRdma = (desc.channelProtocol == CommProtocol::COMM_PROTOCOL_ROCE);
+        TransportLinkType linkType = TransportLinkType::RESERVED;
+        if (desc.channelProtocol == CommProtocol::COMM_PROTOCOL_HCCS_ONLY) {
+            linkType = TransportLinkType::HCCS;
+        } else if (desc.channelProtocol == CommProtocol::COMM_PROTOCOL_SIO) {
+            linkType = TransportLinkType::SIO;
+        }
+        tmpTransport.linkType = linkType;
         commTransport.transportRequests.push_back(tmpTransport);
     }
     
@@ -749,8 +758,8 @@ HcclResult ChannelManager::ChannelCommGetHcclBuffer(ChannelHandle channel, CommB
     CHK_RET(transportPtr->GetRemoteMemSize(UserMemType::INPUT_MEM, tempSize));
     buffer->size = static_cast<uint64_t>(tempSize);
     buffer->type = HCCL_MEM_TYPE_DEVICE;
-    HCCL_INFO("[%s]get remote hccl buffer success, remote addr[%llu], size[%u]", 
-        __func__, buffer->addr, buffer->size);
+    HCCL_INFO("[%s]channel[%llu] channelKey[%s] get remote hccl buffer success, remote addr[%p], size[%u]", 
+        __func__, channel, keyMap_[channel].c_str(), buffer->addr, buffer->size);
     return HCCL_SUCCESS;
 }
 

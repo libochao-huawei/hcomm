@@ -68,6 +68,44 @@ int StubRaGetTpAttrAsyncUboe(void *ctxHandle, uint64_t tpHandle, uint32_t *attrB
     return 0;
 }
 
+int StubRaGetTpInfoListAsyncUboeEight(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num, void **reqHandle)
+{
+    static int kUboeTpListReq = 22378;
+    (void)ctxHandle;
+    (void)cfg;
+    if (infoList != nullptr) {
+        for (unsigned int i = 0; i < 8U; ++i) {
+            infoList[i].tpHandle = 0x100ULL + static_cast<uint64_t>(i);
+        }
+    }
+    if (num != nullptr) {
+        *num = 8U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kUboeTpListReq;
+    }
+    return 0;
+}
+
+int StubRaGetTpAttrAsyncUboeSl789(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr,
+    void **reqHandle)
+{
+    static char kUboeTpAttrSl789Req{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+        attr->slBitmap = (1U << 7U) | (1U << 8U) | (1U << 9U);
+        attr->dscpConfigMode = 0U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kUboeTpAttrSl789Req;
+    }
+    return 0;
+}
+
 } // namespace
 
 class TpMgrTest : public testing::Test {
@@ -130,6 +168,46 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_WithQos_Expect_Success)
     const GetTpInfoParam param = MakeParam("10.10.5.1", "10.10.5.2", TpProtocol::UBOE, 4U);
     TpInfo tpInfo{};
     EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_EightTp_DynamicSl012_Qos0_Expect_LastTp_Sl2)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboe));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.11.1", "10.10.11.2", TpProtocol::UBOE, 0U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_EQ(tpInfo.tpHandle, 0x107ULL);
+    EXPECT_EQ(tpInfo.mappedJettyPriority, 2U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_EightTp_Sl789_Qos0_Expect_LastTp_Sl9)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboeSl789));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.10.1", "10.10.10.2", TpProtocol::UBOE, 0U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_EQ(tpInfo.tpHandle, 0x107ULL);
+    EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+    EXPECT_EQ(tpInfo.mappedJettyPriority, 9U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_EightTp_Sl789_Qos7_Expect_FirstTp_Sl7)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboeSl789));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.10.3", "10.10.10.4", TpProtocol::UBOE, 7U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_EQ(tpInfo.tpHandle, 0x100ULL);
+    EXPECT_EQ(tpInfo.mappedJettyPriority, 7U);
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_DifferentQosKeys_Expect_Both_Success)

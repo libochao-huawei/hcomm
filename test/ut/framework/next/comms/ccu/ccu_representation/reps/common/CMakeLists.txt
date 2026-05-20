@@ -45,10 +45,6 @@ target_compile_options(hccl_utest_comms_ccu_rep_common PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_comms_ccu_rep_common PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
-
 target_link_libraries(hccl_utest_comms_ccu_rep_common PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
