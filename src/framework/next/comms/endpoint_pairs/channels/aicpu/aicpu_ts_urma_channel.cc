@@ -233,7 +233,10 @@ HcclResult AicpuTsUrmaChannel::Init()
         Attention: const 和引用
     */
     // TODO: 处理抛异常
+    s32 devLogicId;
     CHK_RET(ParseInputParam());
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
     CHK_RET(BuildSocket());
     CHK_RET(BuildAttr());
     CHK_RET(BuildConnection());
@@ -242,9 +245,6 @@ HcclResult AicpuTsUrmaChannel::Init()
     commonRes_.bufferVec.clear();
     CHK_RET(BuildBuffer(bufs_));
     CHK_RET(BuildUbMemTransport());
-    s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
 
     return HCCL_SUCCESS;
 }
