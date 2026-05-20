@@ -966,7 +966,7 @@ HcclResult AicpuTsRoceChannelV2::GetQpNum(uint32_t *qpNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannelV2::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
+HcclResult AicpuTsRoceChannelV2::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[AicpuTsRoceChannelV2::%s] remoteMem is nullptr", __func__), HCCL_E_PTR);
