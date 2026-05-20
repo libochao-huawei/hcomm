@@ -170,6 +170,13 @@ public:
     virtual HcclResult AllGatherVOutPlace(const std::string &tag, void *inputPtr, void *outputPtr,
         u64 inputCount, const void *outputCounts, const void *outputDispls, HcclDataType dataType, HcclRtStream stream);
 
+    void SetHalfCclBuffer(bool half) { useHalfCclBuffer_ = half; }
+    virtual HcclResult LocalGather(const std::string &tag, void** sendBufs, u64* counts, u32 numBufs,
+        void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream);
+
+    virtual HcclResult LocalScatter(const std::string &tag, void** recvBufs, u64* counts, u32 numBufs,
+        void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream);
+
     virtual HcclResult AllReduce(const std::string &tag, void *inputPtr, void *outputPtr, u64 count,
         HcclDataType dataType, HcclReduceOp op, HcclRtStream stream,
         SyncMode syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE, const HcomCollOpInfo *opInfo = nullptr);
@@ -995,6 +1002,7 @@ private:
     std::unordered_set<std::string> hbSendRecvTags_;
     std::vector<DeviceMem> deviceResOrigMem_;
     bool isSuspending = false;
+    bool useHalfCclBuffer_ = false; // 在LocalGather后置true, LocalScatter后置false, 使中间的集合通信算子只用CCL前半段
     bool retryEnable_ = false;
     bool rtsSupportChangeLink_ = true;  // RTS是否支持借轨（部分ASCEND_RT_VISIBLE_DEVICES自定义场景不支持访问同chip内的另一个die）
     bool inplaceSupportRetry_ = false; //inplace是否支持重执行

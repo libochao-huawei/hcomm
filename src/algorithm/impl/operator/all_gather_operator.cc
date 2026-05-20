@@ -36,6 +36,13 @@ AllGatherOperator::~AllGatherOperator()
 HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& param, std::string& algName,
                                         std::string& newTag)
 {
+    if (param.isLocalOp) {
+        algName = "LocalGatherExecutor";
+        newTag = tag + algName;
+        newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
+        HCCL_INFO("[SelectAlg] LocalGather newTag is [%s]", newTag.c_str());
+        return HCCL_SUCCESS;
+    }
     if (userRankSize_ == 1 && (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE)) {
         algName = "AllGatherSingleExecutor";
         return HCCL_SUCCESS;
