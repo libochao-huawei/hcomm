@@ -9,8 +9,17 @@
  */
 
 #include "ut_aicpu_ts_base.h"
-#include "ub_transport_lite_impl.h"
 #include "transport_pub.h"
+#include "transport_device_ibverbs_pub.h"
+#include "dispatcher_pub.h"
+#include "dispatcher.h"
+#include "dlhns_function.h"
+
+#define private public
+#define protected public
+#include "aicpu_ts_thread.h"
+#undef protected
+#undef private
 
 using namespace hccl;
 
@@ -31,28 +40,85 @@ protected:
     {
         std::cout << "A Test case in UtAicpuTsHcommBatchTransferOnThread SetUp" << std::endl;
         UtAicpuTsBase::SetUp();
+
+        mainDevThread->devType_ = DevType::DEV_TYPE_910B;
+        mainDevThread->stream_.reset(new Stream());
+
+        HcclResult ret = HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherHandle_);
+        ASSERT_EQ(ret, HCCL_SUCCESS);
+        dispatcher_ = reinterpret_cast<DispatcherPub *>(dispatcherHandle_);
+
+        TransportDeviceIbverbsData d;
+        FillMinimalMemDetailsQpData(d);
+
+        MOCKER_CPP(&DlHnsFunction::DlHnsFunctionInit).stubs().will(returnValue(HCCL_SUCCESS));
+
+        MachinePara machinePara{};
+        machinePara.deviceLogicId = 0;
+        auto *impl = new TransportDeviceIbverbs(
+            dispatcher_, nullptr, machinePara, std::chrono::milliseconds(1), d);
+        ret = impl->Init();
+        ASSERT_EQ(ret, HCCL_SUCCESS);
+
+        transportWrapper_.reset(new Transport(impl));
+        devHandle = reinterpret_cast<ChannelHandle>(transportWrapper_.get());
     }
 
     virtual void TearDown() override
     {
-        UtAicpuTsBase::TearDown();
+        transportWrapper_.reset();
+        if (dispatcherHandle_ != nullptr) {
+            HcclDispatcherDestroy(dispatcherHandle_);
+            dispatcherHandle_ = nullptr;
+            dispatcher_ = nullptr;
+        }
         std::cout << "A Test case in UtAicpuTsHcommBatchTransferOnThread TearDown" << std::endl;
+        UtAicpuTsBase::TearDown();
     }
 
-    uint64_t tempDst[6] = {0};
-    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
-    void *dst = reinterpret_cast<void *>(tempDst);
-    void *src = reinterpret_cast<void *>(tempSrc);
-    uint64_t len = sizeof(tempDst);
-    std::vector<char> uniqueId;
-    Hccl::UbTransportLiteImpl transportDev{uniqueId};
-    ChannelHandle devHandle = reinterpret_cast<ChannelHandle>(&transportDev);
+    void FillMinimalMemDetailsQpData(TransportDeviceIbverbsData &d)
+    {
+        d.useMemDetailsMgr = true;
+        d.qpsPerConnection = 1U;
+        d.qpInfo.resize(1U);
+        d.qpInfo[0].qpPtr = 0x5000ULL;
+        d.qpInfo[0].sqIndex = 1U;
+        d.qpInfo[0].dbIndex = 2U;
+        d.multiQpThreshold = HCCL_MULTI_QP_THRESHOLD_DEFAULT;
+        d.useAtomicWrite = false;
+
+        RoceMemDetails loc{};
+        loc.addr = 0x20000ULL;
+        loc.devAddr = 0xC20000ULL;
+        loc.size = 4096ULL;
+        loc.key = 11U;
+        d.localRoceMemDetailsList = { loc };
+
+        RoceMemDetails rem{};
+        rem.addr = 0x10000ULL;
+        rem.devAddr = 0xC10000ULL;
+        rem.size = 4096ULL;
+        rem.key = 22U;
+        d.remoteRoceMemDetailsList = { rem };
+    }
+
+    HcclDispatcher dispatcherHandle_ = nullptr;
+    DispatcherPub *dispatcher_ = nullptr;
+    std::unique_ptr<Transport> transportWrapper_;
+    ChannelHandle devHandle = 0;
+
+    void *dst = reinterpret_cast<void *>(0x10000);
+    void *src = reinterpret_cast<void *>(0x20000);
+    uint64_t len = 64;
     int32_t res{HCCL_E_RESERVED};
     HcommBatchTransferDesc transferDescs[2];
 };
 
 TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_A5Path_Expect_ReturnHCCL_E_NOT_SUPPORT)
 {
+    mainDevThread->devType_ = DevType::DEV_TYPE_950;
+    mainDevThread->stream_.release();
+
     transferDescs[0].transferInfo.write.len = len;
     transferDescs[0].transferInfo.write.dst = dst;
     transferDescs[0].transferInfo.write.src = src;
@@ -101,7 +167,7 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_I
     EXPECT_EQ(res, HCCL_E_NOT_SUPPORT);
 }
 
-TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_DstIsNull_Expect_ReturnHCCL_E_NOT_SUPPORT)
+TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_DstIsNull_Expect_ReturnHCCL_E_PTR)
 {
     transferDescs[0].transferInfo.write.len = len;
     transferDescs[0].transferInfo.write.dst = nullptr;
@@ -109,10 +175,10 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_D
     transferDescs[0].transType = HCOMM_TRANSFER_TYPE_WRITE;
 
     res = HcommBatchTransferOnThread(thread, devHandle, transferDescs, 1);
-    EXPECT_EQ(res, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(res, HCCL_E_PTR);
 }
 
-TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_SrcIsNull_Expect_ReturnHCCL_E_NOT_SUPPORT)
+TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_SrcIsNull_Expect_ReturnHCCL_E_PTR)
 {
     transferDescs[0].transferInfo.write.len = len;
     transferDescs[0].transferInfo.write.dst = dst;
@@ -120,21 +186,27 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_S
     transferDescs[0].transType = HCOMM_TRANSFER_TYPE_WRITE;
 
     res = HcommBatchTransferOnThread(thread, devHandle, transferDescs, 1);
-    EXPECT_EQ(res, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(res, HCCL_E_PTR);
 }
 
-TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_MultipleDescs_Expect_ReturnHCCL_E_NOT_SUPPORT)
+TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_MultipleDescs_Expect_ReturnHCCL_SUCCESS)
 {
+    MOCKER_CPP(&TransportDeviceIbverbs::UseMultiQp).stubs().will(returnValue(false));
+    MOCKER_CPP(&TransportDeviceIbverbs::TxSendDataAndNotifyWithSingleQP,
+        HcclResult(TransportDeviceIbverbs::*)(std::vector<WrInformation> &, Stream &, bool))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
     transferDescs[0].transferInfo.write.len = len;
     transferDescs[0].transferInfo.write.dst = dst;
     transferDescs[0].transferInfo.write.src = src;
     transferDescs[0].transType = HCOMM_TRANSFER_TYPE_WRITE;
 
     transferDescs[1].transferInfo.read.len = len;
-    transferDescs[1].transferInfo.read.dst = dst;
-    transferDescs[1].transferInfo.read.src = src;
+    transferDescs[1].transferInfo.read.dst = src;
+    transferDescs[1].transferInfo.read.src = dst;
     transferDescs[1].transType = HCOMM_TRANSFER_TYPE_READ;
 
     res = HcommBatchTransferOnThread(thread, devHandle, transferDescs, 2);
-    EXPECT_EQ(res, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(res, HCCL_SUCCESS);
 }
