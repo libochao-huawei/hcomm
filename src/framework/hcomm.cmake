@@ -24,8 +24,7 @@ target_compile_options(hcomm PRIVATE
     -fno-common
     -fno-strict-aliasing
     -pipe
-    -O0
-    -g
+    -O3
     -std=c++14
     -fstack-protector-all
     $<$<CONFIG:Debug>:-g>
