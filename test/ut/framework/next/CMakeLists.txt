@@ -70,7 +70,7 @@ set(src_to_test_list
     coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
     coll_comms/communicator/ns_recovery/ut_ns_recovery.cc
     comms/adpt/ut_hcomm_adapter_hccp_test.cc
-    coll_comms/rank/ut_exchange_info_mgr_v2.cc
+    coll_comms/rank/ut_exchange_info_mgr.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})

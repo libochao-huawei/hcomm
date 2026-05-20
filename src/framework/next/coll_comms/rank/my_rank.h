@@ -25,7 +25,7 @@
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
 #include "coll_comm_config_consistency.h"
-#include "exchange_info_mgr_v2.h"
+#include "exchange_info_mgr.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -116,7 +116,7 @@ private:
     Hccl::RankIpPortMapPtr rankIpPortMap_;
 
     CollCommConfigConsistency collCommConfigConsistency_;
-    ExchangeInfoMgrV2 exchangeInfoMgrV2_;
+    ExchangeInfoMgr ExchangeInfoMgr_;
 };
 
 } // namespace hccl

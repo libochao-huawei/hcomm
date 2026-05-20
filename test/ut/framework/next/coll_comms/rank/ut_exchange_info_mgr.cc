@@ -15,21 +15,21 @@
 
 using namespace hccl;
 
-class ExchangeInfoMgrV2Test : public testing::Test {
+class ExchangeInfoMgrTest : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
-        std::cout << "ExchangeInfoMgrV2Test tests set up." << std::endl;
+        std::cout << "ExchangeInfoMgrTest tests set up." << std::endl;
     }
 
     static void TearDownTestCase()
     {
-        std::cout << "ExchangeInfoMgrV2Test tests tear down." << std::endl;
+        std::cout << "ExchangeInfoMgrTest tests tear down." << std::endl;
     }
 
     virtual void SetUp()
     {
-        std::cout << "A Test case in ExchangeInfoMgrV2Test SetUP" << std::endl;
+        std::cout << "A Test case in ExchangeInfoMgrTest SetUP" << std::endl;
         rankIpPortMap = std::make_shared<std::unordered_map<u32, std::unordered_map<Hccl::IpAddress, u32>>>();
         (*rankIpPortMap)[0][Hccl::IpAddress("1.0.0.0")] = 16666;
         (*rankIpPortMap)[1][Hccl::IpAddress("2.0.0.0")] = 16666;
@@ -39,7 +39,7 @@ protected:
     virtual void TearDown()
     {
         GlobalMockObject::verify();
-        std::cout << "A Test case in ExchangeInfoMgrV2Test TearDown" << std::endl;
+        std::cout << "A Test case in ExchangeInfoMgrTest TearDown" << std::endl;
     }
 
     Hccl::RankIpPortMapPtr rankIpPortMap;
@@ -63,7 +63,7 @@ void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
     hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
 }
 
-TEST_F(ExchangeInfoMgrV2Test, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
+TEST_F(ExchangeInfoMgrTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 {
     // mock Socket::GetAsyncStatus返回OK
     MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
@@ -80,12 +80,12 @@ TEST_F(ExchangeInfoMgrV2Test, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
     // 构造socket列表（指针值仅用于mock匹配，不实际调用）
     std::vector<Hccl::Socket*> sockets = {(Hccl::Socket*)0x1, (Hccl::Socket*)0x2};
     std::vector<u32> remoteRanks = {1, 2};
-    ExchangeInfoMgrV2 exchangeInfoMgrV2;
-    HcclResult ret = exchangeInfoMgrV2.WaitAllAsyncComplete(sockets, remoteRanks);
+    ExchangeInfoMgr ExchangeInfoMgr;
+    HcclResult ret = ExchangeInfoMgr.WaitAllAsyncComplete(sockets, remoteRanks);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(ExchangeInfoMgrV2Test, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
+TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
     HcclResult ret = HCCL_SUCCESS;
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();;
@@ -120,7 +120,7 @@ TEST_F(ExchangeInfoMgrV2Test, Ut_BatchExchange_When_NewRankConsistent_Expect_Suc
     hcommDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
     std::vector<HcommChannelDesc> hcommDescVec;
     hcommDescVec.push_back(hcommDesc);
-    ExchangeInfoMgrV2 exchangeInfoMgrV2;
-    ret = exchangeInfoMgrV2.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, collCommConfigConsistency, "test_tag");
+    ExchangeInfoMgr ExchangeInfoMgr;
+    ret = ExchangeInfoMgr.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, collCommConfigConsistency, "test_tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }

@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     my_rank.cc
-    exchange_info_mgr_v2.cc
+    exchange_info_mgr.cc
 )
 
 if(TARGET hcomm)

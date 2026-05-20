@@ -72,24 +72,6 @@ protected:
     Hccl::RankIpPortMapPtr rankIpPortMap;
 };
 
-void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
-{
-    RankGraphStub rankGraphStub;
-    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
-    void* commV2 = (void*)0x2000;
-    uint32_t rank = 1;
-    HcclMem cclBuffer;
-    cclBuffer.size = 1;
-    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
-    cclBuffer.addr = (void*)0x1000;
-    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-    HcclCommConfig config;
-    config.hcclOpExpansionMode = 1;
-    config.hcclRdmaTrafficClass = 0xFFFFFFFF;
-    config.hcclRdmaServiceLevel = 0xFFFFFFFF;
-    hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
-}
-
 TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
 {
     uint32_t devPort = 60001;
