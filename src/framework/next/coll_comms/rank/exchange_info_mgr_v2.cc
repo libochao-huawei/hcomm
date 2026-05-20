@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "exchange_info_mgr_v2.h"
+#include "env_config/env_config.h"
 
 namespace hccl {
 ExchangeInfoMgrV2::ExchangeInfoMgrV2()
