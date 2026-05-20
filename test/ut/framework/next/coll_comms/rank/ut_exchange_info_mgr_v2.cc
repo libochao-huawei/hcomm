@@ -1,0 +1,121 @@
+#include <iostream>
+#include "gtest/gtest.h"
+#include "mockcpp/mokc.h"
+#include <mockcpp/mockcpp.hpp>
+#include "rank_graph_interface.h"
+#include "rank_graph_v2.h"
+#include "hcomm_c_adpt.h"
+#include "channel_process.h"
+#include "base_config.h"
+#define private public
+#include "my_rank.h"
+#undef private
+#include "hccl_comm_pub.h"
+#include "llt_hccl_stub_rank_graph.h"
+
+using namespace hccl;
+
+class ExchangeInfoMgrV2Test : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "ExchangeInfoMgrV2Test tests set up." << std::endl;
+    }
+
+    static void TearDownTestCase()
+    {
+        std::cout << "ExchangeInfoMgrV2Test tests tear down." << std::endl;
+    }
+
+    virtual void SetUp()
+    {
+        std::cout << "A Test case in ExchangeInfoMgrV2Test SetUP" << std::endl;
+    }
+
+    virtual void TearDown()
+    {
+        GlobalMockObject::verify();
+        std::cout << "A Test case in ExchangeInfoMgrV2Test TearDown" << std::endl;
+    }
+};
+
+void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
+{
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    void* commV2 = (void*)0x2000;
+    uint32_t rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1;
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF;
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF;
+    hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+}
+
+TEST_F(ExchangeInfoMgrV2Test, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
+{
+    // mock Socket::GetAsyncStatus返回OK
+    MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
+        .stubs()
+        .will(returnValue(Hccl::SocketStatus(Hccl::SocketStatus::OK)));
+
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void *rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
+
+    // 构造socket列表（指针值仅用于mock匹配，不实际调用）
+    std::vector<Hccl::Socket*> sockets = {(Hccl::Socket*)0x1, (Hccl::Socket*)0x2};
+    std::vector<u32> remoteRanks = {1, 2};
+
+    HcclResult ret = myRank.WaitAllAsyncComplete(sockets, remoteRanks);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(ExchangeInfoMgrV2Test, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();;
+    InitCollComm(hcclCommPtr);
+    hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
+    hccl::MyRank* myRank = collComm->GetMyRank();
+    CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
+    std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
+    ret = collCommConfigConsistency.AddExchangeInfo(localData.data(), localData.size());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // mock Socket异步接口：GetAsyncStatus返回OK
+    MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
+        .stubs()
+        .will(returnValue(Hccl::SocketStatus(Hccl::SocketStatus::OK)));
+    // mock SendAsync/RecvAsync成功
+    MOCKER_CPP(&Hccl::Socket::SendAsync)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::RecvAsync)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    // mock 超时配置
+    MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
+        .stubs()
+        .will(returnValue((s32)30));
+
+    HcclChannelDesc channelDescs[1];
+    channelDescs[0].remoteRank = 1;
+    HcommChannelDesc hcommDesc;
+    hcommDesc.socket = (HcommSocket)0x1;  // 非空socket
+    hcommDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    std::vector<HcommChannelDesc> hcommDescVec;
+    hcommDescVec.push_back(hcommDesc);
+    CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
+    ExchangeInfoMgrV2 exchangeInfoMgrV2;
+    ret = exchangeInfoMgrV2.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, collCommConfigConsistency, "test_tag");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
