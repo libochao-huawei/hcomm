@@ -590,6 +590,8 @@ HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memN
     remoteMemsPtr_.reset();  
     remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
     CHK_PTR_NULL(remoteMemsPtr_);
+    tagCopies_.clear();
+    tagPointers_.clear();
 
     for (uint32_t i = 0; i < totalCount; i++) {
         auto& rmtRmaBuffer = rmtRmaBuffers_[i];
