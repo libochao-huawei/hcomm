@@ -88,7 +88,6 @@ private:
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_;
-    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
     Hccl::IpAddress     locAddr_;
     Hccl::IpAddress     rmtAddr_;
     const Hccl::SocketConfig*                                   socketConfig_{nullptr};
