@@ -14,6 +14,7 @@
 #include "tp_manager.h"
 #include "orion_adapter_rts.h"
 #include "internal_exception.h"
+#include "env_config/env_config.h"
 
 using namespace Hccl;
 
@@ -166,4 +167,97 @@ TEST_F(TpManagerTest, Ut_ReleaseTpInfo_When_InputValue_Expect_Return_HCCL_SUCCES
 
     result = TpManager::GetInstance(devLogicId).ReleaseTpInfo({locAddr, rmtAddr, protocol}, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
+}
+
+TEST_F(TpManagerTest, Ut_TaHwValueToMs_AllGears_ReturnsCorrectTimeout)
+{
+    EXPECT_EQ(TpManager::TaHwValueToMs(0), 512);
+    EXPECT_EQ(TpManager::TaHwValueToMs(8), 1000);
+    EXPECT_EQ(TpManager::TaHwValueToMs(16), 8000);
+    EXPECT_EQ(TpManager::TaHwValueToMs(24), 32000);
+
+    EXPECT_EQ(TpManager::TaHwValueToMs(7), 512);
+    EXPECT_EQ(TpManager::TaHwValueToMs(15), 1000);
+    EXPECT_EQ(TpManager::TaHwValueToMs(23), 8000);
+    EXPECT_EQ(TpManager::TaHwValueToMs(31), 32000);
+}
+
+TEST_F(TpManagerTest, Ut_TaHwValueToMs_InvalidGear_ReturnsDefault)
+{
+    EXPECT_EQ(TpManager::TaHwValueToMs(32), 8000);
+    EXPECT_EQ(TpManager::TaHwValueToMs(255), 8000);
+}
+
+TEST_F(TpManagerTest, Ut_FindMinTaHwValue_AllTimeouts_ReturnsCorrectHwValue)
+{
+    EXPECT_EQ(TpManager::FindMinTaHwValue(100), 0);
+    EXPECT_EQ(TpManager::FindMinTaHwValue(700), 8);
+    EXPECT_EQ(TpManager::FindMinTaHwValue(5000), 16);
+    EXPECT_EQ(TpManager::FindMinTaHwValue(20000), 24);
+}
+
+TEST_F(TpManagerTest, Ut_FindMinTaHwValue_BoundaryValues_ReturnsCorrectHwValue)
+{
+    EXPECT_EQ(TpManager::FindMinTaHwValue(512), 8);
+    EXPECT_EQ(TpManager::FindMinTaHwValue(1000), 16);
+    EXPECT_EQ(TpManager::FindMinTaHwValue(8000), 24);
+}
+
+TEST_F(TpManagerTest, Ut_GetTpTotalTimeout_ValidAtGear_ReturnsCorrectTimeout)
+{
+    TpAttrInfo tpAttrInfo{};
+    tpAttrInfo.tpAttr.at = 0;
+    tpAttrInfo.tpAttr.retryTimesInit = 0;
+
+    uint32_t tpTimeOutMs = 0;
+    EXPECT_EQ(TpManager::GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs), HCCL_SUCCESS);
+    EXPECT_EQ(tpTimeOutMs, 16);
+
+    tpAttrInfo.tpAttr.at = 1;
+    tpAttrInfo.tpAttr.retryTimesInit = 0;
+    EXPECT_EQ(TpManager::GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs), HCCL_SUCCESS);
+    EXPECT_EQ(tpTimeOutMs, 128);
+
+    tpAttrInfo.tpAttr.at = 2;
+    tpAttrInfo.tpAttr.retryTimesInit = 0;
+    EXPECT_EQ(TpManager::GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs), HCCL_SUCCESS);
+    EXPECT_EQ(tpTimeOutMs, 1000);
+
+    tpAttrInfo.tpAttr.at = 3;
+    tpAttrInfo.tpAttr.retryTimesInit = 0;
+    EXPECT_EQ(TpManager::GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs), HCCL_SUCCESS);
+    EXPECT_EQ(tpTimeOutMs, 4000);
+}
+
+TEST_F(TpManagerTest, Ut_GetTpTotalTimeout_InvalidAtGear_UsesDefault)
+{
+    TpAttrInfo tpAttrInfo{};
+    tpAttrInfo.tpAttr.at = 5;
+    tpAttrInfo.tpAttr.retryTimesInit = 0;
+
+    uint32_t tpTimeOutMs = 0;
+    EXPECT_EQ(TpManager::GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs), HCCL_SUCCESS);
+    EXPECT_EQ(tpTimeOutMs, 1000);
+}
+
+TEST_F(TpManagerTest, Ut_GetTpTotalTimeout_WithRetryTimes_ReturnsCorrectTimeout)
+{
+    TpAttrInfo tpAttrInfo{};
+    tpAttrInfo.tpAttr.at = 2;
+    tpAttrInfo.tpAttr.retryTimesInit = 3;
+
+    uint32_t tpTimeOutMs = 0;
+    EXPECT_EQ(TpManager::GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs), HCCL_SUCCESS);
+    EXPECT_EQ(tpTimeOutMs, 4000);
+}
+
+TEST_F(TpManagerTest, Ut_GetTpTotalTimeout_MaxRetryTimes_ReturnsCorrectTimeout)
+{
+    TpAttrInfo tpAttrInfo{};
+    tpAttrInfo.tpAttr.at = 3;
+    tpAttrInfo.tpAttr.retryTimesInit = 7;
+
+    uint32_t tpTimeOutMs = 0;
+    EXPECT_EQ(TpManager::GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs), HCCL_SUCCESS);
+    EXPECT_EQ(tpTimeOutMs, 32000);
 }

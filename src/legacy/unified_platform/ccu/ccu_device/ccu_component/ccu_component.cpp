@@ -18,6 +18,7 @@
 #include "orion_adapter_rts.h"
 #include "internal_exception.h"
 #include "rdma_handle_manager.h"
+#include "env_config/env_config.h"
 
 #include "ccu_eid_info.h"
 #include "ccu_res_specs.h"
@@ -86,6 +87,17 @@ void CcuComponent::Deinit()
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
         CleanDieCkes(dieId);
     }
+
+    for (const auto &item : tpAttrInfoMap) {
+        const auto &ipAddr = item.first;
+        const auto &tpAttrInfo = item.second;
+        const auto &tpInfoIter = tpInfoMap.find(ipAddr);
+        if (tpInfoIter != tpInfoMap.end() && tpInfoIter->second.tpHandle != 0) {
+            (void)TpManager::GetInstance(devLogicId)
+                .ReleaseTpAttr(tpInfoIter->second.tpHandle, tpAttrInfo);
+        }
+    }
+    tpAttrInfoMap.clear();
 
     for (const auto &item : tpInfoMap) {
         const auto &ipAddr = item.first;
@@ -399,17 +411,20 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
     const auto ccuBufTokenValue = ccuRmaBuffer->GetTokenValue();
     const auto tokenIdHandle = ccuRmaBuffer->GetTokenIdHandle();
     
+    const auto &tpInfo = GetTpInfo(ipAddr);
+    const auto tpAttrInfo = GetLoopTpAttr(ipAddr, tpInfo.tpHandle);
+    const uint8_t errTimeout = TpManager::CalcTaTimeout(tpAttrInfo);
+
     auto &createdVec = createdOutParamMap[dieId];
     auto &importedVec = importedOutParamMap[dieId];
     for (const auto &jettyInfo : jettyInfos) {
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
         const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
-            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth, errTimeout};
         auto createdOutParam = HrtRaUbCreateJetty(rdmaHandle, req);
         createdVec.emplace_back(createdOutParam);
 
-        const auto &tpInfo = GetTpInfo(ipAddr);
         const auto psn = GetPsn(ipAddr);
         const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
         const auto importedOutParam = RaUbTpImportJetty(rdmaHandle, createdOutParam.key,
@@ -455,6 +470,42 @@ TpInfo CcuComponent::GetTpInfo(const IpAddress &ipAddr)
     }
 
     return srcIter->second;
+}
+
+TpAttrInfo CcuComponent::GetLoopTpAttr(const IpAddress &ipAddr, const TpHandle tpHandle)
+{
+    const auto &srcIter = tpAttrInfoMap.find(ipAddr);
+    if (srcIter != tpAttrInfoMap.end()) {
+        return srcIter->second;
+    }
+
+    auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
+    const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+
+    constexpr uint32_t TP_ATTR_BITMAP = 0;
+    const GetTpAttrParam tpAttrParam = {tpHandle, TP_ATTR_BITMAP};
+
+    TpAttrInfo tpAttrInfo{};
+    auto &tpMgr = TpManager::GetInstance(devLogicId);
+    const auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
+    const auto startTime = std::chrono::steady_clock::now();
+
+    HcclResult ret = tpMgr.GetTpAttr(tpAttrParam, tpAttrInfo, rdmaHandle);
+    while (ret == HcclResult::HCCL_E_AGAIN) {
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            THROW<InternalException>("[CcuComponent][%s] failed, get tp attr "
+                "timeout[%d ms], devLogicId[%d].", __func__, timeout, devLogicId);
+        }
+        ret = tpMgr.GetTpAttr(tpAttrParam, tpAttrInfo, rdmaHandle);
+    }
+
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<InternalException>("[CcuComponent][%s] failed, ret[%u], "
+            "devLogicId[%d].", __func__, ret, devLogicId);
+    }
+
+    tpAttrInfoMap[ipAddr] = tpAttrInfo;
+    return tpAttrInfo;
 }
 
 inline uint32_t GetRandomNum()
