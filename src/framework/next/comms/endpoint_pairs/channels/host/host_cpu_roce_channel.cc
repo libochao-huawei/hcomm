@@ -600,7 +600,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memN
         remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
         std::string tagCopy = rmtRmaBuffer->GetMemTag();
         tagCopies_.push_back(std::move(tagCopy));
-        tagPointers_.push_back(const_cast<char*>(tagCopies.back().c_str()));
+        tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
         HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", 
             __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
     }
