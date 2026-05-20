@@ -203,24 +203,12 @@ void DevUbConnection::GetTimeOut() // 直接基于环境变量控制
     HCCL_INFO("%s final TA Timeout [%u] (%ums).", __func__, jettyTimeOut);
 }
 
-void DevUbConnection::AdvanceUbConnFromInit()
+void DevUbConnection::AdvanceUbConnAfterTpInfoReady()
 {
-    HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
-              ubConnStatus.Describe().c_str());
-
     if (devUsed_) {
-        if (!GetTpInfo()) {
-            ubConnStatus = UbConnStatus::TP_INFO_GETTING;
-            return;
-        }
         GetTimeOut();
         CreateJetty(devUsed_);
         ubConnStatus = UbConnStatus::JETTY_CREATING;
-        return;
-    }
-
-    if (!GetTpInfo()) {
-        ubConnStatus = UbConnStatus::TP_INFO_GETTING;
         return;
     }
     GetTimeOut();
@@ -234,26 +222,24 @@ void DevUbConnection::AdvanceUbConnFromInit()
     ubConnStatus = UbConnStatus::JETTY_CREATED;
 }
 
+void DevUbConnection::AdvanceUbConnFromInit()
+{
+    HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
+              ubConnStatus.Describe().c_str());
+
+    if (!GetTpInfo()) {
+        ubConnStatus = UbConnStatus::TP_INFO_GETTING;
+        return;
+    }
+    AdvanceUbConnAfterTpInfoReady();
+}
+
 void DevUbConnection::AdvanceUbConnFromTpInfoGetting()
 {
     if (!GetTpInfo()) {
         return;
     }
-    if (devUsed_) {
-        GetTimeOut();
-        CreateJetty(devUsed_);
-        ubConnStatus = UbConnStatus::JETTY_CREATING;
-        return;
-    }
-    GetTimeOut();
-    CreateJetty(isdevUsed);
-    if (!CheckRequestResult()) {
-        ubConnStatus = UbConnStatus::JETTY_CREATING;
-        return;
-    }
-    SetJettyInfo();
-    status       = RmaConnStatus::EXCHANGEABLE;
-    ubConnStatus = UbConnStatus::JETTY_CREATED;
+    AdvanceUbConnAfterTpInfoReady();
 }
 
 void DevUbConnection::AdvanceUbConnFromJettyCreating()

@@ -251,10 +251,3 @@ int RaGetDevBaseAttr(void *ctxHandle, struct DevBaseAttr *attr)
 {
     return 0;
 }
-
-int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr, void **raReqHandle)
-{
-    static int raReqHandleValue = 12378;
-    *raReqHandle = &raReqHandleValue;
-    return 0;
-}
