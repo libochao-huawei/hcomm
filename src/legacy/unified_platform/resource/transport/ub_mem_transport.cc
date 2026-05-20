@@ -952,7 +952,8 @@ HcclResult UbMemTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, 
         return HCCL_E_PARA;
     }
     uint32_t userMemCount = rmtBufferVec.size();
-    auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
+    auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx,
+        uint32_t index) -> HcclResult {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         CHK_PTR_NULL(rmtBuffer);
         remoteMemCtx.remoteUserMems[index].type = rmtBuffer->GetMemType();
