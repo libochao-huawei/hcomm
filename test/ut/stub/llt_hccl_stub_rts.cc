@@ -49,13 +49,6 @@ rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm)
     return 0;
 }
 
-namespace Hccl {
-void HrtFree(void *devPtr)
-{
-    (void)devPtr;
-}
-}
-
 rtError_t rtReleaseDevResAddress(rtDevResInfo * const resInfo)
 {
     return RT_ERROR_NONE;
