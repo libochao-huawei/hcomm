@@ -45,19 +45,10 @@ target_include_directories(ra_hdc PRIVATE
     ${ASYNC_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
 
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-
-    # runtime头文件
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-
     # rdma头文件
     ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
 
     # HCCP Legacy
     ${CMAKE_CURRENT_SOURCE_DIR}/../comm/ctx
@@ -84,6 +75,9 @@ target_link_options(ra_hdc PRIVATE
 )
 
 target_link_libraries(ra_hdc PRIVATE
+    $<BUILD_INTERFACE:ascend_hal_headers>
+    $<BUILD_INTERFACE:msprof_headers>
+    $<BUILD_INTERFACE:slog_headers>
     -Wl,--no-as-needed
     c_sec
     $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
