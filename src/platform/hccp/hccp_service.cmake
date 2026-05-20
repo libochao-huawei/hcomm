@@ -30,10 +30,6 @@ target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/hdc
     ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/common
-    # Toolkit 包头文件
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/tsd
     # 三方件头文件
     ${RDMA_CORE_INCLUDE_DIR}
 )
@@ -58,6 +54,8 @@ target_link_options(hccp_service.bin PRIVATE
 )
 
 target_link_libraries(hccp_service.bin PRIVATE
+    $<BUILD_INTERFACE:ascend_hal_headers>
+    $<BUILD_INTERFACE:runtime_headers>
     c_sec
     unified_dlog
     ra_adp

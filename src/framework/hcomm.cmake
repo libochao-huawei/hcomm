@@ -118,30 +118,18 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_include_directories(hcomm PRIVATE
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
-        # acl头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
-        # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-        # highlevel_api
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
-        # 包间接口
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+        # ascendc
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
         # 三方件头文件
         ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
     )
 
     target_link_libraries(hcomm
+        $<BUILD_INTERFACE:acl_rt_headers>
+        $<BUILD_INTERFACE:ascend_hal_headers>
+        $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:mmpa_headers>
+        $<BUILD_INTERFACE:runtime_headers>
         -Wl,--no-as-needed
         c_sec
         unified_dlog
