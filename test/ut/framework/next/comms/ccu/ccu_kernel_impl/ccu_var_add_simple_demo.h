@@ -9,11 +9,12 @@
  */
 
 #include "adapter_hccp.h"
-#include "ccu_api.hpp"
-#include "ccu_local_addr.hpp"
+#include "ccu_primitives.hpp"
+#include "ccu_types.h"
 #include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
-#include "ccu_remote_addr.hpp"
 #include <vector>
+
+namespace ccu = ::AscendC::ccu;
 
 struct CcuVarAddKernelArg {
     uint64_t numA{0xffffffff};
@@ -21,8 +22,6 @@ struct CcuVarAddKernelArg {
     ChannelHandle channelHandle{0};
 };
 
-struct CcuVarAddTaskArg {
-};
 // CcuResult CcuVarAddDemoKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);

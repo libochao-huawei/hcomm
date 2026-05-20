@@ -44,8 +44,9 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/include/hccl
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
-    ${HCOMM_DIR}/pkg_inc/hcomm/ccu
-    ${HCOMM_DIR}/pkg_inc/hcomm/ccu_new
+    ${HCOMM_DIR}/pkg_inc/hcomm/ccu     # 仅保留 ccu_primitives_impl.h；其余内部头见 CCU_INTERNAL_INCLUDE_DIRS
+    ${CCU_INTERNAL_INCLUDE_DIRS}
+    ${HCOMM_DIR}/include/ccu
     ${HCOMM_DIR}/src/pub_inc
     ${HCOMM_DIR}/src/pub_inc/aicpu
     ${HCOMM_DIR}/src/pub_inc/new

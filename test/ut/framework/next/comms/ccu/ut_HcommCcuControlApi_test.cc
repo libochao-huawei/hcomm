@@ -21,8 +21,8 @@
 #include "ccu_device_pub.h"
 #include "ccu_kernel_mgr.h"
 #include "ccu_instance_mgr.h"
-#include "ccu_primitives.h"
-#include "ccu_control_api.h"
+#include "ccu_device_res.h"
+#include "ccu_launch.h"
 
 #include "mocks/ccu_device_mock_utils.h"
 #include "mocks/ccu_channel_mock_utils.h"
@@ -561,7 +561,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhileUnified_When_AllFine_Expe
 }
 
 // =================================================================================
-// 以下为针对 PR #2120 增量覆盖率（ccu_kernel.cc / ccu_data_api_impl.cc）补充的用例
+// 以下为针对 PR #2120 增量覆盖率（ccu_kernel.cc / ccu_primitives_impl.cc）补充的用例
 // 模板与上方 Ut_HcommCcuKernelDoWhile_* 完全一致：mock 资源 → 建实例 → 建链 →
 // RegisterStart → InjectXn → Register → RegisterEnd → 销毁。
 // 每条用例采用唯一的 fakeDevId（MAX_MODULE_DEVICE_NUM - N）以避免 CCU 资源串扰。

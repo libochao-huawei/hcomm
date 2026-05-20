@@ -287,8 +287,6 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
     return 0;
 }
 
-extern HcommResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenInfo);
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus
