@@ -17,7 +17,7 @@
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
 #include "channel_process.h"
-#include "ccu_primitives.h"
+#include "ccu_device_res.h"
 #include "ccu_log.h"
 #include "dlprof_function.h"
 

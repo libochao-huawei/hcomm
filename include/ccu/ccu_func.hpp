@@ -20,29 +20,10 @@
 #include <vector>
 
 #include "ccu_types.h"
-#include "ccu_data_api_impl.h"
+#include "ccu_primitives_impl.h"
 #include "ccu_variable.hpp"
-#include "ccu_log.h"
 
-// ==================== ccu::Func / ccu::CallFunc ====================
-//
-// 用户接口形态：
-//   - 用户在 namespace / static 全局位置定义 ccu::Func，构造函数接受 lambda；
-//     lambda 形参一律为 ccu::Variable，个数 N 在编译期由 lambda 推导
-//   - kernel 内通过 ccu::CallFunc<MyAdd>(x, y) 触发 jmp 调用：
-//         ccu::CallFunc<MyAdd>(x, y);
-//
-// 限制（与 func_plan.md 完全一致）：
-//   1. 不允许嵌套调用（lambda 体内不得再 ccu::CallFunc<...>）；
-//   2. 不支持返回值（lambda 必须返回 void）；
-//   3. 不允许 loop body 内调用 ccu::CallFunc。
-//
-// 实现要点：
-//   - ccu::Func 的 ctor 在 main() 之前执行，因此 lambda 不能立刻合成；
-//     仅记录 numIn_ 与类型擦除后的 body_。第一次 ccu::CallFunc<F>(...) 时
-//     由 kernel 进入"合成模式"再执行 lambda；之后命中缓存。
-//   - 缓存键采用 ccu::Func 对象地址 (this)，与"必须是 namespace / static 全局对象"绑定。
-
+namespace AscendC {
 namespace ccu {
 
 namespace internal {
@@ -121,22 +102,27 @@ inline CcuResult CallFunc(Args... args)
     }
 
     uint64_t handle = 0;
-    CCU_CHK_RET(::CcuFuncBlockLookup(Obj.Key(), &handle));
+    CCU_THROW_IF_FAILED(::CcuFuncBlockLookup(Obj.Key(), &handle),
+        "CallFunc: CcuFuncBlockLookup failed");
     if (handle == 0) {
         // 第一次进入：合成 FuncBlock
-        CCU_CHK_RET(::CcuFuncBlockBegin(Obj.Key(), &handle));
+        CCU_THROW_IF_FAILED(::CcuFuncBlockBegin(Obj.Key(), &handle),
+            "CallFunc: CcuFuncBlockBegin failed");
 
         // 形参：按 lambda 形参个数 alloc，并注册为 FuncBlock 的 in args
         std::vector<Variable> formals(Obj.NumIn());
         for (uint32_t i = 0; i < Obj.NumIn(); i++) {
-            CCU_CHK_RET(::CcuVariableAlloc(&formals[i].handle));
-            CCU_CHK_RET(::CcuFuncDefineInArg(handle, formals[i].handle));
+            CCU_THROW_IF_FAILED(::CcuVariableAlloc(&formals[i].handle),
+                "CallFunc: CcuVariableAlloc failed");
+            CCU_THROW_IF_FAILED(::CcuFuncDefineInArg(handle, formals[i].handle),
+                "CallFunc: CcuFuncDefineInArg failed");
         }
 
         // 执行 lambda（在合成模式下 emit 到 FuncBlock）
         Obj.RunBody(formals.empty() ? nullptr : formals.data());
 
-        CCU_CHK_RET(::CcuFuncBlockEnd(handle));
+        CCU_THROW_IF_FAILED(::CcuFuncBlockEnd(handle),
+            "CallFunc: CcuFuncBlockEnd failed");
     }
 
     // emit 一条 FuncCall 跳转
@@ -152,5 +138,6 @@ inline CcuResult CallFunc(Args... args)
 }
 
 } // namespace ccu
+} // namespace AscendC
 
 #endif // CCU_FUNC_HPP

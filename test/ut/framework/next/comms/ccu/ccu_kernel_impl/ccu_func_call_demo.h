@@ -11,7 +11,10 @@
 #ifndef CCU_FUNC_CALL_DEMO_H
 #define CCU_FUNC_CALL_DEMO_H
 
-#include "ccu_api.hpp"
+#include "ccu_primitives.hpp"
+#include "ccu_types.h"
+
+namespace ccu = ::AscendC::ccu;
 
 ccu::Func CcuFuncCallBasicFunc([](ccu::Variable x) {
     ccu::Variable tmp{};
@@ -54,7 +57,7 @@ inline CcuResult CcuFuncCallInLoopInvalidDemoKernel(CcuKernelArg arg)
     ccu::Func body([&]() {
         bodyRet = ccu::CallFunc<CcuFuncCallBasicFunc>(x);
     });
-    CcuLoopConfig dummyCfg{};
+    ccu::LoopConfig dummyCfg{};
     ccu::Loop loop(dummyCfg, body);
     return bodyRet;
 }

@@ -134,7 +134,7 @@ public:
     // 本地（同 device 内跨 core）通知同步：用 notifyTag 字符串作为对端标识，
     // 由调用方约定生产者/消费者使用相同的 tag 字符串完成配对。
     // 与 NotifyRecord/Wait（用 ChannelHandle 标识跨 rank 通道）的对偶。
-    // 必须 public：C API ccu_data_api_impl.cc 直接调用。
+    // 必须 public：C API ccu_primitives_impl.cc 直接调用。
     CcuResult LocalNotifyRecord(const char *notifyTag, const uint32_t mask);
     CcuResult LocalNotifyWait(const char *notifyTag, const uint32_t mask);
     //本地数据拷贝 相关接口

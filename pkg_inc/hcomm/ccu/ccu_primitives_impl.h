@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef CCU_DATA_API_IMPL_H
-#define CCU_DATA_API_IMPL_H
+#ifndef CCU_PRIMITIVES_IMPL_H
+#define CCU_PRIMITIVES_IMPL_H
 
 #ifdef __cplusplus
 #include <cstdbool>
@@ -54,14 +54,12 @@ extern CcuResult CcuAddressAddVarToAddr(CcuAddressHandle resAddr, CcuAddressHand
 extern CcuResult CcuAddressAddAddrToAddr(CcuAddressHandle resAddr, CcuAddressHandle addrA, CcuAddressHandle addrB);
 extern CcuResult CcuAddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
 
-
 //参数加载类 相关接口
 extern CcuResult CcuLoadArg(CcuVariableHandle varHandle, uint32_t argId);
 extern CcuResult CcuLoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
 extern CcuResult CcuLoadVarFromVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num);
 extern CcuResult CcuStoreVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
 extern CcuResult CcuStoreVarToVarAddr(CcuVariableHandle addrHandle, CcuVariableHandle varHandle, uint32_t num);
-
 
 //Event信号同步类 相关接口
 // mask 由调用方独立传入（与 Event 句柄解耦）；CcuSetMask 已废弃删除。
@@ -141,4 +139,4 @@ extern CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,
 }
 #endif // __cplusplus
 
-#endif // CCU_DATA_API_IMPL_H
+#endif // CCU_PRIMITIVES_IMPL_H

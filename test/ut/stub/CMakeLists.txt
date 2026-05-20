@@ -147,8 +147,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/include/hccl/
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
-    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
-    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu_new
+    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu 
+    ${HCCL_CODE_ROOT}/include/ccu
     ${HCCL_CODE_ROOT}/externel_depends/tsch
     ${HCCL_CODE_ROOT}/src/common/
     ${HCCL_CODE_ROOT}/src/pub_inc/

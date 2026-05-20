@@ -8,11 +8,12 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ccu_control_api.h"
+#include "ccu_launch.h"
+#include "ccu_res.h"
 
 #include <vector>
 
-#include "ccu_primitives.h"
+#include "ccu_device_res.h"
 
 #include "ccu_log.h"
 #include "ccu_types.h"
@@ -28,7 +29,7 @@
 
 #include "env_config/env_config.h" // 暂时引用orion的环境变量处理模块
 
-#include "ccu_common.h"
+#include "ccu_device_pub.h"
 
 #include "hcomm_adapter_rts.h"
 
@@ -303,21 +304,21 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
     return CcuResult::CCU_SUCCESS;
 }
 
-HcommResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenInfo)
+CcuResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenInfo)
 {
-    CHK_PTR_NULL(tokenInfo);
+    CCU_CHK_PTR_NULL(tokenInfo);
 
     if (srcVa == 0 || size == 0) {
         HCCL_ERROR("[%s] failed, srcVa[%llx] size[%llu] should not be 0.",
             __func__, srcVa, size);
-        return HcclResult::HCCL_E_PARA;
+        return CcuResult::CCU_E_PARA;
     }
     // 注意token信息属于安全信息，均不允许打印
     hcomm::rtMemUbTokenInfo info{};
     info.va = srcVa;
     info.size = size;
-    CHK_RET(hcomm::RtsUbDevQueryInfo(QUERY_PROCESS_TOKEN, info));
+    CCU_CHK_RET(hcomm::RtsUbDevQueryInfo(QUERY_PROCESS_TOKEN, info));
     *tokenInfo = hcomm::CcuRep::CcuCombineTokenInfo(info.tokenId, info.tokenValue, 1);
 
-    return HcclResult::HCCL_SUCCESS;
+    return CcuResult::CCU_SUCCESS;
 }

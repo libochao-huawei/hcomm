@@ -13,14 +13,16 @@
 
 #include <cstdint>
 #include <new>
+#include <vector>
 
 #include "ccu_types.h"
-#include "ccu_data_api_impl.h"
-#include "ccu_data_utils.hpp"
+#include "ccu_primitives_impl.h"
+#include "ccu_utils.hpp"
 #include "ccu_variable.hpp"
 #include "ccu_event.hpp"
 #include "ccu_buffer.hpp"
 
+namespace AscendC {
 namespace ccu {
 
 // 主模板未实现：未特化的资源类型实例化 Array<T> 时编译失败，
@@ -54,13 +56,13 @@ public:
         if (count == 0) {
             return;
         }
+        using H = typename CcuArrayTraits<T>::Handle;
+        std::vector<H> handles(count);
         elems_ = static_cast<T*>(::operator new(sizeof(T) * count));
         for (uint32_t i = 0; i < count; ++i) {
-            ::new (static_cast<void*>(&elems_[i])) T(NoAllocTag{});
+            ::new (static_cast<void*>(&elems_[i])) T(detail::NoAllocTag{});
         }
-        using H = typename CcuArrayTraits<T>::Handle;
-        H handles[count];
-        auto ret = CcuArrayTraits<T>::BlockAlloc(handles, count);
+        auto ret = CcuArrayTraits<T>::BlockAlloc(handles.data(), count);
         if (ret != CcuResult::CCU_SUCCESS) {
             for (uint32_t i = 0; i < count; ++i) {
                 elems_[i].~T();
@@ -68,7 +70,7 @@ public:
             ::operator delete(elems_);
             elems_ = nullptr;
             count_ = 0;
-            throw ::ccu::CcuException(ret, "Array BlockAlloc: failed");
+            throw ::AscendC::ccu::detail::CcuException(ret, "Array BlockAlloc: failed");
         }
         for (uint32_t i = 0; i < count; ++i) {
             CcuArrayTraits<T>::SetHandle(elems_[i], handles[i]);
@@ -116,5 +118,6 @@ private:
 };
 
 } // namespace ccu
+} // namespace AscendC
 
 #endif // CCU_ARRAY_HPP

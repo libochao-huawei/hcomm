@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef CCU_CONTROL_API_H
-#define CCU_CONTROL_API_H
+#ifndef CCU_LAUNCH_H
+#define CCU_LAUNCH_H
 
 #include "hccl_types.h"
 #include "ccu_types.h"
@@ -18,9 +18,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-
-extern HcclResult HcclCommQueryCcuIns(HcclComm comm,
-    CcuInsHandle *insHandles, uint32_t *insNum);
 
 extern CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle);
 
@@ -37,4 +34,4 @@ extern CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
 }
 #endif // __cplusplus
 
-#endif // CCU_CONTROL_API_H
+#endif // CCU_LAUNCH_H
