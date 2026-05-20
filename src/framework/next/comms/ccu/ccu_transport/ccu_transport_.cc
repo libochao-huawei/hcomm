@@ -320,7 +320,7 @@ HcclResult CcuTransport::RecvDataProcess()
     CHK_RET(ConnInfoUnpackProc(binaryStream));
     CHK_RET(TransResUnpackProc(binaryStream));
     rmtBufferInfos_.clear();
-    remoteMemTag_.clear();
+    remoteUserMemTag_.clear();
     CHK_RET(BufferInfoUnpack(binaryStream));
     return HcclResult::HCCL_SUCCESS;
 }
@@ -456,7 +456,7 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
         CclBufferInfo rmtBufferInfo{};
         rmtBufferInfo.Unpack(binaryStream);
         rmtBufferInfos_.push_back(rmtBufferInfo);
-        remoteMemTag_.push_back(rmtBufferInfo.memTag);
+        remoteUserMemTag_.push_back(rmtBufferInfo.memTag);
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -650,16 +650,16 @@ void CcuTransport::Clean()
 
 HcclResult CcuTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
-    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    uint32_t memCount = rmtBufferInfos_.size();
+    std::lock_guard<std::mutex> lock(remoteUserMemsMutex_);
+    uint32_t userMemCount = rmtBufferInfos_.size();
     auto cacheBuilder = [](Hccl::RemoteMemCtx<CclBufferInfo> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
-        remoteMemCtx.remoteMems[index].type = rmtBuffer.type;
-        remoteMemCtx.remoteMems[index].addr = reinterpret_cast<void *>(rmtBuffer.addr);
-        remoteMemCtx.remoteMems[index].size = rmtBuffer.size;
+        remoteMemCtx.remoteUserMems[index].type = rmtBuffer.type;
+        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer.addr);
+        remoteMemCtx.remoteUserMems[index].size = rmtBuffer.size;
     };
     Hccl::RemoteMemCtx<CclBufferInfo> remoteMemCtx{
-        memCount, cacheValid_, rmtBufferInfos_, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
+        userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
         cacheBuilder, remoteMem, memNum, memTags};
     CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
     return HcclResult::HCCL_SUCCESS;
