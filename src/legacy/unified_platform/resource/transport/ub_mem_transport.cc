@@ -944,7 +944,7 @@ void UbMemTransport::SaveDfxTaskInfo(const TaskParam &taskParam)
     callback(streamId, taskId, taskParam);
 }
 
-HcclResult UbMemTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTags)
+HcclResult UbMemTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec.size() == 0) {
