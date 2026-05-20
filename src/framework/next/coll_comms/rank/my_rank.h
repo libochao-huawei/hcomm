@@ -59,7 +59,7 @@ public:
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
-    HcclResult ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteMems, char ***memTags, uint32_t *memNum);
+    HcclResult ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteMems, uint32_t *memNum, char ***memTags);
 
     // Ns recovery
     void SetKfcControlTransfer(std::shared_ptr<HDCommunicate> kfcControlTransferH2D, 

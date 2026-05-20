@@ -546,7 +546,7 @@ std::vector<char> P2PTransport::GetRmtBufferUniqueIds() const
     return result;
 }
 
-HcclResult P2PTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTags)
+HcclResult P2PTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec.size() == 0) {
