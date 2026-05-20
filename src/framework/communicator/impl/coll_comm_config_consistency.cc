@@ -17,7 +17,6 @@ CollCommConfigConsistency::CollCommConfigConsistency()
 
 CollCommConfigConsistency::~CollCommConfigConsistency()
 {
-    remoteExchangeInfoMap_.clear();
     ResetExchangeInfo();
 }
 
@@ -68,6 +67,7 @@ HcclResult CollCommConfigConsistency::GetExchangeInfo(uint32_t remoteRank, uint3
 HcclResult CollCommConfigConsistency::StoreRemoteExchangeInfo(uint32_t remoteRank, std::vector<u8>& data)
 {
     remoteExchangeInfoMap_[remoteRank] = std::move(data);
+    HCCL_INFO("[StoreRemoteExchangeInfo] remoteExchangeInfoMap_.size:%zu.", remoteExchangeInfoMap_.size());
     HCCL_INFO("[StoreRemoteExchangeInfo] success, remoteRank[%u], length[%zu].", remoteRank, remoteExchangeInfoMap_[remoteRank].size());
     return HCCL_SUCCESS;
 }
