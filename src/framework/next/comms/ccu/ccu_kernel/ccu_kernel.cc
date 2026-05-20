@@ -1824,7 +1824,7 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroup group,
 
     if (!loopDesc.bodyDefined) {
         HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] loop %lu body not defined", loop);
-        return CcuResult::CCU_E_LOOP_BODY_UNDEFINED;
+        return CcuResult::CCU_E_INTERNAL; // CCU_E_LOOP_BODY_UNDEFINED
     }
 
     // 资源池统一在 die0 上申请，SelectDie 后由 MoveResourcesToDie 迁移
@@ -1879,7 +1879,7 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
 
     if (!loopDesc.bodyDefined) {
         HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] loop %lu body not defined", loop);
-        return CcuResult::CCU_E_LOOP_BODY_UNDEFINED;
+        return CcuResult::CCU_E_INTERNAL; // CCU_E_LOOP_BODY_UNDEFINED
     }
 
     // 资源池统一在 die0 上申请，SelectDie 后由 MoveResourcesToDie 迁移

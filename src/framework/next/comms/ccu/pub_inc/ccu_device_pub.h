@@ -13,8 +13,10 @@
 
 #include <memory>
 #include <vector>
+#include <cstdint>
 
-#include "ccu_primitives.h"
+#include "ccu_common.h"
+#include "ccu_device_res.h"
 #include "ccu_res_repo.h"
 #include "ccu_drv_handle.h"
 

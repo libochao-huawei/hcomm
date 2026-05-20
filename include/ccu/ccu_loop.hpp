@@ -16,9 +16,10 @@
 #include "ccu_types.h"
 #include "ccu_variable.hpp"
 #include "ccu_func.hpp"
-#include "ccu_data_api_impl.h"
-#include "ccu_data_utils.hpp"
+#include "ccu_primitives_impl.h"
+#include "ccu_utils.hpp"
 
+namespace AscendC {
 namespace ccu {
 
 class Loop {
@@ -65,7 +66,7 @@ private:
     void ComposeLoopBody(const Func &func)
     {
         if (func.NumIn() != 0) {
-            throw ::ccu::CcuException(CcuResult::CCU_E_PARA,
+            throw ::AscendC::ccu::detail::CcuException(CcuResult::CCU_E_PARA,
                 "ccu::Loop requires a no-argument ccu::Func");
         }
         CCU_THROW_IF_FAILED(::CcuLoopCreate(&handle_), "CcuLoopCreate failed");
@@ -125,7 +126,7 @@ private:
             if (loop.IsVarBased()) {
                 auto *loopParamVar = loop.LoopParamVar();
                 if (loopParamVar == nullptr) {
-                    throw ::ccu::CcuException(CcuResult::CCU_E_PARA,
+                    throw ::AscendC::ccu::detail::CcuException(CcuResult::CCU_E_PARA,
                         "ccu::Loop var-based loop has null loop parameter");
                 }
                 CCU_THROW_IF_FAILED(
@@ -143,5 +144,6 @@ private:
 };
 
 } // namespace ccu
+} // namespace AscendC
 
 #endif // CCU_LOOP_HPP

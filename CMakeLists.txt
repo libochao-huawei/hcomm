@@ -212,28 +212,38 @@ elseif(BUILD_OPEN_PROJECT)
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ ${INSTALL_OPTIONAL}
         COMPONENT hcomm
     )
-    set(HCCL_PKG_CCU_NEW_HEAD
-        pkg_inc/hcomm/ccu_new/ccu_address.hpp
-        pkg_inc/hcomm/ccu_new/ccu_api.hpp
-        pkg_inc/hcomm/ccu_new/ccu_array.hpp
-        pkg_inc/hcomm/ccu_new/ccu_buffer.hpp
-        pkg_inc/hcomm/ccu_new/ccu_control_api.h
-        pkg_inc/hcomm/ccu_new/ccu_control_flow_macro.h
-        pkg_inc/hcomm/ccu_new/ccu_data_api_impl.h
-        pkg_inc/hcomm/ccu_new/ccu_data_utils.hpp
-        pkg_inc/hcomm/ccu_new/ccu_event.hpp
-        pkg_inc/hcomm/ccu_new/ccu_loop.hpp
-        pkg_inc/hcomm/ccu_new/ccu_func.hpp
-        pkg_inc/hcomm/ccu_new/ccu_local_addr.hpp
-        pkg_inc/hcomm/ccu_new/ccu_remote_addr.hpp
-        pkg_inc/hcomm/ccu_new/ccu_types.h
-        pkg_inc/hcomm/ccu_new/ccu_variable.hpp
+    set(HCCL_INC_CCU_HEAD
+        include/ccu/ccu_address.hpp
+        include/ccu/ccu_array.hpp
+        include/ccu/ccu_buffer.hpp
+        include/ccu/ccu_control_flow_macro.h
+        include/ccu/ccu_event.hpp
+        include/ccu/ccu_func.hpp
+        include/ccu/ccu_launch.h
+        include/ccu/ccu_local_addr.hpp
+        include/ccu/ccu_loop.hpp
+        include/ccu/ccu_primitives.hpp
+        include/ccu/ccu_remote_addr.hpp
+        include/ccu/ccu_res.h
+        include/ccu/ccu_types.h
+        include/ccu/ccu_utils.hpp
+        include/ccu/ccu_variable.hpp
     )
     install(FILES
-        ${HCCL_PKG_CCU_NEW_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu_new/ ${INSTALL_OPTIONAL}
+        ${HCCL_INC_CCU_HEAD}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/ccu/ ${INSTALL_OPTIONAL}
         COMPONENT hcomm
     )
+
+    set(HCCL_PKG_INC_CCU_HEAD
+        pkg_inc/hcomm/ccu/ccu_primitives_impl.h
+    )
+    install(FILES
+        ${HCCL_PKG_INC_CCU_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h
     )

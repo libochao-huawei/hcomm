@@ -11,13 +11,15 @@
  #ifndef CCU_REDUCE_SCATTER_MESH1D_DEMO_H
  #define CCU_REDUCE_SCATTER_MESH1D_DEMO_H
  
- #include "ccu_api.hpp"
- #include "ccu_log.h"
+#include "ccu_primitives.hpp"
+#include "ccu_types.h"
  
  #include <cstdint>
  #include <climits>
  #include <memory>
  #include <vector>
+
+namespace ccu = ::AscendC::ccu;
  #include <string>
  #include <set>
  
@@ -270,7 +272,7 @@
      uint32_t channelIdx = 0;
  
      if (arg->channelCount == 0) {
-         return CCU_E_PARA;
+         return CcuResult::CCU_E_PARA;
      }
  
      // ctx 默认构造时 Variable / LocalAddr / RemoteAddr / Event 成员已自动 alloc，

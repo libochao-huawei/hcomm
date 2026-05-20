@@ -14,9 +14,10 @@
 #include <cstdint>
 #include <type_traits>
 #include "ccu_types.h"
-#include "ccu_data_api_impl.h"
-#include "ccu_data_utils.hpp"
+#include "ccu_primitives_impl.h"
+#include "ccu_utils.hpp"
 
+namespace AscendC {
 namespace ccu {
 
 template <typename U> class Array;
@@ -43,10 +44,11 @@ public:
     CcuBufferHandle handle{0};
 
 private:
-    explicit CcuBuffer(NoAllocTag) {}
+    explicit CcuBuffer(detail::NoAllocTag) {}
     template <typename U> friend class Array;
 };
 
 } // namespace ccu
+} // namespace AscendC
 
 #endif // CCU_BUFFER_HPP

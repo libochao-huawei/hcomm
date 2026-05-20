@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ccu_control_api.h"
+#include "hccl_ccu_res.h"
 
 #include "hccl_comm_pub.h"
 

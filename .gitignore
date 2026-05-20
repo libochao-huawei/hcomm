@@ -35,3 +35,4 @@ CLAUDE.md
 # Logs
 logs/
 *.log
+build.txt

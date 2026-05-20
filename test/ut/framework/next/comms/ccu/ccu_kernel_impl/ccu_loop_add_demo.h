@@ -8,7 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ccu_api.hpp"
+#include "ccu_primitives.hpp"
+#include "ccu_types.h"
+
+namespace ccu = ::AscendC::ccu;
 
 struct CcuLoopAddKernelArg {
     uint32_t numA{0};
@@ -38,12 +41,12 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
         r3 = numA + numB;
     });
 
-    CcuLoopConfig cfg1 = {.addrOffset = 0, .loopIterNum = 2};
-    CcuLoopConfig cfg2 = {.addrOffset = 0, .loopIterNum = 2};
+    LoopConfig cfg1 = {.addrOffset = 0, .loopIterNum = 2};
+    LoopConfig cfg2 = {.addrOffset = 0, .loopIterNum = 2};
     Loop loop1(cfg1, body1);
     Loop loop2(cfg2, body2);
 
-    CcuLoopGroupConfig grpCfg1 = {
+    LoopGroupConfig grpCfg1 = {
         .addrOffset = 0, .bufferOffset = 0, .eventOffset = 0,
         .repeatNum = 0, .repeatLoopIdx = 0
     };
@@ -55,10 +58,10 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     Func body3([&]() {
         r5 = numA + numB;
     });
-    CcuLoopConfig cfg3 = {.addrOffset = 4096, .loopIterNum = 4};
+    LoopConfig cfg3 = {.addrOffset = 4096, .loopIterNum = 4};
     Loop loop3(cfg3, body3);
 
-    CcuLoopGroupConfig grpCfg2 = {
+    LoopGroupConfig grpCfg2 = {
         .addrOffset = 4096, .bufferOffset = 1, .eventOffset = 1,
         .repeatNum = 3, .repeatLoopIdx = 1
     };

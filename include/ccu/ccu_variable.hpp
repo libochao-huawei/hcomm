@@ -15,9 +15,10 @@
 #include <type_traits>
 
 #include "ccu_types.h"
-#include "ccu_data_utils.hpp"
-#include "ccu_data_api_impl.h"
+#include "ccu_utils.hpp"
+#include "ccu_primitives_impl.h"
 
+namespace AscendC {
 namespace ccu {
 
 class Variable;
@@ -61,7 +62,7 @@ public:
             "Variable::operator=(uint64_t): CcuVariableAssignImm failed");
     }
 
-    void operator=(CcuArithmeticOperator<Variable, Variable> op) const {
+    void operator=(detail::CcuArithmeticOperator<Variable, Variable> op) const {
         CCU_THROW_IF_FAILED(
             CcuVariableAddVarToVar(this->handle, op.lhs.handle, op.rhs.handle),
             "Variable::operator=(Var+Var): CcuVariableAddVarToVar failed");
@@ -73,8 +74,9 @@ public:
             "Variable::operator+=(Variable): CcuVariableAddVarToVar failed");
     }
 
-    CcuArithmeticOperator<Variable, Variable> operator+(const Variable &that) const {
-        return CcuArithmeticOperator<Variable, Variable>(*this, that, CcuArithmeticOperatorType::ADDITION);
+    detail::CcuArithmeticOperator<Variable, Variable> operator+(const Variable &that) const {
+        return detail::CcuArithmeticOperator<Variable, Variable>(*this, that,
+            detail::CcuArithmeticOperatorType::ADDITION);
     }
 
     CondExpr operator==(uint64_t immediate) {
@@ -88,7 +90,7 @@ public:
     CcuVariableHandle handle{0};
 
 private:
-    explicit Variable(NoAllocTag) {}
+    explicit Variable(detail::NoAllocTag) {}
     template <typename U> friend class Array;
     friend class LocalAddr;
     friend class RemoteAddr;
@@ -96,8 +98,11 @@ private:
 };
 
 } // namespace ccu
+} // namespace AscendC
 
-template <> inline void CcuArithmeticOperator<ccu::Variable, ccu::Variable>::Check() const
+template <>
+inline void AscendC::ccu::detail::CcuArithmeticOperator<AscendC::ccu::Variable,
+                                                       AscendC::ccu::Variable>::Check() const
 {
 }
 

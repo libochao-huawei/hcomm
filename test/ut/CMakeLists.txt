@@ -19,7 +19,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
-    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu_new
+    ${HCCL_CODE_ROOT}/include/ccu
 
     # src/pub_inc 目录下头文件
     ${HCCL_CODE_ROOT}/src/common/
@@ -329,6 +329,16 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_instance/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/arithmetic/
+
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/interface
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/context
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/common
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/control
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/loop
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/translator
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/arithmetic
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_microcode
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel
 
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/dfx/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_representation/reps/common/
