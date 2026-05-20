@@ -748,29 +748,6 @@ uint8_t TpManager::CalcTaTimeout(const TpAttrInfo &tpAttrInfo)
     return errTimeout;
 }
 
-void TpManager::EraseReqCtxAtQos(ReqCtxMap &reqCtxMap, const IpAddress &loc, const IpAddress &rmt, uint32_t qosKey)
-{
-    auto lit = reqCtxMap.find(loc);
-    if (lit == reqCtxMap.end()) {
-        return;
-    }
-    auto rit = lit->second.find(rmt);
-    if (rit == lit->second.end()) {
-        return;
-    }
-    auto qit = rit->second.find(qosKey);
-    if (qit == rit->second.end()) {
-        return;
-    }
-    rit->second.erase(qit);
-    if (rit->second.empty()) {
-        lit->second.erase(rit);
-    }
-    if (lit->second.empty()) {
-        reqCtxMap.erase(lit);
-    }
-}
-
 HcclResult TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
 {
     const QosKey qosKey = QosMapKey(param.qos);
