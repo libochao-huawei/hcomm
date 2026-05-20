@@ -1439,12 +1439,12 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
     attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
     /* errTime配置值：0-31
-       0-7代表芯片配置值b00:128ms
-       8-15代表芯片配置值b01:1s
-       16-23代表芯片配置值b10:8s
-       24-31代表芯片配置值b11:64s
+        0-7代表芯片配置值b00:512ms
+        8-15代表芯片配置值b01:1s
+        16-23代表芯片配置值b10:8s
+        24-31代表芯片配置值b11:32s
     */
-    attr.ub.errTimeout       = 16;
+    attr.ub.errTimeout       = in.errTimeout;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority         = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
@@ -1474,10 +1474,10 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
               "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
               "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u].",
+              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u], timeout[%u].",
                attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode, attr.ub.mode,
                attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa, attr.ub.extMode.sq.buffSize,
-               attr.ub.extMode.piType, attr.ub.priority);
+               attr.ub.extMode.piType, attr.ub.priority, attr.ub.errTimeout);
     return attr;
 }
 
@@ -2484,6 +2484,84 @@ HcclResult HrtRaNormalQpDestroy(QpHandle qpHandle)
     s32 ret = RaNormalQpDestroy(qpHandle);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Destroy][NormalQp]errNo[0x%016llx] ra destroy normal qp fail. return[%d], params: rdmaHandle[%p]",\
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpHandle), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaQpCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, NdaQpInfo *qpInfo, QpHandle *qpHandle)
+{
+    CHK_PTR_NULL(rdmaHandle);
+    CHK_PTR_NULL(ndaOps);
+    HCCL_INFO("[HrtRaNdaQpCreate] Input params: rdmaHandle=%p dmaMode=%u", rdmaHandle, dmaMode);
+
+    struct ibv_qp_init_attr ibQpAttr;
+    CHK_SAFETY_FUNC_RET(memset_s(&ibQpAttr, sizeof(ibv_qp_init_attr), 0, sizeof(ibv_qp_init_attr)));
+    ibQpAttr.qp_context= nullptr;
+    ibQpAttr.send_cq = cqInfo->cq;
+    ibQpAttr.recv_cq = cqInfo->cq;
+    ibQpAttr.srq = nullptr;
+    ibQpAttr.qp_type = IBV_QPT_RC;
+    ibQpAttr.cap.max_inline_data = MAX_INLINE_DATA;
+    ibQpAttr.cap.max_send_wr = MAX_WR_NUM;
+    ibQpAttr.cap.max_send_sge = MAX_SEND_SGE_NUM;
+    ibQpAttr.cap.max_recv_wr = MAX_WR_NUM;
+    ibQpAttr.cap.max_recv_sge = MAX_RECV_SGE_NUM;
+
+    struct NdaQpInitAttr qpAttr;
+    qpAttr.attr = ibQpAttr;
+    qpAttr.qpCapFlag = 0;
+    qpAttr.dmaMode = dmaMode;
+    qpAttr.ops = ndaOps;
+
+    s32 ret = RaNdaQpCreate(rdmaHandle, &qpAttr, qpInfo, qpHandle);
+    CHK_PRT_RET(ret != 0 || qpInfo == nullptr || qpHandle == nullptr,
+        HCCL_ERROR("[Create][NdaQp]errNo[0x%016llx] RaNdaQpCreate fail. return[%d], "
+            "params: rdmaHandle[%p] dmaMode[%u]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, dmaMode), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaCqCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, CqHandle *cqHandle)
+{
+    CHK_PTR_NULL(rdmaHandle);
+    CHK_PTR_NULL(ndaOps);
+    HCCL_INFO("[HrtRaNdaCqCreate] Input params: rdmaHandle=%p dmaMode=%u", rdmaHandle, dmaMode);
+
+    struct ibv_cq_init_attr_ex ibCqAttr;
+    CHK_SAFETY_FUNC_RET(memset_s(&ibCqAttr, sizeof(ibv_cq_init_attr_ex), 0, sizeof(ibv_cq_init_attr_ex)));
+    ibCqAttr.cqe = MAX_CQ_DEPTH;
+    ibCqAttr.cq_context = nullptr;
+    ibCqAttr.channel = nullptr;
+    ibCqAttr.comp_vector = 0;
+    ibCqAttr.wc_flags = 0;
+    ibCqAttr.comp_mask = 0;
+    ibCqAttr.flags = 0;
+
+    struct NdaCqInitAttr cqAttr;
+    cqAttr.attr = ibCqAttr;
+    cqAttr.cqCapFlag = 0;
+    cqAttr.dmaMode = dmaMode;
+    cqAttr.ops = ndaOps;
+
+    s32 ret = RaNdaCqCreate(rdmaHandle, &cqAttr, cqInfo, cqHandle);
+    CHK_PRT_RET(ret != 0 || cqInfo == nullptr || cqHandle == nullptr,
+        HCCL_ERROR("[Create][NdaCq]errNo[0x%016llx] RaNdaCqCreate fail. return[%d], "
+            "params: rdmaHandle[%p] dmaMode[%u]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, dmaMode), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaCqDestroy(RdmaHandle rdmaHandle, CqHandle cqHandle)
+{
+    CHK_PTR_NULL(rdmaHandle);
+    CHK_PTR_NULL(cqHandle);
+    HCCL_INFO("[HrtRaNdaCqDestroy] Input params: rdmaHandle=%p cqHandle=%p", rdmaHandle, cqHandle);
+
+    s32 ret = RaNdaCqDestroy(rdmaHandle, cqHandle);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[RaNdaCqDestroy] errNo[0x%016llx] RaNdaCqDestroy failed, call interface error. "
+                "return[%d], params: rdmaHandle[%p] cqHandle[%p]",
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, cqHandle),
+        HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
 

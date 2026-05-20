@@ -22,6 +22,7 @@
 #include "hccp_async.h"
 #include "hccp_async_ctx.h"
 #include "orion_adapter_hccp.h"
+#include "hccp_nda.h"
  
 int RaCtxQpCreate(void *ctx_handle, struct QpCreateAttr *attr, struct QpCreateInfo *info,
     void **qp_handle)
@@ -120,6 +121,19 @@ int RaCtxQpQueryBatch(void *qp_handle[], struct JettyAttr attr[], unsigned int *
     return 0;
 }
 
+int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
+{
+    if (directFlag != nullptr) {
+        *directFlag = 1;
+    }
+}
+
+int RaCtxGetAsyncEvents(void *ctxHandle, struct AsyncEvent events[], unsigned int *num)
+{
+    *num = 0;
+    return 0;
+}
+
 namespace Hccl {
 HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
 {
@@ -158,5 +172,12 @@ int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo 
 
 int RaGetDevBaseAttr(void *ctxHandle, struct DevBaseAttr *attr)
 {
+    return 0;
+}
+
+int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr, void **raReqHandle)
+{
+    static int raReqHandleValue = 12378;
+    *raReqHandle = &raReqHandleValue;
     return 0;
 }

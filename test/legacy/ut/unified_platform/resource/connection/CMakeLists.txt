@@ -15,4 +15,5 @@ target_sources(hccl_v2_utest
         ut_ub_ci_updater.cc
         ut_rma_connection.cc
         ut_aicpu_ub_conn_lite.cc
+        ut_rdma_conn_lite_v2.cc
 )
