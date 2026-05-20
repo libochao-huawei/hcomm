@@ -31,7 +31,7 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1), isRecvFirst_(isRecvFirst)
 {
     HCCL_INFO("source: %s", locCntNotifyRes.Describe().c_str());
-    HcclResult result = FillTagVec(commonLocRes.bufferVec, localMemTag_);
+    HcclResult result = FillTagVec(commonLocRes.bufferVec, localUserMemTag_);
     CHK_RET_THROW(InternalException,
         StringFormat("[UbMemTransport][UbMemTransport] failed to construct UbMemTransport."),
         result);
@@ -44,7 +44,7 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1)
 {
     HCCL_INFO("source: %s", locCntNotifyRes.Describe().c_str());
-    HcclResult result = FillTagVec(commonLocRes.bufferVec, localMemTag_);
+    HcclResult result = FillTagVec(commonLocRes.bufferVec, localUserMemTag_);
     CHK_RET_THROW(InternalException,
         StringFormat("[UbMemTransport][UbMemTransport] failed to construct UbMemTransport."),
         result);
@@ -62,7 +62,7 @@ HcclResult UbMemTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
         return HCCL_E_PARA;
     }
     HCCL_INFO("[UbMemTransport][FillTagVec] bufferNum[%zu]", bufferVec.size());
-    localMemTag_.reserve(bufferNum);
+    localUserMemTag_.reserve(bufferNum);
     uint32_t index = 0;
     for (auto &localRmaBuffer : bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
@@ -532,7 +532,7 @@ void UbMemTransport::SendDataSize()
     BinaryStream binaryStream;
     HandshakeMsgPack(binaryStream);
     NotifyVecPack(binaryStream);
-    BufferVecPack(binaryStream, commonLocRes.bufferVec, localMemTag_);
+    BufferVecPack(binaryStream, commonLocRes.bufferVec, localUserMemTag_);
     CntNotifyVecPack(binaryStream);
     CntNotifyDescPack(binaryStream);
     ConnVecPack(binaryStream);
@@ -714,7 +714,7 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
             }
         }
     }
-    remoteMemTag_.insert(remoteMemTag_.end(), rmtMemTagTemp_.begin(), rmtMemTagTemp_.end());
+    remoteUserMemTag_.insert(remoteUserMemTag_.end(), rmtMemTagTemp_.begin(), rmtMemTagTemp_.end());
 }
 
 bool UbMemTransport::ConnVecUnpackProc(BinaryStream &binaryStream)
@@ -946,12 +946,12 @@ void UbMemTransport::SaveDfxTaskInfo(const TaskParam &taskParam)
 
 HcclResult UbMemTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
-    std::lock_guard<std::mutex> lock(remoteUserMemsMutex_);
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec.size() == 0) {
         HCCL_ERROR("[UbMemTransport][GetRemoteMems] bufferNum is 0.");
         return HCCL_E_PARA;
     }
-    uint32_t memCount = rmtBufferVec.size();
+    uint32_t userMemCount = rmtBufferVec.size();
     auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         CHK_PTR_NULL(rmtBuffer);
@@ -961,7 +961,7 @@ HcclResult UbMemTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, 
         return HCCL_SUCCESS;
     };
     RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{
-        memCount, cacheValid_, rmtBufferVec, remoteMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
+        userMemCount, cacheValid_, rmtBufferVec, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
         cacheBuilder, remoteMem, memNum, memTags};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
@@ -1040,7 +1040,7 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVe
     rmtBufferVec.insert(rmtBufferVec.end(), std::make_move_iterator(rmtBufferTemp.begin()),
         std::make_move_iterator(rmtBufferTemp.end()));
     commonLocRes.bufferVec.insert(commonLocRes.bufferVec.end(), bufferVecTemp.begin(), bufferVecTemp.end());
-    localMemTag_.insert(localMemTag_.end(), locMemTagTemp_.begin(), locMemTagTemp_.end());
+    localUserMemTag_.insert(localUserMemTag_.end(), locMemTagTemp_.begin(), locMemTagTemp_.end());
     cacheValid_ = false;
     return HCCL_SUCCESS;
 }
