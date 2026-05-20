@@ -12,7 +12,6 @@
 #define HCOMM_RES_H
  
 #include "hcomm_res_defs.h"
-#include "hcomm/hcomm_res_entity_defs.h"
  
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +42,7 @@ extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const
 
 extern HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
-extern HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_t listNum, ChannelPtr *channelPtr);
+extern HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_t listNum, uint64_t *channelPtr);
 
 #ifdef __cplusplus
 }
