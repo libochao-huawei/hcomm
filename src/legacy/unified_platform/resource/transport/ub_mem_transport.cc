@@ -946,7 +946,7 @@ void UbMemTransport::SaveDfxTaskInfo(const TaskParam &taskParam)
 
 HcclResult UbMemTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
-    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+    std::lock_guard<std::mutex> lock(remoteUserMemsMutex_);
     if (rmtBufferVec.size() == 0) {
         HCCL_ERROR("[UbMemTransport][GetRemoteMems] bufferNum is 0.");
         return HCCL_E_PARA;
@@ -955,13 +955,13 @@ HcclResult UbMemTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, 
     auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         CHK_PTR_NULL(rmtBuffer);
-        remoteMemCtx.remoteMems[index].type = rmtBuffer->GetMemType();
-        remoteMemCtx.remoteMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-        remoteMemCtx.remoteMems[index].size = rmtBuffer->GetSize();
+        remoteMemCtx.remoteUserMems[index].type = rmtBuffer->GetMemType();
+        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+        remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
         return HCCL_SUCCESS;
     };
     RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{
-        memCount, cacheValid_, rmtBufferVec, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
+        memCount, cacheValid_, rmtBufferVec, remoteMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
         cacheBuilder, remoteMem, memNum, memTags};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
