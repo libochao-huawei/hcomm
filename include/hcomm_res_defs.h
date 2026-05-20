@@ -80,6 +80,7 @@ typedef enum {
     COMM_PROTOCOL_UBC_TP = 5,     ///< 华为统一总线UBC_TP
     COMM_PROTOCOL_UB_MEM = 6,     ///< UB_MEM
     COMM_PROTOCOL_UBOE = 7,       ///< UBoE
+    COMM_PROTOCOL_HCCS_ONLY = 8,  ///< 一卡双DIE使用HCCS
 } CommProtocol;
 
 /**
@@ -213,6 +214,9 @@ typedef struct {
         struct {
             uint32_t qos;            ///< HCCS QoS
         } hccsAttr;
+        struct {
+            uint32_t sqDepth;         ///< UB队列深度，0表示使用默认值
+        } ubAttr;
     };
 } HcommChannelDesc;
 

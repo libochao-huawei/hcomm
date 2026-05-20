@@ -27,7 +27,7 @@ public:
     explicit CcuChannelCtxPool(int32_t devLogicId);
     ~CcuChannelCtxPool();
 
-    HcclResult PrepareCreate(const std::vector<Hccl::LinkData> &links);
+    HcclResult PrepareCreate(const std::vector<Hccl::LinkData> &links, uint32_t sqSize = 0);
     using CcuChannelCtx = std::pair<CcuChannelInfo, std::vector<CcuJetty *>>;
     HcclResult GetChannelCtx(const Hccl::LinkData &link, CcuChannelCtx &channelCtx) const;
     HcclResult GetCcuChannelCtxById(const std::pair<uint8_t, uint32_t> &key, CcuChannelCtx& ctx);
@@ -75,7 +75,7 @@ private:
     };
 
 private:
-    HcclResult GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr);
+    HcclResult GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr, uint32_t sqSize);
     bool FindAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr) const;
     HcclResult CreateAndSaveNewBatch(const BatchKey &batchKey,
         const std::vector<CcuChannelInfo> channelInfos, ResourceBatch *&batchPtr);

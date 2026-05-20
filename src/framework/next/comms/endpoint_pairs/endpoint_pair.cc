@@ -31,8 +31,11 @@ EndpointPair::~EndpointPair()
 
 HcclResult EndpointPair::Init()
 {
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
     channelHandles_.clear();
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+
     return HCCL_SUCCESS;
 }
 
@@ -46,7 +49,7 @@ HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t 
         linkTag += ("_" + linkData.GetReuseIdx());
     }
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, linkTag);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
+    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
 
@@ -69,7 +72,7 @@ HcclResult EndpointPair::GetSocketWithRank(const uint32_t myRank, const uint32_t
     /* A2: host nic(cpu roce channel) -- device nic(transport ibv)时，两边ip地址格式不一样，判断大小算法不匹配
      * 修改成按照rank id大小判断server和client */
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, linkTag, connectMode, myRank, rmtRank);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
+    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
 
@@ -102,15 +105,18 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
         EXECEPTION_CATCH(socketMgrCompat_ =
             std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId, socketTag),
             return HCCL_E_PTR);
+        CHK_PTR_NULL(rankIpPortMap_);
+        // 单卡多进程场景下，用于保证端口不冲突
+        socketMgrCompat_->SetDeviceServerListenPortMap(*rankIpPortMap_);
     }
-
-    socketMgrCompat_->BatchCreateSockets({linkData}); // 内部同时处理server端和connect端两类socket
 
     std::string linkTag = socketTag;
     if (linkData.GetReuseIdx() != "0") {
         linkTag += ("_" + linkData.GetReuseIdx());
     }
     Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, linkTag);
+
+    socketMgrCompat_->BatchCreateSockets(socketConfig); // 内部同时处理server端和connect端两类socket
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
     CHK_PTR_NULL(socket);
     EXCEPTION_HANDLE_END

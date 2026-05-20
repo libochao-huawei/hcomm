@@ -24,6 +24,7 @@
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
+#include "coll_comm_config_consistency.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -35,7 +36,9 @@ namespace hccl {
  */
 class MyRank {
 public:
-    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph);
+    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config,
+        const ManagerCallbacks& callbacks, RankGraph* rankGraph,
+        const Hccl::RankIpPortMapPtr& rankIpPortMap);
     ~MyRank();
 
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum);
@@ -49,6 +52,8 @@ public:
     uint32_t GetOpExpansionMode() {
         return opExpansionMode_;
     }
+
+    CollCommConfigConsistency &GetCollCommConfigConsistency();
 
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
@@ -66,7 +71,7 @@ public:
 
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
-        const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
+        const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs);
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
     HcclResult BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum);
@@ -76,7 +81,33 @@ private:
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
     HcclResult TryInitCcuInstance();
+    HcclResult ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc);
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
+
+    HcclResult BatchExchangeAndCheckConsistency(
+        const HcclChannelDesc* channelDescs,
+        const std::vector<HcommChannelDesc> &hcommDescs,
+        uint32_t channelNum,
+        const std::string &commTag);
+    HcclResult ExchangeUserInfo(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles);
+    HcclResult BatchExchangeFixedData(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        const u8 *sendData, u32 sendLen,
+        u8 *recvData, u32 recvLen);
+    HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks);
+    HcclResult WaitActiveAsyncComplete(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        const std::vector<u32> &remoteExchangeInfoLens,
+        u32 localExchangeInfoLen,
+        bool isFirstPass);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
@@ -105,8 +136,18 @@ private:
     std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
     // 内部获取 port 的方法，根据 mode_ 区分 v1/v2
     HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
+
+    Hccl::RankIpPortMapPtr rankIpPortMap_;
+
+    CollCommConfigConsistency collCommConfigConsistency_;
 };
 
 } // namespace hccl
+
+namespace MyRankUtils {
+
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc);
+
+} // namespace MyRankUtils  
 
 #endif // MY_RANK_H

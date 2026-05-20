@@ -65,6 +65,11 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
+    virtual void TryLaunchTask()
+    {
+        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+    }
+
     virtual void NotifyWait(u32 notifyId)
     {
         (void)notifyId;
@@ -219,6 +224,7 @@ protected:
     u64 sqBaseAddr_{0};
 
     u32 taskId_{0}; // 填写到SQE中的taskId，现改为由AICPU组件提供的sqeId维护
+    u32 taskIdEnd_{0}; // 当前流已经申请到的最大taskId
 
     std::function<void()> checkOpExecStatusCallback_{nullptr};
 
@@ -229,7 +235,16 @@ protected:
     void ConfigSqTail(u32 value);
     void ConfigDisableToEnable(u32 value);
 
-    HcclResult SetTaskIdBySqeId();
+    inline void SetTaskIdBySqeId()
+    {
+        if (taskId_ < taskIdEnd_) {
+            taskId_++;
+        } else {
+            constexpr u32 PER_GET_SQE_ID_NUM = 1024; // 一次性申请sqeId数量
+            aicpu::GetSqeId(PER_GET_SQE_ID_NUM, taskId_, taskIdEnd_); // aicpu框架保证 taskId_ < taskIdEnd_
+        }
+        return;
+    }
 
 private:
     u64 QuerySqBaseAddr();

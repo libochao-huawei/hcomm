@@ -131,7 +131,7 @@ void RankGraphBuilder::AddPeer2NetLink(const u32 netLayer,  const string &netIns
         // 将rank插入到当前netInstance对应的topoInstance中
         tempNetInsts_[netLayer][netInstId]->UpdateTopoInst(topoInstId, topoType, rankId);
 
-        HCCL_RUN_INFO("[RankGraphBuilder][AddPeer2NetLink] Add Peer2NetLink Net2PeerLink success. level[%u] "
+        HCCL_INFO("[RankGraphBuilder][AddPeer2NetLink] Add Peer2NetLink Net2PeerLink success. level[%u] "
                    "netInstId[%s] rankId[%u] planeId[%s] AddrStr[%s],topoInstId[%u],topoType[%u]",
             netLayer,  netInstId.c_str(), rankId, fabNode->GetPlaneId().c_str(), addrInfo.addr.Describe().c_str(),
             topoInstId, topoType);
@@ -217,6 +217,9 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
     // 存储所有fabric节点，key为topoInstId
     std::map<u32, std::shared_ptr<NetInstance::Fabric>> fabNodes;
 
+    auto peer = rankGraph_->GetPeer(rankGraph_->GetMyRank());
+    auto localDeviceId = peer->GetDeviceId();
+
     // 3. 遍历所有rank节点，根据topoInstId创建fabric节点
     for (RankId rankId : rankIds) {
         LocalId localId = rankGraph_->GetLocalId(rankId);
@@ -244,7 +247,7 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
 
             // 构造连接接口
             auto peerIfaces =
-                ConstructConnIFromPhyTopoConnIAndPortMap(link->GetSourceIFace(), peerNode->GetPortAddrMapLayer0(), topoType, topoInstId);
+                ConstructConnIFromPhyTopoConnIAndPortMap(link->GetSourceIFace(), peerNode->GetPortAddrMapLayer0(), topoType, topoInstId, localDeviceId);
 
             for (const auto& iface : peerIfaces) {
                 peerNode->AddConnInterface(0, iface);
@@ -419,6 +422,9 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
         THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildFromPhytopo] innerNetInstance is nullptr"));
     }
     set<RankId> rankIds = innerNetInstance->GetRankIds();
+
+    auto peer = rankGraph_->GetPeer(rankGraph_->GetMyRank());
+    auto localDeviceId = peer->GetDeviceId();
     for (const auto srcRankId : rankIds) {
         for (const auto dstRankId : rankIds) {
            if (srcRankId == dstRankId) {
@@ -440,9 +446,9 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
 
            for (shared_ptr<PhyTopo::Link> phyLink : phyLinks) {
                 auto sourceIfaces = ConstructConnIFromPhyTopoConnIAndPortMap(
-                    phyLink->GetSourceIFace(), srcPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId());
+                    phyLink->GetSourceIFace(), srcPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId(), localDeviceId);
                 auto targetIfaces = ConstructConnIFromPhyTopoConnIAndPortMap(
-                    phyLink->GetTargetIFace(), dstPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId());
+                    phyLink->GetTargetIFace(), dstPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId(), localDeviceId);
                 if (sourceIfaces.empty() || targetIfaces.empty()) {
                     // 没有可用的接口。
                     HCCL_WARNING("[RankGraphBuilder][BuildFromPhytopo] srcRankId[%d] dstRankId[%d] edge not .",
@@ -506,13 +512,14 @@ void RankGraphBuilder::UpdateTopoInstForMyRankOnly()
 
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
         std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, const std::map<std::string, IpAddress>& portAddrMap, 
-        const TopoType topoType, const u32 topoInstId) {
+        const TopoType topoType, const u32 topoInstId, u32 localDeviceId) {
     std::vector<std::shared_ptr<NetInstance::ConnInterface>> netConnIFaces;
     std::set<string> phyPorts = phyConnIFace->GetPorts();
     std::map<IpAddress, std::set<string>> addr2Ports;
     for (auto port: phyPorts) {
         if (*(phyConnIFace->GetLinkProtocols().begin()) == LinkProtocol::PCIE) {
             IpAddress tempIp;
+            HrtRaSocketGetVnicIpInfos(localDeviceId, DeviceIdType::DEVICE_ID_TYPE_PHY_ID, localDeviceId, tempIp);
             auto it = addr2Ports.find(tempIp);
             if (it == addr2Ports.end()) {
                 std::set<std::string> newPorts;

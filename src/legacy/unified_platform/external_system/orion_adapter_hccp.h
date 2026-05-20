@@ -19,6 +19,7 @@
 #include "hccp_tlv.h"
 #include <mutex>
 #include "hccp_async_ctx.h"
+#include "hccp_nda.h"
 
 namespace Hccl {
 using namespace std;
@@ -54,6 +55,7 @@ constexpr u32 HCCL_INVALID_PORT = 65536;
 
 using RdmaHandle = void *;
 using QpHandle   = void *;
+using CqHandle   = void *;
 
 using SocketHandle = void *;
 using FdHandle     = void *;
@@ -255,6 +257,8 @@ RaSocketFdHandleParam HrtRaBlockGetOneSocket(u32 role, RaSocketGetParam &param);
 void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSize);
 bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize);
 void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size);
+HcclResult HrtRaSocketNonBlockSendHeart(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize);
+HcclResult HrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 
 vector<std::pair<std::string, IpAddress>> HrtGetHostIf(u32 devPhyId);
 vector<IpAddress>                         HrtGetDeviceIp(u32 devicePhyId, NetworkMode netWorkMode = NetworkMode::NETWORK_OFFLINE);
@@ -430,15 +434,16 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     u32              sqDepth{0};
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
-
+    u8 errTimeout{16};
+    
     HrtRaUbJettyCreateParamDef() {}
 
     HrtRaUbJettyCreateParamDef(JfcHandle sjfcHandle, JfcHandle rjfcHandle,
         u32 tokenValue, TokenIdHandle tokenIdHandle, HrtJettyMode jettyMode,
-        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth)
+        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth, u8 errTimeout = 16)
         : sjfcHandle(sjfcHandle), rjfcHandle(rjfcHandle), tokenValue(tokenValue),
           tokenIdHandle(tokenIdHandle), jettyMode(jettyMode), jettyId(jettyId),
-          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex), sqDepth(sqDepth)
+          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex), sqDepth(sqDepth), errTimeout(errTimeout)
     {
     }
 };
@@ -618,7 +623,7 @@ struct SocketEventInfo {
     FdHandle fdHandle;
 };
 
-void HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
+HcclResult HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
                           unsigned int maxevents, u32 &events_num);
 void HrtRaGetSecRandom(u32 *value, u32 &devPhyId);
 
@@ -630,6 +635,9 @@ HcclResult HrtRaDestroyCq(RdmaHandle rdmaHandle, CqInfo& cq);
 HcclResult ConstructQpDefaultAttrs(s32 qpMode, struct qp_ext_attrs &attrs, bool isWorkFlowLib);
 HcclResult HrtRaNormalQpCreate(RdmaHandle rdmaHandle, QpInfo& qp);
 HcclResult HrtRaNormalQpDestroy(QpHandle qpHandle);
+HcclResult HrtRaNdaQpCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, NdaQpInfo *qpInfo, QpHandle *qpHandle);
+HcclResult HrtRaNdaCqCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, CqHandle *cqHandle);
+HcclResult HrtRaNdaCqDestroy(RdmaHandle rdmaHandle, CqHandle cqHandle);
   
 MAKE_ENUM(AuxInfoInType, AUX_INFO_IN_TYPE_CQE, AUX_INFO_IN_TYPE_AE, AUX_INFO_IN_TYPE_MAX);
 struct AuxInfoIn {

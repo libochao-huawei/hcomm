@@ -137,7 +137,8 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
                     && isSingleMeshAggregation_
                     && IsSupportAIVCopy(param.DataDes.dataType)
                     && (dataSize <= AIV_BIG_SIZE || isOnlyAiv);
-    if (isAivMode) {
+    bool isA2APreAG = (param.tag == HCCL_ALLTOALL_PARA_ALLGATHER);
+    if (isAivMode && !isA2APreAG) {
         if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && dataSize <= AIV_ALL_GATHER_SMALL_SIZE) {
             algName = "AllGatherMeshAivSmallCountExecutor"; 
             HCCL_INFO("[SelectAlgfor910BAIV] AllGather SelectAlgfor910B is algName [%s]", algName.c_str());
@@ -197,7 +198,7 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
                         && isMeshTopo
                         && isCCLBufferGE16M
                         && isSupportAivRdmaCount;
-    if (isAivRdmaMode) {
+    if (isAivRdmaMode && !isA2APreAG) {
         algName = "AllGatherAivRdmaExecutor";
     } else if (isMeshTopo) {
         if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
@@ -340,6 +341,15 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         CHK_RET(SelectAlgforAHC(dataSize, AHCOpType::AHC_OP_TYPE_ALLGATHER));
     }
 
+    constexpr u64 ALLGATHER_PIPELINE_THRESHOLD = 4 * 1024 * 1024; // 4MB
+    constexpr u64 ALLGATHER_PIPELINE_SLICE_THRESHOLD = 2; // 2
+    u64 maxCountPerLoop = cclBufferManager_.GetInCCLbufferSize() / HCCL_DEVICE_NUM_TWO / userRankSize_
+                          / HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN / unitSize;
+    u64 bufferSliceNum = 0;
+    if (maxCountPerLoop != 0) {
+        bufferSliceNum = (param.DataDes.count + maxCountPerLoop - 1) / maxCountPerLoop;
+    }
+
     bool isHccsPlusSio = userRankSize_ == 2 && pairLinkCounter_[static_cast<u32>(LinkTypeInServer::SIO_TYPE)] == 2 &&
                          pairLinkCounter_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)] == 0;
     isHccsPlusSio = false;
@@ -377,6 +387,11 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         } else {
             algName = "AllGatherRingZerocopyExchangeExecutor";      // 连续数据通信+额外的数据交换（AHC不支持）
         }
+    } else if (superPodNum_ > 1 && maxCountPerLoop * unitSize > ALLGATHER_PIPELINE_THRESHOLD && bufferSliceNum > ALLGATHER_PIPELINE_SLICE_THRESHOLD
+               && isOpbase && !isAHCAlgo && !multiModuleDiffDeviceNumMode_
+               && (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING
+                   || topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING)) {
+        algName = "AllGatherPipelineFor91093Executor";
     } else {
         if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB ||
             algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||

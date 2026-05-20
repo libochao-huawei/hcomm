@@ -99,6 +99,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/roce_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
@@ -106,6 +107,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/ipc_remote_notify.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buffer_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/rma_conn_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/rdma_conn_lite_v2.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rmt_rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
@@ -371,6 +373,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/common/loggers
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
@@ -408,8 +411,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/loop
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/sync
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/translator
-
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/cluster_monitor
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/host

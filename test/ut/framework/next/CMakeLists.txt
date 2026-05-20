@@ -22,8 +22,10 @@ set(src_to_test_list
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_iaicpu_ts_thread_interface.cc
     comms/comm_engine_res/threads/test_thread_api.cc
+    comms/endpoint_pairs/socket/ut_socket_process.cc
     comms/endpoint_pairs/ut_endpoint_pair.cc
     comms/api_c_adpt/ut_hcomm_c_adpt.cc
+    comms/api_c_adpt/ut_hcomm_c_adpt_ubattr.cc
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
@@ -45,6 +47,9 @@ set(src_to_test_list
     host/ut_cpu_urma_endpoint.cc
     host/ut_host_cpu_urma_channel.cc
     host/ut_host_ub_connection.cc
+    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_roce_channel_v2.cc
+    comms/endpoint_pairs/channels/aicpu/ut_dev_rdma_connection.cc
+    comms/endpoint_pairs/channels/aicpu/device/ut_dev_aicpu_ts_roce_channel_v2.cc
     comms/endpoints/ut_ub_mem_endpoint.cc
     comms/endpoints/reged_mems/ut_roce_mem_test.cc
     comms/endpoints/reged_mems/ut_urma_mem_test.cc
@@ -58,6 +63,7 @@ set(src_to_test_list
     comms/endpoints/ut_aicpu_ts_roce_endpoint.cc
     comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
     comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_channel.cc
+    comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_transport.cc
     comms/endpoint_pairs/ut_endpoint_pair_mgr.cc
     comms/ccu/ccu_device/ccu_comp/ut_ccu_comp_pub.cc
     coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
@@ -92,10 +98,7 @@ target_compile_options(hccl_utest_test_next_resource PRIVATE
     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
- 
-target_link_directories(hccl_utest_test_next_resource PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
+
 target_link_libraries(hccl_utest_test_next_resource PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
@@ -116,6 +119,8 @@ set(src_to_a3_test_list
     main.cc
     hccl_api_base_test.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_a3_api.cc
+    comms/endpoints/ut_hccs_mem_endpoint.cc
+    comms/api_c_adpt/ut_hcomm_hccs_channel_test.cc
 )
 
 add_executable(hccl_utest_test_next_resource_a3 ${src_to_a3_test_list})
@@ -139,10 +144,6 @@ target_compile_options(hccl_utest_test_next_resource_a3 PRIVATE
     -Os
     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
-)
- 
-target_link_directories(hccl_utest_test_next_resource_a3 PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
 
 target_link_libraries(hccl_utest_test_next_resource_a3 PRIVATE

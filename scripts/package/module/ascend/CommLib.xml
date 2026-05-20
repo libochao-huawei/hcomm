@@ -85,6 +85,7 @@
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/pkg_inc/hcomm" dst_path="$(TARGET_ENV)/pkg_inc/hcomm" install_path="$(TARGET_ENV)/pkg_inc/hcomm" install_type="devel" install_mod="440">
         <file value="hcomm_primitives_expt.h"/>
+        <file value="hcomm_res_entity_defs.h"/>
     </file_info>
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="opp/built-in/op_impl/aicpu/kernel" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="440" optional="true">
         <file value="aicpu_hcomm.tar.gz"/>
@@ -195,6 +196,9 @@
         <file value="hccl_ag_superkernel_uint8.o"/>
         <file value="hccl_ag_superkernel_uint16.o"/>
         <file value="hccl_ag_superkernel_uint32.o"/>
+        <file value="hccl_ag_superkernel_int64.o"/>
+        <file value="hccl_ag_superkernel_uint64.o"/>
+        <file value="hccl_ag_superkernel_float64.o"/>
         <file value="hccl_rs_superkernel_int8.o"/>
         <file value="hccl_rs_superkernel_int16.o"/>
         <file value="hccl_rs_superkernel_int32.o"/>
@@ -210,6 +214,9 @@
         <file value="hccl_a2a_superkernel_uint8.o"/>
         <file value="hccl_a2a_superkernel_uint16.o"/>
         <file value="hccl_a2a_superkernel_uint32.o"/>
+        <file value="hccl_a2a_superkernel_int64.o"/>
+        <file value="hccl_a2a_superkernel_uint64.o"/>
+        <file value="hccl_a2a_superkernel_float64.o"/>
         <file value="hccl_ar_superkernel_int8.o"/>
         <file value="hccl_ar_superkernel_int16.o"/>
         <file value="hccl_ar_superkernel_int32.o"/>

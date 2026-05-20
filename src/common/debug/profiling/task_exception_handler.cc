@@ -40,8 +40,29 @@ void RegisterGetErrStatusVecCallBack(GetErrStatusVecCallBack p1)
 
 void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBack p1)
 {
+    if (deviceLogicId >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_ERROR("[RegisterGetAicpuTaskExceptionCallBack] deviceLogicId[%u] out of range, max is %u",
+            deviceLogicId, MAX_MODULE_DEVICE_NUM - 1);
+        return;
+    }
     lock_guard<mutex> lock(g_communicatorCallbackMapMutex);
-    g_communicatorCallbackMap[deviceLogicId].emplace(streamId, p1);
+    g_communicatorCallbackMap[deviceLogicId][streamId] = p1;
+    return;
+}
+
+void UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId)
+{
+    if (deviceLogicId >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_ERROR("[UnregisterGetAicpuTaskExceptionCallBack] deviceLogicId[%u] out of range, max is %u",
+            deviceLogicId, MAX_MODULE_DEVICE_NUM - 1);
+        return;
+    }
+    lock_guard<mutex> lock(g_communicatorCallbackMapMutex);
+    auto& deviceMap = g_communicatorCallbackMap[deviceLogicId];
+    auto it = deviceMap.find(streamId);
+    if (it != deviceMap.end()) {
+        deviceMap.erase(it);
+    }
     return;
 }
 #ifdef __cplusplus

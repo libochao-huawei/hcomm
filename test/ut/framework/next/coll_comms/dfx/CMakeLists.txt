@@ -13,6 +13,9 @@ set(src_to_test_list
     ut_HcommCcuProfiling_test.cc
     ut_HcommAivProfiling_test.cc
     ut_hcclCommTaskExceptionLite.cc
+    ut_cluster_monitor.cc
+    ut_ccuTaskexception_test.cc
+    ut_hcclCommDfx.cc
 )
 
 add_executable(hccl_utest_test_dfx_resource ${src_to_test_list})
@@ -38,10 +41,7 @@ target_compile_options(hccl_utest_test_dfx_resource PRIVATE
     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
- 
-target_link_directories(hccl_utest_test_dfx_resource PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
+
 target_link_libraries(hccl_utest_test_dfx_resource PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

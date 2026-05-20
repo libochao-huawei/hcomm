@@ -13,10 +13,19 @@ set(src_list
     aicpu_ts_p2p_channel.cc
     aicpu_ts_uboe_channel.cc
     aicpu_ts_roce_channel.cc
+    aicpu_ts_hccs_channel.cc
+    aicpu_ts_roce_channel_v2.cc
+    dev_rdma_connection_v2.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/device
+    )
+endif()
 
 add_subdirectory(device)

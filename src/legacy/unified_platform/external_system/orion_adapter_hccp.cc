@@ -314,7 +314,7 @@ static void HRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
 void HrtRaSocketCloseOne(RaSocketCloseParam &in)
 {
     HCCL_INFO("[CloseOne][RaSocket] Input params: socketHandle=%p, fdHandle=%p", in.socketHandle, in.fdHandle);
-    struct SocketCloseInfoT closeInfo = {0};
+    struct SocketCloseInfoT closeInfo = {};
     closeInfo.fdHandle     = in.fdHandle;
     closeInfo.socketHandle = in.socketHandle;
 
@@ -533,7 +533,7 @@ void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSiz
     HCCL_INFO("ra socket send finished,ret[%d]", ret);
 }
 
-bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
+s32 HrtRaSocketNonBlockSendNormal(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
 {
     CHECK_NULLPTR(fdHandle, "[HrtRaSocketNonBlockSend] fdHandle is nullptr!");
     CHECK_NULLPTR(data, "[HrtRaSocketNonBlockSend] data is nullptr!");
@@ -545,7 +545,12 @@ bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 
             "data[%p], size[%llu], fdHandle[%p], send size[%llu]", HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, fdHandle, *sentSize));
     }   
     
-    s32 ret = RaSocketSend(fdHandle, data, size, sentSize);
+    return RaSocketSend(fdHandle, data, size, sentSize);
+}
+
+bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
+{
+    s32 ret = HrtRaSocketNonBlockSendNormal(fdHandle, data, size, sentSize);
     if (ret == 0 || ret == SOCK_EAGAIN) {
         HCCL_INFO("[HrtRaSocketNonBlockSend] ra socket send, data[%p], size[%llu], send size[%llu], ret[%d]", data, size, *sentSize, ret);
         return true;
@@ -554,6 +559,45 @@ bool HrtRaSocketNonBlockSend(const FdHandle fdHandle, void *data, u64 size, u64 
             fdHandle, data, size, *sentSize, ret);
         return false;
     }
+}
+
+HcclResult HrtRaSocketNonBlockSendHeart(const FdHandle fdHandle, void *data, u64 size, u64 *sentSize)
+{
+    s32 ret = HrtRaSocketNonBlockSendNormal(fdHandle, data, size, sentSize);
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    } else if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    } else if (ret == SOCK_CLOSE) {
+        return HCCL_E_INTERNAL; //暂时用这个错误码表示hccp进程异常退出
+    } else {
+        HCCL_WARNING("[HrtRaSocketNonBlockSend]ra socket send failed, data[%p], size[%llu], send size[%llu], ret[%d]",
+            data, size, *sentSize, ret);
+        return HCCL_E_NETWORK;
+    }
+}
+
+HcclResult HrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize)
+{
+    CHECK_NULLPTR(fdHandle, "[HrtRaSocketNonBlockRecv] fdHandle is nullptr!");
+    CHECK_NULLPTR(data, "[HrtRaSocketNonBlockRecv] data is nullptr!");
+    CHECK_NULLPTR(recvSize, "[HrtRaSocketNonBlockRecv] recvSize is nullptr!");
+    HCCL_DEBUG("[HrtRaSocketNonBlockRecv] Input params: fdHandle=%p,data=%p, size=%llu, recvSize=%llu", 
+        fdHandle, data, size, *recvSize); 
+    
+    s32 ret = RaSocketRecv(fdHandle, data, size, recvSize);
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    } else if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    } else if (ret == SOCK_CLOSE) {
+        return HCCL_E_INTERNAL; //暂时用这个错误码表示hccp进程异常退出
+    } else {
+        HCCL_WARNING("[HrtRaSocketNonBlockRecv]ra socket recv failed, data[%p], size[%llu], "\
+            "recv[%llu], ret[%d], errno[%d][%s]", data, size, recvSize, ret, errno, strerror(errno));
+        return HCCL_E_TCP_TRANSFER;
+    }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
@@ -757,7 +801,7 @@ void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceI
             deviceId, vnicIP.Describe().c_str());
         return;
     }
-    struct IpInfo vnicIpInfo;
+    struct IpInfo vnicIpInfo = {};
     (void)memset_s(&vnicIpInfo, sizeof(IpInfo), 0, sizeof(IpInfo));
     IdType idType = static_cast<IdType>(deviceIdType);
     auto ret = RaSocketGetVnicIpInfos(phyId, idType, &deviceId, 1, &vnicIpInfo);
@@ -808,7 +852,7 @@ std::vector<std::pair<std::string, IpAddress>> HrtGetHostIf(u32 devPhyId)
 {
     HCCL_INFO("[HrtGetHostIf] Input params: devPhyId=%u", devPhyId);
     std::vector<std::pair<std::string, IpAddress>> hostIfs;
-    struct RaGetIfattr                           config = {0};
+    struct RaGetIfattr                           config = {};
     config.phyId                                         = devPhyId;
     config.nicPosition                                   = static_cast<u32>(NetworkMode::NETWORK_PEER_ONLINE);
 
@@ -840,7 +884,7 @@ vector<IpAddress> HrtGetDeviceIp(u32 devicePhyId, NetworkMode netWorkMode)
 {
     HCCL_INFO("[HrtGetDeviceIp] Input params: devicePhyId=%u", devicePhyId);
     vector<IpAddress>     ipAddr;
-    struct RaGetIfattr  config = {0};
+    struct RaGetIfattr  config = {};
     config.phyId                = devicePhyId;
     config.nicPosition          = static_cast<u32>(netWorkMode);
 
@@ -1021,7 +1065,7 @@ int HrtGetRaQpStatus(QpHandle qpHandle)
 void HrtRaMrReg(QpHandle qpHandle, RaMrInfo &info)
 {
     CHECK_NULLPTR(qpHandle, "[HrtRaMrReg] qpHandle is nullptr!");
-    struct MrInfoT mrInfo;
+    struct MrInfoT mrInfo = {};
     mrInfo.addr = info.addr;
     mrInfo.size = info.size;
     mrInfo.access = info.access;
@@ -1037,7 +1081,7 @@ void HrtRaMrReg(QpHandle qpHandle, RaMrInfo &info)
 void HrtRaMrDereg(QpHandle qpHandle, RaMrInfo &info)
 {
     CHECK_NULLPTR(qpHandle, "[HrtRaMrDereg] qpHandle is nullptr!");
-    struct MrInfoT mrInfo;
+    struct MrInfoT mrInfo = {};
     mrInfo.addr = info.addr;
     mrInfo.size = info.size;
     mrInfo.access = info.access;
@@ -1087,13 +1131,13 @@ RaSendWrResp HrtRaSendOneWr(QpHandle qpHandle, HRaSendWr &in)
     bufList.addr = in.locAddr;
     bufList.len  = in.len;
 
-    struct SendWr wr;
+    struct SendWr wr = {};
     wr.op        = in.op;
     wr.dstAddr   = in.rmtAddr;
     wr.sendFlag = in.sendFlag;
     wr.bufNum   = 1; // 此处list只有一个，设置为1
     wr.bufList  = &bufList;
-    struct SendWrRsp opRsp;
+    struct SendWrRsp opRsp = {};
     HrtRaSendWr(qpHandle, &wr, &opRsp);
 
     return RaSendWrResp(opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, opRsp.db.dbIndex, opRsp.db.dbInfo);
@@ -1395,12 +1439,12 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
     attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
     /* errTime配置值：0-31
-       0-7代表芯片配置值b00:128ms
-       8-15代表芯片配置值b01:1s
-       16-23代表芯片配置值b10:8s
-       24-31代表芯片配置值b11:64s
+        0-7代表芯片配置值b00:512ms
+        8-15代表芯片配置值b01:1s
+        16-23代表芯片配置值b10:8s
+        24-31代表芯片配置值b11:32s
     */
-    attr.ub.errTimeout       = 16;
+    attr.ub.errTimeout       = in.errTimeout;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority         = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
@@ -1430,10 +1474,10 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
               "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
               "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u].",
+              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u], timeout[%u].",
                attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode, attr.ub.mode,
                attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa, attr.ub.extMode.sq.buffSize,
-               attr.ub.extMode.piType, attr.ub.priority);
+               attr.ub.extMode.piType, attr.ub.priority, attr.ub.errTimeout);
     return attr;
 }
 
@@ -1659,7 +1703,7 @@ static void ConstructSendWrReq(HrtRaUbSendWrReqParam &in, struct WrSgeList &sge,
 
 HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReqParam &in)
 {
-    struct WrSgeList sge;
+    struct WrSgeList sge = {};
     struct SendWrData sendWr {};
 
     ConstructWrSge(in, sge);
@@ -1904,7 +1948,7 @@ RequestHandle RaSocketConnectOneAsync(RaSocketConnectParam &in)
 RequestHandle RaSocketCloseOneAsync(RaSocketCloseParam &in)
 {
     HCCL_INFO("[RaSocketCloseOneAsync] Input params: socketHandle=%p, fdHandle=%p", in.socketHandle, in.fdHandle);
-    struct SocketCloseInfoT closeInfo = {0};
+    struct SocketCloseInfoT closeInfo = {};
     closeInfo.fdHandle     = in.fdHandle;
     closeInfo.socketHandle = in.socketHandle;
 
@@ -2277,24 +2321,24 @@ RequestHandle RaUbUnimportJettyAsync(void *targetJettyHandle)
     return reinterpret_cast<RequestHandle>(raReqHandle);
 }
 
-void HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
+HcclResult HrtRaWaitEventHandle(int event_handle, std::vector<SocketEventInfo> &event_infos, int timeout,
     unsigned int maxevents, u32 &events_num)
 {
     HCCL_INFO("[HrtRaWaitEventHandle] Input params: event_handle=%d, timeout=%d, maxevents=%u, events_num=%u", event_handle, timeout, maxevents, events_num);
     std::vector<struct SocketEventInfoT> raEventInfos(maxevents);
     s32 ret = RaWaitEventHandle(event_handle, raEventInfos.data(), timeout, maxevents, &events_num);
-    if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d].", __func__, ret));
-    }
+    CHK_PRT_RET(ret != 0, HCCL_ERROR("[%s] failed, call RaWaitEventHandle error ret[%d].", __func__, ret), HCCL_E_NETWORK);
     for (u32 i = 0; i < events_num; i++) {
         event_infos[i].fdHandle = raEventInfos[i].fdHandle;
     }
+    return HCCL_SUCCESS;
 }
 
 void HrtRaGetSecRandom(u32 *value, u32 &devPhyId)
 {
     CHECK_NULLPTR(value, "[HrtRaGetSecRandom] value is nullptr!");
-    struct RaInfo raInfo;
+    HCCL_INFO("[HrtRaGetSecRandom] Input params: value=%u, devPhyId=%u", *value, devPhyId);
+    struct RaInfo raInfo = {};
     raInfo.mode = HrtNetworkMode::HDC;
     raInfo.phyId = devPhyId;
 
@@ -2395,7 +2439,7 @@ HcclResult HrtRaDestroyCq(RdmaHandle rdmaHandle, CqInfo& cq)
 {
     CHK_PTR_NULL(rdmaHandle);
     HCCL_INFO("[HrtRaDestroyCq] Input params: rdmaHandle=%p, sq=%p, rq=%p, context=%p", rdmaHandle, cq.sq, cq.rq, cq.context);
-    struct CqAttr attr;
+    struct CqAttr attr = {};
     attr.qpContext = &cq.context;
     attr.ibSendCq = &cq.sq;
     attr.ibRecvCq = &cq.rq;
@@ -2413,7 +2457,7 @@ HcclResult HrtRaNormalQpCreate(RdmaHandle rdmaHandle, QpInfo& qp)
 {
     CHK_PTR_NULL(rdmaHandle);
     HCCL_INFO("[HrtRaNormalQpCreate] Input params: rdmaHandle=%p, context=%p", rdmaHandle, qp.context);
-    struct ibv_qp_init_attr ibQpAttr;
+    struct ibv_qp_init_attr ibQpAttr = {};
     CHK_SAFETY_FUNC_RET(memset_s(&ibQpAttr, sizeof(ibv_qp_init_attr), 0, sizeof(ibv_qp_init_attr)));
     ibQpAttr.qp_context= qp.context;
     ibQpAttr.send_cq = qp.sendCq;
@@ -2440,6 +2484,84 @@ HcclResult HrtRaNormalQpDestroy(QpHandle qpHandle)
     s32 ret = RaNormalQpDestroy(qpHandle);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Destroy][NormalQp]errNo[0x%016llx] ra destroy normal qp fail. return[%d], params: rdmaHandle[%p]",\
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpHandle), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaQpCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, NdaQpInfo *qpInfo, QpHandle *qpHandle)
+{
+    CHK_PTR_NULL(rdmaHandle);
+    CHK_PTR_NULL(ndaOps);
+    HCCL_INFO("[HrtRaNdaQpCreate] Input params: rdmaHandle=%p dmaMode=%u", rdmaHandle, dmaMode);
+
+    struct ibv_qp_init_attr ibQpAttr;
+    CHK_SAFETY_FUNC_RET(memset_s(&ibQpAttr, sizeof(ibv_qp_init_attr), 0, sizeof(ibv_qp_init_attr)));
+    ibQpAttr.qp_context= nullptr;
+    ibQpAttr.send_cq = cqInfo->cq;
+    ibQpAttr.recv_cq = cqInfo->cq;
+    ibQpAttr.srq = nullptr;
+    ibQpAttr.qp_type = IBV_QPT_RC;
+    ibQpAttr.cap.max_inline_data = MAX_INLINE_DATA;
+    ibQpAttr.cap.max_send_wr = MAX_WR_NUM;
+    ibQpAttr.cap.max_send_sge = MAX_SEND_SGE_NUM;
+    ibQpAttr.cap.max_recv_wr = MAX_WR_NUM;
+    ibQpAttr.cap.max_recv_sge = MAX_RECV_SGE_NUM;
+
+    struct NdaQpInitAttr qpAttr;
+    qpAttr.attr = ibQpAttr;
+    qpAttr.qpCapFlag = 0;
+    qpAttr.dmaMode = dmaMode;
+    qpAttr.ops = ndaOps;
+
+    s32 ret = RaNdaQpCreate(rdmaHandle, &qpAttr, qpInfo, qpHandle);
+    CHK_PRT_RET(ret != 0 || qpInfo == nullptr || qpHandle == nullptr,
+        HCCL_ERROR("[Create][NdaQp]errNo[0x%016llx] RaNdaQpCreate fail. return[%d], "
+            "params: rdmaHandle[%p] dmaMode[%u]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, dmaMode), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaCqCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, CqHandle *cqHandle)
+{
+    CHK_PTR_NULL(rdmaHandle);
+    CHK_PTR_NULL(ndaOps);
+    HCCL_INFO("[HrtRaNdaCqCreate] Input params: rdmaHandle=%p dmaMode=%u", rdmaHandle, dmaMode);
+
+    struct ibv_cq_init_attr_ex ibCqAttr;
+    CHK_SAFETY_FUNC_RET(memset_s(&ibCqAttr, sizeof(ibv_cq_init_attr_ex), 0, sizeof(ibv_cq_init_attr_ex)));
+    ibCqAttr.cqe = MAX_CQ_DEPTH;
+    ibCqAttr.cq_context = nullptr;
+    ibCqAttr.channel = nullptr;
+    ibCqAttr.comp_vector = 0;
+    ibCqAttr.wc_flags = 0;
+    ibCqAttr.comp_mask = 0;
+    ibCqAttr.flags = 0;
+
+    struct NdaCqInitAttr cqAttr;
+    cqAttr.attr = ibCqAttr;
+    cqAttr.cqCapFlag = 0;
+    cqAttr.dmaMode = dmaMode;
+    cqAttr.ops = ndaOps;
+
+    s32 ret = RaNdaCqCreate(rdmaHandle, &cqAttr, cqInfo, cqHandle);
+    CHK_PRT_RET(ret != 0 || cqInfo == nullptr || cqHandle == nullptr,
+        HCCL_ERROR("[Create][NdaCq]errNo[0x%016llx] RaNdaCqCreate fail. return[%d], "
+            "params: rdmaHandle[%p] dmaMode[%u]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, dmaMode), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaCqDestroy(RdmaHandle rdmaHandle, CqHandle cqHandle)
+{
+    CHK_PTR_NULL(rdmaHandle);
+    CHK_PTR_NULL(cqHandle);
+    HCCL_INFO("[HrtRaNdaCqDestroy] Input params: rdmaHandle=%p cqHandle=%p", rdmaHandle, cqHandle);
+
+    s32 ret = RaNdaCqDestroy(rdmaHandle, cqHandle);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[RaNdaCqDestroy] errNo[0x%016llx] RaNdaCqDestroy failed, call interface error. "
+                "return[%d], params: rdmaHandle[%p] cqHandle[%p]",
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, cqHandle),
+        HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
 

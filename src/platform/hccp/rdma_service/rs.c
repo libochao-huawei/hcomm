@@ -2218,18 +2218,20 @@ RS_ATTRI_VISI_DEF enum ProductType RsGetProductType(int devId)
     CHK_PRT_RETURN(ret != 0, hccp_err("[Get][ChipInfo]DlHalGetChipInfo failed ret:%d", ret),
         PRODUCT_TYPE_INVALID);
 
-    if (fnmatch("910_93[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0){
+    if (fnmatch("910_93[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_910_93;
     } else if (fnmatch("910B[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_910B;
-    } else if (fnmatch("910_96[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0){
+    } else if (fnmatch("910_96[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_910_96;
     } else if (fnmatch("910[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_910;
     } else if (fnmatch("310p[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_310p;
-    } else if (fnmatch("950[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0){
+    } else if (fnmatch("950[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_950;
+    } else if (fnmatch("350[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
+        type = PRODUCT_TYPE_350;
     } else {
         type = PRODUCT_TYPE_OTHERS;
     }

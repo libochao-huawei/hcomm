@@ -99,15 +99,17 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     u32              sqDepth{0};
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
+    u8 errTimeout{16};
 
     HrtRaUbJettyCreateParamDef() {}
 
     HrtRaUbJettyCreateParamDef(JfcHandle sjfcHandle, JfcHandle rjfcHandle,
         u32 tokenValue, TokenIdHandle tokenIdHandle, HrtJettyMode jettyMode,
-        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth)
+        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth, u8 errTimeout = 16)
         : sjfcHandle(sjfcHandle), rjfcHandle(rjfcHandle), tokenValue(tokenValue),
           tokenIdHandle(tokenIdHandle), jettyMode(jettyMode), jettyId(jettyId),
-          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex), sqDepth(sqDepth)
+          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex),
+          sqDepth(sqDepth), errTimeout(errTimeout)
     {
     }
 };
@@ -168,6 +170,8 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle,
     void *&remQpHandle, RequestHandle &reqHandle);
 
 HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut);
+
+HcclResult HccpRaGetDevBaseAttr(void *ctxHandle, struct DevBaseAttr *attr);
 
 constexpr u32 GET_UBOE_FLAG_ENABLE_OPCODE = 57;
 constexpr u32 GET_UBOE_FLAG_ENABLE_VERSION = 2;

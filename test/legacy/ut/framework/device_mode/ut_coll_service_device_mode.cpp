@@ -103,7 +103,7 @@ protected:
         MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
 
         fakeComm.cclBuffer = DevBuffer::Create(0x100, 0x100);
-        fakeComm.status = CommStatus::COMM_READY;
+        fakeComm.SetCommStatus(CommStatus::COMM_READY);
         fakeComm.InitNotifyManager();
         fakeComm.InitSocketManager();
         fakeComm.InitRmaConnManager();
@@ -294,7 +294,8 @@ TEST_F(CollServiceDeviceModeTest, test_alloc_comm_resource_by_tiling_success)
     std::vector<CcuTaskParam> vec;
     MOCKER_CPP(&Mc2Compont::GetCcuTaskInfo).stubs().with(any()).will(returnValue(vec));
 
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs();
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs();
 
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs();
     std::vector<Hccl::LinkData> linkVec;
@@ -338,7 +339,8 @@ TEST_F(CollServiceDeviceModeTest, test_alloc_comm_resource_by_tiling_success)
 TEST_F(CollServiceDeviceModeTest, test_ccu_RecoverTransport)
 {
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs().will(returnValue(0));
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs().will(returnValue(0));
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs().will(returnValue(0));
     MOCKER_CPP(&ConnLocalCntNotifyManager::ApplyFor).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&MemTransportManager::BatchRecoverOpbasedTransports).stubs().will(returnValue(0));
     MOCKER_CPP(&CcuInsPreprocessor::RecoverCcuTransportCtx).stubs().will(returnValue(HCCL_E_PARA)); 
@@ -684,7 +686,7 @@ TEST_F(CollServiceDeviceModeTest, should_success_when_AllocCommResource_aiv)
         .will(returnValue(rmaBuf));
 
     CommunicatorImpl comm;
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.rankSize = 2;
     comm.myRank = 0;
     comm.opExecuteConfig.accState = AcceleratorState::CCU_MS;
@@ -720,7 +722,8 @@ TEST_F(CollServiceDeviceModeTest, should_success_when_AllocCommResource_aiv)
     comm.rankGraph->AddPeer(peer0);
     comm.rankGraph->AddPeer(peer1);
 
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs();
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs();
 
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs();
     std::vector<Hccl::LinkData> linkVec;
@@ -774,7 +777,7 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs0_Expect_TH
         .will(returnValue(rmaBuf));
 
     CommunicatorImpl comm;
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.rankSize = 2;
     comm.myRank = 0;
     comm.opExecuteConfig.accState = AcceleratorState::CCU_MS;
@@ -810,7 +813,8 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs0_Expect_TH
     comm.rankGraph->AddPeer(peer0);
     comm.rankGraph->AddPeer(peer1);
 
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs();
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs();
 
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs();
     std::vector<Hccl::LinkData> linkVec;
@@ -880,7 +884,7 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs100_Expect_
         .will(returnValue(rmaBuf));
 
     CommunicatorImpl comm;
-    comm.status = CommStatus::COMM_READY;
+    comm.SetCommStatus(CommStatus::COMM_READY);
     comm.rankSize = 2;
     comm.myRank = 0;
     comm.opExecuteConfig.accState = AcceleratorState::CCU_MS;
@@ -916,7 +920,8 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs100_Expect_
     comm.rankGraph->AddPeer(peer0);
     comm.rankGraph->AddPeer(peer1);
 
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs();
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs();
 
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs();
     std::vector<Hccl::LinkData> linkVec;

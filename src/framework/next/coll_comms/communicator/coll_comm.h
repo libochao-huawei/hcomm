@@ -51,7 +51,10 @@ public:
     
     // 获取Rank ID
     uint32_t GetMyRankId() const;
-    
+
+    // 获取devicelogicId
+    s32 GetDeviceLogicId() const { return deviceLogicId_; }
+
     // 获取Rank数量
     uint32_t GetRankSize() {
         if (rankgraph_ == nullptr) {
@@ -100,6 +103,7 @@ private:
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
+    HcclResult GetRankIpPortMap();
 
     void* comm_{nullptr};
     uint32_t rankId_{};
@@ -110,6 +114,7 @@ private:
     ManagerCallbacks callbacks_; 
     s32 deviceLogicId_{0};
     uint32_t index_{0};
+    std::unordered_set<s32> aicpuStreamIds_;
 
     std::unique_ptr<RankGraph> rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
@@ -127,6 +132,7 @@ private:
 
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
+    Hccl::RankIpPortMapPtr rankIpPortMap_;
 };
 }  // namespace hccl
 

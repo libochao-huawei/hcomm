@@ -7,6 +7,7 @@
 #include "llt_hccl_stub_rank_graph.h"
 #include <string>
 #include "mockcpp/mockcpp.hpp"
+#include "cluster_monitor.h"
 
 #define private public
 
@@ -90,6 +91,7 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_IsCommunicatorV2_Is_T
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
     MOCKER(&MyRank::CreateChannels).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommDpuChannelRegisterDfx).stubs().will(returnValue(0));
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CPU, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -142,23 +144,13 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_RetryCntIsInvaild_Ret
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_UboeProtocol_Return_Error)
-{
-    std::vector<HcclChannelDesc> channelDesc(1);
-    std::vector<ChannelHandle> channels(1);
-    GetChannelDesc(channelDesc);
-    channelDesc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_UBOE; // UBOE协议集合通信当前不支持
-
-    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
 TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_Notifynum_Exceeds_Return_Error)
 {
     std::vector<HcclChannelDesc> channelDesc(1);
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
-    channelDesc[0].notifyNum = 65; // UBOE协议集合通信当前不支持
+    channelDesc[0].notifyNum = 65;
+    MOCKER(&hcomm::ClusterMonitor::RegisterToClusterMonitor).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);

@@ -14,7 +14,9 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <array>
 #include "coll_comm.h"
+#include "cluster_monitor.h"
 
 namespace hccl {
 /**
@@ -26,10 +28,12 @@ public:
     void RegisteCollComm(CollComm* collComm);
     void UnRegisteCollComm(CollComm* collComm);
     std::unordered_map<std::string, CollComm*> GetAllCollComms();
+    hcomm::ClusterMonitor &GetClusterMonitor(s32 deviceLogicId);
 
 private:
     static CollCommMgr* instance_;
     std::unordered_map<std::string, CollComm*> allCollComms_;
+    std::array<hcomm::ClusterMonitor, MAX_MODULE_DEVICE_NUM> clusterMonitor_;
 
     std::mutex mutex_;
 };

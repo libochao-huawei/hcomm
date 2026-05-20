@@ -69,8 +69,13 @@ namespace hcomm {
  */
 class EndpointPair {
 public:
-    EndpointPair(EndpointDesc localEndpointDesc, EndpointDesc remoteEndpointDesc):
-        localEndpointDesc_(localEndpointDesc), remoteEndpointDesc_(remoteEndpointDesc) {}
+    EndpointPair(EndpointDesc localEndpointDesc, EndpointDesc remoteEndpointDesc,
+        const Hccl::RankIpPortMapPtr& rankIpPortMap)
+        : localEndpointDesc_(localEndpointDesc),
+          remoteEndpointDesc_(remoteEndpointDesc),
+          rankIpPortMap_(rankIpPortMap)
+    {
+    }
     ~EndpointPair();
 
     HcclResult Init();
@@ -94,9 +99,10 @@ public:
 private:
     EndpointDesc localEndpointDesc_{};
     EndpointDesc remoteEndpointDesc_{};
-    std::unique_ptr<SocketMgr> socketMgr_;
     std::unique_ptr<Hccl::SocketManager> socketMgrCompat_;
     std::unordered_map<CommEngine, std::vector<ChannelHandle>> channelHandles_{};
+    Hccl::RankIpPortMapPtr rankIpPortMap_;
+    uint32_t devicePhyId_{};
 };
 
 } // namespace hcomm

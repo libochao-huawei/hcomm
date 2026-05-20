@@ -169,7 +169,6 @@ HcclResult FlushManager::ExecuteRdmaRead(ibv_qp *loopbackqp0, ibv_cq *cq, ibv_se
             }
         }
         count++;
-        SaluSleep(1000);
     }
 }
 

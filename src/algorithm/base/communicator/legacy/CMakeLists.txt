@@ -17,6 +17,22 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/comm_star.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_alg)
+    target_sources(hccl_alg PRIVATE
+        ${src_list}
+    )
+endif()
+
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/comm_base.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/comm_ring.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/comm_p2p.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/comm_mesh.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/comm_halving_doubling.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/comm_star.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()

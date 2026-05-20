@@ -12,7 +12,6 @@
 #define HCOMM_C_ADPT_H
 
 #include "hcomm_res.h"
-#include "hccl/hccl_res.h"
 #include "mem_host_pub.h"
 #include "hccl_diag.h"
 
@@ -93,6 +92,8 @@ extern HcommResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_
 
 extern HcommResult HcommChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems, char ***memTags);
 
+extern HcommResult HcommMemGrant(EndpointHandle endpointHandle, const HcommMemGrantInfo *remoteGrantInfo);
+
 HcommResult HcommChannelGet(ChannelHandle channelHandle, void **channel);
 
 HcommResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum,
@@ -116,6 +117,8 @@ HcommResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHa
 HcommResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels);
 HcommResult HcommChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
+
+HcommResult CheckUbAttr(HcommChannelDesc &channelDesc);
 
 #ifdef __cplusplus
 }

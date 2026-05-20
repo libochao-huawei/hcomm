@@ -2061,7 +2061,7 @@ HcclResult HcclCommAicpu::CalSendRecvInfoFor910B(const std::string &algName, con
     std::unique_ptr<CollExecutorBase> &executor)
 {
     // A2 AICPU才有机会走入RunAlltoAllVStaged
-    if (algName == "RunAlltoAllVStaged") {
+    if (algName == "RunAlltoAllVStaged" || algName == "RunAlltoAllVFullMesh") {
         CHK_PRT_RET(executor.get() == nullptr,
             HCCL_ERROR("[HcclCommAicpu][%s]Fail to find executor for algName[%s]", __func__, algName.c_str()),
             HCCL_E_PARA);
@@ -2105,7 +2105,7 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
             CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
             CHK_RET(IncreAllocTransportResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
         }
-    } else if (algName == "RunAlltoAllVStaged") {
+    } else if (algName == "RunAlltoAllVStaged" || algName == "RunAlltoAllVFullMesh") {
         AlgResourceRequest resRequest;
         CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
         HCCL_INFO("[%s] check if need refresh resource for alg[%s], tag[%s], old[%lu], new[%lu]",
@@ -5381,8 +5381,9 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     CHK_PTR_NULL(commParam);
     CHK_PTR_NULL(commParam->channelList);
     HcclIndOpChannelRemoteResV2 &remoteResV2 = commParam->remoteResV2[channelIndex];
+    u32 linkType = static_cast<u32>(remoteResV2.channelP2p.transportAttr.linkType);
     std::string channelKey = std::string(commParam->channelTag) + ":" + std::to_string(commParam->engine) + ":" +
-        std::to_string(remoteResV2.remoteRank) + ":" + std::to_string(CommProtocol::COMM_PROTOCOL_HCCS);
+        std::to_string(remoteResV2.remoteRank) + ":" + std::to_string(linkType);
     HCCL_INFO("%s channelKey[%s]", __func__, channelKey.c_str());
     if (channelHandleMap_.find(channelKey) != channelHandleMap_.end()) {
         HCCL_ERROR("[%s]the channel has existed.", __func__);

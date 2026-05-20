@@ -29,16 +29,12 @@ constexpr u32 RTSQ_A5_PART_ID   = 0;
 constexpr u32 PRINT_INTERVAL  = 30;
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId) : RtsqBase(devPhyId, streamId, sqId)
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_ = 0;
-    }
+    SetTaskIdBySqeId();
 }
 
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase(devPhyId, streamId, sqId)
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_ = 0;
-    }
+    SetTaskIdBySqeId();
     launchFlag_ = launchFlag;
 }
 
@@ -87,6 +83,16 @@ void RtsqA5::MakeSureAvailableSpace()
             HCCL_ERROR("%s", msg.c_str());
             THROW<InternalException>(msg);
         }
+
+#ifdef CCL_KERNEL_AICPU
+        HcclResult ret = HandleDispatchAllStreams();
+        if (UNLIKELY(ret != HCCL_SUCCESS)) {
+            auto msg = StringFormat("RtsqA5::%s HandleDispatchAllStreams failed, ret = %d", __func__, ret);
+            HCCL_ERROR("%s", msg.c_str());
+            THROW<InternalException>(msg);
+        }
+#endif
+
         sqHead_        = QuerySqHead();
         availableSpace = GetTailToHeadDist();
 
@@ -148,6 +154,9 @@ void RtsqA5::LaunchTask()
     // 确保 rtsq 有足够空间放pending SQE
     MakeSureAvailableSpace();
 
+    if (pendingSqeCnt == 0) {
+        return;
+    }
     // localBuffer拷贝到 RTSQ
     CopyLocBufToSq();
 
@@ -162,6 +171,34 @@ void RtsqA5::LaunchTask()
     HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
 }
 
+void RtsqA5::TryLaunchTask()
+{
+    HCCL_DEBUG("RtsqA5::%s: START, pendingSqeCnt[%u]", __func__, pendingSqeCnt);
+
+    if (pendingSqeCnt == 0) {
+        HCCL_DEBUG("RtsqA5::%s: pendingSqeCnt is %u, return", __func__, pendingSqeCnt);
+        return;
+    }
+
+    sqHead_ = QuerySqHead();
+    u32 availableSpace = GetTailToHeadDist();
+    if (availableSpace <= pendingSqeCnt) {
+        HCCL_DEBUG("RtsqA5::%s: no enough space, availableSpace[%u] < pendingSqeCnt[%u], return", __func__,
+                  availableSpace, pendingSqeCnt);
+        return;
+    }
+
+    CopyLocBufToSq();
+
+    u32 newTail = (sqTail_ + pendingSqeCnt) % sqDepth_;
+    ConfigSqTail(newTail);
+    sqTail_ = newTail;
+
+    pendingSqeCnt = 0;
+    (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt);
+    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
+}
+
 u8 *RtsqA5::GetCurrSqeBuffer()
 {
     return locBuf + pendingSqeCnt * rtsqSqeSize;
@@ -169,11 +206,8 @@ u8 *RtsqA5::GetCurrSqeBuffer()
 
 void RtsqA5::RefreshInfo()
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_++;
-    }
+    SetTaskIdBySqeId();
     pendingSqeCnt++;
-    HCCL_INFO("RtsqA5::%s: Updated: taskId_[%u], pendingSqeCnt[%u]", __func__, taskId_, pendingSqeCnt);
     
 #ifdef CCL_KERNEL_AICPU
     if (launchFlag_ && !IsBatchLaunchMode()) {

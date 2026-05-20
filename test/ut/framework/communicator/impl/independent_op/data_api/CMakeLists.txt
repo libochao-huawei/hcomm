@@ -16,6 +16,8 @@ set(src_to_test_list
     ut_aicpu_ts_HcommChannelNotifyRecordOnThread.cc
     ut_aicpu_ts_HcommChannelNotifyWaitOnThread.cc
     ut_aicpu_ts_HcommChannelNotifyWaitOnThread_WithTimeout.cc
+    ut_aicpu_ts_HandleDispatchAllStreams.cc
+    ut_aicpu_ts_HcommBatchTransferOnThread.cc
     #ut_aicpu_ts_HcommWriteWithNotifyOnThread.cc
     #ut_aicpu_ts_HcommWriteReduceWithNotifyOnThread.cc
     #ut_aicpu_ts_HcommWriteOnThread.cc
@@ -50,9 +52,6 @@ target_compile_options(hcomm_utest_api_data_aicpu_ts PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hcomm_utest_api_data_aicpu_ts PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
 target_link_libraries(hcomm_utest_api_data_aicpu_ts PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

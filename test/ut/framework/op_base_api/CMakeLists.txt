@@ -27,6 +27,7 @@ set(src_to_test_list
     ut_HcclReduceScatter_API_test.cc
     ut_HcomGetCommHandleByGroup_API_test.cc
     ut_op_base_misc_test.cc
+    # ut_op_base_v2_test.cc
 )
 
 add_executable(hccl_utest_framework_op_base_api ${src_to_test_list})
@@ -51,9 +52,6 @@ target_compile_options(hccl_utest_framework_op_base_api PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_framework_op_base_api PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
 target_link_libraries(hccl_utest_framework_op_base_api PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

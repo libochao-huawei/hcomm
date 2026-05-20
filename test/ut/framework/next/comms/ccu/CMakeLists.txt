@@ -13,6 +13,7 @@ set(src_to_test_list
     hccl_api_base_test.cc
     ut_CcuComponent_test.cc
     ut_CcuConn_test.cc
+    ut_ccu_microcode.cc
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
@@ -37,10 +38,6 @@ target_compile_options(hccl_utest_comms_ccu_features PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_comms_ccu_features PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
-
 target_link_libraries(hccl_utest_comms_ccu_features PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
@@ -57,3 +54,11 @@ add_dependencies(hccl_utest_comms_ccu_features hccl_llt)
 
 enable_testing()
 add_test(NAME hccl_utest_comms_ccu_features COMMAND hccl_utest_comms_ccu_features)
+
+add_subdirectory(ccu_representation/reps/sync)
+add_subdirectory(ccu_representation/reps/control)
+add_subdirectory(ccu_representation/reps/common)
+add_subdirectory(ccu_representation/reps/data)
+add_subdirectory(ccu_representation/reps/arithmetic)
+add_subdirectory(ccu_representation/reps/loop)
+add_subdirectory(ccu_representation/interface)

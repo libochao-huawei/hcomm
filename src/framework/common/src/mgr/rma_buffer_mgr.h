@@ -113,19 +113,6 @@ public:
         return std::make_pair(false, BufferType{}); // 未找到
     }
 
-    // 返回第一个找到的key的全集或超集
-    std::pair<bool, BufferType> DirectFind(const KeyType& key) const 
-    {
-        auto it = intervalTree_.begin();
-        while (it != intervalTree_.end()) {
-            if (it->first == key || it->first.IsSuperset(key)) {
-                return std::make_pair(true, it->second.buffer);
-            }
-            it++;
-        }
-        return std::make_pair(false, BufferType{});
-    }
-
     // 1.删除成功：输入key是表中某一最相近key的全集。 计数-1且之后为0。  返回true
     // 2.删除引用数-1但未删除：输入key是表中某一最相近key的全集。 计数-1且之后大于0。 返回false
     // 3.删除失败：输入key是表中某一个最相近key的交集、子集、超集、空集。——抛出NOT_FOUND异常
@@ -147,10 +134,21 @@ public:
         return false; 
     }
 
+    ConstIterator Begin()
+    {
+        return intervalTree_.begin();
+    }
+
+    ConstIterator Next(ConstIterator it)
+    {
+        return std::next(it);
+    }
+
     ConstIterator End()
     {
         return intervalTree_.end();
     }
+
     size_t size() const
     {
         return intervalTree_.size();

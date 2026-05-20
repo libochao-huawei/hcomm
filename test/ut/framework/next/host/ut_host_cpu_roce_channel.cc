@@ -96,6 +96,10 @@ protected:
         MOCKER(Hccl::HrtGetDevice).stubs().will(returnValue(0));
         MOCKER(Hccl::HrtGetDeviceType).stubs().will(returnValue(dev));
         MOCKER(Hccl::HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<Hccl::DevId>(0)));
+        
+        DevType devType = DevType::DEV_TYPE_950;
+ 	    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
+        // MOCKER(hrtGetDeviceType).stubs().with(outBound(dev)).will(returnValue(HCCL_SUCCESS));
         RdmaHandle rdmaHandle = (void *)0x1000000;
         MOCKER(Hccl::HrtRaRdmaInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
         MOCKER(HcommEndpointStartListen).stubs().will(returnValue(static_cast<HcommResult>(HCCL_SUCCESS)));
@@ -150,6 +154,8 @@ protected:
         MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&SocketMgr::PutSocket).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     std::unique_ptr<hcomm::HostCpuRoceChannel> CreateInitAndConnect(uint32_t notifyNum = 4)
@@ -479,7 +485,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ModifyQp_Failed_Expect_FAILED)
     EXPECT_EQ(status, ChannelStatus::FAILED);
 }
 
-TEST_F(HostCpuRoceChannelTest, Ut_When_GetRemoteMem_NullParam__Expect_HCCL_E_PTR)
+TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMem_When_NullParam_Expect_HCCL_E_PTR)
 {
     DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
@@ -499,6 +505,33 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_GetRemoteMem_NullParam__Expect_HCCL_E_PTR
     EXPECT_EQ(memNum, 0);
     ret = impl_->GetRemoteMem(&remoteMem, (uint32_t *)nullptr, memTagsArray);
     EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMem_When_RemoteMemExists_Expect_Success)
+{
+    DevType devType = DevType::DEV_TYPE_950;
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
+    // construct
+    void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
+    // Init
+    EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    Hccl::ExchangeRdmaBufferDto rmtBufDto(0x2000000, 1024, 1000,"tag1");
+    auto rmtBuf = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, rmtBufDto);
+    impl_->rmtRmaBuffers_.emplace_back(std::move(rmtBuf));
+    Hccl::ExchangeRdmaBufferDto rmtBufDto2(0x3000000, 2048, 1000,"tag2");
+    auto rmtBuf2 = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, rmtBufDto2);
+    impl_->rmtRmaBuffers_.emplace_back(std::move(rmtBuf2));
+    // GetRemoteMem
+    uint32_t memNum = 0;  // 接收内存块数量
+    std::vector<HcclMem *> remoteMemList(5);
+    std::vector<char *> memTags(5);
+    HcclResult ret = impl_->GetRemoteMem(remoteMemList.data(), &memNum, memTags.data());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 2);
 }
 
 TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)
@@ -542,7 +575,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
     EXPECT_EQ(status, ChannelStatus::READY);
 
-    // 交换过程实际没有进行，因此对端数据为空
+    // 交换过程实际没有进行,因此对端数据为空
     HcclResult ret = impl_->NotifyRecord(0);
     EXPECT_EQ(ret, HCCL_E_PARA);
     ret = impl_->NotifyWait(0, 1800);
@@ -610,7 +643,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_PrepareWriteWrResource_Expect_SUCCESS)
     struct ibv_send_wr sendWr {};
     struct ibv_sge sge {};
     sendWr.sg_list = &sge;
-    HcclResult ret = impl_->PrepareWriteWrResource((void *)0x0001, (void *)0x0002, 10, 0, sendWr);
+    Hccl::TaskParam taskParam{};
+    HcclResult ret = impl_->PrepareWriteWrResource((void*)0x0001, (void*)0x0002, 10, 0, sendWr, taskParam);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -868,7 +902,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteAndReadAndWriteWithNotify_When_MaxMsgSize
 {
     DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
-    // construct，不调用 Init，maxMsgSize_ 保持默认值 0
+    // construct,不调用 Init,maxMsgSize_ 保持默认值 0
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     EXPECT_EQ(impl_->maxMsgSize_, 0u);
     // Write
@@ -1789,8 +1823,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_PrepareNotifyWrResource_Success_Expect_HCCL_SU
     struct ibv_send_wr notifyRecordWr {};
     struct ibv_sge sg {};
     notifyRecordWr.sg_list = &sg;
+    Hccl::TaskParam taskParam{};
 
-    HcclResult ret = impl_->PrepareNotifyWrResource(64, 0, notifyRecordWr);
+    HcclResult ret = impl_->PrepareNotifyWrResource(64, 0, notifyRecordWr, taskParam);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -1871,4 +1906,54 @@ TEST_F(HostCpuRoceChannelTest, Ut_ConnectSingleQpHybrid_Success_Expect_HCCL_SUCC
 
     HcclResult ret = impl_->ConnectSingleQpHybrid(NeedStopCounter);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+// 测试 SetDfxCallback - 正常设置
+TEST_F(HostCpuRoceChannelTest, Ut_SetDfxCallback_When_Normal_Expect_SetSuccess)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    bool callbackCalled = false;
+    
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> callback = 
+        [&callbackCalled](const Hccl::TaskParam& param, u64 handle) -> HcclResult {
+            callbackCalled = true;
+            return HCCL_SUCCESS;
+        };
+    
+    HcclResult ret = impl_->SetDfxCallback(callback);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HostCpuRoceChannelTest, Ut_ReportWcStatusError_When_Normal_Expect_HCCL_E_NETWORK)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    impl_->localDpuNotifyIds_ = {0};
+    impl_->remoteDpuNotifyIds_ = {0};
+
+    HcclResult ret = impl_->ReportWcStatusError(IBV_WC_WR_FLUSH_ERR);
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HostCpuRoceChannelTest, Ut_ReportWcStatusError_When_VariousStatuses_Expect_HCCL_E_NETWORK)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    impl_->localDpuNotifyIds_ = {0};
+    impl_->remoteDpuNotifyIds_ = {0};
+
+    std::vector<enum ibv_wc_status> errorStatuses = {
+        IBV_WC_WR_FLUSH_ERR,
+        IBV_WC_BAD_RESP_ERR,
+        IBV_WC_LOC_ACCESS_ERR,
+        IBV_WC_REM_ACCESS_ERR,
+        IBV_WC_REM_OP_ERR
+    };
+
+    for (const auto& status : errorStatuses) {
+        HcclResult ret = impl_->ReportWcStatusError(status);
+        EXPECT_EQ(ret, HCCL_E_NETWORK);
+    }
+    GlobalMockObject::verify();
 }

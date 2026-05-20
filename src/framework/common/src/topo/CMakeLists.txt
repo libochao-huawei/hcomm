@@ -34,13 +34,21 @@ set(device_src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/topo_device/topoinfo_roletableParser_device.cc
 )
 
-target_sources(hcomm   PRIVATE
-    ${src_list}
-    ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_ranktableOffline.cc
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+        ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_ranktableOffline.cc
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${device_src_list}
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()

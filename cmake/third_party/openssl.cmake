@@ -23,7 +23,7 @@ else()
 endif()
 
 set(OPENSSL_FILE "openssl-openssl-3.0.9.tar.gz")
-set(OPENSSL_URL "https://gitcode.com/cann-src-third-party/openssl/releases/download/openssl-3.0.9/${OPENSSL_FILE}")
+set(OPENSSL_URL "https://cann-3rd.obs.cn-north-4.myhuaweicloud.com/openssl/openssl-openssl-3.0.9.tar.gz")
 set(OPENSSL_PKG_PATH ${CANN_3RD_LIB_PATH}/${OPENSSL_FILE})
 set(OPENSSL_INSTALL_PATH ${CANN_3RD_LIB_PATH}/openssl-${PRODUCT_SIDE})
 set(OPENSSL_SRC_PATH ${PROJECT_SOURCE_DIR}/openssl-${PRODUCT_SIDE}-src)
@@ -125,7 +125,7 @@ else()
         --prefix=${OPENSSL_INSTALL_PATH}
     )
 
-    if(DEVICE_MODE)
+    if(${PRODUCT_SIDE} STREQUAL "device")
         set(OPENSSL_CONFIGURE_COMMAND
             unset CROSS_COMPILE &&
             ${OPENSSL_CONFIGURE_PUB_COMMAND}
