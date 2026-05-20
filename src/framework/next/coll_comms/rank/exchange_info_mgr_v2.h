@@ -13,6 +13,7 @@
 #include "hcomm_res_defs.h"
 #include "common.h"
 #include "coll_comm_config_consistency.h"
+#include "socket/socket.h"
 
 namespace hccl {
 class ExchangeInfoMgrV2 {
@@ -46,8 +47,6 @@ public:
         const std::vector<u32> &remoteExchangeInfoLens,
         u32 localExchangeInfoLen,
         bool isFirstPass);
-
-private:
 };
 } // namespace hccl
 
