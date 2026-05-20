@@ -83,7 +83,7 @@ struct HcclChannelUrmaRes {
     u32*  remoteRankId;              // 记录每个channel的对端rank
     s32   deviceLogicId{0};          // 基础通信使用
     u32   deviceType{0};             // 基础通信使用
-    DevAicpuChannelConfig channelConfig;
+    DevAicpuChannelConfig channelConfig; // 收编channel配置类变量
 };
 
 struct HcommRoceChannelRes {

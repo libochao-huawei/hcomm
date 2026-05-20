@@ -33,10 +33,10 @@ struct ThreadMgrAicpuParam {
     char hcomId[HCOMID_MAX_SIZE];
     char threadParam[SIGNAL_DEV_STREAM_MAX_NUM][THREAD_UNIQUE_ID_MAX_SIZE]; // 含序列化后thread信息，约40KB
     void* deviceHandle;
-    u32 rsv1;
     s32 deviceLogicId{-1}; // 基础通信使用
     u32 deviceType{0}; // 基础通信使用
-    DevAicpuThreadConfig threadConfig;
+    DevAicpuThreadConfig threadConfig; // 收编thread配置类变量
+    u32 rsv1;
 };
 
 struct DevAicpuNotifyConfig {
@@ -49,8 +49,8 @@ struct NotifyMgrAicpuParam {
     char notifyParam[NOTIFY_UNIQUE_ID_MAX_SIZE]; // 含序列化后notify信息
     void* deviceHandle;
     bool freeFlag;
+    DevAicpuNotifyConfig notifyConfig; // 收编notify配置类变量
     u32 rsv1;
-    DevAicpuNotifyConfig notifyConfig;
 };
 
 namespace hccl {

@@ -79,7 +79,7 @@ struct HcclDfxOpInfo {
     uint64_t            outputMemAddr = 0;
     uint64_t            outputMemSize = 0;
     // 算子DFX配置
-    DevAicpuDfxConfig   dfxConfig;
+    DevAicpuDfxConfig   dfxConfig; // 收编dfx配置类变量
     int8_t              reserve[96]; // 预留扩展字段
 };
 

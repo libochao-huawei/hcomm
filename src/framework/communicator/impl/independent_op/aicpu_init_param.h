@@ -30,7 +30,7 @@ struct CommAicpuParam {
     u32 userRank;
     hccl::HDCommunicateParams kfcControlTransferH2DParams;
     hccl::HDCommunicateParams kfcStatusTransferD2HParams;
-    DevAicpuCommConfig commConfig;
+    DevAicpuCommConfig commConfig; // 收编通信域配置类变量
 };
 
 #endif
