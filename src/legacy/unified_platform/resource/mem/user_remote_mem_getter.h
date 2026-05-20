@@ -51,7 +51,7 @@ struct RemoteMemCtx{
 };
 
 template<typename T>
-HcclResult GetRemoteUserMem(RemoteMemCtx<T> &remoteMemCtx)
+HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
 {
     CHK_PRT_RET(!remoteMemCtx.remoteMem, HCCL_ERROR("[GetUserRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
     CHK_PRT_RET(!remoteMemCtx.memTags, HCCL_ERROR("[GetUserRemoteMem] memTags is nullptr"), HCCL_E_PARA);

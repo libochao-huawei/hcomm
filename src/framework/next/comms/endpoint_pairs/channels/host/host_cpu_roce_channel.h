@@ -39,7 +39,7 @@ public:
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char** memTags) override;
+    HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
     HcclResult ProcessStatus();
@@ -183,6 +183,9 @@ private:
     std::vector<uint8_t> exchangeDataForRecv_;
 
     uint32_t devicePhyId_{};
+
+    std::vector<std::string>                 tagCopies_;          // 储存 Tag 字符串副本
+    std::vector<char*>                       tagPointers_;        // Tag 缓存
 };
 
 } // namespace hcomm
