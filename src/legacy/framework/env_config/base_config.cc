@@ -164,7 +164,7 @@ u32 EnvRdmaConfig::GetUboeTimeOut() const
 u32 EnvRdmaConfig::GetUbTimeOut() const
 {
     return ubTimeOut.Get();
-
+}
 u32 EnvRdmaConfig::GetRdmaQueueNum() const
 {
     return queueNum.Get();

@@ -150,7 +150,6 @@ private:
     std::vector<ExchangeRdmaConnDto> rmtConnDtos_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
     std::vector<int> wqeNums_;
-    std::unique_ptr<SocketMgr> socketMgr_{nullptr};
     bool fenceFlag_{false};
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
     std::unique_ptr<HcclMem[]> remoteMemsPtr_;
