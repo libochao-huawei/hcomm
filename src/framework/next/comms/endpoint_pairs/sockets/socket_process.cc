@@ -44,7 +44,7 @@ SocketProcess::~SocketProcess()
 
     for (auto &item : tag2socketMap_) {
         if (item.second.first != nullptr) {
-            socketMgr_->DestroySocket(item.second.first);
+            SocketMgr::GetInstance(devicePhyId_).DestroySocket(item.second.first);
         }
     }
     tag2socketMap_.clear();
@@ -84,8 +84,8 @@ HcclResult SocketProcess::DestroySocketHandle(SocketHandle socketHandle)
     Hccl::Socket* rawSocket = tag2socketIter->second.first;
     tag2socketMap_.erase(tag2socketIter);
     socket2TagMap_.erase(socket2TagIter);
-    CHK_RET(socketMgr_->DeleteWhiteList(rawSocket));
-    CHK_RET(socketMgr_->DestroySocket(rawSocket));
+    CHK_RET(SocketMgr::GetInstance(devicePhyId_).DeleteWhiteList(rawSocket));
+    CHK_RET(SocketMgr::GetInstance(devicePhyId_).DestroySocket(rawSocket));
 
     return HCCL_SUCCESS;
 }
@@ -120,6 +120,14 @@ HcclResult SocketProcess::GetSocket(SocketDesc *socketDesc, SocketHandle &socket
 
     socketHandle = static_cast<SocketHandle>(tag2socketMap_[socketTag].first);
     HCCL_INFO("[SocketProcess][%s] socketHandle = %p", __func__, socketHandle);
+    return HCCL_SUCCESS;
+}
+
+HcclResult SocketProcess::PutSocket(SocketHandle &socketHandle)
+{
+    CHK_PTR_NULL(socketHandle);
+    Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
+    SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket);
     return HCCL_SUCCESS;
 }
 
@@ -206,7 +214,6 @@ HcclResult SocketProcess::Init()
     }
 
     s32 devLogicId;
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
     CHK_RET(hrtGetDevice(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
 
@@ -260,7 +267,7 @@ HcclResult SocketProcess::BuildSocket(SocketDesc *socketDesc, const std::string 
     HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());
 
     Hccl::Socket *socket = nullptr;
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
+    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket));
     tag2socketMap_[socketTag].first = socket;
     tag2socketMap_[socketTag].second = 0;
     socket2TagMap_[socket] = socketTag;
