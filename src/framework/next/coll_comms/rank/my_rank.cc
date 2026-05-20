@@ -18,7 +18,6 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 #include "dlprof_function.h"
-#include "exchange_info_mgr_v2.h"
 
 using namespace hcomm;
 
