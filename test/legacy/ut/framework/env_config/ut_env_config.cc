@@ -485,6 +485,7 @@ TEST_F(EnvConfigTest, Ut_CastHcclAccelerator_When_ConfigVaild_ExpectSuccess)
 TEST_F(EnvConfigTest, Ut_CastHcclAccelerator_When_ConfigInvaild_ExpectThrow)
 {
     EXPECT_THROW(CastHcclAccelerator("Invalid"), InvalidParamsException);
+    EXPECT_THROW(CastHcclAccelerator("AIV_ONLY"), InvalidParamsException);
     EXPECT_THROW(CastHcclAccelerator("HOST"), InvalidParamsException);
     EXPECT_THROW(CastHcclAccelerator("HOST_TS"), InvalidParamsException);
 }
