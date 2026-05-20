@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef EXCHANGE_INFO_MGR_V2_H
-#define EXCHANGE_INFO_MGR_V2_H
+#ifndef EXCHANGE_INFO_MGR_H
+#define EXCHANGE_INFO_MGR_H
 
 #include "hcomm_res_defs.h"
 #include "common.h"
@@ -16,10 +16,10 @@
 #include "socket/socket.h"
 
 namespace hccl {
-class ExchangeInfoMgrV2 {
+class ExchangeInfoMgr {
 public:
-    ExchangeInfoMgrV2();
-    ~ExchangeInfoMgrV2();
+    ExchangeInfoMgr();
+    ~ExchangeInfoMgr();
 
     HcclResult BatchExchangeAndCheckConsistency(
         const HcclChannelDesc* channelDescs,
@@ -50,4 +50,4 @@ public:
 };
 } // namespace hccl
 
-#endif // EXCHANGE_INFO_MGR_V2_H
+#endif // EXCHANGE_INFO_MGR_H

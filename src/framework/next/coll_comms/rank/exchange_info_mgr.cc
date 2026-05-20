@@ -7,20 +7,20 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "exchange_info_mgr_v2.h"
+#include "exchange_info_mgr.h"
 #include "env_config/env_config.h"
 
 namespace hccl {
-ExchangeInfoMgrV2::ExchangeInfoMgrV2()
+ExchangeInfoMgr::ExchangeInfoMgr()
 {
 }
 
-ExchangeInfoMgrV2::~ExchangeInfoMgrV2()
+ExchangeInfoMgr::~ExchangeInfoMgr()
 {
-    HCCL_INFO("[ExchangeInfoMgrV2][~ExchangeInfoMgrV2] CollCommConfigConsistency deinit");
+    HCCL_INFO("[ExchangeInfoMgr][~ExchangeInfoMgr] CollCommConfigConsistency deinit");
 }
 
-HcclResult ExchangeInfoMgrV2::BatchExchangeAndCheckConsistency(
+HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
     const HcclChannelDesc* channelDescs,
     const std::vector<HcommChannelDesc> &hcommDescs,
     uint32_t channelNum,
@@ -56,7 +56,7 @@ HcclResult ExchangeInfoMgrV2::BatchExchangeAndCheckConsistency(
     return HCCL_SUCCESS;
 }
 
-HcclResult ExchangeInfoMgrV2::ExchangeUserInfo(
+HcclResult ExchangeInfoMgr::ExchangeUserInfo(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
@@ -115,7 +115,7 @@ HcclResult ExchangeInfoMgrV2::ExchangeUserInfo(
 }
 
 // 批量异步交换定长数据（SERVER先Recv再Send，CLIENT先Send再Recv，防死锁）
-HcclResult ExchangeInfoMgrV2::BatchExchangeFixedData(
+HcclResult ExchangeInfoMgr::BatchExchangeFixedData(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
@@ -145,7 +145,7 @@ HcclResult ExchangeInfoMgrV2::BatchExchangeFixedData(
     return HCCL_SUCCESS;
 }
 
-HcclResult ExchangeInfoMgrV2::WaitAllAsyncComplete(
+HcclResult ExchangeInfoMgr::WaitAllAsyncComplete(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks)
 {
@@ -194,7 +194,7 @@ HcclResult ExchangeInfoMgrV2::WaitAllAsyncComplete(
 }
 
 // 收集并等待有实际异步操作的socket子集
-HcclResult ExchangeInfoMgrV2::WaitActiveAsyncComplete(
+HcclResult ExchangeInfoMgr::WaitActiveAsyncComplete(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
