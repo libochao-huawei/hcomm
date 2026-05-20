@@ -24,7 +24,7 @@ HcclResult ExchangeInfoMgrV2::BatchExchangeAndCheckConsistency(
     const HcclChannelDesc* channelDescs,
     const std::vector<HcommChannelDesc> &hcommDescs,
     uint32_t channelNum,
-    CollCommConfigConsistency collCommConfigConsistency,
+    const CollCommConfigConsistency &collCommConfigConsistency,
     const std::string &commTag)
 {
     std::vector<Hccl::Socket*> sockets;

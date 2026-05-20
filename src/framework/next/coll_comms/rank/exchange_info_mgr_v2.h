@@ -31,7 +31,7 @@ public:
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
         const std::vector<HcommSocketRole> &roles,
-        CollCommConfigConsistency collCommConfigConsistency);
+        const CollCommConfigConsistency &collCommConfigConsistency);
     HcclResult BatchExchangeFixedData(
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
