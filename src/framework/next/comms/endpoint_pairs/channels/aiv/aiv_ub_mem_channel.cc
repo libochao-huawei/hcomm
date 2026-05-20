@@ -76,6 +76,7 @@ HcclResult AivUbMemChannel::Resume()
     return HCCL_SUCCESS;
 }
 
+
 HcclResult AivUbMemChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
     HCCL_INFO("[AivUbMemChannel::%s] not supported yet.", __func__);

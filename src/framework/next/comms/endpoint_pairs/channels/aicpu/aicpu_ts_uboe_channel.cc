@@ -167,7 +167,7 @@ HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &b
         return HCCL_E_PARA;
     }
     HCCL_INFO("[AicpuTsUboeChannel][FillTagVec] bufferNum[%u]", bufferNum);
-    localMemTag.clear();
+    tagVec.clear();
     uint32_t index = 0;
     for (auto &localRmaBuffer : bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
@@ -184,7 +184,7 @@ HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &b
             CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
             HCCL_INFO("[AicpuTsUboeChannel][FillTagVec] memHandleNum[%u] memTag[%s]", index, memTag.data());
         }
-        localMemTag.push_back(memTag);
+        tagVec.push_back(memTag);
         index++;
     }
     return HCCL_SUCCESS;
@@ -268,12 +268,11 @@ HcclResult AicpuTsUboeChannel::GetRemoteMems(CommMem **remoteMem, uint32_t *memN
     uint32_t memCount = rmtBufferVec_.size();
     auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
-        if (rmtBuffer == nullptr) {
-            return;
-        }
+        CHK_PTR_NULL(rmtBuffer);
         remoteMemCtx.remoteMems[index].type = rmtBuffer->GetMemType();
         remoteMemCtx.remoteMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         remoteMemCtx.remoteMems[index].size = rmtBuffer->GetSize();
+        return HCCL_SUCCESS;
     };
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{
         memCount, cacheValid_, rmtBufferVec_, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
