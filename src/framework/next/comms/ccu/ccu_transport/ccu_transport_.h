@@ -183,7 +183,7 @@ private:
     std::vector<std::vector<ResInfo>>        xnsRes_{};
     std::vector<CclBufferInfo>               locBufferInfos_{};
     std::vector<CclBufferInfo>               rmtBufferInfos_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteMemTag_{}; // 远端 Tag 信息
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{}; // 远端 Tag 信息
     uint32_t                                 exchangeDataSize_{0};
     std::vector<char>                        recvData_{};
     std::vector<char>                        recvTrans_{};
@@ -193,7 +193,7 @@ private:
     std::vector<char>                        sendFinishMsg_{};
     bool                                     cacheValid_ = false; // 当前缓存是否有效
     std::mutex                               remoteMemsMutex_;    // 远端内存列表互斥锁
-    std::vector<HcclMem>                     remoteMems_;     // 内存基本信息缓存
+    std::vector<HcclMem>                     remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>                 tagCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>                       tagPointers_;        // Tag 缓存
 };
