@@ -159,7 +159,7 @@ void TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(s32 strea
     if (it != deviceMap.end()) {
         deviceMap.erase(it);
     }
-   return;
+    return;
 }
 
 HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
