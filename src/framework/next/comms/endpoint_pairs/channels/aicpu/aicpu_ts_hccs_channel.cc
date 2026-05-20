@@ -319,7 +319,7 @@ HcclResult AicpuTsHccsChannel::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsHccsChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     remoteIpcRmaBufferVec_.clear();
     CHK_RET(localEpPtr_->GetRemoteIpcRmaBuffer(remoteIpcRmaBufferVec_));

@@ -651,7 +651,7 @@ void CcuTransport::Clean()
 HcclResult CcuTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    uint32_t userMemCount = rmtBufferInfos_.size();
+    uint32_t memCount = rmtBufferInfos_.size();
     auto cacheBuilder = [](Hccl::RemoteMemCtx<CclBufferInfo> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         remoteMemCtx.remoteMems[index].type = rmtBuffer.type;
@@ -659,9 +659,9 @@ HcclResult CcuTransport::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, ch
         remoteMemCtx.remoteMems[index].size = rmtBuffer.size;
     };
     Hccl::RemoteMemCtx<CclBufferInfo> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferInfos_, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memTags, memNum};
-    CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
+        memCount, cacheValid_, rmtBufferInfos_, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
+        cacheBuilder, remoteMem, memNum, memTags};
+    CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
     return HcclResult::HCCL_SUCCESS;
 }
 

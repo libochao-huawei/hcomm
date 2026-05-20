@@ -54,14 +54,9 @@ HcclResult AivUbMemChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AivUbMemChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AivUbMemChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     return transport_->GetRemoteMems(remoteMem, memNum, memTags);
-}
-
-HcclResult AivUbMemChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
-{
-    return transport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
 HcclResult AivUbMemChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
@@ -80,7 +75,6 @@ HcclResult AivUbMemChannel::Resume()
     // 该模式当前不支持N秒快恢
     return HCCL_SUCCESS;
 }
-
 
 HcclResult AivUbMemChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
