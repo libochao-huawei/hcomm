@@ -222,6 +222,7 @@ TEST_F(CommConfigTest, utCommConfig_op_expansion)
     configHandle.opExpansionMode = 4;
     ret = commConfig.SetConfigByVersion(configHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(commConfig.GetConfigIsOnlyAivMode(), true);
 
     g_externalInput.aicpuUnfold = false;
     ret = commConfig.SetConfigByVersion(configHandle);
