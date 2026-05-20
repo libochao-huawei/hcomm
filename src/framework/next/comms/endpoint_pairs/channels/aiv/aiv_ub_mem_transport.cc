@@ -274,7 +274,7 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     }
 }
 
-HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char **memTags) 
+HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags) 
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t memCount = rmtBufferVec_.size();
@@ -290,7 +290,7 @@ HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNu
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> remoteMemCtx{
         memCount, cacheValid_, rmtBufferVec_, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
         cacheBuilder, remoteMem, memNum, memTags};
-    CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
+    CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 

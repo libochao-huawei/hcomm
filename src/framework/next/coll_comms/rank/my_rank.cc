@@ -684,25 +684,25 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     char** memTags = nullptr;
     CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &remoteMems, &memNum, &memTags)));
     CHK_PTR_NULL(remoteMems);
-    CHK_PTR_NULL(memTags);
-    *buffer = remoteMems[0]->addr; // 默认索引0对应内存为cclbuffer
-    *size = remoteMems[0]->size;
-    HCCL_INFO("[%s] Found %s : addr=%p, size=%llu", __func__, memTags[0], remoteMems[0]->addr, remoteMems[0]->size);
+    // 部分Channel不使用memTag，故底层实现未给memTags赋值，不检查是否为空
+    *buffer = remoteMems[0].addr; // 默认索引0对应内存为cclbuffer
+    *size = remoteMems[0].size;
+    HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, remoteMems[0].addr, remoteMems[0].size);
 
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
     CHK_PTR_NULL(remoteMem);
-    CHK_PTR_NULL(memTag);
+    CHK_PTR_NULL(memTags);
     CHK_PTR_NULL(memNum);
 
-    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, remoteMem, memNum, memTags)));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &remoteMem, &memNum, &memTags)));
     // 添加空指针检查，防止返回的指针为空
-    if (*memNum > 0) {
+    if (memNum - 1 > 0) {
         CHK_PTR_NULL(*remoteMem);
-        CHK_PTR_NULL(*memTag);
+        CHK_PTR_NULL(*memTags);
     }
     return HCCL_SUCCESS;
 }

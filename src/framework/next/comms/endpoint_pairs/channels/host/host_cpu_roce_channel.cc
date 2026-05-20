@@ -538,7 +538,7 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char** memTags)
+HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMems] remoteMem is nullptr"), HCCL_E_PTR);
     CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMems] memNum is nullptr"), HCCL_E_PTR);
@@ -564,13 +564,16 @@ HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memN
         remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
         remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
         remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
-        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
+        std::string tagCopy = rmtRmaBuffer->GetMemTag();
+        tagCopies_.push_back(std::move(tagCopy));
+        tagPointers_.push_back(const_cast<char*>(tagCopies.back().c_str()));
         HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", 
             __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
     }
 
     *memNum = totalCount;
     *remoteMem = remoteMemsPtr_.get();
+    *memTags = tagPointers_.data();
     return HCCL_SUCCESS;
 }
 

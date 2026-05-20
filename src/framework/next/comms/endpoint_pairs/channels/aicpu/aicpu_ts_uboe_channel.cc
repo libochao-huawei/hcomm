@@ -156,7 +156,7 @@ HcclResult AicpuTsUboeChannel::BuildNotify()
 }
 
 HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
 {
     uint64_t bufferNum = bufferVec.size();
     if (bufferNum == 0) {
@@ -167,7 +167,7 @@ HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &b
         return HCCL_E_PARA;
     }
     HCCL_INFO("[AicpuTsUboeChannel][FillTagVec] bufferNum[%u]", bufferNum);
-    localUserMemTag.clear();
+    localMemTag.clear();
     uint32_t index = 0;
     for (auto &localRmaBuffer : bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
@@ -184,7 +184,7 @@ HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &b
             CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
             HCCL_INFO("[AicpuTsUboeChannel][FillTagVec] memHandleNum[%u] memTag[%s]", index, memTag.data());
         }
-        localUserMemTag.push_back(memTag);
+        localMemTag.push_back(memTag);
         index++;
     }
     return HCCL_SUCCESS;
@@ -203,7 +203,7 @@ HcclResult AicpuTsUboeChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buf
         commonRes_.bufferVec.push_back(bufferPtr.get());
         localRmaBuffers_.push_back(std::move(bufferPtr));
     }
-    CHK_RET(FillTagVec(commonRes_.bufferVec, localUserMemTag_));
+    CHK_RET(FillTagVec(commonRes_.bufferVec, localMemTag_));
 
     return HCCL_SUCCESS;
 }
@@ -258,70 +258,26 @@ HcclResult AicpuTsUboeChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUboeChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
-{
-    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMems] remoteMem is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMems] memNum is nullptr"), HCCL_E_PARA);
- 
-    *remoteMem = nullptr;
-    *memNum = 0;
-
-    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
- 
-    uint32_t totalCount = rmtBufferVec_.size();
-    if (totalCount == 0) {
-        HCCL_INFO("[GetRemoteMems] No remote memory regions available");
-        return HCCL_SUCCESS;
-    }
-    // 释放之前的内存
-    remoteMemsPtr_.reset();  
-    remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
-    CHK_PTR_NULL(remoteMemsPtr_);
-
-    for (uint32_t i = 0; i < totalCount; i++) {
-        auto& rmtRmaBuffer = rmtBufferVec_[i];
-        remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
-        remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
-        remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
-        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
-        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", 
-            __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
-    }
-
-    *memNum = totalCount;
-    *remoteMem = remoteMemsPtr_.get();
-    return HCCL_SUCCESS;
-}
-
-HcclResult AicpuTsUboeChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult AicpuTsUboeChannel::GetRemoteMems(CommMem **remoteMem, uint32_t *memNum, char ***memTag)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec_.size() == 0) {
-        HCCL_ERROR("[GetUserRemoteMem] bufferNum is 0.");
+        HCCL_ERROR("[GetRemoteMems] bufferNum is 0.");
         return HCCL_E_PARA;
     }
-    uint32_t userMemCount = rmtBufferVec_.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
+    uint32_t memCount = rmtBufferVec_.size();
     auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
-        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
+        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         if (rmtBuffer == nullptr) {
             return;
         }
-        switch (rmtBuffer->GetMemType()) {
-                case HCCL_MEM_TYPE_DEVICE:
-                    remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_DEVICE;
-                    break;
-                case HCCL_MEM_TYPE_HOST:
-                    remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_HOST;
-                    break;
-                default:
-                    remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_INVALID;
-        }
-        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-        remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
+        remoteMemCtx.remoteMems[index].type = rmtBuffer->GetMemType();
+        remoteMemCtx.remoteMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+        remoteMemCtx.remoteMems[index].size = rmtBuffer->GetSize();
     };
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memTag, memNum};
+        memCount, cacheValid_, rmtBufferVec_, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
+        cacheBuilder, remoteMem, memNum, memTag};
     CHK_RET(GetRemoteUserMem(remoteMemCtx));
     return HCCL_SUCCESS;
 }
@@ -459,7 +415,7 @@ void AicpuTsUboeChannel::SendDataSize()
 
     Hccl::BinaryStream binaryStream;
     NotifyVecPack(binaryStream);
-    BufferVecPack(binaryStream, commonRes_.bufferVec, localUserMemTag_);
+    BufferVecPack(binaryStream, commonRes_.bufferVec, localMemTag_);
     ConnVecPack(binaryStream);
 
     binaryStream.Dump(sendData_);
@@ -570,7 +526,7 @@ void AicpuTsUboeChannel::RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &
             }
         }
     }
-    remoteUserMemTag_.insert(remoteUserMemTag_.end(), rmtMemTagTemp_.begin(), rmtMemTagTemp_.end());
+    remoteMemTag_.insert(remoteMemTag_.end(), rmtMemTagTemp_.begin(), rmtMemTagTemp_.end());
 }
 
 bool AicpuTsUboeChannel::ConnVecUnpackProc(Hccl::BinaryStream &binaryStream)

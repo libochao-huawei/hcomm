@@ -75,7 +75,6 @@ public:
     }
 
     HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
-    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
     HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp);
 

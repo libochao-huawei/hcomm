@@ -46,7 +46,6 @@ public:
                      const Stream &stream) override;
 
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
-    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
 
 private:
     MemoryBuffer GetLocMemBuffer(const RmaBufferSlice &locSlice) const;
@@ -67,12 +66,12 @@ private:
     std::vector<std::unique_ptr<IpcRemoteNotify>>    rmtNotifyVec;
     std::vector<std::unique_ptr<RemoteIpcRmaBuffer>> rmtBufferVec;
 
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{};
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localMemTag_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> locMemTagTemp_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteMemTag_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> rmtMemTagTemp_{};
-    bool                         cacheValid_ = false; // GetUserRemoteMem 的缓存标识
-    std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
+    bool                         cacheValid_ = false; // 当前缓存是否有效
+    std::vector<HcclMem>         remoteMems_;     // 内存基本信息缓存
     std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>           tagPointers_;        // Tag 缓存
 
@@ -96,7 +95,6 @@ private:
     std::vector<char> GetRmtBufferUniqueIds() const;
 
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
-    std::unique_ptr<HcclMem[]> remoteMemsPtr_;
 };
 
 } // namespace Hccl
