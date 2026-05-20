@@ -9,6 +9,7 @@
  */
 #include <mutex>
 #include <cstring>
+#include <memory>
 
 #include "hccl/hccl_res.h"
 #include "hcomm_res.h"
@@ -16,12 +17,14 @@
 #include "hcomm_result_defs.h"
 #include "log.h"
 #include "hcomm_c_adpt.h"
+#include "hcomm/hcomm_res_entity_defs.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
 #include "thread.h"
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
 #include "aicpu_ts_urma_channel.h"
+#include "aicpu_ts_roce_channel_v2.h"
 #include "mem_device_pub.h"
 #include "channel_param.h"
 #include "launch_aicpu.h"
@@ -637,4 +640,32 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
 
     return HCCL_SUCCESS;
+}
+
+HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_t listNum, ChannelPtr *channelPtr)
+{
+    HCCL_RUN_INFO("Entry-%s", __func__);
+    CHK_PTR_NULL(channelList);
+    CHK_PTR_NULL(channelPtr);
+    CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]",
+        __func__, listNum), HCCL_E_PARA);
+
+    for (uint32_t i = 0; i < listNum; ++i) {
+        void *channel;
+        HcommResult hcommRet = HcommChannelGet(channelList[i], &channel);
+        CHK_PRT_RET(hcommRet != HCOMM_SUCCESS,
+            HCCL_ERROR("%s HcommChannelGet failed, ret[%d]", __func__, hcommRet),
+            HCCL_E_NOT_FOUND);
+        Channel *baseChannel = static_cast<Channel*>(channel);
+        if (baseChannel->GetChannelKind() == HcommChannelKind::AICPU_TS_ROCE_V2) {
+            auto *aicpuTsRoceChannelV2 = static_cast<AicpuTsRoceChannelV2*>(baseChannel);
+            CHK_RET(aicpuTsRoceChannelV2->BuildAndGetDevChannelEntity(&channelPtr[i]));
+        } else {
+            HCCL_ERROR("%s channel type not support, type[%d]", __func__, baseChannel->GetChannelKind());
+            return HCCL_E_PARA;
+        }
+    }
+
+    HCCL_RUN_INFO("%s Success, listNum=%u", __func__, listNum);
+    return HCOMM_SUCCESS;
 }
