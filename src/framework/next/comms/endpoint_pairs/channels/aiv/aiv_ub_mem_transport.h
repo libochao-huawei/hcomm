@@ -39,18 +39,18 @@ private:
     Hccl::Socket *socket_{}; // 交换所用的socket
     HcommChannelDesc channelDesc_;
     uint32_t exchangeDataSize_{0};
-    std::vector<HcclMem> remoteMems_; // 储存内存位置、地址和大小信息
+    std::vector<HcclMem> remoteUserMems_; // 储存内存位置、地址和大小信息
     std::vector<std::string> tagCopies_; // 储存memTag字符串副本
     std::vector<char*> tagPointers_; // 储存指针
     bool cacheValid_ = false; // 当前缓存是否有效
     
     std::vector<Hccl::LocalIpcRmaBuffer *>  localRmaBufferVec_{};
     std::vector<Hccl::LocalIpcRmaBuffer *>  locMemTemp_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localMemTag_{}; 
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{}; 
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> locTagTemp_{}; 
     std::vector<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> rmtBufferVec_{};
     std::vector<Hccl::RemoteRmaBuffer *> rmtRmaBufferVec_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteMemTag_{};
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> rmtTagTemp_{};
     AivUbMemTransportStatus aivUbStatus_{AivUbMemTransportStatus::INVALID};
     Hccl::TransportStatus baseStatus_{Hccl::TransportStatus::INVALID};
