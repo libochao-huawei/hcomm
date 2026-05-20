@@ -11,6 +11,8 @@
 #include <gtest/gtest.h>
 #include <mockcpp/mockcpp.hpp>
 #include <memory>
+#include <thread>
+#include <atomic>
 
 #define private public
 #define protected public
@@ -289,6 +291,32 @@ TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_AccessVAIsNull_Expec
 
     HcclResult ret = dpuManager.WaitDpuKernelThreadTerminate();
     EXPECT_EQ(ret, HCCL_E_MEMORY);
+}
+
+// WaitDpuKernelThreadTerminate: while循环正常退出（后台线程更新flag使循环退出）
+TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_WhileLoopExitNormally_Expect_Success)
+{
+    DpuManager dpuManager;
+    dpuManager.isDpuKernelLaunched_ = true;
+    dpuManager.accessVA_ = new uint8_t[8]();
+    constexpr uint8_t DEVICE_SIGNAL_SECOND = 2;
+    constexpr uint8_t DEVICE_SIGNAL_THIRD = 3;
+    static_cast<uint8_t*>(dpuManager.accessVA_)[0] = DEVICE_SIGNAL_SECOND;
+
+    std::atomic<bool> updateReady{false};
+    std::thread worker([&dpuManager, &updateReady]() {
+        while (!updateReady.load(std::memory_order_acquire)) {
+            std::this_thread::yield();
+        }
+        static_cast<uint8_t*>(dpuManager.accessVA_)[0] = DEVICE_SIGNAL_THIRD;
+    });
+    worker.detach();
+
+    updateReady.store(true, std::memory_order_release);
+    HcclResult ret = dpuManager.WaitDpuKernelThreadTerminate();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    delete[] static_cast<uint8_t*>(dpuManager.accessVA_);
 }
 
 // ========== Init 测试用例 ==========

@@ -331,3 +331,49 @@ TEST_F(RankGraphV1DirectTest, Ut_GetDevicePort_When_DevPortNullptr_Expect_HCCL_E
     HcclResult ret = rankGraph.GetDevicePort(0, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
+
+TEST_F(RankGraphV1DirectTest, Ut_GetLinks_When_NormalCase_Expect_Success)
+{
+    RankGraphV1 rankGraph;
+    rankGraph.netLayer_.push_back(0);
+    rankGraph.devType_ = DevType::DEV_TYPE_910_93;
+
+    MOCKER(hrtGetPairDeviceLinkType).stubs().with(any(), any(), outBound(LinkTypeInServer::HCCS_TYPE))
+        .will(returnValue(HCCL_SUCCESS));
+
+    RankGraphV1::RankGraphInfo srcGraphInfo;
+    srcGraphInfo.rankInfo.rankId = 0;
+    srcGraphInfo.rankInfo.serverIdx = 0;
+    srcGraphInfo.rankInfo.superPodId = "";
+    srcGraphInfo.rankInfo.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
+    srcGraphInfo.rankInfo.deviceInfo.devicePhyId = 0;
+
+    EndpointDesc srcEndpoint;
+    srcEndpoint.protocol = CommProtocol::COMM_PROTOCOL_HCCS;
+    srcGraphInfo.endPoints.push_back(srcEndpoint);
+    rankGraph.rankIndex_[0] = srcGraphInfo;
+
+    RankGraphV1::RankGraphInfo dstGraphInfo;
+    dstGraphInfo.rankInfo.rankId = 1;
+    dstGraphInfo.rankInfo.serverIdx = 0;
+    dstGraphInfo.rankInfo.superPodId = "";
+    dstGraphInfo.rankInfo.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
+    dstGraphInfo.rankInfo.deviceInfo.devicePhyId = 1;
+
+    EndpointDesc dstEndpoint;
+    dstEndpoint.protocol = CommProtocol::COMM_PROTOCOL_HCCS;
+    dstGraphInfo.endPoints.push_back(dstEndpoint);
+    rankGraph.rankIndex_[1] = dstGraphInfo;
+
+    uint32_t netLayer = 0;
+    uint32_t srcRank = 0;
+    uint32_t dstRank = 1;
+    CommLink* linkList = nullptr;
+    uint32_t listSize = 0;
+
+    HcclResult ret = rankGraph.GetLinks(netLayer, srcRank, dstRank, &linkList, &listSize);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(listSize, 1u);
+    EXPECT_NE(linkList, nullptr);
+}
