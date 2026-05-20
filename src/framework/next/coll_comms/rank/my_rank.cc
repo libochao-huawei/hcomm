@@ -692,17 +692,22 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteMems, char ***memTags, uint32_t *memNum)
 {
-    CHK_PTR_NULL(remoteMem);
+    CHK_PTR_NULL(remoteMems);
     CHK_PTR_NULL(memTags);
     CHK_PTR_NULL(memNum);
 
-    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, remoteMem, memNum, memTags)));
-    // 添加空指针检查，防止返回的指针为空
-    if (memNum - 1 > 0) {
-        CHK_PTR_NULL(*remoteMem);
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, remoteMems, memNum, memTags)));
+    if (*memNum > 1) {
+        CHK_PTR_NULL(*remoteMems);
         CHK_PTR_NULL(*memTags);
+        // 返回的内存不包括cclBuffer，指针后移一位
+        --(*memNum);
+        ++(*remoteMems);
+        ++(*memTags);
+    } else {
+        HCCL_INFO("[ChannelGetRemoteMems] No user remote memory found.")
     }
     return HCCL_SUCCESS;
 }
