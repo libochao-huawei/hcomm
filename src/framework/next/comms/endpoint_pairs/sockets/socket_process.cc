@@ -206,12 +206,39 @@ HcclResult SocketProcess::RecvNoBlock(
     return ret;
 }
 
-HcclResult SocketProcess::Init()
+HcclResult SocketProcess::Init(uint32_t devicePhyId)
 {
     unique_lock<std::mutex> lock(mutex_);
     if (isInit_.load(std::memory_order_acquire)) {
         return HCCL_SUCCESS;
     }
+
+    devicePhyId_ = devicePhyId;
+
+    isInit_.store(true, std::memory_order_release);
+    HCCL_RUN_INFO("[SocketProcess][%s] initialized successfully. devicePhyId: %u, this: %p",
+        __func__, devicePhyId_, static_cast<void*>(this));
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult SocketProcess::InitInternal()
+{
+    unique_lock<std::mutex> lock(mutex_);
+    if (isInit_.load(std::memory_order_acquire)) {
+        return HCCL_SUCCESS;
+    }
+
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+
+    isInit_.store(true, std::memory_order_release);
+    HCCL_RUN_INFO("[SocketProcess][%s] initialized successfully. deviceLogicId: %d, devicePhyId: %u, this: %p",
+        __func__, devLogicId, devicePhyId_, static_cast<void*>(this));
+
+    return HCCL_SUCCESS;
+}
 
     s32 devLogicId;
     CHK_RET(hrtGetDevice(&devLogicId));

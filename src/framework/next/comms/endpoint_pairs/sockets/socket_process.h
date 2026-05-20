@@ -38,8 +38,11 @@ public:
     // 接收数据接口
     HcclResult RecvNoBlock(SocketHandle socketHandle, void *recvBuffer, u64 recvSize, u64 *&recvedSize);
 
+public:
+    HcclResult Init(uint32_t devicePhyId);
+
 private:
-    HcclResult Init();
+    HcclResult InitInternal();
 
     Hccl::SocketRole ConvertToHcclSocketRole(HcommSocketRole &hcommRole);
 

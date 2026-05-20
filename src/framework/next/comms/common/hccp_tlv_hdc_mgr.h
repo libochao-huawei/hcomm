@@ -24,6 +24,7 @@ public:
     static HccpTlvHdcMgr &GetInstance(uint32_t devPhyId);
     TlvHandle GetHandle();
     HcclResult Init();
+    HcclResult Init(uint32_t devPhyId);
 
 private:
     HccpTlvHdcMgr() = default;

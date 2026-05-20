@@ -71,6 +71,19 @@ HcclResult HccpTlvHdcMgr::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult HccpTlvHdcMgr::Init(uint32_t devPhyId)
+{
+    std::unique_lock<std::mutex> lock(innerMutex_);
+    if (initFlag_) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    devPhyId_ = devPhyId;
+    CHK_RET(HccpTlvInit(devPhyId_, tlvHandle_));
+    initFlag_ = true;
+    return HcclResult::HCCL_SUCCESS;
+}
+
 TlvHandle HccpTlvHdcMgr::GetHandle()
 {
     return tlvHandle_;
