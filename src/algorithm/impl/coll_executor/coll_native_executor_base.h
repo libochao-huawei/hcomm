@@ -122,6 +122,8 @@ protected:
     HcclResult SetOpCache(const AivOpArgs& opArgs, const AivTopoArgs& topoArgs, const AivResourceArgs& resourceArgs, 
         const AivAlgArgs& algArgs, ExtraArgs& extraArgs, AivProfilingInfo& aivProfilingInfo, bool isA3CrossNode);
 
+    void SetWorkflowMode(HcclWorkflowMode workflowMode);
+
     /* ---------------以下为 protected 成员变量定义领域-------------------------- */
     std::string tag_;
     u32 root_ = INVALID_VALUE_RANKID;

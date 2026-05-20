@@ -457,6 +457,13 @@ HcclResult AlltoAllOperator::SetExcutorExtraInfo(const std::string& algName, con
     }
 
     CollAlltoAllExecutor* alltoAllExecutor = dynamic_cast<CollAlltoAllExecutor *>(executor_.get());
+    // AICPU侧强制OP_BASE，Host侧需同步覆盖workflowMode_使scratch计算路径一致，避免AICPU侧校验失败
+    if (param.aicpuUnfoldMode && !param.isZeroCopy &&
+        (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL ||
+         param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
+         param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC)) {
+        alltoAllExecutor->SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+    }
     return alltoAllExecutor->SetExcutorExtraInfo(allMeshAggregationSendRecvInfo_, cclBufferManager_.GetInCCLbufferSize());
 }
 
