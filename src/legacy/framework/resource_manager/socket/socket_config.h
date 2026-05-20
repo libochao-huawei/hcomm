@@ -145,18 +145,20 @@ public:
 
 template <> class equal_to<Hccl::SocketConfig> {
 public:
-    bool operator()(const Hccl::SocketConfig &config, const Hccl::SocketConfig &otherConfig) const
+    bool operator()(const Hccl::SocketConfig &config,
+                    const Hccl::SocketConfig &otherConfig) const
     {
+        bool same =
+            config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr() &&
+            config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr() &&
+            config.tag == otherConfig.tag &&
+            config.listeningPort == otherConfig.listeningPort;
+
         if (config.noRankId && otherConfig.noRankId) {
-            return config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr()
-                && config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr()
-                && config.tag == otherConfig.tag && config.listeningPort == otherConfig.listeningPort;
+            return same;
         }
 
-        return config.remoteRank == otherConfig.remoteRank
-               && config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr()
-               && config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr()
-               && config.tag == otherConfig.tag && config.listeningPort == otherConfig.listeningPort;
+        return same && config.remoteRank == otherConfig.remoteRank;
     }
 };
 } // namespace std
