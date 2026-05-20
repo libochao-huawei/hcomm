@@ -280,12 +280,11 @@ HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNu
     uint32_t memCount = rmtBufferVec_.size();
     auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
-        if (rmtBuffer == nullptr) {
-            return;
-        }
+        CHK_PTR_NULL(rmtBuffer);
         remoteMemCtx.remoteMems[index].type = rmtBuffer->GetMemType();
         remoteMemCtx.remoteMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         remoteMemCtx.remoteMems[index].size = rmtBuffer->GetSize();
+        return HCCL_SUCCESS;
     };
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> remoteMemCtx{
         memCount, cacheValid_, rmtBufferVec_, remoteMemTag_, remoteMems_, tagCopies_, tagPointers_,
