@@ -9316,4 +9316,82 @@ namespace hccl
     {
         return dpuManager_->GetDevMemWorkSpace(memTag, size, addr, newCreated);
     }
+
+    HcclResult HcclCommunicator::LocalGather(const std::string &tag, void** sendBufs, u64* counts, u32 numBufs,
+                                              void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream)
+    {
+        CHK_RET(CheckSuspendingStatus());
+        if (!IsAtomicInit()) {
+            HCCL_ERROR("[HcclCommunicator][LocalGather]errNo[0x%016llx] hccl init must be called before call this function",
+                       HCCL_ERROR_CODE(HCCL_E_UNAVAIL));
+            return HCCL_E_UNAVAIL;
+        }
+
+        Stream streamObj(stream);
+        CHK_RET(callbackTask_->CallbackRegStream(stream));
+
+        u32 perDataSize = SIZE_TABLE[dataType];
+        u64 totalSize = 0;
+        for (u32 i = 0; i < numBufs; ++i) {
+            totalSize += counts[i] * perDataSize;
+        }
+        totalSize *= splitNum;
+
+        OpParam opParam;
+        opParam.tag = tag;
+        opParam.inputPtr = gatheredBuf;
+        opParam.inputSize = totalSize;
+        opParam.outputPtr = gatheredBuf;
+        opParam.outputSize = totalSize;
+        opParam.LocalGatherDataDes.sendBufs = sendBufs;
+        opParam.LocalGatherDataDes.counts = counts;
+        opParam.LocalGatherDataDes.numBufs = numBufs;
+        opParam.LocalGatherDataDes.gatheredBuf = gatheredBuf;
+        opParam.LocalGatherDataDes.splitNum = splitNum;
+        opParam.LocalGatherDataDes.dataType = dataType;
+        opParam.stream = streamObj;
+        opParam.opType = HcclCMDType::HCCL_CMD_LOCAL_GATHER;
+
+        CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_LOCAL_GATHER, opParam));
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::LocalScatter(const std::string &tag, void** recvBufs, u64* counts, u32 numBufs,
+                                               void* gatheredBuf, u32 splitNum, HcclDataType dataType, HcclRtStream stream)
+    {
+        CHK_RET(CheckSuspendingStatus());
+        if (!IsAtomicInit()) {
+            HCCL_ERROR("[HcclCommunicator][LocalScatter]errNo[0x%016llx] hccl init must be called before call this function",
+                       HCCL_ERROR_CODE(HCCL_E_UNAVAIL));
+            return HCCL_E_UNAVAIL;
+        }
+
+        Stream streamObj(stream);
+        CHK_RET(callbackTask_->CallbackRegStream(stream));
+
+        u32 perDataSize = SIZE_TABLE[dataType];
+        u64 totalSize = 0;
+        for (u32 i = 0; i < numBufs; ++i) {
+            totalSize += counts[i] * perDataSize;
+        }
+        totalSize *= splitNum;
+
+        OpParam opParam;
+        opParam.tag = tag;
+        opParam.inputPtr = gatheredBuf;
+        opParam.inputSize = totalSize;
+        opParam.outputPtr = gatheredBuf;
+        opParam.outputSize = totalSize;
+        opParam.LocalScatterDataDes.recvBufs = recvBufs;
+        opParam.LocalScatterDataDes.counts = counts;
+        opParam.LocalScatterDataDes.numBufs = numBufs;
+        opParam.LocalScatterDataDes.gatheredBuf = gatheredBuf;
+        opParam.LocalScatterDataDes.splitNum = splitNum;
+        opParam.LocalScatterDataDes.dataType = dataType;
+        opParam.stream = streamObj;
+        opParam.opType = HcclCMDType::HCCL_CMD_LOCAL_SCATTER;
+
+        CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_LOCAL_SCATTER, opParam));
+        return HCCL_SUCCESS;
+    }
 }
