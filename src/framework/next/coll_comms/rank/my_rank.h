@@ -25,6 +25,7 @@
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
 #include "coll_comm_config_consistency.h"
+#include "exchange_info_mgr_v2.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -83,7 +84,7 @@ private:
     HcclResult TryInitCcuInstance();
     HcclResult ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc);
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
-    
+
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
     CommConfig config_{};
