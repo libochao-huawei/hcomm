@@ -22,6 +22,8 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/send_operator.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/receive_operator.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/batch_write_operator.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/local_gather_operator.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/local_scatter_operator.cc
 )
 
 if(TARGET hccl_alg)
