@@ -17,6 +17,7 @@ CollCommConfigConsistency::CollCommConfigConsistency()
 
 CollCommConfigConsistency::~CollCommConfigConsistency()
 {
+    HCCL_INFO("[CollCommConfigConsistency][~CollCommConfigConsistency] CollCommConfigConsistency deinit");
     ResetExchangeInfo();
 }
 

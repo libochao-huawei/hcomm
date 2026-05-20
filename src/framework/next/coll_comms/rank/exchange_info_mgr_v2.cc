@@ -17,6 +17,7 @@ ExchangeInfoMgrV2::ExchangeInfoMgrV2()
 
 ExchangeInfoMgrV2::~ExchangeInfoMgrV2()
 {
+    HCCL_INFO("[ExchangeInfoMgrV2][~ExchangeInfoMgrV2] CollCommConfigConsistency deinit");
 }
 
 HcclResult ExchangeInfoMgrV2::BatchExchangeAndCheckConsistency(
