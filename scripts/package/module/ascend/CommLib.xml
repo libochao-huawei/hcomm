@@ -93,6 +93,7 @@
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="compat" install_path="compat" install_type="all" install_mod="440" optional="true">
         <file value="cann-hcomm-compat.tar.gz"/>
         <file value="cann-hccd-compat.tar.gz"/>
+        <file value="cann-hcomm-compat.ini"/>
     </file_info>
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="opp/built-in/op_impl/aicpu/config" install_path="opp/built-in/op_impl/aicpu/config" install_type="all" install_mod="440">
         <file value="ccl_kernel.json"/>
