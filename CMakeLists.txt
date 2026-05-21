@@ -135,7 +135,8 @@ elseif(BUILD_OPEN_PROJECT)
 
         message(STATUS "Detected CUSTOM_SIGN_SCRIPT: ${CUSTOM_SIGN_SCRIPT}")
         message(STATUS "Detected ENABLE_SIGN: ${ENABLE_SIGN}")
-        pack_targets_and_files(
+        include(version.cmake)
+        cann_pack_targets_and_files(
             OUTPUT_TARGET "generate_device_hccp_package"
             OUTPUT "cann-hcomm-compat.tar.gz"
             TARGETS hccp_service.bin
@@ -327,5 +328,11 @@ file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFI
     install(FILES
         ${HCOMM_PKG_HEAD}
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ OPTIONAL
+    )
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/cann-hcomm-compat.ini
+        DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+        OPTIONAL
     )
 endif()
