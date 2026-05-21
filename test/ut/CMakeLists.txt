@@ -268,6 +268,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/common/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/dfx
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/server_socket/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
