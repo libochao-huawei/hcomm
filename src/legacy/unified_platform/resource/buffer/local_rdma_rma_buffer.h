@@ -21,6 +21,9 @@ class LocalRdmaRmaBuffer : public LocalRmaBuffer {
 public:
     LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle);
 
+    // Alias constructor: wraps a parent buffer, addr/size from buf, registration info from parent
+    LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, std::shared_ptr<LocalRdmaRmaBuffer> parent);
+
     ~LocalRdmaRmaBuffer() override;
 
     LocalRdmaRmaBuffer(const LocalRdmaRmaBuffer &that) = delete;
