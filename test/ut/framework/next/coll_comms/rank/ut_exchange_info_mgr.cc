@@ -12,6 +12,7 @@
 #undef private
 #include "hccl_comm_pub.h"
 #include "llt_hccl_stub_rank_graph.h"
+#include "rank_consistency_checker_v2.h"
 
 using namespace hccl;
 
