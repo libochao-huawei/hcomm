@@ -50,30 +50,28 @@ def check_image_headered(file_path):
 
 def main():
     args = get_args()
-    if args.rcvr:
-        tmp_file = args.raw + '.tmp' # 中间暂存文件
+    if not args.rcvr:
+        raise Exception("No operation found, do nothing")
 
-        if check_image_headered(args.img) == False: # 无头场景，直接将原镜像拷到tmp
-            print("No head magic detected, return original img directly")
-            shutil.copyfile(args.img, tmp_file)
-        else:
-            with open(args.img, 'rb') as img: # 有头场景，将原镜像实际镜像长度考出到tmp
-                img.seek(0x478)
-                code_len = struct.unpack('<I', img.read(4))[0]
-                #检验二进制头字段：code_len必须合法范围且与文件大小一致
-                if code_len < 0x100:
-                    raise ValueError(f"Invalid code_len: 0x{code_len:x}, must be >= 0x100")
-                file_size = img.seek(0, os.SEEK_END)
-                if code_len > file_size:
-                    raise ValueError(f"Invalid code_len: 0x{code_len:x}, must be <= file size: 0x{file_size:x}")
-                max_copy_size = file_size - 0x2100
-                with open(tmp_file, 'wb+') as raw:
-                    __write_raw_img(raw, img, code_len, max_copy_size)
-        shutil.copyfile(tmp_file, args.raw)
+    tmp_file = args.raw + '.tmp' # 中间暂存文件
+    if check_image_headered(args.img) == False: # 无头场景，直接将原镜像拷到tmp
+        shutil.copyfile(args.img, tmp_file)
+    else:
+        with open(args.img, 'rb') as img: # 有头场景，将原镜像实际镜像长度考出到tmp
+            img.seek(0x478)
+            code_len = struct.unpack('<I', img.read(4))[0]
+            #检验二进制头字段：code_len必须合法范围且与文件大小一致
+            if code_len < 0x100:
+                raise ValueError(f"Invalid code_len: 0x{code_len:x}, must be >= 0x100")
+            file_size = img.seek(0, os.SEEK_END)
+            if code_len > file_size:
+                raise ValueError(f"Invalid code_len: 0x{code_len:x}, must be <= file size: 0x{file_size:x}")
+            max_copy_size = file_size - 0x2100
+            with open(tmp_file, 'wb+') as raw:
+                __write_raw_img(raw, img, code_len, max_copy_size)
+    shutil.copyfile(tmp_file, args.raw)
         if os.path.exists(tmp_file):
             os.remove(tmp_file)
-    else:
-        raise Exception("No operation found, do nothing")
 
 
 if __name__ == '__main__':
