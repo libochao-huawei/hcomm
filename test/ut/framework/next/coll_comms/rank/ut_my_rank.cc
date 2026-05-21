@@ -531,9 +531,9 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMems_Normal_Expect_SUCCESS)
     // 接口内校验返回值，需要保证出参索引1不为空
     std::vector<CommMem> remoteMems(2);
     CommMem* remoteMem = remoteMems.data();
-    std::vector<char*> memTags(2); 
+    std::vector<char*> memTags(2);
     char** memTag = memTags.data();
-    uint32_t memNum = 0;
+    uint32_t memNum = 2;
     HcclResult ret = myRank.ChannelGetRemoteMems(channel, &remoteMem, &memNum, &memTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
