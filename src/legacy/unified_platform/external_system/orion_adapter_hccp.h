@@ -19,6 +19,7 @@
 #include "hccp_tlv.h"
 #include <mutex>
 #include "hccp_async_ctx.h"
+#include "hccp_nda.h"
 
 namespace Hccl {
 using namespace std;
@@ -54,6 +55,7 @@ constexpr u32 HCCL_INVALID_PORT = 65536;
 
 using RdmaHandle = void *;
 using QpHandle   = void *;
+using CqHandle   = void *;
 
 using SocketHandle = void *;
 using FdHandle     = void *;
@@ -109,9 +111,9 @@ void         HrtRaSocketDeInit(SocketHandle socketHandle);
 struct RaSocketListenParam {
     SocketHandle socketHandle; /**< socket handle */
     unsigned int port;         /**< Socket listening port number */
-    RaSocketListenParam(SocketHandle handle, u32 port) : socketHandle(handle), port(port)
-    {
-    }
+    IpAddress localIp;         /**< local IP address */
+    RaSocketListenParam(SocketHandle handle, u32 port, IpAddress ip)
+        : socketHandle(handle), port(port), localIp(ip) {}
 };
 
 using QpConfig = struct QpConfigDef {
@@ -158,6 +160,7 @@ using QpInfo = struct QpInfoDef {
     u32 serviceLevel = 0;
     u32 retryCnt = 0;
     u32 retryInterval = 0;
+    s32 lbValue = 0;
     QpInfoDef() : rdmaHandle(nullptr), qpHandle(nullptr), qp(nullptr), context(nullptr), sendCq(nullptr),
         recvCq(nullptr), srq(nullptr), srqCq(nullptr), srqContext(nullptr),
         sendChannel(nullptr), recvChannel(nullptr), trafficClass(HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET),
@@ -193,9 +196,9 @@ using CqInfo = struct CqInfoDef {
         rqEvent(rqEvent), srqContext(srqContext), sendChannel(sendChannel), recvChannel(recvChannel) {}
 };
 
-void HrtRaSocketListenOneStart(RaSocketListenParam &in);
+void HrtRaSocketListenOneStart(RaSocketListenParam &in, HrtNetworkMode netMode);
 void HrtRaSocketListenOneStop(RaSocketListenParam &in);
-bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in);
+bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in, HrtNetworkMode netMode);
 
 void HrtRaSocketSetWhiteListStatus(u32 enable);
 u32  HrtRaSocketGetWhiteListStatus();
@@ -446,15 +449,16 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     u32              sqDepth{0};
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
-
+    u8 errTimeout{16};
+    
     HrtRaUbJettyCreateParamDef() {}
 
     HrtRaUbJettyCreateParamDef(JfcHandle sjfcHandle, JfcHandle rjfcHandle,
         u32 tokenValue, TokenIdHandle tokenIdHandle, HrtJettyMode jettyMode,
-        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth)
+        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth, u8 errTimeout = 16)
         : sjfcHandle(sjfcHandle), rjfcHandle(rjfcHandle), tokenValue(tokenValue),
           tokenIdHandle(tokenIdHandle), jettyMode(jettyMode), jettyId(jettyId),
-          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex), sqDepth(sqDepth)
+          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex), sqDepth(sqDepth), errTimeout(errTimeout)
     {
     }
 };
@@ -646,6 +650,9 @@ HcclResult HrtRaDestroyCq(RdmaHandle rdmaHandle, CqInfo& cq);
 HcclResult ConstructQpDefaultAttrs(s32 qpMode, struct qp_ext_attrs &attrs, bool isWorkFlowLib);
 HcclResult HrtRaNormalQpCreate(RdmaHandle rdmaHandle, QpInfo& qp);
 HcclResult HrtRaNormalQpDestroy(QpHandle qpHandle);
+HcclResult HrtRaNdaQpCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, NdaQpInfo *qpInfo, QpHandle *qpHandle);
+HcclResult HrtRaNdaCqCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, CqHandle *cqHandle);
+HcclResult HrtRaNdaCqDestroy(RdmaHandle rdmaHandle, CqHandle cqHandle);
   
 MAKE_ENUM(AuxInfoInType, AUX_INFO_IN_TYPE_CQE, AUX_INFO_IN_TYPE_AE, AUX_INFO_IN_TYPE_MAX);
 struct AuxInfoIn {

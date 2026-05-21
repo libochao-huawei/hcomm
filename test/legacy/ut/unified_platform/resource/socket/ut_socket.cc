@@ -55,7 +55,7 @@ protected:
 TEST_F(SocketTest, listen_stop_listen_ok)
 {
     // Given
-    MOCKER(HrtRaSocketListenOneStart).stubs().with(any());
+    MOCKER(HrtRaSocketListenOneStart).stubs().with(any(), any());
     MOCKER(HrtRaSocketListenOneStop).stubs().with(any());
     // when
     socketServer->Listen();
