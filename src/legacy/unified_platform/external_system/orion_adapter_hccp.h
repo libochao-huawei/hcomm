@@ -111,9 +111,9 @@ void         HrtRaSocketDeInit(SocketHandle socketHandle);
 struct RaSocketListenParam {
     SocketHandle socketHandle; /**< socket handle */
     unsigned int port;         /**< Socket listening port number */
-    RaSocketListenParam(SocketHandle handle, u32 port) : socketHandle(handle), port(port)
-    {
-    }
+    IpAddress localIp;         /**< local IP address */
+    RaSocketListenParam(SocketHandle handle, u32 port, IpAddress ip)
+        : socketHandle(handle), port(port), localIp(ip) {}
 };
 
 using QpConfig = struct QpConfigDef {
@@ -160,6 +160,7 @@ using QpInfo = struct QpInfoDef {
     u32 serviceLevel = 0;
     u32 retryCnt = 0;
     u32 retryInterval = 0;
+    s32 lbValue = 0;
     QpInfoDef() : rdmaHandle(nullptr), qpHandle(nullptr), qp(nullptr), context(nullptr), sendCq(nullptr),
         recvCq(nullptr), srq(nullptr), srqCq(nullptr), srqContext(nullptr),
         sendChannel(nullptr), recvChannel(nullptr), trafficClass(HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET),
@@ -195,9 +196,9 @@ using CqInfo = struct CqInfoDef {
         rqEvent(rqEvent), srqContext(srqContext), sendChannel(sendChannel), recvChannel(recvChannel) {}
 };
 
-void HrtRaSocketListenOneStart(RaSocketListenParam &in);
+void HrtRaSocketListenOneStart(RaSocketListenParam &in, HrtNetworkMode netMode);
 void HrtRaSocketListenOneStop(RaSocketListenParam &in);
-bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in);
+bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in, HrtNetworkMode netMode);
 
 void HrtRaSocketSetWhiteListStatus(u32 enable);
 u32  HrtRaSocketGetWhiteListStatus();

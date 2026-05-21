@@ -19,6 +19,7 @@
 #include "rmt_rma_buf_slice_lite.h"
 #include "rma_conn_lite.h"
 #include "kernel_param_lite.h"
+#include "hcomm_primitives.h"
 
 namespace Hccl {
 
@@ -77,6 +78,8 @@ public:
     HcclResult Resume(std::vector<char> &uniqueId);
     void SetTaskExceptionEnable(bool flag) { taskExceptionEnable_ = flag; }
 
+    HcclResult ExecuteBatchTransfer(StreamLite *streamLitePtr, const HcommBatchTransferDesc *transferDescs,
+                        uint32_t transferDescNum);
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
