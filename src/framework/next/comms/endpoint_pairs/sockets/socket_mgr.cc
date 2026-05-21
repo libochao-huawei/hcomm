@@ -120,7 +120,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
     
     std::unique_ptr<Hccl::Socket> tmpSocket = nullptr;
     if (socketConfig.link.GetType() == Hccl::PortDeploymentType::DEV_NET) {
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             tmpSocket = std::make_unique<Hccl::Socket>(
                 socketHandle, localIpAddress, socketConfig.listeningPort,
                 remoteIpAddress, hccpSocketTag,
@@ -131,7 +131,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
         HCCL_INFO("[SocketMgr][%s] client_socket_info[%s]", __func__, tmpSocket->Describe().c_str());
         tmpSocket->ConnectAsync();
     } else if (socketConfig.link.GetType() == Hccl::PortDeploymentType::HOST_NET) {
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             tmpSocket = std::make_unique<Hccl::Socket>(socketHandle,
             localIpAddress,
             socketConfig.listeningPort,
@@ -277,7 +277,7 @@ HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
         return HCCL_SUCCESS;
     }
 
-    EXECEPTION_CATCH(Hccl::HrtRaSocketWhiteListDel(socket->GetFdHandle(), wlistInfoVec), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(Hccl::HrtRaSocketWhiteListDel(socket->GetFdHandle(), wlistInfoVec), return HCCL_E_INTERNAL);
     handle2WhiteListMap_.erase(iter);
 
     return HCCL_SUCCESS;
@@ -299,7 +299,7 @@ HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
         }
     }
 
-    EXECEPTION_CATCH(socket->Destroy(),
+    EXCEPTION_CATCH(socket->Destroy(),
         HCCL_ERROR("[DestroySocket] Destroy failed for socket with tag[%s].", socket->Describe().c_str()));
     return HCCL_SUCCESS;
 }

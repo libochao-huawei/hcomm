@@ -65,7 +65,7 @@ HcclResult AicpuTsHccsEndpoint::Init()
 
     CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).RefNetDevCtx(
         NicType::VNIC_TYPE, devIpAddr_, serverPort_, netDevCtx_));
-    EXECEPTION_CATCH(regedMemMgr_ = std::make_shared<HccsRegedMemMgr>(netDevCtx_), return HCCL_E_PARA);
+    EXCEPTION_CATCH(regedMemMgr_ = std::make_shared<HccsRegedMemMgr>(netDevCtx_), return HCCL_E_PARA);
     return HCCL_SUCCESS;
 }
 

@@ -349,7 +349,7 @@ namespace hccl
         CHK_RET(InitBinHandle());
         CHK_PTR_NULL(commV2);
 
-        EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
+        EXCEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
             return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));

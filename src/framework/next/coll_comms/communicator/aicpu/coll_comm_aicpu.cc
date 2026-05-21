@@ -50,7 +50,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(RegisterProfCallBack());
     CHK_RET(InitHDCommunicate(commAicpuParam));
 
-    EXECEPTION_CATCH(nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(), return HCCL_E_PTR);
+    EXCEPTION_CATCH(nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(), return HCCL_E_PTR);
     nsRecoveryLitePtr_->Init(kfcControlTransferH2D_, kfcStatusTransferD2H_);
 
     CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
@@ -71,12 +71,12 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 HcclResult CollCommAicpu::InitHDCommunicate(CommAicpuParam *commAicpuParam)
 {
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
-        EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
         CHK_RET(kfcControlTransferH2D_->InitDevice(commAicpuParam->kfcControlTransferH2DParams));
     }
     if (commAicpuParam->kfcStatusTransferD2HParams.buffLen != 0 && kfcStatusTransferD2H_ == nullptr) {
-        EXECEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
@@ -113,7 +113,7 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
             HCCL_INFO("[CollCommAicpu][%s] %s", __func__, oss.str().c_str());
         }
         std::shared_ptr<AicpuTsThread> thread;
-        EXECEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
+        EXCEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
         HcclResult ret = thread->Init();
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] failed at index %u",
@@ -233,7 +233,7 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     // TODO TransportType
     if (transType == Hccl::TransportType::UB) {
         std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-        EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+        EXCEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
             return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(ubTransportLiteImpl);
         ubTransportLiteImpl->SetTaskExceptionEnable(hcomm::GetTaskExceptionEnable());
@@ -241,7 +241,7 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
         ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
     } else if (transType == Hccl::TransportType::P2P) {
         std::unique_ptr<Hccl::P2PTransportLiteImpl> p2pTransportLiteImpl;
-        EXECEPTION_CATCH((p2pTransportLiteImpl = std::make_unique<Hccl::P2PTransportLiteImpl>(transpUniqueId)),
+        EXCEPTION_CATCH((p2pTransportLiteImpl = std::make_unique<Hccl::P2PTransportLiteImpl>(transpUniqueId)),
             return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(p2pTransportLiteImpl);
         handle = reinterpret_cast<uint64_t>(p2pTransportLiteImpl.get());
@@ -249,7 +249,7 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
         // TODO 是否需要缓存用于NsRecovery
     } else if (transType == Hccl::TransportType::ROCE) {
         std::unique_ptr<Hccl::RoceTransportLiteImpl> roceTransportLiteImpl;
-        EXECEPTION_CATCH((roceTransportLiteImpl = std::make_unique<Hccl::RoceTransportLiteImpl>(transpUniqueId)),
+        EXCEPTION_CATCH((roceTransportLiteImpl = std::make_unique<Hccl::RoceTransportLiteImpl>(transpUniqueId)),
             return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(roceTransportLiteImpl);
 

@@ -56,7 +56,7 @@ HcclResult HccsRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
         localIpcRmaBuffer = findPair.second;
     } else {
         // 构造LocalIpcRmaBuffer
-        EXECEPTION_CATCH((localIpcRmaBuffer = std::make_shared<hccl::LocalIpcRmaBuffer>(
+        EXCEPTION_CATCH((localIpcRmaBuffer = std::make_shared<hccl::LocalIpcRmaBuffer>(
             netDevCtx_, mem.addr, mem.size, static_cast<RmaMemType>(mem.type))),
             return HCCL_E_PTR);
     }
@@ -118,7 +118,7 @@ HcclResult HccsRegedMemMgr::UnregisterMemory(void* memHandle)
     // 从LocalRamBuffer计数器删除
     hccl::BufferKey<uintptr_t, u64> memKey(reinterpret_cast<uintptr_t>(addr), size);
     bool resultPair = false;
-    EXECEPTION_CATCH(resultPair = localIpcRmaBufferMgr->Del(memKey), return HCCL_E_NOT_FOUND);
+    EXCEPTION_CATCH(resultPair = localIpcRmaBufferMgr->Del(memKey), return HCCL_E_NOT_FOUND);
     // 计数器大于1时，返回false，说明框架层有其它设备在使用这段内存，返回HCCL_E_AGAIN
     if (!resultPair) {
         HCCL_INFO("[HccsRegedMemMgr][UnregisterMemory]Memory reference count is larger than 0, do not deregister memory.");
@@ -166,7 +166,7 @@ HcclResult HccsRegedMemMgr::MakeRemoteIpcRmaBuffer(std::string &ipcRmaBufferDesc
         std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer)
 {
     HCCL_INFO("[HccsRegedMemMgr][%s] start", __FUNCTION__);
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         remoteIpcRmaBuffer = std::make_shared<hccl::RemoteIpcRmaBuffer>(netDevCtx_),
         return HCCL_E_PTR;
     );
@@ -258,7 +258,7 @@ HcclResult HccsRegedMemMgr::DeleteMem(hccl::BufferKey<uintptr_t, u64> &memKey)
         __FUNCTION__, reinterpret_cast<void *>(memKey.Addr()), memKey.Size());
 
     bool delResultPair = false;
-    EXECEPTION_CATCH(delResultPair = remoteIpcRmaBufferMgr_.Del(memKey), return HCCL_E_NOT_FOUND);
+    EXCEPTION_CATCH(delResultPair = remoteIpcRmaBufferMgr_.Del(memKey), return HCCL_E_NOT_FOUND);
     // 计数器大于1时，返回false，说明框架层有其它设备在使用这段endpointDesc，返回HCCL_SUCCESS
     if (!delResultPair) {
         HCCL_INFO("[HccsRegedMemMgr][%s] addr[%p], size[%lu] reference count is larger than 0",

@@ -117,13 +117,13 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     std::unique_ptr<Hccl::DevUbConnection> ubConn = nullptr;
     switch (protocol) {
         case Hccl::LinkProtocol::UB_TP:
-            EXECEPTION_CATCH(
+            EXCEPTION_CATCH(
                 ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
                 return HCCL_E_PTR
             );
             break;
         case Hccl::LinkProtocol::UB_CTP:
-            EXECEPTION_CATCH(
+            EXCEPTION_CATCH(
                 ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
                 return HCCL_E_PTR
             );
@@ -149,7 +149,7 @@ HcclResult AicpuTsUrmaChannel::BuildNotify()
     bool devUsed = true;
     for (uint32_t i = 0; i < notifyNum_; ++i) {
         std::unique_ptr<Hccl::UbLocalNotify> notifyPtr = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle_, devUsed),
             return HCCL_E_PTR
         );
@@ -165,7 +165,7 @@ HcclResult AicpuTsUrmaChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buf
     bufferVecTemp_.clear();
     for (size_t i = 0; i < bufs.size(); i++) {
         std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_),
             return HCCL_E_PTR
         );
@@ -189,7 +189,7 @@ HcclResult AicpuTsUrmaChannel::BuildUbMemTransport()
     bool isRecvFirst = socket.GetRole() == Hccl::SocketRole::CLIENT ? true : false;
 
     // make_unique / make_shared / release 包一层抛异常的宏
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         memTransport_ = std::make_unique<Hccl::UbMemTransport>(
             commonRes_, attr_, linkData, socket, rdmaHandle_, locCntNotifyRes, isRecvFirst
         ),
@@ -210,10 +210,10 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(localEp_.loc.device.devPhyId), type, 0, ipaddr);
     Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
-    EXECEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, 
+    EXCEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, 
         ipaddr, "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
     HCCL_INFO("[AicpuTsUrmaChannel][%s] listen_socket_info[%s]", __func__, serverSocket_->Describe().c_str());
-    EXECEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
 
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));

@@ -280,7 +280,7 @@ HcclResult TransportShmEvent::GetIsendDoneSignal(std::shared_ptr<RemoteNotify> &
 
 HcclResult TransportShmEvent::CreateIpcSignal(std::shared_ptr<LocalIpcNotify> &localNotify, u8 *notifyInfo)
 {
-    EXECEPTION_CATCH((localNotify = std::make_shared<LocalIpcNotify>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((localNotify = std::make_shared<LocalIpcNotify>()), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(localNotify);
 
     CHK_RET(localNotify->Init(deviceLogicId_, remoteDeviceId_));

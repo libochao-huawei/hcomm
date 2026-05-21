@@ -41,7 +41,7 @@ HcclResult CpuRoceEndpoint::Init()
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
     s32 devId = 0;
     CHK_RET(hrtGetDevice(&devId));
-    EXECEPTION_CATCH(Hccl::HccpPeerManager::GetInstance().Init(devId), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(Hccl::HccpPeerManager::GetInstance().Init(devId), return HCCL_E_INTERNAL);
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
@@ -54,7 +54,7 @@ HcclResult CpuRoceEndpoint::Init()
         ipAddr.Describe().c_str(),
         ctxHandle_);
 
-    EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<RoceRegedMemMgr>(), return HCCL_E_PARA);
+    EXCEPTION_CATCH(regedMemMgr_ = std::make_unique<RoceRegedMemMgr>(), return HCCL_E_PARA);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
     return HCCL_SUCCESS;
 }

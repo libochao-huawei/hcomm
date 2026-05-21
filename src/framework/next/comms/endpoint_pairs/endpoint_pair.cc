@@ -102,7 +102,7 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
         uint32_t devPhyId{0};
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId), devPhyId));
 
-        EXECEPTION_CATCH(socketMgrCompat_ =
+        EXCEPTION_CATCH(socketMgrCompat_ =
             std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId, socketTag),
             return HCCL_E_PTR);
         CHK_PTR_NULL(rankIpPortMap_);
