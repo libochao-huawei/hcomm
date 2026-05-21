@@ -307,7 +307,8 @@ HcclResult CommFactory::CreateCommRing(const std::string &tag, const DeviceMem &
         if (JudgmentSetHeterogP2p(rank)) {
             commVec[ringIndex]->SetHeterogP2PType();
         }
-        commVec[ringIndex]->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPort_, isSetHDCModeInfo_, isUseRankPort_);
+        commVec[ringIndex]->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPort_,
+            vnicRanksPort_, isSetHDCModeInfo_, isUseRankPort_);
         if (commVec[ringIndex]->Init() != HCCL_SUCCESS) {
             HCCL_ERROR("[Create][CommRing]comm array[%u] init failed", ringIndex);
             commVec[ringIndex].reset(nullptr);
@@ -363,7 +364,8 @@ HcclResult CommFactory::CreateCommHD(const std::string &tag, const DeviceMem &in
         if (JudgmentSetHeterogP2p(rank)) {
             commVec[ringIndex]->SetHeterogP2PType();
         }
-        commVec[ringIndex]->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPort_, isSetHDCModeInfo_, isUseRankPort_);
+        commVec[ringIndex]->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPort_,
+            vnicRanksPort_, isSetHDCModeInfo_, isUseRankPort_);
         if (commVec[ringIndex]->Init() != HCCL_SUCCESS) {
             HCCL_ERROR("[create][CommHD]comm array[%u] init failed", ringIndex);
             commVec[ringIndex].reset(nullptr);
@@ -397,7 +399,8 @@ HcclResult CommFactory::CreateCommStar(const std::string &tag, const DeviceMem &
 
         CHK_PRT_RET(!commVec[ringIndex], HCCL_ERROR("[create][CommStar]comm array[%u] reset failed",
             ringIndex), HCCL_E_PARA);
-        commVec[ringIndex]->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPort_, isSetHDCModeInfo_, isUseRankPort_);
+        commVec[ringIndex]->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPort_,
+            vnicRanksPort_, isSetHDCModeInfo_, isUseRankPort_);
 
         if (JudgmentSetHeterogP2p(userRank_)) {
             commVec[ringIndex]->SetHeterogP2PType();
@@ -451,7 +454,8 @@ HcclResult CommFactory::CreateCommMesh(const std::string &tag, const DeviceMem &
         if (JudgmentSetHeterogP2p(rank)) {
             commVec[ringIndex]->SetHeterogP2PType();
         }
-        commVec[ringIndex]->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPort_, isSetHDCModeInfo_, isUseRankPort_);
+        commVec[ringIndex]->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPort_,
+            vnicRanksPort_, isSetHDCModeInfo_, isUseRankPort_);
         if (commVec[ringIndex]->Init() != HCCL_SUCCESS) {
             HCCL_ERROR("[Create][CommMesh]comm array[%u] init failed", ringIndex);
             commVec[ringIndex].reset(nullptr);
@@ -718,10 +722,11 @@ bool CommFactory::JudgmentSetHeterogP2p(u32 rank) const
 
 HcclResult CommFactory::SetHDCModeInfo(
     std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &rankDevicePhyIdNicInfoMap,
-    std::vector<u32> &ranksPort, bool isSetHDCModeInfo, bool isUseRankPort)
+    std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort, bool isSetHDCModeInfo, bool isUseRankPort)
 {
     rankDevicePhyIdNicInfoMap_ = rankDevicePhyIdNicInfoMap;
     ranksPort_ = ranksPort;
+    vnicRanksPort_ = vnicRanksPort;
     isSetHDCModeInfo_ = isSetHDCModeInfo;
     isUseRankPort_ = isUseRankPort;
     return HCCL_SUCCESS;

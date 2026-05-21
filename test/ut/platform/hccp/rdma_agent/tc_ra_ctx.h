@@ -45,6 +45,12 @@ void TcRaRsCtxGetCrErrInfoList();
 void TcRaCtxGetJettyContext();
 void TcRaHdcCtxGetJettyContext();
 void TcRaPeerCtxGetJettyContext();
+void TcRaRsLmemBatchReg();
+void TcRaRsLmemBatchUnreg();
+void TcRaRsRmemBatchImport();
+void TcRaRsRmemBatchUnimport();
+void TcRaLmemBatch();
+void TcRaRmemBatch();
 
 void TcRaGetTpInfoListAsync();
 void TcRaHdcGetTpInfoListAsync();

@@ -13,7 +13,6 @@
 bool IsBatchLaunchMode();
 HcclResult HandleDispatchAllStreams();
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
