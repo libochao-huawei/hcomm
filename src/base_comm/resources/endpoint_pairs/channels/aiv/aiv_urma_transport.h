@@ -14,6 +14,7 @@
 #include "orion_adapter_hccp.h"
 #include "dev_ub_connection.h"
 #include "hcomm/hcomm_res_entity_defs.h"
+#include "mem_device_pub.h"
 namespace Hccl {
 
 class AivUrmaTransport {
@@ -23,6 +24,8 @@ public:
 
     TransportStatus GetStatus();
     std::string Describe() const;
+    void PrepareHostChannelEntity(ChannelEntity *channelEntitiesHost);
+    void SetQueueIndexDeviceMem(void *sqPiMem, void *sqCiMem, void *cqPiMem, void *cqCiMem, size_t memSize);
     void GetHostChannelEntity(ChannelEntity *channelEntitiesHost);
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
@@ -35,6 +38,7 @@ private:
     void GetSqContext();
     void GetCqContext();
     void GetProtectionInfo();
+    void EnsureQueueIndexDeviceMem();
 
     // 建链过程
     using RemoteBufferVec = std::vector<std::unique_ptr<RemoteUbRmaBuffer>>;
@@ -86,6 +90,10 @@ private:
     std::vector<RegedBufferEntity> remoteBufferInfo_{};
     std::vector<SqContext> sqContextVec_{};
     std::vector<CqContext> cqContextVec_{};
+    hccl::DeviceMem sqPiMem_{};
+    hccl::DeviceMem sqCiMem_{};
+    hccl::DeviceMem cqPiMem_{};
+    hccl::DeviceMem cqCiMem_{};
     uint32_t connNum_{0};
     bool cacheValid_{false};              // GetUserRemoteMem 的缓存标识
     std::vector<CommMem> remoteUserMems_{}; // 内存基本信息缓存
