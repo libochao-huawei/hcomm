@@ -50,7 +50,6 @@ foreach(dir ${LEGACY_DIRS})
     endif()
 endforeach()
 
-include_directories( BEFORE${HCOMM_DIR}/src/common/error_manager)
 
 # 将子目录添加到构建过程
 add_subdirectory(hccd)
