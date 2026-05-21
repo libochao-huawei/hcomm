@@ -78,7 +78,6 @@ target_include_directories(hccl_plf PRIVATE
 
     
     ${HCOMM_DIR}/include
-    ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include/hccl/
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
