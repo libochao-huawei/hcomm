@@ -24,7 +24,7 @@ constexpr u32 TEN_MILLISECOND_OF_USLEEP = 10000;
 LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle)
     : LocalRmaBuffer(buf, RmaType::UB), rdmaHandle(rdmaHandle)
 {
-     if (rdmaHandle == nullptr) {
+    if (rdmaHandle == nullptr) {
         THROW<NullPtrException>("LocalUbRmaBuffer's rdmaHandle is NULL");
     }
     std::pair<u64, u64> alignBuf = BufAlign(buf->GetAddr(), buf->GetSize());
@@ -82,6 +82,26 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer
     HCCL_INFO("LocalUbRmaBuffer Construct: buf=[%s]", buf->Describe().c_str());
 }
 
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, std::shared_ptr<LocalUbRmaBuffer> parent)
+    : LocalRmaBuffer(buf, RmaType::UB), rdmaHandle(parent->rdmaHandle)
+{
+    isAlias_ = true;
+    parentBuffer_ = parent;
+    tokenValue = parent->tokenValue;
+    tokenId = parent->tokenId;
+    tokenIdHandle = parent->tokenIdHandle;
+    memHandle = parent->memHandle;
+    keySize = parent->keySize;
+    reqReg = parent->reqReg;
+    segVa = parent->segVa;
+    if (memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, parent->key, HRT_UB_MEM_KEY_MAX_LEN) != EOK) {
+        HCCL_ERROR("[LocalUbRmaBuffer] alias key copy failed");
+        THROW<InternalException>("[%s] alias key copy failed.", __func__);
+    }
+    HCCL_INFO("[LocalUbRmaBuffer] Alias created: buf=[%s] parent=[%s]",
+        buf->Describe().c_str(), parent->Describe().c_str());
+}
+
 string LocalUbRmaBuffer::Describe() const
 {
     return StringFormat("LocalUbRmaBuffer[rdmaHandle=%p, buf=%s, memHandle=%p]",
@@ -104,6 +124,9 @@ std::unique_ptr<Serializable> LocalUbRmaBuffer::GetExchangeDto()
 
 LocalUbRmaBuffer::~LocalUbRmaBuffer()
 {
+    if (isAlias_) {
+        return;
+    }
     if (rdmaHandle != nullptr && memHandle != 0) {
         HCCL_INFO("[LocalUbRmaBuffer::%s] rdmaHandle[%p], lmemHandle[0x%llx]", __func__, rdmaHandle, memHandle);
         DECTOR_TRY_CATCH("LocalUbRmaBuffer", HrtRaUbLocalMemUnreg(rdmaHandle, memHandle));
