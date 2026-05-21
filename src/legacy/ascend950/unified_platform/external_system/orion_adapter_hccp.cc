@@ -1356,7 +1356,7 @@ const std::map<HrtUbJfcMode, JfcMode> HRT_UB_JFC_MODE_MAP = {{HrtUbJfcMode::NORM
                                                               {HrtUbJfcMode::CCU_POLL, JfcMode::JFC_MODE_CCU_POLL},
                                                               {HrtUbJfcMode::USER_CTL, JfcMode::JFC_MODE_USER_CTL_NORMAL}};
 
-constexpr u32 CQ_DEPTH     = 1024 * 1024 / 64;
+constexpr u32 CQ_DEPTH     = 2 * 1024 * 1024 / 64;
 constexpr u32 CCU_CQ_DEPTH = 64;
 
 JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, CqCreateInfo& cqInfo, HrtUbJfcMode mode)
@@ -1404,6 +1404,8 @@ void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle)
 
 JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo)
 {
+    CHECK_NULLPTR(handle, "[HrtRaUbCreateJfcUserCtl] handle is nullptr!");
+    HCCL_INFO("[HrtRaUbCreateJfcUserCtl] Input params: handle=%p", handle);
     struct CqInfoT info {};
 
     info.in.chanHandle = nullptr;
