@@ -16,11 +16,11 @@ set(HCOMM_ALG_TC_ROOT    ${CMAKE_CURRENT_SOURCE_DIR}/testcase)
 set(HCOMM_ALG_UTILS_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 
 set(HCOMM_CODE_ROOT      ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
-set(HCOMM_CODE_COMMON    ${HCOMM_CODE_ROOT}/src/common)
-set(HCOMM_CODE_PLATFORM  ${HCOMM_CODE_ROOT}/src/platform)
-set(HCOMM_CODE_ALGORITHM ${HCOMM_CODE_ROOT}/src/algorithm)
-set(HCOMM_CODE_FRAMEWORK ${HCOMM_CODE_ROOT}/src/framework)
-set(HCOMM_CODE_LEGACY    ${HCOMM_CODE_ROOT}/src/legacy)
+set(HCOMM_CODE_COMMON    ${HCOMM_CODE_ROOT}/src/legacy/ascend910/common)
+set(HCOMM_CODE_PLATFORM  ${HCOMM_CODE_ROOT}/src/legacy/ascend910/platform)
+set(HCOMM_CODE_ALGORITHM ${HCOMM_CODE_ROOT}/src/legacy/ascend910/algorithm)
+set(HCOMM_CODE_FRAMEWORK ${HCOMM_CODE_ROOT}/src/legacy/ascend910/framework)
+set(HCOMM_CODE_LEGACY    ${HCOMM_CODE_ROOT}/src/legacy/ascend950)
 
 set(THIRD_PARTY_PATH   ${CANN_3RD_LIB_PATH})
 set(PROTOC_PROGRAM     ${THIRD_PARTY_PATH}/protobuf/bin/protoc)
@@ -144,49 +144,49 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/rank_graph
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/resource/engine
 
-    ${HCOMM_CODE_FRAMEWORK}/next/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads/slaves/
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/communicator
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/communicator/aicpu
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/rank
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/rank_pairs
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/profiling
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/profiling/aicpu
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/profiling/host
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/taskException
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/taskException/aicpu
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/taskException/host
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/
+    ${HCOMM_CODE_ROOT}/src/coll_communicator
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/communicator
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/communicator/device
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/remote/rank_pairs
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/profiling
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/profiling/aicpu
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/profiling/host
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/taskException
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/taskException/aicpu
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/taskException/host
     ${HCOMM_CODE_FRAMEWORK}/device/framework
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels/slaves
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels/aicpu/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/sockets/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoints/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoints/reged_mems/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/api_c_adpt/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/common/
-    ${HCOMM_CODE_FRAMEWORK}/../common/stream
-    ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/inc
-    ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/inc/network
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/slaves
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/sockets/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoints/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoints/reged_mems/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/
+    ${HCOMM_CODE_ROOT}/src/base_comm/primitives/api_c_adpt/
+    ${HCOMM_CODE_ROOT}/src/base_comm/common/
+    ${HCOMM_CODE_ROOT}/src/legacy/ascend910/common/stream
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
     ${RDMA_CORE_INCLUDE_DIR}
 
     # ccu 头文件
-    ${HCOMM_CODE_FRAMEWORK}/../../pkg_inc/hcomm/ccu/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/adpt/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/common/
+    ${HCOMM_CODE_ROOT}/pkg_inc/hcomm/ccu/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/adpt/
+    ${HCOMM_CODE_ROOT}/src/base_comm/common/
  
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/pub_inc/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/ccu_comp/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_transport/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/pub_inc/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_transport/
 )
 
 set(HCOMM_LEGACY_INCLUDE_LIST

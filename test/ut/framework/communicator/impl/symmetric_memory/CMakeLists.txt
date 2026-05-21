@@ -22,7 +22,7 @@ add_executable(hccl_utest_framework_symmetric_memory ${src_to_test_list})
 target_include_directories(hccl_utest_framework_symmetric_memory PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/test/ut/framework/communicator
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/symmetric_memory
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/symmetric_memory
 )
 
 target_compile_definitions(hccl_utest_framework_symmetric_memory PRIVATE
