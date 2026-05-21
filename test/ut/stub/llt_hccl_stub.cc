@@ -5529,3 +5529,8 @@ HcclResult GetCustomKernelFilePath(std::string &binaryPath)
     return HCCL_SUCCESS;
 }
 }
+
+u32 HcomConsumeRankTableJsonCrc(s32 deviceLogicId)
+{
+    return 0;
+}
