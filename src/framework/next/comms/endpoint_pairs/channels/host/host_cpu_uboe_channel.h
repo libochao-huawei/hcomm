@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef HOST_CPU_ROCE_CHANNEL_H
-#define HOST_CPU_ROCE_CHANNEL_H
+#ifndef HOST_CPU_UBOE_CHANNEL_H
+#define HOST_CPU_UBOE_CHANNEL_H
 
 #include <mutex>
 
@@ -16,57 +16,52 @@
 #include "enum_factory.h"
 #include "hccl_common.h"
 #include "../../sockets/socket_mgr.h"
-#include "infiniband/verbs.h"
 
-// Orion
-#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "../../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
+#include "host_urma_connection.h"
+#include "local_ub_rma_buffer.h"
 #include "remote_rma_buffer.h"
-#include "host_rdma_connection.h"
+
 
 namespace hcomm {
 
 class HostCpuUboeChannel final : public Channel {
 public:
-    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, QP_CREATED,  DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
+    
+    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, JETTY_CREATED,  DATA_EXCHANGE, JETTY_IMPORTED, CONN_OK)
 
     HostCpuUboeChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc);
     ~HostCpuUboeChannel();
 
     HcclResult Init() override;
-    // 查询notify数量
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    // 查询remoteMem
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) override;
-    // 创建channel前查询channel状态
     ChannelStatus GetStatus() override;
-    // GetStatus内部实现
     HcclResult GetStatus(ChannelStatus &status);
 
-    // channel描述
     std::string Describe() const;
 
-    // 数据面调用verbs接口
-    // host dpu实现同步机制
-    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx);
-    // host dpu实现同步机制
-    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout);
-    
-    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx);
-    HcclResult Write(void *dst, const void *src, uint64_t len);
-    HcclResult Read(void *dst, const void *src, uint64_t len);
-    HcclResult ChannelFence();
-    HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
+    // 数据面接口
+    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;
+    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override;
+    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override;
+    HcclResult Write(void *dst, const void *src, uint64_t len) override;
+    HcclResult Read(void *dst, const void *src, uint64_t len) override;
+    HcclResult ChannelFence() override;
 
-    virtual HcclResult Clean() override;
-    virtual HcclResult Resume() override;
+    HcclResult Clean() override 
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult Resume() override
+    {
+        return HCCL_SUCCESS;
+    }
 
 private:
     HcclResult ParseInputParam();
     HcclResult StartListen();
     HcclResult BuildSocket();
     HcclResult BuildConnection();
-    HcclResult BuildNotify();
     HcclResult BuildBuffer();
 
     HcclResult CheckSocketStatus();
@@ -74,26 +69,12 @@ private:
     HcclResult ExchangeData();
     HcclResult ImportJetty();
 
-    void NotifyVecPack(Hccl::BinaryStream &binaryStream);
     HcclResult BufferVecPack(Hccl::BinaryStream &binaryStream);
     HcclResult ConnVecPack(Hccl::BinaryStream &binaryStream);
-    // void HandshakeMsgPack(Hccl::BinaryStream &binaryStream);
 
-    // HcclResult HandshakeMsgUnpack(Hccl::BinaryStream &binaryStream);
-    HcclResult NotifyVecUnpack(Hccl::BinaryStream &binaryStream);
     HcclResult RmtBufferVecUnpackProc(Hccl::BinaryStream &binaryStream);
     HcclResult ConnVecUnpackProc(Hccl::BinaryStream &binaryStream);
 
-    std::vector<Hccl::JettyInfo> GetJettyInfos() const; // in Connection
-
-    HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct urma_jfs_wr &notifyRecordWr) const;
-    HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
-                                      struct urma_jfs_wr &writeWithNotifyWr) const;
-
-    HcclResult PostUrmaOp(const char *caller, urma_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len);
-    void BuildUrmaWr(const char *caller, urma_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len,
-                     size_t localIdx, size_t rmtIdx, struct urma_jfs_wr &wr, struct urma_sge &sg) const;
-    HcclResult PostAndCheckSend(const char *caller, struct urma_jfs_wr &wr);
     HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
 
@@ -101,33 +82,30 @@ private:
     EndpointHandle endpointHandle_;
     HcommChannelDesc channelDesc_;
 
-    // 转换参数
-    EndpointDesc localEp_;
-    EndpointDesc remoteEp_;
-    uint32_t notifyNum_{0};
-    Hccl::Socket *socket_{nullptr};
-    RdmaHandle rdmaHandle_{nullptr};
-
-    std::vector<std::unique_ptr<HostUrmaConnection>> connections_{};
-    std::vector<Hccl::LocalUbRmaBuffer *> localRmaBuffers_{};
-    std::vector<uint32_t> localDpuNotifyIds_{};
-    uint32_t bufferNum_{0};
-    uint32_t connNum_{0};
-    // Hccl::BaseMemTransport::Attribution attr_;
+    // 状态
     ChannelStatus channelStatus_{ChannelStatus::INIT};
     RdmaStatus rdmaStatus_{RdmaStatus::INIT};
-    std::vector<uint32_t> remoteDpuNotifyIds_;
-    std::vector<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> rmtRmaBuffers_{};
-    ExchangeRdmaConnDto rmtConnDto_;
-    std::vector<std::unique_ptr<HcclMem>> remoteMems{};
-    uint32_t wqeNum_{0};
-    std::unique_ptr<SocketMgr> socketMgr_{nullptr};
-    bool fenceFlag_{false};
+    
+    // 转换参数
+    EndpointDesc localEpDesc_;
+    EndpointDesc remoteEpDesc_;
+    Hccl::Socket *socket_{nullptr};
+    const Hccl::SocketConfig *socketConfig_{nullptr};
 
-    uint64_t maxMsgSize_{0};
+    struct PortAggregationCtx
+    {
+        bool fenceFlag{false};
+        uint32_t wqeNum{0};
 
-    std::mutex cq_mutex;
-    std::mutex sendCq_mutex;
+        RdmaHandle rdmaHandle_{};
+        std::unique_ptr<HostUrmaConnection> connection_;
+        ExchangeRdmaConnDto rmtConnDto_;
+    };
+    
+    std::vector<PortAggregationCtx> portCtxs_;
+    std::vector<Hccl::LocalUbAggregatedRmaBuffer *> localRmaBuffers_;
+    std::vector<std::unique_ptr<Hccl::RemoteUbAggregatedRmaBuffer>> remoteRmaBuffers_;
+    uint32_t devicePhyId_{0};
 };
 
 } // namespace hcomm

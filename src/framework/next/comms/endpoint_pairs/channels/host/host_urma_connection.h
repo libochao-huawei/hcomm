@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef HCCLV2_RMA_HOST_NET_CONNECTION_H
-#define HCCLV2_RMA_HOST_NET_CONNECTION_H
+#ifndef HOST_URMA_CONNECTION_H
+#define HOST_URMA_CONNECTION_H
 
 #include "hccp_common.h"
 #include "enum_factory.h"
@@ -30,7 +30,7 @@ public:
 
     };
     MAKE_ENUM(RdmaConnStatus, CLOSED, INIT, QP_CREATED, QP_MODIFIED, SOCKET_TIMEOUT)
-    HostUrmaConnection(Hccl::Socket *socket, UrmaHandle urmaHandle);
+    HostUrmaConnection(Hccl::Socket *socket, RdmaHandle rdmaHandle);
 
     HcclResult Init();
     HcclResult CreateJetty();
@@ -38,7 +38,7 @@ public:
     // HcclResult ParseRmtQpAttr(const Hccl::Serializable &rmtQpAttrSerial);
     HcclResult GetExchangeDto(std::unique_ptr<Hccl::Serializable> &serial);
     HcclResult ParseRmtExchangeDto(const Hccl::Serializable &rmtDto); // 解析收到的远端序列化数据
-    HcclResult ImportJetty();
+    HcclResult ImportJetty(const Hccl::Serializable &rmtDto);
     RdmaConnStatus GetRdmaStatus();
 
     ~HostUrmaConnection();
@@ -52,4 +52,4 @@ private:
 
 } // namespace hcomm
 
-#endif // HCCLV2_RMA_HOST_NET_CONNECTION_H
+#endif // HOST_URMA_CONNECTION_H

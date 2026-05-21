@@ -23,6 +23,7 @@
 #include "./aiv/aiv_urma_channel.h"
 #include "./aicpu/aicpu_ts_hccs_channel.h"
 #include "./aicpu/aicpu_ts_roce_channel_v2.h"
+#include "./host/host_cpu_uboe_channel.h"
 
 namespace hcomm {
 std::unordered_map<ChannelHandle, ChannelHandle> channelD2HHandleMap_;
@@ -40,12 +41,11 @@ HcclResult Channel::CreateChannel(
                 EXECEPTION_CATCH(uniqueChannelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc),
                     return HCCL_E_PARA);
                 break;
-            } 
-            // else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBOE) {
-            //     EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuUboeChannel>(endpointHandle, channelDesc),
-            //         return HCCL_E_PARA);
-            //     break;
-            // }
+            } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBOE) {
+                EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuUboeChannel>(endpointHandle, channelDesc),
+                    return HCCL_E_PARA);
+                break;
+            }
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
                 channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
                 EXECEPTION_CATCH(uniqueChannelPtr = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc),
