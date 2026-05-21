@@ -23,6 +23,7 @@ set(UT_COMMON_INCLUDE_LIST
     # src/pub_inc 目录下头文件
     ${HCCL_CODE_ROOT}/src/common/
     ${HCCL_CODE_ROOT}/src/pub_inc
+    ${HCOMM_DIR}/src/common/error_manager
     ${HCCL_CODE_ROOT}/src/pub_inc/inner
     ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
     ${HCCL_CODE_ROOT}/src/pub_inc/new
