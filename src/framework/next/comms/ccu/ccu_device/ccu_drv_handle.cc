@@ -24,6 +24,7 @@
 */
 
 #include "ccu_kernel_mgr.h"
+#include "ccu_instance_mgr.h"
 
 #include "adapter_rts.h"
 
@@ -110,6 +111,7 @@ CcuResult CcuDrvHandle::Init()
      * CCU_CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
      */
     CCU_CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
+    CCU_CHK_RET(CcuInstanceMgr::GetInstance(devLogicId_).Init());
 
     return CcuResult::CCU_SUCCESS;
 }
@@ -132,6 +134,7 @@ CcuResult CcuDrvHandle::Deinit()
     // 释放流程不打断，不抛异常，尽量尝试释放所有资源
     // 释放有时序要求
     HCCL_RUN_INFO("[CcuDrvHandle] start to deinit ccu driver, deviceLogicId[%d].", devLogicId_);
+    (void)CcuInstanceMgr::GetInstance(devLogicId_).Deinit();
     (void)CcuKernelMgr::GetInstance(devLogicId_).Deinit();
     /* 为了支持ccu新老通信域混跑，暂时不启用开源数据结构
      * (void)CcuResBatchAllocator::GetInstance(devLogicId_).Deinit();
