@@ -13,6 +13,7 @@ set(src_list
     host_rdma_connection.cc
     host_cpu_urma_channel.cc
     dpu_notify/dpu_notify_manager.cc
+    host_cpu_uboe_channel.cc
 )
 
 if(TARGET hcomm)
