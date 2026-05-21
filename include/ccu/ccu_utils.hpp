@@ -44,27 +44,22 @@ private:
     CcuResult   code_;
     std::string what_;
 };
+enum class CcuArithmeticOperatorType { ADDITION, INVALID };
 
 template <typename lhsT, typename rhsT> class CcuOperator {
 public:
-    CcuOperator(lhsT lhs, rhsT rhs) : lhs(lhs), rhs(rhs)
-    {
-    }
-
+    CcuOperator(lhsT lhs, rhsT rhs) : lhs(lhs), rhs(rhs){}
     lhsT lhs;
     rhsT rhs;
 };
 
-enum class CcuArithmeticOperatorType { ADDITION, INVALID };
-
-template <typename lhsT, typename rhsT> class CcuArithmeticOperator : public CcuOperator<lhsT, rhsT> {
+template <typename lhsT, typename rhsT> 
+class CcuArithmeticOperator : public CcuOperator<lhsT, rhsT> {
 public:
-    CcuArithmeticOperator(lhsT lhs, rhsT rhs, CcuArithmeticOperatorType type)
-        : CcuOperator<lhsT, rhsT>(lhs, rhs), type(type)
+    CcuArithmeticOperator(lhsT lhs, rhsT rhs, CcuArithmeticOperatorType type): CcuOperator<lhsT, rhsT>(lhs, rhs), type(type)
     {
         Check();
     }
-
     void Check() const
     {
         // 默认通用模板：未特化的 (lhsT, rhsT) 组合属于编译期允许、运行期非法。
