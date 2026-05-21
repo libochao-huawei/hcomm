@@ -11,6 +11,7 @@
 set(src_list
     coll_comm_res_c_adpt.cc
     coll_comm_c_adpt.cc
+    exchange_info_c_adpt.cc
 )
 
 if(TARGET hcomm)

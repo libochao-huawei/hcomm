@@ -1057,7 +1057,13 @@ HcclResult CommBase::GetIntraRankIPInfo(std::map<u32, HcclSocketRole> &rankRole,
         HcclRankLinkInfo linkInfo {};
         linkInfo.userRank = paraVector_[dstRank].userRank;
         linkInfo.devicePhyId = dstDeviceId;
-        linkInfo.port = GetNicPort(paraVector_[dstRank].devicePhyId, ranksPort_, linkInfo.userRank, isUseRankPort_);
+        if (vnicRanksPort_.empty() || (userRankSize > 1 && IsSupportMC2(tag_) >= MC2_PLANE_MODE_COMBINE)) {
+            linkInfo.port = GetNicPort(paraVector_[dstRank].devicePhyId, ranksPort_,
+                linkInfo.userRank, isUseRankPort_);
+        } else {
+            linkInfo.port = GetNicPort(paraVector_[dstRank].devicePhyId, vnicRanksPort_,
+                linkInfo.userRank, isUseRankPort_);
+        }
         HcclIpAddress ipAddress(linkInfo.devicePhyId);
         DeviceIdType deviceidType =
             useSuperPodMode_ ? (DeviceIdType::DEVICE_ID_TYPE_SDID) : (DeviceIdType::DEVICE_ID_TYPE_PHY_ID);
@@ -1111,7 +1117,11 @@ HcclResult CommBase::GetIntraRankIPInfo(std::vector<u32> &dstIntraVec,
         linkInfo.userRank = rankInfo.userRank;
         linkInfo.devicePhyId = rankInfo.devicePhyId;
         linkInfo.ip = isHaveCpuRank_ ? rankInfo.hostIp : rankInfo.nicIp[0];
-        linkInfo.port = GetNicPort(linkInfo.devicePhyId, ranksPort_, linkInfo.userRank, isUseRankPort_);
+        if (!vnicRanksPort_.empty()) {
+            linkInfo.port = GetNicPort(linkInfo.devicePhyId, vnicRanksPort_, linkInfo.userRank, isUseRankPort_);
+        } else {
+            linkInfo.port = GetNicPort(linkInfo.devicePhyId, ranksPort_, linkInfo.userRank, isUseRankPort_);
+        }
         linkInfo.socketsPerLink = 1;
 
         HcclSocketRole localRole;
@@ -1151,7 +1161,13 @@ HcclResult CommBase::GetSuperNodeIntraRankIPInfo(std::map<u32, HcclSocketRole> &
         linkInfo.devicePhyId = -1;
         linkInfo.ip = ipAddr;
         CHK_RET(GetRankByUserRank(linkInfo.userRank, dstRank));
-        linkInfo.port = GetNicPort(paraVector_[dstRank].devicePhyId, ranksPort_, linkInfo.userRank, isUseRankPort_);
+        if (!vnicRanksPort_.empty()) {
+            linkInfo.port = GetNicPort(paraVector_[dstRank].devicePhyId, vnicRanksPort_,
+                linkInfo.userRank, isUseRankPort_);
+        } else {
+            linkInfo.port = GetNicPort(paraVector_[dstRank].devicePhyId, ranksPort_,
+                linkInfo.userRank, isUseRankPort_);
+        }
         linkInfo.socketsPerLink = 1;
 
         HCCL_DEBUG("[Get][SuperNodeIntraRankIPInfo] userRank[%u], destRank[%u], localRole[%d], port[%u], ip[%s]",
@@ -1189,10 +1205,11 @@ void CommBase::SetMachineLinkMode(MachinePara &machinePara)
 
 HcclResult CommBase::SetHDCModeInfo(
     std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &rankDevicePhyIdNicInfoMap,
-    std::vector<u32> &ranksPort, bool isSetHDCModeInfo, bool isUseRankPort)
+    std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort, bool isSetHDCModeInfo, bool isUseRankPort)
 {
     rankDevicePhyIdNicInfoMap_ = rankDevicePhyIdNicInfoMap;
     ranksPort_ = ranksPort;
+    vnicRanksPort_ = vnicRanksPort;
     isSetHDCModeInfo_ = isSetHDCModeInfo;
     isUseRankPort_ = isUseRankPort;
     return HCCL_SUCCESS;
