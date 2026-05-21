@@ -1033,6 +1033,7 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
     auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
     CHK_PTR_NULL(streamLitePtr);
     Hccl::FlagTaskInfo flagTaskInfo;
+    CHK_PTR_NULL(streamLitePtr->GetRtsq());
     flagTaskInfo.streamId = streamLitePtr->GetSqId();
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::HEAD;
