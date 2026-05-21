@@ -50,7 +50,8 @@ protected:
 
 private:
     MAKE_ENUM(InnerStatus,
-        INIT, JETTY_CREATING, TP_INFO_GETTING,
+        INIT, TP_INFO_GETTING, TP_ATTR_GETTING,
+        JETTY_CREATING,
         EXCHANGEABLE, JETTY_IMPORTING,
         CONNECTED,
         CONN_INVALID);
@@ -70,6 +71,8 @@ private:
     HcclResult    GetLocalCcuRmaBufferInfo();
     HcclResult    CreateJetty();
     HcclResult    GetTpInfo();
+    HcclResult    GetTpAttr();
+    HcclResult    GetTaTimeOut();
     void          GenerateLocalPsn();
     void          ResetRequestCtxs();
     HcclResult    StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle);
@@ -112,11 +115,16 @@ private:
 
     // 感知tp获取tp handle，import jetty后urma提供tpn
     TpInfo   tpInfo_{};
+    TpAttrInfo tpAttrInfo_{};
 
     // 异步import上下文信息
     std::vector<RequestHandle>  reqHandles_;
     std::vector<std::vector<char>> reqDataBuffers_;
     std::vector<void*>          remoteJettyHandlePtrs_;
+
+    u8 errTimeout_{8};
+
+    HcclResult CalcTotalTimeout(CtxHandle ctxHandle, TpHandle tpHandle, uint32_t &outTotalTimeoutMs);
 };
 
 class CcuRtpConnection : public CcuConnection {

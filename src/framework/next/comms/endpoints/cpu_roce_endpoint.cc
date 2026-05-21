@@ -17,6 +17,7 @@
 #include "adapter_rts_common.h"
 #include "hccp_peer_manager.h"
 #include "server_socket_manager.h"
+#include "hccp.h"
 
 using Hccl::HcclException;
 using std::string;
@@ -139,6 +140,12 @@ HcclResult CpuRoceEndpoint::GetCapabilities(Capabilities &caps)
     if (!isCapabilitiesAvailable_) {
         // 待 HCCP 提供查询设备支持的最大发送消息的接口后，查询设备实际值。
         capabilities_.maxMsgSize = RDMA_MAX_WR_LENGTH;
+        uint32_t ret = RaGetLbMax(this->regedMemMgr_->rdmaHandle_, &(capabilities_.lbMax));
+        CHK_PRT_RET(ret != 0,
+            HCCL_ERROR("[CpuRoceEndpoint::GetCapabilities][GetLbMax]errNo[0x%016llx] RaGetLbMax fail. "
+            "return[%d], params: rdmaHandle[%p], lbMax[%d]",
+            HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, this->regedMemMgr_->rdmaHandle_, capabilities_.lbMax),
+            HCCL_E_NETWORK);
         isCapabilitiesAvailable_ = true;
     }
     caps = capabilities_;
