@@ -211,6 +211,7 @@ HcclResult AicpuTsUboeChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buf
 HcclResult AicpuTsUboeChannel::BuildSocket()
 {
     if (socket_ != nullptr) {
+        HCCL_INFO("[AicpuTsUboeChannel::%s] socket ptr is not NULL, return success", __func__);
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[AicpuTsUboeChannel][%s] socket ptr is NULL, rebuildSocket", __func__);
