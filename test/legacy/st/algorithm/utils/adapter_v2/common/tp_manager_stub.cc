@@ -35,4 +35,19 @@ HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInf
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult TpManager::GetTpAttr(const GetTpAttrParam &param, TpAttrInfo &tpAttrInfo, RdmaHandle rdmaHandle)
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpManager::ReleaseTpAttr(const TpHandle tpHandle, const TpAttrInfo &tpAttrInfo)
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+uint8_t TpManager::CalcTaTimeout(const TpAttrInfo &tpAttrInfo)
+{
+    return AT_GEAR_DEFAULT * 8;
+}
+
 }
