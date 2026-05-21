@@ -1286,6 +1286,7 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            HCCL_INFO("~~~~~~~~~~~~~~begin");
             CheckCcuMc2CompatMode();
             HCCL_INFO("~~~~~~~~~~~~~~0");
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(*comm);
