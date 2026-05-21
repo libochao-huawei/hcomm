@@ -1,4 +1,4 @@
-#include "../../hccl_api_base_test.h"
+#include "gtest/gtest.h"
 #include "hccl/hccl_res.h"
 #include "hccl_common.h"
 #include "config/env_config.h"
@@ -11,6 +11,7 @@
 #include "mockcpp/mockcpp.hpp"
 #include "dfx/cluster_monitor/cluster_monitor.h"
 #include "host/host_cpu_roce_channel.h"
+#include "param_check_pub.h"
 
 #define private public
 
@@ -24,7 +25,6 @@ class HcclChannelDescTest : public BaseInit {
 public:
     void SetUp() override
     {
-        BaseInit::SetUp();
         const char *fakeA5SocName = "Ascend950PR_958b";
         MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
         MOCKER(&HcclCommDfx::ReportKernel).stubs().will(returnValue(HCCL_SUCCESS));
@@ -33,7 +33,6 @@ public:
     }
     void TearDown() override
     {
-        BaseInit::TearDown();
         GlobalMockObject::verify();
     }
 protected: 
@@ -191,6 +190,7 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_IbvPostRecv_Fails_Return_
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
+<<<<<<< HEAD
 
 TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_WrongProtocol_Expect_E_PARA)
 {
@@ -269,3 +269,5 @@ TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_Uboe_QosUnset_UsesCommH
     ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+=======
+>>>>>>> 150e99e1... debug: enable AIV to directly drive URMA
