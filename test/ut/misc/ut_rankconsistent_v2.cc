@@ -101,22 +101,20 @@ TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_EnvVarMismatch_Expect_INTERN
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
-// // 异常：ranktable CRC不一致
-// TEST_F(RankConsistentV2Test, CompareCheckFrameV2_RankTableMismatch)
-// {
-//     checker_.RecordEnvVarCrcV2();
-//     RankTable_t rankTable;
-//     FillMinRankTable(rankTable);
-//     checker_.RecordRankTableCrcV2(rankTable);
+// 异常：ranktable CRC不一致
+TEST_F(RankConsistentV2Test, CompareCheckFrameV2_RankTableMismatch)
+{
+    u32 rankTableCrc = 0x1234;
+    ret = checker_.RecordRankTableCrcV2(rankTableCrc);
 
-//     CheckFrameV2 localFrame;
-//     checker_.GenerateCheckFrameV2(localFrame);
-//     CheckFrameV2 remoteFrame = localFrame;
-//     remoteFrame.rankTableCrcArray[0] = 0xDEADBEEF;
+    CheckFrameV2 localFrame;
+    checker_.GenerateCheckFrameV2(localFrame);
+    CheckFrameV2 remoteFrame = localFrame;
+    remoteFrame.rankTableCrcArray[0] = 0xDEADBEEF;
 
-//     HcclResult ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
-//     EXPECT_EQ(ret, HCCL_E_INTERNAL);
-// }
+    HcclResult ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
 
 // 异常：子通信域参数CRC不一致
 TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_SubCommMismatch_Expect_INTERNAL)
