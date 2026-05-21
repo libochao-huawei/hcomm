@@ -195,7 +195,7 @@ TEST_F(TestChannelProcess, Ut_LaunchChannelKernel_When_ChannelKindIsUBOE_CallsCh
         HcclResult GetNotifyNum(uint32_t *notifyNum) const override {
             return HCCL_SUCCESS;
         }
-        HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override {
+        HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags) override {
             return HCCL_SUCCESS;
         }
         hcomm::ChannelStatus GetStatus() override {

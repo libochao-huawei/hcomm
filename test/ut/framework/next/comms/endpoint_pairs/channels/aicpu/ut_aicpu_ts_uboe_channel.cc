@@ -333,7 +333,7 @@ public:
     }
 };
 
-TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMem_NullParams_ReturnsError) {
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NullParams_ReturnsError) {
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUboeChannel ch(ep, desc);
@@ -343,12 +343,12 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMem_NullParams_ReturnsError) {
     char** memTags = nullptr;
 
     // remoteMem 为空指针
-    EXPECT_EQ(ch.GetRemoteMem(nullptr, &memNum, memTags), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(nullptr, &memNum, &memTags), HCCL_E_PARA);
     // memNum 为空指针
-    EXPECT_EQ(ch.GetRemoteMem(&remoteMem, nullptr, memTags), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(&remoteMem, nullptr, &memTags), HCCL_E_PARA);
 }
 
-TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMem_NoBuffers_ReturnsSuccessWithZero) {
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NoBuffers_ReturnsSuccessWithZero) {
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUboeChannel ch(ep, desc);
@@ -360,13 +360,13 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMem_NoBuffers_ReturnsSuccessWithZero)
     uint32_t memNum = 0;
     char* memTags[2] = {nullptr, nullptr}; // 任意长度，函数内不会使用
 
-    HcclResult ret = ch.GetRemoteMem(&remoteMem, &memNum, memTags);
+    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memNum, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(remoteMem, nullptr);
     EXPECT_EQ(memNum, 0U);
 }
 
-TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMem_WithBuffers_ReturnsCorrectData) {
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithBuffers_ReturnsCorrectData) {
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUboeChannel ch(ep, desc);
@@ -382,7 +382,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMem_WithBuffers_ReturnsCorrectData) {
     uint32_t memNum = 0;
     // 分配内存标签数组，长度至少为2
     char* memTags[2];
-    HcclResult ret = ch.GetRemoteMem(&remoteMem, &memNum, memTags);
+    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memNum, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 2U);
     ASSERT_NE(remoteMem, nullptr);
@@ -400,7 +400,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMem_WithBuffers_ReturnsCorrectData) {
     EXPECT_STREQ(memTags[1], "user_buffer");
 }
 
-TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_NullParams_ReturnsError) {
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NullParams_ReturnsError) {
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUboeChannel ch(ep, desc);
@@ -415,12 +415,12 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_NullParams_ReturnsError) {
     uint32_t memNum = 0;
 
     // 传入无效参数，期望返回参数错误（具体错误码视实现而定，当前返回 HCCL_E_PARA）
-    EXPECT_EQ(ch.GetUserRemoteMem(nullptr, &memTag, &memNum), HCCL_E_PARA);
-    EXPECT_EQ(ch.GetUserRemoteMem(&remoteMem, nullptr, &memNum), HCCL_E_PARA);
-    EXPECT_EQ(ch.GetUserRemoteMem(&remoteMem, &memTag, nullptr), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(nullptr, &memNum, &memTag), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(&remoteMem, &memNum, nullptr), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(&remoteMem, nullptr, &memTag), HCCL_E_PARA);
 }
 
-TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_OnlyCclBuffer_ReturnsSuccessWithZero) {
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccessWithZero) {
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUboeChannel ch(ep, desc);
@@ -436,14 +436,14 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_OnlyCclBuffer_ReturnsSuccessW
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = ch.GetUserRemoteMem(&remoteMem, &memTag, &memNum);
+    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memNum, &memTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(memNum, 0U);
-    EXPECT_EQ(remoteMem, nullptr);
+    EXPECT_EQ(memNum, 1U);
+    ASSERT_NE(remoteMem, nullptr);
     // memTag 在数量为0时也可能为 nullptr，不强制检查
 }
 
-TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_WithUserBuffers_ReturnsCorrectData) {
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithUserBuffers_ReturnsCorrectData) {
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUboeChannel ch(ep, desc);
@@ -475,21 +475,21 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_WithUserBuffers_ReturnsCorrec
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = ch.GetUserRemoteMem(&remoteMem, &memTag, &memNum);
+    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memNum, &memTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(memNum, 2U);
+    EXPECT_EQ(memNum, 3U);
     ASSERT_NE(remoteMem, nullptr);
     ASSERT_NE(memTag, nullptr);
 
     // 验证第一个用户内存（索引1）
-    EXPECT_EQ(remoteMem[0].type, COMM_MEM_TYPE_DEVICE);
-    EXPECT_EQ(remoteMem[0].addr, reinterpret_cast<void*>(0x2000));
-    EXPECT_EQ(remoteMem[0].size, 8192U);
-    EXPECT_STREQ(memTag[0], "user1");
+    EXPECT_EQ(remoteMem[1].type, COMM_MEM_TYPE_DEVICE);
+    EXPECT_EQ(remoteMem[1].addr, reinterpret_cast<void*>(0x2000));
+    EXPECT_EQ(remoteMem[1].size, 8192U);
+    EXPECT_STREQ(memTag[1], "user1");
 
     // 验证第二个用户内存（索引2）
-    EXPECT_EQ(remoteMem[1].type, COMM_MEM_TYPE_DEVICE);
-    EXPECT_EQ(remoteMem[1].addr, reinterpret_cast<void*>(0x3000));
-    EXPECT_EQ(remoteMem[1].size, 16384U);
-    EXPECT_STREQ(memTag[1], "user2");
+    EXPECT_EQ(remoteMem[2].type, COMM_MEM_TYPE_DEVICE);
+    EXPECT_EQ(remoteMem[2].addr, reinterpret_cast<void*>(0x3000));
+    EXPECT_EQ(remoteMem[2].size, 16384U);
+    EXPECT_STREQ(memTag[2], "user2");
 }

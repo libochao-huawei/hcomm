@@ -200,7 +200,7 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_Describe_Expect_NotEmpty)
 }
 
 
-TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMem_Expect_Success)
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMems_Expect_Success)
 {
     std::cout << "Start Ut_When_GetRemoteMem_Expect_Success" << std::endl;
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
@@ -213,7 +213,7 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMem_Expect_Success)
     HcclMem *remoteMem = nullptr;
     uint32_t memNum = 0;
     char* memTagsArray[10] = {nullptr};
-    HcclResult ret = channel->GetRemoteMem(&remoteMem, &memNum, memTagsArray);
+    HcclResult ret = channel->GetRemoteMems(&remoteMem, &memNum, &memTagsArray);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
     std::cout << "End Ut_When_GetRemoteMem_Expect_Success" << std::endl;
@@ -398,9 +398,9 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetDevChannelEntity_Expect_Succ
     std::cout << "End Ut_When_BuildAndGetDevChannelEntity_Expect_Success" << std::endl;
 }
 
-TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMem_NonEmpty_Expect_Success)
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMems_NonEmpty_Expect_Success)
 {
-    std::cout << "Start Ut_When_GetRemoteMem_NonEmpty_Expect_Success" << std::endl;
+    std::cout << "Start Ut_When_GetRemoteMems_NonEmpty_Expect_Success" << std::endl;
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
@@ -410,15 +410,15 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMem_NonEmpty_Expect_Success)
     HcclMem *remoteMem = nullptr;
     uint32_t memNum = 0;
     char* memTagsArray[10] = {nullptr};
-    HcclResult ret = channel->GetRemoteMem(&remoteMem, &memNum, memTagsArray);
+    HcclResult ret = channel->GetRemoteMems(&remoteMem, &memNum, &memTagsArray);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 1u);
-    std::cout << "End Ut_When_GetRemoteMem_NonEmpty_Expect_Success" << std::endl;
+    std::cout << "End Ut_When_GetRemoteMems_NonEmpty_Expect_Success" << std::endl;
 }
 
-TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUserRemoteMem_CacheValid_Expect_Success)
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMems_CacheValid_Expect_Success)
 {
-    std::cout << "Start Ut_When_GetUserRemoteMem_CacheValid_Expect_Success" << std::endl;
+    std::cout << "Start Ut_When_GetRemoteMems_CacheValid_Expect_Success" << std::endl;
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
@@ -429,16 +429,16 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUserRemoteMem_CacheValid_Expect_Succ
     CommMem *remoteMem = nullptr;
     char **memTags = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = channel->GetUserRemoteMem(&remoteMem, &memTags, &memNum);
+    HcclResult ret = channel->GetRemoteMems(&remoteMem, &memNum, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = channel->GetUserRemoteMem(&remoteMem, &memTags, &memNum);
+    ret = channel->GetRemoteMems(&remoteMem, &memNum, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     std::cout << "End Ut_When_GetUserRemoteMem_CacheValid_Expect_Success" << std::endl;
 }
 
-TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUserRemoteMem_NullPtr_Expect_Error)
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMems_NullPtr_Expect_Error)
 {
-    std::cout << "Start Ut_When_GetUserRemoteMem_NullPtr_Expect_Error" << std::endl;
+    std::cout << "Start Ut_When_GetRemoteMems_NullPtr_Expect_Error" << std::endl;
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
@@ -446,17 +446,17 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUserRemoteMem_NullPtr_Expect_Error)
     channel->Init();
     char **memTags = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = channel->GetUserRemoteMem(nullptr, &memTags, &memNum);
+    HcclResult ret = channel->GetRemoteMems(nullptr, &memNum, &memTags);
     EXPECT_NE(ret, HCCL_SUCCESS);
     CommMem *remoteMem = nullptr;
-    ret = channel->GetUserRemoteMem(&remoteMem, nullptr, &memNum);
+    ret = channel->GetRemoteMems(&remoteMem, &memNum, nullptr);
     EXPECT_NE(ret, HCCL_SUCCESS);
-    ret = channel->GetUserRemoteMem(&remoteMem, &memTags, nullptr);
+    ret = channel->GetRemoteMems(&remoteMem, nullptr, &memTags);
     EXPECT_NE(ret, HCCL_SUCCESS);
-    std::cout << "End Ut_When_GetUserRemoteMem_NullPtr_Expect_Error" << std::endl;
+    std::cout << "End Ut_When_GetRemoteMems_NullPtr_Expect_Error" << std::endl;
 }
 
-TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUserRemoteMem_Empty_Expect_Error)
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMems_Empty_Expect_Error)
 {
     std::cout << "Start Ut_When_GetUserRemoteMem_Empty_Expect_Error" << std::endl;
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
@@ -468,9 +468,9 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUserRemoteMem_Empty_Expect_Error)
     CommMem *remoteMem = nullptr;
     char **memTags = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = channel->GetUserRemoteMem(&remoteMem, &memTags, &memNum);
+    HcclResult ret = channel->GetRemoteMems(&remoteMem, &memNum, &memTags);
     EXPECT_NE(ret, HCCL_SUCCESS);
-    std::cout << "End Ut_When_GetUserRemoteMem_Empty_Expect_Error" << std::endl;
+    std::cout << "End Ut_When_GetRemoteMems_Empty_Expect_Error" << std::endl;
 }
 
 TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetLocalNotifyUniqueIds_Expect_NotEmpty)
