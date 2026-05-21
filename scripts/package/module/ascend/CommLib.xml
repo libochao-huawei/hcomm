@@ -50,7 +50,7 @@
         <file value="hcomm_diag.h"/>
         <file value="hccl_diag.h"/>
     </file_info>
-    <file_info value="include" copy_type="source" src_path="hcomm/include/ccu" dst_path="$(TARGET_ENV)/include/ccu" install_path="$(TARGET_ENV)/include/ccu" install_type="devel" install_mod="440">
+    <file_info value="include" copy_type="source" src_path="hcomm/include/ccu" dst_path="$(TARGET_ENV)/include/hcomm/ccu" install_path="$(TARGET_ENV)/include/hcomm/ccu" install_type="devel" install_mod="440">
         <file value="ccu_address.hpp"/>
         <file value="ccu_array.hpp"/>
         <file value="ccu_buffer.hpp"/>
