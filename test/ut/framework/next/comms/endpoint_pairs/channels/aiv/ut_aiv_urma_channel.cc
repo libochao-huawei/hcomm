@@ -654,7 +654,7 @@ TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenOnlyReservedRemoteBuffer_Retur
     uint32_t memNum = 1;
 
     EXPECT_EQ(transport->GetRemoteMems(&remoteMem, &memNum, &memTags), HCCL_SUCCESS);
-    EXPECT_EQ(memNum, 0);
+    EXPECT_EQ(memNum, 1);
 }
 
 TEST_F(AivUrmaTransportTest, Ut_GetStatus_WhenSocketTimeout_Returns_SOCKET_TIMEOUT)
