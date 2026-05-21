@@ -107,7 +107,7 @@ protected:
     Hccl::Socket *fakeSocket_;
 };
 
-TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetUserRemoteMem_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetRemoteMems_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     HcommChannelDesc desc{};
     auto aivTransport = CreateAivTransport(desc);
@@ -124,12 +124,12 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetUserRemoteMem_When_Normal_
     CommMem *remoteMems;
     char **memTags;
     u32 memNum;
-    HcclResult ret = aivTransport->GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+    HcclResult ret = aivTransport->GetUserRemoteMems(&remoteMems, &memTags, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(std::string(memTags[0]), "buffer1");
-    EXPECT_EQ(remoteMems[0].type, HcclMemType::HCCL_MEM_TYPE_HOST);
-    EXPECT_EQ(remoteMems[0].addr, (void *)0x101);
-    EXPECT_EQ(remoteMems[0].size, (uint64_t)0x101);
+    EXPECT_EQ(std::string(memTags[1]), "buffer1");
+    EXPECT_EQ(remoteMems[1].type, HcclMemType::HCCL_MEM_TYPE_HOST);
+    EXPECT_EQ(remoteMems[1].addr, (void *)0x101);
+    EXPECT_EQ(remoteMems[1].size, (uint64_t)0x101);
 }
 
 TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetUserRemoteMem_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
