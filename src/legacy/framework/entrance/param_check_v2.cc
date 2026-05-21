@@ -21,7 +21,7 @@
 #include "exception_util.h"
 #include "data_type.h"
 #include "checkcrc.h"
-#include "rank_consistency_checker_v2.h"
+#include "rank_table_crc_bridge.h"
 
 using namespace std;
 using namespace Hccl;
@@ -492,8 +492,6 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
         "please make sure that device is set. return[%d], para:deviceLogicId[%d]",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, deviceLogicId), HCCL_E_RUNTIME);
     HcomRecordRankTableJsonCrc(deviceLogicId, rankTableM);
-    u32 rankTableCrc = HcomConsumeRankTableJsonCrc(deviceLogicId);
-    RankConsistencyCheckerV2::GetInstance().RecordRankTableCrcV2(rankTableCrc);
     return HCCL_SUCCESS;
 }
 
