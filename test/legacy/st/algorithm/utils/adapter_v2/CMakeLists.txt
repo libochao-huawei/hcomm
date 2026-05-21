@@ -13,6 +13,7 @@ set (include_list
     ${legacy_platform_include_list}
 
     ${HCOMM_ROOT_PATH}/src/pub_inc
+    ${HCOMM_DIR}/src/pub_inc/new
     ${HCOMM_DIR}/src/common/error_manager
     ${HCOMM_PLATFORM_INCLUDE_LIST}
 

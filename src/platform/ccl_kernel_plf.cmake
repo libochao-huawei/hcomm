@@ -131,6 +131,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/framework/common/src/task
     ${HCOMM_DIR}/src/framework/common/src/topo
     ${HCOMM_DIR}/src/framework/common/src/mgr
+    ${HCOMM_DIR}/src/common
     ${HCOMM_DIR}/src/framework/common/src/aicpu
     ${HCOMM_DIR}/src/framework/hcom
     ${HCOMM_DIR}/src/framework/communicator/impl/
@@ -159,6 +160,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/platform/common/
     ${HCOMM_DIR}/src/platform/common/unique
     ${HCOMM_DIR}/src/platform/common/buffer_manager
+    ${HCOMM_DIR}/src/common
     ${HCOMM_DIR}/src/platform/common/unfold_cache
     ${HCOMM_DIR}/src/platform/hccp
     ${HCOMM_DIR}/src/platform/hccp/inc

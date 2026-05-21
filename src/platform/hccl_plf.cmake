@@ -51,6 +51,7 @@ target_include_directories(hccl_plf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/task
     ${CMAKE_CURRENT_SOURCE_DIR}/common/
     ${CMAKE_CURRENT_SOURCE_DIR}/common/buffer_manager
+    ${HCOMM_DIR}/src/common
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unfold_cache
     ${CMAKE_CURRENT_SOURCE_DIR}/common/p2p_mgmt
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unique
@@ -100,6 +101,7 @@ target_include_directories(hccl_plf PRIVATE
     ${HCOMM_DIR}/src/legacy/unified_platform/common
     ${HCOMM_DIR}/src/legacy/unified_platform/resource/buffer
     ${HCOMM_DIR}/src/legacy/unified_platform/pub_inc
+    ${HCCL_CODE_ROOT}/src/common
     ${HCOMM_DIR}/src/legacy/unified_platform/resource
     ${HCOMM_DIR}/src/legacy/framework/topo
     ${HCOMM_DIR}/src/legacy/framework/topo/new_topo_builder/common
