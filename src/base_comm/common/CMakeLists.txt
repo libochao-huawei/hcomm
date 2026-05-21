@@ -13,6 +13,8 @@ set(src_list
     hccp_tlv_hdc_mgr.cc
     eid_info_mgr.cc
     tp_mgr.cc
+    dlurma_function.cc
+    hccl_next_dl.cc
 )
 
 if(TARGET hcomm)

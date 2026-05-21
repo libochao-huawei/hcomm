@@ -62,9 +62,9 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${HCCL_CODE_ROOT}/test/legacy/depends/toolchain/
         ${HCCL_CODE_ROOT}/test/legacy/depends/pkg_inc/runtime/
 
-        ${HCCL_CODE_ROOT}/src/common/
-        ${HCCL_CODE_ROOT}/src/pub_inc/
-        ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network/
+        ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/
+        ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/
+        ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/hccp/inc/network/
         ${RDMA_CORE_INCLUDE_DIR}
 
         ${CANN_3RD_LIB_PATH}/json/include/
