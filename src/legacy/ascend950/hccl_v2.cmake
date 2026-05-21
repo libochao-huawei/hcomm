@@ -58,21 +58,23 @@ target_link_libraries(hccl_v2 PRIVATE
 
 target_include_directories(hccl_v2 PRIVATE
     # src/legacy 头文件
-    ${LEGACY_INCLUDE_LIST}
+    ${LEGACY_ASCEND950_INCLUDE_LIST}
     # 内部头文件
     ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include/hccl/
     ${HCOMM_DIR}/pkg_inc
-    ${HCOMM_DIR}/src/pub_inc
-    # src/algorithm 头文件
-    ${HCOMM_DIR}/src/algorithm/pub_inc
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
-    ${HCOMM_DIR}/src/algorithm/base/alg_template
-    ${HCOMM_DIR}/src/algorithm/base/communicator
-    # src/platform 头文件
-    ${HCOMM_DIR}/src/platform/inc/adapter
-    ${HCOMM_DIR}/src/platform/hccp/inc/network
-    ${HCOMM_DIR}/src/platform/hccp/orion/hcomm_dev/inc/network
+    # pub_inc 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
+    # src/algorithm 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/resource_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/communicator
+    # src/platform 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/inc/adapter
+    # hccp 头文件 (moved to base_comm/resources)
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/orion/hcomm_dev/inc/network
     # 外部依赖
     ${HCOMM_DIR}/externel_depends/tsch
     # 三方件头文件
