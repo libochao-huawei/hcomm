@@ -573,6 +573,12 @@ TEST_F(ProfilingHandlerTest, StartSubscribe_test){
     ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
     uint64_t profconfig = 0;
     handler.StartSubscribe(profconfig);
+    profconfig = PROF_ACL_API_MASK;
+    handler.StartSubscribe(profconfig);
+    profconfig = PROF_TASK_TIME_MASK;
+    handler.StartSubscribe(profconfig);
+    profconfig = PROF_TASK_TIME_L1_MASK;
+    handler.StartSubscribe(profconfig);
 }
 
 // 跑完后看是否还可以继续添加接口调用
@@ -598,3 +604,25 @@ TEST_F(ProfilingHandlerTest, GetProfState_test)
     EXPECT_EQ(false, handler.GetHcclL2State());
 }
 
+TEST_F(ProfilingHandlerTest, Ut_ReportCcuInfo_When_ReportAllType)
+{
+    MOCKER_CPP(&Hccl::ProfilingHandler::GetCcuTaskInfo).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&Hccl::ProfilingHandler::GetCcuWaitSignalInfo).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&Hccl::ProfilingHandler::GetCcuGroupInfo).stubs().will(ignoreReturnValue());
+    ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
+    handler.enableHcclL1_ = true;
+    std::shared_ptr<std::vector<CcuProfilingInfo>> ccuDetailInfo = std::make_shared<std::vector<CcuProfilingInfo>>();
+    CcuProfilingInfo info0{};
+    CcuProfilingInfo info1{};
+    CcuProfilingInfo infoCcu{};
+    info0.type = 0;
+    info1.type = 1;
+    infoCcu.type = 2;
+    ccuDetailInfo->push_back(info0);
+    ccuDetailInfo->push_back(info1);
+    ccuDetailInfo->push_back(infoCcu);
+    TaskParam fakeTaskParam{};
+    TaskInfo fakeTaskInfo(0, 0, 0, fakeTaskParam, nullptr, true);
+    fakeTaskInfo.taskParam_.ccuDetailInfo = ccuDetailInfo;
+    handler.ReportCcuInfo(fakeTaskInfo);
+}
