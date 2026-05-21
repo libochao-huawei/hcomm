@@ -41,25 +41,22 @@ target_include_directories(hccl_headers INTERFACE
     $<INSTALL_INTERFACE:include/hccl/external/hccl>
 )
 
-# 获取 src/legacy 所有子目录，用于设置头文件搜索路径
-set(LEGACY_INCLUDE_LIST)
-FILE(GLOB_RECURSE LEGACY_DIRS LIST_DIRECTORIES TRUE ${HCOMM_DIR}/src/legacy)
+# 获取 src/legacy/ascend950 所有子目录，用于设置头文件搜索路径
+set(LEGACY_ASCEND950_INCLUDE_LIST)
+FILE(GLOB_RECURSE LEGACY_DIRS LIST_DIRECTORIES TRUE ${HCOMM_DIR}/src/legacy/ascend950)
 foreach(dir ${LEGACY_DIRS})
-    if((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
-        list(APPEND LEGACY_INCLUDE_LIST ${dir}) 
+    if((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/legacy/ascend950"))
+        list(APPEND LEGACY_ASCEND950_INCLUDE_LIST ${dir}) 
     endif()
 endforeach()
 
 # 将子目录添加到构建过程
-add_subdirectory(hccd)
-add_subdirectory(platform)
-add_subdirectory(framework)
-add_subdirectory(legacy)
-add_subdirectory(algorithm)
-add_subdirectory(common)
+add_subdirectory(legacy)            # 包含 ascend910 和 ascend950
+add_subdirectory(base_comm)         # 基础通信组件
+add_subdirectory(coll_communicator) # 集合通信组件
 
 # 定义 aicpu_custom 库，在 device 侧使用
 # 注意：aicpu_custom 依赖 ccl_kernel 的源文件列表，因此需要在其后定义
 if(PRODUCT_SIDE STREQUAL "device")
-    include(framework/aicpu_custom.cmake)
+    include(legacy/ascend910/framework/aicpu_custom.cmake)
 endif()
