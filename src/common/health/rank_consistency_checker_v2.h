@@ -19,7 +19,7 @@
 #include "log.h"
 
 namespace hccl {
-constexpr u32 MAX_CANN_VERSION_LEN = 50;  // CANN版本校验
+constexpr u32 CANN_VERSION_MAX_LEN = 50;  // CANN版本最大长度
 static constexpr u32 MAX_CRC_LEN_V2 = 16; // A5最大CRC个数
 struct CrcEntryV2 {
     std::string name;  // A5环境变量名（如"HCCL_BUFFSIZE"）或子通信域参数名（如"sub_comm_rankNum"）或ranktable名
@@ -33,7 +33,7 @@ struct CheckFrameV2 {
     u32 subCommCrcArray[MAX_CRC_LEN_V2] = {0};        // 子通信域参数CRC数组
     u32 rankTableCrcNum = 0;                          // ranktable CRC个数
     u32 rankTableCrcArray[MAX_CRC_LEN_V2] = {0};      // ranktable CRC数组
-    char version[MAX_CANN_VERSION_LEN + 1] = {0};
+    char version[CANN_VERSION_MAX_LEN + 1] = {0};
 };
 
 class RankConsistencyCheckerV2 {
@@ -61,7 +61,7 @@ private:
     
     std::mutex mutex_;
     // cann 版本号
-    char cannVersion_[MAX_CANN_VERSION_LEN + 1] = {0};
+    char cannVersion_[CANN_VERSION_MAX_LEN + 1] = {0};
     std::vector<CrcEntryV2> envVarCrcsV2_;        // A5环境变量CRC（带名称，用于精确报错）
     std::vector<CrcEntryV2> rankTableCrcsV2_;     // A5 ranktable CRC（带名称，用于精确报错）
     std::vector<CrcEntryV2> subCommParaCrcsV2_;   // A5子通信域参数CRC（带名称，用于精确报错）
