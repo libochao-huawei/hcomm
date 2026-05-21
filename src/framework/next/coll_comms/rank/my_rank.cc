@@ -18,6 +18,7 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 #include "dlprof_function.h"
+#include <iostream>
 
 using namespace hcomm;
 
@@ -426,6 +427,10 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     // 记录本轮新申请的channel
     newChannels_.clear();
     bool isAllSuccess = true;
+    if (engine == COMM_ENGINE_AIV) {
+        std::cout << "[AIV_URMA_DEBUG] BatchCreateChannels start rank[" << localRank << "] channelNum["
+            << channelNum << "]" << std::endl;
+    }
 
     for (uint32_t i = 0; i < channelNum; ++i) {
         const EndpointDesc &localEndpointDesc = channelDescs[i].localEndpoint;
@@ -510,7 +515,19 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         }
 
         // CreateChannel 返回 HCCL_E_UNAVAIL 表示资源不足创建失败
+        if (engine == COMM_ENGINE_AIV &&
+            (remoteEndpointDesc.protocol == COMM_PROTOCOL_UBC_CTP || remoteEndpointDesc.protocol == COMM_PROTOCOL_UBC_TP)) {
+            std::cout << "[AIV_URMA_DEBUG] BatchCreateChannels create AIV_URMA channel idx[" << i
+                << "] remoteRank[" << remoteRank << "] reuseIdx[" << idx << "] memHandleNum["
+                << hcommDescs[i].memHandleNum << "] localProtocol[" << localEndpointDesc.protocol
+                << "] remoteProtocol[" << remoteEndpointDesc.protocol << "]" << std::endl;
+        }
         ret = endpointPair->CreateChannel(epHandle, engine, idx, &hcommDescs[i], channelHandles + i);
+        if (engine == COMM_ENGINE_AIV &&
+            (remoteEndpointDesc.protocol == COMM_PROTOCOL_UBC_CTP || remoteEndpointDesc.protocol == COMM_PROTOCOL_UBC_TP)) {
+            std::cout << "[AIV_URMA_DEBUG] BatchCreateChannels CreateChannel ret[" << ret << "] idx[" << i
+                << "] channelHandle[" << channelHandles[i] << "]" << std::endl;
+        }
         if (ret == HCCL_E_TIMEOUT || ret == HCCL_E_INTERNAL) {
             Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
             CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
@@ -657,6 +674,10 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     CHK_PRT_RET(channelNum == 0, HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
 
     HCCL_INFO("[CreateChannels][Enter] engine[%d] commTag[%s] channelNum[%u] rankId[%u]", engine, commTag.c_str(), channelNum, rankId_);
+    if (engine == COMM_ENGINE_AIV) {
+        std::cout << "[AIV_URMA_DEBUG] MyRank::CreateChannels start commTag[" << commTag << "] rank["
+            << rankId_ << "] channelNum[" << channelNum << "]" << std::endl;
+    }
 
     // 参数检查
     CHK_RET(CheckChannelParam(engine, channelDescs, channelNum));
@@ -674,7 +695,15 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
 
     auto start = std::chrono::steady_clock::now();
     std::string socketTag = commTag + "_engine_" + std::to_string(engine);
+    if (engine == COMM_ENGINE_AIV) {
+        std::cout << "[AIV_URMA_DEBUG] MyRank::CreateChannels BatchCreateSockets start socketTag["
+            << socketTag << "]" << std::endl;
+    }
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, socketTag, hcommDescs));
+    if (engine == COMM_ENGINE_AIV) {
+        std::cout << "[AIV_URMA_DEBUG] MyRank::CreateChannels BatchCreateSockets success" << std::endl;
+        std::cout << "[AIV_URMA_DEBUG] MyRank::CreateChannels BatchCreateChannels start" << std::endl;
+    }
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
 
     if (!newChannels_.empty()) {
@@ -721,6 +750,10 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         // TODO: Host侧 Channel 赋值到 channelHandles
         CHK_SAFETY_FUNC_RET(memcpy_s(channelHandles, channelNum * sizeof(ChannelHandle), hostChannelHandleList,
             channelNum * sizeof(ChannelHandle)));
+        if (engine == COMM_ENGINE_AIV) {
+            std::cout << "[AIV_URMA_DEBUG] MyRank::CreateChannels success commTag[" << commTag
+                << "] channelNum[" << channelNum << "]" << std::endl;
+        }
         return HCCL_SUCCESS;
     }
 

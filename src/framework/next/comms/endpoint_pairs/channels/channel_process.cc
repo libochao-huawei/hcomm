@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <iostream>
 #include "exception_handler.h"
 #include "channel_param.h"
 #include "channel.h"
@@ -83,11 +84,23 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
 
     for (uint32_t i = 0; i < channelNum; ++i) {
         std::shared_ptr<Channel> tmpPtr = nullptr;
+        if (engine == COMM_ENGINE_AIV &&
+            (channelDescs[i].remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
+             channelDescs[i].remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP)) {
+            std::cout << "[AIV_URMA_DEBUG] ChannelProcess::CreateChannelsLoop start idx[" << i
+                << "] endpoint[" << endpointHandle << "]" << std::endl;
+        }
         CHK_RET_UNAVAIL(Channel::CreateChannel(endpointHandle, engine, channelDescs[i], tmpPtr));
         CHK_SMART_PTR_NULL(tmpPtr);
 
         ChannelHandle handle = reinterpret_cast<ChannelHandle>(tmpPtr.get());
         outHandles[i] = handle;
+        if (engine == COMM_ENGINE_AIV &&
+            (channelDescs[i].remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
+             channelDescs[i].remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP)) {
+            std::cout << "[AIV_URMA_DEBUG] ChannelProcess::CreateChannelsLoop created idx[" << i
+                << "] handle[" << handle << "] ptr[" << tmpPtr.get() << "]" << std::endl;
+        }
         HCCL_INFO("%s deviceId[%d], handle[0x%llx], ptr[%p]", __func__, deviceId, handle, tmpPtr.get());
 
         // 仅在修改全局表时持锁
