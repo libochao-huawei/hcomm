@@ -126,9 +126,8 @@ HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &frame)
     }
 
     // 填充CANN版本
-    
-    sRet = memcpy_s(frame.version, MAX_CANN_VERSION_LEN + 1,
-        cannVersion_, MAX_CANN_VERSION_LEN + 1);
+    sRet = memcpy_s(frame.version, CANN_VERSION_MAX_LEN + 1,
+        cannVersion_, CANN_VERSION_MAX_LEN + 1);
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[GenerateCheckFrameV2] memcpy version failed."), HCCL_E_INTERNAL);
 
