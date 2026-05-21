@@ -14,10 +14,10 @@ set(hccp_utest_list
     stub/mm.c
     stub/hccp_pub.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/ut_dispatch.cc
-    ${SRC_DIR}/src/platform/hccp/hccp_service/param.c
-    ${SRC_DIR}/src/platform/hccp/common/dl_hal_function.c
-    ${SRC_DIR}/src/platform/hccp/common/ascend_hal_dl.c
-    ${SRC_DIR}/src/platform/hccp/hccp_service/main.c
+    ${SRC_DIR}/src/base_comm/resources/hccp/hccp_service/param.c
+    ${SRC_DIR}/src/base_comm/resources/hccp/common/dl_hal_function.c
+    ${SRC_DIR}/src/base_comm/resources/hccp/common/ascend_hal_dl.c
+    ${SRC_DIR}/src/base_comm/resources/hccp/hccp_service/main.c
     st_test.cc
     tc_hccp.c
     )
@@ -33,21 +33,21 @@ target_include_directories(hccp_utest PRIVATE
     ${SRC_DIR}/test/ut/depends/pkg_inc/aicpu/
     ${SRC_DIR}/test/ut/hccp/rdma_service_normal/rdma_service_normal/include
     ${SRC_DIR}/test/ut/depends/include
-    ${SRC_DIR}/src/platform/hccp/hccp_service
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter/async
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/hdc
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/inc
-    ${SRC_DIR}/src/platform/hccp/rdma_service
-    ${SRC_DIR}/src/platform/hccp/common
-    ${SRC_DIR}/src/platform/hccp/inc/private/network
-    ${SRC_DIR}/src/platform/hccp/inc/network
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc
+    ${SRC_DIR}/src/base_comm/resources/hccp/hccp_service
+    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter
+    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/async
+    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc
+    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/inc
+    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service
+    ${SRC_DIR}/src/base_comm/resources/hccp/common
+    ${SRC_DIR}/src/base_comm/resources/hccp/inc/private/network
+    ${SRC_DIR}/src/base_comm/resources/hccp/inc/network
+    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/inc
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
+    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/host_lite
     ${RDMA_CORE_INCLUDE_DIR}
-    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/providers/hns
-    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/rdma-core/providers/hns
+    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/rdma-core/include
     ${CANN_3RD_LIB_PATH}/json/include/
     ${CANN_3RD_LIB_PATH}/gtest/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/

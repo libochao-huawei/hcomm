@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(HCCL_CODE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
-message(STATUS "${HCCL_CODE_ROOT}/src/platform/common/ *******************************************")
+message(STATUS "${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/ *******************************************")
 set(HCCL_LLT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 set(UT_COMMON_INCLUDE_LIST
@@ -20,144 +20,143 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
 
-    # src/pub_inc 目录下头文件
-    ${HCCL_CODE_ROOT}/src/common/
-    ${HCCL_CODE_ROOT}/src/pub_inc
-    ${HCCL_CODE_ROOT}/src/pub_inc/inner
-    ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
-    ${HCCL_CODE_ROOT}/src/pub_inc/new
+    # src/pub_inc 目录下头文件 (legacy/ascend910)
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/inner
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/new
 
-    # src/hccd 目录下头文件
-    ${HCCL_CODE_ROOT}/src/hccd
+    # src/hccd 目录下头文件 (legacy/ascend910)
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/hccd
 
-    # src/common 目录下头文件
-    ${HCCL_CODE_ROOT}/src/common/health
-    ${HCCL_CODE_ROOT}/src/common/stream
-    ${HCCL_CODE_ROOT}/src/common/launch_device
-    ${HCCL_CODE_ROOT}/src/common/src
-    ${HCCL_CODE_ROOT}/src/common/src/host
-    ${HCCL_CODE_ROOT}/src/common/src/topo
-    ${HCCL_CODE_ROOT}/src/common/debug/config
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling/inc
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling/inc/host
+    # src/common 目录下头文件 (legacy/ascend910)
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/health
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/stream
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/launch_device
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/src
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/src/host
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/src/topo
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/debug/config
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/debug/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/debug/profiling/inc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/debug/profiling/inc/host
 
-    # src/framework 目录下头文件
-    ${HCCL_CODE_ROOT}/src/framework/
-    ${HCCL_CODE_ROOT}/src/framework/inc/
-    ${HCCL_CODE_ROOT}/src/framework/inc/host
-    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/health/heartbeat/
-    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
-    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
-    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
-    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/aclgraph
-    ${HCCL_CODE_ROOT}/src/framework/common/src
-    ${HCCL_CODE_ROOT}/src/framework/common/src/host
-    ${HCCL_CODE_ROOT}/src/framework/common/src/task
-    ${HCCL_CODE_ROOT}/src/framework/common/src/topo
-    ${HCCL_CODE_ROOT}/src/framework/common/src/exception
-    ${HCCL_CODE_ROOT}/src/framework/common/src/config
-    ${HCCL_CODE_ROOT}/src/framework/common/src/onesided_memory_management
-    ${HCCL_CODE_ROOT}/src/framework/common/src/order_launch
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/zero_copy
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/one_sided_service
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/resource_manager
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/channel/
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/channel/device
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/rank_graph
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine
-    ${HCCL_CODE_ROOT}/src/framework/hcom/
-    ${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment
-    ${HCCL_CODE_ROOT}/src/framework/op_base/src/
-    ${HCCL_CODE_ROOT}/src/framework/group
-    ${HCCL_CODE_ROOT}/src/framework/nslbdp/
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/cluster_monitor
-    ${HCCL_CODE_ROOT}/src/framework/next/common
+    # src/framework 目录下头文件 (legacy/ascend910)
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/inc/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/inc/host
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/cluster_maintenance/health/heartbeat/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/cluster_maintenance/detect/detect_connect_anomalies/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/cluster_maintenance/recovery/operator_retry
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/cluster_maintenance/snapshot
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/cluster_maintenance/aclgraph
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/host
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/task
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/topo
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/exception
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/config
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/onesided_memory_management
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/order_launch
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/zero_copy
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/one_sided_service
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/resource_manager
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/rank_graph
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/hcom/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/hcom/gradient_segment
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/op_base/src/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/group
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/nslbdp/
 
-    # src/platform 目录下头文件
-    ${HCCL_CODE_ROOT}/src/platform/
-    ${HCCL_CODE_ROOT}/src/platform/common/
-    ${HCCL_CODE_ROOT}/src/platform/common/unique/
-    ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
-    ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
-    ${HCCL_CODE_ROOT}/src/platform/ping_mesh/
-    ${HCCL_CODE_ROOT}/src/platform/inc/
-    ${HCCL_CODE_ROOT}/src/platform/inc/adapter
-    ${HCCL_CODE_ROOT}/src/platform/inc/adapter/host
-    ${HCCL_CODE_ROOT}/src/platform/resource/
-    ${HCCL_CODE_ROOT}/src/platform/resource/mem
-    ${HCCL_CODE_ROOT}/src/platform/resource/notify/
-    ${HCCL_CODE_ROOT}/src/platform/resource/rma_buffer
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/device/
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/host/
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/heterog/
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/onesided
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/onesided/device
-    ${HCCL_CODE_ROOT}/src/platform/resource/socket/
-    ${HCCL_CODE_ROOT}/src/platform/resource/dispatcher_ctx
-    ${HCCL_CODE_ROOT}/src/platform/task/
-    ${HCCL_CODE_ROOT}/src/platform/aiv_communication/
-    ${HCCL_CODE_ROOT}/src/platform/debug/
-    ${HCCL_CODE_ROOT}/src/platform/debug/dfx/
-    ${HCCL_CODE_ROOT}/src/platform/debug/dfx/trace/
-    ${HCCL_CODE_ROOT}/src/platform/task/
-    ${HCCL_CODE_ROOT}/src/platform/task/rtsq_interact/
-    ${HCCL_CODE_ROOT}/src/platform/typical
-    ${HCCL_CODE_ROOT}/src/platform/hccp/inc
-    ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
+    # src/platform 目录下头文件 (legacy/ascend910)
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/unique/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/buffer_manager
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/unfold_cache
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/ping_mesh/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc/adapter
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc/adapter/host
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/mem
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/notify/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/rma_buffer
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/transport/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/transport/device/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/transport/host/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/transport/heterog/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/transport/onesided
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/transport/onesided/device
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/socket/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/dispatcher_ctx
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/task/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/aiv_communication/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/debug/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/debug/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/debug/dfx/trace/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/task/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/task/rtsq_interact/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/typical
+
+    # hccp (moved to base_comm/resources)
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
     ${RDMA_CORE_INCLUDE_DIR}
 
-    # hccl/algorithm 目录下头文件
-    ${HCCL_CODE_ROOT}/src/algorithm/pub_inc
-    ${HCCL_CODE_ROOT}/src/algorithm/base
-    ${HCCL_CODE_ROOT}/src/algorithm/base/inc
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/temp_all_gather
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/temp_all_reduce
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/temp_alltoall
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/temp_alltoallv
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/temp_broadcast
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/temp_gather
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/temp_reduce
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/temp_reduce_scatter
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/temp_scatter
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/temp_send_recv
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/component
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/component/inc
-    ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/inc_all_reduce_deter
-    ${HCCL_CODE_ROOT}/src/algorithm/base/communicator
-    ${HCCL_CODE_ROOT}/src/algorithm/base/mc2_handler
-    ${HCCL_CODE_ROOT}/src/algorithm/impl
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/inc
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/legacy
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/legacy/operator
-    ${HCCL_CODE_ROOT}/src/algorithm/base/communicator/legacy
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/task
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/operator
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/operator/registry
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/resource_manager
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/registry
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_send_receive
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_reduce
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_reduce/310P
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_to_all
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_gather
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_gather/310P
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_gather_v
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_gather_v/310P
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_reduce_scatter
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor//coll_reduce_scatter/310P
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_reduce_scatter_v
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_reduce_scatter_v/310P
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_reduce
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_scatter
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_broadcast
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_broadcast/310P
+    # hccl/algorithm 目录下头文件 (legacy/ascend910)
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/pub_inc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/inc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/temp_all_gather
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/temp_all_reduce
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/temp_alltoall
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/temp_alltoallv
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/temp_broadcast
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/temp_gather
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/temp_reduce
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/temp_reduce_scatter
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/temp_scatter
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/temp_send_recv
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/component
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/component/inc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/alg_template/inc_all_reduce_deter
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/communicator
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/mc2_handler
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/inc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/legacy
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/legacy/operator
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/base/communicator/legacy
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/task
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/operator
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/operator/registry
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/resource_manager
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/registry
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_send_receive
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_all_reduce
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_all_reduce/310P
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_all_to_all
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_all_gather
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_all_gather/310P
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_all_gather_v
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_all_gather_v/310P
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_reduce_scatter
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_reduce_scatter/310P
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_reduce_scatter_v
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_reduce_scatter_v/310P
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_reduce
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_scatter
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_broadcast
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_broadcast/310P
 
     ${HCCL_CODE_ROOT}/test/hccl_api_single_thread_test
 
@@ -167,63 +166,63 @@ set(UT_COMMON_INCLUDE_LIST
     # proto.h头文件
     ${CMAKE_BINARY_DIR}/proto/hccl_llt
 
-    # /src/framework/device/目录下头文件
-    ${HCCL_CODE_ROOT}/src/framework/device/
-    ${HCCL_CODE_ROOT}/src/framework/device/inc
-    ${HCCL_CODE_ROOT}/src/framework/device/aicpu_kfc
-    ${HCCL_CODE_ROOT}/src/framework/device/aicpu_kfc/inc
-    ${HCCL_CODE_ROOT}/src/framework/device/aicpu_kfc/common
-    ${HCCL_CODE_ROOT}/src/framework/device/common
-    ${HCCL_CODE_ROOT}/src/framework/device/utils
-    ${HCCL_CODE_ROOT}/src/framework/device/framework
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    # /src/framework/device/目录下头文件 (legacy/ascend910)
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/inc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/aicpu_kfc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/aicpu_kfc/inc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/aicpu_kfc/common
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/common
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/utils
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads
 
-    # legacy include
-    ${HCCL_CODE_ROOT}/src/legacy/
-    ${HCCL_CODE_ROOT}/src/legacy/include
-    ${HCCL_CODE_ROOT}/src/legacy/common/
-    ${HCCL_CODE_ROOT}/src/legacy/common/utils/
-    ${HCCL_CODE_ROOT}/src/legacy/common/exception/
-    ${HCCL_CODE_ROOT}/src/legacy/common/types/
-    ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
-    ${HCCL_CODE_ROOT}/src/legacy/framework/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/connection/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/daemon
-    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
-    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/daemon
-    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/common/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_table_info/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/
-    ${HCCL_CODE_ROOT}/src/legacy/interface/
-    ${HCCL_CODE_ROOT}/src/legacy/service/collective/
-    ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/external_system/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/task/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/
+    # legacy include (ascend950)
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/include
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/common/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/common/utils/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/common/exception/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/common/types/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/service/collective/primitive
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/resource_manager/socket/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/resource_manager/connection/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/communicator/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/communicator/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/communicator/aicpu/daemon
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/communicator/aicpu/inc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/communicator/aicpu/daemon
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/topo/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/topo/new_topo_builder/common/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/topo/new_topo_builder/rank_graph/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/topo/new_topo_builder/rank_table_info/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/env_config/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/interface/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/service/collective/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/service/collective/primitive/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/external_system/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/socket/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/transport/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/transport/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/notify/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/stream/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/buffer/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/buffer/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/connection/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/connection/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/pub_inc/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/common/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/task/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/notify/
 
-    # tbe头文件
-    ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
-    ${HCCL_CODE_ROOT}/src/platform/legacy/common/
-    ${HCCL_CODE_ROOT}/src/platform/legacy/graph_ctx_mgr/
-    ${HCCL_CODE_ROOT}/src/platform/legacy/inc/
+    # tbe头文件 (legacy/ascend910)
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/legacy/hccl_tbe_task/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/legacy/common/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/legacy/graph_ctx_mgr/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/legacy/inc/
 
     # hcce头文件
     ${HCCL_CODE_ROOT}/src/engines/hcclengine/inc
@@ -261,86 +260,82 @@ set(UT_COMMON_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
-    # next
-    ${HCCL_CODE_ROOT}/src/framework/next/
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs/
-    ${HCCL_CODE_ROOT}/src/framework/next/common/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/server_socket/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/ccu
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+    # next (拆分到 base_comm 和 coll_communicator)
+    ${HCCL_CODE_ROOT}/src/base_comm/
+    ${HCCL_CODE_ROOT}/src/coll_communicator/
+    ${HCCL_CODE_ROOT}/src/coll_communicator/communicator
+    ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/device
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/remote/rank_pairs/
+    ${HCCL_CODE_ROOT}/src/base_comm/common/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/reged_mems/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/server_socket/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/sockets/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/host/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/ccu
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/
 
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/net_dev
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/net_dev
 
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt/
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/ns_recovery
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/ns_recovery/aicpu
+    ${HCCL_CODE_ROOT}/src/coll_communicator/api_c_adpt/
+    ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/ns_recovery
+    ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/ns_recovery/aicpu
 
-    ${HCCL_CODE_ROOT}/src/legacy/interface/
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/aicpu
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/host
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/aicpu
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/host
-    ${HCCL_CODE_ROOT}/src/framework/device/framework
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
-    ${HCCL_CODE_ROOT}/src/framework/dfx/task_exception
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/profiling
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/task_exception
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/common
-    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream
-    ${HCCL_CODE_ROOT}/src/legacy/interface/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/dfx/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_representation/reps/common/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/ccu_component/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_context/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/ccu/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/interface/
+    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx
+    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/profiling
+    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/profiling/aicpu
+    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/profiling/host
+    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException
+    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException/aicpu
+    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException/host
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/device/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/dfx/task_exception
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/common
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/task_exception
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/aicpu/task_exception
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/aicpu/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/aicpu/common
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/resource_manager/stream
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/stream
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/interface/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/aicpu/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_representation/reps/common/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/ccu_component/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_context/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/pub_inc/ccu/
 
     # ccu 头文件
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/common/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/common/device
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/adpt/
+    ${HCCL_CODE_ROOT}/src/base_comm/common/
+    ${HCCL_CODE_ROOT}/src/base_comm/common/device
 
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/pub_inc/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/ccu/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/arithmetic/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/pub_inc/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_transport/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/ccu/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aiv/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_kernel/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/arithmetic/
 )
 
 add_subdirectory(stub)
-add_subdirectory(framework/next)
-add_subdirectory(framework/next/coll_comms/dfx)
-add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
 add_subdirectory(misc)
