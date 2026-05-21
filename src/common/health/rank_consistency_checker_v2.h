@@ -61,7 +61,7 @@ private:
     
     std::mutex mutex_;
     // cann 版本号
-    char cannVersion_[MAX_CANN_VERSION_LEN + 1];
+    char cannVersion_[MAX_CANN_VERSION_LEN + 1] = {0};
     std::vector<CrcEntryV2> envVarCrcsV2_;        // A5环境变量CRC（带名称，用于精确报错）
     std::vector<CrcEntryV2> rankTableCrcsV2_;     // A5 ranktable CRC（带名称，用于精确报错）
     std::vector<CrcEntryV2> subCommParaCrcsV2_;   // A5子通信域参数CRC（带名称，用于精确报错）

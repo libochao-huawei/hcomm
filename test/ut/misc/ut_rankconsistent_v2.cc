@@ -105,7 +105,7 @@ TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_EnvVarMismatch_Expect_INTERN
 TEST_F(RankConsistentV2Test, CompareCheckFrameV2_RankTableMismatch)
 {
     u32 rankTableCrc = 0x1234;
-    ret = checker_.RecordRankTableCrcV2(rankTableCrc);
+    checker_.RecordRankTableCrcV2(rankTableCrc);
 
     CheckFrameV2 localFrame;
     checker_.GenerateCheckFrameV2(localFrame);
