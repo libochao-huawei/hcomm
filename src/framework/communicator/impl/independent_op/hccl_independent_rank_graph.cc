@@ -77,7 +77,8 @@ HcclResult HcclRankGraphGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcR
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetLinks(netLayer, srcRank, dstRank, links, linkNum));
-            HCCL_INFO("HcclRankGraphGetLinks success, linkNum [%u]", *linkNum);
+            HCCL_INFO("HcclRankGraphGetLinks success with netLayer[%u], srcRank[%u], dstRank[%u], output linkNum[%u]",
+                      netLayer, srcRank, dstRank, *linkNum);
             return HCCL_SUCCESS;
         }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);  

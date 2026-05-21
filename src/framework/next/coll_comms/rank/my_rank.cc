@@ -476,7 +476,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         hcommDescs[i].memHandleNum = memHandleVec.size();
 
         std::vector<MemHandle> commMemHandleVec{};
-        if (engine != COMM_ENGINE_CPU) {
+        if (channelDescs[i].remoteEndpoint.protocol != COMM_PROTOCOL_ROCE) {
             CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandleVec));
             hcommDescs[i].memHandles = commMemHandleVec.data();
         }
@@ -666,9 +666,11 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     std::vector<ChannelHandle> hostChannelHandles(channelNum);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
 
+    auto& rdmaConfig = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
     for (u32 i = 0; i < channelNum; ++i) {
         hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
+        hcommDescs[i].roceAttr.qpThreshold = rdmaConfig.GetRdmaMultiQpThreshold();
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
 
