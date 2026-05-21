@@ -13,6 +13,7 @@
 #include "hccp_ctx.h"
 #include "hccp_async_ctx.h"
 #include "hccp_tlv.h"
+#include "hccp_nda.h"
 
 /**
  * @ingroup libsocket
@@ -740,6 +741,8 @@ int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, st
 
 int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr, void **reqHandle)
 {
+    static int reqHandleValue = 12378;
+    *reqHandle = &reqHandleValue;
     return 0;
 }
 
@@ -758,5 +761,38 @@ int RaCtxLmemBatchRegister(void *ctxHandle, struct MrRegInfoT *lmemInfoList[],
 int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[],
     void *rmemHandleList[], unsigned int num)
 {
+    return 0;
+}
+
+int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
+{
+    if (directFlag != nullptr) {
+        *directFlag = 1;
+    }
+    return 0;
+}
+
+int RaNdaCqCreate(void *rdmaHandle, struct NdaCqInitAttr *attr, struct NdaCqInfo *info, void **cqHandle)
+{
+    return 0;
+}
+
+int RaNdaCqDestroy(void *rdmaHandle, void *cqHandle)
+{
+    return 0;
+}
+
+int RaNdaQpCreate(void *rdmaHandle, struct NdaQpInitAttr *attr, struct NdaQpInfo *info, void **qpHandle)
+{
+    return 0;
+}
+
+int RaGetQpAttr(void *qpHandle, struct QpAttr *attr)
+{
+    if (attr != nullptr) {
+        attr->qpn = 1;
+        attr->psn = 1;
+        attr->gidIdx = 0;
+    }
     return 0;
 }
