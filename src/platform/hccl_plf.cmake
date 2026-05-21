@@ -100,6 +100,7 @@ target_include_directories(hccl_plf PRIVATE
     ${HCOMM_DIR}/src/legacy/unified_platform/common
     ${HCOMM_DIR}/src/legacy/unified_platform/resource/buffer
     ${HCOMM_DIR}/src/legacy/unified_platform/pub_inc
+    ${HCCL_CODE_ROOT}/src/common
     ${HCOMM_DIR}/src/legacy/unified_platform/resource
     ${HCOMM_DIR}/src/legacy/framework/topo
     ${HCOMM_DIR}/src/legacy/framework/topo/new_topo_builder/common
