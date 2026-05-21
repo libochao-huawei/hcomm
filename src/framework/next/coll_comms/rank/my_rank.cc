@@ -712,6 +712,7 @@ HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteM
         HCCL_ERROR("[ChannelGetRemoteMems] No user remote memory found.");
         return HCCL_E_PARA;
     }
+    HCCL_INFO("[%s] success. memNum[%u]", __func__, *memNum);
     return HCCL_SUCCESS;
 }
 
