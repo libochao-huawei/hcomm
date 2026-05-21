@@ -45,6 +45,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
     ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}/src/common/error_manager
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/new
 

@@ -58,6 +58,7 @@ set(HCOMM_PUBLIC_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/include
     ${HCOMM_CODE_ROOT}/include/hccl
     ${HCOMM_CODE_ROOT}/src/pub_inc
+    ${HCOMM_DIR}/src/common/error_manager
     ${HCOMM_CODE_ROOT}/src/pub_inc/new
     ${HCOMM_CODE_ROOT}/src/pub_inc/inner
     ${HCOMM_CODE_ROOT}/pub_inc

@@ -153,6 +153,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/externel_depends/tsch
     ${HCCL_CODE_ROOT}/src/common/
     ${HCCL_CODE_ROOT}/src/pub_inc/
+    ${HCOMM_DIR}/src/common/error_manager
     ${HCCL_CODE_ROOT}/src/pub_inc/inner
     ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
     ${HCCL_CODE_ROOT}/src/pub_inc/new
