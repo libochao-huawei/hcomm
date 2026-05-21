@@ -483,9 +483,6 @@ HcommResult HcommChannelGetRemoteMems(ChannelHandle channelHandle, CommMem **rem
     CHK_PTR_NULL(memNum);
     CHK_PTR_NULL(memTags);
     return ChannelProcess::ChannelGetRemoteMems(channelHandle, remoteMem, memNum, memTags);
-    // 添加空指针检查，防止返回的指针为空
-    CHK_PTR_NULL(*remoteMem);
-    CHK_PTR_NULL(*memTags);
 }
 
 HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32_t *notifyNumPerThread,

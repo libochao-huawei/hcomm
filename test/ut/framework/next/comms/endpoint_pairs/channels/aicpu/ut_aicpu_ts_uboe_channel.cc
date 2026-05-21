@@ -333,22 +333,7 @@ public:
     }
 };
 
-TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NullParams_ReturnsError) {
-    HcommChannelDesc desc{};
-    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
-    AicpuTsUboeChannel ch(ep, desc);
-
-    HcclMem* remoteMem = nullptr;
-    uint32_t memNum = 0;
-    char** memTags = nullptr;
-
-    // remoteMem 为空指针
-    EXPECT_EQ(ch.GetRemoteMems(nullptr, &memNum, &memTags), HCCL_E_PARA);
-    // memNum 为空指针
-    EXPECT_EQ(ch.GetRemoteMems(&remoteMem, nullptr, &memTags), HCCL_E_PARA);
-}
-
-TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NoBuffers_ReturnsSuccessWithZero) {
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NoBuffers_ReturnsError) {
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUboeChannel ch(ep, desc);
@@ -358,10 +343,10 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NoBuffers_ReturnsSuccessWithZero
 
     HcclMem* remoteMem = nullptr;
     uint32_t memNum = 0;
-    char* memTags[2] = {nullptr, nullptr}; // 任意长度，函数内不会使用
+    char** memTags = nullptr;
 
     HcclResult ret = ch.GetRemoteMems(&remoteMem, &memNum, &memTags);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(ret, HCCL_E_PARA);
     EXPECT_EQ(remoteMem, nullptr);
     EXPECT_EQ(memNum, 0U);
 }
@@ -378,10 +363,16 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithBuffers_ReturnsCorrectData) 
     ch.rmtBufferVec_.push_back(std::move(buf1));
     ch.rmtBufferVec_.push_back(std::move(buf2));
 
+    std::array<char, HCCL_RES_TAG_MAX_LEN> tag1 = {};
+    std::array<char, HCCL_RES_TAG_MAX_LEN> tag2 = {};
+    strcpy_s(tag1.data(), tag1.size(), "ccl_buffer");
+    strcpy_s(tag2.data(), tag2.size(), "user_buffer");
+    ch.remoteUserMemTag_.push_back(tag1);
+    ch.remoteUserMemTag_.push_back(tag2);
+
     HcclMem* remoteMem = nullptr;
     uint32_t memNum = 0;
-    // 分配内存标签数组，长度至少为2
-    char* memTags[2];
+    char** memTags = nullptr;
     HcclResult ret = ch.GetRemoteMems(&remoteMem, &memNum, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 2U);
@@ -410,7 +401,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NullParams_ReturnsError) {
     auto cclBuf = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x1000, 4096, HCCL_MEM_TYPE_DEVICE, "ccl_buffer");
     ch.rmtBufferVec_.push_back(std::move(cclBuf));
 
-    CommMem* remoteMem = nullptr;
+    HcclMem* remoteMem = nullptr;
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
@@ -420,7 +411,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NullParams_ReturnsError) {
     EXPECT_EQ(ch.GetRemoteMems(&remoteMem, nullptr, &memTag), HCCL_E_PARA);
 }
 
-TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccessWithZero) {
+TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccess) {
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUboeChannel ch(ep, desc);
@@ -428,11 +419,14 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccessWith
     void* fakeRdma = reinterpret_cast<void*>(0x1234);
     auto cclBuf = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x1000, 4096, HCCL_MEM_TYPE_DEVICE, "ccl_buffer");
     ch.rmtBufferVec_.push_back(std::move(cclBuf));
+    std::array<char, HCCL_RES_TAG_MAX_LEN> tag1 = {};
+    strcpy_s(tag1.data(), tag1.size(), "ccl_buffer");
+    ch.remoteUserMemTag_.push_back(tag1);
 
     // 确保内部 cache 标志初始为 false，以便重新构建
     ch.cacheValid_ = false;
 
-    CommMem* remoteMem = nullptr;
+    HcclMem* remoteMem = nullptr;
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
@@ -471,7 +465,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithUserBuffers_ReturnsCorrectDa
 
     ch.cacheValid_ = false; // 强制重新构建缓存
 
-    CommMem* remoteMem = nullptr;
+    HcclMem* remoteMem = nullptr;
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
