@@ -22,4 +22,5 @@ if(TARGET hcomm)
 endif()
 
 add_subdirectory(comm_mems)
-add_subdirectory(engine_ctxs)
+add_subdirectory(comm_engine_reses)
+add_subdirectory(endpoints)
