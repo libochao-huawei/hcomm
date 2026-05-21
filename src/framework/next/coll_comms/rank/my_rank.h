@@ -116,7 +116,7 @@ private:
     Hccl::RankIpPortMapPtr rankIpPortMap_;
 
     CollCommConfigConsistency collCommConfigConsistency_;
-    ExchangeInfoMgr ExchangeInfoMgr_;
+    ExchangeInfoMgr exchangeInfoMgr_;
 };
 
 } // namespace hccl

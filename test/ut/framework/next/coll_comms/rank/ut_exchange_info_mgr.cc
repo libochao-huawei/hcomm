@@ -80,8 +80,8 @@ TEST_F(ExchangeInfoMgrTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
     // 构造socket列表（指针值仅用于mock匹配，不实际调用）
     std::vector<Hccl::Socket*> sockets = {(Hccl::Socket*)0x1, (Hccl::Socket*)0x2};
     std::vector<u32> remoteRanks = {1, 2};
-    ExchangeInfoMgr ExchangeInfoMgr;
-    HcclResult ret = ExchangeInfoMgr.WaitAllAsyncComplete(sockets, remoteRanks);
+    ExchangeInfoMgr exchangeInfoMgr;
+    HcclResult ret = exchangeInfoMgr.WaitAllAsyncComplete(sockets, remoteRanks);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -120,7 +120,7 @@ TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Succe
     hcommDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
     std::vector<HcommChannelDesc> hcommDescVec;
     hcommDescVec.push_back(hcommDesc);
-    ExchangeInfoMgr ExchangeInfoMgr;
-    ret = ExchangeInfoMgr.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, collCommConfigConsistency, "test_tag");
+    ExchangeInfoMgr exchangeInfoMgr;
+    ret = exchangeInfoMgr.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, collCommConfigConsistency, "test_tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
