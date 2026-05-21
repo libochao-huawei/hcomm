@@ -55,7 +55,9 @@ enum class HcommChannelKind : uint32_t {
  */
 class Channel {
 public:
-    Channel() {};
+    Channel() {
+        HCCL_INFO("[Channel][%s] Channel goujian", __func__);
+    };
     virtual ~Channel() = default;
 
     // 禁拷贝（避免切片/资源重复释放等）
