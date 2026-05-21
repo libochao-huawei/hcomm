@@ -278,6 +278,7 @@ TEST_F(TestChannelProcess, Ut_SaveAivChannels_When_UbcCtp_Expect_BuildDevEntity)
     MOCKER_CPP(&hcomm::AivUrmaChannel::BuildChannelEntityToDevice, HcclResult(hcomm::AivUrmaChannel::*)(void **))
         .stubs()
         .will(invoke(StubAivBuildChannelEntityToDevice));
+    MOCKER(hrtGetDevice).stubs().will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = hcomm::ChannelProcess::SaveAivChannels(targetChannels, userChannels, channelDescs, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -300,6 +301,7 @@ TEST_F(TestChannelProcess, Ut_SaveAivChannels_When_Roce_Expect_BuildDevEntity)
     MOCKER_CPP(&hcomm::AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity, HcclResult(hcomm::AicpuTsRoceChannelV2::*)(uint64_t*))
         .stubs()
         .will(invoke(StubRoceBuildAndGetDevChannelEntity));
+    MOCKER(hrtGetDevice).stubs().will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = hcomm::ChannelProcess::SaveAivChannels(targetChannels, userChannels, channelDescs, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
