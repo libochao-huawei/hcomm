@@ -52,6 +52,7 @@ private:
     HcclResult BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult BuildAivUrmaTransport();
     HcclResult BuildSocket();
+    void PutSocketIfNeeded();
     void ReleaseDeviceChannelEntity();
 
     // --------------------- 转换参数 ---------------------
@@ -73,7 +74,12 @@ private:
     std::vector<std::unique_ptr<Hccl::DevUbConnection>> connections_{};
     RdmaHandle rdmaHandle_{nullptr};
     void *devChannelEntity_{nullptr};
+    std::vector<hccl::DeviceMem> deviceMemories_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>> localRmaBuffers_{};
+    std::unique_ptr<Hccl::Socket> serverSocket_;
+    std::unique_ptr<Hccl::SocketConfig> socketConfigHolder_{nullptr};
+    const Hccl::SocketConfig* socketConfig_{nullptr};
+    uint32_t devicePhyId_{};
 };
 
 } // namespace hcomm

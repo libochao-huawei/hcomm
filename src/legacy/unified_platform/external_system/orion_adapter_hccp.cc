@@ -1404,6 +1404,8 @@ void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle)
 
 JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo)
 {
+    CHECK_NULLPTR(handle, "[HrtRaUbCreateJfcUserCtl] handle is nullptr!");
+    HCCL_INFO("[HrtRaUbCreateJfcUserCtl] Input params: handle=%p", handle);
     struct CqInfoT info {};
 
     info.in.chanHandle = nullptr;
