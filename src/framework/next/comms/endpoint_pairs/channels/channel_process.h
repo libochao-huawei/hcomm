@@ -81,7 +81,7 @@ private:
     static HcclResult RemoveSingleChannel(int32_t deviceId, ChannelHandle inHandle,
         std::vector<ChannelHandle> &deviceHandles);
 
-    static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
+    static std::unordered_map<ChannelHandle, std::shared_ptr<Channel>> g_ChannelMap;
     static std::unordered_map<DeviceChannelKey, ChannelHandle, DeviceChannelKeyHash> g_ChannelD2HMap;
     static std::mutex g_ChannelMapMtx;
 };
