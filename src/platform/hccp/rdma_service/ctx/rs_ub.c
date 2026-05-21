@@ -284,7 +284,7 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
     devCb->index = *devIndex;
 
     hccp_info("max_jetty:%u, maxJfsInlineLen:%u, sqMaxDepth:%u, rqMaxDepth:%u, sqMaxSge:%u, rqMaxSge:%u "
-        "maxReadSize:%u maxWriteSize:%u maxMsgSize:%u", attr.dev_cap.max_jetty,
+        "maxReadSize:%u maxWriteSize:%u maxMsgSize:%llu", attr.dev_cap.max_jetty,
         devAttr->ub.maxJfsInlineLen, devAttr->sqMaxDepth, devAttr->rqMaxDepth, devAttr->sqMaxSge, devAttr->rqMaxSge,
         devAttr->maxReadSize, devAttr->maxWriteSize, devAttr->maxMsgSize);
     return 0;
