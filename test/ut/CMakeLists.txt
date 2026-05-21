@@ -83,6 +83,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/common/
     ${HCCL_CODE_ROOT}/src/platform/common/unique/
     ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
+    ${HCOMM_DIR}/src/common
     ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
     ${HCCL_CODE_ROOT}/src/platform/ping_mesh/
     ${HCCL_CODE_ROOT}/src/platform/inc/
@@ -215,6 +216,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/
+    ${HCCL_CODE_ROOT}/src/common
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/task/
@@ -313,6 +315,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_context/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/ccu/
+    ${HCCL_CODE_ROOT}/src/common
 
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/

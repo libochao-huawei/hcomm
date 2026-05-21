@@ -46,6 +46,7 @@ target_link_options(topoaddrinfo PRIVATE
 target_include_directories(topoaddrinfo PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}/src/pub_inc/new
     ${HCOMM_DIR}/src/common/error_manager
     ${HCOMM_DIR}/include
 )

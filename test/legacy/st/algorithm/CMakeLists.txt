@@ -158,6 +158,7 @@ set(legacy_platform_include_list
     ${HCOMM_LEGACY_PLATFORM}/resource/connection/ub_ci_updater
     ${HCOMM_LEGACY_PLATFORM}/resource/transport
     ${HCOMM_LEGACY_PLATFORM}/external_system
+    ${HCOMM_DIR}/src/pub_inc/new
 )
 
 set(legacy_service_include_list

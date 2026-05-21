@@ -13,7 +13,7 @@
 #include <string>
 #include <stdint.h>
 
-namespace hccl {
+namespace hcomm {
 template<typename A, typename S>
 class BufferKey {
 public:
@@ -84,5 +84,15 @@ public:
         return std::string("addr:") + std::to_string(addr_) + std::string(", size:") + std::to_string(size_);
     }
 };
+}
+
+namespace Hccl {
+    template<typename A, typename S>
+    using BufferKey = hcomm::BufferKey<A, S>;
+}
+
+namespace hccl {
+    template<typename A, typename S>
+    using BufferKey = hcomm::BufferKey<A, S>;
 }
 #endif
