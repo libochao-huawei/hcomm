@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 #include "mockcpp/mokc.h"
+#include <cstdint>
+#include <cstdlib>
 #include <mockcpp/mockcpp.hpp>
 
 #define private public
@@ -8,6 +10,8 @@
 #include "aiv_urma_transport.h"
 #undef protected
 #undef private
+#include "hcomm_c_adpt.h"
+#include "next/comms/endpoints/endpoint.h"
 #include "exchange_ub_buffer_dto.h"
 
 using namespace hcomm;
@@ -20,31 +24,75 @@ LinkData MakeDefaultLinkData()
     return LinkData(portType, 0, 1, 0, 0);
 }
 
-aclError StubAclrtMalloc(void **devPtr, size_t size, aclrtMemMallocPolicy policy)
+class StubEndpointForAivUrmaChannel : public Endpoint {
+public:
+    explicit StubEndpointForAivUrmaChannel(const EndpointDesc &desc, void *rdmaHandle)
+        : Endpoint(desc)
+    {
+        ctxHandle_ = rdmaHandle;
+    }
+
+    HcclResult Init() override { return HCCL_SUCCESS; }
+    HcclResult ServerSocketListen(const uint32_t) override { return HCCL_SUCCESS; }
+    HcclResult RegisterMemory(HcommMem, const char *, void **) override { return HCCL_SUCCESS; }
+    HcclResult UnregisterMemory(void *) override { return HCCL_SUCCESS; }
+    HcclResult MemoryExport(void *, void **, uint32_t *) override { return HCCL_SUCCESS; }
+    HcclResult MemoryImport(const void *, uint32_t, HcommMem *) override { return HCCL_SUCCESS; }
+    HcclResult MemoryUnimport(const void *, uint32_t) override { return HCCL_SUCCESS; }
+    HcclResult GetAllMemHandles(void **, uint32_t *) override { return HCCL_SUCCESS; }
+};
+
+HcommResult StubHcommMemGetAllMemHandlesFail(EndpointHandle, void **, uint32_t *)
 {
-    (void)size;
-    (void)policy;
+    return HCCL_E_INTERNAL;
+}
+
+HcommResult StubHcommMemGetAllMemHandlesEmpty(EndpointHandle, void **memHandles, uint32_t *memHandleNum)
+{
+    *memHandles = nullptr;
+    *memHandleNum = 0;
+    return HCCL_SUCCESS;
+}
+
+HcommResult StubHcommMemGetAllMemHandlesOne(EndpointHandle, void **memHandles, uint32_t *memHandleNum)
+{
+    static std::shared_ptr<Hccl::Buffer> buffer =
+        std::make_shared<Hccl::Buffer>(0x12340000U, 0x2000U, "aiv_urma_ut");
+    static std::shared_ptr<Hccl::LocalUbRmaBuffer> localBuffer =
+        std::make_shared<Hccl::LocalUbRmaBuffer>(buffer);
+    static std::shared_ptr<Hccl::LocalUbRmaBuffer> localBuffers[1] = {localBuffer};
+    *memHandles = localBuffers;
+    *memHandleNum = 1;
+    return HCCL_SUCCESS;
+}
+
+static hccl::DeviceMem StubDeviceMemAlloc(u64 size, bool /*level2Address*/)
+{
+    void *ptr = std::malloc(static_cast<size_t>(size));
+    // UT uses host memory as fake device memory. Keep owner=false because DeviceMem dtor calls hrtFree for owner memory.
+    return hccl::DeviceMem(ptr, size, false);
+}
+
+aclError StubAclrtMalloc(void **devPtr, size_t size, aclrtMemMallocPolicy /*policy*/)
+{
     if (devPtr == nullptr) {
         return ACL_ERROR_RT_PARAM_INVALID;
     }
-    *devPtr = reinterpret_cast<void *>(0x12345678);
-    return ACL_SUCCESS;
-}
-
-aclError StubAclrtMemcpy(void *dst, size_t destMax, const void *src, size_t count, aclrtMemcpyKind kind)
-{
-    (void)dst;
-    (void)destMax;
-    (void)src;
-    (void)count;
-    (void)kind;
-    return ACL_SUCCESS;
+    *devPtr = std::malloc(size);
+    return (*devPtr == nullptr) ? ACL_ERROR_RT_MEMORY_ALLOCATION : ACL_SUCCESS;
 }
 
 aclError StubAclrtFree(void *devPtr)
 {
-    (void)devPtr;
+    std::free(devPtr);
     return ACL_SUCCESS;
+}
+
+bool IsPtrInRange(const void *ptr, const void *base, size_t size)
+{
+    uintptr_t ptrValue = reinterpret_cast<uintptr_t>(ptr);
+    uintptr_t baseValue = reinterpret_cast<uintptr_t>(base);
+    return ptrValue >= baseValue && ptrValue < baseValue + size;
 }
 } // namespace
 
@@ -147,6 +195,7 @@ TEST_F(AivUrmaChannelTest, Ut_BuildSocket_WhenSocketExists_Returns_SUCCESS)
     ch.socket_ = &socket;
 
     EXPECT_EQ(ch.BuildSocket(), HCCL_SUCCESS);
+    ch.socket_ = nullptr;
 }
 
 TEST_F(AivUrmaChannelTest, Ut_BuildSocket_WhenSocketNull_GetsSocketFromSocketMgr)
@@ -164,6 +213,30 @@ TEST_F(AivUrmaChannelTest, Ut_BuildSocket_WhenSocketNull_GetsSocketFromSocketMgr
 
     EXPECT_EQ(ch.BuildSocket(), HCCL_SUCCESS);
     EXPECT_EQ(ch.socket_, &socket);
+    ASSERT_NE(ch.socketConfigHolder_, nullptr);
+    EXPECT_EQ(ch.socketConfig_, ch.socketConfigHolder_.get());
+    ch.socket_ = nullptr;
+}
+
+TEST_F(AivUrmaChannelTest, Ut_PutSocketIfNeeded_WhenCalledTwice_OnlyKeepsSocketNull)
+{
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AivUrmaChannel ch(ep, MakeDefaultDesc());
+    Socket socket(nullptr, IpAddress(), 0, IpAddress(), "ut", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
+    std::string socketTag = "ut";
+    Hccl::SocketConfig socketConfig(MakeDefaultLinkData(), socketTag, true);
+    ch.socket_ = &socket;
+    ch.socketConfig_ = &socketConfig;
+
+    MOCKER_CPP(&SocketMgr::PutSocket)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    ch.PutSocketIfNeeded();
+    EXPECT_EQ(ch.socket_, nullptr);
+
+    ch.PutSocketIfNeeded();
+    EXPECT_EQ(ch.socket_, nullptr);
 }
 
 TEST_F(AivUrmaChannelTest, Ut_BuildBuffer_WhenEmpty_Returns_SUCCESS)
@@ -197,6 +270,61 @@ TEST_F(AivUrmaChannelTest, Ut_Init_WhenEndpointNull_Returns_E_PTR)
     AivUrmaChannel ch(nullptr, MakeDefaultDesc());
 
     EXPECT_EQ(ch.Init(), HCCL_E_PTR);
+}
+
+TEST_F(AivUrmaChannelTest, Ut_ParseInputParam_WhenExchangeAllMemsGetFailed_ReturnsError)
+{
+    EndpointDesc local{};
+    local.loc.device.devPhyId = 3;
+    StubEndpointForAivUrmaChannel endpoint(local, reinterpret_cast<void *>(0x1));
+    HcommChannelDesc desc = MakeDefaultDesc();
+    desc.exchangeAllMems = true;
+    AivUrmaChannel ch(reinterpret_cast<EndpointHandle>(&endpoint), desc);
+
+    MOCKER(HcommMemGetAllMemHandles)
+        .stubs()
+        .will(invoke(StubHcommMemGetAllMemHandlesFail));
+
+    EXPECT_EQ(ch.ParseInputParam(), HCCL_E_INTERNAL);
+    EXPECT_TRUE(ch.bufs_.empty());
+}
+
+TEST_F(AivUrmaChannelTest, Ut_ParseInputParam_WhenExchangeAllMemsEmpty_ReturnsSuccess)
+{
+    EndpointDesc local{};
+    local.loc.device.devPhyId = 3;
+    StubEndpointForAivUrmaChannel endpoint(local, reinterpret_cast<void *>(0x1));
+    HcommChannelDesc desc = MakeDefaultDesc();
+    desc.exchangeAllMems = true;
+    AivUrmaChannel ch(reinterpret_cast<EndpointHandle>(&endpoint), desc);
+
+    MOCKER(HcommMemGetAllMemHandles)
+        .stubs()
+        .will(invoke(StubHcommMemGetAllMemHandlesEmpty));
+
+    EXPECT_EQ(ch.ParseInputParam(), HCCL_SUCCESS);
+    EXPECT_TRUE(ch.bufs_.empty());
+    EXPECT_EQ(ch.devicePhyId_, 3);
+}
+
+TEST_F(AivUrmaChannelTest, Ut_ParseInputParam_WhenExchangeAllMemsOneHandle_FillsBufs)
+{
+    EndpointDesc local{};
+    local.loc.device.devPhyId = 3;
+    StubEndpointForAivUrmaChannel endpoint(local, reinterpret_cast<void *>(0x1));
+    HcommChannelDesc desc = MakeDefaultDesc();
+    desc.exchangeAllMems = true;
+    AivUrmaChannel ch(reinterpret_cast<EndpointHandle>(&endpoint), desc);
+
+    MOCKER(HcommMemGetAllMemHandles)
+        .stubs()
+        .will(invoke(StubHcommMemGetAllMemHandlesOne));
+
+    EXPECT_EQ(ch.ParseInputParam(), HCCL_SUCCESS);
+    ASSERT_EQ(ch.bufs_.size(), 1);
+    EXPECT_EQ(ch.bufs_[0]->GetAddr(), 0x12340000U);
+    EXPECT_EQ(ch.bufs_[0]->GetSize(), 0x2000U);
+    EXPECT_FALSE(ch.bufs_[0]->GetMemTag().empty());
 }
 
 TEST_F(AivUrmaChannelTest, Ut_BuildChannelEntityToDevice_WhenDevPtrNull_Returns_E_PTR)
@@ -270,17 +398,35 @@ TEST_F(AivUrmaChannelTest, Ut_BuildChannelEntityToDevice_WhenTransportReady_Retu
     MOCKER(aclrtMalloc)
         .stubs()
         .will(invoke(StubAclrtMalloc));
-    MOCKER(aclrtMemcpy)
-        .stubs()
-        .will(invoke(StubAclrtMemcpy));
     MOCKER(aclrtFree)
         .stubs()
         .will(invoke(StubAclrtFree));
 
     void *devChannelPtr = nullptr;
     EXPECT_EQ(ch.BuildChannelEntityToDevice(&devChannelPtr), HCCL_SUCCESS);
-    EXPECT_EQ(devChannelPtr, reinterpret_cast<void *>(0x12345678));
-    EXPECT_EQ(ch.devChannelEntity_, reinterpret_cast<void *>(0x12345678));
+    ASSERT_NE(devChannelPtr, nullptr);
+    EXPECT_EQ(ch.devChannelEntity_, devChannelPtr);
+    ASSERT_NE(ch.devChannelEntitySlab_, nullptr);
+    EXPECT_EQ(ch.devChannelEntitySlab_, devChannelPtr);
+    EXPECT_GT(ch.devChannelEntitySlabSize_, sizeof(ChannelEntity));
+    EXPECT_TRUE(ch.deviceMemories_.empty());
+
+    ChannelEntity *devChannel = reinterpret_cast<ChannelEntity *>(devChannelPtr);
+    EXPECT_EQ(devChannel->engine, COMM_ENGINE_AIV);
+    EXPECT_EQ(devChannel->sqNum, 1);
+    EXPECT_EQ(devChannel->cqNum, 1);
+    EXPECT_NE(devChannel->sqContextAddr, nullptr);
+    EXPECT_NE(devChannel->cqContextAddr, nullptr);
+    EXPECT_TRUE(IsPtrInRange(devChannel->sqContextAddr, ch.devChannelEntitySlab_, ch.devChannelEntitySlabSize_));
+    EXPECT_TRUE(IsPtrInRange(devChannel->cqContextAddr, ch.devChannelEntitySlab_, ch.devChannelEntitySlabSize_));
+    EXPECT_TRUE(IsPtrInRange(reinterpret_cast<void *>(devChannel->sqContextAddr[0].contextInfo.ubJfs.headAddr),
+        ch.devChannelEntitySlab_, ch.devChannelEntitySlabSize_));
+    EXPECT_TRUE(IsPtrInRange(reinterpret_cast<void *>(devChannel->sqContextAddr[0].contextInfo.ubJfs.tailAddr),
+        ch.devChannelEntitySlab_, ch.devChannelEntitySlabSize_));
+    EXPECT_TRUE(IsPtrInRange(reinterpret_cast<void *>(devChannel->cqContextAddr[0].contextInfo.ubJfc.headAddr),
+        ch.devChannelEntitySlab_, ch.devChannelEntitySlabSize_));
+    EXPECT_TRUE(IsPtrInRange(reinterpret_cast<void *>(devChannel->cqContextAddr[0].contextInfo.ubJfc.tailAddr),
+        ch.devChannelEntitySlab_, ch.devChannelEntitySlabSize_));
 }
 
 class AivUrmaTransportTest : public testing::Test {
@@ -728,6 +874,14 @@ TEST_F(AivUrmaTransportTest, Ut_GetHostChannelEntity_WhenReady_FillsSqAndCqConte
     transport->transportStatus_ = TransportStatus::READY;
     ChannelEntity hostChannel{};
 
+    using DeviceMemAllocRetByValue = hccl::DeviceMem (*)(u64, bool);
+    mockcpp::mockAPI<DeviceMemAllocRetByValue>::get(
+        "hccl::DeviceMem::alloc",
+        "AivUrmaTransport_DeviceMem_alloc_by_value",
+        static_cast<DeviceMemAllocRetByValue>(&hccl::DeviceMem::alloc))
+        .stubs()
+        .will(invoke(StubDeviceMemAlloc));
+
     transport->GetHostChannelEntity(&hostChannel);
 
     ASSERT_EQ(hostChannel.sqNum, 1);
@@ -738,6 +892,8 @@ TEST_F(AivUrmaTransportTest, Ut_GetHostChannelEntity_WhenReady_FillsSqAndCqConte
     EXPECT_EQ(hostChannel.sqContextAddr[0].contextInfo.ubJfs.sqVa, conn->sqBuffVa);
     EXPECT_EQ(hostChannel.sqContextAddr[0].contextInfo.ubJfs.tpID, conn->tpn);
     EXPECT_EQ(hostChannel.sqContextAddr[0].contextInfo.ubJfs.wqeSize, 64);
+    EXPECT_NE(hostChannel.sqContextAddr[0].contextInfo.ubJfs.headAddr, 0);
+    EXPECT_NE(hostChannel.sqContextAddr[0].contextInfo.ubJfs.tailAddr, 0);
 
     ASSERT_EQ(hostChannel.cqNum, 1);
     ASSERT_NE(hostChannel.cqContextAddr, nullptr);
@@ -747,4 +903,6 @@ TEST_F(AivUrmaTransportTest, Ut_GetHostChannelEntity_WhenReady_FillsSqAndCqConte
     EXPECT_EQ(hostChannel.cqContextAddr[0].contextInfo.ubJfc.cqeSize, conn->cqInfo_.cqeSize);
     EXPECT_EQ(hostChannel.cqContextAddr[0].contextInfo.ubJfc.cqDepth, conn->cqInfo_.cqDepth);
     EXPECT_EQ(hostChannel.cqContextAddr[0].contextInfo.ubJfc.dbVa, conn->cqInfo_.swdbAddr);
+    EXPECT_NE(hostChannel.cqContextAddr[0].contextInfo.ubJfc.headAddr, 0);
+    EXPECT_NE(hostChannel.cqContextAddr[0].contextInfo.ubJfc.tailAddr, 0);
 }

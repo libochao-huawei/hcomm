@@ -20,6 +20,7 @@ namespace Hccl {
 constexpr uint32_t FINISH_MSG_SIZE = 128;
 constexpr char_t FINISH_MSG[FINISH_MSG_SIZE] = "Ub Comm Pipe ready!";
 constexpr uint32_t WQE_SIZE = 64;
+constexpr uint32_t QUEUE_INDEX_MEM_UNIT_SIZE = sizeof(void *);
 
 AivUrmaTransport::AivUrmaTransport(BaseMemTransport::CommonLocRes &commonLocRes, BaseMemTransport::Attribution &attr,
     const LinkData &linkData, const Socket &socket, RdmaHandle rdmaHandle)
@@ -84,12 +85,43 @@ std::string AivUrmaTransport::Describe() const
     return msg;
 }
 
+void AivUrmaTransport::EnsureQueueIndexDeviceMem()
+{
+    if (connNum_ == 0) {
+        return;
+    }
+    if (sqPiMem_ && sqCiMem_ && cqPiMem_ && cqCiMem_) {
+        return;
+    }
+
+    const size_t memSize = static_cast<size_t>(connNum_) * QUEUE_INDEX_MEM_UNIT_SIZE;
+    sqPiMem_ = hccl::DeviceMem::alloc(memSize);
+    sqCiMem_ = hccl::DeviceMem::alloc(memSize);
+    cqPiMem_ = hccl::DeviceMem::alloc(memSize);
+    cqCiMem_ = hccl::DeviceMem::alloc(memSize);
+    if (!sqPiMem_ || !sqCiMem_ || !cqPiMem_ || !cqCiMem_) {
+        MACRO_THROW(InternalException,
+            StringFormat("[AivUrmaTransport::%s] DeviceMem::alloc for queue index mem failed, connNum[%u], size[%zu]",
+                __func__, connNum_, memSize));
+    }
+}
+
+void AivUrmaTransport::SetQueueIndexDeviceMem(void *sqPiMem, void *sqCiMem, void *cqPiMem, void *cqCiMem,
+    size_t memSize)
+{
+    sqPiMem_ = hccl::DeviceMem::create(sqPiMem, memSize);
+    sqCiMem_ = hccl::DeviceMem::create(sqCiMem, memSize);
+    cqPiMem_ = hccl::DeviceMem::create(cqPiMem, memSize);
+    cqCiMem_ = hccl::DeviceMem::create(cqCiMem, memSize);
+}
+
 void AivUrmaTransport::GetSqContext()
 {
     if (transportStatus_ != TransportStatus::READY) {
         MACRO_THROW(InternalException,
             StringFormat("[AivUrmaTransport::%s]transport status is not ready, please check, __func__"));
     }
+    EnsureQueueIndexDeviceMem();
 
     sqContextVec_.clear();
     sqContextVec_.resize(connNum_);
@@ -101,6 +133,10 @@ void AivUrmaTransport::GetSqContext()
         sqContext.type = SQ_CONTEXT_TYPE_UB_JFS;
         sqContext.contextInfo.ubJfs.wqeSize = WQE_SIZE;
         conn->SetSqContextInfo(sqContext);
+        sqContext.contextInfo.ubJfs.headAddr =
+            reinterpret_cast<uint64_t>(sqPiMem_.ptr()) + static_cast<uint64_t>(i) * QUEUE_INDEX_MEM_UNIT_SIZE;
+        sqContext.contextInfo.ubJfs.tailAddr =
+            reinterpret_cast<uint64_t>(sqCiMem_.ptr()) + static_cast<uint64_t>(i) * QUEUE_INDEX_MEM_UNIT_SIZE;
         sqContextVec_[i] = sqContext;
     }
 }
@@ -111,6 +147,7 @@ void AivUrmaTransport::GetCqContext()
         MACRO_THROW(InternalException,
             StringFormat("[AivUrmaTransport::%s]transport status is not ready, please check, __func__"));
     }
+    EnsureQueueIndexDeviceMem();
 
     cqContextVec_.clear();
     cqContextVec_.resize(connNum_);
@@ -121,8 +158,26 @@ void AivUrmaTransport::GetCqContext()
         CqContext cqContext{};
         cqContext.type = CQ_CONTEXT_TYPE_UB_JFC;
         conn->SetCqContextInfo(cqContext);
+        cqContext.contextInfo.ubJfc.headAddr =
+            reinterpret_cast<uint64_t>(cqPiMem_.ptr()) + static_cast<uint64_t>(i) * QUEUE_INDEX_MEM_UNIT_SIZE;
+        cqContext.contextInfo.ubJfc.tailAddr =
+            reinterpret_cast<uint64_t>(cqCiMem_.ptr()) + static_cast<uint64_t>(i) * QUEUE_INDEX_MEM_UNIT_SIZE;
         cqContextVec_[i] = cqContext;
     }
+}
+
+void AivUrmaTransport::PrepareHostChannelEntity(ChannelEntity *channelEntitiesHost)
+{
+    CHECK_NULLPTR(channelEntitiesHost,
+        StringFormat("[AivUrmaTransport::%s]channelEntitiesHost is nullptr", __func__));
+    GetProtectionInfo();
+
+    channelEntitiesHost->localBufferNum = localBufferInfo_.size();
+    channelEntitiesHost->localBufferAddr = localBufferInfo_.data();
+    channelEntitiesHost->remoteBufferNum = remoteBufferInfo_.size();
+    channelEntitiesHost->remoteBufferAddr = remoteBufferInfo_.data();
+    channelEntitiesHost->sqNum = connNum_;
+    channelEntitiesHost->cqNum = connNum_;
 }
 
 void AivUrmaTransport::GetProtectionInfo()
@@ -557,14 +612,9 @@ TransportStatus AivUrmaTransport::GetStatus()
 
 void AivUrmaTransport::GetHostChannelEntity(ChannelEntity *channelEntitiesHost)
 {
+    PrepareHostChannelEntity(channelEntitiesHost);
     GetSqContext();
     GetCqContext();
-    GetProtectionInfo();
-
-    channelEntitiesHost->localBufferNum = localBufferInfo_.size();
-    channelEntitiesHost->localBufferAddr = localBufferInfo_.data();
-    channelEntitiesHost->remoteBufferNum = remoteBufferInfo_.size();
-    channelEntitiesHost->remoteBufferAddr = remoteBufferInfo_.data();
     channelEntitiesHost->sqNum = sqContextVec_.size();
     channelEntitiesHost->sqContextAddr = sqContextVec_.data();
     channelEntitiesHost->cqNum = cqContextVec_.size();
