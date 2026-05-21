@@ -34,27 +34,47 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
     CHK_PTR_NULL(memHandle);
 
     std::shared_ptr<Hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer = nullptr;
- 
-    // LocalRdmaRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
+    uintptr_t addr = reinterpret_cast<uintptr_t>(mem.addr);
+    u64 size = mem.size;
+
+    hccl::BufferKey<uintptr_t, u64> tempKey(addr, size);
     auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
-    if(findPair.first) {
-        localRdmaRmaBuffer = findPair.second;
-    } else {
-        // 构造LocalRdmaRmaBuffer
+    if (findPair.first) {
+        auto existingBuffer = findPair.second;
+        // 创建带调用方tag的新Buffer — 每次注册都有独立的Buffer/RmaBuffer
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
-        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
-            mem.size, static_cast<HcclMemType>(mem.type), memTag)),
+        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(addr,
+            size, static_cast<HcclMemType>(mem.type), memTag)),
+            return HCCL_E_PTR);
+
+        EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<Hccl::LocalRdmaRmaBuffer>(
+            localBufferPtr, existingBuffer)),
+            return HCCL_E_PTR);
+
+        // 别名不插入树中 — 仅递增父buffer的引用计数
+        hccl::BufferKey<uintptr_t, u64> parentKey(existingBuffer->GetAddr(), existingBuffer->GetSize());
+        localRdmaRmaBufferMgr_->AddToTree(parentKey, existingBuffer);
+
+        *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
+        this->allRegisteredBuffers_.push_back(localRdmaRmaBuffer);
+        HCCL_INFO("[RoceRegedMemMgr][RegisterMemory] alias created {%p, %llu} tag[%s] within parent {%p, %llu}",
+            mem.addr, mem.size, memTag, reinterpret_cast<void *>(existingBuffer->GetAddr()), existingBuffer->GetSize());
+        return HCCL_SUCCESS;
+    } else {
+        // 未注册：创建新buffer并执行HW注册
+        std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
+        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(addr,
+            size, static_cast<HcclMemType>(mem.type), memTag)),
             return HCCL_E_PTR);
 
         EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
             return HCCL_E_PTR);
     }
-    
+
     // 注册到LocalRdmaRmaBuffer计数器
     auto resultPair = localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
     if (resultPair.first == localRdmaRmaBufferMgr_->End()) {
-        // 若已注册内存有交叉，返回HCCL_E_INTERNAL
+        // 部分重叠（相交但非子集/超集）
         HCCL_ERROR("[RoceRegedMemMgr][RegisterMemory] [%s]The memory overlaps with the memory that has been registered.", __FUNCTION__);
         return HCCL_E_INTERNAL;
     }
@@ -63,11 +83,11 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
     CHK_SMART_PTR_NULL(localBuffer);
     *memHandle = static_cast<void *>(localBuffer.get());
 
-    // 已注册：输入key是表中某一最相近key的全集。 返回添加该key的迭代器，及false
-    // 未注册：输入key是表中某一最相近key的空集。 返回添加成功的迭代器，及true
+    // 新注册：key与所有已有key不重叠
+    // 已注册：key与已有key精确匹配
     if (resultPair.second) {
         HCCL_INFO("[RoceRegedMemMgr][RegisterMemory]Register memory success! Add key {%p, %llu}", mem.addr, mem.size);
-    } else {  
+    } else {
         HCCL_INFO("[RoceRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);;
         return HCCL_SUCCESS;
@@ -84,20 +104,51 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
     CHK_PTR_NULL(memHandle);
     Hccl::LocalRdmaRmaBuffer* buffer = static_cast<Hccl::LocalRdmaRmaBuffer*>(memHandle);
     CHK_PTR_NULL(buffer);
+
+    if (buffer->IsAlias()) {
+        // 别名不在树中 — 仅递减父buffer引用计数，不执行HW解注册
+        auto parent = buffer->GetParentBuffer();
+        if (parent != nullptr) {
+            hccl::BufferKey<uintptr_t, u64> parentKey(parent->GetAddr(), parent->GetSize());
+            bool parentDeleted = false;
+            EXECEPTION_CATCH(parentDeleted = this->localRdmaRmaBufferMgr_->Del(parentKey), return HCCL_E_NOT_FOUND);
+            if (parentDeleted) {
+                // 父引用计数归零，完全解注册
+                auto parentRaw = parent.get();
+                auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+                    [parentRaw](const std::shared_ptr<Hccl::LocalRdmaRmaBuffer>& ptr) {
+                        return ptr.get() == parentRaw;
+                    });
+                if (it != allRegisteredBuffers_.end()) {
+                    allRegisteredBuffers_.erase(it);
+                }
+            }
+        }
+
+        // 从vector中移除别名
+        auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+            [buffer](const std::shared_ptr<Hccl::LocalRdmaRmaBuffer>& ptr) {
+                return ptr.get() == buffer;
+            });
+        if (it != allRegisteredBuffers_.end()) {
+            allRegisteredBuffers_.erase(it);
+        }
+        HCCL_INFO("[RoceRegedMemMgr][UnregisterMemory] alias unregistered, memHandle[%p]", memHandle);
+        return HCCL_SUCCESS;
+    }
+
     auto bufferInfo = buffer->GetBufferInfo();
 
-    // 从LocalRamBuffer计数器删除
     hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
     bool resultPair = false;
     EXECEPTION_CATCH(resultPair = this->localRdmaRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
-    // 计数器大于1时，返回false，说明框架层有其它设备在使用这段内存，返回HCCL_E_AGAIN
+
     if (!resultPair) {
         HCCL_INFO("[RoceRegedMemMgr][[UnregisterMemory] Memory reference count is larger than 0"
                   "(used by other RemoteRank), do not deregister memory.");
         return HCCL_SUCCESS;
     }
 
-    // 删除vector中的LocalRdmaRmaBuffer
     auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
             [buffer](const std::shared_ptr<Hccl::LocalRdmaRmaBuffer>& ptr) {
                 return ptr.get() == buffer;
