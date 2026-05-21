@@ -627,7 +627,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         hcommDescs[i].roceAttr.qpThreshold = rdmaConfig.GetRdmaMultiQpThreshold();
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
-    CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
+    CHK_RET(BatchCreateSockets(channelDescs, channelNum, socketTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     // 借用hcommDescs.socket，完成一致性校验必要的数据交换
