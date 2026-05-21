@@ -71,7 +71,7 @@ def main():
                 __write_raw_img(raw, img, code_len, max_copy_size)
     shutil.copyfile(tmp_file, args.raw)
     if os.path.exists(tmp_file):
-            os.remove(tmp_file)
+        os.remove(tmp_file)
 
 
 if __name__ == '__main__':
