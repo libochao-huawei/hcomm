@@ -13,7 +13,6 @@
 
 #include <vector>
 #include <functional>
-#include <mutex>
 #include "sal_pub.h"
 #include "dispatcher_pub.h"
 
@@ -179,7 +178,6 @@ private:
     HcclAicpuDispatcherInfo aicpuInfo_;
 
     std::unordered_map<s32, Stream> streamMap_; // 保存下过task的stream
-    std::mutex streamMapMutex_; // 保护streamMap_的互斥锁
     u64 notifySize_ = 0;
 
     // Launch context用于算子展开的动态缓存
