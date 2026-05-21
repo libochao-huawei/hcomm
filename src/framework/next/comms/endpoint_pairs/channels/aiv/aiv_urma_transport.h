@@ -24,8 +24,7 @@ public:
     TransportStatus GetStatus();
     std::string Describe() const;
     void GetHostChannelEntity(ChannelEntity *channelEntitiesHost);
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
-    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
+    HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags);
 
 private:
     MAKE_ENUM(UrmaStatus, INIT, SOCKET_OK, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, CONN_OK)
@@ -76,7 +75,6 @@ private:
     TransportStatus transportStatus_{TransportStatus::INIT};
 
     RemoteBufferVec rmtBufferVec_{}; // 远端 buffer
-    std::unique_ptr<HcclMem[]> remoteMemsPtr_{nullptr};
     std::mutex remoteMemsMutex_;      // 远端内存列表互斥锁
     LocalBufferVec localBuffers_{};   // 本地 buffer
     vector<char> rmtHandshakeMsg_{0}; // 远端握手消息
@@ -88,7 +86,7 @@ private:
     std::vector<CqContext> cqContextVec_{};
     uint32_t connNum_{0};
     bool cacheValid_{false};              // GetUserRemoteMem 的缓存标识
-    std::vector<CommMem> remoteUserMems_{}; // 内存基本信息缓存
+    std::vector<HcclMem> remoteUserMems_{}; // 内存基本信息缓存
     std::vector<std::string> tagCopies_{};  // 储存 Tag 字符串副本
     std::vector<char *> tagPointers_{};     // Tag 缓存
 };
