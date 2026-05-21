@@ -386,9 +386,6 @@ STATIC int CheckCtxLmemBatchReg(void *ctxHandle, struct MrRegInfoT *lmemInfoList
     CHK_PRT_RETURN(ctxHandle == NULL || lmemInfoList == NULL || lmemHandleList == NULL,
         hccp_err("ctx_handle or lmem_info_list or lmem_handle_list is NULL"), -EINVAL);
 
-    CHK_PRT_RETURN(num == 0 || num > LMEM_BATCH_MAX,
-        hccp_err("num[%u] out of range(0, %d]", num, LMEM_BATCH_MAX), -EINVAL);
-
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
     CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxLmemBatchRegister == NULL,
         hccp_err("ctx_ops or ra_ctx_lmem_batch_register is NULL"), -EINVAL);
@@ -438,6 +435,9 @@ HCCP_ATTRI_VISI_DEF int RaCtxLmemBatchRegister(void *ctxHandle, struct MrRegInfo
         return ConverReturnCode(RDMA_OP, ret);
     }
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+
+    CHK_PRT_RETURN(num == 0 || num > LMEM_BATCH_MAX,
+        hccp_err("num[%u] out of range(0, %d]", num, LMEM_BATCH_MAX), -EINVAL);
 
     lmemHandleTmpList = calloc(num, sizeof(struct RaLmemHandle *));
     CHK_PRT_RETURN(lmemHandleTmpList == NULL,
@@ -536,8 +536,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxLmemBatchUnregister(void *ctxHandle, void *lmemHand
         }
     }
 
-    free(lmemHandleTmpList);
-    lmemHandleTmpList = NULL;
     return ConverReturnCode(RDMA_OP, ret);
 }
 
@@ -586,9 +584,6 @@ STATIC int CheckCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemIn
 
     CHK_PRT_RETURN(ctxHandle == NULL || rmemInfoList == NULL || rmemHandleList == NULL,
         hccp_err("ctx_handle or rmem_info_list or rmem_handle_list is NULL"), -EINVAL);
-
-    CHK_PRT_RETURN(num == 0 || num > RMEM_BATCH_MAX,
-        hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX), -EINVAL);
 
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
     CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxRmemBatchImport == NULL,
@@ -640,7 +635,10 @@ HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInf
     }
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
 
-    rmemHandleTmpList = calloc(1, sizeof(struct RaRmemHandle *));
+    CHK_PRT_RETURN(num == 0 || num > RMEM_BATCH_MAX,
+        hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX), -EINVAL);
+
+    rmemHandleTmpList = calloc(num, sizeof(struct RaRmemHandle *));
     CHK_PRT_RETURN(rmemHandleTmpList == NULL,
         hccp_err("calloc rmem_handle_tmp_list failed, errno(%d) phyId(%u) devIndex(%u)",
         errno, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex), ConverReturnCode(RDMA_OP, -ENOMEM));
@@ -738,8 +736,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchUnimport(void *ctxHandle, void *rmemHandle
         }
     }
 
-    free(rmemHandleTmpList);
-    rmemHandleTmpList = NULL;
     return ConverReturnCode(RDMA_OP, ret);
 }
 

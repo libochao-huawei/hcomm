@@ -124,7 +124,7 @@ char *VOS_StrChr(const char *pscStr, const char scChar)
 
 BOOL VOS_StrToIpAddrCheckValid(const char *pscStr, uint32_t *pulIpAddr)
 {
-    if (pscStr == VOS_NULL_PTR) {
+    if (pscStr == VOS_NULL_PTR  || (strlen(pscStr) == 0)) {
         return FALSE;
     }
 

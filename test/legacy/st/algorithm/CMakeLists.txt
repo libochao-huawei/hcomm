@@ -238,6 +238,7 @@ include_directories(
     ${HCOMM_ROOT_PATH}/include
     ${HCOMM_ROOT_PATH}/include/hccl
     ${HCOMM_ROOT_PATH}/include/hcomm
+    ${HCOMM_ROOT_PATH}/pkg_inc
 )
 
 add_subdirectory(testcase)

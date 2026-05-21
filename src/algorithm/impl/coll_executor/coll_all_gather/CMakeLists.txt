@@ -38,6 +38,7 @@ if(TARGET ccl_kernel)
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_mid_count_for_910_93_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_mesh_graph_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_mesh_graph_pipeline_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_pipeline_for_910_93_executor.cc
     )
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}

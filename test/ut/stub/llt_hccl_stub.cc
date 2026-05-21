@@ -1180,6 +1180,19 @@ aclError aclrtMallocForTaskScheduler(void **devPtr, size_t size, aclrtMemMallocP
     return aclrtMallocWithCfg(devPtr, size, policy, cfg);
 }
 
+aclError aclrtMalloc(void **devPtr, size_t size, aclrtMemMallocPolicy policy)
+{
+    if (devPtr == nullptr) {
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+    if (policy > ACL_MEM_ACCESS_USER_SPACE_READONLY) {
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+
+    *devPtr = malloc(size);
+    return (*devPtr == nullptr) ? ACL_ERROR_RT_MEMORY_ALLOCATION : ACL_ERROR_NONE;
+}
+
 aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy policy, aclrtMallocConfig *cfg)
 {
     char my_unique_id[SAL_UNIQUE_ID_BYTES];

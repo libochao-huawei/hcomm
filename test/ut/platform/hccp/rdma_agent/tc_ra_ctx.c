@@ -2135,3 +2135,185 @@ void TcRaPeerCtxGetJettyContext()
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
+
+void TcRaLmemBatch()
+{
+    struct RaCtxHandle ctxHandle = {0};
+    struct MrRegInfoT lmemInfoListElement = {0};
+    struct MrRegInfoT *lmemInfoList[1];
+    void *lmemHandleListElement = NULL;
+    void *lmemHandleList[1];
+    int ret = 0;
+
+    mocker_clean();
+    lmemInfoList[0] = &lmemInfoListElement;
+    lmemHandleList[0] = &lmemHandleListElement;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    mocker(RaHdcProcessMsg, 2, 0);
+    ret = RaCtxLmemBatchRegister((void *)&ctxHandle, lmemInfoList, lmemHandleList, 1);
+    EXPECT_INT_EQ(0, ret);
+    ret = RaCtxLmemBatchUnregister((void *)&ctxHandle, lmemHandleList, 1);
+    EXPECT_INT_EQ(0, ret);
+    mocker_clean();
+}
+
+void TcRaRmemBatch()
+{
+    struct RaCtxHandle ctxHandle = {0};
+    struct MrImportInfoT rmemInfoListElement = {0};
+    struct MrImportInfoT *rmemInfoList[1];
+    void *rmemHandleListElement = NULL;
+    void *rmemHandleList[1];
+    int ret = 0;
+
+    mocker_clean();
+    rmemInfoList[0] = &rmemInfoListElement;
+    rmemHandleList[0] = &rmemHandleListElement;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    mocker(RaHdcProcessMsg, 2, 0);
+    ret = RaCtxRmemBatchImport((void *)&ctxHandle, rmemInfoList, rmemHandleList, 1);
+    EXPECT_INT_EQ(0, ret);
+    ret = RaCtxRmemBatchUnimport((void *)&ctxHandle, rmemHandleList, 1);
+    EXPECT_INT_EQ(0, ret);
+    mocker_clean();
+}
+
+void TcRaRsLmemBatchReg()
+{
+    union OpLmemBatchRegInfoData dataOut = {0};
+    union OpLmemBatchRegInfoData dataIn = {0};
+
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
+    int ret;
+
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpLmemBatchRegInfoData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpLmemBatchRegInfoData));
+
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    dataIn.txData.num = LMEM_BATCH_MAX;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpLmemBatchRegInfoData),
+        &dataIn, sizeof(union OpLmemBatchRegInfoData));
+
+    mocker(RsCtxLmemReg, LMEM_BATCH_MAX, 0);
+    ret = RaRsLmemBatchReg(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, 0);
+    mocker_clean();
+
+    mocker(RsCtxLmemReg, LMEM_BATCH_MAX, -1);
+    ret = RaRsLmemBatchReg(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, -1);
+    mocker_clean();
+
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
+}
+
+void TcRaRsLmemBatchUnreg()
+{
+    union OpLmemBatchUnregInfoData dataOut = {0};
+    union OpLmemBatchUnregInfoData dataIn = {0};
+
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
+    int ret;
+
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpLmemBatchUnregInfoData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpLmemBatchUnregInfoData));
+
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    dataIn.txData.num = LMEM_BATCH_MAX;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpLmemBatchUnregInfoData),
+        &dataIn, sizeof(union OpLmemBatchUnregInfoData));
+
+    mocker(RsCtxLmemUnreg, LMEM_BATCH_MAX, 0);
+    ret = RaRsLmemBatchUnreg(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, 0);
+    mocker_clean();
+
+    mocker(RsCtxLmemUnreg, LMEM_BATCH_MAX, -1);
+    ret = RaRsLmemBatchUnreg(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, -1);
+    mocker_clean();
+
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
+}
+
+void TcRaRsRmemBatchImport()
+{
+    union OpRmemBatchImportInfoData dataOut = {0};
+    union OpRmemBatchImportInfoData dataIn = {0};
+
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
+    int ret;
+
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpRmemBatchImportInfoData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpRmemBatchImportInfoData));
+
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    dataIn.txData.num = RMEM_BATCH_MAX;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpRmemBatchImportInfoData),
+        &dataIn, sizeof(union OpRmemBatchImportInfoData));
+
+    mocker(RsCtxRmemImport, RMEM_BATCH_MAX, 0);
+    ret = RaRsRmemBatchImport(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, 0);
+    mocker_clean();
+
+    mocker(RsCtxRmemImport, RMEM_BATCH_MAX, -1);
+    ret = RaRsRmemBatchImport(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, -1);
+    mocker_clean();
+
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
+}
+
+void TcRaRsRmemBatchUnimport()
+{
+    union OpRmemBatchUnimportInfoData dataOut = {0};
+    union OpRmemBatchUnimportInfoData dataIn = {0};
+
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
+    int ret;
+
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpRmemBatchUnimportInfoData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpRmemBatchUnimportInfoData));
+
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    dataIn.txData.num = RMEM_BATCH_MAX;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpRmemBatchUnimportInfoData),
+        &dataIn, sizeof(union OpRmemBatchUnimportInfoData));
+
+    mocker(RsCtxRmemUnimport, RMEM_BATCH_MAX, 0);
+    ret = RaRsRmemBatchUnimport(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, 0);
+    mocker_clean();
+
+    mocker(RsCtxRmemUnimport, RMEM_BATCH_MAX, -1);
+    ret = RaRsRmemBatchUnimport(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, -1);
+    mocker_clean();
+
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
+}
