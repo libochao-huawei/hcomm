@@ -30,28 +30,53 @@ HcclResult UbMemRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, vo
     CHK_PTR_NULL(memHandle);
     CHK_PTR_NULL(mem.addr);
     CHK_PRT_RET(mem.size == 0, HCCL_ERROR("[%s] mem size is zero", __func__), HCCL_E_PARA);
-    CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID, 
+    CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID,
         HCCL_ERROR("[%s] invalid mem type [%d]", __func__, mem.type), HCCL_E_PARA);
 
     std::shared_ptr<Hccl::LocalIpcRmaBuffer> localIpcRmaBuffer = nullptr;
+    uintptr_t addr = reinterpret_cast<uintptr_t>(mem.addr);
+    u64 size = mem.size;
 
-    // LocalIpcRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
+    hccl::BufferKey<uintptr_t, u64> tempKey(addr, size);
     auto findPair = localIpcRmaBufferMgr_->Find(tempKey);
-    if(findPair.first) {
-        localIpcRmaBuffer = findPair.second;
+    if (findPair.first) {
+        auto existingBuffer = findPair.second;
+        if (existingBuffer->GetAddr() == addr && existingBuffer->GetSize() == size) {
+            // Exact match: already registered, just increment ref count
+            localIpcRmaBuffer = existingBuffer;
+        } else {
+            // Subset: contained within a larger registered region, create alias buffer.
+            // The alias is NOT inserted into the tree — only the parent's ref is incremented.
+            std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
+            EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(addr, size,
+                static_cast<HcclMemType>(mem.type), memTag)), return HCCL_E_PTR);
+            EXECEPTION_CATCH((localIpcRmaBuffer = std::make_shared<Hccl::LocalIpcRmaBuffer>(
+                localBufferPtr, existingBuffer)), return HCCL_E_PTR);
+
+            // Increment parent's ref count in tree
+            hccl::BufferKey<uintptr_t, u64> parentKey(existingBuffer->GetAddr(), existingBuffer->GetSize());
+            localIpcRmaBufferMgr_->AddToTree(parentKey, existingBuffer);
+
+            // Track alias in vector only (tree only contains HW-registered parents)
+            *memHandle = static_cast<void *>(localIpcRmaBuffer.get());
+            allRegisteredBuffers_.push_back(localIpcRmaBuffer);
+            HCCL_INFO("[%s] alias created for subset {addr[%p], size[%llu]} within parent {addr[%p], size[%llu]}",
+                __func__, mem.addr, mem.size, reinterpret_cast<void *>(existingBuffer->GetAddr()),
+                static_cast<unsigned long long>(existingBuffer->GetSize()));
+            return HCCL_SUCCESS;
+        }
     } else {
+        // Not registered, create new buffer with HW registration
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
-        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, 
+        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(addr, size,
             static_cast<HcclMemType>(mem.type), memTag)), return HCCL_E_PTR);
         EXECEPTION_CATCH((localIpcRmaBuffer = std::make_shared<Hccl::LocalIpcRmaBuffer>(localBufferPtr)), return HCCL_E_PTR);
     }
 
-    // 增加到LocalIpcRmaBuffer计数器
+    // Register to LocalIpcRmaBuffer counter
     auto resultPair = localIpcRmaBufferMgr_->Add(tempKey, localIpcRmaBuffer);
     if (resultPair.first == localIpcRmaBufferMgr_->End()) {
-        // 注册内存有交叉
-        HCCL_ERROR("[%s] The memory {addr[%p], size[%llu]} overlaps with the memory that has been registered.", 
+        HCCL_ERROR("[%s] The memory {addr[%p], size[%llu]} overlaps with the memory that has been registered.",
             __func__, mem.addr, mem.size);
         return HCCL_E_INTERNAL;
     }
@@ -60,9 +85,8 @@ HcclResult UbMemRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, vo
     CHK_SMART_PTR_NULL(localBuffer);
     *memHandle = static_cast<void *>(localBuffer.get());
 
-    // 判断增加结果，重复添加仅增加引用计数
     if (!resultPair.second) {
-        HCCL_INFO("[%s] Memory {addr[%p], size[%llu]} is already registered, just increase the reference count.", 
+        HCCL_INFO("[%s] Memory {addr[%p], size[%llu]} is already registered, just increase the reference count.",
             __func__, mem.addr, mem.size);
         return HCCL_SUCCESS;
     }
@@ -79,18 +103,46 @@ HcclResult UbMemRegedMemMgr::UnregisterMemory(void* memHandle)
 
     Hccl::LocalIpcRmaBuffer* buffer = static_cast<Hccl::LocalIpcRmaBuffer*>(memHandle);
     CHK_PTR_NULL(buffer);
-    auto bufferInfo = buffer->GetBufferInfo();
 
-    // 从LocalIpcRmaBuffer计数器删除HcclBuf
+    if (buffer->IsAlias()) {
+        auto parent = buffer->GetParentBuffer();
+        if (parent != nullptr) {
+            hccl::BufferKey<uintptr_t, u64> parentKey(parent->GetAddr(), parent->GetSize());
+            bool parentDeleted = false;
+            EXECEPTION_CATCH(parentDeleted = localIpcRmaBufferMgr_->Del(parentKey), return HCCL_E_NOT_FOUND);
+            if (parentDeleted) {
+                auto parentRaw = parent.get();
+                auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+                    [parentRaw](const std::shared_ptr<Hccl::LocalIpcRmaBuffer>& ptr) {
+                        return ptr.get() == parentRaw;
+                    });
+                if (it != allRegisteredBuffers_.end()) {
+                    allRegisteredBuffers_.erase(it);
+                }
+            }
+        }
+
+        auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+            [buffer](const std::shared_ptr<Hccl::LocalIpcRmaBuffer>& ptr) {
+                return ptr.get() == buffer;
+            });
+        if (it != allRegisteredBuffers_.end()) {
+            allRegisteredBuffers_.erase(it);
+        }
+        HCCL_INFO("[%s] alias unregistered, memHandle[%p]", __func__, memHandle);
+        return HCCL_SUCCESS;
+    }
+
+    // Normal buffer - existing unregistration logic
+    auto bufferInfo = buffer->GetBufferInfo();
     hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
     bool isDeleted = false;
     EXECEPTION_CATCH(isDeleted = localIpcRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
-    // 计数器大于1时，仅减少引用计数
     if (!isDeleted) {
         HCCL_INFO("[%s] Memory reference count is larger than 0, just decrease the reference count.", __func__);
         return HCCL_SUCCESS;
     }
-    // 删除vector中的LocalUbRmaBuffer
+
     auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
             [buffer](const std::shared_ptr<Hccl::LocalIpcRmaBuffer>& ptr) {
                 return ptr.get() == buffer;

@@ -25,6 +25,10 @@ public:
     LocalRdmaRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
         const RmaMemType memType = RmaMemType::DEVICE);
 
+    // Alias constructor: wraps a parent buffer, addr/size from parameters, no HW registration
+    LocalRdmaRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
+        const RmaMemType memType, std::shared_ptr<LocalRdmaRmaBuffer> parent);
+
     HcclResult Init();
     HcclResult Destroy();
     ~LocalRdmaRmaBuffer() override;
@@ -40,6 +44,8 @@ public:
 
 private:
     std::unique_ptr<LocalRdmaRmaBufferImpl> pimpl_;
+    std::shared_ptr<LocalRdmaRmaBuffer> parentTyped_{nullptr};
+    mutable std::string aliasSerializeStr_;
 };
 }
 #endif //  LOCAL_RDMA_RMA_BUFFER_H
