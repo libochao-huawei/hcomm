@@ -79,6 +79,7 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/pkg_inc/hccl
 
     ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}/src/common
     ${HCOMM_DIR}/src/common/error_manager
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/aicpu
