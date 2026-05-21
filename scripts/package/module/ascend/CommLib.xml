@@ -25,6 +25,7 @@
         <file value="hccl_comm.h"/>
         <file value="hccl_types.h"/>
         <file value="hccl_rank_graph.h"/>
+        <file value="hccl_ccu_res.h"/>
         <file value="hccl_res.h"/>
         <file value="hccl_sym_win.h"/>
     </file_info>
