@@ -44,66 +44,70 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
-    ${HCOMM_DIR}/src/pub_inc
-    ${HCOMM_DIR}/src/pub_inc/inner
-    ${HCOMM_DIR}/src/pub_inc/new
 
-    # src/framework 头文件
-    ${HCOMM_DIR}/src/framework
-    ${HCOMM_DIR}/src/framework/inc
-    ${HCOMM_DIR}/src/framework/common/src
-    ${HCOMM_DIR}/src/framework/common/src/config
-    ${HCOMM_DIR}/src/framework/common/src/mgr
-    ${HCOMM_DIR}/src/framework/common/src/hashtable
-    ${HCOMM_DIR}/src/framework/communicator/impl
-    ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
-    ${HCOMM_DIR}/src/framework/communicator/impl/one_sided_service
-    ${HCOMM_DIR}/src/framework/op_base/src
+    # src/pub_inc 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/inner
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
 
-    # src/framework/next 头文件
-    ${HCOMM_DIR}/src/framework/next/common
-    ${HCOMM_DIR}/src/framework/next/comms/ccu/pub_inc
-    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device
-    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp
-    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel
-    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe
-    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1
-    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels/host
+    # src/framework 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/framework
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/config
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/mgr
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/hashtable
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/resource_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/one_sided_service
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/op_base/src
 
-    # src/common 头文件
-    ${HCOMM_DIR}/src/common/debug/profiling/inc
-    ${HCOMM_DIR}/src/common/debug/profiling/inc/host
-    ${HCOMM_DIR}/src/common/debug/config
-    ${HCOMM_DIR}/src/common/stream
-    ${HCOMM_DIR}/src/common/launch_device
+    # src/framework/next 头文件 (已拆分到 base_comm 和 coll_communicator)
+    ${HCOMM_DIR}/src/base_comm/common
+    ${HCOMM_DIR}/src/base_comm/resources/ccu/pub_inc
+    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device
+    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device/ccu_comp
+    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel
+    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe
+    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1
+    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/channels/host
 
-    # src/algorithm 头文件
-    ${HCOMM_DIR}/src/algorithm/pub_inc
-    ${HCOMM_DIR}/src/algorithm/base/inc
-    ${HCOMM_DIR}/src/algorithm/base/alg_template
-    ${HCOMM_DIR}/src/algorithm/base/communicator
-    ${HCOMM_DIR}/src/algorithm/base/communicator/legacy
-    ${HCOMM_DIR}/src/algorithm/impl
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
-    ${HCOMM_DIR}/src/algorithm/impl/task
-    ${HCOMM_DIR}/src/algorithm/impl/legacy
-    ${HCOMM_DIR}/src/algorithm/impl/coll_executor
+    # src/common 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/common/debug/profiling/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/common/debug/profiling/inc/host
+    ${HCOMM_DIR}/src/legacy/ascend910/common/debug/config
+    ${HCOMM_DIR}/src/legacy/ascend910/common/stream
+    ${HCOMM_DIR}/src/legacy/ascend910/common/launch_device
 
-    # src/platform 头文件
-    ${HCOMM_DIR}/src/platform/inc
-    ${HCOMM_DIR}/src/platform/inc/adapter
-    ${HCOMM_DIR}/src/platform/common
-    ${HCOMM_DIR}/src/platform/resource/transport
-    ${HCOMM_DIR}/src/platform/resource/transport/heterog
-    ${HCOMM_DIR}/src/platform/resource/notify
-    ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
-    ${HCOMM_DIR}/src/platform/resource/socket
-    ${HCOMM_DIR}/src/platform/hccp/inc
-    ${HCOMM_DIR}/src/platform/hccp/inc/network
-    ${HCOMM_DIR}/src/platform/hccp/external_depends/ubengine
+    # src/algorithm 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/communicator
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/communicator/legacy
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/resource_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/task
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/legacy
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/coll_executor
 
-    # src/legacy 头文件
-    ${LEGACY_INCLUDE_LIST}
+    # src/platform 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/inc/adapter
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/common
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/heterog
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/notify
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/dispatcher_ctx
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/socket
+
+    # base_comm/resources 头文件 (原 platform/hccp)
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/external_depends/ubengine
+
+    # src/legacy 头文件 (legacy/ascend950)
+    ${LEGACY_ASCEND950_INCLUDE_LIST}
 
     # 三方件头文件
     ${JSON_INCLUDE_DIR}
@@ -154,7 +158,6 @@ else()
         ${TOP_DIR}/runtime/include/external
         ${TOP_DIR}/abl/msprof/inc/toolchain
         ${TOP_DIR}/inc/aicpu
-        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
     )
     target_link_libraries(hcomm
         $<BUILD_INTERFACE:kernel_tiling_headers>
