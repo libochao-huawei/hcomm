@@ -196,6 +196,7 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
         if (socketConfig.hostNic2DeviceNicMode_) {
             socket = it->second.get();
             socket->Destroy();
+            socketInUseMap_.erase(socket);
             socketMap_.erase(it);
         } else {
             HCCL_INFO("[SocketMgr][%s] find a correct socket in map", __func__);
