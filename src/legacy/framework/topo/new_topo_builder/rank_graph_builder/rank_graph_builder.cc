@@ -201,7 +201,7 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
     // 1. 获取物理拓扑图
     auto phyTopoGraph = PhyTopo::GetInstance()->GetTopoGraph(0);
     if (phyTopoGraph == nullptr) {
-        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildFromPhytopo] phyTopoGraph is nullptr"));
+        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][AddTopoDescFabricInfo] phyTopoGraph is nullptr"));
     }
     HCCL_INFO("[RankGraphBuilder][AddTopoDescFabricInfo] Successfully retrieved phyTopoGraph");
 
@@ -414,12 +414,12 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
 {
     auto phyTopoGraph = PhyTopo::GetInstance()->GetTopoGraph(0);
     if (phyTopoGraph == nullptr) {
-        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildFromPhytopo] phyTopoGraph is nullptr"));
+        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildPeer2PeerLinks] phyTopoGraph is nullptr"));
     }
     // 遍历innerNetInstance中的每两个rankId之间是否存在边，存在则添加peer2peerlink
     NetInstance *innerNetInstance = rankGraph_->GetNetInstanceByRankId(0, myRank_);
     if (innerNetInstance == nullptr) {
-        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildFromPhytopo] innerNetInstance is nullptr"));
+        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildPeer2PeerLinks] innerNetInstance is nullptr"));
     }
     set<RankId> rankIds = innerNetInstance->GetRankIds();
 
@@ -451,9 +451,8 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
                     phyLink->GetTargetIFace(), dstPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId(), localDeviceId);
                 if (sourceIfaces.empty() || targetIfaces.empty()) {
                     // 没有可用的接口。
-                    HCCL_WARNING("[RankGraphBuilder][BuildFromPhytopo] srcRankId[%d] dstRankId[%d] edge not .",
-                        srcRankId,
-                        dstRankId);
+                    HCCL_WARNING("[RankGraphBuilder][BuildPeer2PeerLinks] no available interface, "
+                        "srcRankId[%u] dstRankId[%u].", srcRankId, dstRankId);
                     continue;
                 }
                 srcPeer->AddConnInterfaces(0, sourceIfaces);

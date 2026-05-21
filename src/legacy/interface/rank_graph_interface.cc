@@ -150,11 +150,9 @@ namespace Hccl {
         u32 size = 0;
         instSizeVec_.clear();
         auto ret = rankGraph->GetNetInstanceList(netLayer, instSizeVec_, size);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetInstSizeListByNetLayer] Failed to get instSzie[%u] at netLayer[%u]",
-                       listSize, netLayer);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[IRankGraph::GetInstSizeListByNetLayer] Failed to get instSizeList at netLayer[%u], "
+                               "myRank[%u], ret[%d]", netLayer, rankId, ret), ret);
         *instSizeList = instSizeVec_.data();
         *listSize = size;
         return HCCL_SUCCESS;
@@ -260,6 +258,9 @@ namespace Hccl {
                 net2peer = &link;
             }
         }
+        CHK_PTR_NULL(peer2net);
+        CHK_PTR_NULL(net2peer);
+        
         auto srcInterface = peer2net->GetSourceIface();
         auto dstInterface = net2peer->GetTargetIface();
         CHK_PTR_NULL(srcInterface);
@@ -324,17 +325,17 @@ namespace Hccl {
             if (!isClos) {
                 // Peer2Peer网络：直接处理每条link
                 HcclResult ret = InsertInnerLink(path, linkListVec_);
-                if (ret != HCCL_SUCCESS) {
-                    HCCL_ERROR("[IRankGraph::%s] InsertInnerLink FAILED for Peer2Peer.", __func__);
-                    return ret;
-                }
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                            HCCL_ERROR("[IRankGraph::%s] InsertInnerLink failed for Peer2Peer, linkNum[%zu], ret[%d]",
+                                       __func__, path.links.size(), ret),
+                            ret);
             } else {
                 // Clos网络：找到peer2net和net2peer，组合成一条链路
                 HcclResult ret = InsertClosLinks(path, linkListVec_);
-                if (ret != HCCL_SUCCESS) {
-                    HCCL_ERROR("[IRankGraph::%s] InsertClosLinks FAILED for Clos.", __func__);
-                    return ret;
-                }
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                            HCCL_ERROR("[IRankGraph::%s] InsertClosLinks failed for Clos, linkNum[%zu], ret[%d]",
+                                       __func__, path.links.size(), ret),
+                            ret);
             }
         }
         *linkList = linkListVec_.data();
@@ -386,6 +387,8 @@ namespace Hccl {
             *topoType = it->second;
             return HCCL_SUCCESS;
         }
+        HCCL_ERROR("[IRankGraph::GetTopoType] topoType[%s] is not supported, netLayer[%u], "
+                               "topoInstId[%u], myRank[%u]", type.Describe().c_str(), netLayer, topoInstId, rankId);
         return HCCL_E_PARA;
     }
 
@@ -422,11 +425,10 @@ namespace Hccl {
             return HCCL_E_PARA;
         }
         auto ret = rankGraph->GetEndpointNum(netLayer, topoInstId, num);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetEndpointNum] Faild to get endpoint num at netLayer [%u] with topoInstId",
-                       netLayer, topoInstId);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[IRankGraph::GetEndpointNum] Failed to get endpoint num at netLayer[%u], "
+                               "topoInstId[%u], myRank[%u], ret[%d]", netLayer, topoInstId, rankId, ret),
+                    ret);
         return HCCL_SUCCESS;
     }
 
@@ -442,12 +444,26 @@ namespace Hccl {
             return HCCL_E_PARA;
         }
         auto ret = rankGraph->GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetEndpointDesc] Failed to get endpoint desc at netLayer [%u] with descNum [%u]",
-                       netLayer, descNum);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[IRankGraph::GetEndpointDesc] Failed to get endpoint desc at netLayer[%u], "
+                               "topoInstId[%u], myRank[%u], descNum[%u], ret[%d]", netLayer, topoInstId, rankId,
+                               *descNum, ret),
+                    ret);
         return HCCL_SUCCESS;
+    }
+
+    static const char *EndpointAttrToString(EndpointAttr endpointAttr)
+    {
+        switch (endpointAttr) {
+            case ENDPOINT_ATTR_BW_COEFF:
+                return "ENDPOINT_ATTR_BW_COEFF";
+            case ENDPOINT_ATTR_DIE_ID:
+                return "ENDPOINT_ATTR_DIE_ID";
+            case ENDPOINT_ATTR_LOCATION:
+                return "ENDPOINT_ATTR_LOCATION";
+            default:
+                return "ENDPOINT_ATTR_INVALID";
+        }
     }
 
     HcclResult IRankGraph::GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
@@ -456,10 +472,10 @@ namespace Hccl {
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
         HcclResult ret = rankGraph->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetEndpointInfo] Faild to get endpoint info with rank [%u]", rankId);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[IRankGraph::GetEndpointInfo] Failed to get endpoint info, rankId[%u], "
+                               "endpointAttr[%s], ret[%d]", rankId, EndpointAttrToString(endpointAttr), ret),
+                    ret);
         return HCCL_SUCCESS;
     }
 
