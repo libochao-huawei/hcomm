@@ -22,6 +22,20 @@
 #define CCU_STRINGIFY(x)       CCU_STRINGIFY_INNER(x)
 
 
+// Runtime label used by CcuIfBegin / CcuWhileBegin / CcuDoWhileBegin etc.
+// Must be GLOBALLY unique across translation units, because the C runtime
+// matches Begin/End by string label.
+//
+// __COUNTER__ alone is NOT enough: it is per-TU, so two .cc files that each
+// include this header will both start counting from 0 and collide
+// (e.g. an outer CCU_IF in suanzi.cc and the first CCU_IF in alg.cc both
+// become "__ccu_if_0"). We therefore embed __FILE__ ":" __LINE__ into the
+// label string. __FILE__ is already a string literal, and adjacent string
+// literals are concatenated by the compiler at compile time, so this is
+// zero-cost at runtime.
+#define CCU_LABEL(uid) (__FILE__ ":" CCU_STRINGIFY(__LINE__) ":" CCU_STRINGIFY(uid))
+
+
 #define CCU_WHILE(expr)                                                     \
     CCU_WHILE_EXPAND(expr, CCU_CONCAT(__ccu_wh_, __COUNTER__))
 
@@ -40,14 +54,14 @@
     for (int uid##_rc = (uid##_dwLbl != nullptr)                            \
                  ? (int)CCU_SUCCESS                                         \
                  : (int)CcuWhileBegin(uid##_ce.var->handle,                 \
-                       uid##_ce.imm, uid##_ce.cond, CCU_STRINGIFY(uid)),    \
+                       uid##_ce.imm, uid##_ce.cond, CCU_LABEL(uid)),        \
              uid##_done = 0;                                                \
          uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
          uid##_done = 1,                                                    \
              uid##_rc = (uid##_dwLbl != nullptr)                            \
                  ? (int)CcuDoWhileEnd(uid##_ce.var->handle,                 \
                        uid##_ce.imm, uid##_ce.cond, uid##_dwLbl)            \
-                 : (int)CcuWhileEnd(CCU_STRINGIFY(uid)))
+                 : (int)CcuWhileEnd(CCU_LABEL(uid)))
 
 #define CCU_IF(expr)                                                        \
     CCU_IF_EXPAND(expr, CCU_CONCAT(__ccu_if_, __COUNTER__))
@@ -62,8 +76,8 @@
          uid##_p = nullptr)                                                 \
     for (int uid##_rc =                                                     \
              (int)CcuIfBegin(uid##_ce.var->handle, uid##_ce.imm,            \
-                 uid##_ce.cond, CCU_STRINGIFY(uid)),                        \
-             uid##_done = (_CcuIfStackPush(CCU_STRINGIFY(uid)), 0);         \
+                 uid##_ce.cond, CCU_LABEL(uid)),                            \
+             uid##_done = (_CcuIfStackPush(CCU_LABEL(uid)), 0);             \
          uid##_rc == (int)CCU_SUCCESS && uid##_done == 0;                   \
          uid##_done = 1,                                                    \
              ((void)CcuFlushPendingIfs(),                                   \
@@ -95,11 +109,11 @@
     CCU_DO_IMPL(uid)
 
 #define CCU_DO_IMPL(uid)                                                    \
-    for (int uid##_rc = (int)CcuDoWhileBegin(CCU_STRINGIFY(uid)),           \
+    for (int uid##_rc = (int)CcuDoWhileBegin(CCU_LABEL(uid)),               \
              uid##_done = 0;                                                \
          uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
          uid##_done = 1,                                                    \
-             _CcuDoWhileStackPush(CCU_STRINGIFY(uid)))
+             _CcuDoWhileStackPush(CCU_LABEL(uid)))
 
 
 #endif // CCU_CONTROL_FLOW_MACRO_H
