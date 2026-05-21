@@ -23,6 +23,7 @@
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
 #include "rank_consistency_checker_v2.h"
+#include "param_check_v2.h"
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
