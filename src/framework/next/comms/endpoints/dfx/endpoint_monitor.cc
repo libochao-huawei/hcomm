@@ -16,6 +16,7 @@ constexpr u32 EndpointMonitor::MONITOR_INTERVAL;
 
 EndpointMonitor::~EndpointMonitor()
 {
+    HCCL_INFO("[EndpointMonitor][%s] xigou", __func__);
     DeInit(deviceLogicId_);
 }
 
@@ -116,6 +117,7 @@ HcclResult EndpointMonitor::UnRegisterToEndpointMonitor()
 
 void EndpointMonitor::RemoveEpHandleFromEndpointMonitor(EndpointHandle epHandle)
 {
+    // bool isEmpty = false;
     if (epHandle == nullptr) {
         HCCL_ERROR("[EndpointMonitor][%s] epHandle is null", __func__);
         return;
@@ -126,14 +128,20 @@ void EndpointMonitor::RemoveEpHandleFromEndpointMonitor(EndpointHandle epHandle)
         auto it = epHandleSet_.find(reinterpret_cast<u64>(epHandle));
         if (it != epHandleSet_.end()) {
             epHandleSet_.erase(it);
-            HCCL_INFO("[EndpointMonitor][%s] epHandle[%p] is remove from deviceId[%d]",
-                __func__, epHandle, deviceLogicId_);
+            HCCL_INFO(
+                "[EndpointMonitor][%s] epHandle[%p] is remove from deviceId[%d]", __func__, epHandle, deviceLogicId_);
         }
+        // isEmpty = epHandleSet_.empty();
     }
+
+    // if (isEmpty) {
+    //     UnRegisterToEndpointMonitor();
+    // }
 }
 
 HcclResult EndpointMonitor::DeInit(s32 deviceLogicId)
 {
+    HCCL_INFO("[EndpointMonitor][%s] deviceId[%d] deinit", __func__, deviceLogicId);
     endpointMonitorThreadFlag_ = false;
     if (endpointMonitorThread_) {
         if (endpointMonitorThread_->joinable()) {
