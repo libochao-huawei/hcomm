@@ -257,11 +257,10 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtNotifySliceLite(u32 index)
 
 RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtBuf)
 {
-    HCCL_INFO("TESTZJN --- UbTransportLiteImpl::GetRmtRmaBufSliceLite rmtBufferVec[%p]", &rmtBufferVec[0]);
     for (auto &it : rmtBufferVec) {
         Buffer buf(it.addr, it.size);
-        HCCL_INFO("TESTZJN --- UbTransportLiteImpl::GetRmtRmaBufSliceLite %s", buf.Describe().c_str());
-        HCCL_INFO("TESTZJN --- UbTransportLiteImpl::GetRmtRmaBufSliceLite %s", rmtBuf.Describe().c_str());
+        HCCL_INFO("TESTZJN --- UbTransportLiteImpl::GetRmtRmaBufSliceLite buf:%s", buf.Describe().c_str());
+        HCCL_INFO("TESTZJN --- UbTransportLiteImpl::GetRmtRmaBufSliceLite rmtBuf:%s", rmtBuf.Describe().c_str());
         if (buf.Contains(rmtBuf.GetAddr(), rmtBuf.GetSize())) {
             // ub conn lite 不关心rkey , rkey 设定为0
             return RmtRmaBufSliceLite(rmtBuf.GetAddr(), rmtBuf.GetSize(), 0, it.tokenId, it.tokenValue);
