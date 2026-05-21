@@ -252,10 +252,6 @@ void CcuKernel::FillTaskParam(CcuTaskParam &param, uint32_t index, uint32_t seqN
 
     HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
               param.dieId, param.missionId, param.instStartId, param.instCnt, param.argSize);
-    for (uint32_t i = 0; i < param.argSize; i++) {
-        if (i == TOKEN_VALUE_INDEX) { continue; }
-        HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, param.args[i]);
-    }
 }
 
 CcuResult CcuKernel::GeneTaskParams(const uint64_t *taskArgs, uint32_t argsNum,
