@@ -428,7 +428,7 @@ HcclResult AivUrmaTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum
         tagPointers_.clear();
         tagPointers_.reserve(userMemCount);
         for (uint32_t i = 0; i < userMemCount; ++i) {
-            auto& rmtBuffer = rmtBufferVec_[i + 1];
+            auto& rmtBuffer = rmtBufferVec_[i];
             CHK_PTR_NULL(rmtBuffer);
             remoteUserMems_[i].type = rmtBuffer->GetMemType();
             remoteUserMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
