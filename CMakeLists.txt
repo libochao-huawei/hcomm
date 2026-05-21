@@ -232,7 +232,7 @@ elseif(BUILD_OPEN_PROJECT)
     )
     install(FILES
         ${HCCL_INC_CCU_HEAD}
-        DESTINATION ${INSTALL_INCLUDE_DIR}/ccu/ ${INSTALL_OPTIONAL}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ccu/ ${INSTALL_OPTIONAL}
         COMPONENT hcomm
     )
 
