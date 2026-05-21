@@ -254,6 +254,7 @@ elseif(BUILD_OPEN_PROJECT)
     )
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h
+        pkg_inc/hcomm/hcomm_res_entity_defs.h
     )
     install(FILES
         ${HCOMM_PKG_HEAD}

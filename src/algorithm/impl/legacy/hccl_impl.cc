@@ -505,7 +505,8 @@ HcclResult hcclImpl::CreateCommByAlg(const std::string &tag, const AlgType algTy
     DeviceMem &inputMem, DeviceMem &outputMem, DeviceMem &expMem, u32 root, bool isAicpuModeEn, bool meshSinglePlane, bool isA2MC2MultiServer)
 {
     CHK_RET(algConfigurator_->CheckAlgType(algType));
-    CHK_RET(commFactory_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPort_, isSetHDCModeInfo_, isUseRankPort_));
+    CHK_RET(commFactory_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPort_,
+        vnicRanksPort_, isSetHDCModeInfo_, isUseRankPort_));
 
     HcclResult commThreadWaitResultLevel0       = HCCL_SUCCESS;
     HcclResult commThreadWaitResultLevel0Rdma   = HCCL_SUCCESS;
@@ -801,10 +802,11 @@ HcclResult hcclImpl::SetRankPortInfo(s32 deviceLogicID, bool isUseRankPort, std:
 
 void hcclImpl::SetHDCModeInfo(
     std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &rankDevicePhyIdNicInfoMap,
-    std::vector<u32> &ranksPort, bool isSetHDCModeInfo, bool isUseRankPort)
+    std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort, bool isSetHDCModeInfo, bool isUseRankPort)
 {
     rankDevicePhyIdNicInfoMap_ = rankDevicePhyIdNicInfoMap;
     ranksPort_ = ranksPort;
+    vnicRanksPort_ = vnicRanksPort;
     isSetHDCModeInfo_ = isSetHDCModeInfo;
     isUseRankPort_ = isUseRankPort;
 }
