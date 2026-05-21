@@ -647,7 +647,7 @@ TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenOnlyReservedRemoteBuffer_Retur
     Socket socket(nullptr, IpAddress(), 0, IpAddress(), "ut", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     auto transport = MakeTransport(*conn, socket);
     void *rdmaHandle = (void *)0x100;
-    auto remoteRmaBuffer = std::make_unique<RemoteUbRmaBuffer>(rdmaHandle);
+    auto remoteRmaBuffer = std::make_unique<Hccl::RemoteUbRmaBuffer>(rdmaHandle);
     transport->rmtBufferVec_.push_back(std::move(remoteRmaBuffer));
     HcclMem *remoteMem = nullptr;
     char **memTags = nullptr;
