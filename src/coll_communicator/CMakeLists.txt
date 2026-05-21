@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 
 add_subdirectory(common)
-add_subdirectory(rank)
+add_subdirectory(resource_mgr)
 add_subdirectory(rank_pairs)
 add_subdirectory(api_c_adpt)
 add_subdirectory(dfx)
@@ -18,7 +18,6 @@ add_subdirectory(communicator)
 if(TARGET hcomm)
     target_include_directories(hcomm PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/rank_pairs
     )
 endif()
 
