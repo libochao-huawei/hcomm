@@ -26,10 +26,10 @@ def get_args():
 def __write_raw_img(raw, img, code_len, max_copy_size):
     raw.seek(0)
     img.seek(0x2100)
-    # 限制拷贝长度: 取min(声明长度-0x100, 剩余文件大小)
+    # 限制拷贝长度：取min(声明长度-0x100, 剩余文件大小)
     rsv_len = min(code_len - 0x100, max_copy_size)
     while rsv_len > 0:
-        chunk_size = 4096 if rev_len > 4096 else rsv_len
+        chunk_size = 4096 if rsv_len > 4096 else rsv_len
         read_buf = img.read(chunk_size)
         if not read_buf:  # 遇到 EOF 立即 break
             break
@@ -57,20 +57,20 @@ def main():
     if check_image_headered(args.img) == False: # 无头场景，直接将原镜像拷到tmp
         shutil.copyfile(args.img, tmp_file)
     else:
-        with open(args.img, 'rb') as img: # 有头场景，将原镜像实际镜像长度考出到tmp
+        with open(args.img, 'rb') as img: # 有头场景，将原镜像实际镜像长度拷出到tmp
             img.seek(0x478)
             code_len = struct.unpack('<I', img.read(4))[0]
-            #检验二进制头字段：code_len必须合法范围且与文件大小一致
+            # 检验二进制头字段：code_len必须合法范围且与文件大小一致
             if code_len < 0x100:
-                raise ValueError(f"Invalid code_len: 0x{code_len:x}, must be >= 0x100")
+                raise ValueError(f"Invalid code_len: (0x{code_len:x}), must be >= 0x100")
             file_size = img.seek(0, os.SEEK_END)
             if code_len > file_size:
-                raise ValueError(f"Invalid code_len: 0x{code_len:x}, must be <= file size: 0x{file_size:x}")
+                raise ValueError(f"Invalid code_len: (0x{code_len:x}), must be <= file size: (0x{file_size:x})")
             max_copy_size = file_size - 0x2100
             with open(tmp_file, 'wb+') as raw:
                 __write_raw_img(raw, img, code_len, max_copy_size)
     shutil.copyfile(tmp_file, args.raw)
-        if os.path.exists(tmp_file):
+    if os.path.exists(tmp_file):
             os.remove(tmp_file)
 
 
