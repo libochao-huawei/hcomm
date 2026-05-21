@@ -152,6 +152,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/externel_depends/tsch
     ${HCCL_CODE_ROOT}/src/common/
     ${HCCL_CODE_ROOT}/src/pub_inc/
+    ${HCOMM_DIR}/src/common/error_manager
     ${HCCL_CODE_ROOT}/src/pub_inc/inner
     ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
     ${HCCL_CODE_ROOT}/src/pub_inc/new
@@ -200,6 +201,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/platform/common/unique
     ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
     ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
+    ${HCOMM_DIR}/src/common
     ${HCCL_CODE_ROOT}/src/platform/inc
     ${HCCL_CODE_ROOT}/src/platform/inc/adapter
     ${HCCL_CODE_ROOT}/src/common/error_manager
@@ -341,6 +343,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc
+    ${HCCL_CODE_ROOT}/src/common
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
