@@ -9,6 +9,7 @@
  */
 #include "exchange_info_mgr.h"
 #include "env_config/env_config.h"
+#include "rank_consistency_checker_v2.h"
 
 namespace hccl {
 ExchangeInfoMgr::ExchangeInfoMgr()
@@ -47,6 +48,32 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
         sockets.push_back(socket);
         remoteRanks.push_back(remoteRank);
         roles.push_back(hcommDescs[i].role);
+    }
+
+    // 只有rankConsistentState是first或者on时才进行hcomm信息校验
+    if(Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState == 1 ||
+        (Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState == 0 && !checker.GetInconsistentCheckFirstDone())) {
+        // ====== 生成本端CheckFrameV2 ======
+       CheckFrameV2 localFrame;
+       CHK_RET(checker.GenerateCheckFrameV2(localFrame));
+
+       // ====== 交换CheckFrameV2（定长，批量并发交换）======
+       std::vector<CheckFrameV2> remoteFrames(sockets.size());
+       CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles,
+            reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
+            reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
+
+        // ====== 逐个比对CheckFrameV2（精确报错：环境变量名/子通信域参数名等）======
+        for (u32 i = 0; i < sockets.size(); i++) {
+            HcclResult cmpRet = checker.CompareCheckFrameV2(localFrame, remoteFrames[i]);
+            if (cmpRet != HCCL_SUCCESS) {
+                HCCL_ERROR("[BatchExchangeAndCheckConsistency] CheckFrameV2 mismatch for remoteRank[%u].",
+                    remoteRanks[i]);
+                return cmpRet;
+            }
+        }
+        HCCL_INFO("[BatchExchangeAndCheckConsistency] hcomm compare check suc.");
+        checker.SetInconsistentCheckFirstDone(true);
     }
 
     // 交换HCCL算子信息 ======

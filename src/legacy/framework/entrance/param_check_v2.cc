@@ -16,12 +16,16 @@
 #include <fstream>
 #include <linux/limits.h>
 #include <adapter_error_manager_pub.h>
+#include <mutex>
 #include "log.h"
 #include "exception_util.h"
 #include "data_type.h"
+#include "checkcrc.h"
 
 using namespace std;
 using namespace Hccl;
+static std::mutex g_rankTableCrcMutex;
+static std::unordered_map<s32, u32> g_rankTableJsonCrcMap;
 struct EnumHashV2 {
     template <typename T>
     std::size_t operator()(T t) const {
@@ -479,6 +483,14 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
         HCCL_ERROR("[RankTable]load ranktable failed, file is empty");
         return HCCL_E_PARA;
     }
+
+    aclError ret = 0;
+    s32 deviceLogicId = 0;
+    ret = aclrtGetDevice(&deviceLogicId);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Get][DeviceRefresh]errNo[0x%016llx] rtGet device fail, "\
+        "please make sure that device is set. return[%d], para:deviceLogicId[%d]",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, deviceLogicId), HCCL_E_RUNTIME);
+    HcomRecordRankTableJsonCrc(deviceLogicId, rankTableM);
     return HCCL_SUCCESS;
 }
 
@@ -511,4 +523,30 @@ void HcomGetHashFromSendCountMatrixV2(u64 &sendCountMatrixHash, const void *send
     sendCountMatrixHash = hashString(sendCountMatrixStr.c_str());
     HCCL_DEBUG("[HcomGetHashFromSendCountMatrix] tag[%s], sendCountMatrixHash[%llu]",
         tag.c_str(), sendCountMatrixHash);
+}
+
+void HcomRecordRankTableJsonCrc(s32 deviceLogicId, const std::string &rankTableJson)
+{
+    Hccl::CheckCrc checkCrc;
+    u32 crc = 0;
+    HcclResult ret = checkCrc.CalcStringCrc(rankTableJson.c_str(), &crc);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcomRecordRankTableJsonCrc] CalcStringCrc failed, ret[%d]", ret);
+        return;
+    }
+    std::lock_guard<std::mutex> lock(g_rankTableCrcMutex);
+    g_rankTableJsonCrcMap[deviceLogicId] = crc;
+    HCCL_INFO("[HcomRecordRankTableJsonCrc] deviceLogicId[%d], crc[0x%08x] recorded.", deviceLogicId, crc);
+}
+
+u32 HcomConsumeRankTableJsonCrc(s32 deviceLogicId)
+{
+    std::lock_guard<std::mutex> lock(g_rankTableCrcMutex);
+    auto it = g_rankTableJsonCrcMap.find(deviceLogicId);
+    if (it == g_rankTableJsonCrcMap.end()) {
+        return 0;
+    }
+    u32 crc = it->second;
+    g_rankTableJsonCrcMap.erase(it);
+    return crc;
 }
