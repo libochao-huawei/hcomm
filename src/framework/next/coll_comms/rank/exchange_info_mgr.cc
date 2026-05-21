@@ -28,6 +28,8 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
     CollCommConfigConsistency &collCommConfigConsistency,
     const std::string &commTag)
 {
+    auto &checker = RankConsistencyCheckerV2::GetInstance();
+    u64 frameLenV2 = checker.GetCheckFrameLengthV2();
     std::vector<Hccl::Socket*> sockets;
     std::vector<u32> remoteRanks;
     std::vector<HcommSocketRole> roles;
