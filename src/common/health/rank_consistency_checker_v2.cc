@@ -44,7 +44,7 @@ HcclResult RankConsistencyCheckerV2::RecordRankTableCrcV2(u32 crc)
     return HCCL_SUCCESS;
 }
 
-HcclResult RankConsistencyCheckerV2::RecordSubCommParaV2(u32 parentCommCrc, uint32_t rankNum,
+HcclResult RankConsistencyCheckerV2::RecordSubCommParaV2(const std::string &parentIdentifier, uint32_t rankNum,
     const uint32_t *rankIds, uint64_t subCommId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -52,6 +52,10 @@ HcclResult RankConsistencyCheckerV2::RecordSubCommParaV2(u32 parentCommCrc, uint
     // 将子通信域四个关键参数计算CRC，带名称存入a5SubCommParaCrcs_
 
     // 1. 父通信域identifier的CRC（直接使用传入的parentCommCrc）
+    u32 parentCommCrc = 0;
+    HcclResult ret = CalcCrc::HcclCalcCrc(parentIdentifier.c_str(), strlen(parentIdentifier.c_str()), parentCommCrc);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[RecordSubCommParaV2] CalcStringCrc failed for parentIdentifier."), ret);
     subCommParaCrcsV2_.push_back({"sub_comm_parentIdentifier", parentCommCrc});
     HCCL_DEBUG("[RecordSubCommParaV2] parentCommCrc[0x%08x] recorded.", parentCommCrc);
 

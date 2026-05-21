@@ -60,11 +60,11 @@ TEST_F(RankConsistentV2Test, Ut_FullPipeline_AllMatch_Expect_Success)
     EXPECT_EQ(checker_.rankTableCrcsV2_[0].name, "ranktable_content");
 
     // 3. RecordSubCommParaV2
-    u32 parentCrc = 0x12345678;
+    std::string parentIdentifier = "test";
     uint32_t rankNum = 4;
     uint32_t rankIds[] = {0, 1, 2, 3};
     uint64_t subCommId = 100;
-    ret = checker_.RecordSubCommParaV2(parentCrc, rankNum, rankIds, subCommId);
+    ret = checker_.RecordSubCommParaV2(parentIdentifier, rankNum, rankIds, subCommId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ASSERT_EQ(checker_.subCommParaCrcsV2_.size(), 4u);
 

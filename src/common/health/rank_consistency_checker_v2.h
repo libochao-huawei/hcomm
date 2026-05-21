@@ -43,7 +43,7 @@ public:
     
     HcclResult RecordEnvVarCrcV2(u64 buffSize);
     HcclResult RecordRankTableCrcV2(u32 crc);
-    HcclResult RecordSubCommParaV2(u32 parentCommCrc, uint32_t rankNum,
+    HcclResult RecordSubCommParaV2(const std::string &parentIdentifier, uint32_t rankNum,
         const uint32_t *rankIds, uint64_t subCommId);
     HcclResult RecordCannVersionV2(const std::string &version);
     HcclResult GenerateCheckFrameV2(CheckFrameV2 &frame);
