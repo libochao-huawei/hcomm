@@ -22,17 +22,6 @@
 #define CCU_STRINGIFY(x)       CCU_STRINGIFY_INNER(x)
 
 
-// Runtime label used by CcuIfBegin / CcuWhileBegin / CcuDoWhileBegin etc.
-// Must be GLOBALLY unique across translation units, because the C runtime
-// matches Begin/End by string label.
-//
-// __COUNTER__ alone is NOT enough: it is per-TU, so two .cc files that each
-// include this header will both start counting from 0 and collide
-// (e.g. an outer CCU_IF in suanzi.cc and the first CCU_IF in alg.cc both
-// become "__ccu_if_0"). We therefore embed __FILE__ ":" __LINE__ into the
-// label string. __FILE__ is already a string literal, and adjacent string
-// literals are concatenated by the compiler at compile time, so this is
-// zero-cost at runtime.
 #define CCU_LABEL(uid) (__FILE__ ":" CCU_STRINGIFY(__LINE__) ":" CCU_STRINGIFY(uid))
 
 
