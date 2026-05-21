@@ -1,4 +1,4 @@
-#include "../../hccl_api_base_test.h"
+#include "gtest/gtest.h"
 #include "hccl/hccl_res.h"
 #include "independent_op_context_manager.h"
 #include "log.h"
@@ -9,17 +9,17 @@
 #include "mockcpp/mockcpp.hpp"
 #include "cluster_monitor.h"
 #include "host/host_cpu_roce_channel.h"
+#include "param_check_pub.h"
 
 #define private public
 
 using namespace hccl;
 using namespace hcomm;
 
-class HcclChannelDescTest : public BaseInit {
+class HcclChannelDescTest : public testing::Test {
 public:
     void SetUp() override
     {
-        BaseInit::SetUp();
         const char *fakeA5SocName = "Ascend950PR_958b";
         MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
         MOCKER(&HcclCommDfx::ReportKernel).stubs().will(returnValue(HCCL_SUCCESS));
@@ -28,7 +28,6 @@ public:
     }
     void TearDown() override
     {
-        BaseInit::TearDown();
         GlobalMockObject::verify();
     }
 protected: 
