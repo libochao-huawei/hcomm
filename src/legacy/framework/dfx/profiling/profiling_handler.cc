@@ -386,9 +386,9 @@ void ProfilingHandler::ReportCcuInfo(const TaskInfo &taskInfo) const
     for (const auto &info : *ccuDetailInfo) {
         if (info.type == 0 && enableHcclL1_) {
             GetCcuTaskInfo(taskInfo, info);
-        } else if (info.type == 1 &&  enableHcclL2_) {
+        } else if (info.type == 1 &&  enableHcclL1_) {
             GetCcuWaitSignalInfo(taskInfo, info);
-        } else if (info.type == CCU_TYPE && enableHcclL2_) {
+        } else if (info.type == CCU_TYPE && enableHcclL1_) {
             GetCcuGroupInfo(taskInfo, info);
         }
     }
@@ -770,11 +770,12 @@ void ProfilingHandler::StartSubscribe(uint64_t profconfig)
     if ((profconfig & PROF_TASK_TIME_L1_MASK) != 0) {
         StartTaskApiSubscribe();
         StartAddtionInfoSubscribe();
+        StartL2Subscribe(); // ccu开关等级改为L1
     } 
-    // L2打开时, 上报task粒度的打点和子task的详细信息
-    if ((profconfig & PROF_TASK_TIME_L2_MASK) != 0) { 
-        StartL2Subscribe();
-    }
+    // // L2打开时, 上报task粒度的打点和子task的详细信息
+    // if ((profconfig & PROF_TASK_TIME_L2_MASK) != 0) { 
+    //     StartL2Subscribe();
+    // }
     HCCL_RUN_INFO("[Profiling][CommandHandle] profSwitch is[%llu]", profconfig);
 }
 
