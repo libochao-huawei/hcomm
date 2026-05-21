@@ -35,6 +35,7 @@ EndpointMonitor &EndpointMonitor::GetInstance(s32 deviceLogicId)
 
 HcclResult EndpointMonitor::RegisterToEndpointMonitor(s32 deviceLogicId, EndpointHandle epHandle)
 {
+    return HCCL_SUCCESS;
     if ((deviceLogicId < 0) || (static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM)) {
         HCCL_ERROR("[EndpointMonitor][%s] deviceLogicId[%d] not in range [0,%u)", __func__, deviceLogicId,
             MAX_MODULE_DEVICE_NUM);
@@ -95,6 +96,7 @@ void EndpointMonitor::MonitorThread()
 
 HcclResult EndpointMonitor::UnRegisterToEndpointMonitor()
 {
+    return HCCL_SUCCESS;
     s32 deviceLogicId = deviceLogicId_;
     HCCL_INFO("[EndpointMonitor] deviceId[%d] UnRegisterToEndpointMonitor begin.", deviceLogicId);
     {
@@ -116,6 +118,8 @@ HcclResult EndpointMonitor::UnRegisterToEndpointMonitor()
 
 void EndpointMonitor::RemoveEpHandleFromEndpointMonitor(EndpointHandle epHandle)
 {
+    return;
+    bool isEmpty = false;
     if (epHandle == nullptr) {
         HCCL_ERROR("[EndpointMonitor][%s] epHandle is null", __func__);
         return;
@@ -126,14 +130,20 @@ void EndpointMonitor::RemoveEpHandleFromEndpointMonitor(EndpointHandle epHandle)
         auto it = epHandleSet_.find(reinterpret_cast<u64>(epHandle));
         if (it != epHandleSet_.end()) {
             epHandleSet_.erase(it);
-            HCCL_INFO("[EndpointMonitor][%s] epHandle[%p] is remove from deviceId[%d]",
-                __func__, epHandle, deviceLogicId_);
+            HCCL_INFO(
+                "[EndpointMonitor][%s] epHandle[%p] is remove from deviceId[%d]", __func__, epHandle, deviceLogicId_);
         }
+        isEmpty = epHandleSet_.empty();
+    }
+
+    if (isEmpty) {
+        UnRegisterToEndpointMonitor();
     }
 }
 
 HcclResult EndpointMonitor::DeInit(s32 deviceLogicId)
 {
+    return;
     endpointMonitorThreadFlag_ = false;
     if (endpointMonitorThread_) {
         if (endpointMonitorThread_->joinable()) {
