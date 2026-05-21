@@ -73,6 +73,7 @@ private:
     std::vector<std::unique_ptr<Hccl::DevUbConnection>> connections_{};
     RdmaHandle rdmaHandle_{nullptr};
     void *devChannelEntity_{nullptr};
+    std::vector<hccl::DeviceMem> deviceMemories_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>> localRmaBuffers_{};
 };
 
