@@ -23,7 +23,6 @@
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
 #include "rank_consistency_checker_v2.h"
-#include "param_check_v2.h"
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -273,10 +272,10 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         hccl::MyRank* myRank = collComm->GetMyRank();
         CHK_PTR_NULL(myRank);
 
-        s32 deviceLogicId = 0;
-        (void)hrtGetDeviceRefresh(&deviceLogicId);
-        u32 rankTableCrc = HcomConsumeRankTableJsonCrc(deviceLogicId);
-        RankConsistencyCheckerV2::GetInstance().RecordRankTableCrcV2(rankTableCrc);
+        // s32 deviceLogicId = 0;
+        // (void)hrtGetDeviceRefresh(&deviceLogicId);
+        // u32 rankTableCrc = HcomConsumeRankTableJsonCrc(deviceLogicId);
+        // RankConsistencyCheckerV2::GetInstance().RecordRankTableCrcV2(rankTableCrc);
         u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
         CHK_RET(RankConsistencyCheckerV2::GetInstance().RecordEnvVarCrcV2(buffSize));
         std::string curVersion = Hccl::EnvConfig::GetInstance().GetLogConfig().GetCannVersion();
