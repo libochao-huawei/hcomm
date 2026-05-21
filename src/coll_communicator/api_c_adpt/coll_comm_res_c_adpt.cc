@@ -25,6 +25,10 @@
 #include "hcclCommOp.h"
 #include "rank_consistency_checker_v2.h"
 #include "rank_table_crc_bridge.h"
+#include "../../base_comm/resources/endpoint_pairs/channels/channel_process.h"
+#include "../../base_comm/resources/endpoint_pairs/channels/aicpu/aicpu_ts_roce_channel_v2.h"
+#include "../../base_comm/resources/endpoint_pairs/channels/aiv/aiv_urma_channel.h"
+
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -223,6 +227,78 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
     return HCCL_SUCCESS;
 }
 
+static HcclResult BuildAivDeviceChannelEntity(const HcclChannelDesc &channelDesc, ChannelHandle hostChannel,
+    ChannelHandle &deviceChannel)
+{
+    void *channel = nullptr;
+    CHK_RET(hcomm::ChannelProcess::ChannelGet(hostChannel, &channel));
+    hcomm::Channel *baseChannel = static_cast<hcomm::Channel *>(channel);
+    CHK_PTR_NULL(baseChannel);
+
+    if (channelDesc.channelProtocol == COMM_PROTOCOL_ROCE) {
+        auto *aicpuTsRoceChannelV2 = dynamic_cast<hcomm::AicpuTsRoceChannelV2 *>(baseChannel);
+        CHK_PTR_NULL(aicpuTsRoceChannelV2);
+        HCCL_INFO("[%s] build AIV direct device channel by AICPU+Host RoCE flow, protocol[%d], "
+            "hostHandle[0x%llx]", __func__, channelDesc.channelProtocol,
+            static_cast<unsigned long long>(hostChannel));
+        CHK_RET(aicpuTsRoceChannelV2->BuildAndGetDevChannelEntity(&deviceChannel));
+        return HCCL_SUCCESS;
+    }
+
+    if (channelDesc.channelProtocol == COMM_PROTOCOL_UBC_CTP ||
+        channelDesc.channelProtocol == COMM_PROTOCOL_UBC_TP) {
+        auto *aivUrmaChannel = dynamic_cast<hcomm::AivUrmaChannel *>(baseChannel);
+        CHK_PTR_NULL(aivUrmaChannel);
+        HCCL_INFO("[%s] build AIV direct device channel by AIV+URMA flow, protocol[%d], "
+            "hostHandle[0x%llx]", __func__, channelDesc.channelProtocol,
+            static_cast<unsigned long long>(hostChannel));
+        void *devChannelEntity = nullptr;
+        CHK_RET(aivUrmaChannel->BuildChannelEntityToDevice(&devChannelEntity));
+        CHK_PTR_NULL(devChannelEntity);
+        deviceChannel = static_cast<ChannelHandle>(reinterpret_cast<uintptr_t>(devChannelEntity));
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_ERROR("[%s] protocol[%d] is not AIV direct channel protocol", __func__, channelDesc.channelProtocol);
+    return HCCL_E_PARA;
+}
+
+static HcclResult ConvertAivChannelHandlesToDevicePtrs(CommEngine engine, const HcclChannelDesc *channelDescs,
+    uint32_t channelNum, ChannelHandle *channels)
+{
+    if (engine != COMM_ENGINE_AIV) {
+        return HCCL_SUCCESS;
+    }
+
+    std::vector<ChannelHandle> hostChannels(channels, channels + channelNum);
+    std::vector<ChannelHandle> deviceChannels(hostChannels);
+    std::vector<ChannelHandle> mappedDeviceChannels;
+    std::vector<ChannelHandle> mappedHostChannels;
+    for (uint32_t idx = 0; idx < channelNum; ++idx) {
+        if (channelDescs[idx].channelProtocol != COMM_PROTOCOL_ROCE &&
+            channelDescs[idx].channelProtocol != COMM_PROTOCOL_UBC_CTP &&
+            channelDescs[idx].channelProtocol != COMM_PROTOCOL_UBC_TP) {
+            continue;
+        }
+        CHK_RET(BuildAivDeviceChannelEntity(channelDescs[idx], hostChannels[idx], deviceChannels[idx]));
+        mappedDeviceChannels.emplace_back(deviceChannels[idx]);
+        mappedHostChannels.emplace_back(hostChannels[idx]);
+        HCCL_INFO("[%s] convert AIV channel success, idx[%u], protocol[%d], hostHandle[0x%llx], devEntity[0x%llx]",
+            __func__, idx, channelDescs[idx].channelProtocol, static_cast<unsigned long long>(hostChannels[idx]),
+            static_cast<unsigned long long>(deviceChannels[idx]));
+    }
+
+    if (!mappedDeviceChannels.empty()) {
+        CHK_RET(hcomm::ChannelProcess::RegisterChannelD2HMap(mappedDeviceChannels.data(), mappedHostChannels.data(),
+            static_cast<uint32_t>(mappedDeviceChannels.size())));
+    }
+
+    for (uint32_t idx = 0; idx < channelNum; ++idx) {
+        channels[idx] = deviceChannels[idx];
+    }
+    return HCCL_SUCCESS;
+}
+
 bool CheckCommEngine(const CommEngine engine, const uint32_t opExpansionMode)
 {
     constexpr uint32_t DEFAULT_MODE = 0;
@@ -366,6 +442,8 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
  
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] Failed to acquire channel, group[%s], engine[%d], channelNum[%llu], ret[%d]", __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
+
+    CHK_RET(ConvertAivChannelHandlesToDevicePtrs(engine, channelDescFinals.data(), channelNum, channels));
  
     HCCL_RUN_INFO("[%s] acquire channel success, group[%s], engine[%d], channelNum[%llu], take time [%lld]us.", __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, DURATION_US(TIME_NOW() - startut));
     EXCEPTION_HANDLE_END
