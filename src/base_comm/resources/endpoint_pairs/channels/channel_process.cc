@@ -273,10 +273,16 @@ HcclResult ChannelProcess::FillChannelD2HMap(ChannelHandle *deviceChannelHandles
             deviceChannelHandle,
             hostChannelHandle);
         DeviceChannelKey key{deviceId, deviceChannelHandle};
-        g_ChannelD2HMap.emplace(key, hostChannelHandle);
+        g_ChannelD2HMap[key] = hostChannelHandle;
     }
 
     return HCCL_SUCCESS;
+}
+
+HcclResult ChannelProcess::RegisterChannelD2HMap(ChannelHandle *deviceChannelHandles,
+    ChannelHandle *hostChannelHandles, uint32_t listNum)
+{
+    return FillChannelD2HMap(deviceChannelHandles, hostChannelHandles, listNum);
 }
 
 static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam, 

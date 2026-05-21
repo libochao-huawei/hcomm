@@ -30,14 +30,8 @@
 
 namespace hcomm {
 constexpr uint32_t QUEUE_NUM_MAX = 20;
-constexpr uintptr_t CHANNEL_ENTITY_ALIGN_SIZE = 8;
 
 namespace {
-static inline uintptr_t AlignUp(uintptr_t addr, uintptr_t align)
-{
-    return (addr + align - 1) & ~(align - 1);
-}
-
 HcclResult SecureMemset(void *dest, size_t destMax, int value, size_t count, const char *fieldName)
 {
     if (dest == nullptr) {
@@ -59,270 +53,40 @@ HcclResult SecureMemset(void *dest, size_t destMax, int value, size_t count, con
     return HCCL_SUCCESS;
 }
 
-HcclResult GetHostBufRemain(const uint8_t *hostBuf, size_t totalSize, const uint8_t *cursor, size_t &offset,
-    size_t &remain, const char *fieldName)
-{
-    if (hostBuf == nullptr || cursor == nullptr) {
-        HCCL_ERROR("[GetHostBufRemain] nullptr is invalid, field[%s]", fieldName);
-        return HCCL_E_PTR;
-    }
-
-    uintptr_t baseAddr = reinterpret_cast<uintptr_t>(hostBuf);
-    uintptr_t cursorAddr = reinterpret_cast<uintptr_t>(cursor);
-    if (cursorAddr < baseAddr) {
-        HCCL_ERROR("[GetHostBufRemain] cursor is before hostBuf, field[%s], hostBuf[%p], cursor[%p]",
-            fieldName, hostBuf, cursor);
-        return HCCL_E_PARA;
-    }
-
-    offset = static_cast<size_t>(cursorAddr - baseAddr);
-    if (offset > totalSize) {
-        HCCL_ERROR("[GetHostBufRemain] cursor overflow, field[%s], offset[%zu], totalSize[%zu]",
-            fieldName, offset, totalSize);
-        return HCCL_E_PARA;
-    }
-
-    remain = totalSize - offset;
-    return HCCL_SUCCESS;
-}
-
-HcclResult SecureMemcpyToHostBuf(uint8_t *hostBuf, size_t totalSize, uint8_t *cursor, const void *src,
-    size_t copySize, size_t &offset, const char *fieldName)
-{
-    if (src == nullptr || cursor == nullptr) {
-        HCCL_ERROR("[SecureMemcpyToHostBuf] nullptr is invalid, field[%s], src[%p], cursor[%p]",
-            fieldName, src, cursor);
-        return HCCL_E_PTR;
-    }
-
-    size_t remain = 0;
-    CHK_RET(GetHostBufRemain(hostBuf, totalSize, cursor, offset, remain, fieldName));
-    if (copySize > remain) {
-        HCCL_ERROR("[SecureMemcpyToHostBuf] insufficient host buffer, field[%s], copySize[%zu], remain[%zu], "
-                   "offset[%zu], totalSize[%zu]",
-            fieldName, copySize, remain, offset, totalSize);
-        return HCCL_E_PARA;
-    }
-
-    errno_t ret = memcpy_s(cursor, remain, src, copySize);
-    if (ret != EOK) {
-        HCCL_ERROR("[SecureMemcpyToHostBuf] memcpy_s failed, field[%s], ret[%d], copySize[%zu], remain[%zu]",
-            fieldName, ret, copySize, remain);
-        return HCCL_E_MEMORY;
-    }
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult MoveCursorWithAlign(uint8_t *hostBuf, size_t totalSize, uint8_t *&cursor, size_t copySize,
-    const char *fieldName)
-{
-    size_t offset = 0;
-    size_t remain = 0;
-    CHK_RET(GetHostBufRemain(hostBuf, totalSize, cursor, offset, remain, fieldName));
-    if (copySize > remain) {
-        HCCL_ERROR("[MoveCursorWithAlign] copySize exceeds remain, field[%s], copySize[%zu], remain[%zu]",
-            fieldName, copySize, remain);
-        return HCCL_E_PARA;
-    }
-
-    uintptr_t nextAddr = reinterpret_cast<uintptr_t>(cursor) + copySize;
-    uintptr_t alignedAddr = AlignUp(nextAddr, CHANNEL_ENTITY_ALIGN_SIZE);
-    uintptr_t baseAddr = reinterpret_cast<uintptr_t>(hostBuf);
-    if (alignedAddr < nextAddr || alignedAddr - baseAddr > totalSize) {
-        HCCL_ERROR("[MoveCursorWithAlign] aligned cursor overflow, field[%s], alignedOffset[%zu], totalSize[%zu]",
-            fieldName, static_cast<size_t>(alignedAddr - baseAddr), totalSize);
-        return HCCL_E_PARA;
-    }
-
-    cursor = reinterpret_cast<uint8_t *>(alignedAddr);
-    return HCCL_SUCCESS;
-}
-
 template <typename T>
-HcclResult PackArrayToHostBuf(uint8_t *hostBuf, size_t totalSize, uint8_t *&cursor, const T *src, uint32_t num,
-    T **dstField, const char *fieldName)
+HcclResult CopyArrayToDevice(const T *hostArray, uint32_t arrayNum, T **deviceArrayPtr,
+    std::vector<hccl::DeviceMem> &deviceMemories, const char *arrayName)
 {
-    if (dstField == nullptr) {
-        HCCL_ERROR("[PackArrayToHostBuf] dstField is nullptr, field[%s]", fieldName);
+    if (deviceArrayPtr == nullptr) {
+        HCCL_ERROR("[AivUrmaChannel::CopyArrayToDevice] %s deviceArrayPtr is nullptr", arrayName);
         return HCCL_E_PTR;
     }
 
-    if (num == 0 || src == nullptr) {
-        *dstField = nullptr;
+    if (arrayNum == 0 || hostArray == nullptr) {
+        *deviceArrayPtr = nullptr;
         return HCCL_SUCCESS;
     }
 
-    if (num > SIZE_MAX / sizeof(T)) {
-        HCCL_ERROR("[PackArrayToHostBuf] copy size overflow, field[%s], num[%u], elemSize[%zu]",
-            fieldName, num, sizeof(T));
+    if (arrayNum > SIZE_MAX / sizeof(T)) {
+        HCCL_ERROR("[AivUrmaChannel::CopyArrayToDevice] %s copy size overflow, num[%u], elemSize[%zu]",
+            arrayName, arrayNum, sizeof(T));
         return HCCL_E_PARA;
     }
 
-    size_t copySize = static_cast<size_t>(num) * sizeof(T);
-    size_t offset = 0;
-    CHK_RET(SecureMemcpyToHostBuf(hostBuf, totalSize, cursor, src, copySize, offset, fieldName));
-    *dstField = reinterpret_cast<T *>(offset);
-    CHK_RET(MoveCursorWithAlign(hostBuf, totalSize, cursor, copySize, fieldName));
-    return HCCL_SUCCESS;
-}
+    size_t arraySize = static_cast<size_t>(arrayNum) * sizeof(T);
+    hccl::DeviceMem arrayDevMem = hccl::DeviceMem::alloc(arraySize);
+    CHK_PRT_RET(!arrayDevMem,
+        HCCL_ERROR("[AivUrmaChannel::CopyArrayToDevice] DeviceMem::alloc for %s failed, size[%zu]",
+            arrayName, arraySize), HCCL_E_MEMORY);
+    void *arrayDevPtr = arrayDevMem.ptr();
+    deviceMemories.push_back(std::move(arrayDevMem));
 
-HcclResult MemCopyHostToDev(void *devPtr, const void *hostPtr, size_t size)
-{
-    if (devPtr == nullptr || hostPtr == nullptr) {
-        HCCL_ERROR("[memCopyHostToDev] nullptr is invalid");
-        return HCCL_E_PTR;
-    }
-    if (size == 0) {
-        HCCL_ERROR("[memCopyHostToDev] size is 0");
-        return HCCL_E_PARA;
-    }
+    Hccl::HrtMemcpy(arrayDevPtr, arraySize, hostArray, arraySize,
+        Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
 
-    aclError aclRet = aclrtMemcpy(devPtr, size, hostPtr, size, ACL_MEMCPY_HOST_TO_DEVICE);
-    if (aclRet != ACL_SUCCESS) {
-        HCCL_ERROR("[memCopyHostToDev] aclrtMemcpy failed, error=%d", aclRet);
-        return HCCL_E_MEMORY;
-    }
-
-    return HCCL_SUCCESS;
-}
-
-void FreeChannelEntityBuildBuf(uint8_t *hostBuf, uint8_t *devBase)
-{
-    if (hostBuf != nullptr) {
-        free(hostBuf);
-    }
-    if (devBase != nullptr) {
-        (void)aclrtFree(devBase);
-    }
-}
-
-size_t CalcSingleChannelSize(const ChannelEntity &ch)
-{
-    size_t totalSize = sizeof(ChannelEntity);
-    totalSize = static_cast<size_t>(AlignUp(totalSize, CHANNEL_ENTITY_ALIGN_SIZE));
-
-    if (ch.localNotifyNum > 0 && ch.localNotifyAddr != nullptr) {
-        totalSize += ch.localNotifyNum * sizeof(RegedNotifyEntity);
-        totalSize = static_cast<size_t>(AlignUp(totalSize, CHANNEL_ENTITY_ALIGN_SIZE));
-    }
-
-    if (ch.remoteNotifyNum > 0 && ch.remoteNotifyAddr != nullptr) {
-        totalSize += ch.remoteNotifyNum * sizeof(RegedNotifyEntity);
-        totalSize = static_cast<size_t>(AlignUp(totalSize, CHANNEL_ENTITY_ALIGN_SIZE));
-    }
-
-    if (ch.localBufferNum > 0 && ch.localBufferAddr != nullptr) {
-        totalSize += ch.localBufferNum * sizeof(RegedBufferEntity);
-        totalSize = static_cast<size_t>(AlignUp(totalSize, CHANNEL_ENTITY_ALIGN_SIZE));
-    }
-
-    if (ch.remoteBufferNum > 0 && ch.remoteBufferAddr != nullptr) {
-        totalSize += ch.remoteBufferNum * sizeof(RegedBufferEntity);
-        totalSize = static_cast<size_t>(AlignUp(totalSize, CHANNEL_ENTITY_ALIGN_SIZE));
-    }
-
-    if (ch.sqNum > 0 && ch.sqContextAddr != nullptr) {
-        totalSize += ch.sqNum * sizeof(SqContext);
-        totalSize = static_cast<size_t>(AlignUp(totalSize, CHANNEL_ENTITY_ALIGN_SIZE));
-    }
-
-    if (ch.cqNum > 0 && ch.cqContextAddr != nullptr) {
-        totalSize += ch.cqNum * sizeof(CqContext);
-        totalSize = static_cast<size_t>(AlignUp(totalSize, CHANNEL_ENTITY_ALIGN_SIZE));
-    }
-
-    return totalSize;
-}
-
-HcclResult AllocChannelEntityBuildBuf(size_t totalSize, uint8_t **hostBuf, uint8_t **devBase)
-{
-    aclError aclRet = aclrtMalloc(reinterpret_cast<void **>(devBase), totalSize, ACL_MEM_MALLOC_NORMAL_ONLY);
-    if (aclRet != ACL_SUCCESS) {
-        HCCL_ERROR("[BuildChannelEntityDev] aclrtMalloc failed, error=%d", aclRet);
-        return HCCL_E_MEMORY;
-    }
-
-    *hostBuf = static_cast<uint8_t *>(malloc(totalSize));
-    if (*hostBuf == nullptr) {
-        FreeChannelEntityBuildBuf(nullptr, *devBase);
-        *devBase = nullptr;
-        HCCL_ERROR("[BuildChannelEntityDev] Host malloc failed");
-        return HCCL_E_MEMORY;
-    }
-
-    HcclResult ret = SecureMemset(*hostBuf, totalSize, 0, totalSize, "hostBuf");
-    if (ret != HCCL_SUCCESS) {
-        FreeChannelEntityBuildBuf(*hostBuf, *devBase);
-        *hostBuf = nullptr;
-        *devBase = nullptr;
-    }
-    return ret;
-}
-
-HcclResult PackChannelEntityHostBuf(ChannelEntity *channelEntity, uint8_t *hostBuf, size_t totalSize)
-{
-    uint8_t *cursor = hostBuf;
-    ChannelEntity *dst = reinterpret_cast<ChannelEntity *>(cursor);
-    *dst = *channelEntity;
-    cursor += sizeof(ChannelEntity);
-    CHK_RET(MoveCursorWithAlign(hostBuf, totalSize, cursor, 0, "ChannelEntity"));
-
-    RegedNotifyEntity *srcLocalNotify = channelEntity->localNotifyAddr;
-    RegedNotifyEntity *srcRemoteNotify = channelEntity->remoteNotifyAddr;
-    RegedBufferEntity *srcLocalBuffer = channelEntity->localBufferAddr;
-    RegedBufferEntity *srcRemoteBuffer = channelEntity->remoteBufferAddr;
-    SqContext *srcSq = channelEntity->sqContextAddr;
-    CqContext *srcCq = channelEntity->cqContextAddr;
-
-    CHK_RET(PackArrayToHostBuf(hostBuf, totalSize, cursor, srcLocalNotify, channelEntity->localNotifyNum,
-        &dst->localNotifyAddr, "localNotify"));
-    CHK_RET(PackArrayToHostBuf(hostBuf, totalSize, cursor, srcRemoteNotify, channelEntity->remoteNotifyNum,
-        &dst->remoteNotifyAddr, "remoteNotify"));
-    CHK_RET(PackArrayToHostBuf(hostBuf, totalSize, cursor, srcLocalBuffer, channelEntity->localBufferNum,
-        &dst->localBufferAddr, "localBuffer"));
-    CHK_RET(PackArrayToHostBuf(hostBuf, totalSize, cursor, srcRemoteBuffer, channelEntity->remoteBufferNum,
-        &dst->remoteBufferAddr, "remoteBuffer"));
-    CHK_RET(PackArrayToHostBuf(hostBuf, totalSize, cursor, srcSq, channelEntity->sqNum,
-        &dst->sqContextAddr, "sqContext"));
-    CHK_RET(PackArrayToHostBuf(hostBuf, totalSize, cursor, srcCq, channelEntity->cqNum,
-        &dst->cqContextAddr, "cqContext"));
-    return HCCL_SUCCESS;
-}
-
-HcclResult BuildChannelEntityDev(ChannelEntity *channelEntity, void **outDevPtr)
-{
-    if (channelEntity == nullptr || outDevPtr == nullptr) {
-        HCCL_ERROR("[BuildChannelEntityDev] Invalid nullptr input");
-        return HCCL_E_PARA;
-    }
-
-    size_t totalSize = CalcSingleChannelSize(*channelEntity);
-    if (totalSize == 0) {
-        HCCL_ERROR("[BuildChannelEntityDev] totalSize is 0");
-        return HCCL_E_PARA;
-    }
-
-    uint8_t *hostBuf = nullptr;
-    uint8_t *devBase = nullptr;
-    HcclResult ret = AllocChannelEntityBuildBuf(totalSize, &hostBuf, &devBase);
-    if (ret == HCCL_SUCCESS) {
-        ret = PackChannelEntityHostBuf(channelEntity, hostBuf, totalSize);
-    }
-    if (ret == HCCL_SUCCESS) {
-        ret = MemCopyHostToDev(devBase, hostBuf, totalSize);
-    }
-    free(hostBuf);
-    if (ret != HCCL_SUCCESS) {
-        if (devBase != nullptr) {
-            (void)aclrtFree(devBase);
-        }
-        HCCL_ERROR("[BuildChannelEntityDev] build channel entity failed, ret=%d", ret);
-        return ret;
-    }
-
-    *outDevPtr = devBase;
-    HCCL_INFO("[BuildChannelEntityDev] Single channel build success, size=%zu", totalSize);
+    *deviceArrayPtr = reinterpret_cast<T *>(arrayDevPtr);
+    HCCL_INFO("[AivUrmaChannel::CopyArrayToDevice] %s: host[%p] -> dev[%p], num[%u], size[%zu]",
+        arrayName, hostArray, arrayDevPtr, arrayNum, arraySize);
     return HCCL_SUCCESS;
 }
 } // namespace
@@ -336,20 +100,26 @@ AivUrmaChannel::AivUrmaChannel(EndpointHandle endpointHandle, const HcommChannel
 
 AivUrmaChannel::~AivUrmaChannel()
 {
+    PutSocketIfNeeded();
     ReleaseDeviceChannelEntity();
+}
+
+void AivUrmaChannel::PutSocketIfNeeded()
+{
+    if (socket_ == nullptr) {
+        return;
+    }
+    if (socketConfig_ == nullptr) {
+        socket_ = nullptr;
+        return;
+    }
+    (void)SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+    socket_ = nullptr;
 }
 
 void AivUrmaChannel::ReleaseDeviceChannelEntity()
 {
-    if (devChannelEntity_ == nullptr) {
-        return;
-    }
-
-    aclError aclRet = aclrtFree(devChannelEntity_);
-    if (aclRet != ACL_SUCCESS) {
-        HCCL_ERROR("[AivUrmaChannel][%s] aclrtFree devChannelEntity failed, ptr[%p], ret[%d]",
-            __func__, devChannelEntity_, aclRet);
-    }
+    deviceMemories_.clear();
     devChannelEntity_ = nullptr;
 }
 
@@ -373,14 +143,33 @@ HcclResult AivUrmaChannel::ParseInputParam()
     CHK_PTR_NULL(localEpPtr);
     localEp_ = localEpPtr->GetEndpointDesc();
     rdmaHandle_ = localEpPtr->GetRdmaHandle();
+    devicePhyId_ = localEp_.loc.device.devPhyId;
 
     socket_ = reinterpret_cast<Hccl::Socket *>(channelDesc_.socket);
     remoteEp_ = channelDesc_.remoteEndpoint;
     notifyNum_ = channelDesc_.notifyNum;
-
     // 3. 从 channelDesc 的 memHandle，获得 bufs_
-    HCCL_INFO("[AivUrmaChannel][%s] exchangeAllMems == false. Get memHandles from channelDesc.", __func__);
-    CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
+    if (channelDesc_.exchangeAllMems) {
+        HCCL_INFO("[AivUrmaChannel][%s] exchangeAllMems == true. Get memHandles from endpoint.", __func__);
+        std::shared_ptr<Hccl::LocalUbRmaBuffer> *memHandles = nullptr;
+        uint32_t memHandleNum = 0;
+        CHK_RET(static_cast<HcclResult>(
+            HcommMemGetAllMemHandles(endpointHandle_, reinterpret_cast<void **>(&memHandles), &memHandleNum)));
+        HCCL_INFO("[AivUrmaChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
+        bufs_.clear();
+        for (uint32_t i = 0; i < memHandleNum; ++i) {
+            std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
+            HCCL_INFO("[AivUrmaChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
+                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
+                localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+            bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
+                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
+                localUbRmaBuffer->GetBuf()->GetMemTag().c_str())));
+        }
+    } else {
+        HCCL_INFO("[AivUrmaChannel][%s] exchangeAllMems == false. Get memHandles from channelDesc.", __func__);
+        CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
+    }
 
     return HCCL_SUCCESS;
 }
@@ -391,14 +180,28 @@ HcclResult AivUrmaChannel::BuildSocket()
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[AivUrmaChannel][%s] socket ptr is NULL, rebuildSocket", __func__);
+    
+    Hccl::IpAddress ipAddr{};
+    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, ipAddr));
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
+    Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(localEp_.loc.device.devPhyId), type, 0, ipAddr);
+    Hccl::SocketHandle socketHandle
+        = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
+    EXECEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipAddr, 60001, ipAddr, "server",
+                         Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE),
+        return HCCL_E_PARA);
+    HCCL_INFO("[AivUrmaChannel][%s] listen_socket_info[%s]", __func__, serverSocket_->Describe().c_str());
+    EXECEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
 
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
     HCCL_INFO("[AivUrmaChannel][%s] built linkData: %s", __func__, linkData.Describe().c_str());
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
     bool noRankId = true;
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
-    CHK_RET(SocketMgr::GetInstance(localEp_.loc.device.devPhyId).GetSocket(socketConfig, socket_));
+    EXECEPTION_CATCH(socketConfigHolder_ = std::make_unique<Hccl::SocketConfig>(linkData, socketTag, noRankId),
+        return HCCL_E_PTR);
+    socketConfig_ = socketConfigHolder_.get();
+    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(*socketConfigHolder_, socket_));
 
     return HCCL_SUCCESS;
 }
@@ -497,21 +300,35 @@ HcclResult AivUrmaChannel::BuildChannelEntityToDevice(void **devChannelPtr)
     hostChannel.abiHeader = channelDesc_.header;
     hostChannel.engine = COMM_ENGINE_AIV;
     hostChannel.protocol = channelDesc_.remoteEndpoint.protocol;
-    void *newDevChannelEntity = nullptr;
-    HcclResult ret = BuildChannelEntityDev(&hostChannel, &newDevChannelEntity);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AivUrmaChannel] BuildChannelEntityDev failed, ret=%d", ret);
-        return ret;
-    }
-    if (newDevChannelEntity == nullptr) {
-        HCCL_ERROR("[AivUrmaChannel] BuildChannelEntityDev returned nullptr");
-        return HCCL_E_PTR;
-    }
+    std::vector<hccl::DeviceMem> newDeviceMemories;
+    hccl::DeviceMem entityDevMem = hccl::DeviceMem::alloc(sizeof(ChannelEntity));
+    CHK_PRT_RET(!entityDevMem,
+        HCCL_ERROR("[AivUrmaChannel::%s] DeviceMem::alloc for ChannelEntity failed", __func__), HCCL_E_MEMORY);
+    newDeviceMemories.push_back(std::move(entityDevMem));
+    void *entityDevPtr = newDeviceMemories.back().ptr();
+
+    ChannelEntity devChannel = hostChannel;
+    CHK_RET(CopyArrayToDevice(hostChannel.localNotifyAddr, hostChannel.localNotifyNum,
+        &devChannel.localNotifyAddr, newDeviceMemories, "localNotifyAddr"));
+    CHK_RET(CopyArrayToDevice(hostChannel.remoteNotifyAddr, hostChannel.remoteNotifyNum,
+        &devChannel.remoteNotifyAddr, newDeviceMemories, "remoteNotifyAddr"));
+    CHK_RET(CopyArrayToDevice(hostChannel.localBufferAddr, hostChannel.localBufferNum,
+        &devChannel.localBufferAddr, newDeviceMemories, "localBufferAddr"));
+    CHK_RET(CopyArrayToDevice(hostChannel.remoteBufferAddr, hostChannel.remoteBufferNum,
+        &devChannel.remoteBufferAddr, newDeviceMemories, "remoteBufferAddr"));
+    CHK_RET(CopyArrayToDevice(hostChannel.sqContextAddr, hostChannel.sqNum,
+        &devChannel.sqContextAddr, newDeviceMemories, "sqContextAddr"));
+    CHK_RET(CopyArrayToDevice(hostChannel.cqContextAddr, hostChannel.cqNum,
+        &devChannel.cqContextAddr, newDeviceMemories, "cqContextAddr"));
+
+    Hccl::HrtMemcpy(entityDevPtr, sizeof(ChannelEntity), &devChannel, sizeof(ChannelEntity),
+        Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
 
     ReleaseDeviceChannelEntity();
-    devChannelEntity_ = newDevChannelEntity;
+    deviceMemories_ = std::move(newDeviceMemories);
+    devChannelEntity_ = entityDevPtr;
     *devChannelPtr = devChannelEntity_;
-    HCCL_INFO("[AivUrmaChannel] Build channel entity to device success");
+    HCCL_INFO("[AivUrmaChannel] Build channel entity to device success, devPtr[%p]", devChannelEntity_);
     return HCCL_SUCCESS;
 }
 
@@ -621,6 +438,9 @@ ChannelStatus AivUrmaChannel::GetStatus()
             HCCL_ERROR("[AivUrmaChannel][%s] Invalid TransportStatus[%d]", __func__, transportStatus);
             out = ChannelStatus::INVALID;
             break;
+    }
+    if (out == ChannelStatus::READY) {
+        PutSocketIfNeeded();
     }
     return out;
 }
