@@ -18,9 +18,7 @@ if(TARGET hcomm)
     )
     target_include_directories(hcomm PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/ns_recovery
     )
 endif()
 
-add_subdirectory(aicpu)
-add_subdirectory(ns_recovery)
+add_subdirectory(device)
