@@ -64,7 +64,9 @@ target_include_directories(hccl_v2 PRIVATE
     ${HCOMM_DIR}/include/hccl/
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}/src/pub_inc/new
     ${HCOMM_DIR}/src/common/error_manager
+    ${HCOMM_DIR}/src/common
     # src/algorithm 头文件
     ${HCOMM_DIR}/src/algorithm/pub_inc
     ${HCOMM_DIR}/src/algorithm/impl/resource_manager
