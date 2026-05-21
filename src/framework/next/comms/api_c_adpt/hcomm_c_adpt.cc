@@ -42,7 +42,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-#include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
+#include "../../endpoints/dfx/endpoint_monitor.h"
 #include "aiv_urma_channel.h"
 
 namespace hcomm {
@@ -237,7 +237,8 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
 
-    if ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP)) {
+    if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
+        && ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP))) {
         s32 devLogicIdSigned = HcclGetThreadDeviceId();
         CHK_PRT_RET(devLogicIdSigned < 0,
             HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
