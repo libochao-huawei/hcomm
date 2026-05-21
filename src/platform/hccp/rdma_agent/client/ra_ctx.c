@@ -536,8 +536,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxLmemBatchUnregister(void *ctxHandle, void *lmemHand
         }
     }
 
-    free(lmemHandleTmpList);
-    lmemHandleTmpList = NULL;
     return ConverReturnCode(RDMA_OP, ret);
 }
 
@@ -738,8 +736,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchUnimport(void *ctxHandle, void *rmemHandle
         }
     }
 
-    free(rmemHandleTmpList);
-    rmemHandleTmpList = NULL;
     return ConverReturnCode(RDMA_OP, ret);
 }
 

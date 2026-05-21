@@ -321,7 +321,20 @@ void HrtRaSocketCloseOne(RaSocketCloseParam &in)
     HRaSocketBatchClose(&closeInfo, 1);
 }
 
-static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
+static void ReportAddrInUseError(const IpAddress &localIp, u32 port, HrtNetworkMode netMode)
+{
+    std::string errMsg = "The IP address " + std::string(localIp.Describe().c_str()) +
+                         " and port " + std::to_string(port) + " have already been bound.";
+    if (netMode == HrtNetworkMode::PEER) {
+        RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
+            std::vector<std::string>({errMsg}));
+    } else {
+        RPT_INPUT_ERR(true, "EI0020", std::vector<std::string>({"reason"}),
+            std::vector<std::string>({errMsg}));
+    }
+}
+
+static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num, const IpAddress &localIp, HrtNetworkMode netMode)
 {
     CHECK_NULLPTR(conn, "[HRaSocketListenStart] conn is nullptr!");
     HCCL_INFO("[ListenStart][RaSocket] Input params: num=%u", num);
@@ -333,7 +346,7 @@ static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
         ret = RaSocketListenStart(conn, num);
         if (ret == 0) {
             HCCL_INFO("socket listen start success, ret=%d", ret);
-            break; // 成功跳出
+            break;
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
@@ -341,6 +354,14 @@ static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
                     HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), EnvLinkTimeoutGet(), ret, num));
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+        } else if (ret == SOCK_EADDRINUSE) {
+            u32 port = (num > 0) ? conn[0].port : HCCL_INVALID_PORT;
+            ReportAddrInUseError(localIp, port, netMode);
+            MACRO_THROW(NetworkApiException, StringFormat("[%s]ra socket listen could not start, due to the port[%u] has already been bound. please try"
+                        " another port or check the port status", __func__, port));
+        } else if (ret == SOCK_EADDRNOTAVAIL){
+            MACRO_THROW(NetworkApiException, StringFormat("[%s] Socket listen start fail: "
+                "IP address is not available, please check the IP address configuration, return[%d]", __func__, ret));
         } else {
             // 非ra限速场景错误，不轮询，直接退出
             MACRO_THROW(NetworkApiException, StringFormat("[ListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
@@ -349,7 +370,7 @@ static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
     }
 }
 
-static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num)
+static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num, const IpAddress &localIp, HrtNetworkMode netMode)
 {
     CHECK_NULLPTR(conn, "[RaSocketTryListenStart] conn is nullptr!");
     HCCL_INFO("[TryListenStart][RaSocket] Input params: num=%u", num);
@@ -359,9 +380,11 @@ static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num)
     } else if (ret == SOCK_EAGAIN) {
         HCCL_INFO("[%s] listen eagain", __func__);
         return true;
-    } else if (ret == SOCK_EADDRINUSE){
+    } else if (ret == SOCK_EADDRINUSE) {
+        u32 port = (num > 0) ? conn[0].port : HCCL_INVALID_PORT;
+        ReportAddrInUseError(localIp, port, netMode);
         HCCL_INFO("[%s]ra socket listen could not start, due to the port[%u] has already been bound. please try"
-                    " another port or check the port status", __func__, (num > 0 ? conn[0].port : HCCL_INVALID_PORT));
+                    " another port or check the port status", __func__, port);
         return false;
     } else if (ret == SOCK_EADDRNOTAVAIL){
         MACRO_THROW(NetworkApiException, StringFormat("[%s] Socket listen start fail: " 
@@ -400,22 +423,22 @@ static void HRaSocketListenStop(struct SocketListenInfoT conn[], u32 num)
     }
 }
 
-void HrtRaSocketListenOneStart(RaSocketListenParam &in)
+void HrtRaSocketListenOneStart(RaSocketListenParam &in, HrtNetworkMode netMode)
 {
     HCCL_INFO("[ListenStart][RaSocket] Input params: socketHandle: %p, port: %u", in.socketHandle, in.port);
     struct SocketListenInfoT listenInfo {};
     listenInfo.socketHandle = in.socketHandle;
     listenInfo.port = in.port;
-    HRaSocketListenStart(&listenInfo, 1);
+    HRaSocketListenStart(&listenInfo, 1, in.localIp, netMode);
 }
 
-bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in)
+bool HrtRaSocketTryListenOneStart(RaSocketListenParam &in, HrtNetworkMode netMode)
 {
     HCCL_INFO("[TryListenOneStart][RaSocket] Input params: socketHandle: %p, port: %u", in.socketHandle, in.port);
     struct SocketListenInfoT listenInfo {};
     listenInfo.socketHandle = in.socketHandle;
     listenInfo.port = in.port;
-    bool ret = RaSocketTryListenStart(&listenInfo, 1);
+    bool ret = RaSocketTryListenStart(&listenInfo, 1, in.localIp, netMode);
     if (ret && in.port == AUTO_LISTEN_PORT) {
         in.port = listenInfo.port;
     }
@@ -1535,12 +1558,12 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
     attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
     /* errTime配置值：0-31
-       0-7代表芯片配置值b00:128ms
-       8-15代表芯片配置值b01:1s
-       16-23代表芯片配置值b10:8s
-       24-31代表芯片配置值b11:64s
+        0-7代表芯片配置值b00:512ms
+        8-15代表芯片配置值b01:1s
+        16-23代表芯片配置值b10:8s
+        24-31代表芯片配置值b11:32s
     */
-    attr.ub.errTimeout       = 16;
+    attr.ub.errTimeout       = in.errTimeout;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority         = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
@@ -1570,10 +1593,10 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
               "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
               "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u].",
+              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u], timeout[%u].",
                attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode, attr.ub.mode,
                attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa, attr.ub.extMode.sq.buffSize,
-               attr.ub.extMode.piType, attr.ub.priority);
+               attr.ub.extMode.piType, attr.ub.priority, attr.ub.errTimeout);
     return attr;
 }
 
@@ -2580,6 +2603,84 @@ HcclResult HrtRaNormalQpDestroy(QpHandle qpHandle)
     s32 ret = RaNormalQpDestroy(qpHandle);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Destroy][NormalQp]errNo[0x%016llx] ra destroy normal qp fail. return[%d], params: rdmaHandle[%p]",\
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpHandle), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaQpCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, NdaQpInfo *qpInfo, QpHandle *qpHandle)
+{
+    CHK_PTR_NULL(rdmaHandle);
+    CHK_PTR_NULL(ndaOps);
+    HCCL_INFO("[HrtRaNdaQpCreate] Input params: rdmaHandle=%p dmaMode=%u", rdmaHandle, dmaMode);
+
+    struct ibv_qp_init_attr ibQpAttr;
+    CHK_SAFETY_FUNC_RET(memset_s(&ibQpAttr, sizeof(ibv_qp_init_attr), 0, sizeof(ibv_qp_init_attr)));
+    ibQpAttr.qp_context= nullptr;
+    ibQpAttr.send_cq = cqInfo->cq;
+    ibQpAttr.recv_cq = cqInfo->cq;
+    ibQpAttr.srq = nullptr;
+    ibQpAttr.qp_type = IBV_QPT_RC;
+    ibQpAttr.cap.max_inline_data = MAX_INLINE_DATA;
+    ibQpAttr.cap.max_send_wr = MAX_WR_NUM;
+    ibQpAttr.cap.max_send_sge = MAX_SEND_SGE_NUM;
+    ibQpAttr.cap.max_recv_wr = MAX_WR_NUM;
+    ibQpAttr.cap.max_recv_sge = MAX_RECV_SGE_NUM;
+
+    struct NdaQpInitAttr qpAttr;
+    qpAttr.attr = ibQpAttr;
+    qpAttr.qpCapFlag = 0;
+    qpAttr.dmaMode = dmaMode;
+    qpAttr.ops = ndaOps;
+
+    s32 ret = RaNdaQpCreate(rdmaHandle, &qpAttr, qpInfo, qpHandle);
+    CHK_PRT_RET(ret != 0 || qpInfo == nullptr || qpHandle == nullptr,
+        HCCL_ERROR("[Create][NdaQp]errNo[0x%016llx] RaNdaQpCreate fail. return[%d], "
+            "params: rdmaHandle[%p] dmaMode[%u]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, dmaMode), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaCqCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, CqHandle *cqHandle)
+{
+    CHK_PTR_NULL(rdmaHandle);
+    CHK_PTR_NULL(ndaOps);
+    HCCL_INFO("[HrtRaNdaCqCreate] Input params: rdmaHandle=%p dmaMode=%u", rdmaHandle, dmaMode);
+
+    struct ibv_cq_init_attr_ex ibCqAttr;
+    CHK_SAFETY_FUNC_RET(memset_s(&ibCqAttr, sizeof(ibv_cq_init_attr_ex), 0, sizeof(ibv_cq_init_attr_ex)));
+    ibCqAttr.cqe = MAX_CQ_DEPTH;
+    ibCqAttr.cq_context = nullptr;
+    ibCqAttr.channel = nullptr;
+    ibCqAttr.comp_vector = 0;
+    ibCqAttr.wc_flags = 0;
+    ibCqAttr.comp_mask = 0;
+    ibCqAttr.flags = 0;
+
+    struct NdaCqInitAttr cqAttr;
+    cqAttr.attr = ibCqAttr;
+    cqAttr.cqCapFlag = 0;
+    cqAttr.dmaMode = dmaMode;
+    cqAttr.ops = ndaOps;
+
+    s32 ret = RaNdaCqCreate(rdmaHandle, &cqAttr, cqInfo, cqHandle);
+    CHK_PRT_RET(ret != 0 || cqInfo == nullptr || cqHandle == nullptr,
+        HCCL_ERROR("[Create][NdaCq]errNo[0x%016llx] RaNdaCqCreate fail. return[%d], "
+            "params: rdmaHandle[%p] dmaMode[%u]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, dmaMode), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaCqDestroy(RdmaHandle rdmaHandle, CqHandle cqHandle)
+{
+    CHK_PTR_NULL(rdmaHandle);
+    CHK_PTR_NULL(cqHandle);
+    HCCL_INFO("[HrtRaNdaCqDestroy] Input params: rdmaHandle=%p cqHandle=%p", rdmaHandle, cqHandle);
+
+    s32 ret = RaNdaCqDestroy(rdmaHandle, cqHandle);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[RaNdaCqDestroy] errNo[0x%016llx] RaNdaCqDestroy failed, call interface error. "
+                "return[%d], params: rdmaHandle[%p] cqHandle[%p]",
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, cqHandle),
+        HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
 

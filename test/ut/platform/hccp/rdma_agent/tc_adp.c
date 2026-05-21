@@ -1106,6 +1106,26 @@ void TcRaRsTestCtxOps()
     TcCommonTest();
 
     TcAdpEnvInit();
+    mocker((stub_fn_t)gRaRsCtxOps.ctxLmemReg, LMEM_BATCH_MAX, 0);
+    AddTestMsg(RA_RS_LMEM_BATCH_REG, sizeof(union OpLmemBatchRegInfoData));
+    TcCommonTest();
+
+    TcAdpEnvInit();
+    mocker((stub_fn_t)gRaRsCtxOps.ctxLmemUnreg, LMEM_BATCH_MAX, 0);
+    AddTestMsg(RA_RS_LMEM_BATCH_UNREG, sizeof(union OpLmemBatchUnregInfoData));
+    TcCommonTest();
+
+    TcAdpEnvInit();
+    mocker((stub_fn_t)gRaRsCtxOps.ctxRmemImport, RMEM_BATCH_MAX, 0);
+    AddTestMsg(RA_RS_RMEM_BATCH_IMPORT, sizeof(union OpRmemBatchImportInfoData));
+    TcCommonTest();
+
+    TcAdpEnvInit();
+    mocker((stub_fn_t)gRaRsCtxOps.ctxRmemUnimport, RMEM_BATCH_MAX, 0);
+    AddTestMsg(RA_RS_RMEM_BATCH_UNIMPORT, sizeof(union OpRmemBatchUnimportInfoData));
+    TcCommonTest();
+
+    TcAdpEnvInit();
     mocker((stub_fn_t)gRaRsCtxOps.ctxChanCreate, 1, 0);
     AddTestMsg(RA_RS_CTX_CHAN_CREATE, sizeof(union OpCtxChanCreateData));
     TcCommonTest();
