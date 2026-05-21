@@ -11,7 +11,7 @@ set(src_to_test_list
     main.cc
     ../communicator/hccl_api_base_test.cc
     ut_sync_data_device_test.cc
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc
 )
 
 add_executable(hcomm_utest_sync_data_aicpu_ts ${src_to_test_list})
