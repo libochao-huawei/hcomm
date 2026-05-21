@@ -87,13 +87,28 @@ void AicpuTsRoceRegedMemMgr::TrackRegisteredBuffer(const std::shared_ptr<hccl::L
 }
 
 HcclResult AicpuTsRoceRegedMemMgr::GetOrCreateLocalRdmaRmaBuffer(hccl::NetDevContext *netDevCtx, HcommMem mem,
-    hccl::BufferKey<uintptr_t, u64> tempKey, std::shared_ptr<hccl::LocalRdmaRmaBuffer> &localRdmaRmaBuffer)
+    hccl::BufferKey<uintptr_t, u64> tempKey, std::shared_ptr<hccl::LocalRdmaRmaBuffer> &localRdmaRmaBuffer,
+    bool &isAlias)
 {
+    isAlias = false;
     hccl::RmaMemType memType = static_cast<hccl::RmaMemType>(mem.type);
     auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
     if (findPair.first) {
-        localRdmaRmaBuffer = findPair.second;
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] Find hit, reuse buffer mgr entry key {%p, %llu}",
+        auto existingBuffer = findPair.second;
+        uintptr_t addr = reinterpret_cast<uintptr_t>(mem.addr);
+        u64 size = static_cast<u64>(mem.size);
+        if (existingBuffer->GetAddr() == addr && existingBuffer->GetSize() == size) {
+            // Exact match, reuse existing buffer
+            localRdmaRmaBuffer = existingBuffer;
+            HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] Find hit, reuse buffer mgr entry key {%p, %llu}",
+                mem.addr, mem.size);
+            return HCCL_SUCCESS;
+        }
+        // Subset: contained within larger region, create alias
+        EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<hccl::LocalRdmaRmaBuffer>(netDevCtx, mem.addr,
+            static_cast<u64>(mem.size), memType, existingBuffer)), return HCCL_E_PTR);
+        isAlias = true;
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] Find superset hit, alias created key {%p, %llu} within parent",
             mem.addr, mem.size);
         return HCCL_SUCCESS;
     }
@@ -119,12 +134,30 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
     CHK_PTR_NULL(ctx);
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
+    bool isAlias = false;
     std::shared_ptr<hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer;
-    HcclResult ret = GetOrCreateLocalRdmaRmaBuffer(netDevCtx, mem, tempKey, localRdmaRmaBuffer);
+    HcclResult ret = GetOrCreateLocalRdmaRmaBuffer(netDevCtx, mem, tempKey, localRdmaRmaBuffer, isAlias);
     if (ret != HCCL_SUCCESS) {
         return ret;
     }
 
+    if (isAlias) {
+        // Alias is NOT inserted into the tree — only increment parent's ref count
+        auto parent = localRdmaRmaBuffer->GetParentBuffer();
+        if (parent != nullptr) {
+            hccl::BufferKey<uintptr_t, u64> parentKey(
+                reinterpret_cast<uintptr_t>(parent->GetAddr()), parent->GetSize());
+            localRdmaRmaBufferMgr_->AddToTree(parentKey,
+                std::static_pointer_cast<hccl::LocalRdmaRmaBuffer>(parent));
+        }
+
+        *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
+        TrackRegisteredBuffer(localRdmaRmaBuffer);
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] alias success, key {%p, %llu}", mem.addr, mem.size);
+        return HCCL_SUCCESS;
+    }
+
+    // Normal flow: new registration or exact match
     auto resultPair = localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
     if (resultPair.first == localRdmaRmaBufferMgr_->End()) {
         HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] memory overlaps with registered memory");
@@ -167,6 +200,42 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
     auto *buffer = static_cast<hccl::LocalRdmaRmaBuffer *>(memHandle);
+
+    if (buffer->IsAlias()) {
+        // Alias is not in the tree — only decrement parent's ref count, no HW deregistration
+        auto parent = buffer->GetParentBuffer();
+        if (parent != nullptr) {
+            hccl::BufferKey<uintptr_t, u64> parentKey(
+                reinterpret_cast<uintptr_t>(parent->GetAddr()), parent->GetSize());
+            bool parentDeleted = false;
+            EXECEPTION_CATCH(parentDeleted = localRdmaRmaBufferMgr_->Del(parentKey), return HCCL_E_NOT_FOUND);
+            if (parentDeleted) {
+                auto parentRaw = parent.get();
+                allRegisteredBuffers_.erase(
+                    std::remove_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+                        [parentRaw](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &p) { return p.get() == parentRaw; }),
+                    allRegisteredBuffers_.end());
+                hcclBufRecords_.erase(
+                    std::remove_if(hcclBufRecords_.begin(), hcclBufRecords_.end(),
+                        [parentRaw](const HcclBuf &b) { return b.handle == parentRaw; }),
+                    hcclBufRecords_.end());
+            }
+        }
+
+        exportDescByBuffer_.erase(buffer);
+        allRegisteredBuffers_.erase(
+            std::remove_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+                [memHandle](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &p) { return p.get() == memHandle; }),
+            allRegisteredBuffers_.end());
+        hcclBufRecords_.erase(
+            std::remove_if(hcclBufRecords_.begin(), hcclBufRecords_.end(),
+                [memHandle](const HcclBuf &b) { return b.handle == memHandle; }),
+            hcclBufRecords_.end());
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] alias success, memHandle[%p]", memHandle);
+        return HCCL_SUCCESS;
+    }
+
+    // Normal buffer - existing unregistration logic
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buffer->GetAddr()), buffer->GetSize());
 
     bool delOk = false;
