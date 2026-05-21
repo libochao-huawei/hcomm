@@ -85,16 +85,16 @@ HcclResult RankConsistencyCheckerV2::RecordCannVersionV2(const std::string &vers
 {
     std::lock_guard<std::mutex> lock(mutex_);
     u32 strLen = version.length();
-    s32 sRet = memset_s(cannVersion_, MAX_CANN_VERSION_LEN + 1, 0, MAX_CANN_VERSION_LEN + 1);
+    s32 sRet = memset_s(cannVersion_, CANN_VERSION_MAX_LEN + 1, 0, CANN_VERSION_MAX_LEN + 1);
     CHK_PRT_RET(sRet != EOK, HCCL_WARNING("[RankConsistentcyChecker][RecordVerInfo]memory set 0 fail for version str "
         "array. return[%d].", sRet), HCCL_SUCCESS);
 
     CHK_PRT_RET(strLen == 0, HCCL_WARNING("[Record][CannVersion] version information str is empty."),
         HCCL_SUCCESS);
 
-    CHK_PRT_RET(strLen >= MAX_CANN_VERSION_LEN, HCCL_WARNING("[Record][CannVersion]"
+    CHK_PRT_RET(strLen >= CANN_VERSION_MAX_LEN, HCCL_WARNING("[Record][CannVersion]"
         "length of version information str is too long."), HCCL_SUCCESS);
-    sRet = strncpy_s(cannVersion_, MAX_CANN_VERSION_LEN + 1, version.c_str(), strLen);
+    sRet = strncpy_s(cannVersion_, CANN_VERSION_MAX_LEN + 1, version.c_str(), strLen);
     CHK_PRT_RET(sRet != EOK, HCCL_WARNING("[Record][CannVersion] call strncpy_s failed, return [%d].", sRet),
         HCCL_SUCCESS);
     return HCCL_SUCCESS;
