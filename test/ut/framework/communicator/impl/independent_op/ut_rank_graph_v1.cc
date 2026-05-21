@@ -377,3 +377,70 @@ TEST_F(RankGraphV1DirectTest, Ut_GetLinks_When_NormalCase_Expect_Success)
     EXPECT_EQ(listSize, 1u);
     EXPECT_NE(linkList, nullptr);
 }
+
+TEST_F(RankGraphV1DirectTest, Ut_MatchEndpointByAddr_When_IpV6Match_Expect_Pointer)
+{
+    RankGraphV1 rankGraph;
+    rankGraph.netLayer_.push_back(0);
+    rankGraph.devType_ = DevType::DEV_TYPE_910_93;
+
+    RankGraphV1::RankGraphInfo graphInfo;
+    graphInfo.rankInfo.rankId = 0;
+    graphInfo.rankInfo.serverIdx = 0;
+    graphInfo.rankInfo.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
+
+    EndpointDesc endpoint;
+    endpoint.commAddr.type = COMM_ADDR_TYPE_IP_V6;
+    endpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    memset(&endpoint.commAddr.addr6, 0xAB, sizeof(endpoint.commAddr.addr6));
+    graphInfo.endPoints.push_back(endpoint);
+
+    EndpointDesc queryEndpoint;
+    queryEndpoint.commAddr.type = COMM_ADDR_TYPE_IP_V6;
+    queryEndpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    memset(&queryEndpoint.commAddr.addr6, 0xAB, sizeof(queryEndpoint.commAddr.addr6));
+
+    const EndpointDesc* result = rankGraph.MatchEndpointByAddr(graphInfo, &queryEndpoint);
+    EXPECT_NE(result, nullptr);
+}
+
+TEST_F(RankGraphV1DirectTest, Ut_MatchEndpointByAddr_When_IdType_Expect_Pointer)
+{
+    RankGraphV1 rankGraph;
+    rankGraph.netLayer_.push_back(0);
+
+    RankGraphV1::RankGraphInfo graphInfo;
+    graphInfo.rankInfo.rankId = 0;
+
+    EndpointDesc endpoint;
+    endpoint.commAddr.type = COMM_ADDR_TYPE_ID;
+    endpoint.protocol = CommProtocol::COMM_PROTOCOL_PCIE;
+    graphInfo.endPoints.push_back(endpoint);
+
+    EndpointDesc queryEndpoint;
+    queryEndpoint.commAddr.type = COMM_ADDR_TYPE_ID;
+    queryEndpoint.protocol = CommProtocol::COMM_PROTOCOL_PCIE;
+
+    const EndpointDesc* result = rankGraph.MatchEndpointByAddr(graphInfo, &queryEndpoint);
+    EXPECT_NE(result, nullptr);
+}
+
+TEST_F(RankGraphV1DirectTest, Ut_MatchEndpointByAddr_When_UnknownType_Expect_Nullptr)
+{
+    RankGraphV1 rankGraph;
+
+    RankGraphV1::RankGraphInfo graphInfo;
+    graphInfo.rankInfo.rankId = 0;
+
+    EndpointDesc endpoint;
+    endpoint.commAddr.type = COMM_ADDR_TYPE_RESERVED;
+    endpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    graphInfo.endPoints.push_back(endpoint);
+
+    EndpointDesc queryEndpoint;
+    queryEndpoint.commAddr.type = COMM_ADDR_TYPE_RESERVED;
+    queryEndpoint.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+
+    const EndpointDesc* result = rankGraph.MatchEndpointByAddr(graphInfo, &queryEndpoint);
+    EXPECT_EQ(result, nullptr);
+}
