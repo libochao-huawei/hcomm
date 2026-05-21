@@ -1287,12 +1287,15 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             CheckCcuMc2CompatMode();
+            HCCL_INFO("~~~~~~~~~~~~~~0");
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(*comm);
             CHK_PTR_NULL(hcclComm);
-
+            
+            HCCL_INFO("~~~~~~~~~~~~~~1");
             std::string parentIdentifier = hcclComm->GetIdentifier();
+            HCCL_INFO("~~~~~~~~~~~~~~2");
             CHK_RET(RankConsistencyCheckerV2::GetInstance().RecordSubCommParaV2(parentIdentifier, rankNum, rankIds, subCommId));
-
+            HCCL_INFO("~~~~~~~~~~~~~~4");
             void* commV2 = hcclComm->GetCommunicatorV2();
             CHK_PTR_NULL(commV2);
             void* subCommV2 = nullptr;
