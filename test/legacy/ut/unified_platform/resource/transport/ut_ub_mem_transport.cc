@@ -717,7 +717,7 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_GetRemoteMems_When_Normal_Expect_Re
     EXPECT_NO_THROW(transport.RmtBufferVecUnpackProc(2, binaryStream, transport.rmtBufferVec,
         UbMemTransport::UbRmtBufType::BUFFER));
     
-    CommMem *remoteMems;
+    HcclMem *remoteMems;
     char **memTags;
     u32 memNum;
     HcclResult ret = transport.GetRemoteMems(&remoteMems, &memNum, &memTags);
@@ -741,7 +741,7 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_GetRemoteMems_When_bufferNumIs0_Exp
 
     UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
-    CommMem *remoteMems;
+    HcclMem *remoteMems;
     char **memTags;
     u32 memNum;
     HcclResult ret = transport.GetRemoteMems(&remoteMems, &memNum, &memTags);
