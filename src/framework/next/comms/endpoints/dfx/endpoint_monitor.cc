@@ -116,6 +116,7 @@ HcclResult EndpointMonitor::UnRegisterToEndpointMonitor()
 
 void EndpointMonitor::RemoveEpHandleFromEndpointMonitor(EndpointHandle epHandle)
 {
+    bool isEmpty = false;
     if (epHandle == nullptr) {
         HCCL_ERROR("[EndpointMonitor][%s] epHandle is null", __func__);
         return;
@@ -126,9 +127,14 @@ void EndpointMonitor::RemoveEpHandleFromEndpointMonitor(EndpointHandle epHandle)
         auto it = epHandleSet_.find(reinterpret_cast<u64>(epHandle));
         if (it != epHandleSet_.end()) {
             epHandleSet_.erase(it);
-            HCCL_INFO("[EndpointMonitor][%s] epHandle[%p] is remove from deviceId[%d]",
-                __func__, epHandle, deviceLogicId_);
+            HCCL_INFO(
+                "[EndpointMonitor][%s] epHandle[%p] is remove from deviceId[%d]", __func__, epHandle, deviceLogicId_);
         }
+        isEmpty = epHandleSet_.empty();
+    }
+
+    if (isEmpty) {
+        DeInit(deviceLogicId_);
     }
 }
 

@@ -42,7 +42,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-#include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
+#include "../../endpoints/dfx/endpoint_monitor.h"
 #include "aiv_urma_channel.h"
 
 namespace hcomm {
@@ -237,7 +237,8 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
 
-    if ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP)) {
+    if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
+        && ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP))) {
         s32 devLogicIdSigned = HcclGetThreadDeviceId();
         CHK_PRT_RET(devLogicIdSigned < 0,
             HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
@@ -252,6 +253,10 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
 
 HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 {
+    for (u32 id = 0; id < MAX_MODULE_DEVICE_NUM; ++id) {
+        EndpointMonitor::GetInstance(static_cast<s32>(id)).RemoveEpHandleFromEndpointMonitor(endpointHandle);
+    }
+    
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
     auto ret = g_EndpointMap.RemoveEndpoint(endpointHandle);
     CHK_PRT_RET(ret == false, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
