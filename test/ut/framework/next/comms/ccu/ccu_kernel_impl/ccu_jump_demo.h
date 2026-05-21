@@ -279,3 +279,46 @@ CcuResult CcuDoWhileUnifiedDemoKernel(CcuKernelArg arg)
 
     return CcuResult::CCU_SUCCESS;
 }
+
+// ======================== Nested_in_IF IF: if{if{}if{}} ========================
+
+struct CcuNestedInIfIfDemoKernelArg {
+    uint32_t outerVal;
+    uint64_t outerExpected;
+    uint32_t innerVal_1;
+    uint64_t innerExpected_1;
+    uint32_t innerVal_2;
+    uint64_t innerExpected_2;
+};
+
+CcuResult CcuNestedInIfIfDemoKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuNestedInIfIfDemoKernelArg *>(arg);
+
+    ccu::Variable outerVar;
+    outerVar = args->outerVal;
+
+    ccu::Variable innerVar_1;
+    innerVar_1 = args->innerVal_1;
+
+    ccu::Variable innerVar_2;
+    innerVar_2 = args->innerVal_2;
+
+    ccu::Variable result;
+    result = 0;
+
+    ccu::Variable addend;
+
+    CCU_IF(outerVar == args->outerExpected) {
+        CCU_IF(innerVar_1 == args->innerExpected_1) {
+            addend = 10;
+            result = result + addend;
+        }
+        CCU_IF(innerVar_2 == args->innerExpected_2) {
+            addend = 20;
+            result = result + addend;
+        }
+    }
+
+    return CcuResult::CCU_SUCCESS;
+}
