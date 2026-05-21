@@ -113,7 +113,7 @@ TEST_F(TestHcommChannel, Ut_TestHcommChannelDestroy_When_NumZero_Return_HCCL_E_P
 TEST_F(TestHcommChannel, Ut_TestHcommChannelGetRemoteMems_When_MemNullptr_Return_HCCL_E_PTR)
 {
     uint32_t memNum = 0;
-    char* memTags = nullptr;
+    char** memTags = nullptr;
     HcommResult ret = HcommChannelGetRemoteMems(0, nullptr, &memNum, &memTags);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
@@ -121,7 +121,7 @@ TEST_F(TestHcommChannel, Ut_TestHcommChannelGetRemoteMems_When_MemNullptr_Return
 TEST_F(TestHcommChannel, Ut_TestHcommChannelGetRemoteMems_When_NumNullptr_Return_HCCL_E_PTR)
 {
     HcommMem* remoteMem = nullptr;
-    char* memTags = nullptr;
+    char** memTags = nullptr;
     HcommResult ret = HcommChannelGetRemoteMems(0, &remoteMem, nullptr, &memTags);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
