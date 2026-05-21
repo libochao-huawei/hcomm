@@ -9,6 +9,7 @@
  */
 #include <string>
 #include <unordered_map>
+#include <iostream>
 
 #include "log.h"
 #include "channel.h"
@@ -82,6 +83,9 @@ HcclResult Channel::CreateChannel(
                 uniqueChannelPtr = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, engine);
             } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
                        channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
+                std::cout << "[AIV_URMA_DEBUG] Channel::CreateChannel select AivUrmaChannel endpoint["
+                    << endpointHandle << "] protocol[" << channelDesc.remoteEndpoint.protocol << "] memHandleNum["
+                    << channelDesc.memHandleNum << "] notifyNum[" << channelDesc.notifyNum << "]" << std::endl;
                 uniqueChannelPtr.reset(new (std::nothrow) AivUrmaChannel(endpointHandle, channelDesc));
             } else {
                 uniqueChannelPtr.reset(new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));
@@ -96,7 +100,13 @@ HcclResult Channel::CreateChannel(
             return HCCL_E_NOT_FOUND;
     }
     CHK_PTR_NULL(uniqueChannelPtr);
-    CHK_RET_UNAVAIL(uniqueChannelPtr->Init());
+    HcclResult ret = uniqueChannelPtr->Init();
+    if (engine == COMM_ENGINE_AIV &&
+        (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
+         channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP)) {
+        std::cout << "[AIV_URMA_DEBUG] Channel::CreateChannel AivUrmaChannel Init ret[" << ret << "]" << std::endl;
+    }
+    CHK_RET_UNAVAIL(ret);
     channelPtr = std::move(uniqueChannelPtr);
     return HCCL_SUCCESS;
 }

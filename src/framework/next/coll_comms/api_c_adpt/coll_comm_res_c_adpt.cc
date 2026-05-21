@@ -22,6 +22,7 @@
 #include "hccl_ccu_res.h"
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
+#include <iostream>
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -254,6 +255,10 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     HcclResult ret = HCCL_SUCCESS;
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HCCL_RUN_INFO("Entry-%s channelNum[%u], engine[%d] group[%s]", __func__, channelNum, engine, hcclComm->GetIdentifier().c_str());
+    if (engine == COMM_ENGINE_AIV) {
+        std::cout << "[AIV_URMA_DEBUG] HcclChannelAcquire start group[" << hcclComm->GetIdentifier()
+            << "] channelNum[" << channelNum << "]" << std::endl;
+    }
     std::vector<HcclChannelDesc> channelDescFinals;
     for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
@@ -285,6 +290,10 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         }
 
         ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
+        if (engine == COMM_ENGINE_AIV) {
+            std::cout << "[AIV_URMA_DEBUG] HcclChannelAcquire CreateChannels ret[" << ret << "] group["
+                << commTag << "] channelNum[" << channelNum << "]" << std::endl;
+        }
         CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
             HCCL_WARNING("CreateChannels group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -324,8 +333,13 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
  
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] Failed to acquire channel, group[%s], engine[%d], channelNum[%llu], ret[%d]", __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
- 
+
     HCCL_RUN_INFO("[%s] acquire channel success, group[%s], engine[%d], channelNum[%llu], take time [%lld]us.", __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, DURATION_US(TIME_NOW() - startut));
+    if (engine == COMM_ENGINE_AIV) {
+        std::cout << "[AIV_URMA_DEBUG] HcclChannelAcquire success group[" << hcclComm->GetIdentifier()
+            << "] channelNum[" << channelNum << "] takeTimeUs[" << DURATION_US(TIME_NOW() - startut) << "]"
+            << std::endl;
+    }
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
