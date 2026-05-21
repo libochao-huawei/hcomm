@@ -85,4 +85,9 @@ public:
     }
 };
 }
+
+namespace Hccl {
+    template<typename A, typename S>
+    using BufferKey = hccl::BufferKey<A, S>;
+}
 #endif
