@@ -42,7 +42,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-#include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
+#include "../../endpoints/dfx/endpoint_monitor.h"
 
 namespace hcomm {
 static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
