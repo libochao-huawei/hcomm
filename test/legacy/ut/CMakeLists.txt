@@ -64,6 +64,8 @@ target_include_directories(hccl_v2_utest PRIVATE
 
         ${HCCL_CODE_ROOT}/src/common/
         ${HCCL_CODE_ROOT}/src/pub_inc/
+        ${HCOMM_DIR}/src/pub_inc/new
+        ${HCOMM_DIR}/src/common/error_manager
         ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network/
         ${RDMA_CORE_INCLUDE_DIR}
 

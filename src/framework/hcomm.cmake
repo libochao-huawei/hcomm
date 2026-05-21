@@ -45,6 +45,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
     ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}/src/common/error_manager
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/new
 
@@ -54,6 +55,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/framework/common/src
     ${HCOMM_DIR}/src/framework/common/src/config
     ${HCOMM_DIR}/src/framework/common/src/mgr
+    ${HCOMM_DIR}/src/common
     ${HCOMM_DIR}/src/framework/common/src/hashtable
     ${HCOMM_DIR}/src/framework/communicator/impl
     ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager

@@ -46,6 +46,7 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
     ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}/src/common/error_manager
     ${HCOMM_DIR}/src/pub_inc/aicpu
     ${HCOMM_DIR}/src/pub_inc/new
     ${HCOMM_DIR}/externel_depends/tsch
@@ -85,6 +86,7 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/platform/inc/adapter
     ${HCOMM_DIR}/src/platform/common
     ${HCOMM_DIR}/src/platform/common/buffer_manager
+    ${HCOMM_DIR}/src/common
     ${HCOMM_DIR}/src/platform/common/unique
     ${HCOMM_DIR}/src/platform/common/unfold_cache
     ${HCOMM_DIR}/src/platform/resource/transport

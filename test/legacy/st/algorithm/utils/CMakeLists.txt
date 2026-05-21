@@ -22,6 +22,8 @@ set(include_list
     ${HCOMM_CODE_LEGACY}/common/exception
     ${HCOMM_CODE_LEGACY}/include
     ${HCOMM_ROOT_PATH}/src/pub_inc
+    ${HCOMM_DIR}/src/common/error_manager
+    ${HCOMM_DIR}/src/pub_inc/new
     ${HCOMM_CODE_PLATFORM}/common
 
     ${HCOMM_CODE_LEGACY}/service/collective/primitive
