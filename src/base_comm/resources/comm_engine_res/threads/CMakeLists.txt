@@ -21,11 +21,11 @@ if(TARGET hcomm)
     )
     target_include_directories(hcomm PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/slaves
+        ${CMAKE_CURRENT_SOURCE_DIR}/device
     )
 endif()
 
-add_subdirectory(slaves)
+add_subdirectory(device)
 if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}

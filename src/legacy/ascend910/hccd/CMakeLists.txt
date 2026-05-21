@@ -50,25 +50,25 @@ target_sources(hccd PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_comm_conn_mgr.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_raw.cc
 
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager/workspace_resource.cc
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager/workspace_resource_impl.cc
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager/workspace_mem.cc
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager/offload_stream_manager.cc
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager/ccl_buffer_manager.cc
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager/share_ccl_buffer_manager.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/resource_manager/workspace_resource.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/resource_manager/workspace_resource_impl.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/resource_manager/workspace_mem.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/resource_manager/offload_stream_manager.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/resource_manager/ccl_buffer_manager.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/resource_manager/share_ccl_buffer_manager.cc
 
-    ${HCOMM_DIR}/src/framework/common/src/config.cc
-    ${HCOMM_DIR}/src/framework/common/src/json_utils.cc
-    ${HCOMM_DIR}/src/framework/common/src/param_check.cc
-    ${HCOMM_DIR}/src/framework/common/src/topo/topoinfo_ranktableParser.cc
-    ${HCOMM_DIR}/src/framework/common/src/topo/topoinfo_ranktableConcise.cc
-    ${HCOMM_DIR}/src/framework/common/src/topo/topoinfo_ranktableHeterog.cc
-    ${HCOMM_DIR}/src/framework/common/src/topo/topoinfo_ranktableStandard.cc
-    ${HCOMM_DIR}/src/framework/common/src/topo/topoinfo_roletableParser.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/config.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/json_utils.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/param_check.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/topo/topoinfo_ranktableParser.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/topo/topoinfo_ranktableConcise.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/topo/topoinfo_ranktableHeterog.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/topo/topoinfo_ranktableStandard.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/topo/topoinfo_roletableParser.cc
 
-    ${HCOMM_DIR}/src/common/health/rank_consistentcy_checker.cc
-    ${HCOMM_DIR}/src/common/health/calc_crc.cc
-    ${HCOMM_DIR}/src/common/debug/config/config_log.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/common/health/rank_consistentcy_checker.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/common/health/calc_crc.cc
+    ${HCOMM_DIR}/src/legacy/ascend910/common/debug/config/config_log.cc
 )
 
 # 头文件搜索路径
@@ -78,87 +78,89 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
 
-    ${HCOMM_DIR}/src/pub_inc
-    ${HCOMM_DIR}/src/pub_inc/inner
-    ${HCOMM_DIR}/src/pub_inc/aicpu
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/inner
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/aicpu
 
     # src/common 头文件
-    ${HCOMM_DIR}/src/common/health
-    ${HCOMM_DIR}/src/common/debug/profiling/inc
-    ${HCOMM_DIR}/src/common/debug/profiling/inc/host
-    ${HCOMM_DIR}/src/common/debug/config
+    ${HCOMM_DIR}/src/legacy/ascend910/common/health
+    ${HCOMM_DIR}/src/legacy/ascend910/common/debug/profiling/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/common/debug/profiling/inc/host
+    ${HCOMM_DIR}/src/legacy/ascend910/common/debug/config
 
     # src/framework 头文件
-    ${HCOMM_DIR}/src/framework
-    ${HCOMM_DIR}/src/framework/inc
-    ${HCOMM_DIR}/src/framework/common/src
-    ${HCOMM_DIR}/src/framework/common/src/config
-    ${HCOMM_DIR}/src/framework/common/src/topo
-    ${HCOMM_DIR}/src/framework/common/src/aicpu
-    ${HCOMM_DIR}/src/framework/common/src/exception
-    ${HCOMM_DIR}/src/framework/common/src/task
-    ${HCOMM_DIR}/src/framework/common/src/mgr
-    ${HCOMM_DIR}/src/framework/communicator/impl
-    ${HCOMM_DIR}/src/framework/communicator/impl/one_sided_service
-    ${HCOMM_DIR}/src/framework/communicator/impl/zero_copy
-    ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
-    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op
-    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/rank_graph
-    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/resource/engine
-    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/channel
-    ${HCOMM_DIR}/src/framework/communicator/impl/independent_op/channel/device
-    ${HCOMM_DIR}/src/framework/next/comms/endpoints
-    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs
-    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/sockets
-    ${HCOMM_DIR}/src/framework/next/comms/comm_engine_res/threads
+    ${HCOMM_DIR}/src/legacy/ascend910/framework
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/config
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/topo
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/aicpu
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/exception
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/task
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/mgr
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/one_sided_service
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/zero_copy
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/resource_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/rank_graph
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
+    ${HCOMM_DIR}/src/base_comm/resources/endpoints
+    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
+    ${HCOMM_DIR}/src/base_comm/resources/reged_mems
+    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs
+    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/sockets
+    ${HCOMM_DIR}/src/base_comm/resources/comm_engine_res/threads
 
     # src/platform 头文件
-    ${HCOMM_DIR}/src/platform/inc
-    ${HCOMM_DIR}/src/platform/inc/adapter
-    ${HCOMM_DIR}/src/platform/common
-    ${HCOMM_DIR}/src/platform/task
-    ${HCOMM_DIR}/src/platform/hccp/inc
-    ${HCOMM_DIR}/src/platform/hccp/inc/network
-    ${HCOMM_DIR}/src/platform/ping_mesh
-    ${HCOMM_DIR}/src/platform/resource/transport
-    ${HCOMM_DIR}/src/platform/resource/transport/device
-    ${HCOMM_DIR}/src/platform/resource/transport/host
-    ${HCOMM_DIR}/src/platform/resource/transport/heterog
-    ${HCOMM_DIR}/src/platform/resource/transport/onesided
-    ${HCOMM_DIR}/src/platform/resource/transport/onesided/device
-    ${HCOMM_DIR}/src/platform/resource/notify
-    ${HCOMM_DIR}/src/platform/resource/socket
-    ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
-    ${HCOMM_DIR}/src/platform/resource/transport/heterog
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/inc/adapter
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/common
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/task
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/hccp/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/hccp/inc/network
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/ping_mesh
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/device
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/host
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/heterog
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/onesided
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/onesided/device
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/notify
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/socket
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/dispatcher_ctx
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/heterog
 
     # src/algorithm 头文件
-    ${HCOMM_DIR}/src/algorithm/pub_inc
-    ${HCOMM_DIR}/src/algorithm/impl
-    ${HCOMM_DIR}/src/algorithm/impl/inc
-    ${HCOMM_DIR}/src/algorithm/impl/legacy
-    ${HCOMM_DIR}/src/algorithm/impl/legacy/operator
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
-    ${HCOMM_DIR}/src/algorithm/base/inc
-    ${HCOMM_DIR}/src/algorithm/base/alg_aiv_template
-    ${HCOMM_DIR}/src/algorithm/base/alg_template
-    ${HCOMM_DIR}/src/algorithm/base/alg_template/component
-    ${HCOMM_DIR}/src/algorithm/base/mc2_handler
-    ${HCOMM_DIR}/src/algorithm/base/communicator
-    ${HCOMM_DIR}/src/algorithm/base/communicator/legacy
-    ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_all_gather
-    ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_all_reduce
-    ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_alltoall
-    ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_alltoallv
-    ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_broadcast
-    ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_reduce
-    ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_reduce_scatter
-    ${HCOMM_DIR}/src/algorithm/base/alg_template/temp_scatter
-    ${HCOMM_DIR}/src/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/legacy
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/legacy/operator
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/resource_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_aiv_template
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template/component
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/mc2_handler
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/communicator
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/communicator/legacy
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template/temp_all_gather
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template/temp_all_reduce
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template/temp_alltoall
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template/temp_alltoallv
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template/temp_broadcast
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template/temp_reduce
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template/temp_reduce_scatter
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template/temp_scatter
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template
 
     ${HCOMM_DIR}/externel_depends/tsch/
 
     # src/legacy 头文件
-    ${LEGACY_INCLUDE_LIST}
+    ${LEGACY_ASCEND950_INCLUDE_LIST}
 )
 
 if(BUILD_OPEN_PROJECT)
@@ -199,7 +201,6 @@ else()
         ${TOP_DIR}/runtime/pkg_inc/runtime
         ${TOP_DIR}/abl/msprof/inc
         ${TOP_DIR}/open_source/json/include
-        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
     )
 
     target_link_libraries(hccd
