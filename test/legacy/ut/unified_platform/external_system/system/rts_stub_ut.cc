@@ -10,6 +10,7 @@
 
 #include "rt_external.h"
 #include "acl/acl_rt.h"
+#include <mutex>
 
 aclError aclrtDeviceGetBareTgid(int32_t *pid)
 {
@@ -588,3 +589,26 @@ aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t fl
 {
 	return ACL_SUCCESS;
 }
+
+namespace aicpu {
+std::mutex g_sqeIdMtx;
+constexpr uint32_t INITAL_SQE_ID = 0x80000000U;
+uint32_t g_sqeId = INITAL_SQE_ID;
+void GetSqeId(const uint32_t num, uint32_t &start, uint32_t &end)
+{
+    std::lock_guard<std::mutex> lk(g_sqeIdMtx);
+    start = g_sqeId;
+    g_sqeId += num;
+    end = g_sqeId;
+    if (start > end) {
+        g_sqeId = INITAL_SQE_ID;
+        start  = g_sqeId;
+        g_sqeId += num;
+        if (start >= end) {
+            g_sqeId = INITAL_SQE_ID;
+            return;
+        }
+    }
+    return;
+}
+} // aicpu
