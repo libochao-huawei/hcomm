@@ -19,7 +19,7 @@ add_executable(hccl_utest_comms_ccu_microcode ${src_to_test_list})
 
 target_include_directories(hccl_utest_comms_ccu_microcode PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_microcode
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 
 target_compile_definitions(hccl_utest_comms_ccu_microcode PRIVATE

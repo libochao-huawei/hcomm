@@ -90,14 +90,22 @@ target_include_directories(hccl_alg PRIVATE
     ${HCOMM_DIR}/include/hccl
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
-    ${HCOMM_DIR}/src/pub_inc
-    ${HCOMM_DIR}/src/framework/common/src/config
-    ${HCOMM_DIR}/src/framework/inc/
-    ${HCOMM_DIR}/src/framework/common/src/config
-    ${HCOMM_DIR}/src/platform/task/
-    ${HCOMM_DIR}/src/platform/inc/adapter/
-    ${HCOMM_DIR}/src/platform/common/
-    ${HCOMM_DIR}/src/platform/hccp/inc/network/
+
+    # pub_inc (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
+
+    # framework (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/config
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/inc/
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/config
+
+    # platform (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/task/
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/inc/adapter/
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/common/
+
+    # hccp (base_comm/resources)
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network/
     ${RDMA_CORE_INCLUDE_DIR}/
 )
 
