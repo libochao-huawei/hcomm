@@ -532,9 +532,9 @@ TEST_F(MyRankTest, St_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     EXPECT_EQ(endpointPair2->channelHandles_[COMM_ENGINE_CCU].size(), 1);
 }
 
-TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_Normal_Expect_SUCCESS)
+TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMems_Normal_Expect_SUCCESS)
 {
-    MOCKER(hcomm::ChannelProcess::ChannelGetUserRemoteMem)
+    MOCKER(hcomm::ChannelProcess::ChannelGetRemoteMems)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
 
@@ -549,11 +549,11 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_Normal_Expect_SUCCESS)
     CommMem* remoteMem = nullptr;
     char** memTag = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, &remoteMem, &memTag, &memNum);
+    HcclResult ret = myRank.ChannelGetRemoteMems(channel, &remoteMem, &memNum, &memTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_RemoteMemNull_Expect_E_PTR)
+TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMems_RemoteMemNull_Expect_E_PTR)
 {
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -565,11 +565,11 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_RemoteMemNull_Expect_E_PTR)
     ChannelHandle channel = 0x12345;
     char** memTag = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, nullptr, &memTag, &memNum);
+    HcclResult ret = myRank.ChannelGetRemoteMems(channel, nullptr, &memNum, &memTag);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_MemTagNull_Expect_E_PTR)
+TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMems_MemTagNull_Expect_E_PTR)
 {
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -581,11 +581,11 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_MemTagNull_Expect_E_PTR)
     ChannelHandle channel = 0x12345;
     CommMem* remoteMem = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, &remoteMem, nullptr, &memNum);
+    HcclResult ret = myRank.ChannelGetRemoteMems(channel, &remoteMem, &memNum, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_MemNumNull_Expect_E_PTR)
+TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMems_MemNumNull_Expect_E_PTR)
 {
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -597,7 +597,7 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_MemNumNull_Expect_E_PTR)
     ChannelHandle channel = 0x12345;
     CommMem* remoteMem = nullptr;
     char** memTag = nullptr;
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, &remoteMem, &memTag, nullptr);
+    HcclResult ret = myRank.ChannelGetRemoteMems(channel, &remoteMem, nullptr, &memTag);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
