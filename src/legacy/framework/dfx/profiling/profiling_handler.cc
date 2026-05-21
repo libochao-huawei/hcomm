@@ -386,9 +386,9 @@ void ProfilingHandler::ReportCcuInfo(const TaskInfo &taskInfo) const
     for (const auto &info : *ccuDetailInfo) {
         if (info.type == 0 && enableHcclL1_) {
             GetCcuTaskInfo(taskInfo, info);
-        } else if (info.type == 1 &&  enableHcclL2_) {
+        } else if (info.type == 1 &&  enableHcclL1_) {
             GetCcuWaitSignalInfo(taskInfo, info);
-        } else if (info.type == CCU_TYPE && enableHcclL2_) {
+        } else if (info.type == CCU_TYPE && enableHcclL1_) {
             GetCcuGroupInfo(taskInfo, info);
         }
     }
