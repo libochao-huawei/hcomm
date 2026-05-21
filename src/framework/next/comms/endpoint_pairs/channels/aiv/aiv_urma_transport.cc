@@ -419,7 +419,7 @@ HcclResult AivUrmaTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum
         return HCCL_E_PARA;
     }
  
-    uint32_t userMemCount = static_cast<uint32_t>(rmtBufferVec_.size()) - 1;
+    uint32_t userMemCount = static_cast<uint32_t>(rmtBufferVec_.size());
  
     if (!cacheValid_) {
         remoteUserMems_.resize(userMemCount);
