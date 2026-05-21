@@ -16,12 +16,12 @@ set(src_list
     adapter_trace.cc
 )
 
-# if(TARGET hccl_plf)
-#     target_sources(hccl_plf   PRIVATE
-#         adapter_error_manager_pub_extend.cc
-#         ${src_list}
-#     )
-# endif()
+if(TARGET hccl_plf)
+    target_sources(hccl_plf   PRIVATE
+        ${src_list}
+    )
+endif()
+
 if(TARGET hccd)
     target_sources(hccd   PRIVATE
         adapter_hal.cc
