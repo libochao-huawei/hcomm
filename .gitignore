@@ -22,6 +22,10 @@ build/
 build_ut/
 build_st/
 build_out/
+build_device
+build_hccd
+output
+
 openssl-device-src/
 openssl-host-src/
 third_party/
@@ -31,6 +35,7 @@ __pycache__/
 .claude/
 .opencode/
 CLAUDE.md
+AGENTS.md
 
 # Logs
 logs/
