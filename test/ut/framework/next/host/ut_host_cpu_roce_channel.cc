@@ -154,8 +154,33 @@ protected:
         MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     }
+    std::vector<Hccl::QpInfo> SetupValidQpInfos(uint32_t count = 1) {
+        static std::vector<std::unique_ptr<ibv_qp>> qps;
+        static std::vector<std::unique_ptr<ibv_cq>> cqs;
+        qps.clear();
+        cqs.clear();
+        qps.resize(count);
+        cqs.resize(count);
 
+        std::vector<Hccl::QpInfo> qpInfos(count);
+        for (uint32_t i = 0; i < count; i++) {
+            qps[i] = std::make_unique<ibv_qp>();
+            cqs[i] = std::make_unique<ibv_cq>();
+            qps[i]->state = IBV_QPS_RTS;
+            qps[i]->qp_num = 12345 + i;
+            qpInfos[i].qp = qps[i].get();
+            qpInfos[i].sendCq = cqs[i].get();
+            qpInfos[i].recvCq = cqs[i].get();
+            qpInfos[i].context = nullptr;
+        }
+        return qpInfos;
+    }
+    void MockGetQpInfos(uint32_t count = 1) {
+        auto qpInfos = SetupValidQpInfos(count);
+        MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
+    }
     std::unique_ptr<hcomm::HostCpuRoceChannel> CreateInitAndConnect(uint32_t notifyNum = 4)
     {
         memHandle_ = static_cast<void *>(localRdmaRmaBuffer.get());
@@ -244,6 +269,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Normal_Expect_HCCL_SUCCESS)
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -389,6 +415,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_CreateQp_Failed_Expect_FAILED)
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
+    channelDesc.roceAttr.queueNum = 1;
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     // Init
     EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
@@ -450,6 +477,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ModifyQp_Failed_Expect_FAILED)
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_E_ROCE_CONNECT));
+    MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -462,6 +490,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ModifyQp_Failed_Expect_FAILED)
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
+    channelDesc.roceAttr.queueNum = 1;
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     // Init
     EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
@@ -539,6 +568,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -548,11 +578,13 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
+    MockGetQpInfos();
     // construct
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
     channelDesc.notifyNum = 4;
+    channelDesc.roceAttr.queueNum = 1;
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     // Init
     EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
@@ -595,6 +627,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_PrepareWriteWrResource_Expect_SUCCESS)
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -653,12 +686,14 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_HostCpuRoceChannel_Pack_And_Unpack_Expect
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
     channelDesc.notifyNum = 4;
+    channelDesc.roceAttr.queueNum = 1;
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     // Init
     EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
@@ -699,6 +734,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_WqeNumIsZero_Expect_HCCL_SUC
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -708,11 +744,13 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_WqeNumIsZero_Expect_HCCL_SUC
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
+    MockGetQpInfos();
     // construct
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
     channelDesc.memHandleNum = 1;
     channelDesc.notifyNum = 4;
+    channelDesc.roceAttr.queueNum = 1;
     auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
     // Init
     EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
@@ -733,7 +771,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_WqeNumIsZero_Expect_HCCL_SUC
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
     EXPECT_EQ(status, ChannelStatus::READY);
     // ChannelFence
-    impl_->wqeNum_ = 0;
+    SetupOneValidQpInfoMock();
+    impl_->wqeNums_ = {0};
     HcclResult ret = impl_->ChannelFence();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -742,7 +781,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_PollExcessCqe_Expect_HCCL_E_
 {
     SetupSuccessfulConnectionMocks();
     auto impl_ = CreateInitAndConnect();
-    impl_->wqeNum_ = 2;
+    impl_->wqeNums_ = {2};
     SetupOneValidQpInfoMock();
     MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(returnValue(5));
     HcclResult ret = impl_->ChannelFence();
@@ -755,7 +794,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_PollCqFailed_Expect_HCCL_E_N
 {
     SetupSuccessfulConnectionMocks();
     auto impl_ = CreateInitAndConnect();
-    impl_->wqeNum_ = 1;
+    impl_->wqeNums_ = {1};
     SetupOneValidQpInfoMock();
     // Mock IbvPollCq返回错误（负数），模拟ibv_poll_cq失败
     MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(returnValue(-1));
@@ -804,6 +843,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_Write_When_Normal_Expect_HCCL_SUCCESS)
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
     EXPECT_EQ(status, ChannelStatus::READY);
     // Write
+    impl_->wqeNums_ = {1};
     impl_->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((Hccl::RdmaHandle)0x1000));
     impl_->rmtRmaBuffers_[0]->addr = (uintptr_t)0x0002;
     impl_->rmtRmaBuffers_[0]->size = 10;
@@ -858,6 +898,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_Read_When_Normal_Expect_HCCL_SUCCESS)
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
     EXPECT_EQ(status, ChannelStatus::READY);
     // Read
+    impl_->wqeNums_ = {1};
     impl_->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((Hccl::RdmaHandle)0x1000));
     impl_->rmtRmaBuffers_[0]->addr = (uintptr_t)0x0002;
     impl_->rmtRmaBuffers_[0]->size = 10;
@@ -918,6 +959,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_Write_When_LenExceedsMaxMsgSize_Expect_Slicing
     auto impl_ = CreateInitAndConnect();
     // 设置小的 maxMsgSize_ 以触发分片
     impl_->maxMsgSize_ = 100;
+    impl_->wqeNums_ = {1};
     // mock PostRdmaOp
     MOCKER_CPP(&HostCpuRoceChannel::PostRdmaOp).stubs().will(returnValue(HCCL_SUCCESS));
     // len = 250 → 3 个分片 (100 + 100 + 50)
@@ -932,6 +974,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_Read_When_LenExceedsMaxMsgSize_Expect_Slicing_
     auto impl_ = CreateInitAndConnect();
     // 设置小的 maxMsgSize_ 以触发分片
     impl_->maxMsgSize_ = 100;
+    impl_->wqeNums_ = {1};
     // mock PostRdmaOp
     MOCKER_CPP(&HostCpuRoceChannel::PostRdmaOp).stubs().will(returnValue(HCCL_SUCCESS));
     // len = 250 → 3 个分片 (100 + 100 + 50)
@@ -946,6 +989,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteWithNotify_When_LenExceedsMaxMsgSize_Expe
     auto impl_ = CreateInitAndConnect();
     // 设置小的 maxMsgSize_ 以触发分片
     impl_->maxMsgSize_ = 100;
+    impl_->wqeNums_ = {1};
     // mock 前 N-1 块的 PostRdmaOp
     MOCKER_CPP(&HostCpuRoceChannel::PostRdmaOp).stubs().will(returnValue(HCCL_SUCCESS));
     // mock 尾块所需的依赖
@@ -1059,6 +1103,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_PostRdmaOp_PostSendSuccess_Expect_Success)
     SetupSuccessfulConnectionMocks();
     auto impl_ = CreateInitAndConnect();
 
+    impl_->wqeNums_ = {1};
     impl_->localRmaBuffers_.emplace_back(localRdmaRmaBuffer.get());
     impl_->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((Hccl::RdmaHandle)0x1000));
 
@@ -1081,6 +1126,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_PostRdmaOp_PostSendFailed_Expect_NetworkError)
     SetupSuccessfulConnectionMocks();
     auto impl_ = CreateInitAndConnect();
 
+    impl_->wqeNums_ = {1};
     impl_->localRmaBuffers_.emplace_back(localRdmaRmaBuffer.get());
     impl_->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((Hccl::RdmaHandle)0x1000));
 
@@ -1485,6 +1531,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_CreateNotifyHybird_MrRegSuccess_Expect_HCCL_SU
 
     impl_->isHybridMode_ = true;
     impl_->connections_.clear(); // 清空 connections_ 避免析构函数调用无效的 HrtRaMrDereg
+    static auto dummyConn = std::make_unique<hcomm::HostRdmaConnection>(nullptr, (void*)0x1000);
+    impl_->connections_.push_back(std::move(dummyConn));
 
     // Mock HostRdmaConnection::GetQpInfo 返回有效的 QP 信息
     Hccl::QpInfo qpInfo;
@@ -1518,6 +1566,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_CreateNotifyHybird_MrRegFailed_Expect_HCCL_E_M
 
     impl_->isHybridMode_ = true;
     impl_->connections_.clear();
+    static auto dummyConn = std::make_unique<hcomm::HostRdmaConnection>(nullptr, (void*)0x1000);
+    impl_->connections_.push_back(std::move(dummyConn));
 
     // Mock HostRdmaConnection::GetQpInfo 返回有效的 QP 信息
     Hccl::QpInfo qpInfo;
@@ -1546,6 +1596,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_CreateNotifyHybird_MemsetFailed_Expect_HCCL_E_
 
     impl_->isHybridMode_ = true;
     impl_->connections_.clear();
+    static auto dummyConn = std::make_unique<hcomm::HostRdmaConnection>(nullptr, (void*)0x1000);
+    impl_->connections_.push_back(std::move(dummyConn));
 
     // Mock HostRdmaConnection::GetQpInfo 返回有效的 QP 信息
     Hccl::QpInfo qpInfo;
@@ -1570,6 +1622,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_CreateNotifyValueBufferHybird_Success_Expect_H
 
     impl_->isHybridMode_ = true;
     impl_->connections_.clear();
+    static auto dummyConn = std::make_unique<hcomm::HostRdmaConnection>(nullptr, (void*)0x1000);
+    impl_->connections_.push_back(std::move(dummyConn));
 
     Hccl::QpInfo qpInfo;
     qpInfo.qpHandle = reinterpret_cast<void *>(0x4000);
@@ -1593,6 +1647,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_CreateNotifyBufferHybird_Success_Expect_HCCL_S
 
     impl_->isHybridMode_ = true;
     impl_->connections_.clear();
+    static auto dummyConn = std::make_unique<hcomm::HostRdmaConnection>(nullptr, (void*)0x1000);
+    impl_->connections_.push_back(std::move(dummyConn));
 
     Hccl::QpInfo qpInfo;
     qpInfo.qpHandle = reinterpret_cast<void *>(0x4000);
@@ -1657,6 +1713,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_RegisterUserMemHybird_Success_Expect_HCCL_SUCC
 
     impl_->isHybridMode_ = true;
     impl_->connections_.clear();
+    static auto dummyConn = std::make_unique<hcomm::HostRdmaConnection>(nullptr, (void*)0x1000);
+    impl_->connections_.push_back(std::move(dummyConn));
 
     impl_->localRmaBuffers_.emplace_back(localRdmaRmaBuffer.get());
 
@@ -1680,6 +1738,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_BuildExchangeDataHybird_Success_Expect_HCCL_SU
 
     impl_->isHybridMode_ = true;
     impl_->connections_.clear();
+    static auto dummyConn = std::make_unique<hcomm::HostRdmaConnection>(nullptr, (void*)0x1000);
+    impl_->connections_.push_back(std::move(dummyConn));
 
     impl_->localRmaBuffers_.emplace_back(localRdmaRmaBuffer.get());
 
@@ -1823,7 +1883,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_PrepareNotifyWrResource_Success_Expect_HCCL_SU
     notifyRecordWr.sg_list = &sg;
     Hccl::TaskParam taskParam{};
 
-    HcclResult ret = impl_->PrepareNotifyWrResource(64, 0, notifyRecordWr, taskParam);
+    HcclResult ret = impl_->PrepareNotifyWrResource(0, 64, 0, notifyRecordWr, taskParam);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -1894,6 +1954,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_ConnectSingleQpHybrid_Success_Expect_HCCL_SUCC
 
     impl_->isHybridMode_ = true;
     impl_->connections_.clear();
+    static auto dummyConn = std::make_unique<hcomm::HostRdmaConnection>(nullptr, (void*)0x1000);
+    impl_->connections_.push_back(std::move(dummyConn));
 
     Hccl::QpInfo qpInfo;
     qpInfo.qpHandle = reinterpret_cast<void *>(0x4000);

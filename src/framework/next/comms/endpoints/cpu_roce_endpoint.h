@@ -40,6 +40,7 @@ public:
 
     struct Capabilities {
         uint64_t maxMsgSize{0};
+        int lbMax{0};
         // 按需扩展
     };
     HcclResult GetCapabilities(Capabilities &caps);
