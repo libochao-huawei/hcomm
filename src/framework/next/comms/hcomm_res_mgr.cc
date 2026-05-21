@@ -32,6 +32,7 @@
 #include "ccu_comp.h"
 #include "../ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_kernel_mgr.h"
+#include "ccu_instance_mgr.h"
 #include "../endpoint_pairs/sockets/socket_process.h"
 
 namespace hcomm {
@@ -62,12 +63,14 @@ HcommResMgr& HcommResMgr::GetInstance(const uint32_t devicePhyId)
     Hccl::CcuResBatchAllocator::GetInstance(devicePhyId);
     Hccl::CtxMgrImp::GetInstance(devicePhyId);
 
-    // 开源开放架构下CCU模式新增类型单例，当前混跑时不使用
+    // 开源开放架构下CCU使用的单例
     HccpTlvHdcMgr::GetInstance(devicePhyId);
     TpMgr::GetInstance(devicePhyId);
     CcuComponent::GetInstance(devicePhyId);
     Hccl::CcuResBatchAllocator::GetInstance(devicePhyId);
     CcuKernelMgr::GetInstance(devicePhyId);
+    CcuInstanceMgr::GetInstance(devicePhyId);
+
     SocketProcess::GetInstance(devicePhyId);
 
     static HcommResMgr hcommResMgrs[MAX_MODULE_DEVICE_NUM + 1];
