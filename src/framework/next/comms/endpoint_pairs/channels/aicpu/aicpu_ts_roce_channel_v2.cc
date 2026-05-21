@@ -981,7 +981,7 @@ HcclResult AicpuTsRoceChannelV2::GetRemoteMems(HcclMem **remoteMem, uint32_t *me
         return HCCL_E_PARA;
     }
 
-    uint32_t userMemCount = static_cast<uint32_t>(rmtRmaBuffers_.size()) - 1;
+    uint32_t userMemCount = static_cast<uint32_t>(rmtRmaBuffers_.size());
 
     if (!cacheValid_) {
         remoteUserMems_.resize(userMemCount);
