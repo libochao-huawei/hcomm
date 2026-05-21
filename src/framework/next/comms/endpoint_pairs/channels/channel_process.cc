@@ -589,6 +589,9 @@ HcclResult ChannelProcess::ChannelGetNotifyNum(ChannelHandle channelHandle, uint
 
 HcclResult ChannelProcess::ChannelGetRemoteMems(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char ***memTags)
 {
+    CHK_PTR_NULL(remoteMem);
+    CHK_PTR_NULL(memNum);
+    CHK_PTR_NULL(memTags);
     HcclMem **remoteMemConverted = reinterpret_cast<HcclMem **>(remoteMem);
 
     return WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
