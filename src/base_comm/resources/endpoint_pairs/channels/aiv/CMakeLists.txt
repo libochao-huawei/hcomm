@@ -21,6 +21,6 @@ if(TARGET hcomm)
     )
     target_include_directories(hcomm PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${PROJECT_SOURCE_DIR}/src/legacy/unified_platform
+        ${PROJECT_SOURCE_DIR}/src/legacy/ascend950/unified_platform
     )
 endif()
