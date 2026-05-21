@@ -5,10 +5,14 @@
 #include "rank_graph_interface.h"
 #include "rank_graph_v2.h"
 #include "hcomm_c_adpt.h"
-#include "my_rank.h"
 #include "channel_process.h"
 #include "base_config.h"
 #define private public
+#include "my_rank.h"
+#undef private
+#include "hccl_comm_pub.h"
+#include "llt_hccl_stub_rank_graph.h"
+
 using namespace hccl;
 
 class MyRankTest : public testing::Test {
@@ -67,6 +71,24 @@ protected:
     uint32_t CCU_SCHED_MODE = 6;
     Hccl::RankIpPortMapPtr rankIpPortMap;
 };
+
+void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
+{
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    void* commV2 = (void*)0x2000;
+    uint32_t rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1;
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF;
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF;
+    hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+}
 
 TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
 {
@@ -606,4 +628,66 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     auto memInfo1 = static_cast<CommMemInfo*>(commMemHandleVec[1]);
     EXPECT_EQ(memInfo0->bufferHandle, (void*)0x100);
     EXPECT_EQ(memInfo1->bufferHandle, (void*)0x101);
+}
+
+TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
+{
+    // mock Socket::GetAsyncStatus返回OK
+    MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
+        .stubs()
+        .will(returnValue(Hccl::SocketStatus(Hccl::SocketStatus::OK)));
+
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void *rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
+
+    // 构造socket列表（指针值仅用于mock匹配，不实际调用）
+    std::vector<Hccl::Socket*> sockets = {(Hccl::Socket*)0x1, (Hccl::Socket*)0x2};
+    std::vector<u32> remoteRanks = {1, 2};
+
+    HcclResult ret = myRank.WaitAllAsyncComplete(sockets, remoteRanks);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();;
+    InitCollComm(hcclCommPtr);
+    hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
+    hccl::MyRank* myRank = collComm->GetMyRank();
+    CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
+    std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
+    ret = collCommConfigConsistency.AddExchangeInfo(localData.data(), localData.size());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // mock Socket异步接口：GetAsyncStatus返回OK
+    MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
+        .stubs()
+        .will(returnValue(Hccl::SocketStatus(Hccl::SocketStatus::OK)));
+    // mock SendAsync/RecvAsync成功
+    MOCKER_CPP(&Hccl::Socket::SendAsync)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::RecvAsync)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    // mock 超时配置
+    MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
+        .stubs()
+        .will(returnValue((s32)30));
+
+    HcclChannelDesc channelDescs[1];
+    channelDescs[0].remoteRank = 1;
+    HcommChannelDesc hcommDesc;
+    hcommDesc.socket = (HcommSocket)0x1;  // 非空socket
+    hcommDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    std::vector<HcommChannelDesc> hcommDescVec;
+    hcommDescVec.push_back(hcommDesc);
+
+    ret = myRank->BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, "test_tag");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
