@@ -11,7 +11,7 @@
 # 注意a3与a5测试用例拆分不同可执行文件
 set(src_to_test_list
     main.cc
-    hccl_api_base_test.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_api_base_test.cc
     ut_HcclRankGraph_API.cc
     ut_HcomInitCollComm.cc
     comms/aiv/ut_AivUbMemTransport_API_test.cc
@@ -121,7 +121,7 @@ add_test(NAME hccl_utest_test_next_resource COMMAND hccl_utest_test_next_resourc
 
 set(src_to_a3_test_list
     main.cc
-    hccl_api_base_test.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_api_base_test.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_a3_api.cc
     comms/endpoints/ut_hccs_mem_endpoint.cc
     comms/api_c_adpt/ut_hcomm_hccs_channel_test.cc
