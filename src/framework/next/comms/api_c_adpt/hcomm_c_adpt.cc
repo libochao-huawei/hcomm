@@ -687,8 +687,9 @@ HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_
             CHK_PTR_NULL(devChannelEntity);
             channelPtr[i] = static_cast<ChannelPtr>(reinterpret_cast<uintptr_t>(devChannelEntity));
         } else {
-            HCCL_ERROR("[%s] channel type not support, idx[%u], kind[%u]",
-                __func__, i, static_cast<uint32_t>(baseChannel->GetChannelKind()));
+            const HcommChannelKind channelKind = baseChannel->GetChannelKind();
+            HCCL_ERROR("[%s] channel type not support, idx[%u], kind[%s], kindValue[%u]",
+                __func__, i, HcommChannelKindToString(channelKind), static_cast<uint32_t>(channelKind));
             return HCCL_E_PARA;
         }
 
