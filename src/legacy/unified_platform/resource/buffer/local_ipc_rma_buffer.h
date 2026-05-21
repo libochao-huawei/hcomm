@@ -22,6 +22,9 @@ class LocalIpcRmaBuffer : public LocalRmaBuffer {
 public:
     explicit LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf);
 
+    // Alias constructor: wraps a parent buffer, addr/size from buf, IPC info from parent
+    LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf, std::shared_ptr<LocalIpcRmaBuffer> parent);
+
     ~LocalIpcRmaBuffer() override;
 
     LocalIpcRmaBuffer(const LocalIpcRmaBuffer &that) = delete;

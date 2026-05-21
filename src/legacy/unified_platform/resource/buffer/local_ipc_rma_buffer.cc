@@ -12,6 +12,7 @@
 
 #include "rma_buffer.h"
 #include "exchange_ipc_buffer_dto.h"
+#include "securec.h"
 
 namespace Hccl {
 
@@ -21,8 +22,32 @@ LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuff
     HrtIpcSetMemoryName(ipcPtr, name, ipcSize, RTS_IPC_MEM_NAME_LEN);
 }
 
+LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf, std::shared_ptr<LocalIpcRmaBuffer> parent)
+    : LocalRmaBuffer(buf, RmaType::IPC)
+{
+    isAlias_ = true;
+    parentBuffer_ = parent;
+    // Copy parent's IPC info for the sub-region.
+    // The sub-region's offset within the parent's page-aligned IPC memory is:
+    //   alias_ipcOffset = parent->ipcOffset + (alias_addr - parent_buf_addr)
+    uintptr_t parentBaseAddr = parent->buf->GetAddr();
+    uintptr_t aliasAddr = buf->GetAddr();
+    ipcOffset = parent->ipcOffset + (aliasAddr - parentBaseAddr);
+    ipcSize = buf->GetSize();
+    ipcPtr = parent->ipcPtr;
+    if (memcpy_s(name, RTS_IPC_MEM_NAME_LEN, parent->name, RTS_IPC_MEM_NAME_LEN) != EOK) {
+        HCCL_ERROR("[LocalIpcRmaBuffer] alias name copy failed");
+        THROW<InternalException>("[%s] alias name copy failed.", __func__);
+    }
+    HCCL_INFO("[LocalIpcRmaBuffer] Alias created: buf=[%s] parent=[%s]",
+        buf->Describe().c_str(), parent->Describe().c_str());
+}
+
 LocalIpcRmaBuffer::~LocalIpcRmaBuffer()
 {
+    if (isAlias_) {
+        return;
+    }
     DECTOR_TRY_CATCH("LocalIpcRmaBuffer", HrtIpcDestroyMemoryName(name));
 }
 

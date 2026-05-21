@@ -64,10 +64,32 @@ public:
         return nullptr;
     }
 
+    bool IsAlias() const
+    {
+        return isAlias_;
+    }
+
+    void SetAlias(bool isAlias)
+    {
+        isAlias_ = isAlias;
+    }
+
+    std::shared_ptr<LocalRmaBuffer> GetParentBuffer() const
+    {
+        return parentBuffer_;
+    }
+
+    void SetParentBuffer(std::shared_ptr<LocalRmaBuffer> parent)
+    {
+        parentBuffer_ = std::move(parent);
+    }
+
 protected:
     std::shared_ptr<Buffer> buf;
     RmaType                 rmaType;
     u64                     memHandle{0};
+    bool                    isAlias_{false};
+    std::shared_ptr<LocalRmaBuffer> parentBuffer_{nullptr};
 };
 
 } // namespace Hccl

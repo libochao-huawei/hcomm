@@ -13,6 +13,7 @@
 #include "hccp.h"
 #include "rma_buffer.h"
 #include "exchange_rdma_buffer_dto.h"
+#include "securec.h"
 
 namespace Hccl {
 
@@ -42,12 +43,32 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
     }
     lkey = mrInfo.lkey;
     rkey = mrInfo.rkey;
-    HCCL_INFO("LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s]", 
+    HCCL_INFO("LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s]",
             rdmaHandle, mrHandle, buf->Describe().c_str());
+}
+
+LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, std::shared_ptr<LocalRdmaRmaBuffer> parent)
+    : LocalRmaBuffer(buf, RmaType::RDMA), rdmaHandle(parent->rdmaHandle)
+{
+    isAlias_ = true;
+    parentBuffer_ = parent;
+    // Copy parent's RDMA registration info for the sub-region
+    lkey = parent->lkey;
+    rkey = parent->rkey;
+    mrHandle = parent->mrHandle;
+    if (memcpy_s(key, RDMA_MEM_KEY_MAX_LEN, parent->key, RDMA_MEM_KEY_MAX_LEN) != EOK) {
+        HCCL_ERROR("[LocalRdmaRmaBuffer] alias key copy failed");
+        THROW<InternalException>("[%s] alias key copy failed.", __func__);
+    }
+    HCCL_INFO("[LocalRdmaRmaBuffer] Alias created: buf=[%s] parent=[%s]",
+        buf->Describe().c_str(), parent->Describe().c_str());
 }
 
 LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
 {
+    if (isAlias_) {
+        return;
+    }
     if (mrHandle) {
         s32 ret = RaDeregisterMr(rdmaHandle, mrHandle);
         if (ret != 0) {

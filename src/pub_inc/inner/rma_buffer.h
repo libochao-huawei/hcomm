@@ -61,6 +61,26 @@ public:
         return netDevCtx;
     }
 
+    inline bool IsAlias() const
+    {
+        return isAlias_;
+    }
+
+    inline void SetAlias(bool isAlias)
+    {
+        isAlias_ = isAlias;
+    }
+
+    inline std::shared_ptr<RmaBuffer> GetParentBuffer() const
+    {
+        return parentBuffer_;
+    }
+
+    inline void SetParentBuffer(std::shared_ptr<RmaBuffer> parent)
+    {
+        parentBuffer_ = std::move(parent);
+    }
+
 protected:
     const       HcclNetDevCtx netDevCtx{nullptr};
     void*       addr{nullptr};
@@ -68,6 +88,8 @@ protected:
     void*       devAddr{nullptr};
     RmaMemType  memType{RmaMemType::TYPE_NUM};
     RmaType     rmaType{RmaType::RMA_TYPE_RESERVED};
+    bool        isAlias_{false};
+    std::shared_ptr<RmaBuffer> parentBuffer_{nullptr};
 };
 
 struct RmaBufferSlice {

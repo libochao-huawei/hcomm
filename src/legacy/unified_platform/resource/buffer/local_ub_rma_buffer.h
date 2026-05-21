@@ -30,6 +30,9 @@ public:
 
     LocalUbRmaBuffer(std::shared_ptr<Buffer> buf);
 
+    // Alias constructor: wraps a parent buffer, addr/size from buf, registration info from parent
+    LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, std::shared_ptr<LocalUbRmaBuffer> parent);
+
     ~LocalUbRmaBuffer() override;
 
     LocalUbRmaBuffer(const LocalUbRmaBuffer &that) = delete;
