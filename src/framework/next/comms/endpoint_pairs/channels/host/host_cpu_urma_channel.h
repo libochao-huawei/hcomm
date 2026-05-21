@@ -16,7 +16,7 @@
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
+#include "buffer_key.h"
 #include "../../sockets/socket_mgr.h"
 #include "rma_connection.h"
 #include "ub_mem_transport.h"
