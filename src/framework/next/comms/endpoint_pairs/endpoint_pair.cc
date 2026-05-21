@@ -16,6 +16,7 @@
 
 #include "hcom_common.h"
 #include "exception_handler.h"
+#include <iostream>
 
 namespace hcomm {
 
@@ -128,6 +129,12 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
     if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_[engine].size() <= reuseIdx) {
+        if (engine == COMM_ENGINE_AIV &&
+            (channelDescs->remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
+             channelDescs->remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP)) {
+            std::cout << "[AIV_URMA_DEBUG] EndpointPair::CreateChannel create new channel reuseIdx["
+                << reuseIdx << "]" << std::endl;
+        }
         CHK_RET_UNAVAIL(static_cast<HcclResult>(
             HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
         channelHandles_[engine].push_back(channels[0]);
@@ -135,6 +142,13 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
     }
 
     channels[0] = channelHandles_[engine][reuseIdx];
+    if (engine == COMM_ENGINE_AIV &&
+        (channelDescs->remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
+         channelDescs->remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP)) {
+        std::cout << "[AIV_URMA_DEBUG] EndpointPair::CreateChannel reuse channel reuseIdx[" << reuseIdx
+            << "] channelHandle[" << channels[0] << "] memHandleNum[" << channelDescs->memHandleNum << "]"
+            << std::endl;
+    }
     if (channelDescs->memHandleNum > 1) {
         CHK_RET(static_cast<HcclResult>(HcommChannelUpdateMemInfo(channelDescs->memHandles + 1, channelDescs->memHandleNum - 1, channels[0])));
     }
