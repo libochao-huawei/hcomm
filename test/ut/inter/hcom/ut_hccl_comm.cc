@@ -5395,3 +5395,63 @@ TEST_F(HcclCommTest, hcclComm_SetWorldGroupInfo)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
+
+TEST_F(HcclCommTest, hcclComm_AllGatherV_call)
+{
+    MOCKER_CPP(&HcclCommunicator::IsAtomicInit).stubs().will(returnValue(true));
+    MOCKER_CPP(&HcclCommunicator::ExecOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCallbackTask::CallbackRegStream).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::StreamIsCapture).stubs().with(any()).will(returnValue(false));
+    MOCKER_CPP(&hcclImpl::SetHDCModeInfo).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclCommunicator hcclCommunicator;
+    CCLBufferManager cclBufferManager;
+    HcclDispatcher dispatcher;
+    HcclDispatcher vDispatcher;
+    hcclCommunicator.implAlg_.reset(new (std::nothrow) HcclAlg(cclBufferManager, dispatcher, vDispatcher));
+    hcclCommunicator.userRankSize_ = 2;
+
+    string strTag = "allgatherv_tag_test";
+    int sendBuff[4] = {0};
+    u64 sendCount = 4;
+    int recvBuff[8];
+    u64 recvCount[4] = {4,4};
+    u64 rdispls[4] = {4,4};
+    aclrtStream stream;
+    aclError ret = aclrtCreateStream(&stream);
+    EXPECT_EQ(ret, ACL_SUCCESS);
+    ret = hcclCommunicator.AllGatherV(strTag, sendBuff, sendCount, recvBuff, recvCount, rdispls, HcclDataType::HCCL_DATA_TYPE_INT32, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclCommTest, hcclComm_AllGatherVOutPlace_call)
+{
+    MOCKER_CPP(&HcclCommunicator::IsAtomicInit).stubs().will(returnValue(true));
+    MOCKER_CPP(&HcclCommunicator::ExecOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCallbackTask::CallbackRegStream).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::StreamIsCapture).stubs().with(any()).will(returnValue(false));
+    MOCKER_CPP(&hcclImpl::SetHDCModeInfo).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclCommunicator hcclCommunicator;
+    CCLBufferManager cclBufferManager;
+    HcclDispatcher dispatcher;
+    HcclDispatcher vDispatcher;
+    hcclCommunicator.implAlg_.reset(new (std::nothrow) HcclAlg(cclBufferManager, dispatcher, vDispatcher));
+    hcclCommunicator.userRankSize_ = 2;
+
+    string strTag = "allgathervoutplace_tag_test";
+    int sendBuff[4] = {0};
+    u64 sendCount = 4;
+    int recvBuff[8];
+    u64 recvCount[4] = {4,4};
+    u64 rdispls[4] = {4,4};
+    aclrtStream stream;
+    aclError ret = aclrtCreateStream(&stream);
+    EXPECT_EQ(ret, ACL_SUCCESS);
+    ret = hcclCommunicator.AllGatherVOutPlace(strTag, sendBuff, recvBuff, sendCount, recvCount, rdispls, HcclDataType::HCCL_DATA_TYPE_INT32, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}

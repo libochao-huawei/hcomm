@@ -2711,7 +2711,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = inputCount * perDataSize;
@@ -2756,7 +2758,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = sendCount * perDataSize;
@@ -2880,7 +2884,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = inputCount * perDataSize * userRankSize_;
@@ -2934,7 +2940,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 outputSize = 0;
@@ -3021,7 +3029,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -3152,7 +3162,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -3203,7 +3215,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -3262,7 +3276,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -3322,7 +3338,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -3377,7 +3395,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -3449,7 +3469,9 @@ namespace hccl
         }
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
         CHK_RET(ExecOpAlltoAll(HcclCMDType::HCCL_CMD_ALLTOALL, opParam));
         return HCCL_SUCCESS;
     }
@@ -3473,7 +3495,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
 
@@ -3522,7 +3546,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -3571,7 +3597,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 outputSize = recvCount * perDataSize;
@@ -3622,7 +3650,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 outputSize = recvCount * perDataSize;
@@ -3721,7 +3751,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -3768,7 +3800,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
 
@@ -3832,7 +3866,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
 
@@ -3878,7 +3914,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         const bool aicpuUnfoldMode = GetAicpuUnfoldConfig() &&
                                      IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op) && (deviceType_ == DevType::DEV_TYPE_910_93);
@@ -3944,7 +3982,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         const bool aicpuUnfoldMode = GetAicpuUnfoldConfig() &&
                                      IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op) && (deviceType_ == DevType::DEV_TYPE_910_93);
@@ -4016,7 +4056,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
         OpParam opParam;
         opParam.tag = tag;
         opParam.stream = streamObj;
@@ -4105,7 +4147,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -4200,7 +4244,9 @@ namespace hccl
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
+        std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts,
+            vnicRanksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
@@ -7957,6 +8003,10 @@ namespace hccl
         // 根据tag创建comm和流资源
         if (!(IsExistCommRes(tag))) {
             std::unique_ptr<CommInfo> commInfo = nullptr;
+            std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
+            std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+            implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, vnicRanksPorts, isSetHDCModeInfo_,
+                isUseRankPort_);
             HcclResult ret = implAlg_->CreateComm(tag, inputMem, outputMem, algType, commInfo,
                                                   INVALID_VALUE_RANKID, false, true);
 
@@ -8005,6 +8055,12 @@ namespace hccl
 
         HCCL_INFO("resource creation (AllReduce) success, tag[%s]", tag.c_str());
         CHK_RET(notifyPool_->UnregisterOp(tag));
+        if (commPortConfig_.devPortSwitchOn) {
+            std::vector<u32> &nicPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
+            std::vector<u32> &vnicPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+            Heartbeat::GetInstance(deviceLogicId_).SetRankPortInfo(isUseRankPort_, nicPorts, vnicPorts,
+                commPortConfig_.devPortSwitchOn);
+        }
         CHK_RET(RegisterToHeartBeat());
 
         CommBase *comm = nullptr;

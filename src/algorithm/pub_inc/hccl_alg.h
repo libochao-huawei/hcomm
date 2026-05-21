@@ -63,7 +63,7 @@ public:
     HcclResult SupportDeterministicOptim(bool &isDeterministicOptim);
     HcclResult SetHDCModeInfo(
         std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &rankDevicePhyIdNicInfoMap,
-        std::vector<u32> &ranksPort, bool isSetHDCModeInfo, bool isUseRankPort);
+        std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort, bool isSetHDCModeInfo, bool isUseRankPort);
 
     u8 GetDeterministicConfig() const;  // 获取确定性计算配置
     HcclResult SetDeterministicConfig(const u8 deterministic); // 设置确定性计算配置
