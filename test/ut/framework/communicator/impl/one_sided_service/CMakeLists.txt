@@ -18,7 +18,7 @@ add_executable(hccl_utest_framework_one_sided_service ${src_to_test_list})
 target_include_directories(hccl_utest_framework_one_sided_service PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/test/ut/framework/communicator
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/one_sided_service
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/one_sided_service
 )
 
 target_compile_definitions(hccl_utest_framework_one_sided_service PRIVATE

@@ -7,20 +7,5 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-
-set(src_list
-    task_abort_handler.cc
-    ns_recovery.cc
-)
-
-if(TARGET hcomm)
-    target_sources(hcomm PRIVATE
-        ${src_list}
-    )
-    target_include_directories(hcomm PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/channels
-    )
-endif()
-
-add_subdirectory(aicpu)
+add_subdirectory(engine_ctxs)
+add_subdirectory(threads)
