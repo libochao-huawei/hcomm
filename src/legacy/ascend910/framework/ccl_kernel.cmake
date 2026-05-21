@@ -45,71 +45,78 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
-    ${HCOMM_DIR}/src/pub_inc
-    ${HCOMM_DIR}/src/pub_inc/aicpu
-    ${HCOMM_DIR}/src/pub_inc/new
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/aicpu
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
     ${HCOMM_DIR}/externel_depends/tsch
 
-    # src/common 头文件
-    ${HCOMM_DIR}/src/common/stream
-    ${HCOMM_DIR}/src/common/debug/profiling/inc
+    # src/common 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/common/stream
+    ${HCOMM_DIR}/src/legacy/ascend910/common/debug/profiling/inc
 
-    # src/legacy 头文件，优先于 src/framework
-    ${HCOMM_DIR}/src/legacy/unified_platform/resource/socket
-    ${HCOMM_DIR}/src/legacy/framework/env_config
+    # src/legacy 头文件 (ascend950)
+    ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/resource/socket
+    ${HCOMM_DIR}/src/legacy/ascend950/framework/env_config
 
-    # src/framework 头文件
-    ${HCOMM_DIR}/src/framework
-    ${HCOMM_DIR}/src/framework/inc
-    ${HCOMM_DIR}/src/framework/op_base/src
-    ${HCOMM_DIR}/src/framework/cluster_maintenance/health/heartbeat
-    ${HCOMM_DIR}/src/framework/cluster_maintenance/recovery/operator_retry
-    ${HCOMM_DIR}/src/framework/common/src/exception
-    ${HCOMM_DIR}/src/framework/communicator/impl
-    ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
-    ${HCOMM_DIR}/src/framework/next/comms/api_c_adpt
-    ${HCOMM_DIR}/src/framework/next/comms/endpoints
-    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs
-    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/sockets
-    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels
-    ${HCOMM_DIR}/src/framework/next/comms/common/device
-    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device
-    ${HCOMM_DIR}/src/framework/next/coll_comms
-    ${HCOMM_DIR}/src/framework/next/coll_comms/communicator
-    ${HCOMM_DIR}/src/framework/next/coll_comms/rank
-    ${HCOMM_DIR}/src/framework/next/coll_comms/rank_pairs
-    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/profiling/aicpu
+    # src/framework 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/framework
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/op_base/src
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/cluster_maintenance/health/heartbeat
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/cluster_maintenance/recovery/operator_retry
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/exception
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl
+    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/resource_manager
 
-    # src/platform 头文件
-    ${HCOMM_DIR}/src/platform/inc
-    ${HCOMM_DIR}/src/platform/inc/adapter
-    ${HCOMM_DIR}/src/platform/common
-    ${HCOMM_DIR}/src/platform/common/buffer_manager
-    ${HCOMM_DIR}/src/platform/common/unique
-    ${HCOMM_DIR}/src/platform/common/unfold_cache
-    ${HCOMM_DIR}/src/platform/resource/transport
-    ${HCOMM_DIR}/src/platform/resource/transport/heterog
-    ${HCOMM_DIR}/src/platform/resource/notify
-    ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
-    ${HCOMM_DIR}/src/platform/resource/socket
-    ${HCOMM_DIR}/src/platform/task
-    ${HCOMM_DIR}/src/platform/hccp/inc
-    ${HCOMM_DIR}/src/platform/hccp/inc/network
+    # framework/next 头文件 (拆分到 base_comm 和 coll_communicator)
+    ${HCOMM_DIR}/src/base_comm/resources/endpoints
+    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
+    ${HCOMM_DIR}/src/base_comm/resources/reged_mems
+    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs
+    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/sockets
+    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/channels
+    ${HCOMM_DIR}/src/base_comm/common/device
+    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device
+    ${HCOMM_DIR}/src/base_comm/primitives/api_c_adpt
+    ${HCOMM_DIR}/src/coll_communicator
+    ${HCOMM_DIR}/src/coll_communicator/communicator
+    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/local/my_rank
+    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
+    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/remote/rank_pairs
+    ${HCOMM_DIR}/src/coll_communicator/dfx/profiling/aicpu
 
-    # src/algorithm 头文件
-    ${HCOMM_DIR}/src/algorithm/pub_inc
-    ${HCOMM_DIR}/src/algorithm/base/inc
-    ${HCOMM_DIR}/src/algorithm/base/alg_template
-    ${HCOMM_DIR}/src/algorithm/base/communicator
-    ${HCOMM_DIR}/src/algorithm/base/communicator/legacy
-    ${HCOMM_DIR}/src/algorithm/impl
-    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
-    ${HCOMM_DIR}/src/algorithm/impl/task
-    ${HCOMM_DIR}/src/algorithm/impl/legacy
-    ${HCOMM_DIR}/src/algorithm/impl/coll_executor
+    # src/platform 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/inc/adapter
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/common
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/common/buffer_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unique
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unfold_cache
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/heterog
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/notify
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/dispatcher_ctx
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/socket
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/task
+
+    # hccp (base_comm/resources)
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network
+
+    # src/algorithm 头文件 (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/communicator
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/communicator/legacy
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/resource_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/task
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/legacy
+    ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/coll_executor
 
     # src/legacy 头文件
-    ${LEGACY_INCLUDE_LIST}
+    ${LEGACY_ASCEND950_INCLUDE_LIST}
 
     # 三方件头文件
     ${RDMA_CORE_INCLUDE_DIR}

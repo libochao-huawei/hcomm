@@ -81,26 +81,26 @@ target_include_directories(hccl_plf PRIVATE
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
 
-    ${HCOMM_DIR}/src/pub_inc
-    ${HCOMM_DIR}/src/pub_inc/aicpu/
-    ${HCOMM_DIR}/src/pub_inc/inner
-    ${HCOMM_DIR}/src/pub_inc/new
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/aicpu/
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/inner
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
 
-    # legacy
-    ${HCOMM_DIR}/src/legacy/unified_platform
-    ${HCOMM_DIR}/src/legacy/common
-    ${HCOMM_DIR}/src/legacy/common/utils
-    ${HCOMM_DIR}/src/legacy/common/exception
-    ${HCOMM_DIR}/src/legacy/unified_platform/resource/buffer/aicpu
-    ${HCOMM_DIR}/src/legacy/unified_platform/external_system
-    ${HCOMM_DIR}/src/legacy/common/types
-    ${HCOMM_DIR}/src/legacy/unified_platform/common
-    ${HCOMM_DIR}/src/legacy/unified_platform/resource/buffer
-    ${HCOMM_DIR}/src/legacy/unified_platform/pub_inc
-    ${HCOMM_DIR}/src/legacy/unified_platform/resource
-    ${HCOMM_DIR}/src/legacy/framework/topo
-    ${HCOMM_DIR}/src/legacy/framework/topo/new_topo_builder/common
-    ${HCOMM_DIR}/src/legacy/framework/topo/new_topo_builder/rank_graph
+    # legacy (ascend950)
+    ${HCOMM_DIR}/src/legacy/ascend950/unified_platform
+    ${HCOMM_DIR}/src/legacy/ascend950/common
+    ${HCOMM_DIR}/src/legacy/ascend950/common/utils
+    ${HCOMM_DIR}/src/legacy/ascend950/common/exception
+    ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/resource/buffer/aicpu
+    ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/external_system
+    ${HCOMM_DIR}/src/legacy/ascend950/common/types
+    ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/common
+    ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/resource/buffer
+    ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/resource
+    ${HCOMM_DIR}/src/legacy/ascend950/framework/topo
+    ${HCOMM_DIR}/src/legacy/ascend950/framework/topo/new_topo_builder/common
+    ${HCOMM_DIR}/src/legacy/ascend950/framework/topo/new_topo_builder/rank_graph
 )
 
 if(BUILD_OPEN_PROJECT)
@@ -149,7 +149,6 @@ else()
         ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/runtime/include/external
         ${TOP_DIR}/open_source/json/include
-        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
     )
 
     target_link_libraries(hccl_plf
