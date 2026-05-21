@@ -279,6 +279,12 @@ HcclResult ChannelProcess::FillChannelD2HMap(ChannelHandle *deviceChannelHandles
     return HCCL_SUCCESS;
 }
 
+HcclResult ChannelProcess::RegisterChannelD2HMap(ChannelHandle *deviceChannelHandles,
+    ChannelHandle *hostChannelHandles, uint32_t listNum)
+{
+    return FillChannelD2HMap(deviceChannelHandles, hostChannelHandles, listNum);
+}
+
 static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam, 
     const std::string &commTag, 
     hccl::DeviceMem &deviceChannelList,
