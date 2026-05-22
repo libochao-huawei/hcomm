@@ -115,6 +115,9 @@ TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Succe
     MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
         .stubs()
         .will(returnValue((s32)30));
+    MOCKER_CPP(&RankConsistencyCheckerV2::CompareCheckFrameV2)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclChannelDesc channelDescs[1];
     channelDescs[0].remoteRank = 1;
