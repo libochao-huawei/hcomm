@@ -18,7 +18,7 @@
 #include "buffer_key.h"
 #include "local_ub_rma_buffer.h"
 #include "remote_rma_buffer.h"
-#include "../../../../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
+#include "../../../../../../legacy/ascend950/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
  
 namespace hcomm {
 
