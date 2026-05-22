@@ -1849,7 +1849,7 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroup group,
     bundle->AddLoop(entry);
 
     if (!grpDesc.isVarBased) {
-        bundle->SetRepeatLoopIdx(grpDesc.config.repeatLoopIdx);
+        bundle->SetRepeatLoopIdx(grpDesc.config.cloneLoopOffset);
         bundle->SetTotalLoopNum(grpDesc.totalLoopNum);
     }
 
