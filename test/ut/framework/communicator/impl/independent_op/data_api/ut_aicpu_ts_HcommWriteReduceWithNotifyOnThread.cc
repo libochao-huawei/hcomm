@@ -100,7 +100,7 @@ TEST_F(UtAicpuTsHcommWriteReduceWithNotifyOnThread, Ut_HcommWriteReduceWithNotif
 TEST_F(UtAicpuTsHcommWriteReduceWithNotifyOnThread, Ut_HcommWriteReduceWithNotifyOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
 {
     GlobalMockObject::verify();
-    auto *const transportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(devHandle);
+    auto *const transportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
  	MOCKER_CPP_VIRTUAL(transportLitePtr, &Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
         .stubs()
         .will(returnValue(HCCL_E_INTERNAL));
