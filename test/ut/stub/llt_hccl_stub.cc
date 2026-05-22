@@ -5537,3 +5537,9 @@ aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
 {
     return ACL_SUCCESS;
 }
+
+u32 HcomConsumeRankTableJsonCrc(s32 deviceLogicId)
+{
+    return 0;
+}
+
