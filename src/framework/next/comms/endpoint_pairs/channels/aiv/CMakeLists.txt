@@ -11,8 +11,16 @@
 set(src_list
     aiv_ub_mem_channel.cc
     aiv_ub_mem_transport.cc
+    aiv_urma_channel.cc
+    aiv_urma_transport.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${PROJECT_SOURCE_DIR}/src/legacy/unified_platform
+    )
+endif()

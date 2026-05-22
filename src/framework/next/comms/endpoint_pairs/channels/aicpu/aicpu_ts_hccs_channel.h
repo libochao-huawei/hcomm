@@ -58,8 +58,12 @@ public:
 
 private:
     HcclResult ParseInputParam();
+    HcclResult EnableP2P();
+    void DisableP2P();
     HcclResult BuildConnection();
     void DestroyConnection();
+    HcclResult EnableMemAccess();
+    void DisableMemAccess();
     HcclResult GetFirstIpByPhyId(u32 devicePhyId, u32 superDevId, hccl::HcclIpAddress &ip);
     HcclResult SetMachinePara(hccl::MachinePara &machinePara);
     void SetTransportParam(hccl::TransportPara &para);

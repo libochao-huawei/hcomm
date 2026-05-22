@@ -9,11 +9,16 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(src_list
-comm_addr_logger.cc
-endpoint_logger.cc
-channel_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/comm_addr_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/channel_logger.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()

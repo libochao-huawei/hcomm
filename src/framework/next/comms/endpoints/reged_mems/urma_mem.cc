@@ -40,7 +40,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
 
     // LocalUbRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
-    auto findPair = localUbRmaBufferMgr_->DirectFind(tempKey);
+    auto findPair = localUbRmaBufferMgr_->Find(tempKey);
     if(findPair.first) {
         localUbRmaBuffer = findPair.second;
     } else {

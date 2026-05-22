@@ -24,6 +24,7 @@
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
+#include "coll_comm_config_consistency.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -52,6 +53,8 @@ public:
         return opExpansionMode_;
     }
 
+    CollCommConfigConsistency &GetCollCommConfigConsistency();
+
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
@@ -68,7 +71,7 @@ public:
 
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
-        const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
+        const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs);
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
     HcclResult BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum);
@@ -80,6 +83,31 @@ private:
     HcclResult TryInitCcuInstance();
     HcclResult ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc);
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
+
+    HcclResult BatchExchangeAndCheckConsistency(
+        const HcclChannelDesc* channelDescs,
+        const std::vector<HcommChannelDesc> &hcommDescs,
+        uint32_t channelNum,
+        const std::string &commTag);
+    HcclResult ExchangeUserInfo(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles);
+    HcclResult BatchExchangeFixedData(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        const u8 *sendData, u32 sendLen,
+        u8 *recvData, u32 recvLen);
+    HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks);
+    HcclResult WaitActiveAsyncComplete(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        const std::vector<u32> &remoteExchangeInfoLens,
+        u32 localExchangeInfoLen,
+        bool isFirstPass);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
@@ -110,6 +138,8 @@ private:
     HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
 
     Hccl::RankIpPortMapPtr rankIpPortMap_;
+
+    CollCommConfigConsistency collCommConfigConsistency_;
 };
 
 } // namespace hccl

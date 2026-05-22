@@ -50,17 +50,17 @@ public:
 
     void BatchCreateSockets(const vector<LinkData> &links);
 
+    void BatchCreateSockets(const SocketConfig &socketConfig);
+
     void ServerInit(PortData &localPort);
 
     static void ServerInitAll(NewRankInfo &rankInfo);
 
     bool ServerDeInit(PortData &localPort) const;
 
-    Socket *CreateConnectedSocket(SocketConfig &socketConfig);
+    Socket *CreateConnectedSocket(const SocketConfig &socketConfig);
 
-    bool DestroyConnectedSocket(SocketConfig &socketConfig);
-
-    Socket *GetConnectedSocket(SocketConfig &socketConfig) const;
+    Socket *GetConnectedSocket(const SocketConfig &socketConfig) const;
 
     bool CheckServerPortListening(const PortData &portData) const;
 
@@ -80,6 +80,7 @@ private:
     void BatchServerInit(const vector<LinkData> &links);
     void BatchAddWhiteList(const vector<LinkData> &links);
     void BatchCreateConnectedSockets(const vector<LinkData> &links);
+    void AddWhiteList(const SocketConfig &socketConfig);
     const CommunicatorImpl *comm;
     static std::unordered_map<PortData, shared_ptr<Socket>>& GetServerSocketMap();
     u32               localRank;

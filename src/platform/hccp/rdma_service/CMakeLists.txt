@@ -10,7 +10,7 @@
 
 set(TLV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tlv)
 
-set(rs_list
+set(RS_SOURCE_LIST
     rs.c
     rs_epoll.c
     rs_ping.c
@@ -47,56 +47,10 @@ set(rs_list
     $<$<STREQUAL:${PRODUCT_SIDE},device>:${TLV_DIR}/rs_adp_nslb.c>
 )
 
-add_library(rs  SHARED ${rs_list})
+# 创建 rs 动态链接库，host 和 device 侧使用，同时打包到 cann-hccd-compat.tar.gz
+add_library(rs SHARED ${RS_SOURCE_LIST})
 
-target_include_directories(rs PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc/network
-    ${CMAKE_CURRENT_SOURCE_DIR}/../inc/private/network
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/
-    ${TLV_DIR}
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-    # runtime头文件
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-
-    # 第三方库依赖路径
-    ${OPENSSL_INCLUDE_DIR}
-    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
-    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/kms
-
-    # rdma头文件
-    ${RDMA_CORE_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/nda
-
-    # HCCP Legacy
-    ${CMAKE_CURRENT_SOURCE_DIR}/ctx
-    ${CMAKE_CURRENT_SOURCE_DIR}/ctx/product
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
-    ${URMA_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
-)
-
-if(NOT BUILD_OPEN_PROJECT)
-    target_include_directories(rs PRIVATE
-        ${TOP_DIR}/drivers/network/tls_adp
-        ${TOP_DIR}/runtime/pkg_inc/base
-        ${TOP_DIR}/driver/driver/pkg_inc/
-    )
-endif()
-
-# c_sec、mmpa、unified_dlog动态库搜索路径
-target_link_directories(rs PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
-)
-
+# 编译选项
 target_compile_options(rs PRIVATE
     -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal
     -Wextra -Wno-unused-parameter -std=gnu11
@@ -104,23 +58,27 @@ target_compile_options(rs PRIVATE
     $<$<CONFIG:Debug>:-g>
 )
 
+# 链接选项
 target_link_options(rs PRIVATE
     -Wl,-Bsymbolic -Wl,--exclude-libs,ALL
     -Wl,-z,now
     $<$<CONFIG:Release>:-s>
 )
 
+# 宏定义
 target_compile_definitions(rs PRIVATE
     LOG_CPP
     $<$<STREQUAL:${PRODUCT_SIDE},host>:LOG_HOST>
-    $<$<AND:$<STREQUAL:${USE_ALOG},0>,$<STREQUAL:${PRODUCT_SIDE},device>>:CUSTOM_INTERFACE>
     $<$<STREQUAL:${PRODUCT_SIDE},device>:google=ascend_private>
     $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_TLV>
     CONFIG_V121
 )
 
-
+# 链接库
 target_link_libraries(rs PRIVATE
+    $<BUILD_INTERFACE:ascend_hal_headers>
+    $<BUILD_INTERFACE:msprof_headers>
+    $<BUILD_INTERFACE:slog_headers>
     -Wl,--no-as-needed
     c_sec
     $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
@@ -132,9 +90,72 @@ target_link_libraries(rs PRIVATE
     -ldl
 )
 
-install(TARGETS  rs
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
-    COMPONENT hcomm
+# 头文件搜索路径
+target_include_directories(rs PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../inc/network
+    ${CMAKE_CURRENT_SOURCE_DIR}/../inc/private/network
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/
+    ${TLV_DIR}
+    # 第三方库依赖路径
+    ${OPENSSL_INCLUDE_DIR}
+    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
+    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/kms
+    # rdma头文件
+    ${RDMA_CORE_INCLUDE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/nda
+    # HCCP Legacy
+    ${CMAKE_CURRENT_SOURCE_DIR}/ctx
+    ${CMAKE_CURRENT_SOURCE_DIR}/ctx/product
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
+    ${URMA_INCLUDE_DIR}
 )
 
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(rs PRIVATE
+        ${TOP_DIR}/ubengine/ssapi/userspace/umdk/src/urma/lib/urma/core/include
+        ${TOP_DIR}/ubengine/ssapi/userspace/umdk/src/urma/lib/urma/core
+        ${TOP_DIR}/ubengine/ssapi/userspace/udma/src/urma/hw/udma/include
+        ${TOP_DIR}/drivers/network/tls_adp
+        ${TOP_DIR}/runtime/pkg_inc/base
+        ${TOP_DIR}/driver/driver/pkg_inc/
+    )
+endif()
+
+# 设置依赖
 add_dependencies(rs crypto_static)
+
+# 创建 rs 动态链接库，device 侧使用，同时打包到 cann-hcomm-compat.tar.gz
+# 注意：rs_device 与 rs 完全一致，区别是编译时使能 CUSTOM_INTERFACE 宏定义
+if(PRODUCT_SIDE STREQUAL "device")
+    add_library(rs_device SHARED)
+    # 克隆 rs 的属性
+    clone_cann_target(
+        ORIGIN rs
+        OUTPUT rs_device
+    )
+    # 宏定义
+    target_compile_definitions(rs_device PRIVATE
+        CUSTOM_INTERFACE
+    )
+    # 设置依赖
+    add_dependencies(rs_device crypto_static)
+    # 设置 rs_device 输出文件名，同时避免与 rs 输出目录冲突
+    set_target_properties(rs_device
+        PROPERTIES
+        OUTPUT_NAME rs
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/device"
+    )
+endif()
+
+# 安装
+if((NOT BUILD_OPEN_PROJECT) OR (PRODUCT_SIDE STREQUAL "host"))
+    install(TARGETS rs
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+endif()

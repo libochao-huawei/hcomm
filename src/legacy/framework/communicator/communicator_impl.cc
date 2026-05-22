@@ -385,7 +385,7 @@ void CommunicatorImpl::RefreshSubmittedOpcnt()
         collOpIndex++;
         submittedOpCnt = collOpIndex;
     }
-    HCCL_INFO("[%s] end, opType[%s], submittedOpCnt[%u], sendRecvIndex[%u], collOpIndex[%u]", __func__,
+    HCCL_INFO("[%s] end, opType[%s], submittedOpCnt[%u], sendRecvIndex[%u], collOpIndex[%u].", __func__,
               currentCollOperator->opType.Describe().c_str(), submittedOpCnt, sendRecvIndex, collOpIndex);
 }
 
@@ -411,7 +411,7 @@ void CommunicatorImpl::SingleRankProc(const CollOpParams &opParams, void *stream
         len = DataTypeSizeGet(opParams.dataType) * opParams.count;
     }
 
-    HCCL_INFO("[CommunicatorImpl][%s] sendBuf[%p], recvBuf[%p], len[%llu]", __func__, opParams.sendBuf, opParams.recvBuf, len);
+    HCCL_INFO("[CommunicatorImpl][%s] sendBuf[%p], recvBuf[%p], len[%llu].", __func__, opParams.sendBuf, opParams.recvBuf, len);
     if (len > 0) {
         HrtMemAsyncCopy(opParams.recvBuf, len, opParams.sendBuf, len, ACL_MEMCPY_DEVICE_TO_DEVICE, stream);
     }
@@ -486,7 +486,7 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
 void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const
 {
     std::vector<uint64_t> args;
-    CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args);
+    CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args, myRank);
     rtCcuTaskInfo_t *currCcuParam = ccuParams;
     for (u32 i = 0; i < args.size(); i++) {
         // skip token info
@@ -1283,8 +1283,9 @@ void CommunicatorImpl::CheckRankGraphAddrs() const
     const std::shared_ptr<NetInstance::Peer> &peer = rankGraph->GetPeer(myRank);
     const std::vector<std::shared_ptr<NetInstance::ConnInterface>> &interfaces = peer->GetIfaces();
     for(auto &interface : interfaces) {
-        const std::set<LinkProtocol> &protocols = interface->GetLinkProtocols();  // PCIE没有EID
-        if (interface->GetPos() == AddrPosition::DEVICE && protocols.count(LinkProtocol::PCIE) == 0 && localEidSet.count(interface->GetAddr().GetEid()) == 0) {
+        const std::set<LinkProtocol> &protocols = interface->GetLinkProtocols();  // PCIE和UBOE没有EID
+        if (interface->GetPos() == AddrPosition::DEVICE && protocols.count(LinkProtocol::PCIE) == 0
+            && protocols.count(LinkProtocol::UBOE) == 0 && localEidSet.count(interface->GetAddr().GetEid()) == 0) {
             RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
                           std::vector<std::string>({interface->GetAddr().GetIpStr(), "addr", "A right ip address"}));
             THROW<InvalidParamsException>(StringFormat("[CommunicatorImpl][%s]"

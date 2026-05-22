@@ -29,6 +29,14 @@ constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 HostCpuUrmaChannel::HostCpuUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
+HostCpuUrmaChannel::~HostCpuUrmaChannel()
+{
+    if (socket_ != nullptr) {
+        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        socket_ = nullptr;
+    }
+}
+
 HcclResult HostCpuUrmaChannel::ParseInputParam()
 {
     // 1. 从 endpointHandle_，获得 localEp_ 和 rdmaHandle_
@@ -64,8 +72,6 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
         HCCL_WARNING("[HostCpuUrmaChannel][%s] exchangeAllMems is false.", __func__);
     }
 
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
-
     return HCCL_SUCCESS;
 }
 
@@ -100,7 +106,7 @@ HcclResult HostCpuUrmaChannel::BuildSocket()
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
     bool noRankId = true;
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
+    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
     HCCL_INFO("[HostCpuUrmaChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
 }
@@ -185,6 +191,9 @@ HcclResult HostCpuUrmaChannel::BuildUbMemTransport()
 
 HcclResult HostCpuUrmaChannel::Init()
 {
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
     CHK_RET(ParseInputParam());
     CHK_RET(StartListen());
     CHK_RET(BuildSocket());
@@ -193,6 +202,9 @@ HcclResult HostCpuUrmaChannel::Init()
     CHK_RET(BuildUbMemTransport());
     // urma函数初始化
     CHK_RET(DlUrmaFunction::GetInstance().DlUrmaFunctionInit());
+    // 获取urma read/write 单个wr的最大传输数据大小
+    CHK_RET(HccpRaGetDevBaseAttr(rdmaHandle_, &devBaseAttr_));
+
     return HCCL_SUCCESS;
 }
 
@@ -210,7 +222,11 @@ HcclResult HostCpuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 ChannelStatus HostCpuUrmaChannel::GetStatus()
 {
     memTransport_->SetIsHost();
-    return Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
+    ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
+    if (out == ChannelStatus::READY && socket_ != nullptr) {
+        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+    }
+    return out;
 }
 
 HcclResult hcomm::HostCpuUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
@@ -255,16 +271,16 @@ HcclResult HostCpuUrmaChannel::GetLocSeg(const void *addr, const size_t size, u6
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuUrmaChannel::GetSplitNum(uint64_t len, uint64_t &splitNum)
+HcclResult HostCpuUrmaChannel::GetSplitNum(uint64_t len, uint64_t maxJettyWrDataLen, uint64_t &splitNum)
 {
-    if (len == 0) {
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] invalid length 0.", __func__);
+    if (len == 0 || maxJettyWrDataLen == 0) {
+        HCCL_ERROR("[HostCpuUrmaChannel::%s] invalid len[%llu] or maxJettyWrDataLen[%llu].", __func__, len, maxJettyWrDataLen);
         return HCCL_E_PARA;
     }
-    if ((len % MAX_JETTY_WR_DATA_LEN) == 0) {
-        splitNum = len / MAX_JETTY_WR_DATA_LEN;
+    if ((len % maxJettyWrDataLen) == 0) {
+        splitNum = len / maxJettyWrDataLen;
     } else {
-        splitNum = (len / MAX_JETTY_WR_DATA_LEN) + 1;
+        splitNum = (len / maxJettyWrDataLen) + 1;
     }
     return HCCL_SUCCESS;
 }
@@ -297,7 +313,8 @@ HcclResult HostCpuUrmaChannel::UrmaPostJettySendWr(urma_opcode_t opcode, void *d
 
     //  获取切片数量
     uint64_t splitNum = 0;
-    CHK_RET(GetSplitNum(len, splitNum));
+    uint64_t maxJettyWrDataLen = (opcode == URMA_OPC_WRITE) ? devBaseAttr_.maxWriteSize : devBaseAttr_.maxReadSize;
+    CHK_RET(GetSplitNum(len, maxJettyWrDataLen, splitNum));
 
     u64 localSeg;
     u64 remoteSeg;
@@ -306,7 +323,7 @@ HcclResult HostCpuUrmaChannel::UrmaPostJettySendWr(urma_opcode_t opcode, void *d
     uint64_t offset = 0;
     for (uint64_t i = 0; i < splitNum; i++) {
         urma_jfs_wr_t *badWr = nullptr;
-        uint64_t chunkLen = std::min(len - offset, MAX_JETTY_WR_DATA_LEN);
+        uint64_t chunkLen = std::min(len - offset, maxJettyWrDataLen);
         // 源地址 数据长度 tseg
         urma_sge_t srclist = {0};
         urmaWriteWr.rw.src.sge = &srclist;

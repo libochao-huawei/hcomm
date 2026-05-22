@@ -1,3 +1,13 @@
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+
 cmake_minimum_required(VERSION 3.9)
 project(topoaddrinfo VERSION 1.0.0 DESCRIPTION "topo addr info generator")
 
@@ -35,15 +45,13 @@ target_link_options(topoaddrinfo PRIVATE
 
 target_include_directories(topoaddrinfo PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${HCCL_BASE_DIR}/src/pub_inc
-    ${HCCL_BASE_DIR}/include
-    ${HCCL_BASE_DIR}/inc/adapter
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+    ${HCOMM_DIR}/src/pub_inc
+    ${HCOMM_DIR}/include
 )
 
 target_link_libraries(topoaddrinfo PRIVATE
+    $<BUILD_INTERFACE:ascend_hal_headers>
+    $<BUILD_INTERFACE:runtime_headers>
     dl
     c_sec
 )

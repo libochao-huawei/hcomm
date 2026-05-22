@@ -478,7 +478,8 @@ TEST_F(CollServiceAiCpuImplTest, Ut_RecoverTransport_When_Normal_Expect_Success)
     comm.currentCollOperator = make_unique<CollOperator>();
     comm.GetCurrentCollOperator()->opMode = OpMode::OPBASE;
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs().will(returnValue(0));
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs().will(returnValue(0));
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs().will(returnValue(0));
     MOCKER_CPP(&CollServiceAiCpuImpl::AllocNotifies).stubs().will(returnValue(0));
     MOCKER_CPP(&MemTransportManager::BatchRecoverOpbasedTransports).stubs().will(returnValue(0));
     MOCKER_CPP(&MemTransportManager::BatchRecoverOffloadTransports).stubs().will(returnValue(0));

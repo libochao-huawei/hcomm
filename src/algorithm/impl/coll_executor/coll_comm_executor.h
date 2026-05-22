@@ -136,10 +136,11 @@ public:
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;
 
 protected:
-    HcclResult GetSubStreamInfoOnOneRing(const u32 ringIndex,
+    virtual HcclResult GetSubStreamInfoOnOneRing(const u32 ringIndex,
                                          std::vector<Stream>                       &subStreamsInOneRing,
                                          std::vector<std::shared_ptr<LocalNotify>> &mainSignalsInOneRing,
                                          std::vector<std::shared_ptr<LocalNotify>> &subSignalsInOneRing);
+    virtual u32 GetLevel0RingNum() const;
     HcclResult CalUserMemSlices(const HcclDataType dataType, const HcomCollOpInfo *opInfo,
                                 const std::vector<Slice> &singleRingSliceZero, u32 ringIndex,
                                 const std::vector<std::vector<u32>> &multiRingsOrder,

@@ -118,6 +118,20 @@ static inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint3
 extern HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size);
 
 /**
+ * @name 清零通信内存获取
+ * @{
+ */
+/**
+ * @brief 获取通信域中的已清零Hccl缓存(HCCL Buffer)
+ * @param[in] comm 通信域句柄
+ * @param[out] buffer Hccl缓存地址
+ * @param[out] size Hccl缓存大小
+ * @return HcclResult 执行结果状态码
+ * @warning 重要约束：返回的buffer内存由库内管理，调用者严禁释放
+ */
+extern HcclResult HcclGetHcclBufferCleared(HcclComm comm, void **buffer, uint64_t *size);
+
+/**
  * @defgroup 通信引擎资源管理
  * @{
  */

@@ -12,7 +12,7 @@
 #include "adapter_hal_pub.h"
 #include "sal_pub.h"
 #include "task_struct.h"
-#include "type_def.h"
+#include "common/type_def.h"
 
 using char_t = char;
 

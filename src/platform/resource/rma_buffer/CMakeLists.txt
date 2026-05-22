@@ -18,6 +18,8 @@ set(src_list
     remote_ipc_rma_buffer.cc
 )
 
-target_sources(hccl_plf PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${src_list}
+    )
+endif()
