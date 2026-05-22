@@ -552,3 +552,208 @@ TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpu_SignalRecord)
 
     GlobalMockObject::verify();
 }
+
+// 覆盖 SaveStreamInfo: 新流插入streamMap_
+TEST_F(DispatcherAiCpu_UT, ut_SaveStreamInfo_NewStream)
+{
+    HcclComStreamInfo info = {};
+    info.actualStreamId = 10;
+    info.sqId = 10;
+    info.sqDepth = 100;
+    info.sqBaseAddr = static_cast<void *>(sq_addr);
+    info.logicCqId = 10;
+    Stream stream(info, true);
+    SqCqeContext sqeCqeCtx;
+    sqeCqeCtx.sqContext.inited = false;
+    stream.InitSqAndCqeContext(0, 0, &sqeCqeCtx);
+
+    EXPECT_EQ(dispatcherAiCpu->streamMap_.size(), 0u);
+    dispatcherAiCpu->SaveStreamInfo(stream);
+    EXPECT_EQ(dispatcherAiCpu->streamMap_.size(), 1u);
+    EXPECT_NE(dispatcherAiCpu->streamMap_.find(10), dispatcherAiCpu->streamMap_.end());
+}
+
+// 覆盖 SaveStreamInfo: 重复流不重复插入
+TEST_F(DispatcherAiCpu_UT, ut_SaveStreamInfo_DuplicateStream)
+{
+    HcclComStreamInfo info = {};
+    info.actualStreamId = 10;
+    info.sqId = 10;
+    info.sqDepth = 100;
+    info.sqBaseAddr = static_cast<void *>(sq_addr);
+    info.logicCqId = 10;
+    Stream stream(info, true);
+    SqCqeContext sqeCqeCtx;
+    sqeCqeCtx.sqContext.inited = false;
+    stream.InitSqAndCqeContext(0, 0, &sqeCqeCtx);
+
+    dispatcherAiCpu->SaveStreamInfo(stream);
+    EXPECT_EQ(dispatcherAiCpu->streamMap_.size(), 1u);
+
+    dispatcherAiCpu->SaveStreamInfo(stream);
+    EXPECT_EQ(dispatcherAiCpu->streamMap_.size(), 1u);
+}
+
+// 覆盖 LaunchAllTasks: 空streamMap_直接返回成功
+TEST_F(DispatcherAiCpu_UT, ut_LaunchAllTasks_EmptyMap)
+{
+    EXPECT_EQ(dispatcherAiCpu->streamMap_.size(), 0u);
+    auto ret = dispatcherAiCpu->LaunchAllTasks();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// 覆盖 LaunchAllTasks: 多流全部成功 (sqeCnt=0, LaunchTask直接返回)
+TEST_F(DispatcherAiCpu_UT, ut_LaunchAllTasks_MultipleStreams)
+{
+    HcclComStreamInfo info1 = {};
+    info1.actualStreamId = 1;
+    info1.sqId = 1;
+    info1.sqDepth = 100;
+    info1.sqBaseAddr = static_cast<void *>(sq_addr);
+    info1.logicCqId = 1;
+    Stream stream1(info1, true);
+    SqCqeContext sqeCqeCtx1;
+    sqeCqeCtx1.sqContext.inited = false;
+    stream1.InitSqAndCqeContext(0, 0, &sqeCqeCtx1);
+
+    HcclComStreamInfo info2 = {};
+    info2.actualStreamId = 2;
+    info2.sqId = 2;
+    info2.sqDepth = 100;
+    info2.sqBaseAddr = static_cast<void *>(sq_addr);
+    info2.logicCqId = 2;
+    Stream stream2(info2, true);
+    SqCqeContext sqeCqeCtx2;
+    sqeCqeCtx2.sqContext.inited = false;
+    stream2.InitSqAndCqeContext(0, 0, &sqeCqeCtx2);
+
+    dispatcherAiCpu->SaveStreamInfo(stream1);
+    dispatcherAiCpu->SaveStreamInfo(stream2);
+    EXPECT_EQ(dispatcherAiCpu->streamMap_.size(), 2u);
+
+    auto ret = dispatcherAiCpu->LaunchAllTasks();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// 覆盖 LaunchAllTasks: 某流LaunchTask失败，错误码向上传播
+TEST_F(DispatcherAiCpu_UT, ut_LaunchAllTasks_FailedLaunch)
+{
+    HcclComStreamInfo info1 = {};
+    info1.actualStreamId = 1;
+    info1.sqId = 1;
+    info1.sqDepth = 100;
+    info1.sqBaseAddr = static_cast<void *>(sq_addr);
+    info1.logicCqId = 1;
+    Stream stream1(info1, true);
+    SqCqeContext sqeCqeCtx1;
+    sqeCqeCtx1.sqContext.inited = false;
+    stream1.InitSqAndCqeContext(0, 0, &sqeCqeCtx1);
+    stream1.sqeContext_->buffer.sqeCnt = 200; // > sqDepth(100), 触发HCCL_E_PTR
+    stream1.sqeContext_->buffer.tailSqeIdx = 200;
+
+    dispatcherAiCpu->SaveStreamInfo(stream1);
+
+    auto ret = dispatcherAiCpu->LaunchAllTasks();
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+// 覆盖 LaunchTask: RTSQ满时遍历streamMap_启动其他流 (成功路径)
+TEST_F(DispatcherAiCpu_UT, ut_LaunchTask_IterateOtherStreams)
+{
+    // 主流: sqTail=100, sqDepth=100, RTSQ看起来已满
+    uint32_t sqHead = 0;
+    uint32_t sqTail = 100;
+    Stream stream(streamInfo, true); // actualStreamId=1
+    SqCqeContext sqeCqeCtx;
+    sqeCqeCtx.sqContext.inited = false;
+    stream.InitSqAndCqeContext(sqHead, sqTail, &sqeCqeCtx);
+    stream.sqeContext_->buffer.sqeCnt = 2;
+    stream.sqeContext_->buffer.tailSqeIdx = 2;
+
+    // 另一个流: actualStreamId=2, 与主流不同, 会被LaunchTask调用
+    HcclComStreamInfo info2 = {};
+    info2.actualStreamId = 2;
+    info2.sqId = 2;
+    info2.sqDepth = 100;
+    info2.sqBaseAddr = static_cast<void *>(sq_addr);
+    info2.logicCqId = 2;
+    Stream stream2(info2, true);
+    SqCqeContext sqeCqeCtx2;
+    sqeCqeCtx2.sqContext.inited = false;
+    stream2.InitSqAndCqeContext(0, 0, &sqeCqeCtx2);
+    dispatcherAiCpu->SaveStreamInfo(stream2);
+
+    // Query后head推进到98, while条件不满足, 退出循环
+    uint32_t queryHead = 98;
+    MOCKER(QuerySqStatusByType)
+        .stubs()
+        .with(any(), any(), any(), outBound(queryHead))
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(ConfigSqStatusByType)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    dispatcherAiCpu->dfxTimeOutConfig_.sqFullWaitTimeOut = 0;
+    auto ret = dispatcherAiCpu->LaunchTask(stream, true);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+// 覆盖 WaitRtsq: RTSQ满时遍历streamMap_启动其他流 (成功路径)
+TEST_F(DispatcherAiCpu_UT, ut_WaitRtsq_IterateOtherStreams)
+{
+    uint32_t sqHead = 0;
+    uint32_t sqTail = 100;
+    Stream stream(streamInfo, true); // actualStreamId=1
+    SqCqeContext sqeCqeCtx;
+    sqeCqeCtx.sqContext.inited = false;
+    stream.InitSqAndCqeContext(sqHead, sqTail, &sqeCqeCtx);
+
+    // 另一个流: actualStreamId=2, sqeCnt=0, LaunchTask直接返回成功
+    HcclComStreamInfo info2 = {};
+    info2.actualStreamId = 2;
+    info2.sqId = 2;
+    info2.sqDepth = 100;
+    info2.sqBaseAddr = static_cast<void *>(sq_addr);
+    info2.logicCqId = 2;
+    Stream stream2(info2, true);
+    SqCqeContext sqeCqeCtx2;
+    sqeCqeCtx2.sqContext.inited = false;
+    stream2.InitSqAndCqeContext(0, 0, &sqeCqeCtx2);
+    dispatcherAiCpu->SaveStreamInfo(stream2);
+
+    // Query后head推进到95, 为5个SQE腾出空间
+    uint32_t queryHead = 95;
+    MOCKER(QuerySqStatusByType)
+        .stubs()
+        .with(any(), any(), any(), outBound(queryHead))
+        .will(returnValue(HCCL_SUCCESS));
+
+    dispatcherAiCpu->dfxTimeOutConfig_.sqFullWaitTimeOut = 0;
+    auto ret = dispatcherAiCpu->WaitRtsq(stream, 5, true);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+// 覆盖 WaitRtsq: 非阻塞模式下RTSQ满时直接返回
+TEST_F(DispatcherAiCpu_UT, ut_WaitRtsq_NonBlockReturn)
+{
+    uint32_t sqHead = 0;
+    uint32_t sqTail = 100;
+    Stream stream(streamInfo, true);
+    SqCqeContext sqeCqeCtx;
+    sqeCqeCtx.sqContext.inited = false;
+    stream.InitSqAndCqeContext(sqHead, sqTail, &sqeCqeCtx);
+
+    MOCKER(QuerySqStatusByType)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    auto ret = dispatcherAiCpu->WaitRtsq(stream, 10, false);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}

@@ -73,6 +73,12 @@ HcclResult LaunchGraph(void *graphMgr, void *streamPtr, void *ctx, uint32_t time
     return HCCL_SUCCESS;
 }
 
+HcclResult LaunchGraphAndGetGraphInfo(void *fftsPubInfo, void *streamPtr, void *ctx, uint32_t timeout, uint32_t *ctxNum,
+    void **descBuf, size_t *descBufLen)
+{
+    return HCCL_SUCCESS;
+}
+
 void GraphDump(void *graphMgr, void *ctx)
 {
 }

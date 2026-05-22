@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <thread>
 #include "rank_info_detect_client.h"
 #include "root_handle_v2.h"
 #include "env_config.h"
@@ -20,7 +21,6 @@
 #include "socket_manager.h"
 #include "topo_addr_info.h"
 #include "adapter_error_manager_pub.h"
-#include "thread"
 
 namespace Hccl {
 
