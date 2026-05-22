@@ -53,7 +53,6 @@ set(david_to_test_list
 )
 
 add_library(hccl_orion_alg_test SHARED ${david_to_test_list})
-add_dependencies(hccl_orion_alg_test protobuf)  # 依赖 protobuf
 
 #头文件搜索路径
 target_include_directories(hccl_orion_alg_test PRIVATE
@@ -76,7 +75,7 @@ target_link_libraries(hccl_orion_alg_test PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    ${THIRD_PARTY_PATH}/protobuf/lib64/libprotobuf.so
+    ascend_protobuf
     -lrt
     -ldl
 )
