@@ -505,6 +505,7 @@ HcclResult HccdImplPml::BuildHeterogeneousTransport(u32 commId, u32 peerRank, s3
         }
         transTag += std::to_string(tag);
         std::unique_ptr<TransportHeterog> transportPtr;
+        // 当前代码只保留TransportHeterogEventRoce
         transportPtr.reset(new (std::nothrow) TransportHeterogEventRoce(transTag, rankInfoList_[userRank_].nicIp[0],
             rankInfoList_[peerRank].nicIp[0], ranksPort_[peerRank], ranksPort_[userRank_], transportResourceInfo_));
         CHK_SMART_PTR_NULL(transportPtr);
