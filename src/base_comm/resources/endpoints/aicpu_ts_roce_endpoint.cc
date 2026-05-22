@@ -12,7 +12,7 @@
 #include "hccl_mem_defs.h"
 #include "log.h"
 #include "hccl_net_dev.h"
-#include "reged_mems/aicpu_ts_roce_mem.h"
+#include "aicpu_ts_roce_mem.h"
 #include "adapter_rts_common.h"
 #include "hccl_network.h"
 #include "network_manager_pub.h"

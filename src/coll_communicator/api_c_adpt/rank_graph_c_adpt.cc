@@ -9,7 +9,7 @@
  */
 #include <memory>
 #include "rank_graph_c_adpt.h"
-#include "../coll_comm_mgr.h"
+#include "coll_comm_mgr.h"
 
 using namespace hccl;
 extern std::unique_ptr<CollCommMgr> g_collCommMgr;
