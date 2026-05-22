@@ -441,8 +441,8 @@ HcclResult AivUrmaTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum
     }
  
     *remoteMem = remoteUserMems_.data();
-    *memTags = tagPointers_.data();
     *memNum = userMemCount;
+    *memTags = tagPointers_.data();
     return HCCL_SUCCESS;
 }
  
