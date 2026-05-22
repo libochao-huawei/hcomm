@@ -28,23 +28,16 @@ namespace Hccl {
 using namespace std;
 constexpr u32 RTSQ_A5_PART_ID   = 0;
 constexpr u32 PRINT_INTERVAL  = 30;
-const std::chrono::seconds RTSQ_FULL_PRINT_INTERVAL(PRINT_INTERVAL); // 打印间隔30s
 
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId) : RtsqBase(devPhyId, streamId, sqId)
 {
     SetTaskIdBySqeId();
-    rtsqFullTimeoutValue_ = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout + 20; // rtsq full超时时间: X+20s
-    rtsqFullTimeout_ = std::chrono::seconds(rtsqFullTimeoutValue_);
 }
 
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase(devPhyId, streamId, sqId)
 {
     SetTaskIdBySqeId();
     launchFlag_ = launchFlag;
-#ifdef CCL_KERNEL_AICPU
-    rtsqFullTimeoutValue_ = hcomm::GetNotifyWaitTimeout() + 20; // rtsq full超时时间: X+20s
-#endif
-    rtsqFullTimeout_ = std::chrono::seconds(rtsqFullTimeoutValue_);
 }
 
 void RtsqA5::Reset()
@@ -71,10 +64,16 @@ u32 RtsqA5::GetTailToHeadDist() const
 void RtsqA5::MakeSureAvailableSpace()
 {
     u32  availableSpace = GetTailToHeadDist();
-    auto startTime = std::chrono::steady_clock::now();
-    auto lastPrintTime = startTime - RTSQ_FULL_PRINT_INTERVAL;
-    HCCL_INFO("[%s]sqId:%u, rtsqFullTimeoutValue: %u s, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
-        __func__, sqId_, rtsqFullTimeoutValue_, sqHead_, sqTail_, pendingSqeCnt);
+    auto startTime      = std::chrono::steady_clock::now();
+#ifdef CCL_KERNEL_AICPU
+    sqFullTimeout_ = GetSqFullTimeout();
+#endif
+    bool infiniteTimeout = (sqFullTimeout_ == 0);  // 0表示永不超时
+    auto timeout = std::chrono::seconds(infiniteTimeout ? 1 : sqFullTimeout_); // 永不超时时设置为1秒，但跳过超时检查
+    const std::chrono::seconds printInterval(PRINT_INTERVAL); // 打印间隔30s
+    auto                       lastPrintTime = std::chrono::steady_clock::now() - printInterval;
+    HCCL_INFO("[%s]sqId:%u, rtsqFullTimeoutValue: %u s, infiniteTimeout: %d, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
+        __func__, sqId_, sqFullTimeout_, infiniteTimeout, sqHead_, sqTail_, pendingSqeCnt);
 
     while (availableSpace <= pendingSqeCnt) {
         sqHead_        = QuerySqHead();
@@ -84,14 +83,15 @@ void RtsqA5::MakeSureAvailableSpace()
         }
 
         auto curTime = std::chrono::steady_clock::now();
-        if (UNLIKELY(curTime - lastPrintTime >= RTSQ_FULL_PRINT_INTERVAL)) {
+        if (UNLIKELY(curTime - lastPrintTime >= printInterval)) {
             HCCL_RUN_INFO("[%s]while loop, sqId:%u, sqHead:%u, sqTail:%u, availableSpace:%u, pendingSqeCnt:%u, "
-                "rtsqFullTimeoutValue:%u s", __func__, sqId_, sqHead_, sqTail_, availableSpace, pendingSqeCnt, rtsqFullTimeoutValue_);
+                "rtsqFullTimeoutValue:%u s, infiniteTimeout:%d", __func__, sqId_, sqHead_, sqTail_, availableSpace, pendingSqeCnt, sqFullTimeout_, infiniteTimeout);
             lastPrintTime = curTime;
         }
-        if (UNLIKELY((curTime - startTime) >= rtsqFullTimeout_)) { // timeout内还是不能向RTSQ中写入值，报错
+        // 永不超时时跳过超时检查
+        if (!infiniteTimeout && UNLIKELY((curTime - startTime) >= timeout)) { // timeout内还是不能向RTSQ中写入值，报错
             auto msg = StringFormat("Rtsq full, rtsqFullTimeoutValue %u. sqId:%u, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
-                rtsqFullTimeoutValue_, sqId_, sqHead_, sqTail_, pendingSqeCnt);
+                sqFullTimeout_, sqId_, sqHead_, sqTail_, pendingSqeCnt);
             HCCL_ERROR("%s", msg.c_str());
             THROW<InternalException>(msg);
         }
