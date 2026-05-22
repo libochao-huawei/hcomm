@@ -47,6 +47,8 @@ public:
         return static_cast<StreamLite *>(streamLiteVoidPtr_)->GetSqId();
     }
 
+    HcclResult SetSqFullTimeout(uint32_t timeout);
+
 private:
     void *streamLiteVoidPtr_{nullptr};
 };
