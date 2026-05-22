@@ -41,14 +41,14 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
         r3 = numA + numB;
     });
 
-    LoopConfig cfg1 = {.addrOffset = 0, .loopIterNum = 2};
-    LoopConfig cfg2 = {.addrOffset = 0, .loopIterNum = 2};
+    LoopConfig cfg1 = {.addrOffset = 0, .iterNum = 2};
+    LoopConfig cfg2 = {.addrOffset = 0, .iterNum = 2};
     Loop loop1(cfg1, body1);
     Loop loop2(cfg2, body2);
 
     LoopGroupConfig grpCfg1 = {
-        .addrOffset = 0, .bufferOffset = 0, .eventOffset = 0,
-        .repeatNum = 0, .repeatLoopIdx = 0
+        .cloneNum = 0, .cloneLoopOffset = 0,
+        .addrOffset = 0, .ccuBufferOffset = 0, .eventOffset = 0
     };
     LoopGroup group1(grpCfg1, /*maxLoopNum=*/2, {loop1, loop2});
 
@@ -58,12 +58,12 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     Func body3([&]() {
         r5 = numA + numB;
     });
-    LoopConfig cfg3 = {.addrOffset = 4096, .loopIterNum = 4};
+    LoopConfig cfg3 = {.addrOffset = 4096, .iterNum = 4};
     Loop loop3(cfg3, body3);
 
     LoopGroupConfig grpCfg2 = {
-        .addrOffset = 4096, .bufferOffset = 1, .eventOffset = 1,
-        .repeatNum = 3, .repeatLoopIdx = 1
+        .cloneNum = 3, .cloneLoopOffset = 1,
+        .addrOffset = 4096, .ccuBufferOffset = 1, .eventOffset = 1
     };
     LoopGroup group2(grpCfg2, /*maxLoopNum=*/2, {loop2, loop3});
 

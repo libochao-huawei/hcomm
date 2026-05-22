@@ -54,15 +54,16 @@ typedef uint64_t CcuLoopExecutors;
 
 typedef struct {
     uint64_t addrOffset;
-    uint64_t loopIterNum;
+    uint64_t iterNum;
 } CcuLoopConfig;
 
 typedef struct {
-    uint64_t addrOffset;
-    uint64_t bufferOffset;
-    uint64_t eventOffset;
-    uint64_t repeatNum;
-    uint64_t repeatLoopIdx;
+    uint32_t cloneNum;
+    uint32_t cloneLoopOffset;
+    uint32_t addrOffset;
+    uint32_t ccuBufferOffset;
+    uint32_t eventOffset;
+    
 } CcuLoopGroupConfig;
 
 
