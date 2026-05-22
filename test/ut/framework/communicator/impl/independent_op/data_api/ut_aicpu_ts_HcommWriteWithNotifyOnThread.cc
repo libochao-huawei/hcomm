@@ -31,9 +31,9 @@ protected:
         std::cout << "A Test case in UtAicpuTsHcommWriteWithNotifyOnThread SetUp" << std::endl;
         UtAicpuTsBase::SetUp();
 
-        MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-            .stubs()
-            .will(returnValue(HCCL_SUCCESS));
+        // MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
+        //     .stubs()
+        //     .will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown() override
