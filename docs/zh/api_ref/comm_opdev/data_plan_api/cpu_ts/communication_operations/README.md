@@ -9,3 +9,4 @@
 - [HcommWriteWithNotifyOnThread](HcommWriteWithNotifyOnThread.md)  
 - [HcommWriteReduceWithNotifyOnThread](HcommWriteReduceWithNotifyOnThread.md)  
 - [HcommChannelFenceOnThread](HcommChannelFenceOnThread.md)
+- [HcommBatchTransferOnThread](HcommBatchTransferOnThread.md)
