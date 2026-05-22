@@ -110,7 +110,7 @@ target_link_libraries(hccl_alg_adaption PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_alg_test
     -pthread
-    protobuf
+    ascend_protobuf_shared_lib
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     -lrt
     -ldl
