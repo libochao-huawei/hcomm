@@ -16,7 +16,7 @@
 #include "uboe_endpoint.h"
 #include "cpu_urma_endpoint.h"
 #include "aicputs_hccs_endpoint.h"
-#include "../../../../platform/hccp/inc/private/network/ra_rs_comm.h"
+#include "../../../../base_comm/resources/hccp/inc/private/network/ra_rs_comm.h"
 
 namespace hcomm{
 static bool IsSupported(const EndpointDesc &endpointDesc)

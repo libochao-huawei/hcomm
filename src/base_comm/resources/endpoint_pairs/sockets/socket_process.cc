@@ -14,7 +14,7 @@
 #include "ip_address.h"
 #include "exception_handler.h"
 #include "adapter_rts.h"
-#include "../endpoints/endpoint.h"
+#include "endpoint.h"
 #include "adapter_rts_common.h"
 
 using namespace std;

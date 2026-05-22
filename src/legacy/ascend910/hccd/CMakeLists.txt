@@ -118,8 +118,8 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/platform/inc/adapter
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common
     ${HCOMM_DIR}/src/legacy/ascend910/platform/task
-    ${HCOMM_DIR}/src/legacy/ascend910/platform/hccp/inc
-    ${HCOMM_DIR}/src/legacy/ascend910/platform/hccp/inc/network
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network
     ${HCOMM_DIR}/src/legacy/ascend910/platform/ping_mesh
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/device
