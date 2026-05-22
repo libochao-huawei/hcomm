@@ -42,10 +42,10 @@ find_cann_package(unified_dlog MODULE REQUIRED)
 
 # third_party
 include(${HCOMM_DIR}/cmake/hcomm_utils.cmake)
-include(${HCOMM_DIR}/cmake/third_party/json.cmake)
+find_cann_package(json)
 include(${HCOMM_DIR}/cmake/third_party/openssl.cmake)
 include(${HCOMM_DIR}/cmake/third_party/ubengine.cmake)
-include(${HCOMM_DIR}/cmake/third_party/rdma-core.cmake)
+find_cann_package(rdma-core)
 
 # 添加子目录
 add_cann_subdirectories_relative(${HCOMM_DIR}
