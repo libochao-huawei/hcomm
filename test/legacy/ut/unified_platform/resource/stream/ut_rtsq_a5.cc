@@ -346,3 +346,52 @@ TEST_F(RtsqA5Test, Ut_TryLaunchTask_When_HasEnoughSpace_Expect_LaunchTask)
 
     EXPECT_EQ(rtsq.pendingSqeCnt, 0);
 }
+
+TEST_F(RtsqA5Test, Ut_SetSqFullTimeout_When_Normal_Expect_Success)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+
+    u32 timeout = 2000;
+    rtsq.SetSqFullTimeout(timeout);
+
+    EXPECT_EQ(rtsq.sqFullTimeoutConfig_.sqFullTimeout, timeout);
+    EXPECT_EQ(rtsq.sqFullTimeoutConfig_.isSet, true);
+}
+
+TEST_F(RtsqA5Test, Ut_SetSqFullTimeout_When_TimeoutIsZero_Expect_Success)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+
+    u32 timeout = 0;
+    rtsq.SetSqFullTimeout(timeout);
+
+    EXPECT_EQ(rtsq.sqFullTimeoutConfig_.sqFullTimeout, timeout);
+    EXPECT_EQ(rtsq.sqFullTimeoutConfig_.isSet, true);
+}
+
+TEST_F(RtsqA5Test, Ut_GetSqFullTimeout_When_NotSet_Expect_DefaultValue)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+
+    u32 timeout = rtsq.GetSqFullTimeout();
+
+    EXPECT_EQ(timeout, RTSQ_FULL_TIMEOUT_DEFAULT);
+    EXPECT_EQ(rtsq.sqFullTimeoutConfig_.isSet, false);
+}
+
+TEST_F(RtsqA5Test, Ut_SetAndGetSqFullTimeout_Integration_Expect_Consistent)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+
+    u32 timeout1 = 1500;
+    rtsq.SetSqFullTimeout(timeout1);
+    EXPECT_EQ(rtsq.GetSqFullTimeout(), timeout1);
+
+    u32 timeout2 = 5000;
+    rtsq.SetSqFullTimeout(timeout2);
+    EXPECT_EQ(rtsq.GetSqFullTimeout(), timeout2);
+
+    u32 timeout3 = 0;
+    rtsq.SetSqFullTimeout(timeout3);
+    EXPECT_EQ(rtsq.GetSqFullTimeout(), timeout3);
+}

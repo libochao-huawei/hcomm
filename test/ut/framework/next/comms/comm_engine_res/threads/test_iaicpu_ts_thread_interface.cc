@@ -37,6 +37,7 @@ public:
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::NotifyRecordLoc).stubs().will(ignoreReturnValue());
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::SdmaCopy).stubs().will(ignoreReturnValue());
         MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::SdmaReduce).stubs().will(ignoreReturnValue());
+        MOCKER_CPP_VIRTUAL(*rtsqPtr, &RtsqBase::SetSqFullTimeout).stubs().will(ignoreReturnValue());
     }
     void TearDown() override
     {
@@ -322,5 +323,29 @@ TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SdmaReduce_BFP16_When_Inited_Expect
     uint32_t reduceOpRaw = 1;   // PROD
 
     HcclResult ret = aicpuThread.SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
+    EXPECT_EQ(HCCL_SUCCESS, ret);
+}
+
+/**
+ * 测试 IAicpuTsThread SetSqFullTimeout 正常执行
+ * 验证：初始化后调用 SetSqFullTimeout 返回成功
+ */
+TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SetSqFullTimeout_When_Inited_Expect_Success)
+{
+    uint32_t timeout = 2000;
+
+    HcclResult ret = aicpuThread.SetSqFullTimeout(timeout);
+    EXPECT_EQ(HCCL_SUCCESS, ret);
+}
+
+/**
+ * 测试 IAicpuTsThread SetSqFullTimeout 设置超时为0
+ * 验证：timeout为0时仍然返回成功
+ */
+TEST_F(TestIAicpuTsThread, Ut_IAicpuTsThread_SetSqFullTimeout_When_TimeoutIsZero_Expect_Success)
+{
+    uint32_t timeout = 0;
+
+    HcclResult ret = aicpuThread.SetSqFullTimeout(timeout);
     EXPECT_EQ(HCCL_SUCCESS, ret);
 }

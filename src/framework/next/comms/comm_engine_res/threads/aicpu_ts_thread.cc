@@ -217,6 +217,11 @@ void AicpuTsThread::TryLaunchTask() const
     return;
 }
 
+HcclResult AicpuTsThread::SetSqFullTimeout(uint32_t timeout) const
+{
+    return pImpl_->SetSqFullTimeout(timeout);
+}
+
 // Local Data Plane Functions
 HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {

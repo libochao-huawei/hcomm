@@ -61,6 +61,26 @@ HcclResult LaunchContext::HandleDispatchAllStreams()
     return HCCL_SUCCESS;
 }
 
+HcclResult LaunchContext::GetThreadVec(std::vector<ThreadHandle>& threadVec)
+{
+    if (!threadVec_.empty()) {
+        HCCL_DEBUG("[%s] Get %zu threads from threadVec_.", __func__, threadVec_.size());
+        threadVec.insert(threadVec.end(), threadVec_.begin(), threadVec_.end());
+    }
+
+    auto it = launchModeMap_.find(launchTag_);
+    if (it != launchModeMap_.end()) {
+        const auto &threadSet = it->second;
+        if (!threadSet.empty()) {
+            HCCL_DEBUG("[%s] Get %zu threads from launchModeMap_[%s].", __func__, threadSet.size(), launchTag_.c_str());
+            threadVec.insert(threadVec.end(), threadSet.begin(), threadSet.end());
+        }
+    }
+
+    HCCL_INFO("[%s] Total %zu threads collected.", __func__, threadVec.size());
+    return HCCL_SUCCESS;
+}
+
 HcclResult LaunchContext::HandleClear()
 {
     threadVec_.clear();
@@ -77,6 +97,24 @@ HcclResult LaunchContext::HandleClear()
         return HCCL_SUCCESS;
     }
     return HcclTaskClear(launchTag_);
+}
+
+HcclResult LaunchContext::SetNotifyWaitTimeOut(uint32_t timeout)
+{
+    notifyWaitTimeoutConfig_.notifyWaitTimeout = timeout;
+    notifyWaitTimeoutConfig_.isSet = true;
+    return HCCL_SUCCESS;
+}
+
+HcclResult LaunchContext::GetNotifyWaitTimeOut(uint32_t& timeout)
+{
+    timeout = notifyWaitTimeoutConfig_.notifyWaitTimeout;
+#ifndef CCL_KERNEL_AICPU
+    if (!notifyWaitTimeoutConfig_.isSet) {
+        timeout = timeout + 50;
+    }
+#endif
+    return HCCL_SUCCESS;
 }
 
 /*

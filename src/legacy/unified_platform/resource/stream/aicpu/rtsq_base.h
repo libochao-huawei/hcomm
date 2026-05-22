@@ -27,6 +27,9 @@ void __attribute__((weak)) __attribute__((visibility("default"))) GetSqeId(const
 }
 
 namespace Hccl {
+
+constexpr u32 RTSQ_FULL_TIMEOUT_DEFAULT = 1820;
+
 class RtsqBase {
 public:
     RtsqBase(u32 devPhyId, u32 streamId, u32 sqId);
@@ -210,6 +213,17 @@ public:
     virtual bool GetPreStreamSyncStatus()
     {
         return false;
+    }
+
+    virtual void SetSqFullTimeout(u32 timeout)
+    {
+        (void)timeout;
+        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+    }
+
+    virtual u32 GetSqFullTimeout() const
+    {
+        return RTSQ_FULL_TIMEOUT_DEFAULT;
     }
 
 protected:

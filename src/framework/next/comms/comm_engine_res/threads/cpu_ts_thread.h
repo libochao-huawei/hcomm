@@ -35,6 +35,7 @@ public:
     void *GetStreamLitePtr() const override;
     void LaunchTask() const override;
     void TryLaunchTask() const override;
+    HcclResult SetSqFullTimeout(uint32_t timeout) const override;
 
     // Local Data Plane Functions
     HcclResult LocalNotifyRecord(uint32_t notifyId) const override;

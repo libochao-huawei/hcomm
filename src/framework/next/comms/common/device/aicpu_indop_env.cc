@@ -19,20 +19,9 @@ void SetTaskExceptionEnable(bool taskExceptionEnable)
     HCCL_INFO("[%s] taskExceptionEnable[%d]", __func__, taskExceptionEnable);
 }
 
-void SetNotifyWaitTimeout(u32 notifyWaitTimeout)
-{
-    g_configEnv.notifyWaitTimeout = notifyWaitTimeout;
-    HCCL_INFO("[%s] taskExceptionEnable[%d]", __func__, notifyWaitTimeout);
-}
-
 const bool& GetTaskExceptionEnable()
 {
     return g_configEnv.taskExceptionEnable;
-}
-
-const u32& GetNotifyWaitTimeout()
-{
-    return g_configEnv.notifyWaitTimeout;
 }
 
 }  // namespace hcomm
