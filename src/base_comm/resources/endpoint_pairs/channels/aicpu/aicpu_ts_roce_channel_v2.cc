@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "../../../endpoints/endpoint.h"
+#include "endpoint.h"
 #include "aicpu_res_package_helper.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
