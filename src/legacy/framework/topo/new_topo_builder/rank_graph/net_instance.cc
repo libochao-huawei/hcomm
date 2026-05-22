@@ -276,10 +276,27 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
                       fabricId, srcToFabricLinks.size(), fabricToDstLinks.size());
             for (auto& srcLink : srcToFabricLinks) {
                 for (auto& dstLink : fabricToDstLinks) {
-                    CheckPortGroupSize(netLayer, srcLink, dstLink);
-                    NetInstance::Path path;
-                    path.links = {srcLink, dstLink};
-                    paths.emplace_back(path);
+                    auto srcConnIface = srcLink.GetSourceIface();
+                    auto targetConnIface = dstLink.GetTargetIface();
+                    if (srcConnIface->GetPorts().size() == 1 && targetConnIface->GetPorts().size() == 1) {
+                        // 如果port匹配才会创建path
+                        auto srcPorts = srcConnIface->GetPorts();
+                        auto tgtPorts = targetConnIface->GetPorts();
+                        std::string srcPort = *srcPorts.begin();
+                        std::string tgtPort = *tgtPorts.begin();
+                        HCCL_INFO("[InnerNetInstance::GetPaths] DEBUG: srcPort[%s], tgtPort[%s]",
+                                  srcPort.c_str(), tgtPort.c_str());
+                        if (srcPort == tgtPort) {
+                            NetInstance::Path path;
+                            path.links = {srcLink, dstLink};
+                            paths.emplace_back(path);
+                        }
+                    } else {
+                        CheckPortGroupSize(netLayer, srcLink, dstLink);
+                        NetInstance::Path path;
+                        path.links = {srcLink, dstLink};
+                        paths.emplace_back(path);
+                    }
                 }
             }
         } else {
