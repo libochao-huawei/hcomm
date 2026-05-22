@@ -15,7 +15,7 @@
 #include <vector>
 #include <shared_mutex>
 
-#include "../../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
 #include "op_mode.h"
 #include "binary_stream.h"
 #include "ccu_conn.h"

@@ -12,7 +12,7 @@
 #include "endpoint_mgr.h"
 #include "log.h"
 #include "hccl/hccl_res.h"
-#include "reged_mems/urma_mem.h"
+#include "urma_mem.h"
 #include "adapter_rts_common.h"
 #include "server_socket_manager.h"
  
