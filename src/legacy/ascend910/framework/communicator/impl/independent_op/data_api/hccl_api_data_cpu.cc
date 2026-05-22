@@ -46,6 +46,11 @@ bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
     return checkDataType && checkReduceType;
 }
 
+int32_t HcommSetNotifyWaitTimeOut(uint32_t timeOut)
+{
+    return g_threadLaunchCtx.SetNotifyWaitTimeOut(timeOut);
+}
+
 int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len);
@@ -876,5 +881,25 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
     CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommThreadNotifyWaitOnThreadWithDefaultTimeout(ThreadHandle thread, uint32_t notifyIdx)
+{
+    HCCL_INFO("[%s] data cpu START. thread[0x%llx], notifyIdx[%u].", __func__, thread, notifyIdx);
+
+    uint32_t notifyWaitTimeout;
+    g_threadLaunchCtx.GetNotifyWaitTimeOut(notifyWaitTimeout);
+
+    HCCL_DEBUG("[%s] data cpu Using default timeout: %u s", __func__, notifyWaitTimeout);
+
+    int32_t ret = HcommThreadNotifyWaitOnThread(thread, notifyIdx, notifyWaitTimeout);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] data cpu HcommThreadNotifyWaitOnThread FAILED. thread[0x%llx], notifyIdx[%u], ret[%d]",
+            __func__, thread, notifyIdx, ret);
+        return ret;
+    }
+
+    HCCL_INFO("[%s] data cpu SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
