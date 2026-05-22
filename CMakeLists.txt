@@ -120,7 +120,7 @@ elseif(BUILD_OPEN_PROJECT)
     find_cann_package(tsdclient MODULE REQUIRED)
     find_cann_package(unified_dlog MODULE REQUIRED)
     # 检查构建依赖
-    check_pkg_build_deps("hcomm")
+    check_cann_pkg_build_deps("hcomm")
     add_version_info_targets()
     # 配置打包
     pack_built_in()

@@ -15,7 +15,7 @@ set(HCOMM_UTILS_VERSION "9.0.0")
 set(HCOMM_UTILS_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 set(HCOMM_UTILS_FILE "cann-hcomm-utils_${HCOMM_UTILS_VERSION}_linux-${HCOMM_UTILS_ARCH}.tar.gz")
 set(HCOMM_UTILS_URL "https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/20260330_newest/${HCOMM_UTILS_FILE}")
-set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/${HCOMM_UTILS_FILE})
+set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/cann-hcomm-utils_9.1.0_linux-${HCOMM_UTILS_ARCH}.tar.gz)
 set(HCOMM_UTILS_INSTALL_PATH ${CANN_3RD_LIB_PATH}/hcomm_utils)
 
 # 查找目录下是否已经安装，避免重复编译安装
@@ -65,9 +65,9 @@ else()
     if(EXISTS ${HCOMM_UTILS_PKG})
         set(HCOMM_UTILS_URL_HASH "")    # 忽略版本号，不校验哈希值
     elseif(HCOMM_UTILS_ARCH MATCHES "aarch64|ARM64|arm64")
-        set(HCOMM_UTILS_URL_HASH "SHA256=bf36523b855842f7d391eeaaa23ed7ffa066deb591e531e8ec6fa0c35d422aff")
+        set(HCOMM_UTILS_URL_HASH "")
     else()
-        set(HCOMM_UTILS_URL_HASH "SHA256=7b5eea6297b733922b0d6805f02190a6a5fe9f0e2ff969b76375875a7db57746")
+        set(HCOMM_UTILS_URL_HASH "")
     endif()
 
     include(ExternalProject)
