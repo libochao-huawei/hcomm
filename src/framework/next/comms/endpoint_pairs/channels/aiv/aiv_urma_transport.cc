@@ -428,12 +428,12 @@ HcclResult AivUrmaTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum
         tagPointers_.clear();
         tagPointers_.reserve(userMemCount);
         for (uint32_t i = 0; i < userMemCount; ++i) {
-            auto& rmtBuffer = rmtBufferVec_[i];
-            CHK_PTR_NULL(rmtBuffer);
-            remoteUserMems_[i].type = rmtBuffer->GetMemType();
-            remoteUserMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-            remoteUserMems_[i].size = rmtBuffer->GetSize();
-            std::string tagCopy = rmtBuffer->GetMemTag();
+            auto& aivUbRmtBuffer = rmtBufferVec_[i];
+            CHK_PTR_NULL(aivUbRmtBuffer);
+            remoteUserMems_[i].type = aivUbRmtBuffer->GetMemType();
+            remoteUserMems_[i].addr = reinterpret_cast<void *>(aivUbRmtBuffer->GetAddr());
+            remoteUserMems_[i].size = aivUbRmtBuffer->GetSize();
+            std::string tagCopy = aivUbRmtBuffer->GetMemTag();
             tagCopies_.push_back(std::move(tagCopy));
             tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
         }
