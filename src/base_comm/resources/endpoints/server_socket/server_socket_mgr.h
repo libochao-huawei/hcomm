@@ -16,7 +16,7 @@
 
 #include "hccl/hccl_res.h"
 #include "ip_address.h"
-#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
 
 namespace hcomm {
 
