@@ -69,9 +69,6 @@ TEST_F(UtAicpuTsHcommWriteOnThread, Ut_HcommWriteOnThread_When_BuildLocRmaBuffer
  	MOCKER_CPP_VIRTUAL(transportLitePtr, &Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
         .stubs()
         .will(returnValue(HCCL_E_INTERNAL));
-        .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(HCCL_E_INTERNAL));
 
     res = HcommWriteOnThread(thread, devHandle, dst, src, len);
     EXPECT_EQ(res, HCCL_E_INTERNAL);
