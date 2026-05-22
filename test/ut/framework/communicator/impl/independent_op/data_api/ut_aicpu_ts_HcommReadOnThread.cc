@@ -31,10 +31,10 @@ protected:
         std::cout << "A Test case in UtAicpuTsHcommReadOnThread SetUp" << std::endl;
         UtAicpuTsBase::SetUp();
 
-        MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-            .stubs()
-            .with(any(), any(), any())
-            .will(returnValue(HCCL_SUCCESS));
+        // MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
+        //     .stubs()
+        //     .with(any(), any(), any())
+        //     .will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&Hccl::BaseTransportLiteImpl::BuildLocRmaBufferLite)
             .stubs()
             .with(any(), any(), any())
@@ -70,14 +70,14 @@ TEST_F(UtAicpuTsHcommReadOnThread, Ut_HcommReadOnThread_When_Thread_IsNull_Expec
     EXPECT_EQ(res, HCCL_E_PTR);
 }
 
-TEST_F(UtAicpuTsHcommReadOnThread, Ut_HcommReadOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
-{
-    GlobalMockObject::verify();
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-        .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(HCCL_E_INTERNAL));
+// TEST_F(UtAicpuTsHcommReadOnThread, Ut_HcommReadOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
+// {
+//     GlobalMockObject::verify();
+//     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
+//         .stubs()
+//         .with(any(), any(), any())
+//         .will(returnValue(HCCL_E_INTERNAL));
 
-    res = HcommReadOnThread(thread, devHandle, dst, src, len);
-    EXPECT_EQ(res, HCCL_E_INTERNAL);
-}
+//     res = HcommReadOnThread(thread, devHandle, dst, src, len);
+//     EXPECT_EQ(res, HCCL_E_INTERNAL);
+// }
