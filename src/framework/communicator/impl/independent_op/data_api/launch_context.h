@@ -17,12 +17,17 @@
 #include <mutex>
 #include "hccl_api_data.h"
 
+constexpr uint32_t NOTIFY_WAIT_TIMEOUT_DEFAULT = 1800;
+
 class LaunchContext {
 public:
     LaunchContext() = default;
 
     HcclResult SetLaunchMode(const char* launchTag, HcommLaunchMode mode);
     void AddThread(ThreadHandle thread);
+    HcclResult SetNotifyWaitTimeOut(uint32_t timeout);
+    HcclResult GetNotifyWaitTimeOut(uint32_t& timeout);
+    HcclResult GetThreadVec(std::vector<ThreadHandle>& threadVec);
     inline bool IsBatchLaunchMode() const
     {
         return mode_ == HCOMM_LAUNCH_MODE_BATCH;
@@ -35,6 +40,12 @@ private:
     HcclResult HandleClear();
 
     std::string launchTag_; // 当前tag
+
+    struct NotifyWaitTimeoutConfig {
+        uint32_t notifyWaitTimeout = NOTIFY_WAIT_TIMEOUT_DEFAULT;
+        bool isSet = false;
+    } notifyWaitTimeoutConfig_;
+
     std::unordered_map<std::string, std::unordered_set<ThreadHandle>> launchModeMap_;
     HcommLaunchMode mode_ = HCOMM_LAUNCH_MODE_EAGER;
 };
