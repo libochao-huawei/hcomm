@@ -12,7 +12,7 @@
 #define ENDPOINT_MAP_H
  
 #include "hcomm_res_defs.h"
-#include "../endpoints/endpoint.h"
+#include "endpoint.h"
 
 #ifdef __cplusplus
 extern "C" {
