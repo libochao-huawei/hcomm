@@ -60,7 +60,7 @@
 #include "symmetric_memory/symmetric_memory.h"
 #include "my_rank.h"
 #include "hccl_dpu_manager.h"
-#include "../../../legacy/unified_platform/resource/buffer/dev_buffer.h"
+#include "../../../unified_platform/resource/buffer/dev_buffer.h"
 
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;

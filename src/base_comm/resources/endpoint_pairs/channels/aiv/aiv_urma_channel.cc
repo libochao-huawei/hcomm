@@ -9,7 +9,7 @@
  */
 
 #include "aiv_urma_channel.h"
-#include "../../../endpoints/endpoint.h"
+#include "endpoint.h"
 #include "orion_adpt_utils.h"
 #include "comm_mems.h"
 

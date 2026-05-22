@@ -73,8 +73,8 @@ target_include_directories(hccl_plf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/task
     ${CMAKE_CURRENT_SOURCE_DIR}/tbe_vector_reduce
     ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/network
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/
+    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network
 
     ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include/hccl/
