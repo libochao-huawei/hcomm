@@ -45,7 +45,7 @@
 #include "hccl_group.h"
 #include "hostdpu/dpu_kernel_entrance.h"
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-#include "../../next/comms/api_c_adpt/hcomm_c_adpt.h"
+#include "hcomm_c_adpt.h"
 #endif
 
 #define DOUBLE_SIZE 2
