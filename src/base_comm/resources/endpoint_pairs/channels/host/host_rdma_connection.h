@@ -16,7 +16,7 @@
 #include "exchange_rdma_conn_dto.h"
 
 // Orion
-#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
 #include "orion_adapter_hccp.h"
 
 namespace hcomm {

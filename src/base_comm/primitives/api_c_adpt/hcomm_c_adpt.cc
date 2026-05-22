@@ -19,7 +19,7 @@
 #include "hcomm_c_adpt.h"
 #include "hcom_common.h"
 #include "hcomm/hcomm_res_entity_defs.h"
-#include "../endpoints/endpoint.h"
+#include "endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
 #include "thread.h"
 #include "aicpu_ts_thread.h"

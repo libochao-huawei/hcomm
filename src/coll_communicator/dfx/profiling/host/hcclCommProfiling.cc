@@ -10,7 +10,7 @@
 #include "hcclCommProfiling.h"
 #include "profiling_reporter.h"
 #include "profiling_handler.h"
-#include "../../../../../legacy/framework/dfx/profiling/dlprof_function.h"
+#include "../../../../legacy/ascend950/framework/dfx/profiling/dlprof_function.h"
 namespace hccl {
 
 HcclResult HcclCommProfiling::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId) {
