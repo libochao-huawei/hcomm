@@ -27,9 +27,9 @@ std::unordered_map<ChannelHandle, ChannelHandle> channelD2HHandleMap_;
 
 HcclResult Channel::CreateChannel(
     EndpointHandle endpointHandle, CommEngine engine, 
-    HcommChannelDesc channelDesc, std::unique_ptr<Channel>& channelPtr)
+    HcommChannelDesc channelDesc, std::shared_ptr<Channel>& channelPtr)
 {
-std::unique_ptr<Channel> uniqueChannelPtr;
+    std::shared_ptr<Channel> uniqueChannelPtr;
     switch (engine) {
         case COMM_ENGINE_CPU:
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
