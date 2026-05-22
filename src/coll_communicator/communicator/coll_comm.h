@@ -22,7 +22,7 @@
 #include "hcclCommDfx.h"
 #include "rank_graph_v2.h"
 #include "error_message_v2.h"
-#include "../../../../legacy/include/hccl_communicator.h"
+#include "include/hccl_communicator.h"
 
 namespace hccl {
 /**
