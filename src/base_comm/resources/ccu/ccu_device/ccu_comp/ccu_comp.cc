@@ -12,7 +12,7 @@
 
 #include <random>
 
-#include "../../../../../legacy/common/sal.h"
+#include "../../../../../legacy/ascend950/common/sal.h"
 #include "hccl_common.h"
 #include "adapter_rts.h"
 #include "rdma_handle_manager.h"
