@@ -73,8 +73,25 @@ public:
 
     bool GetPreStreamSyncStatus() override;
 
+    void SetSqFullTimeout(u32 timeout) override
+    {
+        sqFullTimeoutConfig_.sqFullTimeout = timeout;
+        sqFullTimeoutConfig_.isSet = true;
+    }
+
+    u32 GetSqFullTimeout() const override
+    {
+        return sqFullTimeoutConfig_.sqFullTimeout;
+    }
+
 private:
     u32 pendingSqeCnt{0};
+
+    struct SqFullTimeoutConfig {
+        u32 sqFullTimeout = RTSQ_FULL_TIMEOUT_DEFAULT;
+        bool isSet = false;
+    };
+    SqFullTimeoutConfig sqFullTimeoutConfig_;
 
     bool isPreStreamSync = false;
 
@@ -84,9 +101,6 @@ private:
     static constexpr u32 perLaunchSqeCnt = 128; // 最大launch 128个SQE
 
     u8 locBuf[rtsqSqeSize * perLaunchSqeCnt]{0};
-
-    u32 rtsqFullTimeoutValue_{1836};
-    std::chrono::duration<u64> rtsqFullTimeout_;
 
     u8 *GetCurrSqeBuffer();
 

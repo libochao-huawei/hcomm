@@ -119,6 +119,22 @@ HcclResult IAicpuTsThread::NotifyRecordLoc(uint32_t notifyId) const
     return HCCL_SUCCESS;
 }
 
+HcclResult IAicpuTsThread::SetSqFullTimeout(uint32_t timeout) const
+{
+    HCCL_INFO("[IAicpuTsThread::%s] at Stream id [%u], timeout [%u]", __func__,
+        static_cast<StreamLite *>(streamLiteVoidPtr_)->GetId(), timeout);
+    RtsqBase *rtsqA5 = static_cast<StreamLite *>(streamLiteVoidPtr_)->GetRtsq();
+    if (rtsqA5 == nullptr) {
+        HCCL_ERROR("[IAicpuTsThread::%s] rtsqA5 is null", __func__);
+        return HCCL_E_PTR;
+    } else {
+        rtsqA5->SetSqFullTimeout(timeout);
+        HCCL_INFO("[IAicpuTsThread::%s] SetSqFullTimeout to %u for stream [%u]", __func__, timeout, static_cast<StreamLite *>(streamLiteVoidPtr_)->GetId());
+    }
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult IAicpuTsThread::SdmaCopy(uint64_t dstAddr, uint64_t srcAddr, uint64_t sizeByte) const
 {
     // SDMA单个任务最大支持4GB的数据量，超过4GB需要分多次提交
