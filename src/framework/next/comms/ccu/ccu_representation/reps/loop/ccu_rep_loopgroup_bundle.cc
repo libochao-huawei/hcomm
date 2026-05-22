@@ -69,7 +69,7 @@ bool CcuRepLoopGroupBundle::Translate(CcuInstr *&instr, uint16_t &instrId, const
     // 1. Assign loopParam for each loop
     for (const auto &loop : loops_) {
         if (!loop.isVarBased) {
-            uint64_t lpImm = GetLoopParam(loop.executorId, loop.config.addrOffset, loop.config.loopIterNum);
+            uint64_t lpImm = GetLoopParam(loop.executorId, loop.config.addrOffset, loop.config.iterNum);
             LoadImdToXnInstr(instr++, loop.loopParamVar.Id(), lpImm);
             instrId++;
         } else {
@@ -83,11 +83,11 @@ bool CcuRepLoopGroupBundle::Translate(CcuInstr *&instr, uint16_t &instrId, const
 
     // 2-3. Assign parallelParam & offsetParam (skip var-based group — registers already set)
     if (!isGroupVarBased_) {
-        uint64_t parallelImm = GetParallelParam(config_.repeatNum, repeatLoopIdx_, totalLoopNum_);
+        uint64_t parallelImm = GetParallelParam(config_.cloneNum, repeatLoopIdx_, totalLoopNum_);
         LoadImdToXnInstr(instr++, parallelVar_.Id(), parallelImm);
         instrId++;
 
-        uint64_t offsetImm = GetOffsetParam(config_.addrOffset, config_.bufferOffset, config_.eventOffset);
+        uint64_t offsetImm = GetOffsetParam(config_.addrOffset, config_.ccuBufferOffset, config_.eventOffset);
         LoadImdToXnInstr(instr++, offsetVar_.Id(), offsetImm);
         instrId++;
     }
