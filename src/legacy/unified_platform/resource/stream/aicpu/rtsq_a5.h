@@ -72,8 +72,25 @@ public:
 
     bool GetPreStreamSyncStatus() override;
 
+    void SetSqFullTimeout(u32 timeout) override
+    {
+        sqFullTimeoutConfig_.sqFullTimeout = timeout;
+        sqFullTimeoutConfig_.isSet = true;
+    }
+
+    u32 GetSqFullTimeout() const override
+    {
+        return sqFullTimeoutConfig_.sqFullTimeout;
+    }
+
 private:
     u32 pendingSqeCnt{0};
+
+    struct SqFullTimeoutConfig {
+        u32 sqFullTimeout = RTSQ_FULL_TIMEOUT_DEFAULT;
+        bool isSet = false;
+    };
+    SqFullTimeoutConfig sqFullTimeoutConfig_;
 
     bool isPreStreamSync = false;
 
