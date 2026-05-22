@@ -19,8 +19,8 @@
 #include "infiniband/verbs.h"
 
 // Orion
-#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "../../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
+#include "../../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
+#include "../../../../../../legacy/ascend950/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "host_rdma_connection.h"
 #include "task_param.h"

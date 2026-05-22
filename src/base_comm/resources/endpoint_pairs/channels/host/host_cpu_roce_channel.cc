@@ -25,9 +25,9 @@
 #include "exchange_rdma_conn_dto.h"
 #include "sal.h"
 #include "adapter_hccp.h"
-#include "../../../../../legacy/common/binary_stream.h"
-#include "../../../../../platform/resource/notify/notify_pool_impl.h"
-#include "../../../../../platform/hccp/inc/network/hccp_common.h"
+#include "../../../../../legacy/ascend910/common/binary_stream.h"
+#include "../../../../../legacy/ascend910/platform/resource/notify/notify_pool_impl.h"
+#include "../../../../../base_comm/resources/hccp/inc/network/hccp_common.h"
 #include "dlprof_function.h"
 
 namespace hcomm {

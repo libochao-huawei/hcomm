@@ -24,8 +24,8 @@
 #include "dfx/endpoint_monitor.h"
 // orion ccu单例
 #include "ccu_component.h"
-#include "../../../legacy/unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
-#include "../../../legacy/unified_platform/ccu/ccu_context/ccu_context_mgr_imp.h"
+#include "../../../legacy/ascend950/unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
+#include "../../../legacy/ascend950/unified_platform/ccu/ccu_context/ccu_context_mgr_imp.h"
 // 开源开放 ccu单例
 #include "hccp_tlv_hdc_mgr.h"
 #include "tp_mgr.h"
