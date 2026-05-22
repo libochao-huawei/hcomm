@@ -484,7 +484,6 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
         HCCL_ERROR("[RankTable]load ranktable failed, file is empty");
         return HCCL_E_PARA;
     }
-    aclError ret = 0;
     s32 deviceLogicId = 0;
     aclrtGetDevice(&deviceLogicId);
     HcomRecordRankTableJsonCrc(deviceLogicId, rankTableM);
