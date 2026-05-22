@@ -20,14 +20,14 @@
 #include "comm_mems/comm_mems.h"
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
-#include "communicator/ns_recovery/ns_recovery.h"
+#include "ns_recovery.h"
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
 #include "coll_comm_config_consistency.h"
 #include "exchange_info_mgr.h"
 
-#include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
+#include "ccu_res_container.h"
 
 
 namespace hccl {
