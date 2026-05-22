@@ -237,6 +237,10 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
     }
     NodeId srcPeerId = peers.at(srcRankId)->GetNodeId();
     NodeId dstPeerId = peers.at(dstRankId)->GetNodeId();
+    
+    HCCL_INFO("[InnerNetInstance::GetPaths] DEBUG: fabrics.size()[%zu], srcRankId[%u], dstRankId[%u], srcPeerId[%lu], dstPeerId[%lu]", 
+              fabrics.size(), srcRankId, dstRankId, srcPeerId, dstPeerId);
+    
     // 1. 获取边
     vGraph.TraverseEdge(srcPeerId, dstPeerId, [&](shared_ptr<NetInstance::Link> edge) {
         NetInstance::Path path;
@@ -268,6 +272,8 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         });
 
         if (!srcToFabricLinks.empty() && !fabricToDstLinks.empty()) {
+            HCCL_INFO("[InnerNetInstance::GetPaths] DEBUG: fabricId[%lu] srcToFabricLinks.size[%zu] fabricToDstLinks.size[%zu]",
+                      fabricId, srcToFabricLinks.size(), fabricToDstLinks.size());
             for (auto& srcLink : srcToFabricLinks) {
                 for (auto& dstLink : fabricToDstLinks) {
                     CheckPortGroupSize(netLayer, srcLink, dstLink);
@@ -279,10 +285,12 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         } else {
             HCCL_WARNING("[NetInstance::GetPaths] netLayer[%u], srcRankId[%u], dstRankId[%u], netInstId[%s], "
                          "from src[%s] to dst[%s] link via fabric[%s] not found.", netLayer, srcRankId, dstRankId,
-                         netInstId.c_str(), peers.at(srcRankId)->Describe().c_str(),
-                         peers.at(dstRankId)->Describe().c_str(), fabric->Describe().c_str());
+                          netInstId.c_str(), peers.at(srcRankId)->Describe().c_str(),
+                          peers.at(dstRankId)->Describe().c_str(), fabric->Describe().c_str());
         }
     }
+    
+    HCCL_INFO("[InnerNetInstance::GetPaths] DEBUG: final paths.size()[%zu]", paths.size());
 
     return paths;
 }
@@ -302,6 +310,10 @@ vector<NetInstance::Path> ClosNetInstance::GetPaths(const RankId srcRankId, cons
     }
     NodeId srcPeerId = peers.at(srcRankId)->GetNodeId();
     NodeId dstPeerId = peers.at(dstRankId)->GetNodeId();
+    
+    HCCL_INFO("[ClosNetInstance::GetPaths] DEBUG: fabrics.size()[%zu], srcRankId[%u], dstRankId[%u], srcPeerId[%lu], dstPeerId[%lu]",
+              fabrics.size(), srcRankId, dstRankId, srcPeerId, dstPeerId);
+    
     for (auto &fabric : fabrics) {
         NodeId fabricId = fabric->GetNodeId();
 
@@ -328,6 +340,8 @@ vector<NetInstance::Path> ClosNetInstance::GetPaths(const RankId srcRankId, cons
                        fabric->Describe().c_str());
         }
     }
+    
+    HCCL_INFO("[ClosNetInstance::GetPaths] DEBUG: paths.size()[%zu]", paths.size());
 
     return paths;
 }
