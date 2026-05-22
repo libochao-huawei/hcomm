@@ -16,7 +16,7 @@
 #include "socket_manager.h"
 #include "hccl_one_sided_data.h"
 #include "rma_buffer_mgr.h"
-#include "../../../../legacy/unified_platform/pub_inc/rma_buffer_mgr.h"
+#include "../../../unified_platform/pub_inc/rma_buffer_mgr.h"
 #include "exchange_ub_buffer_dto.h"
 #include "local_ub_rma_buffer.h"
 #include "remote_rma_buffer.h"

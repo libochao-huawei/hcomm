@@ -14,10 +14,10 @@
 #include <memory>
 #include <vector>
 #include "channels/channel.h"
-#include "../endpoints/endpoint.h"
+#include "endpoint.h"
 #include "socket_mgr.h"
-#include "../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "../../../../legacy/framework/resource_manager/socket/socket_manager.h"
+#include "../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
+#include "../../../../legacy/ascend950/framework/resource_manager/socket/socket_manager.h"
 
 using EndpointDescPair = std::pair<EndpointDesc, EndpointDesc>;
 
