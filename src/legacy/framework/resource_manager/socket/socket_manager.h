@@ -79,6 +79,7 @@ public:
     SocketManager &operator=(const SocketManager &socketManager) = delete;
 
 private:
+    void PrepareLinkAndServerInit(const SocketConfig &socketConfig);
     void BatchServerInit(const vector<LinkData> &links);
     void BatchAddWhiteList(const vector<LinkData> &links);
     void BatchCreateConnectedSockets(const vector<LinkData> &links);

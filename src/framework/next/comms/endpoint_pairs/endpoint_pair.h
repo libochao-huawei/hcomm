@@ -103,6 +103,12 @@ public:
     const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& GetChannelHandles();
 
 private:
+    HcclResult EnsureSocketMgrCompat(const uint32_t myRank, const std::string &socketTag);
+    Hccl::SocketConfig BuildSocketConfig(const Hccl::LinkData &linkData, const std::string &socketTag);
+    HcclResult HandleHostSocketOrBuildLinkData(const uint32_t myRank, const uint32_t rmtRank,
+        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket,
+        uint32_t devicePhyId, uint32_t remoteDevicePhyId, Hccl::LinkData &linkData, bool &isHost);
+
     EndpointDesc localEndpointDesc_{};
     EndpointDesc remoteEndpointDesc_{};
     std::unique_ptr<Hccl::SocketManager> socketMgrCompat_;

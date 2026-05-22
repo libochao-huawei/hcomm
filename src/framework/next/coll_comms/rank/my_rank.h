@@ -71,6 +71,8 @@ public:
 
 private:
     using ReuseSocketIdxMap = std::unordered_map<RankPair*, std::unordered_map<hcomm::EndpointPair*, u32>>;
+    HcclResult GetEndpointPairFromChannel(const HcclChannelDesc &channelDesc, uint32_t channelIndex, uint32_t channelNum,
+        uint32_t &remoteRank, hcomm::EndpointPair* &endpointPair, RankPair* &rankPair);
     HcclResult BatchServerInitForChannels(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &socketTag, ReuseSocketIdxMap &reuseSocketIdxMap);
     HcclResult BatchGetSocketsForChannels(const HcclChannelDesc* channelDescs, uint32_t channelNum,
