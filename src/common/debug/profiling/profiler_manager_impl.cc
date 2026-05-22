@@ -173,14 +173,18 @@ void ProfilerManagerImpl::TaskAivProfiler(ProfilerType profilerType, HcclRtStrea
     }
 }
 
-void ProfilerManagerImpl::TaskProfiler(ProfilerType profilerType, HcclRtStream stream)
+void ProfilerManagerImpl::TaskProfiler(ProfilerType profilerType, HcclRtStream stream, const void *descBuf, size_t descBufLen)
 {
     if (!callbacks_.empty()) {
         for (auto &callback : callbacks_) {
             if (profilerType != ProfilerType::TASK_ALL && callback.first != profilerType) {
                 continue;
             }
-            callback.second(stream);
+            if (profilerType == ProfilerType::TASK_EXCEPTION) {
+                callback.second(stream, descBuf, descBufLen);
+            } else {
+                callback.second(stream);
+            }
         }
     }
 }
@@ -326,7 +330,7 @@ void ProfilerManagerImpl::HandleGraphLaunchTask(struct TaskPara *taskPara)
         }
         TaskProfiler(ProfilerType::TASK_PROFILING, taskPara->stream);
     }
-    TaskProfiler(ProfilerType::TASK_EXCEPTION, taskPara->stream);
+    TaskProfiler(ProfilerType::TASK_EXCEPTION, taskPara->stream, taskPara->graphLaunch.descBuf, taskPara->graphLaunch.descBufLen);
     TaskProfiler(ProfilerType::TASK_OVERFLOW, taskPara->stream);
 }
 } // namespace hccl
