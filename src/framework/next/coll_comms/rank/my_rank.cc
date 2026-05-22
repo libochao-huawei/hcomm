@@ -269,27 +269,32 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
     return HCCL_SUCCESS;
 }
 
+HcclResult MyRank::GetEndpointPairFromChannel(const HcclChannelDesc &channelDesc, uint32_t channelIndex, uint32_t channelNum,
+    uint32_t &remoteRank, hcomm::EndpointPair* &endpointPair, RankPair* &rankPair)
+{
+    remoteRank = channelDesc.remoteRank;
+    HCCL_INFO("[%s][%u/%u] remoteRank[%u] localProtocol[%d] remoteProtocol[%d]",
+        __func__, channelIndex + 1, channelNum, remoteRank, channelDesc.localEndpoint.protocol, channelDesc.remoteEndpoint.protocol);
+
+    const RankIdPair rankIdPair = std::make_pair(rankId_, remoteRank);
+    const EndpointDescPair endpointDescPair = std::make_pair(channelDesc.localEndpoint, channelDesc.remoteEndpoint);
+    CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
+    CHK_PTR_NULL(rankPair);
+    CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
+    CHK_PTR_NULL(endpointPair);
+    return HCCL_SUCCESS;
+}
+
 HcclResult MyRank::BatchServerInitForChannels(const HcclChannelDesc* channelDescs, uint32_t channelNum,
     const std::string &socketTag, ReuseSocketIdxMap &reuseSocketIdxMap)
 {
     // 批量获取socket，与server监听隔离开
     for (uint32_t i = 0; i < channelNum; ++i) {
-        const EndpointDesc &localEndpointDesc = channelDescs[i].localEndpoint;
-        const EndpointDesc &remoteEndpointDesc = channelDescs[i].remoteEndpoint;
-        const uint32_t remoteRank = channelDescs[i].remoteRank;
-
-        HCCL_INFO("[%s][%u/%u] remoteRank[%u] localProtocol[%d] remoteProtocol[%d]",
-            __func__, i + 1, channelNum, remoteRank, localEndpointDesc.protocol, remoteEndpointDesc.protocol);
-
         hcomm::EndpointPair* endpointPair = nullptr;
-        const RankIdPair rankIdPair = std::make_pair(rankId_, remoteRank);
-        const EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
         RankPair* rankPair = nullptr;
+        uint32_t remoteRank = 0;
 
-        CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
-        CHK_PTR_NULL(rankPair);
-        CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
-        CHK_PTR_NULL(endpointPair);
+        CHK_RET(GetEndpointPairFromChannel(channelDescs[i], i, channelNum, remoteRank, endpointPair, rankPair));
 
         if (reuseSocketIdxMap.find(rankPair) == reuseSocketIdxMap.end()) {
             std::unordered_map<hcomm::EndpointPair*, u32> endpointPair2Idx{};
@@ -308,7 +313,7 @@ HcclResult MyRank::BatchServerInitForChannels(const HcclChannelDesc* channelDesc
         auto ret = endpointPair->ServerInit(rankId_, remoteRank, socketTag, reuseIdx, devicePhyId, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] ServerInitFailed, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
-                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx),
+                __func__, i, remoteRank, channelDescs[i].localEndpoint.protocol, reuseIdx),
             ret);
 
         HCCL_INFO("[%s][%u/%u] server listen successfully, remoteRank[%u], reuseIdx[%u]",
@@ -322,23 +327,14 @@ HcclResult MyRank::BatchGetSocketsForChannels(const HcclChannelDesc* channelDesc
     ReuseSocketIdxMap &reuseSocketIdxMap)
 {
     for (uint32_t i = 0; i < channelNum; ++i) {
-        const EndpointDesc &localEndpointDesc = channelDescs[i].localEndpoint;
-        const EndpointDesc &remoteEndpointDesc = channelDescs[i].remoteEndpoint;
-        const uint32_t remoteRank = channelDescs[i].remoteRank;
-        HCCL_INFO("[%s][%u/%u] remoteRank[%u] localProtocol[%d] remoteProtocol[%d]",
-            __func__, i + 1, channelNum, remoteRank, localEndpointDesc.protocol, remoteEndpointDesc.protocol);
-
         hcomm::EndpointPair* endpointPair = nullptr;
-        const RankIdPair rankIdPair = std::make_pair(rankId_, remoteRank);
-        const EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
         RankPair* rankPair = nullptr;
-        CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
-        CHK_PTR_NULL(rankPair);
-        CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
-        CHK_PTR_NULL(endpointPair);
+        uint32_t remoteRank = 0;
+
+        CHK_RET(GetEndpointPairFromChannel(channelDescs[i], i, channelNum, remoteRank, endpointPair, rankPair));
 
         uint32_t listenPort = 0;
-        CHK_RET(QueryListenPort(rankId_, remoteRank, localEndpointDesc, remoteEndpointDesc, listenPort, hcommDescs[i]));
+        CHK_RET(QueryListenPort(rankId_, remoteRank, channelDescs[i].localEndpoint, channelDescs[i].remoteEndpoint, listenPort, hcommDescs[i]));
 
         u32& reuseIdx = reuseSocketIdxMap[rankPair][endpointPair];
         uint32_t devicePhyId;
@@ -348,10 +344,10 @@ HcclResult MyRank::BatchGetSocketsForChannels(const HcclChannelDesc* channelDesc
         HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", rankId_, devicePhyId);
         HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", remoteRank, remoteDevicePhyId);
         Hccl::Socket* socket = nullptr;
-        auto ret = endpointPair->GetConnectedSocket(rankId_, remoteRank, socketTag, reuseIdx, listenPort, socket, remoteRank, remoteDevicePhyId);
+        auto ret = endpointPair->GetConnectedSocket(rankId_, remoteRank, socketTag, reuseIdx, listenPort, socket, devicePhyId, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d], reuseIdx[%u], tag[%s]",
-                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx, socketTag.c_str()),
+                __func__, i, remoteRank, channelDescs[i].localEndpoint.protocol, reuseIdx, socketTag.c_str()),
             ret);
         CHK_PTR_NULL(socket);
 

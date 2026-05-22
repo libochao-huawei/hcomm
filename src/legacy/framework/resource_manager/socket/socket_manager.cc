@@ -26,11 +26,10 @@ namespace Hccl {
 
 static std::mutex socketLock;
 
-void SocketManager::ServerListen(const SocketConfig &socketConfig)
+void SocketManager::PrepareLinkAndServerInit(const SocketConfig &socketConfig)
 {
     LinkData link = socketConfig.link;
 
-    // 使用link管理P2PEnable，但是不应该放置在这里
     if (!Contain(availableLinks, link)) {
         if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
             std::vector<uint32_t> remoteDevices;
@@ -44,7 +43,6 @@ void SocketManager::ServerListen(const SocketConfig &socketConfig)
         availableLinks.insert({link});
     }
 
-    // 统一使用socketConfig管理socket复用
     if (GetConnectedSocket(socketConfig) == nullptr) {
         auto portData = link.GetLocalPort();
         SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
@@ -52,6 +50,11 @@ void SocketManager::ServerListen(const SocketConfig &socketConfig)
             ServerInit(portData);
         }
     }
+}
+
+void SocketManager::ServerListen(const SocketConfig &socketConfig)
+{
+    PrepareLinkAndServerInit(socketConfig);
 }
 
 void SocketManager::ConnectSockets(const SocketConfig &socketConfig)
@@ -95,29 +98,8 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 
 void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
 {
-    LinkData link = socketConfig.link;
-
-    // 使用link管理P2PEnable，但是不应该放置在这里
-    if (!Contain(availableLinks, link)) {
-        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
-            std::vector<uint32_t> remoteDevices;
-            remoteDevices.push_back(link.GetRemoteDeviceId());
-            auto ret = P2PEnableManager::GetInstance().WaitP2PEnabled(remoteDevices);
-            if (ret != HCCL_SUCCESS) {
-                THROW<TimeoutException>(
-                    StringFormat("WaitP2PEnabled failed, devicePhyId=%d", link.GetRemoteDeviceId()));
-            }
-        }
-        availableLinks.insert({link});
-    }
-
-    // 统一使用socketConfig管理socket复用
+    PrepareLinkAndServerInit(socketConfig);
     if (GetConnectedSocket(socketConfig) == nullptr) {
-        auto portData = link.GetLocalPort();
-        SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
-        if (role == SocketRole::SERVER) {
-            ServerInit(portData);
-        }
         AddWhiteList(socketConfig);
         CreateConnectedSocket(socketConfig);
     }
