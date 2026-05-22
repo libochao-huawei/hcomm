@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "../rank/my_rank.h"
+#include "my_rank.h"
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
 #include "config_log.h"
@@ -18,7 +18,7 @@
 
 #include "hcom_common.h"
 #include "ccu_kernel.h"
-#include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
+#include "ccu_kernel_mgr.h"
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
 #include "coll_comm_mgr.h"

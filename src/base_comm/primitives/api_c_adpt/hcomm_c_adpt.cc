@@ -18,7 +18,7 @@
 #include "log.h"
 #include "hcomm_c_adpt.h"
 #include "hcom_common.h"
-#include "../endpoints/endpoint.h"
+#include "endpoint.h"
 #include "thread.h"
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
@@ -39,7 +39,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-#include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
+#include "dfx/endpoint_monitor.h" // cmakelist加include
 
 
 namespace hcomm {

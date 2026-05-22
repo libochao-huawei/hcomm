@@ -16,7 +16,7 @@
 #include "reged_mem_mgr.h"
 #include "rma_buffer_mgr.h"
 #include "buffer_key.h"
-#include "../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
+#include "../../../../../legacy/ascend950/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "exchange_rdma_buffer_dto.h"
 #include "local_rdma_rma_buffer.h"

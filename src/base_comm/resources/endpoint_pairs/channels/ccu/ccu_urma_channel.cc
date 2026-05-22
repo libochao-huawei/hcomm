@@ -12,7 +12,7 @@
 
 #include "hcomm_adapter_hccp.h"
 
-#include "../../api_c_adpt/hcomm_c_adpt.h"
+#include "hcomm_c_adpt.h"
 
 #include "orion_adpt_utils.h"
 
