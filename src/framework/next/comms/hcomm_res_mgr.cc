@@ -71,9 +71,14 @@ HcommResMgr& HcommResMgr::GetInstance(const uint32_t devicePhyId)
     SocketProcess::GetInstance(devicePhyId);
 
     static HcommResMgr hcommResMgrs[MAX_MODULE_DEVICE_NUM + 1];
-    hcommResMgrs[devPhyId].devPhyId_ = devPhyId;
+    HcommResMgr &resMgr = hcommResMgrs[devPhyId];
 
-    return hcommResMgrs[devPhyId];
+    // TODO: 是否有baseCommRes_不为空的情况？如果有，是否需要检查devicePhyId一致性？目前先假设没有
+    if (resMgr.baseCommRes_ == nullptr) {
+        BaseCommResMgr& baseCommResMgr = BaseCommResMgr::GetInstance();
+    }
+
+    return resMgr;
 }
 
 HcommResMgr::HcommResMgr()
