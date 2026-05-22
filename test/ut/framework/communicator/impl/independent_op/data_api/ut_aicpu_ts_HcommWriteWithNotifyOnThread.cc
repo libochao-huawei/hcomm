@@ -56,41 +56,41 @@ protected:
 
 TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    // res = HcommWriteWithNotifyOnThread(thread, channel, dst, src, len, notifyIdx);
-    // EXPECT_EQ(res, HCCL_SUCCESS);
+    res = HcommWriteWithNotifyOnThread(thread, channel, dst, src, len, notifyIdx);
+    EXPECT_EQ(res, HCCL_SUCCESS);
 }
 
-// TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Thread_IsNull_Expect_ReturnIsHCCL_E_PTR)
-// {
-//     res = HcommWriteWithNotifyOnThread(0, channel, dst, src, len, notifyIdx);
-//     EXPECT_EQ(res, HCCL_E_PTR);
-// }
+TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Thread_IsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    res = HcommWriteWithNotifyOnThread(0, channel, dst, src, len, notifyIdx);
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
 
-// TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Channel_IsNull_Expect_ReturnIsHCCL_E_PTR)
-// {
-//     res = HcommWriteWithNotifyOnThread(thread, 0, dst, src, len, notifyIdx);
-//     EXPECT_EQ(res, HCCL_E_PTR);
-// }
+TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Channel_IsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    res = HcommWriteWithNotifyOnThread(thread, 0, dst, src, len, notifyIdx);
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
 
-// TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Dst_IsNull_Expect_ReturnIsHCCL_E_PTR)
-// {
-//     res = HcommWriteWithNotifyOnThread(thread, channel, nullptr, src, len, notifyIdx);
-//     EXPECT_EQ(res, HCCL_E_PTR);
-// }
+TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Dst_IsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    res = HcommWriteWithNotifyOnThread(thread, channel, nullptr, src, len, notifyIdx);
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
 
-// TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Src_IsNull_Expect_ReturnIsHCCL_E_PTR)
-// {
-//     res = HcommWriteWithNotifyOnThread(thread, channel, dst, nullptr, len, notifyIdx);
-//     EXPECT_EQ(res, HCCL_E_PTR);
-// }
+TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Src_IsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    res = HcommWriteWithNotifyOnThread(thread, channel, dst, nullptr, len, notifyIdx);
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
 
-// TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
-// {
-//     GlobalMockObject::verify();
-//     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-//         .stubs()
-//         .will(returnValue(HCCL_E_INTERNAL));
+TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
+{
+    GlobalMockObject::verify();
+    MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
+        .stubs()
+        .will(returnValue(HCCL_E_INTERNAL));
 
-//     res = HcommWriteWithNotifyOnThread(thread, channel, dst, src, len, notifyIdx);
-//     EXPECT_EQ(res, HCCL_E_INTERNAL);
-// }
+    res = HcommWriteWithNotifyOnThread(thread, channel, dst, src, len, notifyIdx);
+    EXPECT_EQ(res, HCCL_E_INTERNAL);
+}
