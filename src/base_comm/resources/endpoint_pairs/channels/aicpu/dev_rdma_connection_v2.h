@@ -19,7 +19,7 @@
 #include "hcomm/hcomm_res_entity_defs.h"
 
 // Orion
-#include "../../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
 #include "hccp_nda.h"
 
 namespace hcomm {
