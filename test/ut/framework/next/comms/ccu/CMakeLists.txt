@@ -19,6 +19,9 @@ set(src_to_test_list
     mocks/ccu_dev_mgr_mock.cc
     ut_CcuConn_test.cc
     ut_ccu_microcode.cc
+
+    ccu_kernel_impl/ccu_groupcopy_alg.cc
+    ccu_kernel_impl/ccu_groupcopy_kernel.cc
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
