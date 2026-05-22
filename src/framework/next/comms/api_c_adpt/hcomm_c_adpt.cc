@@ -164,7 +164,11 @@ HcommResult HcommResMgrInit(uint32_t devPhyId)
     // 内部流程触发各种单例声明，保证时序
     EXCEPTION_HANDLE_BEGIN
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
-        (void)HcommResMgr::GetInstance(devPhyId);
+        HcommResMgr &resMgr = HcommResMgr::GetInstance(devPhyId);
+        if (resMgr.baseCommRes_ == nullptr) {
+            HCCL_ERROR("[%s] GetBaseCommRes failed for devPhyId[%u]", __func__, devPhyId);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
         return HcclResult::HCCL_SUCCESS;
     }());
     EXCEPTION_HANDLE_END

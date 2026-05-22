@@ -12,6 +12,8 @@
 #define HCOMM_RES_MGR_H
 
 #include <cstdint>
+#include <mutex>
+#include "base_comm_res.h"
 
 namespace hcomm {
 
@@ -26,6 +28,8 @@ private:
     HcommResMgr &operator=(const HcommResMgr &that) = delete;
 
     uint32_t devPhyId_{0};
+    BaseCommRes* baseCommRes_{nullptr};
+    mutable std::mutex mutex_;
 };
 
 } // namespace hcomm
