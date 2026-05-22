@@ -26,7 +26,7 @@ void ReportOpCheckFailed(const std::string &paraName, const std::string &localPa
     }
     // 上报故障码EI0005
     RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
-                            std::vector<std::string>({opInfo, optag, paraName, localPara, remotePara}));
+                            std::vector<std::string>({"HCCL " + opInfo, optag, paraName, localPara, remotePara}));
     THROW<InvalidParamsException>(StringFormat(
         "[RankConsistentImpl][CompareFrame][%s]op information%s group%s %s check fail. "
         "local[%s], remote[%s]", __func__, opInfo.c_str(), optag.c_str(), paraName.c_str(), localPara.c_str(), remotePara.c_str()));
@@ -43,7 +43,7 @@ void ReportOpCheckFailed(const std::string &paraName, uint32_t localPara, uint32
     }
     // 上报故障码EI0005
     RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
-                            std::vector<std::string>({opInfo, optag, paraName, std::to_string(localPara), std::to_string(remotePara)}));
+                            std::vector<std::string>({"HCCL " + opInfo, optag, paraName, std::to_string(localPara), std::to_string(remotePara)}));
     THROW<InvalidParamsException>(StringFormat(
         "[RankConsistentImpl][CompareFrame][%s]op information%s group%s %s check fail. "
         "local[%u], remote[%u]", __func__, opInfo.c_str(), optag.c_str(), paraName.c_str(), localPara, remotePara));

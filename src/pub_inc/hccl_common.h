@@ -122,6 +122,14 @@ constexpr uint32_t HCCL_EXCHANGE_INFO_LEN = 4096;  // HCCL一致性校验交换�
     /* EI0004 */
     const std::string RANKTABLE_PARSE_ERROR_REASON =
         "The rankTable file path does not exist, the permission is insufficient, or the JSON format is incorrect.";
+    const std::string RANKTABLE_PATH_NOT_EXIST =
+        "The rankTable file path does not exist or the permission is insufficient.";
+    const std::string RANKTABLE_JSON_FORMAT_ERROR =
+        "The JSON format of the rankTable file is incorrect.";
+    const std::string RANKTABLE_PATH_INVALID =
+        "The rankTable file path is invalid.";
+    const std::string RANKTABLE_CONTENT_ERROR =
+        "Failed to parse the content of the rankTable file.";
     /* EI0006 */
     const std::string GET_SOCKET_TIMEOUT_REASON_CLOSE_DETECT =
         "Connection fault detection has been disabled. "\
