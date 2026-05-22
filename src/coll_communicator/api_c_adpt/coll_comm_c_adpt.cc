@@ -9,7 +9,7 @@
  */
 #include "coll_comm_c_adpt.h"
 #include "op_base.h"
-#include "../coll_comm_mgr.h"
+#include "coll_comm_mgr.h"
 #include <memory>
 
 using namespace hccl;

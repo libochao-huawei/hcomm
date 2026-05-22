@@ -22,7 +22,7 @@
 #include "../host/transport_ibverbs.h"
 
 // 混合模式（RoCE Cross-Mode）公共类型定义
-#include "../../../../framework/next/comms/endpoint_pairs/channels/host/exchange_data_format.h"
+#include "../../../../base_comm/resources/endpoint_pairs/channels/host/exchange_data_format.h"
 
 using namespace std;
 constexpr u32 RDMA_QP_EXPECT_STATUS_PAUSE = 5;

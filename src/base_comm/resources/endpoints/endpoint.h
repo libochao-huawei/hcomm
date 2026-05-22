@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "reged_mems/reged_mem_mgr.h"
+#include "reged_mem_mgr.h"
 #include "hcomm_c_adpt.h"
 #include "socket/socket.h"
 #include "socket_handle_manager.h"
