@@ -46,6 +46,7 @@ enum class HcommChannelKind : uint32_t {
     AIV_UB_MEM = 5U,
     AICPU_TS_UBOE = 6U,
     AICPU_TS_ROCE_V2 = 7U,
+    AIV_URMA = 8U,
 };
 
 /**
@@ -78,6 +79,7 @@ public:
 
     virtual HcommChannelKind GetChannelKind() const;
     virtual HcclResult Serialize(std::shared_ptr<hccl::DeviceMem> &out);
+    virtual void AddPtrArrayDevMem(std::shared_ptr<hccl::DeviceMem> ptrArrayMem);
     // ------------------ 数据面接口 ------------------
     virtual HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) = 0;
     virtual HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) = 0;
@@ -93,7 +95,13 @@ public:
     static HcclResult CreateChannel(EndpointHandle endpointHandle, 
                                     CommEngine engine, 
                                     HcommChannelDesc channelDesc,
-                                    std::unique_ptr<Channel>& out);
+                                    std::shared_ptr<Channel>& out);
+
+protected:
+    void ReleasePtrArrayDevMems();
+
+    HcommChannelKind channelKind_{HcommChannelKind::INVALID};
+    std::vector<std::shared_ptr<hccl::DeviceMem>> ptrArrayDevMems_{};
 };
 
 } // namespace hcomm
