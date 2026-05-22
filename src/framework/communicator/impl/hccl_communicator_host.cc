@@ -683,7 +683,7 @@ namespace hccl
         CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93,
                     HCCL_INFO("[%s] deviceType:%d not support symmetric memory", __func__, deviceType_), false);
         bool isHCCS = !GetExternalInputInterHccsDisable() && useSuperPodMode_;
-        CHK_PRT_RET(superPodNum_ == 1 && serverNum_ > 1 && GetExternalInputInterHccsDisable(),
+        CHK_PRT_RET(superPodNum_ == 1 && serverNum_ > 1 && !isHCCS,
                     HCCL_INFO("[%s] mutilSever use roce not support symmetric memory", __func__), false);
 
         // 判断拓扑逻辑是否支持symmetric memory
