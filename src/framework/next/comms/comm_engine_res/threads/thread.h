@@ -95,6 +95,7 @@ public:
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const = 0;
     virtual bool GetMaster() const = 0;
     virtual void SetIsMaster(bool isMaster) = 0;
+    virtual HcclResult SetSqFullTimeout(uint32_t timeout) const = 0;
 
     HcclResult AddThreadHandleToMap(CommEngine commEngine, ThreadHandle threadHandle);
     Thread *FindThreadByCommEngine(CommEngine commEngine);

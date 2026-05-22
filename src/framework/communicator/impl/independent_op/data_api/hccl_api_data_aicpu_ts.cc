@@ -370,6 +370,84 @@ inline HcclResult CheckDataTypeAndReduceOp(HcommDataType dataType, HcommReduceOp
 
 } // namespace
 
+// 设置notify wait的等待超时时间，默认单位为秒
+int32_t HcommSetNotifyWaitTimeOut(uint32_t timeout)
+{
+    HCCL_INFO("[%s] START. timeout[%u].", __func__, timeout);
+    return g_threadLaunchCtx.SetNotifyWaitTimeOut(timeout);
+}
+
+int32_t HcommThreadResAcquireTimeOut(uint32_t timeout)
+{
+    HCCL_INFO("[%s] START. timeout[%u].", __func__, timeout);
+
+    std::vector<ThreadHandle> threadVec;
+    g_threadLaunchCtx.GetThreadVec(threadVec);
+
+    HCCL_DEBUG("[%s] Found %zu threads to set timeout.", __func__, threadVec.size());
+
+    for (size_t i = 0; i < threadVec.size(); i++) {
+        ThreadHandle thread = threadVec[i];
+        Thread *threadPtr = reinterpret_cast<Thread *>(thread);
+        CHK_PTR_NULL(threadPtr);
+
+        if (!threadPtr->IsDeviceA5()) {
+            HCCL_ERROR("[%s] Thread[%lu] is not A5 device, skip.", __func__, i);
+            continue;
+        }
+        HCCL_DEBUG("[%s] set sqFullTimeout to %u in thread[0x%llx].", __func__, timeout, threadVec[i]);
+        HcclResult ret = threadPtr->SetSqFullTimeout(timeout);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] SetSqFullTimeout failed for thread[%lu], ret=%d", __func__, i, ret);
+            return ret;
+        }
+    }
+
+    HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommChannelNotifyWaitOnThreadWithDefaultTimeout(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u].",
+        __func__, thread, channel, localNotifyIdx);
+
+    uint32_t notifyWaitTimeout;
+    g_threadLaunchCtx.GetNotifyWaitTimeOut(notifyWaitTimeout);
+
+    HCCL_DEBUG("[%s] Using default timeout: %u ms", __func__, notifyWaitTimeout);
+
+    int32_t ret = HcommChannelNotifyWaitOnThread(thread, channel, localNotifyIdx, notifyWaitTimeout);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] FAILED. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], ret[%d]",
+            __func__, thread, channel, localNotifyIdx, ret);
+        return ret;
+    }
+
+    HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommThreadNotifyWaitOnThreadWithDefaultTimeout(ThreadHandle thread, uint32_t notifyIdx)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u].", __func__, thread, notifyIdx);
+
+    uint32_t notifyWaitTimeout;
+    g_threadLaunchCtx.GetNotifyWaitTimeOut(notifyWaitTimeout);
+
+    HCCL_DEBUG("[%s] Using default timeout: %u ms", __func__, notifyWaitTimeout);
+
+    int32_t ret = HcommThreadNotifyWaitOnThread(thread, notifyIdx, notifyWaitTimeout);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] FAILED. thread[0x%llx], notifyIdx[%u], ret[%d]",
+            __func__, thread, notifyIdx, ret);
+        return ret;
+    }
+
+    HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
+
 int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
