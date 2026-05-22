@@ -203,6 +203,12 @@ void CpuTsThread::TryLaunchTask() const
     return;
 }
 
+HcclResult CpuTsThread::SetSqFullTimeout(uint32_t timeout) const
+{
+    HCCL_DEBUG("[%s] CpuTsThread does not support SetSqFullTimeout, skip", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 // Local Data Plane Functions
 HcclResult CpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 {
