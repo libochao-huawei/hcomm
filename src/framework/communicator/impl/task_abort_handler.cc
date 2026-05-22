@@ -143,7 +143,7 @@ HcclResult TaskAbortHandler::Init(HcclCommunicator * communicator)
 HcclResult TaskAbortHandler::DeInit(HcclCommunicator * communicator)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    HCCL_INFO("TaskAbortHandler::DeInit commVector size is [%d], ref_ count is [%d]", commVector.size(), ref_.Count());
+    HCCL_ERROR("TEST TaskAbortHandler::DeInit commVector size is [%d], ref_ count is [%d]", commVector.size(), ref_.Count());
     for (auto it = commVector.begin(); it != commVector.end();) {
         if (*it == communicator) {
             it = commVector.erase(it);

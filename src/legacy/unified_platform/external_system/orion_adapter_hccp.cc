@@ -287,6 +287,9 @@ static void HRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
 {
     CHECK_NULLPTR(conn, "[HRaSocketBatchClose] conn is nullptr!");
     HCCL_INFO("[BatchClose][RaSocket] Input params: num=%u", num);
+    for (u32 i = 0; i < num; i++) {
+        HCCL_INFO("TEST Socket Close [%u] socketHandle=%p, fdHandle=%p", i, conn[i].socketHandle, conn[i].fdHandle);
+    }
     HCCL_INFO("ra socket batch close");
     s32  ret       = 0;
     auto startTime = std::chrono::steady_clock::now();

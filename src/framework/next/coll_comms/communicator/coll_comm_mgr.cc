@@ -45,10 +45,11 @@ void CollCommMgr::RegisteCollComm(CollComm* collComm)
 void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    HCCL_ERROR("TEST [CollCommMgr][UnRegisteCollComm] start to unregister collComm, commId[%s]", collComm->GetCommId().c_str());
     allCollComms_.erase(collComm->GetCommId());
     // 从通信域里面注销
-    HcclTaskAbortHandler::GetInstance().UnRegister(collComm);
     (void)GetClusterMonitor(collComm->GetDeviceLogicId()).UnRegisterToClusterMonitor(collComm);
+    HcclTaskAbortHandler::GetInstance().UnRegister(collComm);
 }
 
 std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()

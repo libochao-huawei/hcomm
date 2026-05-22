@@ -34,6 +34,7 @@ SocketProcess &SocketProcess::GetInstance(s32 deviceLogicId)
 SocketProcess::~SocketProcess()
 {
     unique_lock<std::mutex> lock(mutex_);
+    HCCL_ERROR("TEST [SocketProcess]~SocketProcess start");
     isInit_ = false;
     for (auto &socketItem : serverSocketMap_) {
         if (socketItem.second != nullptr) {
@@ -53,6 +54,7 @@ SocketProcess::~SocketProcess()
 
 HcclResult SocketProcess::DestroySocketHandle(SocketHandle socketHandle)
 {
+    HCCL_ERROR("TEST [%s] start to destroy socketHandle[%p] isInit_[%d]", __func__, socketHandle, isInit_.load());
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
     if (socket == nullptr) {
         HCCL_WARNING("[SocketProcess][%s] socket[%p] is nullptr, please check", __func__, static_cast<void *>(socket));
