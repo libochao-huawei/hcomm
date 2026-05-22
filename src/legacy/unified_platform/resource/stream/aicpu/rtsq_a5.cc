@@ -41,10 +41,6 @@ RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase
 {
     SetTaskIdBySqeId();
     launchFlag_ = launchFlag;
-#ifdef CCL_KERNEL_AICPU
-    rtsqFullTimeoutValue_ = hcomm::GetNotifyWaitTimeout() + 20; // rtsq full超时时间: X+20s
-#endif
-    rtsqFullTimeout_ = std::chrono::seconds(rtsqFullTimeoutValue_);
 }
 
 void RtsqA5::Reset()
@@ -71,10 +67,13 @@ u32 RtsqA5::GetTailToHeadDist() const
 void RtsqA5::MakeSureAvailableSpace()
 {
     u32  availableSpace = GetTailToHeadDist();
-    auto startTime = std::chrono::steady_clock::now();
-    auto lastPrintTime = startTime - RTSQ_FULL_PRINT_INTERVAL;
-    HCCL_INFO("[%s]sqId:%u, rtsqFullTimeoutValue: %u s, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
-        __func__, sqId_, rtsqFullTimeoutValue_, sqHead_, sqTail_, pendingSqeCnt);
+    auto startTime      = std::chrono::steady_clock::now();
+    u32  timeoutValue   = GetSqFullTimeout();
+    auto                       timeout = std::chrono::seconds(timeoutValue);
+    const std::chrono::seconds printInterval(PRINT_INTERVAL); // 打印间隔30s
+    auto                       lastPrintTime = std::chrono::steady_clock::now() - printInterval;
+   HCCL_INFO("[%s]sqId:%u, rtsqFullTimeoutValue: %u s, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
+        __func__, sqId_, timeoutValue, sqHead_, sqTail_, pendingSqeCnt);
 
     while (availableSpace <= pendingSqeCnt) {
         sqHead_        = QuerySqHead();
@@ -84,12 +83,12 @@ void RtsqA5::MakeSureAvailableSpace()
         }
 
         auto curTime = std::chrono::steady_clock::now();
-        if (UNLIKELY(curTime - lastPrintTime >= RTSQ_FULL_PRINT_INTERVAL)) {
+        if (UNLIKELY(curTime - lastPrintTime >= printInterval)) {
             HCCL_RUN_INFO("[%s]while loop, sqId:%u, sqHead:%u, sqTail:%u, availableSpace:%u, pendingSqeCnt:%u, "
                 "rtsqFullTimeoutValue:%u s", __func__, sqId_, sqHead_, sqTail_, availableSpace, pendingSqeCnt, rtsqFullTimeoutValue_);
             lastPrintTime = curTime;
         }
-        if (UNLIKELY((curTime - startTime) >= rtsqFullTimeout_)) { // timeout内还是不能向RTSQ中写入值，报错
+        if (UNLIKELY((curTime - startTime) >= timeout)) { // timeout内还是不能向RTSQ中写入值，报错
             auto msg = StringFormat("Rtsq full, rtsqFullTimeoutValue %u. sqId:%u, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
                 rtsqFullTimeoutValue_, sqId_, sqHead_, sqTail_, pendingSqeCnt);
             HCCL_ERROR("%s", msg.c_str());
