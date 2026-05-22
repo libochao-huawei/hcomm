@@ -23,6 +23,8 @@ void TcRsNdaQpCreateEx();
 void TcRsNdaUbAllocFailed();
 void TcRsNdaDbMmapHostVa();
 void TcRsNdaDbMmapUbRes();
+void TcRsNdaCqCreateFailed();
+void TcRsNdaCqCreate();
 #ifdef __cplusplus
 }
 #endif
