@@ -268,7 +268,7 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
     } else if (IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
         isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize()) ||
         (deviceType_ == DevType::DEV_TYPE_910_93 && param.aicpuUnfoldMode) || deviceType_ == DevType::DEV_TYPE_310P3) {
-        isHCCS = (serverNum_ == 1 || (serverNum_ != 1 && !GetExternalInputInterHccsDisable()));
+        bool isHCCS = (serverNum_ == 1 || (serverNum_ != 1 && !GetExternalInputInterHccsDisable()));
         if (param.supportSymmetricMemory && superPodNum_ == 1 && isHCCS) {
             algName = "RunAlltoAllFullMeshSymmetricMemory";
         } else {
