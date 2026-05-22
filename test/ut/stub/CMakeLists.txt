@@ -363,7 +363,10 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/service/collective
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator
     ${HCCL_CODE_ROOT}/src/legacy/interface
+
+    # ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
     #next
