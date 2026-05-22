@@ -50,10 +50,6 @@ extern uint64_t HcommGetProfilingSysCycleTime();
  */
 extern HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo);
 
-struct DevAicpuDfxConfig {
-    // 如要新增配置类字段，在此处添加
-};
-
 struct HcclDfxOpInfo {
     CommAbiHeader       header;
     //DfxOpInfo_base
@@ -78,8 +74,6 @@ struct HcclDfxOpInfo {
     uint64_t            inputMemSize = 0;
     uint64_t            outputMemAddr = 0;
     uint64_t            outputMemSize = 0;
-    // 算子DFX配置
-    DevAicpuDfxConfig   dfxConfig; // 收编dfx配置类变量
     int8_t              reserve[96]; // 预留扩展字段
 };
 

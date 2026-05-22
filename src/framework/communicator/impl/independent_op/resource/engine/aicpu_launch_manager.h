@@ -36,7 +36,6 @@ struct ThreadMgrAicpuParam {
     s32 deviceLogicId{-1}; // 基础通信使用
     u32 deviceType{0}; // 基础通信使用
     DevAicpuThreadConfig threadConfig; // 收编thread配置类变量
-    u32 rsv1;
 };
 
 struct DevAicpuNotifyConfig {
@@ -50,7 +49,6 @@ struct NotifyMgrAicpuParam {
     void* deviceHandle;
     bool freeFlag;
     DevAicpuNotifyConfig notifyConfig; // 收编notify配置类变量
-    u32 rsv1;
 };
 
 namespace hccl {
