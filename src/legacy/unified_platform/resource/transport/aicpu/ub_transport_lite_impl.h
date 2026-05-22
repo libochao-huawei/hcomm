@@ -11,6 +11,7 @@
 #define UB_MEM_TRANSPORT_LITE_H
 
 #include <vector>
+#include <map>
 #include <memory>
 #include <unordered_map>
 #include "base_transport_lite_impl.h"
@@ -25,8 +26,8 @@ namespace Hccl {
 
 class UbTransportLiteImpl : public BaseTransportLiteImpl {
 public:
-    explicit UbTransportLiteImpl(std::vector<char>                                                 &uniqueId,
-                                 std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback);
+    explicit UbTransportLiteImpl(std::vector<char> &uniqueId,
+        std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback);
 
     UbTransportLiteImpl(std::vector<char> &uniqueId);
     void Init(std::vector<char> &uniqueId);
@@ -50,36 +51,40 @@ public:
 
     void Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override;
 
-    void ReadReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                    const StreamLite &stream) override;
+    void ReadReduce(
+        const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn, const StreamLite &stream) override;
 
-    void WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                     const StreamLite &stream) override;
+    void WriteReduce(
+        const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn, const StreamLite &stream) override;
 
-    void WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify,
-                         const StreamLite &stream) override;
+    void WriteWithNotify(
+        const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify, const StreamLite &stream) override;
 
     void WriteReduceWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                               const WithNotifyIn &withNotify, const StreamLite &stream) override;
+        const WithNotifyIn &withNotify, const StreamLite &stream) override;
 
-    void BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite>  &rmt,
-        const StreamLite &stream) override;
+    void BatchOneSidedWrite(
+        const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt, const StreamLite &stream) override;
 
-    void BatchOneSidedRead(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite>  &rmt,
-        const StreamLite &stream) override;
-    
+    void BatchOneSidedRead(
+        const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt, const StreamLite &stream) override;
+
     void BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
-                        const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
+        const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
 
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
     HcclResult Fence();
 
     HcclResult Clean();
     HcclResult Resume(std::vector<char> &uniqueId);
-    void SetTaskExceptionEnable(bool flag) { taskExceptionEnable_ = flag; }
+    void SetTaskExceptionEnable(bool flag)
+    {
+        taskExceptionEnable_ = flag;
+    }
 
-    HcclResult ExecuteBatchTransfer(StreamLite *streamLitePtr, const HcommBatchTransferDesc *transferDescs,
-                        uint32_t transferDescNum);
+    HcclResult ExecuteBatchTransfer(
+        StreamLite *streamLitePtr, const HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum);
+
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
@@ -88,38 +93,38 @@ private:
     bool taskExceptionEnable_{true};
 
     struct RmtUbBufLite {
-        u64         addr;
-        u64         size;
-        u32         tokenId;
-        u32         tokenValue;
+        u64 addr;
+        u64 size;
+        u32 tokenId;
+        u32 tokenValue;
         std::string Describe() const
         {
             return StringFormat("RmtUbBufLite[addr=0x%llx, size=0x%llx]", addr, size);
         }
     };
 
-     struct LocUbBufLite {
-        u64         addr;
-        u64         size;
-        u32         tokenId;
-        u32         tokenValue;
+    struct LocUbBufLite {
+        u64 addr;
+        u64 size;
+        u32 tokenId;
+        u32 tokenValue;
         std::string Describe() const
         {
             return StringFormat("LocUbBufLite[addr=0x%llx, size=0x%llx]", addr, size);
         }
     };
 
-    std::vector<char>    wqeData; // connection返回的WQE内容
+    std::vector<char> wqeData;    // connection返回的WQE内容
     ConnLiteOperationOut connOut; // connection的输出
 
     void ClearConnOut();
 
     using RmtUbBufLiteVec = std::vector<RmtUbBufLite>;
-    using LocUbBufLiteVec = std::vector<LocUbBufLite>;
+    using LocUbBufLiteMap = std::map<uintptr_t, LocUbBufLite>;
     MAKE_ENUM(RmaUbBufType, NOTIFY, BUFFER)
     RmtUbBufLiteVec rmtNotifyVec;
     RmtUbBufLiteVec rmtBufferVec;
-    LocUbBufLiteVec locBufferVec;
+    LocUbBufLiteMap locBufferMap;
 
     RmtRmaBufSliceLite GetRmtNotifySliceLite(u32 index);
     RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const Buffer &rmtBuf);
@@ -135,17 +140,16 @@ private:
 
     std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback_{nullptr};
 
-    void ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream, DmaOp dmaOp,
-                            u32 taskId);
+    void ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream, DmaOp dmaOp, u32 taskId);
 
-    void ReduceProfilingProcess(void *src, void *dst, u64 size, const ReduceIn &reduceIn,
-                                      const StreamLite &stream, u32 taskId);
+    void ReduceProfilingProcess(
+        void *src, void *dst, u64 size, const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId);
 
     void ParseLocNotifyVec(std::vector<char> &data);
 
     void ParseRmtBufferVec(std::vector<char> &data, RmtUbBufLiteVec &vec, RmaUbBufType rmtType) const;
- 
-    void ParseLocBufferVec(std::vector<char> &data, LocUbBufLiteVec &vec, RmaUbBufType rmtType) const;
+
+    void ParseLocBufferVec(std::vector<char> &data, LocUbBufLiteMap &map, RmaUbBufType rmtType) const;
 
     void ParseConnVec(std::vector<char> &data);
 

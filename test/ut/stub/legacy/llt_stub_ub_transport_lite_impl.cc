@@ -43,7 +43,8 @@ void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmtUbBufLit
 {
 }
 
-void UbTransportLiteImpl::ParseLocBufferVec(std::vector<char> &data, LocUbBufLiteVec &vec, RmaUbBufType rmtType) const
+void UbTransportLiteImpl::ParseLocBufferVec(
+    std::vector<char> &data, LocUbBufLiteMap &bufMap, RmaUbBufType rmtType) const
 {
 }
 
@@ -78,10 +79,11 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtB
 
 RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const RmaBufferLite &lite) const
 {
-    return RmtRmaBufSliceLite(lite.GetAddr(), lite.GetSize(), 0, lite.GetTokenId() , lite.GetTokenValue());
+    return RmtRmaBufSliceLite(lite.GetAddr(), lite.GetSize(), 0, lite.GetTokenId(), lite.GetTokenValue());
 }
 
-HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite)
+HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(
+    const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite)
 {
     return HCCL_SUCCESS;
 }
@@ -113,8 +115,8 @@ void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u
 {
 }
 
-void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream,
-                                           DmaOp dmaOp, u32 taskId)
+void UbTransportLiteImpl::ProfilingProcess(
+    void *src, void *dst, u64 size, const StreamLite &stream, DmaOp dmaOp, u32 taskId)
 {
 }
 
@@ -126,18 +128,18 @@ void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, con
 {
 }
 
-void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                                     const StreamLite &stream)
+void UbTransportLiteImpl::ReadReduce(
+    const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn, const StreamLite &stream)
 {
 }
 
-void UbTransportLiteImpl::ReduceProfilingProcess(void *src, void *dst, u64 size,
-                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
+void UbTransportLiteImpl::ReduceProfilingProcess(
+    void *src, void *dst, u64 size, const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
 }
 
-void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                                      const StreamLite &stream)
+void UbTransportLiteImpl::WriteReduce(
+    const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn, const StreamLite &stream)
 {
 }
 
@@ -146,27 +148,26 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
 {
 }
 
-void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify,
-                                          const StreamLite &stream)
+void UbTransportLiteImpl::WriteWithNotify(
+    const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify, const StreamLite &stream)
 {
 }
 
 void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                                                const WithNotifyIn &withNotify, const StreamLite &stream)
+    const WithNotifyIn &withNotify, const StreamLite &stream)
 {
 }
 
-void UbTransportLiteImpl::BatchOneSidedRead(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
-        const StreamLite &stream)
+void UbTransportLiteImpl::BatchOneSidedRead(
+    const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt, const StreamLite &stream)
 {
 }
 
-void UbTransportLiteImpl::BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
-        const StreamLite &stream)
+void UbTransportLiteImpl::BatchOneSidedWrite(
+    const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt, const StreamLite &stream)
 {
 }
 
- 
 Eid UbTransportLiteImpl::GetLocEid() const
 {
     Eid eid{};
