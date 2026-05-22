@@ -477,6 +477,7 @@ TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_Invalid_Expect_Throw)
 TEST_F(EnvConfigTest, Ut_CastHcclAccelerator_When_ConfigVaild_ExpectSuccess)
 {
     EXPECT_EQ(CastHcclAccelerator("AI_CPU"), HcclAccelerator::AICPU_TS);
+    EXPECT_EQ(CastHcclAccelerator("AICPU_TS"), HcclAccelerator::AICPU_TS);
     EXPECT_EQ(CastHcclAccelerator("AIV"), HcclAccelerator::AIV);
     EXPECT_EQ(CastHcclAccelerator("CCU_MS"), HcclAccelerator::CCU_MS);
     EXPECT_EQ(CastHcclAccelerator("CCU_SCHED"), HcclAccelerator::CCU_SCHED);
