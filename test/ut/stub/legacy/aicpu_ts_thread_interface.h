@@ -70,6 +70,11 @@ public:
         return 0;
     }
 
+    HcclResult SetSqFullTimeout(uint32_t timeout) const
+    {
+        return HCCL_SUCCESS;
+    }
+
 private:
     void *streamLiteVoidPtr_ = nullptr;
 };
