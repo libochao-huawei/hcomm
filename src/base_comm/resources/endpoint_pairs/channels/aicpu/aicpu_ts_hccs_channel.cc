@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aicpu_ts_hccs_channel.h"
-#include "../../../endpoints/endpoint.h"
+#include "endpoint.h"
 #include "../../../endpoints/aicputs_hccs_endpoint.h"
 #include "../../../endpoints/net_dev/global_net_dev_manager.h"
 #include "channel_param.h"

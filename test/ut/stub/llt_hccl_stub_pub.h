@@ -39,7 +39,7 @@
 #ifndef __LLT_HCCL_STUB_PUB_H__
 #define __LLT_HCCL_STUB_PUB_H__
 
-#include "../../../src/platform/common/sal.h" //include private .h files
+#include "../../../src/legacy/ascend910/platform/common/sal.h" //include private .h files
 #include "topoinfo_struct.h"
 #include "llt_hccl_stub_sal_pub.h"
 #include "llt_hccl_stub_fp16.h"

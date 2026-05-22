@@ -15,10 +15,10 @@
 
 #include "hccl/base.h"
 // ltm路径指定
-#include "../../hccp/inc/network/hccp.h"
+#include "network/hccp.h"
 #include "hccl_common.h"
 #include "workflow_pub.h"
-#include "../../hccp/inc/network/hccp_tlv.h"
+#include "network/hccp_tlv.h"
 #include "adapter_hccp_common.h"
 
 constexpr u64 SOCKET_SEND_MAX_SIZE = 0x7FFFFFFFFFFFFFFF;
@@ -70,7 +70,7 @@ using QpConfig = struct QpConfigDef {
     hccl::HcclIpAddress peerIp;
     u32 maxWr;
     u32 maxSendSge;
-    u32 maxRecvSge;
+    u32 maxRecvSge; 
     s32 sqEvent;
     s32 rqEvent;
 
