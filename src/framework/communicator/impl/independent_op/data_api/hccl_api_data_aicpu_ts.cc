@@ -370,6 +370,31 @@ inline HcclResult CheckDataTypeAndReduceOp(HcommDataType dataType, HcommReduceOp
 
 } // namespace
 
+// 设置notify wait的等待超时时间，默认单位为秒
+int32_t HcommSetNotifyWaitTimeOut(uint32_t timeout)
+{
+    return g_threadLaunchCtx.SetNotifyWaitTimeOut(timeout);
+}
+
+int32_t HcommThreadResAcquireTimeOut(uint32_t timeout)
+{
+    return g_threadLaunchCtx.SetSqFullTimeOut(timeout);
+}
+
+int32_t HcommChannelNotifyWaitOnThreadWithDefaultTimeout(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx)
+{
+    uint32_t notifyWaitTimeout;
+    g_threadLaunchCtx.GetNotifyWaitTimeOut(notifyWaitTimeout);
+    return HcommChannelNotifyWaitOnThread(thread, channel, localNotifyIdx, notifyWaitTimeout);
+}
+
+int32_t HcommThreadNotifyWaitOnThreadWithDefaultTimeout(ThreadHandle thread, uint32_t notifyIdx)
+{
+    uint32_t notifyWaitTimeout;
+    g_threadLaunchCtx.GetNotifyWaitTimeOut(notifyWaitTimeout);
+    return HcommThreadNotifyWaitOnThread(thread, notifyIdx, notifyWaitTimeout);
+}
+
 int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",

@@ -63,8 +63,10 @@ void RtsqA5::MakeSureAvailableSpace()
 {
     u32  availableSpace = GetTailToHeadDist();
     auto startTime      = std::chrono::steady_clock::now();
-    auto timeoutValue
-        = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout + 20; // rtsq full超时时间: X+20s
+    u32  timeoutValue   = 1820;
+#ifdef CCL_KERNEL_AICPU
+    timeoutValue   = g_threadLaunchCtx.GetSqFullTimeout() + 20; // rtsq full超时时间: X+20s
+#endif
     auto                       timeout = std::chrono::seconds(timeoutValue);
     const std::chrono::seconds printInterval(PRINT_INTERVAL); // 打印间隔30s
     auto                       lastPrintTime = std::chrono::steady_clock::now() - printInterval;

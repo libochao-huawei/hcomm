@@ -98,6 +98,37 @@ HcclResult LaunchContext::HandleClear()
     return HcclTaskClear(launchTag_);
 }
 
+HcclResult LaunchContext::SetNotifyWaitTimeOut(uint32_t timeout)
+{
+    notifyWaitTimeoutConfig_.notifyWaitTimeout = timeout;
+    notifyWaitTimeoutConfig_.isSet = true;
+    return HCCL_SUCCESS;
+}
+
+HcclResult LaunchContext::SetSqFullTimeOut(uint32_t timeout)
+{
+    sqFullTimeoutConfig_.sqFullTimeout = timeout;
+    sqFullTimeoutConfig_.isSet = true;
+    return HCCL_SUCCESS;
+}
+
+HcclResult LaunchContext::GetNotifyWaitTimeOut(uint32_t& timeout)
+{
+    timeout = notifyWaitTimeoutConfig_.notifyWaitTimeout;
+#ifndef CCL_KERNEL_AICPU
+    if (!notifyWaitTimeoutConfig_.isSet) {
+        timeout = timeout + 50;
+    }
+#endif
+    return HCCL_SUCCESS;
+}
+
+HcclResult LaunchContext::GetSqFullTimeOut(uint32_t& timeout)
+{
+    timeout = sqFullTimeoutConfig_.sqFullTimeout;
+    return HCCL_SUCCESS;
+}
+
 /*
     1 AICPU_TS模式
     AICPU上执行
