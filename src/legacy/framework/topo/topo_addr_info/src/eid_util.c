@@ -150,6 +150,19 @@ int UrmaEidIsUBOE(const dcmi_urma_eid_t *eid)
     return 0;
 }
 
+int UrmaEidIsUBG(const dcmi_urma_eid_t *eid)
+{
+    const unsigned char bitMask = 0xC0;
+    const unsigned char ubgFlag = 0x80;
+    const int flagPos = 7; // UBOE标志位的位置
+    unsigned char flag = eid->raw[flagPos];
+    int bit = (flag & bitMask);
+    if (bit == ubgFlag) {
+        return 1;
+    }
+    return 0;
+}
+
 int UrmaEid2CNA(const dcmi_urma_eid_t *eid, char *cna, size_t cnaSize)
 {
     if (cna == NULL || cnaSize == 0) {
