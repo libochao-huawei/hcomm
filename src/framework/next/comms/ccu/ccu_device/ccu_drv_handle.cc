@@ -14,7 +14,6 @@
 
 #include "hccp_tlv.h"
 #include "hccp_tlv_hdc_mgr.h"
-#include "ccu_kernel_mgr.h"
 
 /* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
  * 暂时改用legacy数据结构，避免反向依赖
@@ -110,7 +109,7 @@ CcuResult CcuDrvHandle::Init()
      * CCU_CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());
      * CCU_CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
      */
-    CCU_CHK_RET(CcuInstanceMgr::GetInstance(devLogicId_).Init());
+    CCU_CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
 
     return CcuResult::CCU_SUCCESS;
 }
