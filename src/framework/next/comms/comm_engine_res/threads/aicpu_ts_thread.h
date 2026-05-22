@@ -46,6 +46,7 @@ public:
 
     void LaunchTask() const override;
     void TryLaunchTask() const override;
+    HcclResult SetSqFullTimeout(uint32_t timeout) override;
 
     // Local Data Plane Functions
     HcclResult LocalNotifyWait(uint32_t notifyId) const override;
