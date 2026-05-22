@@ -148,6 +148,10 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = CommConfig();
+        commName_ = identifier_;
+        if (commConfig_.GetConfigGroupName() != "") {
+            commName_ = commConfig_.GetConfigGroupName();
+        }
         dpuManager_.reset(new (std::nothrow) DpuManager());
         if (dpuManager_ == nullptr) {
             HCCL_ERROR("new DpuManager failed!");
@@ -185,6 +189,10 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = commConfig;
+        commName_ = identifier_;
+        if (commConfig_.GetConfigGroupName() != "") {
+            commName_ = commConfig_.GetConfigGroupName();
+        } 
         dpuManager_.reset(new (std::nothrow) DpuManager());
         if (dpuManager_ == nullptr) {
             HCCL_ERROR("new DpuManager failed!");

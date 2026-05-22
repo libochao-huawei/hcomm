@@ -121,6 +121,32 @@ HcclResult EndpointPair::HandleHostSocketOrBuildLinkData(const uint32_t myRank, 
     return HCCL_SUCCESS;
 }
 
+HcclResult EndpointPair::GetSocketInternal(const uint32_t myRank, const uint32_t rmtRank,
+    const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket,
+    uint32_t devicePhyId, uint32_t remoteDevicePhyId, bool connectMode)
+{
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    bool isHost = false;
+    CHK_RET(HandleHostSocketOrBuildLinkData(myRank, rmtRank, socketTag, reuseIdx, listenPort, socket,
+        devicePhyId, remoteDevicePhyId, linkData, isHost));
+    if (isHost) {
+        return HCCL_SUCCESS;
+    }
+    EXCEPTION_HANDLE_BEGIN
+    Hccl::SocketConfig socketConfig = BuildSocketConfig(linkData, socketTag);
+    if (connectMode) {
+        CHK_PTR_NULL(socketMgrCompat_);
+        socketMgrCompat_->ConnectSockets(socketConfig);
+    } else {
+        CHK_RET(EnsureSocketMgrCompat(myRank, socketTag));
+        socketMgrCompat_->BatchCreateSockets(socketConfig);
+    }
+    socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
+    CHK_PTR_NULL(socket);
+    EXCEPTION_HANDLE_END
+    return HCCL_SUCCESS;
+}
+
 HcclResult EndpointPair::ServerInit(const uint32_t myRank, const uint32_t rmtRank,
     const std::string &socketTag, u32 reuseIdx, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
@@ -142,50 +168,16 @@ HcclResult EndpointPair::GetConnectedSocket(const uint32_t myRank, const uint32_
     const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
     // 该接口内进行建链和获取socket
-    Hccl::LinkData linkData = BuildDefaultLinkData();
-    bool isHost = false;
-    CHK_RET(HandleHostSocketOrBuildLinkData(myRank, rmtRank, socketTag, reuseIdx, listenPort, socket,
-        devicePhyId, remoteDevicePhyId, linkData, isHost));
-    if (isHost) {
-        return HCCL_SUCCESS;
-    }
-    EXCEPTION_HANDLE_BEGIN
-    // server监听已经获取了，所以不需要再次创建
-    CHK_PTR_NULL(socketMgrCompat_);
-
-    Hccl::SocketConfig socketConfig = BuildSocketConfig(linkData, socketTag);
-    // socket 建链添加白名单和其他客户端连接部分
-    socketMgrCompat_->ConnectSockets(socketConfig); // 内部同时处理server端和connect端两类socket
-    socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
-    CHK_PTR_NULL(socket);
-    EXCEPTION_HANDLE_END
-    return HCCL_SUCCESS;
+    return GetSocketInternal(myRank, rmtRank, socketTag, reuseIdx, listenPort, socket,
+        devicePhyId, remoteDevicePhyId, true);
 }
 
 HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank,
     const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
     // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
-    Hccl::LinkData linkData = BuildDefaultLinkData();
-    bool isHost = false;
-    CHK_RET(HandleHostSocketOrBuildLinkData(myRank, rmtRank, socketTag, reuseIdx, listenPort, socket,
-        devicePhyId, remoteDevicePhyId, linkData, isHost));
-    if (isHost) {
-        return HCCL_SUCCESS;
-    }
-
-    // 复用orion流程可能抛异常
-    EXCEPTION_HANDLE_BEGIN
-    CHK_RET(EnsureSocketMgrCompat(myRank, socketTag));
-
-    Hccl::SocketConfig socketConfig = BuildSocketConfig(linkData, socketTag);
-
-    socketMgrCompat_->BatchCreateSockets(socketConfig); // 内部同时处理server端和connect端两类socket
-    socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
-    CHK_PTR_NULL(socket);
-    EXCEPTION_HANDLE_END
-
-    return HCCL_SUCCESS;
+    return GetSocketInternal(myRank, rmtRank, socketTag, reuseIdx, listenPort, socket,
+        devicePhyId, remoteDevicePhyId, false);
 }
 
 HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,

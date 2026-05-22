@@ -27,6 +27,7 @@ TransportManager::TransportManager(CCLBufferManager &cclBufferManager,
                                    const std::vector<RankInfo> &rankInfoList,
                                    RankId userRank,
                                    const std::string &identifier,
+                                   const std::string &commName,
                                    s32 deviceLogicId,
                                    NICDeployment nicDeployment,
                                    bool isHaveCpuRank,
@@ -42,7 +43,7 @@ TransportManager::TransportManager(CCLBufferManager &cclBufferManager,
                                    const HcclIpAddress &localVnicIp,
                                    std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxMap)
     : cclBufferManager_(cclBufferManager), socketManager_(socketManager), dispatcher_(dispatcher),
-    notifyPool_(notifyPool), rankInfoList_(rankInfoList), userRank_(userRank), identifier_(identifier),
+    notifyPool_(notifyPool), rankInfoList_(rankInfoList), userRank_(userRank), identifier_(identifier), commName_(commName),
     deviceLogicId_(deviceLogicId), nicDeployment_(nicDeployment), isHaveCpuRank_(isHaveCpuRank),
     transportResourceInfoAddr_(transportResourceInfoAddr), transportResourceInfoSize_(transportResourceInfoSize),
     isUseRankPort_(isUseRankPort), isUsedRdmaLevel0_(isUsedRdmaLevel0), nicRanksPort_(nicRanksPort),
@@ -990,7 +991,7 @@ bool TransportManager::IsHccsTransport(u32 remoteRank, TransportLinkType linkTyp
 HcclResult TransportManager::ConstructTransTag(const std::string& tag, std::string& transTag, bool isInterRdma,
     u32 subCommIndex, bool isHccs)
 {
-    transTag = (Is310PDevice() || isHaveCpuRank_) ? tag : identifier_ + "_res_optimize_" + std::to_string(subCommIndex);
+    transTag = (Is310PDevice() || isHaveCpuRank_) ? tag : commName_ + "_res_optimize_" + std::to_string(subCommIndex);
     if (isInterRdma) {
         transTag += "_Inter_";
     } else {
@@ -1089,10 +1090,10 @@ HcclResult TransportManager::GetTransNewTag(const std::string &tag, std::string 
 {
     if (mode) {
         if (userRank_ < remoteRank) {
-            newTag = identifier_ + "_" + std::to_string(userRank_) + "_" + std::to_string(remoteRank) + "_" +
+            newTag = commName_ + "_" + std::to_string(userRank_) + "_" + std::to_string(remoteRank) + "_" +
                 devIpAddr_[0].GetReadableIP() + "_" + remoteLink.ip.GetReadableIP();
         } else {
-            newTag = identifier_ + "_" + std::to_string(remoteRank) + "_" + std::to_string(userRank_) + "_" +
+            newTag = commName_ + "_" + std::to_string(remoteRank) + "_" + std::to_string(userRank_) + "_" +
                 remoteLink.ip.GetReadableIP() + "_" + devIpAddr_[0].GetReadableIP();
         }
     } else {

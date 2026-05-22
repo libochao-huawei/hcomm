@@ -30,6 +30,8 @@ extern int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRd
 extern int RsNdaQpCreateEx(struct RsQpCb *qpCb, struct ibv_qp_init_attr_extend *qpInitAttrEx, struct NdaQpInfo *info);
 extern int RsGetNdaPcieDbCb(struct RsNdaCb *ndaCb, uint64_t hva, struct NdaPcieDbCb **ndaDbCb);
 extern int RsGetNdaUbDbCb(struct RsNdaCb *ndaCb, uint64_t guidL, uint64_t guidH, struct NdaUbDbCb **ndaDbCb);
+extern int RsNdaCqCreateEx(struct RsRdevCb *rdevCb, struct ibv_cq_init_attr_extend *cqInitAttrEx,
+    struct NdaCqInfo *info, void **ibvCqExt);
 
 int RsQueryRdevCbNdaStub(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb)
 {
@@ -366,4 +368,84 @@ void TcRsNdaDbMmapUbRes()
 
     free(gRsCb);
     gRsCb = NULL;
+}
+
+void TcRsNdaCqCreateFailed()
+{
+    struct NdaCqInitAttr attr = {0};
+    struct NdaCqInfo info = {0};
+    unsigned int rdevIndex = 0;
+    unsigned int phyId = 0;
+    void *ibvCqExt = NULL;
+    int ret = 0;
+
+    struct RsNdaCb ndaCb = {0};
+    struct NdaOps ops = {0};
+
+    gRsCb = malloc(sizeof(struct rs_cb));
+    attr.ops = &ops;
+    gRsCb->ndaCb = &ndaCb;
+
+    ret = RsNdaCqCreate(phyId, rdevIndex, NULL, NULL, &ibvCqExt);
+    EXPECT_INT_EQ(ret, -EINVAL);
+
+    attr.dmaMode = QBUF_DMA_MODE_MAX;
+    ret = RsNdaCqCreate(phyId, rdevIndex, &attr, &info, &ibvCqExt);
+    EXPECT_INT_EQ(ret, -EINVAL);
+
+    attr.dmaMode = QBUF_DMA_MODE_INDEP_UB;
+    mocker_clean();
+    mocker(RsQueryRdevCb, 1, -1);
+    ret = RsNdaCqCreate(phyId, rdevIndex, &attr, &info, &ibvCqExt);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+
+    mocker_invoke(RsQueryRdevCb, RsQueryRdevCbNdaStub, 1);
+    mocker(RsNdaCqCreateEx, 1, -1);
+    ret = RsNdaCqCreate(phyId, rdevIndex, &attr, &info, &ibvCqExt);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+    free(gRsCb);
+    gRsCb = NULL;
+}
+
+void TcRsNdaCqCreate()
+{
+    struct NdaCqInitAttr attr = {0};
+    struct RsInitConfig cfg = {0};
+    struct NdaCqInfo info = {0};
+    struct rdev rdevInfo = {0};
+    unsigned int rdevIndex = 0;
+    unsigned int phyId = 0;
+    void *ibvCqExt = NULL;
+    int ret = 0;
+
+    struct NdaOps ops = {0};
+
+    rdevInfo.phyId = 0;
+    rdevInfo.family = AF_INET;
+    rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+
+    rs_nda_ut_msg("resource prepare begin..................\n");
+    /* +++++Resource Prepare+++++ */
+    cfg.chipId = 0;
+    cfg.hccpMode = NETWORK_OFFLINE;
+    ret = RsInit(&cfg);
+    EXPECT_INT_EQ(ret, 0);
+
+    ret = RsRdevInit(rdevInfo, NO_USE, &rdevIndex);
+    EXPECT_INT_EQ(ret, 0);
+
+    attr.ops = &ops;
+    ret = RsNdaCqCreate(phyId, rdevIndex, &attr, &info, &ibvCqExt);
+    EXPECT_INT_EQ(ret, 0);
+
+    ret = RsNdaCqDestroy(phyId, rdevIndex, ibvCqExt);
+    EXPECT_INT_EQ(ret, 0);
+
+    ret = RsRdevDeinit(phyId, NO_USE, rdevIndex);
+    EXPECT_INT_EQ(ret, 0);
+
+    ret = RsDeinit(&cfg);
+    EXPECT_INT_EQ(ret, 0);
 }

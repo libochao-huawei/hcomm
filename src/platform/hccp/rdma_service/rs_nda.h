@@ -17,8 +17,6 @@
 #include "rs_list.h"
 #include "rs.h"
 
-#define RS_VENDOR_ID_19E5 0x19E5
-
 struct RsNdaPcieCb {
     struct ibv_extend_ops ibvExOps;
     struct RsListHead ndaDbList;
@@ -72,11 +70,6 @@ struct NdaUbResMapPrivInfo {
     unsigned int db_num;
     unsigned int resv[8];
 };
-
-static inline int RsNdaGetDirectFlagByVendorId(uint32_t vendorId)
-{
-    return (vendorId == RS_VENDOR_ID_19E5) ? DIRECT_FLAG_UB : DIRECT_FLAG_PCIE;
-}
 
 static inline unsigned int RsNdaGenerateResId(uint32_t dbIdx, uint16_t guidIdx)
 {

@@ -340,7 +340,7 @@ namespace hccl
         std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
         transportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
             cclBufferManager_, socketManager_, dispatcher_, notifyPool_,
-            rankInfoList_, userRank_, identifier_,
+            rankInfoList_, userRank_, identifier_, commName_,
             deviceLogicId_, nicDeployment_, isHaveCpuRank_,
             static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
             isUseRankPort_, isUsedRdmaLevel0_, nicRanksPorts, vnicRanksPorts, useSuperPodMode_,
@@ -353,7 +353,7 @@ namespace hccl
         CHK_PTR_NULL(ctx);
         indptOpTransportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
             cclBufferManager_, socketManager_, ctx->GetDispatcher(), notifyPool_,
-            rankInfoList_, userRank_, identifier_,
+            rankInfoList_, userRank_, identifier_, commName_,
             deviceLogicId_, nicDeployment_, isHaveCpuRank_,
             static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
             isUseRankPort_, isUsedRdmaLevel0_, nicRanksPorts, vnicRanksPorts, useSuperPodMode_,

@@ -45,6 +45,9 @@ target_link_options(ccl_dpu PRIVATE
 
 # 链接库
 target_link_libraries(ccl_dpu
+    $<BUILD_INTERFACE:atrace_headers>
+    $<BUILD_INTERFACE:runtime_headers>
+    $<BUILD_INTERFACE:slog_headers>
     -Wl,--no-as-needed
     c_sec
     mmpa
@@ -72,19 +75,6 @@ target_include_directories(ccl_dpu PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/unified_platform/external_system
     ${CMAKE_CURRENT_SOURCE_DIR}/framework/dfx
 )
-
-if(BUILD_OPEN_PROJECT)
-    target_include_directories(ccl_dpu PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/include
-        ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
-    )
-endif()
 
 # 指定 ccl_dpu 构建完成后安装到指定的目标位置
 install(TARGETS ccl_dpu
