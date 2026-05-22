@@ -16,7 +16,7 @@
 #include <string>
 #include <unordered_map>
 #include "config_log.h"
-#include "../../../legacy/unified_platform/resource/buffer/dev_buffer.h"
+#include "../../../unified_platform/resource/buffer/dev_buffer.h"
 
 namespace hccl {
 

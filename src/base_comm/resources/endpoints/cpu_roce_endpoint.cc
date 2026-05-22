@@ -12,7 +12,7 @@
 #include "cpu_roce_endpoint.h"
 #include "hccl/hccl_res.h"
 #include "log.h"
-#include "reged_mems/roce_mem.h"
+#include "roce_mem.h"
 #include "host_socket_handle_manager.h"
 #include "adapter_rts_common.h"
 #include "hccp_peer_manager.h"
