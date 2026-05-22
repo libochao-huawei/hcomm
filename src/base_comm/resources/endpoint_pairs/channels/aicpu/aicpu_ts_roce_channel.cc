@@ -21,9 +21,9 @@
 #include <securec.h>
 #include "hcomm_c_adpt.h"
 #include "log.h"
-#include "../../../endpoints/endpoint.h"
+#include "endpoint.h"
 #include "../../../endpoints/aicpu_ts_roce_endpoint.h"
-#include "../../../endpoints/reged_mems/aicpu_ts_roce_mem.h"
+#include "aicpu_ts_roce_mem.h"
 #include "adapter_rts_common.h"
 #include "channel_param.h"
 #include "dispatcher_ctx.h"

@@ -9,7 +9,7 @@
  */
 
 #include "aicpu_ts_urma_channel.h"
-#include "../../../endpoints/endpoint.h"
+#include "endpoint.h"
 #include "orion_adpt_utils.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
