@@ -16,6 +16,7 @@ set(src_to_test_list
     ut_ccu_microcode.cc
     ./ccu_representation/interface/ut_ccu_interface_assist.cc
     ./ccu_device/ut_ccu_res_batch_allocator.cc
+    ./ccu_device/ccu_comp/ccu_channel/ccu_pfe/ccu_pfe_cfg_mgr.cc
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
@@ -23,6 +24,7 @@ add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
 #头文件搜索路径
 target_include_directories(hccl_utest_comms_ccu_features PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${HCOMM_DIR}/pkg_inc/hcomm/ccu
 )
 
 target_compile_definitions(hccl_utest_comms_ccu_features PRIVATE
