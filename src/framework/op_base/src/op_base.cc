@@ -1252,6 +1252,7 @@ HcclResult SubCommIsOneSidedComm(HcclComm *comm)
 HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *rankIds,
     uint64_t subCommId, uint32_t subCommRankId, HcclCommConfig *config, HcclComm *subComm)
 {
+    HCCL_INFO("lrh~~~~~~~~~~~~~~HcclCreateSubCommConfig");
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
@@ -1286,17 +1287,17 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
-            HCCL_INFO("~~~~~~~~~~~~~~begin");
+            HCCL_INFO("lrh~~~~~~~~~~~~~~begin");
             CheckCcuMc2CompatMode();
-            HCCL_INFO("~~~~~~~~~~~~~~0");
+            HCCL_INFO("lrh~~~~~~~~~~~~~~0");
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(*comm);
             CHK_PTR_NULL(hcclComm);
             
-            HCCL_INFO("~~~~~~~~~~~~~~1");
+            HCCL_INFO("lrh~~~~~~~~~~~~~~1");
             std::string parentIdentifier = hcclComm->GetIdentifier();
             HCCL_INFO("~~~~~~~~~~~~~~2");
             CHK_RET(RankConsistencyCheckerV2::GetInstance().RecordSubCommParaV2(parentIdentifier, rankNum, rankIds, subCommId));
-            HCCL_INFO("~~~~~~~~~~~~~~4");
+            HCCL_INFO("lrh~~~~~~~~~~~~~~4");
             void* commV2 = hcclComm->GetCommunicatorV2();
             CHK_PTR_NULL(commV2);
             void* subCommV2 = nullptr;
