@@ -140,7 +140,7 @@ target_link_libraries(hccl_alg_adaption_v2 PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    ${THIRD_PARTY_PATH}/protobuf/lib64/libprotobuf.so
+    ascend_protobuf_shared_lib/libprotobuf.so
     -lrt
     -ldl
 )
