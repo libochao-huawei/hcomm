@@ -75,14 +75,15 @@ TEST_F(UtAicpuTsHcommReadReduceOnThread, Ut_HcommReadReduceOnThread_When_DataTyp
     EXPECT_EQ(res, HCCL_E_PARA);
 }
 
-// TEST_F(UtAicpuTsHcommReadReduceOnThread, Ut_HcommReadReduceOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
-// {
-//     GlobalMockObject::verify();
-//     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-//         .stubs()
-//         .with(any(), any(), any())
-//         .will(returnValue(HCCL_E_INTERNAL));
+TEST_F(UtAicpuTsHcommReadReduceOnThread, Ut_HcommReadReduceOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
+{
+    GlobalMockObject::verify();
+    auto *const transportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(devHandle);
+    MOCKER_CPP_VIRTUAL(transportLitePtr, &Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
+        .stubs()
+        .with(any(), any(), any())
+        .will(returnValue(HCCL_E_INTERNAL));
 
-//     res = HcommReadReduceOnThread(thread, devHandle, dst, src, count, dataType, reduceOp);
-//     EXPECT_EQ(res, HCCL_E_INTERNAL);
-// }
+    res = HcommReadReduceOnThread(thread, devHandle, dst, src, count, dataType, reduceOp);
+    EXPECT_EQ(res, HCCL_E_INTERNAL);
+}
