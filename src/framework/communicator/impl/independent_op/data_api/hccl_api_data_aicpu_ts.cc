@@ -502,30 +502,30 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        // HCCL_DEBUG("[%s] Running on A5.", __func__);
-        // auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-        // CHK_PTR_NULL(ubTransportLitePtr);
-        // auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
-        // CHK_PTR_NULL(streamLitePtr);
+        HCCL_DEBUG("[%s] Running on A5.", __func__);
+        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(ubTransportLitePtr);
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLitePtr);
 
-        // Hccl::RmaBufferLite locRmaBuf;
-        // ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(src), len, locRmaBuf);
-        // CHK_PRT_RET(ret != HCCL_SUCCESS,
-        //     HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
-        //     __func__, thread, channel, dst, src, len, remoteNotifyIdx), ret);
-        // const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dst), len};
+        Hccl::RmaBufferLite locRmaBuf;
+        ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(src), len, locRmaBuf);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
+            __func__, thread, channel, dst, src, len, remoteNotifyIdx), ret);
+        const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dst), len};
 
-        // Hccl::WithNotifyIn withNotify{Hccl::TransportNotifyType::NORMAL, remoteNotifyIdx};
+        Hccl::WithNotifyIn withNotify{Hccl::TransportNotifyType::NORMAL, remoteNotifyIdx};
 
-        // EXECEPTION_CATCH(ubTransportLitePtr->WriteWithNotify(locRmaBuf, rmtBuf, withNotify, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(ubTransportLitePtr->WriteWithNotify(locRmaBuf, rmtBuf, withNotify, *streamLitePtr), ret = HCCL_E_INTERNAL);
     } else {
-        HcclBuf locBuf{const_cast<void *>(src), len, nullptr};
-        HcclBuf rmtBuf{dst, len, nullptr};
+        // HcclBuf locBuf{const_cast<void *>(src), len, nullptr};
+        // HcclBuf rmtBuf{dst, len, nullptr};
 
-        Stream *stream = GetStream(thread);
-        CHK_PTR_NULL(stream);
+        // Stream *stream = GetStream(thread);
+        // CHK_PTR_NULL(stream);
 
-        ret = HcclRemoteWriteWithNotify(stream, reinterpret_cast<void *>(channel), &rmtBuf, &locBuf, remoteNotifyIdx);
+        // ret = HcclRemoteWriteWithNotify(stream, reinterpret_cast<void *>(channel), &rmtBuf, &locBuf, remoteNotifyIdx);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
