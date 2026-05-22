@@ -23,6 +23,9 @@ public:
 
     HcclResult SetLaunchMode(const char* launchTag, HcommLaunchMode mode);
     void AddThread(ThreadHandle thread);
+    HcclResult SetNotifyWaitTimeOut(uint32_t timeout);
+    HcclResult GetNotifyWaitTimeOut(uint32_t& timeout);
+    HcclResult GetThreadVec(std::vector<ThreadHandle>& threadVec);
     inline bool IsBatchLaunchMode() const
     {
         return mode_ == HCOMM_LAUNCH_MODE_BATCH;
@@ -35,6 +38,17 @@ private:
     HcclResult HandleClear();
 
     std::string launchTag_; // 当前tag
+
+    struct NotifyWaitTimeoutConfig {
+        uint32_t notifyWaitTimeout = 1800;
+        bool isSet = false;
+    } notifyWaitTimeoutConfig_;
+
+    // struct SqFullTimeoutConfig {
+    //     uint32_t sqFullTimeout = 1820;
+    //     bool isSet = false;
+    // } sqFullTimeoutConfig_;
+
     std::unordered_map<std::string, std::unordered_set<ThreadHandle>> launchModeMap_;
     HcommLaunchMode mode_ = HCOMM_LAUNCH_MODE_EAGER;
 };
