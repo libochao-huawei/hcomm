@@ -16,6 +16,7 @@ target_include_directories(executor_reduce_hccl_test PRIVATE
 )
 
 target_compile_definitions(executor_reduce_hccl_test PRIVATE
+    google=ascend_private
     _GLIBCXX_USE_CXX11_ABI=0
     -DOPEN_HCCL_TEST
 )
@@ -34,7 +35,7 @@ target_link_libraries(executor_reduce_hccl_test PRIVATE
     hccl_alg_test
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    protobuf
+    ascend_protobuf
     -lrt
     -ldl
 )

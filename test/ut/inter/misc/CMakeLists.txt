@@ -74,6 +74,7 @@ else()
     )
     
     target_compile_definitions(hccl_utest_inter_misc    PRIVATE
+        google=ascend_private
         HALF_T=float
         google=ascend_private
         CCL_KERNEL

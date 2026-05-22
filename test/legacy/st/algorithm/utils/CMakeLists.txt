@@ -75,6 +75,7 @@ target_include_directories(hccl_alg_analyzer_legacy PRIVATE
 )
 
 target_compile_definitions(hccl_alg_analyzer_legacy PRIVATE
+    google=ascend_private
     -DOPEN_HCCL_TEST
     _GLIBCXX_USE_CXX11_ABI=0
     -DHCCL_ALG_ANALYZER_DAVID   #checker v2相关的编译宏
@@ -95,7 +96,7 @@ target_link_libraries(hccl_alg_analyzer_legacy PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    ${THIRD_PARTY_PATH}/protobuf/lib64/libprotobuf.so
+    ascend_protobuf
     -lrt
     -ldl
 )

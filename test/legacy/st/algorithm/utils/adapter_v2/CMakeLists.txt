@@ -122,6 +122,7 @@ target_include_directories(hccl_alg_adaption_v2 PRIVATE
 )
 
 target_compile_definitions(hccl_alg_adaption_v2 PRIVATE
+    google=ascend_private
     -DOPEN_HCCL_TESTU
     -DHCCL_ALG_ANALYZER_DAVID
     _GLIBCXX_USE_CXX11_ABI=0
@@ -140,7 +141,7 @@ target_link_libraries(hccl_alg_adaption_v2 PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    ${THIRD_PARTY_PATH}/protobuf/lib64/libprotobuf.so
+    ascend_protobuf
     -lrt
     -ldl
 )
