@@ -278,19 +278,15 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
                 for (auto& dstLink : fabricToDstLinks) {
                     auto srcConnIface = srcLink.GetSourceIface();
                     auto targetConnIface = dstLink.GetTargetIface();
-                    if (srcConnIface->GetPorts().size() == 1 && targetConnIface->GetPorts().size() == 1) {
-                        // 如果port匹配才会创建path
-                        auto srcPorts = srcConnIface->GetPorts();
-                        auto tgtPorts = targetConnIface->GetPorts();
-                        std::string srcPort = *srcPorts.begin();
-                        std::string tgtPort = *tgtPorts.begin();
-                        HCCL_INFO("[InnerNetInstance::GetPaths] DEBUG: srcPort[%s], tgtPort[%s]",
-                                  srcPort.c_str(), tgtPort.c_str());
-                        if (srcPort == tgtPort) {
-                            NetInstance::Path path;
-                            path.links = {srcLink, dstLink};
-                            paths.emplace_back(path);
-                        }
+                    // 按 planeId 匹配，同一平面的才创建 path
+                    std::string srcPlaneId = srcConnIface->GetPlaneId();
+                    std::string tgtPlaneId = targetConnIface->GetPlaneId();
+                    HCCL_INFO("[InnerNetInstance::GetPaths] DEBUG: srcPlaneId[%s], tgtPlaneId[%s]",
+                              srcPlaneId.c_str(), tgtPlaneId.c_str());
+                    if (!srcPlaneId.empty() && !tgtPlaneId.empty() && srcPlaneId == tgtPlaneId) {
+                        NetInstance::Path path;
+                        path.links = {srcLink, dstLink};
+                        paths.emplace_back(path);
                     } else {
                         CheckPortGroupSize(netLayer, srcLink, dstLink);
                         NetInstance::Path path;
@@ -642,6 +638,11 @@ TopoType NetInstance::ConnInterface::GetTopoType() const
 u32 NetInstance::ConnInterface::GetTopoInstId() const
 {
     return topoInstId;
+}
+
+std::string NetInstance::ConnInterface::GetPlaneId() const
+{
+    return planeId;
 }
 
 std::string NetInstance::ConnInterface::Describe() const

@@ -33,8 +33,9 @@ public:
     public:
         // 使用地址信息、位置信息、链路类型、链路协议构造接口
         explicit ConnInterface(const IpAddress inputAddr, const std::set<string> inputPorts, const AddrPosition inputPos, const LinkType inputLinkType,
-                             const std::set<LinkProtocol> inputLinkProtocol, TopoType inputTopoType = TopoType::CLOS, u32 intputTopoInstId = 0)
-        :addr(inputAddr), ports(inputPorts), pos(inputPos), linkType(inputLinkType), linkProtocols(inputLinkProtocol), topoType(inputTopoType), topoInstId(intputTopoInstId){}
+                             const std::set<LinkProtocol> inputLinkProtocol, TopoType inputTopoType = TopoType::CLOS, u32 intputTopoInstId = 0,
+                             const std::string& inputPlaneId = "")
+        :addr(inputAddr), ports(inputPorts), pos(inputPos), linkType(inputLinkType), linkProtocols(inputLinkProtocol), topoType(inputTopoType), topoInstId(intputTopoInstId), planeId(inputPlaneId){}
         IpAddress     GetAddr() const;
         AddrPosition  GetPos() const;
         std::set<string> GetPorts() const;
@@ -44,6 +45,7 @@ public:
         u32           GetLocalDieId() const;
         TopoType      GetTopoType() const;
         u32           GetTopoInstId() const;
+        std::string   GetPlaneId() const;
         std::string   Describe() const;
         bool          operator==(const ConnInterface &rhs) const;
         bool          operator!=(const ConnInterface &rhs) const;
@@ -57,6 +59,7 @@ public:
         u32                    localDieId_{};
         TopoType               topoType{TopoType::CLOS};
         u32                    topoInstId{0};
+        std::string            planeId{};
     };
 
     class Node {

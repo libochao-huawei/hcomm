@@ -111,7 +111,7 @@ void RankGraphBuilder::AddPeer2NetLink(const u32 netLayer,  const string &netIns
 
         // 构造 RankGraph 的 PeerIface
         shared_ptr<NetInstance::ConnInterface> peerIface = make_shared<NetInstance::ConnInterface>(
-            addrInfo.addr, rankGraphPorts, link->GetSourceIFace()->GetPos(), LinkType::PEER2NET, link->GetLinkProtocols(), topoType, topoInstId);
+            addrInfo.addr, rankGraphPorts, link->GetSourceIFace()->GetPos(), LinkType::PEER2NET, link->GetLinkProtocols(), topoType, topoInstId, addrInfo.planeId);
         // 获取 rankId 对应 PeerNode
         shared_ptr<NetInstance::Peer> peerNode = peers_.at(rankId);
         peerNode->AddConnInterface(netLayer, peerIface);
