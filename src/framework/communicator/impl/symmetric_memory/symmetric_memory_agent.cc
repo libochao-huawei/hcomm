@@ -161,7 +161,11 @@ HcclResult SymmetricMemoryAgent::ExchangeInfo(void *inputPtr, void *outputPtr, u
     }
     isProcessingTask_ = true;
 
-    CHK_RET(WaitForCollectionComplete());
+    HcclResult ret = WaitForCollectionComplete();
+    if (ret != HCCL_SUCCESS) {
+        isProcessingTask_ = false;
+        return ret;
+    }
     HCCL_INFO("[SymmetricMemoryAgent] ExchangeInfo end");
     return HCCL_SUCCESS;
 }
