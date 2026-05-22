@@ -76,7 +76,7 @@ target_link_libraries(hccl_orion_alg_test PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    ${THIRD_PARTY_PATH}/protobuf/lib64/libprotobuf.so
+    ascend_protobuf_shared_lib
     -lrt
     -ldl
 )
