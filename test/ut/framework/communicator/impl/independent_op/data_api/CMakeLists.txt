@@ -9,15 +9,15 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_to_test_list
     main.cc
-    #ut_aicpu_ts_HcommLocalCopyOnThread.cc
-    #ut_aicpu_ts_HcommLocalReduceOnThread.cc
-    #ut_aicpu_ts_HcommThreadNotifyRecordOnThread.cc
-    #ut_aicpu_ts_HcommThreadNotifyWaitOnThread.cc
-    #ut_aicpu_ts_HcommChannelNotifyRecordOnThread.cc
-    #ut_aicpu_ts_HcommChannelNotifyWaitOnThread.cc
-    #ut_aicpu_ts_HcommChannelNotifyWaitOnThread_WithTimeout.cc
-    #ut_aicpu_ts_HandleDispatchAllStreams.cc
-    #ut_aicpu_ts_HcommBatchTransferOnThread.cc
+    ut_aicpu_ts_HcommLocalCopyOnThread.cc
+    ut_aicpu_ts_HcommLocalReduceOnThread.cc
+    ut_aicpu_ts_HcommThreadNotifyRecordOnThread.cc
+    ut_aicpu_ts_HcommThreadNotifyWaitOnThread.cc
+    ut_aicpu_ts_HcommChannelNotifyRecordOnThread.cc
+    ut_aicpu_ts_HcommChannelNotifyWaitOnThread.cc
+    ut_aicpu_ts_HcommChannelNotifyWaitOnThread_WithTimeout.cc
+    ut_aicpu_ts_HandleDispatchAllStreams.cc
+    ut_aicpu_ts_HcommBatchTransferOnThread.cc
     ut_aicpu_ts_HcommWriteWithNotifyOnThread.cc
     ut_aicpu_ts_HcommWriteReduceWithNotifyOnThread.cc
     ut_aicpu_ts_HcommWriteOnThread.cc
