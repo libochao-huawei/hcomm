@@ -313,6 +313,17 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaH
 {
 }
 
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle,
+    const LocalUbRmaBuffer &parent)
+    : LocalRmaBuffer(buf, RmaType::UB, true),
+      rdmaHandle(rdmaHandle),
+      tokenValue(parent.tokenValue),
+      tokenId(parent.tokenId),
+      tokenIdHandle(parent.tokenIdHandle),
+      reqReg(parent.reqReg)
+{
+}
+
 LocalUbRmaBuffer::~LocalUbRmaBuffer()
 {
 }
@@ -1273,6 +1284,15 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
 {
 }
 
+LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle, u32 lkey, u32 rkey, MrHandle mrHandle)
+    : LocalRmaBuffer(buf, RmaType::RDMA, true)
+{
+    (void)rdmaHandle;
+    (void)lkey;
+    (void)rkey;
+    (void)mrHandle;
+}
+
 LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
 {
 }
@@ -1397,6 +1417,15 @@ LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuff
 {
 }
 
+LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf, const LocalIpcRmaBuffer& parent)
+    : LocalRmaBuffer(buf, RmaType::IPC, true)
+{
+    (void)memcpy_s(name, RTS_IPC_MEM_NAME_LEN, parent.name, RTS_IPC_MEM_NAME_LEN);
+    ipcPtr   = parent.ipcPtr;
+    ipcOffset = parent.ipcOffset;
+    ipcSize   = parent.ipcSize;
+}
+
 LocalIpcRmaBuffer::~LocalIpcRmaBuffer()
 {
 }
@@ -1408,7 +1437,10 @@ string LocalIpcRmaBuffer::Describe() const
 
 std::unique_ptr<Serializable> LocalIpcRmaBuffer::GetExchangeDto()
 {
-    return nullptr;
+    std::unique_ptr<ExchangeIpcBufferDto> dto
+        = make_unique<ExchangeIpcBufferDto>(buf->GetAddr(), buf->GetSize(), ipcOffset, 0, buf->GetMemTag().c_str());
+    (void)memcpy_s(dto->name, RTS_IPC_MEM_NAME_LEN, name, RTS_IPC_MEM_NAME_LEN);
+    return std::unique_ptr<Serializable>(dto.release());
 }
 
 void LocalIpcRmaBuffer::Grant(u32 pid)
