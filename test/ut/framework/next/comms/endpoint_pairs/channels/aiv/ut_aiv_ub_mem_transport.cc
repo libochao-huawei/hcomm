@@ -46,6 +46,10 @@ TEST_F(AivUbMemTransportTest, St_GetStatus_When_SOCKET_OK_Expect_Success)
     aivTransport.aivUbStatus_ = hcomm::AivUbMemTransport::AivUbMemTransportStatus::SOCKET_OK;
     
     MOCKER_CPP(&AivUbMemTransport::RmtBufferUnpackProc).stubs();
+    MOCKER((void (Hccl::Socket::*)(const u8*, u32))&Hccl::Socket::SendAsync)
+        .stubs().with(any(), any());
+    MOCKER((void (Hccl::Socket::*)(u8*, u32))&Hccl::Socket::RecvAsync)
+        .stubs().with(any(), any());
 
     EXPECT_EQ(aivTransport.GetStatus(), Hccl::TransportStatus::SOCKET_OK);
     EXPECT_EQ(aivTransport.aivUbStatus_, hcomm::AivUbMemTransport::AivUbMemTransportStatus::SEND_DATA_SIZE);

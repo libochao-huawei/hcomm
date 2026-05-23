@@ -67,7 +67,7 @@ private:
     HcclResult SendMemInfo();
     HcclResult RecvMemInfo();
     HcclResult RecvDataProcess();
-    void BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
+    HcclResult BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag);
     void RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream);
     HcclResult StateMachine();

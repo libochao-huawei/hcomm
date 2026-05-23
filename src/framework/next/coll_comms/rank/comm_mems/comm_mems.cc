@@ -127,7 +127,15 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
 
     auto opIt = opBindings_.find(memTag);
     if (opIt != opBindings_.end()) {
-        HCCL_ERROR("[CommRegMem] memTag[%s] has already been registered.", memTag.c_str());
+        if (opIt->second->mem.addr == mem.addr && opIt->second->mem.size == mem.size) {
+            *memHandle = opIt->second.get();
+            HCCL_INFO("[CommRegMem] tag[%s] already registered with same addr[%p], return existing handle.",
+                memTag.c_str(), mem.addr);
+            return HCCL_SUCCESS;
+        }
+        HCCL_ERROR("[CommRegMem] memTag[%s] already registered: old addr[%p] size[%llu], new addr[%p] size[%llu].",
+            memTag.c_str(), opIt->second->mem.addr, (unsigned long long)opIt->second->mem.size,
+            mem.addr, (unsigned long long)mem.size);
         return HCCL_E_PARA;
     }
 
@@ -138,12 +146,6 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
 
     // 加入绑定map
     opBindings_.emplace(memTag, h);
-
-    // 新增反查map，用于aiv建链交换内存
-    auto opRevIt = opReverseBindings_.find(h.get());
-    if (opRevIt == opReverseBindings_.end()) {
-        opReverseBindings_[h.get()] = memTag;
-    }
  
     *memHandle = h.get();
     HCCL_INFO("[CommRegMem] ok. tag[%s] memHandle[%p] size[%llu]", memTag.c_str(), *memHandle,
@@ -177,7 +179,6 @@ HcclResult CommMems::CommUnregMem(const std::string& memTag, const void* memHand
             HCCL_ERROR("[CommUnregMem] tag[%s] key not found on Del (maybe already removed)", itTag->first.c_str());
         }
         ++unboundCount;                   // 从绑定列表移除，无论 Del 是否真正擦除
-        opReverseBindings_.erase(const_cast<void*>(memHandle)); // 这里考虑增加校验
         opBindings_.erase(itTag);
         if (reg.table.size() == 0) {
             tagRegs_.erase(std::string(memTag));
@@ -206,16 +207,15 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
     std::lock_guard<std::mutex> lock(memMutex_);
     CommMemInfo** handles = reinterpret_cast<CommMemInfo**>(memHandles);
     for (uint32_t i = 0; i < memHandleNum; i++) {
-        auto it = opReverseBindings_.find(handles[i]);
-        if (it == opReverseBindings_.end()) {
+        if (handles[i] == nullptr) {
             HCCL_ERROR("[CommMems] memHandle[%p] not found", handles[i]);
             return HCCL_E_NOT_FOUND;
         }
         HcclMem mem;
-        mem.addr = (*handles[i]).mem.addr;
-        mem.size = (*handles[i]).mem.size;
-        mem.type = ConvertCommToHcclMemType((*handles[i]).mem.type);
-        memTag.push_back(opReverseBindings_[handles[i]]);
+        mem.addr = handles[i]->mem.addr;
+        mem.size = handles[i]->mem.size;
+        mem.type = ConvertCommToHcclMemType(handles[i]->mem.type);
+        memTag.push_back(handles[i]->memTag);
         memVec.push_back(mem);
     }
     return HCCL_SUCCESS;
