@@ -20,6 +20,11 @@ namespace hccl {
 class LocalRdmaRmaBufferImpl : public RmaBuffer {
 public:
 	LocalRdmaRmaBufferImpl(const HcclNetDevCtx netDevCtx, void* addr, u64 size, const RmaMemType memType);
+
+    // 别名构造函数：共享父buffer的RDMA注册资源，不调用hrtRaRegGlobalMr
+    LocalRdmaRmaBufferImpl(const HcclNetDevCtx netDevCtx, void* addr, u64 size, const RmaMemType memType,
+        const LocalRdmaRmaBufferImpl& parent);
+
     ~LocalRdmaRmaBufferImpl() override;
 
     LocalRdmaRmaBufferImpl(const LocalRdmaRmaBufferImpl &that) = delete;
