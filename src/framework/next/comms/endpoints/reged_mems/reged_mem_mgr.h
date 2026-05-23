@@ -13,6 +13,7 @@
 #include <memory>
 #include "hcomm_c_adpt.h"
 #include "log.h"
+#include "buffer_key.h"
 
 using RdmaHandle = void *;
 
@@ -49,6 +50,27 @@ public:
     }
 
     RdmaHandle rdmaHandle_{nullptr};
+
+protected:
+    // 参数校验：memHandle / addr / size / type
+    static HcclResult ValidateMemParams(HcommMem mem, void **memHandle)
+    {
+        CHK_PTR_NULL(memHandle);
+        CHK_PTR_NULL(mem.addr);
+        CHK_PRT_RET(mem.size == 0, HCCL_ERROR("[%s] mem size is zero", __func__), HCCL_E_PARA);
+        CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID,
+            HCCL_ERROR("[%s] invalid mem type [%d]", __func__, mem.type), HCCL_E_PARA);
+        return HCCL_SUCCESS;
+    }
+
+    // Find命中：对父buffer增加引用计数
+    template <typename Mgr, typename BufferPtr>
+    static void AddRefToParent(Mgr& mgr, const BufferPtr& parent)
+    {
+        hccl::BufferKey<uintptr_t, u64> actualRegKey(
+            parent->GetAddr(), static_cast<uint64_t>(parent->GetSize()));
+        (void)mgr->AddWithoutCheck(actualRegKey, parent);
+    }
 };
 }
 

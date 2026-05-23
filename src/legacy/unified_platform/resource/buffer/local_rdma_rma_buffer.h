@@ -21,6 +21,9 @@ class LocalRdmaRmaBuffer : public LocalRmaBuffer {
 public:
     LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle);
 
+    // 别名构造函数：共享父buffer的RDMA注册资源，不调用RaRegisterMr
+    LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle, u32 lkey, u32 rkey, MrHandle mrHandle);
+
     ~LocalRdmaRmaBuffer() override;
 
     LocalRdmaRmaBuffer(const LocalRdmaRmaBuffer &that) = delete;
@@ -31,9 +34,17 @@ public:
 
     std::unique_ptr<Serializable> GetExchangeDto() override;
 
-    u32 GetLkey() const 
+    u32 GetLkey() const
     {
         return lkey;
+    }
+    u32 GetRkey() const
+    {
+        return rkey;
+    }
+    MrHandle GetMrHandle() const
+    {
+        return mrHandle;
     }
     std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
 

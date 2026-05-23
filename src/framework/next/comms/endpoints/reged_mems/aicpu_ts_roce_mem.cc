@@ -112,45 +112,46 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
     CHK_PTR_NULL(memHandle);
     CHK_PTR_NULL(localRdmaRmaBufferMgr_);
 
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), static_cast<u64>(mem.size));
     auto *netDevCtx = static_cast<hccl::NetDevContext *>(netDev_);
 
     std::shared_ptr<LocalBufferMgrCtx> ctx = GetOrCreateLocalBufferMgr(netDevCtx->GetPhyId());
     CHK_PTR_NULL(ctx);
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
+    hccl::RmaMemType memType = static_cast<hccl::RmaMemType>(mem.type);
+    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), static_cast<u64>(mem.size));
+    auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
+
     std::shared_ptr<hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer;
-    HcclResult ret = GetOrCreateLocalRdmaRmaBuffer(netDevCtx, mem, tempKey, localRdmaRmaBuffer);
-    if (ret != HCCL_SUCCESS) {
-        return ret;
-    }
 
-    auto resultPair = localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
-    if (resultPair.first == localRdmaRmaBufferMgr_->End()) {
-        HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] memory overlaps with registered memory");
-        return HCCL_E_INTERNAL;
-    }
+    if (findPair.first) {
+        auto parentBuffer = findPair.second;
+        AddRefToParent(localRdmaRmaBufferMgr_, parentBuffer);
 
-    std::shared_ptr<hccl::LocalRdmaRmaBuffer> &localBuffer = resultPair.first->second.buffer;
-    CHK_SMART_PTR_NULL(localBuffer);
-    *memHandle = static_cast<void *>(localBuffer.get());
+        EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<hccl::LocalRdmaRmaBuffer>(
+            netDevCtx, mem.addr, static_cast<u64>(mem.size), memType, *parentBuffer)),
+            return HCCL_E_PTR);
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] alias created, key {%p, %llu}", mem.addr, mem.size);
+    } else {
+        EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<hccl::LocalRdmaRmaBuffer>(
+            netDevCtx, mem.addr, static_cast<u64>(mem.size), memType)),
+            return HCCL_E_PTR);
 
-    if (resultPair.second) {
-        ret = localBuffer->Init();
+        HcclResult ret = localRdmaRmaBuffer->Init();
         if (ret != HCCL_SUCCESS) {
-            (void)localRdmaRmaBufferMgr_->Del(tempKey);
             HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] Init failed, ret[%d]", ret);
             return ret;
         }
+
+        hccl::BufferKey<uintptr_t, u64> actualRegKey(
+            reinterpret_cast<uintptr_t>(localRdmaRmaBuffer->GetAddr()),
+            static_cast<u64>(localRdmaRmaBuffer->GetSize()));
+        (void)localRdmaRmaBufferMgr_->AddWithoutCheck(actualRegKey, localRdmaRmaBuffer);
         HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] success, key {%p, %llu}", mem.addr, mem.size);
     }
 
-    TrackRegisteredBuffer(localBuffer);
-
-    if (resultPair.second) {
-        return HCCL_SUCCESS;
-    }
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] already registered, ref++, key {%p, %llu}", mem.addr, mem.size);
+    *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
+    TrackRegisteredBuffer(localRdmaRmaBuffer);
     return HCCL_SUCCESS;
 }
 
@@ -167,7 +168,30 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
     std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
     auto *buffer = static_cast<hccl::LocalRdmaRmaBuffer *>(memHandle);
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buffer->GetAddr()), buffer->GetSize());
+
+    // IsAlias() 直接区分父子buffer：
+    //   - 父buffer (IsAlias()=false): 自己的key在tree中 → Del(ownKey)
+    //   - 子buffer (IsAlias()=true):  自己的key不在tree中 → 通过GetKey找父key做Del
+    hccl::BufferKey<uintptr_t, u64> ownKey(reinterpret_cast<uintptr_t>(buffer->GetAddr()), buffer->GetSize());
+    hccl::LocalRdmaRmaBuffer* refBuffer = buffer;
+
+    if (buffer->IsAlias()) {
+        auto hwHandle = buffer->GetKey();
+        auto findResult = localRdmaRmaBufferMgr_->Find(ownKey);
+        if (findResult.first && findResult.second->GetKey() == hwHandle) {
+            refBuffer = findResult.second.get();
+        } else {
+            for (auto& ptr : allRegisteredBuffers_) {
+                if (ptr->GetKey() == hwHandle) {
+                    refBuffer = ptr.get();
+                    break;
+                }
+            }
+        }
+    }
+
+    hccl::BufferKey<uintptr_t, u64> tempKey(
+        reinterpret_cast<uintptr_t>(refBuffer->GetAddr()), refBuffer->GetSize());
 
     bool delOk = false;
     EXECEPTION_CATCH(delOk = localRdmaRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
