@@ -24,25 +24,39 @@ constexpr u32 TEN_MILLISECOND_OF_USLEEP = 10000;
 LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle)
     : LocalRmaBuffer(buf, RmaType::UB), rdmaHandle(rdmaHandle)
 {
-     if (rdmaHandle == nullptr) {
+    if (rdmaHandle == nullptr) {
         THROW<NullPtrException>("LocalUbRmaBuffer's rdmaHandle is NULL");
     }
     std::pair<u64, u64> alignBuf = BufAlign(buf->GetAddr(), buf->GetSize());
 
-    const auto &tokenIdInfoPair = RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle, 
+    const auto &tokenIdInfoPair = RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle,
         BufferKey<uintptr_t, u64>{alignBuf.first, alignBuf.second});
     tokenIdHandle = tokenIdInfoPair.first;
     tokenId       = tokenIdInfoPair.second;
     tokenValue    = GetUbToken();
     HrtRaUbLocMemRegParam lmemReg{alignBuf.first, alignBuf.second, tokenValue, tokenIdHandle, 1};
-    reqReg     = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
-    keySize    = reqReg.keySize;
-    memHandle  = reqReg.handle;
-    segVa      = reqReg.targetSegVa;
-    memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg.key, HRT_UB_MEM_KEY_MAX_LEN);
+    reqReg = std::make_shared<HrtRaUbLocalMemRegOutParam>();
+    *reqReg = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
+    memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg->key, HRT_UB_MEM_KEY_MAX_LEN);
 
     HCCL_INFO("[LocalUbRmaBuffer::%s] end, rdmaHandle[%p], lmemHandle[0x%llx], keySize[%u]", __func__, rdmaHandle,
-               memHandle, keySize);
+               reqReg->handle, reqReg->keySize);
+}
+
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle,
+    const LocalUbRmaBuffer &parent)
+    : LocalRmaBuffer(buf, RmaType::UB, true),
+      rdmaHandle(rdmaHandle),
+      reqReg(parent.reqReg),
+      tokenValue(parent.tokenValue),
+      tokenId(parent.tokenId),
+      tokenIdHandle(parent.tokenIdHandle)
+{
+    CHK_SMART_PTR_NULL(reqReg);
+    CHK_SAFETY_FUNC_RET(memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, parent.key, HRT_UB_MEM_KEY_MAX_LEN));
+
+    HCCL_INFO("[LocalUbRmaBuffer::%s] alias, rdmaHandle[%p], lmemHandle[0x%llx], keySize[%u]", __func__, rdmaHandle,
+               reqReg->handle, reqReg->keySize);
 }
 
 LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice, bool flag)
@@ -63,12 +77,11 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice,
     tokenId                     = tokenIdInfoPair.second;
     tokenValue                  = GetUbToken();
     HrtRaUbLocMemRegParam lmemReg{alignBuf.first, alignBuf.second, tokenValue, tokenIdHandle, 1};
-    reqReg    = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
-    keySize   = reqReg.keySize;
-    memHandle = reqReg.handle;
-    memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg.key, HRT_UB_MEM_KEY_MAX_LEN);
+    reqReg = std::make_shared<HrtRaUbLocalMemRegOutParam>();
+    *reqReg = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
+    memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg->key, HRT_UB_MEM_KEY_MAX_LEN);
     HCCL_INFO("[LocalUbRmaBuffer::%s] end, rdmaHandle[%p], lmemHandle[0x%llx], keySize[%u]", __func__, rdmaHandle,
-              memHandle, keySize);
+              reqReg->handle, reqReg->keySize);
 }
 
 LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::UB), rdmaHandle(nullptr)
@@ -84,8 +97,8 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer
 
 string LocalUbRmaBuffer::Describe() const
 {
-    return StringFormat("LocalUbRmaBuffer[rdmaHandle=%p, buf=%s, memHandle=%p]",
-                        rdmaHandle, buf->Describe().c_str(), memHandle);
+    return StringFormat("LocalUbRmaBuffer[rdmaHandle=%p, buf=%s, memRegOutParam=%p]",
+                        rdmaHandle, buf->Describe().c_str(), static_cast<void *>(reqReg.get()));
 }
 
 std::unique_ptr<Serializable> LocalUbRmaBuffer::GetExchangeDto()
@@ -96,17 +109,20 @@ std::unique_ptr<Serializable> LocalUbRmaBuffer::GetExchangeDto()
         buf->GetMemTag().c_str(),
         tokenValue,
         tokenId,
-        keySize);
+        reqReg ? reqReg->keySize : 0);
     (void)memcpy_s(dto->key, HRT_UB_MEM_KEY_MAX_LEN, key, HRT_UB_MEM_KEY_MAX_LEN);
-    dto->segVa = segVa;
+    dto->segVa = reqReg ? reqReg->targetSegVa : 0;
     return std::unique_ptr<Serializable>(dto.release());
 }
 
 LocalUbRmaBuffer::~LocalUbRmaBuffer()
 {
-    if (rdmaHandle != nullptr && memHandle != 0) {
-        HCCL_INFO("[LocalUbRmaBuffer::%s] rdmaHandle[%p], lmemHandle[0x%llx]", __func__, rdmaHandle, memHandle);
-        DECTOR_TRY_CATCH("LocalUbRmaBuffer", HrtRaUbLocalMemUnreg(rdmaHandle, memHandle));
+    if (rdmaHandle != nullptr && reqReg != nullptr &&
+        reqReg->handle != 0 && !isAlias_) {
+        HCCL_INFO("[LocalUbRmaBuffer::%s] rdmaHandle[%p], lmemHandle[0x%llx]", __func__, rdmaHandle,
+            reqReg->handle);
+        DECTOR_TRY_CATCH("LocalUbRmaBuffer",
+            HrtRaUbLocalMemUnreg(rdmaHandle, reqReg->handle));
     }
 }
 

@@ -11,6 +11,8 @@
 #ifndef HCCLV2_LOCAL_UB_RMA_BUFFER_H
 #define HCCLV2_LOCAL_UB_RMA_BUFFER_H
 
+#include <memory>
+
 #include "local_rma_buffer.h"
 
 #include "enum_factory.h"
@@ -25,6 +27,10 @@ MAKE_ENUM(UbBufferStatus, INIT, READY, RELEASED);
 class LocalUbRmaBuffer : public LocalRmaBuffer {
 public:
     LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle);
+
+    // 别名构造函数：共享父buffer的注册资源
+    LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle,
+        const LocalUbRmaBuffer &parent);
 
     LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void* netDevice, bool flag);
 
@@ -44,7 +50,13 @@ public:
     u32 GetTokenValue() const;
     TokenIdHandle GetTokenIdHandle() const;
     std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
-    u64 GetTargetSeg() const {return reqReg.targetSegVa;}
+    u64 GetTargetSeg() const {return reqReg ? reqReg->targetSegVa : 0;}
+
+    // 返回共享注册资源对象地址，用于身份判断（父、子 alias 共享同一对象）
+    void *GetMemRegOutParam() const
+    {
+        return static_cast<void *>(reqReg.get());
+    }
 
     std::vector<char> Desc;
 
@@ -55,11 +67,8 @@ private:
     u32                  tokenValue{0};
     u32                  tokenId{0};
     TokenIdHandle        tokenIdHandle{0};
-    u32                  keySize{0};
 
-    HrtRaUbLocalMemRegOutParam    reqReg;
-    void*                         lmemHandle{nullptr};
-    u64                  segVa{0};
+    std::shared_ptr<HrtRaUbLocalMemRegOutParam> reqReg{nullptr};
 };
 u32 GetUbToken(); // 生成伪随机数
 } // namespace Hccl
