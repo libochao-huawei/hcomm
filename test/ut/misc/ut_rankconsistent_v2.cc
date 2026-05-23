@@ -69,7 +69,7 @@ TEST_F(RankConsistentV2Test, Ut_FullPipeline_AllMatch_Expect_Success)
     ASSERT_EQ(checker_.subCommParaCrcsV2_.size(), 4u);
 
     // 4. GenerateCheckFrameV2
-    strncpy_s(checker_.cannVersion_, MAX_CANN_VERSION_LEN + 1, "8.0.RC1", strlen("8.0.RC1"));
+    strncpy_s(checker_.cannVersion_, CANN_VERSION_MAX_LEN + 1, "8.0.RC1", strlen("8.0.RC1"));
     CheckFrameV2 localFrame;
     ret = checker_.GenerateCheckFrameV2(localFrame);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -119,11 +119,11 @@ TEST_F(RankConsistentV2Test, CompareCheckFrameV2_RankTableMismatch)
 // 异常：子通信域参数CRC不一致
 TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_SubCommMismatch_Expect_INTERNAL)
 {
-    u32 parentCrc = 0x12345678;
+    std::string parentIdentifier = "test";
     uint32_t rankNum = 4;
     uint32_t rankIds[] = {0, 1, 2, 3};
     uint64_t subCommId = 100;
-    checker_.RecordSubCommParaV2(parentCrc, rankNum, rankIds, subCommId);
+    checker_.RecordSubCommParaV2(parentIdentifier, rankNum, rankIds, subCommId);
 
     CheckFrameV2 localFrame;
     checker_.GenerateCheckFrameV2(localFrame);
@@ -137,12 +137,12 @@ TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_SubCommMismatch_Expect_INTER
 // 异常：CANN版本不一致
 TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_VersionMismatch_Expect_INTERNAL)
 {
-    strncpy_s(checker_.cannVersion_, MAX_CANN_VERSION_LEN + 1, "8.0.RC1", strlen("8.0.RC1"));
+    strncpy_s(checker_.cannVersion_, CANN_VERSION_MAX_LEN + 1, "8.0.RC1", strlen("8.0.RC1"));
 
     CheckFrameV2 localFrame;
     checker_.GenerateCheckFrameV2(localFrame);
     CheckFrameV2 remoteFrame = localFrame;
-    strncpy_s(remoteFrame.version, MAX_CANN_VERSION_LEN + 1, "8.0.RC2", strlen("8.0.RC2"));
+    strncpy_s(remoteFrame.version, CANN_VERSION_MAX_LEN + 1, "8.0.RC2", strlen("8.0.RC2"));
 
     HcclResult ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
