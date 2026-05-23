@@ -26,6 +26,8 @@ class LocalUbRmaBuffer : public LocalRmaBuffer {
 public:
     LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle);
 
+    LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle, HrtRaUbLocalMemRegOutParam memRegOutParam);
+
     LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void* netDevice, bool flag);
 
     LocalUbRmaBuffer(std::shared_ptr<Buffer> buf);
@@ -46,6 +48,8 @@ public:
     std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
     u64 GetTargetSeg() const {return reqReg.targetSegVa;}
 
+    HrtRaUbLocalMemRegOutParam GetMemRegOutParam() const {return reqReg;}
+
     std::vector<char> Desc;
 
 private:
@@ -55,11 +59,8 @@ private:
     u32                  tokenValue{0};
     u32                  tokenId{0};
     TokenIdHandle        tokenIdHandle{0};
-    u32                  keySize{0};
 
     HrtRaUbLocalMemRegOutParam    reqReg;
-    void*                         lmemHandle{nullptr};
-    u64                  segVa{0};
 };
 u32 GetUbToken(); // 生成伪随机数
 } // namespace Hccl
