@@ -277,6 +277,7 @@ HcclResult AicpuTsP2pChannel::Clean()
 
 HcclResult AicpuTsP2pChannel::Resume()
 {
+    BuildSocket();
     BuildConnection();
     BuildP2pMemTransport();
     return HCCL_SUCCESS;
