@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -21,32 +21,10 @@
 #include "exchange_ipc_buffer_dto.h"
 #include "env_config/env_config.h"
 #include "base_config.h"
+#include "local_ipc_rma_buffer.h"
 
 #undef protected
 #undef private
-
-class LocalRmaBufferStub : public Hccl::LocalRmaBuffer {
-public:
-    LocalRmaBufferStub(std::shared_ptr<Hccl::Buffer> buf, u64 mockAddr, u64 mockSize, u64 mockOffset, u32 mockPid)
-        : Hccl::LocalRmaBuffer(buf, Hccl::RmaType::IPC),
-        mockAddr_(mockAddr), mockSize_(mockSize), mockOffset_(mockOffset), mockPid_(mockPid) {}
-    
-    ~LocalRmaBufferStub() override = default;
-
-    std::string Describe() const override {
-        return "LocalRmaBufferStub";
-    }
-
-    std::unique_ptr<Hccl::Serializable> GetExchangeDto() override {
-        std::string memTag = "HcclBuff";
-        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset_, mockPid_, memTag.c_str());
-    }
-
-    u64 mockAddr_{0};
-    u64 mockSize_{0};
-    u64 mockOffset_{0};
-    u32 mockPid_{0};
-};
 
 class AivUbMemTransportTest : public testing::Test {
 protected:
@@ -83,10 +61,11 @@ protected:
         return std::make_shared<hcomm::AivUbMemTransport>(fakeSocket_, desc);
     }
 
-    std::shared_ptr<LocalRmaBufferStub> CreateLocalRmaBuffer(u64 addr, u64 size, u32 pid)
+    std::shared_ptr<Hccl::LocalIpcRmaBuffer> CreateLocalIpcRmaBuffer(
+        u64 addr, u64 size, HcclMemType type, const std::string &tag)
     {
-        auto buffer = std::make_shared<Hccl::Buffer>(addr, size);
-        return std::make_shared<LocalRmaBufferStub>(buffer, addr, size, 0, pid);
+        auto buf = std::make_shared<Hccl::Buffer>(addr, size, type, tag.c_str());
+        return std::make_shared<Hccl::LocalIpcRmaBuffer>(buf);
     }
 
     std::array<char, HCCL_RES_TAG_MAX_LEN> BuildMemTagArray(const std::string &tag)
@@ -94,14 +73,6 @@ protected:
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
         memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size());
         return memTag;
-    }
-
-    CommMemInfo BuildMemInfo(void *bufferHandle, const std::string &tag)
-    {
-        CommMemInfo memInfo{};
-        memInfo.bufferHandle = bufferHandle;
-        memcpy_s(memInfo.memTag, sizeof(memInfo.memTag), tag.c_str(), tag.size());
-        return memInfo;
     }
 
     Hccl::Socket *fakeSocket_;
@@ -145,27 +116,26 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
 {
     HcommChannelDesc desc{};
     auto aivTransport = CreateAivTransport(desc);
-    auto initMockBuffer = CreateLocalRmaBuffer(0x100, 0x100, 100);
-    aivTransport->localRmaBufferVec_.push_back(reinterpret_cast<Hccl::LocalIpcRmaBuffer*>(initMockBuffer.get()));
+    auto initMockBuffer = CreateLocalIpcRmaBuffer(0x100, 0x100, HCCL_MEM_TYPE_DEVICE, "initBuffer");
+    aivTransport->localRmaBufferVec_.push_back(initMockBuffer.get());
     aivTransport->localUserMemTag_.push_back(BuildMemTagArray("initBuffer"));
 
     size_t initialVecSize = aivTransport->localRmaBufferVec_.size();
     size_t initialTagSize = aivTransport->localUserMemTag_.size();
 
-    auto mockBuffer1 = CreateLocalRmaBuffer(0x1000, 0x1000, 1000);
-    auto mockBuffer2 = CreateLocalRmaBuffer(0x2000, 0x2000, 2000);
-    auto memInfo1 = BuildMemInfo(reinterpret_cast<void*>(mockBuffer1.get()), "newBuffer1");
-    auto memInfo2 = BuildMemInfo(reinterpret_cast<void*>(mockBuffer2.get()), "newBuffer2");
-    void* memHandles[2] = { &memInfo1, &memInfo2 };
+    auto mockBuffer1 = CreateLocalIpcRmaBuffer(0x1000, 0x1000, HCCL_MEM_TYPE_DEVICE, "newBuffer1");
+    auto mockBuffer2 = CreateLocalIpcRmaBuffer(0x2000, 0x2000, HCCL_MEM_TYPE_DEVICE, "newBuffer2");
+    void* memHandles[2] = {
+        reinterpret_cast<void*>(mockBuffer1.get()),
+        reinterpret_cast<void*>(mockBuffer2.get())
+    };
 
     HcclResult ret = aivTransport->UpdateMemInfo(memHandles, 2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     EXPECT_EQ(aivTransport->localRmaBufferVec_.size(), initialVecSize + 2);
-    EXPECT_EQ(aivTransport->localRmaBufferVec_[initialVecSize],
-        reinterpret_cast<Hccl::LocalIpcRmaBuffer*>(mockBuffer1.get()));
-    EXPECT_EQ(aivTransport->localRmaBufferVec_[initialVecSize + 1],
-        reinterpret_cast<Hccl::LocalIpcRmaBuffer*>(mockBuffer2.get()));
+    EXPECT_EQ(aivTransport->localRmaBufferVec_[initialVecSize], mockBuffer1.get());
+    EXPECT_EQ(aivTransport->localRmaBufferVec_[initialVecSize + 1], mockBuffer2.get());
     EXPECT_EQ(aivTransport->localUserMemTag_.size(), initialTagSize + 2);
     EXPECT_EQ(std::string(aivTransport->localUserMemTag_[initialTagSize].data()), "newBuffer1");
     EXPECT_EQ(std::string(aivTransport->localUserMemTag_[initialTagSize + 1].data()), "newBuffer2");
@@ -175,9 +145,8 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_SocketTime
 {
     HcommChannelDesc desc{};
     auto aivTransport = CreateAivTransport(desc);
-    auto mockBuffer = CreateLocalRmaBuffer(0x1000, 0x1000, 1000);
-    auto memInfo = BuildMemInfo(reinterpret_cast<void*>(mockBuffer.get()), "testBuffer");
-    void* memHandles[1] = { &memInfo };
+    auto mockBuffer = CreateLocalIpcRmaBuffer(0x1000, 0x1000, HCCL_MEM_TYPE_DEVICE, "testBuffer");
+    void* memHandles[1] = { reinterpret_cast<void*>(mockBuffer.get()) };
 
     Hccl::SocketStatus fakeSocketStatus = Hccl::SocketStatus::TIMEOUT;
     MOCKER(&Hccl::Socket::GetAsyncStatus).stubs().will(returnValue(fakeSocketStatus));
@@ -189,8 +158,7 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_bufferNumI
 {
     HcommChannelDesc desc{};
     auto aivTransport = CreateAivTransport(desc);
-    CommMemInfo memInfo{};
-    void* memHandles[1] = { &memInfo };
+    void* memHandles[1] = { nullptr };
     HcclResult ret = aivTransport->UpdateMemInfo(memHandles, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }

@@ -32,13 +32,13 @@ HcclResult AivUbMemTransport::FillTagVec(HcommMemHandle *memHandles, uint32_t bu
         return HCCL_E_PARA;
     }
     for (uint32_t i = 0; i < bufferNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        CHK_PTR_NULL(locMemInfo);
-        auto localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(locMemInfo->bufferHandle);
+        auto localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(memHandles[i]);
         CHK_PTR_NULL(localIpcRmaBuffer);
+        auto buf = localIpcRmaBuffer->GetBuf();
+        CHK_PTR_NULL(buf);
         bufferVec.push_back(localIpcRmaBuffer);
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = locMemInfo->memTag;
+        std::string tag = buf->GetMemTag();
         if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
             HCCL_ERROR("[AivUbMemTransport][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
