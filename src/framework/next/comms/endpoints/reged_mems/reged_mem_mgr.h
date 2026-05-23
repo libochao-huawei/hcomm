@@ -49,6 +49,18 @@ public:
     }
 
     RdmaHandle rdmaHandle_{nullptr};
+
+protected:
+    // 参数校验：memHandle / addr / size / type
+    static HcclResult ValidateMemParams(HcommMem mem, void **memHandle)
+    {
+        CHK_PTR_NULL(memHandle);
+        CHK_PTR_NULL(mem.addr);
+        CHK_PRT_RET(mem.size == 0, HCCL_ERROR("[%s] mem size is zero", __func__), HCCL_E_PARA);
+        CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID,
+            HCCL_ERROR("[%s] invalid mem type [%d]", __func__, mem.type), HCCL_E_PARA);
+        return HCCL_SUCCESS;
+    }
 };
 }
 
