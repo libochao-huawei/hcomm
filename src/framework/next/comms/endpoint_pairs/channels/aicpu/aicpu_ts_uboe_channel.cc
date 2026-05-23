@@ -13,7 +13,6 @@
 #include "orion_adpt_utils.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
-#include "comm_mems.h"
 #include "user_remote_mem_getter.h"
 
 // Orion
@@ -47,11 +46,12 @@ HcclResult AicpuTsUboeChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
 {
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        HCCL_INFO("[AicpuTsUboeChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
+        auto localRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
+        auto buf = localRmaBuffer->GetBuf();
+        HCCL_INFO("[AicpuTsUboeChannel][%s] tag[%s]", __func__, buf->GetMemTag().c_str());
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
+            localRmaBuffer->GetAddr(), localRmaBuffer->GetSize(),
+            buf->GetMemType(), buf->GetMemTag().c_str())
         ));
     }
     return HCCL_SUCCESS;
@@ -87,6 +87,7 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
                 localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
                 localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
+                localUbRmaBuffer->GetBuf()->GetMemType(),
                 localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
             ));
         }
