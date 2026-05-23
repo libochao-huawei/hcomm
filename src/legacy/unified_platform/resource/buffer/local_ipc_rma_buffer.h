@@ -22,6 +22,9 @@ class LocalIpcRmaBuffer : public LocalRmaBuffer {
 public:
     explicit LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf);
 
+    // 别名构造函数：共享父buffer的IPC资源，不创建新的IPC内存名
+    LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf, const LocalIpcRmaBuffer& parent);
+
     ~LocalIpcRmaBuffer() override;
 
     LocalIpcRmaBuffer(const LocalIpcRmaBuffer &that) = delete;
@@ -34,6 +37,8 @@ public:
 
     std::unique_ptr<Serializable> GetExchangeDto() override;
     std::pair<uintptr_t, u64> GetBufferInfo() {return std::make_pair(buf->GetAddr(), buf->GetSize());}
+
+    void* GetIpcPtr() const {return ipcPtr;}
 
 protected:
     char  name[RTS_IPC_MEM_NAME_LEN];
