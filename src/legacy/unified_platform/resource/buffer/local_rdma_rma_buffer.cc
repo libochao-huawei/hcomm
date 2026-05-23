@@ -42,13 +42,20 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
     }
     lkey = mrInfo.lkey;
     rkey = mrInfo.rkey;
-    HCCL_INFO("LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s]", 
+    HCCL_INFO("LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s]",
             rdmaHandle, mrHandle, buf->Describe().c_str());
+}
+
+LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle, u32 lkey, u32 rkey, MrHandle mrHandle)
+    : LocalRmaBuffer(buf, RmaType::RDMA, true), rdmaHandle(rdmaHandle), lkey(lkey), rkey(rkey), mrHandle(mrHandle)
+{
+    HCCL_INFO("LocalRdmaRmaBuffer alias[rdmaHandle=%p, mrHandle=%p, lkey=%u, buf=%s]",
+            rdmaHandle, mrHandle, lkey, buf->Describe().c_str());
 }
 
 LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
 {
-    if (mrHandle) {
+    if (mrHandle && !isAlias_) {
         s32 ret = RaDeregisterMr(rdmaHandle, mrHandle);
         if (ret != 0) {
             HCCL_ERROR("[HrtRaDeRegisterMr]errNo[0x%016llx] RaDeregisterMr failed, return[%d]",

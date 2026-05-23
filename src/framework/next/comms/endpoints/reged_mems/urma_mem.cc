@@ -29,95 +29,25 @@ UbRegedMemMgr::UbRegedMemMgr()
 HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
-    CHK_PTR_NULL(this->localUbRmaBufferMgr_);
-    CHK_PTR_NULL(memHandle);
-    CHK_PTR_NULL(mem.addr);
-    CHK_PRT_RET(mem.size == 0, HCCL_ERROR("[%s] mem size is zero", __func__), HCCL_E_PARA);
-    CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID, 
-        HCCL_ERROR("[%s] invalid mem type [%d]", __func__, mem.type), HCCL_E_PARA);
-
-    std::shared_ptr<Hccl::LocalUbRmaBuffer> localUbRmaBuffer = nullptr;
-
-    // LocalUbRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
-    auto findPair = localUbRmaBufferMgr_->Find(tempKey);
-    if(findPair.first) {
-        localUbRmaBuffer = findPair.second;
-    } else {
-        // 构造LocalUbRmaBuffer
-        std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
-        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
-            mem.size, static_cast<HcclMemType>(mem.type), memTag)),
-            return HCCL_E_PTR);
-
-        if (memTag && (strcmp(memTag, "HcclBuffer") == 0)) {
-            EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr)),
-                return HCCL_E_PTR);
-        }
-        else {
-            EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
-                return HCCL_E_PTR);
-        }
-    }
-
-    // 重新构造key确保注册到计数器的key和接口返回的memHandle对应
-    hccl::BufferKey<uintptr_t, u64> actualRegKey(localUbRmaBuffer->GetAddr(),
-        static_cast<uint64_t>(localUbRmaBuffer->GetSize()));
-
-    // 注册到LocalUbRmaBuffer计数器
-    auto resultPair = localUbRmaBufferMgr_->AddWithoutCheck(actualRegKey, localUbRmaBuffer);
-
-    std::shared_ptr<Hccl::LocalUbRmaBuffer> &localBuffer = resultPair.first->second.buffer;
-    CHK_SMART_PTR_NULL(localBuffer);
-    *memHandle = static_cast<void *>(localBuffer.get());
-
-    // 已注册：输入key是表中某一最相近key的全集。 返回添加该key的迭代器，及false
-    // 未注册：输入key是表中某一最相近key的空集。 返回添加成功的迭代器，及true
-    if (resultPair.second) {
-        HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Register memory success! Add key {%p, %llu}", mem.addr, mem.size);
-    } else {  
-        HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
-                "{%p, %llu}", mem.addr, mem.size);;
-        return HCCL_SUCCESS;
-    }
-
-    this->allRegisteredBuffers_.push_back(localBuffer);
-    return HCCL_SUCCESS;
+    CHK_PTR_NULL(localUbRmaBufferMgr_);
+    return RegisterMemoryImpl(mem, memTag, memHandle,
+        localUbRmaBufferMgr_, allRegisteredBuffers_,
+        "UbRegedMemMgr",
+        [&](auto& bufPtr, auto& parent) {
+            return std::make_shared<Hccl::LocalUbRmaBuffer>(bufPtr, rdmaHandle_,
+                parent->GetMemRegOutParam());
+        },
+        [&](auto& bufPtr) {
+            return std::make_shared<Hccl::LocalUbRmaBuffer>(bufPtr, rdmaHandle_);
+        });
 }
 
 HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
-    CHK_PTR_NULL(this->localUbRmaBufferMgr_);
-
-    Hccl::LocalUbRmaBuffer* buffer = static_cast<Hccl::LocalUbRmaBuffer*>(memHandle);
-    CHK_PTR_NULL(buffer);
-    auto bufferInfo = buffer->GetBufferInfo();
-
-    // 从LocalRamBuffer计数器删除
-    hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
-    bool resultPair = false;
-    EXECEPTION_CATCH(resultPair = this->localUbRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
-    // 计数器大于1时，返回false，说明框架层有其它设备在使用这段内存，返回HCCL_E_AGAIN
-    if (!resultPair) {
-        HCCL_INFO("[UbRegedMemMgr][[UnregisterMemory] Memory reference count is larger than 0"
-                  "(used by other RemoteRank), do not deregister memory.");
-        return HCCL_SUCCESS;
-    }
-    
-    // 删除vector中的LocalUbRmaBuffer
-    auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
-            [buffer](const std::shared_ptr<Hccl::LocalUbRmaBuffer>& ptr) {
-                return ptr.get() == buffer;
-            });
-
-    if (it == allRegisteredBuffers_.end()) {
-        HCCL_ERROR("[UbRegedMemMgr][UnregisterMemory] Memory not found in vector!");
-        return HCCL_E_NOT_FOUND;
-    }
-
-    allRegisteredBuffers_.erase(it);
-    return HCCL_SUCCESS;
+    CHK_PTR_NULL(localUbRmaBufferMgr_);
+    return UnregisterMemoryImpl(memHandle, localUbRmaBufferMgr_, allRegisteredBuffers_,
+        [](auto* b) { return b->GetMemRegOutParam().handle; });
 }
 
 HcclResult UbRegedMemMgr::GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalUbRmaBuffer *localUbRmaBuffer) 
@@ -197,7 +127,7 @@ HcclResult UbRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, Hc
     // 构造RemoteUbRmaBuffer
     std::shared_ptr<Hccl::RemoteUbRmaBuffer> remoteUbRmaBuffer;
     EXECEPTION_CATCH(
-        remoteUbRmaBuffer = std::make_shared<Hccl::RemoteUbRmaBuffer>(this->rdmaHandle_, dto),
+        remoteUbRmaBuffer = std::make_shared<Hccl::RemoteUbRmaBuffer>(rdmaHandle_, dto),
         return HCCL_E_PTR;
     );
     CHK_SMART_PTR_NULL(remoteUbRmaBuffer);
