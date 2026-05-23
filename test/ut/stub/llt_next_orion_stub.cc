@@ -313,6 +313,13 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaH
 {
 }
 
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle, HrtRaUbLocalMemRegOutParam memRegOutParam)
+    : LocalRmaBuffer(buf, RmaType::UB, true)
+{
+    (void)rdmaHandle;
+    (void)memRegOutParam;
+}
+
 LocalUbRmaBuffer::~LocalUbRmaBuffer()
 {
 }
@@ -1273,6 +1280,15 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
 {
 }
 
+LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle, u32 lkey, u32 rkey, MrHandle mrHandle)
+    : LocalRmaBuffer(buf, RmaType::RDMA, true)
+{
+    (void)rdmaHandle;
+    (void)lkey;
+    (void)rkey;
+    (void)mrHandle;
+}
+
 LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
 {
 }
@@ -1395,6 +1411,12 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice,
 
 LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer(buf, RmaType::IPC)
 {
+}
+
+LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf, const LocalIpcRmaBuffer& parent)
+    : LocalRmaBuffer(buf, RmaType::IPC, true)
+{
+    (void)parent;
 }
 
 LocalIpcRmaBuffer::~LocalIpcRmaBuffer()
