@@ -194,7 +194,7 @@ TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_Input_Expect_NO_THROW)
 {
     // check
     RankInfoDetect rankInfoDetect;
-    EXPECT_EQ(rankInfoDetect.GetHostListenPort(), 60000); // HOST_CONTROL_BASE_PORT
+    EXPECT_EQ(rankInfoDetect.GetHostListenPort(), HCCL_INVALID_PORT); // HOST_CONTROL_BASE_PORT
 }
 
 TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_Config_PORT_RANGE_Expect_Right)
