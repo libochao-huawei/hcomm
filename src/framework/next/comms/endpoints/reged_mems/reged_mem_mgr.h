@@ -1,18 +1,21 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #ifndef REGED_MEM_MGR_H
 #define REGED_MEM_MGR_H
 
+#include <algorithm>
 #include <memory>
 #include "hcomm_c_adpt.h"
 #include "log.h"
+#include "buffer_key.h"
+#include "buffer.h"
 
 using RdmaHandle = void *;
 
@@ -49,7 +52,129 @@ public:
     }
 
     RdmaHandle rdmaHandle_{nullptr};
+
+protected:
+    static HcclResult ValidateMemParams(HcommMem mem, void **memHandle)
+    {
+        CHK_PTR_NULL(memHandle);
+        CHK_PTR_NULL(mem.addr);
+        CHK_PRT_RET(mem.size == 0, HCCL_ERROR("[%s] mem size is zero", __func__), HCCL_E_PARA);
+        CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID,
+            HCCL_ERROR("[%s] invalid mem type [%d]", __func__, mem.type), HCCL_E_PARA);
+        return HCCL_SUCCESS;
+    }
+
+    // ---- 底层：tree 操作 ----
+
+    // 用实际注册后的addr/size做key，对buffer增加引用计数
+    template <typename Mgr, typename BufferPtr>
+    static void AddRefToParent(Mgr& mgr, const BufferPtr& buffer)
+    {
+        hccl::BufferKey<uintptr_t, u64> actualRegKey(
+            reinterpret_cast<uintptr_t>(buffer->GetAddr()), static_cast<uint64_t>(buffer->GetSize()));
+        (void)mgr->AddWithoutCheck(actualRegKey, buffer);
+    }
+
+    // UnregisterMemory: IsAlias为true时，通过硬件句柄定位父buffer
+    template <typename Mgr, typename BufferPtr, typename BufferVec, typename HwHandleFn>
+    static BufferPtr ResolveAliasParent(Mgr& mgr, const hccl::BufferKey<uintptr_t, u64>& ownKey,
+        BufferPtr buffer, BufferVec& allBuffers, HwHandleFn&& hwHandleGetter)
+    {
+        auto hw = hwHandleGetter(buffer);
+        auto findResult = mgr->Find(ownKey);
+        if (findResult.first && hwHandleGetter(findResult.second.get()) == hw) {
+            return findResult.second.get();
+        }
+        for (auto& ptr : allBuffers) {
+            if (hwHandleGetter(ptr.get()) == hw) {
+                return ptr.get();
+            }
+        }
+        return buffer;
+    }
+
+    // ---- 中层：注册/注销 核心逻辑 ----
+
+    // Find命中则基于父buffer构造别名，未命中则构造新buffer并注册
+    template <typename Mgr, typename FindResult, typename BufferPtr, typename MakeAlias, typename MakeNew>
+    static HcclResult RegisterOrAlias(Mgr& mgr, const FindResult& findPair, BufferPtr& buffer,
+        MakeAlias&& makeAlias, MakeNew&& makeNew)
+    {
+        if (findPair.first) {
+            auto parentBuffer = findPair.second;
+            EXECEPTION_CATCH((buffer = makeAlias(parentBuffer)), return HCCL_E_PTR);
+            AddRefToParent(mgr, parentBuffer);
+        } else {
+            EXECEPTION_CATCH((buffer = makeNew()), return HCCL_E_PTR);
+            AddRefToParent(mgr, buffer);
+        }
+        return HCCL_SUCCESS;
+    }
+
+    // ---- 上层：RegisterMemory / UnregisterMemory 通用实现 ----
+
+    // 构造基类Buffer → RegisterOrAlias → 写回memHandle
+    // makeAlias(bufPtr, parent) — 基于父buffer构造别名
+    // makeNew(bufPtr)          — 构造新buffer
+    template <typename Mgr, typename RmaBuffer, typename MakeAlias, typename MakeNew>
+    static HcclResult RegisterMemoryImpl(HcommMem mem, const char *memTag, void **memHandle,
+        Mgr& mgr, std::vector<std::shared_ptr<RmaBuffer>>& allBuffers,
+        const char* logTag, MakeAlias&& makeAlias, MakeNew&& makeNew)
+    {
+        CHK_RET(ValidateMemParams(mem, memHandle));
+
+        hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
+        auto findPair = mgr->Find(tempKey);
+
+        std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
+        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
+            mem.size, static_cast<HcclMemType>(mem.type), memTag)),
+            return HCCL_E_PTR);
+
+        std::shared_ptr<RmaBuffer> rmaBuffer;
+        CHK_RET(RegisterOrAlias(mgr, findPair, rmaBuffer,
+            [&](auto& parent) { return makeAlias(localBufferPtr, parent); },
+            [&]() { return makeNew(localBufferPtr); }));
+
+        HCCL_INFO("[%s][RegisterMemory] success, key {%p, %llu}", logTag, mem.addr, mem.size);
+        *memHandle = static_cast<void *>(rmaBuffer.get());
+        allBuffers.push_back(rmaBuffer);
+        return HCCL_SUCCESS;
+    }
+
+    // IsAlias → ResolveAliasParent → Del → erase
+    // hwHandleGetter(buffer) — 获取硬件句柄用于ResolveAliasParent
+    template <typename Mgr, typename RmaBuffer, typename HwHandleFn>
+    static HcclResult UnregisterMemoryImpl(void* memHandle, Mgr& mgr,
+        std::vector<std::shared_ptr<RmaBuffer>>& allBuffers, HwHandleFn&& hwHandleGetter)
+    {
+        CHK_PTR_NULL(memHandle);
+        RmaBuffer* buffer = static_cast<RmaBuffer*>(memHandle);
+        CHK_PTR_NULL(buffer);
+        auto bufferInfo = buffer->GetBufferInfo();
+
+        hccl::BufferKey<uintptr_t, u64> ownKey(bufferInfo.first, bufferInfo.second);
+        RmaBuffer* refBuffer = buffer;
+        if (buffer->IsAlias()) {
+            refBuffer = ResolveAliasParent(mgr, ownKey, buffer, allBuffers,
+                std::forward<HwHandleFn>(hwHandleGetter));
+        }
+
+        auto refBufferInfo = refBuffer->GetBufferInfo();
+        hccl::BufferKey<uintptr_t, u64> tempKey(refBufferInfo.first, refBufferInfo.second);
+        bool resultPair = false;
+        EXECEPTION_CATCH(resultPair = mgr->Del(tempKey), return HCCL_E_NOT_FOUND);
+        // 无论tree中是否删除（ref是否归零），当前handle都要从allBuffers移除
+        auto it = std::find_if(allBuffers.begin(), allBuffers.end(),
+            [buffer](const std::shared_ptr<RmaBuffer>& ptr) { return ptr.get() == buffer; });
+        if (it != allBuffers.end()) {
+            allBuffers.erase(it);
+        }
+        if (!resultPair) {
+            return HCCL_SUCCESS;  // ref>0：父buffer tree中保留，仅移除alias handle
+        }
+        return HCCL_SUCCESS;
+    }
 };
 }
-
 #endif // REGED_MEM_MGR_H
