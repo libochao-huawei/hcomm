@@ -29,6 +29,10 @@ public:
     {
     }
 
+    LocalRmaBuffer(std::shared_ptr<Buffer> buf, RmaType type, bool isAlias) : buf(buf), rmaType(type), isAlias_(isAlias)
+    {
+    }
+
     virtual ~LocalRmaBuffer() = default;
 
     virtual std::string Describe() const = 0;
@@ -41,6 +45,11 @@ public:
     RmaType GetRmaType() const // used for grant check
     {
         return rmaType;
+    }
+
+    bool IsAlias() const
+    {
+        return isAlias_;
     }
 
     u64 GetMemHandle() const
@@ -65,6 +74,7 @@ public:
     }
 
 protected:
+    bool isAlias_{false};
     std::shared_ptr<Buffer> buf;
     RmaType                 rmaType;
     u64                     memHandle{0};

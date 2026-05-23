@@ -125,32 +125,26 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
         return ret;
     }
 
-    auto resultPair = localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
-    if (resultPair.first == localRdmaRmaBufferMgr_->End()) {
-        HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] memory overlaps with registered memory");
-        return HCCL_E_INTERNAL;
-    }
+    // 使用实际注册后的key
+    hccl::BufferKey<uintptr_t, u64> actualRegKey(reinterpret_cast<uintptr_t>(localRdmaRmaBuffer->GetAddr()),
+        static_cast<u64>(localRdmaRmaBuffer->GetSize()));
+    auto resultPair = localRdmaRmaBufferMgr_->AddWithoutCheck(actualRegKey, localRdmaRmaBuffer);
 
-    std::shared_ptr<hccl::LocalRdmaRmaBuffer> &localBuffer = resultPair.first->second.buffer;
-    CHK_SMART_PTR_NULL(localBuffer);
-    *memHandle = static_cast<void *>(localBuffer.get());
+    *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
 
     if (resultPair.second) {
-        ret = localBuffer->Init();
+        ret = localRdmaRmaBuffer->Init();
         if (ret != HCCL_SUCCESS) {
-            (void)localRdmaRmaBufferMgr_->Del(tempKey);
+            (void)localRdmaRmaBufferMgr_->Del(actualRegKey);
             HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] Init failed, ret[%d]", ret);
             return ret;
         }
         HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] success, key {%p, %llu}", mem.addr, mem.size);
+    } else {
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] already registered, ref++, key {%p, %llu}", mem.addr, mem.size);
     }
 
-    TrackRegisteredBuffer(localBuffer);
-
-    if (resultPair.second) {
-        return HCCL_SUCCESS;
-    }
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] already registered, ref++, key {%p, %llu}", mem.addr, mem.size);
+    TrackRegisteredBuffer(localRdmaRmaBuffer);
     return HCCL_SUCCESS;
 }
 
