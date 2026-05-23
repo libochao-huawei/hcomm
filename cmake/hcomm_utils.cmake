@@ -19,7 +19,7 @@ set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/${HCOMM_UTILS_FILE})
 set(HCOMM_UTILS_INSTALL_PATH ${CANN_3RD_LIB_PATH}/hcomm_utils)
 
 # 查找目录下是否已经安装，避免重复编译安装
-message(STATUS "[ThirdParty] HCOMM_UTILS_INSTALL_PATH=${HCOMM_UTILS_INSTALL_PATH}")
+message(STATUS "[ThirdParty] HCOMM_UTILS_INSTALL_PATH=${HCOMM_UTILS_INSTALL_PATH} PRODUCT_SIDE=${PRODUCT_SIDE}")
 find_library(TLS_ADP_LIBRARY
     NAMES libtls_adp.so
     PATH_SUFFIXES lib
@@ -41,28 +41,30 @@ message(STATUS "[ThirdParty] Found hcomm_utils: ${hcomm_utils_FOUND}")
 
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdParty] hcomm_utils found in ${HCOMM_UTILS_INSTALL_PATH}, and not force rebuild cann third_party")
-else()
-    file(GLOB HCOMM_UTILS_PKG
-        LIST_DIRECTORIES True
-        ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_*_linux-${HCOMM_UTILS_ARCH}.tar.gz
-    )
-    if(EXISTS ${HCOMM_UTILS_PKG})
-        # 离线编译场景，优先使用已下载的包（忽略版本号）
-        message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG}")
-        set(HCOMM_UTILS_PKG_PATH ${HCOMM_UTILS_PKG})
-    endif()
-
+elseif(PRODUCT_SIDE STREQUAL "host")
+    # Host 侧编译时下载 hcomm_utils 包，Device 侧编译时进行复用
+    set(HCOMM_UTILS_GLOB_PKG "")
     if(EXISTS ${HCOMM_UTILS_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG_PATH}")
         set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
     else()
-        # 下载并解压
-        message(STATUS "[ThirdParty] Downloading hcomm_utils from ${HCOMM_UTILS_URL}")
-        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_URL})
+        file(GLOB HCOMM_UTILS_GLOB_PKG
+            ${CANN_3RD_LIB_PATH}/cann-hcomm-utils_*_linux-${HCOMM_UTILS_ARCH}.tar.gz
+        )
+        if(EXISTS ${HCOMM_UTILS_GLOB_PKG})
+            # 离线编译场景，优先使用已下载的包（忽略版本号）
+            message(STATUS "[ThirdParty] Found local hcomm_utils package (ignore version): ${HCOMM_UTILS_GLOB_PKG}")
+            set(HCOMM_UTILS_PKG_PATH ${HCOMM_UTILS_GLOB_PKG})
+            set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_GLOB_PKG})
+        else()
+            # 下载并解压
+            message(STATUS "[ThirdParty] Downloading hcomm_utils from ${HCOMM_UTILS_URL}")
+            set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_URL})
+        endif()
     endif()
 
-    if(EXISTS ${HCOMM_UTILS_PKG})
+    if(EXISTS ${HCOMM_UTILS_GLOB_PKG})
         set(HCOMM_UTILS_URL_HASH "")    # 忽略版本号，不校验哈希值
     elseif(HCOMM_UTILS_ARCH MATCHES "aarch64|ARM64|arm64")
         set(HCOMM_UTILS_URL_HASH "SHA256=bf36523b855842f7d391eeaaa23ed7ffa066deb591e531e8ec6fa0c35d422aff")
