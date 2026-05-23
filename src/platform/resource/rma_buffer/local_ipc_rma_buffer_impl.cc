@@ -23,11 +23,24 @@ LocalIpcRmaBufferImpl::LocalIpcRmaBufferImpl(
 {
 }
 
+LocalIpcRmaBufferImpl::LocalIpcRmaBufferImpl(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
+    const RmaMemType memType, const LocalIpcRmaBufferImpl& parent)
+    : RmaBuffer(netDevCtx, addr, size, memType, RmaType::IPC_RMA, true),
+      deviceLogicId(parent.deviceLogicId),
+      memName(parent.memName),
+      memOffset(parent.memOffset),
+      initialized_(true)
+{
+    HCCL_INFO("[LocalIpcRmaBufferImpl] alias constructor, ipcName[%s]", memName.ipcName);
+}
+
 LocalIpcRmaBufferImpl::~LocalIpcRmaBufferImpl()
 {
-    HcclResult res = Destroy();
-    if (res != HCCL_SUCCESS) {
-        HCCL_ERROR("[LocalIpcRmaBufferImpl][~LocalIpcRmaBufferImpl]failed, ret[%d]", res);
+    if (!isAlias_) {
+        HcclResult res = Destroy();
+        if (res != HCCL_SUCCESS) {
+            HCCL_ERROR("[LocalIpcRmaBufferImpl][~LocalIpcRmaBufferImpl]failed, ret[%d]", res);
+        }
     }
 }
 
