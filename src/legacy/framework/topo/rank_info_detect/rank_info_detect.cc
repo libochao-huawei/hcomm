@@ -109,7 +109,7 @@ shared_ptr<Socket> RankInfoDetect::ServerInit()
     if (hostPort_ == HCCL_INVALID_PORT) {
         auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
         if (portRange.empty()) {
-            HcclSocketPortRange defaultRange = {HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + HOST_SOCKET_CONN_LIMIT};
+            SocketPortRange defaultRange = {HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + HOST_SOCKET_CONN_LIMIT};
             portRange.push_back(defaultRange);
         }
         PreemptPortManager::GetInstance(devLogicId_).ListenPreempt(serverSocket, portRange, hostPort_);
