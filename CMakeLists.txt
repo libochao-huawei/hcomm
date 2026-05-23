@@ -120,7 +120,7 @@ elseif(BUILD_OPEN_PROJECT)
     find_cann_package(tsdclient MODULE REQUIRED)
     find_cann_package(unified_dlog MODULE REQUIRED)
     # 检查构建依赖
-    check_pkg_build_deps("hcomm")
+    check_cann_pkg_build_deps("hcomm")
     add_version_info_targets()
     # 配置打包
     pack_built_in()
@@ -153,6 +153,9 @@ elseif(BUILD_OPEN_PROJECT)
             INSTALL_COMMAND ${CMAKE_CPACK_COMMAND}
             BUILD_ALWAYS TRUE
         )
+        if(TARGET hcomm_utils)
+            add_dependencies(hcomm_device hcomm_utils)
+        endif()
 
         # 安装 device 侧编译产物
         install(FILES
