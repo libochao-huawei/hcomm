@@ -334,6 +334,7 @@ HcclResult AicpuTsUrmaChannel::Clean()
 
 HcclResult AicpuTsUrmaChannel::Resume()
 {
+    BuildSocket();
     BuildConnection();
     BuildUbMemTransport();
     return HCCL_SUCCESS;
