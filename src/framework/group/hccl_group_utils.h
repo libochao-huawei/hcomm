@@ -103,7 +103,48 @@ struct hcclTaskP2p {
     HcclComm comm;
     HcclRtStream stream;
 };
- 
+
+struct HcclOpP2pDesc {
+    void* buffer;
+    u8 reserved[8];
+    HcclCMDType cmdType;
+    HcclDataType dataType;
+    u64 count;
+    u32 remoteRank;
+};
+
+struct HcclOpDesc {
+    u32 opDescType; // 0:coll, 1:p2p, 2:alltoall, 3:alltoallv
+    char opName[256];
+    u8 reserved[64];
+    union {
+        HcclOpP2pDesc p2p;
+    };
+};
+
+struct HcclP2pPair {
+    u32 sendRank;
+    u32 recvRank;
+};
+
+struct HcclKernelFuncInfo {
+    char kernelSo[256];
+    char kernelFuncName[256];
+};
+
+struct HcclP2pTask {
+    HcclOpP2pDesc desc;
+    aclrtStream stream;
+    HcclKernelFuncInfo funcInfo;
+    void* args;
+    u32 argSize;
+};
+
+struct HcclP2pSendRecvQueue {
+    std::deque<HcclP2pTask> sendQue;
+    std::deque<HcclP2pTask> recvQue;
+};
+
 struct hcclKernelPlanner {
     s32 nTasksColl = -1;
     s32 nTasksP2p = -1;//该plan中Coll和P2p task的个数
@@ -115,6 +156,9 @@ struct hcclKernelPlanner {
     std::vector<HcclSendRecvItem> sendRecvInfo;
 
     std::deque<struct hcclOpInfo> collTaskQueue;
+
+    std::vector<HcclP2pPair> p2pSchedule;
+    std::vector<HcclP2pSendRecvQueue> peers;
 };
 
 }// namespace hccl

@@ -13,11 +13,16 @@
 
 #include "hccl_group.h"
 
+#include "coll_alg_utils.h"
+
 using namespace hccl;
 
 thread_local s32 hcclGroupDepth = 0;
+thread_local s32 hcclP2pTaskNums = 0;
 thread_local std::deque<std::shared_ptr<struct hcclAsyncJob>> hcclInitJobs;
 thread_local std::vector<HcclComm> hcclGroupCommList;
+
+constexpr s32 MAX_P2P_TASK_NUM = 2048;
 
 HcclResult HcclGroupStart()
 {
@@ -26,7 +31,137 @@ HcclResult HcclGroupStart()
     return HCCL_SUCCESS;
 }
 
+namespace {
+u32 Pow2Up(u32 n) {
+    u32 power = 1;
+    while (power < n) { power *= 2; }
+    return power;
+}
+}
+
 namespace hccl{
+HcclResult HcclP2pSchedulerGenerate(HcclComm comm, u32 rankSize)
+{
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
+    u32 userRank = INVALID_VALUE_RANKID;
+    hcclComm->GetUserRank(userRank);
+    u32 serverNum = hcclComm->GetServerNum();
+    std::vector<RankInfo> rankList = hcclComm->GetRankLists();
+    u32 curlocalRank = rankList[userRank].localRank; // userRank在server内的自然排序号
+
+    // 构建server和rank的映射
+    std::map<u32, std::vector<u32>> serverToRankList;
+    std::map<u32, u32> serverToRankSize;
+    for (u32 rankIdx = 0; rankIdx < rankList.size(); rankIdx++) {
+        u32 serverIdx = rankList[rankIdx].serverIdx;
+        serverToRankList[serverIdx].emplace_back(rankIdx);
+        serverToRankSize[serverIdx]++;
+    }
+
+    // 计算groupSize
+    u32 groupSize = 0;
+    if (serverNum == 1) {
+        groupSize = rankSize;
+    } else {
+        groupSize = rankSize / serverNum;
+        std::vector<u32> serverRankSizeList;
+        for (auto& pair : serverToRankSize) {
+            serverRankSizeList.emplace_back(pair.second);
+        }
+        u32 gcdRes = CalGCD(serverRankSizeList);
+        groupSize = gcdRes;
+    }
+
+    u32 curGroupLocalRankIdx = curlocalRank % groupSize; // userRank在group内的自然排序号
+    u32 curGroupIdx = curlocalRank / groupSize;          // userRank所在group的自然排序号
+    u32 nGroups = rankSize / groupSize;
+    u32 nGroupsPow2 = Pow2Up(nGroups);
+    HCCL_DEBUG("[HcclP2pSchedulerGenerate] groupSize:%u, nGroups:%u, nGroupsPow2:%u", groupSize, nGroups, nGroupsPow2);
+
+    std::vector<u32> groupToServer(nGroups);
+    std::vector<u32> groupToLocalRankBase(nGroups); // group的起始rank在server内的自然排序号 
+    u32 groupIdx = 0;
+    for (auto& pair : serverToRankList) {
+        u32 serverIdx = pair.first;
+        u32 localRankSize = serverToRankSize[serverIdx];
+        u32 localGroupSize = localRankSize / groupSize;
+        for (u32 localGroupIdx = 0; localGroupIdx < localGroupSize; localGroupIdx++) {
+            groupToServer[groupIdx] = serverIdx;
+            groupToLocalRankBase[groupIdx] = localGroupIdx * groupSize;
+            groupIdx++;
+        }
+    }
+    
+    // 生成调度表
+    planner->p2pSchedule.resize(rankSize);
+    u32 round = 0;
+    u32 groupRound = 0;
+    u32 groupDelta = 0;
+    do {
+        if (groupDelta < nGroups) {
+            u32 sendGroupIdx = (curGroupIdx + groupDelta) % nGroups;
+            u32 recvGroupIdx = (curGroupIdx - groupDelta + nGroups) % nGroups;
+            u32 sendServerIdx = groupToServer[sendGroupIdx];
+            u32 recvServerIdx = groupToServer[recvGroupIdx];
+            
+            for (u32 delta = 0; delta < groupSize; delta++) {
+                u32 sendLocalIdx = groupToLocalRankBase[sendGroupIdx] + (curGroupLocalRankIdx + delta) % groupSize;
+                u32 recvLocalIdx = groupToLocalRankBase[recvGroupIdx] 
+                                    + (curGroupLocalRankIdx - delta + groupSize) % groupSize;
+
+                planner->p2pSchedule[round].sendRank = serverToRankList[sendServerIdx][sendLocalIdx];
+                planner->p2pSchedule[round].recvRank = serverToRankList[recvServerIdx][recvLocalIdx];
+                round++;
+            }
+        }
+        groupRound++;
+        groupDelta = (groupDelta + groupRound) & (nGroupsPow2 - 1);
+    } while (groupRound != nGroupsPow2);
+
+    if (rankSize != round) {
+        HCCL_ERROR("[HcclP2pSchedulerGenerate] round:%u is not equal to rankSize:%u", round, rankSize);
+        return HCCL_E_INTERNAL;
+    }
+
+    HCCL_INFO("[HcclP2pSchedulerGenerate] schedule generated, round:%u", round);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclP2pTaskSchedule(
+    HcclComm comm, std::vector<HcclP2pTask> &sortedSendQue, std::vector<HcclP2pTask> &sortedRecvQue)
+{
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
+    HCCL_INFO("[HcclP2pTaskSchedule] nTaskP2p:%u", planner->nTasksP2p);
+
+    u32 epoch = 0;
+    while (planner->nTasksP2p > 0) {
+        for (u32 round = 0; round < planner->rankSize; round++) {
+            u32 sendRank = planner->p2pSchedule[round].sendRank;
+            u32 recvRank = planner->p2pSchedule[round].recvRank;
+
+            if (!planner->peers[sendRank].sendQue.empty()) {
+                auto &sendTask = planner->peers[sendRank].sendQue.front();
+                sortedSendQue.emplace_back(sendTask);
+                planner->peers[sendRank].sendQue.pop_front();
+                planner->nTasksP2p--;
+            }
+
+            if (!planner->peers[recvRank].recvQue.empty()) {
+                auto &recvTask = planner->peers[recvRank].recvQue.front();
+                sortedRecvQue.emplace_back(recvTask);
+                planner->peers[recvRank].recvQue.pop_front();
+                planner->nTasksP2p--;
+            }
+        }
+        epoch++;
+    }
+    HCCL_INFO("[HcclP2pTaskSchedule] done, use epochs:%u, sendQueSize:%u, recvQueSize:%u ", epoch,
+        static_cast<u32>(sortedSendQue.size()), static_cast<u32>(sortedRecvQue.size()));
+
+    return HCCL_SUCCESS;
+}
 
 HcclResult initGroupPlanner(HcclComm comm) {
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -39,6 +174,38 @@ HcclResult initGroupPlanner(HcclComm comm) {
     planner->nTasksP2p = 0;
     planner->nTasksColl = 0;
     return HCCL_SUCCESS;
+}
+
+HcclResult HcclGroupAddP2pTask(HcclComm comm, const HcclP2pTask& task, const HcclOpP2pDesc& p2pDesc)
+{
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
+    if(planner->nTasksP2p == -1){
+        initGroupPlanner(comm);
+        HcclP2pSchedulerGenerate(comm, planner->rankSize);
+        planner->peers.resize(planner->rankSize);
+    }
+
+    if (hcclP2pTaskNums == MAX_P2P_TASK_NUM) {
+        HCCL_ERROR("[hcclGroupAddP2pTask] P2pTaskNums is out of %d", MAX_P2P_TASK_NUM);
+        return HCCL_E_OOM;
+    }
+
+    HcclResult ret = HCCL_SUCCESS;
+    hcclComm->SetGroupMode(true);
+    bool isSendOp = (p2pDesc.cmdType == HcclCMDType::HCCL_CMD_SEND);
+    if (isSendOp) {
+        planner->peers[p2pDesc.remoteRank].sendQue.emplace_back(task);
+    } else {
+        planner->peers[p2pDesc.remoteRank].recvQue.emplace_back(task);
+    }
+    planner->nTasksP2p += 1;
+
+    auto itComm = std::find(hcclGroupCommList.begin(), hcclGroupCommList.end(), comm);
+    if (itComm == hcclGroupCommList.end()) {
+        hcclGroupCommList.emplace_back(comm);
+    }
+    return ret;
 }
 
 HcclResult taskAppend(HcclComm comm, hcclOpInfo& info) {
