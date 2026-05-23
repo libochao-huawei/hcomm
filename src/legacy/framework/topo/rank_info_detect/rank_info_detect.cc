@@ -108,6 +108,10 @@ shared_ptr<Socket> RankInfoDetect::ServerInit()
         hccpHostSocketHandle, hostIp_, hostPort_, hostIp_, "server", SocketRole::SERVER, NicType::HOST_NIC_TYPE);
     if (hostPort_ == HCCL_INVALID_PORT) {
         auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
+        if (portRange.empty()) {
+            HcclSocketPortRange defaultRange = {HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + HOST_SOCKET_CONN_LIMIT};
+            portRange.push_back(defaultRange);
+        }
         PreemptPortManager::GetInstance(devLogicId_).ListenPreempt(serverSocket, portRange, hostPort_);
     } else {
         serverSocket->Listen();
@@ -246,8 +250,9 @@ u32 RankInfoDetect::GetHostListenPort()
         return listenPort;
     }
 
-    listenPort = HOST_CONTROL_BASE_PORT + devPhyId_;
-    HCCL_INFO("[RankInfoDetect::%s] default port, listenPort[%u]", __func__, listenPort);
+    // 无环境变量设置，返回HCCL_INVALID_PORT触发PreemptPortManager轮询查找端口[6000, 60008]
+    listenPort = HCCL_INVALID_PORT;
+    HCCL_INFO("[RankInfoDetect::%s] No port configuration, using default port range[%u, %u]", __func__, HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + HOST_SOCKET_CONN_LIMIT);
     return listenPort;
 }
 
