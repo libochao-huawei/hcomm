@@ -17,6 +17,7 @@
 #include "orion_adpt_utils.h"
 
 #include "exception_handler.h"
+#include "comm_mems.h"
 
 // 暂时引入orion
 #include "local_ub_rma_buffer.h"
@@ -32,25 +33,25 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        CHK_PTR_NULL(locMemInfo);
-        auto locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(locMemInfo->bufferHandle);
-        CHK_PTR_NULL(locRmaBuffer);
-        HCCL_INFO("[BuildBufferInfos] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
+        auto localRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
+        CHK_PTR_NULL(localRmaBuffer);
+        auto buf = localRmaBuffer->GetBuf();
+        CHK_PTR_NULL(buf);
+        HCCL_INFO("[BuildBufferInfos] localRmaBuffer[%s]", localRmaBuffer->Describe().c_str());
 
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = locMemInfo->memTag;
+        std::string tag = buf->GetMemTag();
         if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
             HCCL_ERROR("[BuildBufferInfos] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
-            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr),
-            static_cast<uint32_t>(locMemInfo->mem.size),
-            locRmaBuffer->GetTokenId(),
-            locRmaBuffer->GetTokenValue(),
-            locMemInfo->mem.type,
+            localRmaBuffer->GetAddr(),
+            static_cast<uint32_t>(localRmaBuffer->GetSize()),
+            localRmaBuffer->GetTokenId(),
+            localRmaBuffer->GetTokenValue(),
+            hccl::ConvertHcclToCommMemType(buf->GetMemType()),
             memTag);
     }
     return HCCL_SUCCESS;
