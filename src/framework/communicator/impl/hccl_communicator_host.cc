@@ -4538,10 +4538,15 @@ namespace hccl
         bool selectAivAlg = algDesc.isAivMode;
         // aicpu 展开模式的后续执行使用 baseTag 查找 resMap_
         std::string resMapTag = (opParam.aicpuUnfoldMode && opParam.isCapture) ? baseTag : newTag;
+        HCCL_INFO("[%s] aicpuMode[%d] isCapture[%d] newTag[%s] baseTag[%s] resMapTag[%s]",
+            __func__, opParam.aicpuUnfoldMode, opParam.isCapture,
+            newTag.c_str(), baseTag.empty() ? "N/A" : baseTag.c_str(), resMapTag.c_str());
         if (resMap_.find(newTag) == resMap_.end()) {
             if (opParam.aicpuUnfoldMode && opParam.isCapture) {
                 // === aicpu 展开 capture 模式 ===
                 bool isFirstCapture = (resMap_.find(baseTag) == resMap_.end());
+                HCCL_INFO("[%s] aicpu capture isFirstCapture[%d] baseTag[%s] resMap_ size[%zu]",
+                    __func__, isFirstCapture, baseTag.c_str(), resMap_.size());
                 AlgResourceRequest resRequest;
                 CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
                 if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
@@ -4556,6 +4561,11 @@ namespace hccl
                     CHK_PRT_RET(ret != HCCL_SUCCESS,
                         HCCL_ERROR("[HcclCommunicator][ExecOp] AllocAlgResource failed, algName=[%s]", algName.c_str()), ret);
                     CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+                    HCCL_INFO("[%s] aicpu first capture: AllocAlgResource under baseTag[%s], resMap_ size[%zu]",
+                        __func__, baseTag.c_str(), resMap_.size());
+                } else {
+                    HCCL_INFO("[%s] aicpu subsequent capture: skip AllocAlgResource, reuse resMap_[%s], resMap_ size[%zu]",
+                        __func__, baseTag.c_str(), resMap_.size());
                 }
 
                 // ZeroCopy：从 resMap_[baseTag] clone transport → captureTransportMap_[newTag]
