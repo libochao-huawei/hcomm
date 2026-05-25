@@ -459,12 +459,14 @@ struct HcclLinkRoceV2 {
     bool useAtomicWrite{false}; // 是否使用atomic write
 };
 
+constexpr u32 LINK_ROCE_MAX_NUM = 4;
+
 struct HccltagRemoteResV2 {
     ListCommon nextTagRes;
     char tag[TAG_MAX_LENGTH]; // newtag
     HcclLinkP2pV2 linkP2p;
     HcclLinkP2pV2 linkP2pSio;
-    HcclLinkRoceV2 linkRoce[4];
+    HcclLinkRoceV2 linkRoce[LINK_ROCE_MAX_NUM];
 };
 
 struct HccltagRemoteResV3 {

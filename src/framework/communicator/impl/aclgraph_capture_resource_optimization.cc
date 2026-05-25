@@ -35,6 +35,8 @@ HcclResult HcclCommunicator::CollectRemoteRanks(const OpCommTransport &transport
             }
         }
     }
+    HCCL_INFO("[CollectRemoteRanks] collected %u unique ranks, %zu link map entries",
+        uniqueRanks.size(), rankLinkMap.size());
     return HCCL_SUCCESS;
 }
 
@@ -47,6 +49,8 @@ void HcclCommunicator::CalculateSerializationBlockSize(u32 rankCount,
         + rankCount * sizeof(ZeroCopyTransportRankEntry);
     perRankSize = sizeof(HcclRankRelationResV2) + sizeof(HccltagRemoteResV2);
     blockSize = headerSize + rankCount * perRankSize;
+    HCCL_INFO("[CalculateSerializationBlockSize] rankCount[%u] headerSize[%llu] perRankSize[%llu] blockSize[%llu]",
+        rankCount, headerSize, perRankSize, blockSize);
 }
 
 // AllocateAndZeroBlocks: 分配 HOST/Device 连续内存块并清零
@@ -54,6 +58,7 @@ void HcclCommunicator::CalculateSerializationBlockSize(u32 rankCount,
 HcclResult HcclCommunicator::AllocateAndZeroBlocks(u64 blockSize,
     HostMem &hostBlock, DeviceMem &devBlock)
 {
+    HCCL_INFO("[AllocateAndZeroBlocks] blockSize[%llu]", blockSize);
     CHK_PRT_RET(blockSize == 0, HCCL_ERROR("[AllocateAndZeroBlocks] blockSize is zero"), HCCL_E_PARA);
 
     hostBlock = HostMem::alloc(blockSize);
@@ -66,6 +71,8 @@ HcclResult HcclCommunicator::AllocateAndZeroBlocks(u64 blockSize,
     // 清零 Device 块（H2D 拷贝目标）
     CHK_RET(hrtMemSet(devBlock.ptr(), blockSize, blockSize));
 
+    HCCL_INFO("[AllocateAndZeroBlocks] hostBlock[%p] devBlock[%p] blockSize[%llu] zeroed",
+        hostBlock.ptr(), devBlock.ptr(), blockSize);
     return HCCL_SUCCESS;
 }
 
@@ -85,6 +92,8 @@ HcclResult HcclCommunicator::FillOneRankTransport(u32 rankId, const std::string 
         HCCL_ERROR("[FillOneRankTransport] invalid rankId[%u], size[%zu]", rankId, rankInfoList_.size()),
         HCCL_E_PARA);
 
+    HCCL_INFO("[FillOneRankTransport] rankId[%u] tag[%s] linkPairs[%zu]", rankId, tag.c_str(), linkPairs.size());
+
     // 填充 rank 基本信息
     rankNode->remoteUsrRankId = rankId;
     rankNode->remoteWorldRank = rankInfoList_[rankId].worldRank;
@@ -100,6 +109,7 @@ HcclResult HcclCommunicator::FillOneRankTransport(u32 rankId, const std::string 
     // 遍历该 rank 的所有 LINK，提取 transport 参数
     // linkRoce 槽位跟踪：0=主链路, 1=备链路, 2=第二主链路, 3=第二备链路
     u32 roceSlot = 0;
+    u32 p2pCount = 0;
     for (auto it = linkPairs.begin(); it != linkPairs.end(); ++it) {
         u32 level = it->first;
         u32 ring = it->second;
@@ -118,29 +128,37 @@ HcclResult HcclCommunicator::FillOneRankTransport(u32 rankId, const std::string 
 
             if (req.isUsedRdma) {
                 // 主链路（RoCE），使用递增槽位避免覆盖
-                if (roceSlot < 4) {
+                if (roceSlot < LINK_ROCE_MAX_NUM) {
                     CHK_RET(BuildOpRemoteLinkRoceResParam(link, tagResV3,
                         (roceSlot % 2 == 1), (roceSlot >= 2), false));
                     roceSlot++;
+                    HCCL_DEBUG("[FillOneRankTransport] rank[%u] roce slot[%u] level[%u] ring[%u] idx[%u]",
+                        rankId, roceSlot - 1, level, ring, idx);
                 } else {
                     HCCL_WARNING("[FillOneRankTransport] rank[%u] roceSlot exhausted, skip link idx[%u]",
                         rankId, idx);
                 }
                 // 备份链路（如有）
-                if (roceSlot < 4 && !entry.transportBackUp.empty()) {
+                if (roceSlot < LINK_ROCE_MAX_NUM && !entry.transportBackUp.empty()) {
                     auto &backUpLinks = entry.transportBackUp[level][ring].links;
                     if (idx < backUpLinks.size() && backUpLinks[idx] != nullptr) {
                         CHK_RET(BuildOpRemoteLinkRoceResParam(backUpLinks[idx], tagResV3,
                             (roceSlot % 2 == 1), (roceSlot >= 2), false));
                         roceSlot++;
+                        HCCL_DEBUG("[FillOneRankTransport] rank[%u] backup roce slot[%u] level[%u] ring[%u] idx[%u]",
+                            rankId, roceSlot - 1, level, ring, idx);
                     }
                 }
             } else {
                 // P2P 链路
                 CHK_RET(BuildOpRemoteLinkP2pResParam(link, tagResV3, req.linkType));
+                p2pCount++;
+                HCCL_DEBUG("[FillOneRankTransport] rank[%u] p2p level[%u] ring[%u] idx[%u] linkType[%d]",
+                    rankId, level, ring, idx, static_cast<u32>(req.linkType));
             }
         }
     }
+    HCCL_INFO("[FillOneRankTransport] rank[%u] done roceSlots[%u] p2pCount[%u]", rankId, roceSlot, p2pCount);
     return HCCL_SUCCESS;
 }
 
@@ -157,6 +175,8 @@ HcclResult HcclCommunicator::BuildDeviceRankLinkedList(
     rankNode->nextTagRes.preDevice = reinterpret_cast<u64>(devTagNode);
     tagNode->nextTagRes.nextDevice = reinterpret_cast<u64>(devRankNode);
     tagNode->nextTagRes.preDevice = reinterpret_cast<u64>(devRankNode);
+    HCCL_INFO("[BuildDeviceRankLinkedList] rankNode[%p] tagNode[%p] devRankNode[%p] devTagNode[%p]",
+        rankNode, tagNode, devRankNode, devTagNode);
     return HCCL_SUCCESS;
 }
 
@@ -165,6 +185,8 @@ HcclResult HcclCommunicator::BuildDeviceRankLinkedList(
 HcclResult HcclCommunicator::SerializeTransportToDeviceMem(const std::string &tag,
     const CaptureTransportEntry &entry)
 {
+    HCCL_INFO("[SerializeTransportToDeviceMem] start tag[%s]", tag.c_str());
+
     // Step 1: 收集远程 rank
     std::set<u32> uniqueRanks;
     std::unordered_map<u32, std::vector<std::pair<u32, u32>>> rankLinkMap;
@@ -205,6 +227,7 @@ HcclResult HcclCommunicator::SerializeTransportToDeviceMem(const std::string &ta
         // 写入紧凑数组
         header->entries[rankIndex].rankId = rankId;
         header->entries[rankIndex].addr = reinterpret_cast<u64>(devBase + rankOffset);
+        HCCL_DEBUG("[SerializeTransportToDeviceMem] rank[%u] offset[%llu] devAddr[%p]", rankId, rankOffset, devBase + rankOffset);
         rankIndex++;
     }
     header->rankSize = rankCount;
@@ -214,8 +237,8 @@ HcclResult HcclCommunicator::SerializeTransportToDeviceMem(const std::string &ta
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     transportDeviceMemMap_[tag] = std::move(devBlock);
 
-    HCCL_DEBUG("[SerializeTransportToDeviceMem] tag[%s] rankCount[%u] blockSize[%llu] success",
-        tag.c_str(), rankCount, blockSize);
+    HCCL_INFO("[SerializeTransportToDeviceMem] tag[%s] rankCount[%u] blockSize[%llu] devBlock[%p] success",
+        tag.c_str(), rankCount, blockSize, transportDeviceMemMap_[tag].ptr());
     return HCCL_SUCCESS;
 }
 
@@ -227,6 +250,8 @@ HcclResult HcclCommunicator::SerializeTransportToDeviceMem(const std::string &ta
 // 清理 captureTransportMap_ 和 transportDeviceMemMap_ 中对应 tag 的资源
 HcclResult HcclCommunicator::DestroyCaptureIbvTransportPublic(const std::string &captureTag)
 {
+    HCCL_INFO("[DestroyCaptureIbvTransportPublic] start captureTag[%s]", captureTag.c_str());
+
     // 1. 清理 transport 资源
     auto transportIt = captureTransportMap_.find(captureTag);
     if (transportIt != captureTransportMap_.end()) {
@@ -235,15 +260,17 @@ HcclResult HcclCommunicator::DestroyCaptureIbvTransportPublic(const std::string 
             DestroyOpTransportResponse(transportIt->second.transportBackUp);
         }
         captureTransportMap_.erase(transportIt);
+        HCCL_INFO("[DestroyCaptureIbvTransportPublic] captureTag[%s] transport erased from captureTransportMap_", captureTag.c_str());
     }
 
     // 2. 清理 device 内存（DeviceMem 析构自动释放）
     auto memIt = transportDeviceMemMap_.find(captureTag);
     if (memIt != transportDeviceMemMap_.end()) {
         transportDeviceMemMap_.erase(memIt);
+        HCCL_INFO("[DestroyCaptureIbvTransportPublic] captureTag[%s] deviceMem erased from transportDeviceMemMap_", captureTag.c_str());
     }
 
-    HCCL_DEBUG("[DestroyCaptureIbvTransportPublic] captureTag[%s] cleaned", captureTag.c_str());
+    HCCL_INFO("[DestroyCaptureIbvTransportPublic] captureTag[%s] cleaned", captureTag.c_str());
     return HCCL_SUCCESS;
 }
 
