@@ -325,7 +325,7 @@ static HcclResult SaveKernelMissionInfo(CcuKernel *kernel,
     kernel->SetMissionKey(missionKey);
     // 从missionId中获取一个元素并从missionId中删除，当前应只有一个元素，且无需删除
     if (missionId[dieId].empty()) {
-        HCCL_ERROR("[%s] failed, devLogicId[%d] dieId[%u] do not have missions, minions, visions.",
+        HCCL_ERROR("[%s] failed, devLogicId[%d] dieId[%u] do not have missions.",
             __func__, devLogicId, dieId);
         return HcclResult::HCCL_E_INTERNAL;
     }

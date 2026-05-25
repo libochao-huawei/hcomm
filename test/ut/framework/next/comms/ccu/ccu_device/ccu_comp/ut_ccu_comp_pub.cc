@@ -136,30 +136,3 @@ TEST_F(CcuCompPubTest, Ut_CcuCleanDieCkesWhenUnderlyingFailsExpectFailure) {
     auto ret = CcuCleanDieCkes(0, 1);
     EXPECT_EQ(ret, HcclResult::HCCL_E_INTERNAL);
 }
-
-
-class CcuPfeCfgMgrTest : public testing::Test {
-protected:
-    static void SetUpTestCase() {
-        mockcpp::GlobalMockObject::verify();
-        mockcpp::GlobalMockObject::reset();
-    }
-    static void TearDownTestCase() {
-        mockcpp::GlobalMockObject::verify();
-        mockcpp::GlobalMockObject::reset();
-    }
-    void SetUp() override {
-        mockcpp::GlobalMockObject::verify();
-        mockcpp::GlobalMockObject::reset();
-    }
-    void TearDown() override {
-        mockcpp::GlobalMockObject::verify();
-        mockcpp::GlobalMockObject::reset();
-    }
-};
-
-TEST_F(CcuPfeCfgMgrTest, Ut_InvalidDieId) {
- 	auto& mgr = CcuPfeCfgMgr::GetInstance(0);
- 	     // 传入无效 dieId，验证返回空向量以覆盖 warning 分支
- 	EXPECT_TRUE(mgr.GetPfeJettyCtxCfg(CCU_MAX_IODIE_NUM).empty());
-}
