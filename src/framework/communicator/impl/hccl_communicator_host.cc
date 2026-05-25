@@ -4538,8 +4538,9 @@ namespace hccl
         bool selectAivAlg = algDesc.isAivMode;
         // aicpu 展开模式的后续执行使用 baseTag 查找 resMap_
         std::string resMapTag = (opParam.aicpuUnfoldMode && opParam.isCapture) ? baseTag : newTag;
-        HCCL_INFO("[%s] aicpuMode[%d] isCapture[%d] newTag[%s] baseTag[%s] resMapTag[%s]",
+        HCCL_INFO("[%s] aicpuMode[%d] isCapture[%d] isGraphZeroCopy[%d] newTag[%s] baseTag[%s] resMapTag[%s]",
             __func__, opParam.aicpuUnfoldMode, opParam.isCapture,
+            isInGraphCaptureZeroCopy,
             newTag.c_str(), baseTag.empty() ? "N/A" : baseTag.c_str(), resMapTag.c_str());
         if (resMap_.find(newTag) == resMap_.end()) {
             if (opParam.aicpuUnfoldMode && opParam.isCapture) {
