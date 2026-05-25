@@ -384,6 +384,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
             GetUID(myRankUID_).c_str(), GetUID(rem).c_str());
         break;
     }
+    uid2SocketRefMap_.erase(rem);
     SocketRelease(&needConnectRank.socketHandler);
     hrtResetDevice(deviceLogicId_);
 
