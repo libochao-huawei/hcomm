@@ -21,6 +21,18 @@
 #include "local_ub_rma_buffer.h"
 
 namespace Hccl {
+
+namespace {
+// RsJettyKeyInfo 布局中 jettyId.eid 位于 key 起始；与 RaUbGetTpInfoAsync 一致使用链路 IpAddress::GetEid()
+void PatchJettyKeyLinkEid(u8 *qpKey, const u32 keyLen, const Eid &linkEid)
+{
+    if (qpKey == nullptr || keyLen < URMA_EID_LEN) {
+        return;
+    }
+    (void)memcpy_s(qpKey, keyLen, linkEid.raw, URMA_EID_LEN);
+}
+} // namespace
+
 CcuConnection::CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
@@ -220,9 +232,12 @@ void CcuConnection::Serialize(std::vector<char> &dtoData)
     dtoStream << jettyNum;
     HCCL_INFO("[CcuConnection][%s], jettyNum[%u]", __func__, jettyNum);
     for (const auto &ccuJetty : ccuJettys_) {
-        dtoStream << ccuJetty->GetCreateJettyParam().tokenValue; 
+        dtoStream << ccuJetty->GetCreateJettyParam().tokenValue;
         const auto &outParam = ccuJetty->GetJettyedOutParam();
-        dtoStream << outParam.key; // 此处的qpKey是数组
+        u8 patchedKey[HRT_UB_QP_KEY_MAX_LEN]{0};
+        (void)memcpy_s(patchedKey, sizeof(patchedKey), outParam.key, outParam.keySize);
+        PatchJettyKeyLinkEid(patchedKey, outParam.keySize, locAddr_.GetEid());
+        dtoStream << patchedKey;
         dtoStream << outParam.keySize;
     }
 
@@ -322,7 +337,10 @@ HcclResult CcuConnection::StartImportJettyRequest(uint32_t jettyIndex, RequestHa
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    auto &importCtxInParam = importJettyCtxs[jettyIndex].inParam;
+    auto &importCtx = importJettyCtxs[jettyIndex];
+    PatchJettyKeyLinkEid(importCtx.remoteQpKey, importCtx.inParam.keyLen, rmtAddr_.GetEid());
+    importCtx.inParam.key = importCtx.remoteQpKey;
+    auto &importCtxInParam = importCtx.inParam;
     importCtxInParam.jettyImportCfg = jettyImportCfg;
     importCtxInParam.jettyImportCfg.protocol = tpProtocol;
     TRY_CATCH_RETURN(
