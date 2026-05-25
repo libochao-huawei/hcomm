@@ -35,6 +35,15 @@
 
 本样例运行依赖安装CANN ops算子包，详细安装步骤可参见 [源码构建](../../../docs/zh/build/build.md) 中的 “安装CANN软件包” 章节。
 
+### 关闭验签
+
+本源码仓编译生成的`cann-hcomm_<version>_linux-<arch>.run`软件包中包含如下tar.gz子包：
+  - `cann-hcomm-compat.tar.gz`: HCOMM兼容升级包。
+  - `cann-hccd-compat.tar.gz`: DataFlow兼容升级包。
+  - `aicpu_hcomm.tar.gz`: AI CPU通信基础包。
+
+上述tar.gz包会在业务启动时加载至Device，加载过程中默认会由驱动进行安全验签，确保包可信。由于开发者通过本源码仓自行编译生成的tar.gz包中并不含签名头，所以需要关闭驱动安全验签的机制。关闭验签方式参考[关闭验签](../../../docs/zh/build/build.md) 中的 “关闭验签” 章节。
+
 ### 配置环境变量
 
 ```bash
