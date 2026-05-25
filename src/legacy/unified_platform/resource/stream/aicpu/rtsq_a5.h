@@ -84,6 +84,9 @@ private:
 
     u8 locBuf[rtsqSqeSize * perLaunchSqeCnt]{0};
 
+    u32 rtsqFullTimeoutValue_{0};
+    std::chrono::duration<u64> rtsqFullTimeout_;
+
     u8 *GetCurrSqeBuffer();
 
     void RefreshInfo();
