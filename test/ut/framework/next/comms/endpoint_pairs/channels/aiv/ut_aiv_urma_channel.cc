@@ -624,9 +624,9 @@ TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenParamNull_Returns_E_PTR)
     char **memTags = nullptr;
     uint32_t memNum = 0;
 
-    EXPECT_EQ(transport->GetRemoteMems(nullptr, &memNum, &memTags), HCCL_E_PTR);
-    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, &memNum, nullptr), HCCL_E_PTR);
-    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, nullptr, &memTags), HCCL_E_PTR);
+    EXPECT_EQ(transport->GetRemoteMems(nullptr, &memTags, &memNum), HCCL_E_PTR);
+    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, nullptr, &memNum), HCCL_E_PTR);
+    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, &memTags, nullptr), HCCL_E_PTR);
 }
 
 TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenNoRemoteBuffer_Returns_E_PARA)
@@ -638,7 +638,7 @@ TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenNoRemoteBuffer_Returns_E_PARA)
     char **memTags = reinterpret_cast<char **>(0x1);
     uint32_t memNum = 0;
 
-    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, &memNum, &memTags), HCCL_E_PARA);
+    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, &memTags, &memNum), HCCL_E_PARA);
 }
 
 TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenOnlyReservedRemoteBuffer_Returns_SUCCESS)
@@ -653,7 +653,7 @@ TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenOnlyReservedRemoteBuffer_Retur
     char **memTags = nullptr;
     uint32_t memNum = 1;
 
-    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, &memNum, &memTags), HCCL_SUCCESS);
+    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, &memTags, &memNum), HCCL_SUCCESS);
     EXPECT_EQ(memNum, 1);
 }
 

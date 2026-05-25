@@ -404,7 +404,7 @@ bool AivUrmaTransport::IsSocketReady()
     return false;
 }
 
-HcclResult AivUrmaTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
+HcclResult AivUrmaTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[AivUrmaTransport::%s] remoteMem is nullptr", __func__), HCCL_E_PTR);

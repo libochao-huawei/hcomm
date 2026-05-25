@@ -1215,7 +1215,7 @@ void UbMemTransport::SaveDfxTaskInfo(const TaskParam &taskParam)
 {
 }
 
-HcclResult UbMemTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
+HcclResult UbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
     return HCCL_SUCCESS;
 }
@@ -2568,7 +2568,7 @@ P2PTransport::P2PTransport(
 {
 }
 
-HcclResult P2PTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
+HcclResult P2PTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
     return HCCL_SUCCESS;
 }

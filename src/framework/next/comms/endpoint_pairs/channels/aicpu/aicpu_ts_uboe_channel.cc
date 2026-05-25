@@ -258,7 +258,7 @@ HcclResult AicpuTsUboeChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUboeChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTag)
+HcclResult AicpuTsUboeChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec_.size() == 0) {
@@ -277,7 +277,7 @@ HcclResult AicpuTsUboeChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memN
     };
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{
         userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memNum, memTag};
+        cacheBuilder, remoteMem, memTag, memNum};
     CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }

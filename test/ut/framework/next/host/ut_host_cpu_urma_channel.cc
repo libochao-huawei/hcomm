@@ -110,7 +110,7 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_GetRemoteMems_Expect_Success)
     char** memTags = nullptr;
     // GetRemoteMems depends on memTransport_, which is initialized in Init()
     // This test verifies the function can be called
-    EXPECT_NO_THROW(impl->GetRemoteMems(&remoteMem, &memNum, &memTags));
+    EXPECT_NO_THROW(impl->GetRemoteMems(&remoteMem, &memTags, &memNum));
 }
 
 TEST_F(HostCpuUrmaChannelTest, Ut_When_Clean_Expect_NotSupport)

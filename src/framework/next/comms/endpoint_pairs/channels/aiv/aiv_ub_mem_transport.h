@@ -30,7 +30,7 @@ public:
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
     HcclResult Init();
     Hccl::TransportStatus GetStatus();
-    HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags);
+    HcclResult GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum);
     HcclResult GetMemTag(char **memTag, uint32_t memNum);
     HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum);

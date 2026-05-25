@@ -275,7 +275,7 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     }
 }
 
-HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags) 
+HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum) 
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t userMemCount = rmtBufferVec_.size();

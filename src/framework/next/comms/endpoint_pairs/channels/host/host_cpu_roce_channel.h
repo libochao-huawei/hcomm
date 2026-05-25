@@ -39,7 +39,7 @@ public:
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags) override;
+    HcclResult GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
     HcclResult ProcessStatus();

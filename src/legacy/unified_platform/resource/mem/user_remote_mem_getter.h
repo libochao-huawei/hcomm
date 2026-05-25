@@ -34,19 +34,19 @@ struct RemoteMemCtx{
     std::vector<char*>              &tagPointers;
     std::function<HcclResult(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder;
     HcclMem                         **remoteMem;
-    uint32_t                        *memNum;
     char                            ***memTags;
+    uint32_t                        *memNum;
 
     RemoteMemCtx(uint32_t userMemCount, bool &cacheValid, std::vector<T> &rmtBufferVec,
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteUserMemTag,
         std::vector<HcclMem> &remoteUserMems, std::vector<std::string> &tagCopies,
         std::vector<char*> &tagPointers,
         std::function<HcclResult(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder,
-        HcclMem **remoteMem, uint32_t *memNum, char ***memTags) :
+        HcclMem **remoteMem, char ***memTags, uint32_t *memNum) :
         userMemCount(userMemCount), cacheValid(cacheValid), rmtBufferVec(rmtBufferVec),
         remoteUserMemTag(remoteUserMemTag), remoteUserMems(remoteUserMems),
         tagCopies(tagCopies), tagPointers(tagPointers), cacheBuilder(cacheBuilder),
-        remoteMem(remoteMem), memNum(memNum), memTags(memTags)
+        remoteMem(remoteMem), memTags(memTags), memNum(memNum)
     {};
 };
 

@@ -214,9 +214,9 @@ HcclResult AicpuTsP2pChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsP2pChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
+HcclResult AicpuTsP2pChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
-    return memTransport_->GetRemoteMems(remoteMem, memNum, memTags);
+    return memTransport_->GetRemoteMems(remoteMem, memTags, memNum);
 }
 
 ChannelStatus AicpuTsP2pChannel::GetStatus()

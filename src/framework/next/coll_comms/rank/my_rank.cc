@@ -684,7 +684,7 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     u32 memNum = 0;
     CommMem* remoteMem = nullptr;
     char** memTags = nullptr;
-    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &remoteMem, &memNum, &memTags)));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &remoteMem, &memTags, &memNum)));
     // 部分Channel不使用memTag，故底层实现未给memTags赋值，不检查是否为空
     CHK_PTR_NULL(remoteMem);
     *buffer = remoteMem[0].addr; // 默认索引0对应内存为cclbuffer
@@ -703,7 +703,7 @@ HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteM
     CHK_PTR_NULL(memTags);
     CHK_PTR_NULL(memNum);
 
-    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, remoteMem, memNum, memTags)));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, remoteMem, memTags, memNum)));
     if (*memNum > 1) {
         CHK_PTR_NULL(*remoteMem);
         CHK_PTR_NULL(*memTags);

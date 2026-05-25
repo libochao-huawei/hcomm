@@ -215,7 +215,7 @@ TEST_F(AicpuTsRoceChannelTest, Ut_GetRemoteMems_Returns_E_NOT_SUPPORT) {
     HcommChannelDesc desc{};
     AicpuTsRoceChannel ch(reinterpret_cast<EndpointHandle>(0x1), desc);
     uint32_t n = 0;
-    EXPECT_EQ(ch.GetRemoteMems(nullptr, &n, nullptr), HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(ch.GetRemoteMems(nullptr, nullptr, &n), HCCL_E_NOT_SUPPORT);
 }
 
 TEST_F(AicpuTsRoceChannelTest, Ut_BuildSocketTagName_When_ValidIpv4_Returns_SUCCESS) {

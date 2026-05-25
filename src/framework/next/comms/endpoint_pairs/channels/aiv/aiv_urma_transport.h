@@ -24,7 +24,7 @@ public:
     TransportStatus GetStatus();
     std::string Describe() const;
     void GetHostChannelEntity(ChannelEntity *channelEntitiesHost);
-    HcclResult GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags);
+    HcclResult GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum);
 
 private:
     MAKE_ENUM(UrmaStatus, INIT, SOCKET_OK, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, CONN_OK)

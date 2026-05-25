@@ -140,7 +140,7 @@ TEST_F(HcommCAdptTest, ut_HcommChannelGetRemoteMems_When_Normal_Expect_Success)
     MOCKER(ChannelProcess::ChannelGetRemoteMems)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
-    HcommResult ret = HcommChannelGetRemoteMems(channelHandle, &remoteMem, &memNum, &memTags);
+    HcommResult ret = HcommChannelGetRemoteMems(channelHandle, &remoteMem, &memTags, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
