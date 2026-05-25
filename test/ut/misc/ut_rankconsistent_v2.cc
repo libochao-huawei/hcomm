@@ -102,7 +102,7 @@ TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_EnvVarMismatch_Expect_INTERN
 }
 
 // 异常：ranktable CRC不一致
-TEST_F(RankConsistentV2Test, CompareCheckFrameV2_RankTableMismatch)
+TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_RankTableMismatch_Expect_INTERNAL)
 {
     u32 rankTableCrc = 0x1234;
     checker_.RecordRankTableCrcV2(rankTableCrc);
