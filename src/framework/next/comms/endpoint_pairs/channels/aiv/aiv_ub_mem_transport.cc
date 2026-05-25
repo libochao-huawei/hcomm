@@ -279,6 +279,10 @@ HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t userMemCount = rmtBufferVec_.size();
+    if (userMemCount == 0) {
+        HCCL_WARNING("[AivUbMemTransport::%s] bufferNum is 0.", __func__);
+        return HCCL_SUCCESS;
+    }
     auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> &remoteMemCtx,
         uint32_t index) -> HcclResult {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
