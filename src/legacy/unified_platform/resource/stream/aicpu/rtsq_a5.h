@@ -85,7 +85,7 @@ private:
 
     u8 locBuf[rtsqSqeSize * perLaunchSqeCnt]{0};
 
-    u32 rtsqFullTimeoutValue_{0};
+    u32 rtsqFullTimeoutValue_{1836};
     std::chrono::duration<u64> rtsqFullTimeout_;
 
     u8 *GetCurrSqeBuffer();

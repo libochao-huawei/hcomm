@@ -21,6 +21,7 @@
 #include "communicator_impl_lite_manager.h"
 #ifdef CCL_KERNEL_AICPU
 #include "hccl_api_data_aicpu_ts.h"
+#include "aicpu_indop_env.h"
 #endif
 
 namespace Hccl {
@@ -40,7 +41,9 @@ RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase
 {
     SetTaskIdBySqeId();
     launchFlag_ = launchFlag;
-    rtsqFullTimeoutValue_ = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout + 20; // rtsq full超时时间: X+20s
+#ifdef CCL_KERNEL_AICPU
+    rtsqFullTimeoutValue_ = hcomm::GetNotifyWaitTimeout() + 20; // rtsq full超时时间: X+20s
+#endif
     rtsqFullTimeout_ = std::chrono::seconds(rtsqFullTimeoutValue_);
 }
 
