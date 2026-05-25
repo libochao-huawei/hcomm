@@ -685,16 +685,19 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     CommMem* remoteMem = nullptr;
     char** memTags = nullptr;
     CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &remoteMem, &memNum, &memTags)));
-    CHK_PTR_NULL(remoteMem);
     // 部分Channel不使用memTag，故底层实现未给memTags赋值，不检查是否为空
+    CHK_PTR_NULL(remoteMem);
     *buffer = remoteMem[0].addr; // 默认索引0对应内存为cclbuffer
     *size = remoteMem[0].size;
-    HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, remoteMem[0].addr, remoteMem[0].size);
-
+    if (memTags == nullptr) {
+        HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, remoteMem[0].addr, remoteMem[0].size);
+    } else {
+        HCCL_INFO("[%s] Found %s : addr=%p, size=%llu", __func__, memTags[0], remoteMem[0].addr, remoteMem[0].size);
+    }
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteMem, uint32_t *memNum, char ***memTags)
+HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
     CHK_PTR_NULL(remoteMem);
     CHK_PTR_NULL(memTags);
@@ -710,7 +713,7 @@ HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteM
         ++(*memTags);
         HCCL_INFO("[%s] success. memNum[%u]", __func__, *memNum);
     } else {
-        HCCL_WARNING("[%s] No user remote memory found.", __func__);
+        HCCL_RUN_WARNING("[%s] No user remote memory found.", __func__);
     }
     return HCCL_SUCCESS;
 }
