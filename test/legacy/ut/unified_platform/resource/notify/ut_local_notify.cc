@@ -269,11 +269,13 @@ TEST_F(UbLocalNotifyTest, batch_reg_ub_local_notify_expect_success)
     uint32_t notifyNum = 10;
     UbLocalNotify ubLocalNotify(rdmaHandle);
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
+    std::vector<HrtRaUbLocMemRegParam>                          notifyParams;
     for (uint32_t i = 0; i < notifyNum; ++i) {
         std::unique_ptr<Hccl::UbLocalNotify> notifyPtr = nullptr;
         EXPECT_NO_THROW(notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle, false, true));
+        notifyParams.push_back(notifyPtr->GetLmemRegParam());
         localNotifies_.push_back(std::move(notifyPtr));
     }
-    HcclResult ret = Hccl::UbLocalNotify::BatchMemReg(rdmaHandle,localNotifies_);
+    HcclResult ret = Hccl::UbLocalNotify::BatchMemReg(rdmaHandle, localNotifies_, notifyParams);
     EXPECT_EQ(ret,HCCL_SUCCESS);
 };

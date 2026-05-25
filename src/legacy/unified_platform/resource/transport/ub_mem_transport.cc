@@ -681,6 +681,7 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
     HCCL_INFO("unpack %s %s, locNum=%u, rmtNum=%u", type.Describe().c_str(), GetLinkDescInfo().c_str(), locNum,
                rmtNum);
     std::vector<RemoteRmaBuffer *> rmtUbRmaBuffer;
+    std::vector<HrtRaUbRemMemImportParam> importParams;
     for (u32 i = 0; i < rmtNum; i++) {
         u32 pos;
         binaryStream >> pos;
@@ -698,15 +699,14 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
             FillRmtRmaBufferVec(nullptr, type);
         } else { // size非0，则构造一个remote buffer
             bufferVec.push_back(make_unique<RemoteUbRmaBuffer>(rdmaHandle, dto, true));
+            importParams.push_back(dynamic_cast<RemoteUbRmaBuffer*>(bufferVec.back().get())->GetImportParam());
             rmtUbRmaBuffer.push_back(bufferVec.back().get());
             FillRmtRmaBufferVec(bufferVec.back().get(), type);
             HCCL_INFO("unpack buffer pos=%u, rmtRmaBuffer=%s", pos, bufferVec.back()->Describe().c_str());
         }
     }
-    HcclResult ret = Hccl::RemoteUbRmaBuffer::BatchMemImport(rdmaHandle, rmtUbRmaBuffer);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RemoteUbRmaBuffer][RmtBufferVecUnpackProc] BatchMemReg failed ret[%d]", ret);
-    }
+    CHK_RET_THROW(InternalException, StringFormat("[RmtBufferVecUnpackProc] BatchMemImport failed"),
+        Hccl::RemoteUbRmaBuffer::BatchMemImport(rdmaHandle, rmtUbRmaBuffer, importParams));
     rmtMemTagTemp_.clear();
     if (type == UbRmtBufType::BUFFER) {
         rmtMemTagTemp_.resize(rmtNum);
