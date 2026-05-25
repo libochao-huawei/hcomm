@@ -35,11 +35,12 @@ SocketProcess &SocketProcess::GetInstance(s32 deviceLogicId)
 SocketProcess::~SocketProcess()
 {
     unique_lock<std::mutex> lock(mutex_);
-    HCCL_ERROR("TEST [SocketProcess]~SocketProcess start");
-    SaluSleep(10000);
+    HCCL_ERROR("TEST [SocketProcess]~SocketProcess start devicePhyId_[%u]", devicePhyId_);
     isInit_ = false;
     for (auto &socketItem : serverSocketMap_) {
         if (socketItem.second != nullptr) {
+            HCCL_ERROR("TEST ~SocketProcess start Destroy serverSocket=%p devicePhyId_[%u]", socketItem.second.get(), devicePhyId_);
+            SaluSleep(10000);
             socketItem.second.get()->Destroy();
         }
     }
@@ -52,6 +53,7 @@ SocketProcess::~SocketProcess()
     }
     tag2socketMap_.clear();
     socket2TagMap_.clear();
+    HCCL_ERROR("TEST [SocketProcess]~SocketProcess success devicePhyId_[%u]", devicePhyId_);
 }
 
 HcclResult SocketProcess::DestroySocketHandle(SocketHandle socketHandle)
@@ -265,7 +267,8 @@ HcclResult SocketProcess::BuildSocket(SocketDesc *socketDesc, const std::string 
         EXECEPTION_CATCH(serverSocketMap_[localListenPair] = std::make_unique<Hccl::Socket>(
             serverSocketHandle, ipaddr, localListenPair.second, ipaddr, socketDesc->tag,
             Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
-        HCCL_INFO("[%s] listen_socket_info[%s]", __func__, serverSocketMap_[localListenPair].get()->Describe().c_str());
+        HCCL_INFO("[%s] serverSocket=%p listen_socket_info[%s]",
+            __func__, serverSocketMap_[localListenPair].get(), serverSocketMap_[localListenPair].get()->Describe().c_str());
         EXECEPTION_CATCH(serverSocketMap_[localListenPair].get()->Listen(), return HCCL_E_INTERNAL);
     }
     HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());
