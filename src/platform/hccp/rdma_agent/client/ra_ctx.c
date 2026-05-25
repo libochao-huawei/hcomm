@@ -386,6 +386,9 @@ STATIC int CheckCtxLmemBatchReg(void *ctxHandle, struct MrRegInfoT *lmemInfoList
     CHK_PRT_RETURN(ctxHandle == NULL || lmemInfoList == NULL || lmemHandleList == NULL,
         hccp_err("ctx_handle or lmem_info_list or lmem_handle_list is NULL"), -EINVAL);
 
+    CHK_PRT_RETURN(num == 0 || num > LMEM_BATCH_MAX,
+        hccp_err("num[%u] out of range(0, %d]", num, LMEM_BATCH_MAX), ConverReturnCode(RDMA_OP, -EINVAL));
+
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
     CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxLmemBatchRegister == NULL,
         hccp_err("ctx_ops or ra_ctx_lmem_batch_register is NULL"), -EINVAL);
@@ -584,6 +587,9 @@ STATIC int CheckCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemIn
 
     CHK_PRT_RETURN(ctxHandle == NULL || rmemInfoList == NULL || rmemHandleList == NULL,
         hccp_err("ctx_handle or rmem_info_list or rmem_handle_list is NULL"), -EINVAL);
+
+    CHK_PRT_RETURN(num == 0 || num > RMEM_BATCH_MAX,
+        hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX), -EINVAL);
 
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
     CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxRmemBatchImport == NULL,
