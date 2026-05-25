@@ -183,9 +183,6 @@ private:
     std::vector<uint8_t> exchangeDataForRecv_;
 
     uint32_t devicePhyId_{};
-
-    std::vector<std::string>                 tagCopies_;          // 储存 Tag 字符串副本
-    std::vector<char*>                       tagPointers_;        // Tag 缓存
 };
 
 } // namespace hcomm
