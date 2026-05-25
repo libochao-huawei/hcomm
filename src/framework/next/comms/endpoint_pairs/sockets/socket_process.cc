@@ -40,7 +40,6 @@ SocketProcess::~SocketProcess()
     for (auto &socketItem : serverSocketMap_) {
         if (socketItem.second != nullptr) {
             HCCL_ERROR("TEST ~SocketProcess start Destroy serverSocket=%p devicePhyId_[%u]", socketItem.second.get(), devicePhyId_);
-            SaluSleep(10000);
             socketItem.second.get()->Destroy();
         }
     }
@@ -267,8 +266,8 @@ HcclResult SocketProcess::BuildSocket(SocketDesc *socketDesc, const std::string 
         EXECEPTION_CATCH(serverSocketMap_[localListenPair] = std::make_unique<Hccl::Socket>(
             serverSocketHandle, ipaddr, localListenPair.second, ipaddr, socketDesc->tag,
             Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
-        HCCL_INFO("[%s] serverSocket=%p listen_socket_info[%s]",
-            __func__, serverSocketMap_[localListenPair].get(), serverSocketMap_[localListenPair].get()->Describe().c_str());
+        HCCL_INFO("[%s] serverSocket=%p serverSocketHandle=%p listen_socket_info[%s]",
+            __func__, serverSocketMap_[localListenPair].get(), serverSocketHandle, serverSocketMap_[localListenPair].get()->Describe().c_str());
         EXECEPTION_CATCH(serverSocketMap_[localListenPair].get()->Listen(), return HCCL_E_INTERNAL);
     }
     HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());
