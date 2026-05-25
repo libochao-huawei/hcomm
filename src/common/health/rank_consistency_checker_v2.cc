@@ -55,7 +55,7 @@ HcclResult RankConsistencyCheckerV2::RecordSubCommParaV2(const std::string &pare
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[RecordSubCommParaV2] CalcStringCrc failed for parentIdentifier."), ret);
     subCommParaCrcsV2_.push_back({"sub_comm_parentIdentifier", parentCommCrc});
-    HCCL_DEBUG("[RecordSubCommParaV2] parentCommCrc[0x%08x] recorded.", parentCommCrc);
+    HCCL_DEBUG("[RecordSubCommParaV2] parentIdentifier[%s] parentCommCrc[0x%08x] recorded.", parentIdentifier.c_str(), parentCommCrc);
 
     // 2. rankNum的CRC
     u32 rankNumCrc = 0;
