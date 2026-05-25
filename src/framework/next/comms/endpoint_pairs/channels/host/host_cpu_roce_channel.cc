@@ -603,7 +603,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTag
         return HCCL_SUCCESS;
     }
     if (!cacheValid_) {
-        remoteUserMems_.resize(totalCount);
+        userRemoteMems_.resize(totalCount);
         tagCopies_.clear();
         tagCopies_.reserve(totalCount);
         tagPointers_.clear();
@@ -611,9 +611,9 @@ HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTag
         for (uint32_t i = 0; i < totalCount; ++i) {
             auto& rmtBuffer = rmtRmaBuffers_[i];
             CHK_PTR_NULL(rmtBuffer);
-            remoteUserMems_[i].type = rmtBuffer->GetMemType();
-            remoteUserMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-            remoteUserMems_[i].size = rmtBuffer->GetSize();
+            userRemoteMems_[i].type = rmtBuffer->GetMemType();
+            userRemoteMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+            userRemoteMems_[i].size = rmtBuffer->GetSize();
             std::string tagCopy = rmtBuffer->GetMemTag();
             tagCopies_.push_back(std::move(tagCopy));
             tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
@@ -621,7 +621,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTag
         cacheValid_ = true;
     }
 
-    *remoteMem = remoteUserMems_.data();
+    *remoteMem = userRemoteMems_.data();
     *memTags = tagPointers_.data();
     *memNum = totalCount;
     return HCCL_SUCCESS;

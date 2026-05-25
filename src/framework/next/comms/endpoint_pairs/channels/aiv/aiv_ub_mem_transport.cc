@@ -294,7 +294,7 @@ HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags
     };
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> remoteMemCtx{
         userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memNum, memTags};
+        cacheBuilder, remoteMem, memTags, memNum};
     CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
