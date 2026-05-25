@@ -169,7 +169,7 @@ void EnvRdmaConfig::Parse()
         GetRdmaQueueNum());
 
     multiQpThreshold.Parse();
-    HCCL_RUN_INFO("[HCCL_ENV] HCCL_MULTI_QP_THRESHOLD set by %s to [%u]", multiQpThreshold.GetSource(),
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_MULTI_QP_THRESHOLD set by %s to [%u B]", multiQpThreshold.GetSource(),
         GetRdmaMultiQpThreshold());
 }
 
@@ -209,7 +209,7 @@ u32 EnvRdmaConfig::GetRdmaQueueNum() const
 
 u32 EnvRdmaConfig::GetRdmaMultiQpThreshold() const
 {
-    return multiQpThreshold.Get() * 1024;   // KB 转 B
+    return multiQpThreshold.Get();
 }
 
 // EnvAlgoConfig
