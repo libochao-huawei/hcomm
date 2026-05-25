@@ -171,7 +171,6 @@ private:
     ProtocolType protocolType_ = ProtocolType::RESERVED;
     std::vector<u32> crcTable_;
     std::mutex mutex_;
-    bool inconsistentCheckFirstDone_ = false; // 是否完成首次校验
 };
 }
 #endif  // RANK_CONSISTENTCY_CHECKER_H
