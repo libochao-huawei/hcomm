@@ -394,7 +394,14 @@ void Socket::GetOneSocket()
 {
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
     
-    auto fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param);
+    RaSocketFdHandleParam fdHandleParam(nullptr, 0);
+    TRY_CATCH_PROCESS_THROW(
+        NetworkApiException,
+        fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param),
+        "Socket::GetOneSocket failed",
+        PrintErrorSocketInfo()
+    );
+
     // socket status:0 not connected 1:connected 2:connect timeout 3:connecting
     if (fdHandleParam.status == SOCKET_CONNECTED) {
         // sockete 准备好时，可以读取信息
