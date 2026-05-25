@@ -260,6 +260,13 @@ void CheckRDMATrafficClass(const u32 &rdmaTrafficClass)
     }
 }
 
+void ConvertUnitQpThreshold(u32 &multiQpThreshold)
+{
+    HCCL_DEBUG("[Init][TransferUnitQpThreshold]Env config HCCL_MULTI_QP_THRESHOLD is %u[KB], converted to %u[B] for "
+               "subsequant use.", multiQpThreshold, multiQpThreshold * 1024);
+    multiQpThreshold *= 1024;
+}
+
 static void ParseAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlgoType &algoType)
 {
     std::size_t found = algoLevel.find(':');
