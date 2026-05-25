@@ -69,6 +69,7 @@ target_include_directories(hccl_v2 PRIVATE
     ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include/hccl/
     ${HCOMM_DIR}/pkg_inc
+    ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/src/pub_inc
     # src/algorithm 头文件
     ${HCOMM_DIR}/src/algorithm/pub_inc
@@ -79,6 +80,8 @@ target_include_directories(hccl_v2 PRIVATE
     ${HCOMM_DIR}/src/platform/inc/adapter
     ${HCOMM_DIR}/src/platform/hccp/inc/network
     ${HCOMM_DIR}/src/platform/hccp/orion/hcomm_dev/inc/network
+    # src/framework 头文件
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/sockets
     # 外部依赖
     ${HCOMM_DIR}/externel_depends/tsch
     # 三方件头文件

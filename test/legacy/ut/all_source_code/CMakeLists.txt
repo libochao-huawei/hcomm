@@ -160,6 +160,8 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/transport/p2p_transport.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/transport/ub_mem_transport.cc
 
+        ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/socket_mgr.cc
+
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/transport/aicpu/mem_transport_lite.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc

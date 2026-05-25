@@ -11,6 +11,7 @@
 #include "rt_external.h"
 #include "acl/acl_rt.h"
 #include <mutex>
+#include "adapter_rts_common.h"
 
 aclError aclrtDeviceGetBareTgid(int32_t *pid)
 {
@@ -612,3 +613,20 @@ void GetSqeId(const uint32_t num, uint32_t &start, uint32_t &end)
     return;
 }
 } // aicpu
+
+extern "C" {
+HcclResult hrtGetDevice(s32 *deviceLogicId)
+{
+    if (deviceLogicId == nullptr) {
+        return HCCL_E_PARA;
+    }
+    *deviceLogicId = 0;
+    return HCCL_SUCCESS;
+}
+
+HcclResult hrtGetDevicePhyIdByIndex(u32 deviceLogicId, u32 &devicePhyId, bool isRefresh)
+{
+    devicePhyId = 0;
+    return HCCL_SUCCESS;
+}
+}
