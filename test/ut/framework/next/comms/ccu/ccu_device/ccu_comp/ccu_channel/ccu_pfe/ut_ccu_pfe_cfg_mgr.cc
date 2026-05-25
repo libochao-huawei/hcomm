@@ -35,7 +35,7 @@ protected:
     }
 };
 
-TEST_F(CcuPfeCfgMgrTest, Ut_InvalidDieId) {
+TEST_F(CcuPfeCfgMgrTest, Ut__GetPfeJettyCtxCfg__WhenDieIdInvalid__ExpectReturnEmpty) {
  	auto& mgr = CcuPfeCfgMgr::GetInstance(0);
  	     // 传入无效 dieId，验证返回空向量以覆盖 warning 分支
  	EXPECT_TRUE(mgr.GetPfeJettyCtxCfg(CCU_MAX_IODIE_NUM).empty());
