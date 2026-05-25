@@ -378,8 +378,7 @@ err:
     return ConverReturnCode(RDMA_OP, ret);
 }
 
-STATIC int CheckCtxLmemBatchReg(void *ctxHandle, struct MrRegInfoT *lmemInfoList[],
-    void *lmemHandleList[], unsigned int num)
+STATIC int CheckCtxLmemBatchReg(void *ctxHandle, struct MrRegInfoT *lmemInfoList[], void *lmemHandleList[])
 {
     struct RaCtxHandle *ctxHandleTmp = NULL;
 
@@ -430,14 +429,14 @@ HCCP_ATTRI_VISI_DEF int RaCtxLmemBatchRegister(void *ctxHandle, struct MrRegInfo
     unsigned int i;
     int ret;
 
-    ret = CheckCtxLmemBatchReg(ctxHandle, lmemInfoList, lmemHandleList, num);
+    ret = CheckCtxLmemBatchReg(ctxHandle, lmemInfoList, lmemHandleList);
     if (ret != 0) {
         return ConverReturnCode(RDMA_OP, ret);
     }
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
 
     CHK_PRT_RETURN(num == 0 || num > LMEM_BATCH_MAX,
-        hccp_err("num[%u] out of range(0, %d]", num, LMEM_BATCH_MAX), -EINVAL);
+        hccp_err("num[%u] out of range(0, %d]", num, LMEM_BATCH_MAX), ConverReturnCode(RDMA_OP, -EINVAL));
 
     lmemHandleTmpList = calloc(num, sizeof(struct RaLmemHandle *));
     CHK_PRT_RETURN(lmemHandleTmpList == NULL,
@@ -577,8 +576,7 @@ err:
     return ConverReturnCode(RDMA_OP, ret);
 }
 
-STATIC int CheckCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[],
-    void *rmemHandleList[], unsigned int num)
+STATIC int CheckCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[], void *rmemHandleList[])
 {
     struct RaCtxHandle *ctxHandleTmp = NULL;
 
@@ -629,14 +627,14 @@ HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInf
     unsigned int i;
     int ret;
 
-    ret = CheckCtxRmemBatchImport(ctxHandle, rmemInfoList, rmemHandleList, num);
+    ret = CheckCtxRmemBatchImport(ctxHandle, rmemInfoList, rmemHandleList);
     if (ret != 0) {
         return ConverReturnCode(RDMA_OP, ret);
     }
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
 
     CHK_PRT_RETURN(num == 0 || num > RMEM_BATCH_MAX,
-        hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX), -EINVAL);
+        hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX), ConverReturnCode(RDMA_OP, -EINVAL));
 
     rmemHandleTmpList = calloc(num, sizeof(struct RaRmemHandle *));
     CHK_PRT_RETURN(rmemHandleTmpList == NULL,

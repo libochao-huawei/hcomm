@@ -782,7 +782,7 @@ HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInf
 
 /**
  * @ingroup libudma
- * @brief unimport remote mem
+ * @brief batch unimport remote mem
  * @param ctxHandle [IN] ctx handle
  * @param rmemHandleList [IN] rmem handle list
  * @param num [IN] num of rmemHandleList array, max num is RMEM_BATCH_MAX
