@@ -40,6 +40,7 @@ SocketProcess::~SocketProcess()
     for (auto &socketItem : serverSocketMap_) {
         if (socketItem.second != nullptr) {
             HCCL_ERROR("TEST ~SocketProcess start Destroy serverSocket=%p devicePhyId_[%u]", socketItem.second.get(), devicePhyId_);
+            SaluSleep(1000);
             socketItem.second.get()->Destroy();
         }
     }
