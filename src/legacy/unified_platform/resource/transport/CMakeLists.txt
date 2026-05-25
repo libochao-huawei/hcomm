@@ -14,6 +14,12 @@ if(TARGET hccl_v2)
             ub_mem_transport.cc
             transport_urma_mem.cc
     )
+    target_include_directories(hccl_v2 PRIVATE
+        # 内部头文件
+        ${HCOMM_DIR}/src/pub_inc
+        # src/framework 头文件
+        ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/sockets
+    )
 endif()
 
 add_subdirectory(aicpu)
