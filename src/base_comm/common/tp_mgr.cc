@@ -887,7 +887,6 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
             __func__, param.Describe().c_str(), tpInfoNum, slAvailableCnt, static_cast<unsigned>(slMask));
         return HcclResult::HCCL_E_INTERNAL;
     }
-    if (param.tpProtocol == TpProtocol::CTP) { tpListIndex = 0U; }
     if (tpListIndex >= tpInfoNum) {
         return HcclResult::HCCL_E_INTERNAL;
     }
