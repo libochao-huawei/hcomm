@@ -249,7 +249,7 @@ void SocketManager::ServerInitAll(NewRankInfo &rankInfo)
                         continue;
                     }
                     PortData localPort{static_cast<RankId>(rankId), deployType, protoType, 0, rankAddr.addr};
-                    u32 listenPort = DEFAULT_VALUE_DEVICEPORT;
+                    u32 listenPort = DEFAULT_VALUE_TCPPORT;
                     if (serverSocketMap.find(localPort) != serverSocketMap.end()) {
                         // 单进程多通信域，找到老端口直接返回老端口
                         listenPort = serverSocketMap[localPort]->GetListenPort();
@@ -429,7 +429,7 @@ u32 SocketManager::GetDeviceListenPort(const u32 &rankId, const IpAddress &ipAdd
 {
     u32 listenPort = rankListenPortMap_[rankId][ipAddress];
     if (listenPort == 0) {
-        listenPort = DEFAULT_VALUE_DEVICEPORT;
+        listenPort = DEFAULT_VALUE_TCPPORT;
         rankListenPortMap_[rankId][ipAddress] = listenPort;
         HCCL_WARNING("[SocketManager::%s] Can't find rankId[%u], addr[%s] listen port, use default", __func__, rankId, ipAddress.Describe().c_str());
     }
