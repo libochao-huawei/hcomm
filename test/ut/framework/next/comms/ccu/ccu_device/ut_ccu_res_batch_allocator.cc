@@ -40,7 +40,7 @@ protected:
 
 };
 
-TEST_F(CcuResBatchAllocatorTest, UT_Alloc_WhenReqTypeNotDefault_ShouldForceSetToDefault)
+TEST_F(CcuResBatchAllocatorTest, Ut_Alloc_When_ReqTypeNotDefault_Expect_ForceSetToDefault)
 {   
     hcomm::CcuResBatchAllocator allocat{};
     uintptr_t handleKey;
@@ -54,7 +54,7 @@ TEST_F(CcuResBatchAllocatorTest, UT_Alloc_WhenReqTypeNotDefault_ShouldForceSetTo
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-TEST_F(CcuResBatchAllocatorTest, Ut_Alloc_WhenReqNumIs0_ShouldReturnSuccessDirectly)
+TEST_F(CcuResBatchAllocatorTest, Ut_Alloc_When_ReqNumIs0_Expect_ReturnSuccessDirectly)
 {
     hcomm::CcuResBatchAllocator allocat{};
     uintptr_t handleKey;

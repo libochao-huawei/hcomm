@@ -32,7 +32,7 @@ protected:
 
 };
 
-TEST_F(AppendToContextTest, Ut_AppendToContext_NullContext_ShouldThrowException)
+TEST_F(AppendToContextTest, Ut_AppendToContext_When_NullContext_Expect_ShouldThrowException)
 {
     std::shared_ptr<CcuRep::CcuRepBase> rep = std::make_shared<CcuRep::CcuRepBlock>("test_rep");
     
