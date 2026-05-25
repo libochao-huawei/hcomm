@@ -12,6 +12,13 @@
 
 using namespace hcomm;
 
+static void InitTestMissionReq(MissionReq& missionReq, MissionReqType reqType)
+{
+    missionReq.reqType = reqType;
+    missionReq.req[0] = 0;
+    missionReq.req[1] = 0;
+}
+
 class CcuResBatchAllocatorTest : public testing::Test {
 protected:
     static void SetUpTestCase() {
@@ -38,26 +45,25 @@ TEST_F(CcuResBatchAllocatorTest, UT_Alloc_WhenReqTypeNotDefault_ShouldForceSetTo
     hcomm::CcuResBatchAllocator allocat{};
     uintptr_t handleKey;
     MissionReq missionReq;
-    missionReq.reqType = MissionReqType::COMM_ENGINE_RESERVED; 
-    missionReq.req[0] = 0;
-    missionReq.req[1] = 0;
     MissionResInfo missionInfos;
-    
+
+    // 调用公共函数
+    InitTestMissionReq(missionReq, MissionReqType::COMM_ENGINE_RESERVED);
+
     auto ret = allocat.missionMgr_.Alloc(handleKey, missionReq, missionInfos);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
-
 
 TEST_F(CcuResBatchAllocatorTest, Ut_Alloc_WhenReqNumIs0_ShouldReturnSuccessDirectly)
 {
     hcomm::CcuResBatchAllocator allocat{};
     uintptr_t handleKey;
     MissionReq missionReq;
-    missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE; 
-    missionReq.req[0] = 0;
-    missionReq.req[1] = 0;
     MissionResInfo missionInfos;
-    
+
+    // 调用公共函数
+    InitTestMissionReq(missionReq, MissionReqType::FUSION_MULTIPLE_DIE);
+
     auto ret = allocat.missionMgr_.Alloc(handleKey, missionReq, missionInfos);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
