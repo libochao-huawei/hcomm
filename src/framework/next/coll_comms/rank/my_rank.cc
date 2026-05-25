@@ -681,42 +681,41 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     CHK_PTR_NULL(buffer);
     CHK_PTR_NULL(size);
 
-    u32 memNum = 0;  // 接收内存块数量
-    /* 实现获取buffer Num的接口，此处Size为500的vector暂存 */
-    // 临时方案，暂时写死大小，后续需定下正式修改方案整改
-    std::vector<CommMem *> remoteMemList(500);
-    std::vector<char *> memTags(500);
-    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data())));
-
-    for (u32 i = 0; i < memNum; i++) {
-        HCCL_INFO("%s memNum[%u] memTags[%s] size[%llu]", __func__, memNum, memTags[i], *size);
-        if (strcmp(memTags[i], "HcclBuffer") == 0) {
-            *buffer = remoteMemList[i]->addr;
-            *size = remoteMemList[i]->size;
-            HCCL_INFO("[%s] Found Hccl buffer memNum is %u at index %u: addr=%p, size=%llu",
-                __func__,
-                memNum,
-                i,
-                remoteMemList[i]->addr,
-                remoteMemList[i]->size);
-            break;  // 找到后立即退出循环
-        }
+    u32 memNum = 0;
+    CommMem* remoteMem = nullptr;
+    char** memTags = nullptr;
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &remoteMem, &memTags, &memNum)));
+    CHK_PTR_NULL(remoteMem);
+    // AicpuTsHccsChannel不使用memTag，返回为空，默认索引0为cclBuffer
+    if (memTags == nullptr) {
+        *buffer = remoteMem[0].addr;
+        *size = remoteMem[0].size;
+        HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, *buffer, *size);
+        return HCCL_SUCCESS;
     }
-    return HCCL_SUCCESS;
+    for (u32 i = 0; i < memNum; ++i) {
+        CHK_PTR_NULL(memTags);
+        std::string tag = memTags[i];
+        if (tag == "HcclBuffer") {
+            *buffer = remoteMem[i].addr;
+            *size = remoteMem[i].size;
+            HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, *buffer, *size);
+            return HCCL_SUCCESS;
+        }
+        HCCL_INFO("[%s] Found %s : addr=%p, size=%llu", __func__, memTags[i], *buffer, *size);
+    }
+    HCCL_ERROR("[%s] HcclBuffer not found.", __func__);
+    return HCCL_E_INTERNAL;
 }
 
-HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
     CHK_PTR_NULL(remoteMem);
-    CHK_PTR_NULL(memTag);
+    CHK_PTR_NULL(memTags);
     CHK_PTR_NULL(memNum);
-
-    CHK_RET(ChannelProcess::ChannelGetUserRemoteMem(channel, remoteMem, memTag, memNum));
-    // 添加空指针检查，防止返回的指针为空
-    if (*memNum > 0) {
-        CHK_PTR_NULL(*remoteMem);
-        CHK_PTR_NULL(*memTag);
-    }
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, remoteMem, memTags, memNum)));
+    // AicpuTsHccsChannel不使用memTag，返回为空，不检查
+    CHK_PTR_NULL(*remoteMem);
     return HCCL_SUCCESS;
 }
 

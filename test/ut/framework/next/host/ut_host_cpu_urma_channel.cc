@@ -97,7 +97,7 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_StartListen_Fail_Expect_Error)
     EXPECT_NE(impl->Init(), HCCL_SUCCESS);
 }
 
-TEST_F(HostCpuUrmaChannelTest, Ut_When_GetRemoteMem_Expect_Success)
+TEST_F(HostCpuUrmaChannelTest, Ut_When_GetRemoteMems_Expect_Success)
 {
     MOCKER(HcommEndpointStartListen).stubs().will(returnValue(static_cast<HcommResult>(HCCL_SUCCESS)));
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle_));
@@ -108,10 +108,10 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_GetRemoteMem_Expect_Success)
 
     HcclMem* remoteMem = nullptr;
     uint32_t memNum = 0;
-    char* memTags = nullptr;
-    // GetRemoteMem depends on memTransport_, which is initialized in Init()
+    char** memTags = nullptr;
+    // GetRemoteMems depends on memTransport_, which is initialized in Init()
     // This test verifies the function can be called
-    EXPECT_NO_THROW(impl->GetRemoteMem(&remoteMem, &memNum, &memTags));
+    EXPECT_NO_THROW(impl->GetRemoteMems(&remoteMem, &memTags, &memNum));
 }
 
 TEST_F(HostCpuUrmaChannelTest, Ut_When_Clean_Expect_NotSupport)

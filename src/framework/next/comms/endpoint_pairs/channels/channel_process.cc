@@ -587,26 +587,16 @@ HcclResult ChannelProcess::ChannelGetNotifyNum(ChannelHandle channelHandle, uint
     });
 }
 
-HcclResult ChannelProcess::ChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult ChannelProcess::ChannelGetRemoteMems(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
+    CHK_PTR_NULL(remoteMem);
+    CHK_PTR_NULL(memNum);
+    CHK_PTR_NULL(memTags);
     HcclMem **remoteMemConverted = reinterpret_cast<HcclMem **>(remoteMem);
 
     return WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
         // 锁内调用，避免 destroy 并发释放
-        channel.GetRemoteMem(remoteMemConverted, memNum, memTags);
-        return HcclResult::HCCL_SUCCESS;
-    });
-}
-
-HcclResult ChannelProcess::ChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum)
-{
-    CHK_PTR_NULL(remoteMem);
-    CHK_PTR_NULL(memTag);
-    CHK_PTR_NULL(memNum);
-
-    return WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
-        // 锁内调用，避免 destroy 并发释放
-        channel.GetUserRemoteMem(remoteMem, memTag, memNum);
+        channel.GetRemoteMems(remoteMemConverted, memTags, memNum);
         return HcclResult::HCCL_SUCCESS;
     });
 }

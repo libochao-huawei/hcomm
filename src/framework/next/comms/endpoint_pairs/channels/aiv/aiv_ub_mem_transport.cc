@@ -275,45 +275,27 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     }
 }
 
-HcclResult AivUbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) 
+HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum) 
 {
-    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!memTags, HCCL_ERROR("[GetRemoteMem] memTags is nullptr"), HCCL_E_PARA);
-
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-
-    if (*memNum == 0) {
-        // 只传cclbuffer
-        uint32_t cclbufferNum = 1;
-        *memNum = cclbufferNum;
-        remoteMems_.resize(cclbufferNum);
-        auto& rmtBuffer = rmtBufferVec_[0];
-        remoteMems_[0].type = rmtBuffer->GetMemType();
-        remoteMems_[0].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-        remoteMems_[0].size = rmtBuffer->GetSize();
-        remoteMem[0] = &remoteMems_[0];
-        CHK_RET(GetMemTag(memTags, cclbufferNum));
-    } else {
-        // 只传用户注册内存
-        uint32_t totalCount = rmtBufferVec_.size();
-        CHK_PRT_RET((totalCount > *memNum), 
-            HCCL_ERROR("[GetRemoteMem] real remote memNum is greater than input memNum"), HCCL_E_PARA);
-        *memNum = totalCount;
-        if (totalCount == 1) {
-            HCCL_INFO("[GetRemoteMem] No remote memory regions available");
-            return HCCL_SUCCESS;
-        }
-        remoteMems_.resize(totalCount);
-        for (uint32_t i = 0; i < totalCount; i++) {
-            auto& rmtBuffer = rmtBufferVec_[i];
-            remoteMems_[i].type = rmtBuffer->GetMemType();
-            remoteMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-            remoteMems_[i].size = rmtBuffer->GetSize();
-            remoteMem[i] = &remoteMems_[i];
-        }
-        CHK_RET(GetMemTag(memTags, totalCount));
+    uint32_t userMemCount = rmtBufferVec_.size();
+    if (userMemCount == 0) {
+        HCCL_WARNING("[AivUbMemTransport::%s] bufferNum is 0.", __func__);
+        return HCCL_SUCCESS;
     }
+    auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> &remoteMemCtx,
+        uint32_t index) -> HcclResult {
+        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
+        CHK_PTR_NULL(rmtBuffer);
+        remoteMemCtx.remoteUserMems[index].type = rmtBuffer->GetMemType();
+        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+        remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
+        return HCCL_SUCCESS;
+    };
+    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> remoteMemCtx{
+        userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
+        cacheBuilder, remoteMem, memNum, memTags};
+    CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 
@@ -326,26 +308,6 @@ HcclResult AivUbMemTransport::GetMemTag(char **memTag, uint32_t memNum)
         }
         HCCL_INFO("[%s] memTag[%s]", __func__, memTag[i]);
     }
-    return HCCL_SUCCESS;
-}
-
-HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
-{
-    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    uint32_t userMemCount = rmtBufferVec_.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
-    auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> &remoteMemCtx, uint32_t index) {
-        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
-        if (rmtBuffer == nullptr) {
-            return;
-        }
-        remoteMemCtx.remoteUserMems[index].type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
-        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-        remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
-    };
-    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memTags, memNum};
-    CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 

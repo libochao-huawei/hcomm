@@ -39,8 +39,7 @@ public:
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) override;
-    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
+    HcclResult GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
     HcclResult ProcessStatus();
@@ -153,11 +152,10 @@ private:
     std::vector<int> wqeNums_;
     bool fenceFlag_{false};
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
-    std::unique_ptr<HcclMem[]> remoteMemsPtr_;
 
     // GetUserRemoteMem 缓存
-    bool userRemoteMemCacheValid_{false};
-    std::vector<CommMem> userRemoteMems_;
+    bool cacheValid_{false};
+    std::vector<HcclMem> userRemoteMems_;
     std::vector<std::string> tagCopies_;
     std::vector<char*> tagPointers_;
 
