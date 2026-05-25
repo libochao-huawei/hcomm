@@ -65,6 +65,7 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${HCCL_CODE_ROOT}/src/common/
         ${HCCL_CODE_ROOT}/src/pub_inc/
         ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network/
+        ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
         ${RDMA_CORE_INCLUDE_DIR}
 
         ${CANN_3RD_LIB_PATH}/json/include/
