@@ -454,7 +454,12 @@ void HrtRaSocketListenOneStop(RaSocketListenParam &in)
     struct SocketListenInfoT listenInfo {};
     listenInfo.socketHandle = in.socketHandle;
     listenInfo.port = in.port;
-    HRaSocketListenStop(&listenInfo, 1);
+    TRY_CATCH_PROCESS_THROW(
+        NetworkApiException,
+        HRaSocketListenStop(&listenInfo, 1),
+        "Socket::StopListen failed",
+        PrintErrorSocketInfo()
+    );
 }
 
 void RaBlockGetSockets(u32 role, SocketInfoT conn[], u32 num) // 修改为内部函数，不对外

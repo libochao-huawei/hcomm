@@ -141,7 +141,7 @@ HcclResult Socket::IRecvWithHeart(void *data, u64 size, u64& compSize) const
 
 void Socket::Destroy()
 {
-    HCCL_ERROR("TEST Socket::Destroy start Destroy serverSocket=%p this=%p", socketHandle, this);
+    HCCL_ERROR("TEST Socket::Destroy start Destroy serverSocket=%p this=%p", socketHandle, static_cast<void *>(this));
     SaluSleep(1000);
     isDestroyed = true;
     StopListen();
@@ -161,12 +161,7 @@ void Socket::StopListen()
 {
     if (isListening) {
         RaSocketListenParam param(socketHandle, listenPort, localIp);
-        TRY_CATCH_PROCESS_THROW(
-            NetworkApiException,
-            HrtRaSocketListenOneStop(param),
-            "Socket::StopListen failed",
-            PrintErrorSocketInfo()
-        );
+        HrtRaSocketListenOneStop(param);
         isListening = false;
     }
 }
