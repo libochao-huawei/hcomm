@@ -120,6 +120,12 @@ int RaCtxQpQueryBatch(void *qp_handle[], struct JettyAttr attr[], unsigned int *
     return 0;
 }
 
+int RaCtxGetAsyncEvents(void *ctxHandle, struct AsyncEvent events[], unsigned int *num)
+{
+    *num = 0;
+    return 0;
+}
+
 namespace Hccl {
 HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
 {
