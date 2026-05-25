@@ -18,6 +18,7 @@
 #include "user_remote_mem_getter.h"
 #include "exception_util.h"
 #include "env_config/env_config.h"
+#include "socket_mgr.h"
 
 namespace Hccl {
 constexpr u32    FINISH_MSG_SIZE             = 128;
@@ -1100,7 +1101,11 @@ HcclResult UbMemTransport::Init()
  
 HcclResult UbMemTransport::DeInit() const
 {
-    socket->Destroy();
+    s32 devLogicId;
+    uint32_t devicePhyId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId));
+    SocketMgr::GetInstance(devicePhyId).DestroySocket(rawSocket);
     return HCCL_SUCCESS;
 }
 
