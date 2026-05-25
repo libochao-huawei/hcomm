@@ -29,6 +29,17 @@
 
 namespace hcomm {
 
+namespace {
+// RsJettyKeyInfo 布局中 jettyId.eid 位于 key 起始；与 GetTpInfo 一致使用链路 EID
+void PatchJettyKeyLinkEid(u8 *qpKey, const u32 keyLen, const Hccl::Eid &linkEid)
+{
+    if (qpKey == nullptr || keyLen < URMA_EID_LEN) {
+        return;
+    }
+    (void)memcpy_s(qpKey, keyLen, linkEid.raw, URMA_EID_LEN);
+}
+} // namespace
+
 CcuConnection::CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys), qos_(qos)
@@ -293,10 +304,15 @@ HcclResult CcuConnection::Serialize(std::vector<char> &dtoData)
 
     dtoStream << jettyNum_;
     HCCL_INFO("[CcuConnection][%s], jettyNum[%u]", __func__, jettyNum_);
+    Hccl::IpAddress locIpAddr{};
+    CHK_RET(CommAddrToIpAddress(locAddr_, locIpAddr));
     for (const auto &ccuJetty : ccuJettys_) {
-        dtoStream << ccuJetty->GetCreateJettyParam().tokenValue; 
+        dtoStream << ccuJetty->GetCreateJettyParam().tokenValue;
         const auto &outParam = ccuJetty->GetJettyedOutParam();
-        dtoStream << outParam.key; // 此处的qpKey是数组
+        u8 patchedKey[HRT_UB_QP_KEY_MAX_LEN]{0};
+        (void)memcpy_s(patchedKey, sizeof(patchedKey), outParam.key, outParam.keySize);
+        PatchJettyKeyLinkEid(patchedKey, outParam.keySize, locIpAddr.GetEid());
+        dtoStream << patchedKey;
         dtoStream << outParam.keySize;
     }
 
@@ -401,7 +417,12 @@ HcclResult CcuConnection::StartImportJettyRequest(uint32_t jettyIndex, RequestHa
         return ReturnErrorStatus(std::string(__func__));
     }
 
-    auto &importCtxInParam = importJettyCtxs_[jettyIndex].inParam;
+    Hccl::IpAddress rmtIpAddr{};
+    CHK_RET(CommAddrToIpAddress(rmtAddr_, rmtIpAddr));
+    auto &importCtx = importJettyCtxs_[jettyIndex];
+    PatchJettyKeyLinkEid(importCtx.remoteQpKey, importCtx.inParam.keyLen, rmtIpAddr.GetEid());
+    importCtx.inParam.key = importCtx.remoteQpKey;
+    auto &importCtxInParam = importCtx.inParam;
     importCtxInParam.jettyImportCfg = jettyImportCfg_;
     importCtxInParam.jettyImportCfg.protocol = tpProtocol_;
     CHK_RET(HccpUbTpImportJettyAsync(ctxHandle_, importCtxInParam, reqDataBuffers_[jettyIndex],
