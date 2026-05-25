@@ -261,7 +261,7 @@ void ClusterMonitor::CreateHBLinksAsync()
     if (clusterLinkContext_.empty()) {
         return;
     }
-    linkRunningStatus_ = true;
+    linkThreadRunning_ = true;
     std::queue<std::tuple<std::string, ClusterUIDType, ClusterMonitorSocketCtx>> connInfoQueue;
     for (auto &pair : clusterLinkContext_) {
         const std::string &commId = pair.first;
@@ -326,7 +326,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
 
     auto createLinkTimeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
-    while (linkRunningStatus_.load()) {
+    while (linkThreadRunning_.load()) {
         if ((std::chrono::steady_clock::now() - startTime) >= createLinkTimeout) {
             HCCL_RUN_WARNING("establish rank[%s] to rank[%s] connection failed. Reason: link timeout,"
                             "timeout[%llds], the HCCL_CONNECT_TIMEOUT may be insufficient. commId[%s].",
