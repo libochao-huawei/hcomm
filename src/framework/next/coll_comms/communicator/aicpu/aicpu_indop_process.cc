@@ -146,6 +146,24 @@ void AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(const std::string &group)
     rwlock.readUnlock();
 }
 
+CollCommAicpuMgr *AicpuIndopProcess::AicpuGetComm(const std::string &group)
+{
+    if (group.empty()) {
+        HCCL_ERROR("[AicpuIndopProcess][%s] comm group is empty", __func__);
+        return nullptr;
+    }
+    if (g_hcclComm == nullptr) {
+        HCCL_ERROR("[AicpuIndopProcess][%s] g_hcclComm is nullptr", __func__);
+        return nullptr;
+    }
+
+    if (g_hcclComm->GetCollCommAicpu()->GetIdentifier() != group) {
+        HCCL_ERROR("[AicpuIndopProcess][%s] comm group[%s] is not current comm group", __func__, group.c_str());
+        return nullptr;
+    }
+    return g_hcclComm;
+}
+
 ReadWriteLockBase& AicpuIndopProcess::AicpuGetCommMutex()
 {
     return g_commAicpuInfo.commAicpuMgrMapMutex;
