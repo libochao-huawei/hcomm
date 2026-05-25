@@ -729,7 +729,7 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_GetRemoteMems_When_Normal_Expect_Re
     EXPECT_EQ(remoteMems[1].size, (uint64_t)0x101);
 }
 
-TEST_F(UbMemTransportTest, ut_UbMemTransport_GetRemoteMems_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
+TEST_F(UbMemTransportTest, ut_UbMemTransport_GetRemoteMems_When_bufferNumIs0_Expect_ReturnIsHCCL_SUCCESS)
 {
     BaseMemTransport::CommonLocRes    locRes;
     BaseMemTransport::Attribution     attr;
@@ -745,7 +745,7 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_GetRemoteMems_When_bufferNumIs0_Exp
     char **memTags;
     u32 memNum;
     HcclResult ret = transport.GetRemoteMems(&remoteMems, &memTags, &memNum);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(UbMemTransportTest, ut_UbMemTransport_UpdateMemInfo_When_Normal_Expect_ReturnIsHCCL_SUCCESS)

@@ -59,6 +59,10 @@ HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
     *(remoteMemCtx.remoteMem) = nullptr;
     *(remoteMemCtx.memTags) = nullptr;
     *(remoteMemCtx.memNum) = 0;
+    if (remoteMemCtx.userMemCount == 0) {
+        HCCL_WARNING("[%s] userMemCount is 0.", __func__);
+        return HCCL_SUCCESS;
+    }
     // 检查是否有缓存
     if (!remoteMemCtx.cacheValid) {
         remoteMemCtx.remoteUserMems.resize(remoteMemCtx.userMemCount);

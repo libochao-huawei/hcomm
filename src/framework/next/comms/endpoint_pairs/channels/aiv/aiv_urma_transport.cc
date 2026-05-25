@@ -415,8 +415,8 @@ HcclResult AivUrmaTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags,
     *memNum = 0;
  
     if (rmtBufferVec_.size() == 0) {
-        HCCL_ERROR("[AivUrmaTransport::%s] bufferNum is 0.", __func__);
-        return HCCL_E_PARA;
+        HCCL_WARNING("[AivUrmaTransport::%s] bufferNum is 0.", __func__);
+        return HCCL_SUCCESS;
     }
  
     uint32_t userMemCount = static_cast<uint32_t>(rmtBufferVec_.size());

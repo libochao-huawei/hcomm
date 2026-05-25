@@ -685,16 +685,27 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     CommMem* remoteMem = nullptr;
     char** memTags = nullptr;
     CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &remoteMem, &memTags, &memNum)));
-    // 部分Channel不使用memTag，故底层实现未给memTags赋值，不检查是否为空
     CHK_PTR_NULL(remoteMem);
-    *buffer = remoteMem[0].addr; // 默认索引0对应内存为cclbuffer
-    *size = remoteMem[0].size;
+    // AicpuTsHccsChannel不使用memTag，返回为空，默认索引0为cclBuffer
     if (memTags == nullptr) {
-        HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, remoteMem[0].addr, remoteMem[0].size);
-    } else {
-        HCCL_INFO("[%s] Found %s : addr=%p, size=%llu", __func__, memTags[0], remoteMem[0].addr, remoteMem[0].size);
+        *buffer = remoteMem[0].addr;
+        *size = remoteMem[0].size;
+        HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, *buffer, *size);
+        return HCCL_SUCCESS;
     }
-    return HCCL_SUCCESS;
+    for (u32 i = 0; i < memNum; ++i) {
+        CHK_PTR_NULL(memTags);
+        std::string tag = memTags[i];
+        if (tag == "HcclBuffer") {
+            *buffer = remoteMem[i].addr;
+            *size = remoteMem[i].size;
+            HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, *buffer, *size);
+            return HCCL_SUCCESS;
+        }
+        HCCL_INFO("[%s] Found %s : addr=%p, size=%llu", __func__, memTags[i], *buffer, *size);
+    }
+    HCCL_ERROR("[%s] HcclBuffer not found.", __func__);
+    return HCCL_E_INTERNAL;
 }
 
 HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteMem, char ***memTags, uint32_t *memNum)
@@ -702,19 +713,9 @@ HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteM
     CHK_PTR_NULL(remoteMem);
     CHK_PTR_NULL(memTags);
     CHK_PTR_NULL(memNum);
-
     CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, remoteMem, memTags, memNum)));
-    if (*memNum > 1) {
-        CHK_PTR_NULL(*remoteMem);
-        CHK_PTR_NULL(*memTags);
-        // 返回的内存不包括cclBuffer，指针后移一位
-        --(*memNum);
-        ++(*remoteMem);
-        ++(*memTags);
-        HCCL_INFO("[%s] success. memNum[%u]", __func__, *memNum);
-    } else {
-        HCCL_RUN_WARNING("[%s] No user remote memory found.", __func__);
-    }
+    // AicpuTsHccsChannel不使用memTag，返回为空，不检查
+    CHK_PTR_NULL(*remoteMem);
     return HCCL_SUCCESS;
 }
 

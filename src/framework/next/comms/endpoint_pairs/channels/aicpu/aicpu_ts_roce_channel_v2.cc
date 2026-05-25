@@ -977,8 +977,8 @@ HcclResult AicpuTsRoceChannelV2::GetRemoteMems(HcclMem **remoteMem, char ***memT
     *memNum = 0;
 
     if (rmtRmaBuffers_.size() == 0) {
-        HCCL_ERROR("[AicpuTsRoceChannelV2::%s] bufferNum is 0.", __func__);
-        return HCCL_E_PARA;
+        HCCL_WARNING("[AicpuTsRoceChannelV2::%s] bufferNum is 0.", __func__);
+        return HCCL_SUCCESS;
     }
 
     uint32_t userMemCount = static_cast<uint32_t>(rmtRmaBuffers_.size());

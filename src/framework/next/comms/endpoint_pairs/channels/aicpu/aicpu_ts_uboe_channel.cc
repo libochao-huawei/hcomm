@@ -262,8 +262,8 @@ HcclResult AicpuTsUboeChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTag
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec_.size() == 0) {
-        HCCL_ERROR("[GetRemoteMems] bufferNum is 0.");
-        return HCCL_E_PARA;
+        HCCL_WARNING("[GetRemoteMems] bufferNum is 0.");
+        return HCCL_SUCCESS;
     }
     uint32_t userMemCount = rmtBufferVec_.size();
     auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> &remoteMemCtx,

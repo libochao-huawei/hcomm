@@ -948,8 +948,8 @@ HcclResult UbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, u
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec.size() == 0) {
-        HCCL_ERROR("[UbMemTransport][GetRemoteMems] bufferNum is 0.");
-        return HCCL_E_PARA;
+        HCCL_WARNING("[UbMemTransport][GetRemoteMems] bufferNum is 0.");
+        return HCCL_SUCCESS;
     }
     uint32_t userMemCount = rmtBufferVec.size();
     auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx,

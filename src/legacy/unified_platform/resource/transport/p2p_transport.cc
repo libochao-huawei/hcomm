@@ -550,8 +550,8 @@ HcclResult P2PTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uin
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec.size() == 0) {
-        HCCL_ERROR("[P2PTransport][GetRemoteMems] bufferNum is 0.");
-        return HCCL_E_PARA;
+        HCCL_WARNING("[P2PTransport][GetRemoteMems] bufferNum is 0.");
+        return HCCL_SUCCESS;
     }
     uint32_t userMemCount = rmtBufferVec.size();
     auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteIpcRmaBuffer>> &remoteMemCtx,
