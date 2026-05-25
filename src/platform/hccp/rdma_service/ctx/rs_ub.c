@@ -1933,6 +1933,17 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
     rjetty.flag.value = rjettyCb->flag.value;
     rjetty.tp_type = rjettyCb->tpType;
 
+    hccp_info("[rs_ub_ctx][RsUbCtxDrvJettyImport] before import_jetty: mode[%d] token[0x%llx] "
+        "jetty_id.eid[%016llx:%016llx] jetty_id.uasid[%u] jetty_id.id[%u] trans_mode[%u] policy[%u] type[%u] "
+        "flag.value[0x%x] token_policy[%u] order_type[%u] share_tp[%u] tp_type[%u]",
+        rjettyCb->mode, (unsigned long long)tokenValue.token,
+        (unsigned long long)be64toh(rjetty.jetty_id.eid.in6.subnet_prefix),
+        (unsigned long long)be64toh(rjetty.jetty_id.eid.in6.interface_id),
+        rjetty.jetty_id.uasid, rjetty.jetty_id.id, (unsigned int)rjetty.trans_mode,
+        (unsigned int)rjetty.policy, (unsigned int)rjetty.type, rjetty.flag.value,
+        rjetty.flag.bs.token_policy, rjetty.flag.bs.order_type, rjetty.flag.bs.share_tp,
+        (unsigned int)rjetty.tp_type);
+
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
         rjettyCb->tjetty = RsUrmaImportJetty(rjettyCb->devCb->urmaCtx, &rjetty, &tokenValue);
     } else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
