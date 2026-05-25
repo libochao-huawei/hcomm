@@ -6728,10 +6728,10 @@ namespace hccl
                                 algResResponse.aivInputMem, algResResponse.aivOutputMem, expMem, DeviceMem()};
         {
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
+            transportManager_->SetAclGraphZeroCopy(opParam.aclGraphZeroCopyEnable != 0);
             CHK_RET(transportManager_->IncreAlloc(opParam.tag, transMem, resRequest.opTransport,
                                                   algResResponse.opTransportResponse, opParam.aicpuUnfoldMode, false,
-                                                  opParam.isCapture, opParam.opType,
-                                                  opParam.aclGraphZeroCopyEnable != 0));
+                                                  opParam.isCapture, opParam.opType));
         }
         if (retryEnable_) {
             // 获取当前rdma相连的所有对端rankList
@@ -6750,8 +6750,7 @@ namespace hccl
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             CHK_RET(transportManager_->IncreAlloc(opParam.tag, transMem, resRequest.opTransport,
                                                   algResResponse.opTransportResponseBackUp, opParam.aicpuUnfoldMode, true,
-                                                  opParam.isCapture, opParam.opType,
-                                                  opParam.aclGraphZeroCopyEnable != 0));
+                                                  opParam.isCapture, opParam.opType));
         }
         remoteTransportMap_ = transportManager_->GetRemoteTransportMap();
         SaveLinkRes(algResResponse.opTransportResponse);

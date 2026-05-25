@@ -225,7 +225,7 @@ public:
         bool isCapture = false, bool isIndOp = false, bool isNpuDirectRoce = false, const OpParam *opParam = nullptr);
     HcclResult IncreAlloc(const std::string &tag, const TransportIOMem &transMem, OpCommTransport &opTransportReq,
         OpCommTransport &opTransportResponse, bool isAicpuModeEn, bool isBackup = false, bool isCapture = false,
-        const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isAclGraphZeroCopy = false);
+        const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID);
     HcclResult GetRemoteRankList(OpCommTransport &opTransportResponse, std::vector<u32> &rankList,
         TransportType transportType);
     HcclResult GetIncreRemoteRankList(OpCommTransport &opTransportReq,
@@ -245,6 +245,7 @@ public:
     void SetPortConfig(bool devPortSwitchOn);
     HcclResult CheckLinkNumAndSwitchLinkType(TransportType& type, MachinePara& machinePara, const std::vector<std::shared_ptr<HcclSocket> > sockets);
     void SetOpType(HcclCMDType opType);
+    void SetAclGraphZeroCopy(bool enable);
     HcclResult SetGroupMode(bool groupMode);
     std::map<u32, TransportType> GetRemoteTransportMap();
 private:
@@ -268,8 +269,7 @@ private:
         u32 notifyNum, u32 trafficClass, u32 serviceLevel, MachinePara &machinePara, RankInfo &loaclRank, RankInfo &remoteRank,
         const HcclNetDevCtx &netDevCtx, TransportLinkType linkType = TransportLinkType::RESERVED, 
         const IndOpMem &indOpMem = IndOpMem(), bool isIndOp = false,
-		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isNpuDirectRoce = false,
-		bool isAclGraphZeroCopy = false);
+		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isNpuDirectRoce = false);
     HcclResult GetTransportType(const u32 dstRank, bool isUsedRdma, TransportType &transportType);
     void SetTransportParam(TransportPara &para, MachinePara &machinePara);
     HcclResult TransportInit(const u32 dstRank, MachinePara &machinePara,
@@ -282,22 +282,19 @@ private:
         bool isUsedRdma, std::shared_ptr<Transport> &link, bool isAicpuModeEn, HcclResult &retOut, const HcclNetDevCtx &netDevCtx,
         u32 notifyNum = 0, bool isBackup = false, bool isCapture = false, const DeviceMem expMem = DeviceMem(),
         TransportLinkType linkType = TransportLinkType::RESERVED, bool isIndOp = false, const IndOpMem indOpMem = IndOpMem(),
-		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isNpuDirectRoce = false,
-        bool isAclGraphZeroCopy = false);
+		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isNpuDirectRoce = false);
     bool IsHccsTransport(u32 remoteRank, TransportLinkType linkType);
     HcclResult ConstructTransTag(const std::string& tag, std::string& transTag, bool isInterRdma, u32 subCommIndex = 0,
         bool isHccs = false);
     HcclResult ExceptionHandle(const std::string &tag, OpCommTransport &opTransportResponse);
     HcclResult createSubCommLinkThreads(const std::string &tag, const TransportIOMem &transMem,
         struct SubCommLinkPara &subCommLinkPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
-        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false,
-        bool isAclGraphZeroCopy = false);
+        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult waitSubCommLinkThreadsComplete(struct SubCommLinkPara &subCommLinkPara);
     HcclResult checkSubCommLinkThreadsStatus(const std::string &tag, struct SubCommLinkPara &subCommLinkPara, bool isBackup);
     HcclResult AllocSubCommLinks(const std::string &tag, const TransportIOMem &transMem,
         struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
-        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false,
-        bool isAclGraphZeroCopy = false);
+        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult IsInterServer(const u32 dstRank, bool& isInterServer);
     HcclResult PrintErrorInfo(NicType nicType);
     uint32_t GetConnectMode(RankId remoteRank);
@@ -305,15 +302,13 @@ private:
         bool &isInterRdma, u32 subCommIndex, TransportLinkType linkType, HcclRankLinkInfo remoteLink, uint32_t mode);
     HcclResult CreateBatchSendRecvLinks(const std::string &tag, const TransportIOMem &transMem,
         struct LinkPoolPara &linkPoolPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
-        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false,
-        bool isAclGraphZeroCopy = false);
+        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult WaitBatchSendRecvThreadsComplete(struct LinkPoolPara &linkPoolPara);
     HcclResult CheckBatchSendRecvLinkStatus(const std::string &tag, struct SingleSubCommTransport &singleSubCommTransport, bool isBackup);
     HcclResult AllocBatchSendRecvLinks(HcclSendRecvItem *sendRecvItemsPtr, u32 itemNum,
         const std::string &tag, const TransportIOMem &transMem,
         struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
-        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false,
-        bool isAclGraphZeroCopy = false);
+        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult PrepareTaskLists(HcclSendRecvItem *sendRecvItemsPtr, u32 itemNum, const SingleSubCommTransport &singleSubCommTransport,
     std::vector<std::pair<u32, u32>> &senderList, std::vector<std::pair<u32, u32>> &receiverList);
 
@@ -358,6 +353,7 @@ private:
     u32 ibvCount_ = 0;
     std::mutex ibvCountMutex_;
     HcclCMDType opType_ = HcclCMDType::HCCL_CMD_INVALID;
+    bool isAclGraphZeroCopy_ = false;
     bool isStandardCard_ = false;
     std::unique_ptr<MulQpInfo> mulQpinfo_ = { nullptr };
     std::mutex createSocketMutex_;    // BatchSendRecv建链调用CreateDestSockets时，保护socketTagVec_等资源

@@ -161,7 +161,7 @@ HcclResult TransportManager::GetRemoteRankList(OpCommTransport &opTransportRespo
 
 HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, const TransportIOMem &transMem,
     struct SubCommLinkPara &subCommLinkPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex, bool isCapture,
-    const HcclCMDType &opType, bool isIndOp, bool isAclGraphZeroCopy)
+    const HcclCMDType &opType, bool isIndOp)
 {
     u32 num = subCommLinkPara.remoteRankIdNum;
     struct SingleSubCommTransport &singleSubCommTransport = subCommLinkPara.singleSubCommTransport;
@@ -224,7 +224,7 @@ HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, co
                 connectSockets, inputMem, outputMem, transportRequest.isUsedRdma, 
                 std::ref(link), isAicpuModeEn, std::ref(subCommLinkPara.linkResult[i]), netDevCtx,
                 transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
-                isIndOp, indOpMem, opType, false, isAclGraphZeroCopy));
+                isIndOp, indOpMem, opType, false));
         CHK_SMART_PTR_NULL(subCommLinkPara.linkThreads[i]); // 异常时其他线程待处理
         singleSubCommTransport.status[index] = TransportStatus::READY; // 建链后 transport设置为ready状态
     }
@@ -286,7 +286,7 @@ HcclResult TransportManager::checkSubCommLinkThreadsStatus(const std::string &ta
 
 HcclResult TransportManager::AllocSubCommLinks(const std::string &tag, const TransportIOMem &transMem,
     struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
-    bool isCapture, const HcclCMDType &opType, bool isIndOp, bool isAclGraphZeroCopy)
+    bool isCapture, const HcclCMDType &opType, bool isIndOp)
 {
     const u32 offset = 8;
     std::vector<std::pair<u32, u32>> remoteRankMap;
@@ -355,9 +355,9 @@ HcclResult TransportManager::AllocSubCommLinks(const std::string &tag, const Tra
         }
 
         CHK_RET(createSubCommLinkThreads(tag, transMem, nextSubCommLinkPara, isAicpuModeEn, isBackup, subCommIndex,
-            isCapture, opType, isIndOp, isAclGraphZeroCopy));
+            isCapture, opType, isIndOp));
         CHK_RET(createSubCommLinkThreads(tag, transMem, prevSubCommLinkPara, isAicpuModeEn, isBackup, subCommIndex,
-            isCapture, opType, isIndOp, isAclGraphZeroCopy));
+            isCapture, opType, isIndOp));
         CHK_RET(waitSubCommLinkThreadsComplete(nextSubCommLinkPara));
         CHK_RET(waitSubCommLinkThreadsComplete(prevSubCommLinkPara));
         CHK_RET(checkSubCommLinkThreadsStatus(tag, nextSubCommLinkPara, isBackup));
@@ -376,7 +376,7 @@ HcclResult TransportManager::AllocSubCommLinks(const std::string &tag, const Tra
 
 HcclResult TransportManager::CreateBatchSendRecvLinks(const std::string &tag, const TransportIOMem &transMem,
     struct LinkPoolPara &linkPoolPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex, bool isCapture,
-    const HcclCMDType &opType, bool isIndOp, bool isAclGraphZeroCopy)
+    const HcclCMDType &opType, bool isIndOp)
 {
     HcclResult ret = hrtSetDevice(deviceLogicId_);
     if (ret != HCCL_SUCCESS) {
@@ -460,7 +460,7 @@ HcclResult TransportManager::CreateBatchSendRecvLinks(const std::string &tag, co
                 connectSockets, inputMem, outputMem, transportRequest.isUsedRdma, 
                 link, isAicpuModeEn, linkPoolPara.linkResults[currentIdx], netDevCtx,
                 transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
-                isIndOp, indOpMem, opType, false, isAclGraphZeroCopy);
+                isIndOp, indOpMem, opType, false);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[CreateBatchSendRecvLinks]Create Link failed");
             linkPoolPara.linkResults[currentIdx] = ret;
@@ -574,8 +574,7 @@ HcclResult TransportManager::PrepareTaskLists(HcclSendRecvItem *sendRecvItemsPtr
 
 HcclResult TransportManager::AllocBatchSendRecvLinks(HcclSendRecvItem *sendRecvItemsPtr, u32 itemNum,
     const std::string &tag, const TransportIOMem &transMem, struct SingleSubCommTransport &singleSubCommTransport,
-    bool isAicpuModeEn, bool isBackup, u32 subCommIndex, bool isCapture, const HcclCMDType &opType, bool isIndOp,
-    bool isAclGraphZeroCopy)
+    bool isAicpuModeEn, bool isBackup, u32 subCommIndex, bool isCapture, const HcclCMDType &opType, bool isIndOp)
 {
     // 记录pair<remoteRank, idx>, idx表示remoteRank对应的建链信息在transportRequests中的索引位置
     std::vector<std::pair<u32, u32>> senderList;
@@ -598,7 +597,7 @@ HcclResult TransportManager::AllocBatchSendRecvLinks(HcclSendRecvItem *sendRecvI
         senderLinkPoolPara.linkThreads[i].reset(new (std::nothrow) std::thread(
             &TransportManager::CreateBatchSendRecvLinks, this, 
             tag, std::ref(transMem), std::ref(senderLinkPoolPara),
-            isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp, isAclGraphZeroCopy
+            isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp
         ));
 
         if (senderLinkPoolPara.linkThreads[i] == nullptr) {
@@ -612,7 +611,7 @@ HcclResult TransportManager::AllocBatchSendRecvLinks(HcclSendRecvItem *sendRecvI
         receiverLinkPoolPara.linkThreads[i].reset(new (std::nothrow) std::thread(
             &TransportManager::CreateBatchSendRecvLinks, this, 
             tag, std::ref(transMem), std::ref(receiverLinkPoolPara),
-            isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp, isAclGraphZeroCopy
+            isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp
         ));
 
         if (receiverLinkPoolPara.linkThreads[i] == nullptr) {
@@ -658,7 +657,7 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
     CHK_RET(notifyPool_->RegisterOp(tag));
     workflowMode_ = GetWorkflowMode();  // 后续有起新的线程，因此更新一下workflowMode
     // 提取 ACL Graph Zero Copy 标志，用于 QP 模式设置条件
-    bool isAclGraphZeroCopy = (opParam != nullptr && opParam->aclGraphZeroCopyEnable != 0);
+    isAclGraphZeroCopy_ = (opParam != nullptr && opParam->aclGraphZeroCopyEnable != 0);
     for (u32 levelIdx = 0; levelIdx < opTransportResponse.size(); levelIdx++) {
         auto &levelNSubCommTransport = opTransportResponse[levelIdx];
         u32 subCommIndex = 0;
@@ -681,11 +680,10 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                 if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
                     CHK_PTR_NULL(opParam);
                     CHK_RET(AllocBatchSendRecvLinks(opParam->BatchSendRecvDataDes.sendRecvItemsPtr, opParam->BatchSendRecvDataDes.itemNum,
-                        tag, transMem, singleSubCommTransport, isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp,
-                        isAclGraphZeroCopy));
+                        tag, transMem, singleSubCommTransport, isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp));
                 } else {
                     CHK_RET(AllocSubCommLinks(tag, transMem, singleSubCommTransport, isAicpuModeEn, isBackup, subCommIndex,
-                        isCapture, opType, isIndOp, isAclGraphZeroCopy));
+                        isCapture, opType, isIndOp));
                 }
                 continue;
             }
@@ -782,7 +780,7 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                             std::ref(singleSubCommTransport.links[linkIdx]), isAicpuModeEn,
                             std::ref(linkResult[threadsRapplyNum]), netDevCtx,
                             transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
-                            isIndOp, indOpMem, opType, chooseAivRoceDirect, isAclGraphZeroCopy));
+                            isIndOp, indOpMem, opType, chooseAivRoceDirect));
                         CHK_SMART_PTR_NULL(linkThreads[threadsRapplyNum]); // 异常时其他线程待处理
                     singleSubCommTransport.status[linkIdx] = TransportStatus::READY; // 建链后 transport设置为ready状态
                     threadsRapplyNum++;
@@ -852,7 +850,7 @@ HcclResult TransportManager::GetIncreRemoteRankList(OpCommTransport &opTransport
 
 HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportIOMem &transMem,
     OpCommTransport &opTransportReq, OpCommTransport &opTransportResponse, bool isAicpuModeEn,
-    bool isBackup, bool isCapture, const HcclCMDType &opType, bool isAclGraphZeroCopy)
+    bool isBackup, bool isCapture, const HcclCMDType &opType)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     CHK_RET(notifyPool_->RegisterOp(tag));
@@ -940,7 +938,7 @@ HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportI
                             transportRequest.isUsedRdma, std::ref(respSingleSubComm.links[rankIndex]), isAicpuModeEn,
                             std::ref(linkResult[threadsRapplyNum]), netDevCtx,
                             transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
-                            isIndOp, indOpMem, opType, false, isAclGraphZeroCopy));
+                            isIndOp, indOpMem, opType, false));
                         CHK_SMART_PTR_NULL(linkThreads[threadsRapplyNum]); // 异常时其他线程待处理
                     respSingleSubComm.status[rankIndex] = TransportStatus::READY; // 建链后 transport设置为ready状态
                     threadsRapplyNum++;
@@ -1281,8 +1279,7 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     const DeviceMem inputMem, const DeviceMem outputMem, bool isUsedRdma,
     std::shared_ptr<Transport> &link, bool isAicpuModeEn, HcclResult &retOut, const HcclNetDevCtx &netDevCtx,
     u32 notifyNum, bool isBackup, bool isCapture, const DeviceMem expMem, TransportLinkType linkType,
-    bool isIndOp, const IndOpMem indOpMem, const HcclCMDType &opType, bool isNpuDirectRoce,
-    bool isAclGraphZeroCopy)
+    bool isIndOp, const IndOpMem indOpMem, const HcclCMDType &opType, bool isNpuDirectRoce)
 {
     hrtErrMSetErrorContextPub(error_context);
     // 给当前线程添加名字
@@ -1300,8 +1297,7 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     do {
         ret = SetMachinePara(tag, machineType, serverId, remoteRank, supportDataReceivedAck, linkMode, sockets,
             inputMem, outputMem, expMem, isAicpuModeEn, isBackup, isCapture, notifyNum, trafficClass_, serviceLevel_, machinePara,
-            loaclRankInfo, remoteRankInfo, netDevCtx, linkType, indOpMem, isIndOp, opType, isNpuDirectRoce,
-            isAclGraphZeroCopy);
+            loaclRankInfo, remoteRankInfo, netDevCtx, linkType, indOpMem, isIndOp, opType, isNpuDirectRoce);
         retOut = ret;
         std::string tmpErrInfo = ret == HCCL_E_TIMEOUT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s][%s]SetMachinePara error.", __func__, LOG_KEYWORDS_INIT_CHANNEL.c_str(), tmpErrInfo.c_str()),);
@@ -1396,8 +1392,7 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
     const DeviceMem &inputMem, const DeviceMem &outputMem, const DeviceMem &expMem, bool isAicpuModeEn, 
     bool isBackup, bool isCapture, u32 notifyNum, u32 trafficClass, u32 serviceLevel, MachinePara &machinePara,
     RankInfo &loaclRank, RankInfo &remoteRank, const HcclNetDevCtx &netDevCtx, TransportLinkType linkType,
-    const IndOpMem &indOpMem, bool isIndOp, const HcclCMDType &opType, bool isNpuDirectRoce,
-    bool isAclGraphZeroCopy)
+    const IndOpMem &indOpMem, bool isIndOp, const HcclCMDType &opType, bool isNpuDirectRoce)
 {
     machinePara.notifyNum = notifyNum;
     machinePara.linkMode = linkMode;
@@ -1490,7 +1485,7 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
             (linkType == TransportLinkType::SIO) ? LinkTypeInServer::SIO_TYPE : LinkTypeInServer::HCCS_SW_TYPE;
     }
 
-    if (isCapture && (!isAicpuModeEn || isAclGraphZeroCopy)) {
+    if (isCapture && (!isAicpuModeEn || isAclGraphZeroCopy_)) {
         // OFFLOAD 模式：仅当 "ACL Graph 模式" 且 ("HOST 展开模式" 或 "ACL Graph Zero Copy 开启") 时使用
         // HOST 展开模式：aicpuUnfoldMode=false → isAicpuModeEn=false
         // ACL Graph Zero Copy：opParam->aclGraphZeroCopyEnable=1，QP 不可复用
@@ -1697,6 +1692,11 @@ void TransportManager::SetOpType(HcclCMDType opType)
 {
     opType_ = opType;
     return;
+}
+
+void TransportManager::SetAclGraphZeroCopy(bool enable)
+{
+    isAclGraphZeroCopy_ = enable;
 }
 
 HcclResult TransportManager::SetGroupMode(bool groupMode)
