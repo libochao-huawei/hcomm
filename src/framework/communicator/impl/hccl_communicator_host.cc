@@ -4451,6 +4451,8 @@ namespace hccl
         opParam.supportZeroCopy = !opParam.supportSymmetricMemory && IsSupportZeroCopy(opParam);
         opParam.aclGraphZeroCopyEnable = GetConfigAclGraphZeroCopyEnable();
         bool isInGraphCaptureZeroCopy = false;
+        // 保存原始 tag，用于 aicpu 展开模式下计算 baseTag（必须在 SetAclGraphZeroCopyMode 之前）
+        std::string originalTag = opParam.tag;
         zeroCopyAclGraph_->SetRetryEnable(retryEnable_);
         isInGraphCaptureZeroCopy = zeroCopyAclGraph_->SetAclGraphZeroCopyMode(
             deviceType_, opType, opParam, implAlg_.get(), cclBufferManager_.GetOutCCLbufferSize());
@@ -4479,8 +4481,6 @@ namespace hccl
         limit.aivCoreLimit = aivCoreLimit;
         AlgDesc algDesc;
         algDesc.isLastSelect = true;
-        // 保存原始 tag，用于 aicpu 展开模式下计算 baseTag（不包含 ZeroCopy 的 hex suffix）
-        std::string originalTag = opParam.tag;
         CHK_RET(algOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, newTag));
         if (isOnlyAiv_ && !algDesc.isAivMode) {
             std::string opTypeName = GetCMDTypeEnumStr(opType);
