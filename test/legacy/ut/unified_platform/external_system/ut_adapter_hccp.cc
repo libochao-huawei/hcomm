@@ -230,11 +230,11 @@ TEST_F(AdapterHccpTest, hrtRaSocketListenOneStart_again)
     SocketHandle socketHandle = nullptr;
 
 
-    RaSocketListenParam listenInfo(socketHandle, 0);
+    RaSocketListenParam listenInfo(socketHandle, 0, IpAddress());
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketListenOneStart(listenInfo), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketListenOneStart(listenInfo,  HrtNetworkMode::HDC), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, Ut_HrtRaSocketTryListenOneStart_When_InValid_IP_Expect_Throw_Exception)
@@ -243,9 +243,9 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketTryListenOneStart_When_InValid_IP_Expect_T
 
     SocketHandle socketHandle = nullptr;
 
-    RaSocketListenParam listenInfo(socketHandle, 0);
+    RaSocketListenParam listenInfo(socketHandle, 0, IpAddress());
 
-    EXPECT_THROW(HrtRaSocketTryListenOneStart(listenInfo), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketTryListenOneStart(listenInfo, HrtNetworkMode::HDC), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, Ut_HrtRaSocketNonBlockSendHeart_When_Input_normal_Expect_Return_Success)
@@ -758,7 +758,7 @@ TEST_F(AdapterHccpTest, RaSocketListenOneStopAsync_return_ok)
 
     SocketHandle socketHandle = nullptr;
     unsigned int port = 100;
-    RaSocketListenParam param(socketHandle, port);
+    RaSocketListenParam param(socketHandle, port, IpAddress());
 
     RaSocketListenOneStopAsync(param);
 };

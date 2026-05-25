@@ -70,7 +70,7 @@ public:
     u32 GetLevel1CommRank(const u32 ringIdx);
     HcclResult SetHDCModeInfo(
         std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &rankDevicePhyIdNicInfoMap,
-        std::vector<u32> &ranksPort, bool isSetHDCModeInfo, bool isUseRankPort);
+        std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort, bool isSetHDCModeInfo, bool isUseRankPort);
 
 protected:
     /* 禁止用户对工厂类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
@@ -160,6 +160,7 @@ private:
     std::vector<u32> ranksPort_;
     bool isSetHDCModeInfo_ { false };
     bool isUseRankPort_{ false };
+    std::vector<u32> vnicRanksPort_;
 };
 }  // namespace hccl
 

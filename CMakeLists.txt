@@ -8,45 +8,53 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16.0)
-option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
-message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
-message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
-message(STATUS "AARCH_MODE=${AARCH_MODE}")
+option(BUILD_OPEN_PROJECT   "Build open hcomm project."     ON)
+option(ENABLE_BUILD_DEVICE  "Build hcomm device project."   OFF)
+option(ENABLE_BUILD_AARCH   "Build hcomm aarch project."    OFF)
 
-if((BUILD_OPEN_PROJECT AND DEVICE_MODE) OR AARCH_MODE)
-    # need to switch
-    set(CMAKE_SYSTEM_NAME Linux)
-    set(CMAKE_SYSTEM_PROCESSOR aarch64)
-    #Change the path to the absolute path of the cross compilation tool after the toolkit package is decompressed
-    # set cross compile toolchain dir
-    set(TOOLCHAIN_DIR ${CUSTOM_ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc/)
-    message(STATUS "TOOLCHAIN_DIR: ${TOOLCHAIN_DIR}")
-    if (NOT "x${TOOLCHAIN_DIR}" STREQUAL "x")
-        if (NOT IS_DIRECTORY ${TOOLCHAIN_DIR})
-            message(FATAL_ERROR "specify cross compile toolchain directory(${TOOLCHAIN_DIR}) is not exist")
-        endif()
-    endif()
-    # endif()
-    set(CMAKE_CXX_COMPILER ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++)
-    set(CMAKE_C_COMPILER   ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc)
+# 默认只编译 host 侧
+if(NOT DEFINED PRODUCT_SIDE)
+    set(PRODUCT_SIDE "host")
 endif()
 
-# 获取host架构
-execute_process(
-    COMMAND uname -m
-    OUTPUT_VARIABLE SYSTEM_ARCH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
+# 构建 Device 侧需设置 TOOLCHAIN_DIR 环境变量
+if(DEFINED ENV{TOOLCHAIN_DIR} AND ENABLE_BUILD_DEVICE)
+    set(ENABLE_DEVICE ON)
+else()
+    set(ENABLE_DEVICE OFF)
+endif()
+
+message(STATUS "ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
+message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
+message(STATUS "PRODUCT_SIDE=${PRODUCT_SIDE}")
+message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
+message(STATUS "ENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}")
+message(STATUS "ENABLE_BUILD_AARCH=${ENABLE_BUILD_AARCH}")
+
+set(HCOMM_DIR         "${CMAKE_CURRENT_SOURCE_DIR}")
+set(HCC_TOOLCHAIN_DIR "${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc")
+set(HCC_CXX_COMPILER  "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++")
+set(HCC_C_COMPILER    "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc")
+set(HCC_C_AR          "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-ar")
+
+# 交叉编译场景（x86机器上编译arm包）
+if(ENABLE_BUILD_AARCH)
+    message(STATUS "TOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}")
+    set(CMAKE_SYSTEM_NAME Linux)
+    set(CMAKE_SYSTEM_PROCESSOR aarch64)
+    set(TOOLCHAIN_DIR      ${HCC_TOOLCHAIN_DIR})
+    set(CMAKE_CXX_COMPILER ${HCC_CXX_COMPILER})
+    set(CMAKE_C_COMPILER   ${HCC_C_COMPILER})
+endif()
 
 # 引入CANN/cmake库
 include(cmake/fetch_cann_cmake.cmake)
-
 project(hcomm)
 
-# 引入CANN/cmake库，初始化
-init_cann_project()
+# 初始化 CANN 项目配置
+init_cann_project(PREPEND_MODULE_PATH)
 
+# 采用 C++14 标准
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS_RELEASE "")
@@ -87,25 +95,75 @@ if(ENABLE_TEST)
     include(cmake/third_party/mockcpp.cmake)
     include(cmake/third_party/rdma-core.cmake)
     add_subdirectory(test)
-    return()
 
 elseif(BUILD_OPEN_PROJECT)
-    include(cmake/third_party/openssl.cmake)
-    include(cmake/third_party/ubengine.cmake)
-    include(cmake/third_party/rdma-core.cmake)
-    include(cmake/third_party/json.cmake)
-    include(cmake/hcomm_utils.cmake)
     include(cmake/config.cmake)
     include(cmake/package.cmake)
     include(cmake/func.cmake)
     include(version.cmake)
-    if(ENABLE_OPEN_SRC)
-        check_pkg_build_deps("hcomm")
-    endif()
+    # 三方件
+    include(cmake/hcomm_utils.cmake)
+    include(cmake/third_party/openssl.cmake)
+    include(cmake/third_party/ubengine.cmake)
+    include(cmake/third_party/rdma-core.cmake)
+    include(cmake/third_party/json.cmake)
+    # 查找依赖包
+    find_cann_package(acl_rt MODULE REQUIRED)
+    find_cann_package(asc_devkit MODULE REQUIRED)
+    find_cann_package(ascend_hal MODULE REQUIRED)
+    find_cann_package(atrace MODULE REQUIRED)
+    find_cann_package(error_manager MODULE REQUIRED)
+    find_cann_package(mmpa MODULE REQUIRED)
+    find_cann_package(msprof MODULE REQUIRED)
+    find_cann_package(runtime MODULE REQUIRED)
+    find_cann_package(securec MODULE REQUIRED)
+    find_cann_package(tsdclient MODULE REQUIRED)
+    find_cann_package(unified_dlog MODULE REQUIRED)
+    # 检查构建依赖
+    check_cann_pkg_build_deps("hcomm")
     add_version_info_targets()
+    # 配置打包
     pack_built_in()
+    # 添加子目录
     add_subdirectory(src)
     add_subdirectory(python)
+
+    # Device 侧编译构建
+    if(ENABLE_DEVICE)
+        include(ExternalProject)
+        ExternalProject_Add(hcomm_device
+            SOURCE_DIR ${HCOMM_DIR}/cmake/device
+            BINARY_DIR ${HCOMM_DEVICE_BUILD_PATH}
+            CMAKE_ARGS
+                -DTOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}
+                -DCMAKE_TOOLCHAIN_FILE=${HCOMM_DIR}/cmake/aarch64-hcc-toolchain.cmake
+                -DCMAKE_C_COMPILER=${HCC_C_COMPILER}
+                -DCMAKE_CXX_COMPILER=${HCC_CXX_COMPILER}
+                -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+                -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+                -DCMAKE_C_AR=${HCC_C_AR}
+                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                -DCMAKE_INSTALL_PREFIX=${HCOMM_DEVICE_INSTALL_PATH}
+                -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH}
+                -DBUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}
+                -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}
+                -DENABLE_SIGN=${ENABLE_SIGN}
+                -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}
+                -DVERSION_INFO=${VERSION_INFO}
+            INSTALL_COMMAND ${CMAKE_CPACK_COMMAND}
+            BUILD_ALWAYS TRUE
+        )
+        if(TARGET hcomm_utils)
+            add_dependencies(hcomm_device hcomm_utils)
+        endif()
+
+        # 安装 device 侧编译产物
+        install(FILES
+            ${HCOMM_DEVICE_BUILD_PATH}/device-hcomm.tar.gz
+            DESTINATION .
+            COMPONENT hcomm
+        )
+    endif()
 
     set(HCCL_HEAD
         include/hccl/hccl_comm.h
@@ -119,123 +177,6 @@ elseif(BUILD_OPEN_PROJECT)
     set(HCOMM_HEAD
         include/hcomm_primitives.h
     )
-
-    if(DEVICE_MODE)
-        set(HCCP_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/tar_pkg/)
-        set(CCL_KERNEL_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/ccl_kernel_tar_pkg/)
-        set(HCCD_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/hccd_tar_pkg/)
-
-        message(STATUS "Detected CUSTOM_SIGN_SCRIPT: ${CUSTOM_SIGN_SCRIPT}")
-        message(STATUS "Detected ENABLE_SIGN: ${ENABLE_SIGN}")
-        pack_targets_and_files(
-            OUTPUT_TARGET "generate_device_hccp_package"
-            OUTPUT "cann-hcomm-compat.tar.gz"
-            TARGETS hccp_service.bin
-            FILES  ${HCCP_TAR_DIR}/librs.so ${HCCP_TAR_DIR}/libra_adp.so ${HCCP_TAR_DIR}/libtls_adp.so ${HCCP_TAR_DIR}/libascend_kms.so ${HCCP_TAR_DIR}/libnet_co.so
-            MANIFEST "hccp_compat_bin_hash.cfg"
-        )
-        add_dependencies(generate_device_hccp_package hccp_service.bin)
-        sign_file(
-            INPUT "cann-hcomm-compat.tar.gz"
-            CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
-            RESULT_VAR "cann-hcomm-compat_sign_file"
-            DEPENDS generate_device_hccp_package
-        )
-        add_dependencies(sign_cann_hcomm_compat generate_device_hccp_package)
-
-        set(HCCD_TAR_LIBS
-            ${HCCD_TAR_DIR}/lib64/libascend_kms.so
-            ${HCCD_TAR_DIR}/lib64/libhccd.so
-            ${HCCD_TAR_DIR}/lib64/libra_hdc.so
-            ${HCCD_TAR_DIR}/lib64/libra_peer.so
-            ${HCCD_TAR_DIR}/lib64/libra.so
-            ${HCCD_TAR_DIR}/lib64/librs.so
-            ${HCCD_TAR_DIR}/lib64/libtls_adp.so
-        )
-        pack_targets_and_files(
-            OUTPUT_TARGET "generate_device_hccd_package"
-            OUTPUT "cann-hccd-compat.tar.gz"
-            FILES ${HCCD_TAR_LIBS}
-            MANIFEST "bin_hash.cfg"
-            TAR_ROOT_DIR "lib64"
-        )
-        add_dependencies(generate_device_hccd_package hccd)
-        sign_file(
-            INPUT "cann-hccd-compat.tar.gz"
-            CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
-            RESULT_VAR "cann-hccd-compat_sign_file"
-            DEPENDS generate_device_hccd_package
-        )
-        add_dependencies(sign_cann_hccd_compat generate_device_hccd_package)
-
-        if(KERNEL_MODE)
-            set(CCL_KERNEL_TAR_LIBS
-                ${CCL_KERNEL_TAR_DIR}/aicpu_kernels_device/libccl_kernel_plf.so
-                ${CCL_KERNEL_TAR_DIR}/aicpu_kernels_device/libccl_kernel.so
-            )
-            pack_targets_and_files(
-                OUTPUT_TARGET "generate_device_aicpu_package"
-                OUTPUT "aicpu_hcomm.tar.gz"
-                FILES ${CCL_KERNEL_TAR_LIBS}
-                MANIFEST "bin_hash.cfg"
-                TAR_ROOT_DIR "aicpu_kernels_device"
-            )
-            add_dependencies(generate_device_aicpu_package ccl_kernel)
-            sign_file(
-                INPUT "aicpu_hcomm.tar.gz"
-                CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
-                RESULT_VAR "aicpu_hcomm_sign_file"
-                DEPENDS generate_device_aicpu_package
-            )
-            add_dependencies(sign_aicpu_hcomm generate_device_aicpu_package)
-        endif()
-    endif()
-
-    if (NOT DEVICE_MODE)
-        message(STATUS "Detected INSTALL_LIBRARY_DIR: ${INSTALL_LIBRARY_DIR}")
-
-        set(BUILD_DEVICE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/)
-        set(BUILD_HCCD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/)
-        add_custom_target(install_tar DEPENDS
-            ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
-            ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
-            ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
-            ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
-            ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
-        )
-        install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
-            COMPONENT hcomm
-            PERMISSIONS OWNER_READ GROUP_READ
-        )
-        install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
-            COMPONENT hcomm
-        )
-        install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
-            COMPONENT hcomm
-            PERMISSIONS OWNER_READ GROUP_READ
-        )
-        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
-            COMPONENT hcomm
-        )
-        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel ${INSTALL_OPTIONAL}
-            COMPONENT hcomm
-        )
-
-        add_custom_target(install_ccl_kernel DEPENDS
-            ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
-        )
-        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
-            DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device ${INSTALL_OPTIONAL}
-            COMPONENT hcomm
-        )
-        add_dependencies(install_tar hcomm)
-        add_dependencies(install_ccl_kernel hcomm)
-    endif()
 
     install(FILES
         ${HCCL_HEAD}
@@ -321,6 +262,7 @@ elseif(BUILD_OPEN_PROJECT)
     )
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h
+        pkg_inc/hcomm/hcomm_res_entity_defs.h
     )
     install(FILES
         ${HCOMM_PKG_HEAD}

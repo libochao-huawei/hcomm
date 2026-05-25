@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <sys/resource.h>
 #include <errno.h>
-#include "tsd.h"
+#include "tsd/tsd.h"
 #ifndef CONFIG_HCCP_LLT
 #include "dlog_pub.h"
 #endif

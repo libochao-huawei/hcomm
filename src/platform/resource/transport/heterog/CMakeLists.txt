@@ -17,10 +17,14 @@ set(src_list
     socket.cc
 )
 
-target_sources(hccl_plf PRIVATE
-    ${src_list}
-)
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${src_list}
+    )
+endif()
 
-target_sources(hccd PRIVATE
-    ${src_list}
-)
+if(TARGET hccd)
+    target_sources(hccd PRIVATE
+        ${src_list}
+    )
+endif()

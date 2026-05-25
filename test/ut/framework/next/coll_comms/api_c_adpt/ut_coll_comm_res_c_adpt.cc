@@ -8,10 +8,12 @@
 #include <string>
 #include "mockcpp/mockcpp.hpp"
 #include "cluster_monitor.h"
+#include "host/host_cpu_roce_channel.h"
 
 #define private public
 
 using namespace hccl;
+using namespace hcomm;
 
 class HcclChannelDescTest : public BaseInit {
 public:
@@ -144,25 +146,42 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_RetryCntIsInvaild_Ret
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_UboeProtocol_Return_Error)
-{
-    std::vector<HcclChannelDesc> channelDesc(1);
-    std::vector<ChannelHandle> channels(1);
-    GetChannelDesc(channelDesc);
-    channelDesc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_UBOE; // UBOE协议集合通信当前不支持
-
-    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
 TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_Notifynum_Exceeds_Return_Error)
 {
     std::vector<HcclChannelDesc> channelDesc(1);
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
-    channelDesc[0].notifyNum = 65; // UBOE协议集合通信当前不支持
+    channelDesc[0].notifyNum = 65;
     MOCKER(&hcomm::ClusterMonitor::RegisterToClusterMonitor).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_BuildConnection_Fails_Return_Error)
+{
+    std::vector<HcclChannelDesc> channelDesc(1);
+    std::vector<ChannelHandle> channels(1);
+    GetChannelDesc(channelDesc);
+    
+    // Mock BuildConnection 失败
+    MOCKER(&HostCpuRoceChannel::BuildConnection).stubs().will(returnValue(HCCL_E_NETWORK));
+    
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_IbvPostRecv_Fails_Return_Error)
+{
+    std::vector<HcclChannelDesc> channelDesc(1);
+    std::vector<ChannelHandle> channels(1);
+    GetChannelDesc(channelDesc);
+    
+    // Mock BuildConnection 成功
+    MOCKER(&HostCpuRoceChannel::BuildConnection).stubs().will(returnValue(HCCL_SUCCESS));
+    // Mock IbvPostRecv 失败
+    MOCKER(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_E_INTERNAL));
+    
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }

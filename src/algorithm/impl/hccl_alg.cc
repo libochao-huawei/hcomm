@@ -347,9 +347,9 @@ void HcclAlg::Break()
 
 HcclResult HcclAlg::SetHDCModeInfo(
     std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &rankDevicePhyIdNicInfoMap,
-    std::vector<u32> &ranksPort, bool isSetHDCModeInfo, bool isUseRankPort)
+    std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort, bool isSetHDCModeInfo, bool isUseRankPort)
 {
-    pimpl_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap, ranksPort, isSetHDCModeInfo, isUseRankPort);
+    pimpl_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap, ranksPort, vnicRanksPort, isSetHDCModeInfo, isUseRankPort);
     return HCCL_SUCCESS;
 }
 #endif

@@ -99,6 +99,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/roce_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
@@ -106,6 +107,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/ipc_remote_notify.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buffer_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/rma_conn_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/rdma_conn_lite_v2.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rmt_rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
@@ -192,6 +194,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/
     ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/
+
     ${HCCL_CODE_ROOT}/src/platform/
     ${HCCL_CODE_ROOT}/src/platform/common/
     ${HCCL_CODE_ROOT}/src/platform/common/unique
@@ -322,6 +326,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/dpu_notify
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints
@@ -358,7 +363,10 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/service/collective
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator
     ${HCCL_CODE_ROOT}/src/legacy/interface
+
+    # ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
     #next

@@ -72,7 +72,7 @@ extern "C" __sk__ void kernel_name##_1(SK_BIND_FUNC_ARGS_A3); \
 extern "C" __sk__ void kernel_name##_2(SK_BIND_FUNC_ARGS_A3); \
 extern "C" __sk__ void kernel_name##_3(SK_BIND_FUNC_ARGS_A3); \
 extern "C" __sk__ void kernel_name##_4(SK_BIND_FUNC_ARGS_A3); \
-SK_BIND(kernel_name, 0, kernel_name##_1, kernel_name##_2, kernel_name##_3, kernel_name##_4)
+SK_BIND(kernel_name, 8, kernel_name##_1, kernel_name##_2, kernel_name##_3, kernel_name##_4)
 
 // A3 sk 导出函数
 #define _SK_BIND_FUNC_DEF_A3(kernel_name, postfix) \

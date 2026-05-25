@@ -42,6 +42,10 @@ extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const
 
 extern HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
+extern HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_t listNum, uint64_t *channelPtr);
+
+extern HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

@@ -50,18 +50,19 @@ constexpr uint32_t SL_DEFAULT = 0xFFFFFFFFu;   // SL的默认值（不区分芯�
 
 static void FillChannelDescFinal(hccl::CommConfig commConfig, const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, bool isCommunicatorV2)
 {
-    channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
     if (isCommunicatorV2) { // A5
         auto& rdmaConfig = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
         channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? rdmaConfig.GetRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
         channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? rdmaConfig.GetRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
         channelDescFinal.roceAttr.tc = (commConfig.GetConfigTrafficClass() == INVALID_UINT) ? rdmaConfig.GetRdmaTrafficClass() : commConfig.GetConfigTrafficClass();
         channelDescFinal.roceAttr.sl = (commConfig.GetConfigServiceLevel() == INVALID_UINT) ? rdmaConfig.GetRdmaServerLevel() : commConfig.GetConfigServiceLevel();
+        channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? rdmaConfig.GetRdmaQueueNum() : channelDesc.roceAttr.queueNum;
     } else {
         channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
         channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
         channelDescFinal.roceAttr.tc = (channelDesc.roceAttr.tc == 0xFF) ? EnvConfig::GetExternalInputRdmaTrafficClass() : channelDesc.roceAttr.tc;
         channelDescFinal.roceAttr.sl = (channelDesc.roceAttr.sl == 0xFF) ? EnvConfig::GetExternalInputRdmaServerLevel() : channelDesc.roceAttr.sl;
+        channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
     }
 }
 
@@ -123,11 +124,13 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
      // 根据协议类型拷贝union中的相应成员
     switch (channelDesc.channelProtocol) {
         case COMM_PROTOCOL_HCCS:
+        case COMM_PROTOCOL_HCCS_ONLY:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_SIO:
         case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_UBC_TP:
+        case COMM_PROTOCOL_UBOE:
             break;
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
@@ -141,6 +144,8 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
                     case COMM_PROTOCOL_UB_MEM:  return "COMM_PROTOCOL_UB_MEM";
                     case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
                     case COMM_PROTOCOL_UBC_TP:  return "COMM_PROTOCOL_UBC_TP";
+                    case COMM_PROTOCOL_UBOE:    return "COMM_PROTOCOL_UBOE";
+                    case COMM_PROTOCOL_HCCS_ONLY:   return "COMM_PROTOCOL_HCCS_ONLY";
                     default:                    return "UNKNOWN_PROTOCOL";
                 }
             };

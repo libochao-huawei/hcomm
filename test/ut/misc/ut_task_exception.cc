@@ -442,6 +442,60 @@ TEST_F(TaskExceptionTest, ut_task_exception_callback__cqe_heartbeat)
     taskExceptionHandler.Callback(&rtExceptionInfo1);
 }
 #endif
+
+HcclResult stub_hrtGetStreamAvailableNum(u32 &maxStrCount)
+{
+    maxStrCount = 16;
+    return HCCL_SUCCESS;
+}
+
+TEST_F(TaskExceptionTest, ut_TaskInfo_ffts_context)
+{
+    u32 deviceLogicId = 0;
+    TaskExceptionHandler taskExceptionHandler(deviceLogicId);
+
+    MOCKER(GetExternalInputTaskExceptionSwitch)
+        .stubs()
+        .will(returnValue(1));
+    MOCKER(hrtGetStreamAvailableNum)
+        .stubs()
+        .will(invoke(stub_hrtGetStreamAvailableNum));
+
+    HcclResult ret;
+    ret = taskExceptionHandler.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    u32 streamID = 0;
+    u32 taskID = 0;
+    std::string tag = "test_tag";
+    TaskType taskType = TaskType::TASK_RDMA;
+    TaskParaNotify taskParaNotify;
+    string str;
+    AlgType algType = AlgType::Reserved();
+
+    u32 index = 0;
+    TaskInfo taskInfo1(streamID, taskID, tag, taskType, algType, index, taskParaNotify);
+    str = taskInfo1.GetBaseInfoStr();
+    TaskParaDMA taskParaDMA;
+    taskType = TaskType::TASK_RDMA;
+    ret = taskExceptionHandler.Save(streamID, taskID, taskType, taskParaDMA);
+
+    std::vector<uint32_t> descData = {32, 1};
+    size_t descBufLen = 128;
+    ret = taskExceptionHandler.Save(streamID, taskID, descData.data(), descBufLen);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    rtExceptionExpandInfo_t expandInfo;
+    expandInfo.u.fftsPlusInfo.contextId = 0;
+    expandInfo.type = tagRtExceptionExpandType::RT_EXCEPTION_FFTS_PLUS;
+    rtExceptionInfo rtExceptionInfo1;
+    rtExceptionInfo1.streamid = streamID;
+    rtExceptionInfo1.expandInfo = expandInfo;
+    rtExceptionInfo1.deviceid = 0;
+    rtExceptionInfo1.taskid = taskID;
+    TaskExceptionHandler::DealExceptionCtx(&rtExceptionInfo1);
+    taskExceptionHandler.Flush();
+}
+
 TEST_F(TaskExceptionTest, ut_TaskInfo_GetBaseInfoStr)
 {
     u32 deviceLogicId = 0;
@@ -799,3 +853,140 @@ TEST_F(TaskExceptionTest, St_DealExceptionTask_When_Comm_Has_Multi_Aiv_Expect_Pr
     GlobalMockObject::verify();
 }
 #endif
+
+TEST_F(TaskExceptionTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_InvaildDeviceId_Expect_NoRegister)
+{
+    u32 invalidDeviceLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    s32 streamId = 1;
+
+    auto callback = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId, invalidDeviceLogicId, callback);
+    EXPECT_TRUE(g_communicatorCallbackMap[invalidDeviceLogicId].find(streamId) !=
+                g_communicatorCallbackMap[invalidDeviceLogicId].end());
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_Registered_Expect_Removed)
+{
+    s32 streamId = 2;
+    u32 deviceLogicId = 0;
+    auto callback = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId);
+    EXPECT_FALSE(g_communicatorCallbackMap[deviceLogicId].find(streamId) !=
+                 g_communicatorCallbackMap[deviceLogicId].end());
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_UnregisterGetAicpuTaskExceptionCallBack_When_NoRegistered_Expect_NoCrash)
+{
+    s32 streamId = 999;
+    u32 deviceLogicId = 0;
+
+    UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId);
+    EXPECT_TRUE(true);
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_RegisterMultipleCallBacks_SameDevice_DifferentStream_Expect_AllStored)
+{
+    u32 deviceLogicId = 1;
+    s32 streamId1 = 10;
+    s32 streamId2 = 20;
+    s32 streamId3 = 30;
+    auto callback1 = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
+    };
+    auto callback2 = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
+    };
+    auto callback3 = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId, callback1);
+    RegisterGetAicpuTaskExceptionCallBack(streamId2, deviceLogicId, callback2);
+    RegisterGetAicpuTaskExceptionCallBack(streamId3, deviceLogicId, callback3);
+
+    EXPECT_EQ(g_communicatorCallbackMap[deviceLogicId].size(), 3u);
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId1) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId2) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId3) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_UnregisterOneCallBack_OtherCallbacksPreserved_Expect_Correct)
+{
+    u32 deviceLogicId = 2;
+    s32 streamId1 = 100;
+    s32 streamId2 = 200;
+    auto callback1 = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
+    };
+    auto callback2 = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId, callback1);
+    RegisterGetAicpuTaskExceptionCallBack(streamId2, deviceLogicId, callback2);
+    EXPECT_EQ(g_communicatorCallbackMap[deviceLogicId].size(), 2u);
+    UnregisterGetAicpuTaskExceptionCallBack(streamId1, deviceLogicId);
+    EXPECT_EQ(g_communicatorCallbackMap[deviceLogicId].size(), 1u);
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId2) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    EXPECT_FALSE(g_communicatorCallbackMap[deviceLogicId].find(streamId1) !=
+                 g_communicatorCallbackMap[deviceLogicId].end());
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_CallbackOverwrite_SameStreamId_Expect_Updated)
+{
+    u32 deviceLogicId = 3;
+    s32 streamId = 500;
+    bool callback1Called = false;
+    bool callback2Called = false;
+
+    auto callback1 = [&callback1Called]() -> ErrorMessageReport {
+        callback1Called = true;
+        return ErrorMessageReport();
+    };
+    auto callback2 = [&callback2Called]() -> ErrorMessageReport {
+        callback2Called = true;
+        return ErrorMessageReport();
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback1);
+    RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback2);
+    EXPECT_EQ(g_communicatorCallbackMap[deviceLogicId].size(), 1u);
+    auto it = g_communicatorCallbackMap[deviceLogicId].find(streamId);
+    ASSERT_TRUE(it != g_communicatorCallbackMap[deviceLogicId].end());
+    it->second();
+    EXPECT_TRUE(callback2Called);
+    EXPECT_FALSE(callback1Called);
+    g_communicatorCallbackMap.fill({});
+}
+
+TEST_F(TaskExceptionTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_Normal_Expect_SUCCESS)
+{
+    s32 streamId = 1;
+    u32 deviceLogicId = 0;
+    auto callback = []() -> ErrorMessageReport {
+        return ErrorMessageReport();
+    };
+
+    RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId, callback);
+    EXPECT_TRUE(g_communicatorCallbackMap[deviceLogicId].find(streamId) !=
+                g_communicatorCallbackMap[deviceLogicId].end());
+    g_communicatorCallbackMap.fill({});
+}

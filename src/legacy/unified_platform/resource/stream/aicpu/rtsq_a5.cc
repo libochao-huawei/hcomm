@@ -31,18 +31,14 @@ const std::chrono::seconds RTSQ_FULL_PRINT_INTERVAL(PRINT_INTERVAL); // 打印�
 
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId) : RtsqBase(devPhyId, streamId, sqId)
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_ = 0;
-    }
+    SetTaskIdBySqeId();
     rtsqFullTimeoutValue_ = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout + 20; // rtsq full超时时间: X+20s
     rtsqFullTimeout_ = std::chrono::seconds(rtsqFullTimeoutValue_);
 }
 
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase(devPhyId, streamId, sqId)
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_ = 0;
-    }
+    SetTaskIdBySqeId();
     launchFlag_ = launchFlag;
     rtsqFullTimeoutValue_ = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout + 20; // rtsq full超时时间: X+20s
     rtsqFullTimeout_ = std::chrono::seconds(rtsqFullTimeoutValue_);
@@ -214,11 +210,8 @@ u8 *RtsqA5::GetCurrSqeBuffer()
 
 void RtsqA5::RefreshInfo()
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_++;
-    }
+    SetTaskIdBySqeId();
     pendingSqeCnt++;
-    HCCL_INFO("RtsqA5::%s: Updated: taskId_[%u], pendingSqeCnt[%u]", __func__, taskId_, pendingSqeCnt);
     
 #ifdef CCL_KERNEL_AICPU
     if (launchFlag_ && !IsBatchLaunchMode()) {

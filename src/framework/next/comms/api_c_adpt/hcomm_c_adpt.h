@@ -12,7 +12,6 @@
 #define HCOMM_C_ADPT_H
 
 #include "hcomm_res.h"
-#include "hccl/hccl_res.h"
 #include "mem_host_pub.h"
 #include "hccl_diag.h"
 
@@ -87,7 +86,6 @@ extern HcommResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint3
  * @note 停止指定Endpoint在指定端口上的监听服务
  */
 extern HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port);
-
 
 extern HcommResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
 
