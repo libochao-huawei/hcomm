@@ -49,7 +49,7 @@ HcclResult RankConsistencyCheckerV2::RecordSubCommParaV2(const std::string &pare
 {
     std::lock_guard<std::mutex> lock(mutex_);
     // 将子通信域四个关键参数计算CRC，带名称存入a5SubCommParaCrcs_
-    // 1. 父通信域identifier的CRC（直接使用传入的parentCommCrc）
+    // 1. 父通信域identifier
     u32 parentCommCrc = 0;
     HcclResult ret = CalcCrc::HcclCalcCrc(parentIdentifier.c_str(), strlen(parentIdentifier.c_str()), parentCommCrc);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
