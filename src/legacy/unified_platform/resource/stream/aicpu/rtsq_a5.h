@@ -10,6 +10,7 @@
 #ifndef HCCLV2_RTSQ_A5_H
 #define HCCLV2_RTSQ_A5_H
 #include "rtsq_base.h"
+#include <chrono>
 namespace Hccl {
 
 class RtsqA5 : public RtsqBase {
