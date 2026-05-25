@@ -573,21 +573,20 @@ void GetNewNodeInfo(u32 layer, RankId newRankId, const NetInstance::Link &oldLin
 
 bool NeedUpdateTopoInstForSubGraph(const NetInstance *oldNetInstance, u32 topoInstId, RankId parentMyRank)
 {
-    vector<u32> ranks;
-    u32 rankNum = 0;
-    HcclResult ret = oldNetInstance->GetRanksByTopoInst(topoInstId, ranks, rankNum);
-    (void)rankNum;
-    if (ret != HCCL_SUCCESS) {
-        THROW<InternalException>(
-            StringFormat("[SubRankGraph][NeedUpdateTopoInstForSubGraph] failed, topoInstId[%u], parentMyRank[%u]",
-                         topoInstId, parentMyRank));
+    auto topoInstIter = oldNetInstance->topoInsts_.find(topoInstId);
+    if (topoInstIter == oldNetInstance->topoInsts_.end()) {
+        HCCL_DEBUG("[SubRankGraph][NeedUpdateTopoInstForSubGraph] skip topoInstId[%u], parentMyRank[%u], "
+                   "not found in parent netInstId[%s]",
+                   topoInstId, parentMyRank, oldNetInstance->GetNetInstId().c_str());
+        return false;
     }
-    for (const auto rank : ranks) {
-        if (rank == static_cast<u32>(parentMyRank)) {
-            return true;
-        }
+    if (topoInstIter->second == nullptr) {
+        HCCL_WARNING("[SubRankGraph][NeedUpdateTopoInstForSubGraph] skip topoInstId[%u], parentMyRank[%u], "
+                     "topoInst is null in parent netInstId[%s]",
+                     topoInstId, parentMyRank, oldNetInstance->GetNetInstId().c_str());
+        return false;
     }
-    return false;
+    return topoInstIter->second->ranks.count(parentMyRank) > 0;
 }
 
 void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId, RankId dstNewRankId,
