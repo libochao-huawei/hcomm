@@ -53,7 +53,7 @@ static OpType GetOpTypeV2(std::string opTypeName) {
     }
     return OpType::OPTYPEINVALID;
 }
-
+ 
 static void LoadConfigCommName(string &commId, const HcclCommConfig &config)
 {
     if (config.hcclCommName[0] == '\0') {
