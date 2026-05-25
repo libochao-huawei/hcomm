@@ -1335,6 +1335,7 @@ HcclResult HrtRaUbLocalMemBatchRegister(RdmaHandle handle, const std::vector<Hrt
         errno_t sRet = memcpy_s(out.key, sizeof(out.key), info.out.key.value, info.out.key.size);
         if (sRet != EOK) {
             HCCL_ERROR("[%s] memcpy_s failed. sRet[%d]", __func__, sRet);
+            return HCCL_E_MEMORY;
         }
         out.keySize     = info.out.key.size;
         out.handle      = reinterpret_cast<LocMemHandle>(handles[idx]);
@@ -1367,6 +1368,7 @@ HcclResult HrtRaUbRemoteMemBatchImport(RdmaHandle handle, const std::vector<HrtR
         int res = memcpy_s(info.in.key.value, sizeof(info.in.key.value), in.key, in.keyLen);
         if (res != EOK) {
             HCCL_ERROR("[%s] memcpy_s failed. ret[%d], idx[%u]", __func__, res, idx);
+            return HCCL_E_MEMORY;
         }
         info.in.key.size = in.keyLen;
         info.in.ub.tokenValue  = in.tokenValue;

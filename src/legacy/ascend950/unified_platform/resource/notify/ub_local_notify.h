@@ -36,7 +36,14 @@ public:
     void Post(const Stream &stream) const override;
 
     std::unique_ptr<Serializable> GetExchangeDto() override; // 先实现UB Notify的exchange dto，IPC/RDMA待补充
-    static HcclResult BatchMemReg(RdmaHandle rdmaHandle, std::vector<std::unique_ptr<Hccl::UbLocalNotify>> &notifies);
+    static HcclResult BatchMemReg(RdmaHandle rdmaHandle,
+        std::vector<std::unique_ptr<Hccl::UbLocalNotify>> &notifies,
+        const std::vector<HrtRaUbLocMemRegParam> &params);
+
+    const HrtRaUbLocMemRegParam &GetLmemRegParam() const
+    {
+        return lmemReg_;
+    }
 
     ~UbLocalNotify() override;
 
@@ -52,6 +59,7 @@ private:
 
     HrtRaUbLocalMemRegOutParam    reqReg;
     void*                         lmemHandle{nullptr};
+    HrtRaUbLocMemRegParam         lmemReg_{0, 0, 0, 0, 1};
 
     void ReleaseResource() const;
     HcclResult SetMemInfo(const HrtRaUbLocalMemRegOutParam &reqReg);

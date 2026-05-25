@@ -902,7 +902,8 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
 { // 从 DTO 取得数据，然后生成 memHandle
 }
 
-HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer*> &rmtBufs)
+HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer*> &rmtBufs,
+    const std::vector<HrtRaUbRemMemImportParam> &params)
 {
     return HCCL_SUCCESS;
 }
@@ -975,7 +976,9 @@ UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed, bool batchRegi
 {
 }
 
-HcclResult UbLocalNotify::BatchMemReg(RdmaHandle rdmaHandle, std::vector<std::unique_ptr<Hccl::UbLocalNotify>> &notifies) {
+HcclResult UbLocalNotify::BatchMemReg(RdmaHandle rdmaHandle,
+    std::vector<std::unique_ptr<Hccl::UbLocalNotify>> &notifies,
+    const std::vector<HrtRaUbLocMemRegParam> &params) {
     return HCCL_SUCCESS;
 }
 
