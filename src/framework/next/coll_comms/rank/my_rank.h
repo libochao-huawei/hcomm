@@ -24,6 +24,8 @@
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
+#include "coll_comm_config_consistency.h"
+#include "exchange_info_mgr.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -52,6 +54,8 @@ public:
         return opExpansionMode_;
     }
 
+    CollCommConfigConsistency &GetCollCommConfigConsistency();
+
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
@@ -68,7 +72,7 @@ public:
 
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
-        const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
+        const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs);
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
     HcclResult BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum);
@@ -110,6 +114,9 @@ private:
     HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
 
     Hccl::RankIpPortMapPtr rankIpPortMap_;
+
+    CollCommConfigConsistency collCommConfigConsistency_;
+    ExchangeInfoMgr exchangeInfoMgr_;
 };
 
 } // namespace hccl

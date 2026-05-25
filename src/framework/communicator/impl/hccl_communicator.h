@@ -667,6 +667,7 @@ private:
     u32 deviceBackUpPhyId_;
     s32 deviceLogicId_;
     u32 deviceBackUpLogicId_;
+    std::unordered_set<s32> aicpuStreamIds_;
     std::vector<HcclIpAddress> devIpAddr_;
     std::vector<HcclIpAddress> devBackupIpAddr_;
     u32 devBackupPort_{HCCL_INVALID_PORT};
@@ -737,6 +738,7 @@ private:
     std::map<OpParam, HcclCacheInfo> hcclCacheMap_; //存储aiv cache信息
     std::string cclBuffName_;
     bool isShareComm_ = false; // 是否共享cclbuffer
+    std::string commName_; // 通信域名称
 private:
 
     bool IsAtomicInit();

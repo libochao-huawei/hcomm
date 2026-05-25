@@ -135,12 +135,26 @@ HcclResult InsTempAllGatherMesh1D::LocalCopyToUsrOut(InsQuePtr tempInsQue)
         if (tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType && inOff == outOff) {
             continue;
         }
-        DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff, sliceSize);
-        DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOff, sliceSize);
-        HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> out:%s", src.Describe().c_str(), dst.Describe().c_str());
-
-        auto ins = std::make_unique<InsLocalCopy>(src, dst);
-        tempInsQue->Append(std::move(ins));
+        // OPBASE模式下scratch中已有备份数据，从scratch读取避免INPUT src/dst重叠导致数据损坏
+        if (opMode_ == OpMode::OPBASE &&
+            tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType) {
+            const u64 scratchRepeatStride =
+                tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tailSize;
+            const u64 scratchOff = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride +
+                                   tempAlgParams_.sliceSize * myAlgRank;
+            DataSlice src(tempAlgParams_.buffInfo.scratBuffType, scratchOff, sliceSize);
+            DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOff, sliceSize);
+            HCCL_INFO("[InsTempAllGatherMesh1D] scratch:%s -> out:%s",
+                src.Describe().c_str(), dst.Describe().c_str());
+            auto ins = std::make_unique<InsLocalCopy>(src, dst);
+            tempInsQue->Append(std::move(ins));
+        } else {
+            DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff, sliceSize);
+            DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOff, sliceSize);
+            HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> out:%s", src.Describe().c_str(), dst.Describe().c_str());
+            auto ins = std::make_unique<InsLocalCopy>(src, dst);
+            tempInsQue->Append(std::move(ins));
+        }
     }
     return HcclResult::HCCL_SUCCESS;
 }

@@ -82,20 +82,11 @@ set(includes
     ${NETCO_PATH}/idl/src/data_sync/processor/pub_sub/sub/include
     ${NETCO_PATH}/idl/src/plugin/twl_tmr/include
     ${NETCO_PATH}/idl/src/plugin/twl_tmr/inner
-
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 )
 
-target_include_directories(net_co PRIVATE ${includes})
-if(DEVICE_MODE)
-    target_link_directories(net_co PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
-endif()
+target_include_directories(net_co PRIVATE
+    ${includes}
+)
 
 target_compile_options(net_co PRIVATE
 	-Werror
@@ -119,6 +110,9 @@ target_link_options(net_co PRIVATE
 
 #链接动态库
 target_link_libraries(net_co PRIVATE
+    $<BUILD_INTERFACE:ascend_hal_headers>
+    $<BUILD_INTERFACE:msprof_headers>
+    $<BUILD_INTERFACE:slog_headers>
     -Wl,--no-as-needed
     c_sec
     $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>

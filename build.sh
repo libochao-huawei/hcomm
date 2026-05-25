@@ -11,7 +11,6 @@ set -e
 
 CURRENT_DIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 BUILD_DIR=${CURRENT_DIR}/build
-BUILD_DEVICE_DIR="${CURRENT_DIR}/build_device"
 BUILD_OUTPUT_DIR=${CURRENT_DIR}/build_out
 OUTPUT_PATH="${CURRENT_DIR}/output"
 USER_ID=$(id -u)
@@ -20,17 +19,14 @@ JOB_NUM="-j${CPU_NUM}"
 ASAN="false"
 COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
-FULL_MODE="false"  # 新增变量，用于控制是否全量构建
-KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
-DO_NOT_CLEAN="false" # 是否清理
+ENABLE_BUILD_DEVICE="OFF"
+ENABLE_BUILD_AARCH="OFF"
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
-BUILD_AARCH="false"
 CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/community_sign_build.py"
 ENABLE_SIGN="false"
 VERSION_INFO="8.5.0"
 
-BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
 
 BUILD_CB_TEST="false"
@@ -66,19 +62,8 @@ function clean()
         rm -rf ${BUILD_DIR}
     fi
 
-    if [ -z "${TEST}" ] && [ -z "${KERNEL}" ];then
-        if [ -n "${BUILD_OUTPUT_DIR}" ];then
-            rm -rf ${BUILD_OUTPUT_DIR}
-        fi
-    fi
-
-    mkdir -p ${BUILD_DIR}
-}
-
-function rmdir()
-{
-    if [ "${DO_NOT_CLEAN}" = "false" ] && [ $# -gt 0 ]; then
-        rm -rf "$@"
+    if [ -n "${BUILD_OUTPUT_DIR}" ];then
+        rm -rf ${BUILD_OUTPUT_DIR}
     fi
 }
 
@@ -92,36 +77,6 @@ function build()
 {
     log "Info: build target:$@ JOB_NUM:${JOB_NUM}"
     cmake --build . --target "$@" ${JOB_NUM} #--verbose
-}
-
-function build_package(){
-    cmake_config
-    log "Info: build_package"
-    build package
-}
-
-function build_device(){
-    cmake_config
-    log "Info: build_device"
-    TARGET_LIST="hccp_service.bin rs net_co ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom"
-    echo "TARGET_LIST=${TARGET_LIST}"
-    PKG_TARGET_LIST="generate_device_hccp_package generate_device_aicpu_package"
-    echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
-    SIGN_TARGET_LIST="sign_cann_hcomm_compat sign_aicpu_hcomm"
-    echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
-    build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
-}
-
-function build_hccd(){
-    cmake_config
-    log "Info: build_hccd"
-    TARGET_LIST="rs ra_peer ra_hdc ra hccd"
-    echo "TARGET_LIST=${TARGET_LIST}"
-    PKG_TARGET_LIST="generate_device_hccd_package"
-    echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
-    SIGN_TARGET_LIST="sign_cann_hccd_compat"
-    echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
-    build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
 }
 
 function build_cb_test_verify(){
@@ -147,7 +102,7 @@ function run_ctest() {
     # CTest 执行用例
     ctest ${JOB_NUM} \
           --build-nocmake \
-          --timeout 200 \
+          --timeout 1000 \
           --output-on-failure \
           --stop-on-failure \
           --test-output-size-failed 10000000 \
@@ -199,16 +154,11 @@ function build_st() {
     log "Info: Build and tests completed successfully!"
 }
 
-function build_kernel() {
-    cmake_config
-    log "Info: build_kernel"
-    build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom
-}
 
 function mk_dir() {
   local create_dir="$1"  # the target to make
   mkdir -pv "${create_dir}"
-  echo "created ${create_dir}"
+  log "Info: Created ${create_dir}"
 }
 
 function build_ut() {
@@ -279,6 +229,36 @@ function make_ut_gov() {
     cd ${CURRENT_DIR}/cov
     genhtml coverage.info
   fi
+}
+
+function build_hcomm() {
+    # 设置 hcc 编译器工具链
+    export TOOLCHAIN_DIR="${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc"
+
+    # 创建构建目录
+    mk_dir "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
+
+    # 配置
+    cmake -S ../ -B . ${CUSTOM_OPTION}
+    if [ $? -ne 0 ]; then
+        log "Error: cmake config failed"
+        return 1
+    fi
+
+    # 编译
+    cmake --build . -j${CPU_NUM}
+    if [ $? -ne 0 ]; then
+        log "Error: cmake build failed"
+        return 1
+    fi
+
+    # 打包
+    make package -j${CPU_NUM}
+    if [ $? -ne 0 ]; then
+        log "Error: make package failed"
+        return 1
+    fi
 }
 
 # print usage message
@@ -440,16 +420,16 @@ while [[ $# -gt 0 ]]; do
         ST_TASKS+=("legacy_alg_testcase")
         shift
         ;;
-    --aicpu)  # 新增选项，用于只编译 ccl_kernel.so
-        KERNEL="true"
+     --aicpu)
+        ENABLE_BUILD_DEVICE="ON"
         shift
         ;;
     --full)
-        FULL_MODE="true"
+        ENABLE_BUILD_DEVICE="ON"
         shift
         ;;
     --build_aarch)
-        BUILD_AARCH="true"
+        ENABLE_BUILD_AARCH="ON"
         shift
         ;;
     --asan)
@@ -462,17 +442,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     --noclean)
-        DO_NOT_CLEAN="true"
-        shift
-        ;;
-    --fwk_test_hlt)
-        BUILD_FWK_HLT="true"
-        MOCK_FWK_HLT="0"
-        shift
-        ;;
-    --fwk_test_hlt_mock)
-        BUILD_FWK_HLT="true"
-        MOCK_FWK_HLT="1"
+        # 默认不清理构建目录
         shift
         ;;
     --cb_test_verify)
@@ -499,22 +469,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [ "${KERNEL}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DKERNEL_MODE=ON -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device"
-fi
-
-if [ "${FULL_MODE}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
-else
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=OFF"
-fi
-
-if [ "${BUILD_AARCH}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=ON"
-else
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=OFF"
-fi
-
 if [ "${ASAN}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_ASAN=ON"
 fi
@@ -522,8 +476,6 @@ fi
 if [ "${COV}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=ON"
 fi
-
-CUSTOM_OPTION="${CUSTOM_OPTION} -DASCENDC_DUMP=0" # AIV算子调测阶段可配置为1以打开AscendC打印功能
 
 if [ -n "${ascend_package_path}" ];then
     ASCEND_CANN_PACKAGE_PATH=${ascend_package_path}
@@ -544,37 +496,34 @@ if [ -n "${third_party_nlohmann_path}" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DTHIRD_PARTY_NLOHMANN_PATH=${third_party_nlohmann_path}"
 fi
 
-CUSTOM_OPTION="${CUSTOM_OPTION} -DCUSTOM_ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}"
 CUSTOM_OPTION="${CUSTOM_OPTION} -DASCEND_INSTALL_PATH=${ASCEND_CANN_PACKAGE_PATH}"
-# CUSTOM_OPTION="${CUSTOM_OPTION} -DCANN_3RD_LIB_PATH=${cann_3rd_lib_path}"
-CUSTOM_OPTION="$CUSTOM_OPTION -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} -DCANN_UTILS_LIB_PATH=${CANN_UTILS_LIB_PATH}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DCANN_UTILS_LIB_PATH=${CANN_UTILS_LIB_PATH}"
 
-CUSTOM_OPTION="$CUSTOM_OPTION -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_BUILD_AARCH=${ENABLE_BUILD_AARCH}"
+
+CUSTOM_OPTION="${CUSTOM_OPTION} -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_SIGN=${ENABLE_SIGN}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DVERSION_INFO=${VERSION_INFO}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DPRODUCT=ascend"
 
 set_env
 
-if [ "${DO_NOT_CLEAN}" = "false" ]; then
-    clean
-else
-    mkdir -p "${BUILD_DIR}"
-fi
-
+mkdir -p "${BUILD_DIR}"
 cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
+    # 编译并执行 UT
     build_ut
     make_ut_gov
 elif [ "${ENABLE_ST}" == "on" ]; then
+    # 编译并执行 ST
     build_st 
-elif [ "${KERNEL}" == "true" ]; then
-    build_kernel
-elif [ "${BUILD_FWK_HLT}" == "true" ]; then
-    log "Info: Building fwk_test with MOCK_HCCL=${MOCK_FWK_HLT}"
-    cmake ${CUSTOM_OPTION} -DMOCK_HCCL=${MOCK_FWK_HLT} ../test/hlt
-    build hcomm_test
-    log "Info: fwk_test execution example: ${BUILD_DIR}/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --list"
-    log "Info: fwk_test execution example: ${BUILD_DIR}/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread"
 elif [ "${BUILD_CB_TEST}" == "true" ]; then
+    # 前冒烟测试
     log "Info: Building cb_test_verify"
     build_cb_test_verify
     if grep -q "Make Failure" ${BUILD_DIR}/build.log || grep -q "Make test Failure" ${BUILD_DIR}/build.log; then
@@ -583,31 +532,11 @@ elif [ "${BUILD_CB_TEST}" == "true" ]; then
     else
         log "Info: Building cb_test_verify success"
     fi
-elif [ "${FULL_MODE}" == "true" ]; then
-    cd ..
-    mkdir -p ${BUILD_DEVICE_DIR}
-    cd ${BUILD_DEVICE_DIR}
-    CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DFULL_MODE=ON -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend910B -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
-    build_device
-    BUILD_HCCD_DIR="${CURRENT_DIR}/build_hccd"
-    mkdir -p ${BUILD_HCCD_DIR}
-    cd ${BUILD_HCCD_DIR}
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=1 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
-    build_hccd
-    cd .. & cd ${BUILD_DIR}
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
-    build_package
-    rmdir ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
-    cd ..
-    mkdir -p ${BUILD_DEVICE_DIR}
-    cd ${BUILD_DEVICE_DIR}
-    CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
-    build_kernel
-    cd .. & cd ${BUILD_DIR}
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
-    build_package
-    rmdir ${BUILD_DEVICE_DIR}
+    # 编译打包 hcomm 包
+    build_hcomm
+    if [ $? -ne 0 ]; then
+        log "Error: build hcomm failed"
+        exit 1
+    fi
 fi

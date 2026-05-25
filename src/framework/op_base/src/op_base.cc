@@ -1598,7 +1598,6 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
     bool errorFlag = false;
     std::shared_ptr<hccl::hcclComm> pComm;
     HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
-
     const std::string commIdentifier = commConfig.GetConfigCommName();
     auto iter = opBaseHcom.opGroup2CommMap.find(commIdentifier);
     CHK_PRT_RET(
@@ -1607,7 +1606,6 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         HCCL_ERROR_CODE(HCCL_E_PARA), commIdentifier.c_str()),
         HCCL_E_PARA
     );
-
     hccl::HcclCommParams params;
     RankTable_t rankTable;
     HcclBasicRankInfo localRankInfo;
@@ -3436,8 +3434,9 @@ static HcclConfigTypeOpExpansionMode OpExpansionModeValueToModeEnum(const uint32
         case ccuSchedMode:
             return static_cast<HcclConfigTypeOpExpansionMode>(opExpansionModeCcuSched);
         case aivMode:
-        case aivOnlyMode:
             return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_AIV;
+        case aivOnlyMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AIV_ONLY;
         default:
             break;
     }

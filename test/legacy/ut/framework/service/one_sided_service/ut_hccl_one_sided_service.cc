@@ -139,7 +139,8 @@ TEST_F(HcclOneSidedServiceTest, test_ExchangeMemDesc)
 
     oneSidedServiceA.linkDataMap_.emplace(RankIdB, linkData1);
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs().will(returnValue(0));
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs().will(returnValue(0));
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs().will(returnValue(0));
     MOCKER_CPP(&ConnLocalNotifyManager::ApplyFor).stubs().will(returnValue(0));
     MOCKER_CPP(&MemTransportManager::BatchBuildOneSidedTransports).stubs().will(returnValue(0));
     fakeCommA.memTransportManager = std::move(std::make_unique<MemTransportManager>(fakeCommA));
@@ -225,7 +226,8 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
 
     oneSidedServiceA.linkDataMap_.emplace(RankIdB, linkData1);
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs().will(returnValue(0));
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs().will(returnValue(0));
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs().will(returnValue(0));
     MOCKER_CPP(&ConnLocalNotifyManager::ApplyFor).stubs().will(returnValue(0));
     MOCKER_CPP(&MemTransportManager::BatchBuildOneSidedTransports).stubs().will(returnValue(0));
     fakeCommA.memTransportManager = std::move(std::make_unique<MemTransportManager>(fakeCommA));

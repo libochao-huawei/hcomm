@@ -45,7 +45,8 @@ const std::unordered_map<CommProtocol, std::string> HCOM_COMM_PROTOCOL_STR_MAP =
     {COMM_PROTOCOL_SIO, "SIO"},
     {COMM_PROTOCOL_UBC_CTP, "UBC_CTP"},
     {COMM_PROTOCOL_UBC_TP, "UBC_TP"},
-    {COMM_PROTOCOL_UB_MEM, "UB_MEM"}
+    {COMM_PROTOCOL_UB_MEM, "UB_MEM"},
+    {COMM_PROTOCOL_UBOE, "UBOE"}
 };
 
 inline std::string GetCommProtocolEnumStr(CommProtocol protocol)
@@ -269,7 +270,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
 }
 
 HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
-        const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs)
+        const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs)
 {
     CHK_PTR_NULL(channelDescs);
     CHK_PRT_RET(channelNum == 0,
@@ -314,10 +315,10 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
 
         Hccl::Socket* socket = nullptr;
         // 申请的socket在channel资源不足回退时不释放，回退后会复用
-        auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket, devicePhyId, remoteDevicePhyId);
+        auto ret = endpointPair->GetSocket(rankId_, remoteRank, socketTag, reuseIdx, listenPort, socket, devicePhyId, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
-                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx),
+            HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d], reuseIdx[%u], tag[%s]",
+                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx, socketTag.c_str()),
             ret);
         CHK_PTR_NULL(socket);
 
@@ -427,7 +428,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         hcommDescs[i].memHandleNum = memHandleVec.size();
 
         std::vector<MemHandle> commMemHandleVec{};
-        if (engine != COMM_ENGINE_CPU) {
+        if (channelDescs[i].remoteEndpoint.protocol != COMM_PROTOCOL_ROCE) {
             CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandleVec));
             hcommDescs[i].memHandles = commMemHandleVec.data();
         }
@@ -611,8 +612,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     CHK_PTR_NULL(channelHandles);
     CHK_PRT_RET(channelNum == 0, HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
 
-    HCCL_INFO("[CreateChannels][Enter] engine[%d] commTag[%s] channelNum[%u] rankId[%u]", engine, commTag.c_str(),
-        channelNum, rankId_);
+    HCCL_INFO("[CreateChannels][Enter] engine[%d] commTag[%s] channelNum[%u] rankId[%u]", engine, commTag.c_str(), channelNum, rankId_);
 
     // 参数检查
     CHK_RET(CheckChannelParam(engine, channelDescs, channelNum));
@@ -620,15 +620,20 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     std::vector<ChannelHandle> hostChannelHandles(channelNum);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
 
+    auto& rdmaConfig = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
     for (u32 i = 0; i < channelNum; ++i) {
         hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
+        hcommDescs[i].roceAttr.qpThreshold = rdmaConfig.GetRdmaMultiQpThreshold();
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
 
-    CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
+    std::string socketTag = commTag + "_engine_" + std::to_string(engine);
+    CHK_RET(BatchCreateSockets(channelDescs, channelNum, socketTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
+    // 借用hcommDescs.socket，完成一致性校验必要的数据交换
+    CHK_RET(exchangeInfoMgr_.BatchExchangeAndCheckConsistency(channelDescs, hcommDescs, channelNum, collCommConfigConsistency_, commTag));
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
         u32 remoteRank = channelDescs[i].remoteRank;
@@ -647,8 +652,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         if (!callbacks_.getAicpuCommState()) {
             HCCL_INFO("MyRank::%s kernelLaunchAicpuCommInit start.", __func__);
             HcclResult ret = callbacks_.kernelLaunchAicpuCommInit();
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
+            CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
             callbacks_.setAicpuCommState(true);
         }
         HcommChannelDesc *hcommDesc = hcommDescs.data();
@@ -800,5 +804,11 @@ HcclResult MyRank::Resume()
     HCCL_INFO("[NsRecovery][Resume] MyRank::Resume success!");
     return HCCL_SUCCESS;
 }
+
+CollCommConfigConsistency &MyRank::GetCollCommConfigConsistency()
+{
+    return collCommConfigConsistency_;
+}
+
 } // namespace hccl
 

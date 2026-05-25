@@ -38,6 +38,7 @@ public:
     virtual HcclResult ServerSocketListen(const uint32_t port) = 0;
 
     virtual HcclResult ServerSocketStopListen(const uint32_t port) {return HCCL_E_NOT_SUPPORT;};
+    virtual HcclResult ServerSocketGetListenPort(uint32_t *port) {return HCCL_E_NOT_SUPPORT;};
 
     virtual std::shared_ptr<RegedMemMgr> GetRegedMemMgr() 
     {
@@ -75,6 +76,9 @@ public:
     {
         return HCCL_SUCCESS;
     }
+
+    // 获取UB异步事件
+    HcclResult GetAsyncEventsContext(uint32_t devPhyId, struct AsyncEvent events[], uint32_t &num);
 
 protected:
     static HcclResult CreateEndpointBase(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr);

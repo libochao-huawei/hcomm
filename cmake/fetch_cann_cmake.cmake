@@ -15,12 +15,12 @@ if(NOT PROJECT_SOURCE_DIR)
     else()
         include(FetchContent)
 
-        set(CANN_CMAKE_TAG "master-004")
+        set(CANN_CMAKE_TAG "master-015")
         if(CANN_3RD_LIB_PATH AND EXISTS "${CANN_3RD_LIB_PATH}/cmake-${CANN_CMAKE_TAG}.tar.gz")
             FetchContent_Declare(
                 cann-cmake
                 URL "${CANN_3RD_LIB_PATH}/cmake-${CANN_CMAKE_TAG}.tar.gz"
-                URL_HASH SHA256=1b090c1fb4e9f9316e3436c79a46ab82301bfbb545b201fb52d9c5987abb4922
+                URL_HASH SHA256=b8827cb7d30cbf1a6e40d79bca1910dc911dc05058563984b5f1ee104a1933e3
             )
         else()
             FetchContent_Declare(

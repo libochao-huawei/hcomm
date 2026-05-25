@@ -24,6 +24,7 @@
 #include "tp_manager.h"
 #include "exchange_ub_buffer_dto.h"
 #include "exchange_ub_conn_dto.h"
+#include "user_remote_mem_getter.h"
 
 namespace hcomm {
 
@@ -31,6 +32,14 @@ AicpuTsUboeChannel::AicpuTsUboeChannel(EndpointHandle endpointHandle, const Hcom
     : endpointHandle_(endpointHandle),
       channelDesc_(channelDesc)
 {
+}
+
+AicpuTsUboeChannel::~AicpuTsUboeChannel()
+{
+    if (socket_ != nullptr) {
+        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        socket_ = nullptr;
+    }
 }
 
 HcclResult AicpuTsUboeChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
@@ -87,7 +96,6 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
         CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
     }
 
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 
@@ -223,7 +231,7 @@ HcclResult AicpuTsUboeChannel::BuildSocket()
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
     bool noRankId = true;
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
+    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
     isRecvFirst_ = socket_->GetRole() == Hccl::SocketRole::CLIENT ? true : false;
 
     return HCCL_SUCCESS;
@@ -231,12 +239,16 @@ HcclResult AicpuTsUboeChannel::BuildSocket()
 
 HcclResult AicpuTsUboeChannel::Init()
 {
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
     CHK_RET(ParseInputParam());
     CHK_RET(BuildSocket());
     CHK_RET(BuildNotify());
     localRmaBuffers_.clear();
     commonRes_.bufferVec.clear();
     CHK_RET(BuildBuffer(bufs_));
+
     return HCCL_SUCCESS;
 }
 
@@ -246,9 +258,72 @@ HcclResult AicpuTsUboeChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
+// 获取远端的CCLBUFFER，但当前实现返回了所有远端内存，待整改
 HcclResult AicpuTsUboeChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
 {
-    // 不支持
+    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PARA);
+ 
+    *remoteMem = nullptr;
+    *memNum = 0;
+
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+ 
+    uint32_t totalCount = rmtBufferVec_.size();
+    if (totalCount == 0) {
+        HCCL_INFO("[GetRemoteMem] No remote memory regions available");
+        return HCCL_SUCCESS;
+    }
+    // 释放之前的内存
+    remoteMemsPtr_.reset();  
+    remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
+    CHK_PTR_NULL(remoteMemsPtr_);
+
+    for (uint32_t i = 0; i < totalCount; i++) {
+        auto& rmtRmaBuffer = rmtBufferVec_[i];
+        remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
+        remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
+        remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
+        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
+        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", 
+            __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
+    }
+
+    *memNum = totalCount;
+    *remoteMem = remoteMemsPtr_.get();
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsUboeChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+{
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+    if (rmtBufferVec_.size() == 0) {
+        HCCL_ERROR("[GetUserRemoteMem] bufferNum is 0.");
+        return HCCL_E_PARA;
+    }
+    uint32_t userMemCount = rmtBufferVec_.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
+    auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
+        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
+        if (rmtBuffer == nullptr) {
+            return;
+        }
+        switch (rmtBuffer->GetMemType()) {
+                case HCCL_MEM_TYPE_DEVICE:
+                    remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_DEVICE;
+                    break;
+                case HCCL_MEM_TYPE_HOST:
+                    remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_HOST;
+                    break;
+                default:
+                    remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_INVALID;
+        }
+        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+        remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
+    };
+    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{
+        userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
+        cacheBuilder, remoteMem, memTag, memNum};
+    CHK_RET(GetRemoteUserMem(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 
@@ -604,7 +679,12 @@ void AicpuTsUboeChannel::ProcessUboeState()
 
 ChannelStatus AicpuTsUboeChannel::GetStatus()
 {
-    if (channelStatus == ChannelStatus::READY) return channelStatus;
+    if (channelStatus == ChannelStatus::READY ) {
+        if (socket_ != nullptr) {
+            SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        }
+        return channelStatus;
+    }
     if (channelStatus == ChannelStatus::INIT) uboeStatus = UboeStatus::INIT;
 
     if (!IsSocketReady()) return channelStatus;
@@ -766,12 +846,6 @@ HcclResult AicpuTsUboeChannel::Clean()
 HcclResult AicpuTsUboeChannel::Resume()
 {
     // 该模式当前不支持N秒快恢
-    return HCCL_SUCCESS;
-}
-
-HcclResult AicpuTsUboeChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
-{
-    // 待适配
     return HCCL_SUCCESS;
 }
 
