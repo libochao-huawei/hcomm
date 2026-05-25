@@ -14,8 +14,6 @@
 #include <unordered_map>
 
 thread_local bool g_hcclErrToWarn = false;
-int32_t CheckLogLevel(int32_t moduleId, int32_t logLevel) __attribute((weak));
-int32_t dlog_getlevel(int32_t moduleId, int32_t *enableEvent) __attribute((weak));
 
 static thread_local std::unordered_map<int32_t, int32_t> g_logLevelCache;
 
