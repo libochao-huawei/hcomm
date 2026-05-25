@@ -16,6 +16,7 @@
 #include "adapter_rts.h"
 #include "../endpoints/endpoint.h"
 #include "adapter_rts_common.h"
+#include "sal.h"
 
 using namespace std;
 
@@ -35,6 +36,7 @@ SocketProcess::~SocketProcess()
 {
     unique_lock<std::mutex> lock(mutex_);
     HCCL_ERROR("TEST [SocketProcess]~SocketProcess start");
+    SaluSleep(10000);
     isInit_ = false;
     for (auto &socketItem : serverSocketMap_) {
         if (socketItem.second != nullptr) {
