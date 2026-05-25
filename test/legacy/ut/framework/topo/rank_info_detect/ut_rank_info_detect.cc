@@ -197,7 +197,7 @@ TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_Input_Expect_NO_THROW)
     EXPECT_EQ(rankInfoDetect.GetHostListenPort(), HCCL_INVALID_PORT);
 }
 
-TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_AutoPort_Expect_Right)
+TEST_F(RankInfoDetectTest, Ut_ServerInit_When_AutoPort_Expect_Right)
 {
      MOCKER_CPP(&Socket::Listen, bool(Socket::*)(u32 &port))
         .stubs()
