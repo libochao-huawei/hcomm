@@ -7400,7 +7400,7 @@ namespace hccl
         opTilingData->orderLaunchMode = GetOrderLaunchMode(opParam.isCapture);
         opTilingData->isSymmetricMemory = opParam.supportSymmetricMemory;
         opTilingData->needIncreLink = opParam.needIncreLink;
-        // Zero Copy 模式下，填充 transport 序列化数据的 device 内存地址
+        // ACL Graph + Zero Copy 模式下，填充 transport 序列化数据的 device 内存地址
         if (opParam.isCapture && opParam.aclGraphZeroCopyEnable != 0) {
             auto it = transportDeviceMemMap_.find(opParam.tag);
             if (it != transportDeviceMemMap_.end()) {

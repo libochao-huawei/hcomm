@@ -14,11 +14,10 @@
 namespace hccl {
 
 // ============================================================================
-// ACL Graph Capture 资源复用优化 - 序列化子函数
+// ACL Graph Capture 资源复用优化
 // ============================================================================
 
-// CollectRemoteRanks: 遍历 transport，收集所有唯一远程 rankId，并构建 rankLinkMap
-// 用于后续序列化时按 rank 填充 transport 参数
+// CollectRemoteRanks: 遍历 transportRequests，收集唯一远程 rankId 及其 {level, ring} 映射
 HcclResult HcclCommunicator::CollectRemoteRanks(const OpCommTransport &transport,
     std::set<u32> &uniqueRanks,
     std::unordered_map<u32, std::vector<std::pair<u32, u32>>> &rankLinkMap)
@@ -40,8 +39,7 @@ HcclResult HcclCommunicator::CollectRemoteRanks(const OpCommTransport &transport
     return HCCL_SUCCESS;
 }
 
-// CalculateSerializationBlockSize: 计算序列化连续内存块的总大小
-// 紧凑布局：header固定部分 + entries[] + rankNode/tagNode 数据区
+// CalculateSerializationBlockSize: 计算序列化连续内存块大小
 void HcclCommunicator::CalculateSerializationBlockSize(u32 rankCount,
     u64 &headerSize, u64 &perRankSize, u64 &blockSize)
 {
@@ -53,8 +51,7 @@ void HcclCommunicator::CalculateSerializationBlockSize(u32 rankCount,
         rankCount, headerSize, perRankSize, blockSize);
 }
 
-// AllocateAndZeroBlocks: 分配 HOST/Device 连续内存块并清零
-// 清零防止序列化时出现垃圾值导致 BuildOpRemoteLink*ResParam 提前退出
+// AllocateAndZeroBlocks: 分配并清零 HOST/Device 内存块
 HcclResult HcclCommunicator::AllocateAndZeroBlocks(u64 blockSize,
     HostMem &hostBlock, DeviceMem &devBlock)
 {
@@ -76,8 +73,7 @@ HcclResult HcclCommunicator::AllocateAndZeroBlocks(u64 blockSize,
     return HCCL_SUCCESS;
 }
 
-// FillOneRankTransport: 填充一个 rank 的 HcclRankRelationResV2 + HccltagRemoteResV2 节点
-// 从 LINK 对象提取 transport 参数（RoCE/P2P），写入序列化缓冲区
+// FillOneRankTransport: 从 LINK 对象提取 transport 参数，填充 rank 的序列化节点
 HcclResult HcclCommunicator::FillOneRankTransport(u32 rankId, const std::string &tag,
     const OpCommTransport &transport,
     const std::vector<std::pair<u32, u32>> &linkPairs,
@@ -106,8 +102,8 @@ HcclResult HcclCommunicator::FillOneRankTransport(u32 rankId, const std::string 
     CHK_SAFETY_FUNC_RET(memcpy_s(tagNode->tag, sizeof(tagNode->tag),
         tag.c_str(), tag.length() + 1));
 
-    // 遍历该 rank 的所有 LINK，提取 transport 参数
-    // linkRoce 槽位跟踪：0=主链路, 1=备链路, 2=第二主链路, 3=第二备链路
+    // 遍历 linkPairs 中的 {level, ring}，过滤出属于当前 rankId 的 link
+    // linkRoce 槽位分配：[0, LINK_ROCE_MAX_NUM)，避免多链路覆盖
     u32 roceSlot = 0;
     u32 p2pCount = 0;
     for (auto it = linkPairs.begin(); it != linkPairs.end(); ++it) {
@@ -162,8 +158,7 @@ HcclResult HcclCommunicator::FillOneRankTransport(u32 rankId, const std::string 
     return HCCL_SUCCESS;
 }
 
-// BuildDeviceRankLinkedList: 设置 device 侧环形链表指针
-// 每个 rank 的 rankNode ↔ tagNode 形成双向环，device 侧可遍历
+// BuildDeviceRankLinkedList: 设置 device 侧 rankNode ↔ tagNode 双向链表指针
 HcclResult HcclCommunicator::BuildDeviceRankLinkedList(
     HcclRankRelationResV2 *rankNode, HccltagRemoteResV2 *tagNode,
     u8 *devRankNode, u8 *devTagNode)
@@ -180,8 +175,7 @@ HcclResult HcclCommunicator::BuildDeviceRankLinkedList(
     return HCCL_SUCCESS;
 }
 
-// SerializeTransportToDeviceMem: 主编排函数
-// 将 captureTransportMap_ 中的 transport 序列化为连续 DeviceMem 块，供 device 侧读取
+// SerializeTransportToDeviceMem: 将 transport 序列化为连续 DeviceMem 块
 HcclResult HcclCommunicator::SerializeTransportToDeviceMem(const std::string &tag,
     const CaptureTransportEntry &entry)
 {
@@ -246,8 +240,7 @@ HcclResult HcclCommunicator::SerializeTransportToDeviceMem(const std::string &ta
 // 清理流程
 // ============================================================================
 
-// DestroyCaptureIbvTransportPublic: 公开接口，供 AclgraphCallback 调用
-// 清理 captureTransportMap_ 和 transportDeviceMemMap_ 中对应 tag 的资源
+// DestroyCaptureIbvTransportPublic: 清理 capture 资源（transport + deviceMem）
 HcclResult HcclCommunicator::DestroyCaptureIbvTransportPublic(const std::string &captureTag)
 {
     HCCL_INFO("[DestroyCaptureIbvTransportPublic] start captureTag[%s]", captureTag.c_str());

@@ -1424,7 +1424,7 @@ HcclResult HcclCommAicpu::InitRemoteTagRes(u32 &rankId, const ListCommon &head,
 HcclResult HcclCommAicpu::RefreshTransportsResForRank(const HcclOpResParam *commParam, u32 rankId,
     const std::string &newTag, u32 notifyNum, TransportLinkType linkType)
 {
-    // Zero Copy 路径：从 transportDeviceMemAddr_ 读取序列化数据
+    // Acl graph + Zero Copy 路径：从 transportDeviceMemAddr_ 读取序列化数据
     if (transportDeviceMemAddr_ != 0) {
         ZeroCopyTransportHeader *header =
             reinterpret_cast<ZeroCopyTransportHeader *>(transportDeviceMemAddr_);

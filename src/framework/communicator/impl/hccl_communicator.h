@@ -794,7 +794,6 @@ private:
     // HOST 侧 transport 隔离容器条目（forward declaration for method signatures below）
     struct CaptureTransportEntry;
 
-    // ZeroCopy 序列化（主函数 + 子函数）
     HcclResult SerializeTransportToDeviceMem(const std::string &tag,
         const CaptureTransportEntry &entry);
     HcclResult CollectRemoteRanks(const OpCommTransport &transport,
@@ -1017,16 +1016,13 @@ private:
 
     std::unordered_map<std::string, AlgResourceResponse> resMap_; // tag : AlgResourceResponse
 
-    // --- ACL Graph Capture 资源复用优化 ---
-    // HOST 侧 transport 隔离容器条目
+    // ACL Graph Capture HOST 侧 transport 隔离容器条目
     struct CaptureTransportEntry {
         OpCommTransport transport;
         OpCommTransport transportBackUp;  // 备份链路（借轨场景）
     };
-    // 按 capture 隔离的 transport 资源（HOST 展开完整复制 + Zero Copy 序列化）
-    std::unordered_map<std::string, CaptureTransportEntry> captureTransportMap_;
-    // 序列化后的 transport device 内存（Zero Copy 模式）
-    std::unordered_map<std::string, DeviceMem> transportDeviceMemMap_;
+    std::unordered_map<std::string, CaptureTransportEntry> captureTransportMap_;  // ACL Graph + Zero Copy: 按 capture 隔离的 transport
+    std::unordered_map<std::string, DeviceMem> transportDeviceMemMap_;  // ACL Graph + Zero Copy: 序列化后的 device 内存
     std::unordered_set<std::string> hostResMap_;
     std::unordered_set<std::string> hbSendRecvTags_;
     std::vector<DeviceMem> deviceResOrigMem_;

@@ -197,7 +197,7 @@ public:
 
     HcclResult SetDispatcherCtxOnThread();
 
-    // Zero Copy 模式下设置 transport 序列化数据的 device 内存地址和大小
+    // 设置 transport 序列化数据的 device 内存地址和大小
     void SetTransportDeviceMem(u64 addr, u64 size) {
         transportDeviceMemAddr_ = addr;
         transportDeviceMemSize_ = size;
@@ -604,7 +604,7 @@ private:
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
 
-    // Zero Copy 模式下，transport 序列化数据的 device 内存地址和大小
+    // ACL Graph + Zero Copy 模式下，transport 序列化数据的 device 内存地址和大小
     u64 transportDeviceMemAddr_ = 0;
     u64 transportDeviceMemSize_ = 0;
     TaskException taskExecption_;
