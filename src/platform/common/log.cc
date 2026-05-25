@@ -34,6 +34,9 @@ static int32_t GetLogLevel(int32_t moduleId)
 
 bool HcclCheckLogLevel(int logType, int moduleId)
 {
+    if (logType == HCCL_LOG_INFO && moduleId == HCCL_LOG_MASK && GetExternalInputHcclEnableEntryLog()) {
+        return true;
+    }
     return (logType >= GetLogLevel(moduleId));
 }
 
