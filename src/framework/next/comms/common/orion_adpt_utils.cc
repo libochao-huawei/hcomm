@@ -35,7 +35,7 @@ HcclResult CommAddrToIpAddress(const CommAddr &commAddr, Hccl::IpAddress &ipAddr
 
     if (commAddr.type == COMM_ADDR_TYPE_EID) {
         Hccl::Eid inputEid;
-        s32 sret = memcpy_s(inputEid.raw, sizeof(inputEid.raw), eid, COMM_ADDR_EID_LEN);
+        s32 sret = memcpy_s(inputEid.raw, Hccl::URMA_EID_LEN, commAddr.eid, Hccl::URMA_EID_LEN);
         CHK_PRT_RET(sret != EOK, HCCL_ERROR("memcpy failed. errorno[%d]:", sret), HCCL_E_MEMORY);
         ipAddr = Hccl::IpAddress(inputEid);
         return HCCL_SUCCESS;
