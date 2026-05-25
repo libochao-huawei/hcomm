@@ -144,7 +144,8 @@ public:
 
     std::string Describe() const final;
 
-    static HcclResult BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer*> &rmtBufs);
+    static HcclResult BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer*> &rmtBufs,
+        const std::vector<HrtRaUbRemMemImportParam> &params);
 
     uint32_t GetTokenId() const
     {
@@ -161,6 +162,11 @@ public:
         return segVa;
     }
 
+    const HrtRaUbRemMemImportParam &GetImportParam() const
+    {
+        return importParam_;
+    }
+
 private:
     RdmaHandle rdmaHandle{nullptr};
     u8         key[HRT_UB_MEM_KEY_MAX_LEN]{0};
@@ -171,6 +177,7 @@ private:
 
     HcclResult SetMemInfo(const HrtRaUbRemMemImportedOutParam &res);
     HrtRaUbRemMemImportedOutParam reqReg;
+    HrtRaUbRemMemImportParam      importParam_{nullptr, 0, 0};
 };
 
 } // namespace Hccl

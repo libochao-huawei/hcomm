@@ -19,7 +19,6 @@
 
 namespace Hccl {
 
-static thread_local std::vector<HrtRaUbLocMemRegParam> notifyMems;
 UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed, bool batchRegister)
     : BaseLocalNotify(RmaType::UB, devUsed), rdmaHandle(rdmaHandle)
 {
@@ -46,7 +45,7 @@ UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed, bool batchRegi
     std::pair<u64, u64> alignBuf = BufAlign(addr, size);
     HrtRaUbLocMemRegParam lmemReg{alignBuf.first, alignBuf.second, tokenValue, tokenIdHandle, 1};
     if (batchRegister) {
-        notifyMems.push_back(std::move(lmemReg));
+        lmemReg_ = lmemReg;
     } else {
         reqReg = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
         SetMemInfo(reqReg);
@@ -65,15 +64,15 @@ HcclResult UbLocalNotify::SetMemInfo(const HrtRaUbLocalMemRegOutParam &reqReg)
     return HCCL_SUCCESS;
 }
 
-HcclResult UbLocalNotify::BatchMemReg(RdmaHandle rdmaHandle, std::vector<std::unique_ptr<Hccl::UbLocalNotify>> &notifies)
+HcclResult UbLocalNotify::BatchMemReg(RdmaHandle rdmaHandle, std::vector<std::unique_ptr<Hccl::UbLocalNotify>> &notifies,
+    const std::vector<HrtRaUbLocMemRegParam> &params)
 {
-    CHK_PRT_RET(notifies.size() != notifyMems.size(), HCCL_ERROR("[BatchMemReg] notifyMemNum[%u] should match notifyNum[%u]", notifyMems.size(), notifies.size()), HCCL_E_INTERNAL);
+    CHK_PRT_RET(notifies.size() != params.size(), HCCL_ERROR("[BatchMemReg] notifyNum[%u] should match params.size[%u]", notifies.size(), params.size()), HCCL_E_INTERNAL);
     std::vector<HrtRaUbLocalMemRegOutParam> reqRegs;
-    CHK_RET(HrtRaUbLocalMemBatchRegister(rdmaHandle, notifyMems, reqRegs));
+    CHK_RET(HrtRaUbLocalMemBatchRegister(rdmaHandle, params, reqRegs));
     for (u32 idx = 0; idx < notifies.size(); ++idx) {
         notifies[idx]->SetMemInfo(reqRegs[idx]);
     }
-    notifyMems.clear();
     return HCCL_SUCCESS;
 }
 string UbLocalNotify::Describe() const

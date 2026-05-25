@@ -17,7 +17,6 @@
 #include "exchange_rdma_buffer_dto.h"
 namespace Hccl {
 
-static thread_local std::vector<HrtRaUbRemMemImportParam> remoteMemImports;
 RemoteIpcRmaBuffer::RemoteIpcRmaBuffer() : RemoteRmaBuffer(RmaType::IPC), isOpened(false)
 {
 }
@@ -123,7 +122,7 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle) : RemoteRmaBuffer(Rm
 RemoteUbRmaBuffer::~RemoteUbRmaBuffer()
 {
     if (memHandle != 0) {
-        DECTOR_TRY_CATCH("RemoteUbRmaBuffer", HrtRaUbRemoteMemUnimport(rdmaHandle, memHandle)); 
+        DECTOR_TRY_CATCH("RemoteUbRmaBuffer", HrtRaUbRemoteMemUnimport(rdmaHandle, memHandle));
     }
 }
 
@@ -142,8 +141,7 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
     
     if (keySize != 0) {
         if (batchRegister) {
-            HrtRaUbRemMemImportParam importParam{key, keySize, tokenValue};
-            remoteMemImports.push_back(std::move(importParam));
+            importParam_ = HrtRaUbRemMemImportParam{key, keySize, tokenValue};
         } else {
             auto res = HrtRaUbRemoteMemImport(rdmaHandle, key, keySize, tokenValue);
             SetMemInfo(res);
@@ -162,14 +160,15 @@ HcclResult RemoteUbRmaBuffer::SetMemInfo(const HrtRaUbRemMemImportedOutParam &re
     return HCCL_SUCCESS;
 }
 
-HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer *> &rmtBufs)
+HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer *> &rmtBufs,
+    const std::vector<HrtRaUbRemMemImportParam> &params)
 {
-    CHK_PRT_RET(rmtBufs.size() != remoteMemImports.size(),
-        HCCL_ERROR("[BatchMemReg] rmtBufs.size[%u] should match remoteMemImports.size[%u]",
-            rmtBufs.size(), remoteMemImports.size()),
+    CHK_PRT_RET(rmtBufs.size() != params.size(),
+        HCCL_ERROR("[BatchMemImport] rmtBufs.size[%u] should match params.size[%u]",
+            rmtBufs.size(), params.size()),
         HCCL_E_INTERNAL);
     std::vector<HrtRaUbRemMemImportedOutParam> reqRegs;
-    CHK_RET(HrtRaUbRemoteMemBatchImport(rdmaHandle, remoteMemImports, reqRegs));
+    CHK_RET(HrtRaUbRemoteMemBatchImport(rdmaHandle, params, reqRegs));
     for (u32 idx = 0; idx < rmtBufs.size(); ++idx) {
         auto res = dynamic_cast<RemoteUbRmaBuffer*>(rmtBufs[idx]);
         if(res) {
@@ -178,7 +177,6 @@ HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<
             return HCCL_E_PTR;
         }
     }
-    remoteMemImports.clear();
     return HCCL_SUCCESS;
 }
 

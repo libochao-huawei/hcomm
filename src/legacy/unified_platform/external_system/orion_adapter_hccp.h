@@ -384,8 +384,6 @@ using HrtRaUbRemMemImportParam = struct HrtRaUbRemMemImportParamDef {
     u32   tokenValue{0};
 };
 
-using HrtRaUbRemMemImportOutParam = HrtRaUbRemMemImportedOutParam;
-
 HcclResult HrtRaUbLocalMemBatchRegister(RdmaHandle handle, const std::vector<HrtRaUbLocMemRegParam> &regParams,
     std::vector<HrtRaUbLocalMemRegOutParam> &outParams);
 
