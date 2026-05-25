@@ -193,7 +193,47 @@ TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_Input_Expect_NO_THROW)
 {
     // check
     RankInfoDetect rankInfoDetect;
-    EXPECT_EQ(rankInfoDetect.GetHostListenPort(), HCCL_INVALID_PORT); // HOST_CONTROL_BASE_PORT
+    EXPECT_EQ(rankInfoDetect.GetHostListenPort(), HCCL_INVALID_PORT);
+}
+
+TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_AutoPort_Expect_Right)
+{
+     MOCKER_CPP(&Socket::Listen, bool(Socket::*)(u32 &port))
+        .stubs()
+        .with(any())
+        .will(returnValue(false)) // 第1次调用: 60000 端口失败
+        .then(returnValue(true)); // 第2次调用: 60001 端口成功   
+
+    // Mock Socket::GetListenPort 返回实际监听端口
+    MOCKER_CPP(&Socket::GetListenPort)
+        .stubs()
+        .will(returnValue(static_cast<u32>(60001)));
+
+    RankInfoDetect rankInfoDetect;
+    u32 listenPort = rankInfoDetect.GetHostListenPort();
+
+    EXPECT_EQ(listenPort, HCCL_INVALID_PORT);
+
+    rankInfoDetect.hostPort_ = listenPort;
+    shared_ptr<Socket> serverSocket;
+    EXPECT_NO_THROW(serverSocket = rankInfoDetect.ServerInit());
+
+    EXPECT_TRUE(serverSocket != nullptr);
+    EXPECT_EQ(rankInfoDetect.hostPort_, 60001);
+}
+
+TEST_F(RankInfoDetectTest, Ut_ServerInit_When_AllDefaultPortsOccupied_Expect_THROW)
+{
+    MOCKER_CPP(&Socket::Listen, bool(Socket::*)(u32 &port))
+        .stubs()
+        .with(any())
+        .will(returnValue(false));
+
+    RankInfoDetect rankInfoDetect;
+    u32 listenPort = rankInfoDetect.GetHostListenPort();
+    EXPECT_EQ(listenPort, HCCL_INVALID_PORT);
+    rankInfoDetect.hostPort_ = listenPort;
+    EXPECT_THROW(rankInfoDetect.ServerInit(), InvalidParamsException);
 }
 
 TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_Config_PORT_RANGE_Expect_Right)
