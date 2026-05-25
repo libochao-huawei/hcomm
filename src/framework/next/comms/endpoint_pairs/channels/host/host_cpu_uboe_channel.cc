@@ -11,9 +11,11 @@
 #include "adapter_rts_common.h"
 #include "endpoint.h"
 #include "exception_handler.h"
-#include "exchange_ub_buffer_dto.h"
 #include "local_ub_rma_buffer.h"
 #include "hcomm_adapter_urma.h"
+#include "exchange_ub_buffer_dto.h"
+
+using namespace Hccl;
 
 namespace hcomm {
 HostCpuUboeChannel::HostCpuUboeChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc)
@@ -92,9 +94,9 @@ HcclResult HostCpuUboeChannel::BuildConnection()
 {
     for (auto &portCtx : portCtxs_) {
         // 需要为每个端口创建一个连接
-        std::unique_ptr<HostUrmaConnection> conn;
+        std::unique_ptr<HostCpuUboeConnection> conn;
         EXECEPTION_CATCH(
-            conn = std::make_unique<HostUrmaConnection>(socket_, portCtx.rdmaHandle_), return HCCL_E_INTERNAL);
+            conn = std::make_unique<HostCpuUboeConnection>(socket_, portCtx.rdmaHandle_), return HCCL_E_INTERNAL);
         CHK_RET(conn->Init());
         portCtx.connection_ = std::move(conn);
     }

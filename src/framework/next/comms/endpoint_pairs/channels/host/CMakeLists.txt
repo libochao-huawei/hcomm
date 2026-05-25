@@ -12,6 +12,7 @@ set(src_list
     host_cpu_roce_channel.cc
     host_rdma_connection.cc
     host_cpu_urma_channel.cc
+    host_cpu_uboe_connection.cc
     dpu_notify/dpu_notify_manager.cc
     host_cpu_uboe_channel.cc
 )

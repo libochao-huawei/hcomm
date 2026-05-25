@@ -17,10 +17,9 @@
 #include "hccl_common.h"
 #include "../../sockets/socket_mgr.h"
 
-#include "host_urma_connection.h"
+#include "host_cpu_uboe_connection.h"
 #include "local_ub_rma_buffer.h"
 #include "remote_rma_buffer.h"
-
 
 namespace hcomm {
 
@@ -98,8 +97,8 @@ private:
         uint32_t wqeNum{0};
 
         RdmaHandle rdmaHandle_{};
-        std::unique_ptr<HostUrmaConnection> connection_;
-        ExchangeRdmaConnDto rmtConnDto_;
+        std::unique_ptr<HostCpuUboeConnection> connection_;
+        Hccl::ExchangeUbConnDto rmtConnDto_;
     };
     
     std::vector<PortAggregationCtx> portCtxs_;
