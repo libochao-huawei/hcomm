@@ -197,6 +197,7 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
             socket = it->second.get();
             socket->Destroy();
             socketMap_.erase(it);
+            socketInUseMap_.erase(socket);
         } else {
             HCCL_INFO("[SocketMgr][%s] find a correct socket in map", __func__);
             auto timeoutPoint = std::chrono::steady_clock::now() + 
@@ -264,6 +265,18 @@ HcclResult SocketMgr::UpdateSocketConfig(const Hccl::SocketConfig*& socketConfig
 HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
 {
     CHK_PTR_NULL(socket);
+    bool socketExit = false;
+    for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
+        if (it->second.get() == socket) {
+            socketExit = true;
+            break;
+        }
+    }
+    if (!socketExit) {
+        HCCL_WARNING("[DeleteWhiteList] socket not found in socketMap_, nothing to delete.",
+            socket);
+        return HCCL_SUCCESS;
+    }
     auto iter = handle2WhiteListMap_.find(socket->GetFdHandle());
     if (iter == handle2WhiteListMap_.end()) {
         HCCL_WARNING("[DeleteWhiteList] socketHandle[%p] not found in handle2WhiteListMap_, nothing to delete.",
