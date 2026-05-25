@@ -25,16 +25,20 @@
 #define IP_ADDR_LEN (32)
 
 /* 用于识别FE*/
-#define MAX_UE_IN_LEVEL (2)
+#define MAX_UE_ID_IN_LEVEL (2)
 #define MAX_LEVEL_NUM (4)
-#define UE_TYPE_MESH (0)
-#define UE_TYPE_CLOS (1)
-#define UE_TYPE_UBOE (2)
+
+enum UbEntityType {
+    UE_TYPE_MESH = 0,
+    UE_TYPE_CLOS = 1,
+    UE_TYPE_UBOE = 2,
+    UE_TYPE_UBG = 3,
+};
 
 typedef struct stUEInfo {
     int dieId;
     int feId;
-    int type;
+    enum UbEntityType type;
     char ports[256];
 }UEInfo;
 
@@ -43,7 +47,7 @@ typedef int (*GetNetInstanceIdFunc)(int npu_id, const struct dcmi_spod_info *spo
 typedef struct stLevelInfo {
     int level;
     int ueNum;
-    UEInfo ueList[MAX_UE_IN_LEVEL];
+    UEInfo ueList[MAX_UE_ID_IN_LEVEL];
     char netType[16];
     GetNetInstanceIdFunc instanceIdFunc;
 }LevelInfo;
@@ -71,6 +75,7 @@ int GetNetInstanceIdForSuperPod(int npu_id, const struct dcmi_spod_info *spodInf
 
 int GetNetInstanceIdForCluster(int npu_id, const struct dcmi_spod_info *spodInfo, char *netInstanceId, int netInstanceIdLen);
 
+#define MAX_UE_ID (99) // 定义一个MAX_UE_ID， mesh必须使用最大的UE
 static const NetInfo g_netInfoList[] = {
     {
         .mainBoardId = MAIN_BOARD_ID_SERVER_UBX,
@@ -98,7 +103,7 @@ static const NetInfo g_netInfoList[] = {
                 .ueNum = 1,
                 .instanceIdFunc = GetNetInstanceIdForPod,
                 .ueList = {
-                    {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH},
+                    {.dieId = UDIE_1, .feId = MAX_UE_ID, .type = UE_TYPE_MESH},
                 }
             },
             { // level 1 为超平面
@@ -119,7 +124,7 @@ static const NetInfo g_netInfoList[] = {
             {
                 .level = 0, .netType = NET_TYPE_TOPO_FILE_DESC, .ueNum = 1,
                 .instanceIdFunc = GetNetInstanceIdForPod,
-                .ueList = { {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH}, }
+                .ueList = { {.dieId = UDIE_1, .feId = MAX_UE_ID, .type = UE_TYPE_MESH}, }
             },
             {
                 .level = 1, .netType = NET_TYPE_CLOS, .ueNum = 1,
@@ -143,7 +148,7 @@ static const NetInfo g_netInfoList[] = {
                 .ueNum = 1,
                 .instanceIdFunc = GetNetInstanceIdForOS,
                 .ueList = {
-                    {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH},
+                    {.dieId = UDIE_1, .feId = MAX_UE_ID, .type = UE_TYPE_MESH},
                 }
             },
             {
@@ -160,7 +165,7 @@ static const NetInfo g_netInfoList[] = {
             {
                 .level = 0, .netType = NET_TYPE_TOPO_FILE_DESC, .ueNum = 1,
                 .instanceIdFunc = GetNetInstanceIdForOS,
-                .ueList = { {.dieId = UDIE_1, .feId = 5, .type = UE_TYPE_MESH} }
+                .ueList = { {.dieId = UDIE_1, .feId = MAX_UE_ID, .type = UE_TYPE_MESH} }
             }
         },
    },
@@ -172,7 +177,7 @@ static const NetInfo g_netInfoList[] = {
                 .level = 0,
                 .ueNum = 1,
                 .ueList = {
-                    {.dieId = 1, .feId = 5, .type = UE_TYPE_MESH},
+                    {.dieId = 1, .feId = MAX_UE_ID, .type = UE_TYPE_MESH},
                 }
             },
             {
@@ -318,18 +323,43 @@ static int LayerAddUBOE(const UBEntity *ue, const UEInfo *ueInfo, NetLayer *laye
  * @param type: UB类型
  * @return UBEntity*: ue entity
 */
-UBEntity *GetUBEntityByFilter(UEList *ueList, int dieId, int ueId, int type)
+static const UBEntity *GetUBEntityByFilter(const UEList *ueList, int dieId, int ueId, int type)
 {
-    for (unsigned int i = 0; i < ueList->ueNum; i++) {
-        if (type == UE_TYPE_UBOE && UrmaEidIsUBOE(&ueList->ueList[i].eidList[0].eid)) {
-            return &ueList->ueList[i];
-        } else {
-            int die = UrmaEidGetDieId(&ueList->ueList[i].eidList[0].eid);
-            int fe = UBEntityGetId(&ueList->ueList[i]);
-            if (die == dieId && fe == ueId) {
+    if (type == UE_TYPE_UBOE) {
+        for (unsigned int i = 0; i < ueList->ueNum; i++) {
+            if (UrmaEidIsUBOE(&ueList->ueList[i].eidList[0].eid)) {
                 return &ueList->ueList[i];
             }
         }
+        return NULL;
+    }
+    if (type == UE_TYPE_UBG) {
+        for (unsigned int i = 0; i < ueList->ueNum; i++) {
+            if (UrmaEidIsUBG(&ueList->ueList[i].eidList[0].eid)) {
+                return &ueList->ueList[i];
+            }
+        }
+        return NULL;
+    }
+    int maxFe = 0;
+    const UBEntity *ubEntity = NULL;
+    for (unsigned int i = 0; i < ueList->ueNum; i++) {
+        if (UrmaEidIsUBOE(&ueList->ueList[i].eidList[0].eid)) {
+            continue;
+        }
+        int die = UrmaEidGetDieId(&ueList->ueList[i].eidList[0].eid);
+        int fe = UBEntityGetId(&ueList->ueList[i]);
+        if (die == dieId && fe == ueId) {// MAX_UE_ID足够大，这里不会匹配到
+            return &ueList->ueList[i];
+        }
+        //  获取本iodie上UBEntity ID最大的UB Entity
+        if (die == dieId && fe > maxFe) {
+            maxFe = fe;
+            ubEntity = &ueList->ueList[i];
+        }
+    }
+    if (ueId == MAX_UE_ID) {
+        return ubEntity;
     }
     return NULL;
 }
@@ -355,7 +385,7 @@ static int ProcessLayer(int npuId, NetLayer *layer, UEList *ueList, const LevelI
         int fe = levelInfo->ueList[i].feId;
         int die = levelInfo->ueList[i].dieId;
         int type = levelInfo->ueList[i].type;
-        UBEntity* ue = GetUBEntityByFilter(ueList, die, fe, type);
+        const UBEntity* ue = GetUBEntityByFilter(ueList, die, fe, type);
         if (ue == NULL) {
             continue;
         }

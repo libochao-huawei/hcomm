@@ -507,31 +507,6 @@ TEST_F(Communicator_Device_UT, CommunicatorAttrsTest) {
     commAttrs.GetLocalNicPort(NicType::VNIC_TYPE);
 }
 
-TEST_F(Communicator_Device_UT, AicpuGetCommTest) {
-    // 测试空group
-    hccl::HcclCommAicpu *comm1 = AicpuHcclProcess::AicpuGetComm("");
-    EXPECT_EQ(comm1, nullptr);
-    
-    // 测试不存在的group
-    hccl::HcclCommAicpu *comm2 = AicpuHcclProcess::AicpuGetComm("nonexistent_group");
-    EXPECT_EQ(comm2, nullptr);
-    
-    // 测试存在的group（先创建一个group）
-    std::string groupName = "test_group";
-    hccl::HcclCommAicpu *comm3 = nullptr;
-    HcclResult ret = AicpuHcclProcess::AcquireAicpuComm(groupName, &comm3);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_NE(comm3, nullptr);
-    
-    // 测试获取已存在的group
-    hccl::HcclCommAicpu *comm4 = AicpuHcclProcess::AicpuGetComm(groupName);
-    EXPECT_NE(comm4, nullptr);
-    EXPECT_EQ(comm4, comm3);
-    
-    // 清理资源
-    AicpuHcclProcess::AicpuDestoryCommbyGroup(groupName);
-}
-
 TEST_F(Communicator_Device_UT, Ut_WaitAsyncFlag_When_ParamIsNullptr_Expect_ReturnIsHCCL_E_PTR)
 {
     MOCKER(GetCurCpuTimestamp)

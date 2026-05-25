@@ -127,6 +127,7 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:asc_host_headers>
         $<BUILD_INTERFACE:asc_kernel_headers>
         $<BUILD_INTERFACE:ascend_hal_headers>
+        $<BUILD_INTERFACE:kernel_tiling_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:runtime_headers>
