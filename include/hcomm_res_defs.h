@@ -292,7 +292,7 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
  * @brief 底层特性枚举定义
  */
 typedef enum {
-    HCOMM_FEATURE_RESERVE = -1,
+    HCOMM_FEATURE_RESERVED = -1,
     HCOMM_FEATURE_NDA = 0,
 } HcommFeatureType;
 
