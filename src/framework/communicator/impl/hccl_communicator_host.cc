@@ -4479,6 +4479,8 @@ namespace hccl
         limit.aivCoreLimit = aivCoreLimit;
         AlgDesc algDesc;
         algDesc.isLastSelect = true;
+        // 保存原始 tag，用于 aicpu 展开模式下计算 baseTag（不包含 ZeroCopy 的 hex suffix）
+        std::string originalTag = opParam.tag;
         CHK_RET(algOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, newTag));
         if (isOnlyAiv_ && !algDesc.isAivMode) {
             std::string opTypeName = GetCMDTypeEnumStr(opType);
@@ -4493,6 +4495,13 @@ namespace hccl
             newTag += "_Capture";
             // baseTag 不注册 callback，ZeroCopy 的 subTag 注册在 capture 处理分支中
         }
+        
+        // 计算 baseTag：aicpu 展开模式下，resMap_ 使用 baseTag（不含 ZeroCopy hex suffix）
+        // baseTag 的资源跟随 communicator 生命周期，不随 graph 销毁清理
+        std::string baseTag;
+        if (opParam.aicpuUnfoldMode && opParam.isCapture) {
+            baseTag = originalTag + "_Capture";
+        }
 
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && userRankSize_ > 1) {
             CHK_RET(CreateCommCCLbuffer());
@@ -4502,7 +4511,8 @@ namespace hccl
         }
 
         // 资源创建
-        if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture) {
+        // aicpu 展开模式：resMap_ 只使用 baseTag，不随 capture 增长
+        if (!opParam.aicpuUnfoldMode && (resMap_.find(newTag) != resMap_.end()) && opParam.isCapture) {
             auto resTmp = resMap_[newTag];
             ++captureCnt_;
             newTag += std::to_string(captureCnt_);
@@ -4526,54 +4536,115 @@ namespace hccl
         bool needIncreLink = false;
         // aiv算法不需要申请host和device侧的从流
         bool selectAivAlg = algDesc.isAivMode;
+        // aicpu 展开模式的后续执行使用 baseTag 查找 resMap_
+        std::string resMapTag = (opParam.aicpuUnfoldMode && opParam.isCapture) ? baseTag : newTag;
         if (resMap_.find(newTag) == resMap_.end()) {
-            AlgResourceRequest resRequest;
-            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-            if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
-                CHK_RET(SaveRankInfoHasLinked(resRequest));
-            }
-            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            CHK_RET(RecordOpPara(opType, opParam));
-            HcclResult ret = AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg);
-            CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclCommunicator][ExecOp] AllocAlgResource failed, algName=[%s]", algName.c_str()), ret);
-            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
-
-            // ZeroCopy capture 处理：clone transport → captureTransportMap_，序列化到 device 内存
-            if (isInGraphCaptureZeroCopy) {
-                CaptureTransportEntry entry;
-                entry.transport = resMap_[newTag].opTransportResponse;
-                if (IsEnableBackupLink()) {
-                    entry.transportBackUp = resMap_[newTag].opTransportResponseBackUp;
+            if (opParam.aicpuUnfoldMode && opParam.isCapture) {
+                // === aicpu 展开 capture 模式 ===
+                bool isFirstCapture = (resMap_.find(baseTag) == resMap_.end());
+                AlgResourceRequest resRequest;
+                CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
+                if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
+                    CHK_RET(SaveRankInfoHasLinked(resRequest));
                 }
-                captureTransportMap_[newTag] = std::move(entry);
-                CHK_RET(SerializeTransportToDeviceMem(newTag, captureTransportMap_[newTag]));
-                // 注册 AclgraphCallback（graph 销毁时清理 captureTransportMap_ 和 transportDeviceMemMap_）
-                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-                HCCL_DEBUG("[HcclCommunicator][ExecOp] ZeroCopy capture tag[%s] transport serialized to device mem",
-                    newTag.c_str());
-            }
+                resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
+                CHK_RET(RecordOpPara(opType, opParam));
 
-            // 对于91093超节点内aiv跨机通信算子，将不同机的CCLbuffer地址存在约定好的aiv将读取的HBM位置
-            CHK_RET(algOperator->PrepareCommInfoToDevice(algName, resMap_[newTag]));
+                if (isFirstCapture) {
+                    // 首次 capture：在 baseTag 下分配全部资源
+                    HcclResult ret = AllocAlgResource(baseTag, opType, opParam, resRequest, resMap_[baseTag], selectAivAlg);
+                    CHK_PRT_RET(ret != HCCL_SUCCESS,
+                        HCCL_ERROR("[HcclCommunicator][ExecOp] AllocAlgResource failed, algName=[%s]", algName.c_str()), ret);
+                    CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+                }
 
-            if (!isHaveCpuRank_) {
-                if (isUseRankPort_) {
-                    std::vector<u32> &nicPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-                    std::vector<u32> &vnicPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
-                    Heartbeat::GetInstance(deviceLogicId_).SetRankPortInfo(isUseRankPort_, nicPorts, vnicPorts, commPortConfig_.devPortSwitchOn);
+                // ZeroCopy：从 resMap_[baseTag] clone transport → captureTransportMap_[newTag]
+                if (isInGraphCaptureZeroCopy) {
+                    CaptureTransportEntry entry;
+                    entry.transport = resMap_[baseTag].opTransportResponse;
+                    if (IsEnableBackupLink()) {
+                        entry.transportBackUp = resMap_[baseTag].opTransportResponseBackUp;
+                    }
+                    captureTransportMap_[newTag] = std::move(entry);
+                    CHK_RET(SerializeTransportToDeviceMem(newTag, captureTransportMap_[newTag]));
+                    CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                    HCCL_DEBUG("[HcclCommunicator][ExecOp] ZeroCopy capture tag[%s] transport serialized to device mem",
+                        newTag.c_str());
                 }
-                // 开始注册心跳
-                if (opType == HcclCMDType::HCCL_CMD_SEND) {
-                    CHK_RET(RegisterToHeartBeat(opParam.dstRank, tag));
-                    hbSendRecvTags_.emplace(tag);
-                } else if (opType == HcclCMDType::HCCL_CMD_RECEIVE) {
-                    CHK_RET(RegisterToHeartBeat(opParam.srcRank, tag));
-                    hbSendRecvTags_.emplace(tag);
-                } else {
-                    CHK_RET(RegisterToHeartBeat());
+
+                if (isFirstCapture) {
+                    // 首次 capture：H2D 刷新资源、心跳注册、ZeroCopy 初始化
+                    CHK_RET(algOperator->PrepareCommInfoToDevice(algName, resMap_[baseTag]));
+
+                    if (!isHaveCpuRank_) {
+                        if (isUseRankPort_) {
+                            std::vector<u32> &nicPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
+                            std::vector<u32> &vnicPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+                            Heartbeat::GetInstance(deviceLogicId_).SetRankPortInfo(isUseRankPort_, nicPorts, vnicPorts, commPortConfig_.devPortSwitchOn);
+                        }
+                        // 开始注册心跳
+                        if (opType == HcclCMDType::HCCL_CMD_SEND) {
+                            CHK_RET(RegisterToHeartBeat(opParam.dstRank, tag));
+                            hbSendRecvTags_.emplace(tag);
+                        } else if (opType == HcclCMDType::HCCL_CMD_RECEIVE) {
+                            CHK_RET(RegisterToHeartBeat(opParam.srcRank, tag));
+                            hbSendRecvTags_.emplace(tag);
+                        } else {
+                            CHK_RET(RegisterToHeartBeat());
+                        }
+                    }
+                    CHK_RET(UpdateZeroCopy(opParam, resMap_[baseTag]));
                 }
+            } else {
+                // === 非 aicpu 展开 / 非 capture：原有首次分配逻辑 ===
+                AlgResourceRequest resRequest;
+                CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
+                if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
+                    CHK_RET(SaveRankInfoHasLinked(resRequest));
+                }
+                resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
+                CHK_RET(RecordOpPara(opType, opParam));
+                HcclResult ret = AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg);
+                CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclCommunicator][ExecOp] AllocAlgResource failed, algName=[%s]", algName.c_str()), ret);
+                CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+
+                // ZeroCopy capture 处理：clone transport → captureTransportMap_，序列化到 device 内存
+                if (isInGraphCaptureZeroCopy) {
+                    CaptureTransportEntry entry;
+                    entry.transport = resMap_[newTag].opTransportResponse;
+                    if (IsEnableBackupLink()) {
+                        entry.transportBackUp = resMap_[newTag].opTransportResponseBackUp;
+                    }
+                    captureTransportMap_[newTag] = std::move(entry);
+                    CHK_RET(SerializeTransportToDeviceMem(newTag, captureTransportMap_[newTag]));
+                    // 注册 AclgraphCallback（graph 销毁时清理 captureTransportMap_ 和 transportDeviceMemMap_）
+                    CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                    HCCL_DEBUG("[HcclCommunicator][ExecOp] ZeroCopy capture tag[%s] transport serialized to device mem",
+                        newTag.c_str());
+                }
+
+                // 对于91093超节点内aiv跨机通信算子，将不同机的CCLbuffer地址存在约定好的aiv将读取的HBM位置
+                CHK_RET(algOperator->PrepareCommInfoToDevice(algName, resMap_[newTag]));
+
+                if (!isHaveCpuRank_) {
+                    if (isUseRankPort_) {
+                        std::vector<u32> &nicPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
+                        std::vector<u32> &vnicPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+                        Heartbeat::GetInstance(deviceLogicId_).SetRankPortInfo(isUseRankPort_, nicPorts, vnicPorts, commPortConfig_.devPortSwitchOn);
+                    }
+                    // 开始注册心跳
+                    if (opType == HcclCMDType::HCCL_CMD_SEND) {
+                        CHK_RET(RegisterToHeartBeat(opParam.dstRank, tag));
+                        hbSendRecvTags_.emplace(tag);
+                    } else if (opType == HcclCMDType::HCCL_CMD_RECEIVE) {
+                        CHK_RET(RegisterToHeartBeat(opParam.srcRank, tag));
+                        hbSendRecvTags_.emplace(tag);
+                    } else {
+                        CHK_RET(RegisterToHeartBeat());
+                    }
+                }
+                CHK_RET(UpdateZeroCopy(opParam, resMap_[newTag]));
             }
-            CHK_RET(UpdateZeroCopy(opParam, resMap_[newTag]));
         } else if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
             // batchsendrecv需要根据任务来确定和哪些卡建链，因此复用tag，并在此基础上实现增量建链
             AlgResourceRequest resRequest;
@@ -4619,7 +4690,7 @@ namespace hccl
             opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
         }
         auto algType = algOperator->GetAlgType();
-        CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg, tag));
+        CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[resMapTag].slaveStreams, selectAivAlg, tag));
         // 头计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         if (opParam.aicpuUnfoldMode) {
@@ -4632,17 +4703,17 @@ namespace hccl
             HCCL_INFO("[HcclCommunicator][ExecOp] aicpu Unfold mode algType[%s], inplaceSupportRetry_[%d], opType[%d], "
                       "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d].",
                       AlgTypeToStr(algType).c_str(), inplaceSupportRetry_, opType, isInplaceStatus_, inPlaceSupportRetryStatus_);
-            CHK_RET(OrchestrateAicpu(opType, algName, opParam, resMap_[newTag], newTag, algType, isCustom,
+            CHK_RET(OrchestrateAicpu(opType, algName, opParam, resMap_[resMapTag], resMapTag, algType, isCustom,
                 needIncreLink));
         } else {
             // HOST展开aclgraph场景，capture从流
             if (!selectAivAlg) {
-                CHK_RET(CaptureSlaveStreams(opParam.stream.ptr(), resMap_[newTag].slaveStreams));
+                CHK_RET(CaptureSlaveStreams(opParam.stream.ptr(), resMap_[resMapTag].slaveStreams));
             }
             OpCounterInfo opCounter;
             CHK_RET(GetOpCountInfo(opCounter));
             CHK_RET(algOperator->SetOpCounter(opCounter));
-            CHK_RET(algOperator->Orchestrate(algName, opParam, resMap_[newTag]));
+            CHK_RET(algOperator->Orchestrate(algName, opParam, resMap_[resMapTag]));
             if (hostResMap_.find(newTag) == hostResMap_.end()) {
                 hostResMap_.insert(newTag);
             }
@@ -4663,18 +4734,18 @@ namespace hccl
             std::unique_ptr<CollAlgOperator> newalgOperator = implAlg_->GetAlgOperator(opType);
             CHK_SMART_PTR_NULL(newalgOperator);
             CHK_RET(newalgOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, tempTag));
-            CHK_RET(newalgOperator->Orchestrate(algName, opParam, resMap_[newTag]));
+            CHK_RET(newalgOperator->Orchestrate(algName, opParam, resMap_[resMapTag]));
         }
         // 尾计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
-        CHK_RET(UnRegisterDfxInfo(opParam, resMap_[newTag].slaveStreams));
+        CHK_RET(UnRegisterDfxInfo(opParam, resMap_[resMapTag].slaveStreams));
         if (selectAivAlg) {
             CHK_RET(algOperator->SetAivClearEnable(false));
             aivClearEnable_ = false;
         }
         if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().GetInitNetCoFlag() == true) {
             AdjInfo nslbAdjInfo = {};
-            CHK_RET(algOperator->GetAdjInfo(algName, opParam, resMap_[newTag], nslbAdjInfo));
+            CHK_RET(algOperator->GetAdjInfo(algName, opParam, resMap_[resMapTag], nslbAdjInfo));
             NslbDp_CollectSendAdjTable(opType, opParam, algOperator->GetAlgType(), nslbAdjInfo);
         }
         if (isInGraphCaptureZeroCopy) {
@@ -4830,6 +4901,8 @@ namespace hccl
         limit.aivCoreLimit = aivCoreLimit;
         AlgDesc algDesc;
         algDesc.isLastSelect = true;
+        // 保存原始 tag，用于 aicpu 展开模式下计算 baseTag（不包含 ZeroCopy 的 hex suffix）
+        std::string originalTag = opParam.tag;
         CHK_RET(algOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, newTag));
         // 是否是AIV直驱Roce场景
         opParam.isNpuDirectRoce = algName == "AlltoAllDirectFullmeshAIVExecutor";
