@@ -4517,6 +4517,8 @@ namespace hccl
             // 记录指令信息用于一致性校验
             CHK_RET(RecordOpPara(opType, opParam));
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
+            // 注册 AclgraphCallback（graph 销毁时清理增量 transport links）
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
             // 移除tag对应的指令信息
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
         }
@@ -4870,6 +4872,8 @@ namespace hccl
             // 记录指令信息用于一致性校验
             CHK_RET(RecordOpPara(opType, opParam));
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
+            // 注册 AclgraphCallback（graph 销毁时清理增量 transport links）
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
             // 移除tag对应的指令信息
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
         }

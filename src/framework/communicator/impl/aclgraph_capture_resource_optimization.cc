@@ -240,12 +240,12 @@ HcclResult HcclCommunicator::SerializeTransportToDeviceMem(const std::string &ta
 // 清理流程
 // ============================================================================
 
-// DestroyCaptureIbvTransportPublic: 清理 capture 资源（transport + deviceMem）
+// DestroyCaptureIbvTransportPublic: 清理 capture 资源（transport + deviceMem + resMap）
 HcclResult HcclCommunicator::DestroyCaptureIbvTransportPublic(const std::string &captureTag)
 {
     HCCL_INFO("[DestroyCaptureIbvTransportPublic] start captureTag[%s]", captureTag.c_str());
 
-    // 1. 清理 transport 资源
+    // 1. 清理 transport 资源（Zero Copy 模式）
     auto transportIt = captureTransportMap_.find(captureTag);
     if (transportIt != captureTransportMap_.end()) {
         DestroyOpTransportResponse(transportIt->second.transport);
@@ -261,6 +261,14 @@ HcclResult HcclCommunicator::DestroyCaptureIbvTransportPublic(const std::string 
     if (memIt != transportDeviceMemMap_.end()) {
         transportDeviceMemMap_.erase(memIt);
         HCCL_INFO("[DestroyCaptureIbvTransportPublic] captureTag[%s] deviceMem erased from transportDeviceMemMap_", captureTag.c_str());
+    }
+
+    // 3. 清理 resMap_ 中的增量资源（HOST 展开模式）
+    auto resIt = resMap_.find(captureTag);
+    if (resIt != resMap_.end()) {
+        DestroyAlgResource(resIt->second);
+        resMap_.erase(resIt);
+        HCCL_INFO("[DestroyCaptureIbvTransportPublic] captureTag[%s] resource erased from resMap_", captureTag.c_str());
     }
 
     HCCL_INFO("[DestroyCaptureIbvTransportPublic] captureTag[%s] cleaned", captureTag.c_str());
