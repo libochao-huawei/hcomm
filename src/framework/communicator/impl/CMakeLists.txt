@@ -16,6 +16,7 @@ if(TARGET hcomm)
     target_sources(hcomm PRIVATE
         ${src_list}
         ${CMAKE_CURRENT_SOURCE_DIR}/aclgraph/zero_copy_acl_graph.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/aclgraph_capture_resource_optimization.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_host.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs_host.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/comm_topo_desc.cc

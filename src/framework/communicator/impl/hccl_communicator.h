@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <memory>
+#include <set>
 #include <vector>
 #include <hccl/hccl_types.h>
 #include "acl/acl_rt.h"
@@ -493,6 +494,8 @@ public:
     HcclResult DeregisterWindow(HcclCommSymWindow winHandle);
     HcclResult InitSymmetricMemory();
     HcclResult GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
+    // ACL Graph Capture 清理（供 AclgraphCallback 调用）
+    HcclResult DestroyCaptureIbvTransportPublic(const std::string &captureTag);
 private:
 
     bool IsEnableRoce();
@@ -786,6 +789,28 @@ private:
     HcclResult IncreAllocLink(const std::string &newTag, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     HcclResult CleanTransportLinks(OpCommTransport &opTransportReq, OpCommTransport &opTransportResponse);
+
+    // --- ACL Graph Capture 资源复用优化 ---
+    // HOST 侧 transport 隔离容器条目（forward declaration for method signatures below）
+    struct CaptureTransportEntry;
+
+    // ZeroCopy 序列化（主函数 + 子函数）
+    HcclResult SerializeTransportToDeviceMem(const std::string &tag,
+        const CaptureTransportEntry &entry);
+    HcclResult CollectRemoteRanks(const OpCommTransport &transport,
+        std::set<u32> &uniqueRanks,
+        std::unordered_map<u32, std::vector<std::pair<u32, u32>>> &rankLinkMap);
+    void CalculateSerializationBlockSize(u32 rankCount,
+        u64 &headerSize, u64 &perRankSize, u64 &blockSize);
+    HcclResult AllocateAndZeroBlocks(u64 blockSize,
+        HostMem &hostBlock, DeviceMem &devBlock);
+    HcclResult FillOneRankTransport(u32 rankId, const std::string &tag,
+        const OpCommTransport &transport,
+        const std::vector<std::pair<u32, u32>> &linkPairs,
+        HcclRankRelationResV2 *rankNode, HccltagRemoteResV2 *tagNode,
+        const CaptureTransportEntry &entry);
+    HcclResult BuildDeviceRankLinkedList(HcclRankRelationResV2 *rankNode, HccltagRemoteResV2 *tagNode,
+        u8 *devRankNode, u8 *devTagNode);
     DeviceMem GetWorkspaceScracthMem(const std::string &tag, u64 allocMemSize);
     std::vector<Stream> GetWorkspaceSubStreams(const std::string &tag, u32 num);
     // HcclImplBase中Comm资源是否存在
@@ -991,6 +1016,17 @@ private:
     std::unique_ptr<ZeroCopyMemoryAgent> zeroCopyMemoryAgent_ = { nullptr };
 
     std::unordered_map<std::string, AlgResourceResponse> resMap_; // tag : AlgResourceResponse
+
+    // --- ACL Graph Capture 资源复用优化 ---
+    // HOST 侧 transport 隔离容器条目
+    struct CaptureTransportEntry {
+        OpCommTransport transport;
+        OpCommTransport transportBackUp;  // 备份链路（借轨场景）
+    };
+    // 按 capture 隔离的 transport 资源（HOST 展开完整复制 + Zero Copy 序列化）
+    std::unordered_map<std::string, CaptureTransportEntry> captureTransportMap_;
+    // 序列化后的 transport device 内存（Zero Copy 模式）
+    std::unordered_map<std::string, DeviceMem> transportDeviceMemMap_;
     std::unordered_set<std::string> hostResMap_;
     std::unordered_set<std::string> hbSendRecvTags_;
     std::vector<DeviceMem> deviceResOrigMem_;

@@ -536,6 +536,14 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     std::string logInfo = std::string(stackLogBuffer);
     CHK_RET_AND_PRINT_IDE(hcclCommAicpu->SaveTraceInfo(logInfo), opParam.tag.c_str());
 
+    // Zero Copy 模式下，设置 transport 序列化数据的 device 内存地址
+    if (tilingData->transportDeviceMemAddr != 0) {
+        hcclCommAicpu->SetTransportDeviceMem(tilingData->transportDeviceMemAddr,
+            tilingData->transportDeviceMemSize);
+        HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2] SetTransportDeviceMem addr[0x%llx] size[%llu]",
+            tilingData->transportDeviceMemAddr, tilingData->transportDeviceMemSize);
+    }
+
     HcclUs startut = TIME_NOW();
     HcclResult ret = hcclCommAicpu->ExecOp(newTag, algName, opParam, commParam);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AicpuHcclProcess][AicpuRunRpcServerV2] newTag[%s] algName[%s]",

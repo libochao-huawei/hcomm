@@ -217,6 +217,12 @@ namespace hccl
         UnRegisterToCommConfiger();
         AclgraphCallback::GetInstance().CleanCaptureRes(this);
 
+        // 清理残留的 captureTransportMap_ 和 transportDeviceMemMap_
+        while (!captureTransportMap_.empty()) {
+            auto it = captureTransportMap_.begin();
+            (void)DestroyCaptureIbvTransportPublic(it->first);
+        }
+
         if (zeroCopyAclGraph_ != nullptr) {
             zeroCopyAclGraph_ = nullptr;
         }
@@ -4485,10 +4491,7 @@ namespace hccl
         if (opParam.isCapture) {
             // aclgraph使用新的Tag，避免影响其他操作
             newTag += "_Capture";
-            // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
-            if (isInGraphCaptureZeroCopy) {
-                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-            }
+            // baseTag 不注册 callback，ZeroCopy 的 subTag 注册在 capture 处理分支中
         }
 
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && userRankSize_ > 1) {
@@ -4532,6 +4535,21 @@ namespace hccl
             HcclResult ret = AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclCommunicator][ExecOp] AllocAlgResource failed, algName=[%s]", algName.c_str()), ret);
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+
+            // ZeroCopy capture 处理：clone transport → captureTransportMap_，序列化到 device 内存
+            if (isInGraphCaptureZeroCopy) {
+                CaptureTransportEntry entry;
+                entry.transport = resMap_[newTag].opTransportResponse;
+                if (IsEnableBackupLink()) {
+                    entry.transportBackUp = resMap_[newTag].opTransportResponseBackUp;
+                }
+                captureTransportMap_[newTag] = std::move(entry);
+                CHK_RET(SerializeTransportToDeviceMem(newTag, captureTransportMap_[newTag]));
+                // 注册 AclgraphCallback（graph 销毁时清理 captureTransportMap_ 和 transportDeviceMemMap_）
+                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                HCCL_DEBUG("[HcclCommunicator][ExecOp] ZeroCopy capture tag[%s] transport serialized to device mem",
+                    newTag.c_str());
+            }
 
             // 对于91093超节点内aiv跨机通信算子，将不同机的CCLbuffer地址存在约定好的aiv将读取的HBM位置
             CHK_RET(algOperator->PrepareCommInfoToDevice(algName, resMap_[newTag]));
@@ -4824,10 +4842,7 @@ namespace hccl
         if (opParam.isCapture) {
             // aclgraph使用新的Tag，避免影响其他操作
             newTag += "_Capture";
-            // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
-            if (isInGraphCaptureZeroCopy) {
-                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-            }
+            // baseTag 不注册 callback，ZeroCopy 的 subTag 注册在 capture 处理分支中
         }
 
         auto isSupportAlg = [](const std::string &algName, bool aicpuUnfoldMode) -> bool {
@@ -6711,7 +6726,8 @@ namespace hccl
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             CHK_RET(transportManager_->IncreAlloc(opParam.tag, transMem, resRequest.opTransport,
                                                   algResResponse.opTransportResponse, opParam.aicpuUnfoldMode, false,
-                                                  opParam.isCapture, opParam.opType));
+                                                  opParam.isCapture, opParam.opType,
+                                                  opParam.aclGraphZeroCopyEnable != 0));
         }
         if (retryEnable_) {
             // 获取当前rdma相连的所有对端rankList
@@ -6730,7 +6746,8 @@ namespace hccl
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             CHK_RET(transportManager_->IncreAlloc(opParam.tag, transMem, resRequest.opTransport,
                                                   algResResponse.opTransportResponseBackUp, opParam.aicpuUnfoldMode, true,
-                                                  opParam.isCapture, opParam.opType));
+                                                  opParam.isCapture, opParam.opType,
+                                                  opParam.aclGraphZeroCopyEnable != 0));
         }
         remoteTransportMap_ = transportManager_->GetRemoteTransportMap();
         SaveLinkRes(algResResponse.opTransportResponse);
@@ -7383,6 +7400,14 @@ namespace hccl
         opTilingData->orderLaunchMode = GetOrderLaunchMode(opParam.isCapture);
         opTilingData->isSymmetricMemory = opParam.supportSymmetricMemory;
         opTilingData->needIncreLink = opParam.needIncreLink;
+        // Zero Copy 模式下，填充 transport 序列化数据的 device 内存地址
+        if (opParam.isCapture && opParam.aclGraphZeroCopyEnable != 0) {
+            auto it = transportDeviceMemMap_.find(opParam.tag);
+            if (it != transportDeviceMemMap_.end()) {
+                opTilingData->transportDeviceMemAddr = reinterpret_cast<u64>(it->second.ptr());
+                opTilingData->transportDeviceMemSize = it->second.size();
+            }
+        }
         // 有没有存在对应的Notify
         CHK_RET(InitAndCheckAicpuOrderNotify(opTilingData->orderLaunchMode));
         CHK_RET(BuildHierarchicalAlgOption(opTilingData->ahcConfInfo));

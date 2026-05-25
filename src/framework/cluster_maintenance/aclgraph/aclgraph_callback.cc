@@ -55,7 +55,8 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
     bool isResourceReleaseFailed = false;
     for (auto &commIt : modelIt->second) {
         for (auto &newTag : commIt.second) {
-            ret = commIt.first->ClearOpResource(newTag);
+            // 统一清理（HOST 展开和 ZeroCopy 都经此路径）
+            ret = commIt.first->DestroyCaptureIbvTransportPublic(newTag);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[%s] modelID[%llu] tag[%s] resource release fail, ret[%d]",
                     __func__, modelId, newTag.c_str(), ret);

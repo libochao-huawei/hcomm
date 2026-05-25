@@ -1424,6 +1424,44 @@ HcclResult HcclCommAicpu::InitRemoteTagRes(u32 &rankId, const ListCommon &head,
 HcclResult HcclCommAicpu::RefreshTransportsResForRank(const HcclOpResParam *commParam, u32 rankId,
     const std::string &newTag, u32 notifyNum, TransportLinkType linkType)
 {
+    // Zero Copy 路径：从 transportDeviceMemAddr_ 读取序列化数据
+    if (transportDeviceMemAddr_ != 0) {
+        ZeroCopyTransportHeader *header =
+            reinterpret_cast<ZeroCopyTransportHeader *>(transportDeviceMemAddr_);
+        // 线性遍历紧凑数组，查找匹配的 rankId
+        HcclRankRelationResV2 *rankRelationResPtr = nullptr;
+        for (u32 i = 0; i < header->rankSize; i++) {
+            if (header->entries[i].rankId == rankId) {
+                rankRelationResPtr = reinterpret_cast<HcclRankRelationResV2 *>(
+                    header->entries[i].addr);
+                break;
+            }
+        }
+        if (rankRelationResPtr == nullptr) {
+            HCCL_DEBUG("[RefreshTransportsResForRank] rankId[%u] not found in ZeroCopy transport, group[%s]",
+                rankId, identifier_.c_str());
+            return HCCL_SUCCESS;
+        }
+
+        rankData_[rankId].remoteWorldRank = rankRelationResPtr->remoteWorldRank;
+        rankData_[rankId].remoteUsrRankId = rankRelationResPtr->remoteUsrRankId;
+        if (reinterpret_cast<ListCommon *>(rankRelationResPtr->nextTagRes.nextDevice) !=
+            &(rankRelationResPtr->nextTagRes)) {
+            HCCL_DEBUG("[RefreshTransportsResForRank] ZeroCopy rankId[%u], head[%p], nextDevice[%p], group[%s]",
+                rankId, &rankRelationResPtr->nextTagRes, rankRelationResPtr->nextTagRes.nextDevice,
+                identifier_.c_str());
+            CHK_RET(InitRemoteTagRes(rankId, rankRelationResPtr->nextTagRes, newTag, notifyNum, linkType));
+        } else {
+            HCCL_ERROR("[RefreshTransportsResForRank] ZeroCopy could not find tag member, rankId[%u], group[%s]",
+                rankId, identifier_.c_str());
+            return HCCL_E_PARA;
+        }
+        HCCL_INFO("[RefreshTransportsResForRank] ZeroCopy success rankId[%u], group[%s], newTag[%s]",
+            rankId, identifier_.c_str(), newTag.c_str());
+        return HCCL_SUCCESS;
+    }
+
+    // 原有路径：从 commParam->remoteRes[rankId] 读取
     if (rankId >= AICPU_MAX_RANK_NUM) {
         HCCL_ERROR("[%s] rankId[%u] overflow for group[%s], newTag[%s]", __func__,
             rankId, identifier_.c_str(), newTag.c_str());

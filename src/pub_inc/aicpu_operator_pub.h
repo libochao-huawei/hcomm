@@ -476,6 +476,18 @@ struct HccltagRemoteResV3 {
    u64 qpNumBackup = 0;             // 备链路：QP计数，支持多个，用于linkroce添加QP信息
 };
 
+// Device 侧 transport 数据头（紧凑布局，单 flexible array）
+struct ZeroCopyTransportRankEntry {
+    u32 rankId;
+    u32 reserved;       // 对齐到 8 字节
+    u64 addr;           // HcclRankRelationResV2 device 地址
+};
+struct ZeroCopyTransportHeader {
+    u32 rankSize;       // 实际 rank 数量
+    u32 reserved;       // 对齐到 8 字节
+    ZeroCopyTransportRankEntry entries[];  // 按 rankId 升序排列，便于 device 侧线性遍历
+};
+
 struct HcclRankRelationResV2 {
     u32 remoteUsrRankId = 0;
     u32 remoteWorldRank = 0;
@@ -726,6 +738,8 @@ struct OpTilingData {
     u8 isCapture = 0; // 算子是否aclgraph模式
     u8 orderLaunchMode = 0; // 对应AicpuNotifyMode的枚举值
     u8 needIncreLink = 0; // 是否需要增量建链
+    u64 transportDeviceMemAddr = 0;  // Zero Copy 模式下 transport device 内存地址
+    u64 transportDeviceMemSize = 0;  // transport 序列化数据大小
 
     /* 不同算子，长度不同，依据opType决定选择使用
     * (1)batchsendrcv
