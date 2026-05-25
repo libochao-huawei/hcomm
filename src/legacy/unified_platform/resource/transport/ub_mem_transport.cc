@@ -18,6 +18,8 @@
 #include "user_remote_mem_getter.h"
 #include "exception_util.h"
 #include "env_config/env_config.h"
+#include "socket_mgr.h"
+#include "adapter_rts_common.h"
 
 namespace Hccl {
 constexpr u32    FINISH_MSG_SIZE             = 128;
@@ -1101,7 +1103,6 @@ HcclResult UbMemTransport::Init()
 HcclResult UbMemTransport::DeInit() const
 {
     socket->Destroy();
-    return HCCL_SUCCESS;
 }
 
 HcclResult UbMemTransport::GetRemoteSeg(const void* addr, u64 len, u64 *seg)
