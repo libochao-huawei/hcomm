@@ -124,7 +124,7 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetRemoteMems_When_Normal_Exp
     HcclMem *remoteMems;
     char **memTags;
     u32 memNum;
-    HcclResult ret = aivTransport->GetRemoteMems(&remoteMems, &memNum, &memTags);
+    HcclResult ret = aivTransport->GetRemoteMems(&remoteMems, &memTags, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(std::string(memTags[1]), "buffer1");
     EXPECT_EQ(remoteMems[1].type, HcclMemType::HCCL_MEM_TYPE_HOST);

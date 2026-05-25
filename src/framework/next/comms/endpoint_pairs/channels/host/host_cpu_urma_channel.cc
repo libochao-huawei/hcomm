@@ -219,9 +219,9 @@ HcclResult HostCpuUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuUrmaChannel::GetRemoteMems(HcclMem **remoteMem, uint32_t *memNum, char ***memTags)
+HcclResult HostCpuUrmaChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
-    return memTransport_->GetRemoteMems(remoteMem, memNum, memTags);
+    return memTransport_->GetRemoteMems(remoteMem, memTags, memNum);
 }
 
 ChannelStatus HostCpuUrmaChannel::GetStatus()

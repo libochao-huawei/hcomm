@@ -720,7 +720,7 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_GetRemoteMems_When_Normal_Expect_Re
     HcclMem *remoteMems;
     char **memTags;
     u32 memNum;
-    HcclResult ret = transport.GetRemoteMems(&remoteMems, &memNum, &memTags);
+    HcclResult ret = transport.GetRemoteMems(&remoteMems, &memTags, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     std::string memTag = memTags[1];
     EXPECT_EQ(memTag, "buffer1");
@@ -744,7 +744,7 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_GetRemoteMems_When_bufferNumIs0_Exp
     HcclMem *remoteMems;
     char **memTags;
     u32 memNum;
-    HcclResult ret = transport.GetRemoteMems(&remoteMems, &memNum, &memTags);
+    HcclResult ret = transport.GetRemoteMems(&remoteMems, &memTags, &memNum);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 

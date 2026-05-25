@@ -522,10 +522,10 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_NullParam_Expect_HCCL_E_PTR
     HcclMem *remoteMem;
     uint32_t memNum{11119999};
     char **memTagsArray = nullptr;
-    HcclResult ret = impl_->GetRemoteMems(&remoteMem, &memNum, &memTagsArray);
+    HcclResult ret = impl_->GetRemoteMems(&remoteMem, &memTagsArray, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 0);
-    ret = impl_->GetRemoteMems(&remoteMem, (uint32_t *)nullptr, &memTagsArray);
+    ret = impl_->GetRemoteMems(&remoteMem, &memTagsArray, (uint32_t *)nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -551,7 +551,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_RemoteMemExists_Expect_Succ
     uint32_t memNum = 0;  // 接收内存块数量
     std::vector<HcclMem *> remoteMemList(5);
     char **memTags = nullptr;
-    HcclResult ret = impl_->GetRemoteMems(remoteMemList.data(), &memNum, &memTags);
+    HcclResult ret = impl_->GetRemoteMems(remoteMemList.data(), &memTags, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 2);
 }

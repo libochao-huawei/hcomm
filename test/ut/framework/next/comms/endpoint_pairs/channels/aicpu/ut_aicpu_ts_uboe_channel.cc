@@ -345,7 +345,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NoBuffers_ReturnsError) {
     uint32_t memNum = 0;
     char** memTags = nullptr;
 
-    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memNum, &memTags);
+    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memTags, &memNum);
     EXPECT_EQ(ret, HCCL_E_PARA);
     EXPECT_EQ(remoteMem, nullptr);
     EXPECT_EQ(memNum, 0U);
@@ -373,7 +373,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithBuffers_ReturnsCorrectData) 
     HcclMem* remoteMem = nullptr;
     uint32_t memNum = 0;
     char** memTags = nullptr;
-    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memNum, &memTags);
+    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memTags, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 2U);
     ASSERT_NE(remoteMem, nullptr);
@@ -406,9 +406,9 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NullParams_ReturnsError) {
     uint32_t memNum = 0;
 
     // 传入无效参数，期望返回参数错误（具体错误码视实现而定，当前返回 HCCL_E_PARA）
-    EXPECT_EQ(ch.GetRemoteMems(nullptr, &memNum, &memTag), HCCL_E_PARA);
-    EXPECT_EQ(ch.GetRemoteMems(&remoteMem, &memNum, nullptr), HCCL_E_PARA);
-    EXPECT_EQ(ch.GetRemoteMems(&remoteMem, nullptr, &memTag), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(nullptr, &memTag, &memNum), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(&remoteMem, nullptr, &memNum), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(&remoteMem, &memTag, nullptr), HCCL_E_PARA);
 }
 
 TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccess) {
@@ -430,7 +430,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccess) {
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memNum, &memTag);
+    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memTag, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 1U);
     ASSERT_NE(remoteMem, nullptr);
@@ -469,7 +469,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithUserBuffers_ReturnsCorrectDa
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memNum, &memTag);
+    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memTag, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 3U);
     ASSERT_NE(remoteMem, nullptr);
