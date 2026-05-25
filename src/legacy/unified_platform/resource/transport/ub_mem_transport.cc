@@ -1100,7 +1100,7 @@ HcclResult UbMemTransport::Init()
  
 HcclResult UbMemTransport::DeInit() const
 {
-    socket->Destroy();
+    SocketMgr::GetInstance(devicePhyId_).DestroySocket(rawSocket)
     return HCCL_SUCCESS;
 }
 
