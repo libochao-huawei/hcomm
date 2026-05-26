@@ -175,7 +175,6 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/common
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/utils
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework
-    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads
 
     # legacy include (ascend950)
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/
@@ -267,7 +266,12 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/device
     ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/
     ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/remote/rank_pairs/
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_engine_reses
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_mems
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
     ${HCCL_CODE_ROOT}/src/base_comm/common/
+    ${HCCL_CODE_ROOT}/src/base_comm/common/device
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/reged_mems/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/server_socket/
@@ -278,9 +282,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/ccu
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/
-
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/net_dev
-
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/device
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/dfx
+    ${HCCL_CODE_ROOT}/src/base_comm/primitives/api_c_adpt
     ${HCCL_CODE_ROOT}/src/coll_communicator/api_c_adpt/
     ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/ns_recovery
     ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/ns_recovery/aicpu
@@ -294,7 +299,6 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException/aicpu
     ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException/host
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework
-    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/common
