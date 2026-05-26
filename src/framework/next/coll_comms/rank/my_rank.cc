@@ -427,6 +427,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         hcommDescs[i].memHandles = memHandleVec.data();
         hcommDescs[i].memHandleNum = memHandleVec.size();
 
+        HCCL_INFO("TESTZJN --- BatchCreateChannels memHandles[%p], memHandleNum[%u]", hcommDescs[i].memHandles, hcommDescs[i].memHandleNum);
         std::vector<MemHandle> commMemHandleVec{};
         if (channelDescs[i].remoteEndpoint.protocol != COMM_PROTOCOL_ROCE) {
             CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandleVec));

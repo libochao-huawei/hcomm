@@ -120,6 +120,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
     channelDescFinal.notifyNum  = channelDesc.notifyNum;
     channelDescFinal.memHandles  = channelDesc.memHandles;
     channelDescFinal.memHandleNum  = channelDesc.memHandleNum;
+    HCCL_INFO("TESTZJN --- ProcessHcclChannelDesc memHandles[%p], memHandleNum[%u]", channelDesc.memHandles, channelDesc.memHandleNum);
 
      // 根据协议类型拷贝union中的相应成员
     switch (channelDesc.channelProtocol) {
