@@ -335,7 +335,6 @@ extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, 
  */
 extern int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
-
 /**
  * @brief 带通知的单边写操作
  * @param[in] channel 通道句柄
