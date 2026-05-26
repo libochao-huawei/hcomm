@@ -7489,8 +7489,8 @@ namespace hccl
         opTilingData->needIncreLink = opParam.needIncreLink;
         // ACL Graph + Zero Copy 模式下，填充 transport 序列化数据的 device 内存地址
         // ZeroCopy 场景必定是 aicpu 展开，SelectAlg 会在 newTag 末尾追加 _device
+        HCCL_INFO("[%s] CAINE isCapture[%d] tag[%s]", __func__, opParam.isCapture, opParam.tag.c_str());
         if (opParam.isCapture) {
-            HCCL_INFO("[%s] isCapture[%d] tag[%s]", __func__, opParam.isCapture, opParam.tag.c_str());
             auto it = transportDeviceMemMap_.find(opParam.tag + "_device_Capture");
             if (it != transportDeviceMemMap_.end()) {
                 opTilingData->transportDeviceMemAddr = reinterpret_cast<u64>(it->second.ptr());
