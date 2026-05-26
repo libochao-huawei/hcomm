@@ -4577,7 +4577,7 @@ namespace hccl
                         entry.transportBackUp = resMap_[baseTag].opTransportResponseBackUp;
                     }
                     captureTransportMap_[newTag] = std::move(entry);
-                    CHK_RET(SerializeTransportToDeviceMem(newTag, captureTransportMap_[newTag]));
+                    CHK_RET(SerializeTransportToDeviceMem(newTag, captureTransportMap_[newTag], baseTag));
                     CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
                     HCCL_DEBUG("[HcclCommunicator][ExecOp] ZeroCopy capture tag[%s] transport serialized to device mem",
                         newTag.c_str());

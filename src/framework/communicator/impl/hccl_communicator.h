@@ -795,7 +795,7 @@ private:
     struct CaptureTransportEntry;
 
     HcclResult SerializeTransportToDeviceMem(const std::string &tag,
-        const CaptureTransportEntry &entry);
+        const CaptureTransportEntry &entry, const std::string &deviceTag = "");
     HcclResult CollectRemoteRanks(const OpCommTransport &transport,
         std::set<u32> &uniqueRanks,
         std::unordered_map<u32, std::vector<std::pair<u32, u32>>> &rankLinkMap);

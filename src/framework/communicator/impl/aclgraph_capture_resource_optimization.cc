@@ -176,10 +176,15 @@ HcclResult HcclCommunicator::BuildDeviceRankLinkedList(
 }
 
 // SerializeTransportToDeviceMem: 将 transport 序列化为连续 DeviceMem 块
+// tag: transportDeviceMemMap_ 的 key（带 SelectAlg 后缀如 _device）
+// deviceTag: 写入 tagNode->tag 供 device 侧 InitRemoteTagRes 匹配（与 baseTag 一致）
 HcclResult HcclCommunicator::SerializeTransportToDeviceMem(const std::string &tag,
-    const CaptureTransportEntry &entry)
+    const CaptureTransportEntry &entry, const std::string &deviceTag)
 {
     HCCL_INFO("[SerializeTransportToDeviceMem] start tag[%s]", tag.c_str());
+
+    // computeTag 用于写入 tagNode->tag，供 device 侧 InitRemoteTagRes 匹配
+    const std::string &computeTag = deviceTag.empty() ? tag : deviceTag;
 
     // Step 1: 收集远程 rank
     std::set<u32> uniqueRanks;
@@ -211,7 +216,9 @@ HcclResult HcclCommunicator::SerializeTransportToDeviceMem(const std::string &ta
         auto *tagNode = reinterpret_cast<HccltagRemoteResV2 *>(hostBase + rankOffset + sizeof(HcclRankRelationResV2));
 
         // 填充 rank 的 transport 参数
-        CHK_RET(FillOneRankTransport(rankId, tag, entry.transport, rankLinkMap[rankId],
+        // deviceTag 用于 InitRemoteTagRes 中的 strcmp 匹配，必须与 OrchestrateAicpu
+        // 传入的 tag 一致（即 baseTag = originalTag + "_Capture"）
+        CHK_RET(FillOneRankTransport(rankId, computeTag, entry.transport, rankLinkMap[rankId],
             rankNode, tagNode, entry));
 
         // 设置 device 侧环形链表指针
