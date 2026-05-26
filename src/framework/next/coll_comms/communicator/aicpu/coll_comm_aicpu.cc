@@ -369,8 +369,8 @@ HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
     nsRecoveryLitePtr_->SetNeedClean(false);
     nsRecoveryLitePtr_->ResetErrorReported();
 
+    SetErrorReported(false);
     commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
-    
     return HCCL_SUCCESS;
 }
 
