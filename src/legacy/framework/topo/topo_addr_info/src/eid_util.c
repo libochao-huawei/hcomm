@@ -139,12 +139,38 @@ int UrmaEidIsPortGroup(const dcmi_urma_eid_t *eid)
     return 0;
 }
 
+/**
+ * 判断是否是UBOE
+ * 在第7 btye位置上
+ * 11000000 为UBOE, 使用0xc0判断
+ * 10000000 为UBOE, 使用0x80判断
+ * @param eid URMA eid结构体指针
+ * @return int 1为UBOE，0为不是UBOE
+ */
 int UrmaEidIsUBOE(const dcmi_urma_eid_t *eid)
 {
     const int uboeMask = 0xc0;
-    const int flagPos = 7; // UBOE标志位的位置
+    const int flagPos = 7; // UBOE和UBG标志位的位置
     unsigned char flag = eid->raw[flagPos];
     if ((uboeMask & flag) == uboeMask) {
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ * 判断是否是UBG,  判断原理见UrmaEidIsUBOE
+ * @param eid URMA eid结构体指针
+ * @return int 1为UBG，0为不是UBG
+ */
+int UrmaEidIsUBG(const dcmi_urma_eid_t *eid)
+{
+    const unsigned char bitMask = 0xc0;
+    const unsigned char ubgFlag = 0x80; // UBG的flag
+    const int flagPos = 7; // UBOE和UBG标志位的位置
+    unsigned char flag = eid->raw[flagPos];
+    int bit = (flag & bitMask); //
+    if (bit == ubgFlag) {
         return 1;
     }
     return 0;

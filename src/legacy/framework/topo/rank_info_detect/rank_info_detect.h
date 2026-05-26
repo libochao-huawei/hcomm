@@ -43,6 +43,7 @@ private:
     RankTableInfo             rankTable_{};
     IpAddress                 hostIp_{};
     u32                       hostPort_{HCCL_INVALID_PORT};
+    std::shared_ptr<Socket>                    hostPortSocket_{};
     vector<RaSocketWhitelist> wlistInfo_{};
     std::string               identifier_{};
     std::shared_ptr<RankInfoDetectClient> rankInfoDetectClient;

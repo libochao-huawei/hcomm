@@ -36,6 +36,18 @@ constexpr u32 MEM_BLOCK_SIZE = 128;
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 constexpr u32 SEND_RQE_COUNT = 16;
 
+static inline CommMemType HcclMemTypeToCommMemType(HcclMemType type)
+{
+    switch (type) {
+        case HCCL_MEM_TYPE_DEVICE:
+            return COMM_MEM_TYPE_DEVICE;
+        case HCCL_MEM_TYPE_HOST:
+            return COMM_MEM_TYPE_HOST;
+        default:
+            return COMM_MEM_TYPE_INVALID;
+    }
+}
+
 HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
@@ -168,7 +180,9 @@ HcclResult HostCpuRoceChannel::BuildSocket()
         HCCL_INFO("[HostCpuRoceChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
     }
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
+    Hccl::SocketConfig socketConfig = (channelDesc_.role != HCOMM_SOCKET_ROLE_RESERVED)
+        ? Hccl::SocketConfig(linkData, port, socketTag, channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER)
+        : Hccl::SocketConfig(linkData, port, socketTag);
     CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
@@ -226,17 +240,19 @@ HcclResult HostCpuRoceChannel::BuildBuffer()
 
 HcclResult HostCpuRoceChannel::Init()
 {
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+
     CHK_RET(ParseInputParam());
-    if (channelDesc_.exchangeAllMems) {  // true for HIXL, false for HCCL
+    // true for HIXL, false for HCCL
+    if (channelDesc_.exchangeAllMems && channelDesc_.role != HCOMM_SOCKET_ROLE_CLIENT) {
         CHK_RET(StartListen());
     }
     CHK_RET(BuildSocket());
     CHK_RET(BuildConnection());
     CHK_RET(BuildNotify());
     CHK_RET(BuildBuffer());
-    s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
 
     return HCCL_SUCCESS;
 }
@@ -602,6 +618,62 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 
     *memNum = totalCount;
     *remoteMem = remoteMemsPtr_.get();
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+{
+    CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetUserRemoteMem] remoteMem is nullptr"), HCCL_E_PTR);
+    CHK_PRT_RET(memTag == nullptr, HCCL_ERROR("[GetUserRemoteMem] memTag is nullptr"), HCCL_E_PTR);
+    CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetUserRemoteMem] memNum is nullptr"), HCCL_E_PTR);
+
+    *remoteMem = nullptr;
+    *memTag = nullptr;
+    *memNum = 0;
+
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+
+    if (rmtRmaBuffers_.size() <= 1) {
+        HCCL_INFO("[GetUserRemoteMem] No user remote memory found, rmtRmaBuffers_ size=%zu",
+            rmtRmaBuffers_.size());
+        return HCCL_SUCCESS;
+    }
+
+    uint32_t userMemCount = static_cast<uint32_t>(rmtRmaBuffers_.size() - 1);
+
+    if (!userRemoteMemCacheValid_) {
+        userRemoteMems_.resize(userMemCount);
+        tagCopies_.clear();
+        tagCopies_.reserve(userMemCount);
+        tagPointers_.clear();
+        tagPointers_.reserve(userMemCount);
+
+        for (uint32_t i = 0; i < userMemCount; ++i) {
+            auto &rmtBuffer = rmtRmaBuffers_[i + 1]; // skip cclBuffer at index 0
+            if (rmtBuffer == nullptr) {
+                userRemoteMems_[i].type = COMM_MEM_TYPE_INVALID;
+                userRemoteMems_[i].addr = nullptr;
+                userRemoteMems_[i].size = 0;
+                tagCopies_.emplace_back();
+                tagPointers_.push_back(const_cast<char *>(tagCopies_.back().c_str()));
+                continue;
+            }
+
+            userRemoteMems_[i].type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
+            userRemoteMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+            userRemoteMems_[i].size = rmtBuffer->GetSize();
+
+            tagCopies_.emplace_back(rmtBuffer->GetMemTag());
+            tagPointers_.push_back(const_cast<char *>(tagCopies_.back().c_str()));
+        }
+
+        userRemoteMemCacheValid_ = true;
+    }
+
+    *remoteMem = userRemoteMems_.data();
+    *memTag = tagPointers_.data();
+    *memNum = userMemCount;
+
     return HCCL_SUCCESS;
 }
 
@@ -1564,10 +1636,11 @@ HcclResult HostCpuRoceChannel::ParseRecvExchangeDataHybird()
 HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needStop)
 {
     auto qpInfo = connections_[0]->GetQpInfo();
-
-    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(*socketConfig_, socket_));
+    bool hasSocket = (socket_ != nullptr);
+    if (!hasSocket) {
+        CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(*socketConfig_, socket_));
+    }
     CHK_RET(HrtRaQpConnectAsync(qpInfo.qpHandle, socket_->GetFdHandle(), needStop));
-    SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
     
     // 查询QP建链是否成功
     s32 qpStatus = 0;
@@ -1581,6 +1654,9 @@ HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needS
 
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             HCCL_ERROR("[Connect][Qp]get qp status timeout_=%lld, qp_status=%d", timeout, qpStatus);
+            if (!hasSocket) {
+                SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+            }
             return HCCL_E_TIMEOUT;
         }
         raRet = hrtGetRaQpStatus(qpInfo.qpHandle, &qpStatus);
@@ -1590,6 +1666,9 @@ HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needS
         } else {
             SaluSleep(1000);
         }
+    }
+    if (!hasSocket) {
+        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
     }
     return HCCL_SUCCESS;
 }

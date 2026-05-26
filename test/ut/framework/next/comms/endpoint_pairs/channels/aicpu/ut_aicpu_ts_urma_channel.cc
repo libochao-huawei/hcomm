@@ -106,3 +106,14 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     GlobalMockObject::verify();
     GlobalMockObject::reset();
 }
+
+TEST_F(AicpuTsUrmaChannelTest, Ut_StartListen_When_RoleNotServer_Expect_SUCCESS)
+{
+    HcommChannelDesc desc{};
+    desc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUrmaChannel ch(ep, desc);
+
+    auto ret = ch.StartListen();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}

@@ -30,11 +30,6 @@ protected:
     {
         std::cout << "A Test case in UtAicpuTsHcommWriteReduceOnThread SetUp" << std::endl;
         UtAicpuTsBase::SetUp();
-
-        MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-            .stubs()
-            .with(any(), any(), any())
-            .will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown() override
@@ -78,7 +73,8 @@ TEST_F(UtAicpuTsHcommWriteReduceOnThread, Ut_HcommWriteReduceOnThread_When_DataT
 TEST_F(UtAicpuTsHcommWriteReduceOnThread, Ut_HcommWriteReduceOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
 {
     GlobalMockObject::verify();
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
+    auto *const transportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(devHandle);
+ 	MOCKER_CPP_VIRTUAL(transportLitePtr, &Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_E_INTERNAL));

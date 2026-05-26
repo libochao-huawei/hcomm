@@ -148,6 +148,10 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = CommConfig();
+        commName_ = identifier_;
+        if (commConfig_.GetConfigGroupName() != "") {
+            commName_ = commConfig_.GetConfigGroupName();
+        }
         dpuManager_.reset(new (std::nothrow) DpuManager());
         if (dpuManager_ == nullptr) {
             HCCL_ERROR("new DpuManager failed!");
@@ -185,6 +189,10 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = commConfig;
+        commName_ = identifier_;
+        if (commConfig_.GetConfigGroupName() != "") {
+            commName_ = commConfig_.GetConfigGroupName();
+        } 
         dpuManager_.reset(new (std::nothrow) DpuManager());
         if (dpuManager_ == nullptr) {
             HCCL_ERROR("new DpuManager failed!");
@@ -6537,7 +6545,10 @@ namespace hccl
                                            newTag.c_str(), resRequest.streamNum),
                                 HCCL_E_INTERNAL);
                 } else {
-                    algResResponse.slaveStreams = GetWorkspaceSubStreams(opParam.tag, resRequest.streamNum);
+                    // aicpu模式下不申请host从流
+                    if (!opParam.aicpuUnfoldMode) {
+                        algResResponse.slaveStreams = GetWorkspaceSubStreams(opParam.tag, resRequest.streamNum);
+                    }
                 }
             }
         } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE ||
