@@ -47,6 +47,22 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag, u32 myRank
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
+bool HcclCommDfx::IsOpBase() {
+    if (mirrorTaskManager_ == nullptr) {
+        HCCL_INFO("MirrorTaskManager is nullptr!");
+        return false;
+    }
+    auto currDfxOpInfo = mirrorTaskManager_->GetCurrDfxOpInfo();
+    if (currDfxOpInfo == nullptr) {
+        HCCL_INFO("CurrDfxOpInfo is nullptr!");
+        return false;  
+    }
+    bool isOpBase = currDfxOpInfo->op_.opMode == Hccl::OpMode::OPBASE;
+    HCCL_INFO("[%s] IsOpBase: %d", __func__, isOpBase);
+    return isOpBase;
+}
+
+
 // 回调注册实现
 HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
     CHK_SMART_PTR_NULL(mirrorTaskManager_);
@@ -130,9 +146,9 @@ HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 h
     return HCCL_SUCCESS; // 查找成功补充返回成功码
 }
 
-HcclResult HcclCommDfx::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId) {
+HcclResult HcclCommDfx::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId, bool cachedReq) {
     CHK_PTR_NULL(profiling_);
-    CHK_RET(profiling_->ReportKernel(beginTime, commTag, kernelName, threadId));
+    CHK_RET(profiling_->ReportKernel(beginTime, commTag, kernelName, threadId, cachedReq));
     return HCCL_SUCCESS; 
 }
 
