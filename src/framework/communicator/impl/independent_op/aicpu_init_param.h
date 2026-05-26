@@ -17,6 +17,7 @@ constexpr uint32_t HCOMID_MAX_SIZE = 128;
 
 struct AicpuEnvConfig {
     bool taskExceptionEnable{true};
+    u32 notifyWaitTimeout{1836};
 };
 
 // 自定义算子aicpu通信域公共初始化参数
