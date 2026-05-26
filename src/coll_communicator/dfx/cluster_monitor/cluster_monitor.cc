@@ -45,6 +45,13 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm, std::map<uint32_t,
     CHK_PTR_NULL(hcclComm);
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
+#ifndef HCCLV2_COMMUNICATOR_PUB_H
+    (void)uidCtxs;
+    (void)netLayersVector;
+    HCCL_WARNING("[%s]skip getting remote endpoint descs, HCCLV2 communicator is unavailable in this build target.",
+        __func__);
+    return HCCL_SUCCESS;
+#else
     Hccl::HcclCommunicator* commV2 = static_cast<Hccl::HcclCommunicator*>(collComm->GetCommunicatorV2());
     CHK_PTR_NULL(commV2); // 获取到legacy communicator，说明v2通信域
     void *rankGraphPtr = nullptr;
@@ -100,6 +107,7 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm, std::map<uint32_t,
     }
 
     return HCCL_SUCCESS;
+#endif
 }
 
 std::string ClusterMonitor::FormatConnTag(HcommSocketRole role,

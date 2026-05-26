@@ -263,6 +263,12 @@ void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* coll
         return;
     }
 
+#ifndef HCCLV2_COMMUNICATOR_PUB_H
+    HCCL_WARNING("[GetAicpuCqeErrRemoteLocalIdByRankId]skip getting remoteLocalId, HCCLV2 communicator "
+        "is unavailable in this build target, rankId[%u]", rankid);
+    remoteLocalId = INVALID_VALUE_RANKID;
+    return;
+#else
     Hccl::HcclCommunicator * commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
     if (commV2 == nullptr) {
         HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]commV2 is nullptr, rankId[%u]", rankid);
@@ -280,6 +286,7 @@ void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* coll
     u32 LocalId = rankGraphv2->GetLocalId(rankid);
     remoteLocalId = LocalId;
     return;
+#endif
 }
 
 void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
@@ -290,6 +297,12 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
         return;
     }
     
+#ifndef HCCLV2_COMMUNICATOR_PUB_H
+    HCCL_WARNING("[GetAicpuCqeErrNetInstanceByRankId]skip getting netInstanceId, HCCLV2 communicator "
+        "is unavailable in this build target, rankId[%u]", rankid);
+    netInstanceId = "";
+    return;
+#else
     Hccl::HcclCommunicator * commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
     if (commV2 == nullptr) {
         HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]commV2 is nullptr, rankId[%u]", rankid);
@@ -313,6 +326,7 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
     std::string netInsId = netInstance->GetNetInstId();
     netInstanceId = netInsId;
     return;
+#endif
 }
 
 void TaskExceptionHost::GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo)

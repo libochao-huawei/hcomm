@@ -11,6 +11,7 @@
 #include "mockcpp/mockcpp.hpp"
 #include "dfx/cluster_monitor/cluster_monitor.h"
 #include "host/host_cpu_roce_channel.h"
+#include "symmetric_memory/symmetric_memory.h"
 
 #define private public
 
@@ -268,4 +269,17 @@ TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_Uboe_QosUnset_UsesCommH
     in.channelProtocol = COMM_PROTOCOL_UBOE;
     ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+TEST_F(HcclChannelDescTest, Ut_HcclCommMemReg_When_TagUsesSymmetricMemoryPrefix_Return_HCCL_E_PARA)
+{
+    CommMem mem{};
+    mem.type = COMM_MEM_TYPE_DEVICE;
+    mem.addr = reinterpret_cast<void*>(0x5000000);
+    mem.size = 4096;
+    HcclMemHandle memHandle = nullptr;
+    std::string reservedTag = std::string(HCCL_SYMMETRIC_MEMORY_TAG_PREFIX) + "user_tag";
+
+    ret = HcclCommMemReg(comm, reservedTag.c_str(), &mem, &memHandle);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(memHandle, nullptr);
 }
