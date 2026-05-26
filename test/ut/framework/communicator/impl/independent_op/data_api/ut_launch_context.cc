@@ -25,7 +25,7 @@
 #include <mockcpp/mockcpp.hpp>
 
 #define private public
-#include "launch_context.h"
+#include "data_api/launch_context.h"
 #undef private
 #include "adapter_rts_common.h"
 
@@ -73,7 +73,7 @@ TEST_F(UtLaunchContext, Ut_HandleEagerMode_When_Normal_Expect_ReturnHCCL_SUCCESS
 
 TEST_F(UtLaunchContext, Ut_HandleDispatchAllStreams_When_Normal_Expect_ReturnHCCL_SUCCESS)
 {
-    MOCKER(CommTaskLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(DispatchAllStreams).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtGetDeviceType).stubs().with(outBound(DevType::DEV_TYPE_950)).will(returnValue(HCCL_SUCCESS));
 
     LaunchContext ctx;
