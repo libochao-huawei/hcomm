@@ -7488,11 +7488,15 @@ namespace hccl
         opTilingData->isSymmetricMemory = opParam.supportSymmetricMemory;
         opTilingData->needIncreLink = opParam.needIncreLink;
         // ACL Graph + Zero Copy 模式下，填充 transport 序列化数据的 device 内存地址
+        // ZeroCopy 的 transportDeviceMemMap_ 使用 newTag（带 _Capture）作为 key
         if (opParam.isCapture && opParam.aclGraphZeroCopyEnable != 0) {
-            auto it = transportDeviceMemMap_.find(opParam.tag);
+            auto it = transportDeviceMemMap_.find(opParam.tag + "_Capture");
             if (it != transportDeviceMemMap_.end()) {
                 opTilingData->transportDeviceMemAddr = reinterpret_cast<u64>(it->second.ptr());
                 opTilingData->transportDeviceMemSize = it->second.size();
+                HCCL_INFO("[%s] Set transportDeviceMemAddr[0x%llx] size[%llu] tag[%s]",
+                    __func__, opTilingData->transportDeviceMemAddr,
+                    opTilingData->transportDeviceMemSize, opParam.tag.c_str());
             }
         }
         // 有没有存在对应的Notify
