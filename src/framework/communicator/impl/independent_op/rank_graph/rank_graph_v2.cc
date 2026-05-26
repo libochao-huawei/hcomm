@@ -32,6 +32,19 @@ HcclResult RankGraphV2::GetDevicePort(const uint32_t rank, uint32_t *devPort)
     return HCCL_SUCCESS;
 }
 
+HcclResult RankGraphV2::GetListenPort(const uint32_t rank, uint32_t *listenPort, EndpointLocType locType)
+{
+    if (locType == EndpointLocType::ENDPOINT_LOC_TYPE_DEVICE) {
+        CHK_RET(pImpl->GetDevicePort(rank, listenPort));
+    } else if (locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
+        CHK_RET(pImpl->GetHostPort(rank, listenPort));
+    } else {
+        HCCL_ERROR("[%s] Invalid locType[%d] for rank[%u]", __func__, locType, rank);
+        return HcclResult::HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult RankGraphV2::GetRankId(uint32_t *rank)
 {
     return pImpl->GetRankId(rank);

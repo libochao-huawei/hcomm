@@ -29,6 +29,7 @@ public:
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum) override;
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize) override;
     HcclResult GetDevicePort(const uint32_t rank, uint32_t *devPort) override;
+    HcclResult GetListenPort(const uint32_t rank, uint32_t *listenPort, EndpointLocType locType) override;
     HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t** topoInsts, uint32_t* topoInstNum);
     HcclResult GetTopoType(const uint32_t netLayer, const uint32_t topoInstId, CommTopo* topoType);
     HcclResult GetRanksByTopoInst(const uint32_t netLayer, const uint32_t topoInstId, uint32_t** ranks, uint32_t* rankNum);
