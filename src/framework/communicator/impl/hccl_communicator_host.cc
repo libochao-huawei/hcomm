@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <numeric>
 #include <unordered_set>
+#include <cstdint>
 #include <sys/time.h>
 #include "externalinput_pub.h"
 #include "env_config.h"
@@ -9321,7 +9322,7 @@ namespace hccl
         u64 stride = commConfig_.GetConfigSymmetricMemoryStride() * GIGABYTE_TO_BYTE;
         HCCL_RUN_INFO("InitSymmetricMemory, comm identifier[%s], userRank[%u], userRankSize[%u], stride[%llu], devicePhyId[%u].",
             identifier_.c_str(), realUserRank_, userRankSize_, stride, devicePhyId_);
-        
+
         symmetricMemoryAgent_ = std::make_shared<SymmetricMemoryAgent>(socketManager_, devicePhyId_,
             deviceLogicId_, localVnicIp_, rankInfoList_, realUserRank_, useSuperPodMode_, identifier_);
         CHK_SMART_PTR_NULL(symmetricMemoryAgent_);
@@ -9336,7 +9337,7 @@ namespace hccl
         CHK_PRT_RET(superPodNum_ > 1, 
             HCCL_ERROR("[RegisterWindow] Cross-SuperNode not support symmetric memory"), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93, 
+        CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93,
             HCCL_ERROR("[%s] deviceType:%d not support symmetric memory", __func__, deviceType_), HCCL_E_NOT_SUPPORT);
 
         CHK_SMART_PTR_NULL(symmetricMemory_);

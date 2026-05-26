@@ -25,6 +25,8 @@
 #include "../../../../legacy/include/hccl_communicator.h"
 
 namespace hccl {
+class SymmetricMemory;
+struct SymmetricChannelResource;
 /**
  * @note 职责：集合通信通信域上下文管理，包括RankGraph和本rank信息资源等内容。
  * 当前需包含原有的91092/91093的通信域、原有的91095的通信域void
@@ -97,6 +99,9 @@ public:
     HcclResult Suspend();
     HcclResult Clean();
     HcclResult Resume();
+    HcclResult RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle);
+    HcclResult DeregisterWindow(HcclCommSymWindow winHandle);
+    HcclResult GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
 
 private:
     HcclResult DestroyAicpuComm();
@@ -104,6 +109,9 @@ private:
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
     HcclResult GetRankIpPortMap();
+    HcclResult InitSymmetricMemory(HcclCommConfig *config);
+    HcclResult CreateSymmetricChannelResource(void* ptr, size_t size, SymmetricChannelResource &resource);
+    void DestroySymmetricChannelResource(const SymmetricChannelResource &resource);
 
     void* comm_{nullptr};
     uint32_t rankId_{};
@@ -133,6 +141,7 @@ private:
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
     Hccl::RankIpPortMapPtr rankIpPortMap_;
+    std::unique_ptr<SymmetricMemory> symmetricMemory_{nullptr};
 };
 }  // namespace hccl
 
