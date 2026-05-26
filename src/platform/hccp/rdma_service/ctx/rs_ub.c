@@ -1915,6 +1915,11 @@ STATIC void RsUbCtxExpJettyImport(struct RsCtxRemJettyCb *rjettyCb, urma_rjetty_
     expCfg.tp_attr.tx_psn = rjettyCb->expImportCfg.txPsn;
     expCfg.tp_attr.rx_psn = rjettyCb->expImportCfg.rxPsn;
 
+    hccp_info("[rs_ub_ctx][RsUbCtxExpJettyImport] before import_jetty_ex: tp_handle[0x%llx] "
+        "peer_tp_handle[0x%llx] tag[0x%llx] tx_psn[%u] rx_psn[%u]",
+        (unsigned long long)expCfg.tp_handle, (unsigned long long)expCfg.peer_tp_handle,
+        (unsigned long long)expCfg.tag, expCfg.tp_attr.tx_psn, expCfg.tp_attr.rx_psn);
+
     rjettyCb->tjetty = RsUrmaImportJettyEx(rjettyCb->devCb->urmaCtx, rjetty, tokenValue, &expCfg);
 }
 
