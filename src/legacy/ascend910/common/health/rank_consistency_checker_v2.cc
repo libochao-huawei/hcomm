@@ -20,7 +20,7 @@ RankConsistencyCheckerV2& RankConsistencyCheckerV2::GetInstance(s32 deviceLogicI
 {
     static RankConsistencyCheckerV2 instance[MAX_MODULE_DEVICE_NUM];
     if (deviceLogicId == HOST_DEVICE_ID) {
-        HCCL_INFO("[GetInstance] deviceLogicId[-1] is HOST_DEVICE_ID");
+        HCCL_INFO("[RankConsistencyCheckerV2][GetInstance] deviceLogicId[-1] is HOST_DEVICE_ID");
         return instance[0];
     }
     hrtGetDeviceRefresh(&deviceLogicId);
