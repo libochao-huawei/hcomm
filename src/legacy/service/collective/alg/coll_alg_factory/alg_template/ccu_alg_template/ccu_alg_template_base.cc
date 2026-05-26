@@ -14,6 +14,7 @@
 #include "ccu_assist.h"
 #include "log.h"
 #include "hccl_exception.h"
+#include "exception_util.h"
 #include <algorithm>
 
 namespace Hccl {
@@ -130,38 +131,26 @@ u64 CcuAlgTemplateBase::CalcLoopMaxCount(ParamPool &paramPool)
 
 HcclResult CcuAlgTemplateBase::GetToken(const CollAlgOperator &op, uint64_t &token) const
 {
-    try {
-        if (op.inputMem != nullptr && op.inputMem->GetAddr() != 0) {
-            token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.inputMem->GetAddr()),
-                                         static_cast<uint64_t>(op.inputMem->GetSize()));
-            return HCCL_SUCCESS;
-        } else if (op.outputMem != nullptr && op.outputMem->GetAddr() != 0) {
-            token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.outputMem->GetAddr()),
-                                         static_cast<uint64_t>(op.outputMem->GetSize()));
-            return HCCL_SUCCESS;
-        } else if (op.scratchMem != nullptr && op.scratchMem->GetAddr() != 0) {
-            token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.scratchMem->GetAddr()),
-                                         static_cast<uint64_t>(op.scratchMem->GetSize()));
-            return HCCL_SUCCESS;
-        }
+    uint64_t addr = 0;
+    uint64_t size = 0;
+    if (op.inputMem != nullptr && op.inputMem->GetAddr() != 0) {
+        addr = static_cast<uint64_t>(op.inputMem->GetAddr()),
+        size = static_cast<uint64_t>(op.inputMem->GetSize());
+    } else if (op.outputMem != nullptr && op.outputMem->GetAddr() != 0) {
+        addr = static_cast<uint64_t>(op.outputMem->GetAddr()),
+        size = static_cast<uint64_t>(op.outputMem->GetSize());
+    } else if (op.scratchMem != nullptr && op.scratchMem->GetAddr() != 0) {
+        addr = static_cast<uint64_t>(op.scratchMem->GetAddr()),
+        size = static_cast<uint64_t>(op.scratchMem->GetSize());
+    } else {
         HCCL_WARNING("[GetToken] Both inputMem and outputMem are null");
         return HCCL_E_PTR;
-    } catch (HcclException &e) {
-        HCCL_ERROR("[GetToken] Exception occurred: %s", e.what());
-        auto backTraces = e.GetBackTraceStrings();
-        std::for_each(backTraces.begin(), backTraces.end(), [](const std::string &item) {
-            HCCL_INFO("backTraces item: %s", item.c_str());
-        });
-        return e.GetErrorCode();
-    } catch (std::exception &e) {
-        HCCL_ERROR("[GetToken] Exception occurred: %s", e.what());
-        return HcclResult::HCCL_E_INTERNAL;
-    } catch (...) {
-        HCCL_ERROR("[GetToken] Unknow error occurs!");
-        return HcclResult::HCCL_E_INTERNAL;
     }
-    
+        
+    TRY_CATCH_RETURN(token = CcuRep::GetTokenInfo(addr, size));
+    return HCCL_SUCCESS;
 }
+
 u32 CcuAlgTemplateBase::CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType)
 {
     (void) inBuffType;
