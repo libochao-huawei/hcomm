@@ -48,49 +48,6 @@ constexpr u32 GET_TP_ATTR_VERSION = 2;
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
 
-namespace {
-// urma_create_context(eidIndex) 决定 ctx 的 local EID；须与 GetTpList/Import 使用的链路 EID 一致
-uint32_t ResolveUbCtxEidIndex(const HrtRaUbCtxInitParam &in)
-{
-    struct RaInfo info {};
-    u32 num = 0;
-    info.mode = HRT_NETWORK_MODE_MAP.at(in.mode);
-    info.phyId = in.phyId;
-    const Eid linkEid = in.addr.GetEid();
-
-    s32 ret = RaGetDevEidInfoNum(info, &num);
-    if (ret != 0 || num == 0U) {
-        HCCL_WARNING("[HrtRaUbCtxInit][ResolveUbCtxEidIndex] RaGetDevEidInfoNum failed ret[%d] num[%u], "
-            "fallback eidIndex[0], addr[%s].", ret, num, in.addr.Describe().c_str());
-        return 0U;
-    }
-
-    std::vector<HccpDevEidInfo> infoList(num);
-    ret = RaGetDevEidInfoList(info, infoList.data(), &num);
-    if (ret != 0) {
-        HCCL_WARNING("[HrtRaUbCtxInit][ResolveUbCtxEidIndex] RaGetDevEidInfoList failed ret[%d], "
-            "fallback eidIndex[0], addr[%s].", ret, in.addr.Describe().c_str());
-        return 0U;
-    }
-
-    for (u32 i = 0U; i < num; ++i) {
-        Eid devEid {};
-        if (memcpy_s(devEid.raw, sizeof(devEid.raw), infoList[i].eid.raw, sizeof(infoList[i].eid.raw)) != EOK) {
-            continue;
-        }
-        if (devEid == linkEid) {
-            HCCL_INFO("[HrtRaUbCtxInit][ResolveUbCtxEidIndex] linkEid[%s] matched eidIndex[%u].",
-                in.addr.Describe().c_str(), infoList[i].eidIndex);
-            return infoList[i].eidIndex;
-        }
-    }
-
-    HCCL_WARNING("[HrtRaUbCtxInit][ResolveUbCtxEidIndex] linkEid[%s] not found in dev eid list(size[%u]), "
-        "fallback eidIndex[0].", in.addr.Describe().c_str(), num);
-    return 0U;
-}
-} // namespace
-
 s32 g_linkTimeout = 0;
 inline s32 EnvLinkTimeoutGet()
 {
@@ -1226,8 +1183,30 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
     initCfg.mode                 = HRT_NETWORK_MODE_MAP.at(in.mode);
 
     struct CtxInitAttr ctxInfo {};
-    ctxInfo.phyId       = in.phyId;
-    ctxInfo.ub.eidIndex = ResolveUbCtxEidIndex(in);
+    ctxInfo.phyId = in.phyId;
+    // urma_create_context(eidIndex) 决定 ctx 的 local EID，须与 GetTpList/Import 使用的链路 EID 一致
+    ctxInfo.ub.eidIndex = 0U;
+    const Eid linkEid = in.addr.GetEid();
+    try {
+        const vector<HrtDevEidInfo> eidInfoList = HrtRaGetDevEidInfoList(HRaInfo(in.mode, in.phyId));
+        bool matched = false;
+        for (const auto &eidInfo : eidInfoList) {
+            if (eidInfo.ipAddress.GetEid() == linkEid) {
+                ctxInfo.ub.eidIndex = eidInfo.eidIndex;
+                matched = true;
+                HCCL_INFO("[HrtRaUbCtxInit] linkEid[%s] matched eidIndex[%u].",
+                    in.addr.Describe().c_str(), eidInfo.eidIndex);
+                break;
+            }
+        }
+        if (!matched) {
+            HCCL_WARNING("[HrtRaUbCtxInit] linkEid[%s] not found in dev eid list(size[%zu]), "
+                "fallback eidIndex[0].", in.addr.Describe().c_str(), eidInfoList.size());
+        }
+    } catch (const NetworkApiException &) {
+        HCCL_WARNING("[HrtRaUbCtxInit] HrtRaGetDevEidInfoList failed, fallback eidIndex[0], addr[%s].",
+            in.addr.Describe().c_str());
+    }
     HCCL_INFO("[HrtRaUbCtxInit] use eid[%s] eidIndex[%u]", in.addr.Describe().c_str(), ctxInfo.ub.eidIndex);
     s32 sRet = memcpy_s(ctxInfo.ub.eid.raw, sizeof(ctxInfo.ub.eid.raw), in.addr.GetEid().raw, sizeof(in.addr.GetEid().raw));
     if (sRet != EOK) {
