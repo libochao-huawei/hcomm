@@ -1608,7 +1608,7 @@ static struct JettyImportExpCfg GetTpImportCfg(const JettyImportCfg &jettyImport
     cfg.txPsn = jettyImportCfg.localPsn;
     cfg.rxPsn = jettyImportCfg.remotePsn;
 
-    HCCL_INFO("GetTpImportCfg tpHandle[%llu] peerTpHandle[%llu] tag[%llu] txPsn[%llu] rxPsn[%llu]",
+    HCCL_INFO("GetTpImportCfg tpHandle[%llu] peerTpHandle[%llu] tag[%llu] txPsn[%u] rxPsn[%u]",
         cfg.tpHandle, cfg.peerTpHandle, cfg.tag, cfg.txPsn, cfg.rxPsn);
 
     return cfg;
