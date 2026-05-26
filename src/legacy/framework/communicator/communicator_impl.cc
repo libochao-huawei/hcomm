@@ -4022,12 +4022,12 @@ std::vector<LinkData> CommunicatorImpl::GetFullMeshLinks() const
             if (!tempLinks.empty()) {
                 if (myRank / 4 != dRank / 4) {
                     HCCL_INFO("ZJY0 linksize[%zu]",tempLinks.size());
-                    linkDataSet.insert(tempLinks.at((myRank % 4) * 4 + dRank % 4));
+                    linkDataSet.insert(tempLinks.at((dRank % 4) * 4 + dRank % 4));
                 } else {
                     linkDataSet.insert(tempLinks.at(0));
                 }
                 HCCL_INFO("ZJY1 link[%s]",tempLinks.at(0).Describe().c_str());
-                HCCL_INFO("ZJY2 link[%s]",tempLinks.at((myRank % 4) * 4 + dRank % 4).Describe().c_str());  
+                HCCL_INFO("ZJY2 link[%s]",tempLinks.at((dRank % 4) * 4 + dRank % 4).Describe().c_str());  
                 break;
             }
         }
