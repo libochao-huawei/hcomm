@@ -24,11 +24,13 @@ LaunchContext::LaunchContext()
 HcclResult LaunchContext::HandleEagerMode()
 {
     // 带launchTag部分
-    auto it = launchModeMap_.find(launchTag_);
-    if (it != launchModeMap_.end()) {
-        std::vector<ThreadHandle> threadVec(it->second.begin(), it->second.end());
-        CHK_RET(CommTaskLaunch(threadVec.data(), threadVec.size()));
-        HCCL_INFO("[%s]success, launchTag[%s], size[%u]", __func__, launchTag_.c_str(), threadVec.size());
+    if (!launchModeMap_.empty()) {
+        auto it = launchModeMap_.find(launchTag_);
+        if (it != launchModeMap_.end()) {
+            std::vector<ThreadHandle> threadVec(it->second.begin(), it->second.end());
+            CHK_RET(CommTaskLaunch(threadVec.data(), threadVec.size()));
+            HCCL_INFO("[%s]success, launchTag[%s], size[%u]", __func__, launchTag_.c_str(), threadVec.size());
+        }
     }
 
     // 不带launchTag部分
@@ -42,11 +44,13 @@ HcclResult LaunchContext::HandleEagerMode()
 HcclResult LaunchContext::HandleDispatchAllStreams()
 {
     // 带launchTag部分
-    auto it = launchModeMap_.find(launchTag_);
-    if (it != launchModeMap_.end()) {
-        std::vector<ThreadHandle> threadVec(it->second.begin(), it->second.end());
-        CHK_RET(DispatchAllStreams(threadVec.data(), threadVec.size()));
-        HCCL_INFO("[%s]success, launchTag[%s], size[%u]", __func__, launchTag_.c_str(), threadVec.size());
+    if (!launchModeMap_.empty()) {
+        auto it = launchModeMap_.find(launchTag_);
+        if (it != launchModeMap_.end()) {
+            std::vector<ThreadHandle> threadVec(it->second.begin(), it->second.end());
+            CHK_RET(DispatchAllStreams(threadVec.data(), threadVec.size()));
+            HCCL_INFO("[%s]success, launchTag[%s], size[%u]", __func__, launchTag_.c_str(), threadVec.size());
+        }
     }
 
     // 不带launchTag部分
