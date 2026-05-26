@@ -106,8 +106,10 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     Hccl::LinkProtocol  protocol;
     CHK_RET(CommProtocolToLinkProtocol(localEp_.protocol, protocol));
     
-    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locAddr_));
-    CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr_));
+    Hccl::IpAddress     locAddr;
+    Hccl::IpAddress     rmtAddr;
+    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locAddr));
+    CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr));
 
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));
@@ -204,7 +206,8 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
     }
     HCCL_INFO("[AicpuTsUrmaChannel][%s] socket ptr is NULL, rebuildSocket", __func__);
 
-    Hccl::IpAddress ipaddr = locAddr_;
+    Hccl::IpAddress ipaddr{};
+    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, ipaddr));
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(localEp_.loc.device.devPhyId), type, 0, ipaddr);
     if (channelDesc_.role == HCOMM_SOCKET_ROLE_RESERVED) {
