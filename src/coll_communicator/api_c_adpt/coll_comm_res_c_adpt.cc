@@ -278,7 +278,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         (void)hrtGetDeviceRefresh(&deviceLogicId);
         u32 rankTableCrc = HcomConsumeRankTableJsonCrc(deviceLogicId);
         CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordRankTableCrcV2(rankTableCrc));
-        u64 buffSize = Hccl::EnvConfig::GetInstance(deviceLogicId).GetAlgoConfig().GetBuffSize();
+        u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
         CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordEnvVarCrcV2(buffSize));
         const std::string &curVersion = Hccl::EnvConfig::GetInstance().GetLogConfig().GetCannVersion();
         CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordCannVersionV2(curVersion));
