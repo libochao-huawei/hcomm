@@ -125,7 +125,7 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
             break;
         case Hccl::LinkProtocol::UB_CTP:
             EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr , rmtAddr, opMode, devUsed),
+                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
                 return HCCL_E_PTR
             );
             break;
