@@ -12,6 +12,7 @@
 
 #include "hccl_common.h"
 #include "exception_handler.h"
+#include "hccl_exception.h"
 #include "adapter_rts.h"
 #include "ccu_assist_v1.h"
 #include "dev_buffer.h"
@@ -581,7 +582,19 @@ HcclResult CcuKernelMgr::InstantiationTranslator(const uint16_t dieId)
 
     std::pair<uint64_t, uint64_t> ccuTokenInfo(tokenId, tokenValue);
     Hccl::DevBuffer tmpDevMem{1}; // 临时申请device hbm内存用于查询token信息
-    auto hbmTokenInfo = GetTokenInfo(tmpDevMem.GetAddr(), 1);
+    uint64_t hbmTokenInfo = 0;
+    try {
+        hbmTokenInfo = GetTokenInfo(tmpDevMem.GetAddr(), 1);
+    } catch (Hccl::HcclException &e) {
+        HCCL_ERROR("[CcuKernelMgr][InstantiationTranslator] HcclException occurred when GetTokenInfo: %s", e.what());
+        return e.GetErrorCode();
+    } catch (std::exception &e) {
+        HCCL_ERROR("[CcuKernelMgr][InstantiationTranslator] Exception occurred when GetTokenInfo: %s", e.what());
+        return HcclResult::HCCL_E_INTERNAL;
+    } catch (...) {
+        HCCL_ERROR("[CcuKernelMgr][InstantiationTranslator] Unknow exception occurred when GetTokenInfo.");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
 
     CcuResReq totalResReq{};
     // 实例化CcuRepReferenceManager和CcuRepTranslator，并为CcuRepReferenceManager绑定物理资源
