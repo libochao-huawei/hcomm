@@ -4569,18 +4569,29 @@ namespace hccl
                         __func__, baseTag.c_str(), resMap_.size());
                 }
 
-                // ZeroCopy：从 resMap_[baseTag] clone transport → captureTransportMap_[newTag]
+                // ZeroCopy：全新建链（含 OpenIPC）+ 隔离到 captureTransportMap_
                 if (isInGraphCaptureZeroCopy) {
+                    AlgResourceRequest zeroResRequest;
+                    CHK_RET(algOperator->CalcResRequest(algName, opParam, zeroResRequest));
+                    zeroResRequest.isInGraphCaptureZeroCopy = true;
+                    AlgResourceResponse zeroRes;
+                    CHK_RET(IncreAllocLink(newTag, opParam, zeroResRequest, zeroRes));
+                    HCCL_INFO("[%s] ZeroCopy IncreAllocLink done tag[%s] transportCreated[%zu]",
+                        __func__, newTag.c_str(), zeroRes.opTransportResponse.size());
+
                     CaptureTransportEntry entry;
-                    entry.transport = resMap_[baseTag].opTransportResponse;
+                    entry.transport = std::move(zeroRes.opTransportResponse);
                     if (IsEnableBackupLink()) {
-                        entry.transportBackUp = resMap_[baseTag].opTransportResponseBackUp;
+                        entry.transportBackUp = std::move(zeroRes.opTransportResponseBackUp);
                     }
                     captureTransportMap_[newTag] = std::move(entry);
+                    HCCL_INFO("[%s] ZeroCopy transport moved to captureTransportMap_ tag[%s] mapSize[%zu]",
+                        __func__, newTag.c_str(), captureTransportMap_.size());
                     CHK_RET(SerializeTransportToDeviceMem(newTag, captureTransportMap_[newTag], baseTag));
+                    HCCL_INFO("[%s] ZeroCopy serialize done tag[%s] devMemSize[%llu]",
+                        __func__, newTag.c_str(), transportDeviceMemMap_[newTag].size());
                     CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-                    HCCL_DEBUG("[HcclCommunicator][ExecOp] ZeroCopy capture tag[%s] transport serialized to device mem",
-                        newTag.c_str());
+                    HCCL_INFO("[%s] ZeroCopy callback registered tag[%s]", __func__, newTag.c_str());
                 }
 
                 if (isFirstCapture) {
@@ -7489,7 +7500,6 @@ namespace hccl
         opTilingData->needIncreLink = opParam.needIncreLink;
         // ACL Graph + Zero Copy 模式下，填充 transport 序列化数据的 device 内存地址
         // ZeroCopy 场景必定是 aicpu 展开，SelectAlg 会在 newTag 末尾追加 _device
-        HCCL_INFO("[%s] CAINE isCapture[%d] tag[%s]", __func__, opParam.isCapture, opParam.tag.c_str());
         if (opParam.isCapture) {
             auto it = transportDeviceMemMap_.find(opParam.tag + "_device_Capture");
             if (it != transportDeviceMemMap_.end()) {

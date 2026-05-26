@@ -1425,7 +1425,7 @@ HcclResult HcclCommAicpu::RefreshTransportsResForRank(const HcclOpResParam *comm
     const std::string &newTag, u32 notifyNum, TransportLinkType linkType)
 {
     // Acl graph + Zero Copy 路径：从 transportDeviceMemAddr_ 读取序列化数据
-    // 只设置 rankData，不创建链路（链路已在 AicpuResourceInit 中创建）
+    // 序列化数据由 host 侧 IncreAllocLink 全新建链后填充，包含完整 OpenIPC 地址
     if (transportDeviceMemAddr_ != 0) {
         ZeroCopyTransportHeader *header =
             reinterpret_cast<ZeroCopyTransportHeader *>(transportDeviceMemAddr_);
@@ -1448,10 +1448,20 @@ HcclResult HcclCommAicpu::RefreshTransportsResForRank(const HcclOpResParam *comm
 
         rankData_[rankId].remoteWorldRank = rankRelationResPtr->remoteWorldRank;
         rankData_[rankId].remoteUsrRankId = rankRelationResPtr->remoteUsrRankId;
-        HCCL_INFO("[RefreshTransportsResForRank] ZeroCopy rankData set rankId[%u], group[%s], newTag[%s]",
+        if (reinterpret_cast<ListCommon *>(rankRelationResPtr->nextTagRes.nextDevice) !=
+            &(rankRelationResPtr->nextTagRes)) {
+            HCCL_DEBUG("[RefreshTransportsResForRank] ZeroCopy rankId[%u], head[%p], nextDevice[%p], group[%s]",
+                rankId, &rankRelationResPtr->nextTagRes, rankRelationResPtr->nextTagRes.nextDevice,
+                identifier_.c_str());
+            CHK_RET(InitRemoteTagRes(rankId, rankRelationResPtr->nextTagRes, newTag, notifyNum, linkType));
+        } else {
+            HCCL_ERROR("[RefreshTransportsResForRank] ZeroCopy could not find tag member, rankId[%u], group[%s]",
+                rankId, identifier_.c_str());
+            return HCCL_E_PARA;
+        }
+        HCCL_INFO("[RefreshTransportsResForRank] ZeroCopy success rankId[%u], group[%s], newTag[%s]",
             rankId, identifier_.c_str(), newTag.c_str());
-        // ZeroCopy 设完 rankData 后继续走正常路径，用 commParam 创建链路并写入 linkRes_
-        // 不要 return —— GetSdmaLinksByRankAndTag 依赖 linkRes_ 里有条目
+        return HCCL_SUCCESS;
     }
 
     // 原有路径：从 commParam->remoteRes[rankId] 读取
