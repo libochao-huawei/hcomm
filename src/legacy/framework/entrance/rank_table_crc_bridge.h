@@ -13,7 +13,7 @@
 #include <string>
 #include "hccl/base.h"
 
-void HcomRecordRankTableJsonCrc(s32 deviceLogicId, const std::string &rankTableJson);
-u32 HcomConsumeRankTableJsonCrc(s32 deviceLogicId);
+void HcommRecordRankTableJsonCrc(s32 deviceLogicId, const std::string &rankTableJson);
+u32 HcommConsumeRankTableJsonCrc(s32 deviceLogicId);
 
 #endif // RANK_TABLE_CRC_BRIDGE_H
