@@ -4575,6 +4575,29 @@ namespace hccl
                     CHK_RET(algOperator->CalcResRequest(algName, opParam, zeroResRequest));
                     zeroResRequest.isInGraphCaptureZeroCopy = true;
                     AlgResourceResponse zeroRes;
+                    // 预初始化 opTransportResponse 结构（level/ring 层级），IncreAlloc 需要
+                    zeroRes.opTransportResponse = resMap_[baseTag].opTransportResponse;
+                    if (IsEnableBackupLink()) {
+                        zeroRes.opTransportResponseBackUp = resMap_[baseTag].opTransportResponseBackUp;
+                    }
+                    // 清空 links（仅置 nullptr，不调 DeInit——baseTag 仍引用同一 transport）
+                    // IncreAlloc 看到 null links 会全新建链（含 OpenIPC）
+                    for (auto &level : zeroRes.opTransportResponse) {
+                        for (auto &ring : level) {
+                            for (auto &link : ring.links) {
+                                link.reset();
+                            }
+                        }
+                    }
+                    if (IsEnableBackupLink()) {
+                        for (auto &level : zeroRes.opTransportResponseBackUp) {
+                            for (auto &ring : level) {
+                                for (auto &link : ring.links) {
+                                    link.reset();
+                                }
+                            }
+                        }
+                    }
                     CHK_RET(IncreAllocLink(newTag, opParam, zeroResRequest, zeroRes));
                     HCCL_INFO("[%s] ZeroCopy IncreAllocLink done tag[%s] transportCreated[%zu]",
                         __func__, newTag.c_str(), zeroRes.opTransportResponse.size());
