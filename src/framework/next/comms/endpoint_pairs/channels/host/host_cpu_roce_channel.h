@@ -153,7 +153,7 @@ private:
     bool fenceFlag_{false};
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
 
-    // GetUserRemoteMem 缓存
+    // GetRemoteMems 缓存
     bool cacheValid_{false};
     std::vector<HcclMem> userRemoteMems_;
     std::vector<std::string> tagCopies_;

@@ -85,7 +85,7 @@ private:
     std::vector<SqContext> sqContextVec_{};
     std::vector<CqContext> cqContextVec_{};
     uint32_t connNum_{0};
-    bool cacheValid_{false};              // GetUserRemoteMem 的缓存标识
+    bool cacheValid_{false};              // 缓存是否有效
     std::vector<HcclMem> remoteUserMems_{}; // 内存基本信息缓存
     std::vector<std::string> tagCopies_{};  // 储存 Tag 字符串副本
     std::vector<char *> tagPointers_{};     // Tag 缓存
