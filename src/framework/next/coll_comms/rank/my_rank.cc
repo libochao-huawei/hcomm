@@ -714,8 +714,6 @@ HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, CommMem **remoteM
     CHK_PTR_NULL(memTags);
     CHK_PTR_NULL(memNum);
     CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, remoteMem, memTags, memNum)));
-    // AicpuTsHccsChannel不使用memTag，返回为空，不检查
-    CHK_PTR_NULL(*remoteMem);
     HCCL_INFO("[%s] success. memNum[%u]", __func__, *memNum);
     return HCCL_SUCCESS;
 }
