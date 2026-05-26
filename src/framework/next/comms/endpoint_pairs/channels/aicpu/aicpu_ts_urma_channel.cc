@@ -119,13 +119,13 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     switch (protocol) {
         case Hccl::LinkProtocol::UB_TP:
             EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr_, rmtAddr_, opMode, devUsed),
+                ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr, rmtAddr_, opMode, devUsed),
                 return HCCL_E_PTR
             );
             break;
         case Hccl::LinkProtocol::UB_CTP:
             EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr_ , rmtAddr_, opMode, devUsed),
+                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr , rmtAddr_, opMode, devUsed),
                 return HCCL_E_PTR
             );
             break;
@@ -205,7 +205,6 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[AicpuTsUrmaChannel][%s] socket ptr is NULL, rebuildSocket", __func__);
-
     Hccl::IpAddress ipaddr{};
     CHK_RET(CommAddrToIpAddress(localEp_.commAddr, ipaddr));
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
