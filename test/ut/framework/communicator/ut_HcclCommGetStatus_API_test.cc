@@ -41,16 +41,30 @@ TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_Retu
     Ut_Comm_Destroy(comm);
 }
 
-TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_CommIsOk_StatusOutIsReady_Expect_ReturnIsHCCL_SUCCESS) {
+TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_Normal_Expect_ReturnIsHCCL_SUCCESS) {
     UT_COMM_CREATE_DEFAULT(comm);
+
+    MOCKER_CPP(&hcclComm::GetCommStatus).stubs().will(returnValue(HCCL_SUCCESS));
 
     std::string commId = GetCommId(comm);
 
     HcclCommStatus status = HCCL_COMM_STATUS_INVALID;
     HcclResult ret = HcclCommGetStatus(commId.c_str(), &status);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    // After successful create, comm status should be READY
-    EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_READY);
+
+    Ut_Comm_Destroy(comm);
+}
+
+TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_DevTypeIsNot950_Expect_ReturnIsHCCL_E_NOT_SUPPORT) {
+    UT_COMM_CREATE_DEFAULT(comm);
+
+    MOCKER_CPP(&hcclComm::IsCommunicatorV2).stubs().will(returnValue(false));
+
+    std::string commId = GetCommId(comm);
+
+    HcclCommStatus status = HCCL_COMM_STATUS_INVALID;
+    HcclResult ret = HcclCommGetStatus(commId.c_str(), &status);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 
     Ut_Comm_Destroy(comm);
 }

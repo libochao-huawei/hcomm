@@ -23,6 +23,7 @@ struct RsNdaOps gNdaOps = {
     .rsNdaIbvExtendCheckVersion = ibv_extend_check_version,
     .rsNdaIbvOpenExtend = ibv_open_extend,
     .rsNdaIbvCloseExtend = ibv_close_extend,
+    .rsNdaIbvQueryDeviceExtend = ibv_query_device_extend,
     .rsNdaIbvCreateQpExtend = ibv_create_qp_extend,
     .rsNdaIbvCreateCqExtend = ibv_create_cq_extend,
     .rsNdaIbvDestroyQpExtend = ibv_destroy_qp_extend,
@@ -45,6 +46,9 @@ STATIC int RsNdaIbvApiInit(void)
     gNdaOps.rsNdaIbvCloseExtend = (int (*)(struct ibv_context_extend *))
         HccpDlsym(gRoceNdaApiHandle, "ibv_close_extend");
     DL_API_RET_IS_NULL_CHECK(gNdaOps.rsNdaIbvCloseExtend, "ibv_close_extend");
+    gNdaOps.rsNdaIbvQueryDeviceExtend = (int (*)(struct ibv_context_extend *, struct ibv_device_attr_extend *))
+        HccpDlsym(gRoceNdaApiHandle, "ibv_query_device_extend");
+    DL_API_RET_IS_NULL_CHECK(gNdaOps.rsNdaIbvQueryDeviceExtend, "ibv_query_device_extend");
     gNdaOps.rsNdaIbvCreateQpExtend = (struct ibv_qp_extend* (*)(struct ibv_context_extend *,
         struct ibv_qp_init_attr_extend *)) HccpDlsym(gRoceNdaApiHandle, "ibv_create_qp_extend");
     DL_API_RET_IS_NULL_CHECK(gNdaOps.rsNdaIbvCreateQpExtend, "ibv_create_qp_extend");
@@ -157,6 +161,17 @@ int RsNdaIbvCloseExtend(struct ibv_context_extend *context)
 #endif
     }
     return gNdaOps.rsNdaIbvCloseExtend(context);
+}
+
+int RsNdaIbvQueryDeviceExtend(struct ibv_context_extend *context, struct ibv_device_attr_extend *extDevAttr)
+{
+    if (gNdaOps.rsNdaIbvQueryDeviceExtend == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rsNdaIbvQueryDeviceExtend is null");
+        return -EINVAL;
+#endif
+    }
+    return gNdaOps.rsNdaIbvQueryDeviceExtend(context, extDevAttr);
 }
 
 struct ibv_cq_extend *RsNdaIbvCreateCqExtend(struct ibv_context_extend *context,

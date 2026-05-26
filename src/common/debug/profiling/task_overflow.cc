@@ -90,7 +90,7 @@ HcclResult TaskOverflow::Save(u32 &streamID, u32 &taskID, TaskType &taskType, co
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskOverflow::Save(u32 captureStreamID, u32 streamID, u32 taskID)
+HcclResult TaskOverflow::Save(u32 captureStreamID, u32 streamID, u32 taskID, const void *descBuf, size_t descBufLen)
 {
     return HCCL_SUCCESS;
 }
@@ -105,7 +105,7 @@ HcclResult TaskOverflow::Save(u32 streamID, u32 taskID, const TaskParaAiv &paraA
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskOverflow::Save(u32 &streamID, u32 &taskID)
+HcclResult TaskOverflow::Save(u32 &streamID, u32 &taskID, const void *descBuf, size_t descBufLen)
 {
     return HCCL_SUCCESS;
 }
