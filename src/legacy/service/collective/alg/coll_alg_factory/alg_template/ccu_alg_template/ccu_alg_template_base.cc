@@ -13,6 +13,8 @@
 #include "env_config.h"
 #include "ccu_assist.h"
 #include "log.h"
+#include "hccl_exception.h"
+#include <algorithm>
 
 namespace Hccl {
 CcuAlgTemplateBase::CcuAlgTemplateBase(const RankId virtualRank, const u32 tempRankSize,
@@ -128,21 +130,37 @@ u64 CcuAlgTemplateBase::CalcLoopMaxCount(ParamPool &paramPool)
 
 HcclResult CcuAlgTemplateBase::GetToken(const CollAlgOperator &op, uint64_t &token) const
 {
-    if (op.inputMem != nullptr && op.inputMem->GetAddr() != 0) {
-        token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.inputMem->GetAddr()),
-                                     static_cast<uint64_t>(op.inputMem->GetSize()));
-        return HCCL_SUCCESS;
-    } else if (op.outputMem != nullptr && op.outputMem->GetAddr() != 0) {
-        token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.outputMem->GetAddr()),
-                                     static_cast<uint64_t>(op.outputMem->GetSize()));
-        return HCCL_SUCCESS;
-    } else if (op.scratchMem != nullptr && op.scratchMem->GetAddr() != 0) {
-        token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.scratchMem->GetAddr()),
-                                     static_cast<uint64_t>(op.scratchMem->GetSize()));
-        return HCCL_SUCCESS;
+    try {
+        if (op.inputMem != nullptr && op.inputMem->GetAddr() != 0) {
+            token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.inputMem->GetAddr()),
+                static_cast<uint64_t>(op.inputMem->GetSize()));
+            return HCCL_SUCCESS;
+        } else if (op.outputMem != nullptr && op.outputMem->GetAddr() != 0) {
+            token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.outputMem->GetAddr()),
+                static_cast<uint64_t>(op.outputMem->GetSize()));
+            return HCCL_SUCCESS;
+        } else if (op.scratchMem != nullptr && op.scratchMem->GetAddr() != 0) {
+            token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.scratchMem->GetAddr()),
+                static_cast<uint64_t>(op.scratchMem->GetSize()));
+            return HCCL_SUCCESS;
+        }
+        HCCL_WARNING("[GetToken] Both inputMem and outputMem are null");
+        return HCCL_E_PTR;
+    } catch (HcclException &e) {
+        HCCL_ERROR("[GetToken] Exception occurred: %s", e.what());
+        auto backTraces = e.GetBackTracesStrings();
+        std::for_each(backTraces.begin(), backTraces.end(), [](const std::string &item) {
+            HCCL_INFO("backTraces item: %s", item.c_str());
+        });
+        return e.GetErrorCode();
+    } catch (std::exception &e) {
+        HCCL_ERROR("[GetToken] Exception occurred: %s", e.what());
+        return HcclResult::HCCL_E_INTERNAL;
+    } catch (...) {
+        HCCL_ERROR("[GetToken] Unknow error occurs!");
+        return HcclResult::HCCL_E_INTERNAL;
     }
-    HCCL_WARNING("[GetToken] Both inputMem and outputMem are null");
-    return HCCL_E_PTR;
+    
 }
 u32 CcuAlgTemplateBase::CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType)
 {
