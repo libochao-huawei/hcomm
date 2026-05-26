@@ -2013,12 +2013,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_ReportWcStatusError_When_VariousStatuses_Expec
     GlobalMockObject::verify();
 }
 
-TEST_F(HostCpuRoceChannelTest, Ut_GetUserRemoteMem_When_OnlyCclBuffer_Expect_Success)
+TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_OnlyCclBuffer_Expect_Success)
 {
     SetupSuccessfulConnectionMocks();
     auto impl_ = CreateInitAndConnect();
 
-    // Only cclBuffer at index 0, no user buffers
+    // Only cclBuffer at index 0
     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1000000);
     Hccl::ExchangeRdmaBufferDto cclBufDto(0x2000000, 4096, 100, "cclBuffer");
     impl_->rmtRmaBuffers_.emplace_back(
@@ -2028,18 +2028,18 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetUserRemoteMem_When_OnlyCclBuffer_Expect_Suc
     char **memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = impl_->GetUserRemoteMem(&remoteMem, &memTag, &memNum);
+    HcclResult ret = impl_->GetRemoteMems(&remoteMem, &memTag, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(memNum, 0);
+    EXPECT_EQ(memNum, 1);
 }
 
-TEST_F(HostCpuRoceChannelTest, Ut_GetUserRemoteMem_When_UserBuffersExist_Expect_Success)
+TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_UserBuffersExist_Expect_Success)
 {
     SetupSuccessfulConnectionMocks();
     auto impl_ = CreateInitAndConnect();
 
     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1000000);
-    // cclBuffer at index 0 (will be skipped)
+    // cclBuffer at index 0
     Hccl::ExchangeRdmaBufferDto cclBufDto(0x2000000, 4096, 100, "cclTag");
     impl_->rmtRmaBuffers_.emplace_back(
         std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, cclBufDto));
@@ -2058,9 +2058,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetUserRemoteMem_When_UserBuffersExist_Expect_
     char **memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = impl_->GetUserRemoteMem(&remoteMem, &memTag, &memNum);
+    HcclResult ret = impl_->GetRemoteMems(&remoteMem, &memTag, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(memNum, 2);
+    EXPECT_EQ(memNum, 3);
 
     ASSERT_NE(remoteMem, nullptr);
     ASSERT_NE(memTag, nullptr);
