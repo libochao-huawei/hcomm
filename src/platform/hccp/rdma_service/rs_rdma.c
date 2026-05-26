@@ -1807,7 +1807,7 @@ RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevInd
                 rdevCb->typicalCqTable[rdevCb->typicalCqCnt].cqn = *cqn;
                 rdevCb->typicalCqTable[rdevCb->typicalCqCnt].ibCq = ibCq;
                 rdevCb->typicalCqTable[rdevCb->typicalCqCnt].deviceCqAttr = deviceCqAttr;
-                rdevCb->typicalCqTable[rdevCb->typicalCqCnt].hasDeviceAttr = true;
+                rdevCb->typicalCqTable[rdevCb->typicalCqCnt].hasDeviceAttr = false;
                 rdevCb->typicalCqCnt++;
             }
         }
