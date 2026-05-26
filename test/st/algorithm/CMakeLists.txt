@@ -72,10 +72,10 @@ set(HCOMM_PLATFORM_INCLUDE_LIST
     ${HCOMM_CODE_PLATFORM}/inc/adapter
     ${HCOMM_CODE_PLATFORM}/inc/adapter/host
     ${HCOMM_CODE_PLATFORM}/common
-    ${HCOMM_CODE_PLATFORM}/hccp/external_depends/inc/log
     ${HCOMM_CODE_PLATFORM}/task/
-    ${HCOMM_CODE_PLATFORM}/hccp/inc/network/
     ${RDMA_CORE_INCLUDE_DIR}
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/external_depends/inc/log
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc/network/
 )
 
 set(HCOMM_COMMON_INCLUDE_LIST
@@ -165,10 +165,15 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/sockets/
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoints/
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_mems
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoints/dfx
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/reged_mems/
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/
     ${HCOMM_CODE_ROOT}/src/base_comm/primitives/api_c_adpt/
     ${HCOMM_CODE_ROOT}/src/base_comm/common/
+    ${HCOMM_CODE_ROOT}/src/base_comm/common/device
     ${HCOMM_CODE_ROOT}/src/legacy/ascend910/common/stream
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
