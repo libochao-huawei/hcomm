@@ -4575,6 +4575,14 @@ namespace hccl
                     CHK_RET(algOperator->CalcResRequest(algName, opParam, zeroResRequest));
                     zeroResRequest.isInGraphCaptureZeroCopy = true;
                     AlgResourceResponse zeroRes;
+                    // 预填充内存字段（paramInputMem/scratchMem 等供 transport manager 建链使用）
+                    zeroRes.cclInputMem = resMap_[baseTag].cclInputMem;
+                    zeroRes.cclOutputMem = resMap_[baseTag].cclOutputMem;
+                    zeroRes.paramInputMem = resMap_[baseTag].paramInputMem;
+                    zeroRes.paramOutputMem = resMap_[baseTag].paramOutputMem;
+                    zeroRes.scratchMem = resMap_[baseTag].scratchMem;
+                    zeroRes.aivInputMem = resMap_[baseTag].aivInputMem;
+                    zeroRes.aivOutputMem = resMap_[baseTag].aivOutputMem;
                     // 预初始化 opTransportResponse 结构（level/ring 层级），IncreAlloc 需要
                     zeroRes.opTransportResponse = resMap_[baseTag].opTransportResponse;
                     if (IsEnableBackupLink()) {
