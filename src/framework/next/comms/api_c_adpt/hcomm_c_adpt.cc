@@ -17,8 +17,8 @@
 #include "hcomm_result_defs.h"
 #include "log.h"
 #include "hcomm_c_adpt.h"
-#include "hcomm/hcomm_res_entity_defs.h"
 #include "hcom_common.h"
+#include "hcomm/hcomm_res_entity_defs.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
 #include "thread.h"
@@ -43,8 +43,10 @@
 #include "channel_process.h"
 #include "launch_device.h"
 #include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
+#include "aiv_urma_channel.h"
 
 namespace hcomm {
+constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
 static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
 static aclrtBinHandle g_BinHandle;
 static std::mutex g_BinHandleMtx;
@@ -235,7 +237,8 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
 
-    if ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP)) {
+    if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
+        && ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP))) {
         s32 devLogicIdSigned = HcclGetThreadDeviceId();
         CHK_PRT_RET(devLogicIdSigned < 0,
             HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
@@ -251,6 +254,10 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
 HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 {
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
+    s32 devLogicIdSigned = HcclGetThreadDeviceId();
+    CHK_PRT_RET(devLogicIdSigned < 0,
+        HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
+    EndpointMonitor::GetInstance(devLogicIdSigned).RemoveEpHandleFromEndpointMonitor(endpointHandle);
     auto ret = g_EndpointMap.RemoveEndpoint(endpointHandle);
     CHK_PRT_RET(ret == false, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
@@ -276,6 +283,16 @@ HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
     CHK_RET(endpoint->ServerSocketStopListen(port));
+    return HCCL_SUCCESS;
+}
+
+HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port)
+{
+    CHK_PTR_NULL(port);
+    auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
+        __func__, endpointHandle), HCCL_E_NOT_FOUND);
+    CHK_RET(endpoint->ServerSocketGetListenPort(port));
     return HCCL_SUCCESS;
 }
 
@@ -655,25 +672,46 @@ HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_
     HCCL_RUN_INFO("Entry-%s", __func__);
     CHK_PTR_NULL(channelList);
     CHK_PTR_NULL(channelPtr);
-    CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]",
-        __func__, listNum), HCCL_E_PARA);
+    CHK_PRT_RET((listNum == 0 || listNum > CHANNEL_NUM_MAX),
+        HCCL_ERROR("[%s] Invalid listNum, listNum[%u], max channel num[%u]",
+        __func__, listNum, CHANNEL_NUM_MAX), HCCL_E_PARA);
 
     for (uint32_t i = 0; i < listNum; ++i) {
-        void *channel;
-        HcommResult hcommRet = HcommChannelGet(channelList[i], &channel);
+        void *channel = nullptr;
+        const ChannelHandle channelHandle = channelList[i];
+
+        HcommResult hcommRet = HcommChannelGet(channelHandle, &channel);
         CHK_PRT_RET(hcommRet != HCOMM_SUCCESS,
-            HCCL_ERROR("%s HcommChannelGet failed, ret[%d]", __func__, hcommRet),
+            HCCL_ERROR("[%s] HcommChannelGet failed, idx[%u], ret[%d]", __func__, i, hcommRet),
             HCCL_E_NOT_FOUND);
-        Channel *baseChannel = static_cast<Channel*>(channel);
+
+        Channel *baseChannel = static_cast<Channel *>(channel);
+        CHK_PTR_NULL(baseChannel);
+
         if (baseChannel->GetChannelKind() == HcommChannelKind::AICPU_TS_ROCE_V2) {
-            auto *aicpuTsRoceChannelV2 = static_cast<AicpuTsRoceChannelV2*>(baseChannel);
+            auto *aicpuTsRoceChannelV2 = static_cast<AicpuTsRoceChannelV2 *>(baseChannel);
             CHK_RET(aicpuTsRoceChannelV2->BuildAndGetDevChannelEntity(&channelPtr[i]));
+        } else if (baseChannel->GetChannelKind() == HcommChannelKind::AIV_URMA) {
+            AivUrmaChannel *aivUrmaChannel = dynamic_cast<AivUrmaChannel *>(baseChannel);
+            CHK_PTR_NULL(aivUrmaChannel);
+
+            void *devChannelEntity = nullptr;
+            HcclResult ret = aivUrmaChannel->BuildChannelEntityToDevice(&devChannelEntity);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] channel[%u] BuildChannelEntityToDevice failed, ret[%d]", __func__, i, ret), ret);
+            CHK_PTR_NULL(devChannelEntity);
+            channelPtr[i] = static_cast<ChannelPtr>(reinterpret_cast<uintptr_t>(devChannelEntity));
         } else {
-            HCCL_ERROR("%s channel type not support, type[%d]", __func__, baseChannel->GetChannelKind());
+            HCCL_ERROR("[%s] channel type not support, idx[%u], kind[%u]",
+                __func__, i, static_cast<uint32_t>(baseChannel->GetChannelKind()));
             return HCCL_E_PARA;
         }
+
+        HCCL_INFO("[%s] channel[%u] build dev entity success, devEntityPtr[%p]",
+            __func__, i, reinterpret_cast<void *>(static_cast<uintptr_t>(channelPtr[i])));
     }
 
-    HCCL_RUN_INFO("%s Success, listNum=%u", __func__, listNum);
+    HCCL_RUN_INFO("[%s] success, listNum[%u]", __func__, listNum);
+
     return HCOMM_SUCCESS;
 }

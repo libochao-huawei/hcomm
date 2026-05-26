@@ -89,8 +89,6 @@ typedef struct HcclCommConfigDef {
 
     - 该配置项下，AllReduce、ReduceScatter、AllGather、AlltoAll算子支持控核能力，建议业务根据实际使用场景中计算算子与通信算子的并发情况进行Vector Core核数的配置。
 
-      若业务编译分配的Vector Core核数无法满足算法编排的要求，HCCL会报错并提示所需要的最低Vector Core核数。
-
   - 4：代表通信算子在Device侧的Vector Core计算单元展开，但不会随着数据量的变化进行模式切换，始终使用Vector Core计算，如果不满足Vector Core的运行条件，会报错退出。
     - Ascend 950PR不支持此配置。
     - 该配置仅支持对称组网、推理特性。
@@ -125,7 +123,8 @@ typedef struct HcclCommConfigDef {
     - 该配置项下，集合通信支持控核能力，建议业务根据实际使用场景中计算算子与通信算子的并发情况进行Vector Core核数的配置。
 
       - 针对Broadcast算子，建议至少分配ranksize个vector核。
-      - 针对AllReduce、ReduceScatter、AllGather、AlltoAll、AlltoAllV、AlltoAllVC算子，建议最少分配max\(2, ranksize/20 + 1\)个vector核。
+      - 针对AllGather、非确定性ReduceScatter算子，建议最少分配max\(2, ceil\(ranksize/20\)\)个vector核。
+      - 针对AllReduce、确定性ReduceScatter、AlltoAll、AlltoAllV、AlltoAllVC算子，建议最少分配max\(2, ceil\(ranksize/20\)\)个vector核，且核数需为偶数（若计算结果为奇数则向上取整至下一个偶数）。
 
       若业务编译分配的Vector Core核数无法满足算法编排的要求，HCCL会报错并提示所需要的最低Vector Core核数。
 

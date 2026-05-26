@@ -202,7 +202,7 @@ HcclResult MyRank::TryInitCcuInstance()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult MyRank::GetDevicePortInternal(uint32_t rank, uint32_t *devPort)
+HcclResult MyRank::GetDevicePortInternal(uint32_t rank, uint32_t *devPort, EndpointLocType locType)
 {
     CHK_PTR_NULL(devPort);
     CHK_PTR_NULL(rankGraph_);
@@ -215,7 +215,7 @@ HcclResult MyRank::GetDevicePortInternal(uint32_t rank, uint32_t *devPort)
         RankGraphV1* rankGraphV1 = static_cast<RankGraphV1*>(rankGraph_);
         CHK_RET(rankGraphV1->GetDevicePort(rank, devPort));
     } else {
-        CHK_RET(rankGraph_->GetDevicePort(rank, devPort));
+        CHK_RET(rankGraph_->GetListenPort(rank, devPort, locType));
     }
     return HCCL_SUCCESS;
 }
@@ -273,8 +273,8 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
 {
     // 查询rmtRankId对应的devPort
     uint32_t rmtPort = 0;
-    CHK_RET(GetDevicePortInternal(remoteRank, &rmtPort));
-    if (rmtPort > Hccl::MAX_VALUE_DEVICEPORT) {
+    CHK_RET(GetDevicePortInternal(remoteRank, &rmtPort, remoteEndpointDesc.loc.locType));
+    if (rmtPort > Hccl::MAX_VALUE_TCPPORT) {
         HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, rmtPort, remoteRank);
         return HCCL_E_PARA;
     }
@@ -285,9 +285,9 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
     CHK_RET(CommAddrToIpAddress(remoteEndpointDesc.commAddr, remoteIpAddr));
     if (localIpAddr < remoteIpAddr) {
         // 查询localRankId对应的devPort
-        CHK_RET(GetDevicePortInternal(localRank, &listenPort));
+        CHK_RET(GetDevicePortInternal(localRank, &listenPort, localEndpointDesc.loc.locType));
         hcommDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER;
-        if (listenPort > Hccl::MAX_VALUE_DEVICEPORT) {
+        if (listenPort > Hccl::MAX_VALUE_TCPPORT) {
             HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, localRank);
             return HCCL_E_PARA;
         }
@@ -435,7 +435,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
 
         // 启动监听
         uint32_t listenPort = 0;
-        CHK_RET(GetDevicePortInternal(localRank, &listenPort));
+        CHK_RET(GetDevicePortInternal(localRank, &listenPort, localEndpointDesc.loc.locType));
         CHK_RET(static_cast<HcclResult>(HcommEndpointStartListen(epHandle, listenPort, nullptr)));
 
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",
@@ -665,7 +665,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     // 借用hcommDescs.socket，完成一致性校验必要的数据交换
-    CHK_RET(BatchExchangeAndCheckConsistency(channelDescs, hcommDescs, channelNum, commTag));
+    CHK_RET(exchangeInfoMgr_.BatchExchangeAndCheckConsistency(channelDescs, hcommDescs, channelNum, collCommConfigConsistency_, commTag));
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
         u32 remoteRank = channelDescs[i].remoteRank;
@@ -834,205 +834,6 @@ HcclResult MyRank::Resume()
     }
 
     HCCL_INFO("[NsRecovery][Resume] MyRank::Resume success!");
-    return HCCL_SUCCESS;
-}
-
-HcclResult MyRank::BatchExchangeAndCheckConsistency(
-    const HcclChannelDesc* channelDescs,
-    const std::vector<HcommChannelDesc> &hcommDescs,
-    uint32_t channelNum,
-    const std::string &commTag)
-{
-    std::vector<Hccl::Socket*> sockets;
-    std::vector<u32> remoteRanks;
-    std::vector<HcommSocketRole> roles;
-
-    if (channelNum == 0) {
-        HCCL_INFO("[BatchExchangeAndCheckConsistency] channelNum is 0.");
-        return HCCL_SUCCESS;
-    }
-
-    for (uint32_t i = 0; i < channelNum; i++) {
-        u32 remoteRank = channelDescs[i].remoteRank;
-        HcommSocket rawSocket = hcommDescs[i].socket;
-        Hccl::Socket *socket = static_cast<Hccl::Socket *>(rawSocket);
-        CHK_PRT_RET(socket == nullptr,
-            HCCL_ERROR("[BatchExchangeAndCheckConsistency] socket is null for channel[%u] remoteRank[%u].",
-                i, remoteRank),
-            HCCL_E_INTERNAL);
-        sockets.push_back(socket);
-        remoteRanks.push_back(remoteRank);
-        roles.push_back(hcommDescs[i].role);
-    }
-
-    // 交换HCCL算子信息 ======
-    CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles));
-    CHK_RET(collCommConfigConsistency_.ResetExchangeInfo());
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult MyRank::ExchangeUserInfo(
-    const std::vector<Hccl::Socket*> &sockets,
-    const std::vector<u32> &remoteRanks,
-    const std::vector<HcommSocketRole> &roles)
-{
-    u32 localExchangeInfoLen = collCommConfigConsistency_.GetExchangeInfoLen();
-    if (localExchangeInfoLen == 0) {
-        HCCL_INFO("[ExchangeUserInfo] localExchangeInfoLen is 0.");
-        return HCCL_SUCCESS;
-    }
-    // 交换infoLen
-    std::vector<u32> remoteExchangeInfoLens(sockets.size(), 0);
-    CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles,
-        reinterpret_cast<const u8*>(&localExchangeInfoLen), sizeof(u32),
-        reinterpret_cast<u8*>(remoteExchangeInfoLens.data()), sizeof(u32)));
-
-    // 交换info数据（长度可能不同，需逐个收发）
-    std::vector<std::vector<u8>> remoteUserDatas(sockets.size());
-    // SERVER先Recv/CLIENT先Send
-    for (u32 i = 0; i < sockets.size(); i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
-            sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
-        } else {
-            std::vector<u8> exchangeBuf;
-            collCommConfigConsistency_.GetExchangeInfoBuf(exchangeBuf);
-            sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
-        }
-    }
-    CHK_RET(WaitActiveAsyncComplete(sockets, remoteRanks, roles,
-        remoteExchangeInfoLens, localExchangeInfoLen, true));
-
-    // SERVER再Send/CLIENT再Recv
-    for (u32 i = 0; i < sockets.size(); i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            std::vector<u8> exchangeBuf;
-            collCommConfigConsistency_.GetExchangeInfoBuf(exchangeBuf);
-            sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
-        } else {
-            remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
-            sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
-        }
-    }
-    CHK_RET(WaitActiveAsyncComplete(sockets, remoteRanks, roles,
-        remoteExchangeInfoLens, localExchangeInfoLen, false));
-
-    // 存储对端交换信息
-    for (u32 i = 0; i < sockets.size(); i++) {
-        if (remoteExchangeInfoLens[i] > 0 && !remoteUserDatas[i].empty()) {
-            CHK_RET(collCommConfigConsistency_.StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
-        }
-    }
-
-    HCCL_INFO("[ExchangeUserInfo] suc.");
-    return HCCL_SUCCESS;
-}
-
-// 批量异步交换定长数据（SERVER先Recv再Send，CLIENT先Send再Recv，防死锁）
-HcclResult MyRank::BatchExchangeFixedData(
-    const std::vector<Hccl::Socket*> &sockets,
-    const std::vector<u32> &remoteRanks,
-    const std::vector<HcommSocketRole> &roles,
-    const u8 *sendData, u32 sendLen,
-    u8 *recvData, u32 recvLen)
-{
-    // SERVER先Recv/CLIENT先Send
-    for (u32 i = 0; i < sockets.size(); i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            sockets[i]->RecvAsync(recvData + i * recvLen, recvLen);
-        } else {
-            sockets[i]->SendAsync(sendData, sendLen);
-        }
-    }
-    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
-
-    // SERVER再Send/CLIENT再Recv
-    for (u32 i = 0; i < sockets.size(); i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            sockets[i]->SendAsync(sendData, sendLen);
-        } else {
-            sockets[i]->RecvAsync(recvData + i * recvLen, recvLen);
-        }
-    }
-    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult MyRank::WaitAllAsyncComplete(
-    const std::vector<Hccl::Socket*> &sockets,
-    const std::vector<u32> &remoteRanks)
-{
-    auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
-    auto startTime = std::chrono::steady_clock::now();
-    std::vector<bool> done(sockets.size(), false);
-    uint32_t doneCount = 0;
-
-    while (doneCount < sockets.size()) {
-        for (size_t i = 0; i < sockets.size(); i++) {
-            if (done[i]) {
-                continue;
-            }
-            Hccl::SocketStatus status = sockets[i]->GetAsyncStatus();
-            if (status == Hccl::SocketStatus::OK) {
-                done[i] = true;
-                doneCount++;
-                continue;
-            }
-            if (status == Hccl::SocketStatus::TIMEOUT) {
-                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now() - startTime).count();
-                HCCL_ERROR("[WaitAllAsyncComplete] socket timeout for remoteRank[%u], elapsed[%lld]ms.",
-                    remoteRanks[i], elapsed);
-                return HCCL_E_TIMEOUT;
-            }
-        }
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - startTime).count();
-            for (size_t i = 0; i < sockets.size(); i++) {
-                if (!done[i]) {
-                    HCCL_ERROR("[WaitAllAsyncComplete] wall-clock timeout for remoteRank[%u], elapsed[%lld]ms.",
-                        remoteRanks[i], elapsed);
-                }
-            }
-            return HCCL_E_TIMEOUT;
-        }
-    }
-
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now() - startTime).count();
-    HCCL_INFO("[WaitAllAsyncComplete] all[%zu] sockets completed, elapsed[%lld]ms.",
-        sockets.size(), elapsed);
-    return HCCL_SUCCESS;
-}
-
-// 收集并等待有实际异步操作的socket子集
-HcclResult MyRank::WaitActiveAsyncComplete(
-    const std::vector<Hccl::Socket*> &sockets,
-    const std::vector<u32> &remoteRanks,
-    const std::vector<HcommSocketRole> &roles,
-    const std::vector<u32> &remoteExchangeInfoLens,
-    u32 localExchangeInfoLen,
-    bool isFirstPass)
-{
-    std::vector<Hccl::Socket*> activeSockets;
-    std::vector<u32> activeRanks;
-    for (u32 i = 0; i < sockets.size(); i++) {
-        bool isActive = isFirstPass
-            ? (roles[i] == HCOMM_SOCKET_ROLE_SERVER && remoteExchangeInfoLens[i] > 0) ||
-              (roles[i] != HCOMM_SOCKET_ROLE_SERVER && localExchangeInfoLen > 0)
-            : (roles[i] == HCOMM_SOCKET_ROLE_SERVER && localExchangeInfoLen > 0) ||
-              (roles[i] != HCOMM_SOCKET_ROLE_SERVER && remoteExchangeInfoLens[i] > 0);
-        if (isActive) {
-            activeSockets.push_back(sockets[i]);
-            activeRanks.push_back(remoteRanks[i]);
-        }
-    }
-    if (!activeSockets.empty()) {
-        CHK_RET(WaitAllAsyncComplete(activeSockets, activeRanks));
-    }
     return HCCL_SUCCESS;
 }
 

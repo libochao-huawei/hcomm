@@ -308,7 +308,7 @@ void RankGraphBuilder::BuildFromRankTable()
     for (const auto &rankInfo : rankTable_->ranks) {
         updaterFor64Plus1_.SaveReplaceInfo(rankInfo);   // 暂存备份替换信息
         RankId rankId = rankInfo.rankId;
-        shared_ptr<NetInstance::Peer> peer = make_shared<NetInstance::Peer>(rankId, rankInfo.localId, rankInfo.replacedLocalId, rankInfo.deviceId, rankInfo.devicePort);
+        shared_ptr<NetInstance::Peer> peer = make_shared<NetInstance::Peer>(rankId, rankInfo.localId, rankInfo.replacedLocalId, rankInfo.deviceId, rankInfo.devicePort, rankInfo.hostPort);
         rankGraph_->AddPeer(peer);
         peers_.emplace(rankId, peer);  // rankid2peer
 

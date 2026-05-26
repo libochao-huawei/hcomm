@@ -2012,3 +2012,56 @@ TEST_F(HostCpuRoceChannelTest, Ut_ReportWcStatusError_When_VariousStatuses_Expec
     }
     GlobalMockObject::verify();
 }
+
+TEST_F(HostCpuRoceChannelTest, Ut_GetUserRemoteMem_When_OnlyCclBuffer_Expect_Success)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+
+    // Only cclBuffer at index 0, no user buffers
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1000000);
+    Hccl::ExchangeRdmaBufferDto cclBufDto(0x2000000, 4096, 100, "cclBuffer");
+    impl_->rmtRmaBuffers_.emplace_back(
+        std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, cclBufDto));
+
+    CommMem *remoteMem = nullptr;
+    char **memTag = nullptr;
+    uint32_t memNum = 0;
+
+    HcclResult ret = impl_->GetUserRemoteMem(&remoteMem, &memTag, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 0);
+}
+
+TEST_F(HostCpuRoceChannelTest, Ut_GetUserRemoteMem_When_UserBuffersExist_Expect_Success)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1000000);
+    // cclBuffer at index 0 (will be skipped)
+    Hccl::ExchangeRdmaBufferDto cclBufDto(0x2000000, 4096, 100, "cclTag");
+    impl_->rmtRmaBuffers_.emplace_back(
+        std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, cclBufDto));
+    // user buffer 1 at index 1
+    Hccl::ExchangeRdmaBufferDto userDto1(0x3000000, 1024, 200, "userTag1");
+    auto userBuf1 = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, userDto1);
+    userBuf1->memType = HCCL_MEM_TYPE_DEVICE;
+    impl_->rmtRmaBuffers_.emplace_back(std::move(userBuf1));
+    // user buffer 2 at index 2
+    Hccl::ExchangeRdmaBufferDto userDto2(0x4000000, 2048, 300, "userTag2");
+    auto userBuf2 = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, userDto2);
+    userBuf2->memType = HCCL_MEM_TYPE_HOST;
+    impl_->rmtRmaBuffers_.emplace_back(std::move(userBuf2));
+
+    CommMem *remoteMem = nullptr;
+    char **memTag = nullptr;
+    uint32_t memNum = 0;
+
+    HcclResult ret = impl_->GetUserRemoteMem(&remoteMem, &memTag, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 2);
+
+    ASSERT_NE(remoteMem, nullptr);
+    ASSERT_NE(memTag, nullptr);
+}

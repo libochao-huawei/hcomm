@@ -357,14 +357,14 @@ namespace hccl
             commAicpuParam_.kfcStatusTransferD2HParams));
         commAicpuParam_.userRank = collComm_->GetMyRankId();
         commAicpuParam_.userRankSize = collComm_->GetRankSize();
-        commAicpuParam_.envConfig.taskExceptionEnable =
+        commAicpuParam_.commConfig.taskExceptionEnable =
             Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().taskExceptionEnable;
         const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
         HCCL_RUN_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], "
             "userRank[%u], userRankSize[%u], opExpansionMode[%u], taskExceptionEnable[%d].",
             __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
             commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize, opExpansionMode,
-            commAicpuParam_.envConfig.taskExceptionEnable);
+            commAicpuParam_.commConfig.taskExceptionEnable);
 
         const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
         if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
@@ -470,7 +470,8 @@ namespace hccl
         if (IsCommunicatorV2()) {
             status = collComm_->GetCommStatus();
         } else {
-            status = HcclCommStatus::HCCL_COMM_STATUS_READY;
+            HCCL_ERROR("[%s] deviceType is not support", __func__);
+            return HCCL_E_NOT_SUPPORT;
         }
         return HCCL_SUCCESS;
     }

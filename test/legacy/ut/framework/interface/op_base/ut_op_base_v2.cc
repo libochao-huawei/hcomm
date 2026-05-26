@@ -812,7 +812,7 @@ TEST_F(OpbaseTestV2, HcclAllocComResourceByTilingV2_With_Log)
     EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
 }
 
-TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_server_num_exceed_20_Expect_HCCL_E_INTERNAL)
+TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_server_num_exceed_20_Expect_HCCL_E_NOT_SUPPORT)
 {
     // 前置条件
     
@@ -830,7 +830,7 @@ TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_server_num_exceed_20
     HcclResult ret = HcclAllocComResourceByTilingV2(comm, stream, mc2Tiling, &commContext);
 
     // 后置验证
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 }
 
 TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_server_num_is_not_exceed_20_Expect_HCCL_SUCCESS)
