@@ -1428,6 +1428,8 @@ HcclResult HcclCommAicpu::RefreshTransportsResForRank(const HcclOpResParam *comm
     if (transportDeviceMemAddr_ != 0) {
         ZeroCopyTransportHeader *header =
             reinterpret_cast<ZeroCopyTransportHeader *>(transportDeviceMemAddr_);
+        HCCL_INFO("[RefreshTransportsResForRank] ZeroCopy entry addr[0x%llx] rankSize[%u] lookingForRankId[%u] newTag[%s] group[%s]",
+            transportDeviceMemAddr_, header->rankSize, rankId, newTag.c_str(), identifier_.c_str());
         // 线性遍历紧凑数组，查找匹配的 rankId
         HcclRankRelationResV2 *rankRelationResPtr = nullptr;
         for (u32 i = 0; i < header->rankSize; i++) {
