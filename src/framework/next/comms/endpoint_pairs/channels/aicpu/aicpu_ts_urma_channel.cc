@@ -119,13 +119,13 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     switch (protocol) {
         case Hccl::LinkProtocol::UB_TP:
             EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr, rmtAddr_, opMode, devUsed),
+                ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
                 return HCCL_E_PTR
             );
             break;
         case Hccl::LinkProtocol::UB_CTP:
             EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr , rmtAddr_, opMode, devUsed),
+                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr , rmtAddr, opMode, devUsed),
                 return HCCL_E_PTR
             );
             break;
