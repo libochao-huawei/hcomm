@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <numeric>
 #include <unordered_set>
+#include <cstdint>
 #include <sys/time.h>
 #include "externalinput_pub.h"
 #include "env_config.h"
@@ -64,6 +65,7 @@ constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 namespace hccl
 {
     static std::mutex g_hcomInitMutex;
+    static std::atomic<uint64_t> g_symmetricMemoryWinId{0};
     static std::atomic<u32> g_enableBackupLinkCommCount{0}; // 开启借轨的通信域计数
     constexpr u32 MEMORY_CAPACITY = 256 * 1024;
     constexpr u32 WAIT_PREPARE_SLEEP_TIME = 5000;
@@ -74,6 +76,8 @@ namespace hccl
     constexpr u32 ALLTOALL_INFO_MATRIX_SIZE = 4;
     constexpr u32 AICPU_RETRY_LINKROCE_DEFAULT = 0;
     constexpr u32 AICPU_RETRY_LINKROCE_BACKUP = 1;
+    constexpr u32 SYMMETRIC_MEMORY_ROCE_TC_DEFAULT = 0xFFFFFFFFu;
+    constexpr u32 SYMMETRIC_MEMORY_ROCE_SL_DEFAULT = 0xFFFFFFFFu;
     constexpr u32 SINGLE_PROCESS_MIN_PORT = 1024;
     constexpr u32 SINGLE_PROCESS_MAX_PORT = 65535;
     constexpr u32 TYPE_USER_MEM = 1;
@@ -9313,7 +9317,7 @@ namespace hccl
             HCCL_DEBUG("[InitSymmetricMemory] Cross-SuperNode not support symmetric memory");
             return HCCL_SUCCESS;
         }
-        if (deviceType_ != DevType::DEV_TYPE_910_93) {
+        if (deviceType_ != DevType::DEV_TYPE_910_93 && deviceType_ != DevType::DEV_TYPE_950) {
             HCCL_DEBUG("[%s] deviceType:%d not support symmetric memory", __func__, deviceType_);
             return HCCL_SUCCESS;
         }
@@ -9322,6 +9326,153 @@ namespace hccl
         HCCL_RUN_INFO("InitSymmetricMemory, comm identifier[%s], userRank[%u], userRankSize[%u], stride[%llu], devicePhyId[%u].",
             identifier_.c_str(), realUserRank_, userRankSize_, stride, devicePhyId_);
         
+        if (deviceType_ == DevType::DEV_TYPE_950) {
+            symmetricMemory_ = std::make_unique<SymmetricMemory>(realUserRank_, userRankSize_, stride,
+                SymmetricMemoryMode::CHANNEL);
+            CHK_SMART_PTR_NULL(symmetricMemory_);
+
+            symmetricMemory_->SetChannelCallbacks(
+                [this](void* ptr, size_t size, SymmetricChannelResource &resource) -> HcclResult {
+                    CHK_PTR_NULL(ptr);
+                    CHK_PRT_RET(size == 0,
+                        HCCL_ERROR("[InitSymmetricMemory] invalid symmetric memory size 0."), HCCL_E_PARA);
+                    CHK_SMART_PTR_NULL(myRank_);
+                    CommMems* commMems = myRank_->GetCommMems();
+                    CHK_PTR_NULL(commMems);
+
+                    CommMem commMem{};
+                    commMem.type = COMM_MEM_TYPE_DEVICE;
+                    commMem.addr = ptr;
+                    commMem.size = static_cast<uint64_t>(size);
+                    uint64_t winId = g_symmetricMemoryWinId.fetch_add(1, std::memory_order_relaxed);
+                    resource.memTag = identifier_ + "_sym_win_" + std::to_string(realUserRank_) + "_" +
+                        std::to_string(winId);
+                    HcclResult ret = commMems->CommRegMem(resource.memTag, commMem, &resource.memHandle);
+                    CHK_PRT_RET(ret != HCCL_SUCCESS,
+                        HCCL_ERROR("[InitSymmetricMemory] CommRegMem failed, tag[%s], ptr[%p], size[%zu], ret[%d].",
+                            resource.memTag.c_str(), ptr, size, ret), ret);
+
+                    HcclMemHandle memHandle = static_cast<HcclMemHandle>(resource.memHandle);
+                    std::vector<HcclChannelDesc> channelDescs;
+                    std::vector<SymmetricPeerChannelInfo> peerInfos;
+                    uint32_t *netLayers = nullptr;
+                    uint32_t netLayerNum = 0;
+                    ret = rankGraph_.GetNetLayers(&netLayers, &netLayerNum);
+                    if (ret != HCCL_SUCCESS) {
+                        HCCL_ERROR("[InitSymmetricMemory] GetNetLayers failed, ret[%d].", ret);
+                        (void)commMems->CommUnregMem(resource.memTag, resource.memHandle);
+                        return ret;
+                    }
+
+                    for (uint32_t layerIdx = 0; layerIdx < netLayerNum; ++layerIdx) {
+                        uint32_t *rankList = nullptr;
+                        uint32_t rankNum = 0;
+                        ret = rankGraph_.GetInstRanksByNetLayer(netLayers[layerIdx], &rankList, &rankNum);
+                        if (ret != HCCL_SUCCESS) {
+                            HCCL_ERROR("[InitSymmetricMemory] GetInstRanksByNetLayer failed, netLayer[%u], ret[%d].",
+                                netLayers[layerIdx], ret);
+                            (void)commMems->CommUnregMem(resource.memTag, resource.memHandle);
+                            return ret;
+                        }
+
+                        for (uint32_t rankIdx = 0; rankIdx < rankNum; ++rankIdx) {
+                            uint32_t peerRank = rankList[rankIdx];
+                            if (peerRank == realUserRank_) {
+                                continue;
+                            }
+
+                            CommLink *links = nullptr;
+                            uint32_t linkNum = 0;
+                            ret = rankGraph_.GetLinks(netLayers[layerIdx], realUserRank_, peerRank, &links, &linkNum);
+                            if (ret != HCCL_SUCCESS) {
+                                HCCL_ERROR("[InitSymmetricMemory] GetLinks failed, netLayer[%u], srcRank[%u], "
+                                    "dstRank[%u], ret[%d].", netLayers[layerIdx], realUserRank_, peerRank, ret);
+                                (void)commMems->CommUnregMem(resource.memTag, resource.memHandle);
+                                return ret;
+                            }
+                            if (linkNum == 0) {
+                                continue;
+                            }
+
+                            SymmetricPeerChannelInfo peerInfo{};
+                            peerInfo.peerRank = peerRank;
+                            peerInfo.channelOffset = static_cast<u32>(channelDescs.size());
+                            peerInfo.channelNum = linkNum;
+                            peerInfo.reserved = 0;
+
+                            for (uint32_t linkIdx = 0; linkIdx < linkNum; ++linkIdx) {
+                                HcclChannelDesc channelDesc;
+                                ret = HcclChannelDescInit(&channelDesc, 1);
+                                if (ret != HCCL_SUCCESS) {
+                                    HCCL_ERROR("[InitSymmetricMemory] HcclChannelDescInit failed, ret[%d].", ret);
+                                    (void)commMems->CommUnregMem(resource.memTag, resource.memHandle);
+                                    return ret;
+                                }
+                                channelDesc.remoteRank = peerRank;
+                                channelDesc.channelProtocol = links[linkIdx].linkAttr.linkProtocol;
+                                channelDesc.localEndpoint = links[linkIdx].srcEndpointDesc;
+                                channelDesc.remoteEndpoint = links[linkIdx].dstEndpointDesc;
+                                channelDesc.memHandles = &memHandle;
+                                channelDesc.memHandleNum = 1;
+                                if (channelDesc.channelProtocol == COMM_PROTOCOL_ROCE) {
+                                    auto& rdmaConfig = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
+                                    channelDesc.roceAttr.retryCnt = rdmaConfig.GetRdmaRetryCnt();
+                                    channelDesc.roceAttr.retryInterval = rdmaConfig.GetRdmaTimeOut();
+                                    channelDesc.roceAttr.tc =
+                                        (commConfig_.GetConfigTrafficClass() == SYMMETRIC_MEMORY_ROCE_TC_DEFAULT) ?
+                                        rdmaConfig.GetRdmaTrafficClass() : commConfig_.GetConfigTrafficClass();
+                                    channelDesc.roceAttr.sl =
+                                        (commConfig_.GetConfigServiceLevel() == SYMMETRIC_MEMORY_ROCE_SL_DEFAULT) ?
+                                        rdmaConfig.GetRdmaServerLevel() : commConfig_.GetConfigServiceLevel();
+                                    channelDesc.roceAttr.queueNum = rdmaConfig.GetRdmaQueueNum();
+                                }
+                                channelDescs.emplace_back(channelDesc);
+                            }
+                            peerInfos.emplace_back(peerInfo);
+                        }
+                    }
+
+                    if (channelDescs.empty()) {
+                        HCCL_ERROR("[InitSymmetricMemory] no symmetric memory channel desc generated, rank[%u].",
+                            realUserRank_);
+                        (void)commMems->CommUnregMem(resource.memTag, resource.memHandle);
+                        return HCCL_E_NOT_FOUND;
+                    }
+
+                    resource.channelHandles.resize(channelDescs.size());
+                    const std::string commTag = identifier_ + "_sym_win";
+                    ret = myRank_->CreateChannels(COMM_ENGINE_AICPU_TS, commTag, channelDescs.data(),
+                        static_cast<uint32_t>(channelDescs.size()), resource.channelHandles.data());
+                    if (ret != HCCL_SUCCESS) {
+                        HCCL_ERROR("[InitSymmetricMemory] Create symmetric channels failed, group[%s], "
+                            "channelNum[%zu], ret[%d].", commTag.c_str(), channelDescs.size(), ret);
+                        (void)commMems->CommUnregMem(resource.memTag, resource.memHandle);
+                        return ret;
+                    }
+
+                    resource.peerChannels = std::move(peerInfos);
+                    HCCL_RUN_INFO("[InitSymmetricMemory] create symmetric channels success, group[%s], "
+                        "channelNum[%zu], peerInfoNum[%zu].", commTag.c_str(), resource.channelHandles.size(),
+                        resource.peerChannels.size());
+                    return HCCL_SUCCESS;
+                },
+                [this](const SymmetricChannelResource &resource) {
+                    if (resource.memHandle == nullptr || resource.memTag.empty() || myRank_ == nullptr) {
+                        return;
+                    }
+                    CommMems* commMems = myRank_->GetCommMems();
+                    if (commMems == nullptr) {
+                        return;
+                    }
+                    HcclResult ret = commMems->CommUnregMem(resource.memTag, resource.memHandle);
+                    if (ret != HCCL_SUCCESS) {
+                        HCCL_WARNING("[InitSymmetricMemory] CommUnregMem failed, tag[%s], memHandle[%p], ret[%d].",
+                            resource.memTag.c_str(), resource.memHandle, ret);
+                    }
+                });
+            return HCCL_SUCCESS;
+        }
+
         symmetricMemoryAgent_ = std::make_shared<SymmetricMemoryAgent>(socketManager_, devicePhyId_,
             deviceLogicId_, localVnicIp_, rankInfoList_, realUserRank_, useSuperPodMode_, identifier_);
         CHK_SMART_PTR_NULL(symmetricMemoryAgent_);
@@ -9336,7 +9487,7 @@ namespace hccl
         CHK_PRT_RET(superPodNum_ > 1, 
             HCCL_ERROR("[RegisterWindow] Cross-SuperNode not support symmetric memory"), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93, 
+        CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93 && deviceType_ != DevType::DEV_TYPE_950,
             HCCL_ERROR("[%s] deviceType:%d not support symmetric memory", __func__, deviceType_), HCCL_E_NOT_SUPPORT);
 
         CHK_SMART_PTR_NULL(symmetricMemory_);
