@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 #include "my_rank.h"
 #include "rank_graph.h"
 #include "comm_config_pub.h"
@@ -22,9 +23,12 @@
 #include "hcclCommDfx.h"
 #include "rank_graph_v2.h"
 #include "error_message_v2.h"
-#include "include/hccl_communicator.h"
+#include "hccl/hccl_res.h"
+#include "../../../../legacy/include/hccl_communicator.h"
 
 namespace hccl {
+class SymmetricMemory;
+struct SymmetricMemoryResource;
 /**
  * @note 职责：集合通信通信域上下文管理，包括RankGraph和本rank信息资源等内容。
  * 当前需包含原有的91092/91093的通信域、原有的91095的通信域void
@@ -103,6 +107,11 @@ public:
     HcclResult Suspend();
     HcclResult Clean();
     HcclResult Resume();
+    HcclResult RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle);
+    HcclResult DeregisterWindow(HcclCommSymWindow winHandle);
+    HcclResult GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
+    HcclResult GetSymmetricMemHandles(std::vector<HcclMemHandle> &memHandles) const;
+    HcclResult UpdateSymmetricRemoteMem(uint32_t remoteRank, const CommMem *remoteMems, char **memTags, uint32_t memNum);
 
 private:
     HcclResult ValidateConfig(const HcclCommConfig *config);
@@ -111,6 +120,9 @@ private:
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
     HcclResult GetRankIpPortMap();
+    HcclResult InitSymmetricMemory(HcclCommConfig *config);
+    HcclResult RegisterSymmetricMemoryResource(void* ptr, size_t size, SymmetricMemoryResource &resource);
+    void UnregisterSymmetricMemoryResource(const SymmetricMemoryResource &resource);
 
     /* 
      * CollComm初始化方式：
@@ -155,6 +167,7 @@ private:
     Hccl::RankIpPortMapPtr rankIpPortMap_;
 
     CollCommInitMode initMode_{CollCommInitMode::fullMode};  // 初始化模式
+    std::unique_ptr<SymmetricMemory> symmetricMemory_{nullptr};
 };
 }  // namespace hccl
 
