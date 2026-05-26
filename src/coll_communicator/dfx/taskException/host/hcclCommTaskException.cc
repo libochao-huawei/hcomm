@@ -18,6 +18,7 @@
 #include "task_exception_handler.h"
 #include "ccuTaskException.h"
 #include "hccl_types.h"
+#include "hccl_communicator.h"
 
 namespace hcomm {
 

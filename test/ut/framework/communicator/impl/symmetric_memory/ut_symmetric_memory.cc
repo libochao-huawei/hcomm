@@ -1243,3 +1243,152 @@ TEST_F(SymmetricMemoryTest, ut_DeRegisterSymmetricMem_When_FreePhysical_Is_Faile
     ret = symmetricMemory.DeregisterSymmetricMem(win);
     EXPECT_EQ(ret, HCCL_E_DRV);
 }
+
+static void BuildUrmaWindowForRemoteMemTest(SymmetricMemory &symmetricMemory, void *devWin, const std::string &memTag,
+    void *remoteMemsDev, size_t userSize)
+{
+    std::shared_ptr<SymmetricWindow> win = std::make_shared<SymmetricWindow>();
+    win->userVa = reinterpret_cast<void*>(0x1000000);
+    win->userSize = userSize;
+    win->baseVa = reinterpret_cast<void*>(0x2000000);
+    win->alignedHeapOffset = 0;
+    win->alignedSize = userSize;
+    win->localRank = 0;
+    win->rankSize = 2;
+    win->stride = 2 * TWO_M;
+    win->paHandle = nullptr;
+    win->mode = SymmetricMemoryMode::URMA;
+    win->remoteMems = reinterpret_cast<CommMem*>(remoteMemsDev);
+    win->remoteMemNum = 2;
+    win->devWin = devWin;
+
+    SymmetricMemoryResource resource;
+    resource.memTag = memTag;
+    resource.memHandle = reinterpret_cast<void*>(0x4000000);
+
+    std::vector<CommMem> remoteMems(2);
+    for (CommMem &remoteMem : remoteMems) {
+        remoteMem.type = COMM_MEM_TYPE_INVALID;
+        remoteMem.addr = nullptr;
+        remoteMem.size = 0;
+    }
+
+    symmetricMemory.windowMap_[devWin] = win;
+    symmetricMemory.memoryResourceMap_[devWin] = resource;
+    symmetricMemory.remoteMemMap_[devWin] = remoteMems;
+}
+
+static void ClearUrmaWindowForRemoteMemTest(SymmetricMemory &symmetricMemory)
+{
+    symmetricMemory.windowMap_.clear();
+    symmetricMemory.sortedWindows_.clear();
+    symmetricMemory.memoryResourceMap_.clear();
+    symmetricMemory.remoteMemMap_.clear();
+}
+
+TEST_F(SymmetricMemoryTest, ut_GetRegisteredMemHandles_When_HasSymmetricResources_Expect_ReturnHandles)
+{
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, SymmetricMemoryMode::URMA);
+    CommMem remoteMemsDev[2] = {};
+    void *devWin = reinterpret_cast<void*>(0x3000000);
+    std::string memTag = std::string(HCCL_SYMMETRIC_MEMORY_TAG_PREFIX) + "comm_addr_1_size_2097152";
+    BuildUrmaWindowForRemoteMemTest(symmetricMemory, devWin, memTag, remoteMemsDev, TWO_M);
+
+    std::vector<HcclMemHandle> memHandles;
+    HcclResult ret = symmetricMemory.GetRegisteredMemHandles(memHandles);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ASSERT_EQ(memHandles.size(), 1U);
+    EXPECT_EQ(memHandles[0], reinterpret_cast<HcclMemHandle>(0x4000000));
+
+    ClearUrmaWindowForRemoteMemTest(symmetricMemory);
+}
+
+TEST_F(SymmetricMemoryTest, ut_UpdateRemoteMem_When_TagMatched_Expect_UpdateRemoteRankMem)
+{
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, SymmetricMemoryMode::URMA);
+    CommMem remoteMemsDev[2] = {};
+    void *devWin = reinterpret_cast<void*>(0x3000000);
+    std::string memTag = std::string(HCCL_SYMMETRIC_MEMORY_TAG_PREFIX) + "comm_addr_1_size_2097152";
+    BuildUrmaWindowForRemoteMemTest(symmetricMemory, devWin, memTag, remoteMemsDev, TWO_M);
+
+    CommMem remoteMems[1] = {};
+    remoteMems[0].type = COMM_MEM_TYPE_DEVICE;
+    remoteMems[0].addr = reinterpret_cast<void*>(0x5000000);
+    remoteMems[0].size = TWO_M;
+    char tagBuffer[HCCL_RES_TAG_MAX_LEN] = {};
+    ASSERT_EQ(strncpy_s(tagBuffer, sizeof(tagBuffer), memTag.c_str(), memTag.size()), EOK);
+    char *memTags[1] = {tagBuffer};
+
+    MOCKER_CPP(hrtMemSyncCopy)
+        .expects(once())
+        .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = symmetricMemory.UpdateRemoteMem(1, remoteMems, memTags, 1);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(symmetricMemory.remoteMemMap_[devWin][1].addr, remoteMems[0].addr);
+    EXPECT_EQ(symmetricMemory.remoteMemMap_[devWin][1].size, remoteMems[0].size);
+    EXPECT_EQ(symmetricMemory.remoteMemMap_[devWin][1].type, remoteMems[0].type);
+
+    ClearUrmaWindowForRemoteMemTest(symmetricMemory);
+}
+
+TEST_F(SymmetricMemoryTest, ut_UpdateRemoteMem_When_SymmetricTagMissing_Expect_ReturnHCCL_E_PARA)
+{
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, SymmetricMemoryMode::URMA);
+    CommMem remoteMemsDev[2] = {};
+    void *devWin = reinterpret_cast<void*>(0x3000000);
+    std::string memTag = std::string(HCCL_SYMMETRIC_MEMORY_TAG_PREFIX) + "comm_addr_1_size_2097152";
+    BuildUrmaWindowForRemoteMemTest(symmetricMemory, devWin, memTag, remoteMemsDev, TWO_M);
+
+    CommMem remoteMems[1] = {};
+    remoteMems[0].type = COMM_MEM_TYPE_DEVICE;
+    remoteMems[0].addr = reinterpret_cast<void*>(0x5000000);
+    remoteMems[0].size = TWO_M;
+    char otherTag[] = "user_mem";
+    char *memTags[1] = {otherTag};
+
+    HcclResult ret = symmetricMemory.UpdateRemoteMem(1, remoteMems, memTags, 1);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ClearUrmaWindowForRemoteMemTest(symmetricMemory);
+}
+
+TEST_F(SymmetricMemoryTest, ut_UpdateRemoteMem_When_RemoteSizeMismatch_Expect_ReturnHCCL_E_PARA)
+{
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, SymmetricMemoryMode::URMA);
+    CommMem remoteMemsDev[2] = {};
+    void *devWin = reinterpret_cast<void*>(0x3000000);
+    std::string memTag = std::string(HCCL_SYMMETRIC_MEMORY_TAG_PREFIX) + "comm_addr_1_size_2097152";
+    BuildUrmaWindowForRemoteMemTest(symmetricMemory, devWin, memTag, remoteMemsDev, TWO_M);
+
+    CommMem remoteMems[1] = {};
+    remoteMems[0].type = COMM_MEM_TYPE_DEVICE;
+    remoteMems[0].addr = reinterpret_cast<void*>(0x5000000);
+    remoteMems[0].size = TWO_M / 2;
+    char tagBuffer[HCCL_RES_TAG_MAX_LEN] = {};
+    ASSERT_EQ(strncpy_s(tagBuffer, sizeof(tagBuffer), memTag.c_str(), memTag.size()), EOK);
+    char *memTags[1] = {tagBuffer};
+
+    HcclResult ret = symmetricMemory.UpdateRemoteMem(1, remoteMems, memTags, 1);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ClearUrmaWindowForRemoteMemTest(symmetricMemory);
+}
+
+TEST_F(SymmetricMemoryTest, ut_UpdateRemoteMem_When_RemoteRankInvalid_Expect_ReturnHCCL_E_PARA)
+{
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, SymmetricMemoryMode::URMA);
+    CommMem remoteMemsDev[2] = {};
+    void *devWin = reinterpret_cast<void*>(0x3000000);
+    std::string memTag = std::string(HCCL_SYMMETRIC_MEMORY_TAG_PREFIX) + "comm_addr_1_size_2097152";
+    BuildUrmaWindowForRemoteMemTest(symmetricMemory, devWin, memTag, remoteMemsDev, TWO_M);
+
+    CommMem remoteMems[1] = {};
+    char tagBuffer[HCCL_RES_TAG_MAX_LEN] = {};
+    ASSERT_EQ(strncpy_s(tagBuffer, sizeof(tagBuffer), memTag.c_str(), memTag.size()), EOK);
+    char *memTags[1] = {tagBuffer};
+
+    HcclResult ret = symmetricMemory.UpdateRemoteMem(2, remoteMems, memTags, 1);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ClearUrmaWindowForRemoteMemTest(symmetricMemory);
+}
