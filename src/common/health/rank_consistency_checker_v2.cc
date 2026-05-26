@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
 #include "rank_consistency_checker_v2.h"
+#include "adapter_pub.h"
 #include "calc_crc.h"
 #include "adapter_error_manager_pub.h"
 
@@ -16,10 +16,19 @@ namespace hccl {
 
 RankConsistencyCheckerV2::~RankConsistencyCheckerV2() = default;
 
-RankConsistencyCheckerV2& RankConsistencyCheckerV2::GetInstance()
+RankConsistencyCheckerV2& RankConsistencyCheckerV2::GetInstance(s32 deviceLogicId)
 {
-    static RankConsistencyCheckerV2 instance;
-    return instance;
+    static RankConsistencyCheckerV2 instance[MAX_MODULE_DEVICE_NUM];
+    if (deviceLogicId == HOST_DEVICE_ID) {
+        HCCL_INFO("[GetInstance] deviceLogicId[-1] is HOST_DEVICE_ID");
+        return instance[0];
+    }
+    hrtGetDeviceRefresh(&deviceLogicId);
+    HCCL_INFO("[GetInstance] get deviceLogicId[%d]", deviceLogicId);
+    CHK_PRT_RET((static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM || deviceLogicId < 0),
+        HCCL_WARNING("[R]deviceLogicId[%d] is invalid", deviceLogicId), instance[0]);
+
+    return instance[deviceLogicId];
 }
 
 HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
@@ -139,6 +148,7 @@ HcclResult RankConsistencyCheckerV2::CompareCheckFrameV2(
     const CheckFrameV2 &local, const CheckFrameV2 &remote)
 {
     bool isDiff = false;
+    // dfx日志处理在下面函数的内部，外部不处理日志
     CompareEnvV2(local, remote, isDiff);
     CompareRankTableV2(local, remote, isDiff);
     CompareSubCommV2(local, remote, isDiff);
