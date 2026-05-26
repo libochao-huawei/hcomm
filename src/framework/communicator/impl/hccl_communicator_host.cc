@@ -7489,6 +7489,7 @@ namespace hccl
         opTilingData->needIncreLink = opParam.needIncreLink;
         // ACL Graph + Zero Copy 模式下，填充 transport 序列化数据的 device 内存地址
         // ZeroCopy 的 transportDeviceMemMap_ 使用 newTag（带 _Capture）作为 key
+        HCCL_INFO("[%s] isCapture[%d] tag[%s]", __func__, opParam.isCapture, opParam.tag.c_str());
         if (opParam.isCapture) {
             auto it = transportDeviceMemMap_.find(opParam.tag + "_Capture");
             if (it != transportDeviceMemMap_.end()) {
@@ -7497,6 +7498,9 @@ namespace hccl
                 HCCL_INFO("[%s] Set transportDeviceMemAddr[0x%llx] size[%llu] tag[%s]",
                     __func__, opTilingData->transportDeviceMemAddr,
                     opTilingData->transportDeviceMemSize, opParam.tag.c_str());
+            } else {
+                HCCL_INFO("[%s] transportDeviceMemMap_ not found for tag[%s]_Capture",
+                    __func__, opParam.tag.c_str());
             }
         }
         // 有没有存在对应的Notify
