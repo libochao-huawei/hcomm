@@ -251,7 +251,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/include/urma/
 
     ${CANN_3RD_LIB_PATH}/json/include/
-    ${CANN_3RD_LIB_PATH}/gtest/include/
+    
     ${CANN_3RD_LIB_PATH}/mockcpp/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
     ${CANN_3RD_LIB_PATH}/boost/

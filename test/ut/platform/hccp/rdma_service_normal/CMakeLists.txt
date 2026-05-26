@@ -97,7 +97,7 @@ target_include_directories(rs_ut_normal PRIVATE
     ${RDMA_CORE_INCLUDE_DIR}
     ${CANN_3RD_LIB_PATH}/hcomm_utils/host/include/tls_adp
     ${CANN_3RD_LIB_PATH}/json/include/
-    ${CANN_3RD_LIB_PATH}/gtest/include/
+    
     ${CANN_3RD_LIB_PATH}/mockcpp/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
     ${CANN_3RD_LIB_PATH}/boost/

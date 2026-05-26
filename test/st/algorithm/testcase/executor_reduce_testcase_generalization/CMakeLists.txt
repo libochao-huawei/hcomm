@@ -13,7 +13,7 @@ target_include_directories(executor_reduce_hccl_test PRIVATE
     ${HCOMM_LEGACY_INCLUDE_LIST}
 
     ${THIRD_PARTY_PATH}/json/include
-    ${THIRD_PARTY_PATH}/gtest/include
+    
     ${THIRD_PARTY_PATH}/mockcpp/include
 
     ${ASCEND_CANN_INCLUDE_LIST}
