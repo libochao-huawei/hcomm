@@ -741,7 +741,7 @@ namespace hccl
             RPT_ENV_ERR(true,
                         "EI0014",
                         std::vector<std::string>({ "value", "variable" ,"expect" }),
-                        std::vector<std::string>({"[" + std::to_string(devNum) + "]", "[devNum]", "to be  1, 2 or 4, or a multiple of 8"}));
+                        std::vector<std::string>({std::to_string(devNum), "devNum", "to be  1, 2 or 4, or a multiple of 8"}));
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] devNum[%u] devNum must be divisible by 8, or equal to 1, 2 or 4",
                     LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
                     HCCL_ERROR_CODE(HCCL_E_PARA), devNum);

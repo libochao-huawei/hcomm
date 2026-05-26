@@ -21,7 +21,7 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Config_Error_Invalid_Environment_Variable",
       "ErrCode": "EI0001",
-      "ErrMessage": "Value %s for environment variable [%s] is invalid. Expected value: %s.",
+      "ErrMessage": "Value %s for environment variable %s is invalid. Expected value: %s.",
       "Arglist": "value,env,expect",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -32,11 +32,11 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_Timeout",
       "ErrCode": "EI0002",
-      "ErrMessage": "An timeout occurs when the Notify register waits for execution. Waiting peer end: %s; task information: %s; communication operator information: %s; communicator: %s.",
+      "ErrMessage": "An timeout occurs when the Notify register waits for execution. Waiting peer rank: %s; task information: %s; communication operator information: %s; communicator: %s.",
       "Arglist": "remote_rankid, base_information, task_information, group_rank_content",
       "suggestion": {
-        "Possible Cause": "1. An exception occurs during the execution on some NPUs in the cluster. As a result, collective communication operation failed.2. The execution speed on some NPU in the cluster is too slow to complete a communication operation within the timeout interval. (The default timeout interval is 1800s, You can set the interval by using HCCL_EXEC_TIMEOUT.)3. The number of training samples of each NPU is inconsistent.4. Packet loss or other connectivity problems occur on the communication link.",
-        "Solution": "1. If this error is reported on part of these ranks, check other ranks to see whether other errors have been reported earlier.2. If this error is reported for all ranks, check whether the error reporting time is consistent (the maximum difference must not exceed 1800s). If not, locate the cause or set the HCCL_EXEC_TIMEOUT environment variable to a larger value. 3. Ensure that the number of training samples of each NPU is consistent. 4. Check whether the completion queue element (CQE) of the error exists in the plog(grep -rn 'error cqe'). If so, check the network connection status. For details about the troubleshooting method, search for the keyword \"EI0002\" on https://www.hiascend.com/en/document/."
+        "Possible Cause": "1. An exception occurs during the execution on some NPUs in the cluster. As a result, collective communication operation failed.\r\n2. The execution speed on some NPU in the cluster is too slow to complete a communication operation within the timeout interval. (The default timeout interval is 1800s, You can set the interval by using HCCL_EXEC_TIMEOUT.)\r\n3. The number of training samples of each NPU is inconsistent.\r\n4. Packet loss or other connectivity problems occur on the communication link.",
+        "Solution": "1. If this error is reported on only some ranks, check other ranks for earlier errors and investigate the first reported error.\r\n2. If this error is reported on all ranks, verify that the collective operation type, data count and data type are consistent across all ranks.\r\n3. Check whether the error reporting time difference between ranks exceeds HCCL_EXEC_TIMEOUT (1800s by default). If so, investigate the execution gap between ranks or increase HCCL_EXEC_TIMEOUT if necessary.\r\n4. Check for CQE errors in the plog (grep -rn 'error cqe'). If so, check the network connection status.\r\n5. For detailed troubleshooting guidance, refer to https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/900/API/hcclug/hcclug_000059.html."
       }
     },
     {
@@ -65,7 +65,7 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors ",
       "errTitle": "Invalid_Argument",
       "ErrCode": "EI0005",
-      "ErrMessage": "The arguments for collective communication are inconsistent between ranks, ccl_op %s, group %s, parameter %s, local end %s, remote end %s.",
+      "ErrMessage": "The arguments for collective communication are inconsistent between ranks, operator %s, group %s, parameter %s, local rank %s, remote rank %s.",
       "Arglist": "ccl_op, group, para_name,local_para,remote_para",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -113,7 +113,7 @@ const std::string hcomm_g_msg = R"(
       "Arglist": "device_id,reason",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "Use the following hccn_tool commands to check whether the port link is down. (The scope of i represents the number of NPUs of each node. 8 is used as an example.) 1. for i in {0..7}; do hccn_tool -i $i -optical -g; done | grep present: Check whether the optical module is in position. 2. for i in {0..7}; do hccn_tool -i $i -ip -g; done. Check whether the IP address is configured. 3. for i in {0..7}; do hccn_tool -i $i -lldp -g: Check whether the switch is connected."
+        "Solution": "Use the following hccn_tool commands to check whether the port link is down. (The scope of i represents the number of NPUs of each node. 8 is used as an example.) \r\n 1. for i in {0..7}; do hccn_tool -i $i -optical -g; done | grep present: Check whether the optical module is in position. \r\n 2. for i in {0..7}; do hccn_tool -i $i -ip -g; done. Check whether the IP address is configured. \r\n 3. for i in {0..7}; do hccn_tool -i $i -lldp -g: Check whether the switch is connected."
       }
     },
     {
@@ -145,8 +145,8 @@ const std::string hcomm_g_msg = R"(
       "ErrMessage": "SDMA memory copy task exception occurred. Remote rank: [%s]. Base information: [%s]. Task information: [%s]. Communicator information: [%s].",
       "Arglist": "remote_rankid, base_information, task_information, group_rank_content",
       "suggestion": {
-        "Possible Cause": "1. Network connection exception occurred during the SDMA task execution. 2. The peer process exits abnormally. 3. The input or output memory address is not allocated, the actual allocated size is smaller than the input data size, or the memory is freed before the operator execution is complete.",
-        "Solution": "1. Check whether the network link is abnormal during the execution. 2. Check whether a process in the cluster exits before an error is reported. If yes, locate the cause of the process exit. 3. Check whether the size of the input/output memory passed to the communication operator meets the expectation, and whether the input/output memory or communicator is freed or destroyed before the operator execution is complete."
+        "Possible Cause": "1. Network connection exception occurred during the SDMA task execution. \r\n2. The peer process exits abnormally. \r\n3. The input or output memory address is not allocated, the actual allocated size is smaller than the input data size, or the memory is freed before the operator execution is complete.",
+        "Solution": "1. Check whether the network link is abnormal during the execution. \r\n2. Check whether a process in the cluster exits before an error is reported. If yes, locate the cause of the process exit. \r\n3. Check whether the input/output memory size is correct and whether the memory or communicator is released prematurely."
       }
     },
     {
