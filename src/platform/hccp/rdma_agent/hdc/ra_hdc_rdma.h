@@ -189,7 +189,7 @@ union OpTypicalCqCreateData {
         unsigned int phyId;
         unsigned int rdevIndex;
         unsigned int cqDepth;
-        unsigned int rsvd;
+        unsigned int supportLite;
     } txData;
 
     struct {

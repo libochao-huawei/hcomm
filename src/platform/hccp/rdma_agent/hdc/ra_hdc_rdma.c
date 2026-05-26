@@ -376,11 +376,13 @@ int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, 
 {
     union OpTypicalCqCreateData cqCreateData = {0};
     unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct rdma_lite_cq *liteCq = NULL;
     int ret;
 
     cqCreateData.txData.phyId = phyId;
     cqCreateData.txData.rdevIndex = rdmaHandle->rdevIndex;
     cqCreateData.txData.cqDepth = cqDepth;
+    cqCreateData.txData.supportLite = rdmaHandle->supportLite;
 
     ret = RaHdcProcessMsg(RA_RS_TYPICAL_CQ_CREATE, phyId, (char *)&cqCreateData,
         sizeof(union OpTypicalCqCreateData));
@@ -391,14 +393,13 @@ int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, 
 
     *cqn = cqCreateData.rxData.cqn;
 
-    if (cqCreateData.rxData.hasDeviceAttr) {
-        struct rdma_lite_cq *liteCq = NULL;
-        ret = RaHdcLiteCqCreate(rdmaHandle, &cqCreateData.rxData.deviceCqAttr, &liteCq);
-        if (ret) {
-            hccp_err("[create][ra_hdc_typical_cq]RaHdcLiteCqCreate failed, ret(%d) cqn(%u)", ret, *cqn);
-            return ret;
-        }
+    ret = RaHdcLiteCqCreate(rdmaHandle, &cqCreateData.rxData.deviceCqAttr, &liteCq);
+    if (ret) {
+        hccp_err("[create][ra_hdc_typical_cq]RaHdcLiteCqCreate failed, ret(%d) cqn(%u)", ret, *cqn);
+        return ret;
+    }
 
+    if (liteCq != NULL) {
         RA_PTHREAD_MUTEX_LOCK(&rdmaHandle->rdevMutex);
         if (rdmaHandle->cqCount < RA_MAX_CQ_NUM) {
             rdmaHandle->cqEntries[rdmaHandle->cqCount].cqn = *cqn;

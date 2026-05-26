@@ -525,7 +525,11 @@ STATIC int RaRsTypicalCqCreate(char *inBuf, char *outBuf, int *outLen, int *opRe
     HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTypicalCqCreateData), sizeof(struct MsgHead), rcvBufLen,
         opResult);
 
-    *opResult = gRaRsOps.cqCreate(createData->txData.phyId, createData->txData.rdevIndex,
+    unsigned int phyId = createData->txData.phyId;
+    unsigned int rdevIndex = createData->txData.rdevIndex;
+    unsigned int supportLite = createData->txData.supportLite;
+
+    *opResult = gRaRsOps.cqCreate(phyId, rdevIndex,
         createData->txData.cqDepth, &cqn);
     if (*opResult != 0) {
         hccp_err("cq create failed ret[%d].", *opResult);
@@ -535,8 +539,8 @@ STATIC int RaRsTypicalCqCreate(char *inBuf, char *outBuf, int *outLen, int *opRe
     createData = (union OpTypicalCqCreateData *)(outBuf + sizeof(struct MsgHead));
     createData->rxData.cqn = cqn;
 
-    if (gRaRsOps.getTypicalCqAttr != NULL) {
-        *opResult = gRaRsOps.getTypicalCqAttr(createData->txData.phyId, createData->txData.rdevIndex,
+    if (supportLite && gRaRsOps.getTypicalCqAttr != NULL) {
+        *opResult = gRaRsOps.getTypicalCqAttr(phyId, rdevIndex,
             cqn, &createData->rxData.deviceCqAttr);
         createData->rxData.hasDeviceAttr = (*opResult == 0) ? 1 : 0;
     } else {

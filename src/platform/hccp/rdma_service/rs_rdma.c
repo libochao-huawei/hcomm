@@ -1799,6 +1799,13 @@ RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevInd
     {
         struct rdma_lite_device_cq_attr deviceCqAttr;
         struct rdma_lite_device_cq_init_attr initAttr = {0};
+
+        if (rdevCb->supportLite) {
+            initAttr.cq_type = RA_RS_NOR_QP_MODE;
+            initAttr.lite_op_supported = rdevCb->supportLite;
+            initAttr.mem_idx = 0;
+        }
+
         ibCq = RsIbvExpCreateCq(rdevCb->ibCtx, (int)cqDepth,
             NULL, NULL, 0, &initAttr, &deviceCqAttr);
         if (ibCq != NULL) {
@@ -1807,7 +1814,8 @@ RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevInd
                 rdevCb->typicalCqTable[rdevCb->typicalCqCnt].cqn = *cqn;
                 rdevCb->typicalCqTable[rdevCb->typicalCqCnt].ibCq = ibCq;
                 rdevCb->typicalCqTable[rdevCb->typicalCqCnt].deviceCqAttr = deviceCqAttr;
-                rdevCb->typicalCqTable[rdevCb->typicalCqCnt].hasDeviceAttr = true;
+                rdevCb->typicalCqTable[rdevCb->typicalCqCnt].hasDeviceAttr =
+                    (rdevCb->supportLite != 0);
                 rdevCb->typicalCqCnt++;
             }
         }
