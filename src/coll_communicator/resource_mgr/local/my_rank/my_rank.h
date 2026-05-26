@@ -19,7 +19,6 @@
 #include "common.h"
 #include "comm_mems/comm_mems.h"
 #include "engine_ctxs.h"
-#include "endpoint_mgr.h"
 #include "../../../dfx/ns_recovery/ns_recovery.h"
 #include "hdc_pub.h"
 #include "rank_graph.h"
