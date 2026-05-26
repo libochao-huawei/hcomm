@@ -55,7 +55,6 @@ public:
     void GetVendorOps();
 
     // ========== 数据面：RMA 数据传输 ==========
-    // TODO: 其他数据面接口
     void Write(const RmaBufSliceLite    &loc,
                const RmtRmaBufSliceLite &rmt,
                uint64_t                 &dbAddr,
@@ -77,7 +76,7 @@ private:
     RdmaCqContextLite   cqContext_{};
 
     // ========== 厂商 Ops（工厂模式，负责具体厂商 ops 创建）==========
-    std::unique_ptr<RdmaBaseOps> vendorOps_ = nullptr;
+    std::unique_ptr<RdmaBaseOps> rdmaOps_ = nullptr;
 };
 
 } // namespace Hccl
