@@ -24,6 +24,7 @@ static constexpr u32 MAX_CRC_LEN_V2 = 16; // A5最大CRC个数
 struct CrcEntryV2 {
     std::string name;  // A5环境变量名（如"HCCL_BUFFSIZE"）或子通信域参数名（如"sub_comm_rankNum"）或ranktable名
     u32 crc = 0;
+    CrcEntryV2(std::string n, u32 c) : name(n), crc(c) {}
 };
 
 struct CheckFrameV2 {
