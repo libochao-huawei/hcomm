@@ -1087,7 +1087,6 @@ HcclResult TransportBase::BatchTransferAsync(
     static_cast<void>(transferDescs);
     static_cast<void>(descNum);
     static_cast<void>(stream);
-    HCCL_ERROR("[TransportBase][BatchTransferAsync]Does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 }
 

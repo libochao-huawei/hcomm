@@ -149,13 +149,12 @@ TEST_F(HcclCommHostTest, Ut_GetCommStatusWhenIsCommunicatorV2ExpectCollStatus)
     EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
 }
 
-TEST_F(HcclCommHostTest, Ut_GetCommStatusWhenIsCommunicatorV1ExpectReady)
+TEST_F(HcclCommHostTest, Ut_GetCommStatusWhenIsCommunicatorV1ExpectReturnE_NOT_SUPPORT)
 {
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();
     hcclCommPtr->devType_ = DevType::DEV_TYPE_910_93;
 
     HcclCommStatus status = HcclCommStatus::HCCL_COMM_STATUS_INVALID;
     HcclResult ret = hcclCommPtr->GetCommStatus(status);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_READY);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 }

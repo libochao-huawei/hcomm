@@ -244,8 +244,6 @@ private:
     // 保存错误的节点
     std::queue<ClusterUIDType> errRankQueue_;
 
-    std::atomic<bool> linkRunningStatus_{false};
-
     ErrorCqeInfo cqeErrInfo_;
 };
 } // namespace hcomm

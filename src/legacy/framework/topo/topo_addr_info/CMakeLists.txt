@@ -47,12 +47,11 @@ target_include_directories(topoaddrinfo PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${HCOMM_DIR}/src/pub_inc
     ${HCOMM_DIR}/include
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
 )
 
 target_link_libraries(topoaddrinfo PRIVATE
+    $<BUILD_INTERFACE:ascend_hal_headers>
+    $<BUILD_INTERFACE:runtime_headers>
     dl
     c_sec
 )

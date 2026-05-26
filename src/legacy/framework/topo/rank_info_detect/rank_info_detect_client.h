@@ -31,7 +31,7 @@ public:
     }
     ~RankInfoDetectClient();
 
-    void Setup(RankTableInfo &rankTable);
+    void Setup(RankTableInfo &rankTable, u32 hostPort);
 
 private:
     u32                             devPhyId_{0};

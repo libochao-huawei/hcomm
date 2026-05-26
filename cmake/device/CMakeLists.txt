@@ -27,12 +27,18 @@ include(${HCOMM_DIR}/cmake/config.cmake)
 include(${HCOMM_DIR}/cmake/func.cmake)
 
 # 查找依赖包
+find_cann_package(acl_rt MODULE REQUIRED)
+find_cann_package(aicpu_sharder MODULE REQUIRED)
+find_cann_package(asc_devkit MODULE REQUIRED)
+find_cann_package(ascend_hal MODULE REQUIRED)
+find_cann_package(atrace MODULE REQUIRED)
+find_cann_package(error_manager MODULE REQUIRED)
+find_cann_package(metadef MODULE REQUIRED)
+find_cann_package(mmpa MODULE REQUIRED)
 find_cann_package(msprof MODULE REQUIRED)
+find_cann_package(runtime MODULE REQUIRED)
 find_cann_package(securec MODULE REQUIRED)
 find_cann_package(unified_dlog MODULE REQUIRED)
-find_cann_package(mmpa MODULE REQUIRED)
-find_cann_package(runtime MODULE REQUIRED)
-find_cann_package(error_manager MODULE REQUIRED)
 
 # third_party
 include(${HCOMM_DIR}/cmake/hcomm_utils.cmake)
