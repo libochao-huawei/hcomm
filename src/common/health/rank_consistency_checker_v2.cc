@@ -40,7 +40,7 @@ HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
     HcclResult ret = CalcCrc::HcclCalcCrc(buffSizeStr.c_str(), strlen(buffSizeStr.c_str()), crc);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[RecordEnvVarCrcV2] CalcStringCrc failed for HCCL_BUFFSIZE."), ret);
-    envVarCrcsV2_.emplace_back("HCCL_BUFFSIZE", crc);
+    envVarCrcsV2_.emplace_back(std::string("HCCL_BUFFSIZE"), crc);
     HCCL_DEBUG("[RecordEnvVarCrcV2] HCCL_BUFFSIZE=[%s], crc[0x%08x] recorded.", buffSizeStr.c_str(), crc);
     return HCCL_SUCCESS;
 }
@@ -48,7 +48,7 @@ HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
 HcclResult RankConsistencyCheckerV2::RecordRankTableCrcV2(u32 crc)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    rankTableCrcsV2_.emplace_back("ranktable_content", crc);
+    rankTableCrcsV2_.emplace_back(std::string("ranktable_content"), crc);
     HCCL_DEBUG("[RecordA5RankTableCrc] ranktable crc[0x%08x] recorded.",crc);
     return HCCL_SUCCESS;
 }
@@ -63,25 +63,25 @@ HcclResult RankConsistencyCheckerV2::RecordSubCommParaV2(const std::string &pare
     HcclResult ret = CalcCrc::HcclCalcCrc(parentIdentifier.c_str(), strlen(parentIdentifier.c_str()), parentCommCrc);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[RecordSubCommParaV2] CalcStringCrc failed for parentIdentifier."), ret);
-    subCommParaCrcsV2_.emplace_back("sub_comm_parentIdentifier", parentCommCrc);
+    subCommParaCrcsV2_.emplace_back(std::string("sub_comm_parentIdentifier"), parentCommCrc);
     HCCL_DEBUG("[RecordSubCommParaV2] parentIdentifier[%s] parentCommCrc[0x%08x] recorded.", parentIdentifier.c_str(), parentCommCrc);
 
     // 2. rankNum的CRC
     u32 rankNumCrc = 0;
     CHK_RET(CalcRawDataCrc(&rankNum, sizeof(rankNum), rankNumCrc));
-    subCommParaCrcsV2_.emplace_back("sub_comm_rankNum", rankNumCrc);
+    subCommParaCrcsV2_.emplace_back(std::string("sub_comm_rankNum"), rankNumCrc);
     HCCL_DEBUG("[RecordSubCommParaV2] rankNum[%u], crc[0x%08x] recorded.", rankNum, rankNumCrc);
 
     // 3. rankIds数组的CRC
     u32 rankIdsCrc = 0;
     CHK_RET(CalcRawDataCrc(rankIds, rankNum * sizeof(uint32_t), rankIdsCrc));
-    subCommParaCrcsV2_.emplace_back("sub_comm_rankIds", rankIdsCrc);
+    subCommParaCrcsV2_.emplace_back(std::string("sub_comm_rankIds"), rankIdsCrc);
     HCCL_DEBUG("[RecordSubCommParaV2] rankIds crc[0x%08x] recorded.", rankIdsCrc);
 
     // 4. subCommId的CRC
     u32 subCommIdCrc = 0;
     CHK_RET(CalcRawDataCrc(&subCommId, sizeof(subCommId), subCommIdCrc));
-    subCommParaCrcsV2_.emplace_back("sub_comm_subCommId", subCommIdCrc);
+    subCommParaCrcsV2_.emplace_back(std::string("sub_comm_subCommId"), subCommIdCrc);
     HCCL_DEBUG("[RecordSubCommParaV2] subCommId[%llu], crc[0x%08x] recorded.", subCommId, subCommIdCrc);
 
     HCCL_INFO("[RecordSubCommParaV2] success, SubCommParaCrcs count[%zu].", subCommParaCrcsV2_.size());
