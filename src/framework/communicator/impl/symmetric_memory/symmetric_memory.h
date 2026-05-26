@@ -18,12 +18,14 @@
 #include <mutex>
 #include <functional>
 #include <memory>
+#include <string>
 #include "symmetric_memory_agent.h"
 #include "hccl_mem_alloc.h"
 
 // HCCL
 #include "hccl/base.h"
 #include "hccl_comm.h"
+#include "hcomm_primitives.h"
 #include "adapter_rts_common.h"
 #include "hccl_inner.h"
 
@@ -32,10 +34,31 @@
 
 namespace hccl {
 
+enum class SymmetricMemoryMode {
+    VMM = 0,
+    CHANNEL = 1
+};
+
 struct FreeBlock {
     size_t offset;
     size_t size;
 };
+
+struct SymmetricChannelInfo {
+    u32 peerRank;
+    u32 netLayer;
+    u32 linkIndex;
+    ChannelHandle channelHandle;
+};
+
+struct SymmetricChannelResource {
+    std::vector<SymmetricChannelInfo> channelInfos;
+    std::string memTag;
+    void* memHandle{nullptr};
+};
+
+using SymmetricChannelCreateCallback = std::function<HcclResult(void*, size_t, SymmetricChannelResource&)>;
+using SymmetricChannelDestroyCallback = std::function<void(const SymmetricChannelResource&)>;
 
 struct ShareableInfo {
     size_t offset;
@@ -54,6 +77,10 @@ struct SymmetricWindow {
     u32 rankSize;
     size_t stride;
     aclrtDrvMemHandle paHandle;
+
+    SymmetricChannelInfo* channelInfo;
+    u32 channelInfoNum;
+    u32 reserved;
 
     void* devWin; // device端结构体
 };
@@ -82,6 +109,8 @@ struct PaMappingInfo {
 class SymmetricMemory {
 public:
     SymmetricMemory(u32 rank, u32 rankSize, size_t stride, std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent);
+    SymmetricMemory(u32 rank, u32 rankSize, size_t stride, SymmetricMemoryMode mode,
+        std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent = nullptr);
     ~SymmetricMemory();
 
     // 禁止拷贝和赋值
@@ -94,11 +123,17 @@ public:
     HcclResult RegisterSymmetricMem(void* ptr, size_t size, void** devWin);
     HcclResult DeregisterSymmetricMem(void* devWin);
     HcclResult FindSymmetricWindow(void* ptr, size_t size, void** win, u64 *offset);
+    void SetChannelCallbacks(SymmetricChannelCreateCallback createCallback,
+        SymmetricChannelDestroyCallback destroyCallback);
 
 private:
     HcclResult Init();
     HcclResult GetAllRankPid();
     HcclResult RegisterInternal(aclrtDrvMemHandle &paHandle, size_t offset, size_t mapSize);
+    HcclResult RegisterChannelMode(void* ptr, size_t size, void** devWin);
+    HcclResult DeregisterChannelMode(void* devWin);
+    HcclResult BuildWindowChannelInfo(std::shared_ptr<SymmetricWindow> &win,
+        const std::vector<SymmetricChannelInfo> &channelInfos);
     HcclResult AddSymmetricWindow(std::shared_ptr<SymmetricWindow> &win);
     HcclResult DeleteSymmetricWindow(std::shared_ptr<SymmetricWindow> &win);
     HcclResult DeleteSymmetricWindow(void* devWin);
@@ -108,6 +143,7 @@ private:
     std::once_flag init_flag_;
     u32 rank_{0};
     u32 rankSize_{0};
+    SymmetricMemoryMode mode_{SymmetricMemoryMode::VMM};
     size_t stride_{0};      // 每个Rank的VA空间大小
     void* heapBase_{nullptr};  // 对称VA空间的总基地址 (所有rank相同)
     size_t granularity_{0};
@@ -118,6 +154,9 @@ private:
     std::map<void*, std::shared_ptr<SymmetricWindow>> windowMap_; // device指针到host SymmetricWindow 的映射
     std::unordered_map<aclrtDrvMemHandle, std::shared_ptr<PaMappingInfo>> paMappingMap_;
     std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent_;
+    SymmetricChannelCreateCallback channelCreateCallback_{nullptr};
+    SymmetricChannelDestroyCallback channelDestroyCallback_{nullptr};
+    std::unordered_map<void*, SymmetricChannelResource> channelResourceMap_;
     std::vector<int32_t> remoteShareablePids;   // 所有rank进程号
     aclrtPhysicalMemProp prop = {              // 内存信息，用来获取内存映射的粒度
         ACL_MEM_HANDLE_TYPE_NONE,

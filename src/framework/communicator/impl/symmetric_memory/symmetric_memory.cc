@@ -178,8 +178,15 @@ public:
 };
 
 SymmetricMemory::SymmetricMemory(u32 rank, u32 rankSize, size_t stride, std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent)
+    : SymmetricMemory(rank, rankSize, stride, SymmetricMemoryMode::VMM, std::move(symmetricMemoryAgent))
+{
+}
+
+SymmetricMemory::SymmetricMemory(u32 rank, u32 rankSize, size_t stride, SymmetricMemoryMode mode,
+    std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent)
     : rank_(rank),
       rankSize_(rankSize),
+      mode_(mode),
       stride_(stride), 
       vaAllocator_(new (std::nothrow) SimpleVaAllocator()),
       symmetricMemoryAgent_(std::move(symmetricMemoryAgent))
@@ -190,11 +197,12 @@ SymmetricMemory::SymmetricMemory(u32 rank, u32 rankSize, size_t stride, std::sha
 SymmetricMemory::~SymmetricMemory() 
 {
     HCCL_INFO("[SymmetricMemory][~SymmetricMemory] begin");
-    for (auto& pair : windowMap_) {
-        DeregisterSymmetricMem(pair.first);
+    while (!windowMap_.empty()) {
+        DeregisterSymmetricMem(windowMap_.begin()->first);
     }
     windowMap_.clear();
     sortedWindows_.clear();
+    channelResourceMap_.clear();
     importAddrs_.clear();
 
     if (heapBase_) {
@@ -216,7 +224,6 @@ HcclResult SymmetricMemory::EnsureInit() {
 HcclResult SymmetricMemory::Init() 
 {
     CHK_SMART_PTR_NULL(vaAllocator_);
-    CHK_SMART_PTR_NULL(symmetricMemoryAgent_);
 
     isSingleRank_ = (rankSize_ == 1);
     CHK_PRT_RET(isSingleRank_, HCCL_INFO("[SymmetricMemory][Init] single rank communicator"), HCCL_SUCCESS);
@@ -239,7 +246,7 @@ HcclResult SymmetricMemory::Init()
     CHK_PRT_RET(stride_ % granularity_ != 0,
         HCCL_ERROR("[SymmetricMemory][Init] Stride %llu is not a multiple of granularity %zu.", stride_, granularity_), HCCL_E_PARA);
 
-    size_t totalHeapSize = static_cast<size_t>(stride_ * rankSize_); // 每个rank都预留一个总大小为 totalHeapSize 的VA空间。
+    size_t totalHeapSize = (mode_ == SymmetricMemoryMode::CHANNEL) ? stride_ : static_cast<size_t>(stride_ * rankSize_);
     void* hintPtr = reinterpret_cast<void*>(targetStartTB);
 
     if (aclrtReserveMemAddressNoUCMemory(&heapBase_, totalHeapSize, 0, hintPtr, 0) != ACL_SUCCESS) {
@@ -251,11 +258,14 @@ HcclResult SymmetricMemory::Init()
     //  这是一个集合调用，所有rank上的vaAllocator_状态将保持一致（前提是 SimpleVaAllocator 是确定性的）
     CHK_RET(vaAllocator_->Init(stride_));
 
-    CHK_RET(symmetricMemoryAgent_->Init());
-    CHK_RET(GetAllRankPid());
+    if (mode_ == SymmetricMemoryMode::VMM) {
+        CHK_SMART_PTR_NULL(symmetricMemoryAgent_);
+        CHK_RET(symmetricMemoryAgent_->Init());
+        CHK_RET(GetAllRankPid());
+    }
 
-    HCCL_INFO("[SymmetricMemory][Init] SymmetricMemory initialized. Rank[%u], Local Heap Base: %p, Stride: %llu, RankSize: %u.",
-               rank_, heapBase_, stride_, rankSize_);
+    HCCL_INFO("[SymmetricMemory][Init] SymmetricMemory initialized. Rank[%u], Local Heap Base: %p, Stride: %llu, "
+        "RankSize: %u, mode[%u].", rank_, heapBase_, stride_, rankSize_, static_cast<u32>(mode_));
 
     return HCCL_SUCCESS;
 }
@@ -330,6 +340,30 @@ HcclResult SymmetricMemory::AddSymmetricWindow(std::shared_ptr<SymmetricWindow> 
     return HCCL_SUCCESS;
 }
 
+void SymmetricMemory::SetChannelCallbacks(SymmetricChannelCreateCallback createCallback,
+    SymmetricChannelDestroyCallback destroyCallback)
+{
+    channelCreateCallback_ = std::move(createCallback);
+    channelDestroyCallback_ = std::move(destroyCallback);
+}
+
+HcclResult SymmetricMemory::BuildWindowChannelInfo(std::shared_ptr<SymmetricWindow> &win,
+    const std::vector<SymmetricChannelInfo> &channelInfos)
+{
+    CHK_SMART_PTR_NULL(win);
+    win->channelInfo = nullptr;
+    win->channelInfoNum = static_cast<u32>(channelInfos.size());
+    if (channelInfos.empty()) {
+        return HCCL_SUCCESS;
+    }
+
+    const size_t channelInfoSize = channelInfos.size() * sizeof(SymmetricChannelInfo);
+    CHK_RET(hrtMalloc(reinterpret_cast<void**>(&win->channelInfo), channelInfoSize));
+    CHK_RET(hrtMemSyncCopy(win->channelInfo, channelInfoSize, channelInfos.data(), channelInfoSize,
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    return HCCL_SUCCESS;
+}
+
 HcclResult SymmetricMemory::DeleteSymmetricWindow(std::shared_ptr<SymmetricWindow> &win)
 {
     auto it = std::find_if(sortedWindows_.begin(), sortedWindows_.end(),
@@ -337,6 +371,11 @@ HcclResult SymmetricMemory::DeleteSymmetricWindow(std::shared_ptr<SymmetricWindo
             return w.get() == win.get();
         });
     if (it != sortedWindows_.end()) {
+        if (win->channelInfo != nullptr) {
+            CHK_PRT(hrtFree(win->channelInfo));
+            win->channelInfo = nullptr;
+            win->channelInfoNum = 0;
+        }
         CHK_PRT(hrtFree(win->devWin));
         windowMap_.erase(win->devWin);
         sortedWindows_.erase(it);
@@ -350,6 +389,11 @@ HcclResult SymmetricMemory::DeleteSymmetricWindow(void* devWin)
     auto it = windowMap_.find(devWin);
     if (it != windowMap_.end()) {
         std::shared_ptr<SymmetricWindow> win = it->second;
+        if (win->channelInfo != nullptr) {
+            CHK_PRT(hrtFree(win->channelInfo));
+            win->channelInfo = nullptr;
+            win->channelInfoNum = 0;
+        }
         CHK_PRT(hrtFree(win->devWin));
         windowMap_.erase(it);
 
@@ -405,6 +449,9 @@ HcclResult SymmetricMemory::GetMemoryInfo(void* ptr, size_t size, void** baseUse
 HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** devWin)
 {
     CHK_RET(EnsureInit());
+    if (mode_ == SymmetricMemoryMode::CHANNEL) {
+        return RegisterChannelMode(ptr, size, devWin);
+    }
     if (isSingleRank_) {
         HCCL_INFO("[SymmetricMemory][RegisterSymmetricMem] single rank communicator");
         CHK_RET(hrtMalloc(devWin, sizeof(SymmetricWindow)));
@@ -451,6 +498,9 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
     pWin->rankSize = rankSize_;
     pWin->stride = stride_;
     pWin->paHandle = paHandle;
+    pWin->channelInfo = nullptr;
+    pWin->channelInfoNum = 0;
+    pWin->reserved = 0;
 
     HcclResult ret = RegisterInternal(paHandle, paMapInfo->heapBaseOffset,  baseVaSize);
     if (ret != HCCL_SUCCESS) {
@@ -477,10 +527,103 @@ INTERNAL_ERROR:
     return ret;
 }
 
+HcclResult SymmetricMemory::RegisterChannelMode(void* ptr, size_t size, void** devWin)
+{
+    CHK_PTR_NULL(devWin);
+    CHK_PRT_RET(channelCreateCallback_ == nullptr,
+        HCCL_ERROR("[SymmetricMemory][RegisterChannelMode] channelCreateCallback is null"), HCCL_E_INTERNAL);
+
+    if (isSingleRank_) {
+        HCCL_INFO("[SymmetricMemory][RegisterChannelMode] single rank communicator");
+        CHK_RET(hrtMalloc(devWin, sizeof(SymmetricWindow)));
+        return HCCL_SUCCESS;
+    }
+
+    void* baseUserVa = nullptr;
+    size_t baseVaSize = 0;
+    aclrtDrvMemHandle paHandle = nullptr;
+    auto releasePaHandle = [&paHandle]() {
+        if (paHandle == nullptr) {
+            return;
+        }
+        aclError aclRet = aclrtFreePhysical(paHandle);
+        if (aclRet != ACL_SUCCESS) {
+            HCCL_ERROR("[SymmetricMemory][RegisterChannelMode] Free Physical handle[%p] failed, ret[%d].",
+                paHandle, aclRet);
+        }
+        paHandle = nullptr;
+    };
+    std::shared_ptr<SymmetricWindow> pWin = nullptr;
+    EXECEPTION_CATCH((pWin = std::make_shared<SymmetricWindow>()), return HCCL_E_PTR);
+    CHK_RET(GetMemoryInfo(ptr, size, &baseUserVa, &baseVaSize, &paHandle));
+
+    size_t offset = 0;
+    if (vaAllocator_->Reserve(baseVaSize, granularity_, offset) != HCCL_SUCCESS) {
+        HCCL_ERROR("[SymmetricMemory][RegisterChannelMode] Failed to reserve VA space. Req size[%zu], "
+            "align[%zu], stride[%zu].", baseVaSize, granularity_, stride_);
+        releasePaHandle();
+        return HCCL_E_MEMORY;
+    }
+
+    SymmetricChannelResource channelResource;
+    HcclResult ret = channelCreateCallback_(baseUserVa, baseVaSize, channelResource);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[SymmetricMemory][RegisterChannelMode] Create symmetric channels failed, ret[%d].", ret);
+        (void)vaAllocator_->Release(offset, baseVaSize);
+        releasePaHandle();
+        return ret;
+    }
+
+    pWin->userVa = baseUserVa;
+    pWin->userSize = baseVaSize;
+    pWin->baseVa = static_cast<uint8_t*>(heapBase_) + offset;
+    pWin->alignedHeapOffset = offset;
+    pWin->alignedSize = baseVaSize;
+    pWin->localRank = rank_;
+    pWin->rankSize = rankSize_;
+    pWin->stride = stride_;
+    pWin->paHandle = paHandle;
+    pWin->channelInfo = nullptr;
+    pWin->channelInfoNum = 0;
+    pWin->reserved = 0;
+
+    ret = BuildWindowChannelInfo(pWin, channelResource.channelInfos);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[SymmetricMemory][RegisterChannelMode] BuildWindowChannelInfo failed, ret[%d].", ret);
+        if (channelDestroyCallback_ != nullptr) {
+            channelDestroyCallback_(channelResource);
+        }
+        (void)vaAllocator_->Release(offset, baseVaSize);
+        releasePaHandle();
+        return ret;
+    }
+
+    ret = AddSymmetricWindow(pWin);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[SymmetricMemory][RegisterChannelMode] AddSymmetricWindow failed, ret[%d].", ret);
+        if (pWin->channelInfo != nullptr) {
+            CHK_PRT(hrtFree(pWin->channelInfo));
+        }
+        if (channelDestroyCallback_ != nullptr) {
+            channelDestroyCallback_(channelResource);
+        }
+        (void)vaAllocator_->Release(offset, baseVaSize);
+        releasePaHandle();
+        return ret;
+    }
+
+    *devWin = pWin->devWin;
+    channelResourceMap_[pWin->devWin] = std::move(channelResource);
+    return HCCL_SUCCESS;
+}
+
 HcclResult SymmetricMemory::DeregisterSymmetricMem(void* devWin)
 {
     HcclResult ret = HCCL_SUCCESS;
     CHK_PTR_NULL(devWin);
+    if (mode_ == SymmetricMemoryMode::CHANNEL) {
+        return DeregisterChannelMode(devWin);
+    }
     if (isSingleRank_) {
         HCCL_INFO("[SymmetricMemory][DeregisterSymmetricMem] single rank communicator");
         CHK_RET(hrtFree(devWin));
@@ -531,6 +674,44 @@ HcclResult SymmetricMemory::DeregisterSymmetricMem(void* devWin)
     }
 
     return ret;
+}
+
+HcclResult SymmetricMemory::DeregisterChannelMode(void* devWin)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    CHK_PTR_NULL(devWin);
+    if (isSingleRank_) {
+        HCCL_INFO("[SymmetricMemory][DeregisterChannelMode] single rank communicator");
+        CHK_RET(hrtFree(devWin));
+        return ret;
+    }
+
+    auto winIt = windowMap_.find(devWin);
+    CHK_PRT_RET(winIt == windowMap_.end(),
+        HCCL_ERROR("[SymmetricMemory][DeregisterChannelMode] Window handle[%p] is not registered.", devWin),
+        HCCL_E_NOT_FOUND);
+
+    auto resIt = channelResourceMap_.find(devWin);
+    if (resIt != channelResourceMap_.end()) {
+        if (channelDestroyCallback_ != nullptr) {
+            channelDestroyCallback_(resIt->second);
+        }
+        channelResourceMap_.erase(resIt);
+    }
+
+    std::shared_ptr<SymmetricWindow> win = winIt->second;
+    ret = vaAllocator_->Release(win->alignedHeapOffset, win->alignedSize);
+    if (win->paHandle != nullptr) {
+        aclError aclRet = aclrtFreePhysical(win->paHandle);
+        if (aclRet != ACL_SUCCESS) {
+            HCCL_ERROR("[SymmetricMemory][DeregisterChannelMode] Free Physical handle[%p] failed, ret[%d].",
+                win->paHandle, aclRet);
+            ret = HCCL_E_DRV;
+        }
+        win->paHandle = nullptr;
+    }
+    HcclResult delRet = DeleteSymmetricWindow(devWin);
+    return (ret != HCCL_SUCCESS) ? ret : delRet;
 }
 
 HcclResult SymmetricMemory::FindSymmetricWindow(void* ptr, size_t size, void** win, u64 *offset)
