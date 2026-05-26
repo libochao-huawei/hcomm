@@ -175,11 +175,10 @@ void DevUbConnection::Connect()
     GetStatus();
 }
 
-inline uint32_t GetRandomPsn(uint32_t salt)
+inline uint32_t GetRandomNum()
 {
-    // std::rand() 在多进程同种子时会碰撞（常见首值 1804289383）；掺入 salt 保证各 rank/card PSN 不同
-    const uint32_t randNum = static_cast<uint32_t>(std::rand());
-    return randNum ^ (salt * 0x9E3779B9U) ^ (randNum >> 16);
+    uint32_t randNum = std::rand();
+    return randNum;
 }
 
 HcclResult DevUbConnection::CalcTotalTimeout(uint32_t &outTotalTimeoutMs)
@@ -520,10 +519,7 @@ bool DevUbConnection::GetTpInfo()
 
 void DevUbConnection::GenerateLocalPsn()
 {
-    const uint32_t salt = static_cast<uint32_t>(devLogicId) ^ (dieId << 16U) ^ funcId;
-    jettyImportCfg.localPsn = GetRandomPsn(salt);
-    HCCL_INFO("[DevUbConnection][%s] localPsn[%u] devLogicId[%d] dieId[%u] funcId[%u].", __func__,
-        jettyImportCfg.localPsn, devLogicId, dieId, funcId);
+    jettyImportCfg.localPsn = GetRandomNum();
 }
 
 void DevUbConnection::ImportJetty()
