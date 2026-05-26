@@ -175,7 +175,7 @@ private:
     std::unique_ptr<BaseTask> ConstructTaskUbSend(const HrtRaUbSendWrRespParam &sendWrResp, const SqeConfig &config);
     void                      UpdateCiVal(u32 ci);
     HcclResult                SetTpAttrAsync();
-    HcclResult                GetTpAttrAsync();
+    HcclResult                GetTpAttrAsync(uint32_t& attrBitmap);
     HcclResult                Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U]);
     HcclResult                CalcTotalTimeout(uint32_t &outTotalTimeoutMs);
 };

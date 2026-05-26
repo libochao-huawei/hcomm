@@ -324,14 +324,16 @@ void DevUbConnection::ImportRmtDto()
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    // 设置tp attr(sip dip等)
-    if ((tpProtocol == TpProtocol::UBOE) && SetTpAttrAsync() != HCCL_SUCCESS) {
-        HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
+    uint32_t attrBitmap;
+    // 获取tp attr(smac dmac等)
+    if ((tpProtocol == TpProtocol::UBOE) && GetTpAttrAsync(attrBitmap) != HCCL_SUCCESS) {
+        HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
-    // 获取tp attr(smac dmac等)
-    if ((tpProtocol == TpProtocol::UBOE) && GetTpAttrAsync() != HCCL_SUCCESS) {
-        HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
+
+    // 设置tp attr(sip dip等)
+    if ((tpProtocol == TpProtocol::UBOE) && attrBitmap != 508 && SetTpAttrAsync() != HCCL_SUCCESS) {
+        HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
 
@@ -1075,10 +1077,9 @@ HcclResult DevUbConnection::SetTpAttrAsync()
     return HCCL_SUCCESS;
 }
 
-HcclResult DevUbConnection::GetTpAttrAsync()
+HcclResult DevUbConnection::GetTpAttrAsync(uint32_t& attrBitmap)
 {
     TpHandle tpHandle = tpInfo.tpHandle;
-    uint32_t attrBitmap = 0;
     struct TpAttr tpAttr = {0};
 
     u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
