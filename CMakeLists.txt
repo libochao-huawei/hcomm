@@ -156,6 +156,9 @@ elseif(BUILD_OPEN_PROJECT)
         if(TARGET hcomm_utils)
             add_dependencies(hcomm_device hcomm_utils)
         endif()
+        if(TARGET rdma_core)
+            add_dependencies(hcomm_device rdma_core)
+        endif()
 
         # 安装 device 侧编译产物
         install(FILES
