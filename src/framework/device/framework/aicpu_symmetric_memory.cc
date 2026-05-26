@@ -41,9 +41,22 @@ HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, 
     CHK_PRT_RET(offset >= symWin->userSize,
         HCCL_ERROR("[%s] Invalid offset: %llu. userSize[%llu]", __func__, offset, symWin->userSize), HCCL_E_PARA);
 
+    if (symWin->mode == SymmetricMemoryMode::URMA) {
+        CHK_PTR_NULL(symWin->peerBasePtrs);
+        CHK_PRT_RET(peerRank >= symWin->peerBasePtrNum,
+            HCCL_ERROR("[HcclSymWinGetPeerPointer] Invalid peerRank: %d. peerBasePtrNum[%u]",
+                peerRank, symWin->peerBasePtrNum), HCCL_E_PARA);
+        void *peerBasePtr = symWin->peerBasePtrs[peerRank];
+        CHK_PTR_NULL(peerBasePtr);
+        *ptr = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(peerBasePtr) + offset);
+        HCCL_INFO("[HcclSymWinGetPeerPointer] Get URMA Ptr[%p] from winHandle[%p], peerRank[%d], offset[%llu]",
+            *ptr, winHandle, peerRank, offset);
+        return HCCL_SUCCESS;
+    }
+
     size_t peerOffset = peerRank * symWin->stride + offset;
     *ptr = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(symWin->baseVa) + peerOffset);
-    HCCL_INFO("[HcclSymWinGetPeerPointer] Get Ptr[%p] from winHandle[%p], peerRank[%d], peerOffset[%llu]",
+    HCCL_INFO("[HcclSymWinGetPeerPointer] Get HCCS Ptr[%p] from winHandle[%p], peerRank[%d], peerOffset[%llu]",
         *ptr, winHandle, peerRank, peerOffset);
 
     return HCCL_SUCCESS;
