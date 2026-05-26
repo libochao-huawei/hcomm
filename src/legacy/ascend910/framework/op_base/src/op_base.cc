@@ -5283,7 +5283,17 @@ HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, Hccl
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
     if (flag == HCCL_COMM_SYM_WINDOW_FLAG_COLL_SYMMETRIC) {
         hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(hcclComm->RegisterWindow(addr, size, winHandle));
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+        if (hcclComm->IsCommunicatorV2()) {
+            hccl::CollComm *collComm = hcclComm->GetCollComm();
+            CHK_PTR_NULL(collComm);
+            CHK_RET(collComm->RegisterWindow(addr, size, winHandle));
+        } else {
+#endif
+            CHK_RET(hcclComm->RegisterWindow(addr, size, winHandle));
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+        }
+#endif
         HCCL_RUN_INFO("[%s]WindowRegister mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
             hcclComm->GetIdentifier().c_str(), *winHandle, size);
         {
@@ -5314,7 +5324,17 @@ HcclResult HcclCommSymWinDeregister(HcclCommSymWindow winHandle)
     comm = it->second;
     CHK_PTR_NULL(comm);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    CHK_RET(hcclComm->DeregisterWindow(winHandle));
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    if (hcclComm->IsCommunicatorV2()) {
+        hccl::CollComm *collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        CHK_RET(collComm->DeregisterWindow(winHandle));
+    } else {
+#endif
+        CHK_RET(hcclComm->DeregisterWindow(winHandle));
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    }
+#endif
     winHandle2comm.erase(it);
     HCCL_RUN_INFO("[%s]WindowDeregister mem success, group[%s]", __func__, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
@@ -5330,7 +5350,17 @@ HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymW
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
 
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    CHK_RET(hcclComm->GetCommSymWin(ptr, size, winHandle, offset));
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    if (hcclComm->IsCommunicatorV2()) {
+        hccl::CollComm *collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        CHK_RET(collComm->GetCommSymWin(ptr, size, winHandle, offset));
+    } else {
+#endif
+        CHK_RET(hcclComm->GetCommSymWin(ptr, size, winHandle, offset));
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    }
+#endif
     HCCL_RUN_INFO("[%s]GetCommSymWin success, group[%s], handle ptr[%p], offset[%llu], size[%llu]", __func__,
         hcclComm->GetIdentifier().c_str(), *winHandle, *offset, size);
     return HCCL_SUCCESS;
