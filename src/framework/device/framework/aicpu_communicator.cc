@@ -1224,9 +1224,9 @@ HcclResult HcclCommAicpu::InitLinkP2p(HccltagRemoteResV2 *tagRes, u32 &rankId, c
         (linkType == TransportLinkType::SIO) ? linkResSio_ : linkRes_;
     HcclLinkP2pV2 &linkP2p = (linkType == TransportLinkType::SIO) ? tagRes->linkP2pSio : tagRes->linkP2p;
 
-    if (linkRes.find(rankId) == linkRes.end() ||
+    if (transportDeviceMemAddr_ != 0 || linkRes.find(rankId) == linkRes.end() ||
         linkRes[rankId].find(newTag) == linkRes[rankId].end()){
-        // 优先校验notify去判定link是否有效
+        // ZeroCopy 模式（transportDeviceMemAddr_ != 0）：每次 capture 覆盖创建新链路
         if (linkP2p.localIpcSignal[0].resId == INVALID_U64) {
             HCCL_INFO("[%s]the link is invalid, no need to create transport, rankId[%u], newTag[%s]",
                 __func__, rankId, newTag.c_str());
@@ -1556,9 +1556,18 @@ HcclResult HcclCommAicpu::GetSdmaLinksByRankAndTag(const HcclOpResParam *commPar
         linkRes = &linkResSio_;
     }
     auto iterRankLinks = linkRes->find(rankId);
-    if (iterRankLinks == linkRes->end() || iterRankLinks->second.find(newTag) == iterRankLinks->second.end()) {
-        HCCL_INFO("[%s] could not find link resource, rankId[%u], group[%s], newTag[%s]", __func__, rankId,
-            identifier_.c_str(), newTag.c_str());
+    // ZeroCopy 模式（transportDeviceMemAddr_ != 0）：即使已有缓存链路也强制刷新
+    // 每次 capture 的 transport（含 OpenIPC）不同，必须重新创建链路
+    if (transportDeviceMemAddr_ != 0 || iterRankLinks == linkRes->end() ||
+        iterRankLinks->second.find(newTag) == iterRankLinks->second.end()) {
+        if (transportDeviceMemAddr_ != 0 && iterRankLinks != linkRes->end() &&
+            iterRankLinks->second.find(newTag) != iterRankLinks->second.end()) {
+            HCCL_INFO("[%s] ZeroCopy force refresh rankId[%u], group[%s], newTag[%s]", __func__, rankId,
+                identifier_.c_str(), newTag.c_str());
+        } else {
+            HCCL_INFO("[%s] could not find link resource, rankId[%u], group[%s], newTag[%s]", __func__, rankId,
+                identifier_.c_str(), newTag.c_str());
+        }
         CHK_RET(RefreshTransportsResForRank(commParam, rankId, newTag, notifyNum, linkType));
         iterRankLinks = linkRes->find(rankId);
         if (iterRankLinks == linkRes->end() || iterRankLinks->second.find(newTag) == iterRankLinks->second.end()) {
