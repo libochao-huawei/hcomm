@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(hccl_ut_task_exception_list
+    main.cc
     ut_task_exception.cc
 )
 add_executable(hccl_ut_task_exception ${hccl_ut_task_exception_list})
