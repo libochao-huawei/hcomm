@@ -44,6 +44,8 @@ file(GLOB_RECURSE FRAMEWORK_HOST_SOURCES "${HCCL_CODE_ROOT}/src/legacy/ascend910
 file(GLOB_RECURSE FRAMEWORK_DEVICE_SOURCES "${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/*.cc")
 file(GLOB_RECURSE HCCD_SOURCES "${HCCL_CODE_ROOT}/src/legacy/ascend910/hccd/*.cc")
 file(GLOB_RECURSE PLATFORM_SOURCES "${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/*.cc")
+file(GLOB_RECURSE BASE_COMM "${HCCL_CODE_ROOT}/src/base_comm/*.cc")
+file(GLOB_RECURSE COLL_COMMUNICATOR "${HCCL_CODE_ROOT}/src/base_comm/*.cc")
 
 set(EXCLUDE_FREAMEWORK_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/hccl_communicator_attrs_device.cc"
@@ -57,6 +59,7 @@ set(EXCLUDE_FREAMEWORK_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/diag/aicpu/hcomm_diag_adapt_aicpu.cc"
     )
 list(REMOVE_ITEM FRAMEWORK_HOST_SOURCES ${EXCLUDE_FREAMEWORK_DEVICE_REGEX})
+list(REMOVE_ITEM COLL_COMMUNICATOR ${EXCLUDE_FREAMEWORK_DEVICE_REGEX})
 
 set(EXCLUDE_ALGORITHM_DEVICE_REGEX 
     "${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/hccl_alg_device.cc"
@@ -79,12 +82,12 @@ list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 
 list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/legacy/ascend910/platform/legacy/.*")
 
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/coll_communicator/rank_graphs/.*")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/engine_ctxs/.*")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/notifys/.*")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/comm_engine_res.cc")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/comm_engine_res_mgr.cc")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/base_comm/primitives/.*")
+list(FILTER COLL_COMMUNICATOR EXCLUDE REGEX ".*src/coll_communicator/rank_graphs/.*")
+list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/engine_ctxs/.*")
+list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/notifys/.*")
+list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/comm_engine_res.cc")
+list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/comm_engine_res_mgr.cc")
+list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/primitives/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/common/src/topo/topo_device/topoinfo_ranktableParser_device.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc")
@@ -95,32 +98,32 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/thread.cc
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/cpu_ts_thread.cc
 
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/interface/aicpu_ts_thread_interface.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/common/exception/exception_defination.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/transport/aicpu/roce_transport_lite_impl.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/buffer/buffer.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/notify/aicpu/notify_lite.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/notify/rts_notify.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/notify/ipc_remote_notify.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/buffer/aicpu/rma_buffer_lite.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/connection/aicpu/rma_conn_lite.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/connection/aicpu/rdma_conn_lite_v2.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/buffer/aicpu/rmt_rma_buf_slice_lite.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/connection/host_ub_connection.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/stream/stream.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/unified_platform/resource/task/task.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/interface/rank_graph_interface.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/framework/topo/new_topo_builder/rank_graph/net_instance.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/framework/topo/virtual_topo.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/framework/env_config/base_config.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/framework/env_config/env_config.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/ascend950/framework/env_config/env_func.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/interface/aicpu_ts_thread_interface.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/common/exception/exception_defination.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/transport/aicpu/roce_transport_lite_impl.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/buffer/buffer.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/notify/aicpu/notify_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/notify/rts_notify.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/notify/ipc_remote_notify.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/buffer/aicpu/rma_buffer_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/connection/aicpu/rma_conn_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/connection/aicpu/rdma_conn_lite_v2.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/buffer/aicpu/rmt_rma_buf_slice_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/connection/host_ub_connection.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/stream/stream.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/task/task.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/interface/rank_graph_interface.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/topo/new_topo_builder/rank_graph/net_instance.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/topo/virtual_topo.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/env_config/base_config.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/env_config/env_config.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/env_config/env_func.cc
 )
 
 set(hccl_list
@@ -131,6 +134,8 @@ set(hccl_list
     ${ALGORITHM_SOURCES}
     ${PLATFORM_SOURCES}
     ${orion_list}
+    ${BASE_COMM}
+    ${COLL_COMMUNICATOR}
 )
 
 add_library(hccl_llt SHARED  ${hccl_list})
@@ -334,7 +339,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/base_comm/resources/api_c_adpt
     ${HCCL_CODE_ROOT}/src/base_comm/resources/common
     ${HCCL_CODE_ROOT}/src/base_comm/resources/common/device
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/common
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/stream/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/common/types
@@ -391,7 +395,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/api_c_adpt/
 
-
+    ${HCCL_CODE_ROOT}/src/base_comm/primitives
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/server_socket/
 
     ${HCCL_CODE_ROOT}/src/base_comm/resources/adpt/
@@ -426,6 +430,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException
     ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException/aicpu
     ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException/host
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/slaves
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/dfx/task_exception
@@ -438,9 +444,9 @@ target_include_directories(hccl_llt  PRIVATE
 
 )
 
-FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/legacy)
+FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/legacy/ascend950)
 foreach (dir ${sources_list})
-    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
+    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/legacy/ascend950") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
         target_include_directories(hccl_llt  PRIVATE  ${dir})
     endif()
 endforeach()
