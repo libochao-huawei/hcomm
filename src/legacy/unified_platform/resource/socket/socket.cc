@@ -142,8 +142,8 @@ HcclResult Socket::IRecvWithHeart(void *data, u64 size, u64& compSize) const
 void Socket::Destroy()
 {
     isDestroyed = true;
-    EXECEPTION_CATCH(StopListen(), HCCL_ERROR("Socket::Destroy StopListen failed, socket info[%s]", Describe().c_str()));
-    EXECEPTION_CATCH(Close(), HCCL_ERROR("Socket::Destroy Close failed, socket info[%s]", Describe().c_str()));
+    EXECEPTION_CATCH(StopListen(), return);
+    EXECEPTION_CATCH(Close(), return);
 }
 
 void Socket::Close()
@@ -393,8 +393,7 @@ void Socket::GetOneSocket()
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
     
     RaSocketFdHandleParam fdHandleParam(nullptr, 0);
-    EXECEPTION_CATCH(fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param),
-        HCCL_ERROR("Socket::GetOneSocket failed, socket info[%s]", Describe().c_str()));
+    EXECEPTION_CATCH(fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param), return);
     // socket status:0 not connected 1:connected 2:connect timeout 3:connecting
     if (fdHandleParam.status == SOCKET_CONNECTED) {
         // sockete 准备好时，可以读取信息
