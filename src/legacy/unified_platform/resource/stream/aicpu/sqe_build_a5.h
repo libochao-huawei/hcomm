@@ -34,12 +34,12 @@ inline void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, uint8_t
     SetSqeHeaderTaskFields(sqe, taskId);
 
     sqe->header.type       = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_WAIT);
-    sqe->header.wrCqe      = 1U;
+    sqe->header.wrCqe      = 0U;
 
     sqe->cntFlag           = false;
     sqe->clrFlag           = true;
     sqe->subType           = static_cast<uint16_t>(Rt91095NotifySubType::NOTIFY_SUB_TYPE_SINGLE_NOTIFY_WAIT);
-    sqe->kernelCredit      = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
+    sqe->kernelCredit      = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT; // wait任务需要设置为0xff，否则会触发rtsq的超时机制，即使record了也wait不到
     sqe->notifyId          = notifyId;
     sqe->timeout           = GetKernelExecTimeoutFromEnvConfig();
 }
@@ -51,7 +51,7 @@ inline void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 tim
     SetSqeHeaderTaskFields(sqe, taskId);
 
     sqe->header.type       = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_WAIT);
-    sqe->header.wrCqe      = 1U;
+    sqe->header.wrCqe      = 0U;
 
     sqe->kernelCredit      = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
     sqe->cntFlag           = false;
@@ -68,7 +68,7 @@ inline void BuildA5SqeNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, uint8
     SetSqeHeaderTaskFields(sqe, taskId);
 
     sqe->header.type       = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_RECORD);
-    sqe->header.wrCqe      = 1U;
+    sqe->header.wrCqe      = 0U;
 
     sqe->kernelCredit      = RT_STARS_DEFAULT_KERNEL_CREDIT;
     sqe->subType           = static_cast<uint16_t>(Rt91095NotifySubType::NOTIFY_SUB_TYPE_SINGLE_NOTIFY_RECORD);
@@ -82,7 +82,7 @@ inline void BuildA5SqeCnt1toNNotifyRecord(u32 streamId, u32 taskId, u32 notifyId
     SetSqeHeaderTaskFields(sqe, taskId);
 
     sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_RECORD);
-    sqe->header.wrCqe  = 1U;
+    sqe->header.wrCqe  = 0U;
 
     sqe->kernelCredit = RT_STARS_DEFAULT_KERNEL_CREDIT;
     sqe->clrFlag = false;
@@ -100,7 +100,7 @@ inline void BuildA5SqeCnt1toNNotifyWait(u32 streamId, u32 taskId, u32 notifyId, 
     SetSqeHeaderTaskFields(sqe, taskId);
     
     sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_WAIT);
-    sqe->header.wrCqe  = 1U;
+    sqe->header.wrCqe  = 0U;
 
     sqe->kernelCredit = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
     sqe->cntFlag = true;
@@ -118,7 +118,7 @@ inline void BuildA5SqeCntNto1NotifyRecord(u32 streamId, u32 taskId, u32 notifyId
     SetSqeHeaderTaskFields(sqe, taskId);
 
     sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_RECORD);
-    sqe->header.wrCqe  = 1U;
+    sqe->header.wrCqe  = 0U;
     sqe->kernelCredit = RT_STARS_DEFAULT_KERNEL_CREDIT;
 
     sqe->clrFlag = false;
@@ -136,7 +136,7 @@ inline void BuildA5SqeCntNto1NotifyWait(u32 streamId, u32 taskId, u32 notifyId, 
     SetSqeHeaderTaskFields(sqe, taskId);
 
     sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_WAIT);
-    sqe->header.wrCqe  = 1U;
+    sqe->header.wrCqe  = 0U;
 
     sqe->kernelCredit = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
     sqe->cntFlag = true;
@@ -155,7 +155,7 @@ inline void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAdd
     SetSqeHeaderTaskFields(sqe, taskId);
 
     sqe->header.type           = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_SDMA);
-    sqe->header.wrCqe          = 1U;
+    sqe->header.wrCqe          = 0U;
 
     sqe->opcode                = opcode;
     sqe->kernelCredit          = RT_STARS_DEFAULT_KERNEL_CREDIT;

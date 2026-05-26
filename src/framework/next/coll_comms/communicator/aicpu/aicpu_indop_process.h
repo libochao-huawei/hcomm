@@ -31,6 +31,7 @@ public:
     static HcclResult AcquireAicpuCommMgr(const std::string &group, CollCommAicpuMgr **aicpuCommMgrPtr);
     static CollCommAicpuMgr *AicpuGetCommMgrbyGroup(const std::string &group);
     static void AicpuReleaseCommMgrbyGroup(const std::string &group);
+    static CollCommAicpuMgr *AicpuGetComm(const std::string &group);
     static ReadWriteLockBase& AicpuGetCommMutex();
     static HcclResult AicpuGetCommAll(std::vector<std::pair<std::string, CollCommAicpuMgr *>> &aicpuCommInfo);
     static HcclResult AicpuDestroyCommbyGroup(const std::string &group);

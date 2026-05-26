@@ -108,14 +108,19 @@ elseif(BUILD_OPEN_PROJECT)
     include(cmake/third_party/rdma-core.cmake)
     include(cmake/third_party/json.cmake)
     # 查找依赖包
-    find_cann_package(msprof MODULE REQUIRED)
-    find_cann_package(securec MODULE REQUIRED)
-    find_cann_package(unified_dlog MODULE REQUIRED)
-    find_cann_package(mmpa MODULE REQUIRED)
-    find_cann_package(runtime MODULE REQUIRED)
+    find_cann_package(acl_rt MODULE REQUIRED)
+    find_cann_package(asc_devkit MODULE REQUIRED)
+    find_cann_package(ascend_hal MODULE REQUIRED)
+    find_cann_package(atrace MODULE REQUIRED)
     find_cann_package(error_manager MODULE REQUIRED)
+    find_cann_package(mmpa MODULE REQUIRED)
+    find_cann_package(msprof MODULE REQUIRED)
+    find_cann_package(runtime MODULE REQUIRED)
+    find_cann_package(securec MODULE REQUIRED)
+    find_cann_package(tsdclient MODULE REQUIRED)
+    find_cann_package(unified_dlog MODULE REQUIRED)
     # 检查构建依赖
-    check_pkg_build_deps("hcomm")
+    check_cann_pkg_build_deps("hcomm")
     add_version_info_targets()
     # 配置打包
     pack_built_in()
@@ -148,6 +153,9 @@ elseif(BUILD_OPEN_PROJECT)
             INSTALL_COMMAND ${CMAKE_CPACK_COMMAND}
             BUILD_ALWAYS TRUE
         )
+        if(TARGET hcomm_utils)
+            add_dependencies(hcomm_device hcomm_utils)
+        endif()
 
         # 安装 device 侧编译产物
         install(FILES

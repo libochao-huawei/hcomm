@@ -17,6 +17,7 @@ CollCommConfigConsistency::CollCommConfigConsistency()
 
 CollCommConfigConsistency::~CollCommConfigConsistency()
 {
+    HCCL_INFO("[CollCommConfigConsistency][~CollCommConfigConsistency] CollCommConfigConsistency deinit");
     remoteExchangeInfoMap_.clear();
     ResetExchangeInfo();
 }
@@ -44,6 +45,7 @@ HcclResult CollCommConfigConsistency::GetExchangeInfo(uint32_t remoteRank, uint3
     auto iter = remoteExchangeInfoMap_.find(remoteRank);
     if (iter == remoteExchangeInfoMap_.end()) {
         *actualLength = 0;
+        HCCL_INFO("[GetExchangeInfo] remoteExchangeInfoMap_ is null");
         return HCCL_SUCCESS;
     }
     *actualLength = static_cast<uint32_t>(iter->second.size());

@@ -1097,8 +1097,12 @@ STATIC void RsDestroyQpList(unsigned int phyId, unsigned int rdevIndex,
         for (; (&qpCb->list) != &rdevCb->qpList;
             qpCb = qpCb2, qpCb2 = list_entry(qpCb2->list.next, struct RsQpCb, list)) {
             hccp_info("qpn[%u] will be destroyed", qpCb->ibQp->qp_num);
-            ret = RsQpDestroy(phyId, rdevIndex, qpCb->ibQp->qp_num);
-            if (ret) {
+            if (qpCb->ibQpEx != NULL) {
+                ret = RsNdaQpDestroy(phyId, rdevIndex, qpCb->ibQp->qp_num);
+            } else {
+                ret = RsQpDestroy(phyId, rdevIndex, qpCb->ibQp->qp_num);
+            }
+            if (ret != 0) {
                 hccp_err("rs_qp_destroy failed, ret:%d", ret);
             }
         }

@@ -87,7 +87,7 @@ TEST_F(UtChannelRoceFactory, CreateChannel_NullEndpoint_AicpuTs_Roce_Returns_E_P
 {
     HcommChannelDesc desc{};
     desc.remoteEndpoint.protocol = COMM_PROTOCOL_ROCE;
-    std::unique_ptr<Channel> ch;
+    std::shared_ptr<Channel> ch;
     EXPECT_EQ(Channel::CreateChannel(nullptr, COMM_ENGINE_AICPU_TS, desc, ch), HCCL_E_PTR);
     EXPECT_EQ(ch.get(), nullptr);
 }
@@ -96,7 +96,7 @@ TEST_F(UtChannelRoceFactory, CreateChannel_NullEndpoint_Aicpu_Roce_Returns_E_PTR
 {
     HcommChannelDesc desc{};
     desc.remoteEndpoint.protocol = COMM_PROTOCOL_ROCE;
-    std::unique_ptr<Channel> ch;
+    std::shared_ptr<Channel> ch;
     EXPECT_EQ(Channel::CreateChannel(nullptr, COMM_ENGINE_AICPU, desc, ch), HCCL_E_PTR);
     EXPECT_EQ(ch.get(), nullptr);
 }
@@ -111,7 +111,7 @@ TEST_F(UtChannelRoceFactory, CreateChannel_InvalidEngine_Returns_NOT_FOUND)
     StubEndpointForChannelFactory stub(ep);
     HcommChannelDesc desc{};
     desc.remoteEndpoint.protocol = COMM_PROTOCOL_ROCE;
-    std::unique_ptr<Channel> ch;
+    std::shared_ptr<Channel> ch;
     EXPECT_EQ(Channel::CreateChannel(reinterpret_cast<EndpointHandle>(&stub), static_cast<CommEngine>(0x7fff0001), desc, ch),
         HCCL_E_NOT_FOUND);
     EXPECT_EQ(ch.get(), nullptr);
@@ -125,7 +125,7 @@ TEST_F(UtChannelRoceFactory, CreateChannel_CpuTs_Returns_NOT_SUPPORT)
     StubEndpointForChannelFactory stub(ep);
     HcommChannelDesc desc{};
     desc.remoteEndpoint.protocol = COMM_PROTOCOL_ROCE;
-    std::unique_ptr<Channel> ch;
+    std::shared_ptr<Channel> ch;
     EXPECT_EQ(Channel::CreateChannel(reinterpret_cast<EndpointHandle>(&stub), COMM_ENGINE_CPU_TS, desc, ch),
         HCCL_E_NOT_SUPPORT);
     EXPECT_EQ(ch.get(), nullptr);
@@ -139,7 +139,7 @@ TEST_F(UtChannelRoceFactory, CreateChannel_CpuNonRoce_Returns_NOT_SUPPORT)
     StubEndpointForChannelFactory stub(ep);
     HcommChannelDesc desc{};
     desc.remoteEndpoint.protocol = COMM_PROTOCOL_UB_MEM;
-    std::unique_ptr<Channel> ch;
+    std::shared_ptr<Channel> ch;
     EXPECT_EQ(Channel::CreateChannel(reinterpret_cast<EndpointHandle>(&stub), COMM_ENGINE_CPU, desc, ch),
         HCCL_E_NOT_SUPPORT);
     EXPECT_EQ(ch.get(), nullptr);

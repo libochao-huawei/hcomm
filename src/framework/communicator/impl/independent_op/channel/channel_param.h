@@ -68,6 +68,10 @@ struct HcclIndOpChannelRemoteResV3 {
     HcclIndOpChannelRemoteResV2* remoteResV2 = nullptr; // 不同remoteRank建链的资源
 };
 
+struct DevAicpuChannelConfig {
+    // 如要新增配置类字段，在此处添加
+};
+
 struct HcclChannelUrmaRes {
     char  hcomId[HCOMID_MAX_LENGTH]; // 通信域ID 最大长度待修改
     void* channelList;               // 反序列后返回给host侧的device侧handle地址
@@ -79,6 +83,7 @@ struct HcclChannelUrmaRes {
     u32*  remoteRankId;              // 记录每个channel的对端rank
     s32   deviceLogicId{0};          // 基础通信使用
     u32   deviceType{0};             // 基础通信使用
+    DevAicpuChannelConfig channelConfig; // 收编channel配置类变量
 };
 
 struct HcommRoceChannelRes {
