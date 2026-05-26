@@ -141,8 +141,6 @@ HcclResult Socket::IRecvWithHeart(void *data, u64 size, u64& compSize) const
 
 void Socket::Destroy()
 {
-    HCCL_ERROR("TEST Socket::Destroy start Destroy serverSocket=%p this=%p", socketHandle, static_cast<void *>(this));
-    SaluSleep(10000);
     isDestroyed = true;
     EXECEPTION_CATCH(StopListen(), HCCL_ERROR("Socket::Destroy StopListen failed, socket info[%s]", Describe().c_str()));
     EXECEPTION_CATCH(Close(), HCCL_ERROR("Socket::Destroy Close failed, socket info[%s]", Describe().c_str()));
