@@ -550,6 +550,7 @@ HcclResult P2PTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uin
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec.size() == 0) {
+        *memNum = 0;
         HCCL_WARNING("[P2PTransport][GetRemoteMems] bufferNum is 0.");
         return HCCL_SUCCESS;
     }

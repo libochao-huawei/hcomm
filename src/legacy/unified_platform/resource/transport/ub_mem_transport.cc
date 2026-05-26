@@ -948,6 +948,7 @@ HcclResult UbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, u
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec.size() == 0) {
+        *memNum = 0;
         HCCL_WARNING("[UbMemTransport][GetRemoteMems] bufferNum is 0.");
         return HCCL_SUCCESS;
     }
