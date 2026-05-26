@@ -147,6 +147,10 @@ HcclResult HcclCommunicator::FillOneRankTransport(u32 rankId, const std::string 
                 }
             } else {
                 // P2P 链路
+                // 清零后的 resId=0 会被 BuildOpRemoteLinkP2pResParam 误判为"已存在"
+                //（resId != INVALID_U64 -> 认为已填充，跳过），设回 INVALID_U64 确保正常填充
+                tagNode->linkP2p.localIpcSignal[0].resId = INVALID_U64;
+                tagNode->linkP2pSio.localIpcSignal[0].resId = INVALID_U64;
                 CHK_RET(BuildOpRemoteLinkP2pResParam(link, tagResV3, req.linkType));
                 p2pCount++;
                 HCCL_DEBUG("[FillOneRankTransport] rank[%u] p2p level[%u] ring[%u] idx[%u] linkType[%d]",
