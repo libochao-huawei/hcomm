@@ -374,10 +374,15 @@ namespace hccl
 
         const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
         if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
+#ifdef HCCLV2_COMMUNICATOR_PUB_H
             // 当前需要支持coll comm与legacy comm混跑，coll comm确定加速模式后，需要设置comm加速模式
             auto *commImplV2 = static_cast<Hccl::HcclCommunicator *>(commV2);
             constexpr bool isCcuMsAvailable = false; // 禁止legacy通信域使用ms模式，避免抢占过多coll comm ccu可用资源
             CHK_RET(commImplV2->SetAccelerator(static_cast<int32_t>(opExpansionMode), isCcuMsAvailable));
+#else
+            HCCL_WARNING("[%s]skip SetAccelerator, HCCLV2 communicator is unavailable in this build target.",
+                __func__);
+#endif
         }
 
         return HCCL_SUCCESS;
