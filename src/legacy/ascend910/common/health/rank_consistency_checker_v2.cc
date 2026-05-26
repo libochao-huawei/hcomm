@@ -40,7 +40,7 @@ HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
     HcclResult ret = CalcCrc::HcclCalcCrc(buffSizeStr.c_str(), strlen(buffSizeStr.c_str()), crc);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[RecordEnvVarCrcV2] CalcStringCrc failed for HCCL_BUFFSIZE."), ret);
-    envVarCrcsV2_.push_back({"HCCL_BUFFSIZE", crc});
+    envVarCrcsV2_.emplace_back({"HCCL_BUFFSIZE", crc});
     HCCL_DEBUG("[RecordEnvVarCrcV2] HCCL_BUFFSIZE=[%s], crc[0x%08x] recorded.", buffSizeStr.c_str(), crc);
     return HCCL_SUCCESS;
 }
@@ -48,7 +48,7 @@ HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
 HcclResult RankConsistencyCheckerV2::RecordRankTableCrcV2(u32 crc)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    rankTableCrcsV2_.push_back({"ranktable_content", crc});
+    rankTableCrcsV2_.emplace_back({"ranktable_content", crc});
     HCCL_DEBUG("[RecordA5RankTableCrc] ranktable crc[0x%08x] recorded.",crc);
     return HCCL_SUCCESS;
 }
@@ -63,25 +63,25 @@ HcclResult RankConsistencyCheckerV2::RecordSubCommParaV2(const std::string &pare
     HcclResult ret = CalcCrc::HcclCalcCrc(parentIdentifier.c_str(), strlen(parentIdentifier.c_str()), parentCommCrc);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[RecordSubCommParaV2] CalcStringCrc failed for parentIdentifier."), ret);
-    subCommParaCrcsV2_.push_back({"sub_comm_parentIdentifier", parentCommCrc});
+    subCommParaCrcsV2_.emplace_back({"sub_comm_parentIdentifier", parentCommCrc});
     HCCL_DEBUG("[RecordSubCommParaV2] parentIdentifier[%s] parentCommCrc[0x%08x] recorded.", parentIdentifier.c_str(), parentCommCrc);
 
     // 2. rankNum的CRC
     u32 rankNumCrc = 0;
     CHK_RET(CalcRawDataCrc(&rankNum, sizeof(rankNum), rankNumCrc));
-    subCommParaCrcsV2_.push_back({"sub_comm_rankNum", rankNumCrc});
+    subCommParaCrcsV2_.emplace_back({"sub_comm_rankNum", rankNumCrc});
     HCCL_DEBUG("[RecordSubCommParaV2] rankNum[%u], crc[0x%08x] recorded.", rankNum, rankNumCrc);
 
     // 3. rankIds数组的CRC
     u32 rankIdsCrc = 0;
     CHK_RET(CalcRawDataCrc(rankIds, rankNum * sizeof(uint32_t), rankIdsCrc));
-    subCommParaCrcsV2_.push_back({"sub_comm_rankIds", rankIdsCrc});
+    subCommParaCrcsV2_.emplace_back({"sub_comm_rankIds", rankIdsCrc});
     HCCL_DEBUG("[RecordSubCommParaV2] rankIds crc[0x%08x] recorded.", rankIdsCrc);
 
     // 4. subCommId的CRC
     u32 subCommIdCrc = 0;
     CHK_RET(CalcRawDataCrc(&subCommId, sizeof(subCommId), subCommIdCrc));
-    subCommParaCrcsV2_.push_back({"sub_comm_subCommId", subCommIdCrc});
+    subCommParaCrcsV2_.emplace_back({"sub_comm_subCommId", subCommIdCrc});
     HCCL_DEBUG("[RecordSubCommParaV2] subCommId[%llu], crc[0x%08x] recorded.", subCommId, subCommIdCrc);
 
     HCCL_INFO("[RecordSubCommParaV2] success, SubCommParaCrcs count[%zu].", subCommParaCrcsV2_.size());
@@ -194,19 +194,19 @@ HcclResult RankConsistencyCheckerV2::CompareEnvV2(const CheckFrameV2 &local, con
             std::vector<std::string>({"N/A", "N/A", "env_var_count",
                 std::to_string(local.crcNum), std::to_string(remote.crcNum)}));
         isDiff = true;
-    } else {
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (u32 i = 0; i < local.crcNum && i < envVarCrcsV2_.size(); i++) {
-            if (local.crcArray[i] != remote.crcArray[i]) {
-                const std::string &varName = envVarCrcsV2_[i].name;
-                HCCL_ERROR("[CompareEnvV2] env var mismatch: [%s], local[0x%08x], remote[0x%08x].",
-                    varName.c_str(), local.crcArray[i], remote.crcArray[i]);
-                RPT_INPUT_ERR(true, "EI0005",
-                    std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
-                    std::vector<std::string>({"N/A", "N/A", varName,
-                        std::to_string(local.crcArray[i]), std::to_string(remote.crcArray[i])}));
-                isDiff = true;
-            }
+        return HCCL_SUCCESS;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (u32 i = 0; i < local.crcNum && i < envVarCrcsV2_.size(); i++) {
+        if (local.crcArray[i] != remote.crcArray[i]) {
+            const std::string &varName = envVarCrcsV2_[i].name;
+            HCCL_ERROR("[CompareEnvV2] env var mismatch: [%s], local[0x%08x], remote[0x%08x].",
+                varName.c_str(), local.crcArray[i], remote.crcArray[i]);
+            RPT_INPUT_ERR(true, "EI0005",
+                std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
+                std::vector<std::string>({"N/A", "N/A", varName,
+                    std::to_string(local.crcArray[i]), std::to_string(remote.crcArray[i])}));
+            isDiff = true;
         }
     }
     return HCCL_SUCCESS;
@@ -222,21 +222,22 @@ HcclResult RankConsistencyCheckerV2::CompareRankTableV2(const CheckFrameV2 &loca
             std::vector<std::string>({"N/A", "N/A", "ranktable_count",
                 std::to_string(local.rankTableCrcNum), std::to_string(remote.rankTableCrcNum)}));
         isDiff = true;
-    } else {
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (u32 i = 0; i < local.rankTableCrcNum && i < rankTableCrcsV2_.size(); i++) {
-            if (local.rankTableCrcArray[i] != remote.rankTableCrcArray[i]) {
-                const std::string &rtName = rankTableCrcsV2_[i].name;
-                HCCL_ERROR("[CompareRankTableV2] ranktable mismatch: [%s], local[0x%08x], remote[0x%08x].",
-                    rtName.c_str(), local.rankTableCrcArray[i], remote.rankTableCrcArray[i]);
-                RPT_INPUT_ERR(true, "EI0005",
-                    std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
-                    std::vector<std::string>({"N/A", "N/A", rtName,
-                        std::to_string(local.rankTableCrcArray[i]), std::to_string(remote.rankTableCrcArray[i])}));
-                isDiff = true;
-            }
+        return HCCL_SUCCESS;
+    } 
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (u32 i = 0; i < local.rankTableCrcNum && i < rankTableCrcsV2_.size(); i++) {
+        if (local.rankTableCrcArray[i] != remote.rankTableCrcArray[i]) {
+            const std::string &rtName = rankTableCrcsV2_[i].name;
+            HCCL_ERROR("[CompareRankTableV2] ranktable mismatch: [%s], local[0x%08x], remote[0x%08x].",
+                rtName.c_str(), local.rankTableCrcArray[i], remote.rankTableCrcArray[i]);
+            RPT_INPUT_ERR(true, "EI0005",
+                std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
+                std::vector<std::string>({"N/A", "N/A", rtName,
+                    std::to_string(local.rankTableCrcArray[i]), std::to_string(remote.rankTableCrcArray[i])}));
+            isDiff = true;
         }
     }
+
     return HCCL_SUCCESS;
 }
 
@@ -250,19 +251,19 @@ HcclResult RankConsistencyCheckerV2::CompareSubCommV2(const CheckFrameV2 &local,
             std::vector<std::string>({"N/A", "N/A", "sub_comm_param_count",
                 std::to_string(local.subCommCrcNum), std::to_string(remote.subCommCrcNum)}));
         isDiff = true;
-    } else {
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (u32 i = 0; i < local.subCommCrcNum && i < subCommParaCrcsV2_.size(); i++) {
-            if (local.subCommCrcArray[i] != remote.subCommCrcArray[i]) {
-                const std::string &paraName = subCommParaCrcsV2_[i].name;
-                HCCL_ERROR("[CompareSubCommV2] sub comm param mismatch: [%s], local[0x%08x], remote[0x%08x].",
-                    paraName.c_str(), local.subCommCrcArray[i], remote.subCommCrcArray[i]);
-                RPT_INPUT_ERR(true, "EI0005",
-                    std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
-                    std::vector<std::string>({"N/A", "N/A", paraName,
-                        std::to_string(local.subCommCrcArray[i]), std::to_string(remote.subCommCrcArray[i])}));
-                isDiff = true;
-            }
+        return HCCL_SUCCESS;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (u32 i = 0; i < local.subCommCrcNum && i < subCommParaCrcsV2_.size(); i++) {
+        if (local.subCommCrcArray[i] != remote.subCommCrcArray[i]) {
+            const std::string &paraName = subCommParaCrcsV2_[i].name;
+            HCCL_ERROR("[CompareSubCommV2] sub comm param mismatch: [%s], local[0x%08x], remote[0x%08x].",
+                paraName.c_str(), local.subCommCrcArray[i], remote.subCommCrcArray[i]);
+            RPT_INPUT_ERR(true, "EI0005",
+                std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
+                std::vector<std::string>({"N/A", "N/A", paraName,
+                    std::to_string(local.subCommCrcArray[i]), std::to_string(remote.subCommCrcArray[i])}));
+            isDiff = true;
         }
     }
     return HCCL_SUCCESS;
@@ -275,6 +276,7 @@ HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local,
     if (localVer.empty() || remoteVer.empty()) {
         HCCL_WARNING("[CompareVersionV2] CANN version str is empty. local[%s], remote[%s].",
             localVer.c_str(), remoteVer.c_str());
+        return HCCL_SUCCESS;
     } else if (localVer != remoteVer) {
         RPT_INPUT_ERR(true, "EI0008",
             std::vector<std::string>({"local_version", "remote_version"}),
