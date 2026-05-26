@@ -295,7 +295,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
 
         s32 deviceLogicId = 0;
         (void)hrtGetDeviceRefresh(&deviceLogicId);
-        u32 rankTableCrc = HcomConsumeRankTableJsonCrc(deviceLogicId);
+        u32 rankTableCrc = HcommConsumeRankTableJsonCrc(deviceLogicId);
         CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordRankTableCrcV2(rankTableCrc));
         u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
         CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordEnvVarCrcV2(buffSize));
