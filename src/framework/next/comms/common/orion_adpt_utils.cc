@@ -33,25 +33,23 @@ HcclResult CommAddrToIpAddress(const CommAddr &commAddr, Hccl::IpAddress &ipAddr
         return HCCL_SUCCESS;
     }
 
-    if (commAddr.type == COMM_ADDR_TYPE_EID || commAddr.type == COMM_ADDR_TYPE_MULTI_PORT) {
-        const uint8_t *eid = nullptr;
-        if (commAddr.type == COMM_ADDR_TYPE_EID) {
-            eid = commAddr.eid;
-        } else {
-            const uint8_t portNum = commAddr.portsAddr.portNum;
-            CHK_PRT_RET(portNum == 0 || portNum > HCOMM_NIC_PORT_MAX_NUM,
-                HCCL_ERROR("[%s] invalid portNum[%u], max[%u].",
-                    __func__, portNum, HCOMM_NIC_PORT_MAX_NUM),
-                HCCL_E_PARA);
-
-            // 兼容旧接口：CommAddrToIpAddress只能返回一个IpAddress。
-            // MULTI_PORT场景下默认返回PORT0地址；完整多PORT展开由CpuUboeEndpoint::GetIpAddressByPortId处理。
-            eid = commAddr.portsAddr.eidList[0];
-        }
+    if (commAddr.type == COMM_ADDR_TYPE_EID) {
         Hccl::Eid inputEid;
-        s32 sret = memcpy_s(inputEid.raw, sizeof(inputEid.raw), eid, COMM_ADDR_EID_LEN);
+        s32 sret = memcpy_s(inputEid.raw, Hccl::URMA_EID_LEN, commAddr.eid, Hccl::URMA_EID_LEN);
         CHK_PRT_RET(sret != EOK, HCCL_ERROR("memcpy failed. errorno[%d]:", sret), HCCL_E_MEMORY);
         ipAddr = Hccl::IpAddress(inputEid);
+        return HCCL_SUCCESS;
+    }
+
+    if (commAddr.type == COMM_ADDR_TYPE_MULTI_PORT) {
+        if (commAddr.portsAddr.family != AF_INET && commAddr.portsAddr.family != AF_INET6) {
+            HCCL_ERROR("[%s] failed, ports address family[%d] is not supported.", __func__, commAddr.portsAddr.family);
+            return HCCL_E_NOT_SUPPORT;
+        }
+        
+        s32 sret = memcpy_s(&binAddr, sizeof(Hccl::BinaryAddr), &commAddr.portsAddr.linkAddr, sizeof(Hccl::BinaryAddr));
+        CHK_PRT_RET(sret != EOK, HCCL_ERROR("memcpy failed. errorno[%d]:", sret), HCCL_E_MEMORY);
+        ipAddr = Hccl::IpAddress(binAddr, commAddr.portsAddr.family);
         return HCCL_SUCCESS;
     }
 
