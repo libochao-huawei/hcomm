@@ -104,7 +104,7 @@ TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_NotifyWait_Reports
     u32 deviceId = 0;
     s32 streamId = 100;
 
-    auto callback = []() -> ErrorMessageReport {
+    auto callback = [=]() -> ErrorMessageReport {
         ErrorMessageReport msg;
         strncpy(msg.tag, "test_tag_notify_wait", TAG_MAX_LENGTH - 1);
         msg.taskType = TaskType::TASK_NOTIFY_WAIT;
@@ -141,7 +141,7 @@ TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_Sdma_ReportsEI0012
     u32 deviceId = 0;
     s32 streamId = 101;
 
-    auto callback = []() -> ErrorMessageReport {
+    auto callback = [=]() -> ErrorMessageReport {
         ErrorMessageReport msg;
         strncpy(msg.tag, "test_tag_sdma", TAG_MAX_LENGTH - 1);
         msg.taskType = TaskType::TASK_SDMA;
@@ -178,7 +178,7 @@ TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_ReduceInline_Repor
     u32 deviceId = 0;
     s32 streamId = 102;
 
-    auto callback = []() -> ErrorMessageReport {
+    auto callback = [=]() -> ErrorMessageReport {
         ErrorMessageReport msg;
         strncpy(msg.tag, "test_tag_reduce_inline", TAG_MAX_LENGTH - 1);
         msg.taskType = TaskType::TASK_REDUCE_INLINE;
@@ -217,7 +217,7 @@ TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_ErrMsgFlagTrue_NoR
     u32 deviceId = 0;
     s32 streamId = 103;
 
-    auto callback = []() -> ErrorMessageReport {
+    auto callback = [=]() -> ErrorMessageReport {
         ErrorMessageReport msg;
         strncpy(msg.tag, "test_tag_notify_wait", TAG_MAX_LENGTH - 1);
         msg.taskType = TaskType::TASK_NOTIFY_WAIT;
@@ -330,7 +330,7 @@ TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_SecondCall_ErrMsgF
     s32 streamId1 = 110;
     s32 streamId2 = 111;
 
-    auto callback1 = []() -> ErrorMessageReport {
+    auto callback1 = [=]() -> ErrorMessageReport {
         ErrorMessageReport msg;
         strncpy(msg.tag, "test_tag_notify_wait", TAG_MAX_LENGTH - 1);
         msg.taskType = TaskType::TASK_NOTIFY_WAIT;
@@ -339,7 +339,7 @@ TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_SecondCall_ErrMsgF
         return msg;
     };
 
-    auto callback2 = []() -> ErrorMessageReport {
+    auto callback2 = [=]() -> ErrorMessageReport {
         ErrorMessageReport msg;
         strncpy(msg.tag, "test_tag_sdma", TAG_MAX_LENGTH - 1);
         msg.taskType = TaskType::TASK_SDMA;
