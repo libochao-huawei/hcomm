@@ -83,7 +83,7 @@ HcclResult AicpuUtils::GetCommHandle(CommunicatorImplLite *communicatorImplLite,
     if (kernelParam_->op.algOperator.opMode == OpMode::OPBASE) {
         communicatorImplLite->SetCurrentOpMode(kernelParam_->op.algOperator.opMode);
         communicatorImplLite->UpdateCommParam(kernelParam_);
-        EXECEPTION_CATCH(communicatorImplLite->UpdateRes(kernelParam_), return HCCL_E_INTERNAL);
+        EXCEPTION_CATCH(communicatorImplLite->UpdateRes(kernelParam_), return HCCL_E_INTERNAL);
     } else {
         HCCL_ERROR("[%s]%s only support opbase, but get opMode %s.", __func__, __func__,
                     kernelParam_->op.algOperator.opMode.Describe().c_str());

@@ -973,7 +973,7 @@ HcclResult CollCommExecutor::MultiRingGather(const std::string &tag, DeviceMem i
             HCCL_ERROR("[CommonOperator][MultiRingGather]invalid root rank[%u] to get user rank", root), ret);
 
         std::unique_ptr<AlgTemplateBase> tempAlg = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             (tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_GATHER_RING, dispatcher_)),
             return HCCL_E_PTR);
         HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_GATHER_RING in COMM_LEVEL0", __func__);

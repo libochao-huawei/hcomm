@@ -245,7 +245,7 @@ HcclResult AicpuTsRoceEndpoint::ServerSocketListen(const uint32_t port)
         }
     }
 
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         serverSocket_ = std::make_shared<hccl::HcclSocket>(static_cast<HcclNetDevCtx>(netDev_), listenPort),
         return HCCL_E_PTR);
     CHK_PTR_NULL(serverSocket_);

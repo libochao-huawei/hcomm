@@ -78,7 +78,7 @@ void RankInfoDetectService::GetConnections()
         }
         std::shared_ptr<Socket> connSocket = std::make_shared<Socket>(
             hccpHostSocketHandle, hostIp_, hostPort, hostIp_, connSocketTag, SocketRole::SERVER, NicType::HOST_NIC_TYPE);
-        EXECEPTION_CATCH(status = connSocket->GetStatus(), 
+        EXCEPTION_CATCH(status = connSocket->GetStatus(), 
             {
                 // 非本端client首次连接异常，直接重试
                 if(status == SocketStatus::OK) {

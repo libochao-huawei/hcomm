@@ -132,13 +132,13 @@ HcclResult HostCpuUrmaChannel::BuildConnection()
     std::unique_ptr<Hccl::HostUbConnection> ubConn = nullptr;
     switch (protocol) {
         case Hccl::LinkProtocol::UB_TP:
-            EXECEPTION_CATCH(
+            EXCEPTION_CATCH(
                 ubConn = std::make_unique<Hccl::HostUbTpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode),
                 return HCCL_E_PTR
             );
             break;
         case Hccl::LinkProtocol::UB_CTP:
-            EXECEPTION_CATCH(
+            EXCEPTION_CATCH(
                 ubConn = std::make_unique<Hccl::HostUbCtpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode),
                 return HCCL_E_PTR
             );
@@ -163,7 +163,7 @@ HcclResult HostCpuUrmaChannel::BuildBuffer()
     commonRes_.bufferVec.clear();
     for (size_t i = 0; i < bufs_.size(); i++) {
         std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs_[i], rdmaHandle_),
             return HCCL_E_PTR
         );
@@ -183,7 +183,7 @@ HcclResult HostCpuUrmaChannel::BuildUbMemTransport()
     CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
 
     // make_unique / make_shared / release 包一层抛异常的宏
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         memTransport_ = std::make_unique<Hccl::UbMemTransport>(
             commonRes_, attr_, linkData, socket, rdmaHandle_, locCntNotifyRes, isRecvFirst
         ),

@@ -40,13 +40,13 @@ HcclResult UboeEndpoint::Init()
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     Hccl::IpAddress eidAddress{};
     rdmaHandleMgr.UboeIpv4ToEid(ipAddr, eidAddress, devPhyId);
-    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, eidAddress)), 
+    EXCEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, eidAddress)), 
         return HCCL_E_PARA);
     CHK_PTR_NULL(ctxHandle_);
     HCCL_INFO("%s success, devId[%u], eidAddress[%s], ctxHandle[%p]",
         __func__, devPhyId, eidAddress.Describe().c_str(), ctxHandle_);
 
-    EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
     regedMemMgr_->rdmaHandle_ = ctxHandle_;
 
     return HcclResult::HCCL_SUCCESS;

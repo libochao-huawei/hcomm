@@ -296,7 +296,7 @@ HcclResult InitAndVerifySignal(const HcclSignalInfo &signalInfo, std::shared_ptr
         return HCCL_SUCCESS;
     }
 
-    EXECEPTION_CATCH((notify = std::make_shared<T>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((notify = std::make_shared<T>()), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(notify);
     CHK_RET(notify->Init(signalInfo, NotifyLoadType::DEVICE_NOTIFY));
     HcclSignalInfo notifyInfo;
@@ -375,7 +375,7 @@ HcclResult InitAicpuOpNotify(HccCommResParamTask *commParam, AicpuComContext *ct
     for (u32 i = 0; i < sizeof(ctx->aicpuOpNotify) / sizeof(ctx->aicpuOpNotify[0]); i++) {
         HcclSignalInfo *sigInfo = &commParam->signalInfo.aicpuOpNotify[i];
         std::shared_ptr<LocalNotify> localNitfy;
-        EXECEPTION_CATCH((localNitfy = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((localNitfy = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
         CHK_RET(localNitfy->Init(*sigInfo, NotifyLoadType::DEVICE_NOTIFY));
         HcclSignalInfo signalInfo;
         CHK_RET(localNitfy->GetNotifyData(signalInfo));
@@ -1550,7 +1550,7 @@ u32 AicpuKfcProcess::AicpuRpcResInit(HccCommResParamTask *commParam)
     std::iota(ctx->turnValue, ctx->turnValue + TILING_TURN_MAX * AC_MAX_RANK_NUM, 0);
     HcclSignalInfo *sigInfo = &commParam->signalInfo.aicpuNotify;
     std::shared_ptr<LocalNotify> localNitfy;
-    EXECEPTION_CATCH((localNitfy = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((localNitfy = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
     CHK_RET(localNitfy->Init(*sigInfo, NotifyLoadType::DEVICE_NOTIFY));
     ctx->kfcNotifyId = sigInfo->resId;
 
@@ -1587,12 +1587,12 @@ u32 AicpuKfcProcess::AicpuRpcResInit(HccCommResParamTask *commParam)
     ctx->commOpenStatus = true;
     ctx->opIndex = 0;
     if (commParam->kfcControlTransferH2DParams.buffLen != 0) {
-        EXECEPTION_CATCH((ctx->kfcControlTransferH2D = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((ctx->kfcControlTransferH2D = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(ctx->kfcControlTransferH2D);
         CHK_RET(ctx->kfcControlTransferH2D->InitDevice(commParam->kfcControlTransferH2DParams));
     }
     if (commParam->kfcStatusTransferD2HParams.buffLen != 0) {
-        EXECEPTION_CATCH((ctx->kfcStatusTransferD2H = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((ctx->kfcStatusTransferD2H = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(ctx->kfcStatusTransferD2H);
         CHK_RET(ctx->kfcStatusTransferD2H->InitDevice(commParam->kfcStatusTransferD2HParams));
     }

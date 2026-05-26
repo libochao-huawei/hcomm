@@ -507,7 +507,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitOneSidedService(const RankTable_t &rankTable)
     {
-        EXECEPTION_CATCH((oneSideService_ = std::make_unique<HcclOneSidedService>(socketManager_, notifyPool_, commConfig_)),
+        EXCEPTION_CATCH((oneSideService_ = std::make_unique<HcclOneSidedService>(socketManager_, notifyPool_, commConfig_)),
                          return HCCL_E_INTERNAL);
         hcclRankLinkInfo_.userRank = userRank_;
         hcclRankLinkInfo_.devicePhyId = devicePhyId_;
@@ -1253,7 +1253,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitOpRetry()
     {
-        EXECEPTION_CATCH((opRetryStreamPtr_ = std::make_shared<HcclOpStreamRes>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((opRetryStreamPtr_ = std::make_shared<HcclOpStreamRes>()), return HCCL_E_PTR);
         if (retryEnable_) {
             opRetryManager_.reset(new (std::nothrow) OpRetryManager());
             CHK_SMART_PTR_NULL(opRetryManager_);
@@ -1449,7 +1449,7 @@ namespace hccl
         callbacks.kernelLaunchAicpuCommInit = [this](){return HCCL_SUCCESS;};
 
         // MyRank的rankIpPortMap为950使用，直接赋空
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             (myRank_ = std::make_unique<MyRank>(binHandle, rankId, commConfig, callbacks, &rankGraph_, nullptr)),
             return HCCL_E_PTR);
 
@@ -6865,7 +6865,7 @@ namespace hccl
 
         DeviceMem tmpBuffer;
         CHK_RET(DeviceMem::alloc(tmpBuffer, size));
-        EXECEPTION_CATCH((bufferPtr = std::make_shared<DeviceMem>(std::move(tmpBuffer))), return HCCL_E_PTR);
+        EXCEPTION_CATCH((bufferPtr = std::make_shared<DeviceMem>(std::move(tmpBuffer))), return HCCL_E_PTR);
 
         CHK_PRT_RET(size && !bufferPtr.get()->ptr(),
                     HCCL_ERROR("[HcclCommunicator][AllocAndClearDeviceMem]Create DeviceMem size[%llu] fail,"
@@ -6887,7 +6887,7 @@ namespace hccl
                     HCCL_E_PARA);
 
         HostMem tmpBuffer = HostMem::alloc(size);
-        EXECEPTION_CATCH((bufferPtr = std::make_shared<HostMem>(std::move(tmpBuffer))), return HCCL_E_PTR);
+        EXCEPTION_CATCH((bufferPtr = std::make_shared<HostMem>(std::move(tmpBuffer))), return HCCL_E_PTR);
 
         CHK_PRT_RET(size && !bufferPtr.get()->ptr(),
                     HCCL_ERROR("[HcclCommunicator][AllocAndClearHostMem]host memory space size[%llu] fail,"
@@ -7216,7 +7216,7 @@ namespace hccl
             return HCCL_SUCCESS;
         }
 
-        EXECEPTION_CATCH((localNotify = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((localNotify = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
         CHK_RET(localNotify->Init(NotifyLoadType::DEVICE_NOTIFY));
         CHK_RET(localNotify->SetIpc());
 
@@ -8833,7 +8833,7 @@ namespace hccl
         // DeviceMem::create创建的DeviceMem对象为拷贝构造，析构时不释放内存，内存由上层管理
         DeviceMem userMem =  DeviceMem::create(addr, size);
         std::shared_ptr<DeviceMem> userMemPtr = nullptr;
-        EXECEPTION_CATCH((userMemPtr = std::make_shared<DeviceMem>(std::move(userMem))), return HCCL_E_PTR);
+        EXCEPTION_CATCH((userMemPtr = std::make_shared<DeviceMem>(std::move(userMem))), return HCCL_E_PTR);
         *handle = static_cast<void *>(userMemPtr.get());
         userMemMap_.insert(std::make_pair(*handle, userMemPtr));
         HCCL_INFO("[HcclCommunicator][%s]Register user mem success, group[%s], handle[%p], addr[%llu], size[%llu]",
