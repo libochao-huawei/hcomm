@@ -1172,7 +1172,12 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
 
     struct CtxInitAttr ctxInfo {};
     ctxInfo.phyId = in.phyId;
+<<<<<<< HEAD
     // urma_create_context(eidIndex) 鍐冲畾 ctx 鐨?local EID锛岄』涓?GetTpList/Import 浣跨敤鐨勯摼璺?EID 涓€鑷?    ctxInfo.ub.eidIndex = 0U;
+=======
+    // urma_create_context(eidIndex) 决定 ctx 的 local EID，须与 GetTpList/Import 使用的链路 EID 一致
+    ctxInfo.ub.eidIndex = 0U;
+>>>>>>> dbe5f67d (优化local eid index 选择写法)
     const Eid linkEid = in.addr.GetEid();
     try {
         const vector<HrtDevEidInfo> eidInfoList = HrtRaGetDevEidInfoList(HRaInfo(in.mode, in.phyId));
