@@ -4021,9 +4021,10 @@ std::vector<LinkData> CommunicatorImpl::GetFullMeshLinks() const
 
             if (!tempLinks.empty()) {
                 if (myRank / 4 != dRank / 4) {
-                    linkDataSet.insert(tempLinks.begin(), tempLinks.begin() + 3);
+                    linkDataSet.insert(tempLinks.at(dRank % 4));
+                } else {
+                    linkDataSet.insert(tempLinks.at(0));
                 }
-                linkDataSet.insert(tempLinks.at(0));
               //  
                 break;
             }
