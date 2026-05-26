@@ -43,7 +43,7 @@ void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmtUbBufLit
 {
 }
 
-void UbTransportLiteImpl::ParseLocBufferVec(std::vector<char> &data, LocUbBufLiteVec &vec, RmaUbBufType rmtType) const
+void UbTransportLiteImpl::ParseLocBufferVec(std::vector<char> &data, LocUbBufLiteVec &vec, LocUbBufLiteMap &map, RmaUbBufType rmtType) const
 {
 }
 

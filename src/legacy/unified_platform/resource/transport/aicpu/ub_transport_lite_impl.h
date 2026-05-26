@@ -11,6 +11,7 @@
 #define UB_MEM_TRANSPORT_LITE_H
 
 #include <vector>
+#include <map>
 #include <memory>
 #include <unordered_map>
 #include "base_transport_lite_impl.h"
@@ -116,10 +117,12 @@ private:
 
     using RmtUbBufLiteVec = std::vector<RmtUbBufLite>;
     using LocUbBufLiteVec = std::vector<LocUbBufLite>;
+    using LocUbBufLiteMap = std::map<uintptr_t, LocUbBufLite>;
     MAKE_ENUM(RmaUbBufType, NOTIFY, BUFFER)
     RmtUbBufLiteVec rmtNotifyVec;
     RmtUbBufLiteVec rmtBufferVec;
     LocUbBufLiteVec locBufferVec;
+    LocUbBufLiteMap locBufferMap;
 
     RmtRmaBufSliceLite GetRmtNotifySliceLite(u32 index);
     RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const Buffer &rmtBuf);
@@ -145,7 +148,7 @@ private:
 
     void ParseRmtBufferVec(std::vector<char> &data, RmtUbBufLiteVec &vec, RmaUbBufType rmtType) const;
  
-    void ParseLocBufferVec(std::vector<char> &data, LocUbBufLiteVec &vec, RmaUbBufType rmtType) const;
+    void ParseLocBufferVec(std::vector<char> &data, LocUbBufLiteVec &vec, LocUbBufLiteMap &map, RmaUbBufType rmtType) const;
 
     void ParseConnVec(std::vector<char> &data);
 
