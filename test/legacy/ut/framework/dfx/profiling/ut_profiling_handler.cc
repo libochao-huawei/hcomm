@@ -517,7 +517,7 @@ TEST_F(ProfilingHandlerTest, ReportNodeApi_test){
     uint64_t cmdItemId = 0;
     uint32_t threadId = 0;
     handler.enableHostApi_ = true;
-    handler.ReportNodeApi(beginTime, endTime, cmdItemId, threadId);
+    handler.ReportNodeApi(beginTime, endTime, cmdItemId, threadId, false);
 }
 
 TEST_F(ProfilingHandlerTest, ReportNodeBasicInfo_test){
@@ -526,7 +526,7 @@ TEST_F(ProfilingHandlerTest, ReportNodeBasicInfo_test){
     uint64_t cmdItemId = 0;
     uint32_t threadId = 0;
     handler.enableHcclL1_ = true;
-    handler.ReportNodeBasicInfo(timeStamp, cmdItemId, threadId);
+    handler.ReportNodeBasicInfo(timeStamp, cmdItemId, threadId, false);
 }
 
 TEST_F(ProfilingHandlerTest, ReportHcclOpInfo_test){
@@ -545,7 +545,7 @@ TEST_F(ProfilingHandlerTest, ReportHcclOpInfo_test){
     dfxOpInfo->op_ = op;
     handler.enableHcclL0_ = true;
     u32 ranksize = comm->GetRankSize();
-    handler.ReportHcclOpInfo(timeStamp, *dfxOpInfo, threadId);
+    handler.ReportHcclOpInfo(timeStamp, *dfxOpInfo, threadId, false);
     delete comm;
 }
 
@@ -565,7 +565,7 @@ TEST_F(ProfilingHandlerTest, ReportHcclOpInfo_alltoallv_test){
     dfxOpInfo->op_ = op;
     handler.enableHcclL0_ = true;
     u32 ranksize = comm->GetRankSize();
-    handler.ReportHcclOpInfo(timeStamp, *dfxOpInfo, threadId);
+    handler.ReportHcclOpInfo(timeStamp, *dfxOpInfo, threadId, false);
     delete comm;
 }
 
@@ -583,7 +583,7 @@ TEST_F(ProfilingHandlerTest, GetInitCacheData_test){
     handler.StartHostApiSubscribe();
     handler.StartHostHcclOpSubscribe();
     handler.StartTaskApiSubscribe();
-    handler.StartAddtionInfoSubscribe();
+    handler.StartAdditionInfoSubscribe();
     handler.StartL2Subscribe();
     handler.StopSubscribe();
 }
