@@ -13,11 +13,12 @@
 #include "../../../../../legacy/framework/dfx/profiling/dlprof_function.h"
 namespace hccl {
 
-HcclResult HcclCommProfiling::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId) {
+HcclResult HcclCommProfiling::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId, bool cachedReq) {
     u64 endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     uint64_t cmdItemId = Hccl::DlProfFunction::GetInstance().dlMsprofStr2Id(kernelName.c_str(), kernelName.length());
-    EXECEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeApi(beginTime, endTime, cmdItemId, threadId), return HCCL_E_PTR);
-    EXECEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeBasicInfo(endTime, cmdItemId, threadId), return HCCL_E_PTR);
+    // mode==OPS_KERNEL_INFO_LIB || GetThreadCaptureStatus()  在这两个条件下才会缓存  但是当前没有capture  而且当前也不是这个模式了
+    EXECEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeApi(beginTime, endTime, cmdItemId, threadId, cachedReq), return HCCL_E_PTR);
+    EXECEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeBasicInfo(endTime, cmdItemId, threadId, cachedReq), return HCCL_E_PTR);
     HCCL_INFO("[HcclCommProfiling][ReportKernel] beginTime [%llu] endTime[%llu] kernelName[%s] commTag[%s] threadId[%u]",
             beginTime, endTime, kernelName.c_str(), commTag.c_str(), threadId);
     return HCCL_SUCCESS;
