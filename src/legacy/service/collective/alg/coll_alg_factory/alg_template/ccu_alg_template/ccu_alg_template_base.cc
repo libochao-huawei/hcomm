@@ -133,22 +133,22 @@ HcclResult CcuAlgTemplateBase::GetToken(const CollAlgOperator &op, uint64_t &tok
     try {
         if (op.inputMem != nullptr && op.inputMem->GetAddr() != 0) {
             token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.inputMem->GetAddr()),
-                static_cast<uint64_t>(op.inputMem->GetSize()));
+                                         static_cast<uint64_t>(op.inputMem->GetSize()));
             return HCCL_SUCCESS;
         } else if (op.outputMem != nullptr && op.outputMem->GetAddr() != 0) {
             token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.outputMem->GetAddr()),
-                static_cast<uint64_t>(op.outputMem->GetSize()));
+                                         static_cast<uint64_t>(op.outputMem->GetSize()));
             return HCCL_SUCCESS;
         } else if (op.scratchMem != nullptr && op.scratchMem->GetAddr() != 0) {
             token = CcuRep::GetTokenInfo(static_cast<uint64_t>(op.scratchMem->GetAddr()),
-                static_cast<uint64_t>(op.scratchMem->GetSize()));
+                                         static_cast<uint64_t>(op.scratchMem->GetSize()));
             return HCCL_SUCCESS;
         }
         HCCL_WARNING("[GetToken] Both inputMem and outputMem are null");
         return HCCL_E_PTR;
     } catch (HcclException &e) {
         HCCL_ERROR("[GetToken] Exception occurred: %s", e.what());
-        auto backTraces = e.GetBackTracesStrings();
+        auto backTraces = e.GetBackTraceStrings();
         std::for_each(backTraces.begin(), backTraces.end(), [](const std::string &item) {
             HCCL_INFO("backTraces item: %s", item.c_str());
         });
