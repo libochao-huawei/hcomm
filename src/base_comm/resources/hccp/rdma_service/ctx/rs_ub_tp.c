@@ -9,7 +9,6 @@
  */
 
 #include <urma_types.h>
-#include <arpa/inet.h>
 #include "securec.h"
 #include "user_log.h"
 #include "dl_urma_function.h"
@@ -33,17 +32,6 @@ int RsUbGetTpInfoList(struct RsUbDevCb *devCb, struct GetTpCfg *cfg, struct Hccp
     (void)memcpy_s(udmaCfg.local_eid.raw, sizeof(udmaCfg.local_eid.raw),
         cfg->localEid.raw, sizeof(cfg->localEid.raw));
     (void)memcpy_s(udmaCfg.peer_eid.raw, sizeof(udmaCfg.peer_eid.raw), cfg->peerEid.raw, sizeof(cfg->peerEid.raw));
-
-    hccp_info("[rs_ub_ctx][RsUbGetTpInfoList] before rs_urma_get_tp_list: tpCnt[%u] flag.value[0x%x] "
-        "ctp[%u] rtp[%u] utp[%u] uboe[%u] pre_defined[%u] dynamic_defined[%u] "
-        "trans_mode[%u] localEid[%016llx:%016llx] peerEid[%016llx:%016llx]",
-        tpCnt, udmaCfg.flag.value, udmaCfg.flag.bs.ctp, udmaCfg.flag.bs.rtp, udmaCfg.flag.bs.utp,
-        udmaCfg.flag.bs.uboe, udmaCfg.flag.bs.pre_defined, udmaCfg.flag.bs.dynamic_defined,
-        (unsigned int)udmaCfg.trans_mode,
-        (unsigned long long)be64toh(udmaCfg.local_eid.in6.subnet_prefix),
-        (unsigned long long)be64toh(udmaCfg.local_eid.in6.interface_id),
-        (unsigned long long)be64toh(udmaCfg.peer_eid.in6.subnet_prefix),
-        (unsigned long long)be64toh(udmaCfg.peer_eid.in6.interface_id));
 
     ret = RsUrmaGetTpList(devCb->urmaCtx, &udmaCfg, &tpCnt, tpList);
     CHK_PRT_RETURN(ret != 0, hccp_err("[rs_ub_ctx]rs_urma_get_tp_list failed, ret[%d] transMode:%u flag:0x%x "
