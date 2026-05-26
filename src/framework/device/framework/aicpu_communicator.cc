@@ -1448,11 +1448,10 @@ HcclResult HcclCommAicpu::RefreshTransportsResForRank(const HcclOpResParam *comm
 
         rankData_[rankId].remoteWorldRank = rankRelationResPtr->remoteWorldRank;
         rankData_[rankId].remoteUsrRankId = rankRelationResPtr->remoteUsrRankId;
-        // ZeroCopy 路径不创建新链路，链路在首次 capture 的 AicpuResourceInit 中已创建
-        // 直接使用已有链路（linkRes_[rankId][newTag]），由 GetSdmaLinksByRankAndTag 查找
-        HCCL_INFO("[RefreshTransportsResForRank] ZeroCopy success rankId[%u], group[%s], newTag[%s]",
+        HCCL_INFO("[RefreshTransportsResForRank] ZeroCopy rankData set rankId[%u], group[%s], newTag[%s]",
             rankId, identifier_.c_str(), newTag.c_str());
-        return HCCL_SUCCESS;
+        // ZeroCopy 设完 rankData 后继续走正常路径，用 commParam 创建链路并写入 linkRes_
+        // 不要 return —— GetSdmaLinksByRankAndTag 依赖 linkRes_ 里有条目
     }
 
     // 原有路径：从 commParam->remoteRes[rankId] 读取
