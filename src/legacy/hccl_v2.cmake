@@ -82,7 +82,6 @@ target_include_directories(hccl_v2 PRIVATE
     # 外部依赖
     ${HCOMM_DIR}/externel_depends/tsch
     # 三方件头文件
-    ${THIRD_PARTY_NLOHMANN_PATH}
     ${RDMA_CORE_INCLUDE_DIR}
 )
 

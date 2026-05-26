@@ -206,7 +206,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCOMM_DIR}/externel_depends/tsch/
         # 三方件头文件
         ${RDMA_CORE_INCLUDE_DIR}
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        ${JSON_INCLUDE_DIR}
     )
     target_include_directories(ccl_kernel_plf PRIVATE
         ${CCL_KERNEL_PLF_OPEN_INCLUDE_LIST}

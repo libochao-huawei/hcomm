@@ -106,9 +106,9 @@ target_include_directories(hcomm PRIVATE
     ${LEGACY_INCLUDE_LIST}
 
     # 三方件头文件
-    ${THIRD_PARTY_NLOHMANN_PATH}
     ${RDMA_CORE_INCLUDE_DIR}
     ${URMA_INCLUDE_DIR}
+    ${JSON_INCLUDE_DIR}
 )
 
 if(BUILD_OPEN_PROJECT)
