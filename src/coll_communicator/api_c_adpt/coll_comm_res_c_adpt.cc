@@ -296,11 +296,11 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         s32 deviceLogicId = 0;
         (void)hrtGetDeviceRefresh(&deviceLogicId);
         u32 rankTableCrc = HcomConsumeRankTableJsonCrc(deviceLogicId);
-        RankConsistencyCheckerV2::GetInstance().RecordRankTableCrcV2(rankTableCrc);
-        u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
-        CHK_RET(RankConsistencyCheckerV2::GetInstance().RecordEnvVarCrcV2(buffSize));
-        std::string curVersion = Hccl::EnvConfig::GetInstance().GetLogConfig().GetCannVersion();
-        RankConsistencyCheckerV2::GetInstance().RecordCannVersionV2(curVersion);
+        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordRankTableCrcV2(rankTableCrc));
+        u64 buffSize = Hccl::EnvConfig::GetInstance(deviceLogicId).GetAlgoConfig().GetBuffSize();
+        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordEnvVarCrcV2(buffSize));
+        const std::string &curVersion = Hccl::EnvConfig::GetInstance().GetLogConfig().GetCannVersion();
+        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordCannVersionV2(curVersion));
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
         if (!CheckCommEngine(engine, opExpansionMode)) {

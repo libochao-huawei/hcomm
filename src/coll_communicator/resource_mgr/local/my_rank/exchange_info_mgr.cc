@@ -28,7 +28,9 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
     CollCommConfigConsistency &collCommConfigConsistency,
     const std::string &commTag)
 {
-    auto &checker = RankConsistencyCheckerV2::GetInstance();
+    s32 deviceLogicId = 0;
+    (void)hrtGetDeviceRefresh(&deviceLogicId);
+    auto &checker = RankConsistencyCheckerV2::GetInstance(deviceLogicId);
     u64 frameLenV2 = checker.GetCheckFrameLengthV2();
     std::vector<Hccl::Socket*> sockets;
     std::vector<u32> remoteRanks;
