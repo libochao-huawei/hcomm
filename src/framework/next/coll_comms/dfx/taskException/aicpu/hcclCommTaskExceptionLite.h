@@ -31,6 +31,7 @@ private:
     HcclResult ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
     HcclResult ReportErrMsg(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
     HcclResult PrintTaskException(CollCommAicpu *aicpuComm, u32 sqId, uint16_t taskId, uint16_t streamId);
+    HcclResult PrintThreadTaskInfo(CollCommAicpu *aicpuComm, u32 sqId, uint16_t taskId, uint16_t streamId);
 
     HcclResult HandleExceptionCqe();
     HcclResult GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);

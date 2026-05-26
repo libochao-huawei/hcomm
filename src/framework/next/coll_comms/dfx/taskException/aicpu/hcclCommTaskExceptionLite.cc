@@ -92,6 +92,25 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
                     "cqeStatus[%d]", __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId(), cqeStatus), ret);
             }
         }
+
+        if (printAllThreads_) {
+            for (auto thread : threads) {
+                Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(thread->GetStreamLitePtr());
+                u32 sqHead = 0U;
+                u32 sqTail = 0U;
+                HcclResult ret = QuerySqStatus(devId_, streamLite->GetSqId(), sqHead, sqTail);
+                if (ret != HCCL_SUCCESS || sqHead == sqTail) { // 此流为空时，不打印
+                    HCCL_RUN_INFO("PrintThreadTaskInfo skip, QuerySqStatus ret[%d], aicpuComm[%s], devId[%u], sqId[%u], sqHead[%u], sqTail[%u]",
+                        ret, aicpuComm->GetIdentifier().c_str(), devId_, streamLite->GetSqId(), sqHead, sqTail);
+                    continue;
+                }
+
+                uint16_t streamId = 0;
+                uint16_t taskId = 0;
+                streamLite->GetRtsq()->GetStreamIdAndTaskIdByIdx(sqHead, streamId, taskId);
+                PrintTaskException(aicpuComm, streamLite->GetSqId(), sqHead, sqTail);
+            }
+        }
         threadRwlock.readUnlock();
     }
     rwlock.readUnlock();
