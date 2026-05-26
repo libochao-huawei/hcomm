@@ -8,7 +8,7 @@ if(BUILD_OPEN_PROJECT)
         COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication_v2.h 
                 -o ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_910_95_tmp.o 
                 --cce-aicore-arch=dav-c310-vec
-                --cce-aicore-input-parameter-size=28000 --cce-aicore-only 
+                --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only 
                 -mllvm -cce-aicore-function-stack-size=0x8000 
                 -mllvm -cce-aicore-stack-size=0x8000
                 -D__CCE_AICORE__=310 -D__DAV_C310__ -DASCENDC_DUMP
@@ -40,7 +40,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT8 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_int8
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -59,7 +59,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT16 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_int16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -78,7 +78,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT32 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_int32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -97,7 +97,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_float16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP16 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_float16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -116,7 +116,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_float32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP32 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_float32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -135,7 +135,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_bfloat16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_BFP16 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_bfloat16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -154,7 +154,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT8 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_int8
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -173,7 +173,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT16 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_int16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -192,7 +192,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT32 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_int32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -211,7 +211,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_float16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP16 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_float16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -230,7 +230,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_float32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP32 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_float32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -249,7 +249,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_bfloat16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_BFP16 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_bfloat16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -268,7 +268,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT8 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_int8
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -287,7 +287,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT16 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_int16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -306,7 +306,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT32 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_int32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -325,7 +325,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_float16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP16 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_float16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -344,7 +344,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_float32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP32 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_float32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -363,7 +363,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_bfloat16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_BFP16 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_bfloat16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -382,7 +382,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT8 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_int8
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -401,7 +401,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT16 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_int16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -420,7 +420,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT32 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_int32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -439,7 +439,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_float16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
           -DHCCL_DTYPE_FP16 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_float16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -458,7 +458,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_float32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP32 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_float32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -477,7 +477,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_bfloat16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_BFP16 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_bfloat16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -496,7 +496,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT8 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_uint8
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -515,7 +515,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT16 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_uint16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -534,7 +534,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT32 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_uint32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -553,7 +553,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int64.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT64 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_int64
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -572,7 +572,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint64.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT64 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_uint64
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -591,7 +591,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT8 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_int8
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -610,7 +610,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT16 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_int16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -629,7 +629,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT32 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_int32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -648,7 +648,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_float16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP16 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_float16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -667,7 +667,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_float32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP32 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_float32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -686,7 +686,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_bfloat16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_BFP16 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_bfloat16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -705,7 +705,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT8 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_uint8
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -724,7 +724,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT16 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_uint16
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -743,7 +743,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT32 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_uint32
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -762,7 +762,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int64.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT64 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_int64
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -781,7 +781,7 @@ if(BUILD_OPEN_PROJECT)
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint64.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT64 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_uint64
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -802,7 +802,7 @@ else()
     add_custom_target(hccl_aiv_op_910_95
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication_v2.h -o ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_910_95_tmp.o
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -I${TOP_DIR}/asc/asc-devkit/
             -I${TOP_DIR}/asc/asc-devkit/include
@@ -830,7 +830,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT8 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_int8
             -I${TOP_DIR}/asc/asc-devkit/
@@ -858,7 +858,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT16 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_int16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -886,7 +886,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT32 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_int32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -914,7 +914,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_float16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP16 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_float16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -942,7 +942,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_float32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP32 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_float32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -970,7 +970,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_oneshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_bfloat16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_BFP16 -Dsk_allreduce_mesh_1d_oneshot=sk_allreduce_mesh_1d_oneshot_bfloat16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -998,7 +998,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT8 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_int8
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1026,7 +1026,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT16 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_int16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1054,7 +1054,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_int32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT32 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_int32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1082,7 +1082,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_float16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP16 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_float16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1110,7 +1110,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_float32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP32 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_float32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1138,7 +1138,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_mesh_1d_twoshot_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_twoshot_bfloat16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_BFP16 -Dsk_allreduce_mesh_1d_twoshot=sk_allreduce_mesh_1d_twoshot_bfloat16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1166,7 +1166,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT8 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_int8
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1194,7 +1194,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT16 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_int16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1222,7 +1222,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_int32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT32 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_int32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1250,7 +1250,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_float16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP16 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_float16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1278,7 +1278,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_float32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP32 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_float32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1306,7 +1306,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_mesh_1d_bfloat16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_BFP16 -Dsk_reducescatter_mesh_1d=sk_reducescatter_mesh_1d_bfloat16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1334,7 +1334,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT8 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_int8
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1362,7 +1362,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT16 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_int16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1390,7 +1390,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT32 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_int32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1418,7 +1418,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_float16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP16 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_float16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1446,7 +1446,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_float32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP32 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_float32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1474,7 +1474,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_bfloat16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_BFP16 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_bfloat16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1502,7 +1502,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT8 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_uint8
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1530,7 +1530,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT16 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_uint16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1558,7 +1558,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT32 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_uint32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1586,7 +1586,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_int64.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT64 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_int64
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1614,7 +1614,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_mesh_1d_uint64.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT64 -Dsk_allgather_mesh_1d=sk_allgather_mesh_1d_uint64
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1642,7 +1642,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT8 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_int8
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1670,7 +1670,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT16 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_int16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1698,7 +1698,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT32 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_int32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1726,7 +1726,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_float16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP16 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_float16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1754,7 +1754,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_float32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_FP32 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_float32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1782,7 +1782,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_bfloat16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_BFP16 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_bfloat16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1810,7 +1810,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint8.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT8 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_uint8
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1838,7 +1838,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint16.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT16 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_uint16
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1866,7 +1866,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint32.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT32 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_uint32
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1894,7 +1894,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_int64.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_INT64 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_int64
             -I${TOP_DIR}/asc/asc-devkit/
@@ -1922,7 +1922,7 @@ else()
             COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_mesh_1d_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_mesh_1d_uint64.o
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-input-parameter-size=28000  -mllvm -cce-block-local-reserve-size=0x158   --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
             -DHCCL_DTYPE_UINT64 -Dsk_alltoall_mesh_1d=sk_alltoall_mesh_1d_uint64
             -I${TOP_DIR}/asc/asc-devkit/
