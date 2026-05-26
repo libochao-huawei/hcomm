@@ -76,6 +76,26 @@ HcclResult TopoInfoExchangeServer::FailedConnectionAgentIdString(u32 rankSize, s
     return failedAgentIdList.length() > oriLength ? HCCL_SUCCESS : result;
 }
 
+void TopoInfoExchangeServer::PrintFailedAgentIdList(const std::string &failedAgentIdList)
+{
+    size_t start = 0;
+    while (start < failedAgentIdList.size()) {
+        size_t end = start + LOG_TMPBUF_SIZE ;
+        if (end >= failedAgentIdList.size()) {
+            HCCL_ERROR("[TopoInfoExchangeServer] identifier:[%s], failed rankList:[%s]", identifier_.c_str(),
+                failedAgentIdList.substr(start).c_str());
+            break;
+        }
+        size_t commaPos = failedAgentIdList.rfind(',', end);
+        if (commaPos == std::string::npos || commaPos < start) {
+            commaPos = end;
+        }
+        HCCL_ERROR("[TopoInfoExchangeServer] identifier:[%s], failed rankList:[%s]", identifier_.c_str(),
+            failedAgentIdList.substr(start, commaPos - start).c_str());
+        start = commaPos + 1;
+    }
+}
+
 HcclResult TopoInfoExchangeServer::Setup()
 {
     HcclResult ret;
@@ -87,7 +107,9 @@ HcclResult TopoInfoExchangeServer::Setup()
         HcclResult connectRet = Connect(connectSockets_, expectRankSize);
         if (connectRet != HCCL_SUCCESS) {
             HcclResult result = FailedConnectionAgentIdString(expectRankSize, failedAgentIdList);
-            CHK_PRT_CONT(result == HCCL_SUCCESS, HCCL_ERROR("[TopoInfoExchangeServer]failed to connect rankList:[%s]", failedAgentIdList.c_str()));
+            CHK_PRT_BREAK(result != HCCL_SUCCESS, HCCL_ERROR("[TopoInfoExchangeServer][Setup]identifier:[%s], Failed to get unconnected agent IDs",
+                identifier_.c_str()), error = result);
+            PrintFailedAgentIdList(failedAgentIdList);    // 防截断打印
         }
         u32 rankSize = connectSockets_.size();
         if (!isByMasterInfo_ && rankSize > TOPO_HIERARCHICAL_ENABLE_THRESHOLD) {
@@ -352,6 +374,7 @@ HcclResult TopoInfoExchangeServer::Connect(std::map<std::string, std::shared_ptr
             return HCCL_E_TCP_CONNECT;
         }
     }
+    HCCL_RUN_INFO("[TopoInfoExchangeServer][Connect]: rootInfo identifer[%s], socket accept all ranks success.", identifier_.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -409,7 +432,7 @@ HcclResult TopoInfoExchangeServer::GroupLeaderConnect(std::map<std::string, std:
             return HCCL_E_TCP_CONNECT;
         }
     }
-
+    HCCL_RUN_INFO("[TopoInfoExchangeServer][GroupLeaderConnect]: rootInfo identifer[%s], socket accept all ranks success.", identifier_.c_str());
     return HCCL_SUCCESS;
 }
 

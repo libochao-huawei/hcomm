@@ -77,10 +77,10 @@ HcclResult TopoInfoExchangeAgent::Setup()
     //填充要发送的localRankHandle的值
     localRankHandle_.rankId = localRankInfo_.rank;
     HcclResult ret = ConnectWithRetry(serverIP_, serverPort_, socket_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TopoInfoExchangeAgent][Setup]TopoExchangeAgent: "\
-        "connect server[%s : %u] failed", serverIP_.GetReadableAddress(), serverPort_), ret);
-    HCCL_INFO("TopoExchangeAgent: client connect with server ip[%s] port[%u] success.",
-        serverIP_.GetReadableAddress(), serverPort_);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TopoInfoExchangeAgent][Setup]TopoExchangeAgent: identifier[%s], rankID[%d], "\
+        "connect server[%s : %u] failed", identifier_.c_str(), localRankInfo_.rank, serverIP_.GetReadableAddress(), serverPort_), ret);
+    HCCL_RUN_INFO("TopoExchangeAgent: identifier[%s], rankID[%d], client connect with server ip[%s] port[%u] success.",
+        identifier_.c_str(), localRankInfo_.rank, serverIP_.GetReadableAddress(), serverPort_);
 
     if (!isByMasterInfo_ && localRankInfo_.rankSize > TOPO_HIERARCHICAL_ENABLE_THRESHOLD) {
         ret = socket_->Send(&localRankHandle_, sizeof(localRankHandle_));

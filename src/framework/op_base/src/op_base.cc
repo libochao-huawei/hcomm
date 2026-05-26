@@ -1995,8 +1995,8 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
 
     /* 接口交互信息日志 */
     HCCL_RUN_INFO("Entry-HcclCommInitRootInfoConfigInner:ranks[%u], rank[%u], rootinfo: host ip[%s] "\
-        "port[%u] nicDeploy[%d] identifier[%s], deviceLogicId[%d]", nRanks, rank, rootHandle.ip,
-        rootHandle.port, rootHandle.nicDeploy, commConfig.GetConfigCommName().c_str(), deviceLogicId);
+        "port[%u] nicDeploy[%d] rootInfo identifier[%s] identifier[%s], deviceLogicId[%d]", nRanks, rank, rootHandle.ip,
+        rootHandle.port, rootHandle.nicDeploy, rootHandle.identifier, commConfig.GetConfigCommName().c_str(), deviceLogicId);
 
     /* --------------初始化------------------------- */
     ret = InitCommRootInfo(nRanks, rank, rootHandle, commConfig, comm);

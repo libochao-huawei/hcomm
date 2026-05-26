@@ -70,6 +70,7 @@ private:
     HcclResult GetRemoteFdAndRankSize(std::shared_ptr<HcclSocket> &socket,
         std::map<std::string, std::shared_ptr<HcclSocket>> &connectSockets, u32 &rankSize);
     HcclResult FailedConnectionAgentIdString(u32 rankSize, std::string &failedAgentIdList);
+    void PrintFailedAgentIdList(const std::string &failedAgentIdList);
     HcclIpAddress hostIP_;
     u32 hostPort_{HCCL_INVALID_PORT};
     SocketHandle socketHandle_;
