@@ -48,7 +48,7 @@ public:
     void CloseSocket(std::shared_ptr<hccl::HcclSocket> &socket);
 
 private:
-    static HcclResult Init(u32 devicePhyId, u32 deviceLogicId);
+    static HcclResult Init(GlobalNetDevMgr &netDevMgrInstance, u32 devicePhyId, u32 deviceLogicId);
     void UnInit();
     HcclResult ServerDeInit(const HcclIpAddress& localIp, u32 port);
     HcclResult AddListenSocketWhiteList(const HcclIpAddress& localIp, uint32_t port,

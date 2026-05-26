@@ -34,8 +34,6 @@ std::map<PortInfo, std::shared_ptr<HcclSocket>> GlobalNetDevMgr::serverSocketMap
 std::map<PortInfo, Referenced> GlobalNetDevMgr::serverSocketRefMap_;
 std::mutex GlobalNetDevMgr::serverMapMutex_;
 
-// reserve 1 instance for invalid deviceid and host
-static GlobalNetDevMgr netDevMgrInstance[MAX_MODULE_DEVICE_NUM + 1];
 GlobalNetDevMgr::~GlobalNetDevMgr()
 {
     HCCL_INFO("[GlobalNetDevMgr][%s] start.", __func__);
@@ -47,6 +45,8 @@ GlobalNetDevMgr::~GlobalNetDevMgr()
 
 GlobalNetDevMgr& GlobalNetDevMgr::GetInstance(u32 devicePhyId)
 {
+    // reserve 1 instance for invalid deviceid and host
+    static GlobalNetDevMgr netDevMgrInstance[MAX_MODULE_DEVICE_NUM + 1];
     u32 deviceLogicId;
     HcclResult hcclRet = hrtGetDeviceIndexByPhyId(devicePhyId, deviceLogicId);
     if (hcclRet != HCCL_SUCCESS) {
@@ -61,7 +61,7 @@ GlobalNetDevMgr& GlobalNetDevMgr::GetInstance(u32 devicePhyId)
     }
 
     if (!netDevMgrInstance[deviceLogicId].isInited_) {
-        hcclRet = Init(devicePhyId, deviceLogicId);
+        hcclRet = Init(netDevMgrInstance[deviceLogicId], devicePhyId, deviceLogicId);
         if (hcclRet != HCCL_SUCCESS) {
             HCCL_RUN_WARNING("[Get][Instance]Init deviceLogicId[%u]fail, return reserve instance", deviceLogicId);
             return netDevMgrInstance[MAX_MODULE_DEVICE_NUM];
@@ -72,11 +72,11 @@ GlobalNetDevMgr& GlobalNetDevMgr::GetInstance(u32 devicePhyId)
     return netDevMgrInstance[deviceLogicId];
 }
 
-HcclResult GlobalNetDevMgr::Init(u32 devicePhyId, u32 deviceLogicId)
+HcclResult GlobalNetDevMgr::Init(GlobalNetDevMgr &netDevMgrInstance, u32 devicePhyId, u32 deviceLogicId)
 {
     // init after get the lock
     std::unique_lock<std::mutex> lock(netDevCtxMtx_);
-    if (netDevMgrInstance[deviceLogicId].isInited_) {
+    if (netDevMgrInstance.isInited_) {
         return HCCL_SUCCESS;
     }
 
@@ -87,16 +87,16 @@ HcclResult GlobalNetDevMgr::Init(u32 devicePhyId, u32 deviceLogicId)
     }
 
     // need to check again
-    if (netDevMgrInstance[deviceLogicId].isInited_) {
+    if (netDevMgrInstance.isInited_) {
         HCCL_INFO("[GlobalNetDevMgr][Init]Has been inited. devicePhyId[%u], deviceLogicId[%d]", 
             devicePhyId, deviceLogicId);
         return HCCL_SUCCESS;
     }
 
-    netDevMgrInstance[deviceLogicId].devicePhyId_ = devicePhyId;
-    netDevMgrInstance[deviceLogicId].deviceLogicId_ = deviceLogicId;
+    netDevMgrInstance.devicePhyId_ = devicePhyId;
+    netDevMgrInstance.deviceLogicId_ = deviceLogicId;
     CHK_RET(HcclNetInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, devicePhyId, static_cast<u32>(deviceLogicId), false));
-    netDevMgrInstance[deviceLogicId].isInited_ = true;
+    netDevMgrInstance.isInited_ = true;
     HCCL_INFO("[GlobalNetDevMgr][Init]Init success, devicePhyId[%u], deviceLogicId[%d]",
         devicePhyId, deviceLogicId);
     return HCCL_SUCCESS;
