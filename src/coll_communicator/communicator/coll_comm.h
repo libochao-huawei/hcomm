@@ -10,8 +10,10 @@
 #ifndef COLL_COMM_H
 #define COLL_COMM_H
 
+#include <atomic>
 #include <memory>
 #include <string>
+#include <vector>
 #include "my_rank.h"
 #include "rank_graph.h"
 #include "comm_config_pub.h"
@@ -22,9 +24,12 @@
 #include "hcclCommDfx.h"
 #include "rank_graph_v2.h"
 #include "error_message_v2.h"
-#include "include/hccl_communicator.h"
+#include "hccl/hccl_res.h"
+#include "../../../../legacy/include/hccl_communicator.h"
 
 namespace hccl {
+class SymmetricMemory;
+struct SymmetricMemoryResource;
 /**
  * @note 职责：集合通信通信域上下文管理，包括RankGraph和本rank信息资源等内容。
  * 当前需包含原有的91092/91093的通信域、原有的91095的通信域void
@@ -97,6 +102,11 @@ public:
     HcclResult Suspend();
     HcclResult Clean();
     HcclResult Resume();
+    HcclResult RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle);
+    HcclResult DeregisterWindow(HcclCommSymWindow winHandle);
+    HcclResult GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
+    HcclResult GetSymmetricMemHandles(std::vector<HcclMemHandle> &memHandles) const;
+    HcclResult UpdateSymmetricRemoteMem(uint32_t remoteRank, const CommMem *remoteMems, char **memTags, uint32_t memNum);
 
 private:
     HcclResult DestroyAicpuComm();
@@ -104,6 +114,9 @@ private:
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
     HcclResult GetRankIpPortMap();
+    HcclResult InitSymmetricMemory(HcclCommConfig *config);
+    HcclResult RegisterSymmetricMemoryResource(void* ptr, size_t size, SymmetricMemoryResource &resource);
+    void UnregisterSymmetricMemoryResource(const SymmetricMemoryResource &resource);
 
     void* comm_{nullptr};
     uint32_t rankId_{};
@@ -123,6 +136,7 @@ private:
     std::unique_ptr<ChannelManager> channelMgr_{nullptr};
     std::shared_ptr<MyRank> myRank_{};
     std::unique_ptr<HcclCommDfx> hcclCommDfx_{nullptr};
+    std::atomic<uint64_t> symmetricMemoryWinId_{0};
     uintptr_t   addr_{0};
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
@@ -133,6 +147,7 @@ private:
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
     Hccl::RankIpPortMapPtr rankIpPortMap_;
+    std::unique_ptr<SymmetricMemory> symmetricMemory_{nullptr};
 };
 }  // namespace hccl
 
