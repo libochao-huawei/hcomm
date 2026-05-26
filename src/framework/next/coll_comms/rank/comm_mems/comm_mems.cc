@@ -214,6 +214,7 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
         HcclMem mem;
         mem.addr = (*handles[i]).mem.addr;
         mem.size = (*handles[i]).mem.size;
+        HCCL_INFO("TESTZJN --- CommMems::GetTagMemoryHandles mem.addr[%p], mem.size[%u]", (*handles[i]).mem.addr, (*handles[i]).mem.size);
         mem.type = ConvertCommToHcclMemType((*handles[i]).mem.type);
         memTag.push_back(opReverseBindings_[handles[i]]);
         memVec.push_back(mem);
