@@ -237,6 +237,7 @@ HcclResult CommMems::SetMemHandles(HcommMemHandle *memHandles, const std::vector
     for (uint32_t i = 1; i < memHandleVec.size(); ++i) {
         CHK_PTR_NULL(memHandleVec[i]);
         (*handles[i - 1]).bufferHandle = memHandleVec[i];
+        HCCL_INFO("TESTZJN --- CommMems::SetMemHandles addr[%p], size[%d]", (*handles[i - 1]).mem.addr, (*handles[i - 1]).mem.size);
         commMemHandleVec.push_back(static_cast<void*>(handles[i - 1]));
     }
     return HCCL_SUCCESS;
