@@ -38,6 +38,26 @@ MAKE_ENUM(TopoType, CLOS, MESH_1D, MESH_2D, A3_SERVER, A2_AX_SERVER, TOPO_TYPE_R
 constexpr LocalId BACKUP_LOCAL_ID = 64;
 } // namespace Hccl
 
+inline bool operator==(const MultiPortAddr &lhs, const MultiPortAddr &rhs)
+{
+    if (lhs.portNum != rhs.portNum) {
+        return false;
+    }
+    if (lhs.family != rhs.family) {
+        return false;
+    }
+    if (lhs.family == AF_INET) {
+        if (memcmp(&lhs.linkAddr.addr, &rhs.linkAddr.addr, sizeof(lhs.linkAddr.addr)) != 0) {
+            return false;
+        }
+    } else {
+        if (memcmp(&lhs.linkAddr.addr6, &rhs.linkAddr.addr6, sizeof(lhs.linkAddr.addr6)) != 0) {
+            return false;
+        }
+    }
+    return memcmp(lhs.eidList, rhs.eidList, static_cast<size_t>(lhs.portNum) * COMM_ADDR_EID_LEN) == 0;
+}
+
 inline bool operator==(const CommAddr& lhs, const CommAddr& rhs) {
     // 类型不同，直接不等
     if (lhs.type != rhs.type) {
@@ -61,15 +81,7 @@ inline bool operator==(const CommAddr& lhs, const CommAddr& rhs) {
             return memcmp(lhs.eid, rhs.eid, COMM_ADDR_EID_LEN) == 0;
 
         case COMM_ADDR_TYPE_MULTI_PORT: {
-            if (lhs.portsAddr.portNum != rhs.portsAddr.portNum) {
-                return false;
-            }
-            if (lhs.portsAddr.portNum == 0 || lhs.portsAddr.portNum > HCOMM_NIC_PORT_MAX_NUM) {
-                return false;
-            }
-            return memcmp(lhs.portsAddr.eidList, rhs.portsAddr.eidList,
-                static_cast<size_t>(lhs.portsAddr.portNum) * COMM_ADDR_EID_LEN) == 0 &&
-                memcmp(&lhs.portsAddr.addr6, &rhs.portsAddr.addr6, sizeof(lhs.portsAddr.addr6)) == 0;
+            return lhs.portsAddr == rhs.portsAddr;
         }
 
         case COMM_ADDR_TYPE_RESERVED:
@@ -110,6 +122,35 @@ struct hash<CommProtocol> {
 };
 
 template <>
+struct hash<MultiPortAddr> {
+    size_t operator()(const MultiPortAddr& addr) const noexcept
+    {
+        constexpr uint8_t BITS_8 = 8;
+        uint8_t LEFT_SHIFT_BITS = BITS_8;
+        size_t h = 0;
+        h = h ^ static_cast<size_t>(addr.portNum);
+        h = h ^ (static_cast<size_t>(addr.family) << LEFT_SHIFT_BITS);
+        if (addr.family == AF_INET) {
+            LEFT_SHIFT_BITS += BITS_8;
+            h = h ^ (static_cast<size_t>(addr.linkAddr.addr.s_addr) << LEFT_SHIFT_BITS);
+        } else {
+            const auto *addrBytes = reinterpret_cast<const uint8_t *>(&addr.linkAddr.addr6);
+            for (u32 i = 0; i < sizeof(addr.linkAddr.addr6); ++i) {
+                h = h ^ (static_cast<size_t>(addrBytes[i]) << (((i + 1) % BITS_8) + LEFT_SHIFT_BITS));
+            }
+            LEFT_SHIFT_BITS += BITS_8;
+        }
+        for (uint8_t idx = 0; idx < addr.portNum && idx < HCOMM_NIC_PORT_MAX_NUM; ++idx) {
+            for (u32 i = 0; i < COMM_ADDR_EID_LEN; ++i) {
+                h = h ^ (static_cast<size_t>(addr.eidList[idx][i]) << (((i + 1) % BITS_8) + LEFT_SHIFT_BITS));
+            }
+            LEFT_SHIFT_BITS += BITS_8;
+        }
+        return h;
+    }
+};
+
+template <>
 struct hash<CommAddr> {
     size_t operator()(const CommAddr& commAddr) const noexcept
     {
@@ -139,17 +180,7 @@ struct hash<CommAddr> {
                 break;
             }
             case COMM_ADDR_TYPE_MULTI_PORT: {
-                h = h ^ static_cast<size_t>(commAddr.portsAddr.portNum);
-                for (uint8_t portId = 0; portId < commAddr.portsAddr.portNum && portId < HCOMM_NIC_PORT_MAX_NUM; ++portId) {
-                    for (u32 i = 0; i < COMM_ADDR_EID_LEN; ++i) {
-                        h = h ^ (static_cast<size_t>(commAddr.portsAddr.eidList[portId][i])
-                            << ((i % sizeof(size_t)) * 8));
-                    }
-                }
-                const auto *addrBytes = reinterpret_cast<const uint8_t *>(&commAddr.portsAddr.addr6);
-                for (u32 i = 0; i < sizeof(commAddr.portsAddr.addr6); ++i) {
-                    h = h ^ (static_cast<size_t>(addrBytes[i]) << ((i % sizeof(size_t)) * 8));
-                }
+                h = h ^ (std::hash<MultiPortAddr>()(commAddr.portsAddr) << 8);
                 break;
             }
             default: {
