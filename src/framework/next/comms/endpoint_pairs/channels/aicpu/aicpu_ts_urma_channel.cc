@@ -43,6 +43,7 @@ HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
     for (uint32_t i = 0; i < memHandleNum; ++i) {
         auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
         HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
+        HCCL_INFO("TESTZJN --- AicpuTsUrmaChannel::Makebufs addr[%p], size[%u]", locMemInfo->mem.addr, locMemInfo->mem.size);
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
             reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
             hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
