@@ -40,7 +40,7 @@ protected:
         std::cout << "A Test TearDown" << std::endl;
     }
 
-    RankConsistencyCheckerV2 &checker_ = RankConsistencyCheckerV2::GetInstance();
+    RankConsistencyCheckerV2 &checker_ = RankConsistencyCheckerV2::GetInstance(0xFF);
 };
 
 // 通用：Record*V2 → GenerateCheckFrameV2 → CompareCheckFrameV2全流程匹配

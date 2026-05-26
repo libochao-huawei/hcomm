@@ -39,7 +39,7 @@ struct CheckFrameV2 {
 class RankConsistencyCheckerV2 {
 public:
     ~RankConsistencyCheckerV2();
-    static RankConsistencyCheckerV2& GetInstance();
+    static RankConsistencyCheckerV2& GetInstance(s32 deviceLogicId = 0xFF);
     
     HcclResult RecordEnvVarCrcV2(u64 buffSize);
     HcclResult RecordRankTableCrcV2(u32 crc);
