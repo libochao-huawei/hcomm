@@ -1290,8 +1290,10 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(*comm);
             CHK_PTR_NULL(hcclComm);
             
-            std::string parentIdentifier = hcclComm->GetIdentifier();
-            CHK_RET(RankConsistencyCheckerV2::GetInstance().RecordSubCommParaV2(parentIdentifier, rankNum, rankIds, subCommId));
+            const std::string &parentIdentifier = hcclComm->GetIdentifier();
+            s32 deviceLogicId = 0;
+            (void)hrtGetDeviceRefresh(&deviceLogicId);
+            CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordSubCommParaV2(parentIdentifier, rankNum, rankIds, subCommId));
             void* commV2 = hcclComm->GetCommunicatorV2();
             CHK_PTR_NULL(commV2);
             void* subCommV2 = nullptr;
