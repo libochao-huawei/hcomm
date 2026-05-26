@@ -80,9 +80,6 @@ private:
 
     bool launchFlag_ = false;
 
-    static constexpr u32 rtsqSqeSize     = 64;
-    static constexpr u32 perLaunchSqeCnt = 128; // 最大launch 128个SQE
-
     u8 locBuf[rtsqSqeSize * perLaunchSqeCnt]{0};
 
     u32 rtsqFullTimeoutValue_{1836};

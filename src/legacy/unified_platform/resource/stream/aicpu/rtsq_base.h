@@ -27,6 +27,9 @@ void __attribute__((weak)) __attribute__((visibility("default"))) GetSqeId(const
 }
 
 namespace Hccl {
+constexpr u32 rtsqSqeSize = 64;
+constexpr u32 perLaunchSqeCnt = 128;
+
 class RtsqBase {
 public:
     RtsqBase(u32 devPhyId, u32 streamId, u32 sqId);
@@ -211,6 +214,8 @@ public:
     {
         return false;
     }
+
+    HcclResult GetStreamIdAndTaskIdByIdx(u32 idx, uint16_t& streamId, uint16_t& taskId);
 
 protected:
     u32 devPhyId_{0};
