@@ -1915,11 +1915,6 @@ STATIC void RsUbCtxExpJettyImport(struct RsCtxRemJettyCb *rjettyCb, urma_rjetty_
     expCfg.tp_attr.tx_psn = rjettyCb->expImportCfg.txPsn;
     expCfg.tp_attr.rx_psn = rjettyCb->expImportCfg.rxPsn;
 
-    hccp_info("[rs_ub_ctx][RsUbCtxExpJettyImport] before import_jetty_ex: tp_handle[0x%llx] "
-        "peer_tp_handle[0x%llx] tag[0x%llx] tx_psn[%u] rx_psn[%u]",
-        (unsigned long long)expCfg.tp_handle, (unsigned long long)expCfg.peer_tp_handle,
-        (unsigned long long)expCfg.tag, expCfg.tp_attr.tx_psn, expCfg.tp_attr.rx_psn);
-
     rjettyCb->tjetty = RsUrmaImportJettyEx(rjettyCb->devCb->urmaCtx, rjetty, tokenValue, &expCfg);
 }
 
@@ -1937,17 +1932,6 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
     rjetty.type = (urma_target_type_t)rjettyCb->type;
     rjetty.flag.value = rjettyCb->flag.value;
     rjetty.tp_type = rjettyCb->tpType;
-
-    hccp_info("[rs_ub_ctx][RsUbCtxDrvJettyImport] before import_jetty: mode[%d] token[0x%x] "
-        "jetty_id.eid[%016llx:%016llx] jetty_id.uasid[%u] jetty_id.id[%u] trans_mode[%u] policy[%u] type[%u] "
-        "flag.value[0x%x] token_policy[%u] order_type[%u] share_tp[%u] tp_type[%u]",
-        (int)rjettyCb->mode, tokenValue.token,
-        (unsigned long long)be64toh(rjetty.jetty_id.eid.in6.subnet_prefix),
-        (unsigned long long)be64toh(rjetty.jetty_id.eid.in6.interface_id),
-        rjetty.jetty_id.uasid, rjetty.jetty_id.id, (unsigned int)rjetty.trans_mode,
-        (unsigned int)rjetty.policy, (unsigned int)rjetty.type, rjetty.flag.value,
-        (unsigned int)rjetty.flag.bs.token_policy, (unsigned int)rjetty.flag.bs.order_type,
-        (unsigned int)rjetty.flag.bs.share_tp, (unsigned int)rjetty.tp_type);
 
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
         rjettyCb->tjetty = RsUrmaImportJetty(rjettyCb->devCb->urmaCtx, &rjetty, &tokenValue);
