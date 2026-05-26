@@ -1425,6 +1425,7 @@ HcclResult HcclCommAicpu::RefreshTransportsResForRank(const HcclOpResParam *comm
     const std::string &newTag, u32 notifyNum, TransportLinkType linkType)
 {
     // Acl graph + Zero Copy 路径：从 transportDeviceMemAddr_ 读取序列化数据
+    // 只设置 rankData，不创建链路（链路已在 AicpuResourceInit 中创建）
     if (transportDeviceMemAddr_ != 0) {
         ZeroCopyTransportHeader *header =
             reinterpret_cast<ZeroCopyTransportHeader *>(transportDeviceMemAddr_);
@@ -1447,17 +1448,8 @@ HcclResult HcclCommAicpu::RefreshTransportsResForRank(const HcclOpResParam *comm
 
         rankData_[rankId].remoteWorldRank = rankRelationResPtr->remoteWorldRank;
         rankData_[rankId].remoteUsrRankId = rankRelationResPtr->remoteUsrRankId;
-        if (reinterpret_cast<ListCommon *>(rankRelationResPtr->nextTagRes.nextDevice) !=
-            &(rankRelationResPtr->nextTagRes)) {
-            HCCL_DEBUG("[RefreshTransportsResForRank] ZeroCopy rankId[%u], head[%p], nextDevice[%p], group[%s]",
-                rankId, &rankRelationResPtr->nextTagRes, rankRelationResPtr->nextTagRes.nextDevice,
-                identifier_.c_str());
-            CHK_RET(InitRemoteTagRes(rankId, rankRelationResPtr->nextTagRes, newTag, notifyNum, linkType));
-        } else {
-            HCCL_ERROR("[RefreshTransportsResForRank] ZeroCopy could not find tag member, rankId[%u], group[%s]",
-                rankId, identifier_.c_str());
-            return HCCL_E_PARA;
-        }
+        // ZeroCopy 路径不创建新链路，链路在首次 capture 的 AicpuResourceInit 中已创建
+        // 直接使用已有链路（linkRes_[rankId][newTag]），由 GetSdmaLinksByRankAndTag 查找
         HCCL_INFO("[RefreshTransportsResForRank] ZeroCopy success rankId[%u], group[%s], newTag[%s]",
             rankId, identifier_.c_str(), newTag.c_str());
         return HCCL_SUCCESS;
