@@ -137,51 +137,6 @@ public:
 
     ~Rdma1825Ops() override {}
 
-protected:
-    // 创建Hi1823对应RoceWqeEntry, 并下发
-    int PostWqeList(std::vector<WqeDesc> &descList)
-    {
-        int ret = HCCL_SUCCESS;
-
-        // 读取Sq CI指针
-        auto status = memcpy_s(&sqTail_, sizeof(uint32_t), (void *)sqContext_->tailAddr, sizeof(uint32_t));
-        if (UNLIKELY(status != 0)) {
-            THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] memcpy_s failed, ret = %d", __func__, ret));
-        }
-
-        // sq队列如果满，则阻塞下发
-        int wqeNum = descList.size();
-        while (1) {
-            HCCL_INFO("[Rdma1825Ops::%s] Operate : sqTail = %u", __func__, sqTail_);
-            // sq队列能放下
-            if (static_cast<uint32_t>(sqHead_ - sqTail_ + wqeNum) < sqContext_->depth) {
-                break;
-            }
-        }
-
-        // 按入队顺序下发
-        for (int i = 0; i < wqeNum; i++) {
-            RoceWqeEntry wqe{};
-
-            ret = BuildOneWqe(descList[i], &wqe);
-            if (ret != HCCL_SUCCESS) {
-                return ret;
-            }
-            ret = ProcessOneWqe(&wqe, sizeof(RoceWqeEntry), descList[i].opCode);
-            if (ret != HCCL_SUCCESS) {
-                return ret;
-            }
-        }
-
-        // 更新Sq PI指针
-        status = memcpy_s((void *)sqContext_->headAddr, sizeof(uint32_t), &sqHead_, sizeof(uint32_t));
-        if (UNLIKELY(status != 0)) {
-            THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] memcpy_s failed, ret = %d", __func__, ret));
-        }
-
-        return ret;
-    }
-
     int BuildDoorbell(u64 &dbAddr, u64 &dbValue)
     {
         HCCL_INFO("[Rdma1825Ops::%s] start BuildDoorbell", __func__);
@@ -205,39 +160,35 @@ protected:
         return HCCL_SUCCESS;
     }
 
-private:
-    // 总的Wqe创建入口，分发任务
-    int BuildOneWqe(const WqeDesc &desc, RoceWqeEntry *wqe)
+protected:
+    int BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt)
     {
-        uint32_t opCode = 0;
-        // RdmaOpType -> HCOMM_OP_TYPE
-        switch (desc.opCode) {
-            case RdmaOpType::WRITE:
-                opCode = static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE);
-                return BuildWriteWqe(desc.loc, desc.rmt, wqe, opCode);
-            case RdmaOpType::NOTIFY:
-                opCode = static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE);
-                return BuildWriteWqe(desc.locNotify, desc.notify, wqe, opCode);
-            case RdmaOpType::WRITE_REDUCE:
-                return HCCL_E_NOT_SUPPORT;
-            case RdmaOpType::WRITE_REDUCE_WITH_NOTIFY:
-                return HCCL_E_NOT_SUPPORT;
-            default:
-                return HCCL_E_NOT_SUPPORT;
-        }
+        int ret = HCCL_SUCCESS;
+
+        RoceWqeEntry wqe{};
+        CHK_RET(FillCommonWqe(loc, rmt, &wqe, static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE)));
+
+        CHK_RET(CommitWqe(&wqe, sizeof(RoceWqeEntry)));
+        return HCCL_SUCCESS;
     }
 
-    int BuildWriteWqe(const RmaBufSliceLite *loc, const RmtRmaBufSliceLite *rmt, RoceWqeEntry *wqe, uint32_t opCode)
+    int BuildNotifyWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify)
     {
-        if (loc == nullptr || rmt == nullptr) {
-            HCCL_INFO("[Rdma1825Ops::%s] BuildWrite InVaild Params !");
-            return HCCL_E_PARA;
-        }
+        int ret = HCCL_SUCCESS;
 
-        HCCL_INFO("[Rdma1825Ops::%s] BuildWrite start, loc size[%u]", __func__, loc->GetSize());
+        RoceWqeEntry wqe{};
+        CHK_RET(FillCommonWqe(locNotify, notify, &wqe, static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE)));
 
-        u32 sqHead = sqHead_ % (sqContext_->depth);
-        uint8_t owner = (sqHead & (sqContext_->depth)) == 0 ? 0 : 1;
+        CHK_RET(CommitWqe(&wqe, sizeof(RoceWqeEntry)));
+        return HCCL_SUCCESS;
+    }
+
+private:
+    int FillCommonWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, RoceWqeEntry *wqe, uint32_t opCode)
+    {
+        HCCL_INFO("[Rdma1825Ops::%s] BuildWrite start, loc size[%u]", __func__, loc.GetSize());
+
+        uint8_t owner = (sqHead_ & (sqContext_->depth)) == 0 ? 0 : 1;
 
         // ----- Ctrl Seg 1 -----
         wqe->ctrl.dw0.value =
@@ -248,25 +199,25 @@ private:
         wqe->doorbell = 0;
         // ----- Task Seg -----
         wqe->task.dw0.value = htonl(opCode << HCOMM_WQE_OP_TYPE_OFFSET | 1U << HCOMM_WQE_C_OFFSET);
-        wqe->dataLen = htonl(loc->GetSize());
+        wqe->dataLen = htonl(loc.GetSize());
         wqe->immeData = 0;
         wqe->firstLast = 0;
         wqe->nxtEthHdr = 0;
         wqe->cmdLen = 0;
         wqe->rsvd0 = 0;
         wqe->lastExtLen = 0;
-        wqe->vaHigh32 = htonl(((uint64_t)rmt->GetAddr() + rmt->GetSize()) >> 32);
-        wqe->vaLow32 = htonl(((uint64_t)rmt->GetAddr() + rmt->GetSize()) & 0xffffffff);
+        wqe->vaHigh32 = htonl(((uint64_t)rmt.GetAddr() + rmt.GetSize()) >> 32);
+        wqe->vaLow32 = htonl(((uint64_t)rmt.GetAddr() + rmt.GetSize()) & 0xffffffff);
         // rkey通过rmt传入
-        uint32_t rKey = rmt->GetRkey();
+        uint32_t rKey = rmt.GetRkey();
         wqe->rKey = htonl(rKey);
         wqe->rsvd1 = 0;
         // ----- Data Seg -----
-        wqe->data.bufAddrHigh32 = htonl((uint64_t)loc->GetAddr() >> 32);
-        wqe->data.bufAddrLow32 = htonl((uint64_t)loc->GetAddr() & 0xffffffff);
-        wqe->data.rLen = (uint32_t)loc->GetSize();
+        wqe->data.bufAddrHigh32 = htonl((uint64_t)loc.GetAddr() >> 32);
+        wqe->data.bufAddrLow32 = htonl((uint64_t)loc.GetAddr() & 0xffffffff);
+        wqe->data.rLen = (uint32_t)loc.GetSize();
         // lkey通过loc传入
-        uint32_t lKey = loc->GetLkey();
+        uint32_t lKey = loc.GetLkey();
         wqe->data.leKey = htonl(1 << 31 | lKey);
 
         HCCL_INFO("[Rdma1825Ops::%s] Hcomm UB BuildWrite wqe OK", __func__);

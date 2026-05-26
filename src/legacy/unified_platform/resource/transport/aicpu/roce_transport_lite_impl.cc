@@ -194,6 +194,12 @@ RmaBufSliceLite RoceTransportLiteImpl::GetRmaBufSlicelite(const RmaBufferLite &l
     return RmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetLkey(), 0);
 }
 
+RmaBufSliceLite RoceTransportLiteImpl::GetRmtNotifySliceLite(u32 index) const
+{
+    auto &lite = notifyValueBuffer_[index];
+    return RmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetLkey(), 0);
+}
+
 RmtRmaBufSliceLite RoceTransportLiteImpl::GetRmtRmaBufSliceLite(const RmtRmaBufferLite &lite) const
 {
     return RmtRmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetRkey(), 0, 0);
@@ -297,10 +303,9 @@ void RoceTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const RmtR
     u64 dbValue = 0;
 
     // Post Wqe && return dbValue
-    // TODO 此处localNotify获取接口未添加？
     connVec_[0]->WriteWithNotify(
         GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt),
-        GetLocNotifySliceLite(remoteNotifyIdx), GetRmtNotifySliceLite(remoteNotifyIdx), dbAddr, dbValue);
+        GetNotifySlicelite(remoteNotifyIdx), GetRmtNotifySliceLite(remoteNotifyIdx), dbAddr, dbValue);
 
     // Ring Doorbell
     BuildRdmaDbSendTask(stream, dbAddr, dbValue);

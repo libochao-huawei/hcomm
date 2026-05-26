@@ -5,79 +5,71 @@
 
 namespace Hccl {
 
-// 上层只分发操作类型，具体opCode在子类指定
-enum RdmaOpType {
-    WRITE = 0,
-    NOTIFY,
-    WRITE_WITH_NOTIFY,
-    WRITE_REDUCE,
-    WRITE_REDUCE_WITH_NOTIFY,
-};
-
-// 厂商共用的wqe创建入参
-struct WqeDesc {
-    RdmaOpType opCode = RdmaOpType::WRITE;
-
-    const RmaBufSliceLite           *loc        = nullptr;
-    const RmtRmaBufSliceLite        *rmt        = nullptr;
-    const RmaBufSliceLite           *locNotify  = nullptr;
-    const RmtRmaBufSliceLite        *notify     = nullptr;
-
-    // TODO Hccl与Hcomm的ReduceType不一样？
-    // HcommDataType dataType;
-    // HcommReduceOp reduceOp;
-
-    // HcclType
-    HcclDataType dataType;
-    HcclReduceOp reduceOp;
-};
-
 class RdmaBaseOps {
 public:
-    RdmaBaseOps(RdmaSqContextLite *sqContext, RdmaCqContextLite *cqContext): sqContext_(sqContext), cqContext_(cqContext) {}
-    virtual ~RdmaBaseOps() {}
+    RdmaBaseOps(RdmaSqContextLite *sqContext, RdmaCqContextLite *cqContext)
+        : sqContext_(sqContext), cqContext_(cqContext) {}
+    virtual ~RdmaBaseOps() = default;
 
+    // 上层接口，不关心具体vendor类型
     int Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt)
     {
-        std::vector<WqeDesc> descList = {};
-        // Add Write
-        AddWqeList(RdmaOpType::WRITE, loc, rmt, descList);
+        // Write需要占用1个wr位置, 确定Sq存在空位
+        constexpr int WriteWqeCount = 1;
+        CHK_RET(WaitSqFree(WriteWqeCount));
 
-        return PostWqeList(descList);
+        // 进入vendor特有wqe组装接口, 组装完wqe直接下发
+        CHK_RET(BuildWriteWqe(loc, rmt));
+
+        // 更新Sq队列PI值
+        CHK_RET(UpdateSqPI());
+
+        return HCCL_SUCCESS;
     }
 
     int NotifyRecord(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify)
     {
-        std::vector<WqeDesc> descList = {};
-        // Add Notify
-        AddWqeList(RdmaOpType::NOTIFY, locNotify, notify, descList);
+        constexpr int NotifyWqeCount = 1;
+        CHK_RET(WaitSqFree(NotifyWqeCount));
 
-        return PostWqeList(descList);
+        // 进入vendor特有wqe组装接口, 组装完wqe直接下发
+        CHK_RET(BuildNotifyWqe(locNotify, notify));
+
+        // 更新Sq队列PI值
+        CHK_RET(UpdateSqPI());
+
+        return HCCL_SUCCESS;
     }
 
     int WriteWithNotify(
         const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, 
         const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify)
     {
-        std::vector<WqeDesc> descList = {};
-        // Add Write
-        AddWqeList(RdmaOpType::WRITE, loc, rmt, descList);
+        // Write需要占用2个wr位置, 确定Sq存在空位
+        constexpr int WriteWithNotifyWqeCount = 2;
+        CHK_RET(WaitSqFree(WriteWithNotifyWqeCount));
 
-        // Add Notify
-        AddWqeList(RdmaOpType::NOTIFY, locNotify, notify, descList);
+        // 进入vendor特有wqe组装接口, 组装完wqe直接下发
+        CHK_RET(BuildWriteWqe(loc, rmt));
+        CHK_RET(BuildNotifyWqe(locNotify, notify));
 
-        return PostWqeList(descList);
+        // 更新Sq队列PI值
+        CHK_RET(UpdateSqPI());
+
+        return HCCL_SUCCESS;
     }
 
     int WriteReduce(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, DataType dataType, ReduceOp reduceOp)
     {
-        return HCCL_SUCCESS;
+        HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support WriteReduce Now.", __func__);
+        return HCCL_E_NOT_SUPPORT;
     }
 
     int WriteReduceWithNotify(
         const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, DataType dataType, ReduceOp reduceOp, const uint32_t remoteNotifyId)
     {
-        return HCCL_SUCCESS;
+        HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support WriteReduceWithNotify Now.", __func__);
+        return HCCL_E_NOT_SUPPORT;
     }
 
     // 准备Doorbell(厂商实现)
@@ -91,52 +83,70 @@ protected:
     RdmaSqContextLite *sqContext_;
     RdmaCqContextLite *cqContext_;
 
-    int AddWqeList(RdmaOpType descType, 
-        const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, std::vector<WqeDesc> &descList)
-    {
-        WqeDesc descTmp{};
-
-        switch (descType) {
-            case RdmaOpType::WRITE:
-                descTmp.opCode         = RdmaOpType::WRITE;
-                descTmp.loc            = &loc;
-                descTmp.rmt            = &rmt;
-                break;
-            case RdmaOpType::NOTIFY:
-                descTmp.opCode         = RdmaOpType::NOTIFY;
-                descTmp.locNotify      = &loc;
-                descTmp.notify         = &rmt;
-                break;
-            default:
-                HCCL_ERROR("error wqeType[%d]", descType);
-                return HCCL_E_INTERNAL;
-        }
-
-        descList.push_back(descTmp);
-        return HCCL_SUCCESS;
+    // vendor扩展点: 每个原子op一个虚函数
+    // 默认 NOT_SUPPORT, 各个vendor 只重写自己支持的
+    virtual int BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt) {
+        HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support Write Now.", __func__);
+        return HCCL_E_NOT_SUPPORT;
     }
 
-    // 根据descList准备wqe(厂商实现) + 下发wqe(厂商实现)
-    virtual int PostWqeList(std::vector<WqeDesc> &descList) = 0;
+    virtual int BuildNotifyWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify) {
+        HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support Notify Now.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
 
-    // 搬运wqe(通用实现)
-    int ProcessOneWqe(const void *wqe, uint32_t wqeSize, uint32_t opCode)
+    virtual int BuildWriteReduceWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify,
+                                    DataType dataType, ReduceOp reduceOp) {
+        HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support WriteReduce Now.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    // 搬运wqe(通用实现), 把 Wqe 写到 SQ
+    int CommitWqe(const void *wqe, uint32_t wqeSize)
     {
-        HCCL_INFO("[RdmaBaseOps::%s] Memcpy wqe start, opCode[%d]", __func__, opCode);
-
-        // pi维护用于传入DB Send用于Rtsq 敲door bell
-        sqHead_ = sqHead_ + 1;
+        HCCL_INFO("[RdmaBaseOps::%s] Memcpy wqe start, i[%u]", __func__, sqHead_);
 
         // 写wqe到va
         auto sqDepth = sqContext_->depth;
         uint32_t sqPIMask = sqDepth - 1;
-        u8 *va = reinterpret_cast<u8 *>(sqContext_->sqVa + ((sqHead_ % sqDepth) & sqPIMask) * wqeSize);
+        u8 *va = reinterpret_cast<u8 *>(sqContext_->sqVa + (sqHead_ & sqPIMask) * wqeSize);
         auto ret = memcpy_s(va, wqeSize, wqe, wqeSize);
         if (UNLIKELY(ret != 0)) {
             THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] memcpy_s failed, ret = %d", __func__, ret));
         }
 
+        // pi维护用于传入DB Send用于Rtsq 敲door bell
+        sqHead_ = sqHead_ + 1;
+
         HCCL_INFO("[RdmaBaseOps::%s] Memcpy wqe end, pi[%u]", __func__, sqHead_);
+        return HCCL_SUCCESS;
+    }
+
+    int WaitSqFree(uint32_t wqeNum) {
+        // 读取Sq CI指针
+        auto status = memcpy_s(&sqTail_, sizeof(uint32_t), (void *)sqContext_->tailAddr, sizeof(uint32_t));
+        if (UNLIKELY(status != 0)) {
+            THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] read sq tail failed, ret = %d", __func__, status));
+        }
+        // TODO 超时退出机制
+        while (1) {
+            HCCL_INFO("[RdmaBaseOps::%s] Operate : sqTail = %u", __func__, sqTail_);
+            // sq队列能放下
+            memcpy_s(&sqTail_, sizeof(uint32_t), (void *)sqContext_->tailAddr, sizeof(uint32_t));
+            if (static_cast<uint32_t>(sqHead_ - sqTail_ + wqeNum) <= sqContext_->depth) {
+                break;
+            }
+        }
+        return HCCL_SUCCESS;
+    }
+
+    // 将PI更新到硬件可见地址
+    int UpdateSqPI() {
+        // 更新Sq PI指针
+        auto status = memcpy_s((void *)sqContext_->headAddr, sizeof(uint32_t), &sqHead_, sizeof(uint32_t));
+        if (UNLIKELY(status != 0)) {
+            THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] write head failed, ret = %d", __func__, status));
+        }
         return HCCL_SUCCESS;
     }
 };

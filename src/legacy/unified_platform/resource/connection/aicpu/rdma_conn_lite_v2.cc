@@ -76,16 +76,16 @@ std::string RdmaConnLiteV2::Describe()
 
 void RdmaConnLiteV2::GetVendorOps()
 {
-    if (vendorOps_ != nullptr) {
+    if (rdmaOps_ != nullptr) {
         return;
     }
     switch (dmaMode_) {
         case QBUF_DMA_MODE_DEFAULT: {   // PCIe
-            vendorOps_ = std::make_unique<RdmaXscdvOps>(&sqContext_, &cqContext_);
+            rdmaOps_ = std::make_unique<RdmaXscdvOps>(&sqContext_, &cqContext_);
             break;
         }
         case QBUF_DMA_MODE_INDEP_UB: {  // UB
-            vendorOps_ = std::make_unique<Rdma1825Ops>(&sqContext_, &cqContext_);
+            rdmaOps_ = std::make_unique<Rdma1825Ops>(&sqContext_, &cqContext_);
             break;
         }
     }
@@ -94,14 +94,42 @@ void RdmaConnLiteV2::GetVendorOps()
 void RdmaConnLiteV2::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, u64 &dbAddr, u64 &dbValue)
 {
     HCCL_INFO("[RdmaConnLiteV2::%s] Write start, loc size = %u", __func__, loc.GetSize());
+    
+    u64 len = loc.GetSize();
+    u32 rdmaSendRepeat = len / RDMA_SEND_MAX_SIZE;
+    u32 rdmaSendRemain = len % RDMA_SEND_MAX_SIZE;
 
-    // Post wqe, vendorOps_用来屏蔽厂商区别; 和UDMA不同，RDMA似乎不需要考虑Slice切分
-    vendorOps_->Write(loc, rmt);
+    // 存在Remain
+    if (rdmaSendRemain > 0) {
+        rdmaSendRepeat++;
+    }
+
+    // 分片transport
+    for (int sliceIdx = 0; sliceIdx < rdmaSendRepeat; sliceIdx++) {
+        u64 offset      = sliceIdx * RDMA_SEND_MAX_SIZE;
+        u64 localAddr   = loc.GetAddr() + offset;
+        u64 remoteAddr  = rmt.GetAddr() + offset;
+        u32 sliceSize   = RDMA_SEND_MAX_SIZE;
+
+        // 如果是余数段
+        if (i == rdmaSendRepeat - 1) {
+            sliceSize = rdmaSendRemain;
+        }
+
+        RmaBufferLite locSlice(localAddr, sliceSize, loc.GetLkey());
+        
+        RmtRmaBufSliceLite rmtSlice(remoteAddr, sliceSize, rmt.GetRkey(), 0, 0);
+
+        HCCL_INFO("[RdmaConnLiteV2::%s] Slice[%llu]: offset=0x%llx, locAddr=0x%llx, rmtAddr=0x%llx, size=0x%u",
+            __func__, sliceIdx, offset, locAddr, rmtAddr, sliceSize);
+
+        // 分片填好wqe
+        rdmaOps_->Write(locSlice, rmtSlice);
+    }
 
     // 构造Doorbell并返回
-    vendorOps_->BuildDoorbell(dbAddr, dbValue);
+    rdmaOps_->BuildDoorbell(dbAddr, dbValue);
 
-    // TODO 增加错误处理
     HCCL_INFO("[RdmaConnLiteV2::%s] end, dbAddr = %llu, dbValue = %llu, conn[%s]", __func__, dbAddr, dbValue, Describe().c_str());
 }
 
@@ -112,12 +140,11 @@ void RdmaConnLite::WriteWithNotify(
     HCCL_INFO("[RdmaConnLite::%s] start", __func__);
 
     // Post wqe, vendorOps_用来屏蔽厂商区别; 和UDMA不同，RDMA似乎不需要考虑Slice切分
-    vendorOps_->WriteWithNotify(loc, rmt, locNotify, notify);
+    rdmaOps_->WriteWithNotify(loc, rmt, locNotify, notify);
 
     // 构造Doorbell并返回
-    vendorOps_->BuildDoorbell(dbAddr, dbValue);
+    rdmaOps_->BuildDoorbell(dbAddr, dbValue);
 
-    // TODO 增加错误处理
     HCCL_INFO("[RdmaConnLite::%s] end, dbAddr = %llu, dbValue = %llu, conn[%s]", __func__, dbAddr, dbValue, Describe().c_str());
 }
 
