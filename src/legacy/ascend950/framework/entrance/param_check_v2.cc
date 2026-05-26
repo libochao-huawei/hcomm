@@ -486,7 +486,7 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
     }
     s32 deviceLogicId = 0;
     aclrtGetDevice(&deviceLogicId);
-    HcommRecordRankTableJsonCrc(deviceLogicId, rankTableM);
+    HcomRecordRankTableJsonCrc(deviceLogicId, rankTableM);
     return HCCL_SUCCESS;
 }
 
@@ -521,7 +521,7 @@ void HcomGetHashFromSendCountMatrixV2(u64 &sendCountMatrixHash, const void *send
         tag.c_str(), sendCountMatrixHash);
 }
 
-void HcommRecordRankTableJsonCrc(s32 deviceLogicId, const std::string &rankTableJson)
+void HcomRecordRankTableJsonCrc(s32 deviceLogicId, const std::string &rankTableJson)
 {
     Hccl::CheckCrc checkCrc;
     u32 crc = 0;
@@ -535,7 +535,7 @@ void HcommRecordRankTableJsonCrc(s32 deviceLogicId, const std::string &rankTable
     HCCL_INFO("[HcomRecordRankTableJsonCrc] deviceLogicId[%d], crc[0x%08x] recorded.", deviceLogicId, crc);
 }
 
-u32 HcommConsumeRankTableJsonCrc(s32 deviceLogicId)
+u32 HcomConsumeRankTableJsonCrc(s32 deviceLogicId)
 {
     std::lock_guard<std::mutex> lock(g_rankTableCrcMutex);
     auto it = g_rankTableJsonCrcMap.find(deviceLogicId);
