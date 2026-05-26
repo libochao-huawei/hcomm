@@ -16,7 +16,6 @@
 #include "adapter_rts.h"
 #include "../endpoints/endpoint.h"
 #include "adapter_rts_common.h"
-#include "sal.h"
 
 using namespace std;
 
@@ -35,18 +34,12 @@ SocketProcess &SocketProcess::GetInstance(s32 deviceLogicId)
 SocketProcess::~SocketProcess()
 {
     unique_lock<std::mutex> lock(mutex_);
-    HCCL_ERROR("TEST [SocketProcess]~SocketProcess start devicePhyId_[%u] this=%p", devicePhyId_, static_cast<void *>(this));
     isInit_ = false;
     for (auto &socketItem : serverSocketMap_) {
         if (socketItem.second != nullptr) {
-            HCCL_ERROR("TEST ~SocketProcess start Destroy serverSocket=%p fdHandle=%p devicePhyId_[%u] this=%p",
-                socketItem.second.get(), socketItem.second.get()->GetFdHandle(), devicePhyId_, static_cast<void *>(this));
-            SaluSleep(10000);
             socketItem.second.get()->Destroy();
         }
     }
-    HCCL_ERROR("TEST ~SocketProcess start clear devicePhyId_[%u]", devicePhyId_);
-    SaluSleep(10000);
     serverSocketMap_.clear();
 
     for (auto &item : tag2socketMap_) {
@@ -56,12 +49,10 @@ SocketProcess::~SocketProcess()
     }
     tag2socketMap_.clear();
     socket2TagMap_.clear();
-    HCCL_ERROR("TEST [SocketProcess]~SocketProcess success devicePhyId_[%u]", devicePhyId_);
 }
 
 HcclResult SocketProcess::DestroySocketHandle(SocketHandle socketHandle)
 {
-    HCCL_ERROR("TEST [%s] start to destroy socketHandle[%p] isInit_[%d]", __func__, socketHandle, isInit_.load());
     Hccl::Socket *socket = static_cast<Hccl::Socket *>(socketHandle);
     if (socket == nullptr) {
         HCCL_WARNING("[SocketProcess][%s] socket[%p] is nullptr, please check", __func__, static_cast<void *>(socket));
@@ -270,8 +261,7 @@ HcclResult SocketProcess::BuildSocket(SocketDesc *socketDesc, const std::string 
         EXECEPTION_CATCH(serverSocketMap_[localListenPair] = std::make_unique<Hccl::Socket>(
             serverSocketHandle, ipaddr, localListenPair.second, ipaddr, socketDesc->tag,
             Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
-        HCCL_INFO("[%s] serverSocket=%p serverSocketHandle=%p fdHandle=%p listen_socket_info[%s] this=%p",
-            __func__, serverSocketMap_[localListenPair].get(), serverSocketHandle, serverSocketMap_[localListenPair].get()->GetFdHandle(), serverSocketMap_[localListenPair].get()->Describe().c_str(), static_cast<void *>(this));
+        HCCL_INFO("[%s] listen_socket_info[%s]", __func__, serverSocketMap_[localListenPair].get()->Describe().c_str());
         EXECEPTION_CATCH(serverSocketMap_[localListenPair].get()->Listen(), return HCCL_E_INTERNAL);
     }
     HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());

@@ -45,7 +45,6 @@ void CollCommMgr::RegisteCollComm(CollComm* collComm)
 void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    HCCL_ERROR("TEST [CollCommMgr][UnRegisteCollComm] start to unregister collComm, commId[%s]", collComm->GetCommId().c_str());
     allCollComms_.erase(collComm->GetCommId());
     // 从通信域里面注销
     (void)GetClusterMonitor(collComm->GetDeviceLogicId()).UnRegisterToClusterMonitor(collComm);
