@@ -9,6 +9,7 @@
 #include "mockcpp/mockcpp.hpp"
 #include "cluster_monitor.h"
 #include "host/host_cpu_roce_channel.h"
+#include "symmetric_memory/symmetric_memory.h"
 
 #define private public
 
@@ -184,4 +185,18 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_IbvPostRecv_Fails_Return_
     
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcclChannelDescTest, Ut_HcclCommMemReg_When_TagUsesSymmetricMemoryPrefix_Return_HCCL_E_PARA)
+{
+    CommMem mem{};
+    mem.type = COMM_MEM_TYPE_DEVICE;
+    mem.addr = reinterpret_cast<void*>(0x5000000);
+    mem.size = 4096;
+    HcclMemHandle memHandle = nullptr;
+    std::string reservedTag = std::string(HCCL_SYMMETRIC_MEMORY_TAG_PREFIX) + "user_tag";
+
+    ret = HcclCommMemReg(comm, reservedTag.c_str(), &mem, &memHandle);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(memHandle, nullptr);
 }
