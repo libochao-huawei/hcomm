@@ -656,7 +656,8 @@ void RankGraph::AddSubPeers(const std::vector<RankId> &rankIds, RankGraph *subRa
         LocalId replacedLocalId = oldPeer->GetReplacedLocalId();
         DeviceId deviceId = oldPeer->GetDeviceId();
         u32 devicePort = oldPeer->GetDevicePort();
-        shared_ptr<NetInstance::Peer> subPeer = make_shared<NetInstance::Peer>(subRankId, localId, replacedLocalId, deviceId, devicePort);
+        u32 hostPort = oldPeer->GetHostPort();
+        shared_ptr<NetInstance::Peer> subPeer = make_shared<NetInstance::Peer>(subRankId, localId, replacedLocalId, deviceId, devicePort, hostPort);
         subRankGraph->AddPeer(subPeer);
         peers.emplace(subRankId, subPeer);
         const auto& oldEndpointMap = oldPeer->GetEndpointToIfaceMap();
