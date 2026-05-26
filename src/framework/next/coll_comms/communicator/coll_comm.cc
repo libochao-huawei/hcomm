@@ -34,7 +34,8 @@ CollComm::~CollComm()
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     // dpu的兜底上报 - 异常退出时捕获异常避免二次崩溃
     if (hcclCommDfx_ != nullptr) {
-        DECTOR_TRY_CATCH("CollComm", hcclCommDfx_->ReportAllTasks(true));
+        bool isBaseOpMode = hcclCommDfx_->IsOpBase();
+        DECTOR_TRY_CATCH("CollComm", hcclCommDfx_->ReportAllTasks(!isBaseOpMode));
     }
     for (auto streamId : aicpuStreamIds_) {
         hcomm::TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_);
