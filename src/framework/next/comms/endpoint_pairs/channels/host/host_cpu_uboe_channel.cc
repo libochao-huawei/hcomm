@@ -13,6 +13,7 @@
 #include "exception_handler.h"
 #include "exchange_ub_buffer_dto.h"
 #include "local_ub_rma_buffer.h"
+#include "hcomm_adapter_urma.h"
 
 namespace hcomm {
 HostCpuUboeChannel::HostCpuUboeChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc)
@@ -39,7 +40,7 @@ HcclResult HostCpuUboeChannel::ParseInputParam()
     uint8_t portNum = localEpPtr->GetPortNum();
     portCtxs_.resize(portNum);
     for (uint8_t i = 0; i < portNum; i++) {
-        portCtxs_[i].rdmaHandle_ = localEpPtr->GetRdmaHandleByPortId(i);
+        portCtxs_[i].rdmaHandle_ = localEpPtr->GetRdmaHandleByPortIdx(i);
     }
 
     localEpDesc_ = localEpPtr->GetEndpointDesc();
@@ -118,7 +119,7 @@ HcclResult HostCpuUboeChannel::BuildBuffer()
         std::shared_ptr<Hccl::LocalUbAggregatedRmaBuffer> &localRdmaBuffer = memHandles[i];
         HCCL_INFO("[HostCpuUboeChannel][BuildBuffer] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].", i,
             localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemTag().c_str());
-        localRmaBuffers_.emplace_back(localRdmaBuffer.get());
+        localRmaBuffers_.emplace_back(localRdmaBuffer);
     }
 
     return HCCL_SUCCESS;
@@ -136,6 +137,7 @@ HcclResult HostCpuUboeChannel::Init()
     CHK_RET(BuildSocket());
     CHK_RET(BuildConnection());
     CHK_RET(BuildBuffer());
+    CHK_RET(DlUrmaFunction::GetInstance().DlUrmaFunctionInit());
     return HCCL_SUCCESS;
 }
 
@@ -314,6 +316,11 @@ HcclResult HostCpuUboeChannel::ConnVecPack(Hccl::BinaryStream &binaryStream)
     HCCL_INFO("[HostCpuUboeChannel::%s] start to pack connections", __func__);
     u32 pos = 0;
     for (auto &portCtx : portCtxs_) {
+        if (portCtx.connection_ == nullptr) {
+            HCCL_ERROR("[HostCpuUboeChannel::%s] portCtx.connection_ is null", __func__);
+            return HCCL_E_PTR;
+        }
+        
         binaryStream << pos;
         std::unique_ptr<Hccl::Serializable> dto = nullptr;
         CHK_RET(portCtx.connection_->GetExchangeDto(dto));
@@ -401,17 +408,31 @@ std::string HostCpuUboeChannel::Describe() const
     std::string msg = "HostCpuUboeChannel{";
     msg += Hccl::StringFormat("bufferNum:%u, localRmaBuffers: [", localRmaBuffers_.size());
     for (auto &buf : localRmaBuffers_) {
+        if (buf == nullptr)
+        {
+            HCCL_WARNING("[HostCpuUboeChannel::%s] localRmaBuffers_ contains a null pointer", __func__);
+            continue;
+        }
+        
         msg += buf->Describe();
         msg += ", ";
     }
     msg += Hccl::StringFormat("], portNum:%u, portCtxs:[", portCtxs_.size());
     for (auto &portCtx : portCtxs_) {
+        if (portCtx.connection_ == nullptr) {
+            HCCL_WARNING("[HostCpuUboeChannel::%s] portCtx.connection_ is null", __func__);
+            continue;
+        }
         msg += portCtx.connection_->Describe();
-        msg += Hccl::StringFormat("], rmdaHandle: %p", portCtx.rdmaHandle_);
+        msg += Hccl::StringFormat("], rdmaHandle: %p", portCtx.rdmaHandle_);
     }
 
     msg += Hccl::StringFormat("], rdmaStatus: %s, ", rdmaStatus_.Describe().c_str());
-    msg += socket_->Describe();
+    if (socket_ == nullptr) {
+        HCCL_WARNING("[HostCpuUboeChannel::%s] socket_ is null", __func__);
+    } else {
+        msg += socket_->Describe();
+    }
     msg += ", ";
     return msg;
 }

@@ -103,7 +103,7 @@ private:
     };
     
     std::vector<PortAggregationCtx> portCtxs_;
-    std::vector<Hccl::LocalUbAggregatedRmaBuffer *> localRmaBuffers_;
+    std::vector<std::shared_ptr<Hccl::LocalUbAggregatedRmaBuffer>> localRmaBuffers_;
     std::vector<std::unique_ptr<Hccl::RemoteUbAggregatedRmaBuffer>> remoteRmaBuffers_;
     uint32_t devicePhyId_{0};
 };
