@@ -190,8 +190,8 @@ SymmetricMemory::SymmetricMemory(u32 rank, u32 rankSize, size_t stride, std::sha
 SymmetricMemory::~SymmetricMemory() 
 {
     HCCL_INFO("[SymmetricMemory][~SymmetricMemory] begin");
-    for (auto& pair : windowMap_) {
-        DeregisterSymmetricMem(pair.first);
+    while (!windowMap_.empty()) {
+        DeregisterSymmetricMem(windowMap_.begin()->first);
     }
     windowMap_.clear();
     sortedWindows_.clear();
