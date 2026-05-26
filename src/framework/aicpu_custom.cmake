@@ -26,6 +26,7 @@ target_link_libraries(aicpu_custom PRIVATE
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:kernel_tiling_headers>
     $<BUILD_INTERFACE:atrace_headers>
+    $<BUILD_INTERFACE:json>
     $<BUILD_INTERFACE:runtime_headers>
     $<BUILD_INTERFACE:slog_headers>
     -Wl,--no-as-needed

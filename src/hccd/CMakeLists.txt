@@ -169,13 +169,13 @@ if(BUILD_OPEN_PROJECT)
     target_include_directories(hccd PRIVATE
         # 三方件头文件
         ${RDMA_CORE_INCLUDE_DIR}
-        ${THIRD_PARTY_NLOHMANN_PATH}
         ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
     )
 
     target_link_libraries(hccd
         $<BUILD_INTERFACE:ascend_hal_headers>
         $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:json>
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:slog_headers>

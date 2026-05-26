@@ -113,7 +113,6 @@ target_include_directories(ccl_kernel PRIVATE
 
     # 三方件头文件
     ${RDMA_CORE_INCLUDE_DIR}
-    ${THIRD_PARTY_NLOHMANN_PATH}
 )
 
 if(BUILD_OPEN_PROJECT)
@@ -129,6 +128,7 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:ascend_hal_headers>
         $<BUILD_INTERFACE:kernel_tiling_headers>
         $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:json>
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:runtime_headers>
         -Wl,--no-as-needed

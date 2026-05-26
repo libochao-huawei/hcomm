@@ -85,8 +85,6 @@ target_include_directories(hccl_alg_adaption PRIVATE
     ${HCOMM_FRAMEWORK_INCLUDE_LIST}
     ${HCOMM_LEGACY_INCLUDE_LIST}
 
-    ${THIRD_PARTY_PATH}/json/include
-
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 
     ${RDMA_CORE_INCLUDE_DIR}

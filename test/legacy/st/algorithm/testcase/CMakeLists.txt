@@ -15,9 +15,7 @@ set(include_list
 
     // 第三方
     ${RDMA_CORE_INCLUDE_DIR}
-    ${THIRD_PARTY_PATH}/json/include
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
-    ${THIRD_PARTY_PATH}/protobuf/include
 )
 
 file(GLOB_RECURSE ALG_CCU_CONTEXT_SRC "${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/*.cc")

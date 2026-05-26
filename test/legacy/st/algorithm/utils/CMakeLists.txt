@@ -54,10 +54,6 @@ set(include_list
     ${HCOMM_CODE_FRAMEWORK}/common/src/topo
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl
 
-    # json 目录的头文件
-    ${THIRD_PARTY_PATH}/json/include
-
-    ${THIRD_PARTY_PATH}/protobuf/include
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 )
 
@@ -94,6 +90,7 @@ target_compile_options(hccl_alg_analyzer_legacy PRIVATE
 )
 
 target_link_libraries(hccl_alg_analyzer_legacy PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_adaption_v2
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

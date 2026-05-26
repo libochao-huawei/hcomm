@@ -20,7 +20,6 @@ set (include_list
 
     // 第三方
     ${RDMA_CORE_INCLUDE_DIR}
-    ${THIRD_PARTY_PATH}/json/include
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 )
 
@@ -136,6 +135,7 @@ target_compile_options(hccl_alg_adaption_v2 PRIVATE
 )
 
 target_link_libraries(hccl_alg_adaption_v2 PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_orion_alg_test
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

@@ -22,12 +22,7 @@ target_include_directories(hccl_alg_analyzer PRIVATE
     ${HCOMM_FRAMEWORK_INCLUDE_LIST}
     ${HCOMM_LEGACY_INCLUDE_LIST}
 
-    ${THIRD_PARTY_PATH}/json/include
-
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
-
-    # protobuf源码
-    ${THIRD_PARTY_PATH}/protobuf/include
 
     ${ASCEND_CANN_INCLUDE_LIST}
 )

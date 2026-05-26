@@ -106,7 +106,6 @@ target_include_directories(hcomm PRIVATE
     ${LEGACY_INCLUDE_LIST}
 
     # 三方件头文件
-    ${THIRD_PARTY_NLOHMANN_PATH}
     ${RDMA_CORE_INCLUDE_DIR}
     ${URMA_INCLUDE_DIR}
 )
@@ -129,6 +128,7 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:ascend_hal_headers>
         $<BUILD_INTERFACE:kernel_tiling_headers>
         $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:json>
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:runtime_headers>
         -Wl,--no-as-needed
