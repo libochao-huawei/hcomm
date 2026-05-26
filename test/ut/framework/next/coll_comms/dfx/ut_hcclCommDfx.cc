@@ -188,3 +188,29 @@ TEST_F(HcclCommDfxTest, Ut_GetTaskId_When_DifferentStreamId_Expect_Independent)
     taskId2 = HcclCommDfx::GetTaskId(streamId2);
     EXPECT_EQ(taskId2, 2u);
 }
+
+// 测试 IsOpBase - OPBASE 模式返回 true
+TEST_F(HcclCommDfxTest, Ut_IsOpBase_When_OpModeIsOpBase_Expect_ReturnTrue)
+{
+    auto opInfo = std::make_shared<Hccl::DfxOpInfo>();
+    opInfo->op_.opMode = Hccl::OpMode::OPBASE;
+    dfx_->mirrorTaskManager_->SetCurrDfxOpInfo(opInfo);
+
+    bool isOpBase = false;
+    HcclResult ret = dfx_->IsOpBase(isOpBase);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_TRUE(isOpBase);
+}
+
+// 测试 IsOpBase - OFFLOAD 模式返回 false
+TEST_F(HcclCommDfxTest, Ut_IsOpBase_When_OpModeIsOffload_Expect_ReturnFalse)
+{
+    auto opInfo = std::make_shared<Hccl::DfxOpInfo>();
+    opInfo->op_.opMode = Hccl::OpMode::OFFLOAD;
+    dfx_->mirrorTaskManager_->SetCurrDfxOpInfo(opInfo);
+
+    bool isOpBase = true;
+    HcclResult ret = dfx_->IsOpBase(isOpBase);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_FALSE(isOpBase);
+}
