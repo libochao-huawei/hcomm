@@ -83,7 +83,6 @@ HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
         remoteMemCtx.tagPointers.clear();
         remoteMemCtx.tagPointers.reserve(remoteMemCtx.userMemCount);
         for (uint32_t i = 0; i < remoteMemCtx.userMemCount; ++i) {
-            CHK_PTR_NULL(remoteMemCtx.rmtBufferVec[i]);
             CommMem mem{};
             CHK_RET(remoteMemCtx.cacheBuilder(remoteMemCtx.rmtBufferVec[i], mem));
             remoteMemCtx.remoteUserMems.push_back(mem);
