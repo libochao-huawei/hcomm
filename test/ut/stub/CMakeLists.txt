@@ -73,6 +73,7 @@ list(REMOVE_ITEM COMMON_SOURCES ${EXCLUDE_COMMON_DEVICE_REGEX})
 
 set(EXCLUDE_PLATFORM_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/platform/resource/mem/mem_mapping_manager_device.cc"
+    "${HCCL_CODE_ROOT}/src/platform/common/launch_aicpu.cc"
     )
 list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 
