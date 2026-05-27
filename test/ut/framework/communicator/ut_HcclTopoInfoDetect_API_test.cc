@@ -139,7 +139,7 @@ TEST_F(HcclTopoInfoDetectTest, Ut_PrintFailedAgentIdList_AllBranches)
 
     std::string longStrNoComma(600, 'A');
     server.PrintFailedAgentIdList(longStrNoComma);
-
+lllll
     std::string longStrWithComma;
     for (int i = 0; i < 200; i++) {
         longStrWithComma += std::to_string(i) + ",";
