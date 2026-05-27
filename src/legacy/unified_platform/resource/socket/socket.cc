@@ -24,6 +24,7 @@ constexpr u32 AUTO_LISTEN_PORT          = 0;
 Socket::~Socket()
 {
     if (!isDestroyed) {
+        HCCL_ERROR("TEST Socket::~Socket serverSocket=%p this=%p", socketHandle, static_cast<void *>(this));
         DECTOR_TRY_CATCH("Socket", this->Destroy());
     }
 }
