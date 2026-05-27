@@ -262,6 +262,9 @@ HcclResult AicpuTsUboeChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTag
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec_.size() == 0) {
+        *remoteMem = nullptr;
+        *memTags = nullptr;
+        *memNum = 0;
         HCCL_WARNING("[GetRemoteMems] bufferNum is 0.");
         return HCCL_SUCCESS;
     }
