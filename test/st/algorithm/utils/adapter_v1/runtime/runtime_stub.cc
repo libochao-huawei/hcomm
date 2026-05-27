@@ -352,3 +352,20 @@ aclError aclsysGetVersionStr(char *pkgName, char *versionStr)
 {
     return RT_ERROR_NONE;
 }
+
+aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus *captureStatus, aclmdlRI *rtModel)
+{
+    *captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
+    *rtModel = nullptr;
+    return ACL_SUCCESS;
+}
+
+aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttrType attrType, aclrtStreamAttrValue *value)
+{
+    return ACL_SUCCESS;
+}
+
+aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
+{
+    return ACL_SUCCESS;
+}

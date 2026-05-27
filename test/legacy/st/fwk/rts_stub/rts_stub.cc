@@ -613,5 +613,10 @@ aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t fl
 {
 	return ACL_SUCCESS;
 }
+
+aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
+{
+    return ACL_SUCCESS;
+}
  
 #endif
