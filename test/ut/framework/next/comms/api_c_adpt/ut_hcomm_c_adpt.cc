@@ -424,3 +424,19 @@ TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_HandleInvalid_Expect_E
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_ServerSocketNotSupport_Expect_E_NOT_SUPPORT)
+{
+    uint32_t port = 0;
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+
+    MOCKER_CPP(&HcommEndpointMap::GetEndpoint, Endpoint*(HcommEndpointMap::*)(EndpointHandle))
+        .stubs()
+        .will(returnValue(reinterpret_cast<Endpoint*>(0x56789)));
+    MOCKER_CPP(&Endpoint::ServerSocketGetListenPort, HcclResult(Endpoint::*)(uint32_t*))
+        .stubs()
+        .will(returnValue(HCCL_E_NOT_SUPPORT));
+
+    HcommResult ret = HcommEndpointGetListenPort(endpointHandle, &port);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
