@@ -11,6 +11,7 @@
 #ifndef SOCKET_MGR_H
 #define SOCKET_MGR_H
 
+#include <atomic>
 #include <mutex>
 #include <condition_variable>
 
@@ -50,7 +51,7 @@ private:
     uint32_t serverListenPort_{};
     std::unordered_map<Hccl::SocketConfig, std::unique_ptr<Hccl::Socket>> socketMap_{};
     std::unordered_map<Hccl::SocketHandle, std::vector<Hccl::RaSocketWhitelist>> handle2WhiteListMap_{};
-    std::unordered_map<Hccl::Socket*, bool> socketInUseMap_{};
+    std::unordered_map<Hccl::Socket*, std::atomic<bool>> socketInUseMap_{};
     std::mutex mutex_{};
     std::condition_variable socketAvailableCv_;
 };
