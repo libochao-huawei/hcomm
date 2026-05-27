@@ -25,6 +25,7 @@ Socket::~Socket()
 {
     if (!isDestroyed) {
         HCCL_ERROR("TEST Socket::~Socket serverSocket=%p this=%p", socketHandle, static_cast<void *>(this));
+        SaluSleep(10000);
         DECTOR_TRY_CATCH("Socket", this->Destroy());
     }
 }

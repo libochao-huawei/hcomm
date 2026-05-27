@@ -302,8 +302,8 @@ HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
 
     HCCL_ERROR("TEST [DestroySocket] Calling socket->Destroy() for socket[%p].", socket);
     SaluSleep(10000);
-    EXECEPTION_CATCH(socket->Destroy(),
-        HCCL_ERROR("[DestroySocket] Destroy failed for socket with tag[%s].", socket->Describe().c_str()));
+    // EXECEPTION_CATCH(socket->Destroy(),
+    //     HCCL_ERROR("[DestroySocket] Destroy failed for socket with tag[%s].", socket->Describe().c_str()));
     return HCCL_SUCCESS;
 }
 
