@@ -35,6 +35,7 @@ if(TARGET hccl_plf)
         ${CMAKE_CURRENT_SOURCE_DIR}/error_manager/adapter_error_manager.cc   # 相对于 CMakeLists.txt 的路径
         ${CMAKE_CURRENT_SOURCE_DIR}/error_manager/adapter_error_manager_pub.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/error_manager/adapter_error_manager_pub_extend.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu/launch_aicpu.cc
     )
 endif()
 
@@ -55,3 +56,12 @@ if(TARGET hccl_v2)
         ${CMAKE_CURRENT_SOURCE_DIR}/error_manager/adapter_error_manager_pub_extend.cc 
     ) 
  endif()
+
+ if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu/launch_aicpu.cc
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu
+    )
+endif()
