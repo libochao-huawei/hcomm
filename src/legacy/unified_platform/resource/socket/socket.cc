@@ -24,8 +24,6 @@ constexpr u32 AUTO_LISTEN_PORT          = 0;
 Socket::~Socket()
 {
     if (!isDestroyed) {
-        HCCL_ERROR("TEST Socket::~Socket serverSocket=%p this=%p", socketHandle, static_cast<void *>(this));
-        SaluSleep(10000);
         DECTOR_TRY_CATCH("Socket", this->Destroy());
     }
 }
@@ -143,8 +141,6 @@ HcclResult Socket::IRecvWithHeart(void *data, u64 size, u64& compSize) const
 
 void Socket::Destroy()
 {
-    HCCL_ERROR("TEST Socket::Destroy start Destroy serverSocket=%p this=%p", socketHandle, static_cast<void *>(this));
-    SaluSleep(10000);
     isDestroyed = true;
     EXECEPTION_CATCH(StopListen(), return);
     EXECEPTION_CATCH(Close(), return);

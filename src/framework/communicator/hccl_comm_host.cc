@@ -122,7 +122,7 @@ namespace hccl
 
     HcclResult hcclComm::UnRegistTaskAbortHandler() const
     {
-        HCCL_ERROR("TEST UnRegistTaskAbortHandler begin, group[%s]", identifier_.c_str());
+        HCCL_RUN_INFO("UnRegistTaskAbortHandler begin, group[%s]", identifier_.c_str());
         CHK_RET(TaskAbortHandler::DeInit(communicator_.get()));
         return HCCL_SUCCESS;
     }

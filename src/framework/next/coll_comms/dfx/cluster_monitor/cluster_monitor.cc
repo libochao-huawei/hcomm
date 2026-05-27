@@ -506,7 +506,6 @@ void ClusterMonitor::DelErrorSocket()
             GetUID(rem).c_str());
         uid2FrameStatusMap_.erase(rem);
         if (uid2SocketRefMap_.has(rem)) {
-            HCCL_ERROR("TEST ClusterMonitor::DelErrorSocket socketHandler[%p]", uid2SocketRefMap_[rem].socketHandler);
             SocketDestroy(uid2SocketRefMap_[rem].socketHandler);
             while (uid2SocketRefMap_.erase(rem)) {
             };
@@ -743,7 +742,6 @@ HcclResult ClusterMonitor::UnRegisterToClusterMonitor(hccl::CollComm* collComm)
             return HCCL_SUCCESS;
         }
 
-        HCCL_ERROR("TEST [%s]commId[%s] socket start destory", __func__, commId.c_str());
         for (const auto& remRank : commIdMap_[commId]) {
             ClusterUIDType rem = remRank.first;
             uid2FrameStatusMap_.erase(rem);

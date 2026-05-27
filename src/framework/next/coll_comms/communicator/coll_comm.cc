@@ -30,8 +30,8 @@ CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, co
 
 CollComm::~CollComm()
 {
-    HCCL_ERROR("TEST [CollComm][~CollComm] collComm deinit");
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
+    HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     // dpu的兜底上报 - 异常退出时捕获异常避免二次崩溃
     if (hcclCommDfx_ != nullptr) {
         DECTOR_TRY_CATCH("CollComm", hcclCommDfx_->ReportAllTasks(true));
