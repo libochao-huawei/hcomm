@@ -105,6 +105,12 @@ private:
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
     HcclResult GetRankIpPortMap();
+
+    /* 
+     * CollComm初始化方式：
+     *      fullMode：给A5及后续新架构使用，完整的CollComm初始化和资源管理
+     *      SimpleMode：给A2/A3老芯片使用，由于架构限制，仅将RankGraph、MyRank等放入CollComm管理，简化CollComm实现
+     */
     HcclResult InitFullMode(void* rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig* config);
     HcclResult InitSimpleMode(void* rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig* config);
 
