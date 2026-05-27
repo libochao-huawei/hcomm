@@ -868,23 +868,15 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     return HCCL_SUCCESS;
 }
 
-extern HcclResult HcclTaskExceptionRegCallBack(HcclComm comm, HcclTaskExceptionCallback callback)
+extern HcclResult HcclTaskExceptionRegCallBack(HcclTaskExceptionCallback callback)
 {
-    HCCL_INFO("[%s] START, comm[%p], callback[%p].", __func__, comm, callback);
-    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
-    auto hcclComm = static_cast<hccl::hcclComm*>(comm);
-    CHK_PTR_NULL(hcclComm);
-    if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is not supported", __func__);
-        return HCCL_E_NOT_SUPPORT;
-    }
-    hccl::CollComm* collComm = hcclComm->GetCollComm();
-    CHK_PTR_NULL(collComm);
-
+    HCCL_INFO("[%s] START, callback[%p].", __func__, callback);
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId))；
     hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(
-        static_cast<size_t>(collComm->GetDeviceLogicId()));
+        static_cast<size_t>());
     CHK_PTR_NULL(handler);
     handler->SetTaskExceptionCallback(callback);
-    HCCL_INFO("[%s] SUCCESS, deviceLogicId[%d].", __func__, collComm->GetDeviceLogicId());
+    HCCL_INFO("[%s] SUCCESS, deviceLogicId[%d].", __func__, devLogicId);
     return HCCL_SUCCESS;
 }
