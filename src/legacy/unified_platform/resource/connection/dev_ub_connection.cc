@@ -312,6 +312,9 @@ void DevUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
 
 void DevUbConnection::ImportRmtDto()
 {
+    struct TpAttr tpAttr = {0};
+    uint32_t attrBitmap = 0;
+
     if (ubConnStatus == UbConnStatus::READY) {
         HCCL_WARNING("[DevUbConnection][%s] import jetty already, %s.",
                      __func__, Describe().c_str());
@@ -330,7 +333,7 @@ void DevUbConnection::ImportRmtDto()
         ThrowAbnormalStatus(std::string(__func__));
     }
     // 获取tp attr(smac dmac等)
-    if ((tpProtocol == TpProtocol::UBOE) && GetTpAttrAsync() != HCCL_SUCCESS) {
+    if ((tpProtocol == TpProtocol::UBOE) && GetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
         HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
@@ -1046,6 +1049,16 @@ HcclResult DevUbConnection::Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U
     return HCCL_SUCCESS;
 }
 
+bool DevUbConnection::IpArrayCompare(uint8_t ipArrLeft[16U], uint8_t ipArrRight[16U])
+{
+    for (unsigned int i = 0; i < 16U; i++) {
+        if (ipArrLeft[i] != ipArrRight[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 HcclResult DevUbConnection::SetTpAttrAsync()
 {
     TpHandle tpHandle = tpInfo.tpHandle;
@@ -1055,7 +1068,9 @@ HcclResult DevUbConnection::SetTpAttrAsync()
         6-vlan_id: 12 bit           7-vlan_en: 1 bit        8-dscp: 6 bit
         9-at_times: 5 bit           10-sl: 4 bit             11-ttl: 8 bit
     */
+    uint32_t attrBitmapCurrent = 0;
     uint32_t attrBitmap = 508;
+    struct TpAttr tpAttrCurrent = {0};
     struct TpAttr tpAttr = {0};
 
     // 填充本端IP
@@ -1071,15 +1086,23 @@ HcclResult DevUbConnection::SetTpAttrAsync()
     HCCL_INFO("[DevUbConnection::%s] rmtIpv4Str[%s], dip[%u:%u:%u:%u]",
         __func__, rmtIp, tpAttr.dip[12], tpAttr.dip[13], tpAttr.dip[14], tpAttr.dip[15]);
 
+    // 检查是否已经填过相同的tp attr(smac dmac等)
+    if (GetTpAttrAsync(attrBitmapCurrent, tpAttrCurrent) != HCCL_SUCCESS) {
+        HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
+        ThrowAbnormalStatus(std::string(__func__));
+    }
+    if (attrBitmapCurrent == attrBitmap &&
+        IpArrayCompare(tpAttrCurrent.sip, tpAttr.sip) && IpArrayCompare(tpAttrCurrent.dip, tpAttr.dip)) {
+        return HCCL_SUCCESS;
+    }
+
     CHK_RET(HrtRaSetTpAttrAsync(rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
     return HCCL_SUCCESS;
 }
 
-HcclResult DevUbConnection::GetTpAttrAsync()
+HcclResult DevUbConnection::GetTpAttrAsync(uint32_t& attrBitmap, struct TpAttr& tpAttr)
 {
     TpHandle tpHandle = tpInfo.tpHandle;
-    uint32_t attrBitmap = 0;
-    struct TpAttr tpAttr = {0};
 
     u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
     CHK_RET(HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
