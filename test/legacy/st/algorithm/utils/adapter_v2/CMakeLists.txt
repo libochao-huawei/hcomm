@@ -121,6 +121,8 @@ add_library(hccl_alg_adaption_v2 SHARED
 #头文件搜索路径
 target_include_directories(hccl_alg_adaption_v2 PRIVATE
     ${include_list}
+    ${HCOMM_DIR}/src/common
+    ${HCOMM_DIR}/src/common/error_manager
 )
 
 target_compile_definitions(hccl_alg_adaption_v2 PRIVATE
