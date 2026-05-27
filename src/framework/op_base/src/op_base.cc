@@ -701,11 +701,7 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         hcclNslbDp::GetInstance().SendGlobalRankTable(rank);
     }
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    ret = opBaseHcom.pComm->InitCollCommInner(rank);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[Init][CommClusterInfo] InitCollCommInner failed, ret=%d", ret);
-        return ret;
-    }
+    CHK_RET(opBaseHcom.pComm->InitCollCommInner(rank));
 #endif
     /* 关键状态记录 */
     HCCL_INFO("%s success, rankNum[%u], rank[%u], server[%s], device[%d].",

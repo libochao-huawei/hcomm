@@ -321,8 +321,9 @@ HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const En
             HCCL_INFO("HcclRankGraphGetEndpointInfo success");
             return HCCL_SUCCESS;
         }());
-    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HcclResult ret = hcclComm->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
+    RankGraph* rankGraph = nullptr;
+    CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
+    HcclResult ret = rankGraph->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to get endpoint info, ret[%d]", __func__, ret);
         return ret;

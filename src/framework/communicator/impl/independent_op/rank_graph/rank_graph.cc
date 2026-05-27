@@ -758,29 +758,23 @@ HcclResult RankGraphV1::FillAttr(EndpointAttr endpointAttr, const EndpointDesc *
 {
     switch (endpointAttr) {
         case ENDPOINT_ATTR_BW_COEFF: {
-            if (infoLen != sizeof(EndpointAttrBwCoeff)) {
+            CHK_PRT_RET(infoLen != sizeof(EndpointAttrBwCoeff),
                 HCCL_ERROR("[RankGraphV1::GetEndpointInfo] Size mismatch for ENDPOINT_ATTR_BW_COEFF: expected %zu, actual %u",
-                    sizeof(EndpointAttrBwCoeff), infoLen);
-                return HCCL_E_PARA;
-            }
+                    sizeof(EndpointAttrBwCoeff), infoLen), HCCL_E_PARA);
             *(static_cast<EndpointAttrBwCoeff*>(info)) = 1;
             break;
         }
         case ENDPOINT_ATTR_DIE_ID: {
-            if (infoLen != sizeof(EndpointAttrDieId)) {
+            CHK_PRT_RET(infoLen != sizeof(EndpointAttrDieId),
                 HCCL_ERROR("[RankGraphV1::GetEndpointInfo] Size mismatch for ENDPOINT_ATTR_DIE_ID: expected %zu, actual %u",
-                    sizeof(EndpointAttrDieId), infoLen);
-                return HCCL_E_PARA;
-            }
+                    sizeof(EndpointAttrDieId), infoLen), HCCL_E_PARA);
             *(static_cast<EndpointAttrDieId*>(info)) = foundEndpoint->loc.device.superDevId;
             break;
         }
         case ENDPOINT_ATTR_LOCATION: {
-            if (infoLen != sizeof(EndpointAttrLocation)) {
+            CHK_PRT_RET(infoLen != sizeof(EndpointAttrLocation),
                 HCCL_ERROR("[RankGraphV1::GetEndpointInfo] Size mismatch for ENDPOINT_ATTR_LOCATION: expected %zu, actual %u",
-                    sizeof(EndpointAttrLocation), infoLen);
-                return HCCL_E_PARA;
-            }
+                    sizeof(EndpointAttrLocation), infoLen), HCCL_E_PARA);
             *(static_cast<EndpointAttrLocation*>(info)) = foundEndpoint->loc.locType;
             break;
         }
