@@ -13,7 +13,7 @@
 
 #include "rt_external_base.h"
 #include "rt_external_stars_define.h"
-#include "rt_external_kernel.h"
+#include "rt_external_kernel.h" // Added from Legacy to ensure rtArgsEx_t and other types are defined
 
 #if defined(__cplusplus)
 extern "C" {
@@ -217,7 +217,7 @@ RTS_API rtError_t rtLaunchDvppTask(const void *sqe, uint32_t sqeLen, rtStream_t 
 
 /**
  * @ingroup rt_stars
- * @brief gerneral ctrl if
+ * @brief general ctrl interface
  * @param [in] ctl              ctl input
  * @param [in] num              ctl input num
  * @param [in] type             ctl type

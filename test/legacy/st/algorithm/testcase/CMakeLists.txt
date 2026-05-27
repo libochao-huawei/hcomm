@@ -18,6 +18,9 @@ set(include_list
     ${THIRD_PARTY_PATH}/json/include
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
     ${THIRD_PARTY_PATH}/protobuf/include
+
+    ${HCOMM_DIR}/src/common
+    ${HCOMM_DIR}/src/common/error_manager
 )
 
 file(GLOB_RECURSE ALG_CCU_CONTEXT_SRC "${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/*.cc")
@@ -58,6 +61,8 @@ add_dependencies(hccl_orion_alg_test protobuf)  # 依赖 protobuf
 #头文件搜索路径
 target_include_directories(hccl_orion_alg_test PRIVATE
     ${include_list}
+    ${HCOMM_DIR}/src/common
+    ${HCOMM_DIR}/src/common/error_manager
 )
 
 target_compile_definitions(hccl_orion_alg_test PRIVATE
