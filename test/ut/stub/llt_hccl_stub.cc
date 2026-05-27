@@ -5541,9 +5541,9 @@ HcclResult GetCustomKernelFilePath(std::string &binaryPath)
     binaryPath = "./";
     return HCCL_SUCCESS;
 }
+}
 
 aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
 {
     return ACL_SUCCESS;
-}
 }

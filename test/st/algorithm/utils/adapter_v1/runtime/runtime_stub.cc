@@ -360,7 +360,7 @@ aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus *captu
     return ACL_SUCCESS;
 }
 
-aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttrType attrType, aclrtStreamAttrValue *value)
+aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType, aclrtStreamAttrValue *value)
 {
     return ACL_SUCCESS;
 }

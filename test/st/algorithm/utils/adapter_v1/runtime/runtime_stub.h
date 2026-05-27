@@ -126,7 +126,7 @@ aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numB
 
 aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus *captureStatus, aclmdlRI *rtModel);
 
-aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttrType attrType, aclrtStreamAttrValue *value);
+aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType, aclrtStreamAttrValue *value);
 
 aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen);
 
