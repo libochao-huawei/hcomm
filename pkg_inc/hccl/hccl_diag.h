@@ -41,7 +41,7 @@ extern HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char 
 extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime);
 
 typedef void (*HcclTaskExceptionCallback)(aclrtExceptionInfo *exceptionInfo);
-extern HcclResult HcclTaskExceptionRegCallBack(HcclComm comm, HcclTaskExceptionCallback callback);
+extern HcclResult HcclTaskExceptionRegCallBack(HcclTaskExceptionCallback callback);
 
 extern uint64_t HcommGetProfilingSysCycleTime();
 
