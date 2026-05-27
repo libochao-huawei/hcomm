@@ -954,6 +954,7 @@ HcclResult UbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, 
     }
     uint32_t userMemCount = rmtBufferVec.size();
     auto cacheBuilder = [](std::unique_ptr<RemoteUbRmaBuffer> &rmtBuffer, CommMem &mem) -> HcclResult {
+        CHK_PTR_NULL(rmtBuffer);
         mem.type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
         mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         mem.size = rmtBuffer->GetSize();

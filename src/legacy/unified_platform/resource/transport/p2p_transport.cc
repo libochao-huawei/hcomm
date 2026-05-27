@@ -556,6 +556,7 @@ HcclResult P2PTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, ch
     }
     uint32_t userMemCount = rmtBufferVec.size();
     auto cacheBuilder = [](std::unique_ptr<RemoteIpcRmaBuffer> &rmtBuffer, CommMem &mem) -> HcclResult {
+        CHK_PTR_NULL(rmtBuffer);
         mem.type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
         mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         mem.size = rmtBuffer->GetSize();
