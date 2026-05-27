@@ -91,7 +91,7 @@ TEST_F(CcuUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     auto transport = std::make_unique<CcuTransport>(fakeSocket, std::move(conn), bufInfo);
     ch.impl_ = std::move(transport);
 
-    // 3. 从 ch.impl_ 操作，不要再用旧的 transport 指针！
+    // 3. 从 ch.impl_ 操作，不要再用旧的 Stransport 指针！
     ch.impl_->transStatus_ = CcuTransport::TransStatus::SOCKET_TIMEOUT;
     auto ret = ch.GetStatus();
     EXPECT_NE(ret, ChannelStatus::INIT);
