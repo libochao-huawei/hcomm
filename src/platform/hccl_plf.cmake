@@ -89,6 +89,7 @@ target_include_directories(hccl_plf PRIVATE
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/new
     ${HCOMM_DIR}/src/common/error_manager
+    ${HCOMM_DIR}/src/common
 
     # legacy
     ${HCOMM_DIR}/src/legacy/unified_platform
