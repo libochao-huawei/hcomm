@@ -309,7 +309,7 @@ TEST_F(TbeVectorReduceTest, crack_crack_get_op_info)
     HcclResult ret;
     nlohmann::json opDescInfo;
     nlohmann::json opTilingInfo;
-    TbeReduce::TbeCrackCleard tbeTest;
+    TbeReduce::TbeCrackCleared tbeTest;
     tbeTest.deviceType_ = LegacyDevType::DEV_TYPE_910B;
     ret = tbeTest.GetOpInfo(opDescInfo, opTilingInfo);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
