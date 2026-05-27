@@ -127,4 +127,14 @@ TEST_F(HcclTopoInfoDetectTest, Ut_Print_Failed_Connect_AgentIds)
 {
     TopoInfoExchangeServer server;
     server.PrintFailedAgentIdList("111,222,333");
+
+    server.PrintFailedAgentIdList("");
+
+    server.PrintFailedAgentIdList("123");
+
+    std::string agentIdList = "123,"
+    for(int i = 0; i < 1000; i++) {  // 长度超限
+        agentIdList += i
+    }
+    server.PrintFailedAgentIdList(agentIdList);
 }
