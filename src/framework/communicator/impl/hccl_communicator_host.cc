@@ -4578,8 +4578,9 @@ namespace hccl
                     // 预填充内存字段（paramInputMem/scratchMem 等供 transport manager 建链使用）
                     zeroRes.cclInputMem = resMap_[baseTag].cclInputMem;
                     zeroRes.cclOutputMem = resMap_[baseTag].cclOutputMem;
-                    zeroRes.paramInputMem = resMap_[baseTag].paramInputMem;
-                    zeroRes.paramOutputMem = resMap_[baseTag].paramOutputMem;
+                    // ZeroCopy 每轮的用户 buffer 地址不同，用当前 opParam 的地址
+                    zeroRes.paramInputMem = DeviceMem::create(opParam.inputPtr, opParam.inputSize);
+                    zeroRes.paramOutputMem = DeviceMem::create(opParam.outputPtr, opParam.outputSize);
                     zeroRes.scratchMem = resMap_[baseTag].scratchMem;
                     zeroRes.aivInputMem = resMap_[baseTag].aivInputMem;
                     zeroRes.aivOutputMem = resMap_[baseTag].aivOutputMem;
