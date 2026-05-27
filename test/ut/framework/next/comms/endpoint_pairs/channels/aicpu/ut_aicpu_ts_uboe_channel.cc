@@ -406,9 +406,9 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NullParams_ReturnsError) {
     uint32_t memNum = 0;
 
     // 传入无效参数，期望返回参数错误（具体错误码视实现而定，当前返回 HCCL_E_PARA）
-    EXPECT_EQ(ch.GetRemoteMems(nullptr, &memTag, &memNum), HCCL_E_PARA);
-    EXPECT_EQ(ch.GetRemoteMems(&remoteMem, nullptr, &memNum), HCCL_E_PARA);
-    EXPECT_EQ(ch.GetRemoteMems(&remoteMem, &memTag, nullptr), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(&memNum, nullptr, &memTag), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(&memNum, &remoteMem, nullptr), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(nullptr, &remoteMem, &memTag), HCCL_E_PARA);
 }
 
 TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccess) {
@@ -430,7 +430,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccess) {
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memTag, &memNum);
+    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 1U);
     ASSERT_NE(remoteMem, nullptr);
