@@ -148,7 +148,6 @@ private:
     std::vector<uint32_t> remoteDpuNotifyIds_;
     std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
     std::vector<ExchangeRdmaConnDto> rmtConnDtos_;
-    std::vector<std::unique_ptr<HcclMem>> remoteMems{};
     std::vector<int> wqeNums_;
     bool fenceFlag_{false};
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁

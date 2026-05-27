@@ -36,18 +36,6 @@ constexpr u32 MEM_BLOCK_SIZE = 128;
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 constexpr u32 SEND_RQE_COUNT = 16;
 
-static inline CommMemType HcclMemTypeToCommMemType(HcclMemType type)
-{
-    switch (type) {
-        case HCCL_MEM_TYPE_DEVICE:
-            return COMM_MEM_TYPE_DEVICE;
-        case HCCL_MEM_TYPE_HOST:
-            return COMM_MEM_TYPE_HOST;
-        default:
-            return COMM_MEM_TYPE_INVALID;
-    }
-}
-
 HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
