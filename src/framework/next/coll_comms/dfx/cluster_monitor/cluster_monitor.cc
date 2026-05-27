@@ -506,6 +506,7 @@ void ClusterMonitor::DelErrorSocket()
             GetUID(rem).c_str());
         uid2FrameStatusMap_.erase(rem);
         if (uid2SocketRefMap_.has(rem)) {
+            HCCL_ERROR("TEST ClusterMonitor::DelErrorSocket socketHandler[%p]", uid2SocketRefMap_[rem].socketHandler);
             SocketDestroy(uid2SocketRefMap_[rem].socketHandler);
             while (uid2SocketRefMap_.erase(rem)) {
             };

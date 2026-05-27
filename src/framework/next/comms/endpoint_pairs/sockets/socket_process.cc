@@ -93,6 +93,7 @@ HcclResult SocketProcess::DestroySocketHandle(SocketHandle socketHandle)
     Hccl::Socket* rawSocket = tag2socketIter->second.first;
     tag2socketMap_.erase(tag2socketIter);
     socket2TagMap_.erase(socket2TagIter);
+    HCCL_ERROR("TEST [%s] destroy rawSocket[%p]", __func__, rawSocket);
     CHK_RET(SocketMgr::GetInstance(devicePhyId_).DeleteWhiteList(rawSocket));
     CHK_RET(SocketMgr::GetInstance(devicePhyId_).DestroySocket(rawSocket));
 
