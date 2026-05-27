@@ -166,8 +166,6 @@ HcclResult CcuUrmaChannel::Init()
     CHK_RET_UNAVAIL(CreateCcuTransport(ccuEndpoint, linkData, socket,
         channelDesc_.memHandles, channelDesc_.memHandleNum, impl_, channelDesc_.ubAttr.sqDepth));
 
-    hcclBufferInfoPtr_.reset(new (std::nothrow) HcclMem());
-    CHK_PTR_NULL(hcclBufferInfoPtr_);
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }

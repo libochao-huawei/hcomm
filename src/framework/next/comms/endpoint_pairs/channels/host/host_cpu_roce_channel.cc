@@ -12,7 +12,7 @@
 #include "../../../endpoints/endpoint.h"
 #include "dpu_notify/dpu_notify_manager.h"
 #include "hcomm_res.h"
-#include "hcomm_c_adpt.h"
+#include "comm_mems.h"
 #include "exception_handler.h"
 #include "cpu_roce_endpoint.h"
 #include "adapter_error_manager_pub.h"
@@ -35,18 +35,6 @@ constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
 constexpr u32 MEM_BLOCK_SIZE = 128;
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 constexpr u32 SEND_RQE_COUNT = 16;
-
-static inline CommMemType HcclMemTypeToCommMemType(HcclMemType type)
-{
-    switch (type) {
-        case HCCL_MEM_TYPE_DEVICE:
-            return COMM_MEM_TYPE_DEVICE;
-        case HCCL_MEM_TYPE_HOST:
-            return COMM_MEM_TYPE_HOST;
-        default:
-            return COMM_MEM_TYPE_INVALID;
-    }
-}
 
 HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
@@ -611,7 +599,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMems(CommMem **remoteMem, char ***memTag
         for (uint32_t i = 0; i < totalCount; ++i) {
             auto& rmtBuffer = rmtRmaBuffers_[i];
             CHK_PTR_NULL(rmtBuffer);
-            userRemoteMems_[i].type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
+            userRemoteMems_[i].type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
             userRemoteMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
             userRemoteMems_[i].size = rmtBuffer->GetSize();
             std::string tagCopy = rmtBuffer->GetMemTag();

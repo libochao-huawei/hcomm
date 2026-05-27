@@ -50,8 +50,9 @@ struct RemoteMemCtx{
     {};
 };
 
-CommMemType ConvertHcclToCommMemType(HcclMemType hcclType) {
-    switch (hcclType) {
+inline CommMemType HcclMemTypeToCommMemType(HcclMemType type)
+{
+    switch (type) {
         case HCCL_MEM_TYPE_DEVICE:
             return COMM_MEM_TYPE_DEVICE;
         case HCCL_MEM_TYPE_HOST:
