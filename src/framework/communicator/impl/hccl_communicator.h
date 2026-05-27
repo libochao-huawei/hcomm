@@ -58,6 +58,9 @@
 #include "rank_graph.h"
 #include "symmetric_memory/symmetric_memory.h"
 
+// aclgraph 销毁路径 host 端 payload 复用 buffer 用到，完整定义见 src/pub_inc/aicpu_operator_pub.h
+struct HcclKfcClearOpResTilingData;
+
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
 
@@ -304,8 +307,8 @@ public:
     HcclResult AivResume();
     void AtomicInitClear();
     bool GetNicInitialized();
-    void DestroyAlgResource(AlgResourceResponse &res);
-    void DestroyOpTransportResponse(OpCommTransport &opTransportResponse);
+    void DestroyAlgResource(AlgResourceResponse &res, bool aclGraphDestroyCbk = false);
+    void DestroyOpTransportResponse(OpCommTransport &opTransportResponse, bool aclGraphDestroyCbk = false);
     HcclResult ReleasePreemptSocket();
     HcclResult DestroyNetworkResources();
     HcclResult DisablePreResource();
@@ -327,8 +330,8 @@ public:
     HcclResult InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbufferSize);
 
     // 目前支持按tag对资源释放、解绑定
-    HcclResult  ClearResMap(const std::string &tag, bool &findTag);
-    virtual HcclResult ClearOpResource(const std::string &tag);
+    HcclResult  ClearResMap(const std::string &tag, bool &findTag, bool aclGraphDestroyCbk = false);
+    virtual HcclResult ClearOpResource(const std::string &tag, bool aclGraphDestroyCbk = false);
     HcclResult SetClearAivSyncBuf(bool aivClearEnable);
 
     HcclResult SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr);
@@ -375,7 +378,10 @@ public:
         void* tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
         const std::string &tag, bool isCustom);
     HcclResult InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode);
-
+    // aclgraph销毁时批量清理aicpu端 tags 关联资源；走RunAicpuKfcClearOpRes kernel，
+    // 同一communicator下整批tag一次launch（超MAX_BATCH分批），payload走持久HBM buffer。
+    // aicpu端按group定位HcclCommAicpu后for循环ClearOpResource。
+    HcclResult AicpuKfcClearOpResLaunch(const std::unordered_set<std::string> &tags);
     virtual HcclResult Mc2AiCpuStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
     HcclResult Mc2AiCpuInitStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
     HcclResult GetTopoDesc(HcclTopoDescs *topoDescs, uint32_t topoSize);
@@ -757,6 +763,7 @@ private:
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool selectAivAlg = false);
     HcclResult IncreAllocLink(const std::string &newTag, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
+    bool HasRoceTransportLinks(OpCommTransport &opTransportReq);
     HcclResult CleanTransportLinks(OpCommTransport &opTransportReq, OpCommTransport &opTransportResponse);
     DeviceMem GetWorkspaceScracthMem(const std::string &tag, u64 allocMemSize);
     std::vector<Stream> GetWorkspaceSubStreams(const std::string &tag, u32 num);
@@ -934,6 +941,13 @@ private:
     DeviceMem workSpace_;
     DeviceMem mc2DeviceMem_;
     std::vector<DeviceMem> extraMem_;
+    // aclgraph 销毁时 host→aicpu 投递 HcclKfcClearOpResTilingData 的常驻 HBM buffer，
+    // lazy alloc 在 AicpuKfcClearOpResLaunch 首次调用；析构靠 DeviceMem RAII。
+    DeviceMem aicpuCleanupBuf_;
+    // host 侧 payload 暂存 buffer：HcclKfcClearOpResTilingData 在 10k batch 时达 ~2.5MB，
+    // 若每次 launch 在栈上 value-init 整个结构体会有爆栈风险（ACL runtime callback
+    // worker thread 栈可能 <2MB，未在 ACL 文档钉死）。改为 heap 持久持有 + 复用。
+    std::unique_ptr<HcclKfcClearOpResTilingData> aicpuCleanupHostBuf_;
     std::vector<HcclRtEvent> aiCpuNoIpcEvnet_;
     bool isDiffDeviceModule_;
     bool isDiffDeviceType_;
