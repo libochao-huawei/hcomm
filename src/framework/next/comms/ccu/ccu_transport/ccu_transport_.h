@@ -91,7 +91,7 @@ public:
     HcclResult  Init();
     TransStatus GetStatus();
     void        Clean();
-    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
+    HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags);
     HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp);
 
@@ -191,7 +191,7 @@ private:
     std::vector<char>                        sendTrans_{};
     std::vector<char>                        recvFinishMsg_{};
     std::vector<char>                        sendFinishMsg_{};
-    bool                                     cacheValid_ = false; // GetUserRemoteMem 的缓存标识
+    bool                                     cacheValid_ = false; // 当前缓存是否有效
     std::mutex                               remoteMemsMutex_;    // 远端内存列表互斥锁
     std::vector<CommMem>                     remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>                 tagCopies_;          // 储存 Tag 字符串副本

@@ -45,8 +45,7 @@ public:
     void WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
                      const Stream &stream) override;
 
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
-    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
+    HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags);
 
 private:
     MemoryBuffer GetLocMemBuffer(const RmaBufferSlice &locSlice) const;
@@ -71,7 +70,7 @@ private:
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> locMemTagTemp_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> rmtMemTagTemp_{};
-    bool                         cacheValid_ = false; // GetUserRemoteMem 的缓存标识
+    bool                         cacheValid_ = false; // 当前缓存是否有效
     std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>           tagPointers_;        // Tag 缓存
@@ -96,7 +95,6 @@ private:
     std::vector<char> GetRmtBufferUniqueIds() const;
 
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
-    std::unique_ptr<HcclMem[]> remoteMemsPtr_;
 };
 
 } // namespace Hccl

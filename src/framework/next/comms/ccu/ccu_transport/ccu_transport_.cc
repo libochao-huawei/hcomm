@@ -648,20 +648,21 @@ void CcuTransport::Clean()
     ccuConnection_->Clean();
 }
 
-HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult CcuTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    uint32_t userMemCount = rmtBufferInfos_.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
-    auto cacheBuilder = [](Hccl::RemoteMemCtx<CclBufferInfo> &remoteMemCtx, uint32_t index) {
-        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
+    uint32_t userMemCount = rmtBufferInfos_.size();
+    auto cacheBuilder = [](Hccl::RemoteMemCtx<CclBufferInfo> &remoteMemCtx, uint32_t index) -> HcclResult {
+        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         remoteMemCtx.remoteUserMems[index].type = rmtBuffer.type;
         remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer.addr);
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer.size;
+        return HCCL_SUCCESS;
     };
     Hccl::RemoteMemCtx<CclBufferInfo> remoteMemCtx{
         userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
         cacheBuilder, remoteMem, memTags, memNum};
-    CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
+    CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
     return HcclResult::HCCL_SUCCESS;
 }
 
