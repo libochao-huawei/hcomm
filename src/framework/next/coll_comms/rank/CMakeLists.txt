@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     my_rank.cc
+    exchange_info_mgr.cc
 )
 
 target_sources(hcomm PRIVATE

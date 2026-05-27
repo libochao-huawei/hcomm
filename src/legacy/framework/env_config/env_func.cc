@@ -775,12 +775,55 @@ std::vector<std::string> SplitDfsConfig(const std::string &str, char delimiter)
     return tokens;
 }
 
+void CastDfsConfigParseTaskExceptionEnable(bool &taskExceptionEnable, const std::string configValue)
+{
+    if (configValue == "off") {
+        taskExceptionEnable = false;
+        HCCL_WARNING("env[HCCL_DFS_CONFIG] task_exception was configed to [%s]", configValue.c_str());
+    } else if (configValue == "on") {
+        taskExceptionEnable = true;
+    } else {
+        THROW<InvalidParamsException>(StringFormat(
+            "env[HCCL_DFS_CONFIG] please set task_exception to 'on' or 'off'.", configValue.c_str()));
+    }
+}
+
+void CastDfsConfigParseClusterHeartBeatEnable(bool &clusterHeartBeatEnable, const std::string configValue)
+{
+    if (configValue == "off") {
+        clusterHeartBeatEnable = false;
+        HCCL_WARNING("env[HCCL_DFS_CONFIG] cluster_heartbeat was configed to [%s]", configValue.c_str());
+    } else if (configValue == "on") {
+        clusterHeartBeatEnable = true;
+    } else {
+        THROW<InvalidParamsException>(StringFormat(
+            "env[HCCL_DFS_CONFIG] please set cluster_heartbeat to 'on' or 'off'.", configValue.c_str()));
+    }
+}
+
+void CastDfsConfigParseRankConsistentState(int32_t &rankConsistentState, const std::string configValue)
+{
+    if (configValue == "off") {
+        rankConsistentState = -1;
+    }else if (configValue == "first")
+    {
+        rankConsistentState = 0;   
+    }else if (configValue == "on")
+    {
+        rankConsistentState = 1;  
+    }else {
+        THROW<InvalidParamsException>(StringFormat(
+            "env[HCCL_DFS_CONFIG] please set inconsistent_check to '-1' or '0' or '1'.", configValue.c_str()));
+    }
+}
+
 DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 {
-    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 2;
-    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsItemName   = {"task_exception", "cluster_heartbeat"};
+    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 3;
+    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsItemName   = {"task_exception", "cluster_heartbeat", "inconsistent_check"};
     bool                                               taskExceptionEnable = true;
     bool                                               clusterHeartBeatEnable = true;
+    int32_t                                            rankConsistentState = 0;
     std::string                                        dfsConfigEnvCopy    = dfsConfigEnv;
     dfsConfigEnvCopy.erase(std::remove(dfsConfigEnvCopy.begin(), dfsConfigEnvCopy.end(), ' '), dfsConfigEnvCopy.end());
     auto items = SplitDfsConfig(dfsConfigEnvCopy, ',');
@@ -793,33 +836,17 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
                 StringFormat("env[HCCL_DFS_CONFIG] value[%s] is invalid,  please check, example [task_exception:on]", dfsConfigEnv.c_str()));
         }
         if (itemPair[0] == dfsItemName[0]) {
-            auto taskException = itemPair[1];
-            if (taskException == "off") {
-                taskExceptionEnable = false;
-                HCCL_WARNING("env[HCCL_DFS_CONFIG] task_exception was configed to [%s]", taskException.c_str());
-            } else if (taskException == "on") {
-                taskExceptionEnable = true;
-            } else {
-                THROW<InvalidParamsException>(StringFormat(
-                    "env[HCCL_DFS_CONFIG] please set task_exception to 'on' or 'off'.", taskException.c_str()));
-            }
+            CastDfsConfigParseTaskExceptionEnable(taskExceptionEnable, itemPair[1]);
         } else if (itemPair[0] == dfsItemName[1]) {
-            auto heartBeat = itemPair[1];
-            if (heartBeat == "off") {
-                clusterHeartBeatEnable = false;
-                HCCL_WARNING("env[HCCL_DFS_CONFIG] cluster_heartbeat was configed to [%s]", heartBeat.c_str());
-            } else if (heartBeat == "on") {
-                clusterHeartBeatEnable = true;
-            } else {
-                THROW<InvalidParamsException>(StringFormat(
-                    "env[HCCL_DFS_CONFIG] please set cluster_heartbeat to 'on' or 'off'.", heartBeat.c_str()));
-            }
+            CastDfsConfigParseClusterHeartBeatEnable(clusterHeartBeatEnable, itemPair[1]);
+        } else if (itemPair[0] == dfsItemName[2]) {
+            CastDfsConfigParseRankConsistentState(rankConsistentState, itemPair[1]);
         }
     }
-    DfsConfig config{taskExceptionEnable, clusterHeartBeatEnable};
+    DfsConfig config{taskExceptionEnable, clusterHeartBeatEnable, rankConsistentState};
 
-    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d], cluster_heartbeat [%d]",
-        config.taskExceptionEnable, config.clusterHeartBeatEnable);
+    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d], cluster_heartbeat [%d] rankConsistentState[%d]",
+        config.taskExceptionEnable, config.clusterHeartBeatEnable, config.rankConsistentState);
     return config;
 }
 
