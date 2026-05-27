@@ -194,15 +194,20 @@ RmaBufSliceLite RoceTransportLiteImpl::GetRmaBufSlicelite(const RmaBufferLite &l
     return RmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetLkey(), 0);
 }
 
-RmaBufSliceLite RoceTransportLiteImpl::GetRmtNotifySliceLite(u32 index) const
+RmaBufSliceLite RoceTransportLiteImpl::GetNotifySlicelite(u32 index) const
 {
-    auto &lite = notifyValueBuffer_[index];
-    return RmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetLkey(), 0);
+    return RmaBufSliceLite(0, 0, 0, 0);
 }
 
-RmtRmaBufSliceLite RoceTransportLiteImpl::GetRmtRmaBufSliceLite(const RmtRmaBufferLite &lite) const
+RmtRmaBufSliceLite RoceTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtBuf) const
 {
-    return RmtRmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetRkey(), 0, 0);
+    for (auto &it : rmtBufferVec_) {
+        Buffer buf(it.GetAddr(), it.GetSize());
+        if (buf.Contains(rmtBuf.GetAddr(), rmtBuf.GetSize())) {
+            return RmtRmaBufSliceLite(rmtBuf.GetAddr(), rmtBuf.GetSize(), it.GetRkey(), 0, 0);
+        }
+    }
+    MACRO_THROW(InternalException, StringFormat("%s is not in current transport", rmtBuf.Describe().c_str()));
 }
 
 RmtRmaBufSliceLite RoceTransportLiteImpl::GetRmtNotifySliceLite(u32 index) const
@@ -254,7 +259,7 @@ std::string RoceTransportLiteImpl::Describe() const
     return desc;
 }
 
-HcclResult RoceTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const
+HcclResult RoceTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite)
 {
     HCCL_INFO("[RoceTransportLiteImpl::%s] start to find addr[0x%llx], size[0x%llx] in locBufferVec, whose size is %zu. ",
         __func__, addr, size, locBufferVec_.size());
@@ -284,7 +289,7 @@ HcclResult RoceTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, co
     return HCCL_SUCCESS;
 }
 
-void RoceTransportLiteImpl::Write(const RmaBufferLite &loc, const RmtRmaBufferLite &rmt, const StreamLite &stream)
+void RoceTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
 {
     u64 dbAddr = 0;
     u64 dbValue = 0;
@@ -297,34 +302,35 @@ void RoceTransportLiteImpl::Write(const RmaBufferLite &loc, const RmtRmaBufferLi
     BuildRdmaDbSendTask(stream, dbAddr, dbValue);
 }
 
-void RoceTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const RmtRmaBufferLite &rmt, const uint32_t remoteNotifyIdx, const StreamLite &stream)
+void RoceTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify, const StreamLite &stream)
 {
     u64 dbAddr = 0;
     u64 dbValue = 0;
+    u32 notifyIdx = withNotify.index_;
 
     // Post Wqe && return dbValue
     connVec_[0]->WriteWithNotify(
         GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt),
-        GetNotifySlicelite(remoteNotifyIdx), GetRmtNotifySliceLite(remoteNotifyIdx), dbAddr, dbValue);
+        GetNotifySlicelite(notifyIdx), GetRmtNotifySliceLite(notifyIdx), dbAddr, dbValue);
 
     // Ring Doorbell
     BuildRdmaDbSendTask(stream, dbAddr, dbValue);
 }
 
-void RoceTransportLiteImpl::NotifyWait(const uint32_t index, const StreamLite &stream)
+void RoceTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
 {
     auto notifyId = localNotifies_[index]->GetId();
     BuildNotifyWaitTask(stream, notifyId);
 }
 
 // 下发Rtsq sqe, 敲DB
-void AicpuTsRoceChannelLite::BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue)
+void RoceTransportLiteImpl::BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue)
 {
     stream.GetRtsq()->RdmaDbSend(remoteAddr, dbValue);
 }
 
 // 下发Rtsq sqe, NotifyWait
-void AicpuTsRoceChannelLite::BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId)
+void RoceTransportLiteImpl::BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId)
 {
     stream.GetRtsq()->NotifyWait(notifyId);
 }

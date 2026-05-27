@@ -29,10 +29,11 @@ inline uint64_t my_htonll(uint64_t x) {
 // 先默认所有WQE都只占一个WQEBB
 #define WQEBB_SHIFT 6
 
-#define ROCE_WQE_OWNERBIT_SHIFT = 7;
+#define ROCE_WQE_OWNERBIT_SHIFT 7
 #define ROCE_WQE_CTRL_VALUE 0x40
 #define ROCE_SQ_VA_VALUE 0x20
 #define ROCE_SQ_SIGNAL_SHIFT 7
+#define ROCE_WQE_CQE_SIGNAL_SHIFT 7
 #define ROCE_WQE_CMP_TASK_LEN1 1u /* wqe cl is set to 1 */
 #define ROCE_WQE_CMP_TASK_LEN_SHIFT 28
 #define ROCE_TASK_SEG_ALIGN 8
@@ -70,7 +71,7 @@ union Roce3TaskSeg {
 
 typedef struct {
     // Task Wqe Segment
-    struct Roce3TaskSeg tskSeg;
+    union Roce3TaskSeg tskSeg;
     uint32_t dataLen;
     uint32_t immData;
     union {
@@ -177,8 +178,6 @@ public:
 protected:
     int BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt)
     {
-        int ret = HCCL_SUCCESS;
-
         RoceWqeEntry wqe{};
         CHK_RET(FillCommonWqe(loc, rmt, &wqe, static_cast<uint32_t>(ROCE3_OPCODE::ROCE_OPCODE_RDMA_WRITE)));
 
@@ -188,8 +187,6 @@ protected:
 
     int BuildNotifyWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify)
     {
-        int ret = HCCL_SUCCESS;
-
         RoceWqeEntry wqe{};
         CHK_RET(FillCommonWqe(locNotify, notify, &wqe, static_cast<uint32_t>(ROCE3_OPCODE::ROCE_OPCODE_RDMA_WRITE)));
 
@@ -209,7 +206,7 @@ private:
 
         // 指定cqe产生 + task字段的长度
         wqe->ctrl.df_tsl    = 1U << ROCE_SQ_SIGNAL_SHIFT | ROCE_SQ_VA_VALUE;            
-        wqe->ctrl.df_tsl    |= sizeof(struct Roce3TaskWqeSeg) / ROCE_TASK_SEG_ALIGN;
+        wqe->ctrl.df_tsl    |= sizeof(Roce3TaskWqeSeg) / ROCE_TASK_SEG_ALIGN;
 
         // fast_dma + SSN + sge长度
         wqe->ctrl.wf_bdsl   = my_htons((uint16_t)(0 << ROCE_WQE_FAST_DMA_SHIFT));
@@ -223,7 +220,7 @@ private:
         wqe->task.tskSeg.value = 0;
         wqe->task.tskSeg.dw0.signal = !!((wqe->ctrl.df_tsl & (1U << ROCE_WQE_CQE_SIGNAL_SHIFT)) > 0);
         wqe->task.tskSeg.dw0.fence = 0;
-        wqe->task.tskSeg.dw0.opCode = opCode;
+        wqe->task.tskSeg.dw0.opType = opCode;
         wqe->task.tskSeg.dw0.se = 0;
 
         wqe->task.dataLen = my_htonl(loc.GetSize());

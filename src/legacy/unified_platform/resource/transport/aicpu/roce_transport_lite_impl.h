@@ -41,7 +41,7 @@ public:
 
     // ========== 同步 / Notify 接口 ==========
     // void Post(u32 index, const StreamLite &stream) override;    // NotifyRecord
-    // void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
+    void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
 
 private:
     u32 notifyNum_{0};
@@ -58,7 +58,7 @@ private:
 
     RmaBufSliceLite GetRmaBufSlicelite(const RmaBufferLite &lite) const;
     RmaBufSliceLite GetNotifySlicelite(u32 index) const;
-    RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const RmtRmaBufferLite &lite) const;
+    RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const Buffer &rmtBuf) const;
     RmtRmaBufSliceLite GetRmtNotifySliceLite(u32 index) const;
 
     void ParseLocNotifyVec(std::vector<char> &data);

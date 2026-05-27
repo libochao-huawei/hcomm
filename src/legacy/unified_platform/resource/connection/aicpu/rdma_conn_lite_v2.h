@@ -41,7 +41,6 @@ struct RdmaCqContextLite {
 };
 
 #include "rdma_vendor_1825_ops.h"
-#include "rdma_vendor_xscdv_ops.h"
 
 namespace Hccl {
 class RdmaConnLiteV2 : public RmaConnLite {
@@ -57,15 +56,15 @@ public:
     // ========== 数据面：RMA 数据传输 ==========
     void Write(const RmaBufSliceLite    &loc,
                const RmtRmaBufSliceLite &rmt,
-               uint64_t                 &dbAddr,
-               uint64_t                 &dbValue);
+               u64                      &dbAddr,
+               u64                      &dbValue);
 
-    void WriteWithNotify(const RmaBufSliceLite    &loc,
-                         const RmtRmaBufSliceLite &rmt,
-                         const RmaBufSliceLite    &locNotify,
-                         const RmtRmaBufSliceLite &notify,
-                         uint64_t                 &dbAddr,
-                         uint64_t                 &dbValue);
+    void WriteWithNotify(const RmaBufSliceLite      &loc,
+                         const RmtRmaBufSliceLite   &rmt,
+                         const RmaBufSliceLite      &locNotify,
+                         const RmtRmaBufSliceLite   &notify,
+                         u64                        &dbAddr,
+                         u64                        &dbValue);
 
 private:
     void ParseSqContext(std::vector<char>& data);

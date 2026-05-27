@@ -11,6 +11,8 @@
 #include "rdma_conn_lite_v2.h"
 
 namespace Hccl {
+constexpr u64 RDMA_DMA_MAX_SIZE = 0x80000000; // Byte, RDMA一次传输的最大size
+
 void RdmaConnLiteV2::ParseSqContext(std::vector<char>& data)
 {
     BinaryStream binaryStream(data);
@@ -80,11 +82,12 @@ void RdmaConnLiteV2::GetVendorOps()
         return;
     }
     switch (dmaMode_) {
-        case QBUF_DMA_MODE_DEFAULT: {   // PCIe
-            rdmaOps_ = std::make_unique<RdmaXscdvOps>(&sqContext_, &cqContext_);
+        case 0 : {   // [PCIe] QBUF_DMA_MODE_DEFAULT
+            HCCL_INFO("[RdmaConnLiteV2::%s] Now AIcpu NDA doesn't support PCIE !", __func__);
+            rdmaOps_ = nullptr;
             break;
         }
-        case QBUF_DMA_MODE_INDEP_UB: {  // UB
+        case 1: {  // [UB] QBUF_DMA_MODE_INDEP_UB
             rdmaOps_ = std::make_unique<Rdma1825Ops>(&sqContext_, &cqContext_);
             break;
         }
@@ -96,8 +99,8 @@ void RdmaConnLiteV2::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite 
     HCCL_INFO("[RdmaConnLiteV2::%s] Write start, loc size = %u", __func__, loc.GetSize());
     
     u64 len = loc.GetSize();
-    u32 rdmaSendRepeat = len / RDMA_SEND_MAX_SIZE;
-    u32 rdmaSendRemain = len % RDMA_SEND_MAX_SIZE;
+    u32 rdmaSendRepeat = len / RDMA_DMA_MAX_SIZE;
+    u32 rdmaSendRemain = len % RDMA_DMA_MAX_SIZE;
 
     // 存在Remain
     if (rdmaSendRemain > 0) {
@@ -105,23 +108,23 @@ void RdmaConnLiteV2::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite 
     }
 
     // 分片transport
-    for (int sliceIdx = 0; sliceIdx < rdmaSendRepeat; sliceIdx++) {
-        u64 offset      = sliceIdx * RDMA_SEND_MAX_SIZE;
+    for (u32 sliceIdx = 0; sliceIdx < rdmaSendRepeat; sliceIdx++) {
+        u64 offset      = sliceIdx * RDMA_DMA_MAX_SIZE;
         u64 localAddr   = loc.GetAddr() + offset;
         u64 remoteAddr  = rmt.GetAddr() + offset;
-        u32 sliceSize   = RDMA_SEND_MAX_SIZE;
+        u32 sliceSize   = RDMA_DMA_MAX_SIZE;
 
         // 如果是余数段
-        if (i == rdmaSendRepeat - 1) {
+        if (sliceIdx == rdmaSendRepeat - 1) {
             sliceSize = rdmaSendRemain;
         }
 
-        RmaBufferLite locSlice(localAddr, sliceSize, loc.GetLkey());
+        RmaBufSliceLite locSlice(localAddr, sliceSize, loc.GetLkey(), 0);
         
         RmtRmaBufSliceLite rmtSlice(remoteAddr, sliceSize, rmt.GetRkey(), 0, 0);
 
-        HCCL_INFO("[RdmaConnLiteV2::%s] Slice[%llu]: offset=0x%llx, locAddr=0x%llx, rmtAddr=0x%llx, size=0x%u",
-            __func__, sliceIdx, offset, locAddr, rmtAddr, sliceSize);
+        HCCL_INFO("[RdmaConnLiteV2::%s] Slice[%llu]: offset=0x%llx, localAddr=0x%llx, remoteAddr=0x%llx, size=0x%u",
+            __func__, sliceIdx, offset, localAddr, remoteAddr, sliceSize);
 
         // 分片填好wqe
         rdmaOps_->Write(locSlice, rmtSlice);
@@ -140,8 +143,8 @@ void RdmaConnLiteV2::WriteWithNotify(
     HCCL_INFO("[RdmaConnLiteV2::%s] WriteWithNotify start, loc size = %u", __func__, loc.GetSize());
     
     u64 len = loc.GetSize();
-    u32 rdmaSendRepeat = len / RDMA_SEND_MAX_SIZE;
-    u32 rdmaSendRemain = len % RDMA_SEND_MAX_SIZE;
+    u32 rdmaSendRepeat = len / RDMA_DMA_MAX_SIZE;
+    u32 rdmaSendRemain = len % RDMA_DMA_MAX_SIZE;
 
     // 存在Remain
     if (rdmaSendRemain > 0) {
@@ -149,23 +152,23 @@ void RdmaConnLiteV2::WriteWithNotify(
     }
 
     // 分片transport
-    for (int sliceIdx = 0; sliceIdx < rdmaSendRepeat; sliceIdx++) {
-        u64 offset      = sliceIdx * RDMA_SEND_MAX_SIZE;
+    for (u32 sliceIdx = 0; sliceIdx < rdmaSendRepeat; sliceIdx++) {
+        u64 offset      = sliceIdx * RDMA_DMA_MAX_SIZE;
         u64 localAddr   = loc.GetAddr() + offset;
         u64 remoteAddr  = rmt.GetAddr() + offset;
-        u32 sliceSize   = RDMA_SEND_MAX_SIZE;
+        u32 sliceSize   = RDMA_DMA_MAX_SIZE;
 
         // 如果是余数段
-        if (i == rdmaSendRepeat - 1) {
+        if (sliceIdx == rdmaSendRepeat - 1) {
             sliceSize = rdmaSendRemain;
         }
 
-        RmaBufferLite locSlice(localAddr, sliceSize, loc.GetLkey());
+        RmaBufSliceLite locSlice(localAddr, sliceSize, loc.GetLkey(), 0);
         
         RmtRmaBufSliceLite rmtSlice(remoteAddr, sliceSize, rmt.GetRkey(), 0, 0);
 
-        HCCL_INFO("[RdmaConnLiteV2::%s] Slice[%llu]: offset=0x%llx, locAddr=0x%llx, rmtAddr=0x%llx, size=0x%u",
-            __func__, sliceIdx, offset, locAddr, rmtAddr, sliceSize);
+        HCCL_INFO("[RdmaConnLiteV2::%s] Slice[%llu]: offset=0x%llx, localAddr=0x%llx, remoteAddr=0x%llx, size=0x%u",
+            __func__, sliceIdx, offset, localAddr, remoteAddr, sliceSize);
 
         // 分片填好wqe
         rdmaOps_->Write(locSlice, rmtSlice);
