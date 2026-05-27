@@ -89,6 +89,11 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     memTransport->baseStatus = Hccl::TransportStatus::READY;
     ch.memTransport_ = std::move(memTransport);
 
+    MOCKER(GetExternalInputHcclEnableEntryLog)
+        .stubs()
+        .with(any())
+        .will(returnValue(true));
+
     MOCKER_CPP(&Hccl::UbMemTransport::Describe, HcclResult (Hccl::UbMemTransport::*)(std::string&))
         .stubs()
         .with(any())
