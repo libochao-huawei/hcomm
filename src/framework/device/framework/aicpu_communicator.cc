@@ -1610,6 +1610,11 @@ HcclResult HcclCommAicpu::ClearOpResource(const std::string &tag)
         if (localTagResToObj_.erase(t) > 0) {
             hit = true;
         }
+        for (auto &rankIt : rankTagRemoteRes_) {
+            if (rankIt.second.erase(t) > 0) {
+                hit = true;
+            }
+        }
         return hit;
     };
 
