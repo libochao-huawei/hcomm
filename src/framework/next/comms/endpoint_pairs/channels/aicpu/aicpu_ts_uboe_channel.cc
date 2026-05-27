@@ -11,7 +11,7 @@
 #include "aicpu_ts_uboe_channel.h"
 #include "endpoint.h"
 #include "orion_adpt_utils.h"
-#include "hcomm_c_adpt.h"
+#include "comm_mems.h"
 #include "exception_handler.h"
 #include "user_remote_mem_getter.h"
 
@@ -272,7 +272,7 @@ HcclResult AicpuTsUboeChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteM
         uint32_t index) -> HcclResult {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         CHK_PTR_NULL(rmtBuffer);
-        remoteMemCtx.remoteUserMems[index].type = Hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
+        remoteMemCtx.remoteUserMems[index].type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
         remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
         return HCCL_SUCCESS;

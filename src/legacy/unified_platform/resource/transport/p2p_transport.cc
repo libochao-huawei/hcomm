@@ -571,7 +571,7 @@ HcclResult P2PTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, ch
         uint32_t index) -> HcclResult {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         CHK_PTR_NULL(rmtBuffer);
-        remoteMemCtx.remoteUserMems[index].type = Hccl::HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
+        remoteMemCtx.remoteUserMems[index].type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
         remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
         return HCCL_SUCCESS;
