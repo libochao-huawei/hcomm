@@ -691,6 +691,12 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
     CHK_PRT_RET(transferDescNum == 0,
         HCCL_ERROR("[%s] transferDescNum is 0.", __func__), HCCL_E_PARA);
 
+    for (uint32_t i = 0; i < transferDescNum; i++) {
+        HCCL_ERROR("[%s][TEST] transferDescs[%u], transType[%d], write.src[%p], write.dst[%p], size[%llu]",
+            __func__, i, transferDescs[i].transType, transferDescs[i].transferInfo.write.src,
+            transferDescs[i].transferInfo.write.dst, sizeof(HcommBatchTransferDesc));
+    }
+
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     AddThread(thread);
