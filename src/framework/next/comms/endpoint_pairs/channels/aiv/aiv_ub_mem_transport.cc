@@ -286,9 +286,7 @@ HcclResult AivUbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMe
         HCCL_WARNING("[AivUbMemTransport::%s] bufferNum is 0.", __func__);
         return HCCL_SUCCESS;
     }
-    auto cacheBuilder = [](CommMem &mem, uint32_t index) -> HcclResult {
-        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
-        CHK_PTR_NULL(rmtBuffer);
+    auto cacheBuilder = [](std::unique_ptr<Hccl::RemoteIpcRmaBuffer> &rmtBuffer, CommMem &mem) -> HcclResult {
         mem.type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
         mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         mem.size = rmtBuffer->GetSize();
