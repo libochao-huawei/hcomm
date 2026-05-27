@@ -17,6 +17,8 @@
 #include "op_base.h"
 #include "hccl_comm_pub.h"
 
+constexpr s32 MAX_P2P_TASK_NUM = 2048;
+
 namespace hccl{
 
 using hcclGroupJobState_t = enum hcclGroupJobState {

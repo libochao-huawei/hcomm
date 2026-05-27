@@ -22,8 +22,6 @@ thread_local s32 hcclP2pTaskNums = 0;
 thread_local std::deque<std::shared_ptr<struct hcclAsyncJob>> hcclInitJobs;
 thread_local std::vector<HcclComm> hcclGroupCommList;
 
-constexpr s32 MAX_P2P_TASK_NUM = 2048;
-
 HcclResult HcclGroupStart()
 {
     hcclGroupDepth++;
