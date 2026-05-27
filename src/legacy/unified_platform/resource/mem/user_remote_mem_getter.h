@@ -32,7 +32,7 @@ struct RemoteMemCtx{
     std::vector<CommMem>            &remoteUserMems;
     std::vector<std::string>        &tagCopies;
     std::vector<char*>              &tagPointers;
-    std::function<HcclResult(CommMem &mem, uint32_t index)> cacheBuilder;
+    std::function<HcclResult(T &rmtBuffer, CommMem &mem)> cacheBuilder;
     CommMem                         **remoteMem;
     char                            ***memTags;
     uint32_t                        *memNum;
