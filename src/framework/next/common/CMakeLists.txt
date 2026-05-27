@@ -11,6 +11,7 @@
 set(src_list
     dlurma_function.cc
     hccl_next_dl.cc
+    env_parse.cc
 )
 
 if(TARGET hcomm)
