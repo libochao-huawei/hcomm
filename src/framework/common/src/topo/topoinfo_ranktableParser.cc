@@ -135,7 +135,8 @@ HcclResult TopoInfoRanktableParser::ReadFile(const std::string &readFile)
             RPT_INPUT_ERR(true,
                 "EI0004",
                 std::vector<std::string>({"ranktable_path", "error_reason"}),
-                std::vector<std::string>({readFile.c_str(), "load file to json fail, the permission is insufficient, or the JSON format is incorrect"}));
+                std::vector<std::string>({readFile.c_str(), RANKTABLE_PARSE_ERROR_REASON}));
+
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] load file[%s] to json fail. please check json file!",
                 LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(),
@@ -242,7 +243,7 @@ HcclResult TopoInfoRanktableParser::LoadString(const std::string &string)
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0004",
         std::vector<std::string>({"ranktable_path", "error_reason"}),
-        std::vector<std::string>({string, "failed to read the rank table JSON file, the permission is insufficient, or the JSON format is incorrect"}));
+        std::vector<std::string>({string, "failed to parse rank table JSON content, the JSON format is incorrect"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]Failed to read the string %s into JSON.", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), string.c_str()), ret);
@@ -274,7 +275,8 @@ HcclResult TopoInfoRanktableParser::LoadFileInit(std::string &rankTableM)
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0004",
         std::vector<std::string>({"ranktable_path", "error_reason"}),
-        std::vector<std::string>({rankTableFile_, "fail to load rank table file, the permission is insufficient, or the JSON format is incorrect"}));
+        std::vector<std::string>({rankTableFile_, RANKTABLE_PARSE_ERROR_REASON}));
+
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]load file[%s] error", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), rankTableFile_.c_str()), ret);
