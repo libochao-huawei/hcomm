@@ -236,7 +236,7 @@ public:
         *notifyNum = 0U;
         return HCCL_SUCCESS;
     }
-    HcclResult GetRemoteMems(HcclMem **, char ***, uint32_t *) override
+    HcclResult GetRemoteMems(uint32_t *, CommMem **, char ***) override
     {
         return HCCL_SUCCESS;
     }

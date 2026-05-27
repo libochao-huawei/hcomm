@@ -704,7 +704,7 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_GetRemoteMems_When_Normal_Expect_Re
 
     std::shared_ptr<DevBuffer> buffer1 = DevBuffer::Create(0x101, 0x101);
     strcpy(buffer1->mem_Tag_, "buffer1");
-    buffer1->memType_ = HcclMemType::HCCL_MEM_TYPE_HOST;
+    buffer1->memType_ = CommMemType::COMM_MEM_TYPE_HOST;
     LocalUbRmaBuffer     ubLocalRmaBuffer1(buffer1, rdmaHandle);
     LocalRmaBuffer      *validLocalRmaBuffer1 = &ubLocalRmaBuffer1;
     locRes.bufferVec.push_back(validLocalRmaBuffer1);
@@ -724,7 +724,7 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_GetRemoteMems_When_Normal_Expect_Re
     EXPECT_EQ(ret, HCCL_SUCCESS);
     std::string memTag = memTags[1];
     EXPECT_EQ(memTag, "buffer1");
-    EXPECT_EQ(remoteMems[1].type, HcclMemType::HCCL_MEM_TYPE_HOST);
+    EXPECT_EQ(remoteMems[1].type, CommMemType::COMM_MEM_TYPE_HOST);
     EXPECT_EQ(remoteMems[1].addr, (void *)0x101);
     EXPECT_EQ(remoteMems[1].size, (uint64_t)0x101);
 }

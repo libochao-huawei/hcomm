@@ -34,7 +34,7 @@ public:
         uint32_t size{0};
         uint32_t tokenId{0};
         uint32_t tokenValue{0};
-        HcclMemType type{HCCL_MEM_TYPE_NUM};
+        CommMemType type{COMM_MEM_TYPE_INVALID};
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
 
         explicit CclBufferInfo() = default;
@@ -43,7 +43,7 @@ public:
             : addr(addr), size(size), tokenId(tokenId), tokenValue(tokenValue) {}
 
         CclBufferInfo(const uint64_t addr, const uint32_t size, const uint32_t tokenId, const uint32_t tokenValue,
-            const HcclMemType type, const std::array<char, HCCL_RES_TAG_MAX_LEN> &memTag)
+            const CommMemType type, const std::array<char, HCCL_RES_TAG_MAX_LEN> &memTag)
             : addr(addr), size(size), tokenId(tokenId), tokenValue(tokenValue), type(type), memTag(memTag) {}
 
         void Pack(Hccl::BinaryStream &binaryStream) const {
@@ -193,7 +193,7 @@ private:
     std::vector<char>                        sendFinishMsg_{};
     bool                                     cacheValid_ = false; // 当前缓存是否有效
     std::mutex                               remoteMemsMutex_;    // 远端内存列表互斥锁
-    std::vector<HcclMem>                     remoteUserMems_;     // 内存基本信息缓存
+    std::vector<CommMem>                     remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>                 tagCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>                       tagPointers_;        // Tag 缓存
 };

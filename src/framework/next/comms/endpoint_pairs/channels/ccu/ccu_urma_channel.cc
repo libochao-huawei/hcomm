@@ -52,7 +52,7 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
             static_cast<uint32_t>(locMemInfo->mem.size),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type),
+            locMemInfo->mem.type,
             memTag);
     }
     return HCCL_SUCCESS;

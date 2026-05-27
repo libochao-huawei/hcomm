@@ -401,7 +401,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NullParams_ReturnsError) {
     auto cclBuf = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x1000, 4096, HCCL_MEM_TYPE_DEVICE, "ccl_buffer");
     ch.rmtBufferVec_.push_back(std::move(cclBuf));
 
-    HcclMem* remoteMem = nullptr;
+    CommMem* remoteMem = nullptr;
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
@@ -426,7 +426,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccess) {
     // 确保内部 cache 标志初始为 false，以便重新构建
     ch.cacheValid_ = false;
 
-    HcclMem* remoteMem = nullptr;
+    CommMem* remoteMem = nullptr;
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
@@ -465,7 +465,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithUserBuffers_ReturnsCorrectDa
 
     ch.cacheValid_ = false; // 强制重新构建缓存
 
-    HcclMem* remoteMem = nullptr;
+    CommMem* remoteMem = nullptr;
     char** memTag = nullptr;
     uint32_t memNum = 0;
 

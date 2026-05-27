@@ -2024,11 +2024,11 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_OnlyCclBuffer_Expect_Succes
     impl_->rmtRmaBuffers_.emplace_back(
         std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, cclBufDto));
 
-    HcclMem *remoteMem = nullptr;
+    CommMem *remoteMem = nullptr;
     char **memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = impl_->GetRemoteMems(&remoteMem, &memTag, &memNum);
+    HcclResult ret = impl_->GetRemoteMems(&memNum, &remoteMem, &memTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 1);
 }
@@ -2054,11 +2054,11 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_UserBuffersExist_Expect_Suc
     userBuf2->memType = HCCL_MEM_TYPE_HOST;
     impl_->rmtRmaBuffers_.emplace_back(std::move(userBuf2));
 
-    HcclMem *remoteMem = nullptr;
+    CommMem *remoteMem = nullptr;
     char **memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = impl_->GetRemoteMems(&remoteMem, &memTag, &memNum);
+    HcclResult ret = impl_->GetRemoteMems(&memNum, &remoteMem, &memTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 3);
 

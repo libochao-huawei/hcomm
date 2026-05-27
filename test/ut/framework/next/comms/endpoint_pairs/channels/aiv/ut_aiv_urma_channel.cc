@@ -634,7 +634,7 @@ TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenNoRemoteBuffer_Returns_SUCCESS
     auto conn = MakeConn();
     Socket socket(nullptr, IpAddress(), 0, IpAddress(), "ut", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     auto transport = MakeTransport(*conn, socket);
-    CommMem *remoteMem = reinterpret_cast<HcclMem *>(0x1);
+    CommMem *remoteMem = reinterpret_cast<CommMem *>(0x1);
     char **memTags = reinterpret_cast<char **>(0x1);
     uint32_t memNum = 0;
 
