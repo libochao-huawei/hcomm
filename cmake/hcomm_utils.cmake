@@ -14,7 +14,7 @@ unset(TLS_ADP_LIBRARY CACHE)
 set(HCOMM_UTILS_VERSION "9.0.0")
 set(HCOMM_UTILS_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 set(HCOMM_UTILS_FILE "cann-hcomm-utils_${HCOMM_UTILS_VERSION}_linux-${HCOMM_UTILS_ARCH}.tar.gz")
-set(HCOMM_UTILS_URL "https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/20260330_newest/${HCOMM_UTILS_FILE}")
+set(HCOMM_UTILS_URL "https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/20260527_newest/${HCOMM_UTILS_FILE}")
 set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/${HCOMM_UTILS_FILE})
 set(HCOMM_UTILS_INSTALL_PATH ${CANN_3RD_LIB_PATH}/hcomm_utils)
 
