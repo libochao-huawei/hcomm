@@ -395,6 +395,26 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcResInit(void *args) {
     return AicpuKfcProcess::AicpuRpcResInit(reinterpret_cast<HccCommResParamTask *>(ctxArgs->context));
 }
 
+// aclgraph销毁触发的tag清理入口。host端走 KFCResInitTask{context, isCustom} 模式投递,
+// context 指向 host 在 HBM alloc 的 HcclKfcClearOpResTilingData payload。这里先把 args 当作
+// KFCResInitTask 解包, 再从 context 反解 payload 交给 AicpuHcclProcess。
+// 不能直接把 args reinterpret 为 payload: aclrtLaunchKernelWithHostArgs 的 host args 通道
+// 有 size 上限, 520B payload 走 args/tiling 都会被 runtime 拒绝 (errorCode=0x2a)。
+__attribute__((visibility("default"))) uint32_t RunAicpuKfcClearOpRes(void *args) {
+    if (args == nullptr) {
+        HCCL_ERROR("[RunAicpuKfcClearOpRes] args is null.");
+        return HCCL_E_PARA;
+    }
+    KFCResInitTask *ctxArgs = static_cast<KFCResInitTask *>(args);
+    if (ctxArgs->context == 0) {
+        HCCL_ERROR("[RunAicpuKfcClearOpRes] ctxArgs->context is null.");
+        return HCCL_E_PARA;
+    }
+    const HcclKfcClearOpResTilingData *tilingData =
+        reinterpret_cast<const HcclKfcClearOpResTilingData *>(ctxArgs->context);
+    return AicpuHcclProcess::AicpuRpcClearOpRes(tilingData);
+}
+
 __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunch(void *args)
 {
     KfcState state;
