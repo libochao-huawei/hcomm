@@ -123,18 +123,26 @@ TEST_F(HcclTopoInfoDetectTest, Ut_SetupServer_When_PortRange_ReturnIsHCCL_SUCCES
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(HcclTopoInfoDetectTest, Ut_Print_Failed_Connect_AgentIds)
+TEST_F(HcclTopoInfoDetectTest, Ut_PrintFailedAgentIdList_AllBranches)
 {
-    TopoInfoExchangeServer server;
-    server.PrintFailedAgentIdList("111,222,333");
+    HcclIpAddress hostIP("127.0.0.1");
+    u32 hostPort = 61111;
+    std::vector<HcclIpAddress> whitelist;
+    HcclNetDevCtx netDevCtx = nullptr;
+    std::shared_ptr<HcclSocket> listenSocket;
+    const std::string identifier = "test_id";
+    TopoInfoExchangeServer server(hostIP, hostPort, whitelist, netDevCtx, listenSocket, identifier);
 
     server.PrintFailedAgentIdList("");
 
-    server.PrintFailedAgentIdList("123");
+    server.PrintFailedAgentIdList("1,2,3");
 
-    std::string agentIdList = "123,"
-    for(int i = 0; i < 1000; i++) {  // 长度超限
-        agentIdList += i
+    std::string longStrNoComma(600, 'A');
+    server.PrintFailedAgentIdList(longStrNoComma);
+
+    std::string longStrWithComma;
+    for (int i = 0; i < 200; i++) {
+        longStrWithComma += std::to_string(i) + ",";
     }
-    server.PrintFailedAgentIdList(agentIdList);
+    server.PrintFailedAgentIdList(longStrWithComma);
 }
