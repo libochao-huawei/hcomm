@@ -149,7 +149,7 @@ namespace hccl
         }
         commConfig_ = CommConfig();
         commName_ = identifier_;
-        if (commConfig_.GetConfigGroupName() != "") {
+        if (commConfig_.GetConfigUdi() != "") {    // 如果配置了udi，更新commName_
             commName_ = commConfig_.GetConfigGroupName();
         }
         dpuManager_.reset(new (std::nothrow) DpuManager());
@@ -190,7 +190,7 @@ namespace hccl
         }
         commConfig_ = commConfig;
         commName_ = identifier_;
-        if (commConfig_.GetConfigGroupName() != "") {
+        if (commConfig_.GetConfigUdi() != "") {    // 如果配置了udi，更新commName_
             commName_ = commConfig_.GetConfigGroupName();
         } 
         dpuManager_.reset(new (std::nothrow) DpuManager());
