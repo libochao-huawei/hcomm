@@ -18,6 +18,8 @@
 
 #include "exception_handler.h"
 
+#include "config_log.h"
+
 // 暂时引入orion
 #include "local_ub_rma_buffer.h"
 
@@ -200,7 +202,7 @@ ChannelStatus CcuUrmaChannel::GetStatus()
             break;
     }
 
-    if (isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
+    if ((hccl::GetDebugConfig() & HCCL_RES) && isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
         std::string channelInfo = "create channel info:channel handle[";
         channelInfo.append(std::to_string(reinterpret_cast<uint64_t>(this)));
         channelInfo.append("] ");
