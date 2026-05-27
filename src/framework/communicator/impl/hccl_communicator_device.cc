@@ -203,13 +203,15 @@ namespace hccl
         return 0;
     }
 
-    HcclResult HcclCommunicator::ClearResMap(const std::string &tag, bool &findTag)
+    HcclResult HcclCommunicator::ClearResMap(const std::string &tag, bool &findTag, bool aclGraphDestroyCbk)
     {
+        (void)aclGraphDestroyCbk;
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::ClearOpResource(const std::string &tag)
+    HcclResult HcclCommunicator::ClearOpResource(const std::string &tag, bool aclGraphDestroyCbk)
     {
+        (void)aclGraphDestroyCbk;
         return HCCL_SUCCESS;
     }
 
@@ -839,6 +841,12 @@ namespace hccl
     HcclResult HcclCommunicator::CheckSetRetryStateToWaitResume()
     {
         return HCCL_SUCCESS;
+    }
+
+    bool HcclCommunicator::HasRoceTransportLinks(OpCommTransport &opTransportReq)
+    {
+        (void)opTransportReq;
+        return false;
     }
 
     HcclResult HcclCommunicator::BuildOpLocalResParam(const AlgResourceResponse &algResource, const std::string &newTag)
