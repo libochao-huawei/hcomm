@@ -5,10 +5,13 @@
 #include "rank_graph_interface.h"
 #include "rank_graph_v2.h"
 #include "hcomm_c_adpt.h"
-#include "my_rank.h"
 #include "channel_process.h"
 #include "base_config.h"
 #define private public
+#include "my_rank.h"
+#undef private
+#include "hccl_comm_pub.h"
+#include "llt_hccl_stub_rank_graph.h"
 using namespace hccl;
 
 class MyRankTest : public testing::Test {

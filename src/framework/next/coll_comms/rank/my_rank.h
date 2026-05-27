@@ -24,6 +24,8 @@
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
+#include "coll_comm_config_consistency.h"
+#include "exchange_info_mgr.h
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -51,6 +53,8 @@ public:
     uint32_t GetOpExpansionMode() {
         return opExpansionMode_;
     }
+
+    CollCommConfigConsistency &GetCollCommConfigConsistency();
 
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
@@ -112,6 +116,9 @@ private:
     HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort, EndpointLocType locType);
 
     Hccl::RankIpPortMapPtr rankIpPortMap_;
+
+    CollCommConfigConsistency collCommConfigConsistency_;
+    ExchangeInfoMgr exchangeInfoMgr_;
 };
 
 } // namespace hccl
