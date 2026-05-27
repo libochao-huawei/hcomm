@@ -238,3 +238,18 @@ TEST_F(SocketProcessTest, Ut_DestroySocketHandle_When_NormalInput_Expect_Success
     EXPECT_EQ(ret, HCCL_SUCCESS);
     SocketProcessTest::socketHandle = nullptr;
 }
+
+TEST_F(SocketProcessTest, Ut_SocketMgr_GetSocket)
+{
+    uint32_t    devicePhyId = 0;
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    HCCL_INFO("[AicpuTsUboeChannel][%s] built linkData: %s", __func__, linkData.Describe().c_str());
+    std::string socketTag = "AUTOMATIC_SOCKET_TAG";
+    bool noRankId = true;
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
+    Hccl::Socket* socketTmp = nullptr;
+    const Hccl::SocketConfig* configPtr = &socketConfig;
+    SocketMgr::GetInstance(devicePhyId).GetSocket(socketConfig, socketTmp);
+    SocketMgr::GetInstance(devicePhyId).PutSocket(configPtr, socketTmp);
+    SocketMgr::GetInstance(devicePhyId).GetSocket(socketConfig, socketTmp);
+}
