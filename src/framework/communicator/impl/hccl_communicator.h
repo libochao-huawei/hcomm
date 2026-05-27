@@ -382,6 +382,7 @@ public:
     // 同一communicator下整批tag一次launch（超MAX_BATCH分批），payload走持久HBM buffer。
     // aicpu端按group定位HcclCommAicpu后for循环ClearOpResource。
     HcclResult AicpuKfcClearOpResLaunch(const std::unordered_set<std::string> &tags);
+    HcclResult ClearAclgraphHostLinks(const std::unordered_set<std::string> &tags);
     virtual HcclResult Mc2AiCpuStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
     HcclResult Mc2AiCpuInitStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
     HcclResult GetTopoDesc(HcclTopoDescs *topoDescs, uint32_t topoSize);
@@ -1047,6 +1048,10 @@ private:
     void *zeroCopyIpcPtrs_[MAX_MODULE_DEVICE_NUM] {};
     std::atomic<HcclCommState> state_{HcclCommState::IDLE};
     std::unordered_map<std::string, std::string> newTagToTagMap_;
+    // ClearResMap 强清块依据: zerocopy hex prefix tag + cnt 副本 _CaptureN tag,
+    // 跨 iter 在 rankTagRemoteRes_/hostMemVec_/deviceMemVec_/nextTagRes 链表累积新 entry,
+    // 必须 RPC sync aicpu 后 host 端 ListCommonRemove + 配对 erase 释放。
+    std::unordered_set<std::string> tagsRequiringHostCleanup_;
     static std::mutex linkResMapMutex_;
     static std::unordered_map<Transport*, LinkInfo> linkResMap_;
     std::shared_ptr<HostMem> transDevIbverbsDataMem_ = nullptr;
