@@ -573,7 +573,7 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::GetRemoteMems(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult HostCpuRoceChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags)
 {
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMems] remoteMem is nullptr"), HCCL_E_PTR);
     CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMems] memNum is nullptr"), HCCL_E_PTR);
