@@ -493,3 +493,14 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetUserRemoteMem_WithUserBuffers_ReturnsCorrec
     EXPECT_EQ(remoteMem[1].size, 16384U);
     EXPECT_STREQ(memTag[1], "user2");
 }
+
+TEST_F(AicpuTsUboeChannelTest, Ut_GetStatusReady_SocketNotNullptr) {
+    MOCKER_CPP(&SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
+ 	MOCKER_CPP(&SocketMgr::PutSocket).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsUboeChannel::IsSocketReady).stubs().will(returnValue(true));
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+    ch.uboeStatus = AicpuTsUboeChannel::UboeStatus::SET_READY;
+    ch.GetStatus();
+}
