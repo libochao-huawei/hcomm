@@ -21,7 +21,7 @@ namespace hccl {
         void* tilingDataPtr = nullptr, u32 tilingDataSize = 0);
 	HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
 		aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
-		void *tilingDataPtr, u32 tilingDataSize);
+		void *tilingDataPtr, u32 tilingDataSize, const std::string &tag);
     HcclResult GetKernelFilePath(std::string &binaryPath);
 }
 

@@ -142,7 +142,7 @@ HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
 
 HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
                                   aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
-                                  void *tilingDataPtr, u32 tilingDataSize) {
+                                  void *tilingDataPtr, u32 tilingDataSize, const std::string &tag) {
     if (binHandle == nullptr) {
         HCCL_ERROR("binHandle is nullptr, no need to launch aicpu kernel, binHandle[%p]", binHandle);
         return HCCL_E_PTR;
@@ -190,6 +190,29 @@ HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
     CHK_PRT_RET(aclRet != ACL_SUCCESS,
                 HCCL_ERROR("[aclrtLaunchKernelWithHostArgs]errNo[0x%016llx] launch kernel failed", aclRet),
 	    HCCL_E_RUNTIME);
+
+    // 获取capture状态
+    aclmdlRI rtModel = nullptr;
+    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
+    aclError aclRet = aclmdlRICaptureGetInfo(stream, &captureStatus, &rtModel);
+    if (aclRet == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
+        HCCL_WARNING("[%s]Stream capture does not support!", __func__);
+        return HCCL_SUCCESS;
+    } else {
+        CHK_PRT_RET(aclRet != ACL_SUCCESS,
+                    HCCL_ERROR("[%s]rtGet stream get capture status fail. return[%d]", __func__, ret), HCCL_E_RUNTIME);
+    }
+    // 获取是否开启缓存
+    aclrtStreamAttrValue value;
+    aclRet = aclrtGetStreamAttribute(resourceArgs.stream, ACL_STREAM_ATTR_CACHE_OP_INFO, &value);
+    CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s]stream get attribute fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+
+    HCCL_INFO("[AicpuAclKernelLaunchV2] cacheOpInfoSwitch[%u] captureStatus[%d] identify[%s]", value.cacheOpInfoSwitch, captureStatus, topoArgs.identify.c_str());
+    if (value.cacheOpInfoSwitch == 1 && captureStatus == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE) {
+        aclRet = aclrtCacheLastTaskExtendInfo(topoArgs.identify.c_str(), strlen(topoArgs.identify.c_str()));
+        CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s]stream cache task op info fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+    }
+
     return HCCL_SUCCESS;
 }
 
