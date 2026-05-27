@@ -644,14 +644,14 @@ HcclResult hrtMalloc(void **devPtr, u64 size, bool level2Address)
     }
     RPT_ENV_ERR(ret == ACL_ERROR_RT_MEMORY_ALLOCATION, "EI0011",                                                                             
         std::vector<std::string>({"memory_size"}),                                                          
-        std::vector<std::string>({std::string("size:") + std::to_string(size)}));
+        std::vector<std::string>({std::to_string(size)}));
 
     CHK_PRT_RET(ret == ACL_ERROR_RT_MEMORY_ALLOCATION, HCCL_ERROR("[Malloc][Mem] rtMalloc failed, "\
         "Reason: out of memory, return[%d], para: devPtrAddr[%p], size[%llu Byte].", ret, *devPtr, size),
         HCCL_E_OOM);
 
     RPT_ENV_ERR((ret != ACL_SUCCESS), "EI0007", std::vector<std::string>({"resource_type", "resource_info"}), \
-        std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)+ " Byte"}));
+        std::vector<std::string>({"DeviceMemory", std::string("hrtMalloc, size:") + std::to_string(size)+ " Byte"}));
 
     CHK_PRT_RET((ret != ACL_SUCCESS), HCCL_ERROR("[%s][%s]errNo[0x%016llx] rtMalloc failed, "\
         "return[%d], para: devPtrAddr[%p], size[%llu Byte].", LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -1253,7 +1253,7 @@ HcclResult hrtMallocHost(void **hostPtr, u64 size)
     aclError ret = funcPtr(hostPtr, size, &cfg);
 #endif
     RPT_ENV_ERR((ret != ACL_SUCCESS), "EI0007", std::vector<std::string>({"resource_type", "resource_info"}), \
-        std::vector<std::string>({"HostMemory", std::string("size:") + std::to_string(size)+ " Byte"}));
+        std::vector<std::string>({"HostMemory", std::string("hrtMallocHost, size:") + std::to_string(size)+ " Byte"}));
 
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] rt malloc host fail. return[%d], "\
         "para: hostPtr[%p], size[%llu Byte].", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(),
