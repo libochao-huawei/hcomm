@@ -116,6 +116,7 @@ add_library(hccl_alg_adaption_v2 SHARED
 
     ${adapter_v2_src_list}
     ${CCU_PLATFORM_SRC}
+    ${HCOMM_DIR}/src/common
 )
 
 #头文件搜索路径
