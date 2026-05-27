@@ -1432,6 +1432,15 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
 }
 
+void SocketManager::ServerListen(const SocketConfig &socketConfig)
+{
+}
+
+void SocketManager::ConnectSockets(const SocketConfig &socketConfig)
+{
+}
+
+
 void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
 {
 }
