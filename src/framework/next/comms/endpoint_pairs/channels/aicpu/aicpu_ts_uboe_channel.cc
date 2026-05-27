@@ -268,9 +268,7 @@ HcclResult AicpuTsUboeChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteM
         return HCCL_SUCCESS;
     }
     uint32_t userMemCount = rmtBufferVec_.size();
-    auto cacheBuilder = [](CommMem &mem, uint32_t index) -> HcclResult {
-        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
-        CHK_PTR_NULL(rmtBuffer);
+    auto cacheBuilder = [](std::unique_ptr<Hccl::RemoteUbRmaBuffer> &rmtBuffer, CommMem &mem) -> HcclResult {
         mem.type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
         mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         mem.size = rmtBuffer->GetSize();
