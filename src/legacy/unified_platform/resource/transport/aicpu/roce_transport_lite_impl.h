@@ -36,15 +36,12 @@ public:
     // ========== RMA 数据传输接口 ==========
     void Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override;
 
-    void WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                     const StreamLite &stream) override;
-
     void WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify,
                          const StreamLite &stream) override;
 
     // ========== 同步 / Notify 接口 ==========
-    void Post(u32 index, const StreamLite &stream) override;    // NotifyRecord
-    void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
+    // void Post(u32 index, const StreamLite &stream) override;    // NotifyRecord
+    // void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
 
 private:
     u32 notifyNum_{0};

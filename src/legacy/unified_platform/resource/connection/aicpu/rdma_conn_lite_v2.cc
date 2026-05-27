@@ -133,19 +133,51 @@ void RdmaConnLiteV2::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite 
     HCCL_INFO("[RdmaConnLiteV2::%s] end, dbAddr = %llu, dbValue = %llu, conn[%s]", __func__, dbAddr, dbValue, Describe().c_str());
 }
 
-void RdmaConnLite::WriteWithNotify(
+void RdmaConnLiteV2::WriteWithNotify(
     const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
     const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify, u64 &dbAddr, u64 &dbValue)
 {
-    HCCL_INFO("[RdmaConnLite::%s] start", __func__);
+    HCCL_INFO("[RdmaConnLiteV2::%s] WriteWithNotify start, loc size = %u", __func__, loc.GetSize());
+    
+    u64 len = loc.GetSize();
+    u32 rdmaSendRepeat = len / RDMA_SEND_MAX_SIZE;
+    u32 rdmaSendRemain = len % RDMA_SEND_MAX_SIZE;
 
-    // Post wqe, vendorOps_用来屏蔽厂商区别; 和UDMA不同，RDMA似乎不需要考虑Slice切分
-    rdmaOps_->WriteWithNotify(loc, rmt, locNotify, notify);
+    // 存在Remain
+    if (rdmaSendRemain > 0) {
+        rdmaSendRepeat++;
+    }
+
+    // 分片transport
+    for (int sliceIdx = 0; sliceIdx < rdmaSendRepeat; sliceIdx++) {
+        u64 offset      = sliceIdx * RDMA_SEND_MAX_SIZE;
+        u64 localAddr   = loc.GetAddr() + offset;
+        u64 remoteAddr  = rmt.GetAddr() + offset;
+        u32 sliceSize   = RDMA_SEND_MAX_SIZE;
+
+        // 如果是余数段
+        if (i == rdmaSendRepeat - 1) {
+            sliceSize = rdmaSendRemain;
+        }
+
+        RmaBufferLite locSlice(localAddr, sliceSize, loc.GetLkey());
+        
+        RmtRmaBufSliceLite rmtSlice(remoteAddr, sliceSize, rmt.GetRkey(), 0, 0);
+
+        HCCL_INFO("[RdmaConnLiteV2::%s] Slice[%llu]: offset=0x%llx, locAddr=0x%llx, rmtAddr=0x%llx, size=0x%u",
+            __func__, sliceIdx, offset, locAddr, rmtAddr, sliceSize);
+
+        // 分片填好wqe
+        rdmaOps_->Write(locSlice, rmtSlice);
+    }
+
+    // 补充一个notify操作
+    rdmaOps_->NotifyRecord(locNotify, notify);
 
     // 构造Doorbell并返回
     rdmaOps_->BuildDoorbell(dbAddr, dbValue);
 
-    HCCL_INFO("[RdmaConnLite::%s] end, dbAddr = %llu, dbValue = %llu, conn[%s]", __func__, dbAddr, dbValue, Describe().c_str());
+    HCCL_INFO("[RdmaConnLiteV2::%s] end, dbAddr = %llu, dbValue = %llu, conn[%s]", __func__, dbAddr, dbValue, Describe().c_str());
 }
 
 } // namespace Hccl

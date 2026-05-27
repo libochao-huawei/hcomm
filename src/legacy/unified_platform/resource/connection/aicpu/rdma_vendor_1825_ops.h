@@ -5,76 +5,98 @@
 
 namespace Hccl {
 
+// Necessary helper funcs
+inline uint16_t my_htons(uint16_t x) {
+    return (((x & 0xffULL) << 8) | ((x & 0xff00ULL) >> 8));
+}
+
+inline uint32_t my_htonl(uint32_t x) {
+    return  ((x & 0x000000ffU) << 24) | ((x & 0x0000ff00U) << 8)  |
+            ((x & 0x00ff0000U) >> 8)  | ((x & 0xff000000U) >> 24);
+}
+
+inline uint64_t my_htonll(uint64_t x) {
+    return  ((x & 0x00000000000000ffULL) << 56) |
+            ((x & 0x000000000000ff00ULL) << 40) |
+            ((x & 0x0000000000ff0000ULL) << 24) |
+            ((x & 0x00000000ff000000ULL) << 8)  |
+            ((x & 0x000000ff00000000ULL) >> 8)  |
+            ((x & 0x0000ff0000000000ULL) >> 24) |
+            ((x & 0x00ff000000000000ULL) >> 40) |
+            ((x & 0xff00000000000000ULL) >> 56);
+}
+
+// 先默认所有WQE都只占一个WQEBB
+#define WQEBB_SHIFT 6
+
+#define ROCE_WQE_OWNERBIT_SHIFT = 7;
+#define ROCE_WQE_CTRL_VALUE 0x40
+#define ROCE_SQ_VA_VALUE 0x20
+#define ROCE_SQ_SIGNAL_SHIFT 7
+#define ROCE_WQE_CMP_TASK_LEN1 1u /* wqe cl is set to 1 */
+#define ROCE_WQE_CMP_TASK_LEN_SHIFT 28
+#define ROCE_TASK_SEG_ALIGN 8
+#define ROCE_WQE_FAST_DMA_SHIFT 10
+#define ROCE_WQE_SSN_MASK 0x3
+#define ROCE_WQE_SSN_SHIFT 12
+#define ROCE_WQE_DATA_SEG_SHIFT 4
+#define WQE_SECTION_ALIGN_SHIFT 3
+
+#define ROCE_WQE_NEXT_SGE_INVALID (1u << 31)
+
 typedef struct {
     // Control Segment
-    union {
-        struct {
-            uint32_t o : 1;     // Owner
-            uint32_t ctrlSl : 2;
-            uint32_t csl : 2;
-            uint32_t difSl : 3;
-            uint32_t cr : 1;
-            uint32_t df : 1;
-            uint32_t va : 1;
-            uint32_t tsl : 5;
-            uint32_t cf : 1;
-            uint32_t wf : 1;
-            uint32_t rsvd0 : 4;
-            uint32_t rrvSl : 2;
-            uint32_t bdsLen : 8;
-        } bs;
-        uint32_t value;
+    uint8_t owner_sl;
+    uint8_t df_tsl;
+    uint16_t wf_bdsl;
+    uint32_t cl_pi;
+    uint64_t db;        /* used by direct wqe*/
+} Roce3CtrlSeg;
+
+union Roce3TaskSeg {
+    struct {
+        uint32_t xrcSrqn : 18;
+        uint32_t ext : 1;
+        uint32_t dif : 1;
+        uint32_t rsvd0 : 3;
+        uint32_t so : 1;
+        uint32_t opType : 5;
+        uint32_t signal : 1;
+        uint32_t fence : 1;
+        uint32_t se : 1;        /* solited event flag; */
     } dw0;
-    union {
-        struct {
-            uint32_t cl : 4;
-            uint32_t rsvd1 : 8;
-            uint32_t maskPi : 20;
-        } bs;
-        uint32_t value;
-    } dw1;
-} RoceWqeCtrlSeg;
+    uint32_t value;
+};
 
 typedef struct {
-    // Task Segment
+    // Task Wqe Segment
+    struct Roce3TaskSeg tskSeg;
+    uint32_t dataLen;
+    uint32_t immData;
     union {
         struct {
-            uint32_t se : 1;
-            uint32_t f : 1;
-            uint32_t c : 1;
-            uint32_t opType : 5;
-            uint32_t so : 1;
-            uint32_t rsvd0 : 3;
-            uint32_t dif : 1;
-            uint32_t ext : 1;
-            uint32_t xrcSrqn : 18;
+            uint32_t lastExtLen : 8;
+            uint32_t cmdLen : 8;
+            uint32_t pi : 16;
         } bs;
+
+        uint32_t feth; /* cflush feth header */
         uint32_t value;
-    } dw0;
-} RoceWqeTaskSeg;
+    } dw3;
+    uint64_t va;    /* to indicate remote buf address; */
+    uint32_t rkey;  /* to indicate remote mr buf; */
+    uint32_t ulp;   /* ulp预留字段 */
+} Roce3TaskWqeSeg;
 
 typedef struct {
-    uint32_t bufAddrHigh32;
-    uint32_t bufAddrLow32;
-    uint32_t rLen;
-    uint32_t leKey;
+    uint64_t bufAddr;   /* buffer address that wqe sge indicate; */
+    uint32_t rLen;      /* buffer length that wqe sge indicate; */
+    uint32_t leKey;     /* buffer lkey that wqe sge indicate; */
 } RoceWqeDataSeg;
 
 typedef struct {
-    RoceWqeCtrlSeg ctrl;
-    uint64_t doorbell;
-    RoceWqeTaskSeg task;
-    uint32_t dataLen;
-    uint32_t immeData;
-    uint32_t firstLast  : 1;
-    uint32_t nxtEthHdr  : 7;
-    uint32_t cmdLen     : 8;
-    uint32_t rsvd0      : 8;
-    uint32_t lastExtLen : 8;
-    uint32_t vaHigh32;
-    uint32_t vaLow32;
-    uint32_t rKey;
-    uint32_t rsvd1;
+    Roce3CtrlSeg ctrl;
+    Roce3TaskWqeSeg task;
     RoceWqeDataSeg data;
 } RoceWqeEntry;
 
@@ -89,46 +111,36 @@ typedef struct {
     uint32_t cqe7;
 } RoceCqeEntry;
 
+// Doorbell related
+constexpr uint32_t ROCE_SQ_DOORBELL_TYPE = 21;
+constexpr uint32_t ROCE_INIT_SQ_DB_SGIT_IDX = 1;
+
 typedef struct {
     union {
         struct {
+            uint32_t qpn        : 20;   /* indicate the sq qpn; */
+            uint32_t cntxSize   : 2;    /* indicate the qpc size; */
+            uint32_t r          : 1;    /* reserved bit; */
+            uint32_t c          : 1;
+            uint32_t cos        : 3;
+            uint32_t type       : 5;
+
             uint32_t pi         : 8;
             uint32_t resv       : 8;
             uint32_t xrcvld     : 1;
             uint32_t vxlan      : 1;
             uint32_t mtuShift   : 3;
             uint32_t sgidIndex  : 7;
-            uint32_t queueId    : 4;
-            uint32_t qpn        : 20;
-            uint32_t cntxSize   : 2;
-            uint32_t n          : 1;
-            uint32_t c          : 1;
-            uint32_t cos        : 3;
-            uint32_t type       : 5;
+            uint32_t subType    : 4;
         } bs;
-        uint64_t value;
+        uint64_t db_value;
     } dw0;
-} RoceDbEntry;
+} Roce3DbEntry;
 
-enum class HCOMM_OP_TYPE : uint32_t {
-    WRITE = 4U,
-    READ = 8U
+enum class ROCE3_OPCODE : uint32_t {
+    ROCE_OPCODE_RDMA_WRITE  = 0U,
+    ROCE_OPCODE_RDMA_READ   = 4U
 };
-
-// Wqe ctrl seg
-#define HCOMM_WQE_BDSL_OFFSET 0
-#define HCOMM_WQE_TSL_OFFSET 16
-#define HCOMM_WQE_VA_OFFSET 21
-#define HCOMM_WQE_CR_OFFSET 23
-#define HCOMM_WQE_CTRLSL_OFFSET 29
-#define HCOMM_WQE_CL_OFFSET 28
-#define HCOMM_WQE_OWNER_OFFSET 31
-#define HCOMM_WQE_OP_TYPE_OFFSET 24
-#define HCOMM_WQE_C_OFFSET 29
-
-// Doorbell related
-constexpr uint32_t ROCE_SQ_DOORBELL_TYPE = 2;
-constexpr uint32_t ROCE_INIT_SQ_DB_SGIT_IDX = 1;
 
 class Rdma1825Ops : public RdmaBaseOps {
 public:
@@ -139,24 +151,26 @@ public:
 
     int BuildDoorbell(u64 &dbAddr, u64 &dbValue)
     {
-        HCCL_INFO("[Rdma1825Ops::%s] start BuildDoorbell", __func__);
+        HCCL_INFO("[Rdma1825Ops::%s] Hcomm RDMA 1825 Build Doorbell start. ", __func__);
 
-        RoceDbEntry dbEntry = {0};
-        dbEntry.dw0.bs.type = ROCE_SQ_DOORBELL_TYPE;
-        dbEntry.dw0.bs.c = 0;
-        dbEntry.dw0.bs.n = 0;
-        dbEntry.dw0.bs.cntxSize = 1;
-        dbEntry.dw0.bs.qpn = sqContext_->qpn;                   // Doorbell QPN
-        dbEntry.dw0.bs.mtuShift = 0;
-        dbEntry.dw0.bs.resv = 0;
-        dbEntry.dw0.bs.sgidIndex = ROCE_INIT_SQ_DB_SGIT_IDX;
-        dbEntry.dw0.bs.cos = 0x7;
-        dbEntry.dw0.bs.pi = sqHead_;                                // Doorbell Sq PI
+        Roce3DbEntry dbEntry;
+        dbEntry.dw0.db_value        = 0;
+        dbEntry.dw0.bs.r            = 0;
+        dbEntry.dw0.bs.c            = 0;
+        dbEntry.dw0.bs.cntxSize     = 1;
+        dbEntry.dw0.bs.qpn          = sqContext_->qpn;
+        dbEntry.dw0.bs.subType      = 0;
+        dbEntry.dw0.bs.resv         = 0;
+        dbEntry.dw0.bs.pi           = ((sqHead_ >> 8) & 0xff);
+        dbEntry.dw0.bs.sgidIndex    = ROCE_INIT_SQ_DB_SGIT_IDX;
+        dbEntry.dw0.bs.type         = ROCE_SQ_DOORBELL_TYPE;
+        dbEntry.dw0.bs.mtuShift     = 0;
+        dbEntry.dw0.bs.cos          = 0x7;
 
-        dbAddr  = sqContext_->dbVa + ((sqHead_ >> 8) & 0xff);
-        dbValue = dbEntry.dw0.value;
+        dbAddr  = sqContext_->dbVa;
+        dbValue = dbEntry.dw0.db_value;
 
-        HCCL_INFO("[Rdma1825Ops::%s] Hcomm UB Build Doorbell OK", __func__);
+        HCCL_INFO("[Rdma1825Ops::%s] Hcomm RDMA 1825 Build Doorbell OK. ", __func__);
         return HCCL_SUCCESS;
     }
 
@@ -166,7 +180,7 @@ protected:
         int ret = HCCL_SUCCESS;
 
         RoceWqeEntry wqe{};
-        CHK_RET(FillCommonWqe(loc, rmt, &wqe, static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE)));
+        CHK_RET(FillCommonWqe(loc, rmt, &wqe, static_cast<uint32_t>(ROCE3_OPCODE::ROCE_OPCODE_RDMA_WRITE)));
 
         CHK_RET(CommitWqe(&wqe, sizeof(RoceWqeEntry)));
         return HCCL_SUCCESS;
@@ -177,7 +191,7 @@ protected:
         int ret = HCCL_SUCCESS;
 
         RoceWqeEntry wqe{};
-        CHK_RET(FillCommonWqe(locNotify, notify, &wqe, static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE)));
+        CHK_RET(FillCommonWqe(locNotify, notify, &wqe, static_cast<uint32_t>(ROCE3_OPCODE::ROCE_OPCODE_RDMA_WRITE)));
 
         CHK_RET(CommitWqe(&wqe, sizeof(RoceWqeEntry)));
         return HCCL_SUCCESS;
@@ -186,45 +200,48 @@ protected:
 private:
     int FillCommonWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, RoceWqeEntry *wqe, uint32_t opCode)
     {
-        HCCL_INFO("[Rdma1825Ops::%s] BuildWrite start, loc size[%u]", __func__, loc.GetSize());
+        HCCL_INFO("[Rdma1825Ops::%s] Hcomm RDMA 1825 BuildWrite wqe start, loc size[%u]", __func__, loc.GetSize());
 
+        // ----- Ctrl Seg -----
+        // 赋值本wqe的owner
         uint8_t owner = (sqHead_ & (sqContext_->depth)) == 0 ? 0 : 1;
+        wqe->ctrl.owner_sl  = (owner << ROCE_WQE_OWNERBIT_SHIFT) | ROCE_WQE_CTRL_VALUE;
 
-        // ----- Ctrl Seg 1 -----
-        wqe->ctrl.dw0.value =
-            htonl(owner << HCOMM_WQE_OWNER_OFFSET | 2U << HCOMM_WQE_CTRLSL_OFFSET | 1U << HCOMM_WQE_CR_OFFSET
-                | 1U << HCOMM_WQE_VA_OFFSET | 4U << HCOMM_WQE_TSL_OFFSET | 2U << HCOMM_WQE_BDSL_OFFSET);
-        wqe->ctrl.dw1.value = htonl(1U << HCOMM_WQE_CL_OFFSET);
-        // ----- Doorbell -----
-        wqe->doorbell = 0;
+        // 指定cqe产生 + task字段的长度
+        wqe->ctrl.df_tsl    = 1U << ROCE_SQ_SIGNAL_SHIFT | ROCE_SQ_VA_VALUE;            
+        wqe->ctrl.df_tsl    |= sizeof(struct Roce3TaskWqeSeg) / ROCE_TASK_SEG_ALIGN;
+
+        // fast_dma + SSN + sge长度
+        wqe->ctrl.wf_bdsl   = my_htons((uint16_t)(0 << ROCE_WQE_FAST_DMA_SHIFT));
+        wqe->ctrl.wf_bdsl   |= my_htons((sqHead_ & ROCE_WQE_SSN_MASK) << ROCE_WQE_SSN_SHIFT);
+        wqe->ctrl.wf_bdsl   |= my_htons((uint32_t)1 << (ROCE_WQE_DATA_SEG_SHIFT - WQE_SECTION_ALIGN_SHIFT));
+
+        // cl
+        wqe->ctrl.cl_pi     = my_htonl(ROCE_WQE_CMP_TASK_LEN1 << ROCE_WQE_CMP_TASK_LEN_SHIFT);
+
         // ----- Task Seg -----
-        wqe->task.dw0.value = htonl(opCode << HCOMM_WQE_OP_TYPE_OFFSET | 1U << HCOMM_WQE_C_OFFSET);
-        wqe->dataLen = htonl(loc.GetSize());
-        wqe->immeData = 0;
-        wqe->firstLast = 0;
-        wqe->nxtEthHdr = 0;
-        wqe->cmdLen = 0;
-        wqe->rsvd0 = 0;
-        wqe->lastExtLen = 0;
-        wqe->vaHigh32 = htonl(((uint64_t)rmt.GetAddr() + rmt.GetSize()) >> 32);
-        wqe->vaLow32 = htonl(((uint64_t)rmt.GetAddr() + rmt.GetSize()) & 0xffffffff);
-        // rkey通过rmt传入
-        uint32_t rKey = rmt.GetRkey();
-        wqe->rKey = htonl(rKey);
-        wqe->rsvd1 = 0;
-        // ----- Data Seg -----
-        wqe->data.bufAddrHigh32 = htonl((uint64_t)loc.GetAddr() >> 32);
-        wqe->data.bufAddrLow32 = htonl((uint64_t)loc.GetAddr() & 0xffffffff);
-        wqe->data.rLen = (uint32_t)loc.GetSize();
-        // lkey通过loc传入
-        uint32_t lKey = loc.GetLkey();
-        wqe->data.leKey = htonl(1 << 31 | lKey);
+        wqe->task.tskSeg.value = 0;
+        wqe->task.tskSeg.dw0.signal = !!((wqe->ctrl.df_tsl & (1U << ROCE_WQE_CQE_SIGNAL_SHIFT)) > 0);
+        wqe->task.tskSeg.dw0.fence = 0;
+        wqe->task.tskSeg.dw0.opCode = opCode;
+        wqe->task.tskSeg.dw0.se = 0;
 
-        HCCL_INFO("[Rdma1825Ops::%s] Hcomm UB BuildWrite wqe OK", __func__);
+        wqe->task.dataLen = my_htonl(loc.GetSize());
+        wqe->task.immData = 0;
+        wqe->task.dw3.value = 0;
+        wqe->task.va = my_htonll(rmt.GetAddr());
+        wqe->task.rkey = my_htonl(rmt.GetRkey());
+        wqe->task.ulp = 0;
+
+        // ----- Data Seg -----
+        wqe->data.bufAddr = my_htonll((uint64_t)loc.GetAddr());
+        wqe->data.leKey = my_htonl(loc.GetLkey() | ROCE_WQE_NEXT_SGE_INVALID);  // 当前sge就是最后一个
+        wqe->data.rLen = my_htonl(loc.GetSize());
+
+        HCCL_INFO("[Rdma1825Ops::%s] Hcomm RDMA 1825 BuildWrite wqe OK", __func__);
         return HCCL_SUCCESS;
     }
 };
-
 
 }
 #endif // RDMA_VENDOR_1825_OPS_H
