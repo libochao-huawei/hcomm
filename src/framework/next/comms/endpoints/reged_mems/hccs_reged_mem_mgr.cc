@@ -437,7 +437,7 @@ HcclResult HccsRegedMemMgr::GetAllMemHandles(void **memHandles, uint32_t *memHan
 
 HcclResult HccsRegedMemMgr::GetRemoteIpcRmaBuffer(std::vector<CommMem> &remoteIpcRmaBufferVec)
 {
-    HcclMem mem;
+    CommMem mem;
     for (auto it = remoteIpcRmaBufferMgr_.Begin(); it != remoteIpcRmaBufferMgr_.End();) {
         const std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer = it->second.buffer;
         mem.addr = remoteIpcRmaBuffer->GetAddr();

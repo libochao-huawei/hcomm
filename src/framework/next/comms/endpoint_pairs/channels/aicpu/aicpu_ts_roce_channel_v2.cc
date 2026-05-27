@@ -20,6 +20,7 @@
 #include "aicpu_ts_roce_channel_v2.h"
 #include "../../../common/orion_adpt_utils.h"
 #include "../../../sockets/socket_mgr.h"
+#include "comm_mems.h"
 
 namespace hcomm {
 
@@ -992,7 +993,7 @@ HcclResult AicpuTsRoceChannelV2::GetRemoteMems(uint32_t *memNum, CommMem **remot
         for (uint32_t i = 0; i < userMemCount; ++i) {
             auto& rmtBuffer = rmtRmaBuffers_[i];
             CHK_PTR_NULL(rmtBuffer);
-            remoteUserMems_[i].type = rmtBuffer->GetMemType();
+            remoteUserMems_[i].type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
             remoteUserMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
             remoteUserMems_[i].size = rmtBuffer->GetSize();
             std::string tagCopy = rmtBuffer->GetMemTag();

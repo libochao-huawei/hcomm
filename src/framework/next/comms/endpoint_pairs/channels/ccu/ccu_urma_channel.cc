@@ -21,8 +21,6 @@
 // 暂时引入orion
 #include "local_ub_rma_buffer.h"
 
-#include "comm_mems.h"
-
 namespace hcomm {
 
 CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
