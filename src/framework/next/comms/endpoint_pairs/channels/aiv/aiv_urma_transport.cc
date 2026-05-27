@@ -15,6 +15,7 @@
 #include "sal.h"
 #include "orion_adapter_hccp.h"
 #include "../../../../../../legacy/service/collective/coll_operator_check.h"
+#include "comm_mems.h"
 
 namespace Hccl {
 constexpr uint32_t FINISH_MSG_SIZE = 128;
@@ -404,42 +405,7 @@ bool AivUrmaTransport::IsSocketReady()
     return false;
 }
 
-HcclResult AivUrmaTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
-{
-    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PARA);
-
-    *remoteMem = nullptr;
-    *memNum = 0;
-
-    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-
-    uint32_t totalCount = rmtBufferVec_.size();
-    if (totalCount == 0) {
-        HCCL_INFO("[GetRemoteMem] No remote memory regions available");
-        return HCCL_SUCCESS;
-    }
-    // 释放之前的内存
-    remoteMemsPtr_.reset();
-    remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
-    CHK_PTR_NULL(remoteMemsPtr_);
-
-    for (uint32_t i = 0; i < totalCount; i++) {
-        auto &rmtRmaBuffer = rmtBufferVec_[i];
-        remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
-        remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
-        remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
-        memTags[i] = const_cast<char *>(rmtRmaBuffer->GetMemTag().c_str());
-        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", __func__,
-            reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
-    }
-
-    *memNum = totalCount;
-    *remoteMem = remoteMemsPtr_.get();
-    return HCCL_SUCCESS;
-}
-
-HcclResult AivUrmaTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult AivUrmaTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[AivUrmaTransport::%s] remoteMem is nullptr", __func__), HCCL_E_PTR);
@@ -450,11 +416,11 @@ HcclResult AivUrmaTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTa
     *memNum = 0;
  
     if (rmtBufferVec_.size() == 0) {
-        HCCL_ERROR("[AivUrmaTransport::%s] bufferNum is 0.", __func__);
-        return HCCL_E_PARA;
+        HCCL_WARNING("[AivUrmaTransport::%s] bufferNum is 0.", __func__);
+        return HCCL_SUCCESS;
     }
  
-    uint32_t userMemCount = static_cast<uint32_t>(rmtBufferVec_.size()) - 1;
+    uint32_t userMemCount = static_cast<uint32_t>(rmtBufferVec_.size());
  
     if (!cacheValid_) {
         remoteUserMems_.resize(userMemCount);
@@ -463,23 +429,12 @@ HcclResult AivUrmaTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTa
         tagPointers_.clear();
         tagPointers_.reserve(userMemCount);
         for (uint32_t i = 0; i < userMemCount; ++i) {
-            auto& rmtBuffer = rmtBufferVec_[i + 1];
-            if (rmtBuffer == nullptr) {
-                continue;
-            }
-            switch (rmtBuffer->GetMemType()) {
-                case HCCL_MEM_TYPE_DEVICE:
-                    remoteUserMems_[i].type = COMM_MEM_TYPE_DEVICE;
-                    break;
-                case HCCL_MEM_TYPE_HOST:
-                    remoteUserMems_[i].type = COMM_MEM_TYPE_HOST;
-                    break;
-                default:
-                    remoteUserMems_[i].type = COMM_MEM_TYPE_INVALID;
-            }
-            remoteUserMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-            remoteUserMems_[i].size = rmtBuffer->GetSize();
-            std::string tagCopy = rmtBuffer->GetMemTag();
+            auto& aivUbRmtBuffer = rmtBufferVec_[i];
+            CHK_PTR_NULL(aivUbRmtBuffer);
+            remoteUserMems_[i].type = hccl::ConvertHcclToCommMemType(aivUbRmtBuffer->GetMemType());
+            remoteUserMems_[i].addr = reinterpret_cast<void *>(aivUbRmtBuffer->GetAddr());
+            remoteUserMems_[i].size = aivUbRmtBuffer->GetSize();
+            std::string tagCopy = aivUbRmtBuffer->GetMemTag();
             tagCopies_.push_back(std::move(tagCopy));
             tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
         }
@@ -487,8 +442,8 @@ HcclResult AivUrmaTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTa
     }
  
     *remoteMem = remoteUserMems_.data();
-    *memTags = tagPointers_.data();
     *memNum = userMemCount;
+    *memTags = tagPointers_.data();
     return HCCL_SUCCESS;
 }
  

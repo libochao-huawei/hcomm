@@ -95,7 +95,7 @@ protected:
     std::vector<std::shared_ptr<Hccl::LocalUbRmaBuffer>> locBuffers_;
 };
 
-TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(CcuTransportTest, ut_CcuTransport_GetRemoteMems_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     auto memInfo0 = BuildMemInfo(0x100, 0x100);
     auto memInfo1 = BuildMemInfo(0x101, 0x101, "buffer1", CommMemType::COMM_MEM_TYPE_DEVICE);
@@ -118,15 +118,15 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_Ret
     CommMem *remoteMems;
     char **memTags;
     u32 memNum;
-    ret = ccuTransport->GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+    ret = ccuTransport->GetRemoteMems(&memNum, &remoteMems, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(std::string(memTags[0]), "buffer1");
-    EXPECT_EQ(remoteMems[0].type, CommMemType::COMM_MEM_TYPE_DEVICE);
-    EXPECT_EQ(remoteMems[0].addr, (void *)0x101);
-    EXPECT_EQ(remoteMems[0].size, (uint64_t)0x101);
+    EXPECT_EQ(std::string(memTags[1]), "buffer1");
+    EXPECT_EQ(remoteMems[1].type, CommMemType::COMM_MEM_TYPE_DEVICE);
+    EXPECT_EQ(remoteMems[1].addr, (void *)0x101);
+    EXPECT_EQ(remoteMems[1].size, (uint64_t)0x101);
 }
 
-TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
+TEST_F(CcuTransportTest, ut_CcuCreateTransport_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
 {
     std::unique_ptr<hcomm::CcuTransport> ccuTransport{};
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{};

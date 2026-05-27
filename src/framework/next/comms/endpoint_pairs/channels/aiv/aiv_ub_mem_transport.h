@@ -30,9 +30,8 @@ public:
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
     HcclResult Init();
     Hccl::TransportStatus GetStatus();
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
+    HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags);
     HcclResult GetMemTag(char **memTag, uint32_t memNum);
-    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
     HcclResult CheckSocketStatus(std::string socketOpreator);
     HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum);
 
@@ -40,11 +39,10 @@ private:
     Hccl::Socket *socket_{}; // 交换所用的socket
     HcommChannelDesc channelDesc_;
     uint32_t exchangeDataSize_{0};
-    std::vector<HcclMem> remoteMems_;
-    std::vector<CommMem> remoteUserMems_;
-    std::vector<std::string> tagCopies_; //储存memTag字符串副本
+    std::vector<CommMem> remoteUserMems_; // 储存内存位置、地址和大小信息
+    std::vector<std::string> tagCopies_; // 储存memTag字符串副本
     std::vector<char*> tagPointers_; // 储存指针
-    bool cacheValid_ = false; // GetUserRemoteMem 的缓存标识
+    bool cacheValid_ = false; // 当前缓存是否有效
     
     std::vector<Hccl::LocalIpcRmaBuffer *>  localRmaBufferVec_{};
     std::vector<Hccl::LocalIpcRmaBuffer *>  locMemTemp_{};
@@ -68,7 +66,7 @@ private:
     HcclResult RecvMemInfo();
     HcclResult RecvDataProcess();
     void BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag);
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
     void RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream);
     HcclResult StateMachine();
     Hccl::TransportStatus UpdateStatus();
