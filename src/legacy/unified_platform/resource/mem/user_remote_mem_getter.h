@@ -32,7 +32,7 @@ struct RemoteMemCtx{
     std::vector<CommMem>            &remoteUserMems;
     std::vector<std::string>        &tagCopies;
     std::vector<char*>              &tagPointers;
-    std::function<void(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder;
+    std::function<HcclResult(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder;
     CommMem                         **remoteMem;
     char                            ***memTags;
     uint32_t                        *memNum;
@@ -41,7 +41,7 @@ struct RemoteMemCtx{
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteUserMemTag,
         std::vector<CommMem> &remoteUserMems, std::vector<std::string> &tagCopies,
         std::vector<char*> &tagPointers,
-        std::function<void(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder,
+        std::function<HcclResult(RemoteMemCtx<T> &remoteMemCtx, uint32_t index)> cacheBuilder,
         CommMem **remoteMem, char ***memTags, uint32_t *memNum) :
         userMemCount(userMemCount), cacheValid(cacheValid), rmtBufferVec(rmtBufferVec),
         remoteUserMemTag(remoteUserMemTag), remoteUserMems(remoteUserMems),
@@ -50,17 +50,28 @@ struct RemoteMemCtx{
     {};
 };
 
+CommMemType ConvertHcclToCommMemType(HcclMemType hcclType) {
+    switch (hcclType) {
+        case HCCL_MEM_TYPE_DEVICE:
+            return COMM_MEM_TYPE_DEVICE;
+        case HCCL_MEM_TYPE_HOST:
+            return COMM_MEM_TYPE_HOST;
+        default:
+            return COMM_MEM_TYPE_INVALID;
+    }
+}
+
 template<typename T>
-HcclResult GetRemoteUserMem(RemoteMemCtx<T> &remoteMemCtx)
+HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
 {
-    CHK_PRT_RET(!remoteMemCtx.remoteMem, HCCL_ERROR("[GetUserRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!remoteMemCtx.memTags, HCCL_ERROR("[GetUserRemoteMem] memTags is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!remoteMemCtx.memNum, HCCL_ERROR("[GetUserRemoteMem] memNum is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!remoteMemCtx.remoteMem, HCCL_ERROR("[GetRemoteUserMems] remoteMem is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!remoteMemCtx.memTags, HCCL_ERROR("[GetRemoteUserMems] memTags is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!remoteMemCtx.memNum, HCCL_ERROR("[GetRemoteUserMems] memNum is nullptr"), HCCL_E_PARA);
     *(remoteMemCtx.remoteMem) = nullptr;
     *(remoteMemCtx.memTags) = nullptr;
     *(remoteMemCtx.memNum) = 0;
     if (remoteMemCtx.userMemCount == 0) {
-        HCCL_INFO("[GetUserRemoteMem] No user remote memory found");
+        HCCL_WARNING("[%s] userMemCount is 0.", __func__);
         return HCCL_SUCCESS;
     }
     // 检查是否有缓存
@@ -71,8 +82,8 @@ HcclResult GetRemoteUserMem(RemoteMemCtx<T> &remoteMemCtx)
         remoteMemCtx.tagPointers.clear();
         remoteMemCtx.tagPointers.reserve(remoteMemCtx.userMemCount);
         for (uint32_t i = 0; i < remoteMemCtx.userMemCount; ++i) {
-            remoteMemCtx.cacheBuilder(remoteMemCtx, i);
-            const char* src = remoteMemCtx.remoteUserMemTag[i + 1].data();
+            CHK_RET(remoteMemCtx.cacheBuilder(remoteMemCtx, i));
+            const char* src = remoteMemCtx.remoteUserMemTag[i].data();
             std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
             remoteMemCtx.tagCopies.push_back(std::move(tagCopy));
             remoteMemCtx.tagPointers.push_back(const_cast<char*>(remoteMemCtx.tagCopies.back().c_str()));
