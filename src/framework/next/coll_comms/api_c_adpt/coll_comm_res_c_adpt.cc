@@ -11,6 +11,7 @@
 #include "../rank/my_rank.h"
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
+#include "config_log.h"
 #include "config/env_config.h"
 #include "env_config/env_config.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
@@ -284,6 +285,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
                 HCCL_ERROR("RegisterToClusterMonitor failed. group[%s], engine[%d], channelNum[%llu], ret[%d]", hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
         }
 
+        InitDebugConfigByEnv();
         ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
         CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
             HCCL_WARNING("CreateChannels group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
