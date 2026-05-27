@@ -122,3 +122,9 @@ TEST_F(HcclTopoInfoDetectTest, Ut_SetupServer_When_PortRange_ReturnIsHCCL_SUCCES
     ret = topoDetectServer->SetupServer(rootHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+TEST_F(HcclTopoInfoDetectTest, Ut_Print_Failed_Connect_AgentIds)
+{
+    TopoInfoExchangeServer server;
+    server.PrintFailedAgentIdList("111,222,333");
+}
