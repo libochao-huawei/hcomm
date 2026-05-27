@@ -983,12 +983,12 @@ namespace hccl
         return commConfig_.GetConfigAclGraphZeroCopyEnable();
     }
 
-    HcclResult HcclCommunicator::ClearResMap(const std::string &tag, bool &findTag)
+    HcclResult HcclCommunicator::ClearResMap(const std::string &tag, bool &findTag, bool aclGraphDestroyCbk)
     {
         auto resIter = resMap_.find(tag);
         if (resIter != resMap_.end()) {
             findTag = true;
-            DestroyAlgResource(resIter->second);
+            DestroyAlgResource(resIter->second, aclGraphDestroyCbk);
             CHK_RET(StreamActiveManager::GetInstance(deviceLogicId_).StreamsUnactive(resIter->second.slaveStreams));
             resMap_.erase(resIter);
             HCCL_INFO("[%s] clear resMap[%s]", __func__, tag.c_str());
@@ -996,12 +996,12 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::ClearOpResource(const std::string &tag)
+    HcclResult HcclCommunicator::ClearOpResource(const std::string &tag, bool aclGraphDestroyCbk)
     {
         bool findTag = false;
-        CHK_RET(ClearResMap(tag, findTag));
-        CHK_RET(ClearResMap(tag + "_host", findTag));
-        CHK_RET(ClearResMap(tag + "_device", findTag));
+        CHK_RET(ClearResMap(tag, findTag, aclGraphDestroyCbk));
+        CHK_RET(ClearResMap(tag + "_host", findTag, aclGraphDestroyCbk));
+        CHK_RET(ClearResMap(tag + "_device", findTag, aclGraphDestroyCbk));
         if (!findTag) {
             HCCL_WARNING("[%s] not find tag[%s] in resMap", __func__, tag.c_str());
         }
@@ -6239,6 +6239,22 @@ namespace hccl
                   algResResponse.paramInputMem.size(), algResResponse.paramOutputMem.ptr(),
                   algResResponse.paramOutputMem.size());
         return HCCL_SUCCESS;
+    }
+
+    bool HcclCommunicator::HasRoceTransportLinks(OpCommTransport &opTransportReq)
+    {
+        for (u32 levelIndex = 0; levelIndex < opTransportReq.size(); levelIndex++) {
+            for (u32 ringIndex = 0; ringIndex < opTransportReq[levelIndex].size(); ringIndex++) {
+                SingleSubCommTransport &reqSingleSubComm = opTransportReq[levelIndex][ringIndex];
+                for (u32 rankIndex = 0; rankIndex < reqSingleSubComm.transportRequests.size(); rankIndex++) {
+                    TransportRequest &transportRequest = reqSingleSubComm.transportRequests[rankIndex];
+                    if (transportRequest.isUsedRdma) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     HcclResult HcclCommunicator::CleanTransportLinks(OpCommTransport &opTransportReq, OpCommTransport &opTransportResponse)
