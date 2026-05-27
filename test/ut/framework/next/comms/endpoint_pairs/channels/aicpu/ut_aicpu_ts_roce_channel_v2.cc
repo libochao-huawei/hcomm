@@ -387,10 +387,10 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMems_NonEmpty_Expect_Success)
     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
     channel->Init();
     channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
-    HcclMem *remoteMem = nullptr;
+    CommMem *remoteMem = nullptr;
     uint32_t memNum = 0;
     char* memTagsArray[10] = {nullptr};
-    HcclResult ret = channel->GetRemoteMems(&remoteMem, &memTagsArray, &memNum);
+    HcclResult ret = channel->GetRemoteMems(&memNum, &remoteMem, &memTagsArray);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 1u);
     std::cout << "End Ut_When_GetRemoteMems_NonEmpty_Expect_Success" << std::endl;
@@ -409,9 +409,9 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMems_CacheValid_Expect_Success
     CommMem *remoteMem = nullptr;
     char **memTags = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = channel->GetRemoteMems(&remoteMem, &memTags, &memNum);
+    HcclResult ret = channel->GetRemoteMems(&memNum, &remoteMem, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = channel->GetRemoteMems(&remoteMem, &memTags, &memNum);
+    ret = channel->GetRemoteMems(&memNum, &remoteMem, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     std::cout << "End Ut_When_GetUserRemoteMem_CacheValid_Expect_Success" << std::endl;
 }
@@ -426,12 +426,12 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMems_NullPtr_Expect_Error)
     channel->Init();
     char **memTags = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = channel->GetRemoteMems(nullptr, &memTags, &memNum);
+    HcclResult ret = channel->GetRemoteMems(&memNum, nullptr, &memTags);
     EXPECT_NE(ret, HCCL_SUCCESS);
     CommMem *remoteMem = nullptr;
-    ret = channel->GetRemoteMems(&remoteMem, nullptr, &memNum);
+    ret = channel->GetRemoteMems(&memNum, &remoteMem, nullptr);
     EXPECT_NE(ret, HCCL_SUCCESS);
-    ret = channel->GetRemoteMems(&remoteMem, &memTags, nullptr);
+    ret = channel->GetRemoteMems(nullptr, &remoteMem, &memTags);
     EXPECT_NE(ret, HCCL_SUCCESS);
     std::cout << "End Ut_When_GetRemoteMems_NullPtr_Expect_Error" << std::endl;
 }
@@ -448,7 +448,7 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMems_Empty_Expect_Error)
     CommMem *remoteMem = nullptr;
     char **memTags = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = channel->GetRemoteMems(&remoteMem, &memTags, &memNum);
+    HcclResult ret = channel->GetRemoteMems(&memNum, &remoteMem, &memTags);
     EXPECT_NE(ret, HCCL_SUCCESS);
     std::cout << "End Ut_When_GetRemoteMems_Empty_Expect_Error" << std::endl;
 }

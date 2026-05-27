@@ -620,13 +620,13 @@ TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenParamNull_Returns_E_PTR)
     auto conn = MakeConn();
     Socket socket(nullptr, IpAddress(), 0, IpAddress(), "ut", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     auto transport = MakeTransport(*conn, socket);
-    HcclMem *remoteMem = nullptr;
+    CommMem *remoteMem = nullptr;
     char **memTags = nullptr;
     uint32_t memNum = 0;
 
-    EXPECT_EQ(transport->GetRemoteMems(nullptr, &memTags, &memNum), HCCL_E_PTR);
-    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, nullptr, &memNum), HCCL_E_PTR);
-    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, &memTags, nullptr), HCCL_E_PTR);
+    EXPECT_EQ(transport->GetRemoteMems(&memNum, nullptr, &memTags), HCCL_E_PTR);
+    EXPECT_EQ(transport->GetRemoteMems(&memNum, &remoteMem, nullptr), HCCL_E_PTR);
+    EXPECT_EQ(transport->GetRemoteMems(nullptr, &remoteMem, &memTags), HCCL_E_PTR);
 }
 
 TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenNoRemoteBuffer_Returns_SUCCESS)
@@ -634,11 +634,11 @@ TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenNoRemoteBuffer_Returns_SUCCESS
     auto conn = MakeConn();
     Socket socket(nullptr, IpAddress(), 0, IpAddress(), "ut", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     auto transport = MakeTransport(*conn, socket);
-    HcclMem *remoteMem = reinterpret_cast<HcclMem *>(0x1);
+    CommMem *remoteMem = reinterpret_cast<HcclMem *>(0x1);
     char **memTags = reinterpret_cast<char **>(0x1);
     uint32_t memNum = 0;
 
-    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, &memTags, &memNum), HCCL_SUCCESS);
+    EXPECT_EQ(transport->GetRemoteMems(&memNum, &remoteMem, &memTags), HCCL_SUCCESS);
 }
 
 TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenOnlyReservedRemoteBuffer_Returns_SUCCESS)
@@ -649,11 +649,11 @@ TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenOnlyReservedRemoteBuffer_Retur
     void *rdmaHandle = (void *)0x100;
     auto remoteRmaBuffer = std::make_unique<Hccl::RemoteUbRmaBuffer>(rdmaHandle);
     transport->rmtBufferVec_.push_back(std::move(remoteRmaBuffer));
-    HcclMem *remoteMem = nullptr;
+    CommMem *remoteMem = nullptr;
     char **memTags = nullptr;
     uint32_t memNum = 1;
 
-    EXPECT_EQ(transport->GetRemoteMems(&remoteMem, &memTags, &memNum), HCCL_SUCCESS);
+    EXPECT_EQ(transport->GetRemoteMems(&memNum, &remoteMem, &memTags), HCCL_SUCCESS);
     EXPECT_EQ(memNum, 1);
 }
 

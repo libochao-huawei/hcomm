@@ -39,7 +39,7 @@ public:
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum) override;
+    HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
     HcclResult ProcessStatus();
@@ -154,7 +154,7 @@ private:
 
     // GetRemoteMems 缓存
     bool cacheValid_{false};
-    std::vector<HcclMem> userRemoteMems_;
+    std::vector<CommMem> userRemoteMems_;
     std::vector<std::string> tagCopies_;
     std::vector<char*> tagPointers_;
 

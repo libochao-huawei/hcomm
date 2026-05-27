@@ -45,7 +45,7 @@ public:
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
     HcclResult GetBufferNum(uint32_t *bufferNum) const;
     HcclResult GetQpNum(uint32_t *qpNum) const;
-    HcclResult GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum) override;
+    HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
     HcclResult ProcessStatus();
@@ -146,7 +146,7 @@ private:
     std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
     ExchangeRdmaConnDto                                     rmtConnDto_;
     std::mutex                                              remoteMemsMutex_{};
-    std::vector<HcclMem>                                    remoteUserMems_{};
+    std::vector<CommMem>                                    remoteUserMems_{};
     std::vector<std::string>                                tagCopies_{};
     std::vector<char*>                                      tagPointers_{};
     bool                                                    cacheValid_{false};

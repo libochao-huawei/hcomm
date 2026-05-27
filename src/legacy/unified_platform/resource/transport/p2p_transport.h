@@ -45,7 +45,7 @@ public:
     void WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
                      const Stream &stream) override;
 
-    HcclResult GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum);
+    HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags);
 
 private:
     MemoryBuffer GetLocMemBuffer(const RmaBufferSlice &locSlice) const;

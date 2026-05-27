@@ -341,11 +341,11 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NoBuffers_ReturnsSuccess) {
     // 确保 rmtBufferVec_ 为空
     ch.rmtBufferVec_.clear();
 
-    HcclMem* remoteMem = nullptr;
+    CommMem* remoteMem = nullptr;
     uint32_t memNum = 0;
     char** memTags = nullptr;
 
-    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memTags, &memNum);
+    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(remoteMem, nullptr);
     EXPECT_EQ(memNum, 0U);
@@ -370,10 +370,10 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithBuffers_ReturnsCorrectData) 
     ch.remoteUserMemTag_.push_back(tag1);
     ch.remoteUserMemTag_.push_back(tag2);
 
-    HcclMem* remoteMem = nullptr;
+    CommMem* remoteMem = nullptr;
     uint32_t memNum = 0;
     char** memTags = nullptr;
-    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memTags, &memNum);
+    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 2U);
     ASSERT_NE(remoteMem, nullptr);

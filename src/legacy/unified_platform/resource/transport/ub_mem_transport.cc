@@ -944,7 +944,7 @@ void UbMemTransport::SaveDfxTaskInfo(const TaskParam &taskParam)
     callback(streamId, taskId, taskParam);
 }
 
-HcclResult UbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult UbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     if (rmtBufferVec.size() == 0) {
@@ -957,7 +957,7 @@ HcclResult UbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, u
         uint32_t index) -> HcclResult {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         CHK_PTR_NULL(rmtBuffer);
-        remoteMemCtx.remoteUserMems[index].type = rmtBuffer->GetMemType();
+        remoteMemCtx.remoteUserMems[index].type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
         remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
         return HCCL_SUCCESS;

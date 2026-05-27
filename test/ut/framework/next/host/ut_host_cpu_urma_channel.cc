@@ -106,12 +106,12 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_GetRemoteMems_Expect_Success)
     auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
     ASSERT_EQ(impl->Init(), HCCL_SUCCESS);
 
-    HcclMem* remoteMem = nullptr;
+    CommMem* remoteMem = nullptr;
     uint32_t memNum = 0;
     char** memTags = nullptr;
     // GetRemoteMems depends on memTransport_, which is initialized in Init()
     // This test verifies the function can be called
-    EXPECT_NO_THROW(impl->GetRemoteMems(&remoteMem, &memTags, &memNum));
+    EXPECT_NO_THROW(impl->GetRemoteMems(&memNum, &remoteMem, &memTags));
 }
 
 TEST_F(HostCpuUrmaChannelTest, Ut_When_Clean_Expect_NotSupport)

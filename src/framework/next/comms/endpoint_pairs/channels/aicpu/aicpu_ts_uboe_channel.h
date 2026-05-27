@@ -34,7 +34,7 @@ public:
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum) override;
+    HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags) override;
     ChannelStatus GetStatus() override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
@@ -159,7 +159,7 @@ private:
 
     std::mutex remoteMemsMutex_; // 远端内存列表互斥锁
     bool cacheValid_ = false; // 当前缓存是否有效
-    std::vector<HcclMem>         remoteUserMems_;     // 内存基本信息缓存
+    std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>           tagPointers_;        // Tag 缓存
     const Hccl::SocketConfig*    socketConfig_{nullptr};

@@ -118,7 +118,7 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetRemoteMems_When_Normal_Expect_Return
     HcclMem *remoteMems;
     char **memTags;
     u32 memNum;
-    ret = ccuTransport->GetRemoteMems(&remoteMems, &memTags, &memNum);
+    ret = ccuTransport->GetRemoteMems(&memNum, &remoteMems, &memTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(std::string(memTags[1]), "buffer1");
     EXPECT_EQ(remoteMems[1].type, HcclMemType::HCCL_MEM_TYPE_DEVICE);

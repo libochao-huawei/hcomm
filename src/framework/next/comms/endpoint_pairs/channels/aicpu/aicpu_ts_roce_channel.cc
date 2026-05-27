@@ -377,7 +377,7 @@ HcclResult AicpuTsRoceChannel::GetNotifyNum(uint32_t *notifyNum) const
 }
 
 // 单边通信暂未使用，接口先保留但返回不支持
-HcclResult AicpuTsRoceChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult AicpuTsRoceChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags)
 {
     (void)remoteMem;
     (void)memTags;

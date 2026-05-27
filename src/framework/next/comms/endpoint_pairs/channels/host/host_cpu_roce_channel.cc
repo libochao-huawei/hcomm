@@ -36,6 +36,18 @@ constexpr u32 MEM_BLOCK_SIZE = 128;
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 constexpr u32 SEND_RQE_COUNT = 16;
 
+static inline CommMemType HcclMemTypeToCommMemType(HcclMemType type)
+{
+    switch (type) {
+        case HCCL_MEM_TYPE_DEVICE:
+            return COMM_MEM_TYPE_DEVICE;
+        case HCCL_MEM_TYPE_HOST:
+            return COMM_MEM_TYPE_HOST;
+        default:
+            return COMM_MEM_TYPE_INVALID;
+    }
+}
+
 HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
@@ -573,7 +585,7 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult HostCpuRoceChannel::GetRemoteMems(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMems] remoteMem is nullptr"), HCCL_E_PTR);
     CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMems] memNum is nullptr"), HCCL_E_PTR);
@@ -599,7 +611,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMems(HcclMem **remoteMem, char ***memTag
         for (uint32_t i = 0; i < totalCount; ++i) {
             auto& rmtBuffer = rmtRmaBuffers_[i];
             CHK_PTR_NULL(rmtBuffer);
-            userRemoteMems_[i].type = rmtBuffer->GetMemType();
+            userRemoteMems_[i].type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
             userRemoteMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
             userRemoteMems_[i].size = rmtBuffer->GetSize();
             std::string tagCopy = rmtBuffer->GetMemTag();

@@ -32,7 +32,7 @@ public:
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
     virtual HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    virtual HcclResult GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum) override;
+    virtual HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags) override;
     HcclResult BuildChannelEntityToDevice(void **devChannelPtr);
 
     HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;

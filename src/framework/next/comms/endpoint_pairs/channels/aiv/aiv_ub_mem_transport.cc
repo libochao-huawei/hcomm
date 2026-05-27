@@ -275,11 +275,14 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     }
 }
 
-HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags, uint32_t *memNum) 
+HcclResult AivUbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags) 
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t userMemCount = rmtBufferVec_.size();
     if (userMemCount == 0) {
+        *remoteMem = nullptr;
+        *memTags = nullptr;
+        *memNum = 0;
         HCCL_WARNING("[AivUbMemTransport::%s] bufferNum is 0.", __func__);
         return HCCL_SUCCESS;
     }
@@ -287,7 +290,7 @@ HcclResult AivUbMemTransport::GetRemoteMems(HcclMem **remoteMem, char ***memTags
         uint32_t index) -> HcclResult {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index];
         CHK_PTR_NULL(rmtBuffer);
-        remoteMemCtx.remoteUserMems[index].type = rmtBuffer->GetMemType();
+        remoteMemCtx.remoteUserMems[index].type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
         remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
         return HCCL_SUCCESS;
