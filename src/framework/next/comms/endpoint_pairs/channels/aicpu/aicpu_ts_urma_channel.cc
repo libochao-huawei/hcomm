@@ -14,6 +14,7 @@
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
 #include "comm_mems.h"
+#include "config_log.h"
 
 // Orion
 #include "coll_alg_param.h"
@@ -280,7 +281,7 @@ ChannelStatus AicpuTsUrmaChannel::GetStatus()
 {
     ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
 
-    if (isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
+    if ((hccl::GetDebugConfig() & hccl::HCCL_RES) && isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
         std::string channelInfo = "create channel info:channel handle[";
         channelInfo.append(std::to_string(reinterpret_cast<uint64_t>(this)));
         channelInfo.append("] ");

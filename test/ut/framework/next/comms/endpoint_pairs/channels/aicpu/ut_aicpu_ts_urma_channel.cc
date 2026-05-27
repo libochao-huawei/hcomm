@@ -2,6 +2,7 @@
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 
+#include "externalinput.h"
 #define private public
 #define protected public
 #include "next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_urma_channel.h"
@@ -88,6 +89,11 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     memTransport->connNum = 1;
     memTransport->baseStatus = Hccl::TransportStatus::READY;
     ch.memTransport_ = std::move(memTransport);
+
+    MOCKER(GetExternalInputHcclEnableEntryLog)
+        .stubs()
+        .with(any())
+        .will(returnValue(true));
 
     MOCKER_CPP(&Hccl::UbMemTransport::Describe, HcclResult (Hccl::UbMemTransport::*)(std::string&))
         .stubs()
