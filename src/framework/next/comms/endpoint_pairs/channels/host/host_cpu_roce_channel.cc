@@ -603,7 +603,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteM
             mem.type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
             mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
             mem.size = rmtBuffer->GetSize();
-            remoteUserMems_.push_back(mem);
+            userRemoteMems_.push_back(mem);
             std::string tagCopy = rmtBuffer->GetMemTag();
             tagCopies_.push_back(std::move(tagCopy));
             tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
