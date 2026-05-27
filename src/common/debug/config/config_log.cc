@@ -14,6 +14,7 @@
 namespace hccl {
 
 static u64 g_debugConfig = 0ULL;
+bool g_debugConfigInited = false;
 
 u64 GetDebugConfig()
 {
@@ -58,7 +59,12 @@ HcclResult InitDebugConfigByEnv()
     }
     free(configDup);
     HCCL_RUN_INFO("HCCL_DEBUG_CONFIG[%s], set debugConfig[0x%llx]", env, g_debugConfig);
+    g_debugConfigInited = true;
     return HCCL_SUCCESS;
+}
+
+bool GetDebugConfigInited {
+    return g_debugConfigInited;
 }
 
 void InitDebugConfigByValue(u64 config)
