@@ -639,12 +639,23 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         u32 remoteRank = channelDescs[i].remoteRank;
         HcclCommDfx::AddChannelRemoteRankId(commTag, hostChannelHandleList[i], remoteRank);
         // 打印UB通道建链信息
-        HCCL_RUN_INFO("create channel info:channel handle[%s] comm tag[%s] protocol[%s]"
-                      " local rank[%u] local dev phyid[%u] remote rank[%u] remote dev phyid[%u] engine[%s]",
-            std::to_string(reinterpret_cast<uint64_t>(hostChannelHandleList[i])).c_str(), commTag.c_str(),
-            MyRankUtils::GetCommProtocolEnumStr(channelDescs[i].localEndpoint.protocol).c_str(), rankId_,
-            channelDescs[i].localEndpoint.loc.device.devPhyId, remoteRank,
-            channelDescs[i].remoteEndpoint.loc.device.devPhyId, MyRankUtils::GetCommEngineEnumStr(engine).c_str());
+        if (GetExternalInputHcclEnableEntryLog()) {
+            if (channelDescs[i].localEndpoint.loc.locType == ENDPOINT_LOC_TYPE_DEVICE &&
+                channelDescs[i].remoteEndpoint.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+                    HCCL_RUN_INFO("create channel info:channel handle[%s] comm tag[%s] protocol[%s]"
+                            " local rank[%u] local dev phyid[%u] remote rank[%u] remote dev phyid[%u] engine[%s]",
+                    std::to_string(reinterpret_cast<uint64_t>(hostChannelHandleList[i])).c_str(), commTag.c_str(),
+                    MyRankUtils::GetCommProtocolEnumStr(channelDescs[i].localEndpoint.protocol).c_str(), rankId_,
+                    channelDescs[i].localEndpoint.loc.device.devPhyId, remoteRank,
+                    channelDescs[i].remoteEndpoint.loc.device.devPhyId, MyRankUtils::GetCommEngineEnumStr(engine).c_str());
+            } else {
+                    HCCL_RUN_INFO("create channel info:channel handle[%s] comm tag[%s] protocol[%s]"
+                            " local rank[%u]  remote rank[%u]  engine[%s]",
+                    std::to_string(reinterpret_cast<uint64_t>(hostChannelHandleList[i])).c_str(), commTag.c_str(),
+                    MyRankUtils::GetCommProtocolEnumStr(channelDescs[i].localEndpoint.protocol).c_str(), rankId_,
+                    remoteRank, MyRankUtils::GetCommEngineEnumStr(engine).c_str());
+            }
+        }
     }
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {

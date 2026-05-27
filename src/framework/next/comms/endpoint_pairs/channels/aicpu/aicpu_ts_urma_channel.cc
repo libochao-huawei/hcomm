@@ -280,7 +280,7 @@ ChannelStatus AicpuTsUrmaChannel::GetStatus()
 {
     ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
 
-    if (isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
+    if (GetExternalInputHcclEnableEntryLog() && isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
         std::string channelInfo = "create channel info:channel handle[";
         channelInfo.append(std::to_string(reinterpret_cast<uint64_t>(this)));
         channelInfo.append("] ");
