@@ -685,24 +685,25 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     CommMem* remoteMem = nullptr;
     char** memTags = nullptr;
     CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &remoteMem, &memTags, &memNum)));
-    CHK_PTR_NULL(remoteMem);
-    // AicpuTsHccsChannel不使用memTag，返回为空，默认索引0为cclBuffer
-    if (memTags == nullptr) {
-        *buffer = remoteMem[0].addr;
-        *size = remoteMem[0].size;
-        HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, *buffer, *size);
-        return HCCL_SUCCESS;
-    }
-    for (u32 i = 0; i < memNum; ++i) {
-        CHK_PTR_NULL(memTags);
-        std::string tag = memTags[i];
-        if (tag == "HcclBuffer") {
-            *buffer = remoteMem[i].addr;
-            *size = remoteMem[i].size;
+    if (memNum > 0) {
+        // AicpuTsHccsChannel不使用memTag，返回为空，默认索引0为cclBuffer
+        if (memTags == nullptr) {
+            *buffer = remoteMem[0].addr;
+            *size = remoteMem[0].size;
             HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, *buffer, *size);
             return HCCL_SUCCESS;
         }
-        HCCL_INFO("[%s] Found %s : addr=%p, size=%llu", __func__, memTags[i], *buffer, *size);
+        CHK_PTR_NULL(remoteMem);
+        for (u32 i = 0; i < memNum; ++i) {
+            std::string tag = memTags[i];
+            if (tag == "HcclBuffer") {
+                *buffer = remoteMem[i].addr;
+                *size = remoteMem[i].size;
+                HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, *buffer, *size);
+                return HCCL_SUCCESS;
+            }
+            HCCL_INFO("[%s] Found %s : addr=%p, size=%llu", __func__, memTags[i], *buffer, *size);
+        }
     }
     HCCL_ERROR("[%s] HcclBuffer not found.", __func__);
     return HCCL_E_INTERNAL;
