@@ -19,19 +19,19 @@ EndpointMonitor::~EndpointMonitor()
     DeInit(deviceLogicId_);
 }
 
-EndpointMonitor &EndpointMonitor::GetInstance(s32 deviceLogicId)
-{
-    static std::array<EndpointMonitor, MAX_MODULE_DEVICE_NUM + 1> instances;
-    uint32_t deviceId;
-    if ((deviceLogicId < 0) || (static_cast<u32>(deviceLogicId) > MAX_MODULE_DEVICE_NUM)) {
-        HCCL_ERROR("[EndpointMonitor][%s] deviceLogicId[%d] not in range [0,%u]", __func__, deviceLogicId,
-            MAX_MODULE_DEVICE_NUM);
-        deviceId = MAX_MODULE_DEVICE_NUM;
-    } else {
-        deviceId = static_cast<u32>(deviceLogicId);
-    }
-    return instances[deviceId];
-}
+// EndpointMonitor &EndpointMonitor::GetInstance(s32 deviceLogicId)
+// {
+//     static std::array<EndpointMonitor, MAX_MODULE_DEVICE_NUM + 1> instances;
+//     uint32_t deviceId;
+//     if ((deviceLogicId < 0) || (static_cast<u32>(deviceLogicId) > MAX_MODULE_DEVICE_NUM)) {
+//         HCCL_ERROR("[EndpointMonitor][%s] deviceLogicId[%d] not in range [0,%u]", __func__, deviceLogicId,
+//             MAX_MODULE_DEVICE_NUM);
+//         deviceId = MAX_MODULE_DEVICE_NUM;
+//     } else {
+//         deviceId = static_cast<u32>(deviceLogicId);
+//     }
+//     return instances[deviceId];
+// }
 
 HcclResult EndpointMonitor::RegisterToEndpointMonitor(s32 deviceLogicId, EndpointHandle epHandle)
 {
@@ -116,6 +116,7 @@ HcclResult EndpointMonitor::UnRegisterToEndpointMonitor()
 
 void EndpointMonitor::RemoveEpHandleFromEndpointMonitor(EndpointHandle epHandle)
 {
+    bool isEmpty = false;
     if (epHandle == nullptr) {
         HCCL_ERROR("[EndpointMonitor][%s] epHandle is null", __func__);
         return;
@@ -129,6 +130,12 @@ void EndpointMonitor::RemoveEpHandleFromEndpointMonitor(EndpointHandle epHandle)
             HCCL_INFO("[EndpointMonitor][%s] epHandle[%p] is remove from deviceId[%d]",
                 __func__, epHandle, deviceLogicId_);
         }
+
+        isEmpty = epHandleSet_.empty();
+    }
+
+    if (isEmpty) {
+        UnRegisterToEndpointMonitor();
     }
 }
 

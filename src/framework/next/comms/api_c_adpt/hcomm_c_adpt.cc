@@ -17,7 +17,7 @@
 #include "hcomm_result_defs.h"
 #include "log.h"
 #include "hcomm_c_adpt.h"
-#include "hcom_common.h"
+// #include "hcom_common.h"
 #include "hcomm/hcomm_res_entity_defs.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
@@ -42,7 +42,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-#include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
+// #include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
 #include "aiv_urma_channel.h"
 
 namespace hcomm {
@@ -237,13 +237,13 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
 
-    if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
-        && ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP))) {
-        s32 devLogicIdSigned = HcclGetThreadDeviceId();
-        CHK_PRT_RET(devLogicIdSigned < 0,
-            HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
-        EndpointMonitor::GetInstance(devLogicIdSigned).RegisterToEndpointMonitor(devLogicIdSigned, handle);
-    }
+    // if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
+    //     && ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP))) {
+    //     s32 devLogicIdSigned = HcclGetThreadDeviceId();
+    //     CHK_PRT_RET(devLogicIdSigned < 0,
+    //         HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
+    //     EndpointMonitor::GetInstance(devLogicIdSigned).RegisterToEndpointMonitor(devLogicIdSigned, handle);
+    // }
 
     HCCL_INFO("[%s] endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] create endpointHandle [%p] done.", 
             __func__, endpoint->protocol, endpoint->loc.locType, handle);
@@ -254,10 +254,10 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
 HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 {
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
-    s32 devLogicIdSigned = HcclGetThreadDeviceId();
-    CHK_PRT_RET(devLogicIdSigned < 0,
-        HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
-    EndpointMonitor::GetInstance(devLogicIdSigned).RemoveEpHandleFromEndpointMonitor(endpointHandle);
+    // s32 devLogicIdSigned = HcclGetThreadDeviceId();
+    // CHK_PRT_RET(devLogicIdSigned < 0,
+    //     HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
+    // EndpointMonitor::GetInstance(devLogicIdSigned).RemoveEpHandleFromEndpointMonitor(endpointHandle);
     auto ret = g_EndpointMap.RemoveEndpoint(endpointHandle);
     CHK_PRT_RET(ret == false, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);

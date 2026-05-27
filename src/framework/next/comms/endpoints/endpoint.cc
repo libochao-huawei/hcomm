@@ -16,7 +16,7 @@
 #include "uboe_endpoint.h"
 #include "cpu_urma_endpoint.h"
 #include "aicputs_hccs_endpoint.h"
-#include "../../../../platform/hccp/inc/private/network/ra_rs_comm.h"
+// #include "../../../../platform/hccp/inc/private/network/ra_rs_comm.h"
 
 namespace hcomm{
 static bool IsSupported(const EndpointDesc &endpointDesc)
@@ -94,30 +94,30 @@ if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == E
     return HCCL_SUCCESS;
 }
 
-HcclResult Endpoint::GetAsyncEventsContext(uint32_t devPhyId, struct AsyncEvent events[], uint32_t &num)
-{
-    uint32_t interfaceVersion{0};
+// HcclResult Endpoint::GetAsyncEventsContext(uint32_t devPhyId, struct AsyncEvent events[], uint32_t &num)
+// {
+//     uint32_t interfaceVersion{0};
 
-    int ret;
-    // 对RaCtxGetAsyncEvents接口的版本检验
-    ret = RaGetInterfaceVersion(devPhyId, RA_RS_CTX_GET_ASYNC_EVENTS, &interfaceVersion);
-    if (ret != 0) {
-        HCCL_ERROR("[%s] devPhyId[%u] RaGetInterfaceVersion failed, ret[%d]", __func__, devPhyId, ret);
-        return HCCL_E_INTERNAL; 
-    }
+//     int ret;
+//     // 对RaCtxGetAsyncEvents接口的版本检验
+//     ret = RaGetInterfaceVersion(devPhyId, RA_RS_CTX_GET_ASYNC_EVENTS, &interfaceVersion);
+//     if (ret != 0) {
+//         HCCL_ERROR("[%s] devPhyId[%u] RaGetInterfaceVersion failed, ret[%d]", __func__, devPhyId, ret);
+//         return HCCL_E_INTERNAL; 
+//     }
 
-    if (interfaceVersion <= 1) {
-        HCCL_ERROR("[%s] devPhyId[%u] version[%u] not support", __func__, devPhyId, interfaceVersion);
-        return HCCL_E_NOT_SUPPORT;
-    }
+//     if (interfaceVersion <= 1) {
+//         HCCL_ERROR("[%s] devPhyId[%u] version[%u] not support", __func__, devPhyId, interfaceVersion);
+//         return HCCL_E_NOT_SUPPORT;
+//     }
 
-    CHK_PTR_NULL(ctxHandle_);
-    ret = RaCtxGetAsyncEvents(ctxHandle_, events, &num);
-    if (ret != 0) {
-        HCCL_ERROR("[%s] devPhyId[%u] RaCtxGetAsyncEvents failed, ctxHandle[%p] ret[%d]", __func__, devPhyId,
-            (void *)ctxHandle_, ret);
-        return HCCL_E_INTERNAL;
-    }
-    return HCCL_SUCCESS;
-}
+//     CHK_PTR_NULL(ctxHandle_);
+//     ret = RaCtxGetAsyncEvents(ctxHandle_, events, &num);
+//     if (ret != 0) {
+//         HCCL_ERROR("[%s] devPhyId[%u] RaCtxGetAsyncEvents failed, ctxHandle[%p] ret[%d]", __func__, devPhyId,
+//             (void *)ctxHandle_, ret);
+//         return HCCL_E_INTERNAL;
+//     }
+//     return HCCL_SUCCESS;
+// }
 }
