@@ -9,6 +9,7 @@
  */
 
 #include "endpoint_map.h"
+#include "../endpoint_pairs/endpoint_pair.h"
 #include <unordered_map>
 #include <memory>
 #include <mutex>
@@ -65,6 +66,18 @@ Endpoint* HcommEndpointMap::GetEndpoint(EndpointHandle handle)
     auto it = g_EndpointMap.find(handle);
     if (it != g_EndpointMap.end()) {
         return it->second.get(); // 返回裸指针，不转移所有权
+    }
+    return nullptr;
+}
+
+Endpoint* HcommEndpointMap::GetEndpointByDesc(const EndpointDesc &endpointDesc)
+{
+    std::lock_guard<std::mutex> lock(g_EndpointMapMutex);
+
+    for (auto &kv : g_EndpointMap) {
+        if (kv.second && kv.second->GetEndpointDesc() == endpointDesc) {
+            return kv.second.get();
+        }
     }
     return nullptr;
 }
