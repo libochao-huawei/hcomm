@@ -1028,6 +1028,41 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::ClearAclgraphHostLinks(const std::unordered_set<std::string> &tags)
+    {
+        for (const auto &tag : tags) {
+            auto it = tagsRequiringHostCleanup_.find(tag);
+            if (it == tagsRequiringHostCleanup_.end()) {
+                continue;
+            }
+            for (auto &rankIt : rankTagRemoteRes_) {
+                auto tagIt = rankIt.second.find(tag);
+                if (tagIt == rankIt.second.end()) {
+                    continue;
+                }
+                HccltagRemoteResV2 *hostPtr = tagIt->second.tagRemoteResPtr;
+                if (hostPtr != nullptr) {
+                    // 顺序敏感: ListCommonRemove 必须先于 erase shared_ptr,
+                    // 否则 hostPtr 成野指针, ListCommonRemove 访问 segfault。
+                    ListCommonRemove(&hostPtr->nextTagRes);
+                    for (auto vIt = hostMemVec_.begin(); vIt != hostMemVec_.end(); ++vIt) {
+                        if (*vIt && (*vIt)->ptr() == hostPtr) {
+                            size_t idx = static_cast<size_t>(vIt - hostMemVec_.begin());
+                            if (idx < deviceMemVec_.size()) {
+                                deviceMemVec_.erase(deviceMemVec_.begin() + idx);
+                            }
+                            hostMemVec_.erase(vIt);
+                            break;
+                        }
+                    }
+                }
+                rankIt.second.erase(tagIt);
+            }
+            tagsRequiringHostCleanup_.erase(it);
+        }
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::ClearOpResource(const std::string &tag, bool aclGraphDestroyCbk)
     {
         bool findTag = false;
@@ -4544,6 +4579,7 @@ namespace hccl
             // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
             if (isInGraphCaptureZeroCopy) {
                 CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                tagsRequiringHostCleanup_.insert(newTag);
             }
         }
 
@@ -4575,6 +4611,7 @@ namespace hccl
                 CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
                 // aclgraph零拷贝场景下，除第一个capture外，需要记录，在graph销毁时清理相关资源
                 CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                tagsRequiringHostCleanup_.insert(newTag);
             }
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
@@ -4887,6 +4924,7 @@ namespace hccl
             // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
             if (isInGraphCaptureZeroCopy) {
                 CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                tagsRequiringHostCleanup_.insert(newTag);
             }
         }
 
@@ -4920,6 +4958,7 @@ namespace hccl
                 CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
                 // aclgraph零拷贝场景下，除第一个capture外，需要记录，在graph销毁时清理相关资源
                 CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                tagsRequiringHostCleanup_.insert(newTag);
             }
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
