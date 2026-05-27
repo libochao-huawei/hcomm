@@ -7,6 +7,7 @@
 #include "next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_urma_channel.h"
 #undef private
 #undef protected
+#include "config_log.h"
 using namespace hcomm;
 
 class AicpuTsUrmaChannelTest : public testing::Test {
@@ -88,6 +89,11 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     memTransport->connNum = 1;
     memTransport->baseStatus = Hccl::TransportStatus::READY;
     ch.memTransport_ = std::move(memTransport);
+
+    MOCKER(hccl::GetDebugConfig)
+        .stubs()
+        .with(any())
+        .will(returnValue((unsigned long long)4));
 
     MOCKER_CPP(&Hccl::UbMemTransport::Describe, HcclResult (Hccl::UbMemTransport::*)(std::string&))
         .stubs()
