@@ -194,23 +194,21 @@ HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
     // 获取capture状态
     aclmdlRI rtModel = nullptr;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
-    aclError aclRet = aclmdlRICaptureGetInfo(stream, &captureStatus, &rtModel);
+    aclRet = aclmdlRICaptureGetInfo(stm, &captureStatus, &rtModel);
     if (aclRet == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
         HCCL_WARNING("[%s]Stream capture does not support!", __func__);
-        return HCCL_SUCCESS;
     } else {
         CHK_PRT_RET(aclRet != ACL_SUCCESS,
-                    HCCL_ERROR("[%s]rtGet stream get capture status fail. return[%d]", __func__, ret), HCCL_E_RUNTIME);
-    }
-    // 获取是否开启缓存
-    aclrtStreamAttrValue value;
-    aclRet = aclrtGetStreamAttribute(resourceArgs.stream, ACL_STREAM_ATTR_CACHE_OP_INFO, &value);
-    CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s]stream get attribute fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+                    HCCL_ERROR("[%s]rtGet stream get capture status fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+        aclrtStreamAttrValue value;
+        aclRet = aclrtGetStreamAttribute(stm, ACL_STREAM_ATTR_CACHE_OP_INFO, &value);
+        CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s]stream get attribute fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
 
-    HCCL_INFO("[AicpuAclKernelLaunchV2] cacheOpInfoSwitch[%u] captureStatus[%d] identify[%s]", value.cacheOpInfoSwitch, captureStatus, topoArgs.identify.c_str());
-    if (value.cacheOpInfoSwitch == 1 && captureStatus == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE) {
-        aclRet = aclrtCacheLastTaskExtendInfo(topoArgs.identify.c_str(), strlen(topoArgs.identify.c_str()));
-        CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s]stream cache task op info fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+        HCCL_INFO("[AicpuAclKernelLaunchV2] cacheOpInfoSwitch[%u] captureStatus[%d] identify[%s]", value.cacheOpInfoSwitch, captureStatus, tag.c_str());
+        if (value.cacheOpInfoSwitch == 1 && captureStatus == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE) {
+            aclRet = aclrtCacheLastTaskExtendInfo(tag.c_str(), strlen(tag.c_str()));
+            CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s]stream cache task op info fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+        }
     }
 
     return HCCL_SUCCESS;
