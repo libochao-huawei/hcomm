@@ -130,7 +130,7 @@ TEST_F(TestChannelProcess, Ut_TestChannelGetRemoteMems_When_RemoteMemNullptr_Ret
 {
     char** memTag = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = hcomm::ChannelProcess::ChannelGetRemoteMems(0, nullptr, &memTag, &memNum);
+    HcclResult ret = hcomm::ChannelProcess::ChannelGetRemoteMems(0, &memNum, nullptr, &memTag);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -138,7 +138,7 @@ TEST_F(TestChannelProcess, Ut_TestChannelGetRemoteMems_When_MemTagNullptr_Return
 {
     CommMem* remoteMem = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = hcomm::ChannelProcess::ChannelGetRemoteMems(0, &remoteMem, nullptr, &memNum);
+    HcclResult ret = hcomm::ChannelProcess::ChannelGetRemoteMems(0, &memNum, &remoteMem, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -146,7 +146,7 @@ TEST_F(TestChannelProcess, Ut_TestChannelGetRemoteMems_When_MemNumNullptr_Return
 {
     CommMem* remoteMem = nullptr;
     char** memTag = nullptr;
-    HcclResult ret = hcomm::ChannelProcess::ChannelGetRemoteMems(0, &remoteMem, &memTag, nullptr);
+    HcclResult ret = hcomm::ChannelProcess::ChannelGetRemoteMems(0, nullptr, &remoteMem, &memTag);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 

@@ -115,7 +115,7 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetRemoteMems_When_Normal_Exp
     auto rmtBuffer1 = std::make_unique<Hccl::RemoteIpcRmaBuffer>();
     rmtBuffer1->addr = (uintptr_t)0x101;
     rmtBuffer1->size = (u64)0x101;
-    rmtBuffer1->memType = CommMemType::COMM_MEM_TYPE_HOST;
+    rmtBuffer1->memType = HcclMemType::HCCL_MEM_TYPE_HOST;
     aivTransport->rmtBufferVec_.push_back(std::move(rmtBuffer1));
 
     aivTransport->remoteUserMemTag_.push_back(BuildMemTagArray("cclBuffer"));

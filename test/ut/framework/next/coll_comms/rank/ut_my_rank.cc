@@ -531,7 +531,7 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMems_Normal_Expect_SUCCESS)
     CommMem* remoteMem = nullptr;
     char** memTag = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = myRank.ChannelGetRemoteMems(channel, &remoteMem, &memTag, &memNum);
+    HcclResult ret = myRank.ChannelGetRemoteMems(channel, &memNum, &remoteMem, &memTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -547,7 +547,7 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMems_RemoteMemNull_Expect_E_PTR)
     ChannelHandle channel = 0x12345;
     char** memTag = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = myRank.ChannelGetRemoteMems(channel, nullptr, &memTag, &memNum);
+    HcclResult ret = myRank.ChannelGetRemoteMems(channel, &memNum, nullptr, &memTag);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -563,7 +563,7 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMems_MemTagNull_Expect_E_PTR)
     ChannelHandle channel = 0x12345;
     CommMem* remoteMem = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = myRank.ChannelGetRemoteMems(channel, &remoteMem, nullptr, &memNum);
+    HcclResult ret = myRank.ChannelGetRemoteMems(channel, &memNum, &remoteMem, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -579,7 +579,7 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMems_MemNumNull_Expect_E_PTR)
     ChannelHandle channel = 0x12345;
     CommMem* remoteMem = nullptr;
     char** memTag = nullptr;
-    HcclResult ret = myRank.ChannelGetRemoteMems(channel, &remoteMem, &memTag, nullptr);
+    HcclResult ret = myRank.ChannelGetRemoteMems(channel, nullptr, &remoteMem, &memTag);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
