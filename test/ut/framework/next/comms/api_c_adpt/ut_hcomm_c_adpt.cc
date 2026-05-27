@@ -424,3 +424,31 @@ TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_HandleInvalid_Expect_E
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
+
+class SubEndpoint final : public Endpoint {
+public:
+    explicit SubEndpoint(const EndpointDesc &endpointDesc) : Endpoint(endpointDesc) {}
+    HcclResult Init() override { return HCCL_SUCCESS; }
+    HcclResult ServerSocketListen(const uint32_t port) override { return HCCL_SUCCESS; }
+    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override { return HCCL_SUCCESS; }
+    HcclResult UnregisterMemory(void* memHandle) override { return HCCL_SUCCESS; }
+    HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override { return HCCL_SUCCESS; }
+    HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override { return HCCL_SUCCESS; }
+    HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override { return HCCL_SUCCESS; }
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override { return HCCL_SUCCESS; }
+};
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_ServerSocketNotSupport_Expect_E_NOT_SUPPORT)
+{
+    uint32_t port = 0;
+    EndpointDesc endpointDesc{};
+    SubEndpoint subEndpoint(endpointDesc);
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(&subEndpoint);
+
+    MOCKER_CPP(&HcommEndpointMap::GetEndpoint, Endpoint*(HcommEndpointMap::*)(EndpointHandle))
+        .stubs()
+        .will(returnValue(&subEndpoint));
+
+    HcommResult ret = HcommEndpointGetListenPort(endpointHandle, &port);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
