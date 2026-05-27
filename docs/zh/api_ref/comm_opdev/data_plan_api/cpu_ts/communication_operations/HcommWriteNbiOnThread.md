@@ -1,4 +1,4 @@
-# HcommChannelFenceOnThread
+# HcommWriteNbiOnThread
 
 ## 产品支持情况
 
@@ -8,20 +8,23 @@
 
 ## 功能说明
 
-在指定通信线程和通信通道上插入内存屏障操作，确保屏障前的通道读写操作在屏障后的通道读写操作之前完成。
+向channel上的指定内存写数据，将src中长度为len的内存数据写入dst所指向的相同长度的内存区域。接口调用方为src所在节点，该接口为非阻塞接口。
 
 ## 函数原型
 
 ```c
-int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
+int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 ```
 
 ## 参数说明
 
 | 参数名 | 输入/输出 | 描述 |
 | --- | --- | --- |
-| thread | 输入 | 通信线程句柄。AICPU侧调用时，为通过[HcclThreadAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclThreadAcquire.md)接口获取到的threads；Host CPU侧调用时，该参数无作用，传入0即可。<br>ThreadHandle类型的定义可参见[ThreadHandle](../../../datatype_definition/ThreadHandle.md)。 |
+| thread | 输入 | 通信线程句柄，当前无作用，传入 0 即可。 |
 | channel | 输入 | 通信通道句柄，为通过[HcommChannelCreate](../../../control_plane_api/basic_resource_mgmt/HcommChannelCreate.md)或[HcclChannelAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelAcquire.md)接口获取到的channels。<br>ChannelHandle类型的定义可参见[ChannelHandle](../../../datatype_definition/ChannelHandle.md)。 |
+| dst | 输出 | 目的内存地址。基础通信场景下，写发起端应使用通过[HcommMemImport](../../../control_plane_api/basic_resource_mgmt/HcommMemImport.md)导入的对端内存地址；集合通信场景下，为使用[HcclChannelGetHcclBuffer](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelGetHcclBuffer.md)获取到的对端通信内存地址。 |
+| src | 输入 | 源内存地址。基础通信场景下，为通过[HcommMemReg](../../../control_plane_api/basic_resource_mgmt/HcommMemReg.md)注册的本端内存地址；集合通信场景下，为使用[HcclGetHcclBuffer](../../../control_plane_api/comms_domain_resource_mgmt/HcclGetHcclBuffer.md)、[HcclChannelGetHcclBuffer](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelGetHcclBuffer.md)获取到的本端内存地址。 |
+| len | 输入 | 数据长度（字节），需大于0。 |
 
 ## 返回值
 
@@ -29,45 +32,45 @@ int32_t：接口成功返回0，其他失败。
 
 ## 约束说明
 
-- 针对Ascend 950PR/Ascend 950DT，支持AICPU侧和Host CPU侧调用。
-- AICPU侧调用时，通信引擎为AICPU_TS，支持通信协议UBC_TP、UBC_CTP、UBoE。
-- Host CPU侧调用时，通信引擎为CPU，支持通信协议UBC_TP、UBC_CTP、RoCE，`thread`参数无作用，可传入0。
+- 针对Ascend 950PR/Ascend 950DT，仅支持通信引擎CPU，仅支持通信协议UBC_TP、UBC_CTP、RoCE，仅支持在Host CPU上调用。
+- `[src, src + len)`必须落在本端已注册或获取的内存范围内，`[dst, dst + len)`必须落在对端已导入或获取的内存范围内。
+- 该接口返回成功仅表示写请求提交成功。如需确认写操作完成，调用方应调用[HcommChannelFenceOnThread](HcommChannelFenceOnThread.md)等待通道上已提交的写操作完成。
 
 ## 调用示例
 
 ### 集合通信示例
 
 ```c
-// 申请通信线程资源
-CommEngine engine = CommEngine::COMM_ENGINE_AICPU_TS;
-uint32_t threadNum = 1;
-uint32_t notifyNumPerThread = 1;
-ThreadHandle thread;
-HcclThreadAcquire(engine, threadNum, notifyNumPerThread, &thread);
+// 省略：创建通信域句柄 comm
 
 // 申请通信通道资源
+CommEngine engine = CommEngine::COMM_ENGINE_CPU;
 uint32_t channelNum = 1;
 HcclChannelDesc channelDesc;
-HcclChannelDescInit(&channelDesc, channelNum);
-HcclComm comm;
+HcclResult result = HcclChannelDescInit(&channelDesc, channelNum);
+channelDesc.channelProtocol = COMM_PROTOCOL_ROCE;
+channelDesc.localEndpoint.protocol = COMM_PROTOCOL_ROCE;
+channelDesc.remoteEndpoint.protocol = COMM_PROTOCOL_ROCE;
+// 省略：channelDesc填充其他信息
 ChannelHandle channel;
-HcclChannelAcquire(comm, engine, &channelDesc, channelNum, &channel);
+result = HcclChannelAcquire(comm, engine, &channelDesc, channelNum, &channel);
 
 // 获取本端通信内存信息
 void * localBuffer;
 uint64_t localBufferSize;
-HcclGetHcclBuffer(comm, &localBuffer, &localBufferSize);
+result = HcclGetHcclBuffer(comm, &localBuffer, &localBufferSize);
 
 // 获取对端通信内存信息
 void * remoteBuffer;
 uint64_t remoteBufferSize;
-HcclChannelGetHcclBuffer(comm, channel, &remoteBuffer, &remoteBufferSize);
+result = HcclChannelGetHcclBuffer(comm, channel, &remoteBuffer, &remoteBufferSize);
 uint64_t len = std::min(localBufferSize, remoteBufferSize);
 
 // 将本端内存的内容写到对端内存上
-HcommWriteOnThread(thread, channel, remoteBuffer, localBuffer, len);
-HcommChannelFenceOnThread(thread, channel);
-HcommReadOnThread(thread, channel, localBuffer, remoteBuffer, len);
+int32_t ret = HcommWriteNbiOnThread(0, channel, remoteBuffer, localBuffer, len);
+
+// 等待通信通道上已提交的写操作完成
+ret = HcommChannelFenceOnThread(0, channel);
 ```
 
 ### 基础通信示例
@@ -116,7 +119,7 @@ HcommChannelDesc serverChannelDesc = {};
 result = HcommChannelDescInit(&serverChannelDesc, 1);
 serverChannelDesc.remoteEndpoint = clientEndpointDesc;
 serverChannelDesc.notifyNum = 1;
-serverChannelDesc.exchangeAllMems = true;
+serverChannelDesc.exchangeAllMems = true; // 让Channel创建时自动关联本端memHandle。
 serverChannelDesc.role = HCOMM_SOCKET_ROLE_SERVER;
 serverChannelDesc.roceAttr.queueNum = 1;
 ChannelHandle serverChannel = 0;
@@ -139,7 +142,7 @@ const EndpointDesc clientEndpointDesc = {
     .raws = {0}
 };
 EndpointHandle clientEndpointHandle = nullptr;
-HcommResult result = HcommEndpointCreate(&clientEndpointDesc, &clientEndpointHandle);
+result = HcommEndpointCreate(&clientEndpointDesc, &clientEndpointHandle);
 
 // 注册Client端内存
 CommMem clientHostMem = {
@@ -163,7 +166,7 @@ HcommChannelDesc clientChannelDesc = {};
 result = HcommChannelDescInit(&clientChannelDesc, 1);
 clientChannelDesc.remoteEndpoint = serverEndpointDesc;
 clientChannelDesc.notifyNum = 1;
-clientChannelDesc.exchangeAllMems = true;
+clientChannelDesc.exchangeAllMems = true; // 让Channel创建时自动关联本端memHandle。
 clientChannelDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
 clientChannelDesc.roceAttr.queueNum = 1;
 ChannelHandle clientChannel = 0;
