@@ -1568,6 +1568,67 @@ HcclResult HcclCommAicpu::CleanAllRoceResource(){
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommAicpu::ClearOpResource(const std::string &tag)
+{
+    // 与GetAlgResponseRes/AllocAlgResource/ReAllocTransportResource互斥，避免读写竞争resMap_/linkRes_
+    std::lock_guard<std::mutex> lock(preemptMutexForResMap_);
+
+    auto eraseTagFromAll = [this](const std::string &t) -> bool {
+        bool hit = false;
+        // 主资源map：vector<LINK>析构会让shared_ptr<Transport>引用-1，归零时触发driver资源释放
+        if (resMap_.erase(t) > 0) {
+            hit = true;
+        }
+        // SDMA HCCS链路缓存：报错日志中driver halResAddrMap ioctl失败的根本累积点
+        for (auto &rankIt : linkRes_) {
+            if (rankIt.second.erase(t) > 0) {
+                hit = true;
+            }
+        }
+        // SDMA SIO并发链路缓存
+        for (auto &rankIt : linkResSio_) {
+            if (rankIt.second.erase(t) > 0) {
+                hit = true;
+            }
+        }
+        // RDMA主备链路缓存（CleanAllRoceResource按通信域全清，本接口按tag细粒度清）
+        for (auto &rankIt : linkRdmaRes_) {
+            if (rankIt.second.erase(t) > 0) {
+                hit = true;
+            }
+        }
+        for (auto &rankIt : linkRdmaResBackUp_) {
+            if (rankIt.second.erase(t) > 0) {
+                hit = true;
+            }
+        }
+        // 本地scratchMem和localTagResToObj按tag索引
+        if (tagScratchMem_.erase(t) > 0) {
+            hit = true;
+        }
+        if (localTagResToObj_.erase(t) > 0) {
+            hit = true;
+        }
+        return hit;
+    };
+
+    // 与host端ClearOpResource对齐：尝试base/_host/_device三种后缀
+    // host侧host.cc按这三种后缀清自己的resMap_；aicpu侧资源命名可能落在三者之一
+    bool found = false;
+    found = eraseTagFromAll(tag) || found;
+    found = eraseTagFromAll(tag + "_host") || found;
+    found = eraseTagFromAll(tag + "_device") || found;
+    if (!found) {
+        HCCL_WARNING("[HcclCommAicpu][ClearOpResource] no entries matched tag[%s] "
+                     "(also tried _host/_device variants), group[%s]",
+                     tag.c_str(), identifier_.c_str());
+    } else {
+        HCCL_INFO("[HcclCommAicpu][ClearOpResource] cleared resources for tag[%s], group[%s]",
+                  tag.c_str(), identifier_.c_str());
+    }
+    return HCCL_SUCCESS;
+}
+
 // 借轨重新刷新资源
 HcclResult HcclCommAicpu::ReAllocTransportResource(const std::string &newTag, AlgResourceResponse &algResResponse,
     std::map<u32, bool> &remoteRankPortMap, const HcclOpResParam *commParam, const OpParam &param)
