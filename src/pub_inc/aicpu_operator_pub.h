@@ -303,6 +303,31 @@ static inline void ListCommonAddHead(struct ListCommon *newDeviceL, struct ListC
     headHostL->nextDevice = reinterpret_cast<u64>(newDeviceL);
 }
 
+// 跟 ListCommonAddHead 对称的双链表 unlink：同时维护 host 和 device 两套 prev/next 指针。
+// 调用方负责后续释放节点关联的内存；本函数只调整链表指针。
+static inline void ListCommonRemove(struct ListCommon *nodeHostL)
+{
+    if (nodeHostL == nullptr) {
+        HCCL_ERROR("nodeHostL is nullptr");
+        return;
+    }
+    ListCommon *prevHost = reinterpret_cast<ListCommon *>(nodeHostL->preHost);
+    ListCommon *nextHost = reinterpret_cast<ListCommon *>(nodeHostL->nextHost);
+    if (prevHost == nullptr || nextHost == nullptr) {
+        HCCL_ERROR("nodeHostL link broken, preHost[%p] nextHost[%p]", prevHost, nextHost);
+        return;
+    }
+    prevHost->nextHost = nodeHostL->nextHost;
+    nextHost->preHost = nodeHostL->preHost;
+    prevHost->nextDevice = nodeHostL->nextDevice;
+    nextHost->preDevice = nodeHostL->preDevice;
+    // 自指向，避免悬空指针被误访问（跟 ListCommonInit 后空链表状态一致）
+    nodeHostL->nextHost = reinterpret_cast<u64>(nodeHostL);
+    nodeHostL->preHost = reinterpret_cast<u64>(nodeHostL);
+    nodeHostL->nextDevice = nodeHostL->nextHost;
+    nodeHostL->preDevice = nodeHostL->preHost;
+}
+
 // KFC控制命令
 enum class KfcCommand : int64_t {
     kNone = 0,		// 空命令
