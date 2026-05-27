@@ -482,7 +482,7 @@ TEST_F(HcommCAdptTest, ut_HcommEndpointCheckFeature_When_SupportedFeature_Expect
     MOCKER(RaNdaGetDirectFlag).stubs().with(any(), outBoundP(&directFlag)).will(returnValue(0));
 
     bool value = false;
-    HcommResult ret = HcommEndpointCheckFeature(HCOMM_FEATURE_NDA, &endpointDesc, &value);
+    HcommResult ret = HcommEndpointCheckFeature(HCOMM_ENDPOINT_FEATURE_NDA, &endpointDesc, &value);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(value, true);
 }

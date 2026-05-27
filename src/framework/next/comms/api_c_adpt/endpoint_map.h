@@ -29,6 +29,8 @@ public:
     bool UpdateEndpoint(EndpointHandle handle, std::unique_ptr<Endpoint> newEndpoint);
 
     Endpoint* GetEndpoint(EndpointHandle handle);
+
+    Endpoint* GetEndpointByDesc(const EndpointDesc &endpointDesc);
 };
 }
 
