@@ -175,42 +175,37 @@ TransportStatus P2PTransport::GetStatus()
 {
     if (baseStatus == TransportStatus::READY) {
         return baseStatus;
+    } else if (baseStatus == TransportStatus::INIT) {
+        ubStatus = UbStatus::INIT;
     }
+
     if (!IsSocketReady()) {
-        p2pStatus = P2PStatus::INIT;
         return baseStatus;
     }
-    baseStatus = TransportStatus::SOCKET_OK;
 
     switch (p2pStatus) {
         case P2PStatus::INIT:
             p2pStatus = P2PStatus::SOCKET_OK;
+            baseStatus = TransportStatus::SOCKET_OK;
             break;
         case P2PStatus::SOCKET_OK:
-            if (IsRmtPidValid()) { // rmt PID 有效，不需要交换PID，grant并发送data
-                Grant();
-                p2pStatus = P2PStatus::GRANT;
-            } else { //  rmtPid无效，需要先交换PID
-                SendPid();
-                p2pStatus = P2PStatus::SEND_PID;
-            }
+            PrepareSendData();
+            p2pStatus = P2PStatus::SEND_DATA_SIZE;
             break;
-        case P2PStatus::SEND_PID:
-            RecvPid();
-            rmtPidValid = true; // 收到 PID 了
-            p2pStatus   = P2PStatus::RECV_PID;
+        case P2PStatus::SEND_DATA_SIZE:
+            RecvDataSize();
+            p2pStatus = P2PStatus::RECV_DATA_SIZE;
             break;
-        case P2PStatus::RECV_PID:
-            Grant();
-            p2pStatus = P2PStatus::GRANT;
-            break;
-        case P2PStatus::GRANT:
+        case P2PStatus::RECV_DATA_SIZE:
             SendExchangeData();
             p2pStatus = P2PStatus::SEND_DATA;
             break;
         case P2PStatus::SEND_DATA:
             RecvExchangeData();
             p2pStatus = P2PStatus::RECV_DATA;
+            break;
+        case P2PStatus::RECV_DATA:
+            ProcessRecvData();
             SetBaseStatusReady(); 
             break;
         default:
@@ -238,7 +233,7 @@ void P2PTransport::SendPid()
     std::vector<char> data;
     binaryStream.Dump(data);
     pidMsgSize = data.size();
-    socket->Send(reinterpret_cast<u8 *>(&data[0]), data.size());
+    socket->SendAsync(reinterpret_cast<u8 *>(&data[0]), data.size());
 
     HCCL_INFO("send pid %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), data.size(),
                Bytes2hex(data.data(), data.size()).c_str());
@@ -247,7 +242,7 @@ void P2PTransport::SendPid()
 void P2PTransport::RecvPid()
 {
     std::vector<char> data(pidMsgSize);
-    socket->Recv(reinterpret_cast<u8 *>(&data[0]), data.size());
+    socket->RecvAsync(reinterpret_cast<u8 *>(&data[0]), data.size());
     HCCL_INFO("recv pid %s, size=%llu, data=%s", GetLinkDescInfo().c_str(), data.size(),
                Bytes2hex(data.data(), data.size()).c_str());
 
@@ -272,7 +267,7 @@ void P2PTransport::Grant()
     }
 }
 
-void P2PTransport::SendExchangeData()
+void P2PTransport::PrepareSendData()
 {
     notifyNum = commonLocRes.notifyVec.size(); // 需要交换的notify数量
     bufferNum = commonLocRes.bufferVec.size(); // 需要交换的buffer数量
@@ -286,24 +281,41 @@ void P2PTransport::SendExchangeData()
     NotifyVecPack(binaryStream);
     BufferVecPack(binaryStream);
 
-    std::vector<char> data;
-    binaryStream.Dump(data);
-    exchangeDataSize = data.size();
-    socket->Send(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
-    socket->Send(reinterpret_cast<u8 *>(&data[0]), data.size());
-    HCCL_INFO("send data %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), data.size(),
-               Bytes2hex(data.data(), data.size()).c_str());
+    sendData.clear();
+    binaryStream.Dump(sendData);
+    exchangeDataSize = sendData.size();
+    socket->SendAsync(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
+
+    HCCL_INFO("send datasize %s, size=%u", GetLinkDescInfo().c_str(), exchangeDataSize);
+}
+
+void P2PTransport::RecvDataSize()
+{
+    socket->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
+    HCCL_INFO("P2PTransport: recv datasize %u", exchangeDataSize);
+}
+
+void P2PTransport::SendExchangeData()
+{
+    socket->SendAsync(reinterpret_cast<u8 *>(&sendData[0]), sendData.size());
+    HCCL_INFO("send data %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), sendData.size(),
+               Bytes2hex(sendData.data(), sendData.size()).c_str());
 }
 
 void P2PTransport::RecvExchangeData()
 {
-    socket->Recv(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
-    vector<char> data(exchangeDataSize);
-    socket->Recv(reinterpret_cast<u8 *>(&data[0]), data.size());
-    HCCL_INFO("recv data %s, size=%llu, data=%s", GetLinkDescInfo().c_str(), data.size(),
-               Bytes2hex(data.data(), data.size()).c_str());
+    recvData.resize(exchangeDataSize);
+    socket->RecvAsync(reinterpret_cast<u8 *>(&recvData[0]), recvData.size());
+    HCCL_INFO("RecvExchangeData recv data %s, size=%llu, data=%s", GetLinkDescInfo().c_str(), recvData.size(),
+               Bytes2hex(recvData.data(), recvData.size()).c_str());
+}
 
-    BinaryStream binaryStream(data);
+void P2PTransport::ProcessRecvData()
+{
+    HCCL_INFO("ProcessRecvData recv data %s, size=%llu, data=%s", GetLinkDescInfo().c_str(), recvData.size(),
+               Bytes2hex(recvData.data(), recvData.size()).c_str());
+
+    BinaryStream binaryStream(recvData);
     HandshakeMsgUnpack(binaryStream);
     RmtNotifyVecUnpackProc(binaryStream);
     RmtBufferVecUnpackProc(binaryStream);

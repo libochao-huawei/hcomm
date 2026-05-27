@@ -55,7 +55,7 @@ private:
     HcclResult FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
 
-    MAKE_ENUM(P2PStatus, INIT, SOCKET_OK, SEND_PID, RECV_PID, GRANT, SEND_DATA, RECV_DATA)
+    MAKE_ENUM(P2PStatus, INIT, SOCKET_OK, SEND_PID, RECV_PID, GRANT, SEND_DATA, RECV_DATA, SEND_DATA_SIZE, RECV_DATA_SIZE)
     P2PStatus p2pStatus{P2PStatus::INIT};
 
     u32 pidMsgSize{0};
@@ -75,13 +75,18 @@ private:
     std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>           tagPointers_;        // Tag 缓存
+    std::vector<char> sendData;
+    std::vector<char> recvData;
 
     bool IsRmtPidValid() const;
     void SendPid();
     void RecvPid();
     void Grant();
+    void PrepareSendData();
+    void RecvDataSize();
     void SendExchangeData();
     void RecvExchangeData();
+    void ProcessRecvData();
 
     void BufferVecPack(BinaryStream &binaryStream);
 
