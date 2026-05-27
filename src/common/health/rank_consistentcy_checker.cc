@@ -535,8 +535,10 @@ bool RankConsistentcyChecker::CompareFrame(HcclCheckInfo &checkInfo, HcclCheckIn
             HCCL_WARNING("[RankConsistentcyChecker][CompareFrame] CANN version str is empty. local_version %s, "
                 "remote_version %s.", checkInfo.version, checkInfoRecv.version);
         } else if (localCannVersion != remoteCannVersion) { // cann版本信息读取成功，且版本不一致
+            const char *ascendHomePath = std::getenv("ASCEND_HOME_PATH");
+ 	        std::string versionFilePath = (ascendHomePath != nullptr) ? std::string(ascendHomePath) + "/share/info/hccl/version.info" : "unknown";
             RPT_INPUT_ERR(true, "EI0008", std::vector<std::string>({"local_version", "remote_version"}),
-                std::vector<std::string>({localCannVersion, remoteCannVersion}));
+                std::vector<std::string>({localCannVersion+ " (version file: " + versionFilePath + ")", remoteCannVersion}));
             HCCL_ERROR("[%s][%s] errNo[0x%016llx] Inconsistent HCCL Versions. local_version %s, remote_version %s.",
                 LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_VERSION_CONFLICT.c_str(),
                 HCCL_ERROR_CODE(HCCL_E_INTERNAL), checkInfo.version, checkInfoRecv.version);
