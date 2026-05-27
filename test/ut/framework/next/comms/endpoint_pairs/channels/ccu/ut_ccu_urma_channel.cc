@@ -5,6 +5,7 @@
 #define private public
 #include "next/comms/endpoint_pairs/channels/ccu/ccu_urma_channel.h"
 #undef private
+#include "config_log.h"
 
 using namespace hcomm;
 
@@ -91,7 +92,12 @@ TEST_F(CcuUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     auto transport = std::make_unique<CcuTransport>(fakeSocket, std::move(conn), bufInfo);
     ch.impl_ = std::move(transport);
 
-    // 3. 从 ch.impl_ 操作，不要再用旧的 transport 指针！
+    MOCKER(GetDebugConfig)
+        .stubs()
+        .with(any())
+        .will(returnValue((unsigned long long)4));
+
+    // 3. 从 ch.impl_ 操作，不要再用旧的 Stransport 指针！
     ch.impl_->transStatus_ = CcuTransport::TransStatus::SOCKET_TIMEOUT;
     auto ret = ch.GetStatus();
     EXPECT_NE(ret, ChannelStatus::INIT);
@@ -112,6 +118,11 @@ TEST_F(CcuUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     GlobalMockObject::reset(); // <-- 必须重置 Mock！
 
     // 5. Mock 2：失败
+    MOCKER(GetDebugConfig)
+        .stubs()
+        .with(any())
+        .will(returnValue((unsigned long long)4));
+
     ch.impl_->transStatus_ = CcuTransport::TransStatus::READY;
     ch.isFirstPrintChannelInfo_ = true; // 需要重置为true才能触发Describe的调用
     MOCKER_CPP(&CcuConnection::Describe, HcclResult (CcuConnection::*)(std::string&))

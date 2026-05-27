@@ -14,6 +14,7 @@
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
 #include "comm_mems.h"
+#include "config_log.h"
 
 // Orion
 #include "coll_alg_param.h"
@@ -290,7 +291,7 @@ ChannelStatus AicpuTsUrmaChannel::GetStatus()
             out = ChannelStatus::FAILED;
         } else {
             channelInfo.append(" TA[RM]"); // 目前TA只支持RM
-            HCCL_RUN_INFO("%s", channelInfo.c_str());
+            HCCL_CONFIG_DEBUG(HCCL_RES, "%s", channelInfo.c_str());
         }
         isFirstPrintChannelInfo_ = false;
     }
