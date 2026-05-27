@@ -205,8 +205,6 @@ HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
         }
     }
 
-    EXECEPTION_CATCH(socket->Destroy(),
-        HCCL_ERROR("[DestroySocket] Destroy failed for socket with tag[%s].", socket->Describe().c_str()));
     return HCCL_SUCCESS;
 }
 
