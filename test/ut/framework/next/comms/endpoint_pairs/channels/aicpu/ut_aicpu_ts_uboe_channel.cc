@@ -469,7 +469,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithUserBuffers_ReturnsCorrectDa
     char** memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = ch.GetRemoteMems(&remoteMem, &memTag, &memNum);
+    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memTag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 3U);
     ASSERT_NE(remoteMem, nullptr);
