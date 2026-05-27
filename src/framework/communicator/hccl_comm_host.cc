@@ -359,12 +359,14 @@ namespace hccl
         commAicpuParam_.userRankSize = collComm_->GetRankSize();
         commAicpuParam_.envConfig.taskExceptionEnable =
             Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().taskExceptionEnable;
+        commAicpuParam_.envConfig.notifyWaitTimeout =
+            Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
         const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
         HCCL_RUN_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], "
-            "userRank[%u], userRankSize[%u], opExpansionMode[%u], taskExceptionEnable[%d].",
+            "userRank[%u], userRankSize[%u], opExpansionMode[%u], taskExceptionEnable[%d], notifyWaitTimeout[%u].",
             __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
             commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize, opExpansionMode,
-            commAicpuParam_.envConfig.taskExceptionEnable);
+            commAicpuParam_.envConfig.taskExceptionEnable, commAicpuParam_.envConfig.notifyWaitTimeout);
 
         const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
         if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
