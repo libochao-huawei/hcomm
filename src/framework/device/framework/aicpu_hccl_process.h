@@ -31,6 +31,8 @@ public:
     static HcclResult AicpuGetCommAll(std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> &aicpuCommInfo);
     static void AicpuDestoryCommbyGroup(const std::string &group);
     static void AicpuReleaseCommbyGroup(const std::string &group);
+    // aclgraph销毁时由host端通过KFC kernel(RunAicpuKfcClearOpRes)投递的tag清理入口
+    static u32 AicpuRpcClearOpRes(const struct HcclKfcClearOpResTilingData *tilingData);
     static HcclResult AicpuRunRpcServerV2(
         hccl::HcclCommAicpu *hcclCommAicpu, OpTilingData *tilingData, HcclOpResParam *commParam);
     static void CallMC2MaintenanceThread(AicpuComContext *ctx);
