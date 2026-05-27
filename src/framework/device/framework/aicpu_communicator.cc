@@ -1512,9 +1512,12 @@ HcclResult HcclCommAicpu::GetRdmaLinksByRankAndTag(const HcclOpResParam *commPar
 
     auto *linkRes = isBackup ? &linkRdmaResBackUp_ : &linkRdmaRes_;
     auto iterRankLinks = linkRes->find(rankId);
-    if (iterRankLinks == linkRes->end() || iterRankLinks->second.find(newTag) == iterRankLinks->second.end()) {
-        HCCL_INFO("[%s] could not find link resource, rankId[%u], group[%s], newTag[%s]", __func__, rankId,
-            identifier_.c_str(), newTag.c_str());
+    // ZeroCopy 模式：即使已有缓存链路也强制刷新
+    if (transportDeviceMemAddr_ != 0 || iterRankLinks == linkRes->end() ||
+        iterRankLinks->second.find(newTag) == iterRankLinks->second.end()) {
+        HCCL_INFO("[%s] could not find link resource or ZeroCopy force refresh, rankId[%u], group[%s], newTag[%s], "
+            "transportDeviceMemAddr_[0x%llx]", __func__, rankId,
+            identifier_.c_str(), newTag.c_str(), transportDeviceMemAddr_);
         CHK_RET(RefreshTransportsResForRank(commParam, rankId, newTag, notifyNum, TransportLinkType::RDMA));
         iterRankLinks = linkRes->find(rankId);
         if (iterRankLinks == linkRes->end() || iterRankLinks->second.find(newTag) == iterRankLinks->second.end()) {
@@ -1701,6 +1704,37 @@ HcclResult HcclCommAicpu::AllocTransportResource(const std::string &newTag, cons
         }
     }
 
+    return HCCL_SUCCESS;
+}
+
+// ZeroCopy 模式下每次 capture 强制覆盖 transport 链路
+// 在 GetAlgResponseRes 的 resMap_ hit 路径调用，触发全量链路重建
+HcclResult HcclCommAicpu::RefreshZeroCopyTransport(const std::string &newTag, const OpParam &opParam,
+    const HcclOpResParam *commParam, AlgResourceResponse &algResResponse)
+{
+    HCCL_INFO("[%s] Entry ZeroCopy refresh transport group[%s], newTag[%s]",
+        __func__, identifier_.c_str(), newTag.c_str());
+    for (auto &levelNSubCommTransport : algResResponse.opTransportResponse) {
+        for (auto &singleSubCommTransport : levelNSubCommTransport) {
+            singleSubCommTransport.links.clear();
+            singleSubCommTransport.links.reserve(singleSubCommTransport.transportRequests.size());
+            for (auto &transportRequest : singleSubCommTransport.transportRequests) {
+                singleSubCommTransport.links.push_back(nullptr);
+                if (transportRequest.isValid) {
+                    localUserRank_ = transportRequest.localUserRank;
+                    receivedAcks_[transportRequest.remoteUserRank] =
+                        singleSubCommTransport.supportDataReceivedAck;
+                    HCCL_DEBUG("[%s] refresh link newTag[%s] remoteRank[%u] linkType[%d] rdma[%d]",
+                        __func__, newTag.c_str(), transportRequest.remoteUserRank,
+                        transportRequest.linkType, transportRequest.isUsedRdma);
+                    CHK_RET(CreateLink(newTag, transportRequest, commParam,
+                        singleSubCommTransport.links.back(), transportRequest.notifyNum, false, false));
+                }
+            }
+        }
+    }
+    HCCL_INFO("[%s] ZeroCopy refresh transport success group[%s], newTag[%s]",
+        __func__, identifier_.c_str(), newTag.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -2174,6 +2208,11 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
     CHK_PRT_RET(iter == resMap_.end(),
         HCCL_ERROR("[%s]Fail to find algResResponse for tag[%s]", __func__, newTag.c_str()), HCCL_E_PARA);
     algResResponse = &iter->second;
+    // ZeroCopy 模式：resMap_ hit 时强制覆盖 transport 链路
+    // 每次 capture 的 transport 数据不同（含 OpenIPC），必须全量重建
+    if (transportDeviceMemAddr_ != 0) {
+        CHK_RET(RefreshZeroCopyTransport(newTag, opParam, commParam, *algResResponse));
+    }
     HCCL_INFO("[HcclCommAicpu][GetAlgResponseRes] success!");
     return HCCL_SUCCESS;
 }

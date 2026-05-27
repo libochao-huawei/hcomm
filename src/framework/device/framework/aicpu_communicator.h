@@ -246,6 +246,8 @@ private:
         TransportLinkType linkType = TransportLinkType::RESERVED);
     HcclResult AllocTransportResource(const std::string &newTag, const OpParam &opParam,
         const HcclOpResParam *commParam, AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
+    HcclResult RefreshZeroCopyTransport(const std::string &newTag, const OpParam &opParam,
+        const HcclOpResParam *commParam, AlgResourceResponse &algResResponse);
     HcclResult IncreAllocTransportResource(const std::string &newTag, const OpParam &opParam,
         const HcclOpResParam *commParam, AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     HcclResult CreateLink(const std::string &newTag, TransportRequest& transportRequest,
