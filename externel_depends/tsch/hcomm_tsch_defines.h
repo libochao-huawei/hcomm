@@ -25,8 +25,8 @@
 #include <linux/types.h>
 #endif
 
-#include "task_scheduler_error.h"
-#include "tsch_defines_profiling.h"
+#include "hcomm_task_scheduler_error.h"
+#include "hcomm_tsch_defines_profiling.h"
 
 #ifdef __cplusplus
 extern "C" {
