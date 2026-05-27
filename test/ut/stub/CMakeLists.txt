@@ -52,6 +52,7 @@ set(EXCLUDE_FREAMEWORK_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/framework/communicator/hccl_comm_device.cc"
     "${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt/dev/dev_coll_comm_c_adpt.cc"
     "${HCCL_CODE_ROOT}/src/framework/device/framework/zero_copy_address_mgr.cc"
+    "${HCCL_CODE_ROOT}/src/framework/common/src/launch_aicpu.cc"
     "${HCCL_CODE_ROOT}/src/framework/op_base/src/op_base_device.cc"
     "${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/diag/aicpu/hcomm_diag_adapt_aicpu.cc"
     )
@@ -73,7 +74,6 @@ list(REMOVE_ITEM COMMON_SOURCES ${EXCLUDE_COMMON_DEVICE_REGEX})
 
 set(EXCLUDE_PLATFORM_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/platform/resource/mem/mem_mapping_manager_device.cc"
-    "${HCCL_CODE_ROOT}/src/platform/common/launch_aicpu.cc"
     )
 list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 
