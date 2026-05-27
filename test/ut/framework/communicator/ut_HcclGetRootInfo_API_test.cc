@@ -9,6 +9,7 @@
  */
 
 #include "hccl_api_base_test.h"
+#include "hccl_network.h"
 
 class HcclGetRootInfoTest : public BaseInit {
 public:
@@ -210,4 +211,26 @@ TEST_F(HcclGetRootInfoTest, Ut_HcclGetRootInfo_When_SetHOSTNAMEAsEth_Expect_IdEq
     
     unsetenv("HCCL_WHITELIST_DISABLE");
     unsetenv("HCCL_SOCKET_IFNAME");
+}
+
+TEST_F(HcclGetRootInfoTest, Ut_PrintFailedAgentIdList_AllBranches)
+{
+    HcclIpAddress hostIP("127.0.0.1");
+    u32 hostPort = 61111;
+    std::vector<HcclIpAddress> whitelist;
+    HcclNetDevCtx netDevCtx = nullptr;
+    std::shared_ptr<HcclSocket> listenSocket;
+    const std::string identifier = "test_id";
+    TopoInfoExchangeServer server(hostIP, hostPort, whitelist, netDevCtx, listenSocket, identifier);
+    server.PrintFailedAgentIdList("");
+
+    server.PrintFailedAgentIdList("1,2,3");
+
+    std::string longStrNoComma(600, 'A');
+    server.PrintFailedAgentIdList(longStrNoComma);
+    std::string longStrWithComma;
+    for (int i = 0; i < 200; i++) {
+        longStrWithComma += std::to_string(i) + ",";
+    }
+    server.PrintFailedAgentIdList(longStrWithComma);
 }
