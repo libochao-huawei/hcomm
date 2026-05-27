@@ -189,27 +189,25 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
 
     for (; it != socketMap_.end(); ++it) {
         if (std::equal_to<Hccl::SocketConfig>{}(socketConfig, it->first)) {
+            socket = it->second.get();
             break;
         }
     }
     if (it != socketMap_.end()) {
         if (socketConfig.hostNic2DeviceNicMode_) {
-            socket = it->second.get();
             socket->Destroy();
             socketMap_.erase(it);
         } else {
             HCCL_INFO("[SocketMgr][%s] find a correct socket in map", __func__);
             auto timeoutPoint = std::chrono::steady_clock::now() + 
-                                std::chrono::seconds(EnvLinkTimeoutGet());
-            lock.unlock();
+                                std::chrono::seconds(EnvLinkTimeoutGet()) - std::chrono::seconds(10);
             while(socketInUseMap_[socket] == true) {
-                if (socketAvailableCv_.wait_until(lock, timeoutPoint) == std::cv_status::timeout) {
+                auto currentTime = std::chrono::steady_clock::now();
+                if (currentTime >= timeoutPoint) {
                     HCCL_ERROR("[SocketMgr][%s] Get Socket Time Out", __func__);
                     return HCCL_E_TIMEOUT;
                 }
             }
-            lock.lock();
-            socket = it->second.get();
             CHK_RET(MakeSocketInUse(socket));
             return HCCL_SUCCESS;
         }
@@ -234,7 +232,6 @@ HcclResult SocketMgr::PutSocket(const Hccl::SocketConfig*& socketConfig, Hccl::S
 {
     HCCL_INFO("[SocketMgr][%s] start to put a socket", __func__);
     CHK_PTR_NULL(socket);
-    std::lock_guard<std::mutex> lock(mutex_);
     CHK_RET(UpdateSocketConfig(socketConfig, socket));
     for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
         if (it->second.get() == socket) {

@@ -64,6 +64,7 @@ protected:
 
 TEST_F(DevUbConnectionTest, rma_ub_connection_get_status_return_exchanging_and_ok)
 {
+    MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
     // Given
     RdmaHandle rdmaHandle = (void *)0x1000000;
 
@@ -100,6 +101,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_get_status_return_exchanging_and_o
 
     string msg = devUbConnection.Describe();
     EXPECT_NE(0, msg.length());
+    GlobalMockObject::verify();
 }
 
 TEST_F(DevUbConnectionTest, rma_ub_connection_get_rma_conn_lite)
@@ -966,3 +968,22 @@ TEST_F(DevUbConnectionTest, Ut_Describe_Tp_Mode)
 
     GlobalMockObject::verify();
 }
+
+// TEST_F(DevUbConnectionTest, Ut_ImportRmtDto)
+// {
+//     MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_E_NOT_FOUND));
+//     // Given
+//     RdmaHandle rdmaHandle = (void *)0x1000000;
+
+//     BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+//     LinkData     linkData(portType, 0, 1, 0, 1);
+//     std::string tag = "test";
+
+//     // construct DevUbConnection
+//     DevUbConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+//     devUbConnection.tpProtocol = TpProtocol::UBOE;
+//     devUbConnection.ImportRmtDto();
+//     GlobalMockObject::verify();
+//     MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
+//     devUbConnection.ImportRmtDto();
+// }
