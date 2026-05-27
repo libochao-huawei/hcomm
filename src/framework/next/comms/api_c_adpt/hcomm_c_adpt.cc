@@ -44,9 +44,6 @@
 #include "launch_device.h"
 #include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
 #include "aiv_urma_channel.h"
-#include "hccp_nda.h"
-#include "orion_adpt_utils.h"
-#include "hccp_peer_manager.h"
 
 
 namespace hcomm {
@@ -719,12 +716,12 @@ HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_
     return HCOMM_SUCCESS;
 }
 
-HcommResult HcommEndpointCheckFeature(HcommFeatureType featureType, const EndpointDesc *endpointDesc, bool *value)
+HcommResult HcommEndpointCheckFeature(HcommEndpointFeatureType featureType, const EndpointDesc *endpointDesc, bool *value)
 {
     CHK_PTR_NULL(endpointDesc);
     CHK_PTR_NULL(value);
 
-    if (featureType == HCOMM_FEATURE_NDA) {
+    if (featureType == HCOMM_ENDPOINT_FEATURE_NDA) {
         if (endpointDesc->protocol != COMM_PROTOCOL_ROCE || endpointDesc->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
             HCCL_WARNING("[%s] not support NDA, protocol[%d], locType[%d]",
                 __func__, endpointDesc->protocol, endpointDesc->loc.locType);
@@ -733,24 +730,16 @@ HcommResult HcommEndpointCheckFeature(HcommFeatureType featureType, const Endpoi
         }
 
         EXCEPTION_HANDLE_BEGIN
-        Hccl::IpAddress ipAddr{};
-        CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc->commAddr, ipAddr));
-        s32 devId = 0;
-        CHK_RET(hrtGetDevice(&devId));
-        Hccl::HccpPeerManager::GetInstance().Init(devId);
-        u32 devPhyId = 0;
-        CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
-        auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-        void *rdmaHandle = static_cast<void *>(
-            rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET));
-        CHK_PTR_NULL(rdmaHandle);
-        s32 directFlag = 0;
-        s32 ret = RaNdaGetDirectFlag(rdmaHandle, &directFlag);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] failed to get directFlag, ret[%d]", __func__, ret), HCCL_E_INTERNAL);
-        *value = (directFlag != DIRECT_FLAG_NOTSUPP);
-        HCCL_INFO("[%s] %s NDA, devId[%u], ipAddr[%s], rdmaHandle[%p], directFlag[%d]",
-            __func__, *value ? "support" : "not support", devPhyId, ipAddr.Describe().c_str(), rdmaHandle, directFlag);
+        Endpoint *endpoint = g_EndpointMap.GetEndpointByDesc(*endpointDesc);
+        if (endpoint == nullptr) {
+            EndpointHandle handle = nullptr;
+            HcommResult ret = HcommEndpointCreate(endpointDesc, &handle);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] HcommEndpointCreate failed, ret[%d]", __func__, ret), (HcclResult)ret);
+            endpoint = g_EndpointMap.GetEndpoint(handle);
+            CHK_PTR_NULL(endpoint);
+        }
+        CHK_RET(endpoint->CheckFeature(featureType, *value));
         EXCEPTION_HANDLE_END
     } else {
         HCCL_WARNING("[%s] unsupported featureType[%d]", __func__, featureType);
