@@ -9,7 +9,7 @@
  */
 #ifndef TS_TASK_STRUCT_H
 #define TS_TASK_STRUCT_H
-#include "tsch_defines.h"
+#include "hcomm_tsch_defines.h"
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
