@@ -259,6 +259,7 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, CollOpPar
     currentCollOperator->sendRecvRemoteRank = opParams.dstRank;
     if (opParams.opType == OpType::ALLTOALL || opParams.opType == OpType::ALLTOALLV || opParams.opType == OpType::ALLTOALLVC) {
         ConvertCollOperatorA2A(opParams);
+        currentCollOperator->dataType  = opParams.dataType;
     } else if (opParams.opType == OpType::BATCHSENDRECV) {
         currentCollOperator->batchSendRecvDataDes.sendRecvItemsPtr = opParams.batchSendRecvDataDes.sendRecvItemsPtr;
         currentCollOperator->batchSendRecvDataDes.itemNum = opParams.batchSendRecvDataDes.itemNum;

@@ -385,8 +385,9 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     InsAlgTemplate2 tempAlgIntraAG(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate3 tempAlgInterAG(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
 
+    // 设置链路信息
     std::vector<map<u32, u32>> rank2PathNumMap;
-    HCCL_INFO("[InsAllReduceParallelExecutorV2] Orchestrate SetPathNumMap");
+    HCCL_INFO("[InsAllReduceParallelExecutorV2] Orchestrate host SetPathNumMap");
     CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
     tempAlgIntraRS.setPathNumMap(rank2PathNumMap[0]);
     tempAlgInterRS.setPathNumMap(rank2PathNumMap[1]);

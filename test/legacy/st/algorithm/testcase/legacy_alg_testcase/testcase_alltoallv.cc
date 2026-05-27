@@ -77,6 +77,7 @@ protected:
         checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_FP16;
         checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_FP16;
         checkerOpParam.algName = algName;
+        checkerOpParam.DataDes.dataType = checkerOpParam.All2AllDataDes.sendType;
 
         GenAllToAllVParams(rankNum, dataCount, checkerOpParam.All2AllDataDes.sendCounts, 
         checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts, checkerOpParam.All2AllDataDes.rdispls);
