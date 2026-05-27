@@ -53,6 +53,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/aclgraph
     ${HCCL_CODE_ROOT}/src/framework/common/src
+    ${HCOMM_DIR}/src/common/launch_aicpu
     ${HCCL_CODE_ROOT}/src/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/framework/common/src/task
     ${HCCL_CODE_ROOT}/src/framework/common/src/topo
@@ -84,6 +85,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/common/unique/
     ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
     ${HCOMM_DIR}/src/common
+    ${HCOMM_DIR}src/common/launch_aicpu
     ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
     ${HCCL_CODE_ROOT}/src/platform/ping_mesh/
     ${HCCL_CODE_ROOT}/src/platform/inc/

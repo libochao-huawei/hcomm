@@ -52,7 +52,7 @@ set(EXCLUDE_FREAMEWORK_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/framework/communicator/hccl_comm_device.cc"
     "${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt/dev/dev_coll_comm_c_adpt.cc"
     "${HCCL_CODE_ROOT}/src/framework/device/framework/zero_copy_address_mgr.cc"
-    "${HCCL_CODE_ROOT}/src/framework/common/src/launch_aicpu.cc"
+    "${HCCL_CODE_ROOT}/src/common/launch_aicpu/launch_aicpu.cc"
     "${HCCL_CODE_ROOT}/src/framework/op_base/src/op_base_device.cc"
     "${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/diag/aicpu/hcomm_diag_adapt_aicpu.cc"
     )
@@ -143,6 +143,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_LLT_ROOT}/stub/legacy/
 
     ${HCCL_CODE_ROOT}/src/framework/common/src
+    ${HCOMM_DIR}/src/common/launch_aicpu
     ${HCCL_CODE_ROOT}/include/
     ${HCCL_CODE_ROOT}/include/hccl/
     ${HCCL_CODE_ROOT}/pkg_inc
@@ -198,6 +199,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/platform/common/unique
     ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
     ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
+    ${HCOMM_DIR}src/common/launch_aicpu
     ${HCOMM_DIR}/src/common
     ${HCCL_CODE_ROOT}/src/platform/inc
     ${HCCL_CODE_ROOT}/src/platform/inc/adapter
