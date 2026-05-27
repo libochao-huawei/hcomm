@@ -99,6 +99,7 @@ target_include_directories(hccl_alg PRIVATE
     ${HCOMM_DIR}/src/platform/task/
     ${HCOMM_DIR}/src/platform/inc/adapter/
     ${HCOMM_DIR}/src/platform/common/
+    ${HCOMM_DIR}src/common/launch_aicpu
     ${HCOMM_DIR}/src/platform/hccp/inc/network/
     ${RDMA_CORE_INCLUDE_DIR}/
 )

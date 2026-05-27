@@ -11,8 +11,13 @@
 #include "aicpu/aicpu_hccl_sqcq.h"
 #include "adapter_hal_pub.h"
 #include "sal_pub.h"
+<<<<<<< HEAD
 #include "task_struct.h"
 #include "common/type_def.h"
+=======
+#include "hcomm_task_struct.h"
+#include "type_def.h"
+>>>>>>> 0dd9ca39 (目的合并迁移)
 
 using char_t = char;
 
