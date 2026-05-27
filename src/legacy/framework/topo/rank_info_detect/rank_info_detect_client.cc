@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <thread>
 #include "rank_info_detect_client.h"
 #include "root_handle_v2.h"
 #include "env_config.h"
@@ -473,9 +474,12 @@ void RankInfoDetectClient::TearDown()
     // deinit handle
     HostSocketHandleManager::GetInstance().Destroy(devPhyId_, clientSocket_->GetLocalIp());
 
-    // deinit ra
+    // deinit ra in detach thread to avoid block main thread
     s32 deviceLogicId = HrtGetDevice();
-    HccpPeerManager::GetInstance().DeInit(deviceLogicId);
+    std::thread{[deviceLogicId](){
+        EXECEPTION_CATCH(HccpPeerManager::GetInstance().DeInit(deviceLogicId),
+            HCCL_ERROR("[RankInfoDetectClient::TearDown] DeInit exception"));
+    }}.detach();
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
 }
