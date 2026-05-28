@@ -39,9 +39,32 @@ void HccpHdcManager::Init(u32 deviceLogicId)
     instances.insert(deviceLogicId);
 }
 
+void HccpHdcManager::DeInit(u32 deviceLogicId)
+{
+    std::lock_guard<std::mutex> lock(managerMutex);
+
+    if (destroyed) {
+        HCCL_WARNING("[HccpHdcManager::%s] HccpHdcManager has been destroyed", __func__);
+        return;
+    }
+
+    // 校验是否存在
+    if (instances.count(deviceLogicId) == 0) {
+        HCCL_WARNING("[HccpHdcManager::%s] deviceLogicId[%d] not ra init", __func__, deviceLogicId);
+        return;
+    }
+
+    HRaInitConfig cfg;
+    cfg.phyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    cfg.mode = HrtNetworkMode::HDC;
+    DECTOR_TRY_CATCH("HccpHdcManager", HrtRaDeInit(cfg));
+    instances.erase(deviceLogicId);
+    HCCL_INFO("[HccpHdcManager::%s] devLogicId [%d] ra deinit success.", __func__, deviceLogicId);
+}
+
 void HccpHdcManager::DestroyAll()
 {
-    std::unique_lock<std::mutex> lock(managerMutex);
+    std::lock_guard<std::mutex> lock(managerMutex);
     for (auto deviceLogicId : instances) {
         HCCL_INFO("HccpHdcManager deinit");
 
@@ -51,6 +74,7 @@ void HccpHdcManager::DestroyAll()
         DECTOR_TRY_CATCH("HccpHdcManager", HrtRaDeInit(cfg));
         DECTOR_TRY_CATCH("HccpHdcManager", HrtResetDevice(deviceLogicId));
     }
+    destroyed = true;
     instances.clear();
 }
 

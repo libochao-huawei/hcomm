@@ -182,3 +182,35 @@ int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, s
     *raReqHandle = &raReqHandleValue;
     return 0;
 }
+
+namespace Hccl {
+
+void HrtRaDeInit(HRaInitConfig &cfg)
+{
+}
+
+void HrtRaRdmaDeInit(RdmaHandle rdmaHandle, HrtNetworkMode netMode)
+{
+}
+
+void HrtRaUbCtxDestroy(RdmaHandle handle)
+{
+}
+
+void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle)
+{
+}
+
+void HrtRaSocketDeInit(SocketHandle socketHandle)
+{
+}
+
+void HrtResetDevice(s32 deviceLogicId)
+{
+}
+
+void RaUbFreeTokenIdHandle(RdmaHandle handle, TokenIdHandle tokenIdHandle)
+{
+}
+
+} // namespace Hccl
