@@ -95,7 +95,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/thread.cc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/cpu_ts_thread.cc
 
-    ${HCCL_CODE_ROOT}/src/legacy/interface/aicpu_ts_thread_interface.cc
+${HCCL_CODE_ROOT}/src/legacy/interface/aicpu_ts_thread_interface.cc
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
@@ -119,6 +119,10 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/base_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_func.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/rdma_handle_manager.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/tokenInfo_manager.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/socket_handle_manager.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/hccp_hdc_manager.cc
 )
 
 set(hccl_list
