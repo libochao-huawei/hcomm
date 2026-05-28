@@ -154,15 +154,15 @@ TEST_F(AclgraphCommunicatorTest, HasRoceTransportLinks_NoRdma)
 
 /**
  * @brief TC-COMM-08: DestroyAlgResource 参数传递验证
- * 验证：DestroyAlgResource 被 ClearResMap 正确调用并传递 aclGraphDestroyCbk 参数
- * 通过检查链路清理结果来间接验证参数传递正确性
+ * 验证：aclGraphDestroyCbk=true 时，DestroyOpTransportResponse 中
+ * 非 RDMA 链路被保留（linkResMap_ 中不擦除），验证参数正确传递
  */
 TEST_F(AclgraphCommunicatorTest, DestroyAlgResource_WithDestroyCbk)
 {
     std::string tag = "test_tag";
     bool findTag = false;
 
-    // 预置包含 transport 的完整 AlgResourceResponse
+    // 预置 2 条链路：非 RDMA。aclGraphDestroyCbk=true 时应被保留
     AlgResourceResponse res;
     res.opTransportResponse.resize(1);
     res.opTransportResponse[0].resize(1);
@@ -171,18 +171,19 @@ TEST_F(AclgraphCommunicatorTest, DestroyAlgResource_WithDestroyCbk)
     res.opTransportResponse[0][0].links.resize(1);
     res.opTransportResponse[0][0].links[0] = std::make_shared<Transport>();
     res.opTransportResponse[0][0].transportRequests.resize(1);
-    res.opTransportResponse[0][0].transportRequests[0].isUsedRdma = true;
+    res.opTransportResponse[0][0].transportRequests[0].isUsedRdma = false; // 非 RDMA
+    res.opTransportResponse[0][0].transportRequests[0].isValid = true;
     
     communicator_.resMap_[tag] = res;
     communicator_.linkResMap_[res.opTransportResponse[0][0].virtualLinks[0].get()] = LinkInfo();
     communicator_.linkResMap_[res.opTransportResponse[0][0].links[0].get()] = LinkInfo();
 
-    // 调用 ClearResMap 传入 aclGraphDestroyCbk=true（DestroyOpTransportResponse 应保留 RDMA 链路）
+    // aclGraphDestroyCbk=true 时，非 RDMA 链路保留；RDMA 链路擦除
     HcclResult ret = communicator_.ClearResMap(tag, findTag, true);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_TRUE(findTag);
     EXPECT_EQ(communicator_.resMap_.count(tag), 0);
-    // aclGraphDestroyCbk=true 时，RDMA 链路(isUsedRdma=true)应保留在 linkResMap_ 中
+    // 非 RDMA 链路应保留在 linkResMap_ 中
     EXPECT_EQ(communicator_.linkResMap_.size(), 2);
     communicator_.linkResMap_.clear();
 }
