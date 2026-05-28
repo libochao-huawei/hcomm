@@ -182,4 +182,42 @@ HcclResult ServerSocketManager::HostSocketStopListen(const Hccl::PortData& local
     return HCCL_E_NOT_FOUND;
 }
 
+void ServerSocketManager::DeInit(uint32_t devPhyId)
+{
+    auto &anst = GetInstance();
+    {
+        std::lock_guard<std::mutex> lock(inst.deviceMutex_);
+        for (auto it = inst.deviceServerSocketMap_.begin(); it != inst.deviceServerSocketMap_.end();) {
+            if (static_cast<uint32_t>(it->first.GetRankId()) == devPhyId) {
+                for (auto &portEntry : it->second) {
+                    if (portEntry.second.first != nullptr) {
+                        it.second->Destroy();
+                        it.second.reset();
+                    }
+                }
+                it = inst.deviceServerSocketMap_erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(inst.hostMutex_);
+        for (auto it = inst.hostServerSocketMap_.begin(); it != inst.hostServerSocketMap_.end();) {
+            if (static_cast<uint32_t>(it->first.GetRankId()) == devPhyId) {
+                for (auto &portEntry : it->second) {
+                    if (portEntry.second.first != nullptr) {
+                        it.second->Destroy();
+                        it.second.reset();
+                    }
+                }
+                it = inst.deviceServerSocketMap_erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
+
 } // namespace hcomm
