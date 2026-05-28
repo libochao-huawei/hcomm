@@ -20,6 +20,9 @@ int32_t dlog_getlevel(int32_t moduleId, int32_t *enableEvent) __attribute((weak)
 
 bool HcclCheckLogLevel(int logType, int moduleId)
 {
+    if (dlog_getlevel == nullptr) {
+        return (CheckLogLevel(moduleId, logType) == 1);
+    }
     if (g_logLevelCache == HCCL_LOG_LEVEL_INVALID) {
         int32_t enableEvent = -1;
         g_logLevelCache = dlog_getlevel(moduleId, &enableEvent);
