@@ -310,8 +310,8 @@ TEST_F(RankGraphTest, ut_AddNewLink_When_TopoInstStatusVaries_Expect_UpdateMatch
     constexpr RankId parentMyRank = 0;
     constexpr RankId otherRank = 1;
 
-    auto oldNetInstance = std::make_shared<InnerNetInstance>(layer, "layer0_1");
-    auto newNetInstance = std::make_shared<InnerNetInstance>(layer, "layer0_1");
+    std::shared_ptr<NetInstance> oldNetInstance = std::make_shared<InnerNetInstance>(layer, "layer0_1");
+    std::shared_ptr<NetInstance> newNetInstance = std::make_shared<InnerNetInstance>(layer, "layer0_1");
     auto oldPeer0 = createPeer(0, 0, 0);
     auto oldPeer1 = createPeer(1, 1, 1);
     auto newPeer0 = createPeer(0, 0, 0);
