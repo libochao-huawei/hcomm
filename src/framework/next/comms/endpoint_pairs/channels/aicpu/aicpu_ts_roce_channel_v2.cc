@@ -967,47 +967,12 @@ HcclResult AicpuTsRoceChannelV2::GetQpNum(uint32_t *qpNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannelV2::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags)
+HcclResult AicpuTsRoceChannelV2::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[AicpuTsRoceChannelV2::%s] remoteMem is nullptr", __func__), HCCL_E_PTR);
-    CHK_PRT_RET(memInfos == nullptr, HCCL_ERROR("[AicpuTsRoceChannelV2::%s] memInfos is nullptr", __func__), HCCL_E_PTR);
-    CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[AicpuTsRoceChannelV2::%s] memNum is nullptr", __func__), HCCL_E_PTR);
-    *remoteMem = nullptr;
-    *memInfos = nullptr;
-    *memNum = 0;
-
-    if (rmtRmaBuffers_.size() == 0) {
-        HCCL_WARNING("[AicpuTsRoceChannelV2::%s] bufferNum is 0.", __func__);
-        return HCCL_SUCCESS;
-    }
-
-    uint32_t userMemCount = static_cast<uint32_t>(rmtRmaBuffers_.size());
-
-    if (!cacheValid_) {
-        remoteUserMems_.clear();
-        tagCopies_.clear();
-        tagCopies_.reserve(userMemCount);
-        tagPointers_.clear();
-        tagPointers_.reserve(userMemCount);
-        for (uint32_t i = 0; i < userMemCount; ++i) {
-            auto& rmtBuffer = rmtRmaBuffers_[i];
-            CHK_PTR_NULL(rmtBuffer);
-            CommMem mem;
-            mem.type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
-            mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-            mem.size = rmtBuffer->GetSize();
-            remoteUserMems_.push_back(mem);
-            std::string tagCopy = rmtBuffer->GetMemTag();
-            tagCopies_.push_back(std::move(tagCopy));
-            tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
-        }
-        cacheValid_ = true;
-    }
-
-    *remoteMem = remoteUserMems_.data();
-    *memTags = tagPointers_.data();
-    *memNum = userMemCount;
+    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> remoteMemCtx{cacheValid_, rmtRmaBuffers_,
+    remoteUserMems_, tagCopies_, tagPointers_, remoteMem, memInfos, memNum};
+    CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 

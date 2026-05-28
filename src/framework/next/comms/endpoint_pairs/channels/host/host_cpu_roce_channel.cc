@@ -575,45 +575,11 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
 
 HcclResult HostCpuRoceChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
-    CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMems] remoteMem is nullptr"), HCCL_E_PTR);
-    CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMems] memNum is nullptr"), HCCL_E_PTR);
-    CHK_PRT_RET(memInfos == nullptr, HCCL_ERROR("[GetRemoteMems] memInfos is nullptr"), HCCL_E_PTR);
- 
-    *remoteMem = nullptr;
-    *memInfos = nullptr;
-    *memNum = 0;
- 
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
- 
-    uint32_t totalCount = rmtRmaBuffers_.size();
-    if (totalCount == 0) {
-        HCCL_INFO("[GetRemoteMems] No remote memory regions available");
-        return HCCL_SUCCESS;
-    }
-    if (!cacheValid_) {
-        userRemoteMems_.clear();
-        tagCopies_.clear();
-        tagCopies_.reserve(totalCount);
-        tagPointers_.clear();
-        tagPointers_.reserve(totalCount);
-        for (uint32_t i = 0; i < totalCount; ++i) {
-            auto& rmtBuffer = rmtRmaBuffers_[i];
-            CHK_PTR_NULL(rmtBuffer);
-            CommMem mem;
-            mem.type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
-            mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-            mem.size = rmtBuffer->GetSize();
-            userRemoteMems_.push_back(mem);
-            std::string tagCopy = rmtBuffer->GetMemTag();
-            tagCopies_.push_back(std::move(tagCopy));
-            tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
-        }
-        cacheValid_ = true;
-    }
-
-    *remoteMem = userRemoteMems_.data();
-    *memInfos = tagPointers_.data();
-    *memNum = totalCount;
+    uint32_t userMemCount = rmtRmaBuffers_.size();
+    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{cacheValid_, rmtRmaBuffers_,
+    userRemoteMems_, tagCopies_, tagPointers_, remoteMem, memInfos, memNum};
+    CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 
