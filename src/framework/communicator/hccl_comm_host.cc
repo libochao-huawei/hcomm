@@ -437,7 +437,8 @@ namespace hccl
         CHK_PTR_NULL(collComm_);
         HcclCommDfx* hcclComDfx = collComm_->GetHcclCommDfx();
         CHK_PTR_NULL(hcclComDfx);
-        CHK_RET(hcclComDfx->ReportKernel(beginTime, identifier_, kernelName, SalGetTid()));
+        // 通信域初始化在op注册之前，这个地方一定是false，因为还不知道是不是图模式
+        CHK_RET(hcclComDfx->ReportKernel(beginTime, identifier_, kernelName, SalGetTid(), false));
         HCCL_INFO("[KernelLaunchAicpuCommInit] ReportAicpuCommKernel end");
         // 打印增加初始化对应的参数
         HCCL_RUN_INFO("[%s] KernelLaunchAicpuCommInit Success", __func__);
