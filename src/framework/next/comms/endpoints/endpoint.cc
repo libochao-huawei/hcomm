@@ -120,4 +120,18 @@ HcclResult Endpoint::GetAsyncEventsContext(uint32_t devPhyId, struct AsyncEvent 
     }
     return HCCL_SUCCESS;
 }
+
+static EndpointDeviceStateCallback(int32_t deviceId, aclrtDeviceState state, void *args)
+{
+    if (state != ACL_RT_DEVICE_STATE_RESET_PRE) {
+        return;
+    }
+    u32 devPhyId = Hccl::HrtGetDevicePhyIdByIndex(deviceId);
+    
+}
+
+__attribute__((construct)) void EndpointCallBackInit()
+{
+    aclError = aclrtRegDeviceStateCallback("hcomm_endpoint", EndpointDeviceStateCallback, nullptr);
+}
 }
