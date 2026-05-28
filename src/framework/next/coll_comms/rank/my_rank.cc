@@ -17,6 +17,7 @@
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
 #include "channel_process.h"
+#include "sal_pub.h"
 #include "dlprof_function.h"
 
 using namespace hcomm;
@@ -582,12 +583,9 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
 
     std::vector<int32_t> statusVec(channelNum, 0);
     int32_t* statusList = statusVec.data();
+    std::vector<bool> channelFailed(channelNum, false);
     uint32_t retryCount = 0;
     while (true) {
-        HcclResult ret =  hcomm::ChannelProcess::ChannelGetStatus(channelHandles, channelNum, statusList);
-
-        // 卫语句：先处理异常情况
-
         // 1. 检查超时
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -604,32 +602,58 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
             return HCCL_E_TIMEOUT;
         }
 
-        // 2. 处理重试（去除频繁的重试日志，一秒可能重试上千次）
-        if (ret == HCCL_E_AGAIN) {
-            retryCount++;
-            continue;
+        HcclResult ret =  hcomm::ChannelProcess::ChannelGetStatus(channelHandles, channelNum, statusList);
+
+        // 2. 更新每个 channel 的失败标记
+        for (uint32_t i = 0; i < channelNum; i++) {
+            if (statusList[i] == ChannelStatus::FAILED ||
+                statusList[i] == ChannelStatus::SOCKET_TIMEOUT) {
+                channelFailed[i] = true;
+            }
         }
 
-        // 3. 处理失败
-        if (ret != HCCL_SUCCESS) {
+        // 3. 检查是否所有 channel 都已到达终态（FAILED / SOCKET_TIMEOUT / READY）
+        uint32_t doneCount = 0;
+        for (uint32_t i = 0; i < channelNum; i++) {
+            if (channelFailed[i] || statusList[i] == ChannelStatus::READY) {
+                doneCount++;
+            }
+        }
+
+        if (doneCount == channelNum) {
+            // 全部 channel 都有了终态
+            bool anyFailed = false;
+            for (uint32_t i = 0; i < channelNum; i++) {
+                if (channelFailed[i]) {
+                    anyFailed = true;
+                    break;
+                }
+            }
+            if (anyFailed) {
+                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - startTime).count();
+                HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
+                    __func__, channelNum, ret, elapsed, retryCount);
+                Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+                CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
+                    HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
+                logger::ChannelLogger::PrintChannelErrorDetails(
+                    rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed, tlsStatus);
+                return ret;
+            }
+            // 全部成功
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
-                __func__, channelNum, ret, elapsed, retryCount);
-            Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
-            CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
-                HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
-            logger::ChannelLogger::PrintChannelErrorDetails(
-                rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed, tlsStatus);
-            return ret;
+            HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+                __func__, channelNum, elapsed, retryCount);
+            break;
         }
 
-        // 4. 正常情况：所有通道连接成功
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now() - startTime).count();
-        HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
-            __func__, channelNum, elapsed, retryCount);
-        break;
+        // 4. 还有 channel 在连接中，sleep 避免忙等
+        if (ret == HCCL_E_AGAIN) {
+            retryCount++;
+        }
+        SaluSleep(ONE_MILLISECOND_OF_USLEEP);
     }
     return HCCL_SUCCESS;
 }
