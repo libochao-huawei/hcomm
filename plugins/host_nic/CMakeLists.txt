@@ -141,7 +141,9 @@ function(hcomm_host_nic_common target_name output_name)
         ${HCOMM_SOURCE_DIR}/src/platform/resource/transport/onesided
         ${HCOMM_SOURCE_DIR}/src/platform/typical
         ${HCOMM_HOST_NIC_LEGACY_INCLUDE_LIST}
+        ${JSON_INCLUDE_DIR}
         ${THIRD_PARTY_NLOHMANN_PATH}
+        ${HCOMM_SOURCE_DIR}/third_party/json/include
         ${RDMA_CORE_INCLUDE_DIR}
         ${URMA_INCLUDE_DIR}
         ${HCOMM_SOURCE_DIR}/third_party/rdma-core-build/include
@@ -200,6 +202,9 @@ add_library(hcomm_host_roce_plugin SHARED
     roce/dpu_notify/dpu_notify_manager.cc
 )
 hcomm_host_nic_common(hcomm_host_roce_plugin hcomm_host_roce_plugin)
+if(TARGET json)
+    add_dependencies(hcomm_host_roce_plugin json)
+endif()
 
 add_library(hcomm_host_ub_plugin SHARED
     plugin_core.cc
@@ -209,6 +214,9 @@ add_library(hcomm_host_ub_plugin SHARED
     ub/host_cpu_urma_channel.cc
 )
 hcomm_host_nic_common(hcomm_host_ub_plugin hcomm_host_ub_plugin)
+if(TARGET json)
+    add_dependencies(hcomm_host_ub_plugin json)
+endif()
 
 install(TARGETS hcomm_host_roce_plugin hcomm_host_ub_plugin
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}/hcomm_plugin ${INSTALL_OPTIONAL}
