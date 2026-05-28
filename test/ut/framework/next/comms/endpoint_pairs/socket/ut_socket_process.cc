@@ -253,3 +253,42 @@ TEST_F(SocketProcessTest, Ut_SocketMgr_GetSocket)
     SocketMgr::GetInstance(devicePhyId).PutSocket(configPtr, socketTmp);
     SocketMgr::GetInstance(devicePhyId).GetSocket(socketConfig, socketTmp);
 }
+
+
+TEST_F(SocketProcessTest, Ut_SocketMgr_PhyIdOutOfRange)
+{
+    uint32_t    devicePhyId = MAX_MODULE_DEVICE_NUM ;
+    SocketMgr::GetInstance(devicePhyId);
+}
+
+TEST_F(SocketProcessTest, Ut_SocketMgr_GetSocket_hostNic2DeviceNicMode)
+{
+    uint32_t    devicePhyId = 0;
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    HCCL_INFO("[AicpuTsUboeChannel][%s] built linkData: %s", __func__, linkData.Describe().c_str());
+    std::string socketTag = "UT_SOCKET_TAG";
+    bool noRankId = true;
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
+    socketConfig.hostNic2DeviceNicMode_ = 1;
+    Hccl::Socket* socketTmp = nullptr;
+    const Hccl::SocketConfig* configPtr = &socketConfig;
+    SocketMgr::GetInstance(devicePhyId).GetSocket(socketConfig, socketTmp);
+    SocketMgr::GetInstance(devicePhyId).PutSocket(configPtr, socketTmp);
+    SocketMgr::GetInstance(devicePhyId).GetSocket(socketConfig, socketTmp);
+}
+
+TEST_F(SocketProcessTest, Ut_SocketMgr_GetSocket)
+{
+    uint32_t    devicePhyId = 0;
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    HCCL_INFO("[AicpuTsUboeChannel][%s] built linkData: %s", __func__, linkData.Describe().c_str());
+    std::string socketTag = "UT_SOCKET_TAG";
+    bool noRankId = true;
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
+    Hccl::Socket* socketTmp = nullptr;
+    const Hccl::SocketConfig* configPtr = &socketConfig;
+    SocketMgr::GetInstance(devicePhyId).GetSocket(socketConfig, socketTmp);
+    SocketMgr::GetInstance(devicePhyId).PutSocket(configPtr, socketTmp);
+    SocketMgr::GetInstance(devicePhyId).DestroySocket(socketTmp);
+    SocketMgr::GetInstance(devicePhyId).DeleteWhiteList(socketTmp);
+}

@@ -505,3 +505,14 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetStatusReady_SocketNotNullptr) {
     ch.GetStatus();
     GlobalMockObject::verify();
 }
+
+TEST_F(AicpuTsUboeChannelTest, Ut_GetStatusReady) {
+    MOCKER_CPP(&SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
+ 	MOCKER_CPP(&SocketMgr::PutSocket).stubs().will(returnValue(HCCL_SUCCESS));
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+    ch.channelStatus = ChannelStatus::READY;
+    ch.GetStatus();
+    GlobalMockObject::verify();
+}
