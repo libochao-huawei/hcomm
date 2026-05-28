@@ -8,6 +8,7 @@
 #define CCU_CONTEXT_ASSIST_PUB_H
 
 #include <cstdint>
+#include "hccl_types.h"
 
 namespace hcomm {
 namespace CcuRep {
