@@ -26,6 +26,9 @@
 #include "aclgraph_callback.h"
 #undef private
 
+#include "aclgraph/zero_copy_acl_graph.h"
+#include "aicpu_operator_pub.h"
+
 using namespace hccl;
 
 // Mock 函数用于 rtModelGetId
@@ -133,4 +136,65 @@ TEST_F(AclgraphCallbackTest, ut_CleanCaptureRes_By_Communicator_With_Multiple_Co
     EXPECT_TRUE(foundComm2After) << "Communicator2 should still be found in captureResMap_ after CleanCaptureRes";
 
     GlobalMockObject::verify();
+}
+
+// ======== TC-UTIL-01~03: ListCommonRemove ========
+
+TEST_F(AclgraphCallbackTest, ListCommonRemove_NormalNode)
+{
+    ListCommon nodes[3];
+    for (int i = 0; i < 3; i++) {
+        ListCommonInit(&nodes[i]);
+    }
+    ListCommonAddHead(&nodes[1], &nodes[0]);
+    ListCommonAddHead(&nodes[2], &nodes[1]);
+    ListCommonRemove(&nodes[1]);
+    EXPECT_EQ(reinterpret_cast<ListCommon*>(nodes[0].nextHost), &nodes[2]);
+    EXPECT_EQ(reinterpret_cast<ListCommon*>(nodes[2].preHost), &nodes[0]);
+    EXPECT_EQ(reinterpret_cast<ListCommon*>(nodes[1].nextHost), &nodes[1]);
+    EXPECT_EQ(reinterpret_cast<ListCommon*>(nodes[1].preHost), &nodes[1]);
+}
+
+TEST_F(AclgraphCallbackTest, ListCommonRemove_Nullptr)
+{
+    ListCommonRemove(nullptr);
+}
+
+TEST_F(AclgraphCallbackTest, ListCommonRemove_SelfLoopNode)
+{
+    ListCommon node;
+    ListCommonInit(&node);
+    ListCommonRemove(&node);
+    EXPECT_EQ(reinterpret_cast<ListCommon*>(node.nextHost), &node);
+    EXPECT_EQ(reinterpret_cast<ListCommon*>(node.preHost), &node);
+}
+
+// ======== TC-UTIL-04~06: IsAclGraphZeroCopyAlgAvailable ========
+
+TEST_F(AclgraphCallbackTest, IsZeroCopyAvailable_NonReduceOp)
+{
+    ZeroCopyAclGraph algo;
+    OpParam opParam;
+    opParam.aclGraphZeroCopyEnable = 0;
+    EXPECT_TRUE(algo.IsAclGraphZeroCopyAlgAvailable(HCCL_CMD_ALLGATHER, opParam));
+    EXPECT_TRUE(algo.IsAclGraphZeroCopyAlgAvailable(HCCL_CMD_BROADCAST, opParam));
+    EXPECT_TRUE(algo.IsAclGraphZeroCopyAlgAvailable(HCCL_CMD_ALLTOALLV, opParam));
+}
+
+TEST_F(AclgraphCallbackTest, IsZeroCopyAvailable_ReduceOp_Enabled)
+{
+    ZeroCopyAclGraph algo;
+    OpParam opParam;
+    opParam.aclGraphZeroCopyEnable = 1;
+    EXPECT_TRUE(algo.IsAclGraphZeroCopyAlgAvailable(HCCL_CMD_ALLREDUCE, opParam));
+    EXPECT_TRUE(algo.IsAclGraphZeroCopyAlgAvailable(HCCL_CMD_REDUCE, opParam));
+}
+
+TEST_F(AclgraphCallbackTest, IsZeroCopyAvailable_ReduceOp_Disabled)
+{
+    ZeroCopyAclGraph algo;
+    OpParam opParam;
+    opParam.aclGraphZeroCopyEnable = 0;
+    EXPECT_FALSE(algo.IsAclGraphZeroCopyAlgAvailable(HCCL_CMD_ALLREDUCE, opParam));
+    EXPECT_FALSE(algo.IsAclGraphZeroCopyAlgAvailable(HCCL_CMD_REDUCE_SCATTER, opParam));
 }
