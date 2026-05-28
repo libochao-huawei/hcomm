@@ -86,6 +86,20 @@ HcommResult CheckUbAttr(HcommChannelDesc &channelDesc)
     return HCCL_SUCCESS;
 }
 
+HcommResult CheckRoceAttr(HcommChannelDesc &channelDesc)
+{
+    if (channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_ROCE) {
+        return HCCL_SUCCESS;
+    }
+
+    if (channelDesc.roceAttr.queueNum == INVALID_UINT) {
+        channelDesc.roceAttr.queueNum = 1;
+        HCCL_INFO("[%s] set roceAttr.queueNum to 1.", __func__);
+    }
+
+    return HCCL_SUCCESS;
+}
+
 namespace {
 HcommResult ProcessHcommChannelDescs(const HcommChannelDesc &channelDesc, HcommChannelDesc &channelDescFinal)
 {
@@ -147,8 +161,15 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
         }
         ret = CheckUbAttr(channelDescFinal);
         if (ret != HCOMM_SUCCESS) {
+            HCCL_ERROR("[%s] CheckUbAttr failed, ret[%d].", __func__, ret);
             return ret;
         }
+        ret = CheckRoceAttr(channelDescFinal);
+        if (ret != HCOMM_SUCCESS) {
+            HCCL_ERROR("[%s] CheckRoceAttr failed, ret[%d].", __func__, ret);
+            return ret;
+        }
+
         channelDescFinals.push_back(channelDescFinal);
     }
     return HCOMM_SUCCESS;
