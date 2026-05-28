@@ -1,7 +1,7 @@
 get_filename_component(ALG_ANALYZER_UI_PROTO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ui/proto ABSOLUTE)
 
 add_custom_target(alg_analyzer_proto_legacy
-    DEPENDS protobuf    # 依赖 protoc
+    DEPENDS host_protoc # 依赖 host_protoc
 )
 add_custom_command(TARGET alg_analyzer_proto_legacy
     COMMAND mkdir -p ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
