@@ -661,7 +661,7 @@ struct ibv_pd *ibv_alloc_pd(struct ibv_context *context)
 struct ibv_qp *ibv_create_qp(struct ibv_pd *pd,
 			     struct ibv_qp_init_attr *qp_init_attr)
 {
-	static qpn = 0;
+	static int qpn = 0;
 	struct ibv_qp *qp;
 
 	qp = malloc(sizeof(struct ibv_qp));
@@ -692,7 +692,7 @@ struct ibv_qp *ibv_exp_create_qp(struct ibv_pd *pd,
 int ibv_exp_post_send(struct ibv_qp *qp,
                                     struct ibv_send_wr *wr,
                                     struct ibv_send_wr **bad_wr, struct wr_exp_rsp *exp_rsp) {
-	return ibv_post_send(qp, wr, &bad_wr);
+	return ibv_post_send(qp, wr, bad_wr);
 }
 
 struct ibv_mr *ibv_exp_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
@@ -801,12 +801,12 @@ struct ibv_context *ibv_open_device(struct ibv_device *device)
 	return ctx;
 }
 
-struct ibv_device *tc_dev[2]= {0x123, 0x456};
+struct ibv_device *tc_dev[2]= {(void *)0x123, (void *)0x456};
 struct ibv_device **ibv_get_device_list(int *num_devices)
 {
 	*num_devices = 2;
 
-	return &tc_dev;
+	return tc_dev;
 }
 
 struct ibv_device **ibv_get_device_list_stub2(int *num_devices)
