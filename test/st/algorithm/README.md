@@ -228,7 +228,7 @@ bash build.sh --executor_pipeline_hccl_test
 - 第5句说明了是哪两个task造成的内存冲突。
 - 第6句说明了产生内存冲突的rank号。
 
-上述错误日志说明同时有两个task在往OUTPUT\_CCL类型的0\~3200的范围内执行写入操作。
+上述错误日志说明同时有两个task在往OUTPUT_CCL类型的0\~3200的范围内执行写入操作。
 
 #### 定位方法
 
@@ -240,7 +240,7 @@ bash build.sh --executor_pipeline_hccl_test
 
 2. 根据报错日志找到造成内存冲突的两个task，排查这两个task前后同步的编排。
 
-    [问题现象](#问题现象)中的错误日志说明同时有两个task在往OUTPUT\_CCL类型的0\~3200的范围内执行写入操作。
+    [问题现象](#问题现象)中的错误日志说明同时有两个task在往OUTPUT_CCL类型的0\~3200的范围内执行写入操作。
 
 ### 语义校验失败定位方法
 
@@ -260,7 +260,7 @@ private:
 }
 ```
 
-内存支持Input、Output、CCL\_Input、CCL\_Output、Scratch等类型。
+内存支持Input、Output、CCL_Input、CCL_Output、Scratch等类型。
 
 集合通信算法在运行过程中会涉及复杂的数据搬运、规约操作，算法分析器用**BufferSemantic（语义）**记录**数据搬运关系**，其中有目的内存表达和多个源内存表达。目的内存通过成员变量startAddr和Size表示；源内存用结构体SrcBufDes表示，结构体定义如下：
 
