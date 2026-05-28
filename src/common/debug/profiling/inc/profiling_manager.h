@@ -128,11 +128,11 @@ public:
         HCCL_RUN_INFO("SetTaskApiSubscribe:[%d]", isTaskApiSubscribe_);
     }
 
-    void StartAddtionInfoSubscribe()
+    void StartAdditionInfoSubscribe()
     {
-        isAddtionInfoSubscribe_ = HCCL_SUCCESS;
+        isAdditionInfoSubscribe_ = HCCL_SUCCESS;
         ReportStoragedAdditionInfo();
-        HCCL_RUN_INFO("StartAddtionInfoSubscribe:[%d]", isAddtionInfoSubscribe_);
+        HCCL_RUN_INFO("StartAdditionInfoSubscribe:[%d]", isAdditionInfoSubscribe_);
     }
 
     void StartSubscribe(uint64_t profconfig)
@@ -163,7 +163,7 @@ public:
         }
         // L1打开时, 上报task粒度的打点和子task的详细信息
         if (((profconfig & PROF_TASK_TIME_L1_MASK) != 0) || ((profconfig & PROF_HCCL_TRACE_MASK) != 0)) {
-            StartAddtionInfoSubscribe();
+            StartAdditionInfoSubscribe();
         } else {
             HCCL_RUN_INFO("[Profiling][CommandHandle] profSwitch is[%u]", profconfig);
         }
@@ -176,10 +176,10 @@ public:
         HCCL_INFO("EsStartTaskApiSubscribe:[%d]", isTaskApiSubscribe_);
     }
 
-    void EsStartAddtionInfoSubscribe()
+    void EsStartAdditionInfoSubscribe()
     {
-        isAddtionInfoSubscribe_ = HCCL_SUCCESS;
-        HCCL_INFO("[Check][Param]EsStartAddtionInfoSubscribe.");
+        isAdditionInfoSubscribe_ = HCCL_SUCCESS;
+        HCCL_INFO("[Check][Param]EsStartAdditionInfoSubscribe.");
     }
 
     void EsStartSubscribe(uint64_t profconfig)
@@ -192,7 +192,7 @@ public:
         }
 
         if (((profconfig & PROF_TASK_TIME_L1_MASK) != 0) || ((profconfig & PROF_HCCL_TRACE_MASK) != 0)) {
-            EsStartAddtionInfoSubscribe();
+            EsStartAdditionInfoSubscribe();
         }
 
         HCCL_INFO("EsStartSubscribe");
@@ -208,7 +208,7 @@ public:
         isHostApiSubscribe_ = HCCL_E_NOT_SUPPORT;
         isHostHcclOpSubscribe_ = HCCL_E_NOT_SUPPORT;
         isTaskApiSubscribe_ = HCCL_E_NOT_SUPPORT;
-        isAddtionInfoSubscribe_ = HCCL_E_NOT_SUPPORT;
+        isAdditionInfoSubscribe_ = HCCL_E_NOT_SUPPORT;
         isFftsLaunchSubscribe_ = HCCL_E_NOT_SUPPORT;
         HCCL_RUN_INFO("[ProfilingManage]StopSubscribe.");
     }
@@ -218,7 +218,7 @@ public:
         // profconfig同步到platform
         SetProfConfig(profconfig);
         isTaskApiSubscribe_ = HCCL_E_NOT_SUPPORT;
-        isAddtionInfoSubscribe_ = HCCL_E_NOT_SUPPORT;
+        isAdditionInfoSubscribe_ = HCCL_E_NOT_SUPPORT;
         HCCL_INFO("[Check][Param]EsStopSubscribe.");
     }
 
@@ -226,9 +226,9 @@ public:
     {
         return isFftsLaunchSubscribe_;
     }
-    HcclResult GetAddtionInfoState()
+    HcclResult GetAdditionInfoState()
     {
-        return isAddtionInfoSubscribe_;
+        return isAdditionInfoSubscribe_;
     }
     HcclResult GetTaskApiState()
     {
@@ -238,7 +238,7 @@ public:
     {
         return (isHostApiSubscribe_ == HCCL_E_NOT_SUPPORT) &&
                (isTaskApiSubscribe_ == HCCL_E_NOT_SUPPORT) &&
-               (isAddtionInfoSubscribe_ == HCCL_E_NOT_SUPPORT) &&
+               (isAdditionInfoSubscribe_ == HCCL_E_NOT_SUPPORT) &&
                (isHostHcclOpSubscribe_ == HCCL_E_NOT_SUPPORT) &&
                (isFftsLaunchSubscribe_ == HCCL_E_NOT_SUPPORT);
     }
@@ -251,7 +251,7 @@ private:
     MsprofReporterCallback reporterCallback_;
     HcclResult isHostApiSubscribe_ = HCCL_E_NOT_SUPPORT;
     HcclResult isTaskApiSubscribe_ = HCCL_E_NOT_SUPPORT;
-    HcclResult isAddtionInfoSubscribe_ = HCCL_E_NOT_SUPPORT;
+    HcclResult isAdditionInfoSubscribe_ = HCCL_E_NOT_SUPPORT;
     HcclResult isHostHcclOpSubscribe_ = HCCL_E_NOT_SUPPORT;
     HcclResult isFftsLaunchSubscribe_ = HCCL_E_NOT_SUPPORT;
     static std::queue<MsprofApi> storageTaskApi_;

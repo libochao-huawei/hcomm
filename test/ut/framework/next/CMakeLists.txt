@@ -57,6 +57,7 @@ set(src_to_test_list
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_uboe_channel.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_roce_channel.cc
     comms/endpoint_pairs/channels/aicpu/device/ut_aicpu_channel_process.cc
+    comms/endpoints/ut_urma_endpoint.cc
     comms/endpoints/ut_aicpu_ts_roce_endpoint.cc
     comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
     comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_channel.cc
@@ -70,6 +71,8 @@ set(src_to_test_list
     coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
     coll_comms/communicator/ns_recovery/ut_ns_recovery.cc
     comms/adpt/ut_hcomm_adapter_hccp_test.cc
+    comms/endpoints/dfx/ut_endpoint_monitor.cc
+    coll_comms/rank/ut_exchange_info_mgr.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})

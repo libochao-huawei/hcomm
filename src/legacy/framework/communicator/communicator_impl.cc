@@ -1356,6 +1356,7 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     RankGraphBuilder rankGraphBuilder;
     rankGraph = rankGraphBuilder.Build(ranktable, topoPath, myRank);
     ranktableInfo = rankGraphBuilder.GetRankTableInfo(); // 获取ranktable信息
+    HCCL_RUN_INFO("[CommunicatorImpl::%s] rankTableInfo: %s", __func__, ranktableInfo->Describe().c_str());
     topoInfo = rankGraphBuilder.GetTopoInfo(); // 获取topo信息
     HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] topoInfo[%s]", topoInfo->Describe().c_str());
     rankSize = rankGraph->GetRankSize();

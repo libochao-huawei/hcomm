@@ -136,11 +136,31 @@ TaskExceptionHostManager::~TaskExceptionHostManager() {}
 void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId,
     GetAicpuTaskExceptionCallBackHcomm p1)
 {
-   lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
-   g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
-   return ;
+    if (deviceLogicId >= MAX_MODULE_DEVICE_NUM_V2) {
+        HCCL_ERROR("[RegisterGetAicpuTaskExceptionCallBack] deviceLogicId[%u] out of range, max is %u",
+            deviceLogicId, MAX_MODULE_DEVICE_NUM_V2 - 1);
+        return;
+    }
+    lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
+    g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
+    return;
 }
 
+void TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId)
+{
+    if (deviceLogicId >= MAX_MODULE_DEVICE_NUM_V2) {
+        HCCL_ERROR("[UnregisterGetAicpuTaskExceptionCallBack] deviceLogicId[%u] out of range, max is %u",
+            deviceLogicId, MAX_MODULE_DEVICE_NUM_V2 - 1);
+        return;
+    }
+    lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
+    auto& deviceMap = g_communicatorCallbackMapV2[deviceLogicId];
+    auto it = deviceMap.find(streamId);
+    if (it != deviceMap.end()) {
+        deviceMap.erase(it);
+    }
+    return;
+}
 
 HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 {
@@ -630,7 +650,7 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo,
             lock.lock();
             g_commHadCallbackArrayV2[exceptionInfo->deviceid] = true;
         } else {
-            HCCL_WARNING("PrintAicpuErrorMessage No Vaild errorMessage!");
+            HCCL_WARNING("PrintAicpuErrorMessage No Valid errorMessage!");
         }
     } else {
         HCCL_INFO("PrintAicpuErrorMessage streamId[%u] is not found.", exceptionInfo->streamid);

@@ -34,8 +34,13 @@ CollComm::~CollComm()
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     // dpu的兜底上报 - 异常退出时捕获异常避免二次崩溃
     if (hcclCommDfx_ != nullptr) {
-        DECTOR_TRY_CATCH("CollComm", hcclCommDfx_->ReportAllTasks(true));
+        // 析构属于最终阶段，不再存储数据，直接上报
+        DECTOR_TRY_CATCH("CollComm", hcclCommDfx_->ReportAllTasks(false));
     }
+    for (auto streamId : aicpuStreamIds_) {
+        hcomm::TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_);
+    }
+    aicpuStreamIds_.clear();
     (void)DestroyAicpuComm();
 }
 
@@ -248,6 +253,7 @@ void CollComm::RegisterAicpuTaskExceptionCallback(u32 streamId)
     auto getAicpuTaskExceptionCallBack = [this]() {return this->GetAicpuTaskException();};
     hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_,
         getAicpuTaskExceptionCallBack);
+    aicpuStreamIds_.insert(static_cast<s32>(streamId));
     return ;
 }
 

@@ -268,6 +268,10 @@ namespace hccl
         }
 
         (void)UnRegistTaskExceptionHandler();
+        for (auto streamId : aicpuStreamIds_) {
+            UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_);
+        }
+        aicpuStreamIds_.clear();
         kfcControlTransferH2D_ = nullptr;
         kfcStatusTransferD2H_ = nullptr;
         customControlTransferH2D_ = nullptr;
@@ -6268,7 +6272,7 @@ namespace hccl
         // 记录主流相关信息, 给profiling和task exception使用
         HCCL_PROFILER_ADD_STREAM_BY_STREAMID(param.stream.id(), param.tag, 0, algType);
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-             hccl::ProfilingManagerPub::GetAddtionInfoState() &&
+             hccl::ProfilingManagerPub::GetAdditionInfoState() &&
              hccl::ProfilingManagerPub::GetTaskApiState()) &&
              !param.isCapture) {
             return HCCL_SUCCESS;
@@ -7527,8 +7531,10 @@ namespace hccl
             return this->GetAicpuTaskException();
         };
         RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_, getAicpuTaskExceptionCallBack);
+        aicpuStreamIds_.insert(streamId);
         if (streamId != opParam.stream.id()) {
             RegisterGetAicpuTaskExceptionCallBack(opParam.stream.id(), deviceLogicId_, getAicpuTaskExceptionCallBack);
+            aicpuStreamIds_.insert(opParam.stream.id());
         }
 
         HCCL_INFO("%s profName[%s] tag[%s] kfcOpStreamId[%d] mainStreamId[%u] kfcStreamId[%d] isCapture[%d] mode[%d] ",
