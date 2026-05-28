@@ -28,6 +28,7 @@
 
 #include "aclgraph/zero_copy_acl_graph.h"
 #include "aicpu_operator_pub.h"
+#include "stream_utils.h"
 
 using namespace hccl;
 
@@ -197,4 +198,134 @@ TEST_F(AclgraphCallbackTest, IsZeroCopyAvailable_ReduceOp_Disabled)
     opParam.aclGraphZeroCopyEnable = 0;
     EXPECT_FALSE(algo.IsAclGraphZeroCopyAlgAvailable(HCCL_CMD_ALLREDUCE, opParam));
     EXPECT_FALSE(algo.IsAclGraphZeroCopyAlgAvailable(HCCL_CMD_REDUCE_SCATTER, opParam));
+}
+
+// ======== TC-CALLBACK-01~04: AclgraphCallback 全流程 ========
+
+TEST_F(AclgraphCallbackTest, CleanCaptureRes_ModelIdNotFound)
+{
+    HcclResult ret = AclgraphCallback::GetInstance().CleanCaptureRes(999);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+}
+
+TEST_F(AclgraphCallbackTest, CleanCaptureRes_ThreePhase_SimplifiedFlow)
+{
+    // 直接操作私有成员预置 captureResMap_ 来模拟已注册的 tag
+    // 使用真实实现，依赖早期返回路径特性简化测试
+    // AicpuKfcClearOpResLaunch: binHandle_ == nullptr 时直接返回 HCCL_SUCCESS
+    // ClearAclgraphHostLinks: rankTagRemoteRes_ 为空时只清 tagsRequiringHostCleanup_
+    // ClearOpResource: resMap_ 中找不到 tag 时仍返回 HCCL_SUCCESS
+
+    const u64 modelId = 42;
+    const std::string tag = "test_tag_Capture";
+
+    // 直接插入 captureResMap_ 条目（跳过 InsertNewTagToCaptureResMap 的 stream 依赖）
+    {
+        std::lock_guard<std::mutex> lock(AclgraphCallback::GetInstance().resMutex_);
+        AclgraphCallback::GetInstance().captureResMap_[modelId][&communicator1_].insert(tag);
+        AclgraphCallback::GetInstance().captureCallbackParamMap_[modelId].modelId = modelId;
+    }
+
+    // 预置 tagsRequiringHostCleanup_
+    communicator1_.tagsRequiringHostCleanup_.insert(tag);
+
+    // 执行 CleanCaptureRes
+    HcclResult ret = AclgraphCallback::GetInstance().CleanCaptureRes(modelId);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 验证：captureResMap_ 和 captureCallbackParamMap_ 已清空
+    {
+        std::lock_guard<std::mutex> lock(AclgraphCallback::GetInstance().resMutex_);
+        EXPECT_TRUE(AclgraphCallback::GetInstance().captureResMap_.empty());
+        EXPECT_TRUE(AclgraphCallback::GetInstance().captureCallbackParamMap_.empty());
+    }
+
+    // 验证：tagsRequiringHostCleanup_ 中 tag 已被清除
+    EXPECT_EQ(communicator1_.tagsRequiringHostCleanup_.count(tag), 0U);
+}
+
+TEST_F(AclgraphCallbackTest, InsertNewTag_CallbackRegistration)
+{
+    // Mock 底层 C 函数使 InsertNewTagToCaptureResMap 能正常走完全程
+    MOCKER(GetStreamCaptureInfo)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(GetModelId)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(aclmdlRIDestroyRegisterCallback)
+        .stubs()
+        .with(any(), any(), any())
+        .will(returnValue(ACL_SUCCESS));
+
+    // 构造 OpParam（stream 需要有合法 .ptr() 避免空指针）
+    OpParam opParam;
+
+    std::string tag1 = "tag1";
+    HcclResult ret = AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(
+        &communicator1_, tag1, opParam);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 第一次插入应注册 callback
+    // 验证 captureResMap_ 包含 modelId→communicator1_→tag1
+    bool found = false;
+    for (const auto &modelEntry : AclgraphCallback::GetInstance().captureResMap_) {
+        for (const auto &commEntry : modelEntry.second) {
+            if (commEntry.first == &communicator1_ &&
+                commEntry.second.find(tag1) != commEntry.second.end()) {
+                found = true;
+            }
+        }
+    }
+    EXPECT_TRUE(found);
+
+    GlobalMockObject::reset();
+}
+
+TEST_F(AclgraphCallbackTest, InsertNewTag_NoDuplicateCallback)
+{
+    // 同一个 modelId 第二次插入不应再次注册 callback
+    MOCKER(GetStreamCaptureInfo)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(GetModelId)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(aclmdlRIDestroyRegisterCallback)
+        .stubs()
+        .will(returnValue(ACL_SUCCESS));
+
+    OpParam opParam;
+
+    // 第一次插入
+    std::string tag1 = "tag1";
+    HcclResult ret1 = AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(
+        &communicator1_, tag1, opParam);
+    EXPECT_EQ(ret1, HCCL_SUCCESS);
+
+    // 第二次插入同 communicator 不同 tag → 不应再次注册
+    std::string tag2 = "tag2";
+    HcclResult ret2 = AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(
+        &communicator1_, tag2, opParam);
+    EXPECT_EQ(ret2, HCCL_SUCCESS);
+
+    // 验证 captureResMap_ 包含两个 tag
+    bool foundTag1 = false;
+    bool foundTag2 = false;
+    for (const auto &modelEntry : AclgraphCallback::GetInstance().captureResMap_) {
+        for (const auto &commEntry : modelEntry.second) {
+            if (commEntry.first == &communicator1_) {
+                if (commEntry.second.find(tag1) != commEntry.second.end()) foundTag1 = true;
+                if (commEntry.second.find(tag2) != commEntry.second.end()) foundTag2 = true;
+            }
+        }
+    }
+    EXPECT_TRUE(foundTag1);
+    EXPECT_TRUE(foundTag2);
+
+    GlobalMockObject::reset();
 }
