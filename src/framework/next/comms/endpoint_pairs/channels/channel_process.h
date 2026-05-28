@@ -78,6 +78,7 @@ private:
         ChannelHandle *hostChannelHandles, uint32_t listNum, HcommChannelKind channelKind, aclrtBinHandle binHandle);
 
     static HcclResult ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum);
+    // 前置条件：调用方必须持有 g_ChannelMapMtx 锁
     static HcclResult RemoveSingleChannel(int32_t deviceId, ChannelHandle inHandle,
         std::vector<ChannelHandle> &deviceHandles);
 

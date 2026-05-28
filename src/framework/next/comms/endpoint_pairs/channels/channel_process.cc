@@ -117,7 +117,7 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
     int32_t deviceId = 0;
     CHK_RET(hrtGetDevice(&deviceId));
 
-    Channel *channel = nullptr;
+    std::shared_ptr<Channel> channelPtr = nullptr;
     {
         std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
         // 1) D2H 映射
@@ -129,7 +129,7 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
         }
         const ChannelHandle mappedHandle = itH->second;
 
-        // 2) ChannelMap 查找
+        // 2) ChannelMap 查找 — 拷贝 shared_ptr，保证锁释放后 Channel 对象不会被并发 Destroy 析构
         auto itC = g_ChannelMap.find(mappedHandle);
         if (itC == g_ChannelMap.end() || !itC->second) {
             HCCL_ERROR("[%s] channel not found in g_ChannelMap, deviceId[%d], channelHandle[0x%llx], mappedHandle[0x%llx].",
@@ -139,10 +139,17 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
                 mappedHandle);
             return HcclResult::HCCL_E_INTERNAL;
         }
-        channel = itC->second.get();
+        channelPtr = itC->second;
+        if (channelPtr == nullptr) {
+            HCCL_ERROR("[%s] null channel pointer, deviceId[%d], channelHandle[0x%llx], mappedHandle[0x%llx].",
+                __func__, deviceId, channelHandle, mappedHandle);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
     }
     // UpdateMemInfo需要rank间交互，若在锁内执行会导致单进程多线程场景其他rank被锁拦住
-    CHK_RET(channel->UpdateMemInfo(memHandles, memHandleNum));
+    // channelPtr 是 shared_ptr 拷贝，即使并发 ChannelDestroy 已 erase g_ChannelMap 中的 entry，
+    // Channel 对象仍会因引用计数未归零而存活，直至 UpdateMemInfo 执行完毕
+    CHK_RET(channelPtr->UpdateMemInfo(memHandles, memHandleNum));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
@@ -617,21 +624,35 @@ HcclResult ChannelProcess::ChannelGet(const ChannelHandle channelHandle, void **
     int32_t deviceId = 0;
     CHK_RET(hrtGetDevice(&deviceId));
 
-    std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
-    DeviceChannelKey key{deviceId, channelHandle};
-    const auto &D2HhandleIter = g_ChannelD2HMap.find(key);
-    if (D2HhandleIter == g_ChannelD2HMap.end()) {
-        HCCL_ERROR("[ChannelProcess][%s] deviceId[%d], channel[%llx] not found.", __func__, deviceId, channelHandle);
-        return HcclResult::HCCL_E_NOT_FOUND;
+    std::shared_ptr<Channel> channelPtr = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
+        DeviceChannelKey key{deviceId, channelHandle};
+        const auto &D2HhandleIter = g_ChannelD2HMap.find(key);
+        if (D2HhandleIter == g_ChannelD2HMap.end()) {
+            HCCL_ERROR("[ChannelProcess][%s] deviceId[%d], channel[%llx] not found.", __func__, deviceId, channelHandle);
+            return HcclResult::HCCL_E_NOT_FOUND;
+        }
+
+        const auto handle = D2HhandleIter->second;
+        const auto &handleIter = g_ChannelMap.find(handle);
+        if (handleIter == g_ChannelMap.end()) {
+            HCCL_ERROR("[ChannelProcess][%s] deviceId[%d], channel[%llx] not found.", __func__, deviceId, handle);
+            return HcclResult::HCCL_E_NOT_FOUND;
+        }
+        // 拷贝 shared_ptr，保证 Channel 对象在锁释放后不会被并发 Destroy 析构
+        channelPtr = handleIter->second;
+        if (channelPtr == nullptr) {
+            HCCL_ERROR("[ChannelProcess][%s] null channel pointer, deviceId[%d], channelHandle[%llx].",
+                __func__, deviceId, channelHandle);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
     }
- 
-    const auto handle = D2HhandleIter->second;
-    const auto &handleIter = g_ChannelMap.find(handle);
-    if (handleIter == g_ChannelMap.end()) {
-        HCCL_ERROR("[ChannelProcess][%s] deviceId[%d], channel[%llx] not found.", __func__, deviceId, handle);
-        return HcclResult::HCCL_E_NOT_FOUND;
-    }
-    *channel = reinterpret_cast<void*>(handleIter->second.get());
+    // 注意：返回的裸指针生命周期受限于 channelPtr（shared_ptr），但 channelPtr 在本函数返回后即析构。
+    // 若并发 ChannelDestroy 已 erase g_ChannelMap 中该 entry 且无其他 shared_ptr 持有该 Channel，
+    // 则裸指针可能悬空。调用方应确保在 ChannelDestroy 之前使用返回的指针，或改用
+    // WithChannelByHandleLocked 模式以持有 shared_ptr 延长生命周期。
+    *channel = reinterpret_cast<void *>(channelPtr.get());
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -667,6 +688,9 @@ HcclResult ChannelProcess::ChannelKernelDestroy(ChannelHandle *channelHandles, u
 HcclResult ChannelProcess::RemoveSingleChannel(int32_t deviceId, ChannelHandle inHandle,
     std::vector<ChannelHandle> &deviceHandles)
 {
+    // 前置条件：调用方必须持有 g_ChannelMapMtx 锁
+    // 本函数直接操作 g_ChannelD2HMap 和 g_ChannelMap，不加锁，依赖调用方在外层持锁。
+    // 若不持锁直接调用，将产生数据竞争。当前唯一调用方 ChannelDestroy 在调用前已持锁。
     DeviceChannelKey key{deviceId, inHandle};
     auto itH = g_ChannelD2HMap.find(key);
     if (itH == g_ChannelD2HMap.end()) {

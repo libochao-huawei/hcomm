@@ -9,7 +9,11 @@
  */
 
 #include "../../../ut_hcomm_base.h"
+#define private public
+#define protected public
 #include "channel_process.h"
+#undef protected
+#undef private
 
 class TestChannelProcess : public TestHcommCAdptBase {
 public:
@@ -238,4 +242,223 @@ TEST_F(TestChannelProcess, Ut_LaunchChannelKernel_When_ChannelKindIsUBOE_CallsCh
 
     auto ret = hcomm::ChannelProcess::LaunchChannelKernel(deviceHandles, hostHandles, hcommDescs, 1, nullptr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+namespace {
+constexpr int32_t LOCKFIX_TEST_DEVICE_ID = 0;
+constexpr ChannelHandle LOCKFIX_TEST_DEV_HANDLE = 0x100;
+constexpr ChannelHandle LOCKFIX_TEST_HOST_HANDLE = 0x200;
+
+HcclResult StubHrtGetDeviceForLockFix(s32 *deviceLogicId)
+{
+    if (deviceLogicId != nullptr) {
+        *deviceLogicId = LOCKFIX_TEST_DEVICE_ID;
+    }
+    return HCCL_SUCCESS;
+}
+
+class FakeChannelLockFix : public hcomm::Channel {
+public:
+    hcomm::HcommChannelKind GetChannelKind() const override { return hcomm::HcommChannelKind::AICPU_TS_URMA; }
+    HcclResult Init() override { return HCCL_SUCCESS; }
+    HcclResult GetNotifyNum(uint32_t *notifyNum) const override { return HCCL_SUCCESS; }
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override { return HCCL_SUCCESS; }
+    hcomm::ChannelStatus GetStatus() override { return hcomm::ChannelStatus::READY; }
+    HcclResult Clean() override { return HCCL_SUCCESS; }
+    HcclResult Resume() override { return HCCL_SUCCESS; }
+    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override { return HCCL_SUCCESS; }
+    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override { return HCCL_SUCCESS; }
+    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override { return HCCL_SUCCESS; }
+    HcclResult Write(void *dst, const void *src, uint64_t len) override { return HCCL_SUCCESS; }
+    HcclResult Read(void *dst, const void *src, uint64_t len) override { return HCCL_SUCCESS; }
+    HcclResult ChannelFence() override { return HCCL_SUCCESS; }
+    HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum) override { return HCCL_SUCCESS; }
+};
+
+void LockFixClearGlobalMaps()
+{
+    hcomm::ChannelProcess::g_ChannelD2HMap.clear();
+    hcomm::ChannelProcess::g_ChannelMap.clear();
+}
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelUpdateMemInfo_When_HandleNotFoundInD2HMap_Returns_E_NOT_FOUND)
+{
+    LockFixClearGlobalMaps();
+    MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceForLockFix));
+
+    HcommMemHandle memHandles[1] = {};
+    HcclResult ret = hcomm::ChannelProcess::ChannelUpdateMemInfo(memHandles, 1, LOCKFIX_TEST_DEV_HANDLE);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+
+    LockFixClearGlobalMaps();
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelUpdateMemInfo_When_ChannelNotFoundInChannelMap_Returns_E_INTERNAL)
+{
+    LockFixClearGlobalMaps();
+    MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceForLockFix));
+
+    hcomm::DeviceChannelKey key{LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE};
+    hcomm::ChannelProcess::g_ChannelD2HMap.emplace(key, LOCKFIX_TEST_HOST_HANDLE);
+
+    HcommMemHandle memHandles[1] = {};
+    HcclResult ret = hcomm::ChannelProcess::ChannelUpdateMemInfo(memHandles, 1, LOCKFIX_TEST_DEV_HANDLE);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    LockFixClearGlobalMaps();
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelUpdateMemInfo_When_NullSharedPtrInChannelMap_Returns_E_INTERNAL)
+{
+    LockFixClearGlobalMaps();
+    MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceForLockFix));
+
+    hcomm::DeviceChannelKey key{LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE};
+    hcomm::ChannelProcess::g_ChannelD2HMap.emplace(key, LOCKFIX_TEST_HOST_HANDLE);
+    hcomm::ChannelProcess::g_ChannelMap.emplace(LOCKFIX_TEST_HOST_HANDLE, std::shared_ptr<hcomm::Channel>());
+
+    HcommMemHandle memHandles[1] = {};
+    HcclResult ret = hcomm::ChannelProcess::ChannelUpdateMemInfo(memHandles, 1, LOCKFIX_TEST_DEV_HANDLE);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    LockFixClearGlobalMaps();
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelUpdateMemInfo_When_ChannelFound_Returns_SUCCESS)
+{
+    LockFixClearGlobalMaps();
+    MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceForLockFix));
+
+    auto fakeChannel = std::make_shared<FakeChannelLockFix>();
+    ChannelHandle hostHandle = reinterpret_cast<ChannelHandle>(fakeChannel.get());
+
+    hcomm::DeviceChannelKey key{LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE};
+    hcomm::ChannelProcess::g_ChannelD2HMap.emplace(key, hostHandle);
+    hcomm::ChannelProcess::g_ChannelMap.emplace(hostHandle, fakeChannel);
+
+    HcommMemHandle memHandles[1] = {};
+    HcclResult ret = hcomm::ChannelProcess::ChannelUpdateMemInfo(memHandles, 1, LOCKFIX_TEST_DEV_HANDLE);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    LockFixClearGlobalMaps();
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelGet_When_ChannelOutputNull_Returns_E_PTR)
+{
+    HcclResult ret = hcomm::ChannelProcess::ChannelGet(LOCKFIX_TEST_DEV_HANDLE, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelGet_When_HandleNotFoundInD2HMap_Returns_E_NOT_FOUND)
+{
+    LockFixClearGlobalMaps();
+    MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceForLockFix));
+
+    void *channelOut = nullptr;
+    HcclResult ret = hcomm::ChannelProcess::ChannelGet(LOCKFIX_TEST_DEV_HANDLE, &channelOut);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+
+    LockFixClearGlobalMaps();
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelGet_When_ChannelNotFoundInChannelMap_Returns_E_NOT_FOUND)
+{
+    LockFixClearGlobalMaps();
+    MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceForLockFix));
+
+    hcomm::DeviceChannelKey key{LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE};
+    hcomm::ChannelProcess::g_ChannelD2HMap.emplace(key, LOCKFIX_TEST_HOST_HANDLE);
+
+    void *channelOut = nullptr;
+    HcclResult ret = hcomm::ChannelProcess::ChannelGet(LOCKFIX_TEST_DEV_HANDLE, &channelOut);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+
+    LockFixClearGlobalMaps();
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelGet_When_NullSharedPtrInChannelMap_Returns_E_INTERNAL)
+{
+    LockFixClearGlobalMaps();
+    MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceForLockFix));
+
+    hcomm::DeviceChannelKey key{LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE};
+    hcomm::ChannelProcess::g_ChannelD2HMap.emplace(key, LOCKFIX_TEST_HOST_HANDLE);
+    hcomm::ChannelProcess::g_ChannelMap.emplace(LOCKFIX_TEST_HOST_HANDLE, std::shared_ptr<hcomm::Channel>());
+
+    void *channelOut = nullptr;
+    HcclResult ret = hcomm::ChannelProcess::ChannelGet(LOCKFIX_TEST_DEV_HANDLE, &channelOut);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    LockFixClearGlobalMaps();
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelGet_When_ChannelFound_Returns_SUCCESS)
+{
+    LockFixClearGlobalMaps();
+    MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceForLockFix));
+
+    auto fakeChannel = std::make_shared<FakeChannelLockFix>();
+    ChannelHandle hostHandle = reinterpret_cast<ChannelHandle>(fakeChannel.get());
+
+    hcomm::DeviceChannelKey key{LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE};
+    hcomm::ChannelProcess::g_ChannelD2HMap.emplace(key, hostHandle);
+    hcomm::ChannelProcess::g_ChannelMap.emplace(hostHandle, fakeChannel);
+
+    void *channelOut = nullptr;
+    HcclResult ret = hcomm::ChannelProcess::ChannelGet(LOCKFIX_TEST_DEV_HANDLE, &channelOut);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(channelOut, nullptr);
+
+    LockFixClearGlobalMaps();
+}
+
+TEST_F(TestChannelProcess, Ut_RemoveSingleChannel_When_HandleNotFoundInD2HMap_Returns_E_NOT_FOUND)
+{
+    LockFixClearGlobalMaps();
+
+    std::vector<ChannelHandle> deviceHandles;
+    HcclResult ret = hcomm::ChannelProcess::RemoveSingleChannel(
+        LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE, deviceHandles);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+
+    LockFixClearGlobalMaps();
+}
+
+TEST_F(TestChannelProcess, Ut_RemoveSingleChannel_When_ChannelNotFoundInChannelMap_Returns_E_NOT_FOUND)
+{
+    LockFixClearGlobalMaps();
+
+    hcomm::DeviceChannelKey key{LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE};
+    hcomm::ChannelProcess::g_ChannelD2HMap.emplace(key, LOCKFIX_TEST_HOST_HANDLE);
+
+    std::vector<ChannelHandle> deviceHandles;
+    HcclResult ret = hcomm::ChannelProcess::RemoveSingleChannel(
+        LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE, deviceHandles);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+
+    LockFixClearGlobalMaps();
+}
+
+TEST_F(TestChannelProcess, Ut_RemoveSingleChannel_When_Found_ErasesFromBothMaps_Returns_SUCCESS)
+{
+    LockFixClearGlobalMaps();
+
+    auto fakeChannel = std::make_shared<FakeChannelLockFix>();
+    ChannelHandle hostHandle = reinterpret_cast<ChannelHandle>(fakeChannel.get());
+
+    hcomm::DeviceChannelKey key{LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE};
+    hcomm::ChannelProcess::g_ChannelD2HMap.emplace(key, hostHandle);
+    hcomm::ChannelProcess::g_ChannelMap.emplace(hostHandle, fakeChannel);
+
+    std::vector<ChannelHandle> deviceHandles;
+    HcclResult ret = hcomm::ChannelProcess::RemoveSingleChannel(
+        LOCKFIX_TEST_DEVICE_ID, LOCKFIX_TEST_DEV_HANDLE, deviceHandles);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(deviceHandles.size(), 1u);
+    EXPECT_EQ(deviceHandles[0], LOCKFIX_TEST_DEV_HANDLE);
+    EXPECT_EQ(hcomm::ChannelProcess::g_ChannelMap.count(hostHandle), 0u);
+    EXPECT_EQ(hcomm::ChannelProcess::g_ChannelD2HMap.size(), 0u);
+
+    LockFixClearGlobalMaps();
 }
