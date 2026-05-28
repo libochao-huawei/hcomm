@@ -368,6 +368,67 @@ disabled_thread_out:
     }
 }
 
+int RaHdcLiteGetCqAttr(struct RaRdmaHandle *rdmaHandle, unsigned int cqn,
+    struct rdma_lite_device_cq_attr *deviceCqAttr)
+{
+    union OpGetLiteCqAttrData getLiteCqAttrData = {0};
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    int ret;
+
+    getLiteCqAttrData.txData.phyId = phyId;
+    getLiteCqAttrData.txData.rdevIndex = rdmaHandle->rdevIndex;
+    getLiteCqAttrData.txData.cqn = cqn;
+
+    ret = RaHdcProcessMsg(RA_RS_GET_LITE_CQ_ATTR, phyId, (char *)&getLiteCqAttrData,
+        sizeof(union OpGetLiteCqAttrData));
+    if (ret) {
+        hccp_err("[create][ra_hdc_lite_get_cq_attr]ra hdc message process failed ret(%d) phyId(%u)", ret, phyId);
+        return ret;
+    }
+
+    *deviceCqAttr = getLiteCqAttrData.rxData.deviceCqAttr;
+    hccp_info("[create][ra_hdc_lite_get_cq_attr]get lite cq attr success, cqn[%u] depth[%u]",
+        cqn, deviceCqAttr->depth);
+    return 0;
+}
+
+int RaHdcLiteCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth,
+    union OpTypicalCqCreateData *cqData, struct rdma_lite_cq **liteCq)
+{
+    struct rdma_lite_cq_attr liteCqAttr = {0};
+    struct rdma_lite_device_cq_attr deviceCqAttr = {0};
+    int ret;
+
+    if (rdmaHandle->supportLite == 0) {
+        return 0;
+    }
+
+    ret = RaHdcLiteGetCqAttr(rdmaHandle, cqData->rxData.cqn, &deviceCqAttr);
+    if (ret) {
+        hccp_err("[create][ra_hdc_lite_cq]get lite cq attr failed, cqn[%u] ret[%d]",
+            cqData->rxData.cqn, ret);
+        return ret;
+    }
+
+    liteCqAttr.device_cq_attr = deviceCqAttr;
+    liteCqAttr.mem_idx = 0;
+
+    if (rdmaHandle->supportLite == LITE_ALIGN_2MB) {
+        liteCqAttr.mem_idx = 0;
+    }
+
+    *liteCq = RaRdmaLiteCreateCq(rdmaHandle->liteCtx, &liteCqAttr);
+    if (*liteCq == NULL) {
+        hccp_err("[create][ra_hdc_lite_cq]create lite cq failed, errno(%d) cqDepth(%u)",
+            errno, cqDepth);
+        return -EFAULT;
+    }
+
+    hccp_info("[create][ra_hdc_lite_cq]lite cq created successfully, cqDepth(%u)", cqDepth);
+
+    return 0;
+}
+
 STATIC void RaHdcLiteQpAttrInit(struct RaQpHandle *qpHdc, struct rdma_lite_qp_attr *liteQpAttr,
     struct rdma_lite_qp_cap *cap)
 {

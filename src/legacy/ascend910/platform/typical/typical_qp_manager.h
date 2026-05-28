@@ -14,6 +14,7 @@
 #include <memory>
 #include "adapter_hccp.h"
 #include "hccl_common.h"
+#include "interface_hccl.h"
 
 namespace hccl {
 
@@ -25,6 +26,7 @@ public:
     HcclResult ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo);
     HcclResult DestroyQp(struct TypicalQp& qpInfo);
     HcclResult GetQpHandleByQpn(u32 qpn, QpHandle& qpHandle);
+    HcclResult CreateCq(AscendCQInfo& cqInfo);
 private:
     TypicalQpManager();
     ~TypicalQpManager();
@@ -40,6 +42,8 @@ private:
     const s32 OPBASE_QP_MODE = 2;  // 单算子模式的QP
     std::map<u32, std::pair<struct TypicalQp, QpHandle>> qpMap_{};
     std::mutex qpMutex_;
+    std::map<u32, std::pair<AscendCQInfo, void*>> cqMap_{};
+    std::mutex cqMutex_;
 };
 } // namespace hccl
 #endif

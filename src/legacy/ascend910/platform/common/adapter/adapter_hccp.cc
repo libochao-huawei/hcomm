@@ -179,6 +179,16 @@ HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     return HCCL_SUCCESS;
 }
 
+HcclResult CreateTypicalCq(RdmaHandle rdmaHandle, u32 cqDepth, u32 &cqn, void **cqHandle)
+{
+    HCCL_DEBUG("CreateTypicalCq cqDepth[%u]", cqDepth);
+
+    s32 ret = DlRaFunction::GetInstance().dlRaTypicalCqCreate(rdmaHandle, cqDepth, &cqn, cqHandle);
+    CHK_PRT_RET(ret != 0 || (cqHandle == NULL),
+        HCCL_ERROR("[CreateTypicalCq]create typical cq failed. ret[%d]", ret), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
 HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct TypicalQp* localQpInfo, struct TypicalQp* remoteQpInfo)
 {
     std::string qpInfo = std::string("qpHandle:") + std::to_string(reinterpret_cast<intptr_t>(qpHandle)) + \
