@@ -11,6 +11,7 @@
 #ifndef HCCLV2_HCCP_HDC_MANAGER_H
 #define HCCLV2_HCCP_HDC_MANAGER_H
 #include <set>
+#include <vector>
 #include <mutex>
 #include "orion_adapter_hccp.h"
 namespace Hccl {
@@ -18,6 +19,7 @@ class HccpHdcManager {
 public:
     static HccpHdcManager &GetInstance();
     void                   Init(u32 deviceLogicId);
+    void                   DeInit(u32 deviceLogicId);
     HccpHdcManager(const HccpHdcManager &hccpHdcManager)            = delete;
     HccpHdcManager &operator=(const HccpHdcManager &hccpHdcManager) = delete;
     // 测试使用，待修改: 添加编译宏，仅在单元测试时提供此接口
@@ -30,6 +32,7 @@ public:
 private:
     std::set<u32> instances; // key: deviceLogicId
     std::mutex    managerMutex;
+    bool          destroyed{false};
     bool          deinitted{false};
     HccpHdcManager() = default;
     void DestroyAll();

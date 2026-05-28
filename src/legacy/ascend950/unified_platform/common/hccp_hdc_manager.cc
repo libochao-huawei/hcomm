@@ -25,6 +25,10 @@ HccpHdcManager &HccpHdcManager::GetInstance()
 void HccpHdcManager::Init(u32 deviceLogicId)
 {
     std::unique_lock<std::mutex> lock(managerMutex);
+    if (destroyed) {
+        HCCL_WARNING("[HccpHdcManager::%s] HccpHdcManager has been destroyed", __func__);
+        return;
+    }
     if (instances.count(deviceLogicId) != 0) {
         return;
     }
@@ -39,10 +43,53 @@ void HccpHdcManager::Init(u32 deviceLogicId)
     instances.insert(deviceLogicId);
 }
 
+void HccpHdcManager::DeInit(u32 deviceLogicId)
+{
+    bool shouldDeInit = false;
+    {
+        std::lock_guard<std::mutex> lock(managerMutex);
+        if (destroyed) {
+            HCCL_WARNING("[HccpHdcManager::%s] HccpHdcManager has been destroyed", __func__);
+            return;
+        }
+        if (instances.count(deviceLogicId) == 0) {
+            HCCL_WARNING("[HccpHdcManager::%s] deviceLogicId[%d] not ra init", __func__, deviceLogicId);
+            return;
+        }
+        instances.erase(deviceLogicId);
+        shouldDeInit = true;
+    }
+
+    if (shouldDeInit) {
+        u32 devPhyId = 0;
+        HcclResult ret = hrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_WARNING("[HccpHdcManager::%s] hrtGetDevicePhyIdByIndex failed, deviceLogicId[%d], ret[%d]",
+                         __func__, deviceLogicId, ret);
+            return;
+        }
+        HRaInitConfig cfg;
+        cfg.phyId = devPhyId;
+        cfg.mode = HrtNetworkMode::HDC;
+        DECTOR_TRY_CATCH("HccpHdcManager", HrtRaDeInit(cfg));
+        HCCL_INFO("[HccpHdcManager::%s] devLogicId [%d] ra deinit success.", __func__, deviceLogicId);
+    }
+}
+
 void HccpHdcManager::DestroyAll()
 {
-    std::unique_lock<std::mutex> lock(managerMutex);
-    for (auto deviceLogicId : instances) {
+    std::vector<u32> deviceIds;
+    {
+        std::lock_guard<std::mutex> lock(managerMutex);
+        if (destroyed) {
+            return;
+        }
+        destroyed = true;
+        deviceIds.assign(instances.begin(), instances.end());
+        instances.clear();
+    }
+
+    for (auto deviceLogicId : deviceIds) {
         HCCL_INFO("HccpHdcManager deinit");
 
         HRaInitConfig cfg;
@@ -51,7 +98,6 @@ void HccpHdcManager::DestroyAll()
         DECTOR_TRY_CATCH("HccpHdcManager", HrtRaDeInit(cfg));
         DECTOR_TRY_CATCH("HccpHdcManager", HrtResetDevice(deviceLogicId));
     }
-    instances.clear();
 }
 
 HccpHdcManager::~HccpHdcManager()
