@@ -26,7 +26,7 @@ HcclResult NotifyManager::InitNotifys(std::istringstream &iss, size_t notifyNum,
     newNotifys.reserve(newNotifys.size() + notifyNum);
     for (u32 idx = 0; idx < notifyNum; idx++) {
         std::unique_ptr<LocalNotify> notify;
-        EXECEPTION_CATCH(notify = std::make_unique<LocalNotify>(), return HCCL_E_PTR);
+        EXCEPTION_CATCH(notify = std::make_unique<LocalNotify>(), return HCCL_E_PTR);
         HcclSignalInfo notifyInfo;
         iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
         CHK_RET(notify->Init(notifyInfo, NotifyLoadType::DEVICE_NOTIFY));
@@ -120,7 +120,7 @@ HcclResult NotifyManager::HcclAllocNotify(CommEngine commEngine, ::NotifyType no
     // 构建 LocalNotify
     for (uint32_t i = 0; i < notifyNum; ++i) {
         std::unique_ptr<LocalNotify> notify;
-        EXECEPTION_CATCH(notify = std::make_unique<LocalNotify>(), return HCCL_E_PTR);
+        EXCEPTION_CATCH(notify = std::make_unique<LocalNotify>(), return HCCL_E_PTR);
         CHK_RET(notify->Init(notifyLoadType));
         if (Is310PDevice()) {
             CHK_RET(notify->SetIpc());
@@ -129,7 +129,7 @@ HcclResult NotifyManager::HcclAllocNotify(CommEngine commEngine, ::NotifyType no
     }
 
     std::unique_ptr<NotifyHandle[]> handles;
-    EXECEPTION_CATCH(handles = std::make_unique<NotifyHandle[]>(notifyNum), return HCCL_E_PTR);
+    EXCEPTION_CATCH(handles = std::make_unique<NotifyHandle[]>(notifyNum), return HCCL_E_PTR);
     if (isAicpu) {
         if (!callbacks_.getAicpuCommState()) {
             HcclResult ret = callbacks_.kernelLaunchAicpuCommInit();

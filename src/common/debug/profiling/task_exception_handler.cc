@@ -1666,7 +1666,7 @@ HcclResult TaskExceptionHandler::InsertTaskMap(u32 &streamID, TaskInfo &tmpTaskI
         CHK_PRT_RET(taskMap[deviceLogicId_].size() >= maxStrCount, HCCL_ERROR("[Insert][TaskMap]taskMap size is "
             "bigger than max stream count[%u]. stream add fail", maxStrCount), HCCL_E_INTERNAL);
         std::shared_ptr<deque<TaskInfo>> tmpTaskInfoQue = nullptr;
-        EXECEPTION_CATCH((tmpTaskInfoQue = make_shared<deque<TaskInfo>>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((tmpTaskInfoQue = make_shared<deque<TaskInfo>>()), return HCCL_E_PTR);
         tmpTaskInfoQue->push_back(tmpTaskInfo);
         taskMap[deviceLogicId_].insert({ streamID, tmpTaskInfoQue });
     } else { // 由于不允许多线程对同一stream操作，因此此处不需要保留锁，并且此处访问量最多，性能考虑也最好不要加锁
@@ -1696,7 +1696,7 @@ HcclResult TaskExceptionHandler::InsertOpMap(u32 &streamID, u32 &taskID, string 
         CHK_PRT_RET(opMap[deviceLogicId_].size() >= maxStrCount, HCCL_ERROR("[Insert][OpMap]Map size is "
             "bigger than max stream count[%u]. stream add fail", maxStrCount), HCCL_E_INTERNAL);
         std::shared_ptr<deque<FFTSOpInfo>> tmpOpInfoQue = nullptr;
-        EXECEPTION_CATCH((tmpOpInfoQue = make_shared<deque<FFTSOpInfo>>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((tmpOpInfoQue = make_shared<deque<FFTSOpInfo>>()), return HCCL_E_PTR);
         tmpOpInfoQue->push_back(tmpOpPara);
         opMap[deviceLogicId_].insert({ streamID, tmpOpInfoQue });
     } else {
@@ -1727,10 +1727,10 @@ HcclResult TaskExceptionHandler::InsertOpCtxInfo(u32 &streamID, u32 &taskID, str
         tmpOpInfo.descBufLen = descBufLen;
     }
     std::shared_ptr<FFTSOpInfo> tmpOpInfoPtr = nullptr;
-    EXECEPTION_CATCH((tmpOpInfoPtr = std::make_shared<FFTSOpInfo>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((tmpOpInfoPtr = std::make_shared<FFTSOpInfo>()), return HCCL_E_PTR);
     *tmpOpInfoPtr = tmpOpInfo;
     std::shared_ptr<vector<CtxInfo>> tempCtxVectorPtr = nullptr;
-    EXECEPTION_CATCH((tempCtxVectorPtr = std::make_shared<vector<CtxInfo>>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((tempCtxVectorPtr = std::make_shared<vector<CtxInfo>>()), return HCCL_E_PTR);
     std::unique_lock<std::mutex> lock(ctxInfoVectorMutex[deviceLogicId_]);  // 防止存入和读取冲突
     *tempCtxVectorPtr = ctxInfoArray[deviceLogicId_];
     auto tempPair = std::make_pair(tmpOpInfoPtr, tempCtxVectorPtr);
@@ -1741,7 +1741,7 @@ HcclResult TaskExceptionHandler::InsertOpCtxInfo(u32 &streamID, u32 &taskID, str
             "bigger than max stream count[%u]. stream add fail", maxStrCount), HCCL_E_INTERNAL);
         std::shared_ptr<std::deque<std::pair<std::shared_ptr<FFTSOpInfo>,
             std::shared_ptr<std::vector<CtxInfo>>>>> tmpOpInfoQue = nullptr;
-        EXECEPTION_CATCH((tmpOpInfoQue = std::make_shared<std::deque<std::pair<std::shared_ptr<FFTSOpInfo>,
+        EXCEPTION_CATCH((tmpOpInfoQue = std::make_shared<std::deque<std::pair<std::shared_ptr<FFTSOpInfo>,
             std::shared_ptr<std::vector<CtxInfo>>>>>()), return HCCL_E_PTR);
         tmpOpInfoQue->push_back(tempPair);
         opCtxInfo[deviceLogicId_].insert({ streamID, tmpOpInfoQue });
@@ -1769,7 +1769,7 @@ HcclResult TaskExceptionHandler::InsertRankInfo(std::string &tag) const
     {
         std::unique_lock<std::mutex> groupRankMapLock(groupRankMapMutex[deviceLogicId_]);
         std::shared_ptr<GroupRankInfo> tmpRankInfo = nullptr;
-        EXECEPTION_CATCH((tmpRankInfo = std::make_shared<GroupRankInfo>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((tmpRankInfo = std::make_shared<GroupRankInfo>()), return HCCL_E_PTR);
         *tmpRankInfo = groupRankInfo;
         auto groupRankIt = groupRankMap[deviceLogicId_].find(tag);
         if (groupRankIt == groupRankMap[deviceLogicId_].end()) {
@@ -1801,7 +1801,7 @@ HcclResult TaskExceptionHandler::InsertOpData(std::string &tag) const
     auto tempDeque = tagOpDataMap[deviceLogicId_].find(tag);
     if (tempDeque == tagOpDataMap[deviceLogicId_].end()) {
         std::shared_ptr<queue<OpDataInfo>> tmpOpDataInfo = nullptr;
-        EXECEPTION_CATCH((tmpOpDataInfo = std::make_shared<queue<OpDataInfo>>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((tmpOpDataInfo = std::make_shared<queue<OpDataInfo>>()), return HCCL_E_PTR);
         tmpOpDataInfo->push(opDataInfo);
         tagOpDataMap[deviceLogicId_].insert({ tag, tmpOpDataInfo });
         HCCL_DEBUG("[TaskExceptionHandler][Callback]InsertOpData index %u tag %s",

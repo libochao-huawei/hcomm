@@ -74,7 +74,7 @@ HcclResult NotifyPoolImpl::CreateNotify(std::shared_ptr<LocalIpcNotify> &localNo
     bool errorFlag = false;
     while (true) {
         std::shared_ptr<LocalIpcNotify> tmpNotify;
-        EXECEPTION_CATCH((tmpNotify = std::make_shared<LocalIpcNotify>()), errorFlag = true);
+        EXCEPTION_CATCH((tmpNotify = std::make_shared<LocalIpcNotify>()), errorFlag = true);
         CHK_PRT_BREAK(!(tmpNotify) || errorFlag, HCCL_ERROR("[NotifyPoolImpl][CreateNotify]create notify failed, "
             "errorFlag[%d]", errorFlag), errorFlag = true);
 
