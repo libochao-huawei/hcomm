@@ -153,21 +153,38 @@ TEST_F(AclgraphCommunicatorTest, HasRoceTransportLinks_NoRdma)
 }
 
 /**
- * @brief TC-COMM-08: DestroyAlgResource 传递 aclGraphDestroyCbk 参数（简化版）
- * 验证：ClearResMap 传入 aclGraphDestroyCbk=true 时，清理功能正常
+ * @brief TC-COMM-08: DestroyAlgResource 参数传递验证
+ * 验证：DestroyAlgResource 被 ClearResMap 正确调用并传递 aclGraphDestroyCbk 参数
+ * 通过检查链路清理结果来间接验证参数传递正确性
  */
 TEST_F(AclgraphCommunicatorTest, DestroyAlgResource_WithDestroyCbk)
 {
     std::string tag = "test_tag";
     bool findTag = false;
 
-    communicator_.resMap_[tag] = AlgResourceResponse();
+    // 预置包含 transport 的完整 AlgResourceResponse
+    AlgResourceResponse res;
+    res.opTransportResponse.resize(1);
+    res.opTransportResponse[0].resize(1);
+    res.opTransportResponse[0][0].virtualLinks.resize(1);
+    res.opTransportResponse[0][0].virtualLinks[0] = std::make_shared<Transport>();
+    res.opTransportResponse[0][0].links.resize(1);
+    res.opTransportResponse[0][0].links[0] = std::make_shared<Transport>();
+    res.opTransportResponse[0][0].transportRequests.resize(1);
+    res.opTransportResponse[0][0].transportRequests[0].isUsedRdma = true;
+    
+    communicator_.resMap_[tag] = res;
+    communicator_.linkResMap_[res.opTransportResponse[0][0].virtualLinks[0].get()] = LinkInfo();
+    communicator_.linkResMap_[res.opTransportResponse[0][0].links[0].get()] = LinkInfo();
 
-    // 调用 ClearResMap 传入 aclGraphDestroyCbk=true
+    // 调用 ClearResMap 传入 aclGraphDestroyCbk=true（DestroyOpTransportResponse 应保留 RDMA 链路）
     HcclResult ret = communicator_.ClearResMap(tag, findTag, true);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_TRUE(findTag);
     EXPECT_EQ(communicator_.resMap_.count(tag), 0);
+    // aclGraphDestroyCbk=true 时，RDMA 链路(isUsedRdma=true)应保留在 linkResMap_ 中
+    EXPECT_EQ(communicator_.linkResMap_.size(), 2);
+    communicator_.linkResMap_.clear();
 }
 
 /**
@@ -239,8 +256,8 @@ TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_NormalPath)
     communicator_.binHandle_ = reinterpret_cast<aclrtBinHandle>(0x1);
     // 由于 opStream_ 可能为空/未初始化，不会真正进入 launch 路径
     HcclResult ret = communicator_.AicpuKfcClearOpResLaunch({"tag1", "tag2"});
-    // 返回 SUCCESS（提前返回路径）或 HCCL_E_RUNTIME（launch 失败）均可
-    EXPECT_TRUE(ret == HCCL_SUCCESS || ret == HCCL_E_RUNTIME);
+    // 返回 SUCCESS（opStream_ 为空时走提前返回路径）
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 /**
