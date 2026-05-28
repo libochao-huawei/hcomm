@@ -13,7 +13,7 @@ namespace hccl {
 
 HcclResult RankPair::Init()
 {
-    EXECEPTION_CATCH(endpointPairMgr_ = std::make_unique<hcomm::EndpointPairMgr>(), return HCCL_E_PTR);
+    EXCEPTION_CATCH(endpointPairMgr_ = std::make_unique<hcomm::EndpointPairMgr>(), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
  

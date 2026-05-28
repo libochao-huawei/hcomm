@@ -308,7 +308,7 @@ HcclResult HcclOneSidedService::CreateLaunchStream()
 {
     g_launchStream = nullptr;
     constexpr u32 streamMode = 1;   // 使能遇错即停
-    EXECEPTION_CATCH(g_launchStream = std::make_unique<Stream>(StreamType::STREAM_TYPE_ONLINE),
+    EXCEPTION_CATCH(g_launchStream = std::make_unique<Stream>(StreamType::STREAM_TYPE_ONLINE),
         return HCCL_E_PTR);
     CHK_PTR_NULL(g_launchStream);
     CHK_PTR_NULL(g_launchStream->ptr());
@@ -376,7 +376,7 @@ HcclResult HcclOneSidedService::CreateConnection(RankId remoteRankId, const Hccl
     u32 serverId = isUsedRdmaMap_.at(remoteRankId) ? 0 : rankTable_->rankList.at(localRankInfo_.userRank).serverIdx;
     // 新增isNeedEnableP2P，用于判断remoteRank和本Rank是否在同一server上，在则需要enableP2P，反之则不需要
     bool isNeedEnableP2P = enableP2PRankIds_.find(remoteRankId) != enableP2PRankIds_.end();
-    EXECEPTION_CATCH(tempConn = std::make_shared<HcclOneSidedConn>(*ctx, *rankInfo, remoteRankInfo,
+    EXCEPTION_CATCH(tempConn = std::make_shared<HcclOneSidedConn>(*ctx, *rankInfo, remoteRankInfo,
         socketManager_, notifyPool_, dispatcher_, isUsedRdmaMap_[remoteRankId], sdid, serverId, trafficClass_,
         serviceLevel_, aicpuUnfoldMode_, isStandardCard_, isNeedEnableP2P), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(tempConn);
@@ -1062,7 +1062,7 @@ HcclResult HcclOneSidedService::AicpuInitKernelLaunch()
 
 HcclResult HcclOneSidedService::CreateAicpuNotify(std::shared_ptr<LocalNotify> &localNotify, HcclSignalInfo &notifyInfo)
 {
-    EXECEPTION_CATCH((localNotify = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((localNotify = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
     CHK_RET(localNotify->Init(NotifyLoadType::DEVICE_NOTIFY));
     CHK_RET(localNotify->SetIpc());
     CHK_RET(localNotify->GetNotifyData(notifyInfo));

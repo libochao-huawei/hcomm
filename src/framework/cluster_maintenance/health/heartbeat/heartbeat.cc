@@ -70,7 +70,7 @@ HcclResult Heartbeat::InitNic(const NicType nicType, const s32 devicePhyId, cons
 
     if (!isBackUp) {
         std::shared_ptr<HcclSocket> tempSocket;
-        EXECEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(nicCtx, port)), return HCCL_E_PTR);
+        EXCEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(nicCtx, port)), return HCCL_E_PTR);
         CHK_RET(tempSocket->Init());
         CHK_RET(tempSocket->Listen());
 
@@ -731,7 +731,7 @@ HcclResult Heartbeat::GetConnInfo(RankInfo &remRank, bool useSuperPodMode, HcclS
         conn.wlistInfosVec.push_back(wlistInfo);
     }
 
-    EXECEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(tag, devCtx, remNicIp, port, role)), return HCCL_E_PTR);
+    EXCEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(tag, devCtx, remNicIp, port, role)), return HCCL_E_PTR);
     CHK_RET(tempSocket->Init());
 
     conn.socket = tempSocket;

@@ -263,7 +263,7 @@ const u64 HCCL_MODULE_ID       = 5;
         }                                             \
     } while (0)
 
-#define EXECEPTION_CATCH(expression, retExp)                                       \
+#define EXCEPTION_CATCH(expression, retExp)                                       \
     do {                                                                           \
         try {                                                                      \
             expression;                                                            \

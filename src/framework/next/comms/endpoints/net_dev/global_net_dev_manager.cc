@@ -260,7 +260,7 @@ HcclResult GlobalNetDevMgr::ServerInit(u32 port)
     }
 
     std::shared_ptr<HcclSocket> tempSocket;
-    EXECEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(
+    EXCEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(
         netDevCtx_, port)), return HCCL_E_PTR);
     CHK_RET(tempSocket->Init());
     CHK_RET(tempSocket->Listen());
@@ -396,7 +396,7 @@ HcclResult GlobalNetDevMgr::ConnectToServer(uint32_t localPort,
 
     HCCL_INFO("[GlobalNetDevMgr][client] ConnectToServer connect to server");
     std::shared_ptr<hccl::HcclSocket> socketTemp = nullptr;
-    EXECEPTION_CATCH(socketTemp = std::make_shared<hccl::HcclSocket>(socketTag, netDevCtx_, remoteIp, remotePort,
+    EXCEPTION_CATCH(socketTemp = std::make_shared<hccl::HcclSocket>(socketTag, netDevCtx_, remoteIp, remotePort,
                         hccl::HcclSocketRole::SOCKET_ROLE_CLIENT),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(socketTemp);

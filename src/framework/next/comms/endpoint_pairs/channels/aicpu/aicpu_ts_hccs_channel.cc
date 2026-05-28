@@ -407,7 +407,7 @@ HcclResult AicpuTsHccsChannel::Serialize(std::shared_ptr<hccl::DeviceMem> &out)
     // cal remote buf mem
     size_t remoteBufSize = hostChannelHccsRes.remoteBufSize * sizeof(HcclMemEx);
     outSize += remoteBufSize;
-    EXECEPTION_CATCH((out = std::make_shared<hccl::DeviceMem>(hccl::DeviceMem::alloc(outSize))),
+    EXCEPTION_CATCH((out = std::make_shared<hccl::DeviceMem>(hccl::DeviceMem::alloc(outSize))),
                             return HCCL_E_PTR);
 
     void *dstPtr = nullptr;
