@@ -150,14 +150,6 @@ void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtM
     (void)memcpy_s(dst, destMax, src, count);
 }
 
-RdmaHandleManager::RdmaHandleManager()
-{
-}
-
-RdmaHandleManager::~RdmaHandleManager()
-{
-}
-
 RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
 {
     return (void *)0x12345678;
@@ -359,14 +351,6 @@ u32 GetUbToken()
 void SaluSleep(uint32_t usec)
 {
     return;
-}
-
-SocketHandleManager::SocketHandleManager()
-{
-}
-
-SocketHandleManager::~SocketHandleManager()
-{
 }
 
 SocketHandleManager &SocketHandleManager::GetInstance()
@@ -1391,10 +1375,7 @@ HccpHdcManager &HccpHdcManager::GetInstance()
 
 void HccpHdcManager::Init(u32 deviceLogicId)
 {
-}
-
-HccpHdcManager::~HccpHdcManager()
-{
+    instances.insert(deviceLogicId);
 }
 
 LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice, bool flag)
