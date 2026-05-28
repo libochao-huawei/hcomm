@@ -290,7 +290,80 @@ TEST_F(RdmaConnLiteV2Test, Ut_When_Write_SmallSize_Expect_SingleSlice)
     u64 dbAddr = 0;
     u64 dbValue = 0;
 
+    // 屏蔽对硬件 SQ 的真实读写
+    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
     EXPECT_NO_THROW(connLite.Write(loc, rmt, dbAddr, dbValue));
 
     std::cout << "End Ut_When_Write_SmallSize_Expect_SingleSlice" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_Write_LargeSize_Expect_MultiSlice)
+{
+    std::cout << "Start Ut_When_Write_LargeSize_Expect_MultiSlice" << std::endl;
+
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    u64 totalSize = 0x80000000ULL + 0x1000ULL;
+    RmaBufSliceLite loc(0x100000, totalSize, 0x11, 0);
+    RmtRmaBufSliceLite rmt(0x200000, totalSize, 0x22, 0, 0);
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    // 屏蔽对硬件 SQ 的真实读写
+    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
+    EXPECT_NO_THROW(connLite.Write(loc, rmt, dbAddr, dbValue));
+
+    // 校验上下文未被破坏（Describe 仍可正常输出）
+    EXPECT_FALSE(connLite.Describe().empty());
+
+    std::cout << "End Ut_When_Write_LargeSize_Expect_MultiSlice" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_WriteWithNotify_Expect_Success)
+{
+    std::cout << "Start Ut_When_WriteWithNotify_Expect_Success" << std::endl;
+
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    u64 totalSize = 0x80000000ULL;
+    RmaBufSliceLite      loc(0x1000, totalSize, 0x11, 0);
+    RmtRmaBufSliceLite   rmt(0x2000, totalSize, 0x22, 0, 0);
+
+    // notify 地址段
+    RmaBufSliceLite      locNotify(0x3000, 64, 0x33, 0);
+    RmtRmaBufSliceLite   notify(0x4000, 64, 0x44, 0, 0);
+
+    u64 dbAddr  = 0;
+    u64 dbValue = 0;
+
+    // 屏蔽对硬件 SQ 的真实读写
+    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
+    EXPECT_NO_THROW(connLite.WriteWithNotify(loc, rmt, locNotify, notify, dbAddr, dbValue));
+
+    std::cout << "End Ut_When_WriteWithNotify_Expect_Success" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_GetVendorOpsCalledTwice_Expect_NoRecreate)
+{
+    std::cout << "Start Ut_When_GetVendorOpsCalledTwice_Expect_NoRecreate" << std::endl;
+
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    EXPECT_NE(connLite.rdmaOps_, nullptr);
+    auto* firstPtr = connLite.rdmaOps_.get();
+
+    // 再次显式调用 GetVendorOps，应直接早返回，不重复创建
+    EXPECT_NO_THROW(connLite.GetVendorOps());
+    EXPECT_EQ(connLite.rdmaOps_.get(), firstPtr);
+
+    std::cout << "End Ut_When_GetVendorOpsCalledTwice_Expect_NoRecreate" << std::endl;
 }

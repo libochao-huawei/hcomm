@@ -17,6 +17,8 @@
 #include "rmt_rma_buffer_lite.h"
 #include "notify_lite.h"
 #include "binary_stream.h"
+#include "stream.h"
+#include "stream_lite.h"
 #include "rdma_conn_lite_v2.h"
 
 #define private public
@@ -481,10 +483,14 @@ TEST_F(RoceTransportLiteImplTest, Ut_When_ConnVecValues_Expect_Correct)
     
 //     ASSERT_EQ(transport.connVec_.size(), static_cast<size_t>(CONN_NUM));
 
-//     RmaBufSliceLite locSLice(0x1000, 2048, 0x11, 0);
-//     RmtRmaBufSliceLite rmtSlice(0x2000, 2048, 0x22, 0, 0);
-//     Stream stream;
-//     EXPECT_THROW(transport.Write(locSlice, rmtSlice, stream), NotSupportException);
+//     RmaBufferLite locBuf(0x4000, 2048, 0x400, 0);
+//     Hccl::Buffer rmtBuf{0x5000, 0x200};
+//     StreamLite stream(0, 0, 0, 0);
+//     MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+//     MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
+//     MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
+//     // 执行到rtsq，主动报NotSupportException
+//     EXPECT_THROW(transport.Write(locBuf, rmtBuf, stream), NotSupportException);
     
 //     std::cout << "End Ut_RoceTransportLite_write" << std::endl;
 // }
