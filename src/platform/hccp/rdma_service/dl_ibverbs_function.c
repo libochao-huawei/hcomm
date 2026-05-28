@@ -29,7 +29,8 @@ struct RsIbverbsOps gIbverbsOps = {
     .rsIbvAckCqEvents = ibv_ack_cq_events,
     .rsIbvGetDeviceName = ibv_get_device_name,
     .rsIbvWcStatusStr = ibv_wc_status_str,
-    .rsIbvQueryGidType = ibv_query_gid_type,
+    .rsIbvQueryGidType = (int (*)(struct ibv_context*, uint8_t, unsigned int,
+        enum ibv_gid_type_sysfs*))ibv_query_gid_type,
     .rsIbvDeregMr = ibv_dereg_mr,
     .rsIbvQueryQp = ibv_query_qp,
     .rsIbvDestroyQp = ibv_destroy_qp,
@@ -64,7 +65,9 @@ struct RsRoceUserOps gRoceUserOps = {
     .rsIbvExpRegMr = ibv_exp_reg_mr,
     .rsIbvExpCreateQp = ibv_exp_create_qp,
     .rsIbvExtPostSend = ibv_ext_post_send,
-    .rsIbvExpCreateCq = ibv_exp_create_cq,
+    .rsIbvExpCreateCq = (struct ibv_cq* (*)(struct ibv_context*, int, void*,
+        struct ibv_comp_channel*, int, struct rdma_lite_device_cq_init_attr*,
+        struct rdma_lite_device_cq_attr*))ibv_exp_create_cq,
     .rsIbvExpQueryDevice = ibv_exp_query_device,
     .rsRoceInitMemPool = roce_init_mem_pool,
     .rsRoceDeinitMemPool = roce_deinit_mem_pool,
@@ -81,7 +84,7 @@ struct RsRoceUserOps gRoceUserOps = {
 struct RsHrnOps gHrnOps = {
     .rsRoceSetQpLbValue = roce_set_qp_lb_value,
     .rsRoceGetQpLbValue = roce_get_qp_lb_value,
-    .rsRoceGetQpNum = roce_get_qp_num,
+    .rsRoceGetQpNum = (int (*)(struct ibv_context*, int*))roce_get_qp_num,
 };
 #endif
 

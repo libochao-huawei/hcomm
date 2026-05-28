@@ -13,6 +13,8 @@
 #include "rs_tlv.h"
 #include "ra_adp_tlv.h"
 #include "ra_rs_err.h"
+#include <stdlib.h>
+#include "securec.h"
 
 #define TC_TLV_HDC_MSG_SIZE    (32 * 1024)
 

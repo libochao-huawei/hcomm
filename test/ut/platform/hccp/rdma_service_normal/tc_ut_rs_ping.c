@@ -34,6 +34,8 @@ extern int RsGetPingCb(struct RaRsDevInfo *rdev, struct RsPingCtxCb **pingCb);
 extern int RsPingCommonPostRecv(struct RsPingLocalQpCb *qpCb);
 extern int RsPingCommonInitPostRecvAll(struct RsPingLocalQpCb *qpCb);
 extern void RsPingCommonDeinitLocalBuffer(struct RsPingCtxCb *pingCb);
+extern int RsPingCbInitMutex(struct RsPingCtxCb *pingCb);
+extern void *RsPingHandle(void *arg);
 extern int RsPingPongInitLocalBuffer(struct rs_cb *rscb, struct PingInitAttr *attr, struct PingInitInfo *info,
     struct RsPingCtxCb *pingCb);
 extern int RsPingCommonInitLocalQp(struct rs_cb *rscb, struct RsPingCtxCb *pingCb, union PingQpAttr*attr,
@@ -278,7 +280,7 @@ void TcRsPingInit()
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    mocker((stub_fn_t)RsIbvCreateCq, 10, NULL);
+    mocker((stub_fn_t)RsIbvCreateCq, 10, 0);
     ret = RsPingCommonInitLocalQp(&tmpRsCb, &pingCb, &rdmaAttr, &qpCb);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
@@ -917,13 +919,13 @@ void TcRsPingCbGetDevRdevIndex()
 
     pthread_mutex_init(&pingCb.pingMutex, NULL);
     pingCb.rdevCb.devList = &devList;
-    mocker(RsIbvGetDeviceName, 1, "dev");
+    mocker(RsIbvGetDeviceName, 1, 0);
     mocker(RsRoceGetRoceDevData, 1, -1);
     ret = RsPingCbGetDevRdevIndex(&pingCb, index);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
-    mocker(RsIbvGetDeviceName, 1, "dev");
+    mocker(RsIbvGetDeviceName, 1, 0);
     mocker(RsRoceGetRoceDevData, 1, 0);
     ret = RsPingCbGetDevRdevIndex(&pingCb, index);
     EXPECT_INT_EQ(ret, 0);
@@ -951,7 +953,7 @@ void TcRsPingInitMrCb()
     EXPECT_INT_NE(ret, 0);
 
     mocker(DlHalBuffAllocAlignEx, 1, 0);
-    mocker(RsDrvMrReg, 1, NULL);
+    mocker(RsDrvMrReg, 1, 0);
     ret = RsPingCommonInitMrCb(&rscb, &pingCb, &mrCb);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
@@ -959,7 +961,7 @@ void TcRsPingInitMrCb()
     mocker(DlHalBuffAllocAlignEx, 1, 0);
     mocker_invoke(RsDrvMrReg, RsDrvMrRegStub, 1);
     mocker_invoke(RsDrvMrDereg, RsDrvMrDeregStub, 1);
-    mocker(calloc, 10, NULL);
+    mocker(calloc, 10, 0);
     ret = RsPingCommonInitMrCb(&rscb, &pingCb, &mrCb);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
