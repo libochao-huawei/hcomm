@@ -156,7 +156,6 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
     CHK_PTR_NULL(statusList);
 
     u32 readyCount = 0;
-
     for (uint32_t i = 0; i < listNum; ++i) {
         const ChannelHandle inHandle = channelList[i];
         int32_t status = 0;
@@ -166,21 +165,21 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
             status = channel.GetStatus();  // 锁内调用，防止 destroy 并发释放
             return HcclResult::HCCL_SUCCESS;
         });
-
         if (ret != HcclResult::HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Get ChannelHandle failed.", __func__);
             return ret;
         }
-        CHK_PRT_RET(
-            status == ChannelStatus::FAILED, HCCL_ERROR("[%s] FAILED, status[%d]", __func__, status), HCCL_E_NETWORK);
-
-        CHK_PRT_RET(status == ChannelStatus::SOCKET_TIMEOUT,
-            HCCL_ERROR("[%s] TIMEOUT, status[%d]", __func__, status),
-            HCCL_E_TIMEOUT);
-
-        readyCount += (status == ChannelStatus::READY) ? 1 : 0;
         statusList[i] = status;
+
+        if (status == ChannelStatus::FAILED) {
+            return HCCL_E_NETWORK;
+        } else if (status == ChannelStatus::SOCKET_TIMEOUT) {
+            return HCCL_E_TIMEOUT;
+        } else if (status == ChannelStatus::READY) {
+            readyCount++;
+        }
     }
+
     if (readyCount != listNum) {
         return HCCL_E_AGAIN;
     }
