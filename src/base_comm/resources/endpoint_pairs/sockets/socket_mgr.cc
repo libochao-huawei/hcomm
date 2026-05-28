@@ -22,6 +22,7 @@
 namespace hcomm {
 
 constexpr uint32_t TempServerListenPort = 60001;    // 临时固定监听端口，用于功能验证
+constexpr uint32_t kHostResourceId = 0U;
 
 s32 g_linkTimeout = 0;
 inline s32 EnvLinkTimeoutGet()
@@ -42,15 +43,37 @@ SocketMgr& SocketMgr::GetInstance(s32 phyId)
     return instances[phyId];
 }
 
-HcclResult SocketMgr::Init()
+HcclResult SocketMgr::Init(const Hccl::SocketConfig &socketConfig)
 {
-    if (isLoaded_) {
+    const auto localPort = socketConfig.link.GetLocalPort();
+    if (localPort.GetType() == Hccl::PortDeploymentType::HOST_NET) {
+        if (isLoaded_ && isHostOnlyInit_) {
+            return HCCL_SUCCESS;
+        }
+        isLoaded_ = true;
+        isHostOnlyInit_ = true;
+        devicePhyId_ = kHostResourceId;
+        serverListenPort_ = TempServerListenPort;
+        HCCL_INFO("[SocketMgr][%s] init host socket mgr, hostResourceId[%u], localPort[%s].",
+            __func__, devicePhyId_, localPort.Describe().c_str());
         return HCCL_SUCCESS;
     }
-    isLoaded_ = true;
+
+    if (localPort.GetType() != Hccl::PortDeploymentType::DEV_NET) {
+        HCCL_ERROR("[SocketMgr][%s] PortDeploymentType[%s] is not supported.",
+            __func__, localPort.GetType().Describe().c_str());
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    if (isLoaded_ && !isHostOnlyInit_) {
+        return HCCL_SUCCESS;
+    }
+
     s32 devLogicId;
     CHK_RET(hrtGetDevice(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    isLoaded_ = true;
+    isHostOnlyInit_ = false;
     serverListenPort_ = TempServerListenPort;
     return HCCL_SUCCESS;
 }
@@ -183,7 +206,7 @@ HcclResult SocketMgr::MakeSocketInUse(Hccl::Socket*& socket)
 HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    CHK_RET(Init());
+    CHK_RET(Init(socketConfig));
     // 1. 先查找
     std::unordered_map<Hccl::SocketConfig,
                     std::unique_ptr<Hccl::Socket>>::iterator it =

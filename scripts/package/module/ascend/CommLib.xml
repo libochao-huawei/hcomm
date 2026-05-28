@@ -2,6 +2,7 @@
 <block name="CommLib" copy_type="delivery" src_path="" dst_path="" install_path="" install_own="$username:$usergroup" install_mod="550" install_type="run;devel">
     <dir_info install_mod="550">
         <path value="$(TARGET_ENV)/lib64"/>
+        <path value="hcomm_plugin"/>
         <path value="$(TARGET_ENV)/include" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/hccl" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/hcomm" install_type="devel"/>
@@ -279,5 +280,9 @@
         <file value="libtls_adp.so" file_type="shared"/>
         <!-- python -->
         <file value="hccl-0.1.0-py3-none-any.whl" file_type="whl"/>
+    </file_info>
+    <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="hcomm_plugin" install_path="hcomm_plugin" install_type="all" install_mod="440">
+        <file value="libhcomm_host_roce_plugin.so" file_type="shared"/>
+        <file value="libhcomm_host_ub_plugin.so" file_type="shared"/>
     </file_info>
 </block>
