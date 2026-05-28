@@ -43,35 +43,22 @@ if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdParty] hcomm_utils found in ${HCOMM_UTILS_INSTALL_PATH}, and not force rebuild cann third_party")
 elseif(PRODUCT_SIDE STREQUAL "host")
     # Host 侧编译时下载 hcomm_utils 包，Device 侧编译时进行复用
-    set(HCOMM_UTILS_GLOB_PKG "")
-    if(EXISTS ${HCOMM_UTILS_PKG_PATH})
+    file(GLOB HCOMM_UTILS_GLOB_PKG
+        ${CANN_3RD_LIB_PATH}/cann-hcomm-utils_*_linux-${HCOMM_UTILS_ARCH}.tar.gz
+    )
+    if(EXISTS ${HCOMM_UTILS_GLOB_PKG})
+        # 离线编译场景，优先使用已下载的包（忽略版本号）
+        message(STATUS "[ThirdParty] Found local hcomm_utils package (ignore version): ${HCOMM_UTILS_GLOB_PKG}")
+        set(HCOMM_UTILS_PKG_PATH ${HCOMM_UTILS_GLOB_PKG})
+        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
+    elseif(EXISTS ${HCOMM_UTILS_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG_PATH}")
         set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
     else()
-        file(GLOB HCOMM_UTILS_GLOB_PKG
-            ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_*_linux-${HCOMM_UTILS_ARCH}.tar.gz
-        )
-        if(EXISTS ${HCOMM_UTILS_GLOB_PKG})
-            # 离线编译场景，优先使用已下载的包（忽略版本号）
-            message(STATUS "[ThirdParty] Found local hcomm_utils package (ignore version): ${HCOMM_UTILS_GLOB_PKG}")
-            set(HCOMM_UTILS_PKG_PATH ${HCOMM_UTILS_GLOB_PKG})
-            set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_GLOB_PKG})
-        else()
-            file(GLOB HCOMM_UTILS_GLOB_PKG
-                ${CANN_3RD_LIB_PATH}/cann-hcomm-utils_*_linux-${HCOMM_UTILS_ARCH}.tar.gz
-            )
-            if(EXISTS ${HCOMM_UTILS_GLOB_PKG})
-                # 离线编译场景，优先使用已下载的包（忽略版本号）
-                message(STATUS "[ThirdParty] Found local hcomm_utils package (ignore version): ${HCOMM_UTILS_GLOB_PKG}")
-                set(HCOMM_UTILS_PKG_PATH ${HCOMM_UTILS_GLOB_PKG})
-                set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_GLOB_PKG})
-            else()
-                # 下载并解压
-                message(STATUS "[ThirdParty] Downloading hcomm_utils from ${HCOMM_UTILS_URL}")
-                set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_URL})
-            endif()
-        endif()
+        # 下载并解压
+        message(STATUS "[ThirdParty] Downloading hcomm_utils from ${HCOMM_UTILS_URL}")
+        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_URL})
     endif()
 
     if(EXISTS ${HCOMM_UTILS_GLOB_PKG})
