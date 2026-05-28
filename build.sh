@@ -246,17 +246,10 @@ function build_hcomm() {
         return 1
     fi
 
-    # 编译
-    cmake --build . -j${CPU_NUM}
+    # 编译 + 打包
+    cmake --build . --target package -j${CPU_NUM}
     if [ $? -ne 0 ]; then
         log "Error: cmake build failed"
-        return 1
-    fi
-
-    # 打包
-    make package -j${CPU_NUM}
-    if [ $? -ne 0 ]; then
-        log "Error: make package failed"
         return 1
     fi
 }
