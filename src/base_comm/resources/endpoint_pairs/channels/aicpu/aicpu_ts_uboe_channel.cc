@@ -138,23 +138,6 @@ void AicpuTsUboeChannel::BuildConn()
     }
 }
 
-HcclResult AicpuTsUboeChannel::BuildNotify()
-{
-    localNotifies_.clear();
-    commonRes_.notifyVec.clear();
-    bool devUsed = true;
-    for (uint32_t i = 0; i < notifyNum_; ++i) {
-        std::unique_ptr<Hccl::UbLocalNotify> notifyPtr = nullptr;
-        EXCEPTION_CATCH(
-            notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle_, devUsed),
-            return HCCL_E_PTR
-        );
-        commonRes_.notifyVec.push_back(notifyPtr.get());
-        localNotifies_.push_back(std::move(notifyPtr));
-    }
-    return HCCL_SUCCESS;
-}
-
 HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
 {
@@ -192,19 +175,8 @@ HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &b
 
 HcclResult AicpuTsUboeChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
 {
-    bufferVecTemp_.clear();
-    for (size_t i = 0; i < bufs.size(); i++) {
-        std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
-        EXCEPTION_CATCH(
-            bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_),
-            return HCCL_E_PTR
-        );
-        bufferVecTemp_.push_back(bufferPtr.get());
-        commonRes_.bufferVec.push_back(bufferPtr.get());
-        localRmaBuffers_.push_back(std::move(bufferPtr));
-    }
+    CHK_RET(UbChannelBase::BuildBuffer(bufs));
     CHK_RET(FillTagVec(commonRes_.bufferVec, localUserMemTag_));
-
     return HCCL_SUCCESS;
 }
 
