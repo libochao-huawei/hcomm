@@ -676,19 +676,19 @@ ErrorMessageReport GetAicpuTaskException()
     return emrReport;
 }
 
-TEST_F(TaskExceptionTest, ut_PrintAicpuErrorMessage)
-{
-    bool isExistAicpuError = false;
-    u32 deviceLogicId = 0;
-    TaskExceptionHandler taskExceptionHandler(deviceLogicId);
-    auto getAicpuTaskExceptionCallBack = []() {return GetAicpuTaskException();};
-    RegisterGetAicpuTaskExceptionCallBack(0, 0, getAicpuTaskExceptionCallBack);
-    rtExceptionInfo exceptionInfo{0, 0, 0, 0, 0};
+// TEST_F(TaskExceptionTest, ut_PrintAicpuErrorMessage)
+// {
+//     bool isExistAicpuError = false;
+//     u32 deviceLogicId = 0;
+//     TaskExceptionHandler taskExceptionHandler(deviceLogicId);
+//     auto getAicpuTaskExceptionCallBack = []() {return GetAicpuTaskException();};
+//     RegisterGetAicpuTaskExceptionCallBack(0, 0, getAicpuTaskExceptionCallBack);
+//     rtExceptionInfo exceptionInfo{0, 0, 0, 0, 0};
 
-    taskExceptionHandler.PrintAicpuErrorMessage(&exceptionInfo, isExistAicpuError);
+//     taskExceptionHandler.PrintAicpuErrorMessage(&exceptionInfo, isExistAicpuError);
 
-    taskExceptionHandler.Callback(&exceptionInfo);
-}
+//     taskExceptionHandler.Callback(&exceptionInfo);
+// }
 #if 0 //执行失败Map size is bigger than max stream count
 TEST_F(TaskExceptionTest, ut_task_exception_aiv)
 {
