@@ -170,7 +170,7 @@ HcclResult RankConsistentcyChecker::GetCheckFrame(u8 *destBuf, u64 maxDestBuf, c
 HcclResult RankConsistentcyChecker::CheckFrameRecv(const u8 *recvBuf, u32 recvBufLen, const std::string &tag)
 {
     if ((GetExternalInconsistentCheckSwitch() == InconsistentCheckMode::OFF) || 
-        (GetExternalInconsistentCheckSwitch() == InconsistentCheckMode::FIRST && inconsistentCheckFirstDone_ = true)) {
+        (GetExternalInconsistentCheckSwitch() == InconsistentCheckMode::FIRST && inconsistentCheckFirstDone_ == true)) {
         return HCCL_SUCCESS;
     }
     CHK_PTR_NULL(recvBuf);
