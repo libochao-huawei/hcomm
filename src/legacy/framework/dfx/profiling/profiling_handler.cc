@@ -401,9 +401,9 @@ void ProfilingHandler::ReportCcuInfo(const TaskInfo &taskInfo) const
     for (const auto &info : *ccuDetailInfo) {
         if (info.type == 0 && enableHcclL1_) {
             GetCcuTaskInfo(taskInfo, info);
-        } else if (info.type == 1 &&  enableHcclL2_) {
+        } else if (info.type == 1 &&  enableHcclL1_) {
             GetCcuWaitSignalInfo(taskInfo, info);
-        } else if (info.type == CCU_TYPE && enableHcclL2_) {
+        } else if (info.type == CCU_TYPE && enableHcclL1_) {
             GetCcuGroupInfo(taskInfo, info);
         }
     }
@@ -766,11 +766,8 @@ void ProfilingHandler::StartSubscribe(uint64_t profconfig)
     if ((profconfig & PROF_TASK_TIME_L1_MASK) != 0) {
         StartTaskApiSubscribe();
         StartAdditionInfoSubscribe();
+        StartCcuSubscribe(); // ccu开关等级改为L1
     } 
-    // L2打开时, 上报task粒度的打点和子task的详细信息
-    if ((profconfig & PROF_TASK_TIME_L2_MASK) != 0) { 
-        StartL2Subscribe();
-    }
     HCCL_RUN_INFO("[Profiling][CommandHandle] profSwitch is[%llu]", profconfig);
 }
 
@@ -964,12 +961,11 @@ void ProfilingHandler::ReportStoragedAdditionInfo()
     }
 }
 
-void ProfilingHandler::StartL2Subscribe()
+void ProfilingHandler::StartCcuSubscribe()
 {
     enableHcclNode_ = true;
     enableHcclL1_ = true;
-    enableHcclL2_ = true;
-    HCCL_INFO("ProfilingHandler StartL2Subscribe");
+    HCCL_INFO("ProfilingHandler StartCcuSubscribe");
     const std::vector<std::pair<uint32_t, std::string>> ccuInfoTypes
         = {{MSPROF_REPORT_CCU_TASK_INFO, "ccu_task_info"},
            {MSPROF_REPORT_CCU_WAIT_SIGNAL_INFO, "ccu_wait_signal_info"},
@@ -997,7 +993,6 @@ void ProfilingHandler::ProfilingHandler::StopSubscribe()
     enableHcclNode_ = false;
     enableHcclL0_   = false;
     enableHcclL1_   = false;
-    enableHcclL2_   = false;
     HCCL_RUN_INFO("[ProfilingHandler]StopSubscribe.");
 }
 
@@ -1017,11 +1012,6 @@ bool ProfilingHandler::GetHcclL0State() const
 bool ProfilingHandler::GetHcclL1State() const
 {
     return enableHcclL1_;
-}
-
-bool ProfilingHandler::GetHcclL2State() const
-{
-    return enableHcclL2_;
 }
 
 uint64_t ProfilingHandler::GetProfHashId(const char *name, uint32_t len) const

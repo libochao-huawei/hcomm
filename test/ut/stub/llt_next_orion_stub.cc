@@ -1894,7 +1894,7 @@ void ProfilingHandler::ReportStoragedAdditionInfo()
 {
 }
 
-void ProfilingHandler::StartL2Subscribe()
+void ProfilingHandler::StartCcuSubscribe()
 {
 }
 
@@ -1916,11 +1916,6 @@ bool ProfilingHandler::GetHcclL0State() const
 }
 
 bool ProfilingHandler::GetHcclL1State() const
-{
-    return false;
-}
-
-bool ProfilingHandler::GetHcclL2State() const
 {
     return false;
 }
