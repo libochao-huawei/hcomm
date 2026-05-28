@@ -12,6 +12,7 @@
 #define HCCL_DIAG_H
 
 #include <cstddef>
+#include <acl/acl_rt.h>
 #include <hccl/base.h>
 #include <hccl/hccl_types.h>
 #include <hcomm_res_defs.h>
@@ -38,6 +39,9 @@ extern HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime);
  */
 extern HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char *kernelName);
 extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime);
+
+typedef void (*HcclTaskExceptionCallback)(aclrtExceptionInfo *exceptionInfo);
+extern HcclResult HcclTaskExceptionRegCallBack(HcclTaskExceptionCallback callback);
 
 extern uint64_t HcommGetProfilingSysCycleTime();
 

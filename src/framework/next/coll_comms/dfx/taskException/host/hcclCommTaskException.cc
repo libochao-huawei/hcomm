@@ -133,6 +133,30 @@ TaskExceptionHostManager::TaskExceptionHostManager() {}
 
 TaskExceptionHostManager::~TaskExceptionHostManager() {}
 
+void TaskExceptionHost::SetTaskExceptionCallback(HcclTaskExceptionCallback callback)
+{
+    std::lock_guard<std::mutex> lock(callbackMutex_);
+    callbacks_.clear();
+    if (callback != nullptr) {
+        callbacks_.push_back(callback);
+    }
+}
+
+void TaskExceptionHost::CallTaskExceptionCallbacks(rtExceptionInfo_t *exceptionInfo) const
+{
+    std::vector<HcclTaskExceptionCallback> callbacks;
+    {
+        std::lock_guard<std::mutex> lock(callbackMutex_);
+        callbacks = callbacks_;
+    }
+
+    for (auto callback : callbacks) {
+        if (callback != nullptr) {
+            callback(reinterpret_cast<aclrtExceptionInfo *>(exceptionInfo));
+        }
+    }
+}
+
 void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId,
     GetAicpuTaskExceptionCallBackHcomm p1)
 {
@@ -208,6 +232,11 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
     HCCL_RUN_INFO("[TaskExceptionHost][%s], taskid[%u], streamid[%u], tid[%u], deviceid[%u], retcode[%u], type[%d]",
         __func__, exceptionInfo->taskid, exceptionInfo->streamid, exceptionInfo->tid, exceptionInfo->deviceid,
         exceptionInfo->retcode, exceptionInfo->expandInfo.type);
+
+    TaskExceptionHost *handler = TaskExceptionHostManager::GetHandler(static_cast<size_t>(exceptionInfo->deviceid));
+    if (handler != nullptr) {
+        handler->CallTaskExceptionCallbacks(exceptionInfo);
+    }
 
     if (IsMC2Exception(exceptionInfo)) { // MC2 taskException 新流程暂未支持，回退到老流程
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
