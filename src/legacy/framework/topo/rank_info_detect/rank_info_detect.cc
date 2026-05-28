@@ -226,6 +226,7 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
 
     // 确保root info流程先销毁server socket 再返回
     // 可能失败，需要将错误状态带出
+    HCCL_INFO("[rank_info_detect][%s] destroy a socket[%p] in UbMemTransport deinit", __func__, static_cast<void*>(serverSocket));
     EXECEPTION_CATCH(serverSocket->Destroy(), hasException = true);
     HrtResetDevice(devLogicId);
 
