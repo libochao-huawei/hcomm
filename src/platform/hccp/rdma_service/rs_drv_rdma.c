@@ -1292,6 +1292,22 @@ create_recv_cq_err:
     return -EOPENSRC;
 }
 
+int RsDrvTypicalCqCreate(struct RsRdevCb *rdevCb, unsigned int cqDepth, unsigned int *cqn,
+    struct ibv_cq **ibCq, struct rdma_lite_device_cq_attr *deviceCqAttr)
+{
+    struct rdma_lite_device_cq_init_attr initAttr = {0};
+
+    *ibCq = RsIbvExpCreateCq(rdevCb->ibCtx, (int)cqDepth, NULL, NULL, 0, &initAttr, deviceCqAttr);
+    if (*ibCq == NULL) {
+        hccp_err("rs_ibv_exp_create_cq failed, cqDepth[%u]", cqDepth);
+        return -ENOMEM;
+    }
+
+    *cqn = deviceCqAttr->cqn;
+    hccp_info("drv typical cq create success, cqn[%u] cqDepth[%u]", *cqn, cqDepth);
+    return 0;
+}
+
 int RsDrvDestroyCqEvent(struct RsCqContext *cqContext)
 {
     int ret;

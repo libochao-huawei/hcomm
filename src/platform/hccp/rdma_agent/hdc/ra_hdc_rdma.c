@@ -355,6 +355,63 @@ int RaHdcTypicalQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, 
     return 0;
 }
 
+int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn,
+    void **cqHandle)
+{
+    union OpTypicalCqCreateData cqCreateData = {0};
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RaTypicalCqHandle *cqHdc = NULL;
+    int ret;
+
+    cqHdc = (struct RaTypicalCqHandle *)calloc(1, sizeof(struct RaTypicalCqHandle));
+    CHK_PRT_RETURN(cqHdc == NULL,
+        hccp_err("[create][ra_hdc_typical_cq]cq_hdc calloc failed phyId(%u)", phyId), -ENOMEM);
+
+    cqCreateData.txData.phyId = phyId;
+    cqCreateData.txData.rdevIndex = rdmaHandle->rdevIndex;
+    cqCreateData.txData.cqDepth = cqDepth;
+
+    ret = RaHdcProcessMsg(RA_RS_TYPICAL_CQ_CREATE, phyId, (char *)&cqCreateData,
+        sizeof(union OpTypicalCqCreateData));
+    if (ret) {
+        hccp_err("[create][ra_hdc_typical_cq]ra hdc message process failed ret(%d) phyId(%u)", ret, phyId);
+        free(cqHdc);
+        cqHdc = NULL;
+        return ret;
+    }
+    hccp_info("RaHdcProcessMsg RA_RS_TYPICAL_CQ_CREATE Done");
+
+    *cqn = cqCreateData.rxData.cqn;
+
+    cqHdc->cqn = *cqn;
+    cqHdc->phyId = phyId;
+    cqHdc->rdevIndex = rdmaHandle->rdevIndex;
+    cqHdc->rdmaHandle = rdmaHandle;
+    cqHdc->rdmaOps = rdmaHandle->rdmaOps;
+
+    if (rdmaHandle->supportLite != 0) {
+        struct rdma_lite_cq *liteCq = NULL;
+        ret = RaHdcLiteCqCreate(rdmaHandle, cqDepth, &cqCreateData, &liteCq);
+        if (ret) {
+            union OpQpDestroyData destroyData = {0};
+            hccp_err("[create][ra_hdc_typical_cq]ra_hdc_lite_cq_create failed ret(%d) phyId(%u)", ret, phyId);
+            destroyData.txData.qpn = cqHdc->cqn;
+            destroyData.txData.phyId = cqHdc->phyId;
+            destroyData.txData.rdevIndex = cqHdc->rdevIndex;
+            (void)RaHdcProcessMsg(RA_RS_QP_DESTROY, cqHdc->phyId, (char *)&destroyData,
+                sizeof(union OpQpDestroyData));
+            free(cqHdc);
+            cqHdc = NULL;
+            return ret;
+        }
+        cqHdc->liteCq = liteCq;
+    }
+
+    *cqHandle = cqHdc;
+
+    return 0;
+}
+
 int RaHdcQpDestroy(struct RaQpHandle *qpHdc)
 {
     int ret;
