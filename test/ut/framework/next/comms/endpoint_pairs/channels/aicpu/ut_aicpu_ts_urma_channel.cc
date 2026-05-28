@@ -32,6 +32,11 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_Resume_MockedBuilds_Returns_SUCCESS) {
     AicpuTsUrmaChannel ch(ep, desc);
 
     // Mock private helper methods BuildConnection and BuildUbMemTransport
+    MOCKER_CPP(&AicpuTsUrmaChannel::BuildSocket, HcclResult(AicpuTsUrmaChannel::*)())
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
+
     MOCKER_CPP(&AicpuTsUrmaChannel::BuildConnection, HcclResult(AicpuTsUrmaChannel::*)())
         .stubs()
         .with(any())
