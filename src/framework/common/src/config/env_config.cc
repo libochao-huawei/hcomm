@@ -736,11 +736,11 @@ HcclResult ParseDFSConfig()
     std::string inconsistentCheckSwitch;
     CHK_RET(ParseSingleDFSConfigItem(dfsConfigEnv, INCONSISTENT_CHECK_CONFIG, inconsistentCheckSwitch));
     if (inconsistentCheckSwitch == "off") {
-        g_envConfig.inconsistentCheckSwitch = false;
+        g_envConfig.inconsistentCheckSwitch = InconsistentCheckMode::OFF;
     } else if (inconsistentCheckSwitch == "on") {
-        g_envConfig.inconsistentCheckSwitch = true;
+        g_envConfig.inconsistentCheckSwitch = InconsistentCheckMode::ON;
     }  else if (inconsistentCheckSwitch == "first") {
-        g_envConfig.inconsistentCheckSwitch = true;
+        g_envConfig.inconsistentCheckSwitch = InconsistentCheckMode::FIRST;
     } else {
         HCCL_RUN_WARNING("[ParseDFSConfig] HCCL_DFS_CONFIG-inconsistent_check was configured to [%s], please configured to"\
             "'on' or 'off' or 'first'", inconsistentCheckSwitch.c_str());
@@ -838,9 +838,14 @@ const bool& GetExternalInputStuckDetect()
     return g_envConfig.opCounterEnable;
 }
 
-const bool& GetExternalInconsistentCheckSwitch()
+const InconsistentCheckMode& GetExternalInconsistentCheckSwitch()
 {
     return g_envConfig.inconsistentCheckSwitch;
+}
+
+HcclResult SetExternalInconsistentCheckSwitch(InconsistentCheckMode mode)
+{
+    g_envConfig.inconsistentCheckSwitch = mode;
 }
 
 HcclResult ParseHcclAlgo()
