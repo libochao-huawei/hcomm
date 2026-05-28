@@ -288,6 +288,8 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
     return 0;
 }
 
+#define HCOMM_SUPPORT_UBOE 1
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
