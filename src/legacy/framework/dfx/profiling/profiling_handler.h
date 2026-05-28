@@ -147,7 +147,6 @@ public:
     bool GetHcclNodeState() const;
     bool GetHcclL0State() const;
     bool GetHcclL1State() const;
-    bool GetHcclL2State() const;
     int32_t CommandHandle(uint32_t rtType, void *data, uint32_t len) const; 
     void Init();
     void ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
@@ -170,7 +169,7 @@ private:
     void StartHostApiSubscribe();
     void StartAdditionInfoSubscribe();
     void StartHostHcclOpSubscribe();
-    void StartL2Subscribe();
+    void StartCcuSubscribe();
     void StopSubscribe();
 
     void CallProfRegHostApi() const;
@@ -207,7 +206,6 @@ private:
     bool                    enableHcclNode_{false};
     bool                    enableHcclL0_{false};
     bool                    enableHcclL1_{false};
-    bool                    enableHcclL2_{false};
 
     std::vector<TaskInfo>           cacheTaskInfos_{};
     std::queue<MsprofApi>           cachedTaskApiInfo_{};

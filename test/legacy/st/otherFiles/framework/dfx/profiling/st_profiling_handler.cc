@@ -396,8 +396,8 @@ TEST_F(ProfilingHandlerTest, GetInitCacheData_test){
     handler.StartHostApiSubscribe();
     handler.StartHostHcclOpSubscribe();
     handler.StartTaskApiSubscribe();
-    handler.StartAdditionInfoSubscribe();
-    handler.StartL2Subscribe();
+    handler.StartAddtionInfoSubscribe();
+    handler.StartCcuSubscribe();
     handler.StopSubscribe();
 }
 
@@ -408,6 +408,5 @@ TEST_F(ProfilingHandlerTest, GetProfState_test)
     EXPECT_EQ(false, handler.GetHcclNodeState());
     EXPECT_EQ(false, handler.GetHcclL0State());
     EXPECT_EQ(false, handler.GetHcclL1State());
-    EXPECT_EQ(false, handler.GetHcclL2State());
 }
 
