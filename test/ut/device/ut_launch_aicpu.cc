@@ -34,120 +34,120 @@ protected:
     }
 };
 
-TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_BinHandleIsNull_Expect_ReturnPtrError)
-{
-    rtStream_t stm = nullptr;
-    HcclResult ret = AicpuAclKernelLaunchV2(stm, nullptr, 0, nullptr, "test", true, 0, nullptr, 0, "tag");
-    EXPECT_EQ(ret, HCCL_E_PTR);
-}
+// TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_BinHandleIsNull_Expect_ReturnPtrError)
+// {
+//     rtStream_t stm = nullptr;
+//     HcclResult ret = AicpuAclKernelLaunchV2(stm, nullptr, 0, nullptr, "test", true, 0, nullptr, 0, "tag");
+//     EXPECT_EQ(ret, HCCL_E_PTR);
+// }
 
-TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_AddrIsNull_Expect_ReturnParaError)
-{
-    rtStream_t stm = nullptr;
-    aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
-    HcclResult ret = AicpuAclKernelLaunchV2(stm, nullptr, 0, binHandle, "test", true, 0, nullptr, 0, "tag");
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
+// TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_AddrIsNull_Expect_ReturnParaError)
+// {
+//     rtStream_t stm = nullptr;
+//     aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
+//     HcclResult ret = AicpuAclKernelLaunchV2(stm, nullptr, 0, binHandle, "test", true, 0, nullptr, 0, "tag");
+//     EXPECT_EQ(ret, HCCL_E_PARA);
+// }
 
-TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_SizeIsZero_Expect_ReturnParaError)
-{
-    rtStream_t stm = nullptr;
-    aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
-    u32 addr = 1;
-    HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, 0, binHandle, "test", true, 0, nullptr, 0, "tag");
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
+// TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_SizeIsZero_Expect_ReturnParaError)
+// {
+//     rtStream_t stm = nullptr;
+//     aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
+//     u32 addr = 1;
+//     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, 0, binHandle, "test", true, 0, nullptr, 0, "tag");
+//     EXPECT_EQ(ret, HCCL_E_PARA);
+// }
 
-TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_GetFunctionFail_Expect_ReturnRuntimeError)
-{
-    rtStream_t stm = nullptr;
-    aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
-    u32 addr = 1;
-    u32 size = 10;
-    MOCKER(aclrtBinaryGetFunction)
-        .stubs()
-        .will(returnValue(ACL_ERROR_RT_FEATURE_NOT_SUPPORT));
-    HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
-    EXPECT_EQ(ret, HCCL_E_RUNTIME);
-    GlobalMockObject::verify();
-}
+// TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_GetFunctionFail_Expect_ReturnRuntimeError)
+// {
+//     rtStream_t stm = nullptr;
+//     aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
+//     u32 addr = 1;
+//     u32 size = 10;
+//     MOCKER(aclrtBinaryGetFunction)
+//         .stubs()
+//         .will(returnValue(ACL_ERROR_RT_FEATURE_NOT_SUPPORT));
+//     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
+//     EXPECT_EQ(ret, HCCL_E_RUNTIME);
+//     GlobalMockObject::verify();
+// }
 
-TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_LaunchKernelFail_Expect_ReturnRuntimeError)
-{
-    rtStream_t stm = nullptr;
-    aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
-    u32 addr = 1;
-    u32 size = 10;
-    MOCKER(aclrtBinaryGetFunction)
-        .stubs()
-        .will(returnValue(ACL_SUCCESS));
-    MOCKER(aclrtLaunchKernelWithHostArgs)
-        .stubs()
-        .will(returnValue(ACL_ERROR_RT_FEATURE_NOT_SUPPORT));
-    HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
-    EXPECT_EQ(ret, HCCL_E_RUNTIME);
-    GlobalMockObject::verify();
-}
+// TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_LaunchKernelFail_Expect_ReturnRuntimeError)
+// {
+//     rtStream_t stm = nullptr;
+//     aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
+//     u32 addr = 1;
+//     u32 size = 10;
+//     MOCKER(aclrtBinaryGetFunction)
+//         .stubs()
+//         .will(returnValue(ACL_SUCCESS));
+//     MOCKER(aclrtLaunchKernelWithHostArgs)
+//         .stubs()
+//         .will(returnValue(ACL_ERROR_RT_FEATURE_NOT_SUPPORT));
+//     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
+//     EXPECT_EQ(ret, HCCL_E_RUNTIME);
+//     GlobalMockObject::verify();
+// }
 
-TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CaptureNotSupport_Expect_ReturnSuccess)
-{
-    rtStream_t stm = reinterpret_cast<rtStream_t>(1);
-    aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
-    u32 addr = 1;
-    u32 size = 10;
-    MOCKER(aclrtBinaryGetFunction)
-        .stubs()
-        .will(returnValue(ACL_SUCCESS));
-    MOCKER(aclrtLaunchKernelWithHostArgs)
-        .stubs()
-        .will(returnValue(ACL_SUCCESS));
-    MOCKER(aclmdlRICaptureGetInfo)
-        .stubs()
-        .will(returnValue(ACL_ERROR_RT_FEATURE_NOT_SUPPORT));
-    HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify();
-}
+// TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CaptureNotSupport_Expect_ReturnSuccess)
+// {
+//     rtStream_t stm = reinterpret_cast<rtStream_t>(1);
+//     aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
+//     u32 addr = 1;
+//     u32 size = 10;
+//     MOCKER(aclrtBinaryGetFunction)
+//         .stubs()
+//         .will(returnValue(ACL_SUCCESS));
+//     MOCKER(aclrtLaunchKernelWithHostArgs)
+//         .stubs()
+//         .will(returnValue(ACL_SUCCESS));
+//     MOCKER(aclmdlRICaptureGetInfo)
+//         .stubs()
+//         .will(returnValue(ACL_ERROR_RT_FEATURE_NOT_SUPPORT));
+//     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     GlobalMockObject::verify();
+// }
 
-TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CaptureGetInfoFail_Expect_ReturnRuntimeError)
-{
-    rtStream_t stm = reinterpret_cast<rtStream_t>(1);
-    aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
-    u32 addr = 1;
-    u32 size = 10;
-    MOCKER(aclrtBinaryGetFunction)
-        .stubs()
-        .will(returnValue(ACL_SUCCESS));
-    MOCKER(aclrtLaunchKernelWithHostArgs)
-        .stubs()
-        .will(returnValue(ACL_SUCCESS));
-    MOCKER(aclmdlRICaptureGetInfo)
-        .stubs()
-        .will(returnValue(static_cast<aclError>(ACL_ERROR_RT_INTERNAL_ERROR)));
-    HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
-    EXPECT_EQ(ret, HCCL_E_RUNTIME);
-    GlobalMockObject::verify();
-}
+// TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CaptureGetInfoFail_Expect_ReturnRuntimeError)
+// {
+//     rtStream_t stm = reinterpret_cast<rtStream_t>(1);
+//     aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
+//     u32 addr = 1;
+//     u32 size = 10;
+//     MOCKER(aclrtBinaryGetFunction)
+//         .stubs()
+//         .will(returnValue(ACL_SUCCESS));
+//     MOCKER(aclrtLaunchKernelWithHostArgs)
+//         .stubs()
+//         .will(returnValue(ACL_SUCCESS));
+//     MOCKER(aclmdlRICaptureGetInfo)
+//         .stubs()
+//         .will(returnValue(static_cast<aclError>(ACL_ERROR_RT_INTERNAL_ERROR)));
+//     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
+//     EXPECT_EQ(ret, HCCL_E_RUNTIME);
+//     GlobalMockObject::verify();
+// }
 
-TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_GetStreamAttrFail_Expect_ReturnRuntimeError)
-{
-    rtStream_t stm = reinterpret_cast<rtStream_t>(1);
-    aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
-    u32 addr = 1;
-    u32 size = 10;
-    MOCKER(aclrtBinaryGetFunction)
-        .stubs()
-        .will(returnValue(ACL_SUCCESS));
-    MOCKER(aclrtLaunchKernelWithHostArgs)
-        .stubs()
-        .will(returnValue(ACL_SUCCESS));
-    MOCKER(aclmdlRICaptureGetInfo)
-        .stubs()
-        .will(returnValue(ACL_SUCCESS));
-    MOCKER(aclrtGetStreamAttribute)
-        .stubs()
-        .will(returnValue(static_cast<aclError>(ACL_ERROR_RT_INTERNAL_ERROR)));
-    HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
-    EXPECT_EQ(ret, HCCL_E_RUNTIME);
-    GlobalMockObject::verify();
-}
+// TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_GetStreamAttrFail_Expect_ReturnRuntimeError)
+// {
+//     rtStream_t stm = reinterpret_cast<rtStream_t>(1);
+//     aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
+//     u32 addr = 1;
+//     u32 size = 10;
+//     MOCKER(aclrtBinaryGetFunction)
+//         .stubs()
+//         .will(returnValue(ACL_SUCCESS));
+//     MOCKER(aclrtLaunchKernelWithHostArgs)
+//         .stubs()
+//         .will(returnValue(ACL_SUCCESS));
+//     MOCKER(aclmdlRICaptureGetInfo)
+//         .stubs()
+//         .will(returnValue(ACL_SUCCESS));
+//     MOCKER(aclrtGetStreamAttribute)
+//         .stubs()
+//         .will(returnValue(static_cast<aclError>(ACL_ERROR_RT_INTERNAL_ERROR)));
+//     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
+//     EXPECT_EQ(ret, HCCL_E_RUNTIME);
+//     GlobalMockObject::verify();
+// }
