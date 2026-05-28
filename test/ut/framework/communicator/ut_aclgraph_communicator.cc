@@ -18,6 +18,7 @@
 #include "aicpu_operator_pub.h"
 #include "mem_host_pub.h"
 #include "mem_device_pub.h"
+#include "stream_pub.h"
 
 using namespace hccl;
 
@@ -296,17 +297,90 @@ TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_NullOpStream)
 }
 
 /**
- * @brief TC-COMM-14: AicpuKfcClearOpResLaunch 正常路径
- * 验证：预置条件满足时，函数不崩溃
+ * @brief TC-COMM-14: AicpuKfcClearOpResLaunch launch 路径（单批）
+ * 验证：binHandle_ 和 opStream_ 均有效时，进入 launch 路径，
+ *       mock hrtMemSyncCopy/AicpuAclKernelLaunchV2/hcclStreamSynchronize 返回成功
  */
-TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_NormalPath)
+TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_LaunchPath)
 {
     // 预置成功能进 launch 路径的条件
     communicator_.binHandle_ = reinterpret_cast<aclrtBinHandle>(0x1);
-    // 由于 opStream_ 可能为空/未初始化，不会真正进入 launch 路径
+    communicator_.opStream_ = Stream(reinterpret_cast<rtStream_t>(0x1234), true);
+    communicator_.identifier_ = "test_group";
+    // 预置 buffer 避免走 DeviceMem::alloc 路径（需要 mock 该静态方法）
+    communicator_.aicpuCleanupBuf_ = DeviceMem(reinterpret_cast<void *>(0x5678), 4096, false);
+    communicator_.aicpuCleanupHostBuf_.reset(new (std::nothrow) HcclKfcClearOpResTilingData());
+    ASSERT_NE(communicator_.aicpuCleanupHostBuf_, nullptr);
+
+    // Mock C 函数
+    MOCKER(hrtMemSyncCopy)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(AicpuAclKernelLaunchV2)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    // 使用默认实现，或 mock 返回成功
+    // hcclStreamSynchronize 的 stub 可能在 llt_hccl_stub 中已有默认实现
+
     HcclResult ret = communicator_.AicpuKfcClearOpResLaunch({"tag1", "tag2"});
-    // 返回 SUCCESS（opStream_ 为空时走提前返回路径）
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+/**
+ * @brief TC-COMM-15: AicpuKfcClearOpResLaunch launch 路径（分批）
+ * 验证：tags 数量超过 MAX_BATCH 时自动分批，验证 launch 调用次数
+ */
+TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_MultiBatch)
+{
+    communicator_.binHandle_ = reinterpret_cast<aclrtBinHandle>(0x1);
+    communicator_.opStream_ = Stream(reinterpret_cast<rtStream_t>(0x1234), true);
+    communicator_.identifier_ = "test_group";
+    communicator_.aicpuCleanupBuf_ = DeviceMem(reinterpret_cast<void *>(0x5678), 4096, false);
+    communicator_.aicpuCleanupHostBuf_.reset(new (std::nothrow) HcclKfcClearOpResTilingData());
+    ASSERT_NE(communicator_.aicpuCleanupHostBuf_, nullptr);
+
+    // 构造超过 MAX_BATCH 的 tags
+    std::unordered_set<std::string> manyTags;
+    for (u32 i = 0; i < HCCL_KFC_CLEAR_OP_RES_MAX_BATCH + 10; i++) {
+        manyTags.insert("tag_" + std::to_string(i));
+    }
+
+    int launchCallCount = 0;
+    MOCKER(hrtMemSyncCopy)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(AicpuAclKernelLaunchV2)
+        .stubs()
+        .will(invoke([&launchCallCount](const rtStream_t, void*, u32, aclrtBinHandle, const char*, bool, u16, void*, u32) {
+            ++launchCallCount;
+            return HCCL_SUCCESS;
+        }));
+
+    HcclResult ret = communicator_.AicpuKfcClearOpResLaunch(manyTags);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    // 应分 2 批 launch（MAX_BATCH + 10 需要 2 批）
+    EXPECT_GE(launchCallCount, 2);
+}
+
+/**
+ * @brief TC-COMM-16: AllocAlgResource capture 冲突分支 — tagsRequiringHostCleanup_ 插入
+ * 注意：此路径需要完整的 algOperator + resMap_ 预置 + 算子执行流程，
+ *       在纯 UT 环境中难以触发。此处标记为 DISABLED，
+ *       需要在集成测试或 ST 中覆盖。
+ * 覆盖函数：hccl_communicator_host.cc ~4597-4614 和 ~4945-4961
+ * 入口：HcclCommunicator::AllocAlgResource 中
+ *       opParam.isCapture=true && resMap_.find(newTag)!=end 分支
+ */
+TEST_F(AclgraphCommunicatorTest, DISABLED_AllocAlgResource_CaptureConflict_RoceBranch)
+{
+    // 前提条件：
+    // 1. resMap_[tag] 已存在
+    // 2. opParam.isCapture = true
+    // 3. HasRoceTransportLinks(transportReq) = true
+    // 验证：
+    // - tagsRequiringHostCleanup_ 包含新 tag
+    // - InsertNewTagToCaptureResMap 被调用
+    // - captureCnt_ 自增
 }
 
 /**
