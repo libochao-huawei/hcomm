@@ -152,6 +152,12 @@ void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtM
 
 RdmaHandleManager::RdmaHandleManager()
 {
+    constexpr u32 MAX_DEVICE_NUM = 65;
+    constexpr u32 LINK_PROTO_TYPE_NUM = 4;
+    rdmaHandleMap.resize(MAX_DEVICE_NUM);
+    for (u32 i = 0; i < rdmaHandleMap.size(); ++i) {
+        rdmaHandleMap[i].resize(LINK_PROTO_TYPE_NUM);
+    }
 }
 
 RdmaHandleManager::~RdmaHandleManager()
@@ -178,6 +184,53 @@ std::pair<TokenIdHandle, uint32_t> RdmaHandleManager::GetTokenIdInfo(
     RdmaHandle rdmaHandle, const BufferKey<uintptr_t, u64> &bufKey)
 {
     return {0x12345678, 12345678};
+}
+
+void RdmaHandleManager::DeInit(u32 devPhyId)
+{
+    if (destroyed) {
+        return;
+    }
+    if (devPhyId >= rdmaHandleMap.size()) {
+        return;
+    }
+    std::vector<RdmaHandle> handlesToCleanup;
+    for (u32 j = 0; j < rdmaHandleMap[devPhyId].size(); ++j) {
+        for (auto &handleIter : rdmaHandleMap[devPhyId][j]) {
+            if (handleIter.second != nullptr) {
+                handlesToCleanup.push_back(handleIter.second);
+            }
+        }
+        rdmaHandleMap[devPhyId][j].clear();
+    }
+    for (auto &handle : handlesToCleanup) {
+        auto jfcIt = jfcHandleMap.find(handle);
+        if (jfcIt != jfcHandleMap.end()) {
+            jfcHandleMap.erase(jfcIt);
+        }
+        netWorkModeMap.erase(handle);
+        tokenInfoMap.erase(handle);
+        DieAndFuncIdMap.erase(handle);
+        RtpEnableMap.erase(handle);
+    }
+}
+
+void RdmaHandleManager::DestroyAll()
+{
+    if (destroyed) {
+        return;
+    }
+    destroyed = true;
+    for (u32 i = 0; i < rdmaHandleMap.size(); ++i) {
+        for (u32 j = 0; j < rdmaHandleMap[i].size(); ++j) {
+            rdmaHandleMap[i][j].clear();
+        }
+    }
+    jfcHandleMap.clear();
+    netWorkModeMap.clear();
+    tokenInfoMap.clear();
+    DieAndFuncIdMap.clear();
+    RtpEnableMap.clear();
 }
 
 bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
@@ -379,6 +432,10 @@ SocketHandle SocketHandleManager::Create(DevId devicePhyId, const PortData &loca
 {
     int a = 0x12345678;
     return (void *)&a;
+}
+
+void SocketHandleManager::DeInit(u32 devPhyId)
+{
 }
 
 std::shared_ptr<TopoInfo> RankGraphBuilder::GetTopoInfo()
@@ -1390,6 +1447,10 @@ HccpHdcManager &HccpHdcManager::GetInstance()
 }
 
 void HccpHdcManager::Init(u32 deviceLogicId)
+{
+}
+
+void HccpHdcManager::DeInit(u32 deviceLogicId)
 {
 }
 
