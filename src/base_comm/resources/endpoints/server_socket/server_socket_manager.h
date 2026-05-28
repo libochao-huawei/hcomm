@@ -39,6 +39,7 @@ public:
 
     HcclResult ServerSocketStartListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t devPhyId, uint32_t *port);
     HcclResult ServerSocketStopListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t port);
+    static void DeInit(u32 devPhyId);
 
 private:
     ServerSocketManager()
