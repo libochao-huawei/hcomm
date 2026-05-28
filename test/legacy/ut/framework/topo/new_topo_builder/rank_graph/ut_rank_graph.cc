@@ -301,6 +301,7 @@ std::shared_ptr<RankGraph> create4pclosRankGraph(RankId myRank) {
         peer3, fabric, rank3ToFabricIface, nullptr, LinkType::PEER2NET, protocols));
     netInstMixPcie->AddLink(std::make_shared<NetInstance::Link>(
         fabric, peer3, nullptr, fabricToRank3Iface, LinkType::PEER2NET, protocols));
+    rankGraph.InitInnerRanks();
     return std::make_shared<RankGraph>(rankGraph);
 }
 
@@ -404,16 +405,18 @@ TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
     constexpr u32 mesh23TopoInstId = 1;
     constexpr u32 closTopoInstId = 2;
 
-    auto meshPath = rankGraph->GetPaths(layer, 0, 1);
-    EXPECT_GE(meshPath.size(), 1U);
-    ASSERT_GE(meshPath[0].links.size(), 1U);
-    EXPECT_EQ(LinkType::PEER2PEER, meshPath[0].links[0].GetType());
+    const NetInstance *oldNetInstance = rankGraph->GetNetInstanceByNetInstId(layer, "mixpcie");
+    ASSERT_NE(nullptr, oldNetInstance);
+    auto oldMeshPath = oldNetInstance->GetPaths(0, 1);
+    ASSERT_GE(oldMeshPath.size(), 1U);
+    ASSERT_GE(oldMeshPath[0].links.size(), 1U);
+    EXPECT_EQ(LinkType::PEER2PEER, oldMeshPath[0].links[0].GetType());
 
-    auto closPath = rankGraph->GetPaths(layer, 0, 2);
-    ASSERT_EQ(1U, closPath.size());
-    ASSERT_EQ(2U, closPath[0].links.size());
-    EXPECT_EQ(LinkType::PEER2NET, closPath[0].links[0].GetType());
-    EXPECT_EQ(LinkType::PEER2NET, closPath[0].links[1].GetType());
+    auto oldClosPath = oldNetInstance->GetPaths(0, 2);
+    ASSERT_EQ(1U, oldClosPath.size());
+    ASSERT_EQ(2U, oldClosPath[0].links.size());
+    EXPECT_EQ(LinkType::PEER2NET, oldClosPath[0].links[0].GetType());
+    EXPECT_EQ(LinkType::PEER2NET, oldClosPath[0].links[1].GetType());
 
     vector<u32> subRankIds = {0, 1, 2, 3};
     std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(subRankIds);
