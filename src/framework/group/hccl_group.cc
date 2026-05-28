@@ -714,10 +714,17 @@ HcclResult HcclGroupEnd()
     HCCL_INFO("[HcclGroupEnd] hcclGroupDepth=[%d]", hcclGroupDepth);
     /*遇到最后一个HcclGroupEnd才处理group内的所有任务*/
 
-    if (devType == DevType::DEV_TYPE_950) {
-        CHK_RET(groupLaunchA5());
-        return HCCL_SUCCESS;
+    if (!hcclGroupCommList.empty()) {
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(hcclGroupCommList[0]);
+        DevType devType;
+        hcclComm->GetDevType(devType);
+    
+        if (devType == DevType::DEV_TYPE_950) {
+            CHK_RET(groupLaunchA5());
+            return HCCL_SUCCESS;
+        }
     }
+    
 
     groupLaunch();
     HCCL_INFO("[GroupEnd] done groupLaunch");
