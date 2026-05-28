@@ -139,9 +139,35 @@ HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
     return HCCL_SUCCESS;
 }
 
+HcclResult CacheTaskOpInfo(aclrtStream stream, const std::string &identify)
+{
+    aclmdlRI rtModel = nullptr;
+    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
+    aclError aclRet = aclmdlRICaptureGetInfo(stream, &captureStatus, &rtModel);
+    if (aclRet == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
+        HCCL_WARNING("[%s]Stream capture does not support!", __func__);
+        return HCCL_SUCCESS;
+    }
+    CHK_PRT_RET(aclRet != ACL_SUCCESS,
+                HCCL_ERROR("[%s]rtGet stream get capture status fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+
+    aclrtStreamAttrValue value;
+    aclRet = aclrtGetStreamAttribute(stream, ACL_STREAM_ATTR_CACHE_OP_INFO, &value);
+    CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s]stream get attribute fail. return[%d]", __func__, aclRet),
+                HCCL_E_RUNTIME);
+
+    HCCL_INFO("[CacheTaskOpInfo] cacheOpInfoSwitch[%u] captureStatus[%d] identify[%s]", value.cacheOpInfoSwitch, captureStatus, identify.c_str());
+    if (value.cacheOpInfoSwitch == 1 && captureStatus == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE) {
+        aclRet = aclrtCacheLastTaskExtendInfo(identify.c_str(), strlen(identify.c_str()));
+        CHK_PRT_RET(aclRet != ACL_SUCCESS,
+                    HCCL_ERROR("[%s]stream cache task op info fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
                                   aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
-                                  void *tilingDataPtr, u32 tilingDataSize, const std::string &tag) {
+                                  void *tilingDataPtr, u32 tilingDataSize, const std::string &identify) {
     if (binHandle == nullptr) {
         HCCL_ERROR("binHandle is nullptr, no need to launch aicpu kernel, binHandle[%p]", binHandle);
         return HCCL_E_PTR;
@@ -190,25 +216,7 @@ HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
                 HCCL_ERROR("[aclrtLaunchKernelWithHostArgs]errNo[0x%016llx] launch kernel failed", aclRet),
                 HCCL_E_RUNTIME);
 
-    // 获取capture状态
-    aclmdlRI rtModel = nullptr;
-    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
-    aclRet = aclmdlRICaptureGetInfo(stm, &captureStatus, &rtModel);
-    if (aclRet == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
-        HCCL_WARNING("[%s]Stream capture does not support!", __func__);
-    } else {
-        CHK_PRT_RET(aclRet != ACL_SUCCESS,
-                    HCCL_ERROR("[%s]rtGet stream get capture status fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
-        aclrtStreamAttrValue value;
-        aclRet = aclrtGetStreamAttribute(stm, ACL_STREAM_ATTR_CACHE_OP_INFO, &value);
-        CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s]stream get attribute fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
-
-        HCCL_INFO("[AicpuAclKernelLaunchV2] cacheOpInfoSwitch[%u] captureStatus[%d] identify[%s]", value.cacheOpInfoSwitch, captureStatus, tag.c_str());
-        if (value.cacheOpInfoSwitch == 1 && captureStatus == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE) {
-            aclRet = aclrtCacheLastTaskExtendInfo(tag.c_str(), strlen(tag.c_str()));
-            CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s]stream cache task op info fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
-        }
-    }
+    CHK_RET(CacheTaskOpInfo(stm, identify));
 
     return HCCL_SUCCESS;
 }
