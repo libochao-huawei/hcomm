@@ -1,8 +1,7 @@
-
 get_filename_component(ALG_ANALYZER_UI_PROTO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ui/proto ABSOLUTE)
 
 add_custom_target(alg_analyzer_proto
-    DEPENDS protobuf    # 依赖 protoc
+    DEPENDS host_protoc # 依赖 host_protoc
 )
 add_custom_command(TARGET alg_analyzer_proto
     COMMAND mkdir -p ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
@@ -22,12 +21,7 @@ target_include_directories(hccl_alg_analyzer PRIVATE
     ${HCOMM_FRAMEWORK_INCLUDE_LIST}
     ${HCOMM_LEGACY_INCLUDE_LIST}
 
-    ${THIRD_PARTY_PATH}/json/include
-
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
-
-    # protobuf源码
-    ${THIRD_PARTY_PATH}/protobuf/include
 
     ${ASCEND_CANN_INCLUDE_LIST}
 )
