@@ -17,7 +17,7 @@ namespace CcuRep {
 void AppendToContext(CcuRepContext* context, std::shared_ptr<CcuRep::CcuRepBase> rep)
 {
     if (context == nullptr) {
-        Hccl::THROW<Hccl::CcuApiException>("context is nullptr, AppendToContext assit[%d]", rep->Type());
+        Hccl::THROW<Hccl::CcuApiException>("context is nullptr, AppendToContext assist[%d]", rep->Type());
     }
     else {
         return context->Append(rep);
