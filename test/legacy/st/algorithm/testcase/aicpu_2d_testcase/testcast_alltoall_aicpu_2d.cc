@@ -56,7 +56,8 @@ protected:
     std::vector<u64> GenerateDataCount()
     {
         std::set<u64> dataCountSet = {
-            1, 2, 4, 8, 16, 128, 1 * K, 2 * K, 256 * K, 512 * K, 1 * M, 200 * M, 256 * M, 500 * M, 1.01 * G};
+            1, 2, 4, 8, 16, 128, 1 * K, 2 * K, 256 * K, 512 * K, 1 * M, 200 * M, 256 * M, 500 * M,
+            static_cast<u64>(1.01 * G)};
         return std::vector<u64>(dataCountSet.begin(), dataCountSet.end());
     }
 
