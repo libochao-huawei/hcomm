@@ -16,6 +16,8 @@
 #include "hccl_communicator.h"
 #include "coll_alg_param.h"
 #include "aicpu_operator_pub.h"
+#include "mem_host_pub.h"
+#include "mem_device_pub.h"
 
 using namespace hccl;
 
@@ -211,6 +213,52 @@ TEST_F(AclgraphCommunicatorTest, ClearAclgraphHostLinks_TagNotTracked)
     // tag 不在 tagsRequiringHostCleanup_ 中，应跳过
     HcclResult ret = communicator_.ClearAclgraphHostLinks({"untracked_tag"});
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+/**
+ * @brief TC-COMM-10b: ClearAclgraphHostLinks 完整路径
+ * 验证：rankTagRemoteRes_ 有匹配 tag、hostPtr 非空、hostMemVec_ 含匹配指针时，
+ *       ListCommonRemove 被调用，三容器配对 erase
+ */
+TEST_F(AclgraphCommunicatorTest, ClearAclgraphHostLinks_FullPath)
+{
+    const std::string tag = "test_tag";
+    const u32 rankId = 0;
+
+    // 1. 预置 host 端 HccltagRemoteResV2（模拟通信域分配的 remote res）
+    HccltagRemoteResV2 remoteResV2;
+    ListCommonInit(&remoteResV2.nextTagRes);
+    HccltagRemoteResV2 *hostPtr = &remoteResV2;
+    // 将 HostMem 包装 remoteResV2 的指针后存入 hostMemVec_
+    auto hostMem = std::make_shared<HostMem>(HostMem::create(hostPtr, sizeof(remoteResV2)));
+    communicator_.hostMemVec_.push_back(hostMem);
+    communicator_.deviceMemVec_.push_back(nullptr);
+
+    // 2. pre-populate tagsRequiringHostCleanup_
+    communicator_.tagsRequiringHostCleanup_.insert(tag);
+
+    // 3. pre-populate rankTagRemoteRes_ with HccltagRemoteResV3 pointing to remoteResV2
+    HccltagRemoteResV3 remoteResV3;
+    remoteResV3.tagRemoteResPtr = hostPtr;
+    communicator_.rankTagRemoteRes_[rankId][tag] = remoteResV3;
+
+    // 4. 调用 ClearAclgraphHostLinks
+    HcclResult ret = communicator_.ClearAclgraphHostLinks({tag});
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 5. 验证：tagsRequiringHostCleanup_ 已清除
+    EXPECT_EQ(communicator_.tagsRequiringHostCleanup_.count(tag), 0);
+    // 验证：rankTagRemoteRes_ 中已无此 tag
+    EXPECT_EQ(communicator_.rankTagRemoteRes_[rankId].count(tag), 0);
+    // 验证：hostMemVec_ 中对应的条目已被 erase
+    bool foundInHostMemVec = false;
+    for (auto &hm : communicator_.hostMemVec_) {
+        if (hm && hm->ptr() == hostPtr) {
+            foundInHostMemVec = true;
+            break;
+        }
+    }
+    EXPECT_FALSE(foundInHostMemVec);
 }
 
 /**
