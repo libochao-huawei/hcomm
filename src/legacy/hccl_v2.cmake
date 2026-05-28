@@ -25,7 +25,7 @@ target_compile_options(hccl_v2 PRIVATE
     -fno-strict-aliasing
     -pipe
     -O3
-    -std=c++14
+    -std=c++17
     -fstack-protector-all
     $<$<CONFIG:Debug>:-g>
 )

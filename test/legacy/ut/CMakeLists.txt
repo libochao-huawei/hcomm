@@ -87,7 +87,7 @@ target_link_libraries(hccl_v2_utest PRIVATE
 
 # 编译选项
 target_compile_options(hccl_v2_utest PRIVATE
-        -std=c++14
+        -std=c++17
         -Werror
         -fno-common
         -fno-strict-aliasing

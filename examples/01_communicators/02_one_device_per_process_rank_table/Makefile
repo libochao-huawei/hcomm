@@ -18,7 +18,7 @@ ifndef MPI_HOME
              set environment variable by running `export MPI_HOME=/path/to/mpi`")
 endif
 
-CXXFLAGS := -std=c++14 \
+CXXFLAGS := -std=c++17 \
         -Werror \
         -fstack-protector-strong \
         -fPIE -pie \
