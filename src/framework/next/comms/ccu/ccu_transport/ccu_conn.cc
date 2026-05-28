@@ -300,7 +300,7 @@ HcclResult CcuConnection::Serialize(std::vector<char> &dtoData)
         const auto &outParam = ccuJetty->GetJettyedOutParam();
         u8 patchedKey[HRT_UB_QP_KEY_MAX_LEN]{0};
         (void)memcpy_s(patchedKey, sizeof(patchedKey), outParam.key, outParam.keySize);
-        if (patchedKey != nullptr && outParam.keySize >= URMA_EID_LEN) {
+        if (outParam.keySize >= URMA_EID_LEN) {
             (void)memcpy_s(patchedKey, outParam.keySize, locIpAddr.GetEid().raw, URMA_EID_LEN);
         }
         dtoStream << patchedKey;
@@ -411,7 +411,7 @@ HcclResult CcuConnection::StartImportJettyRequest(uint32_t jettyIndex, RequestHa
     Hccl::IpAddress rmtIpAddr{};
     CHK_RET(CommAddrToIpAddress(rmtAddr_, rmtIpAddr));
     auto &importCtx = importJettyCtxs_[jettyIndex];
-    if (importCtx.remoteQpKey != nullptr && importCtx.inParam.keyLen >= URMA_EID_LEN) {
+    if (importCtx.inParam.keyLen >= URMA_EID_LEN) {
         (void)memcpy_s(importCtx.remoteQpKey, importCtx.inParam.keyLen, rmtIpAddr.GetEid().raw, URMA_EID_LEN);
     }
     importCtx.inParam.key = importCtx.remoteQpKey;

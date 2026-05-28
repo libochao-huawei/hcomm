@@ -335,7 +335,7 @@ std::unique_ptr<Serializable> DevUbConnection::GetExchangeDto()
     std::unique_ptr<ExchangeUbConnDto> dto
         = make_unique<ExchangeUbConnDto>(tokenValue, keySize, jettyImportCfg.localTpHandle, jettyImportCfg.localPsn);
     (void)memcpy_s(dto->qpKey, HRT_UB_QP_KEY_MAX_LEN, localQpKey, HRT_UB_QP_KEY_MAX_LEN);
-    if (dto->qpKey != nullptr && keySize >= URMA_EID_LEN) {
+    if (keySize >= URMA_EID_LEN) {
         (void)memcpy_s(dto->qpKey, keySize, locAddr.GetEid().raw, URMA_EID_LEN);
     }
     (void)memcpy_s(dto->eid, sizeof(dto->eid), locAddr.GetEid().raw, URMA_EID_LEN);
@@ -511,7 +511,7 @@ void DevUbConnection::GenerateLocalPsn()
 
 void DevUbConnection::ImportJetty()
 {
-    if (remoteQpKey != nullptr && keySize >= URMA_EID_LEN) {
+    if (keySize >= URMA_EID_LEN) {
         (void)memcpy_s(remoteQpKey, keySize, rmtAddr.GetEid().raw, URMA_EID_LEN);
     }
     HCCL_INFO("[DevUbConnection][%s] import jetty key eid patched to link rmtEid[%s].", __func__,
