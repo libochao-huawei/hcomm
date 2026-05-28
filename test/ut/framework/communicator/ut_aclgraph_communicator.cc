@@ -15,6 +15,7 @@
 // -fno-access-control 已在 CMakeLists.txt 中启用，可直接访问 private 成员
 #include "hccl_communicator.h"
 #include "coll_alg_param.h"
+#include "aicpu_operator_pub.h"
 
 using namespace hccl;
 
@@ -240,4 +241,67 @@ TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_NormalPath)
     HcclResult ret = communicator_.AicpuKfcClearOpResLaunch({"tag1", "tag2"});
     // 返回 SUCCESS（提前返回路径）或 HCCL_E_RUNTIME（launch 失败）均可
     EXPECT_TRUE(ret == HCCL_SUCCESS || ret == HCCL_E_RUNTIME);
+}
+
+/**
+ * @brief AIT-01: AicpuInitOpTilingDataAicpuCache enable=0
+ * 验证：aicpuCacheEnable=0 时，不修改 tilingData 值
+ */
+TEST_F(AclgraphCommunicatorTest, AicpuInitTilingCache_Disabled)
+{
+    OpParam opParam;
+    opParam.aicpuCacheEnable = 0;
+    OpTilingData tilingData;
+    tilingData.aicpuCacheEnable = 0;
+
+    HcclResult ret = communicator_.AicpuInitOpTilingDataAicpuCache(opParam, HCCL_CMD_ALLREDUCE, &tilingData);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(tilingData.aicpuCacheEnable, 0);
+}
+
+/**
+ * @brief AIT-02: AicpuInitOpTilingDataAicpuCache enable=1 + isCapture
+ * 验证：算子模式 isCapture=true 情况下能正常返回
+ */
+TEST_F(AclgraphCommunicatorTest, AicpuInitTilingCache_ForceOpbaseWithCapture)
+{
+    OpParam opParam;
+    opParam.aicpuCacheEnable = 1;
+    opParam.isCapture = true;
+    opParam.isZeroCopy = true;
+    OpTilingData tilingData;
+    tilingData.aicpuCacheEnable = 0;
+
+    HcclResult ret = communicator_.AicpuInitOpTilingDataAicpuCache(opParam, HCCL_CMD_ALLREDUCE, &tilingData);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+/**
+ * @brief AIT-03: AicpuInitOpTilingDataAicpuCache enable >= 10
+ * 验证：aicpuCacheEnable >= 10 时触发内部错误检查
+ */
+TEST_F(AclgraphCommunicatorTest, AicpuInitTilingCache_EnableTooHigh)
+{
+    OpParam opParam;
+    opParam.aicpuCacheEnable = 10;
+    OpTilingData tilingData;
+
+    HcclResult ret = communicator_.AicpuInitOpTilingDataAicpuCache(opParam, HCCL_CMD_ALLREDUCE, &tilingData);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+/**
+ * @brief AIT-04: AicpuInitOpTilingDataAicpuCache 单算子模式
+ * 验证：非图模式下，直接赋值 aicpuCacheEnable 不变
+ */
+TEST_F(AclgraphCommunicatorTest, AicpuInitTilingCache_OpsMode)
+{
+    OpParam opParam;
+    opParam.aicpuCacheEnable = 1;
+    OpTilingData tilingData;
+    tilingData.aicpuCacheEnable = 0;
+
+    HcclResult ret = communicator_.AicpuInitOpTilingDataAicpuCache(opParam, HCCL_CMD_ALLREDUCE, &tilingData);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(tilingData.aicpuCacheEnable, 1);
 }
