@@ -8,33 +8,27 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-set(src_to_test_list
+set(hccl_ut_task_exception_list
     main.cc
-    hccl_api_base_test.cc
-    ut_CcuComponent_test.cc
-    ut_CcuConn_test.cc
-    ut_ccu_microcode.cc
-    ./ccu_representation/interface/ut_ccu_interface_assist.cc
-    ./ccu_device/ut_ccu_res_batch_allocator.cc
-    ./ccu_device/ccu_comp/ccu_channel/ccu_pfe/ut_ccu_pfe_cfg_mgr.cc
+    ut_task_exception.cc
 )
+add_executable(hccl_ut_task_exception ${hccl_ut_task_exception_list})
 
-add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
-
-#头文件搜索路径
-target_include_directories(hccl_utest_comms_ccu_features PRIVATE
+target_include_directories(hccl_ut_task_exception PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
-    ${HCOMM_DIR}/pkg_inc/hcomm/ccu
 )
 
-target_compile_definitions(hccl_utest_comms_ccu_features PRIVATE
+target_compile_definitions(hccl_ut_task_exception PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
+    HALF_T=float
     google=ascend_private
-    -DOPEN_HCCL_TEST
+    CCL_KERNEL
+    CCL_LLT
+    OPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
 
-target_compile_options(hccl_utest_comms_ccu_features PRIVATE
+target_compile_options(hccl_ut_task_exception PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -42,27 +36,18 @@ target_compile_options(hccl_utest_comms_ccu_features PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_libraries(hccl_utest_comms_ccu_features PRIVATE
+target_link_libraries(hccl_ut_task_exception PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt
     -Wl,--whole-archive
-    -Wl,--no-whole-archi
+    -Wl,--no-whole-archive
     -lgcov
     -lrt
     -ldl
 )
-
-add_dependencies(hccl_utest_comms_ccu_features hccl_llt)
+add_dependencies(hccl_ut_task_exception hccl_llt)
 
 enable_testing()
-add_test(NAME hccl_utest_comms_ccu_features COMMAND hccl_utest_comms_ccu_features)
-
-add_subdirectory(ccu_representation/reps/sync)
-add_subdirectory(ccu_representation/reps/control)
-add_subdirectory(ccu_representation/reps/common)
-add_subdirectory(ccu_representation/reps/data)
-add_subdirectory(ccu_representation/reps/arithmetic)
-add_subdirectory(ccu_representation/reps/loop)
-add_subdirectory(ccu_representation/interface)
+add_test(NAME hccl_ut_task_exception COMMAND hccl_ut_task_exception)

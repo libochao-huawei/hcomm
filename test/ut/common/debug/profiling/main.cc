@@ -8,18 +8,13 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef __AICPU_INDOP_ENV_H__
-#define __AICPU_INDOP_ENV_H__
+#include <stdio.h>
+#include <stdlib.h>
+#include "gtest/gtest.h"
 
-#include "hccl_types.h"
-#include "log.h"
-
-namespace hcomm {
-
-void SetTaskExceptionEnable(bool taskExceptionEnable);
-void SetNotifyWaitTimeout(u32 notifyWaitTimeout);
-
-const bool& GetTaskExceptionEnable();
-const u32& GetNotifyWaitTimeout();
+GTEST_API_ int main(int argc, char **argv)
+{
+    printf("Running main() from ut_task_exception main.cc\n");
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
-#endif

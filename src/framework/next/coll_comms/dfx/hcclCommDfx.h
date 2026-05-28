@@ -86,6 +86,6 @@ private:
     std::function<HcclResult(const Hccl::TaskParam&, u64)> setAddDpuTaskCallback_; //dputask无法从外部获取taskid和streamid
 };
 
-} // namesapce hccl
+} // namespace hccl
 
 #endif
