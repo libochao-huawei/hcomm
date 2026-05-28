@@ -150,7 +150,7 @@ public:
 
     ~Rdma1825Ops() override {}
 
-    int BuildDoorbell(u64 &dbAddr, u64 &dbValue)
+    HcclResult BuildDoorbell(u64 &dbAddr, u64 &dbValue)
     {
         HCCL_INFO("[Rdma1825Ops::%s] Hcomm RDMA 1825 Build Doorbell start. ", __func__);
 
@@ -176,7 +176,7 @@ public:
     }
 
 protected:
-    int BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt)
+    HcclResult BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt)
     {
         RoceWqeEntry wqe{};
         CHK_RET(FillCommonWqe(loc, rmt, &wqe, static_cast<uint32_t>(ROCE3_OPCODE::ROCE_OPCODE_RDMA_WRITE)));
@@ -185,7 +185,7 @@ protected:
         return HCCL_SUCCESS;
     }
 
-    int BuildNotifyWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify)
+    HcclResult BuildNotifyWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify)
     {
         RoceWqeEntry wqe{};
         CHK_RET(FillCommonWqe(locNotify, notify, &wqe, static_cast<uint32_t>(ROCE3_OPCODE::ROCE_OPCODE_RDMA_WRITE)));
@@ -195,7 +195,7 @@ protected:
     }
 
 private:
-    int FillCommonWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, RoceWqeEntry *wqe, uint32_t opCode)
+    HcclResult FillCommonWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, RoceWqeEntry *wqe, uint32_t opCode)
     {
         HCCL_INFO("[Rdma1825Ops::%s] Hcomm RDMA 1825 BuildWrite wqe start, loc size[%u]", __func__, loc.GetSize());
 

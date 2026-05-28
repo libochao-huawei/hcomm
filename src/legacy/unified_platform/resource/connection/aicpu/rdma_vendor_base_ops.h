@@ -12,7 +12,7 @@ public:
     virtual ~RdmaBaseOps() = default;
 
     // 上层接口，不关心具体vendor类型
-    int Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt)
+    HcclResult Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt)
     {
         // Write需要占用1个wr位置, 确定Sq存在空位
         constexpr int WriteWqeCount = 1;
@@ -27,7 +27,7 @@ public:
         return HCCL_SUCCESS;
     }
 
-    int NotifyRecord(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify)
+    HcclResult NotifyRecord(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify)
     {
         constexpr int NotifyWqeCount = 1;
         CHK_RET(WaitSqFree(NotifyWqeCount));
@@ -41,7 +41,7 @@ public:
         return HCCL_SUCCESS;
     }
 
-    int WriteWithNotify(
+    HcclResult WriteWithNotify(
         const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, 
         const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify)
     {
@@ -59,13 +59,13 @@ public:
         return HCCL_SUCCESS;
     }
 
-    int WriteReduce(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, DataType dataType, ReduceOp reduceOp)
+    HcclResult WriteReduce(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, DataType dataType, ReduceOp reduceOp)
     {
         HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support WriteReduce Now.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
 
-    int WriteReduceWithNotify(
+    HcclResult WriteReduceWithNotify(
         const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, DataType dataType, ReduceOp reduceOp, const uint32_t remoteNotifyId)
     {
         HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support WriteReduceWithNotify Now.", __func__);
@@ -73,7 +73,7 @@ public:
     }
 
     // 准备Doorbell(厂商实现)
-    virtual int BuildDoorbell(u64 &dbAddr, u64 &dbValue) = 0;
+    virtual HcclResult BuildDoorbell(u64 &dbAddr, u64 &dbValue) = 0;
 
 protected:
     // 软件侧只维护Sq PI，Sq CI由硬件维护
@@ -85,24 +85,24 @@ protected:
 
     // vendor扩展点: 每个原子op一个虚函数
     // 默认 NOT_SUPPORT, 各个vendor 只重写自己支持的
-    virtual int BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt) {
+    virtual HcclResult BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt) {
         HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support Write Now.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual int BuildNotifyWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify) {
+    virtual HcclResult BuildNotifyWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify) {
         HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support Notify Now.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
 
-    virtual int BuildWriteReduceWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify,
+    virtual HcclResult BuildWriteReduceWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify,
                                     DataType dataType, ReduceOp reduceOp) {
         HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support WriteReduce Now.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
 
     // 搬运wqe(通用实现), 把 Wqe 写到 SQ
-    int CommitWqe(const void *wqe, uint32_t wqeSize)
+    HcclResult CommitWqe(const void *wqe, uint32_t wqeSize)
     {
         HCCL_INFO("[RdmaBaseOps::%s] Memcpy wqe start, i[%u]", __func__, sqHead_);
 
@@ -122,7 +122,7 @@ protected:
         return HCCL_SUCCESS;
     }
 
-    int WaitSqFree(uint32_t wqeNum) {
+    HcclResult WaitSqFree(uint32_t wqeNum) {
         // 读取Sq CI指针
         auto status = memcpy_s(&sqTail_, sizeof(uint32_t), (void *)sqContext_->tailAddr, sizeof(uint32_t));
         if (UNLIKELY(status != 0)) {
@@ -141,7 +141,7 @@ protected:
     }
 
     // 将PI更新到硬件可见地址
-    int UpdateSqPI() {
+    HcclResult UpdateSqPI() {
         // 更新Sq PI指针
         auto status = memcpy_s((void *)sqContext_->headAddr, sizeof(uint32_t), &sqHead_, sizeof(uint32_t));
         if (UNLIKELY(status != 0)) {
