@@ -765,7 +765,7 @@ void ProfilingHandler::StartSubscribe(uint64_t profconfig)
     // L1打开时, 上报task粒度的打点和子task的详细信息
     if ((profconfig & PROF_TASK_TIME_L1_MASK) != 0) {
         StartTaskApiSubscribe();
-        StartAddtionInfoSubscribe();
+        StartAdditionInfoSubscribe();
         StartCcuSubscribe(); // ccu开关等级改为L1
     } 
     HCCL_RUN_INFO("[Profiling][CommandHandle] profSwitch is[%llu]", profconfig);
