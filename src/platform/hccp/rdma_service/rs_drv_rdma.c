@@ -1292,6 +1292,32 @@ create_recv_cq_err:
     return -EOPENSRC;
 }
 
+int RsDrvTypicalCqCreate(struct RsRdevCb *rdevCb, unsigned int cqDepth, unsigned int *cqn,
+    struct rdma_lite_device_cq_attr *deviceCqAttr)
+{
+    struct ibv_cq *ibCq = NULL;
+    struct hns_roce_cq_data_plane_info cqInfo = {0};
+
+    ibCq = RsIbvCreateCq(rdevCb->ibCtx, (int)cqDepth, NULL, NULL, 0);
+    if (ibCq == NULL) {
+        hccp_err("rs_ibv_create_cq failed, cqDepth[%u]", cqDepth);
+        return -ENOMEM;
+    }
+
+    (void)RsRoceGetCqDataPlaneInfo(ibCq, &cqInfo);
+    deviceCqAttr->depth = cqInfo.depth;
+    deviceCqAttr->flags = 0;
+    deviceCqAttr->cqe_size = cqInfo.cqe_size;
+    deviceCqAttr->cqn = cqInfo.cqn;
+    deviceCqAttr->cq_buf.va = cqInfo.buf_addr;
+    deviceCqAttr->cq_buf.len = cqInfo.depth * cqInfo.cqe_size;
+    deviceCqAttr->swdb_buf.va = cqInfo.swdb_addr;
+    deviceCqAttr->swdb_buf.len = 0;
+    *cqn = deviceCqAttr->cqn;
+    hccp_info("drv typical cq create success, cqn[%u] cqDepth[%u]", *cqn, cqDepth);
+    return 0;
+}
+
 int RsDrvDestroyCqEvent(struct RsCqContext *cqContext)
 {
     int ret;

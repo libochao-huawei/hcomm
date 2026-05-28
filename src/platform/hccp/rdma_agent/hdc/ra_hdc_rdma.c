@@ -355,6 +355,53 @@ int RaHdcTypicalQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, 
     return 0;
 }
 
+int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn,
+    void **cqHandle)
+{
+    union OpTypicalCqCreateData cqCreateData = {0};
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RaQpHandle *cqnHdc = NULL;
+    int ret;
+
+    cqnHdc = (struct RaQpHandle *)calloc(1, sizeof(struct RaQpHandle));
+    CHK_PRT_RETURN(cqnHdc == NULL,
+        hccp_err("[create][ra_hdc_typical_cq]cq_hdc calloc failed phyId(%u)", phyId), -ENOMEM);
+
+    cqCreateData.txData.phyId = phyId;
+    cqCreateData.txData.rdevIndex = rdmaHandle->rdevIndex;
+    cqCreateData.txData.cqDepth = cqDepth;
+
+    ret = RaHdcProcessMsg(RA_RS_TYPICAL_CQ_CREATE, phyId, (char *)&cqCreateData,
+        sizeof(union OpTypicalCqCreateData));
+    if (ret) {
+        hccp_err("[create][ra_hdc_typical_cq]ra hdc message process failed ret(%d) phyId(%u)", ret, phyId);
+        free(cqnHdc);
+        cqnHdc = NULL;
+        return ret;
+    }
+
+    *cqn = cqCreateData.rxData.cqn;
+
+    RaHdcGetQpHdc(rdmaHandle, 0, 0, *cqn, cqnHdc);
+
+    if (rdmaHandle->supportLite != 0) {
+        struct rdma_lite_cq *liteCq = NULL;
+        ret = RaHdcLiteCqCreate(rdmaHandle, cqDepth, &cqCreateData, &liteCq);
+        if (ret) {
+            hccp_err("[create][ra_hdc_typical_cq]ra_hdc_lite_cq_create failed ret(%d) phyId(%u)", ret, phyId);
+            (void)RaHdcCmdQpDestroy(cqnHdc);
+            free(cqnHdc);
+            cqnHdc = NULL;
+            return ret;
+        }
+        cqnHdc->sendLiteCq = liteCq;
+    }
+
+    *cqHandle = cqnHdc;
+
+    return 0;
+}
+
 int RaHdcQpDestroy(struct RaQpHandle *qpHdc)
 {
     int ret;

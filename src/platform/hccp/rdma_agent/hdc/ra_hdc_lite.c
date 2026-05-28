@@ -368,6 +368,34 @@ disabled_thread_out:
     }
 }
 
+int RaHdcLiteCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth,
+    union OpTypicalCqCreateData *cqData, struct rdma_lite_cq **liteCq)
+{
+    struct rdma_lite_cq_attr liteCqAttr = {0};
+
+    if (rdmaHandle->supportLite == 0) {
+        return 0;
+    }
+
+    liteCqAttr.device_cq_attr = cqData->rxData.deviceCqAttr;
+    liteCqAttr.mem_idx = 0;
+
+    if (rdmaHandle->supportLite == LITE_ALIGN_2MB) {
+        liteCqAttr.mem_idx = 0;
+    }
+
+    *liteCq = RaRdmaLiteCreateCq(rdmaHandle->liteCtx, &liteCqAttr);
+    if (*liteCq == NULL) {
+        hccp_err("[create][ra_hdc_lite_cq]create lite cq failed, errno(%d) cqDepth(%u)",
+            errno, cqDepth);
+        return -EFAULT;
+    }
+
+    hccp_info("[create][ra_hdc_lite_cq]lite cq created successfully, cqDepth(%u)", cqDepth);
+
+    return 0;
+}
+
 STATIC void RaHdcLiteQpAttrInit(struct RaQpHandle *qpHdc, struct rdma_lite_qp_attr *liteQpAttr,
     struct rdma_lite_qp_cap *cap)
 {
