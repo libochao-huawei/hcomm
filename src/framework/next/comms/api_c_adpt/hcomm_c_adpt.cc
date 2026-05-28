@@ -284,6 +284,15 @@ HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port
     return HCCL_SUCCESS;
 }
 
+HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port)
+{
+    CHK_PTR_NULL(port);
+    auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
+        __func__, endpointHandle), HCCL_E_NOT_FOUND);
+    return endpoint->ServerSocketGetListenPort(port);
+}
+
 HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const CommMem *mem,
     HcommMemHandle *memHandle)
 {
