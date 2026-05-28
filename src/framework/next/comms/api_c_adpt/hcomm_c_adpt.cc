@@ -9,7 +9,9 @@
  */
 #include <mutex>
 #include <cstring>
+#include <chrono>
 #include <memory>
+#include <vector>
 
 #include "hccl/hccl_res.h"
 #include "hcomm_res.h"
@@ -27,6 +29,7 @@
 #include "channel_param.h"
 #include "launch_aicpu.h"
 #include "comm_configer.h"
+#include "env_config/env_config.h"
 #include "endpoint_map.h"
 #include "nic_plugin_manager.h"
 
@@ -176,6 +179,56 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
     }
     return HCOMM_SUCCESS;
 }
+
+void DestroyCreatedPluginChannels(ChannelHandle *channels, uint32_t channelNum)
+{
+    if (channels == nullptr) {
+        return;
+    }
+    for (uint32_t idx = 0; idx < channelNum; ++idx) {
+        if (channels[idx] == 0) {
+            continue;
+        }
+        (void)DestroyPluginChannel(channels[idx]);
+        channels[idx] = 0;
+    }
+}
+
+HcommResult ConnectPluginChannels(ChannelHandle *channels, uint32_t channelNum)
+{
+    CHK_PTR_NULL(channels);
+    CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]",
+        __func__, channelNum), HCCL_E_PARA);
+
+    const auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    const auto startTime = std::chrono::steady_clock::now();
+    std::vector<int32_t> statusVec(channelNum, 1);
+
+    while (true) {
+        HcommResult ret = HcommChannelGetStatus(channels, channelNum, statusVec.data());
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] HcommChannelGetStatus failed, ret[%d].", __func__, ret);
+            return ret;
+        }
+
+        bool allReady = true;
+        for (uint32_t idx = 0; idx < channelNum; ++idx) {
+            if (statusVec[idx] != 0) {
+                allReady = false;
+                break;
+            }
+        }
+        if (allReady) {
+            HCCL_INFO("[%s] SUCCESS.", __func__);
+            return HCCL_SUCCESS;
+        }
+
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_ERROR("[%s] plugin channel connect timeout.", __func__);
+            return HCCL_E_TIMEOUT;
+        }
+    }
+}
 } // namespace
 
 HcommResult HcommResMgrInit(uint32_t devPhyId)
@@ -243,12 +296,24 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
         return HCCL_E_PARA;
     }
 
-    if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST && FindHostNicPlugin(endpoint->protocol) != nullptr) {
-            CHK_RET(static_cast<HcclResult>(CreatePluginEndpoint(endpoint, endpointHandle)));
-            HCCL_INFO("[%s] nic plugin endpoint created, protocol[%d], handle[%p].",
-                __func__, endpoint->protocol, *endpointHandle);
-            return HCCL_SUCCESS;
+    const NicPluginEntry *pluginEntry = nullptr;
+    if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        pluginEntry = FindHostNicPlugin(endpoint->protocol);
     }
+    HCCL_INFO("[NicPluginDebug][%s] locType[%d], protocol[%d], pluginEntry[%p].",
+        __func__, endpoint->loc.locType, endpoint->protocol, pluginEntry);
+
+    if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST && pluginEntry != nullptr) {
+        HCCL_INFO("[NicPluginDebug][%s] enter plugin endpoint branch, protocol[%d].",
+            __func__, endpoint->protocol);
+        CHK_RET(static_cast<HcclResult>(CreatePluginEndpoint(endpoint, endpointHandle)));
+        HCCL_INFO("[NicPluginDebug][%s] plugin endpoint created, protocol[%d], handle[%p], isPlugin[%d].",
+            __func__, endpoint->protocol, *endpointHandle, IS_PLUGIN_HANDLE(*endpointHandle));
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_RUN_WARNING("[NicPluginDebug][%s] fallback to builtin Endpoint::CreateEndpoint, locType[%d], protocol[%d], "
+        "pluginEntry[%p].", __func__, endpoint->loc.locType, endpoint->protocol, pluginEntry);
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
@@ -345,6 +410,16 @@ HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port
 HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port)
 {
     CHK_PTR_NULL(port);
+    if (IS_PLUGIN_HANDLE(endpointHandle)) {
+        PluginEndpointCtx *pluginEndpoint = PLUGIN_EP_CTX(endpointHandle);
+        CHK_PTR_NULL(pluginEndpoint);
+        CHK_PTR_NULL(pluginEndpoint->ops);
+        if (pluginEndpoint->ops->getListenPort == nullptr) {
+            return UnsupportedPluginOp(__func__);
+        }
+        return pluginEndpoint->ops->getListenPort(pluginEndpoint->ctx, port);
+    }
+
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
@@ -574,12 +649,19 @@ HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
         for (uint32_t idx = 0; idx < channelNum; ++idx) {
             HcommResult ret = CreatePluginChannel(endpointHandle, &channelDescFinals[idx], &channels[idx]);
             if (ret != HCCL_SUCCESS) {
-                for (uint32_t clearIdx = 0; clearIdx < idx; ++clearIdx) {
-                    (void)DestroyPluginChannel(channels[clearIdx]);
-                    channels[clearIdx] = 0;
-                }
+                DestroyCreatedPluginChannels(channels, idx);
                 return ret;
             }
+        }
+        HcommResult ret = ConnectPluginChannels(channels, channelNum);
+        if (ret != HCCL_SUCCESS) {
+            DestroyCreatedPluginChannels(channels, channelNum);
+            return ret;
+        }
+        ret = static_cast<HcommResult>(EnsureKernelBinLoaded(engine));
+        if (ret != HCCL_SUCCESS) {
+            DestroyCreatedPluginChannels(channels, channelNum);
+            return ret;
         }
         return HCCL_SUCCESS;
     }

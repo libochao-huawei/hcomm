@@ -19,9 +19,9 @@
 #include "param_check_pub.h"
 
 namespace {
-using hcomm::Channel;
-using hcomm::CpuRoceEndpoint;
-using hcomm::HostCpuRoceChannel;
+using hcomm_host_nic::Channel;
+using hcomm_host_nic::CpuRoceEndpoint;
+using hcomm_host_nic::HostCpuRoceChannel;
 
 int32_t InitEndpoint(void *endpointCtx)
 {
@@ -55,6 +55,12 @@ HcommResult StopListen(void *endpointCtx, uint32_t port)
 {
     CHK_PTR_NULL(endpointCtx);
     return static_cast<CpuRoceEndpoint *>(endpointCtx)->ServerSocketStopListen(port);
+}
+
+HcommResult GetListenPort(void *endpointCtx, uint32_t *port)
+{
+    CHK_PTR_NULL(endpointCtx);
+    return static_cast<CpuRoceEndpoint *>(endpointCtx)->ServerSocketGetListenPort(port);
 }
 
 HcommResult MemReg(void *endpointCtx, const CommMem *mem, const char *memTag, void **memHandle)
@@ -130,8 +136,8 @@ HcommResult GetStatus(void *channelCtx, int32_t *status)
     CHK_PTR_NULL(channelCtx);
     CHK_PTR_NULL(status);
     auto channelStatus = static_cast<HostCpuRoceChannel *>(channelCtx)->GetStatus();
-    *status = (channelStatus == hcomm::ChannelStatus::READY) ? 0 : 1;
-    if (channelStatus == hcomm::ChannelStatus::FAILED || channelStatus == hcomm::ChannelStatus::SOCKET_TIMEOUT) {
+    *status = (channelStatus == hcomm_host_nic::ChannelStatus::READY) ? 0 : 1;
+    if (channelStatus == hcomm_host_nic::ChannelStatus::FAILED || channelStatus == hcomm_host_nic::ChannelStatus::SOCKET_TIMEOUT) {
         return HCCL_E_NETWORK;
     }
     return HCCL_SUCCESS;
@@ -280,6 +286,7 @@ HcommNicEndpointOps kEndpointOps = {
     DestroyEndpoint,
     StartListen,
     StopListen,
+    GetListenPort,
     MemGetAllHandles,
     MemGrant
 };

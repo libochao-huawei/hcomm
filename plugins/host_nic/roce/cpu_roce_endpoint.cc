@@ -9,6 +9,8 @@
  */
 #include "endpoint_mgr.h"
 #include "hccl_mem_defs.h"
+#include <mutex>
+#include <unordered_set>
 #include "cpu_roce_endpoint.h"
 #include "hccl/hccl_res.h"
 #include "log.h"
@@ -16,6 +18,7 @@
 #include "host_socket_handle_manager.h"
 #include "adapter_rts_common.h"
 #include "hccp_peer_manager.h"
+#include "orion_adapter_hccp.h"
 #include "server_socket_manager.h"
 #include "hccp.h"
 
@@ -23,14 +26,42 @@ using Hccl::HcclException;
 using std::string;
 using std::exception;
  
-namespace hcomm {
+namespace hcomm_host_nic {
 namespace {
 constexpr uint32_t kHostResourceId = 0U;
+
+HcclResult InitHostPeerRaOnce(uint32_t hostResourceId)
+{
+    static std::mutex peerRaMutex;
+    static std::unordered_set<uint32_t> initializedHostResources;
+
+    std::lock_guard<std::mutex> lock(peerRaMutex);
+    if (initializedHostResources.count(hostResourceId) != 0) {
+        return HCCL_SUCCESS;
+    }
+
+    Hccl::HRaInitConfig cfg;
+    cfg.phyId = hostResourceId;
+    cfg.mode = Hccl::HrtNetworkMode::PEER;
+    EXECEPTION_CATCH(Hccl::HrtRaInit(cfg), return HCCL_E_INTERNAL);
+    initializedHostResources.insert(hostResourceId);
+    HCCL_INFO("[CpuRoceEndpoint][%s] host peer RA init success, hostResourceId[%u].", __func__, hostResourceId);
+    return HCCL_SUCCESS;
+}
 }
 
 CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
     : Endpoint(endpointDesc)
 {
+}
+
+CpuRoceEndpoint::~CpuRoceEndpoint() noexcept
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    if (dynamicPort_ != HCCL_INVALID_PORT) {
+        ServerSocketStopListen(dynamicPort_);
+    }
+    dynamicPort_ = HCCL_INVALID_PORT;
 }
 
 HcclResult CpuRoceEndpoint::Init()
@@ -42,7 +73,8 @@ HcclResult CpuRoceEndpoint::Init()
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::IpAddress ipAddr{};
-    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+    CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+    CHK_RET(InitHostPeerRaOnce(kHostResourceId));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     TRY_CATCH_RETURN(ctxHandle_ = static_cast<void *>(
         rdmaHandleMgr.GetByAddr(kHostResourceId, Hccl::LinkProtoType::RDMA, ipAddr,
@@ -62,7 +94,7 @@ HcclResult CpuRoceEndpoint::Init()
 HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
 {
     Hccl::IpAddress ipAddr{};
-    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+    CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
     Hccl::PortData localPort = Hccl::PortData(kHostResourceId, type, 0, ipAddr);
@@ -71,7 +103,7 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
         __func__, kHostResourceId, ipAddr.Describe().c_str());
 
     uint32_t requestPort = port;
-    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE,
+    CHK_RET(hcomm::ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE,
         kHostResourceId, &requestPort));
 
     return HCCL_SUCCESS;
@@ -80,12 +112,42 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
 HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
 {
     Hccl::IpAddress ipAddr{};
-    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+    CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
     Hccl::PortData localPort = Hccl::PortData(kHostResourceId, type, 0, ipAddr);
-    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
+    CHK_RET(hcomm::ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult CpuRoceEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    CHK_PTR_NULL(port);
+    Hccl::IpAddress ipAddr{};
+    CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
+    Hccl::PortData localPort = Hccl::PortData(kHostResourceId, type, 0, ipAddr);
+
+    HCCL_INFO("[CpuRoceEndpoint::%s] hostResourceId[%u] ipAddress[%s]",
+        __func__, kHostResourceId, ipAddr.Describe().c_str());
+
+    if (dynamicPort_ != HCCL_INVALID_PORT) {
+        *port = dynamicPort_;
+        HCCL_INFO("[CpuRoceEndpoint::%s] already listening, return existing port[%u]", __func__, dynamicPort_);
+        return HCCL_SUCCESS;
+    }
+    uint32_t requestPort = 0;
+    CHK_RET(hcomm::ServerSocketManager::GetInstance().ServerSocketStartListen(
+        localPort, Hccl::NicType::HOST_NIC_TYPE, kHostResourceId, &requestPort));
+    if (requestPort == 0 || requestPort == HCCL_INVALID_PORT) {
+        HCCL_ERROR("[CpuRoceEndpoint::%s] get listen port failed, port is invalid", __func__);
+        return HCCL_E_NETWORK;
+    }
+    dynamicPort_ = requestPort;
+    *port = dynamicPort_;
     return HCCL_SUCCESS;
 }
 

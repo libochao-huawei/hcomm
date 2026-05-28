@@ -10,7 +10,7 @@
 
 #include "dpu_notify_manager.h"
 #include "log.h"
-namespace hcomm {
+namespace hcomm_host_nic {
 
 constexpr uint32_t BYTE_SIZE = 8;  // 一个字节占8位，用于比较赋值等，避免使用魔法数字
 

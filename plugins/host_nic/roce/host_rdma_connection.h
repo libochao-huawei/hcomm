@@ -19,7 +19,7 @@
 #include "socket.h"
 #include "orion_adapter_hccp.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 
 class HostRdmaConnection {
 public:
@@ -82,6 +82,6 @@ private:
     QpAttrDto           locQpAttr_{};
 };
 
-} // namespace hcomm
+} // namespace hcomm_host_nic
 
 #endif // HCCLV2_RMA_HOST_NET_CONNECTION_H

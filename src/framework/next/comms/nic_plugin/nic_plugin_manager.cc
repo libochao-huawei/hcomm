@@ -31,9 +31,23 @@ namespace {
 constexpr const char *HCOMM_NIC_PLUGIN_DIR = "hcomm_plugin";
 constexpr const char *HCOMM_NIC_PLUGIN_SO_ENV = "HCOMM_NIC_PLUGIN_SO";
 
-std::once_flag g_loadOnce;
-std::vector<std::unique_ptr<NicPluginEntry>> g_loadedPlugins;
-std::unordered_map<CommProtocol, const NicPluginEntry *> g_protocolPlugins;
+std::once_flag &LoadOnce()
+{
+    static std::once_flag loadOnce;
+    return loadOnce;
+}
+
+std::vector<std::unique_ptr<NicPluginEntry>> &LoadedPlugins()
+{
+    static std::vector<std::unique_ptr<NicPluginEntry>> loadedPlugins;
+    return loadedPlugins;
+}
+
+std::unordered_map<CommProtocol, const NicPluginEntry *> &ProtocolPlugins()
+{
+    static std::unordered_map<CommProtocol, const NicPluginEntry *> protocolPlugins;
+    return protocolPlugins;
+}
 
 bool EndsWithSo(const std::string &path)
 {
@@ -78,16 +92,17 @@ bool ValidatePluginInfo(const char *soPath, const HcommNicPluginInfo *info,
 
 void RegisterPluginProtocols(const NicPluginEntry *plugin)
 {
+    auto &protocolPlugins = ProtocolPlugins();
     for (uint32_t idx = 0; idx < plugin->info->protocolCount; ++idx) {
         const CommProtocol protocol = ToCommProtocol(plugin->info->protocols[idx]);
-        auto iter = g_protocolPlugins.find(protocol);
-        if (iter != g_protocolPlugins.end()) {
+        auto iter = protocolPlugins.find(protocol);
+        if (iter != protocolPlugins.end()) {
             HCCL_RUN_WARNING("[NicPlugin] protocol[%d] handler[%s] is overwritten by plugin[%s].",
                 protocol,
                 iter->second->info->name == nullptr ? "unknown" : iter->second->info->name,
                 plugin->info->name == nullptr ? "unknown" : plugin->info->name);
         }
-        g_protocolPlugins[protocol] = plugin;
+        protocolPlugins[protocol] = plugin;
         HCCL_RUN_INFO("[NicPlugin] protocol[%d] is handled by plugin[%s].",
             protocol, plugin->info->name == nullptr ? "unknown" : plugin->info->name);
     }
@@ -142,7 +157,7 @@ void LoadOnePlugin(const std::string &path)
         return;
     }
     RegisterPluginProtocols(plugin.get());
-    g_loadedPlugins.emplace_back(std::move(plugin));
+    LoadedPlugins().emplace_back(std::move(plugin));
 }
 
 void LoadDefaultDirectory(const std::string &pluginDir)
@@ -154,9 +169,6 @@ void LoadDefaultDirectory(const std::string &pluginDir)
     }
     std::vector<std::string> soPaths;
     for (dirent *entry = readdir(dir); entry != nullptr; entry = readdir(dir)) {
-        if (entry->d_name == nullptr) {
-            continue;
-        }
         const std::string name(entry->d_name);
         if (name == "." || name == ".." || !EndsWithSo(name)) {
             continue;
@@ -192,7 +204,7 @@ void LoadPluginsOnce()
 {
     uint32_t deviceCount = 0;
     const aclError ret = aclrtGetDeviceCount(&deviceCount);
-    if (ret != ACL_SUCCESS || deviceCount != 0) {
+    if (ret == ACL_SUCCESS && deviceCount != 0) {
         HCCL_RUN_INFO("[NicPlugin] plugin loading skipped, aclrtGetDeviceCount ret[%d], count[%u].",
             ret, deviceCount);
         return;
@@ -210,19 +222,18 @@ void LoadPluginsOnce()
 
 void LoadAllNicPlugins()
 {
-    std::call_once(g_loadOnce, LoadPluginsOnce);
-}
-
-__attribute__((constructor)) static void HcommNicPluginConstructor()
-{
-    LoadAllNicPlugins();
+    std::call_once(LoadOnce(), LoadPluginsOnce);
 }
 
 const NicPluginEntry *FindHostNicPlugin(CommProtocol protocol)
 {
     LoadAllNicPlugins();
-    auto iter = g_protocolPlugins.find(protocol);
-    return iter == g_protocolPlugins.end() ? nullptr : iter->second;
+    const auto &protocolPlugins = ProtocolPlugins();
+    auto iter = protocolPlugins.find(protocol);
+    const NicPluginEntry *entry = iter == protocolPlugins.end() ? nullptr : iter->second;
+    HCCL_RUN_WARNING("[NicPluginDebug][FindHostNicPlugin] protocol[%d], entry[%p], mapSize[%zu].",
+        protocol, entry, protocolPlugins.size());
+    return entry;
 }
 
 HcommResult CreatePluginEndpoint(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
@@ -230,6 +241,8 @@ HcommResult CreatePluginEndpoint(const EndpointDesc *endpoint, EndpointHandle *e
     CHK_PTR_NULL(endpoint);
     CHK_PTR_NULL(endpointHandle);
     const NicPluginEntry *entry = FindHostNicPlugin(endpoint->protocol);
+    HCCL_RUN_WARNING("[NicPluginDebug][CreatePluginEndpoint] protocol[%d], entry[%p].",
+        endpoint->protocol, entry);
     if (entry == nullptr) {
         return HCCL_E_NOT_FOUND;
     }

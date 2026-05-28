@@ -12,7 +12,7 @@
 #include "channel.h"
 #include "log.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 Endpoint::Endpoint(const EndpointDesc &endpointDesc) : endpointDesc_(endpointDesc)
 {
 }
@@ -89,4 +89,4 @@ void Channel::ReleasePtrArrayDevMems()
 {
     ptrArrayDevMems_.clear();
 }
-} // namespace hcomm
+} // namespace hcomm_host_nic

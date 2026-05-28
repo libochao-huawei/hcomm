@@ -12,11 +12,13 @@
 #define ROCE_ENDPOINT_H
 
 #include <memory>
+#include <mutex>
 #include <vector>
 #include <string>
 #include "endpoint.h"
+#include "externalinput_pub.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 /**
  * @note 职责：Host CPU通信引擎+RoCE协议的通信设备Endpoint，管理通信设备上下文，以及设备上的注册内存。
  */
@@ -24,12 +26,13 @@ class CpuRoceEndpoint : public Endpoint {
 public:
     explicit CpuRoceEndpoint(const EndpointDesc &endpointDesc);
 
-    ~CpuRoceEndpoint() = default;
+    ~CpuRoceEndpoint() noexcept override;
 
     HcclResult Init() override;
 
     HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult ServerSocketStopListen(const uint32_t port) override;
+    HcclResult ServerSocketGetListenPort(uint32_t *port) override;
 
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
@@ -45,6 +48,8 @@ public:
     };
     HcclResult GetCapabilities(Capabilities &caps);
 private:
+    std::mutex portMutex_;
+    u32 dynamicPort_{HCCL_INVALID_PORT};
     Capabilities capabilities_{};
     bool isCapabilitiesAvailable_{false};
 };

@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "reged_mem_mgr.h"
+#include "reged_mems/reged_mem_mgr.h"
 #include "rma_buffer_mgr.h"
 #include "buffer_key.h"
 #include "../../../../src/legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
@@ -21,7 +21,7 @@
 #include "exchange_rdma_buffer_dto.h"
 #include "local_rdma_rma_buffer.h"
  
-namespace hcomm {
+namespace hcomm_host_nic {
 /**
  * @note 职责：用于通信设备EndPoint的注册内存信息管理，支持基于RmaBufferMgr类的重叠内存的检测报错等。
  */
