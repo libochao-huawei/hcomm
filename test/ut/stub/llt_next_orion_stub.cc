@@ -1393,6 +1393,10 @@ void HccpHdcManager::Init(u32 deviceLogicId)
 {
 }
 
+void HccpHdcManager::DeInit(u32 deviceLogicId)
+{
+}
+
 HccpHdcManager::~HccpHdcManager()
 {
 }
