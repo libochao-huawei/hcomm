@@ -308,9 +308,11 @@ TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
     ASSERT_NE(nullptr, peer2);
 
     auto fabric = std::make_shared<NetInstance::Fabric>(0, "plane0");
+    auto fabricForSourceUpdate = std::make_shared<NetInstance::Fabric>(1, "plane1");
     oldNetInstance->AddNode(peer0);
     oldNetInstance->AddNode(peer2);
     oldNetInstance->AddNode(fabric);
+    oldNetInstance->AddNode(fabricForSourceUpdate);
 
     std::set<std::string> ports = {"1/0"};
     std::set<LinkProtocol> protocols = {LinkProtocol::UB_TP};
@@ -323,10 +325,14 @@ TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
     auto fabricToRank2Iface = makeIface(noParentTopoInstId);
     auto rank2ToFabricIface = makeIface(nullTopoInstId);
     auto fabricToRank0Iface = makeIface(parentTopoInstId);
+    auto rank0ToFabricForSourceUpdateIface = makeIface(parentTopoInstId);
+    auto fabricForSourceUpdateToRank2Iface = makeIface(noParentTopoInstId);
     peer0->AddConnInterface(layer, rank0ToFabricIface);
     peer0->AddConnInterface(layer, fabricToRank0Iface);
+    peer0->AddConnInterface(layer, rank0ToFabricForSourceUpdateIface);
     peer2->AddConnInterface(layer, rank2ToFabricIface);
     peer2->AddConnInterface(layer, fabricToRank2Iface);
+    peer2->AddConnInterface(layer, fabricForSourceUpdateToRank2Iface);
 
     oldNetInstance->UpdateTopoInst(noParentTopoInstId, TopoType::CLOS, otherRank);
     oldNetInstance->topoInsts_[nullTopoInstId] = nullptr;
@@ -339,6 +345,10 @@ TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
         peer2, fabric, rank2ToFabricIface, nullptr, LinkType::PEER2NET, protocols));
     oldNetInstance->AddLink(std::make_shared<NetInstance::Link>(
         fabric, peer0, nullptr, fabricToRank0Iface, LinkType::PEER2NET, protocols));
+    oldNetInstance->AddLink(std::make_shared<NetInstance::Link>(
+        peer0, fabricForSourceUpdate, rank0ToFabricForSourceUpdateIface, nullptr, LinkType::PEER2NET, protocols));
+    oldNetInstance->AddLink(std::make_shared<NetInstance::Link>(
+        fabricForSourceUpdate, peer2, nullptr, fabricForSourceUpdateToRank2Iface, LinkType::PEER2NET, protocols));
 
     vector<u32> subRankIds = {0, 2};
     std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(subRankIds);
