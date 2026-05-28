@@ -399,6 +399,7 @@ target_include_directories(hccl_llt  PRIVATE
 
     ${HCCL_CODE_ROOT}/src/base_comm/primitives
     ${HCCL_CODE_ROOT}/src/base_comm/primitives/api_c_adpt
+    ${HCCL_CODE_ROOT}/src/base_comm/primitives/api_c_adpt/nic_plugin
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/server_socket/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/adpt/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/pub_inc/
