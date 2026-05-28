@@ -25,28 +25,20 @@ namespace Hccl {
 
 template <typename T>
 struct RemoteMemCtx{
-    uint32_t                        userMemCount = 0;
     bool                            &cacheValid;
     std::vector<T>                  &rmtBufferVec;
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteUserMemTag;
     std::vector<CommMem>            &remoteUserMems;
     std::vector<std::string>        &tagCopies;
     std::vector<char*>              &tagPointers;
-    std::function<HcclResult(T &rmtBuffer, CommMem &mem)> cacheBuilder;
     CommMem                         **remoteMem;
-    char                            ***memTags;
+    char                            ***memInfos;
     uint32_t                        *memNum;
 
-    RemoteMemCtx(uint32_t userMemCount, bool &cacheValid, std::vector<T> &rmtBufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteUserMemTag,
-        std::vector<CommMem> &remoteUserMems, std::vector<std::string> &tagCopies,
-        std::vector<char*> &tagPointers,
-        std::function<HcclResult(T &rmtBuffer, CommMem &mem)> cacheBuilder,
-        CommMem **remoteMem, char ***memTags, uint32_t *memNum) :
-        userMemCount(userMemCount), cacheValid(cacheValid), rmtBufferVec(rmtBufferVec),
-        remoteUserMemTag(remoteUserMemTag), remoteUserMems(remoteUserMems),
-        tagCopies(tagCopies), tagPointers(tagPointers), cacheBuilder(cacheBuilder),
-        remoteMem(remoteMem), memTags(memTags), memNum(memNum)
+    RemoteMemCtx(bool &cacheValid, std::vector<T> &rmtBufferVec,
+        std::vector<CommMem> &remoteUserMems, std::vector<std::string> &tagCopies, std::vector<char*> &tagPointers,
+        CommMem **remoteMem, char ***memInfos, uint32_t *memNum) :
+        cacheValid(cacheValid), rmtBufferVec(rmtBufferVec), remoteUserMems(remoteUserMems),
+        tagCopies(tagCopies), tagPointers(tagPointers), remoteMem(remoteMem), memInfos(memInfos), memNum(memNum)
     {};
 };
 
@@ -66,36 +58,39 @@ template<typename T>
 HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
 {
     CHK_PRT_RET(!remoteMemCtx.remoteMem, HCCL_ERROR("[GetRemoteUserMems] remoteMem is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!remoteMemCtx.memTags, HCCL_ERROR("[GetRemoteUserMems] memTags is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!remoteMemCtx.memInfos, HCCL_ERROR("[GetRemoteUserMems] memInfos is nullptr"), HCCL_E_PARA);
     CHK_PRT_RET(!remoteMemCtx.memNum, HCCL_ERROR("[GetRemoteUserMems] memNum is nullptr"), HCCL_E_PARA);
     *(remoteMemCtx.remoteMem) = nullptr;
-    *(remoteMemCtx.memTags) = nullptr;
+    *(remoteMemCtx.memInfos) = nullptr;
     *(remoteMemCtx.memNum) = 0;
-    if (remoteMemCtx.userMemCount == 0) {
-        HCCL_WARNING("[%s] userMemCount is 0.", __func__);
+    uint32_t userMemCount = remoteMemCtx.rmtBufferVec.size();
+    if (userMemCount == 0) {
+        HCCL_WARNING("[%s] bufferNum is 0.", __func__);
         return HCCL_SUCCESS;
     }
     // 检查是否有缓存
     if (!remoteMemCtx.cacheValid) {
         remoteMemCtx.remoteUserMems.clear();
         remoteMemCtx.tagCopies.clear();
-        remoteMemCtx.tagCopies.reserve(remoteMemCtx.userMemCount);
+        remoteMemCtx.tagCopies.reserve(userMemCount);
         remoteMemCtx.tagPointers.clear();
-        remoteMemCtx.tagPointers.reserve(remoteMemCtx.userMemCount);
-        for (uint32_t i = 0; i < remoteMemCtx.userMemCount; ++i) {
+        remoteMemCtx.tagPointers.reserve(userMemCount);
+        for (uint32_t i = 0; i < userMemCount; ++i) {
+            auto &rmtBuffer = remoteMemCtx.rmtBufferVec[i];
             CommMem mem{};
-            CHK_RET(remoteMemCtx.cacheBuilder(remoteMemCtx.rmtBufferVec[i], mem));
+            mem.type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
+            mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+            mem.size = rmtBuffer->GetSize();
             remoteMemCtx.remoteUserMems.push_back(mem);
-            const char* src = remoteMemCtx.remoteUserMemTag[i].data();
-            std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
+            std::string tagCopy = rmtBuffer->GetMemTag();;
             remoteMemCtx.tagCopies.push_back(std::move(tagCopy));
             remoteMemCtx.tagPointers.push_back(const_cast<char*>(remoteMemCtx.tagCopies.back().c_str()));
         }
         remoteMemCtx.cacheValid = true;
     }
     *(remoteMemCtx.remoteMem) = remoteMemCtx.remoteUserMems.data();
-    *(remoteMemCtx.memTags) = remoteMemCtx.tagPointers.data();
-    *(remoteMemCtx.memNum) = remoteMemCtx.userMemCount;
+    *(remoteMemCtx.memInfos) = remoteMemCtx.tagPointers.data();
+    *(remoteMemCtx.memNum) = userMemCount;
     return HCCL_SUCCESS;
 }
 } // namespace Hccl
