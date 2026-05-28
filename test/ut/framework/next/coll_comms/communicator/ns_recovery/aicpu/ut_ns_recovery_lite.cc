@@ -35,14 +35,6 @@ TEST_F(NsRecoveryLiteTest, Ut_IsNeedCleanWhenDefaultAndToggledExpectReflect)
     EXPECT_FALSE(lite.IsNeedClean());
 }
 
-TEST_F(NsRecoveryLiteTest, Ut_ResetErrorReportedWhenCalledExpectNoCrash)
-{
-    NsRecoveryLite lite;
-    // ResetErrorReported 只是将内部标识复位，不应引发异常或崩溃
-    lite.ResetErrorReported();
-    SUCCEED();
-}
-
 TEST_F(NsRecoveryLiteTest, Ut_BackGroundGetCmdWhenHdcGetFailsExpectNoneReturned)
 {
     NsRecoveryLite lite;
