@@ -10,24 +10,14 @@
 #ifndef AICPU_TS_UBOE_CHANNEL_H
 #define AICPU_TS_UBOE_CHANNEL_H
 
-#include "channel.h"
-#include "socket_mgr.h"
-
-// Orion
-#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "../../../../../../legacy/framework/resource_manager/socket/socket_manager.h"
-#include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
-#include "rma_connection.h"
-#include "ub_mem_transport.h"
-#include "dev_ub_connection.h"
-#include "ub_local_notify.h"
+#include "aicpu_ts_ub_channel_base.h"
 
 namespace hcomm {
 
 constexpr u32    FINISH_MSG_SIZE             = 128;
 constexpr char_t FINISH_MSG[FINISH_MSG_SIZE] = "Uboe Comm Pipe ready!";
 
-class AicpuTsUboeChannel : public Channel {
+class AicpuTsUboeChannel : public AicpuTsUbChannelBase {
 public:
     AicpuTsUboeChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
     ~AicpuTsUboeChannel();
@@ -109,29 +99,6 @@ private:
     std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue) const;
     std::vector<char> GetConnUniqueIds();
 private:
-    // --------------------- 入参 ---------------------
-    EndpointHandle                                              endpointHandle_;
-    HcommChannelDesc                                            channelDesc_;
-
-    // TODO: 成员变量全部初始化
-    // --------------------- 转换参数 ---------------------
-    EndpointDesc                                                localEp_{};
-    EndpointDesc                                                remoteEp_{};
-    uint32_t                                                    notifyNum_{0};
-    std::vector<std::shared_ptr<Hccl::Buffer>>                  bufs_{};
-    std::vector<std::shared_ptr<Hccl::Buffer>>                  bufsTemp{}; // channel 复用时暂存新增 buffer
-
-    // --------------------- 具体成员 ---------------------
-    Hccl::Socket*                                               socket_{nullptr};
-    RdmaHandle                                                  rdmaHandle_{nullptr};
-    std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
-    Hccl::BaseMemTransport::CommonLocRes                        commonRes_{};
-    std::vector<Hccl::LocalRmaBuffer *>                         bufferVecTemp_; // channel 复用时暂存新增 rmaBuffer
-    std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
-    std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
-    std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
-    std::unique_ptr<Hccl::Socket>                               serverSocket_;
-
     ChannelStatus                                               channelStatus{ChannelStatus::INIT};
     MAKE_ENUM(UboeStatus, INIT, SEND_EID, RECV_EID, PROCESS_EID_DATA, BUILD_CONN, SEND_SIZE, RECV_SIZE, SEND_DATA, 
         RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, SET_READY, READY)
@@ -164,8 +131,6 @@ private:
     std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>           tagPointers_;        // Tag 缓存
-    const Hccl::SocketConfig*    socketConfig_{nullptr};
-    uint32_t    devicePhyId_{};
 };
 
 } // namespace hcomm

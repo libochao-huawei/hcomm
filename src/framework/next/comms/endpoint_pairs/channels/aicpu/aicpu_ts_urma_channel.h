@@ -11,21 +11,11 @@
 #define AICPU_TS_URMA_CHANNEL_H
 
 #include <atomic>
-#include "../channel.h"
-#include "../../sockets/socket_mgr.h"
-
-// Orion
-#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "../../../../../../legacy/framework/resource_manager/socket/socket_manager.h"
-#include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
-#include "rma_connection.h"
-#include "ub_mem_transport.h"
-#include "dev_ub_connection.h"
-#include "ub_local_notify.h"
+#include "aicpu_ts_ub_channel_base.h"
 
 namespace hcomm {
 
-class AicpuTsUrmaChannel : public Channel {
+class AicpuTsUrmaChannel : public AicpuTsUbChannelBase {
 public:
     AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
     ~AicpuTsUrmaChannel();
@@ -66,31 +56,7 @@ private:
 
 private:
     std::atomic<bool> isFirstPrintChannelInfo_{true}; // 是否第一次打印通道建链信息，避免重复打印日志刷屏
-    // --------------------- 入参 ---------------------
-    EndpointHandle                                              endpointHandle_;
-    HcommChannelDesc                                            channelDesc_;
-
-    // TODO: 成员变量全部初始化
-    // --------------------- 转换参数 ---------------------
-    EndpointDesc                                                localEp_{};
-    EndpointDesc                                                remoteEp_{};
-    uint32_t                                                    notifyNum_{0};
-    std::vector<std::shared_ptr<Hccl::Buffer>>                  bufs_{};
-    std::vector<std::shared_ptr<Hccl::Buffer>>                  bufsTemp{}; // channel 复用时暂存新增 buffer
-
-    // --------------------- 具体成员 ---------------------
-    Hccl::Socket*                                               socket_{nullptr};
-    RdmaHandle                                                  rdmaHandle_{nullptr};
-    std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::Attribution                         attr_{};
-    Hccl::BaseMemTransport::CommonLocRes                        commonRes_{};
-    std::vector<Hccl::LocalRmaBuffer *>                         bufferVecTemp_; // channel 复用时暂存新增 rmaBuffer
-    std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
-    std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
-    std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
-    std::unique_ptr<Hccl::Socket>                               serverSocket_;
-    const Hccl::SocketConfig*                                   socketConfig_{nullptr};
-    uint32_t                                                    devicePhyId_{};
 };
 
 } // namespace hcomm
