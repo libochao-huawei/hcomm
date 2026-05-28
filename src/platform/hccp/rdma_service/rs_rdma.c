@@ -2718,6 +2718,81 @@ rs_cq_create_err:
     return ret;
 }
 
+#define RS_MAX_TYPICAL_CQ_NUM 128
+
+struct RsTypicalCqEntry {
+    unsigned int phyId;
+    unsigned int rdevIndex;
+    unsigned int cqn;
+    struct ibv_cq *ibCq;
+    struct rdma_lite_device_cq_attr deviceCqAttr;
+};
+
+STATIC struct RsTypicalCqEntry gRsTypicalCqTable[RS_MAX_TYPICAL_CQ_NUM];
+STATIC int gRsTypicalCqCnt = 0;
+
+RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth,
+    unsigned int *cqn)
+{
+    int ret;
+    struct RsRdevCb *rdevCb = NULL;
+    struct ibv_cq *ibCq = NULL;
+    struct rdma_lite_device_cq_attr deviceCqAttr;
+
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
+    if (ret) {
+        hccp_err("rs_query_rdev_cb phyId[%u] rdevIndex[%u], ret %d", phyId, rdevIndex, ret);
+        return ret;
+    }
+
+    ret = RsDrvTypicalCqCreate(rdevCb, cqDepth, cqn, &ibCq, &deviceCqAttr);
+    if (ret) {
+        hccp_err("rs_drv_typical_cq_create failed, cqDepth[%u] ret[%d]", cqDepth, ret);
+        return ret;
+    }
+
+    if (gRsTypicalCqCnt < RS_MAX_TYPICAL_CQ_NUM) {
+        gRsTypicalCqTable[gRsTypicalCqCnt].phyId = phyId;
+        gRsTypicalCqTable[gRsTypicalCqCnt].rdevIndex = rdevIndex;
+        gRsTypicalCqTable[gRsTypicalCqCnt].cqn = *cqn;
+        gRsTypicalCqTable[gRsTypicalCqCnt].ibCq = ibCq;
+        gRsTypicalCqTable[gRsTypicalCqCnt].deviceCqAttr = deviceCqAttr;
+        gRsTypicalCqCnt++;
+    }
+
+    hccp_info("RsTypicalCqCreate success: phyId[%u] rdevIndex[%u] cqn[%u] cqDepth[%u]",
+        phyId, rdevIndex, *cqn, cqDepth);
+
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsGetLiteCqAttr(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
+    struct rdma_lite_device_cq_attr *deviceCqAttr)
+{
+    int ret;
+    int i;
+
+    RS_CHECK_POINTER_NULL_RETURN_INT(deviceCqAttr);
+
+    for (i = 0; i < gRsTypicalCqCnt; i++) {
+        if (gRsTypicalCqTable[i].phyId == phyId &&
+            gRsTypicalCqTable[i].rdevIndex == rdevIndex &&
+            gRsTypicalCqTable[i].cqn == cqn) {
+            ret = memcpy_s(deviceCqAttr, sizeof(*deviceCqAttr),
+                &gRsTypicalCqTable[i].deviceCqAttr, sizeof(gRsTypicalCqTable[i].deviceCqAttr));
+            if (ret) {
+                hccp_err("memcpy_s failed, ret:%d", ret);
+                return ret;
+            }
+            hccp_info("RsGetLiteCqAttr success: cqn[%u] depth[%u]", cqn, deviceCqAttr->depth);
+            return 0;
+        }
+    }
+
+    hccp_err("rs_get_lite_cq_attr: cqn[%u] not found phyId[%u] rdevIndex[%u]", cqn, phyId, rdevIndex);
+    return -EINVAL;
+}
+
 RS_ATTRI_VISI_DEF int RsCqDestroy(unsigned int phyId, unsigned int rdevIndex, struct CqAttr *attr)
 {
     int ret;

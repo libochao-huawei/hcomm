@@ -73,6 +73,20 @@ HcclResult TypicalQpManager::CreateQp(struct TypicalQp& qpInfo, const QpConfigIn
     return HCCL_SUCCESS;
 }
 
+HcclResult TypicalQpManager::CreateCq(AscendCQInfo& cqInfo)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    void *cqHandle = nullptr;
+    CHK_RET(RdmaResourceManager::GetInstance().GetRdmaHandle(rdmaHandle_));
+    CHK_PTR_NULL(rdmaHandle_);
+    std::unique_lock<std::mutex> lock(cqMutex_);
+    ret = CreateTypicalCq(rdmaHandle_, cqInfo.cqDepth, cqInfo.cqn, &cqHandle);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[TypicalQpManager][CreateCq] Create cq failed."), HCCL_E_INTERNAL);
+    cqMap_.insert(std::make_pair(cqInfo.cqn, std::make_pair(cqInfo, cqHandle)));
+    return HCCL_SUCCESS;
+}
+
 HcclResult TypicalQpManager::ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo)
 {
     CHK_PRT_RET((localQpInfo.qpn == 0 || remoteQpInfo.qpn == 0),

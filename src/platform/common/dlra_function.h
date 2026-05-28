@@ -129,6 +129,8 @@ public:
     std::function<int(RdmaHandle rdmaHandle,
         struct TypicalQp *localQpInfo, struct TypicalQp *remoteQpInfo)> dlRaTypicalQpModify;
     std::function<int(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp)> dlRaTypicalSendWr;
+    std::function<int(RdmaHandle rdmaHandle, unsigned int cqDepth,
+        unsigned int *cqn, void **cqHandle)> dlRaTypicalCqCreate;
  
     std::function<int(RdmaHandle rdmaHandle, struct QpExtAttrs *ext_attrs, struct AiQpInfo *info, \
     QpHandle *qpHandle)> dlRaAiQpCreate;
