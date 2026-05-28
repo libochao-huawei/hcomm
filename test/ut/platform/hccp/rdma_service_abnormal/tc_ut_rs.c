@@ -196,6 +196,28 @@ extern int RsServerSendWlistCheckResult(struct RsConnInfo *conn, bool flag);
 extern uint32_t RsGenerateUeInfo(uint32_t dieId, uint32_t funcId);
 extern uint32_t RsGenerateDevIndex(uint32_t devCnt, uint32_t dieId, uint32_t funcId);
 extern int RsNetAdaptApiInit(void);
+extern int RsConnectHandle(struct RsInitConfig *cfg);
+extern int RsSocketStateReset(unsigned int chipId, struct RsConnInfo *conn, uint32_t sslEnable, struct rs_cb *rscb);
+extern int RsCallocMr(unsigned int phyId, struct RsMrCb **mrCb);
+extern int RsCallocQpcb(unsigned int phyId, struct RsQpCb **qpCb);
+extern void RsSocketsServeripConverter(struct SocketFdData *sockets, int num, int role);
+extern void RsEpollRecvHandleRemain(struct RsQpCb *qpCb, unsigned int totalSize, unsigned int curSize, bool flag, char *bufTmp);
+extern int RsSetFdNonblock(int fd);
+extern int RsSocketSslConnect(struct RsConnInfo *conn, struct rs_cb *rscb);
+extern int RsSocketStateConnected(struct RsConnInfo *conn, uint32_t sslEnable, struct rs_cb *rscb);
+extern int RsSocketStateSslFdBind(struct RsConnInfo *conn, uint32_t sslEnable, struct rs_cb *rscb);
+extern void RsDoSslHandshake(struct RsAcceptInfo *acceptInfo, struct rs_cb *rscb);
+extern int rs_get_pk(struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo, EVP_PKEY **pky);
+extern int rs_ssl_crl_init(SSL_CTX *sslCtx, struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo);
+extern int rs_ssl_check_cert_chain(struct tls_cert_mng_info *mngInfo, struct RsCerts *certs);
+extern int rs_remove_certs(const char* endFile, const char* caFile);
+extern int rs_ssl_skid_get_from_chain(struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo, struct RsCerts *certs, struct tls_ca_new_certs *newCerts);
+extern int rs_ssl_init(struct rs_cb *rscb);
+extern int RsTcpRecvTagInHandle(struct RsListenInfo *listenInfo, int fd, struct RsConnInfo *connTmp, struct RsIpAddrInfo *remoteIp);
+extern void RsEpollEventTcpListenInHandle(struct rs_cb *rsCb, struct RsListenInfo *listenInfo, int fd, struct RsIpAddrInfo *remoteIp);
+extern void RsSslRecvTagInHandle(struct RsAcceptInfo *acceptInfo, struct RsConnInfo *connTmp);
+extern void RsServerValidAsync(unsigned int chipId, struct RsConnCb *connCb, struct RsConnInfo *conn);
+extern int RsNetApiInit(void);
 
 long unsigned int StubCalloc(long unsigned int num, long unsigned int size)
 {
@@ -204,7 +226,7 @@ long unsigned int StubCalloc(long unsigned int num, long unsigned int size)
 		return 0;
 	}
 	hit ++;
-	return malloc(num * size);
+	return (unsigned long)malloc(num * size);
 }
 
 int StubIbvGetCqEvent(struct ibv_comp_channel *channel, struct ibv_cq **cq, void **cqContext)
@@ -277,7 +299,7 @@ void TcRsInit2()
 
 	cfg.chipId = 3;
 	cfg.hccpMode = NETWORK_ONLINE;
-	mocker((stub_fn_t)calloc, 10, NULL);
+	mocker((stub_fn_t)calloc, 10, 0);
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, -12);
 	mocker_clean();
@@ -346,7 +368,7 @@ void TcRsRdevInit()
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	mocker((stub_fn_t)calloc, 20, NULL);
+	mocker((stub_fn_t)calloc, 20, 0);
 	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
@@ -446,7 +468,7 @@ void TcRsSocketListenStart2()
 	listenNode[0].phyId = 0;
 	listenNode[0].family = AF_INET;
     listenNode[0].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	mocker((stub_fn_t)calloc, 10, NULL);
+	mocker((stub_fn_t)calloc, 10, 0);
 	listenNode[0].port = 16666;
 	ret = RsSocketListenStart(listenNode, 1);
 	mocker_clean();
@@ -595,7 +617,7 @@ void TcRsSocketBatchConnect2()
 
 	connNode[0].phyId = 0;
 
-	mocker((stub_fn_t)calloc, 10, NULL);
+	mocker((stub_fn_t)calloc, 10, 0);
 	connNode[0].port = 16666;
 	ret = RsSocketBatchConnect(connNode, 1);
 	mocker_clean();
@@ -767,12 +789,12 @@ void TcRsQpCreate2()
 	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	mocker((stub_fn_t)calloc, 10, NULL);
+	mocker((stub_fn_t)calloc, 10, 0);
 	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	mocker((stub_fn_t)ibv_create_comp_channel, 10, NULL);
+	mocker((stub_fn_t)ibv_create_comp_channel, 10, 0);
 	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
@@ -814,7 +836,7 @@ void TcRsQpCreate2()
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	mocker((stub_fn_t)ibv_exp_create_qp, 10, NULL);
+	mocker((stub_fn_t)ibv_exp_create_qp, 10, 0);
 	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
@@ -1044,8 +1066,8 @@ void TcRsEpollOps2()
 	RsEpollEventInHandle(rsCbT, &events);
 	mocker_clean();
 
-	mocker((stub_fn_t)calloc, 10, NULL);
-	struct RsConnCb conCbNode;
+	mocker((stub_fn_t)calloc, 10, 0);
+	struct RsConnInfo *conCbNode = NULL;
 	ret = RsAllocConnNode(&conCbNode, 16666);
 	EXPECT_INT_EQ(ret, -12);
 
@@ -1775,7 +1797,7 @@ void TcRsMrAbnormal2()
 	struct RsQpCb *qpCbT;
 	ret = RsQpn2qpcb(devId, rdevIndex, resp.qpn, &qpCbT);
 	EXPECT_INT_EQ(ret, 0);
-	ret = RsGetMrcb(qpCbT, addr, &mrCb, &qpCbT->mrList);
+	ret = RsGetMrcb(qpCbT, (uint64_t)addr, &mrCb, &qpCbT->mrList);
 	if (mrCb->qpCb->connInfo == NULL) {
 		free(addr);
 		return;
@@ -2267,7 +2289,7 @@ void TcRsAbnormal2()
 	ret = RsQpn2qpcb(devId, rdevIndex, resp.qpn, &qpCb);
 	EXPECT_INT_EQ(ret, 0);
 
-	mocker((stub_fn_t)calloc, 10, NULL);
+	mocker((stub_fn_t)calloc, 10, 0);
 	ret = RsNotifyMrListAdd(qpCb, buf);
 	mocker_clean();
 
@@ -2286,7 +2308,7 @@ void TcRsAbnormal2()
 	mocker_clean();
 
 	*cmd = RS_CMD_MR_INFO;
-	mocker((stub_fn_t)calloc, 10, NULL);
+	mocker((stub_fn_t)calloc, 10, 0);
 	RsEpollRecvHandle(qpCb, buf, 64);
 	mocker_clean();
 
@@ -2301,14 +2323,14 @@ void TcRsAbnormal2()
 	mocker((stub_fn_t)memcpy_s, 10, 1);
 	RsEpollRecvHandleRemain(qpCb, totalSize, curSize, flag, bufTmp);
 	mocker_clean();
-	mocker((stub_fn_t)ibv_create_cq, 10, NULL);
+	mocker((stub_fn_t)ibv_create_cq, 10, 0);
 	ibSendCqT = qpCb->ibSendCq;
 	ibRecvCqT = qpCb->ibRecvCq;
 	ret = RsDrvCreateCq(qpCb, 0);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	mocker_ret((stub_fn_t)ibv_create_cq , 1, NULL, 0);
+	mocker_ret((stub_fn_t)ibv_create_cq , 1, 0, 0);
 	mocker((stub_fn_t)ibv_destroy_cq, 10, 0);
 	ret = RsDrvCreateCq(qpCb, 0);
 	qpCb->ibSendCq = ibSendCqT;
@@ -2316,7 +2338,7 @@ void TcRsAbnormal2()
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	mocker_ret((stub_fn_t)ibv_create_cq , 1, NULL, 0);
+	mocker_ret((stub_fn_t)ibv_create_cq , 1, 0, 0);
 	mocker((stub_fn_t)ibv_destroy_cq, 10, 0);
 	ret = RsDrvCreateCq(qpCb, 0);
 	qpCb->ibSendCq = ibSendCqT;
@@ -2324,7 +2346,7 @@ void TcRsAbnormal2()
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	mocker_ret((stub_fn_t)RsIbvExpCreateCq , 1, NULL, 0);
+	mocker_ret((stub_fn_t)RsIbvExpCreateCq , 1, 0, 0);
 	mocker((stub_fn_t)ibv_destroy_cq, 10, 0);
 	ret = RsDrvCreateCq(qpCb, 1);
 	qpCb->ibSendCq = ibSendCqT;
@@ -2445,7 +2467,7 @@ void TcRsConnectHandle()
     EXPECT_INT_EQ(ret, 0);
 
     ret = RsConnectHandle(NULL);
-    EXPECT_INT_EQ(ret, NULL);
+    EXPECT_INT_EQ(ret, 0);
     return;
 }
 
@@ -2594,7 +2616,7 @@ void TcTlsAbnormal1()
     errRscb.chipId = 0;
     mngInfo.cert_count = 0;
     mngInfo.total_cert_len = 100;
-    ret = rs_ssl_put_certs(&errRscb, &mngInfo, &certs, &newCerts, NULL);
+    ret = rs_ssl_put_certs(&errRscb, &mngInfo, &certs, newCerts, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 
@@ -2664,7 +2686,7 @@ void TcTlsAbnormal1()
 
     mngInfo.cert_count = 2;
     mocker((stub_fn_t)BIO_new_mem_buf, 10, 0);
-    ret = rs_ssl_skid_get_from_chain(&errRscb, &mngInfo, &certs, &newCerts);
+    ret = rs_ssl_skid_get_from_chain(&errRscb, &mngInfo, &certs, newCerts);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 

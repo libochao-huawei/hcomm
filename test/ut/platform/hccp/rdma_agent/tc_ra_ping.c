@@ -71,7 +71,7 @@ void TcRaPingInitAbnormal()
     ret = RaPingInit(NULL, NULL, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
 
-    mocker((stub_fn_t)calloc, 1, NULL);
+    mocker((stub_fn_t)calloc, 1, 0);
     ret = RaPingInit(NULL, NULL, &pingHandle);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
@@ -202,32 +202,32 @@ void TcRaPingTargetDelAbnoraml()
     int num = 0;
     int ret;
 
-    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
+    ret = RaPingTargetDel((void *)(&pingHandle), (struct PingTargetCommInfo *)target, num);
     EXPECT_INT_NE(ret, 0);
 
     num = 1;
     pingHandle.pingOps = &ops;
-    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
+    ret = RaPingTargetDel((void *)(&pingHandle), (struct PingTargetCommInfo *)target, num);
     EXPECT_INT_NE(ret, 0);
 
     ops.raPingTargetDel = RaHdcPingTargetDel;
     pingHandle.taskCnt = 1;
-    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
+    ret = RaPingTargetDel((void *)(&pingHandle), (struct PingTargetCommInfo *)target, num);
     EXPECT_INT_NE(ret, 0);
 
     pingHandle.taskCnt = 0;
     pingHandle.targetCnt = 0;
-    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
+    ret = RaPingTargetDel((void *)(&pingHandle), (struct PingTargetCommInfo *)target, num);
     EXPECT_INT_NE(ret, 0);
 
     pingHandle.targetCnt = 1;
     pingHandle.phyId = RA_MAX_PHY_ID_NUM;
-    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
+    ret = RaPingTargetDel((void *)(&pingHandle), (struct PingTargetCommInfo *)target, num);
     EXPECT_INT_NE(ret, 0);
 
     pingHandle.phyId = 0;
     mocker(RaHdcPingTargetDel, 1, -1);
-    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
+    ret = RaPingTargetDel((void *)(&pingHandle), (struct PingTargetCommInfo *)target, num);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 }

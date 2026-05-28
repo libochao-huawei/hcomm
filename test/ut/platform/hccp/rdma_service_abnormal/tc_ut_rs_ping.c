@@ -40,6 +40,8 @@ extern void RsPingCommonDeinitLocalQp(struct rs_cb *rscb, struct RsPingCtxCb *pi
     struct RsPingLocalQpCb *qpCb);
 extern int RsPingCbGetIbCtxAndIndex(struct rdev *rdevInfo, struct RsPingCtxCb *pingCb);
 extern int RsPingCbGetDevRdevIndex(struct RsPingCtxCb *pingCb, int index);
+extern int RsPingUrmaCheckFd(struct RsPingCtxCb *pingCb, int fd);
+extern int RsPongUrmaCheckFd(struct RsPingCtxCb *pingCb, int fd);
 
 static struct rs_cb gTmpRsCb0;
 static struct rs_cb gTmpRsCb1;
@@ -399,7 +401,7 @@ void TcRsPingCbGetIbCtxAndIndex()
     int ret = 0;
 
     pingCb.rdevCb.devNum = 1;
-    pingCb.rdevCb.devList = &devList;
+    pingCb.rdevCb.devList = devList;
     devList[0] = &devNode;
     mocker(RsQueryGid, 1, 0);
     mocker(RsPingCbGetDevRdevIndex, 1, 0);
