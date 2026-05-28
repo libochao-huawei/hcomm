@@ -59,7 +59,7 @@ HcclResult HcomGetRanktableRealPath(const char *rankTable, std::string &realFile
         RPT_INPUT_ERR(true,
         "EI0004",
         std::vector<std::string>({"ranktable_path", "error_reason"}),
-        std::vector<std::string>({std::string(rankTable), RANKTABLE_PARSE_ERROR_REASON}));
+        std::vector<std::string>({std::string(rankTable), "rankTable path length is " + std::to_string(rankTablePathLen) + ", expect value is 0~" + std::to_string(RANK_TABLE_MAX_LEN)}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankTable file name is invalid, len is %u", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTablePathLen);
         return HCCL_E_PARA;
@@ -70,7 +70,7 @@ HcclResult HcomGetRanktableRealPath(const char *rankTable, std::string &realFile
         RPT_INPUT_ERR(true,
             "EI0004",
             std::vector<std::string>({"ranktable_path", "error_reason"}),
-            std::vector<std::string>({std::string(rankTable), RANKTABLE_PARSE_ERROR_REASON}));
+            std::vector<std::string>({std::string(rankTable), "rankTable path \"" + std::string(realFile) + "\" not a valid real path"}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] path %s is not a valid real path", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTable);
         return HCCL_E_PARA;
@@ -88,7 +88,7 @@ HcclResult HcomCheckRankTable(const char *rankTableM, u32 &rankTableSize)
         RPT_INPUT_ERR(true,
             "EI0004",
             std::vector<std::string>({"ranktable_path", "error_reason"}),
-            std::vector<std::string>({std::string(rankTableM), RANKTABLE_PARSE_ERROR_REASON}));
+            std::vector<std::string>({std::string(rankTableM), "rankTable path length is " + std::to_string(rankTableLen) + ", expect value is 0~" + std::to_string(STRING_MAX_LENGTH)}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankTable string is invalid, len is %u", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTableLen);
         return HCCL_E_PARA;

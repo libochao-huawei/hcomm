@@ -533,7 +533,7 @@ HcclResult InsBatchSendRecvExecutor<AlgTopoMatch>::Orchestrate(const AlgTopoInfo
         HcclResult::HCCL_E_PARA);
 
     CHK_PRT_RET(rankSize_ == 1,
-        HCCL_ERROR("BatchSendRecv Excutor orchestrate failed, do not support single rank."),
+        HCCL_ERROR("BatchSendRecv Executor orchestrate failed, do not support single rank."),
         HcclResult::HCCL_E_PARA);
 
     virtRankMap_ = topoInfo.virtRankMap[0];

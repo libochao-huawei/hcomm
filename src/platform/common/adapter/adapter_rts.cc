@@ -644,14 +644,14 @@ HcclResult hrtMalloc(void **devPtr, u64 size, bool level2Address)
     }
     RPT_ENV_ERR(ret == ACL_ERROR_RT_MEMORY_ALLOCATION, "EI0011",                                                                             
         std::vector<std::string>({"memory_size"}),                                                          
-        std::vector<std::string>({std::string("size:") + std::to_string(size)}));
+        std::vector<std::string>({std::to_string(size)}));
 
     CHK_PRT_RET(ret == ACL_ERROR_RT_MEMORY_ALLOCATION, HCCL_ERROR("[Malloc][Mem] rtMalloc failed, "\
         "Reason: out of memory, return[%d], para: devPtrAddr[%p], size[%llu Byte].", ret, *devPtr, size),
         HCCL_E_OOM);
 
     RPT_ENV_ERR((ret != ACL_SUCCESS), "EI0007", std::vector<std::string>({"resource_type", "resource_info"}), \
-        std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
+        std::vector<std::string>({"DeviceMemory", std::string("hrtMalloc, size:") + std::to_string(size)+ " Byte"}));
 
     CHK_PRT_RET((ret != ACL_SUCCESS), HCCL_ERROR("[%s][%s]errNo[0x%016llx] rtMalloc failed, "\
         "return[%d], para: devPtrAddr[%p], size[%llu Byte].", LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -1253,7 +1253,7 @@ HcclResult hrtMallocHost(void **hostPtr, u64 size)
     aclError ret = funcPtr(hostPtr, size, &cfg);
 #endif
     RPT_ENV_ERR((ret != ACL_SUCCESS), "EI0007", std::vector<std::string>({"resource_type", "resource_info"}), \
-        std::vector<std::string>({"HostMemory", std::string("size:") + std::to_string(size)}));
+        std::vector<std::string>({"HostMemory", std::string("hrtMallocHost, size:") + std::to_string(size)+ " Byte"}));
 
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] rt malloc host fail. return[%d], "\
         "para: hostPtr[%p], size[%llu Byte].", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(),
@@ -1489,34 +1489,34 @@ HcclResult hrtNotifyCreate(s32 deviceId, aclrtNotify *notify)
         aclrtStream stream = nullptr;
         aclError ret = aclrtCreateStream(&stream);
         if (ret != ACL_SUCCESS) {
-            HCCL_ERROR("[hrtNotifyCreate] aclrtCreateStream fail, ret[%d], destory event.", ret);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtCreateStream fail, ret[%d], destroy event.", ret);
             aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtRecordEvent(*notify, stream);
         if (ret != ACL_SUCCESS) {
-            HCCL_ERROR("[hrtNotifyCreate] aclrtRecordEvent fail, ret[%d], destory stream and event.", ret);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtRecordEvent fail, ret[%d], destroy stream and event.", ret);
             aclrtDestroyStream(stream);
             aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtResetEvent(*notify, stream);
         if (ret != ACL_SUCCESS) {
-            HCCL_ERROR("[hrtNotifyCreate] aclrtResetEvent fail, ret[%d], destory stream and event.", ret);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtResetEvent fail, ret[%d], destroy stream and event.", ret);
             aclrtDestroyStream(stream);
             aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtSynchronizeStream(stream);
         if (ret != ACL_SUCCESS) {
-            HCCL_ERROR("[hrtNotifyCreate] aclrtSynchronizeStream fail, ret[%d], destory stream and event.", ret);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtSynchronizeStream fail, ret[%d], destroy stream and event.", ret);
             aclrtDestroyStream(stream);
             aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtDestroyStream(stream);
         if (ret != ACL_SUCCESS) {
-            HCCL_ERROR("[hrtNotifyCreate] aclrtDestroyStream fail, ret[%d], destory event.", ret);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtDestroyStream fail, ret[%d], destroy event.", ret);
             aclrtDestroyEvent(*notify);
             return ret;
         }
@@ -1990,9 +1990,9 @@ HcclResult hrtStreamCreate(aclrtStream *stream)
         "rtRet[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
     s32 streamId = 0;
-    HcclResult hcclRet = hrtGetStreamId(stream, streamId);
+    HcclResult hcclRet = hrtGetStreamId(*stream, streamId);
     if (hcclRet != HCCL_SUCCESS) {
-        HCCL_ERROR("[hrtStreamCreate] hrtGetStreamId fail, ret[%d], destory stream.", ret);
+        HCCL_ERROR("[hrtStreamCreate] hrtGetStreamId fail, ret[%d], destroy stream.", ret);
         aclrtDestroyStream(*stream);
         return hcclRet;
     }
@@ -2015,9 +2015,9 @@ HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint3
         "error, rtRet[%d], flags[%u]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, flags), HCCL_E_RUNTIME);
 
     s32 streamId = 0;
-    HcclResult hcclRet = hrtGetStreamId(stream, streamId);
+    HcclResult hcclRet = hrtGetStreamId(*stream, streamId);
     if (hcclRet != HCCL_SUCCESS) {
-        HCCL_ERROR("[hrtStreamCreateWithFlags] hrtGetStreamId fail, ret[%d], destory stream.", ret);
+        HCCL_ERROR("[hrtStreamCreateWithFlags] hrtGetStreamId fail, ret[%d], destroy stream.", ret);
         aclrtDestroyStream(*stream);
         return hcclRet;
     }

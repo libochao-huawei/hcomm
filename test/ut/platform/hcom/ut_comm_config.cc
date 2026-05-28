@@ -20,6 +20,7 @@
 #include "externalinput.h"
 #include "adapter_rts.h"
 #include "env_config.h"
+#include "aicpu_indop_env.h"
 
 #define private public
 #define protected public
@@ -221,6 +222,7 @@ TEST_F(CommConfigTest, utCommConfig_op_expansion)
     configHandle.opExpansionMode = 4;
     ret = commConfig.SetConfigByVersion(configHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(commConfig.GetConfigIsOnlyAivMode(), true);
 
     g_externalInput.aicpuUnfold = false;
     ret = commConfig.SetConfigByVersion(configHandle);
@@ -478,4 +480,18 @@ TEST_F(CommConfigTest, CheckRankIpFamily_InvalidDeviceIp_Success)
     
     HcclResult ret = CheckRankIpFamily(rankList);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommConfigTest, Check_taskexception_enable)
+{
+    bool taskExceptionEnable = true;
+    hcomm::SetTaskExceptionEnable(taskExceptionEnable);
+    EXPECT_EQ(hcomm::GetTaskExceptionEnable(), taskExceptionEnable);
+}
+
+TEST_F(CommConfigTest, Check_notifyWaitTimeout)
+{
+    u32 notifyWaitTimeout = 68;
+    hcomm::SetNotifyWaitTimeout(notifyWaitTimeout);
+    EXPECT_EQ(hcomm::GetNotifyWaitTimeout(), notifyWaitTimeout);
 }

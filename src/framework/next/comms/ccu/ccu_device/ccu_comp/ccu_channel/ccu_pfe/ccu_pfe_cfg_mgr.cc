@@ -15,7 +15,7 @@
 
 #include "hccl_common.h"
 #include "eid_info_mgr.h"
-#include "ccu_res_specs.h"
+#include "../../../ccu_res_specs.h"
 #include "adapter_rts.h"
 
 namespace hcomm {
@@ -99,7 +99,7 @@ HcclResult CcuPfeCfgMgr::Deinit()
 std::vector<PfeJettyCtxCfg> CcuPfeCfgMgr::GetPfeJettyCtxCfg(const uint8_t dieId)
 {
     if (dieId >= CCU_MAX_IODIE_NUM) {
-        HCCL_WARNING("[CcuPfeCfgMgr][PfeJettyCtxCfg] invaild dieId[%u]", dieId);
+        HCCL_WARNING("[CcuPfeCfgMgr][PfeJettyCtxCfg] invalid dieId[%u]", dieId);
         return std::vector<PfeJettyCtxCfg>();
     }
 

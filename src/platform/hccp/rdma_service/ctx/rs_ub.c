@@ -139,9 +139,13 @@ STATIC int RsUbFillInfoByEidList(urma_device_t *currDev, unsigned int *index, st
     unsigned int totalNum)
 {
     urma_eid_info_t *eidList = NULL;
+    urma_device_attr_t attr = {0};
     unsigned int eidNum = 0;
     unsigned int j;
     int ret = 0;
+
+    ret = RsUrmaQueryDevice(currDev, &attr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaQueryDevice failed, ret:%d, errno:%d", ret, errno), -EOPENSRC);
 
     eidList = RsUrmaGetEidList(currDev, &eidNum);
     // normal case, should continue to get eid_list from the rest of device
@@ -161,6 +165,7 @@ STATIC int RsUbFillInfoByEidList(urma_device_t *currDev, unsigned int *index, st
             hccp_err("rs_ub_fill_dev_eid_info_list failed, index:%u, ret:%d", *index, ret);
             goto free_eid_list;
         }
+        totalList[*index].devFeature = attr.dev_cap.feature.value;
         *index += 1;
     }
 
@@ -259,6 +264,9 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
     devAttr->rqMaxSge = attr.dev_cap.max_jfr_sge;
     devAttr->ub.maxJfsInlineLen = attr.dev_cap.max_jfs_inline_len;
     devAttr->ub.maxJfsRsge = attr.dev_cap.max_jfs_rsge;
+    devAttr->maxReadSize = attr.dev_cap.max_read_size;
+    devAttr->maxWriteSize = attr.dev_cap.max_write_size;
+    devAttr->maxMsgSize = attr.dev_cap.max_msg_size;
     devAttr->ub.rmTpCap.value = attr.dev_cap.rm_tp_cap.value;
     devAttr->ub.rcTpCap.value = attr.dev_cap.rc_tp_cap.value;
     devAttr->ub.umTpCap.value = attr.dev_cap.um_tp_cap.value;
@@ -275,9 +283,10 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
     *devIndex = RsGenerateDevIndex(devCb->rscb->devCnt, devAttr->ub.dieId, devAttr->ub.funcId);
     devCb->index = *devIndex;
 
-    hccp_info("max_jetty:%u, maxJfsInlineLen:%u, max_jfs_depth:%u, max_jfr_depth:%u, max_jfs_sge:%u, max_jfr_sge:%u",
-        attr.dev_cap.max_jetty, devAttr->ub.maxJfsInlineLen, devAttr->sqMaxDepth,
-        devAttr->rqMaxDepth, devAttr->sqMaxSge, devAttr->rqMaxSge);
+    hccp_info("max_jetty:%u, maxJfsInlineLen:%u, sqMaxDepth:%u, rqMaxDepth:%u, sqMaxSge:%u, rqMaxSge:%u "
+        "maxReadSize:%u maxWriteSize:%u maxMsgSize:%llu", attr.dev_cap.max_jetty,
+        devAttr->ub.maxJfsInlineLen, devAttr->sqMaxDepth, devAttr->rqMaxDepth, devAttr->sqMaxSge, devAttr->rqMaxSge,
+        devAttr->maxReadSize, devAttr->maxWriteSize, devAttr->maxMsgSize);
     return 0;
 }
 
@@ -561,7 +570,10 @@ STATIC void RsUbCtxFreeJettyCb(struct RsCtxJettyCb *jettyCb)
     struct RsCtxJettyCb *tmpJettyCb = jettyCb;
 
 #ifdef CUSTOM_INTERFACE
-    (void)DlHalBuffFree((void *)(uintptr_t)jettyCb->qpShareInfoAddr);
+    if (jettyCb->qpShareInfoAddr != NULL) {
+        (void)DlHalBuffFree((void *)(uintptr_t)jettyCb->qpShareInfoAddr);
+        jettyCb->qpShareInfoAddr = NULL;
+    }
 #endif
 
     pthread_mutex_destroy(&tmpJettyCb->crErrInfo.mutex);
@@ -1314,10 +1326,7 @@ int RsUbCtxRmemUnimport(struct RsUbDevCb *devCb, unsigned long long addr)
     hccp_run_info("[deinit][rs_ctx_rmem]devIndex:0x%x unimport addr:0x%llx", devCb->index, addr);
 
     ret = RsUbQuerySegCb(devCb, addr, &remSegCb, &devCb->rsegList);
-    if (ret != 0) {
-        hccp_warn("[deinit][rs_ctx_rmem]can not find rem seg cb for addr:0x%llx", addr);
-        return 0;
-    }
+    CHK_PRT_RETURN(ret != 0, hccp_warn("[deinit][rs_ctx_rmem]can not find rem seg cb for addr:0x%llx", addr), 0);
 
     RsUrmaUnimportSeg(remSegCb->segment);
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
@@ -1475,11 +1484,16 @@ STATIC int RsUbJettyCbInit(struct RsUbDevCb *devCb, struct CtxQpAttr *jettyAttr,
 }
 
 #ifdef CUSTOM_INTERFACE
-STATIC int RsUbJettyCbBuffAlloc(struct RsUbDevCb *devCb, struct RsCtxJettyCb *jettyCb)
+STATIC int RsUbJettyCbBuffAlloc(struct RsUbDevCb *devCb, struct RsCtxJettyCb *jettyCb, enum JfcMode jfcType)
 {
     unsigned int logicDevid = 0;
     unsigned long flag = 0;
     int ret = 0;
+
+    if (jfcType != JFC_MODE_NORMAL) {
+        jettyCb->qpShareInfoAddr = NULL;
+        return 0;
+    }
 
     ret = rsGetLocalDevIDByHostDevID(devCb->phyId, &logicDevid);
     CHK_PRT_RETURN(ret != 0, hccp_err("rsGetLocalDevIDByHostDevID failed, phyId(%u), ret(%d)",
@@ -1523,14 +1537,6 @@ STATIC int RsUbCtxInitJettyCb(struct RsUbDevCb *devCb, struct CtxQpAttr *attr,
         hccp_err("jetty_cb init failed ret:%d", ret);
         goto jetty_cb_init_err;
     }
-
-#ifdef CUSTOM_INTERFACE
-    ret = RsUbJettyCbBuffAlloc(devCb, tmpJettyCb);
-    if (ret != 0) {
-        hccp_err("jetty_cb buff alloc failed ret:%d", ret);
-        goto jetty_cb_init_err;
-    }
-#endif
 
     *jettyCb = tmpJettyCb;
     return 0;
@@ -1742,6 +1748,14 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
         goto free_jetty_cb;
     }
 
+#ifdef CUSTOM_INTERFACE
+    ret = RsUbJettyCbBuffAlloc(devCb, jettyCb, sendJfcCb->jfcType);
+    if (ret != 0) {
+        hccp_err("jetty_cb buff alloc failed ret:%d", ret);
+        goto free_jetty_cb;
+    }
+#endif
+
     ret = RsUbCtxDrvJettyCreate(jettyCb, sendJfcCb, recvJfcCb);
     if (ret != 0) {
         hccp_err("rs_ub_ctx_drv_jetty_create failed, ret:%d", ret);
@@ -1755,6 +1769,8 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
     }
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    jettyCb->scqIndex = attr->scqIndex;
+    jettyCb->rcqIndex = attr->rcqIndex;
     RsListAddTail(&jettyCb->list, &devCb->jettyList);
     devCb->jettyCnt++;
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
@@ -2196,10 +2212,8 @@ STATIC int RsUbCtxInitJfsWr(struct RsCtxJettyCb *jettyCb, struct udma_u_jfs_wr_e
     if (opcode == URMA_OPC_READ || opcode == URMA_OPC_WRITE || opcode == URMA_OPC_WRITE_NOTIFY ||
         opcode == URMA_OPC_WRITE_IMM) {
         ret = RsUbGetRemJettyCb(jettyCb->devCb, (unsigned int)wrData->ub.remJetty, &rjettyCb);
-        if (ret != 0) {
-            hccp_err("[send][rs_ub_ctx]get rjetty_cb failed, ret:%d remJettyId:%llu", ret, wrData->ub.remJetty);
-            return ret;
-        }
+        CHK_PRT_RETURN(ret != 0, hccp_err("[send][rs_ub_ctx]get rjetty_cb failed, ret:%d remJettyId:%llu", ret, wrData->ub.remJetty), ret);
+
         ubWr->wr.tjetty = rjettyCb->tjetty;
         return RsUbCtxInitRwWr(jettyCb->devCb, &ubWr->wr, wrData, lsge, rsge);
     }
@@ -2291,23 +2305,14 @@ int RsUbCtxBatchSendWr(struct rs_cb *rsCb, struct WrlistBaseInfo *baseInfo,
     }
 
     ret = RsUbGetDevCb(rsCb, baseInfo->devIndex, &devCb);
-    if (ret != 0) {
-        hccp_err("[send][rs_ub_ctx]get dev_cb failed, ret:%d, devIndex:0x%x", ret, baseInfo->devIndex);
-        return ret;
-    }
+    CHK_PRT_RETURN(ret != 0, hccp_err("[send][rs_ub_ctx]get dev_cb failed, ret:%d, devIndex:0x%x", ret, baseInfo->devIndex), ret);
 
     ret = RsUbGetJettyCb(devCb, baseInfo->qpn, &jettyCb);
-    if (ret != 0) {
-        hccp_err("[send][rs_ub_ctx]get jetty_cb failed, ret:%d, jettyId[%u]", ret, baseInfo->qpn);
-        return ret;
-    }
+    CHK_PRT_RETURN(ret != 0, hccp_err("[send][rs_ub_ctx]get jetty_cb failed, ret:%d, jettyId[%u]", ret, baseInfo->qpn), ret);
 
     ret = RsUbCtxBatchSendWrExt(jettyCb, wrData, wrResp, wrlistNum);
-    if (ret != 0) {
-        hccp_err("[send][rs_ub_ctx]send wr ext failed, ret:%d, sendNum[%u], completeNum[%u]",
-            ret, wrlistNum->sendNum, *wrlistNum->completeNum);
-        return ret;
-    }
+    CHK_PRT_RETURN(ret != 0, hccp_err("[send][rs_ub_ctx]send wr ext failed, ret:%d, sendNum[%u], completeNum[%u]",
+        ret, wrlistNum->sendNum, *wrlistNum->completeNum), ret);
 
     return 0;
 }

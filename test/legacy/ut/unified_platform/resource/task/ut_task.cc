@@ -14,7 +14,7 @@
 #include "task.h"
 #include "null_ptr_exception.h"
 #include "internal_exception.h"
-#include "remote_notify.h"
+#include "ipc_remote_notify.h"
 #include "ipc_local_notify.h"
 
 using namespace Hccl;

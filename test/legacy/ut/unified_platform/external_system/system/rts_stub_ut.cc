@@ -8,14 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <runtime/stream.h>
-#include <runtime/rt.h>
-#include <runtime/base.h>
-#include "runtime/rts/rts_device.h"
-#include "runtime/rts/rts_event.h"
-
-// #include "rt_external.h"
+#include "rt_external.h"
 #include "acl/acl_rt.h"
+#include <mutex>
 
 aclError aclrtDeviceGetBareTgid(int32_t *pid)
 {
@@ -132,6 +127,7 @@ aclError aclrtCntNotifyWaitWithTimeout(aclrtCntNotify cntNotify, aclrtStream str
 
 aclError aclrtCreateStream(aclrtStream *stream)
 {
+    *stream = reinterpret_cast<void *>(0x12345678);
     return ACL_SUCCESS;
 }
 
@@ -383,18 +379,6 @@ rtError_t rtMemcpyAsyncWithCfgV2(void *dst, uint64_t destMax, const void *src, u
     return RT_ERROR_NONE;
 }
 
-rtError_t rtReduceAsyncV2(void *dst, uint64_t destMax, const void *src, uint64_t count, rtRecudeKind_t kind,
-    rtDataType_t type, rtStream_t stm, void *overflowAddr)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtReduceAsync(
-    void *dst, uint64_t destMax, const void *src, uint64_t cnt, rtRecudeKind_t kind, rtDataType_t type, rtStream_t stm)
-{
-    return RT_ERROR_NONE;
-}
-
 rtError_t rtRDMASend(uint32_t sqIndex, uint32_t wqeIndex, rtStream_t stm)
 {
     return RT_ERROR_NONE;
@@ -434,12 +418,6 @@ rtError_t rtKernelLaunch(
 
 rtError_t rtAicpuKernelLaunch(const rtKernelLaunchNames_t *launchNames, uint32_t numBlocks, const void *args,
     uint32_t argsSize, rtSmDesc_t *smDesc, rtStream_t stm)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtReduceAsyncWithCfgV2(void *dst, uint64_t destMax, const void *src, uint64_t cnt, rtRecudeKind_t kind,
-    rtDataType_t type, rtStream_t stm, const rtTaskCfgInfo_t *cfgInfo)
 {
     return RT_ERROR_NONE;
 }
@@ -546,16 +524,6 @@ aclError aclrtQueryEventWaitStatus(aclrtEvent event, aclrtEventWaitStatus *statu
     return ACL_SUCCESS;
 }
 
-rtError_t rtSetTaskAbortCallBack(const char *moduleName, rtTaskAbortCallBack callback, void *args)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtStreamGetCaptureInfo(rtStream_t stm, rtStreamCaptureStatus * const status, rtModel_t *captureMdl)
-{
-    return RT_ERROR_NONE;
-}
-
 rtError_t rtStreamAddToModel(rtStream_t stm, rtModel_t captureMdl)
 {
     return RT_ERROR_NONE;
@@ -617,17 +585,30 @@ aclError aclrtBinaryUnLoad(aclrtBinHandle binHandle)
     return ACL_SUCCESS;
 }
 
-rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId)
-{
-    return RT_ERROR_NONE;
-}
- 
-rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId)
-{
-    return RT_ERROR_NONE;
-}
-
 aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags)
 {
 	return ACL_SUCCESS;
 }
+
+namespace aicpu {
+std::mutex g_sqeIdMtx;
+constexpr uint32_t INITAL_SQE_ID = 0x80000000U;
+uint32_t g_sqeId = INITAL_SQE_ID;
+void GetSqeId(const uint32_t num, uint32_t &start, uint32_t &end)
+{
+    std::lock_guard<std::mutex> lk(g_sqeIdMtx);
+    start = g_sqeId;
+    g_sqeId += num;
+    end = g_sqeId;
+    if (start > end) {
+        g_sqeId = INITAL_SQE_ID;
+        start  = g_sqeId;
+        g_sqeId += num;
+        if (start >= end) {
+            g_sqeId = INITAL_SQE_ID;
+            return;
+        }
+    }
+    return;
+}
+} // aicpu

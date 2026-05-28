@@ -43,10 +43,21 @@ public:
     const RankInfo_t* FindRank(uint32_t rankId) const;
     HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len) override;
     HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum) override;
+    HcclResult GetDeviceId(uint32_t rankId, uint32_t *deviceId) override;
     HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType) override;
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum) override;
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum) override;
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize) override;
+
+    HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
+    HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
+    HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
+    std::vector<const RankInfo_t *> GetRanksInTopoInst(uint32_t netLayer, uint32_t topoInstId);
+    std::set<CommProtocol> GetProtocolsByConnections(uint32_t netLayer,
+        const std::vector<const RankInfo_t *> &topoInstRanks);
+    HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
+    HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
+    HcclResult GetDevicePort(const uint32_t rank, uint32_t *devPort) override;
 
 private:
     HcclResult DevTypeToCommProtocol(DevType &type, CommProtocol &protocol) const;

@@ -21,6 +21,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
 
     # src/pub_inc 目录下头文件
+    ${HCCL_CODE_ROOT}/src/common/
     ${HCCL_CODE_ROOT}/src/pub_inc
     ${HCCL_CODE_ROOT}/src/pub_inc/inner
     ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
@@ -73,6 +74,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/cluster_monitor
+    ${HCCL_CODE_ROOT}/src/framework/next/common
 
     # src/platform 目录下头文件
     ${HCCL_CODE_ROOT}/src/platform/
@@ -176,6 +179,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
 
     # legacy include
+    ${HCCL_CODE_ROOT}/src/legacy/
+    ${HCCL_CODE_ROOT}/src/legacy/include
     ${HCCL_CODE_ROOT}/src/legacy/common/
     ${HCCL_CODE_ROOT}/src/legacy/common/utils/
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/
@@ -183,6 +188,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
     ${HCCL_CODE_ROOT}/src/legacy/framework/
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/connection/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/daemon
@@ -242,6 +248,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
+    ${HCCL_CODE_ROOT}/test/ut/depends/include/urma/
 
     ${CANN_3RD_LIB_PATH}/json/include/
     ${CANN_3RD_LIB_PATH}/gtest/include/
@@ -249,10 +256,13 @@ set(UT_COMMON_INCLUDE_LIST
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
     ${CANN_3RD_LIB_PATH}/boost/
 
-    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
+    # ascendc
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
     # next
+    ${HCCL_CODE_ROOT}/src/framework/next/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
@@ -261,12 +271,18 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/common/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/server_socket/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/ccu
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/net_dev
+
     ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/ns_recovery
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/ns_recovery/aicpu
@@ -296,11 +312,17 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/dfx/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_representation/reps/common/
-
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/ccu_component/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_context/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/ccu/
 
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/common/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/common/device
 
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/pub_inc/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/
@@ -321,6 +343,7 @@ add_subdirectory(framework/next/coll_comms/dfx)
 add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
+add_subdirectory(common/debug/profiling)
 add_subdirectory(misc)
 add_subdirectory(impl)
 add_subdirectory(device)

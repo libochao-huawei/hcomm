@@ -20,6 +20,7 @@
 #include "orion_adapter_hccp.h"
 #include <adapter_error_manager_pub.h>
 #include "hccl_common_v2.h"
+#include "hal.h"
 
 namespace Hccl {
 
@@ -45,7 +46,7 @@ extern "C" {
 void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, Hccl::GetAicpuTaskExceptionCallBack p1)
 {
     lock_guard<mutex> lock(Hccl::g_communicatorCallbackMapMutexV2);
-    Hccl::g_communicatorCallbackMapV2[deviceLogicId].emplace(streamId, p1);
+    Hccl::g_communicatorCallbackMapV2[deviceLogicId][streamId] = p1;
     return;
 }
 #ifdef __cplusplus
@@ -245,6 +246,7 @@ void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo,
     aclRet = aclrtMemcpy(flag_buff_temp, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, taskInfo.taskParam_.taskPara.Aiv.flagMem, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, ACL_MEMCPY_DEVICE_TO_HOST);
     if (aclRet != ACL_SUCCESS) {
         HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
+        aclrtFreeHost(flag_buff_temp);
         return;
     }
 
@@ -295,7 +297,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
     }
 
     HCCL_ERROR("[TaskExceptionHandler][AIV]Task run failed, para information is "
-               "deviceId[%u] streamId[%u], TaskId[%u], task info before failed task is:",
+               "deviceId[%u] streamId[%u], TaskId[%u].",
                exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
 
     for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); --(*taskItorPtr)) {
@@ -337,14 +339,28 @@ string TaskExceptionHandler::GetGroupRankInfo(const TaskInfo& taskInfo)
 void TaskExceptionHandler::ProcessException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo)
 {
     HCCL_RUN_INFO("[TaskExceptionHandler][%s]begin to execute hccl task exception callback function.", __func__);
+    bool isExistAicpuError = false;
     if (exceptionInfo == nullptr) {
         HCCL_ERROR("[TaskExceptionHandler][ProcessException] exceptionInfo is nullptr.");
         return;
     }
-    PrintAicpuErrorMessage(exceptionInfo);
+    PrintAicpuErrorMessage(exceptionInfo, isExistAicpuError);
+    if (isExistAicpuError) {
+        // 如果已经有AICPU上报的task exception, 则host侧无需再次重复上报
+        return;
+    }
     HCCL_ERROR("[TaskExceptionHandler][%s]Task from HCCL run failed.", __func__);
     if (taskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
         PrintTaskContextInfo(exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
+        HCCL_ERROR("[TaskExceptionHandler][ProcessException] EI0002");
+        RPT_INPUT_ERR(true,
+            "EI0002",
+            std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+            std::vector<std::string>({
+                std::to_string(taskInfo.remoteRank_),
+                taskInfo.GetBaseInfo(), taskInfo.GetParaInfo(),
+                ""})
+        );
     }
     HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, base information is deviceID:[%u], %s.", __func__,
         exceptionInfo->deviceid, taskInfo.GetBaseInfo().c_str());
@@ -545,6 +561,15 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
+        std::tuple<std::string, std::string, std::string, std::string> ipInfo = 
+            TaskExceptionHandler::GetCcuErrorIpInfo(deviceId, status, taskInfo);
+        std::string localServerId = std::get<0>(ipInfo);
+        std::string localIp = std::get<1>(ipInfo);
+        std::string remoteIp = std::get<2>(ipInfo);
+        std::string remoteId = std::get<3>(ipInfo);
+        RPT_INPUT_ERR(true, "EI0018", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
+            "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
+            std::vector<std::string>({localServerId, std::to_string(deviceId), localIp, "", remoteId, remoteIp}));
         PrintCcuErrorInfo(deviceId, status, taskInfo);
         // 打印寄存器信息
         PrintPanicLogInfo(missionInfo.panicLog);
@@ -743,7 +768,7 @@ void GetTaskParam(TaskParam &taskParam, const ErrorMessageReport &errorMessage) 
     }
 }
 
-void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
+void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo, bool &isExistAicpuError)
 {
     ErrorMessageReport errorMessage;
     unique_lock<std::mutex> lock(Hccl::g_commHadCallbackArrayMutexV2);
@@ -759,6 +784,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
         // 找到对应的通信域，并调用回调函数从HDC通道获取AICPU异常信息
         errorMessage = (Hccl::g_communicatorCallbackMapV2[exceptionInfo->deviceid])[exceptionInfo->streamid]();
         if (strlen(errorMessage.tag) > 0) {
+            isExistAicpuError = true;
             std::string groupRankContent;
             u32 streamId = static_cast<u32>(errorMessage.streamId);
             TaskParam taskParam{};
@@ -1156,6 +1182,30 @@ std::pair<IpAddress, IpAddress> TaskExceptionHandler::GetAddrPairByChannelId(uin
     const uint8_t dieId          = taskInfo.taskParam_.taskPara.Ccu.dieId;
     return collServiceCcu->GetCcuInsPreprocessor()->GetCcuComm()->GetCcuJettyMgr()->GetAddrPairByChannelId(
         dieId, channelId);
+}
+
+std::tuple<std::string, std::string, std::string, std::string> TaskExceptionHandler::GetCcuErrorIpInfo(
+    uint32_t deviceId, uint16_t status, const TaskInfo& taskInfo)
+{
+    std::string localServerId = "";
+    std::string localIp = "";
+    std::string remoteIp = "";
+    std::string remoteId = "";
+
+    char serverIdBuf[64] = {0};
+    if (get_server_id(serverIdBuf, sizeof(serverIdBuf)) == 0) {
+        localServerId = serverIdBuf;
+    }
+
+    auto ccuDetailInfo = taskInfo.taskParam_.ccuDetailInfo;
+    if (ccuDetailInfo != nullptr && !ccuDetailInfo->empty() && ccuDetailInfo->at(0).channelId[0] != INVALID_VALUE_CHANNELID) {
+        uint16_t channelId = ccuDetailInfo->at(0).channelId[0];
+        auto addrPair = GetAddrPairByChannelId(channelId, taskInfo);
+        localIp = addrPair.first.Describe();
+        remoteIp = addrPair.second.Describe();
+        remoteId = std::to_string(taskInfo.remoteRank_);
+    }
+    return std::make_tuple(localServerId, localIp, remoteIp, remoteId);
 }
 
 } // namespace Hccl

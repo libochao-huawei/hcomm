@@ -56,6 +56,9 @@ public:
     bool Listen(u32 &port);
     bool ISend(void *data, u64 size, u64& compSize) const;
 
+    HcclResult ISendWithHeart(void *data, u64 size, u64& compSize) const;
+    HcclResult IRecvWithHeart(void *data, u64 size, u64& compSize) const;
+
     bool IsListen() const
     {
         return isListening;
@@ -90,7 +93,7 @@ public:
 
     string Describe()
     {
-        return StringFormat("Socket[role=%s, localIp=%s, listenPort=0x%x, remoteIp=%s, tag=%s, nicType=%s]",
+        return StringFormat("Socket[role=%s, localIp=%s, listenPort=%u, remoteIp=%s, tag=%s, nicType=%s]",
                             role.Describe().c_str(), localIp.Describe().c_str(), listenPort,
                             remoteIp.Describe().c_str(), tag.c_str(), nicType.Describe().c_str());
     }
@@ -108,6 +111,7 @@ private:
     bool              isConnected{false};
     bool              isListening{false};
     bool              isDestroyed{false};
+    std::unique_ptr<SocketListenInfoT> listenInfo_{nullptr};
 
     std::chrono::steady_clock::time_point lastLogTime{}; // 抑制日志刷屏时间戳，刷新时可置空
 
@@ -128,6 +132,7 @@ private:
     bool CheckStartRequestResult();
     bool CheckSendRequestResult();
     bool CheckRecvRequestResult();
+    void PrintErrorSocketInfo();
 };
 
 } // namespace Hccl

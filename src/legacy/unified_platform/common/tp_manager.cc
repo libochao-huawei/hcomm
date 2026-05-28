@@ -13,6 +13,7 @@
 #include "exception_util.h"
 #include "hccl_common_v2.h"
 #include "invalid_params_exception.h"
+#include "env_config/env_config.h"
 
 #include "hccp_ctx.h"
 #include "orion_adapter_rts.h"
@@ -23,10 +24,10 @@ namespace Hccl {
 
 TpManager& TpManager::GetInstance(const int32_t deviceLogicId)
 {
-    static TpManager tpManager[MAX_MODULE_DEVICE_NUM];
+    static TpManager tpManager[MAX_MODULE_DEVICE_NUM + 1];
 
     if (deviceLogicId < 0 ||
-        static_cast<uint32_t>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+        static_cast<uint32_t>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
         THROW<InvalidParamsException>("[TpManager][%s] failed to get instance, "
             "devLogicId[%d] should be less than %u.", __func__,
             deviceLogicId, MAX_MODULE_DEVICE_NUM);
@@ -76,7 +77,8 @@ HcclResult CheckTpProtocol(const TpProtocol tpProtocol) {
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
+    bool isSync)
 {
     const auto &tpProtocol = param.tpProtocol;
     CHK_RET(CheckTpProtocol(tpProtocol));
@@ -96,13 +98,16 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
             param.Describe().c_str());
 
         RequestCtx &reqCtx = locReqCtxMap[rmtAddr];
-        StartGetTpInfoListRequest(param, reqCtx);
+        reqCtx.isSync = isSync;
+        StartGetTpInfoListRequest(param, reqCtx, isSync);
         return HcclResult::HCCL_E_AGAIN;
     }
 
-    auto &reqCtx = locReqCtxIter->second;
-    if (!CheckRequestResult(reqCtx.handle)) {
-        return HcclResult::HCCL_E_AGAIN;
+    if (!locReqCtxIter->second.isSync) {
+        auto &reqCtx = locReqCtxIter->second;
+        if (!CheckRequestResult(reqCtx.handle)) {
+            return HcclResult::HCCL_E_AGAIN;
+        }
     }
 
     RequestCtx completedReqCtx = locReqCtxIter->second; // 深拷贝构造对象，与map解耦
@@ -110,6 +115,80 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
     reqCtxLock.unlock();
 
     return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
+}
+
+HcclResult TpManager::FindAndGetTpAttr(const TpHandle tpHandle, TpAttrInfo &tpAttrInfo)
+{
+    std::lock_guard<std::mutex> lock(tpAttrCtxMutex);
+    auto attrIter = tpAttrCtxMap.find(tpHandle);
+    if (attrIter != tpAttrCtxMap.end()) {
+        attrIter->second.useCnt += 1;
+        tpAttrInfo = attrIter->second.tpAttrInfo;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    return HcclResult::HCCL_E_NOT_FOUND;
+}
+
+HcclResult TpManager::GetTpAttr(const GetTpAttrParam &param, TpAttrInfo &tpAttrInfo, RdmaHandle rdmaHandle)
+{
+    const TpHandle tpHandle = param.tpHandle;
+    if (FindAndGetTpAttr(tpHandle, tpAttrInfo) == HcclResult::HCCL_SUCCESS) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    std::unique_lock<std::mutex> reqCtxLock(tpAttrReqMutex);
+    auto reqCtxIter = tpAttrReqCtxMap.find(tpHandle);
+    if (reqCtxIter == tpAttrReqCtxMap.end()) {
+        HCCL_INFO("[TpManager][%s] get new tpAttr, param[%s].", __func__,
+            param.Describe().c_str());
+
+        TpAttrRequestCtx &reqCtx = tpAttrReqCtxMap[tpHandle];
+        CHK_RET(StartGetTpAttrRequest(param, reqCtx, rdmaHandle));
+        return HcclResult::HCCL_E_AGAIN;
+    }
+
+    auto &reqCtx = reqCtxIter->second;
+    if (!CheckRequestResult(reqCtx.handle)) {
+        return HcclResult::HCCL_E_AGAIN;
+    }
+
+    TpAttrRequestCtx completedReqCtx = reqCtxIter->second;
+    tpAttrReqCtxMap.erase(reqCtxIter);
+    reqCtxLock.unlock();
+
+    return HandleCompletedTpAttrRequest(std::move(completedReqCtx), tpHandle, tpAttrInfo);
+}
+
+HcclResult TpManager::StartGetTpAttrRequest(const GetTpAttrParam &param,
+    TpManager::TpAttrRequestCtx &reqCtx, RdmaHandle rdmaHandle) const
+{
+    void *raReqHandle = nullptr;
+    s32 ret = RaGetTpAttrAsync(rdmaHandle, param.tpHandle,
+        const_cast<uint32_t*>(&param.attrBitmap), &reqCtx.tpAttr, &raReqHandle);
+    if (ret != 0 || !raReqHandle) {
+        HCCL_ERROR("[TpManager][%s] failed, call RaGetTpAttrAsync error[%d] raReqHandle[%p], "
+            "tpHandle[0x%llx] attrBitmap[0x%x].", __func__, ret, raReqHandle,
+            param.tpHandle, param.attrBitmap);
+        return HcclResult::HCCL_E_NETWORK;
+    }
+
+    reqCtx.handle = reinterpret_cast<RequestHandle>(raReqHandle);
+    HCCL_INFO("[TpManager][%s] success, tpHandle[0x%llx] reqHandle[%llu].",
+        __func__, param.tpHandle, reqCtx.handle);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpManager::HandleCompletedTpAttrRequest(const TpManager::TpAttrRequestCtx reqCtx,
+    const TpHandle tpHandle, TpAttrInfo &tpAttrInfo)
+{
+    TpAttrInfo tmpTpAttrInfo(reqCtx.tpAttr);
+
+    std::lock_guard<std::mutex> lock(tpAttrCtxMutex);
+    tpAttrCtxMap[tpHandle] = {std::move(tmpTpAttrInfo), 1};
+    
+    tpAttrInfo = tpAttrCtxMap[tpHandle].tpAttrInfo;
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo)
@@ -136,8 +215,97 @@ HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInf
     }
 
     locInfoMap.erase(locInfoIter);
-    // 暂时不能主动释放tp handle，跟随unimport jetty释放
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpManager::ReleaseTpAttr(const TpHandle tpHandle, const TpAttrInfo &tpAttrInfo)
+{
+    std::lock_guard<std::mutex> lock(tpAttrCtxMutex);
+    auto attrIter = tpAttrCtxMap.find(tpHandle);
+    if (attrIter == tpAttrCtxMap.end()) {
+        HCCL_ERROR("[TpManager][%s] failed, tp attr is not found, "
+            "tpHandle[0x%llx].", __func__, tpHandle);
+        return HcclResult::HCCL_E_NOT_FOUND;
+    }
+
+    if (attrIter->second.useCnt > 1) {
+        attrIter->second.useCnt -= 1;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    tpAttrCtxMap.erase(attrIter);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpManager::GetTpTotalTimeout(const TpAttrInfo &tpAttrInfo, uint32_t &tpTimeOutMs)
+{
+    uint8_t rawAtGear = tpAttrInfo.tpAttr.at;
+    uint8_t rawRetryTimes = tpAttrInfo.tpAttr.retryTimesInit;
+
+    uint8_t finalAtGear = rawAtGear;
+    if (rawAtGear < AT_GEAR_MIN || rawAtGear > AT_GEAR_MAX) {
+        finalAtGear = AT_GEAR_DEFAULT;
+        HCCL_WARNING("%s Invalid at gear[%u], expect [%u, %u], use default gear[%u].",
+            __func__, rawAtGear, AT_GEAR_MIN, AT_GEAR_MAX, finalAtGear);
+    }
+
+    uint32_t singleAtTimeoutMs = AT_TIMEOUT_MAP[finalAtGear];
+    tpTimeOutMs = singleAtTimeoutMs * static_cast<uint32_t>(rawRetryTimes + 1);
+
+    HCCL_INFO("%s TP timeout calc success: raw_at_gear[%u], final_at_gear[%u], "
+        "single_timeout[%ums], retry_times[%u], total_timeout[%ums].",
+        __func__, rawAtGear, finalAtGear, singleAtTimeoutMs, rawRetryTimes, tpTimeOutMs);
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+uint32_t TpManager::TaHwValueToMs(uint8_t hwValue)
+{
+    uint8_t gear = hwValue / 8;
+    switch (gear) {
+        case TA_GEAR_INDEX_0: return TA_TIMEOUT_MS_GEAR0;
+        case TA_GEAR_INDEX_1: return TA_TIMEOUT_MS_GEAR1;
+        case TA_GEAR_INDEX_2: return TA_TIMEOUT_MS_GEAR2;
+        case TA_GEAR_INDEX_3: return TA_TIMEOUT_MS_GEAR3;
+        default: return TA_TIMEOUT_MS_GEAR2;
+    }
+}
+
+uint8_t TpManager::FindMinTaHwValue(uint32_t tpTotalTimeoutMs)
+{
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR0) {
+        return TA_HW_GEAR0_BASE;
+    }
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR1) {
+        return TA_HW_GEAR1_BASE;
+    }
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR2) {
+        return TA_HW_GEAR2_BASE;
+    }
+    return TA_HW_GEAR3_BASE;
+}
+
+uint8_t TpManager::CalcTaTimeout(const TpAttrInfo &tpAttrInfo)
+{
+    constexpr uint8_t UB_TIMEOUT_DEFAULT = 8;
+    uint8_t envValue = static_cast<uint8_t>(EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
+    uint32_t envTimeoutMs = TaHwValueToMs(envValue);
+    
+    uint32_t tpTimeOutMs = 0;
+    (void)GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs);
+    
+    uint8_t errTimeout = UB_TIMEOUT_DEFAULT;
+    if (envTimeoutMs < tpTimeOutMs) {
+        errTimeout = FindMinTaHwValue(tpTimeOutMs);
+        HCCL_WARNING("[TpManager][%s] Env timeout [%ums] < TP timeout [%ums]. Auto upgrade TA to hw_val[%u] (%ums).",
+            __func__, envTimeoutMs, tpTimeOutMs, errTimeout, TaHwValueToMs(errTimeout));
+    } else {
+        errTimeout = envValue;
+        HCCL_INFO("[TpManager][%s] Env timeout [%ums] >= TP timeout [%ums]. Use env gear base hw_val[%u] (%ums).",
+            __func__, envTimeoutMs, tpTimeOutMs, envValue, envTimeoutMs);
+    }
+    
+    return errTimeout;
 }
 
 bool TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
@@ -156,14 +324,23 @@ bool TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo
 }
 
 void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
-    TpManager::RequestCtx &reqCtx) const
+    TpManager::RequestCtx &reqCtx, bool isSync) const
 {
-    RdmaHandle rdmaHandle =
-        RdmaHandleManager::GetInstance().GetByIp(devPhyId, param.locAddr);
+    Hccl::IpAddress localIp = param.locAddr;
+
+    // isSync为true走同步路径，false走异步路径。当前仅HostUbConnection使用同步模式。
+    RdmaHandle rdmaHandle = isSync 
+        ? RdmaHandleManager::GetInstance().GetByAddr(devPhyId, LinkProtoType::UB, 
+                                localIp, Hccl::PortDeploymentType::HOST_NET)
+        : RdmaHandleManager::GetInstance().GetByIp(devPhyId, param.locAddr);
     if (!rdmaHandle) {
         THROW<InternalException>("[TpManager][%s] can not find rdmaHandle, "
             "devPhyId[%u] locAddr[%s].", __func__, devPhyId,
             param.locAddr.Describe().c_str());
+    }
+    if (isSync) {
+        RaUbGetTpInfo(rdmaHandle, param, reqCtx.dataBuffer, reqCtx.tpInfoNum);
+        return;
     }
     reqCtx.handle = RaUbGetTpInfoAsync(rdmaHandle, param, reqCtx.dataBuffer,
         reqCtx.tpInfoNum);

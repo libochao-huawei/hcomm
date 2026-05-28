@@ -9,16 +9,17 @@
  */
 
 #include "topoinfo_ranktableConcise.h"
-#include <map>
-#include <vector>
 #include <string>
 #include <fstream>
 #include <algorithm>
+#include <map>
+#include <vector>
 #include <unistd.h>
 #include <chrono>
 #include <iostream>
 #include <arpa/inet.h>
 
+#include "externalinput.h"
 #include "log.h"
 #include "env_config.h"
 #include "hccl_comm_pub.h"
@@ -128,9 +129,6 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
         return HCCL_SUCCESS;
     }
 
-    DetectNicDepoly(rankTable);
-    CHK_RET(CheckNicDeployConsistence(rankTable, rankTable.nicDeploy));
-
     std::sort(rankTable.rankList.begin(), rankTable.rankList.end(),
         [&](const RankInfo_t &a, const RankInfo_t &b) -> bool {return a.rankId < b.rankId;});
 
@@ -138,46 +136,48 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
     if (IsAllDigit(identify_.c_str()) != HCCL_SUCCESS ||
         SalStrToULong(identify_, HCCL_BASE_DECIMAL, rankId) != HCCL_SUCCESS) {
 	    RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-		    std::vector<std::string>({"CheckRankID", identify_.c_str(), "rank_id", "a non-negative decimal number"}));
+		    std::vector<std::string>({"HcclCommInitRootInfo", identify_.c_str(), "RANK_ID", "a non-negative decimal number"}));
 	    HCCL_ERROR("[%s][%s]errNo[0x%016llx] rank_id[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
 		    LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), identify_.c_str());
 	    return HCCL_E_PARA;
     }
 
-    // 校验rank id合法性
     if (rankId >= rankTable.rankList.size()) {
-        RPT_ENV_ERR(true,
-            "EI0014",
-            std::vector<std::string>({ "value", "variable" ,"expect" }),
-            std::vector<std::string>({"[" + std::to_string(rankId) + "]", "[rank_id]",
-                std::to_string(rankTable.rankList[rankId].rankId) }));
-        HCCL_ERROR("[%s][%s]rankId[%u] is invalid",
-            LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
-            rankId);
+        RPT_ENV_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+            std::vector<std::string>({std::to_string(rankId), "rank_id",
+            std::to_string(rankTable.rankList[rankId].rankId) }));
+        HCCL_ERROR("[%s][%s]rankId[%u] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),  rankId);
         return HCCL_E_PARA;
     }
 
     RPT_ENV_ERR(rankId != rankTable.rankList[rankId].rankId, "EI0014",
-        std::vector<std::string>({ "value", "variable" ,"expect" }),
-        std::vector<std::string>({ "[" + std::to_string(rankId) + "]",
-            "[rank_id]", std::to_string(rankTable.rankList[rankId].rankId) }));
+        std::vector<std::string>({"value", "variable" ,"expect"}), std::vector<std::string>({
+        std::to_string(rankId), "rank_id", std::to_string(rankTable.rankList[rankId].rankId) }));
     CHK_PRT_RET(rankId != rankTable.rankList[rankId].rankId,
         HCCL_ERROR("[%s][%s]check rankList[%u] rankId[%u] failed", LOG_KEYWORDS_INIT_GROUP.c_str(),
         LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), rankId, rankTable.rankList[rankId].rankId), HCCL_E_UNAVAIL);
+
+    if (rankId < rankTable.rankList.size() &&
+        rankTable.rankList[rankId].deviceInfo.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        rankTable.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+        SetHostUseDevNicFlag(false);
+    } else {
+        DetectNicDepoly(rankTable);
+    }
+    CHK_RET(CheckNicDeployConsistence(rankTable, rankTable.nicDeploy));
+
     u32 devId = rankTable.rankList[rankId].deviceInfo.devicePhyId;
     CHK_RET(hrtGetDevice(&params.logicDevId));
 
-    u32 devicePhyId = 0;
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(params.logicDevId), devicePhyId));
-    RPT_ENV_ERR(devicePhyId != static_cast<u32>(devId),
-        "EI0014",
-        std::vector<std::string>({ "value", "variable" ,"expect" }),
-        std::vector<std::string>({"[" + std::to_string(devicePhyId) + "]", "[devicePhyId]",
-            std::to_string(static_cast<u32>(devId)) }));
-    CHK_PRT_RET(devicePhyId != static_cast<u32>(devId),
+    u32 phyId = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(params.logicDevId), phyId));
+    RPT_ENV_ERR(phyId != static_cast<u32>(devId), "EI0014", std::vector<std::string>({"value", "variable" ,"expect"}),
+        std::vector<std::string>({std::to_string(phyId), "devicePhyId",
+        std::to_string(static_cast<u32>(devId)) }));
+    CHK_PRT_RET(phyId != static_cast<u32>(devId),
         HCCL_ERROR("[%s][%s]ranktable config devId[%d],but local devId[%u]",
-        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), devId, devicePhyId), HCCL_E_UNAVAIL);
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), devId, phyId), HCCL_E_UNAVAIL);
 
     params.rank = rankId;
     params.serverId = rankTable.rankList[rankId].serverId;
@@ -228,7 +228,7 @@ HcclResult TopoinfoRanktableConcise::GetServerList(const nlohmann::json &obj, Ra
         // 校验serverCount
         if (serverList.size() != clusterInfo.serverNum) {
             RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-                std::vector<std::string>({ "[" + serverCount + "]", "[server_count]",
+                std::vector<std::string>({serverCount, "server_count",
                     std::to_string(serverList.size())}));
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] serverList size[%zu] neq server num[%u]",
                 LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA),
@@ -245,7 +245,7 @@ HcclResult TopoinfoRanktableConcise::GetServerList(const nlohmann::json &obj, Ra
     }
     if (clusterInfo.serverNum == 0) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-            std::vector<std::string>({ "[" + std::to_string(clusterInfo.serverNum) + "]", "[server_count]",
+            std::vector<std::string>({ std::to_string(clusterInfo.serverNum), "server_count",
             "is a positive integer" }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] server num is zero", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA));
@@ -346,6 +346,41 @@ HcclResult TopoinfoRanktableConcise::GetDeviceList(const nlohmann::json &serverL
     return HCCL_SUCCESS;
 }
 
+HcclResult TopoinfoRanktableConcise::GetSingleNicInfo(const nlohmann::json &serverListObj, u32 objIndex,
+    RankTable_t &clusterInfo, RankInfo_t &rankinfo)
+{
+    std::string netPosition;
+    rankinfo.deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    HcclResult ret = GetJsonArrayMemberProperty(serverListObj, objIndex, "net_position", netPosition, true);
+    CHK_PRT_RET(ret != HCCL_SUCCESS && ret != HCCL_E_NOT_FOUND,
+        HCCL_ERROR("[Get][GetSingleNicInfo]get net position error"), ret);
+    HCCL_DEBUG("[%s.json] -> net_position: [%s]. ret[%u]", fileName_.c_str(), netPosition.c_str(), ret);
+    if (ret != HCCL_E_NOT_FOUND) {
+        if (netPosition == "host") { // 默认值为Device模式
+            rankinfo.deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+        } else {
+            rankinfo.deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+        }
+    }
+
+    std::string netProto;
+    ret = GetJsonArrayMemberProperty(serverListObj, objIndex, "net_protocol", netProto, true);
+    CHK_PRT_RET(ret != HCCL_SUCCESS && ret != HCCL_E_NOT_FOUND,
+        HCCL_ERROR("[Get][GetSingleNicInfo]get net protocol error"), ret);
+    HCCL_DEBUG("[%s.json] -> net_protocol: [%s]. ret[%u]", fileName_.c_str(), netProto.c_str(), ret);
+    if (ret != HCCL_E_NOT_FOUND) {
+        if (netProto == "rdma") { // 未配置则使用默认值，不处理，使用原有逻辑
+            SetExternalInputProtocolType(ProtocolType::RDMA);
+            rankinfo.deviceInfo.proto = u32(ProtocolType::RDMA);
+        } else if (netProto == "tcp") {
+            SetExternalInputProtocolType(ProtocolType::TCP);
+            rankinfo.deviceInfo.proto = u32(ProtocolType::TCP);
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult TopoinfoRanktableConcise::GetSingleDevice(const nlohmann::json &deviceListObj, u32 objIndex,
     RankTable_t &clusterInfo, std::string &serverId, u32 &serverIdx, HcclIpAddress &hostIp)
 {
@@ -392,10 +427,11 @@ HcclResult TopoinfoRanktableConcise::GetSingleDevice(const nlohmann::json &devic
     CHK_RET(GetSingleDeviceIp(deviceListObj, objIndex, clusterInfo, rankinfo, deviceType, rankinfo.hostIp.IsInvalid()));
     CHK_RET(GetSingleDevicePort(deviceListObj, objIndex, rankinfo));
     CHK_RET(GetSingleBackupDeviceIp(deviceListObj, objIndex, rankinfo));
+    CHK_RET(GetSingleNicInfo(deviceListObj, objIndex, clusterInfo, rankinfo));
 
     if (SalStrToULong(rankId, HCCL_BASE_DECIMAL, rankinfo.rankId) != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-            std::vector<std::string>({ "[" + rankId + "]", "[rank_id]", "is a non-negative integer." }));
+            std::vector<std::string>({ rankId, "rank_id", "is a non-negative integer." }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankid[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankId.c_str());
         return HCCL_E_PARA;
@@ -451,7 +487,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleDeviceIp(const nlohmann::json &dev
             isDeviceIpError = false;
         }
         RPT_INPUT_ERR(isDeviceIpError, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-            std::vector<std::string>({ "[" + deviceIp + "]", "[device_ip]", "is a valid IP address" }));
+            std::vector<std::string>({ deviceIp, "device_ip", "a valid IP address" }));
         CHK_PRT_RET(isDeviceIpError,
             HCCL_ERROR("[%s][%s]'device_ip' is not set correctly, " \
                        "must be set when multi Server or HCCL_INTRA_ROCE_ENABLE enabled",
@@ -721,8 +757,8 @@ HcclResult TopoinfoRanktableConcise::GetSingleSuperDeviceId(const nlohmann::json
     ret = SalStrToULong(strSuperDeviceId, HCCL_BASE_DECIMAL, superDeviceId);
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-            std::vector<std::string>({ "[" + strSuperDeviceId + "]", "[super_device_id]",
-            "is a valid non-negative integer" }));
+            std::vector<std::string>({ strSuperDeviceId, "super_device_id",
+            "a valid non-negative integer" }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] super_device_id[%s] is invalid",
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA),
             strSuperDeviceId.c_str());
@@ -774,8 +810,8 @@ HcclResult TopoinfoRanktableConcise::GetSingleSuperPod(const nlohmann::json &sup
     ret = GetJsonArrayMemberProperty(superPodList, objIndex, "super_pod_id", superPodId, true);
     if (ret != HCCL_SUCCESS || superPodId.empty()) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-            std::vector<std::string>({ "[" + superPodId + "]", "[super_pod_id]",
-            "is a valid non-empty string." }));
+            std::vector<std::string>({ superPodId, "super_pod_id",
+            "a valid non-empty string." }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] super_pod_id[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(ret), superPodId.c_str());
         return ret;
@@ -832,8 +868,8 @@ HcclResult TopoinfoRanktableConcise::GetSingleSuperPodSever(const nlohmann::json
     // server_id未找到, 或与server_list中的server_id不一致
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-            std::vector<std::string>({ "[" + serverId + "]", "[server_id]",
-            "is a valid non-empty string." }));
+            std::vector<std::string>({ serverId, "server_id",
+            "a valid non-empty string." }));
         return ret;
     }
 

@@ -27,6 +27,7 @@
 #include "rs_inner.h"
 #include "rs_rdma_inner.h"
 #include "rs_epoll.h"
+#include "dl_hal_function.h"
 #include "dl_ibverbs_function.h"
 #include "rs_drv_socket.h"
 #include "rs_drv_rdma.h"
@@ -633,6 +634,24 @@ RS_ATTRI_VISI_DEF int RsMrDereg(unsigned int phyId, unsigned int rdevIndex, unsi
     return 0;
 }
 
+STATIC int RsMemRegisterUbSegment(int directFlag, unsigned int logicId, uint64_t addr, uint64_t len)
+{
+    if (directFlag != DIRECT_FLAG_UB) {
+        return 0;
+    }
+
+    return DlHalMemRegUbSegment(logicId, addr, len);
+}
+
+STATIC int RsMemUnRegisterUbSegment(int directFlag, unsigned int logicId, uint64_t addr)
+{
+    if (directFlag != DIRECT_FLAG_UB) {
+        return 0;
+    }
+
+    return DlHalMemUnRegUbSegment(logicId, addr);
+}
+
 RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, struct RdmaMrRegInfo *mrRegInfo,
     void **mrHandle)
 {
@@ -647,8 +666,7 @@ RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, s
         phyId >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId,
         RS_MAX_DEV_NUM), -EINVAL);
 
-    hccp_info("[rs_register_mr] len[0x%llx], access[%d]",
-        mrRegInfo->len, mrRegInfo->access);
+    hccp_info("[rs_register_mr] len[0x%llx], access[%d]", mrRegInfo->len, mrRegInfo->access);
 
     ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
     CHK_PRT_RETURN(ret, hccp_err("rs_register_mr rsGetLocalDevIDByHostDevID phyId[%u] invalid, ret %d",
@@ -658,11 +676,20 @@ RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, s
     CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
         chipId, ret), ret);
 
+    ret = RsMemRegisterUbSegment(rdevCb->directFlag, rdevCb->rsCb->logicId, (uint64_t)(uintptr_t)mrRegInfo->addr,
+        mrRegInfo->len);
+    if (ret != 0) {
+        hccp_err("RsMemRegisterUbSegment failed, ret[%d] vendor_id[0x%x] part_id[0x%x] directFlag[%u] "
+            "addr[0x%llx] len[0x%llx]", ret, rdevCb->deviceAttr.vendor_id, rdevCb->deviceAttr.vendor_part_id,
+            rdevCb->directFlag, (uint64_t)(uintptr_t)mrRegInfo->addr, mrRegInfo->len);
+        goto mem_reg_err;
+    }
+
     *mrHandle = (void *)RsDrvMrReg(rdevCb->ibPd, mrRegInfo->addr, mrRegInfo->len, mrRegInfo->access);
     if (*mrHandle == NULL) {
-        hccp_warn("rs_drv_mr_reg addr is NULL len[%lld] access[%d] unsuccessful ", mrRegInfo->len,
+        hccp_warn("rs_drv_mr_reg addr is NULL len[0x%llx] access[%d] unsuccessful ", mrRegInfo->len,
             mrRegInfo->access);
-        goto reg_err;
+        goto mr_reg_err;
     }
 
     rsMrHandle = (struct ibv_mr *)*mrHandle;
@@ -671,10 +698,12 @@ RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, s
 
     hccp_info("rs_register_mr succ");
     return ret;
-reg_err:
+mr_reg_err:
+    (void)RsMemUnRegisterUbSegment(rdevCb->directFlag, rdevCb->rsCb->logicId, (uint64_t)(uintptr_t)mrRegInfo->addr);
+mem_reg_err:
     mrRegInfo->lkey = 0;
 
-    return 0;
+    return ret;
 }
 
 STATIC int RsInitTypicalMrCb(unsigned int phyId, struct RdmaMrRegInfo *mrRegInfo, struct RsRdevCb *devCb,
@@ -910,15 +939,29 @@ RS_ATTRI_VISI_DEF int RsTypicalDeregisterMr(unsigned int phyId, unsigned int dev
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int RsDeregisterMr(void *mrHandle)
+RS_ATTRI_VISI_DEF int RsDeregisterMr(unsigned int phyId, unsigned int rdevIndex, void *mrHandle)
 {
     RS_CHECK_POINTER_NULL_RETURN_INT(mrHandle);
 
-    int ret;
     struct ibv_mr *rsMrHandle = (struct ibv_mr *)mrHandle;
+    struct RsRdevCb *devCb = NULL;
+    unsigned int chipId;
+    int ret = 0;
+
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("phyId[%u] invalid, ret %d", phyId, ret), ret);
+
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &devCb);
+    CHK_PRT_RETURN(ret != 0 || devCb == NULL, hccp_err("rs_rdev2rdev_cb get dev_cb failed for chip_id[%u], ret[%d]",
+        chipId, ret), -ENODEV);
+
+    ret = RsMemUnRegisterUbSegment(devCb->directFlag, devCb->rsCb->logicId, (uint64_t)(uintptr_t)rsMrHandle->addr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsMemUnRegisterUbSegment failed ret[%d], vendor_id[0x%x] part_id[0x%x]"
+        " directFlag[%u]", ret, devCb->deviceAttr.vendor_id, devCb->deviceAttr.vendor_part_id,
+        devCb->directFlag), ret);
 
     ret = RsDrvMrDereg(rsMrHandle);
-    CHK_PRT_RETURN(ret, hccp_err("rs_drv_mr_dereg failed ret[%d] ", ret), -EACCES);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_drv_mr_dereg failed ret[%d]", ret), -EACCES);
 
     hccp_info("rs_deregister_mr succ");
     return 0;
@@ -2053,18 +2096,11 @@ create_qp_err:
     return ret;
 }
 
-STATIC void RsQpRelease(struct RsQpCb *qpCb)
+void RsMrRelease(struct RsQpCb *qpCb)
 {
     struct RsMrCb *mrTmp2 = NULL;
     struct RsMrCb *mrTmp = NULL;
 
-    RS_PTHREAD_MUTEX_LOCK(&qpCb->rdevCb->rdevMutex);
-    RsListDel(&qpCb->list);
-    RS_PTHREAD_MUTEX_ULOCK(&qpCb->rdevCb->rdevMutex);
-    RsIbvAckCqEvents(qpCb->ibSendCq, qpCb->numSendCqEvents);
-    RsIbvAckCqEvents(qpCb->ibRecvCq, qpCb->numRecvCqEvents);
-
-    // dereg mr
     RS_PTHREAD_MUTEX_LOCK(&qpCb->qpMutex);
     RS_LIST_GET_HEAD_ENTRY(mrTmp, mrTmp2, &qpCb->mrList, list, struct RsMrCb);
     for (; (&mrTmp->list) != &qpCb->mrList;
@@ -2085,6 +2121,18 @@ STATIC void RsQpRelease(struct RsQpCb *qpCb)
         mrTmp = NULL;
     }
     RS_PTHREAD_MUTEX_ULOCK(&qpCb->qpMutex);
+}
+
+STATIC void RsQpRelease(struct RsQpCb *qpCb)
+{
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->rdevCb->rdevMutex);
+    RsListDel(&qpCb->list);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->rdevCb->rdevMutex);
+    RsIbvAckCqEvents(qpCb->ibSendCq, qpCb->numSendCqEvents);
+    RsIbvAckCqEvents(qpCb->ibRecvCq, qpCb->numRecvCqEvents);
+
+    // dereg mr
+    RsMrRelease(qpCb);
 }
 
 RS_ATTRI_VISI_DEF int RsQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn)

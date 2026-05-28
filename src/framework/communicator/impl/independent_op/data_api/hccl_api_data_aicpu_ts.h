@@ -11,7 +11,7 @@
 #define HCCL_API_DATA_AICPU_TS_H
 
 bool IsBatchLaunchMode();
-
+HcclResult HandleDispatchAllStreams();
 
 #ifdef __cplusplus
 extern "C" {

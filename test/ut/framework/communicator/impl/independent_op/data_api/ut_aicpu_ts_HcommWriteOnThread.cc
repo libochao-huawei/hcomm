@@ -10,11 +10,12 @@
 
 #include "ut_aicpu_ts_base.h"
 #include "ub_transport_lite_impl.h"
+#include "exception_util.h"
+#include "hccl_exception.h"
 
 using namespace hccl;
 
-class UtAicpuTsHcommWriteOnThread : public UtAicpuTsBase
-{
+class UtAicpuTsHcommWriteOnThread : public UtAicpuTsBase {
 protected:
     static void SetUpTestCase()
     {
@@ -30,11 +31,6 @@ protected:
     {
         std::cout << "A Test case in UtAicpuTsHcommWriteOnThread SetUp" << std::endl;
         UtAicpuTsBase::SetUp();
-
-        MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-            .stubs()
-            .with(any(), any(), any())
-            .will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown() override
@@ -69,11 +65,21 @@ TEST_F(UtAicpuTsHcommWriteOnThread, Ut_HcommWriteOnThread_When_Thread_IsNull_Exp
 TEST_F(UtAicpuTsHcommWriteOnThread, Ut_HcommWriteOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
 {
     GlobalMockObject::verify();
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
+    auto *const transportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(devHandle);
+ 	MOCKER_CPP_VIRTUAL(transportLitePtr, &Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_E_INTERNAL));
 
+    res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+    EXPECT_EQ(res, HCCL_E_INTERNAL);
+}
+
+TEST_F(UtAicpuTsHcommWriteOnThread, Ut_HcommWriteOnThread_When_GetRmtRmaBufSliceLite_Throw_Expect_ReturnIsHCCL_E_INTERNAL)
+{
+    MOCKER_CPP_VIRTUAL(transportDev, &Hccl::UbTransportLiteImpl::Write)
+        .stubs()
+        .will(throws(Hccl::InternalException("test exception")));
     res = HcommWriteOnThread(thread, devHandle, dst, src, len);
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }

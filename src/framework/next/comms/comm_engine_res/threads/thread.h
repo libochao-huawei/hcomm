@@ -81,6 +81,7 @@ public:
     virtual Stream *GetStream() const = 0;
     virtual void *GetStreamLitePtr() const = 0;
     virtual void LaunchTask() const = 0;
+    virtual void TryLaunchTask() const = 0;
 
     // Local Data Plane Functions
     virtual HcclResult LocalNotifyRecord(uint32_t notifyId) const = 0;
@@ -116,7 +117,7 @@ protected:
         HcommReduceOp reduceOp, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
         HcommReduceOp reduceOp, u64 beginTime, bool isMaster) const;
-
+    bool IsReportTask() const;
 private:
     std::unordered_map<CommEngine, ThreadHandle> threadHandleMap_; // CPU_TS上的ThreadHandle与其他引擎上的ThreadHandle的映射
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback_; // 上报task信息的回调函数

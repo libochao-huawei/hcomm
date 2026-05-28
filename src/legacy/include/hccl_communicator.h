@@ -20,6 +20,7 @@
 #include "hccl_rank_graph.h"
 #include "hccl_mem_defs.h"
 #include "trace.h"
+#include "socket_manager.h"
  
 namespace Hccl {
 class CommunicatorImpl;
@@ -89,6 +90,7 @@ public:
     CommStatus GetCommStatus() const;
     // 设置加速模式
     HcclResult SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable);
+    HcclResult SetAccelerator(int32_t accelerator, bool isCcuMsAvailable);
     HcclResult GetAccelerator(int32_t* accelerator) const;
     bool IsUsingCcuMs() const;
     bool IsUsingCcuSched() const;
@@ -134,6 +136,8 @@ public:
     u32 GetDeviceLogicId() const;
     u32 GetRankInParentComm();
     HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
+    HcclResult GetStreamId(u32 &streamId);
+    HcclResult GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap);
  
 private:
     CommParams                        commParams;

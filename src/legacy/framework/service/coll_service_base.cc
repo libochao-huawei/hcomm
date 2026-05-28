@@ -429,7 +429,7 @@ void CollServiceBase::AllocQueueNotify(const InsQueue &insQueue)
 
 void CollServiceBase::AllocQNotifyForSingleQ(const InsQueue &insQueue) const
 {
-    auto &queueNotifyManager = comm->GetQueueNotifyManager();
+    auto &queueNotifyManager = comm->GetCcuQueueNotifyManager();
     for (auto it = insQueue.Iter(); it.HasNext(); ++it) {
         const Instruction &ins     = *it;
         auto               insType = ins.GetType();

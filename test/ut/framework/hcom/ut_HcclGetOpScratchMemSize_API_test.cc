@@ -172,3 +172,14 @@ TEST_F(GetOpScratchMemSizeTest, Ut_GetOpScratchMemSize_When_GetDeviceTypeFail_Ex
     
     EXPECT_EQ(result, HCCL_E_INTERNAL);
 }
+
+// 测试 HcomGetGroupNameByOpBase 场景
+TEST_F(GetOpScratchMemSizeTest, Ut_HcomGetGroupNameByOpBase_When_Normal_Expect_Success) {
+    comm.reset(new hccl::hcclComm(1, 1, "test_group_name"));
+    s64 opBaseHcom = (s64)comm.get();
+    char *groupname = nullptr;
+    HcclResult ret = HcomGetGroupNameByOpBase(opBaseHcom, &groupname);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(groupname, nullptr);
+    EXPECT_STREQ(groupname, "test_group_name");
+}

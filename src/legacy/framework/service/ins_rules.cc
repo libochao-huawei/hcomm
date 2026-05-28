@@ -341,7 +341,7 @@ void Interpret(const InsLocalPostTo &insLocalPostTo, CommunicatorImpl &comm, con
 
     if (insLocalPostTo.GetNotifyType() == NotifyType::NORMAL) {
         auto notify
-            = RtsNotifyGet(comm.GetQueueNotifyManager(), insLocalPostTo.GetPostQid(), insLocalPostTo.GetWaitQid(),
+            = RtsNotifyGet(comm.GetCcuQueueNotifyManager(), insLocalPostTo.GetPostQid(), insLocalPostTo.GetWaitQid(),
                                  insLocalPostTo.GetTopicId(), insLocalPostTo.Describe());
         notify->Post(stream);
         notifyID = notify->GetId();
@@ -375,7 +375,7 @@ void Interpret(const InsLocalWaitFrom &insLocalWaitFrom, CommunicatorImpl &comm,
     u64 notifyID;
 
     if (insLocalWaitFrom.GetNotifyType() == NotifyType::NORMAL) {
-        auto notify = RtsNotifyGet(comm.GetQueueNotifyManager(), insLocalWaitFrom.GetPostQid(),
+        auto notify = RtsNotifyGet(comm.GetCcuQueueNotifyManager(), insLocalWaitFrom.GetPostQid(),
                                                      insLocalWaitFrom.GetWaitQid(), insLocalWaitFrom.GetTopicId(),
                                                      insLocalWaitFrom.Describe());
         notify->Wait(stream, taskConfig.GetNotifyWaitTime());
@@ -649,23 +649,8 @@ static void FastLoadSaveParams(const CcuInstruction &ccuInstruction, Communicato
 void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const OpTaskConfig &taskConfig, 
                             const Stream &stream, std::vector<std::vector<CcuTaskParam>> &ccuParams)
 {
-    TaskParam taskParam = {
-        .taskType  = TaskParamType::TASK_CCU,
-        .beginTime = 0,
-        .endTime   = 0,
-        .isMaster = false,
-        .taskPara  = {
-            .Ccu = {
-                .dieId         = 0,
-                .missionId     = 0,
-                .execMissionId = 0,
-                .instrId       = 0,
-                .costumArgs    = {0},
-                .executeId     = 0
-            }
-        },
-        .ccuDetailInfo  = nullptr
-    };
+    TaskParam taskParam = {};
+    taskParam.taskType = TaskParamType::TASK_CCU;
     std::vector<std::vector<CcuProfilingInfo>> ccuProfilingInfo;
     GetCcuProfilingInfo(ccuInstruction, ccuParams, ccuProfilingInfo);
     
@@ -732,23 +717,8 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
         return;
     }
 
-    TaskParam taskParam = {
-        .taskType  = TaskParamType::TASK_CCU,
-        .beginTime = 0,
-        .endTime   = 0,
-        .isMaster = false,
-        .taskPara  = {
-            .Ccu = {
-                .dieId         = 0,
-                .missionId     = 0,
-                .execMissionId = 0,
-                .instrId       = 0,
-                .costumArgs    = {0},
-                .executeId     = 0
-            }
-        },
-        .ccuDetailInfo  = nullptr
-    };
+    TaskParam taskParam = {};
+    taskParam.taskType = TaskParamType::TASK_CCU;
     std::vector<std::vector<CcuProfilingInfo>> ccuProfilingInfo;
     GetCcuProfilingInfo(ccuInstruction, ccuParams, ccuProfilingInfo);
     
@@ -781,6 +751,8 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
         .taskType  = TaskParamType::TASK_AIV,
         .beginTime = aivOpArgs.beginTime,
         .endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime(),
+        .aicpuTaskId = 0,
+        .npuDevId = 0,
         .isMaster = isMaster,
         .taskPara  = {
             .Aiv = {
@@ -851,7 +823,7 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
                 reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_CLEAR_OFFSET);
         bool isAivClearEnable = comm.GetAivClearEnable();
         if (isAivClearEnable) {
-            HrtMemcpy(buffersInAddr, AIV_FLAG_AREA_SIZE, buffersInAddrSrc, AIV_FLAG_AREA_SIZE, RT_MEMCPY_DEVICE_TO_DEVICE);
+            HrtMemAsyncCopy(buffersInAddr, AIV_FLAG_AREA_SIZE, buffersInAddrSrc, AIV_FLAG_AREA_SIZE, ACL_MEMCPY_DEVICE_TO_DEVICE, stream.GetPtr());
         }
     }
 

@@ -10,14 +10,25 @@
 set(src_list
     endpoint_mgr.cc
     cpu_roce_endpoint.cc
+    cpu_urma_endpoint.cc
     urma_endpoint.cc
     ub_mem_endpoint.cc
+    aicpu_ts_roce_endpoint.cc
+    aicputs_hccs_endpoint.cc
     endpoint.cc
+    uboe_endpoint.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
 add_subdirectory(reged_mems)
 add_subdirectory(server_socket)
+add_subdirectory(net_dev)
+add_subdirectory(dfx)

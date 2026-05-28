@@ -145,7 +145,7 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
 
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
-    HCCL_RUN_INFO("Entry-%s:comm[%s] engine[%u] notifyNum[%u] stream[%p]",
+    HCCL_INFO("Entry-%s:comm[%s] engine[%u] notifyNum[%u] stream[%p]",
         __func__, commId.c_str(), engine, notifyNum, stream);
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
@@ -167,7 +167,7 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
             CHK_PTR_NULL(threadStream);
             Mc2CommInfo mc2CommInfo;
             mc2CommInfo.FreeStreamId = 0;
-            mc2CommInfo.streamsId.push_back(static_cast<u32>(threadStream->id()));
+            mc2CommInfo.streamsId.push_back(static_cast<u32>(threadStream->sqId()));
             mc2CommInfo.groupname = commId;
             mc2CommInfo.myRankId = collComm->GetMyRankId();
             mc2CommInfo.rankSize = collComm->GetRankSize();
@@ -280,13 +280,14 @@ extern "C" {
 #endif
 HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads)
 {
+    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(threads);
     CHK_PTR_NULL(exportedThreads);
     CHK_PRT_RET(!IsValidCommEngine(dstCommEngine),
                 HCCL_ERROR("[%s] commEngine[%d] is invalid", __func__, static_cast<int32_t>(dstCommEngine)), HCCL_E_PARA);
     if (threadNum == 0 || threadNum > MAX_EXPORT_THREAD_NUM) {
-        HCCL_ERROR("[%s] threadNum is 0 or greater than %u", __func__, MAX_EXPORT_THREAD_NUM);
+        HCCL_ERROR("[%s] threadNum[%u] is 0 or greater than %u", __func__, threadNum, MAX_EXPORT_THREAD_NUM);
         return HCCL_E_PARA;
     }
 
@@ -301,6 +302,13 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+        if (ret == HCCL_SUCCESS &&
+                (dstCommEngine == CommEngine::COMM_ENGINE_AICPU_TS || dstCommEngine == CommEngine::COMM_ENGINE_AICPU)) {
+            HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+            CHK_PTR_NULL(hcclCommDfx);
+            const std::string KernelName = "RunAicpuIndOpThreadInit";
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid()));
+        }
     } else {
         auto &engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
         ret = engineResMgr.HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
@@ -331,7 +339,11 @@ HcclResult HcclThreadResGetInfo(HcclComm comm, ThreadHandle thread, ThreadResTyp
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadResGetInfo(thread, resType, infoLen, info);
     } else {
-        HCCL_ERROR("[%s] communicatorType is not supported.", __func__);
+        DevType devType;
+        CHK_RET(hrtGetDeviceType(devType));
+        if (devType != DevType::DEV_TYPE_910B) { // 910B HOST网卡需要走此流程，不打印错误日志
+            HCCL_ERROR("[%s] communicatorType is not supported.", __func__);
+        }
         return HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] thread resource get info failed. thread[0x%llx], resType[%d], infoLen[%u], info[%p]",

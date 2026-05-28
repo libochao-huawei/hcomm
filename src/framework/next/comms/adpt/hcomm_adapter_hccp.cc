@@ -46,6 +46,20 @@ HcclResult IpAddressToReverseHccpEid(const Hccl::IpAddress &ipAddr, Eid &eid)
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult IpAddressToReverseHcclEid(const Hccl::IpAddress &ipAddr, Hccl::Eid &eid)
+{
+    HCCL_INFO("EID ipAddr[%s]", ipAddr.Describe().c_str());
+    int32_t sRet = memcpy_s(eid.raw, sizeof(eid.raw),
+        ipAddr.GetReverseEid().raw, sizeof(ipAddr.GetReverseEid().raw));
+    if (sRet != EOK) {
+        HCCL_ERROR("[%s] memcpy failed[%d].", __func__, sRet);
+        return HcclResult::HCCL_E_MEMORY;
+    }
+    HCCL_INFO("[IpAddressToHccpEid] hccpEid.in6.subnetPrefix[%016llx], hccpEid.in6.interfaceId[%016llx]",
+              eid.in6.subnetPrefix, eid.in6.interfaceId);
+    return HcclResult::HCCL_SUCCESS;
+}
+
 inline Hccl::IpAddress HccpEidToIpAddress(Eid& hccpEid)
 {
     Hccl::Eid eid{};
@@ -155,12 +169,12 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
     attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
     /* errTime配置值：0-31
-       0-7代表芯片配置值b00:128ms
+       0-7代表芯片配置值b00:512ms
        8-15代表芯片配置值b01:1s
        16-23代表芯片配置值b10:8s
-       24-31代表芯片配置值b11:64s
+       24-31代表芯片配置值b11:32s
     */
-    attr.ub.errTimeout       = 16;
+    attr.ub.errTimeout       = in.errTimeout;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority          = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
@@ -188,10 +202,10 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
         "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
         "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u].",
+        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], timeout[%u].",
         attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode,
         attr.ub.mode, attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa,
-        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType);
+        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType, attr.ub.errTimeout);
 
     struct QpCreateInfo info {};
     void *qpHandle = nullptr;
@@ -248,7 +262,7 @@ HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreate
        16-23代表芯片配置值b10:8s
        24-31代表芯片配置值b11:64s
     */
-    attr.ub.errTimeout       = 16;
+    attr.ub.errTimeout       = in.errTimeout;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority          = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
@@ -276,10 +290,10 @@ HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreate
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
               "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
               "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], priority[%u].",
+              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], priority[%u], timeout[%u].",
               attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode, attr.ub.mode,
               attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa, attr.ub.extMode.sq.buffSize,
-              attr.ub.extMode.piType, attr.ub.priority);
+              attr.ub.extMode.piType, attr.ub.priority, attr.ub.errTimeout);
 
     void *raReqHandle = nullptr;
     out.resize(sizeof(QpCreateInfo));
@@ -487,4 +501,30 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult HccpGetUboeFlagEnable(const u32 devPhyId)
+{
+    u32 uboeVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(devPhyId, GET_UBOE_FLAG_ENABLE_OPCODE, &uboeVersion);
+    CHK_PRT_RET(versionRet != 0,
+        HCCL_ERROR("[%s] RaGetInterfaceVersion failed, devPhyId=%u, versionRet=%d", __func__, devPhyId, versionRet),
+            HCCL_E_INTERNAL);
+    CHK_PRT_RET(uboeVersion < GET_UBOE_FLAG_ENABLE_VERSION,
+        HCCL_ERROR("[%s] this package does not support to get uboe flag, "
+            "please change new package. uboeVersion[%u].", __func__, uboeVersion), HCCL_E_NOT_SUPPORT);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HccpRaGetDevBaseAttr(void *ctxHandle, struct DevBaseAttr *attr)
+{
+    int ret = RaGetDevBaseAttr(ctxHandle, attr);
+    if (ret != 0) {
+        HCCL_ERROR("[%s] RaGetDevBaseAttr failed, ctxHandle[%p], attr[%p], ret[%d]", __func__, ctxHandle, attr, ret);
+        return HCCL_E_NETWORK;
+    }
+    HCCL_INFO("HccpRaGetDevBaseAttr success, sqMaxDepth[%u], rqMaxDepth[%u], sqMaxSge[%u], rqMaxSge[%u], maxReadSize[%u], maxWriteSize[%u]",
+        attr->sqMaxDepth, attr->rqMaxDepth, attr->sqMaxSge, attr->rqMaxSge, attr->maxReadSize, attr->maxWriteSize); 
+    return HCCL_SUCCESS;
+}
+
 } // namespace hcomm

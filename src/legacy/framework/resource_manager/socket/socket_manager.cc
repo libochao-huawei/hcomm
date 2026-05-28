@@ -26,6 +26,45 @@ namespace Hccl {
 
 static std::mutex socketLock;
 
+void SocketManager::PrepareLinkAndServerInit(const SocketConfig &socketConfig)
+{
+    LinkData link = socketConfig.link;
+
+    if (!Contain(availableLinks, link)) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            std::vector<uint32_t> remoteDevices;
+            remoteDevices.push_back(link.GetRemoteDeviceId());
+            auto ret = P2PEnableManager::GetInstance().WaitP2PEnabled(remoteDevices);
+            if (ret != HCCL_SUCCESS) {
+                THROW<TimeoutException>(
+                    StringFormat("WaitP2PEnabled failed, devicePhyId=%d", link.GetRemoteDeviceId()));
+            }
+        }
+        availableLinks.insert({link});
+    }
+
+    if (GetConnectedSocket(socketConfig) == nullptr) {
+        auto portData = link.GetLocalPort();
+        SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
+        if (role == SocketRole::SERVER) {
+            ServerInit(portData);
+        }
+    }
+}
+
+void SocketManager::ServerListen(const SocketConfig &socketConfig)
+{
+    PrepareLinkAndServerInit(socketConfig);
+}
+
+void SocketManager::ConnectSockets(const SocketConfig &socketConfig)
+{
+    if (GetConnectedSocket(socketConfig) == nullptr) {
+        AddWhiteList(socketConfig);
+        CreateConnectedSocket(socketConfig);
+    }
+}
+
 void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
     vector<LinkData> pendingLinks;
@@ -57,11 +96,52 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
     availableLinks.insert(pendingLinks.begin(), pendingLinks.end());
 }
 
+void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
+{
+    PrepareLinkAndServerInit(socketConfig);
+    if (GetConnectedSocket(socketConfig) == nullptr) {
+        AddWhiteList(socketConfig);
+        CreateConnectedSocket(socketConfig);
+    }
+}
+
+void SocketManager::AddWhiteList(const SocketConfig &socketConfig)
+{
+    unordered_map<PortData, vector<RaSocketWhitelist>> wlistMap{};
+    LinkData link = socketConfig.link;
+   
+    // 通过虚拟拓扑获取Peer可能为空，如果为空，需要抛异，NullPtrException
+    // 这里检查rankGraph完整性的逻辑是什么？
+    SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
+    if (role == SocketRole::SERVER) {
+        if (comm) {
+            auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
+            if (peer == nullptr) {
+                auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
+                THROW<NullPtrException>(msg);
+            }
+        }
+    
+        RaSocketWhitelist wlistInfo{};
+        wlistInfo.connLimit = 1;
+        wlistInfo.remoteIp = link.GetRemoteAddr();
+        wlistInfo.tag = socketConfig.GetHccpTag();
+
+        auto port = link.GetLocalPort();
+        vector<RaSocketWhitelist> wlistInfoVec{wlistInfo};
+        AddWhiteList(port, wlistInfoVec);
+        socketWlistMap[port] = wlistInfoVec;
+    }
+}
+
 void SocketManager::BatchServerInit(const vector<LinkData> &links)
 {
     for (auto &link : links) {
-        auto portData = link.GetLocalPort();
-        ServerInit(portData);
+        SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
+        if (role == SocketRole::SERVER) {
+            auto portData = link.GetLocalPort();
+            ServerInit(portData);
+        }
     }
 }
 
@@ -71,28 +151,31 @@ void SocketManager::BatchAddWhiteList(const vector<LinkData> &links)
 
     for (const auto &link : links) {
         // 通过虚拟拓扑获取Peer可能为空，如果为空，需要抛异，NullPtrException
-        if (comm) {
-            auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
-            if (peer == nullptr) {
-                auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
-                THROW<NullPtrException>(msg);
+        SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
+        if (role == SocketRole::SERVER) {
+            if (comm) {
+                auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
+                if (peer == nullptr) {
+                    auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
+                    THROW<NullPtrException>(msg);
+                }
             }
+
+            RaSocketWhitelist wlistInfo{};;
+            wlistInfo.connLimit = 1;
+            wlistInfo.remoteIp = link.GetRemoteAddr();
+
+            std::string  linkTag  = socketTag_;
+            // 获取到reuseIdx不为0时，tag需要拼接_reuseIdx；为0时不拼接，不影响原socket公用
+            if (link.GetReuseIdx() != "0") {
+                linkTag += ("_" + link.GetReuseIdx());
+            }
+            SocketConfig socketConfig(link.GetRemoteRankId(), link, linkTag);
+            string       hccpSocketTag = socketConfig.GetHccpTag();
+
+            wlistInfo.tag = hccpSocketTag;
+            wlistMap[link.GetLocalPort()].push_back(wlistInfo);
         }
-
-        RaSocketWhitelist wlistInfo{};;
-        wlistInfo.connLimit = 1;
-        wlistInfo.remoteIp = link.GetRemoteAddr();
-
-        std::string  linkTag  = socketTag_;
-        // 获取到reuseIdx不为0时，tag需要拼接_reuseIdx；为0时不拼接，不影响原socket公用
-        if (link.GetReuseIdx() != "0") {
-            linkTag += ("_" + link.GetReuseIdx());
-        }
-        SocketConfig socketConfig(link.GetRemoteRankId(), link, linkTag);
-        string       hccpSocketTag = socketConfig.GetHccpTag();
-
-        wlistInfo.tag = hccpSocketTag;
-        wlistMap[link.GetLocalPort()].push_back(wlistInfo);
     }
 
     for (auto &i : wlistMap) {
@@ -196,7 +279,7 @@ void SocketManager::ServerInitAll(NewRankInfo &rankInfo)
                         continue;
                     }
                     PortData localPort{static_cast<RankId>(rankId), deployType, protoType, 0, rankAddr.addr};
-                    u32 listenPort = DEFAULT_VALUE_DEVICEPORT;
+                    u32 listenPort = DEFAULT_VALUE_TCPPORT;
                     if (serverSocketMap.find(localPort) != serverSocketMap.end()) {
                         // 单进程多通信域，找到老端口直接返回老端口
                         listenPort = serverSocketMap[localPort]->GetListenPort();
@@ -233,17 +316,23 @@ bool SocketManager::ServerDeInit(PortData &localPort) const
     return true;
 }
 
-Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
+Socket *SocketManager::CreateConnectedSocket(const SocketConfig &socketConfig)
 {
     auto res = GetConnectedSocket(socketConfig);
     if (res != nullptr) {
         return res;
     }
 
+    HCCL_INFO("[SocketManager::%s] Create connected socket for tag %s.", __func__, socketConfig.tag.c_str());
+
     const PortData &localPort = socketConfig.link.GetLocalPort();
     const PortData &remotePort = socketConfig.link.GetRemotePort();
 
     auto socketHandle = SocketHandleManager::GetInstance().Get(devicePhyId, localPort);
+    if (socketHandle == nullptr) {
+        socketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, socketConfig.link.GetLocalPort());
+    }
+
     if (socketHandle == nullptr) {
         THROW<NullPtrException>(StringFormat("socketHandle of is nullptr, devicePhyId=%d, port=%s", devicePhyId,
                                              localPort.Describe().c_str()));
@@ -267,24 +356,9 @@ Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
     return connectedSocketMap[socketConfig].get();
 }
 
-bool SocketManager::DestroyConnectedSocket(SocketConfig &socketConfig)
+Socket *SocketManager::GetConnectedSocket(const SocketConfig &socketConfig) const
 {
-    auto socket = GetConnectedSocket(socketConfig);
-    if (socket) {
-        socket->Destroy();
-        int num = availableLinks.erase(socketConfig.link);
-        if (num <= 0) {
-            THROW<NullPtrException>(StringFormat("availableLinks has no socketConfig.link, link=%s",
-                socketConfig.link.Describe().c_str()));
-        }
-        return true;
-    }
-
-    return true;
-}
-
-Socket *SocketManager::GetConnectedSocket(SocketConfig &socketConfig) const
-{
+    HCCL_INFO("[SocketManager::%s] Get connected socket for tag %s.", __func__, socketConfig.tag.c_str());
     auto res = connectedSocketMap.find(socketConfig);
     if (res != connectedSocketMap.end()) {
         return res->second.get();
@@ -389,7 +463,7 @@ u32 SocketManager::GetDeviceListenPort(const u32 &rankId, const IpAddress &ipAdd
 {
     u32 listenPort = rankListenPortMap_[rankId][ipAddress];
     if (listenPort == 0) {
-        listenPort = DEFAULT_VALUE_DEVICEPORT;
+        listenPort = DEFAULT_VALUE_TCPPORT;
         rankListenPortMap_[rankId][ipAddress] = listenPort;
         HCCL_WARNING("[SocketManager::%s] Can't find rankId[%u], addr[%s] listen port, use default", __func__, rankId, ipAddress.Describe().c_str());
     }

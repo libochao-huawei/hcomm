@@ -26,6 +26,7 @@ namespace Hccl {
         HcclResult GetRankId(uint32_t *rank);
         HcclResult GetRankSize(uint32_t *rankSize);
         HcclResult GetDevicePort(const uint32_t rank, uint32_t *devPort);
+        HcclResult GetHostPort(const uint32_t rank, uint32_t *hostPort);
         HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink **linkList, uint32_t *listSize);
         HcclResult GetRankGraphInfo(void **graph, uint32_t *len);
         HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
@@ -39,6 +40,7 @@ namespace Hccl {
         HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
  	    HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
  	    HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
+        HcclResult GetDeviceId(uint32_t rankId, uint32_t *deviceId);
 
     private:
         void *rankGraphPtr_;

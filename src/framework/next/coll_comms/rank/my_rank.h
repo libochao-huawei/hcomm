@@ -24,6 +24,8 @@
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
+#include "coll_comm_config_consistency.h"
+#include "exchange_info_mgr.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -35,7 +37,9 @@ namespace hccl {
  */
 class MyRank {
 public:
-    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph);
+    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config,
+        const ManagerCallbacks& callbacks, RankGraph* rankGraph,
+        const Hccl::RankIpPortMapPtr& rankIpPortMap);
     ~MyRank();
 
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum);
@@ -49,6 +53,8 @@ public:
     uint32_t GetOpExpansionMode() {
         return opExpansionMode_;
     }
+
+    CollCommConfigConsistency &GetCollCommConfigConsistency();
 
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
@@ -65,15 +71,29 @@ public:
     HcclResult Resume();
 
 private:
+    using ReuseSocketIdxMap = std::unordered_map<RankPair*, std::unordered_map<hcomm::EndpointPair*, u32>>;
+    HcclResult GetEndpointPairFromChannel(const HcclChannelDesc &channelDesc, uint32_t channelIndex, uint32_t channelNum,
+        uint32_t &remoteRank, hcomm::EndpointPair* &endpointPair, RankPair* &rankPair);
+    HcclResult BatchServerInitForChannels(const HcclChannelDesc* channelDescs, uint32_t channelNum,
+        const std::string &socketTag, ReuseSocketIdxMap &reuseSocketIdxMap);
+    HcclResult BatchGetSocketsForChannels(const HcclChannelDesc* channelDescs, uint32_t channelNum,
+        const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs,
+        ReuseSocketIdxMap &reuseSocketIdxMap);
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
-        const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
+        const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs);
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
     HcclResult BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum);
-    HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);
+    HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc* channelDesc, uint32_t channelNum);
     HcclResult QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
+
+    HcclResult TryInitCcuInstance();
+    HcclResult ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc);
+    HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
+    // 获取port
+    HcclResult GetListenPortInternal(uint32_t rank, uint32_t *devPort, EndpointLocType locType);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
@@ -95,10 +115,26 @@ private:
     // RankGraph (临时放在myRank里面，后面会随着createchannel整体迁移到RankPairMgr上)
     RankGraph* rankGraph_{nullptr};
 
+    // 记录每次调用BatchCreateChannels时新增的channelIndex, reuseIdx
+    std::vector<std::pair<u32, u32>> newChannels_{};
+
     // Ns recovery
     std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
+    // 内部获取 port 的方法，根据 mode_ 区分 v1/v2
+    HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort, EndpointLocType locType);
+
+    Hccl::RankIpPortMapPtr rankIpPortMap_;
+
+    CollCommConfigConsistency collCommConfigConsistency_;
+    ExchangeInfoMgr exchangeInfoMgr_;
 };
 
 } // namespace hccl
+
+namespace MyRankUtils {
+
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc);
+
+} // namespace MyRankUtils  
 
 #endif // MY_RANK_H

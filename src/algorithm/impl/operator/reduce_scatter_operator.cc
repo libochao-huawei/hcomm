@@ -23,7 +23,12 @@ constexpr u32 HCCL_310P_DATA_SIZE_MID_COUNT = 320 * 1024;
 constexpr u32 HCCL_310P_DATA_SIZE_SMALL_COUNT = 1024;
 constexpr u32 HCCL_310P_SLIM_RING_MAX_SIZE = 8;
 
+// Pipeline并行比串行更优的总数据量临界点（基于910_93 2 SuperPod, 1 Server, 12 Rank 性能基线测试，
+// 数据量低于此值时调度开销超过流水收益）
+constexpr u64 HCCL_PIPELINE_TOTAL_DATA_SIZE_THRESHOLD = 608 * 1024 * 1024;
+
 namespace hccl {
+
 ReduceScatterOperator::ReduceScatterOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
     HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher) :
     CollAlgOperator(algConfigurator, cclBufferManager, dispatcher, topoMatcher, HcclCMDType::HCCL_CMD_REDUCE_SCATTER)
@@ -181,10 +186,10 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
         cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType);
 
     if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT) {
-        if (!isMeshTopo || multiModuleDiffDeviceNumMode_) {
-            // 保序规约场景（多batch一致），当前不支持A2标卡（ring拓扑场景）/ 非对称场景
-            HCCL_ERROR("[SelectAlgfor910B] reduce order preservation only support MeshTopo(isMeshTopo:[%d]) "
-                "and Symmetry(multiModuleDiffDeviceNumMode_[%d]).", isMeshTopo, multiModuleDiffDeviceNumMode_);
+        if (multiModuleDiffDeviceNumMode_) {
+            // 保序规约场景（多batch一致），当前不支持A2非对称场景
+            HCCL_ERROR("[SelectAlgfor910B] reduce order preservation only support"
+                " Symmetry(multiModuleDiffDeviceNumMode_[%d]).", multiModuleDiffDeviceNumMode_);
             return HCCL_E_NOT_SUPPORT;
         }
         if (param.DataDes.dataType == HCCL_DATA_TYPE_FP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP32
@@ -458,6 +463,16 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     u64 smallCountSingleServerThreshold = (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) ? HCCL_SMALL_COUNT_512_KB : HCCL_SMALL_COUNT_1_MB;
     u64 smallCountMultiServerThreshold = (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) ? HCCL_SMALL_COUNT_1_MB : HCCL_SMALL_COUNT_2_MB;
     CHK_RET(cclBufferManager_.GetInCCLbuffer(commInputPtr, commInputSize));
+    u64 maxPipelineBlockSize = 0;
+    if (userRankSize_ != 0) {
+        maxPipelineBlockSize = commInputSize / userRankSize_ / HCCL_DEVICE_NUM_TWO /
+            HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN;
+    }
+    bool isSupportPipelineFor91093 = (maxPipelineBlockSize >= HCCL_SMALL_COUNT_4_MB) &&
+        (dataSize * userRankSize_ > HCCL_PIPELINE_TOTAL_DATA_SIZE_THRESHOLD);
+    HCCL_INFO("[ReduceScatterOperator][SelectAlgfor91093] dataSize[%llu] commInputSize[%llu] "
+        "userRankSize[%u] maxPipelineBlockSize[%llu] isSupportPipelineFor91093[%d]",
+        dataSize, commInputSize, userRankSize_, maxPipelineBlockSize, isSupportPipelineFor91093);
     bool dmaReduceLimit = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) && isPowOfTwo &&
         ((commInputSize * HCCL_DEVICE_NUM_TWO < param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] * userRankSize_) ||
         retryEnable_);
@@ -513,6 +528,14 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         } else {
             algName = "ReduceScatterRingZerocopyExchangeExecutor";      // 连续数据通信+数据交换（AHC不支持）
         }
+    } else if (isOpbase && superPodNum_ > 1 &&
+               !isAHCAlgo &&
+               !multiSuperPodDiffDeviceNumMode_ &&
+               isSupportInlineReduce &&
+               (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING ||
+                topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) &&
+               isSupportPipelineFor91093) {
+        algName = "ReduceScatterPipelineFor91093Executor";
     } else {
         if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING) {
             algName = "ReduceScatterRingFor91093Executor";
@@ -551,6 +574,11 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[SelectAlgfor91093] ReduceScatter SelectAlgfor91093 is algName [%s]", algName.c_str());
+    
+    HCCL_INFO("[SelectAlgfor91093] isOpbase[%d] superPodNum_[%u] isAHCAlgo[%d] multiSuperPodDiffDeviceNumMode_[%d] "
+        "isSupportInlineReduce[%d] topoType_[%d] dataSize[%llu]",
+        isOpbase, superPodNum_, isAHCAlgo, multiSuperPodDiffDeviceNumMode_,
+        isSupportInlineReduce, topoType_, dataSize);
     return HCCL_SUCCESS;
 }
 

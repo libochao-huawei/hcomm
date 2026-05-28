@@ -14,6 +14,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <atomic>
 #include <climits>
 #include <queue>
 #include <string>
@@ -63,7 +64,8 @@ constexpr u32 INVALID_QOSCFG = 0xFFFFFFFF;
 // 系统常用参数
 constexpr u64 SYS_MAX_COUNT = 0x7FFFFFFFF; // 系统当前支持的最大count数
 constexpr u32 HCCL_AISERVER_DEVICE_NUM = 8; // 单个Server 支持最大的设备数量
-constexpr u32 MAX_MODULE_DEVICE_NUM = 32; // 单server双模组时支持最大的设备数量
+constexpr u32 MAX_MODULE_DEVICE_NUM = 65; // 单server双模组时支持最大的设备数量
+constexpr u32 AICPU_ZERO_COPY_MAX_DEVICE_NUM_A3 = 32; // 零拷贝相关在A3场景上的最大设备数，影响外部组件使用，不能随意修改
 constexpr u32 HCCL_DEVICE_NIC_NUM = 3; // device网卡上最大的device ip数目，1个ipv4,ipv4自动转换的ipv6,用户配置的ipv6
 constexpr u32 HCCL_HOST_NIC_NUM = 1000; // host 支持最大的网卡数量
 constexpr int HCCL_DEVICE_MINNUM = 1;
@@ -115,6 +117,7 @@ constexpr uint32_t HCCL_QOS_LEVEL_1_LIMIT = 2;
 constexpr uint32_t HCCL_QOS_LEVEL_2_LIMIT = 4;
 constexpr uint32_t HCCL_QOS_LEVEL_3_LIMIT = 7;
 
+constexpr uint32_t HCCL_EXCHANGE_INFO_LEN = 4096;  // HCCL一致性校验交换信息最大长度
 /* error message相关 */
     /* EI0004 */
     const std::string RANKTABLE_PARSE_ERROR_REASON =
@@ -138,7 +141,7 @@ constexpr uint32_t HCCL_QOS_LEVEL_3_LIMIT = 7;
         "You can check the peer dependency relationship of link establishment and the operator information in the plog logs "\
         "to locate and analyze the fault. (You need to enable log recording using HCCL_ENTRY_LOG_ENABLE.) "\
         "For details about the troubleshooting method, search for the keyword \"EI0006\" on "\
-        "https://www.hiascend.com/en/dovument/.";
+        "https://www.hiascend.com/en/document/.";
 
 /* 对关键报错日志提供多级检索关键字 */
 /* 一级检索关键字 */
@@ -333,6 +336,8 @@ public:
     // 初始化这个类，引用计数设为1，并且将p指向传入的地址
     Referenced(): refCount(0) {}
 
+    Referenced(const Referenced& other): refCount(other.refCount.load()) {}
+
     // 引用计数加1
     int Ref()
     {
@@ -362,7 +367,7 @@ public:
     }
     ~Referenced() {}
 private:
-    int refCount; // 引用计数，表示有多少个变量引用这块内存
+    std::atomic<int> refCount; // 引用计数，表示有多少个变量引用这块内存
 };
 
 using RemoteRankInfo = struct TagRemoteRankInfo {

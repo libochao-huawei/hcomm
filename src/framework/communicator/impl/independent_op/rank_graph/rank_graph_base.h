@@ -35,6 +35,7 @@ public:
     virtual HcclResult GetRankId(uint32_t *rank){return HCCL_E_NOT_SUPPORT;};
     virtual HcclResult GetRankSize(uint32_t *rankSize){return HCCL_E_NOT_SUPPORT;};
     virtual HcclResult GetDevicePort(const uint32_t rank, uint32_t *devPort){return HCCL_E_NOT_SUPPORT;};
+    virtual HcclResult GetListenPort(const uint32_t rank, uint32_t *listenPort, EndpointLocType locType){return HCCL_E_NOT_SUPPORT;};
     virtual HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len) = 0;
     virtual HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink **linkList,
                                 uint32_t *listSize) = 0;
@@ -44,6 +45,7 @@ public:
     virtual HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum) = 0;
     virtual HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum) = 0;
     virtual HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize) = 0;
+    virtual HcclResult GetDeviceId(uint32_t rankId, uint32_t *deviceId) = 0;
 };
 }  // namespace hccl
 #endif

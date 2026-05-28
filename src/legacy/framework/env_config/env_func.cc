@@ -616,21 +616,19 @@ std::map<OpType, std::vector<HcclAlgoType>> SetHcclAlgoConfig(const std::string 
 HcclAccelerator CastHcclAccelerator(const std::string &s)
 {
     HcclAccelerator mode;
-    if (s == "AI_CPU") {
+    if (s == "AI_CPU" || s == "AICPU_TS") {
         mode = HcclAccelerator::AICPU_TS;
-    } else if (s == "AIV" || s == "AIV_ONLY") {
+    } else if (s == "AIV") {
         mode = HcclAccelerator::AIV;
-    } else if (s == "HOST" || s == "HOST_TS") {
-        mode = HcclAccelerator::CCU_SCHED;
-        HCCL_WARNING("do not support %s, use default op expansion mode.", s.c_str());
     } else if (s == "CCU_MS") {
         mode = HcclAccelerator::CCU_MS;
     } else if (s == "CCU_SCHED") {
         mode = HcclAccelerator::CCU_SCHED;
     } else {
+        HCCL_ERROR("Env HCCL_OP_EXPANSION_MODE config do not support %s, it should be one of [AI_CPU, AICPU_TS, AIV, CCU_MS, CCU_SCHED].", s.c_str());
         THROW<InvalidParamsException>(
             StringFormat("Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid."
-                "it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str()));
+                "it should be one of [AI_CPU, AICPU_TS, AIV, CCU_MS, CCU_SCHED].", s.c_str()));
     }
     return mode;
 }
@@ -777,11 +775,55 @@ std::vector<std::string> SplitDfsConfig(const std::string &str, char delimiter)
     return tokens;
 }
 
+void CastDfsConfigParseTaskExceptionEnable(bool &taskExceptionEnable, const std::string configValue)
+{
+    if (configValue == "off") {
+        taskExceptionEnable = false;
+        HCCL_WARNING("env[HCCL_DFS_CONFIG] task_exception was configed to [%s]", configValue.c_str());
+    } else if (configValue == "on") {
+        taskExceptionEnable = true;
+    } else {
+        THROW<InvalidParamsException>(StringFormat(
+            "env[HCCL_DFS_CONFIG] please set task_exception to 'on' or 'off'.", configValue.c_str()));
+    }
+}
+
+void CastDfsConfigParseClusterHeartBeatEnable(bool &clusterHeartBeatEnable, const std::string configValue)
+{
+    if (configValue == "off") {
+        clusterHeartBeatEnable = false;
+        HCCL_WARNING("env[HCCL_DFS_CONFIG] cluster_heartbeat was configed to [%s]", configValue.c_str());
+    } else if (configValue == "on") {
+        clusterHeartBeatEnable = true;
+    } else {
+        THROW<InvalidParamsException>(StringFormat(
+            "env[HCCL_DFS_CONFIG] please set cluster_heartbeat to 'on' or 'off'.", configValue.c_str()));
+    }
+}
+
+void CastDfsConfigParseRankConsistentState(int32_t &rankConsistentState, const std::string configValue)
+{
+    if (configValue == "off") {
+        rankConsistentState = -1;
+    }else if (configValue == "first")
+    {
+        rankConsistentState = 0;   
+    }else if (configValue == "on")
+    {
+        rankConsistentState = 1;  
+    }else {
+        THROW<InvalidParamsException>(StringFormat(
+            "env[HCCL_DFS_CONFIG] please set inconsistent_check to '-1' or '0' or '1'.", configValue.c_str()));
+    }
+}
+
 DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 {
-    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 1;
-    const std::array<std::string, DFS_CONFIG_ITEM_NUM> taskExceptionName   = {"task_exception"};
+    constexpr std::size_t                              DFS_CONFIG_ITEM_NUM = 3;
+    const std::array<std::string, DFS_CONFIG_ITEM_NUM> dfsItemName   = {"task_exception", "cluster_heartbeat", "inconsistent_check"};
     bool                                               taskExceptionEnable = true;
+    bool                                               clusterHeartBeatEnable = true;
+    int32_t                                            rankConsistentState = 0;
     std::string                                        dfsConfigEnvCopy    = dfsConfigEnv;
     dfsConfigEnvCopy.erase(std::remove(dfsConfigEnvCopy.begin(), dfsConfigEnvCopy.end(), ' '), dfsConfigEnvCopy.end());
     auto items = SplitDfsConfig(dfsConfigEnvCopy, ',');
@@ -789,25 +831,22 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
         auto                  itemPair  = SplitDfsConfig(item, ':');
         constexpr std::size_t ITEM_SIZE = 2;
         if (itemPair.size() != ITEM_SIZE
-            || std::find(taskExceptionName.begin(), taskExceptionName.end(), itemPair[0]) == taskExceptionName.end()) {
+            || std::find(dfsItemName.begin(), dfsItemName.end(), itemPair[0]) == dfsItemName.end()) {
             THROW<InvalidParamsException>(
                 StringFormat("env[HCCL_DFS_CONFIG] value[%s] is invalid,  please check, example [task_exception:on]", dfsConfigEnv.c_str()));
         }
-        if (itemPair[0] == taskExceptionName[0]) {
-            auto taskException = itemPair[1];
-            if (taskException == "off") {
-                taskExceptionEnable = false;
-                HCCL_WARNING("env[HCCL_DFS_CONFIG] task_exception was configed to [%s]", taskException.c_str());
-            } else if (taskException == "on") {
-                taskExceptionEnable = true;
-            } else {
-                THROW<InvalidParamsException>(StringFormat(
-                    "env[HCCL_DFS_CONFIG] please set task_exception to 'on' or 'off'.", taskException.c_str()));
-            }
+        if (itemPair[0] == dfsItemName[0]) {
+            CastDfsConfigParseTaskExceptionEnable(taskExceptionEnable, itemPair[1]);
+        } else if (itemPair[0] == dfsItemName[1]) {
+            CastDfsConfigParseClusterHeartBeatEnable(clusterHeartBeatEnable, itemPair[1]);
+        } else if (itemPair[0] == dfsItemName[2]) {
+            CastDfsConfigParseRankConsistentState(rankConsistentState, itemPair[1]);
         }
     }
-    DfsConfig config{taskExceptionEnable};
-    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d]", config.taskExceptionEnable);
+    DfsConfig config{taskExceptionEnable, clusterHeartBeatEnable, rankConsistentState};
+
+    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d], cluster_heartbeat [%d] rankConsistentState[%d]",
+        config.taskExceptionEnable, config.clusterHeartBeatEnable, config.rankConsistentState);
     return config;
 }
 

@@ -69,8 +69,13 @@ namespace hcomm {
  */
 class EndpointPair {
 public:
-    EndpointPair(EndpointDesc localEndpointDesc, EndpointDesc remoteEndpointDesc):
-        localEndpointDesc_(localEndpointDesc), remoteEndpointDesc_(remoteEndpointDesc) {}
+    EndpointPair(EndpointDesc localEndpointDesc, EndpointDesc remoteEndpointDesc,
+        const Hccl::RankIpPortMapPtr& rankIpPortMap)
+        : localEndpointDesc_(localEndpointDesc),
+          remoteEndpointDesc_(remoteEndpointDesc),
+          rankIpPortMap_(rankIpPortMap)
+    {
+    }
     ~EndpointPair();
 
     HcclResult Init();
@@ -78,19 +83,41 @@ public:
     
     // 临时方案：新增临时接口用于支持混跑
     HcclResult GetSocket(const uint32_t myRank, const uint32_t rmtRank,
-        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket *&socket);
+        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket *&socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId);
+    HcclResult GetSocketWithRank(const uint32_t myRank, const uint32_t rmtRank, const std::string &socketTag,
+        const uint32_t listenPort, u32 reuseIdx, Hccl::Socket*& socket);
+
+    HcclResult ServerInit(const uint32_t myRank, const uint32_t rmtRank,
+        const std::string &socketTag, u32 reuseIdx, uint32_t devicePhyId, uint32_t remoteDevicePhyId);
+    HcclResult GetConnectedSocket(const uint32_t myRank, const uint32_t rmtRank,
+        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort,
+        Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId);
 
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
 
+    HcclResult DestroyChannel(CommEngine engine, u32 reuseIdx);
+
+    bool IsChannelNotExist(CommEngine engine, u32 reuseIdx);
+
     const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& GetChannelHandles();
 
 private:
+    HcclResult EnsureSocketMgrCompat(const uint32_t myRank, const std::string &socketTag);
+    Hccl::SocketConfig BuildSocketConfig(const Hccl::LinkData &linkData, const std::string &socketTag);
+    HcclResult HandleHostSocketOrBuildLinkData(const uint32_t myRank, const uint32_t rmtRank,
+        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket,
+        uint32_t devicePhyId, uint32_t remoteDevicePhyId, Hccl::LinkData &linkData, bool &isHost);
+    HcclResult GetSocketInternal(const uint32_t myRank, const uint32_t rmtRank,
+        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort,
+        Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId, bool connectMode);
+
     EndpointDesc localEndpointDesc_{};
     EndpointDesc remoteEndpointDesc_{};
-    std::unique_ptr<SocketMgr> socketMgr_;
     std::unique_ptr<Hccl::SocketManager> socketMgrCompat_;
     std::unordered_map<CommEngine, std::vector<ChannelHandle>> channelHandles_{};
+    Hccl::RankIpPortMapPtr rankIpPortMap_;
+    uint32_t devicePhyId_{};
 };
 
 } // namespace hcomm

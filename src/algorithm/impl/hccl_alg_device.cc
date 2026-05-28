@@ -269,10 +269,11 @@ namespace hccl
 
     HcclResult HcclAlg::SetHDCModeInfo(
         std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &rankDevicePhyIdNicInfoMap,
-        std::vector<u32> &ranksPort, bool isSetHDCModeInfo, bool isUseRankPort)
+        std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort, bool isSetHDCModeInfo, bool isUseRankPort)
     {
         (void) rankDevicePhyIdNicInfoMap;
         (void) ranksPort;
+        (void) vnicRanksPort;
         (void) isSetHDCModeInfo;
         (void) isUseRankPort;
         return HCCL_SUCCESS;

@@ -44,7 +44,8 @@ protected:
         std::cout << "A Test case in AdapterHccp TearDown" << std::endl;
     }
 
-    FdHandle fakeFdHandle = nullptr;
+    SocketHandle fakeSocHandle = (SocketHandle)0x123;
+    FdHandle fakeFdHandle = (FdHandle)0x200;
     void *fakeData = (void *)0x100;
 };
 
@@ -182,7 +183,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_nok)
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketWhiteListAdd(nullptr, whiteList), NullPtrException);
+    EXPECT_THROW(HrtRaSocketWhiteListAdd(fakeSocHandle, whiteList), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_ok)
@@ -190,11 +191,10 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_ok)
     // Given
     MOCKER(RaSocketWhiteListAdd).stubs().will(returnValue(0));
     vector<RaSocketWhitelist> whiteList(1);
-    SocketHandle validSocketHandle = reinterpret_cast<SocketHandle>(0x123);
     // when
 
     // then
-    EXPECT_NO_THROW(HrtRaSocketWhiteListAdd(validSocketHandle, whiteList));
+    EXPECT_NO_THROW(HrtRaSocketWhiteListAdd(fakeSocHandle, whiteList));
 }
 
 TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_strcpy_nok)
@@ -205,7 +205,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_strcpy_nok)
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketWhiteListAdd(nullptr, whiteList), NullPtrException);
+    EXPECT_THROW(HrtRaSocketWhiteListAdd(fakeSocHandle, whiteList), InternalException);
 }
 
 TEST_F(AdapterHccpTest, HrtRaSocketWhiteListDel_nok)
@@ -216,7 +216,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListDel_nok)
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketWhiteListDel(nullptr, whiteList), NullPtrException);
+    EXPECT_THROW(HrtRaSocketWhiteListDel(fakeSocHandle, whiteList), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, hrtRaSocketListenOneStart_again)
@@ -230,11 +230,11 @@ TEST_F(AdapterHccpTest, hrtRaSocketListenOneStart_again)
     SocketHandle socketHandle = nullptr;
 
 
-    RaSocketListenParam listenInfo(socketHandle, 0);
+    RaSocketListenParam listenInfo(socketHandle, 0, IpAddress());
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketListenOneStart(listenInfo), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketListenOneStart(listenInfo,  HrtNetworkMode::HDC), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, Ut_HrtRaSocketTryListenOneStart_When_InValid_IP_Expect_Throw_Exception)
@@ -243,9 +243,39 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketTryListenOneStart_When_InValid_IP_Expect_T
 
     SocketHandle socketHandle = nullptr;
 
-    RaSocketListenParam listenInfo(socketHandle, 0);
+    RaSocketListenParam listenInfo(socketHandle, 0, IpAddress());
 
-    EXPECT_THROW(HrtRaSocketTryListenOneStart(listenInfo), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketTryListenOneStart(listenInfo, HrtNetworkMode::HDC), NetworkApiException);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketNonBlockSendHeart_When_Input_normal_Expect_Return_Success)
+{
+    u64 sendBuffer = 0;
+    u64 sendSizeStub = 123;
+    u64 fd = 0;
+    SocketHandle socketHandle = &fd;
+    MOCKER(RaSocketSend).stubs().with(any(), any(), any(), outBoundP(&sendSizeStub, sizeof(sendSizeStub)))
+        .will(returnValue(0));
+
+    u64 sentSize = 0;
+    HcclResult ret = HrtRaSocketNonBlockSendHeart(socketHandle, &sendBuffer, sizeof(sendBuffer), &sentSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(sendSizeStub, sentSize);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketNonBlockRecvHeart_When_Input_normal_Expect_Return_Success)
+{
+    u64 recvbuffer = 0;
+    u64 recvSizeStub = 123;
+    u64 fd = 0;
+    SocketHandle socketHandle = &fd;
+    MOCKER(RaSocketRecv).stubs().with(any(), any(), any(), outBoundP(&recvSizeStub, sizeof(recvSizeStub)))
+        .will(returnValue(0));
+
+    u64 recvedSize = 0;
+    HcclResult ret = HrtRaSocketNonBlockRecvHeart(socketHandle, &recvbuffer, sizeof(recvbuffer), &recvedSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(recvSizeStub, recvedSize);
 }
 
 TEST_F(AdapterHccpTest, HrtRaSocketInit_OK)
@@ -292,6 +322,23 @@ TEST_F(AdapterHccpTest, HrtHrtRaRdmaInit_NOK)
         .stubs()
         .with(any(), any(), any(), outBoundP(&rdmaHandle, sizeof(rdmaHandle)))
         .will(returnValue(1));
+
+    struct RaInterface rdevInfo;
+    // when
+
+    EXPECT_THROW(HrtRaRdmaInit(HrtNetworkMode::HDC, rdevInfo), NetworkApiException);
+    delete[] num;
+}
+
+TEST_F(AdapterHccpTest, HrtHrtRaRdmaInit_return_HCCP_ELINKDOWN_NOK)
+{
+    // Given
+    u32       *num        = new u32[1];
+    RdmaHandle rdmaHandle = static_cast<void *>(num);
+    MOCKER(RaRdevInit)
+        .stubs()
+        .with(any(), any(), any(), outBoundP(&rdmaHandle, sizeof(rdmaHandle)))
+        .will(returnValue(HCCP_ELINKDOWN));
 
     struct RaInterface rdevInfo;
     // when
@@ -429,7 +476,8 @@ TEST_F(AdapterHccpTest, HrtRaUbRemoteMemUnimport_ok)
 TEST_F(AdapterHccpTest, HrtRaUbCreateJfc_ok)
 {
     RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
-    u64 result = HrtRaUbCreateJfc(handle, HrtUbJfcMode::NORMAL);
+    struct Hccl::CqCreateInfo cqInfo;
+    u64 result = HrtRaUbCreateJfc(handle, cqInfo, HrtUbJfcMode::NORMAL);
     EXPECT_EQ(0, result);
 }
 
@@ -710,7 +758,7 @@ TEST_F(AdapterHccpTest, RaSocketListenOneStopAsync_return_ok)
 
     SocketHandle socketHandle = nullptr;
     unsigned int port = 100;
-    RaSocketListenParam param(socketHandle, port);
+    RaSocketListenParam param(socketHandle, port, IpAddress());
 
     RaSocketListenOneStopAsync(param);
 };
@@ -726,7 +774,9 @@ TEST_F(AdapterHccpTest, RaUbAllocTokenIdHandle_ok)
 TEST_F(AdapterHccpTest, RaUbFreeTokenIdHandle_exception)
 {
     MOCKER(RaCtxTokenIdFree).stubs().with(any()).will(returnValue(1));
-    EXPECT_THROW(RaUbFreeTokenIdHandle(0, 0), NullPtrException);
+    RdmaHandle handle = (void *)0x1234;
+    TokenIdHandle tokenIdHandle = 1234;
+    EXPECT_THROW(RaUbFreeTokenIdHandle(handle, tokenIdHandle), NetworkApiException);
 }
 
 void MockRaSocketRecv(int ret, unsigned long long recvSize)
@@ -746,44 +796,42 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvOnceComplete_Expect_Suc
 {
     MockRaSocketRecv(0, 100); // 一次接收完成
     MockEnvLinkTimeoutGet(1); // 1秒超时
-    FdHandle fakeFdHandle = reinterpret_cast<FdHandle>(0x123);
-    void *fakeData = reinterpret_cast<void *>(0x133);
     EXPECT_NO_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100));
 }
 
-TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvSizeExceeds_Expect_ThrowException)
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvSizeExceeds_Expect_Throw_NetworkApiException)
 {
     MockRaSocketRecv(0, 150); // 超出预期大小
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
 
-TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvSizeZero_Expect_ThrowException)
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvSizeZero_Expect_Throw_NetworkApiException)
 {
     MockRaSocketRecv(0, 0); // 接收为0
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
 
-TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_SockClosed_Expect_ThrowException)
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_SockClosed_Expect_Throw_NetworkApiException)
 {
     MockRaSocketRecv(SOCK_ESOCKCLOSED, 0);
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
 
-TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_SockClose_Expect_ThrowException)
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_SockClose_Expect_Throw_NetworkApiException)
 {
     MockRaSocketRecv(SOCK_CLOSE, 0);
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
 
-TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_Timeout_Expect_ThrowException)
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_Timeout_Expect_Throw_NetworkApiException)
 {
-    MockRaSocketRecv(0, 0); // 模拟一直接收不到数据
+    MockRaSocketRecv(1, 0); // 模拟一直接收不到数据
     MockEnvLinkTimeoutGet(0); // 超时时间设为0
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, ut_HrtRaSocketWhiteListDel_With_Enormous_WhiteList)
@@ -956,7 +1004,7 @@ TEST_F(AdapterHccpTest, HrtRaGetEidByIp_ra_get_eid_by_ip_error)
 
     MOCKER(RaGetEidByIp).stubs().will(returnValue(1));
 
-    EXPECT_THROW(HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList), NetworkApiException);
+    EXPECT_EQ(HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList), HCCL_E_INTERNAL);
 }
 
 TEST_F(AdapterHccpTest, HrtRaGetEidByIp_count_mismatch_returns_internal)
@@ -998,4 +1046,64 @@ TEST_F(AdapterHccpTest, HrtRaGetEidByIp_empty_input_ok)
 
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_TRUE(eidAddrList.empty());
+}
+
+TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_VersionEnough_Expect_Success)
+{
+    u32 devPhyId = 1;
+    u32 mock_version = GET_UBOE_FLAG_ENABLE_VERSION;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&mock_version, sizeof(s32)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId);
+    
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_When_VersionNotEnough_Expect_NotSupport)
+{
+    u32 devPhyId = 1;
+    u32 mock_version = GET_UBOE_FLAG_ENABLE_VERSION - 1;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&mock_version, sizeof(s32)))
+        .will(returnValue(0));
+    
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId);
+    
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_When_RaGetInterfaceFailed_Expect_E_INTERNAL)
+{
+    u32 devPhyId = 1;
+    MOCKER(RaGetInterfaceVersion).stubs().will(returnValue(-1));
+    HcclResult ret = HrtGetUboeFlagEnable(devPhyId);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtCheckUboeSupported_When_DevFeatureBitSet_Expect_True)
+{
+    u32 devFeature = 1 << UBOE_DEV_FLAG_RIGHT_SHIFT;
+    bool result = HrtCheckUboeSupported(devFeature);
+    EXPECT_TRUE(result);
+    
+    // 测试其他位也有值的情况
+    devFeature = (1 << UBOE_DEV_FLAG_RIGHT_SHIFT) | 0xFFFF;
+    result = HrtCheckUboeSupported(devFeature);
+    EXPECT_TRUE(result);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtCheckUboeSupported_When_DevFeatureBitNotSet_Expect_False)
+{
+    u32 devFeature = 0;
+    bool result = HrtCheckUboeSupported(devFeature);
+    EXPECT_FALSE(result);
+    
+    // 测试只有其他位被设置，但UBOE位未设置
+    devFeature = 0xFFFFFFFF & ~(1 << UBOE_DEV_FLAG_RIGHT_SHIFT);
+    result = HrtCheckUboeSupported(devFeature);
+    EXPECT_FALSE(result);
 }

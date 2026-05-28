@@ -237,7 +237,7 @@ u32 RankGraph::GetLayerRanks(const u32 netLayer) const
 {
     u32 layerRankSize = 0;
     if(netInsts_.at(netLayer).size() == 0){
-        HCCL_WARNING("[RankGraph][GetLayerRanks] Rankgraph has no net instance on layer %u");
+        HCCL_WARNING("[RankGraph][GetLayerRanks] RankGraph has no netInstance on netLayer %u", netLayer);
         return 0;
     }
     for (const auto& netInst : netInsts_.at(netLayer)) {
@@ -283,7 +283,7 @@ HcclResult RankGraph::GetNetInstanceList(const u32 netLayer, vector<u32> &instSi
     instSizeList.clear();
     listSize = 0;
     if(netInsts_.at(netLayer).size() == 0){
-        HCCL_WARNING("[RankGraph][GetLayerRanks] Rankgraph has no net instance on layer %u", netLayer);
+        HCCL_WARNING("[RankGraph][GetNetInstanceList] RankGraph has no net instance on layer %u", netLayer);
         return HCCL_E_PARA;
     }
     for (const auto& netInst : netInsts_.at(netLayer)) {
@@ -302,12 +302,17 @@ void RankGraph::GetTopoInstsByLayer(const u32 netLayer, std::vector<u32>& topoIn
 HcclResult RankGraph::GetTopoType(const u32 netLayer, const u32 topoInstId, TopoType &topoType) const
 {
     auto *netInstance = GetNetInstanceByRankId(netLayer, myRank_);
+    CHK_PRT_RET(netInstance == nullptr,
+                HCCL_ERROR("[RankGraph::GetTopoType] netInstance is nullptr, myRank[%u], netLayer[%u], "
+                           "topoInstId[%u]", myRank_, netLayer, topoInstId),
+                HCCL_E_PTR);
 
     auto ret = netInstance->GetTopoType(topoInstId, topoType);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to GetTopoType ret[%d]", __func__, ret);
-        return ret;
-    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] Failed to GetTopoType, myRank[%u], netLayer[%u], netInstId[%s], topoInstId[%u], "
+                           "ret[%d]", __func__, myRank_, netLayer, netInstance->GetNetInstId().c_str(), topoInstId,
+                           ret),
+                ret);
     return HCCL_SUCCESS;
 }
 
@@ -315,12 +320,17 @@ HcclResult RankGraph::GetRanksByTopoInst(
     const u32 netLayer, const u32 topoInstId, std::vector<u32> &ranks, u32 &rankNum) const
 {
     auto *netInstance = GetNetInstanceByRankId(netLayer, myRank_);
+    CHK_PRT_RET(netInstance == nullptr,
+                HCCL_ERROR("[RankGraph::GetRanksByTopoInst] netInstance is nullptr, myRank[%u], netLayer[%u], "
+                           "topoInstId[%u]", myRank_, netLayer, topoInstId),
+                HCCL_E_PTR);
 
     auto ret = netInstance->GetRanksByTopoInst(topoInstId, ranks, rankNum);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to GetRanksByTopoInst ret[%d]", __func__, ret);
-        return ret;
-    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] Failed to GetRanksByTopoInst, myRank[%u], netLayer[%u], netInstId[%s], "
+                           "topoInstId[%u], ret[%d]", __func__, myRank_, netLayer,
+                           netInstance->GetNetInstId().c_str(), topoInstId, ret),
+                ret);
     return HCCL_SUCCESS;
 }
 
@@ -646,7 +656,8 @@ void RankGraph::AddSubPeers(const std::vector<RankId> &rankIds, RankGraph *subRa
         LocalId replacedLocalId = oldPeer->GetReplacedLocalId();
         DeviceId deviceId = oldPeer->GetDeviceId();
         u32 devicePort = oldPeer->GetDevicePort();
-        shared_ptr<NetInstance::Peer> subPeer = make_shared<NetInstance::Peer>(subRankId, localId, replacedLocalId, deviceId, devicePort);
+        u32 hostPort = oldPeer->GetHostPort();
+        shared_ptr<NetInstance::Peer> subPeer = make_shared<NetInstance::Peer>(subRankId, localId, replacedLocalId, deviceId, devicePort, hostPort);
         subRankGraph->AddPeer(subPeer);
         peers.emplace(subRankId, subPeer);
         const auto& oldEndpointMap = oldPeer->GetEndpointToIfaceMap();
@@ -866,7 +877,9 @@ CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol)
         {LinkProtocol::UB_TP, COMM_PROTOCOL_UBC_TP},
         {LinkProtocol::ROCE, COMM_PROTOCOL_ROCE},
         {LinkProtocol::HCCS, COMM_PROTOCOL_HCCS},
-        {LinkProtocol::UB_MEM, COMM_PROTOCOL_UB_MEM}};
+        {LinkProtocol::PCIE, COMM_PROTOCOL_PCIE},
+        {LinkProtocol::UB_MEM, COMM_PROTOCOL_UB_MEM},
+        {LinkProtocol::UBOE, COMM_PROTOCOL_UBOE}};
 
     for (const auto &p : protocolPairs) {
         if (p.first == linkProtocol) {

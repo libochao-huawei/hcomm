@@ -3561,7 +3561,7 @@ void TcRsGetIbCtxAndRdevIndex()
 void TcRsRdevCbInit()
 {
 	struct rdev rdevInfo = {0};
-	struct rs_cb rsCb;
+	struct rs_cb rsCb = {0};
 	struct RsRdevCb rdevCb = {0};
 	int rdevIndex;
 	mocker(RsInetNtop, 20, 0);
@@ -4524,10 +4524,10 @@ void TcRsRegisterMr()
 	EXPECT_INT_EQ(0, ret);
 	mocker_clean();
 
-	ret =  RsDeregisterMr(mrHandle);
+	ret =  RsDeregisterMr(phyId, rdevIndex, mrHandle);
 	EXPECT_INT_EQ(0, ret);
 
-	ret =  RsDeregisterMr(NULL);
+	ret =  RsDeregisterMr(phyId, rdevIndex, NULL);
 	EXPECT_INT_NE(0, ret);
 
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);

@@ -392,6 +392,7 @@ public:
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
     HcclResult GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t *size);
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
+    HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
     HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
     HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, uint32_t *topoType);
@@ -404,6 +405,13 @@ public:
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize);
+    void *GetMyRank();
+    uint32_t GetConnectMode();
+    HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
+    HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
+    HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
+    HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
+    HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetHeterogMode(HcclHeterogMode *mode);
     // for group
     HcclResult SetGroupMode(bool isGroup);
@@ -423,6 +431,7 @@ private:
     void PrintSubmittedOpCnt(const std::string &tag, HcclResult ret);
     HcclResult ReleaseChannel();
     void BinaryUnLoad();
+    HcclResult InitBinHandle();
     DeviceMem indirectInCCLbuffer_; /* 保存inCCLbuffer指针的地址 */
     DeviceMem indirectOutCCLbuffer_; /* 保存outCCLbuffer_指针的地址 */
     u64 inCCLbufferSize_;

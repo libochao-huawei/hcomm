@@ -11,8 +11,8 @@
 #include "../rank/my_rank.h"
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
-#include "env_config.h"
-#include "../../../../legacy/framework/env_config/env_config.h"
+#include "config/env_config.h"
+#include "env_config/env_config.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
 
 #include "hcom_common.h"
@@ -20,7 +20,8 @@
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
-
+#include "coll_comm_mgr.h"
+#include "hcclCommOp.h"
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -49,18 +50,19 @@ constexpr uint32_t SL_DEFAULT = 0xFFFFFFFFu;   // SL的默认值（不区分芯�
 
 static void FillChannelDescFinal(hccl::CommConfig commConfig, const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, bool isCommunicatorV2)
 {
-    channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
     if (isCommunicatorV2) { // A5
         auto& rdmaConfig = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
         channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? rdmaConfig.GetRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
         channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? rdmaConfig.GetRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
         channelDescFinal.roceAttr.tc = (commConfig.GetConfigTrafficClass() == INVALID_UINT) ? rdmaConfig.GetRdmaTrafficClass() : commConfig.GetConfigTrafficClass();
         channelDescFinal.roceAttr.sl = (commConfig.GetConfigServiceLevel() == INVALID_UINT) ? rdmaConfig.GetRdmaServerLevel() : commConfig.GetConfigServiceLevel();
+        channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? rdmaConfig.GetRdmaQueueNum() : channelDesc.roceAttr.queueNum;
     } else {
         channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
         channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
         channelDescFinal.roceAttr.tc = (channelDesc.roceAttr.tc == 0xFF) ? EnvConfig::GetExternalInputRdmaTrafficClass() : channelDesc.roceAttr.tc;
         channelDescFinal.roceAttr.sl = (channelDesc.roceAttr.sl == 0xFF) ? EnvConfig::GetExternalInputRdmaServerLevel() : channelDesc.roceAttr.sl;
+        channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
     }
 }
 
@@ -122,11 +124,13 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
      // 根据协议类型拷贝union中的相应成员
     switch (channelDesc.channelProtocol) {
         case COMM_PROTOCOL_HCCS:
+        case COMM_PROTOCOL_HCCS_ONLY:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_SIO:
         case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_UBC_TP:
+        case COMM_PROTOCOL_UBOE:
             break;
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
@@ -140,6 +144,8 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
                     case COMM_PROTOCOL_UB_MEM:  return "COMM_PROTOCOL_UB_MEM";
                     case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
                     case COMM_PROTOCOL_UBC_TP:  return "COMM_PROTOCOL_UBC_TP";
+                    case COMM_PROTOCOL_UBOE:    return "COMM_PROTOCOL_UBOE";
+                    case COMM_PROTOCOL_HCCS_ONLY:   return "COMM_PROTOCOL_HCCS_ONLY";
                     default:                    return "UNKNOWN_PROTOCOL";
                 }
             };
@@ -211,14 +217,29 @@ bool CheckCommEngine(const CommEngine engine, const uint32_t opExpansionMode)
 
 constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
 
+HcclResult RegisterToClusterMonitor(HcclComm comm)
+{
+    HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("comm is not support [%s]", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    CHK_RET(CollCommMgr::GetInstance()->GetClusterMonitor(collComm->GetDeviceLogicId()).RegisterToClusterMonitor(comm));
+    HCCL_RUN_INFO("%s Success", __func__);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, 
     const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle* channels)
 {
-    HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
     u64 beginTime =  Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     EXCEPTION_HANDLE_BEGIN
-    HCCL_INFO("[%s] ChannelAcquire begin, channelNum[%u], engine[%d]", __func__, channelNum, engine);
 
     // 入参校验
     CHK_PTR_NULL(comm);
@@ -232,17 +253,14 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
  
     HcclResult ret = HCCL_SUCCESS;
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HCCL_RUN_INFO("Entry-%s channelNum[%u], engine[%d] group[%s]", __func__, channelNum, engine, hcclComm->GetIdentifier().c_str());
     std::vector<HcclChannelDesc> channelDescFinals;
     for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
         HcclChannelDescInit(&channelDescFinal, 1);
         ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal, hcclComm);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "
-                "channelNum[%llu], ret[%d]", __func__, idx, hcclComm->GetIdentifier().c_str(),
-                engine, channelNum, ret);
-            return ret;
-        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("ProcessHcclResPackReq failed. channelDesc idx[%u], group[%s], engine[%d] channelNum[%llu], ret[%d]", idx, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
         channelDescFinals.push_back(channelDescFinal);
     }
  
@@ -255,36 +273,59 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
         if (!CheckCommEngine(engine, opExpansionMode)) {
-            HCCL_ERROR("[%s] failed, coll comm[%p] is not enable ccu feature[%d], "
-                "but commEngine is [%d].", __func__, hcclComm, opExpansionMode, engine);
+            HCCL_ERROR("[%s] failed, coll comm[%p] group[%s] opExpansionMode[%d] is not supported by CCU engine[%d].", 
+                __func__, hcclComm, hcclComm->GetIdentifier().c_str(), opExpansionMode, engine);
             return HcclResult::HCCL_E_PARA;
         }
-        
-        CHK_RET(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
+
+        if (engine != CommEngine::COMM_ENGINE_CPU) { // host dpu场景暂不支持cluster monitor
+            ret = RegisterToClusterMonitor(comm);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("RegisterToClusterMonitor failed. group[%s], engine[%d], channelNum[%llu], ret[%d]", hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
+        }
+
+        ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
+        CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
+            HCCL_WARNING("CreateChannels group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("CreateChannels failed. group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
+        if (engine == COMM_ENGINE_CPU) {
+            HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+            CHK_PTR_NULL(hcclCommDfx);
+            auto callback = hcclCommDfx->GetDpuCallback();
+            for (uint32_t idx = 0; idx < channelNum; idx++) {
+                int32_t ret = HcommDpuChannelRegisterDfx(channels[idx], callback);
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to register DFX callback for channel[%u], ret[%d]", commTag.c_str(), idx, ret),
+                    static_cast<HcclResult>(ret));
+            }
+            HCCL_INFO("[HcclChannelAcquire] group[%s] channelNum[%u] Register DFX callback for CPU channels success", commTag.c_str(), channelNum);
+        }
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
             std::string kernelName = "RunAicpuIndOpChannelInitV2";
-            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid()));
-            HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel success");
+            ret = hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid());
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to report kernel for kernelName[%s], tid[%d], ret[%d]", commTag.c_str(), kernelName.c_str(), SalGetTid(), ret), ret);
         }
     } else {
-        auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-        ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), engine,
-            channelDescFinals.data(), channelNum, channels);
+        hccl::MyRank *myRank = (hccl::MyRank *)hcclComm->GetMyRank();
+        if (hcclComm->GetConnectMode() && engine == COMM_ENGINE_CPU && myRank != nullptr) {
+            const std::string &commTag = hcclComm->GetIdentifier();
+            ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
+        } else {
+            auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
+            ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), engine,
+                channelDescFinals.data(), channelNum, channels);
+        }
     }
  
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to acquire channel, group[%s], engine[%d], channelNum[%llu], ret[%d]",
-           __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret);
-        return ret;
-    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] Failed to acquire channel, group[%s], engine[%d], channelNum[%llu], ret[%d]", __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
  
-    HCCL_RUN_INFO("[%s] acquire channel success, group[%s], engine[%d], channelNum[%llu], ret[%d]", 
-        __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret);
-    HCCL_INFO("[%s] success, take time [%lld]us.",
-        __func__, DURATION_US(TIME_NOW() - startut));
+    HCCL_RUN_INFO("[%s] acquire channel success, group[%s], engine[%d], channelNum[%llu], take time [%lld]us.", __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, DURATION_US(TIME_NOW() - startut));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
@@ -360,7 +401,7 @@ HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
 static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params, const aclrtStream stream, Hccl::TaskParam &taskParam)
 {
     taskParam.beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    constexpr uint32_t defaultTimeOutSec = 120; // 当前未支持从环境变量配置
+    const uint32_t execTimeOutSec = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
     for (auto it = params.begin(); it != params.end(); ++it) {
         rtCcuTaskInfo_t taskInfo{};
         taskInfo.dieId       = it->dieId;
@@ -369,7 +410,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
         taskInfo.instCnt     = it->instCnt;
         taskInfo.key         = it->key;
         taskInfo.argSize     = it->argSize;
-        taskInfo.timeout     = defaultTimeOutSec;
+        taskInfo.timeout     = execTimeOutSec;
         std::copy(std::begin(it->args), std::end(it->args), std::begin(taskInfo.args));
         
         HCCL_INFO("[%s] start ccu task, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], "
@@ -532,23 +573,8 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     }
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
     CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
-    Hccl::TaskParam taskParam = {
-        .taskType  = Hccl::TaskParamType::TASK_CCU,
-        .beginTime = 0,
-        .endTime   = 0,
-        .isMaster = false,
-        .taskPara  = {
-            .Ccu = {
-                .dieId         = 0,
-                .missionId     = 0,
-                .execMissionId = 0,
-                .instrId       = 0,
-                .costumArgs    = {},
-                .executeId     = 0
-            }
-        },
-        .ccuDetailInfo  = nullptr
-    };
+    Hccl::TaskParam taskParam = {};
+    taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
     CHK_RET(LaunchCcuTasks(ccuParams, streamPtr, taskParam));
     CHK_RET(HcclReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo.data(), allCcuProfilingInfo.size(),
                                         comm, taskParam, rtsThread->GetMaster()));

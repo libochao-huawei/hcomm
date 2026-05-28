@@ -9,23 +9,33 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc 
+    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/coll_comm_config_consistency.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-    ${CMAKE_CURRENT_SOURCE_DIR}/aclgraph/zero_copy_acl_graph.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_host.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs_host.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/comm_topo_desc.cc
-    task_abort_handler.cc
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+        ${CMAKE_CURRENT_SOURCE_DIR}/aclgraph/zero_copy_acl_graph.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_host.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs_host.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/comm_topo_desc.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_dpu_manager.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/task_abort_handler.cc
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_device.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs_device.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
 

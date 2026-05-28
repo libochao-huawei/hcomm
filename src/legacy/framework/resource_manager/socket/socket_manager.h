@@ -18,13 +18,16 @@
 #include <functional>
 #include <memory>
 
-#include "socket.h"
+#include "../../unified_platform/resource/socket/socket.h"
 #include "virtual_topo.h"
 #include "socket_config.h"
 #include "env_func.h"
 #include "orion_adapter_hccp.h"
 
 namespace Hccl {
+
+using RankIpPortMap = std::unordered_map<u32, std::unordered_map<IpAddress, u32>>;
+using RankIpPortMapPtr = std::shared_ptr<RankIpPortMap>;
 
 class CommunicatorImpl;
 class SocketManager {
@@ -46,6 +49,10 @@ public:
     u32 GetDeviceListenPort(const u32 &rankId, const IpAddress &ipAddress);
 
     void BatchCreateSockets(const vector<LinkData> &links);
+    void ServerListen(const SocketConfig &socketConfig);
+    void ConnectSockets(const SocketConfig &socketConfig);
+
+    void BatchCreateSockets(const SocketConfig &socketConfig);
 
     void ServerInit(PortData &localPort);
 
@@ -53,11 +60,9 @@ public:
 
     bool ServerDeInit(PortData &localPort) const;
 
-    Socket *CreateConnectedSocket(SocketConfig &socketConfig);
+    Socket *CreateConnectedSocket(const SocketConfig &socketConfig);
 
-    bool DestroyConnectedSocket(SocketConfig &socketConfig);
-
-    Socket *GetConnectedSocket(SocketConfig &socketConfig) const;
+    Socket *GetConnectedSocket(const SocketConfig &socketConfig) const;
 
     bool CheckServerPortListening(const PortData &portData) const;
 
@@ -74,9 +79,11 @@ public:
     SocketManager &operator=(const SocketManager &socketManager) = delete;
 
 private:
+    void PrepareLinkAndServerInit(const SocketConfig &socketConfig);
     void BatchServerInit(const vector<LinkData> &links);
     void BatchAddWhiteList(const vector<LinkData> &links);
     void BatchCreateConnectedSockets(const vector<LinkData> &links);
+    void AddWhiteList(const SocketConfig &socketConfig);
     const CommunicatorImpl *comm;
     static std::unordered_map<PortData, shared_ptr<Socket>>& GetServerSocketMap();
     u32               localRank;

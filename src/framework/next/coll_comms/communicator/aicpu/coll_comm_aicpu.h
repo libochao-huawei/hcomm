@@ -20,6 +20,7 @@
 #include "thread.h"
 #include "local_notify.h"
 #include "ub_transport_lite_impl.h"
+#include "p2p_transport_lite_impl.h"
 #include "task_exception.h"
 #include "aicpu_launch_manager.h"
 #include "channel_param.h"
@@ -30,9 +31,11 @@
 #include "error_message_v2.h"
 #include "kfc.h"
 #include "aicpu_hdc.h"
+#include "roce_transport_lite_impl.h"
 #include "hccl/hccl_types.h"
 
 using namespace hccl;
+
 class CollCommAicpu {
 public:
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
@@ -50,6 +53,7 @@ public:
     HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo);
     HcclResult RegisterProfCallBack();
     HcclCommDfxLite* GetHcclCommDfxLite() { return &dfx_; };
+    ReadWriteLockBase& GetThreadMutex() { return threadMutex_; }
 
     // h2d - d2h通道信息交互
     HcclResult BackGroundGetCmd(Hccl::KfcCommand &cmd);
@@ -65,6 +69,10 @@ public:
     HcclResult Resume(HcclChannelUrmaRes *commParam);
 
 private:
+    // 初始化
+    void InitIndopEnv(CommAicpuParam *commAicpuParam);
+    HcclResult InitHDCommunicate(CommAicpuParam *commAicpuParam);
+
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
     HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
@@ -81,10 +89,13 @@ private:
     std::string identifier_;
     HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
     HcclTopoInfo topoInfo_;
+    ReadWriteLockBase threadMutex_;
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::P2PTransportLiteImpl>> p2pTransportMap_;
+    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::RoceTransportLiteImpl>> roceTransportMap_;
 
     // N秒快恢相关
     hccl::NsRecoveryLitePtr nsRecoveryLitePtr_{nullptr};

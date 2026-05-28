@@ -385,6 +385,45 @@ TEST_F(HcclImplTest, ut_SelectAlg_when_broadcast_910C_Expect_ReturnIs_BroadcastM
     std::unique_ptr<BroadCastOperator> operation(new (std::nothrow) BroadCastOperator(algConfigurator.get(), cclBufferManager, dispatcher, topoMatcher));
     ret = operation->SelectAlg("", opParam, algName, newTag);
     EXPECT_TRUE(algName == "BroadcastMeshAivExecutor");
+
+    MOCKER_CPP(&HcclCommunicator::HandleAclGraphFirstOpAivBuff)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::RegisterDfxInfo)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(StarsCounter).stubs().will(returnValue(HCCL_SUCCESS));
+    AivOpArgs opArgs{HcclCMDType::HCCL_CMD_BROADCAST,
+        opParam.inputPtr,
+        opParam.outputPtr,
+        opParam.DataDes.count,
+        opParam.DataDes.dataType,
+        opParam.reduceType,
+        opParam.root,
+        0};
+    AivTopoArgs topoArgs{0, 2};
+    topoArgs.identify = "test";
+    opParam.aivTag = 1;
+    AivResourceArgs resourceArgs {
+        opParam.tag, opParam.stream.ptr(), nullptr, nullptr, 4096, 1, opParam.aivTag
+    };
+    AivAlgArgs algArgs{};
+    algArgs.execTimeOut = 1;
+    algArgs.execTimeOutSet = true;
+    struct AivProfilingInfo aivProfilingInfo;
+    ExtraArgs extraArgs;
+    HcclCacheInfo cacheInfo;
+    cacheInfo.opArgs = opArgs;
+    cacheInfo.topoArgs = topoArgs;
+    cacheInfo.resourceArgs = resourceArgs;
+    cacheInfo.algArgs = algArgs;
+    cacheInfo.profilingInfo = aivProfilingInfo;
+    cacheInfo.extraArgs = extraArgs;
+    cacheInfo.isUseCache = true;
+    implBase->SetClearAivSyncBuf(true);
+    implBase->ExecOpCache(HcclCMDType::HCCL_CMD_BROADCAST, opParam, cacheInfo);
     operation = nullptr;
     GlobalMockObject::verify();
 }
@@ -407,4 +446,41 @@ TEST_F(HcclImplTest, Ut_SplitBsrData_When_countEqualZero_Expect_ReturnIsHCCL_SUC
     hcclCommunicator->SplitBsrData(opParam, isDirectRemoteRank, hostSendRecvInfo, deviceSendRecvInfo);
     EXPECT_EQ(hostSendRecvInfo.size(), 0);
     GlobalMockObject::verify();
+}
+
+TEST_F(HcclImplTest, ut_HcclCommunicator_BuildZeroCopyParamSuccess_When_ZeroCopyLocalBuffer_Is_Not_Nullptr_Expect_Return_Success)
+{
+    MOCKER_CPP(&ZeroCopyMemoryAgent::GetRingBufferAddr).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    EXPECT_NE(hcclCommunicator, nullptr);
+
+    void *fakePtr = (void*)0x12345678; // 给定非空的地址用于打桩控制条件
+    u64 fakeSize = 50;
+    auto deviceMem = DeviceMem(fakePtr, fakeSize);
+    hcclCommunicator->zeroCopyLocalBuffer_ = std::move(deviceMem);
+    EXPECT_EQ(hcclCommunicator->BuildZeroCopyParam(), HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(HcclImplTest, ut_HcclCommunicator_BuildZeroCopyParamFailed_When_ZeroCopyLocalBuffer_Is_Nullptr_Expect_Return_Success)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    EXPECT_NE(hcclCommunicator, nullptr);
+
+    auto deviceMem = DeviceMem(); // 生成空的地址用于打桩控制条件
+    hcclCommunicator->zeroCopyLocalBuffer_ = std::move(deviceMem);
+    EXPECT_EQ(hcclCommunicator->BuildZeroCopyParam(), HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(HcclImplTest, ut_HcclCommunicator_BuildZeroCopyParamFailed_When_GetRingBufferAddr_Failed_Expect_Return_E_INTERNAL)
+{
+    // 控制内部流程失败返回特定返回码
+    MOCKER_CPP(&ZeroCopyMemoryAgent::GetRingBufferAddr).stubs().will(returnValue(HcclResult::HCCL_E_INTERNAL));
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    EXPECT_NE(hcclCommunicator, nullptr);
+
+    void *fakePtr = (void*)0x12345678; // 给定非空的地址用于打桩控制条件
+    u64 fakeSize = 50;
+    auto deviceMem = DeviceMem(fakePtr, fakeSize);
+    hcclCommunicator->zeroCopyLocalBuffer_ = std::move(deviceMem);
+    EXPECT_EQ(hcclCommunicator->BuildZeroCopyParam(), HcclResult::HCCL_E_INTERNAL);
 }

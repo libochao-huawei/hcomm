@@ -119,6 +119,7 @@ enum class ProfTaskType {
     TASK_MULTI_THREAD,
     TASK_LAUNCH_FFTS_TASK,
     TASK_AIV,
+    TASK_DPU_HCCL_INFO, // 用于区分DPU侧上报的HCCL信息和Host侧上报的HCCL信息
 
     TASK_ISET_LOOKUP_RESPONSE,
     TASK_WAIT_SOME,
@@ -172,6 +173,7 @@ enum class ProfTaskType {
 
 const std::map<ProfTaskType, std::string> PROF_TASK_OP_NAME = {
     {ProfTaskType::TASK_HCCL_INFO, "hccl_info"},
+    {ProfTaskType::TASK_DPU_HCCL_INFO, "dpu_hccl_info"},
     {ProfTaskType::TASK_SDMA, "Memcpy"},
     {ProfTaskType::TASK_RDMA, "RDMASend"},
     {ProfTaskType::TASK_REDUCE_INLINE, "Reduce_Inline"},
@@ -282,12 +284,12 @@ public:
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaReduce &paraReduce) override;
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaNotify &paraNotify) override;
     HcclResult Save(u32 streamID, u32 taskID, const TaskParaAiv &paraAiv) override;
-    HcclResult Save(u32 &streamID, u32 &taskID) override;
+    HcclResult Save(u32 &streamID, u32 &taskID, const void *descBuf = nullptr, size_t descBufLen = 0) override;
     HcclResult SaveToLog(const TaskParaHost &paraHost) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaDMA &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaReduce &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaNotify &para) override;
-    HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID) override;
+    HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, const void *descBuf = nullptr, size_t descBufLen = 0) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &paraAiv) override;
 
     static void DumpReportDataInfo(uint32_t type, const MsprofHcclInfo &profInfo);

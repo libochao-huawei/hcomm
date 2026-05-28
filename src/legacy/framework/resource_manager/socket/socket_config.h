@@ -23,6 +23,7 @@ public:
     LinkData          link;
     uint32_t          listeningPort{DEFAULT_LISTENING_PORT};
     const std::string tag;
+    uint32_t          hostNic2DeviceNicMode_; // 0 normal, 1: host(host cpu roce channel) - device(transport ibv)
 
     SocketConfig(RankId remoteRank, const LinkData &link, const std::string &tag)
         : remoteRank(remoteRank), link(link), tag(tag),
@@ -44,16 +45,38 @@ public:
                             link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
     {}
 
+    SocketConfig(const LinkData &link, const std::string &tag, SocketRole role, const uint32_t listenPort)
+        : remoteRank(link.GetRemoteRankId()), link(link), listeningPort(listenPort), tag(tag), role(role),
+        hccpTag(role == SocketRole::SERVER
+                    ? tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
+                    : tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
+    {}
+
     SocketConfig(const LinkData &link, const std::string &tag, bool noRankId)
         : remoteRank(link.GetRemoteRankId()), link(link), tag(tag),
         role(link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT),
         hccpTag(role == SocketRole::SERVER
                     ? tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
-                    : tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
-    {
-        (void)noRankId;
-    }
+                    : tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr()),
+        noRankId(noRankId)
+    {}
 
+    SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag,
+        uint32_t hostNic2DeviceNicMode, const uint32_t myRank, const uint32_t rmtRank):
+        SocketConfig(link, listenPort, tag)
+    {
+        if (!hostNic2DeviceNicMode) {
+            return;
+        }
+        remoteRank = rmtRank;
+        role = myRank < rmtRank ? SocketRole::SERVER : SocketRole::CLIENT;
+        if (role == SocketRole::SERVER) { // server: tag_local_remote
+            hccpTag = tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr();
+        } else { // client: tag_remote_local
+            hccpTag = tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr();
+        }
+        hostNic2DeviceNicMode_ = hostNic2DeviceNicMode;
+    }
 
     SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag)
         : link(link), listeningPort(listenPort), tag(tag)
@@ -66,6 +89,21 @@ public:
                       "_" + to_string(listenPort);
         } else { // client: tag_remote_local
             hccpTag = tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr() + 
+                      "_" + to_string(listenPort);
+        }
+    }
+
+    SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag, const bool isServer)
+        : link(link), listeningPort(listenPort), tag(tag)
+    {
+        remoteRank = link.GetRemoteRankId();
+        role = isServer ? SocketRole::SERVER : SocketRole::CLIENT;
+
+        if (role == SocketRole::SERVER) { // server: tag_local_remote
+            hccpTag = tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr() +
+                      "_" + to_string(listenPort);
+        } else { // client: tag_remote_local
+            hccpTag = tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr() +
                       "_" + to_string(listenPort);
         }
     }
@@ -83,6 +121,9 @@ public:
 private:
     SocketRole role{};
     string     hccpTag;
+
+public:
+    bool       noRankId;
 };
 } // namespace Hccl
 
@@ -106,10 +147,17 @@ template <> class equal_to<Hccl::SocketConfig> {
 public:
     bool operator()(const Hccl::SocketConfig &config, const Hccl::SocketConfig &otherConfig) const
     {
-        return config.remoteRank == otherConfig.remoteRank
-               && config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr()
-               && config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr()
-               && config.tag == otherConfig.tag && config.listeningPort == otherConfig.listeningPort;
+        bool IsOthersSame =
+            config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr() &&
+            config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr() &&
+            config.tag == otherConfig.tag &&
+            config.listeningPort == otherConfig.listeningPort;
+
+        if (config.noRankId && otherConfig.noRankId) {
+            return IsOthersSame;
+        }
+
+        return IsOthersSame && config.remoteRank == otherConfig.remoteRank;
     }
 };
 } // namespace std

@@ -19,6 +19,7 @@
 #include "rma_buffer_lite.h"
 #include "mem_transport_common.h"
 #include "rmt_rma_buf_slice_lite.h"
+#include "task_param.h"
 namespace Hccl {
 
 inline HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
@@ -33,7 +34,7 @@ inline HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
     return reduceTypeMap[reduceOp];
 }
 
-MAKE_ENUM(TransferType, WRITE, READ)
+MAKE_ENUM(TransferType, WRITE, WRITE_REDUCE, WRITE_WITH_NOTIFY, WRITE_REDUCE_WITH_NOTIFY, READ, READ_REDUCE, NOTIFY_RECORD, NOTIFY_WAIT)
 
 class BaseTransportLiteImpl {
 public:
@@ -57,6 +58,14 @@ public:
         return Buffer(0, 0);
     }
 
+    virtual HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite)
+    {
+        (void)addr;
+        (void)size;
+        rmaBufferLite = RmaBufferLite(0, 0, 0, 0);
+        return HCCL_SUCCESS;
+    }
+
     virtual void Post(u32 index, const StreamLite &stream)
     {
         (void)index;
@@ -67,6 +76,13 @@ public:
     {
         (void)index;
         (void)stream;
+    }
+
+    virtual void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
+    {
+        (void)index;
+        (void)stream;
+        (void)timeout;
     }
 
     virtual void Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
@@ -145,6 +161,15 @@ public:
         (void)stream;
     }
 
+    // 自定义算子流程上报task的Callback
+    HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback)
+    {
+        CHK_PTR_NULL(callback);
+        newCallback_ = callback;
+        return HCCL_SUCCESS;
+    }
+protected:
+    std::function<HcclResult(u32, u32, const TaskParam&, u64)> newCallback_{nullptr};
 private:
 };
 

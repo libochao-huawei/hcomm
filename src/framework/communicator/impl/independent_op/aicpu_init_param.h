@@ -15,6 +15,12 @@
 
 constexpr uint32_t HCOMID_MAX_SIZE = 128;
 
+struct DevAicpuCommConfig {
+    bool taskExceptionEnable{true};
+    u32 notifyWaitTimeout{1836};
+    // 如要新增配置类字段，在此处添加
+};
+
 // 自定义算子aicpu通信域公共初始化参数
 struct CommAicpuParam {
     char hcomId[HCOMID_MAX_SIZE];
@@ -25,6 +31,7 @@ struct CommAicpuParam {
     u32 userRank;
     hccl::HDCommunicateParams kfcControlTransferH2DParams;
     hccl::HDCommunicateParams kfcStatusTransferD2HParams;
+    DevAicpuCommConfig commConfig; // 收编通信域配置类变量
 };
 
 #endif

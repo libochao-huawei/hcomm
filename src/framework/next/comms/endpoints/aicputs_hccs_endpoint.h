@@ -14,23 +14,45 @@
 #include <vector>
 #include <string>
 #include "endpoint.h"
+#include "hccl_ip_address.h"
+#include "remote_ipc_rma_buffer.h"
 
 namespace hcomm {
+constexpr uint32_t AICPU_CHANNEL_DEFAULT_PORT = 16666;
+
 /**
  * @note 职责：AICPU_TS通信引擎+HCCS协议的通信设备EndPoint，管理通信设备上下文，以及设备上的注册内存。
  */
-class AicpuTsHccsEndPoint : public Endpoint {
+class AicpuTsHccsEndpoint : public Endpoint {
 public:
-    virtual ~AicpuTsHccsEndPoint() = default;
+    explicit AicpuTsHccsEndpoint(const EndpointDesc &endpointDesc);
 
-    // 注册内存
-    HcclResult RegisterMemory(const std::vector<MemHandle>& memHandles) override;
+    ~AicpuTsHccsEndpoint();
 
-    // 注销内存
-    virtual HcclResult UnregisterMemory(MemHandle memHandle) override;
+    HcclResult Init() override;
+    HcclResult ServerSocketListen(const uint32_t port) override;
+    HcclResult ServerSocketStopListen(const uint32_t port) override;
+    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
+    HcclResult UnregisterMemory(void* memHandle) override;
+    HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;
+    HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
+    HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
 
-    // 获取注册的内存信息
-    virtual HcclResult GetRegisteredMemory(std::vector<MemRegion>& memRegions) override;
+    HcclResult MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo) override;
+    HcclResult MemoryEnableP2P(const EndpointDesc &remoteEndpointDesc);
+    HcclResult MemoryDisableP2P(const EndpointDesc &remoteEndpointDesc);
+    HcclResult MemoryOpenRemoteIpc();
+    HcclResult MemoryCloseRemoteIpc();
+    HcclResult GetRemoteIpcRmaBuffer(std::vector<HcclMem> &remoteIpcRmaBufferVec);
+    HcclResult GetRemoteIpcRmaBufferEx(std::vector<HcclMemEx> &remoteIpcRmaBufferVecEx);
+    HcclResult GetLocalIpcRmaBufferEx(std::vector<HcclMemEx> &localIpcRmaBufferVecEx);
+
+private:
+    u32 serverPort_{AICPU_CHANNEL_DEFAULT_PORT};
+    hccl::HcclIpAddress devIpAddr_;
+    bool serverListened_{false};
+    HcclNetDevCtx netDevCtx_{nullptr};
 };
 }
 #endif // AICPUTS_HCCS_ENDPOINT_H

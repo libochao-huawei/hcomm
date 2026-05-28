@@ -38,6 +38,7 @@
 #include "hcom_private_v2.h"
 #include "comm_topo_desc.h"
 #include "hcom_common.h"
+#include "hcom_pub.h"
 
 using namespace std;
 using namespace hccl;
@@ -170,6 +171,7 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
 
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            CheckCcuMc2CompatMode();
             CHK_RET(HcomInitByStringV2(rankTableM, identify));
             s32 myRank = std::atoi(identify);
             Hccl::RankId rank = static_cast<Hccl::RankId>(myRank);
@@ -1839,20 +1841,21 @@ HcclResult HcomExecSelectAlg(s64 comm, const char *group, HcclCMDType opType, u6
 }
 
 HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, HcclDataType dataType, HcclReduceOp op,
-    HcclCMDType opType, int32_t aivCoreLimit, bool &ifAiv, char *algName)
+    HcclCMDType opType, int32_t aivCoreLimit, bool *ifAiv, char *algName)
 {
-    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName));
+    CHK_PTR_NULL(ifAiv);
+    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, opType, count, dataType, op, aivCoreLimit, *ifAiv, algName));
     HcclWorkflowMode lastWorkflowMode = GetWorkflowMode();
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
     std::string tempAlgName;
     if (comm != static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
         hccl::hcclComm* hcclHcomComm = reinterpret_cast<hccl::hcclComm*>(comm);
-        CHK_RET(hcclHcomComm->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
+        CHK_RET(hcclHcomComm->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, *ifAiv, tempAlgName));
     } else {
         std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
         std::shared_ptr<hccl::hcclComm> hcclComm;
         CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
-        CHK_RET(hcclComm->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
+        CHK_RET(hcclComm->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, *ifAiv, tempAlgName));
     }
     int32_t sret = memcpy_s(algName, ALG_NAME_MAX_LEN, tempAlgName.c_str(), (tempAlgName.length() + 1));
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[HcomSelectAlg][algName]memcpy failed. ret[%d],"
@@ -2948,6 +2951,14 @@ __attribute__((constructor)) void CallBackInit()
         HcomDestroyOneDeviceHeterog);
 }
 
+HcclResult HcomGetGroupNameByOpBase(s64 opBaseHcom, char **groupname) 
+{   
+    hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
+    CHK_PTR_NULL(hcclComm);
+    *groupname = const_cast<char *>(hcclComm->GetIdentifier().c_str());
+    return HCCL_SUCCESS;
+}
+
 HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname) 
 {   
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
@@ -3043,6 +3054,8 @@ HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResRe
     ret = SalGetDataTypeSize(hcomOpParam->dataType, dataTypeSize);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[GetOp][WorkspaceMemSize]op[%s]: get data size failed. ret[%d]",
         sCollectiveType.c_str(), ret), ret);
+
+    CHK_RET(HcomCheckCount(hcomOpParam->count));
 
     u64 opDataSize = dataTypeSize * hcomOpParam->count;
 
@@ -4224,24 +4237,5 @@ HcclResult HcomTbeMemClean(int64_t addrList[], int64_t sizeList[], uint32_t coun
     aclrtStream stream, int32_t deviceLogicId)
 {
     CHK_RET(HcclTbeMemClean(addrList, sizeList, count, stream,deviceLogicId));
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcomGetHcclComm(int64_t comm, std::string &group)
-{   
-    hccl::hcclComm* hcclComm = nullptr;
-    if (comm == static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
-        std::shared_ptr<hccl::hcclComm> hcclCommPtr;
-        HcclResult ret = HcomGetCommByGroup(group.c_str(), hcclCommPtr);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_WARNING("%s HcomGetCommByGroup fail, skip", __func__), HCCL_SUCCESS);
-        hcclComm = hcclCommPtr.get();
-    } else {
-        hcclComm = reinterpret_cast<hccl::hcclComm*>(comm);
-        CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("%s comm is null, skip", __func__), HCCL_SUCCESS);
-        group = hcclComm->GetIdentifier();
-    }
-    CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("%s hcclComm is null, skip", __func__), HCCL_SUCCESS);
-
-    HCCL_INFO("%s success, comm:%llu, group:%s, hcclComm:%p", __func__, comm, group.c_str(), hcclComm);
     return HCCL_SUCCESS;
 }

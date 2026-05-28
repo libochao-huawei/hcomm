@@ -64,7 +64,7 @@ public:
     HcclResult SetTaskKillDone();
     HcclResult CleanTaskKillState() const;
 
-    std::array<bool, MAX_CCU_IODIE_NUM> GetDieEnableFlags() const;
+    const std::array<bool, MAX_CCU_IODIE_NUM> &GetDieEnableFlags() const;
 
 private:
     static constexpr uint32_t INVALID_DEV_ID = 0xFFFFFFFF;
@@ -90,6 +90,7 @@ private:
     using ImportOutParamPair = std::pair<RdmaHandle, HrtRaUbJettyImportedOutParam>;
     std::unordered_map<uint8_t, std::vector<ImportOutParamPair>> importedOutParamMap{};
     std::unordered_map<IpAddress, TpInfo> tpInfoMap{};
+    std::unordered_map<IpAddress, TpAttrInfo> tpAttrInfoMap{};
     std::unordered_map<IpAddress, uint32_t> psnMap{};
 
     // CCU Task Kill相关状态
@@ -111,6 +112,7 @@ private:
         const vector<JettyInfo> &jettyInfos);
     TpInfo RequestNewTpInfo(const IpAddress &srcIpAddr, const IpAddress &dstIpAddr) const;
     TpInfo GetTpInfo(const IpAddress &ipAddr);
+    TpAttrInfo GetLoopTpAttr(const IpAddress &ipAddr, const TpHandle tpHandle);
     uint32_t GetPsn(const IpAddress &ipAddr);
     HcclResult ConfigLoopChannel(const uint8_t dieId, const IpAddress &ipAddr,
         const ChannelInfo &channelInfo);

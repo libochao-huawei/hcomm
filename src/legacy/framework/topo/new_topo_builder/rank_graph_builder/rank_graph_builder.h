@@ -53,6 +53,7 @@ private:
                         const shared_ptr<NetInstance::Fabric> &fabNode, const vector<shared_ptr<PhyTopo::Link>> &links);
     void AddTopoDescFabricInfo();
     void UpdateTopoInstForMyRankOnly();
+    const RankLevelInfo &GetRankLevelInfoByNetLayer(const NewRankInfo &rankInfo, u32 netLayer) const;
     // 新增创建NetInstance
     std::shared_ptr<NetInstance> GetNetInstance(const RankLevelInfo &levelInfo);
     std::shared_ptr<NetInstance> CreateNetInstance(const RankLevelInfo &levelInfo);
@@ -61,7 +62,8 @@ private:
 std::map<PlaneId, FabricId> GetFabricsFromAddrInfo(const std::vector<AddressInfo>& rankAddrs);
 std::vector<shared_ptr<PhyTopo::Link>> GetPeer2NetPhyLinks(u32 netLayer, LocalId localId);
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
-    std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, const std::map<std::string, IpAddress>& portAddrMap, const TopoType topoType, const u32 topoInstId);
+    std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, const std::map<std::string, IpAddress>& portAddrMap,
+    const TopoType topoType, const u32 topoInstId, u32 localDeviceId);
 std::vector<shared_ptr<NetInstance::Link>> ConstructLinks(shared_ptr<NetInstance::Peer> srcPeer, 
     shared_ptr<NetInstance::Peer> dstPeer, std::vector<std::shared_ptr<NetInstance::ConnInterface>> sourceIfaces,
     std::vector<std::shared_ptr<NetInstance::ConnInterface>> targetIfaces, shared_ptr<PhyTopo::Link> phyLink);

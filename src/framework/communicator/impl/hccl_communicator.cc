@@ -41,6 +41,7 @@
 #include "../nslbdp/hccl_nslbdp.h"
 #include "dispatcher_ctx.h"
 #include "launch_device.h"
+
 using namespace std;
 
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -61,6 +62,7 @@ namespace hccl
     constexpr u32 AICPU_RETRY_LINKROCE_BACKUP = 1;
     constexpr u32 SINGLE_PROCESS_MIN_PORT = 1024;
     constexpr u32 SINGLE_PROCESS_MAX_PORT = 65535;
+
     enum TransferMemInfoIdx
     {
         TRANSFER_MEM_INFO_KEY_IDX = 0,
@@ -338,7 +340,7 @@ namespace hccl
         std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
         transportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
             cclBufferManager_, socketManager_, dispatcher_, notifyPool_,
-            rankInfoList_, userRank_, identifier_,
+            rankInfoList_, userRank_, identifier_, commName_,
             deviceLogicId_, nicDeployment_, isHaveCpuRank_,
             static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
             isUseRankPort_, isUsedRdmaLevel0_, nicRanksPorts, vnicRanksPorts, useSuperPodMode_,
@@ -351,7 +353,7 @@ namespace hccl
         CHK_PTR_NULL(ctx);
         indptOpTransportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
             cclBufferManager_, socketManager_, ctx->GetDispatcher(), notifyPool_,
-            rankInfoList_, userRank_, identifier_,
+            rankInfoList_, userRank_, identifier_, commName_,
             deviceLogicId_, nicDeployment_, isHaveCpuRank_,
             static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
             isUseRankPort_, isUsedRdmaLevel0_, nicRanksPorts, vnicRanksPorts, useSuperPodMode_,
@@ -616,7 +618,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    bool HcclCommunicator::IsEnableRoce()
+bool HcclCommunicator::IsEnableRoce()
     {
         return attrCollector_.IsEnableRoce();
     }
@@ -854,7 +856,8 @@ namespace hccl
                                                   std::shared_ptr<HDCommunicate> &statusD2H)
     {
         HCCL_INFO("[HcclCommunicator][%s]start to destroy the aicpu comm, group[%s].", __func__, identifier_.c_str());
-        if (deviceType_ != DevType::DEV_TYPE_910_93 && !(deviceType_ == DevType::DEV_TYPE_910B && GetAicpuUnfoldFlag()))
+        if (deviceType_ != DevType::DEV_TYPE_910_93 &&
+            !(deviceType_ == DevType::DEV_TYPE_910B && GetAicpuUnfoldFlag()) && !myRankConnectMode_)
         {
             HCCL_INFO("[HcclCommunicator][%s]Device type[%d] no needs to destroy the aicpu comm.", __func__,
                       deviceType_);
@@ -2332,6 +2335,7 @@ namespace hccl
     HcclResult HcclCommunicator::ReAllocTransports(const std::string &tag, const std::string &newTag)
     {
         HcclResult ret = HCCL_SUCCESS;
+        HCCL_INFO("[%s] alloc tag[%s] transports", __func__, newTag.c_str());
 
         AlgResourceResponse &algResResponse = resMap_[newTag];
         DeviceMem expMem = cclBufferManager_.GetCommCCLBuffer();
@@ -2350,6 +2354,7 @@ namespace hccl
 
         if (IsEnableBackupLink())
         {
+            HCCL_INFO("[%s] alloc tag[%s] backup transports", __func__, newTag.c_str());
             // 超节点 && level2支持重执行 && Aicpu：备用Transport资源 重建链
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             ret = transportManager_->Alloc(tag, transMem, algResResponse.opTransportResponseBackUp, true, true);
@@ -2522,7 +2527,7 @@ namespace hccl
     HcclResult HcclCommunicator::GetTransportCqeErrors(const HcclNetDevCtx netDevCtx,
                                                        std::vector<ErrCqeInfo> &infos, u32 &num)
     {
-        if (netDevCtx == nullptr || linkResMap_.empty())
+        if (netDevCtx == nullptr)
         {
             return HCCL_SUCCESS;
         }
@@ -2543,8 +2548,11 @@ namespace hccl
             }
             else
             {
-                HCCL_RUN_WARNING("[GetTransportCqeErrors]get err failed, transport is not find, localIp[%s], remoteIp[%s]",
-                                 localIp.GetReadableAddress(), info.second.remoteIp.GetReadableAddress());
+                LinkInfo linkInfo;
+                linkInfo.localDevicePhyId = -1;
+                linkInfo.remoteDevicePhyId = -1;
+                infos.push_back(ErrCqeInfo(info.second, linkInfo, qpn));
+                HCCL_RUN_WARNING("[GetTransportCqeErrors]Transport linkInfo was not saved, only print CqeInfo");
             }
         }
         num = infos.size();

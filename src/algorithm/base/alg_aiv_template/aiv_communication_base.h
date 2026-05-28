@@ -41,7 +41,10 @@ static const struct FunLevelKType kernel_name##_kernel_type_section __attribute_
     func(uint32_t); \
     func(int8_t); \
     func(uint8_t); \
-    func(bfloat16_t)
+    func(bfloat16_t); \
+    func(int64_t); \
+    func(uint64_t); \
+    func(double)
     
 constexpr uint32_t MAX_RANK_SIZE = 16; // server内最大卡数
 constexpr uint32_t MAX_RANK_SIZE_A3 = 768; // 超节点内最大卡数
@@ -165,9 +168,6 @@ hiddenInput, input, output
 hiddenInput
 
 constexpr uint64_t AIV_FLAG_BUFFER_SIZE = 3 * 1024 * 1024; // aiv算子的flag区域大小
-constexpr uint64_t INFO_EVEN_BUFFER_OFFSET = 3 * 1024 * 1024; // aiv算子偶数tag存放AIV_INFO区域偏移
-constexpr uint64_t INFO_ODD_BUFFER_OFFSET = 4 * 1024 * 1024; // aiv算子奇数tag存放AIV_INFO区域偏移
-constexpr uint64_t LOG_LEVEL_OFFSET = 2 * 1024 * 1024; // 存放AIV_INFO日志环境变量的偏移
 constexpr uint64_t CLEAR_BUFFER_OFFSET = 1024 * 1024; // 用于清空的aiv buffer的偏移
 constexpr uint64_t SYNC_BUFFER_OFFSET = 2 * 1024 * 1024; // 用于sync的aiv buffer的偏移
 constexpr uint64_t BUFFER_AREA = 1024 * 1024; // aiv算子的单独功能flag区域大小
@@ -323,17 +323,22 @@ uint32_t devType = args->devType; GM_ADDR headCountMem = args->headCountMem; GM_
 GM_ADDR addOneMem = args->addOneMem; uint32_t counterMemSize = args->counterMemSize; bool isEnableCounter = args->isEnableCounter; \
 uint32_t deterministic = args->deterministic; uint64_t rmaInfo = args->rmaInfo
 
-// sk 绑定函数
-#define SuperKernelBind(kernel_name) \
-SK_BIND(kernel_name, 0, kernel_name##_1, kernel_name##_2, kernel_name##_3, kernel_name##_4)
+// sk 绑定函数 A2
+#define SuperKernelBindA2(kernel_name) \
+extern "C" __sk__ void kernel_name##_1(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_2(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_3(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_4(SK_BIND_FUNC_ARGS); \
+SK_BIND(kernel_name, 8, kernel_name##_1, kernel_name##_2, kernel_name##_3, kernel_name##_4)
 
 // A2 sk 导出函数
-#define SK_BIND_FUNC_DEF_A2(kernel_name, postfix) \
+#define _SK_BIND_FUNC_DEF_A2(kernel_name, postfix) \
 extern "C" __sk__ void kernel_name##_##postfix(SK_BIND_FUNC_ARGS) \
 { \
     CONVERT_SK_PARAM_TO_KERNEL_ARGS_A2; \
     kernel_name##_inner(KERNEL_ARGS_CALL); \
 }
+#define SK_BIND_FUNC_DEF_A2(kernel_name, postfix) _SK_BIND_FUNC_DEF_A2(kernel_name, postfix)
 
 // A2 Global 导出函数
 #define GLOBAL_FUNC_DEF_A2(kernel_name) \
@@ -381,8 +386,6 @@ public:
         pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
         countOffset = DOUBLE * pingpongOffset;
         seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
-        logLevel_ = GetLogLevel();
-        uint64_t offset = (logLevel_ == 1) ? (tag_ & 1 ? INFO_EVEN_BUFFER_OFFSET : INFO_ODD_BUFFER_OFFSET) : INFO_EVEN_BUFFER_OFFSET;
 
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_4);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
@@ -401,10 +404,6 @@ public:
 
         pipe.InitBuffer(flagInQue, AIV_PING_PONG_FACTOR_TWO, UB_FLAG_SIZE);
         InitOpCounter(headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter);
-        if (tag_ == 1) {
-            ClearSyncBuf();
-            pipe_barrier(PIPE_ALL);
-        }
     }
 
     __aicore__ inline void Init(GM_ADDR hiddenInput, uint64_t threshold, bool useDoubleBuffer = false)
@@ -622,8 +621,6 @@ public:
  
     __aicore__ inline void ClearSyncBuf();
 
-    __aicore__ inline int32_t GetLogLevel();
-
     __aicore__ inline void InitOpCounter(GM_ADDR headCountMem, GM_ADDR tailCountMem, GM_ADDR addOneMem, uint32_t counterMemSize,
         bool isEnableCounter)
     {
@@ -636,7 +633,7 @@ public:
 
     __aicore__ inline void HeadCounter()
     {
-        if (GetBlockIdx() == 0 && isEnableCounter_) {
+        if (blockIdx_ == 0 && isEnableCounter_) {
             CpGM2GM((__gm__ int32_t*)headCountMem_, (__gm__ int32_t*)addOneMem_, counterMemSize_ / sizeof(int32_t), true,
                 HcclReduceOp::HCCL_REDUCE_SUM);
         }
@@ -644,7 +641,7 @@ public:
 
     __aicore__ inline void TailCounter()
     {
-        if (GetBlockIdx() == 0 && isEnableCounter_) {
+        if (blockIdx_ == 0 && isEnableCounter_) {
             CpGM2GM((__gm__ int32_t*)tailCountMem_, (__gm__ int32_t*)addOneMem_, counterMemSize_ / sizeof(int32_t), true,
                 HcclReduceOp::HCCL_REDUCE_SUM);
         }
@@ -664,7 +661,7 @@ public:
     uint64_t len_;
     int32_t tag_;
     int32_t numBlocks_;
-    int32_t logLevel_;
+    uint32_t blockIdx_ = GetBlockIdx(); // 在构造函数中初始化，以免漏初始化
 
     bool useDoubleBuffer_;
 
@@ -703,7 +700,7 @@ __aicore__ inline void AivCommBase::Barrier(uint32_t step)
     // 用10个flag
     uint32_t flagOffset = 2 * 1024 * 1024 + (step % 2) * FLAG_SIZE * rankSize_;
     __gm__ int32_t *ctrlFlagsGM;
-    if (GetBlockIdx() == 0) {
+    if (blockIdx_ == 0) {
         pipe_barrier(PIPE_ALL);
         for (int i = 1; i < rankSize_; i++) {
             uint32_t targetRank = (rank_ + i) % rankSize_; 
@@ -730,7 +727,7 @@ __aicore__ inline void AivCommBase::ClearFlag()
     // 用10个flag
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_]);
     __gm__ int32_t *emtpyGM = (__gm__ int32_t *)(GM_OUT[rank_] + CLEAR_BUFFER_OFFSET);
-    if (GetBlockIdx() == 0) {
+    if (blockIdx_ == 0) {
         CpGM2GM(ctrlFlagsGM, emtpyGM, BUFFER_AREA / sizeof(int32_t));
     }
 }
@@ -739,7 +736,7 @@ __aicore__ inline void AivCommBase::BlockSync()
 {
     uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * numBlocks_;
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset);
-    if (GetBlockIdx() == 0) {
+    if (blockIdx_ == 0) {
         //通知其他核
         pipe_barrier(PIPE_ALL);
         for (int i = 1; i < numBlocks_; i++) {
@@ -748,8 +745,8 @@ __aicore__ inline void AivCommBase::BlockSync()
         pipe_barrier(PIPE_ALL);
     } else {
         //接收通知并清零
-        WaitSignalValue(ctrlFlagsGM + GetBlockIdx() * FLAG_SIZE, localCheckTensor, 1);
-        SetSignalValue(ctrlFlagsGM +  GetBlockIdx() * FLAG_SIZE, localSetTensor, 0);
+        WaitSignalValue(ctrlFlagsGM + blockIdx_ * FLAG_SIZE, localCheckTensor, 1);
+        SetSignalValue(ctrlFlagsGM +  blockIdx_ * FLAG_SIZE, localSetTensor, 0);
         pipe_barrier(PIPE_ALL);
     }
 }
@@ -761,16 +758,6 @@ __aicore__ inline void AivCommBase::ClearSyncBuf()
     ClearFlag();
     Barrier(DOUBLE);
     BlockSync();
-}
-
-__aicore__ inline int32_t AivCommBase::GetLogLevel()
-{
-    #ifndef OPEN_HCCL_TEST
-    int32_t tmpLogLevel = *((__gm__ int32_t*)(GM_OUT[rank_] + LOG_LEVEL_OFFSET - sizeof(int32_t)));
-    return tmpLogLevel;
-    #else
-    return 0;
-    #endif
 }
 
 __aicore__ inline uint64_t AivCommBase::CeilDiv(uint64_t a, uint64_t b)

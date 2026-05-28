@@ -36,6 +36,9 @@ protected:
 
     virtual void SetUp()
     {
+        MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
+        MOCKER_CPP(&RtsqBase::QuerySqDepth).stubs().with(any()).will(returnValue(static_cast<u32>(AC_SQE_MAX_CNT)));
+        MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().will(returnValue(static_cast<u32>(0)));
         std::cout << "A Test case in TaskExceptionFuncTest SetUp" << std::endl;
     }
 
@@ -44,6 +47,8 @@ protected:
         std::cout << "A Test case in TaskExceptionFuncTest TearDown" << std::endl;
         GlobalMockObject::verify();
     }
+
+    u8  mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
 };
 
 TEST_F(TaskExceptionFuncTest, SetDevId_ShouldSetDevId_WhenCalled)
@@ -63,9 +68,6 @@ TEST_F(TaskExceptionFuncTest, RegisterCallback_ShouldRegisterCallback_WhenCalled
 
 TEST_F(TaskExceptionFuncTest, Register_ShouldRegisterStreamLite_WhenCalled)
 {
-    // Mock StreamLite
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().will(returnValue(static_cast<u64>(0)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().will(returnValue(static_cast<u32>(0)));
     std::vector<char> uniqueId{'0', '0', '0'};
     StreamLite streamLite(uniqueId);
 
@@ -75,9 +77,6 @@ TEST_F(TaskExceptionFuncTest, Register_ShouldRegisterStreamLite_WhenCalled)
 
 TEST_F(TaskExceptionFuncTest, UnRegister_ShouldUnRegisterStreamLite_WhenCalled)
 {
-    // Mock StreamLite
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().will(returnValue(static_cast<u64>(0)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().will(returnValue(static_cast<u32>(0)));
     std::vector<char> uniqueId{'0', '0', '0'};
     StreamLite streamLite(uniqueId);
 
@@ -120,11 +119,12 @@ TEST_F(TaskExceptionFuncTest, StringLogicCqReportInfo_ShouldReturnCorrectString_
     EXPECT_EQ(instance.StringLogicCqReportInfo(report), "streamId :1 taskId :2 errorCode :3 errorType :33(pre_p/post_p error) sqeType :5 sqId :6 sqHead :7 matchFlag :0 dropFlag :1 errorBit :0 accError :1");
 
     report.errorType = 0b1;
+    report.sqeType = 9; // sqeType等于9时代表UBDMA类型，按照UB格式解析errorCode
     report.errorCode = 0x4;
-    EXPECT_EQ(instance.StringLogicCqReportInfo(report), "streamId :1 taskId :2 errorCode :4(Transaction Retry Counter Exceeded) errorType :1(exception) sqeType :5 sqId :6 sqHead :7 matchFlag :0 dropFlag :1 errorBit :0 accError :1");
+    EXPECT_EQ(instance.StringLogicCqReportInfo(report), "streamId :1 taskId :2 errorCode :4(Transaction Retry Counter Exceeded) errorType :1(exception) sqeType :9 sqId :6 sqHead :7 matchFlag :0 dropFlag :1 errorBit :0 accError :1");
 
     report.errorCode = 0xF;
-    EXPECT_EQ(instance.StringLogicCqReportInfo(report), "streamId :1 taskId :2 errorCode :15(Reserved) errorType :1(exception) sqeType :5 sqId :6 sqHead :7 matchFlag :0 dropFlag :1 errorBit :0 accError :1");
+    EXPECT_EQ(instance.StringLogicCqReportInfo(report), "streamId :1 taskId :2 errorCode :15(Reserved) errorType :1(exception) sqeType :9 sqId :6 sqHead :7 matchFlag :0 dropFlag :1 errorBit :0 accError :1");
 }
 
 TEST_F(TaskExceptionFuncTest, getTrailingZeros_ShouldReturnCorrectCount_WhenCalled)
@@ -151,9 +151,6 @@ TEST_F(TaskExceptionFuncTest, IsExceptionCqe_ShouldReturnFalse_WhenErrorTypeIsNo
 
 TEST_F(TaskExceptionFuncTest, ShouldContinueOnWaitTimeout)
 {
-    // Mock StreamLite
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().will(returnValue(static_cast<u64>(0)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().will(returnValue(static_cast<u32>(0)));
     std::vector<char> uniqueId{'0', '0', '0'};
     StreamLite streamLite(uniqueId);
 
@@ -165,9 +162,6 @@ TEST_F(TaskExceptionFuncTest, ShouldContinueOnWaitTimeout)
 
 TEST_F(TaskExceptionFuncTest, ShouldContinueOnNonNoneError)
 {
-    // Mock StreamLite
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().will(returnValue(static_cast<u64>(0)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().will(returnValue(static_cast<u32>(0)));
     std::vector<char> uniqueId{'0', '0', '0'};
     StreamLite streamLite(uniqueId);
 
@@ -179,9 +173,6 @@ TEST_F(TaskExceptionFuncTest, ShouldContinueOnNonNoneError)
 
 TEST_F(TaskExceptionFuncTest, ShouldContinueWhenReportNumError)
 {
-    // Mock StreamLite
-    MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().will(returnValue(static_cast<u64>(0)));
-    MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().will(returnValue(static_cast<u32>(0)));
     std::vector<char> uniqueId{'0', '0', '0'};
     StreamLite streamLite(uniqueId);
 

@@ -22,6 +22,7 @@
 #include "rdma_handle_manager.h"
 #include "tp_manager.h"
 #include "hccp_async.h"
+#include "env_config/env_config.h"
 #undef protected
 #undef private
 #include "hccp_async_ctx.h"
@@ -909,12 +910,19 @@ TEST_F(DevUbConnectionTest, ctp_import_test)
 }
 
 constexpr uint64_t expectSqBuffVa = 10;
-int RaCtxQpCreateAsync_stub(void *ctxHandle, struct QpCreateAttr *attr,
-    struct QpCreateInfo *info, void **qpHandle, void **reqHandle)
+RequestHandle RaUbCreateJettyAsync_stub(const RdmaHandle handle, const HrtRaUbCreateJettyParam &in,
+    vector<char_t> &out, void *&jettyHandle)
 {
-    *reqHandle = reinterpret_cast<void *>(0x12345678);
-    info->ub.sqBuffVa = expectSqBuffVa;
-    return 0;
+    struct QpCreateInfo info;
+    info.ub.sqBuffVa = expectSqBuffVa;
+    info.ub.id = 1;
+    info.key.size = 0;
+    info.key.value[0] = 0;
+    info.ub.dbAddr = 0;
+    out.resize(sizeof(info));
+    memcpy(out.data(), &info, sizeof(info));
+    jettyHandle = reinterpret_cast<void *>(0x12345678ULL);
+    return static_cast<RequestHandle>(0x12345678ULL);
 }
 TEST_F(DevUbConnectionTest, Ut_CreateJetty_When_CorrectParams_ReturnIsOk)
 {
@@ -927,10 +935,34 @@ TEST_F(DevUbConnectionTest, Ut_CreateJetty_When_CorrectParams_ReturnIsOk)
     std::string tag = "test";
 
     // When
-    MOCKER(RaCtxQpCreateAsync).stubs().will(invoke(RaCtxQpCreateAsync_stub));
+    MOCKER(RaUbCreateJettyAsync).stubs().will(invoke(RaUbCreateJettyAsync_stub));
     DevUbCtpConnection devUbCtpConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
 
     // Then
+    devUbCtpConn.CreateJetty(false);
     devUbCtpConn.SetJettyInfo();
     EXPECT_EQ(devUbCtpConn.sqBuffVa, expectSqBuffVa);
+}
+
+TEST_F(DevUbConnectionTest, Ut_Describe_Tp_Mode)
+{
+    // construct DevUbConnection
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 10, 11, 10, 11);
+    linkData.localAddr_ = IpAddress("10.0.0.1");
+    linkData.remoteAddr_ = IpAddress("10.0.0.2");
+    linkData.linkProtocol_ = LinkProtocol::UB_TP;
+    std::string tag = "test";
+
+    DevUbTpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+
+    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    std::string testDfx = "";
+    HcclResult ret = devUbConnection.Describe(testDfx);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
 }

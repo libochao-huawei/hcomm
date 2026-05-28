@@ -9,10 +9,17 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     roce_mem.cc
+    aicpu_ts_roce_mem.cc
     urma_mem.cc
     ub_mem.cc
+    hccs_reged_mem_mgr.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()

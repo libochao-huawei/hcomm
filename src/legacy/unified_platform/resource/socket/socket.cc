@@ -12,6 +12,7 @@
 
 #include "sal.h"
 #include "socket_exception.h"
+#include "network_api_exception.h"
 
 namespace Hccl {
 
@@ -30,8 +31,9 @@ Socket::~Socket()
 void Socket::Listen()
 {
     HCCL_INFO("[Socket::%s] listen start, listenPort[%u]", __func__, listenPort);
-    RaSocketListenParam param(socketHandle, listenPort);
-    HrtRaSocketListenOneStart(param);
+    HrtNetworkMode netMode = nicType == NicType::HOST_NIC_TYPE ? HrtNetworkMode::PEER : HrtNetworkMode::HDC;
+    RaSocketListenParam param(socketHandle, listenPort, localIp);
+    HrtRaSocketListenOneStart(param, netMode);
     isListening = true;
     socketStatus = SocketStatus::LISTENING;
 }
@@ -39,8 +41,9 @@ void Socket::Listen()
 bool Socket::Listen(u32 &port)
 {
     HCCL_INFO("[Socket::%s] trying to listen on port[%u]", __func__, port);
-    RaSocketListenParam param(socketHandle, port);
-    bool ret = HrtRaSocketTryListenOneStart(param);
+    HrtNetworkMode netMode = nicType == NicType::HOST_NIC_TYPE ? HrtNetworkMode::PEER : HrtNetworkMode::HDC;
+    RaSocketListenParam param(socketHandle, port, localIp);
+    bool ret = HrtRaSocketTryListenOneStart(param, netMode);
     CHK_PRT_RET(!ret, HCCL_INFO("[Socket::%s] socket[%s] listen failed, port[%u] is in use",
                                  __func__, Describe().c_str(), port), ret);
 
@@ -67,6 +70,14 @@ void Socket::Connect()
     socketStatus = SocketStatus::CONNECTING;
 }
 
+void Socket::PrintErrorSocketInfo()
+{
+    HCCL_ERROR("Socket::GetStatus failed.");
+    HCCL_ERROR("Please check if env HCCL_SOCKET_IFNAME is set correctly, "
+               "which can be verified by checking localIp and remoteIp in socket info:");
+    HCCL_ERROR("%s", Describe().c_str());
+}
+
 SocketStatus Socket::GetStatus()
 {
     if (socketStatus == SocketStatus::OK) {
@@ -75,7 +86,13 @@ SocketStatus Socket::GetStatus()
     }
 
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
-    auto result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param);
+    RaSocketFdHandleParam result(nullptr, 0);
+    TRY_CATCH_PROCESS_THROW(
+        NetworkApiException,
+        result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param),
+        "Socket::GetStatus failed",
+        PrintErrorSocketInfo()
+    );
 
     fdHandle = result.fdHandle;
 
@@ -112,11 +129,21 @@ bool Socket::ISend(void *data, u64 size, u64& compSize) const
     return HrtRaSocketNonBlockSend(fdHandle, data, size, &compSize);
 }
 
+HcclResult Socket::ISendWithHeart(void *data, u64 size, u64& compSize) const
+{
+    return HrtRaSocketNonBlockSendHeart(fdHandle, data, size, &compSize);
+}
+
+HcclResult Socket::IRecvWithHeart(void *data, u64 size, u64& compSize) const
+{
+    return HrtRaSocketNonBlockRecvHeart(fdHandle, data, size, &compSize);
+}
+
 void Socket::Destroy()
 {
     isDestroyed = true;
-    StopListen();
-    Close();
+    EXECEPTION_CATCH(StopListen(), return);
+    EXECEPTION_CATCH(Close(), return);
 }
 
 void Socket::Close()
@@ -131,7 +158,7 @@ void Socket::Close()
 void Socket::StopListen()
 {
     if (isListening) {
-        RaSocketListenParam param(socketHandle, listenPort);
+        RaSocketListenParam param(socketHandle, listenPort, localIp);
         HrtRaSocketListenOneStop(param);
         isListening = false;
     }
@@ -365,7 +392,8 @@ void Socket::GetOneSocket()
 {
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
     
-    auto fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param);
+    RaSocketFdHandleParam fdHandleParam(nullptr, 0);
+    EXECEPTION_CATCH(fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param), return);
     // socket status:0 not connected 1:connected 2:connect timeout 3:connecting
     if (fdHandleParam.status == SOCKET_CONNECTED) {
         // sockete 准备好时，可以读取信息
@@ -388,8 +416,10 @@ void Socket::GetOneSocket()
 
 void Socket::ListenAsync()
 {
-    RaSocketListenParam param(socketHandle, listenPort);
-    reqHandle = RaSocketListenOneStartAsync(param);
+    listenInfo_ = std::make_unique<SocketListenInfoT>();
+    listenInfo_->socketHandle = socketHandle;
+    listenInfo_->port = listenPort;
+    reqHandle = RaSocketListenOneStartAsync(listenInfo_.get());
     socketStatus = SocketStatus::LISTEN_STARTING;
 }
 

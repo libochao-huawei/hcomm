@@ -11,9 +11,9 @@
 #define private public
 #define protected public
 
-#include "ccu_res_batch_allocator.h"
+#include "comms/ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_pfe_cfg_mgr.h"
-#include "ccu_res_specs.h"
+#include "comms/ccu/ccu_device/ccu_res_specs.h"
 #include "ccu_comp.h"
 
 #include "hcomm_adapter_hccp.h"
@@ -93,6 +93,9 @@ void MockCcuNetworkDeviceDefault(int32_t devPhyId)
     eidInfo.commAddr.type = CommAddrType::COMM_ADDR_TYPE_IP_V4;
     eidInfo.commAddr.addr.s_addr = 469762271;
     fakeEidInfos.push_back(eidInfo);
+
+    MOCKER(hcomm::HccpGetUboeFlagEnable).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hcomm::HccpCheckUboeSupported).stubs().will(returnValue(false));
 
     MOCKER(hcomm::RaGetDevEidInfos)
         .stubs()

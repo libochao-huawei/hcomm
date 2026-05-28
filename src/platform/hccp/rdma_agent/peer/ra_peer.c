@@ -20,6 +20,7 @@
 #include "ra_rs_comm.h"
 #include "ra_rs_err.h"
 #include "rs.h"
+#include "ra_peer_nda.h"
 #include "ra_peer.h"
 #include "rs_common_inner.h"
 
@@ -590,8 +591,8 @@ int RaPeerMrDereg(struct RaQpHandle *qpPeer, struct MrInfoT *info)
 
 int RaPeerRegisterMr(struct RaRdmaHandle *rdmaPeer, struct MrInfoT *info, void **mrHandle)
 {
-    int ret;
     struct RdmaMrRegInfo mrRegInfo = {0};
+    int ret;
 
     mrRegInfo.addr = info->addr;
     mrRegInfo.len = info->size;
@@ -612,8 +613,8 @@ int RaPeerDeregisterMr(struct RaRdmaHandle *rdmaPeer, void *mrHandle)
     int ret;
 
     RsSetCtx(rdmaPeer->rdevInfo.phyId);
-    ret = RsDeregisterMr(mrHandle);
-    if (ret) {
+    ret = RsDeregisterMr(rdmaPeer->rdevInfo.phyId, rdmaPeer->rdevIndex, mrHandle);
+    if (ret != 0) {
         hccp_err("[ra_peer_deregister_mr]rs_deregister_mr failed ret(%d)", ret);
     }
     return ret;
@@ -878,13 +879,14 @@ STATIC int RaPeerSingleQpDestroy(struct RaQpHandle *qpPeer)
 
 int RaPeerQpDestroy(struct RaQpHandle *qpPeer)
 {
-    if (qpPeer->loopbackQpHandle == NULL) {
+    if (qpPeer->loopbackQpHandle != NULL) {
+        RaPeerLoopbackQpDestroy(qpPeer);
+        return 0;
+    } else if (qpPeer->directFlag != DIRECT_FLAG_NOTSUPP) {
+        return RaPeerNdaQpDestroy(qpPeer);
+    } else {
         return RaPeerSingleQpDestroy(qpPeer);
     }
-
-    RaPeerLoopbackQpDestroy(qpPeer);
-
-    return 0;
 }
 
 int RaPeerSendWr(struct RaQpHandle *qpPeer, struct SendWr *wr, struct SendWrRsp *wrRsp)

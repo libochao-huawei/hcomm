@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <algorithm>
 #include <array>
 #include "rank_graph_builder.h"
 #include "detour_service.h"
@@ -50,6 +51,20 @@ unique_ptr<RankGraph> RankGraphBuilder::Build(const RankTableInfo &ranktable, co
     HCCL_INFO("[RankGraphBuilder] Build VirtualTopo success!");
     rankGraph_->Dump();
     return std::move(rankGraph_);
+}
+
+const RankLevelInfo &RankGraphBuilder::GetRankLevelInfoByNetLayer(const NewRankInfo &rankInfo, u32 netLayer) const
+{
+    auto it = std::find_if(rankInfo.rankLevelInfos.begin(), rankInfo.rankLevelInfos.end(),
+        [netLayer](const RankLevelInfo &levelInfo) {
+            return levelInfo.netLayer == netLayer;
+        });
+    if (it == rankInfo.rankLevelInfos.end()) {
+        THROW<InvalidParamsException>(StringFormat(
+            "[RankGraphBuilder][GetRankLevelInfoByNetLayer] rankId[%u] netLayer[%u] does not exist in ranktable.",
+            rankInfo.rankId, netLayer));
+    }
+    return *it;
 }
 
 std::vector<shared_ptr<PhyTopo::Link>> GetPeer2NetPhyLinks(u32 netLayer, LocalId localId)
@@ -116,7 +131,7 @@ void RankGraphBuilder::AddPeer2NetLink(const u32 netLayer,  const string &netIns
         // 将rank插入到当前netInstance对应的topoInstance中
         tempNetInsts_[netLayer][netInstId]->UpdateTopoInst(topoInstId, topoType, rankId);
 
-        HCCL_RUN_INFO("[RankGraphBuilder][AddPeer2NetLink] Add Peer2NetLink Net2PeerLink success. level[%u] "
+        HCCL_INFO("[RankGraphBuilder][AddPeer2NetLink] Add Peer2NetLink Net2PeerLink success. level[%u] "
                    "netInstId[%s] rankId[%u] planeId[%s] AddrStr[%s],topoInstId[%u],topoType[%u]",
             netLayer,  netInstId.c_str(), rankId, fabNode->GetPlaneId().c_str(), addrInfo.addr.Describe().c_str(),
             topoInstId, topoType);
@@ -135,8 +150,9 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
     }
     set<RankId> inRanks = netInst->GetRankIds();
     string      netInstId = netInst->GetNetInstId();
+    const auto &myLevelInfo = GetRankLevelInfoByNetLayer(rankTable_->ranks[myRank_], netLayer);
     // 根据planeId确认Fabric个数，每个fabricId对应一个planeId
-    std::map<PlaneId, FabricId> planeId2Node = GetFabricsFromAddrInfo(rankTable_->ranks[myRank_].rankLevelInfos[netLayer].rankAddrs);
+    std::map<PlaneId, FabricId> planeId2Node = GetFabricsFromAddrInfo(myLevelInfo.rankAddrs);
 
     if (planeId2Node.size() == 0) {
         HCCL_WARNING("[RankGraphBuilder][AddFabricInfo] current rankId[%d] netLayer[%u] group no net plane", myRank_, netLayer);
@@ -146,7 +162,8 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
 
     // 遍历每一个rankId，每个rankId都增加 peer2net 和 net2peer 两条链路
     for (RankId srcRankId : inRanks) {
-        vector<AddressInfo> addrs = rankTable_->ranks[srcRankId].rankLevelInfos[netLayer].rankAddrs;
+        const auto &srcLevelInfo = GetRankLevelInfoByNetLayer(rankTable_->ranks[srcRankId], netLayer);
+        const vector<AddressInfo> &addrs = srcLevelInfo.rankAddrs;
         // rankId对应的物理逻辑localId
         LocalId localId  = rankGraph_->GetLocalId(srcRankId);
         // 从物理拓扑图中找出 localId在 netLayer 中所有的peer2Net的边。
@@ -184,7 +201,7 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
     // 1. 获取物理拓扑图
     auto phyTopoGraph = PhyTopo::GetInstance()->GetTopoGraph(0);
     if (phyTopoGraph == nullptr) {
-        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildFromPhytopo] phyTopoGraph is nullptr"));
+        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][AddTopoDescFabricInfo] phyTopoGraph is nullptr"));
     }
     HCCL_INFO("[RankGraphBuilder][AddTopoDescFabricInfo] Successfully retrieved phyTopoGraph");
 
@@ -199,6 +216,9 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
 
     // 存储所有fabric节点，key为topoInstId
     std::map<u32, std::shared_ptr<NetInstance::Fabric>> fabNodes;
+
+    auto peer = rankGraph_->GetPeer(rankGraph_->GetMyRank());
+    auto localDeviceId = peer->GetDeviceId();
 
     // 3. 遍历所有rank节点，根据topoInstId创建fabric节点
     for (RankId rankId : rankIds) {
@@ -227,7 +247,7 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
 
             // 构造连接接口
             auto peerIfaces =
-                ConstructConnIFromPhyTopoConnIAndPortMap(link->GetSourceIFace(), peerNode->GetPortAddrMapLayer0(), topoType, topoInstId);
+                ConstructConnIFromPhyTopoConnIAndPortMap(link->GetSourceIFace(), peerNode->GetPortAddrMapLayer0(), topoType, topoInstId, localDeviceId);
 
             for (const auto& iface : peerIfaces) {
                 peerNode->AddConnInterface(0, iface);
@@ -288,7 +308,7 @@ void RankGraphBuilder::BuildFromRankTable()
     for (const auto &rankInfo : rankTable_->ranks) {
         updaterFor64Plus1_.SaveReplaceInfo(rankInfo);   // 暂存备份替换信息
         RankId rankId = rankInfo.rankId;
-        shared_ptr<NetInstance::Peer> peer = make_shared<NetInstance::Peer>(rankId, rankInfo.localId, rankInfo.replacedLocalId, rankInfo.deviceId, rankInfo.devicePort);
+        shared_ptr<NetInstance::Peer> peer = make_shared<NetInstance::Peer>(rankId, rankInfo.localId, rankInfo.replacedLocalId, rankInfo.deviceId, rankInfo.devicePort, rankInfo.hostPort);
         rankGraph_->AddPeer(peer);
         peers_.emplace(rankId, peer);  // rankid2peer
 
@@ -394,14 +414,17 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
 {
     auto phyTopoGraph = PhyTopo::GetInstance()->GetTopoGraph(0);
     if (phyTopoGraph == nullptr) {
-        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildFromPhytopo] phyTopoGraph is nullptr"));
+        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildPeer2PeerLinks] phyTopoGraph is nullptr"));
     }
     // 遍历innerNetInstance中的每两个rankId之间是否存在边，存在则添加peer2peerlink
     NetInstance *innerNetInstance = rankGraph_->GetNetInstanceByRankId(0, myRank_);
     if (innerNetInstance == nullptr) {
-        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildFromPhytopo] innerNetInstance is nullptr"));
+        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildPeer2PeerLinks] innerNetInstance is nullptr"));
     }
     set<RankId> rankIds = innerNetInstance->GetRankIds();
+
+    auto peer = rankGraph_->GetPeer(rankGraph_->GetMyRank());
+    auto localDeviceId = peer->GetDeviceId();
     for (const auto srcRankId : rankIds) {
         for (const auto dstRankId : rankIds) {
            if (srcRankId == dstRankId) {
@@ -423,14 +446,13 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
 
            for (shared_ptr<PhyTopo::Link> phyLink : phyLinks) {
                 auto sourceIfaces = ConstructConnIFromPhyTopoConnIAndPortMap(
-                    phyLink->GetSourceIFace(), srcPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId());
+                    phyLink->GetSourceIFace(), srcPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId(), localDeviceId);
                 auto targetIfaces = ConstructConnIFromPhyTopoConnIAndPortMap(
-                    phyLink->GetTargetIFace(), dstPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId());
+                    phyLink->GetTargetIFace(), dstPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId(), localDeviceId);
                 if (sourceIfaces.empty() || targetIfaces.empty()) {
                     // 没有可用的接口。
-                    HCCL_WARNING("[RankGraphBuilder][BuildFromPhytopo] srcRankId[%d] dstRankId[%d] edge not .",
-                        srcRankId,
-                        dstRankId);
+                    HCCL_WARNING("[RankGraphBuilder][BuildPeer2PeerLinks] no available interface, "
+                        "srcRankId[%u] dstRankId[%u].", srcRankId, dstRankId);
                     continue;
                 }
                 srcPeer->AddConnInterfaces(0, sourceIfaces);
@@ -489,13 +511,14 @@ void RankGraphBuilder::UpdateTopoInstForMyRankOnly()
 
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
         std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, const std::map<std::string, IpAddress>& portAddrMap, 
-        const TopoType topoType, const u32 topoInstId) {
+        const TopoType topoType, const u32 topoInstId, u32 localDeviceId) {
     std::vector<std::shared_ptr<NetInstance::ConnInterface>> netConnIFaces;
     std::set<string> phyPorts = phyConnIFace->GetPorts();
     std::map<IpAddress, std::set<string>> addr2Ports;
     for (auto port: phyPorts) {
         if (*(phyConnIFace->GetLinkProtocols().begin()) == LinkProtocol::PCIE) {
             IpAddress tempIp;
+            HrtRaSocketGetVnicIpInfos(localDeviceId, DeviceIdType::DEVICE_ID_TYPE_PHY_ID, localDeviceId, tempIp);
             auto it = addr2Ports.find(tempIp);
             if (it == addr2Ports.end()) {
                 std::set<std::string> newPorts;

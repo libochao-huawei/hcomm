@@ -462,6 +462,34 @@ HcclResult HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb)
     return g_taskServiceMap[commId]->TaskRegister(msgTag, cb);
 }
 
+HcclResult HcclTaskRegisterProfV2(HcclComm comm, ProfCallbackTemplate profCallback)
+{
+    CHK_PTR_NULL(comm);
+    Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    std::string commId = communicator->GetId();
+    HCCL_INFO("[HcclTaskRegisterProfV2] commId[%s]", commId.c_str());
+    if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
+        HCCL_ERROR("[HcclTaskRegisterProfV2] TaskService of CommId[%s] Not Found, g_taskServiceMap size[%zu]", commId.c_str(), g_taskServiceMap.size());
+        return HCCL_E_NOT_FOUND;
+    }
+    return g_taskServiceMap[commId]->TaskProfRegister(profCallback);
+}
+
+HcclResult HcclGetDpuSteamIdV2(HcclComm comm, u32 &dpuStreamId) {
+    HCCL_RUN_INFO("[HcclTaskRegisterV2] start to Get DpuSteamId");
+    CHK_PTR_NULL(comm);
+    Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    auto ret = communicator->GetStreamId(dpuStreamId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[HcclGetDpuSteamIdV2] GetStreamId failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
+    return HCCL_SUCCESS;
+}
+
+
+
+
 HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag)
 {
     HCCL_RUN_INFO("[HcclTaskUnRegisterV2] start to unregister task, g_taskServiceMap.size()==%zu", g_taskServiceMap.size());
@@ -974,7 +1002,6 @@ HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
 
 HcclResult HcclGetRankSizeV2(HcclComm comm, uint32_t *rankSize)
 {
-    HCCL_RUN_INFO("Entry-HcclGetRankSize V950");
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankSize);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
@@ -1346,7 +1373,7 @@ HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2
 
     HcclResult ret = communicator->AllocCommResource(mc2Tiling, commContext);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclAllocComResourceByTilingV2]AllocCommResource fail, errNo[%d]", ret), HCCL_E_INTERNAL);
+        HCCL_ERROR("[HcclAllocComResourceByTilingV2]AllocCommResource fail, errNo[%d]", ret), ret);
 
     u32 totalServerNum = 0;
     for (auto hcclGroupMap : opbasedCommInfoV2.hcclGroupMap) {
@@ -1356,7 +1383,7 @@ HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2
     CHK_PRT_RET(totalServerNum > MAX_CCU_MC2_SERVER_NUM,
         HCCL_ERROR("[%s] the number of operators is %u, "
             "which exceeds the maximum operator specification of %u supported by CCU MC2.",
-            __func__, totalServerNum, MAX_CCU_MC2_SERVER_NUM), HCCL_E_INTERNAL);
+            __func__, totalServerNum, MAX_CCU_MC2_SERVER_NUM), HCCL_E_NOT_SUPPORT);
     
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
@@ -1740,7 +1767,7 @@ HcclResult HcclCommInitRootInfoV2(
     /* 接口交互信息日志 */
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    HCCL_RUN_INFO("Entry-Entry-HcclCommInitRootInfo V950, ranks[%u], rank[%u], rootinfo: host ip[%s] port[%u] "\
+    HCCL_RUN_INFO("Entry-HcclCommInitRootInfo V950, ranks[%u], rank[%u], rootinfo: host ip[%s] port[%u] "\
         "netMode[%s] identifier[%s], deviceLogicId[%d], devPhyId[%d]", nRanks, rank, rootHandle.ip, rootHandle.listenPort,
         rootHandle.netMode.Describe().c_str(), identifier.c_str(), deviceLogicId, devPhyId);
 

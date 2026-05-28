@@ -23,7 +23,7 @@ TpManager& TpManager::GetInstance(const int32_t deviceLogicId)
     return tpManager[deviceLogicId];
 }
 
-HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync)
 {
     TpInfo info;
     tpInfo = info;
@@ -33,6 +33,21 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
 HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo)
 {
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpManager::GetTpAttr(const GetTpAttrParam &param, TpAttrInfo &tpAttrInfo, RdmaHandle rdmaHandle)
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpManager::ReleaseTpAttr(const TpHandle tpHandle, const TpAttrInfo &tpAttrInfo)
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+uint8_t TpManager::CalcTaTimeout(const TpAttrInfo &tpAttrInfo)
+{
+    return AT_GEAR_DEFAULT * 8;
 }
 
 }

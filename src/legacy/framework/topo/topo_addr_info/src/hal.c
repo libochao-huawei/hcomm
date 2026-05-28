@@ -121,7 +121,10 @@ int load_dcmi()
     dcmiv2_get_mainboard_id = hal_dlsym(dcmi, "dcmiv2_get_mainboard_id");
     dcmiv2_get_device_pcie_info = hal_dlsym(dcmi, "dcmiv2_get_device_pcie_info");
     dcmiv2_get_device_info = hal_dlsym(dcmi, "dcmiv2_get_device_info");
-    get_logicid_from_phyid = hal_dlsym(dcmi, "dcmiv2_get_dev_id_from_chip_phyid");
+    get_logicid_from_phyid = hal_dlsym(dcmi, "dcmiv2_get_dev_id_by_chip_phy_id");
+    if (get_logicid_from_phyid == NULL) {
+        get_logicid_from_phyid = hal_dlsym(dcmi, "dcmiv2_get_dev_id_from_chip_phyid");
+    }
 
     if ((dcmi_init == NULL)
      || (dcmiv2_get_urma_device_cnt == NULL)
@@ -324,8 +327,10 @@ int hal_get_driver_install_path(char *value_buf, size_t buf_size) {
     // 打开文件
     fp = fopen("/etc/ascend_install.info", "r");
     if (fp == NULL) {
-        perror("Failed to open file /etc/ascend_install.info");
-        return -1;
+        if (strcpy_s(value_buf, buf_size, DRIVER_DRFAULT_INSTALL_PATH) != 0) {
+            return -1;
+        }
+        return 0;
     }
 
     // 逐行读取文件

@@ -33,8 +33,8 @@
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
 
-void AddThread(ThreadHandle thread) {
-    g_threadLaunchCtx.AddThread(thread);
+void AddThreadWithTag(ThreadHandle thread) {
+    g_threadLaunchCtx.AddThreadWithTag(thread);
 }
 
 bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
@@ -52,7 +52,7 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -83,7 +83,7 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
     CHK_PTR_NULL(src);
     CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[HcommLocalReduceOnThread]Not support reduce, "
         "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -112,7 +112,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
 {
     HCCL_INFO("[%s] START. thread[0x%llx], dstThread[0x%llx], dstNotifyIdx[%u].", __func__, thread, dstThread, dstNotifyIdx);
 
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -141,7 +141,7 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
 {
     HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut);
 
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -168,7 +168,7 @@ int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId
 {
     HCCL_INFO("[%s] START. thread[0x%llx], dstNotifyId[%u].", __func__, thread, dstNotifyId);
 
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -186,7 +186,7 @@ int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uin
 {
     HCCL_INFO("[%s] START. thread[0x%llx], notifyId[%llu], timeOut[%u].", __func__, thread, notifyId, timeOut);
 
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -231,6 +231,15 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
     return HcclTaskLaunch(streams.data(), threadNum);
 }
 
+HcclResult DispatchAllStreams(ThreadHandle *threads, uint32_t threadNum)
+{
+    CHK_PTR_NULL(threads);
+    CHK_PRT_RET(threadNum < 1, HCCL_ERROR("[DispatchAllStreams]threadNum is less than 1"), HCCL_E_PARA);
+
+    HCCL_WARNING("[DispatchAllStreams] DispatchAllStreams is only supported on A5 device, skip");
+    return HCCL_E_NOT_SUPPORT;
+}
+
 int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
@@ -238,7 +247,7 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -257,6 +266,14 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
     return HCCL_SUCCESS;
 }
 
+int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
+    const HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum)
+{
+    HCCL_ERROR(" [HcommBatchTransferOnThread] not support in cpu");
+    return HCCL_E_NOT_SUPPORT;
+}
+ 	 
+
 int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp)
 {
@@ -267,7 +284,7 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
     CHK_PTR_NULL(src);
     CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[HcommWriteReduceOnThread]Not support reduce, "
         "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -296,7 +313,7 @@ HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel,
     CHK_PTR_NULL(dst);
     CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[CommWriteReduceWithNotify]Not support reduce, "
         "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
-    AddThread(thread);
+    AddThreadWithTag(thread);
     HcclBuf locBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
     HcclBuf rmtBuf{dst, count * SIZE_TABLE[dataType], nullptr};
     HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
@@ -316,7 +333,7 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
 
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -343,7 +360,7 @@ int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle ch
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -369,7 +386,7 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -398,7 +415,7 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
     CHK_PTR_NULL(src);
     CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[HcommReadReduceOnThread]Not support reduce, "
         "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
-    AddThread(thread);
+    AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -433,9 +450,9 @@ int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_950) {
-        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-        CHK_PTR_NULL(hostCpuRoceChannelPtr);
-        ret = hostCpuRoceChannelPtr->Write(dst, src, len);
+        auto *const channelPtr = reinterpret_cast<hcomm::Channel *>(channel);
+        CHK_PTR_NULL(channelPtr);
+        ret = channelPtr->Write(dst, src, len);
     } else {
         ret = HCCL_E_NOT_SUPPORT;
     }
@@ -464,10 +481,10 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
-        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-        CHK_PTR_NULL(hostCpuRoceChannelPtr);
-        ret = hostCpuRoceChannelPtr->WriteWithNotify(dst, src, len, remoteNotifyIdx);
+    if (devType == DevType::DEV_TYPE_950 || thread == 0) {
+        auto *const channelPtr = reinterpret_cast<hcomm::Channel *>(channel);
+        CHK_PTR_NULL(channelPtr);
+        ret = channelPtr->WriteWithNotify(dst, src, len, remoteNotifyIdx);
     } else {
         ret = HCCL_E_NOT_SUPPORT;
     }
@@ -497,9 +514,9 @@ int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *d
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_950) {
-        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-        CHK_PTR_NULL(hostCpuRoceChannelPtr);
-        ret = hostCpuRoceChannelPtr->Read(dst, src, len);
+        auto *const channelPtr = reinterpret_cast<hcomm::Channel *>(channel);
+        CHK_PTR_NULL(channelPtr);
+        ret = channelPtr->Read(dst, src, len);
     } else {
         ret = HCCL_E_NOT_SUPPORT;
     }
@@ -522,12 +539,12 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
-        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-        CHK_PTR_NULL(hostCpuRoceChannelPtr);
-        ret = hostCpuRoceChannelPtr->NotifyRecord(remoteNotifyIdx);
+    if (devType == DevType::DEV_TYPE_950 || (thread == 0 && devType == DevType::DEV_TYPE_910B)) {
+        auto *const channelPtr = reinterpret_cast<hcomm::Channel *>(channel);
+        CHK_PTR_NULL(channelPtr);
+        ret = channelPtr->NotifyRecord(remoteNotifyIdx);
     } else {  // Non-950 devices use thread-based notify.
-        AddThread(thread);
+        AddThreadWithTag(thread);
 
         Thread *threadPtr = reinterpret_cast<Thread *>(thread);
         CHK_PTR_NULL(threadPtr);
@@ -559,12 +576,12 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
-        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-        CHK_PTR_NULL(hostCpuRoceChannelPtr);
-        ret = hostCpuRoceChannelPtr->NotifyWait(localNotifyIdx, timeOut);
+    if (devType == DevType::DEV_TYPE_950 || (thread == 0 && devType == DevType::DEV_TYPE_910B)) {
+        auto *const channelPtr = reinterpret_cast<hcomm::Channel *>(channel);
+        CHK_PTR_NULL(channelPtr);
+        ret = channelPtr->NotifyWait(localNotifyIdx, timeOut);
     } else {  // Non-950 devices use thread-based notify.
-        AddThread(thread);
+        AddThreadWithTag(thread);
 
         Thread *threadPtr = reinterpret_cast<Thread *>(thread);
         CHK_PTR_NULL(threadPtr);
@@ -616,11 +633,16 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 
 int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback)
 {
-    HCCL_INFO("[HcommThreadRegisterDfx] Init begin");
     Thread *threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     CHK_RET(threadPtr->SetAddTaskInfoCallback(callback));
-    HCCL_INFO("[HcommThreadRegisterDfx] Init success");
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommDpuChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(const Hccl::TaskParam&, u64)> callback) {
+    auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
+    CHK_PTR_NULL(hostCpuRoceChannelPtr);
+    CHK_RET(hostCpuRoceChannelPtr->SetDfxCallback(callback));
     return HCCL_SUCCESS;
 }
 
@@ -671,10 +693,10 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
-        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-        CHK_PTR_NULL(hostCpuRoceChannelPtr);
-        ret = hostCpuRoceChannelPtr->ChannelFence();
+    if (devType == DevType::DEV_TYPE_950 || thread == 0) {
+        auto *const channelPtr = reinterpret_cast<hcomm::Channel *>(channel);
+        CHK_PTR_NULL(channelPtr);
+        ret = channelPtr->ChannelFence();
     } else {
         ret = HCCL_E_NOT_SUPPORT;
     }
@@ -694,6 +716,22 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo) // 兼容性接�
     return HCCL_SUCCESS;
 }
 
+static HcclResult RegAicpuTaskException(HcclDfxOpInfo* dfxOpInfo, hccl::CollComm* collComm)
+{
+    if (dfxOpInfo->engine != COMM_ENGINE_AICPU_TS) {
+        return HCCL_SUCCESS;
+    }
+    LocalNotify *notify = GetNotify(dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx);
+    CHK_PRT_RET(!notify, HCCL_ERROR("[%s]GetNotify null, thread[%llu], notifyIdx[%u]",
+        __func__, dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx), HCCL_E_PTR);
+    dfxOpInfo->cpuWaitAicpuNotifyId = notify->notifyId_;
+
+    Stream *cpuTsStream = GetStream(dfxOpInfo->cpuTsThread);
+    CHK_PTR_NULL(cpuTsStream);
+    collComm->RegisterAicpuTaskExceptionCallback(cpuTsStream->id());
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 {
     EXCEPTION_HANDLE_BEGIN
@@ -709,31 +747,27 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
     CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
     HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hcclDfxOpInfo);
     CHK_PTR_NULL(dfxOpInfo);
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (!hcclComm->IsCommunicatorV2() && devType == DevType::DEV_TYPE_910B) {
+        return HCCL_SUCCESS;
+    }
     if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
-        return HCCL_E_NOT_SUPPORT;
+         HCCL_ERROR("[%s]comm is NOT_SUPPORT", __func__);
+         return HCCL_E_NOT_SUPPORT;
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
 
-    dfxOpInfo->beginTime = hrtMsprofSysCycleTime();	 
-    if (dfxOpInfo->engine == COMM_ENGINE_AICPU_TS) {
-        LocalNotify *notify = GetNotify(dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx);
-        CHK_PRT_RET(!notify, HCCL_ERROR("[%s]GetNotify null, thread[%llu], notifyIdx[%u]",
-            __func__, dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx), HCCL_E_PTR);
-        dfxOpInfo->cpuWaitAicpuNotifyId = notify->notifyId_;
-
-        Stream *cpuTsStream = GetStream(dfxOpInfo->cpuTsThread);
-        CHK_PTR_NULL(cpuTsStream);
-        collComm->RegisterAicpuTaskExceptionCallback(cpuTsStream->id());
-    }
+    dfxOpInfo->beginTime = hrtMsprofSysCycleTime();
+    CHK_RET(RegAicpuTaskException(dfxOpInfo, collComm));
 
     //HcclDfxOpInfo转为DfxOpInfo
     auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
     CHK_SMART_PTR_NULL(dfxOpInfoOnce);
     dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
-    dfxOpInfoOnce->groupName_ = collComm->GetCommId(); 
+    dfxOpInfoOnce->groupName_ = collComm->GetCommId();
     dfxOpInfoOnce->opIndex_ = collComm->UpdateIndex();
     dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
     //单算子模式，暂时覆盖opTag
@@ -757,6 +791,11 @@ HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_910B && !hcclComm->IsCommunicatorV2()) {
+        return HCCL_SUCCESS;
+    }
     if (!hcclComm->IsCommunicatorV2()) {
         HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
         return HCCL_E_NOT_SUPPORT;
@@ -783,8 +822,7 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
-        return HCCL_E_NOT_SUPPORT;
+        return HCCL_SUCCESS;
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
@@ -802,6 +840,8 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     uint32_t taskId = INVALID_UINT;
     uint32_t streamId = INVALID_UINT;
     CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    HCCL_INFO("[%s] taskId[%u], streamId[%u].", __func__, taskId, streamId);
+    hcclCommDfx->SetAicpuTaskIdAndStreamId(taskId, streamId);
     CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;
@@ -833,4 +873,4 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
     return HCCL_SUCCESS;
-} 
+}

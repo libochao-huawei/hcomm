@@ -469,7 +469,9 @@ RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char
     unsigned int *valueLen)
 {
 #define HCCN_CFGFILE_PATH "/etc/hccl.cfg"
-    const char *keyName[HCCN_CFG_KEY_INVALID] = {"udp_port_mode", "multi_qp_count", "multi_qp_udp_ports", "resv_mem"};
+    const char *keyName[HCCN_CFG_KEY_INVALID] = {
+        "udp_port_mode", "multi_qp_count", "multi_qp_udp_ports", "resv_mem", "qos_dscp"
+    };
     unsigned int cfg_key = (unsigned int)key;
     unsigned int valLen = 0;
     unsigned int bufLen;
@@ -945,7 +947,7 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
     return 0;
 
 free_nda_cb:
-    RsFreeNdaCb(rdevCb);
+    RsDeinitNdaCb(rdevCb);
 unmmap_ai_db:
 #ifdef CUSTOM_INTERFACE
     if (RsIsCustomInterfaceSupported()) {
@@ -1095,8 +1097,12 @@ STATIC void RsDestroyQpList(unsigned int phyId, unsigned int rdevIndex,
         for (; (&qpCb->list) != &rdevCb->qpList;
             qpCb = qpCb2, qpCb2 = list_entry(qpCb2->list.next, struct RsQpCb, list)) {
             hccp_info("qpn[%u] will be destroyed", qpCb->ibQp->qp_num);
-            ret = RsQpDestroy(phyId, rdevIndex, qpCb->ibQp->qp_num);
-            if (ret) {
+            if (qpCb->ibQpEx != NULL) {
+                ret = RsNdaQpDestroy(phyId, rdevIndex, qpCb->ibQp->qp_num);
+            } else {
+                ret = RsQpDestroy(phyId, rdevIndex, qpCb->ibQp->qp_num);
+            }
+            if (ret != 0) {
                 hccp_err("rs_qp_destroy failed, ret:%d", ret);
             }
         }
@@ -1163,7 +1169,7 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
 
     RsIbvDeallocPd(rdevCb->ibPd);
 
-    RsFreeNdaCb(rdevCb);
+    RsDeinitNdaCb(rdevCb);
 
     RsIbvCloseDevice(rdevCb->ibCtx);
 
@@ -2216,18 +2222,20 @@ RS_ATTRI_VISI_DEF enum ProductType RsGetProductType(int devId)
     CHK_PRT_RETURN(ret != 0, hccp_err("[Get][ChipInfo]DlHalGetChipInfo failed ret:%d", ret),
         PRODUCT_TYPE_INVALID);
 
-    if (fnmatch("910_93[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0){
+    if (fnmatch("910_93[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_910_93;
     } else if (fnmatch("910B[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_910B;
-    } else if (fnmatch("910_96[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0){
+    } else if (fnmatch("910_96[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_910_96;
     } else if (fnmatch("910[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_910;
     } else if (fnmatch("310p[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_310p;
-    } else if (fnmatch("950[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0){
+    } else if (fnmatch("950[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_950;
+    } else if (fnmatch("350[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
+        type = PRODUCT_TYPE_350;
     } else {
         type = PRODUCT_TYPE_OTHERS;
     }

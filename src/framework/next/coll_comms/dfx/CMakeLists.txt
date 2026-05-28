@@ -12,20 +12,33 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommOp.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/profiling
+        ${CMAKE_CURRENT_SOURCE_DIR}/profiling/aicpu
+        ${CMAKE_CURRENT_SOURCE_DIR}/taskException
+        ${CMAKE_CURRENT_SOURCE_DIR}/taskException/aicpu
+    )
+endif()
 
 set(device_src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommDfxLite.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommOp.cc
 )
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${device_src_list}
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
 
 add_subdirectory(profiling)
 add_subdirectory(taskException)
+add_subdirectory(cluster_monitor)

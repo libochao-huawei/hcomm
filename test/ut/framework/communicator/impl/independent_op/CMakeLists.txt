@@ -12,8 +12,10 @@ set(src_to_test_list
     # ut_hccl_independent_rank_graph.cc
     ut_hccl_independent_op_engine.cc
     ut_hccl_independent_op_channel.cc
+    ut_rank_graph_v1.cc
     ${HCCL_CODE_ROOT}/test/ut/framework/communicator/hccl_api_base_test.cc
     ut_hccl_independent_op_mem.cc
+    ut_thread_manager.cc
 )
 
 add_executable(hccl_utest_framework_independent_op ${src_to_test_list})
@@ -39,9 +41,6 @@ target_compile_options(hccl_utest_framework_independent_op PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_framework_independent_op PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
 target_link_libraries(hccl_utest_framework_independent_op PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

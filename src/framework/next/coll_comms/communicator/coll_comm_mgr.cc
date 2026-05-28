@@ -9,6 +9,7 @@
  */
 #include "coll_comm_mgr.h"
 #include "ns_recovery/task_abort_handler.h"
+#include "cluster_monitor.h"
 
 namespace hccl {
 
@@ -21,6 +22,16 @@ CollCommMgr* CollCommMgr::GetInstance()
         instance_ = new CollCommMgr();
     });
     return instance_;
+}
+
+hcomm::ClusterMonitor &CollCommMgr::GetClusterMonitor(s32 deviceLogicId)
+{
+    if (static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+	    HCCL_WARNING("[ClusterMonitor][%s]deviceLogicId[%d] >= %u, invalid",
+	        __func__, deviceLogicId, MAX_MODULE_DEVICE_NUM);
+	    return clusterMonitor_[0];
+	}
+	return clusterMonitor_[deviceLogicId];
 }
 
 void CollCommMgr::RegisteCollComm(CollComm* collComm)
@@ -37,6 +48,7 @@ void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
     allCollComms_.erase(collComm->GetCommId());
     // 从通信域里面注销
     HcclTaskAbortHandler::GetInstance().UnRegister(collComm);
+    (void)GetClusterMonitor(collComm->GetDeviceLogicId()).UnRegisterToClusterMonitor(collComm);
 }
 
 std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()

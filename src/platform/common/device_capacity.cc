@@ -50,7 +50,8 @@ bool IsSupportAIVCopy(HcclDataType dataType)
 {
     return (dataType == HCCL_DATA_TYPE_FP16 || dataType == HCCL_DATA_TYPE_INT16 || dataType == HCCL_DATA_TYPE_UINT16 ||
         dataType == HCCL_DATA_TYPE_FP32 || dataType == HCCL_DATA_TYPE_INT32 || dataType == HCCL_DATA_TYPE_UINT32 ||
-        dataType == HCCL_DATA_TYPE_INT8 || dataType == HCCL_DATA_TYPE_UINT8 || dataType == HCCL_DATA_TYPE_BFP16);
+        dataType == HCCL_DATA_TYPE_INT8 || dataType == HCCL_DATA_TYPE_UINT8 || dataType == HCCL_DATA_TYPE_BFP16 ||
+        dataType == HCCL_DATA_TYPE_INT64 || dataType == HCCL_DATA_TYPE_UINT64 || dataType == HCCL_DATA_TYPE_FP64);
 }
 
 bool IsSupportAIVReduce(HcclDataType dataType, HcclReduceOp op)
@@ -252,6 +253,9 @@ HcclResult GetMaxDevNum(u32& MaxDevNum)
         switch (devType) {
             case DevType::DEV_TYPE_310P3:
                 cachedMaxDevNum = MAX_DEVICE_NUM_THIRTY_TWO;
+                break;
+            case DevType::DEV_TYPE_950:
+                cachedMaxDevNum = MAX_DEVICE_NUM_SIXTY_FIVE;
                 break;
             default:
                 cachedMaxDevNum = MAX_DEVICE_NUM_SIXTEEN;

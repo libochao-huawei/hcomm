@@ -16,6 +16,7 @@ set(src_to_test_list
     ut_cpu_HcommReadNbiOnThread.cc
     ut_cpu_HcommFenceOnThread.cc
     ut_cpu_HcommChannelFenceOnThread.cc
+    ut_cpu_HcommDpuChannelRegisterDfx.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_cpu.cc
 )
 
@@ -41,9 +42,6 @@ target_compile_options(hcomm_utest_api_data_cpu PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hcomm_utest_api_data_cpu PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
 target_link_libraries(hcomm_utest_api_data_cpu PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

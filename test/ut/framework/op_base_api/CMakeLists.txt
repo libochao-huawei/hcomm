@@ -20,11 +20,14 @@ set(src_to_test_list
     ut_HcclRecv_API_test.cc
     ut_HcclSend_API_test.cc
     ut_HcclAlltoAllV_API_test.cc
+    ut_HcclAlltoAllVC_API_test.cc
     ut_HcclReduce_API_test.cc
     ut_HcclAllGather_API_test.cc
     ut_HcclBarrier_API_test.cc
     ut_HcclReduceScatter_API_test.cc
     ut_HcomGetCommHandleByGroup_API_test.cc
+    ut_op_base_misc_test.cc
+    # ut_op_base_v2_test.cc
 )
 
 add_executable(hccl_utest_framework_op_base_api ${src_to_test_list})
@@ -49,9 +52,6 @@ target_compile_options(hccl_utest_framework_op_base_api PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_framework_op_base_api PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
 target_link_libraries(hccl_utest_framework_op_base_api PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

@@ -36,6 +36,9 @@ constexpr u32 RANK_FIVE = 5;
 constexpr u32 RANK_SIX = 6;
 constexpr u32 RANK_SEVEN = 7;
 constexpr u32 MAX_ARGS_SIZE_A3_STRUCT = 9;
+constexpr u32 STEP_ONE = 1;
+constexpr u32 STEP_TWO = 2;
+constexpr u32 STEP_THREE = 3;
 
 constexpr u32 AIV_BUFFER_PING_PONG_FACTOR = 2;
 
@@ -106,6 +109,9 @@ static std::vector<AivKernelInfo> g_allgatherAivKernelInfoList = {
     {"aiv_all_gather_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_gather_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_gather_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_gather_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_all_gather_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_all_gather_double", HcclDataType::HCCL_DATA_TYPE_FP64},
     {"aiv_all_gather_cn_half", HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
     {"aiv_all_gather_cn_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
     {"aiv_all_gather_cn_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_SIMPLE},
@@ -115,6 +121,9 @@ static std::vector<AivKernelInfo> g_allgatherAivKernelInfoList = {
     {"aiv_all_gather_cn_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
     {"aiv_all_gather_cn_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_SIMPLE},
     {"aiv_all_gather_cn_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_double", HcclDataType::HCCL_DATA_TYPE_FP64, KernelArgsType::ARGS_TYPE_SIMPLE},
 };
 static std::string g_allgatherAivBinaryName = "hccl_aiv_all_gather_op.o";
 
@@ -128,6 +137,9 @@ static std::vector<AivKernelInfo> g_broadcastAivKernelInfoList = {
     {"aiv_broadcast_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_broadcast_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_broadcast_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_broadcast_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_broadcast_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_broadcast_double", HcclDataType::HCCL_DATA_TYPE_FP64},
 };
 static std::string g_broadcastAivBinaryName = "hccl_aiv_broadcast_op.o";
 
@@ -141,6 +153,9 @@ static std::vector<AivKernelInfo> g_alltoallAivKernelInfoList = {
     {"aiv_all_to_all_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_to_all_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_to_all_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_to_all_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_all_to_all_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_all_to_all_double", HcclDataType::HCCL_DATA_TYPE_FP64},
 };
 static std::string g_alltoallAivBinaryName = "hccl_aiv_all_to_all_op.o";
 
@@ -154,6 +169,9 @@ static std::vector<AivKernelInfo> g_alltoallvAivKernelInfoList = {
     {"aiv_all_to_all_v_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_to_all_v_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_to_all_v_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_to_all_v_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_all_to_all_v_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_all_to_all_v_double", HcclDataType::HCCL_DATA_TYPE_FP64},
     {"aiv_all_to_all_v_sp_half", HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SUPERPOD},
     {"aiv_all_to_all_v_sp_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SUPERPOD},
     {"aiv_all_to_all_v_sp_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_SUPERPOD},
@@ -163,6 +181,9 @@ static std::vector<AivKernelInfo> g_alltoallvAivKernelInfoList = {
     {"aiv_all_to_all_v_sp_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SUPERPOD},
     {"aiv_all_to_all_v_sp_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_SUPERPOD},
     {"aiv_all_to_all_v_sp_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64, KernelArgsType::ARGS_TYPE_SUPERPOD},
+    {"aiv_all_to_all_v_sp_double", HcclDataType::HCCL_DATA_TYPE_FP64, KernelArgsType::ARGS_TYPE_SUPERPOD},
 };
 static std::string g_alltoallvAivBinaryName = "hccl_aiv_all_to_all_v_op.o";
 
@@ -176,6 +197,9 @@ static std::vector<AivKernelInfo> g_alltoallvcAivKernelInfoList = {
     {"aiv_all_to_all_vc_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_to_all_vc_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_to_all_vc_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_to_all_vc_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_all_to_all_vc_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_all_to_all_vc_double", HcclDataType::HCCL_DATA_TYPE_FP64},
 };
 static std::string g_alltoallvcAivBinaryName = "hccl_aiv_all_to_all_vc_op.o";
 
@@ -199,8 +223,18 @@ static std::vector<AivKernelInfo> g_allgathervAivKernelInfoList = {
     {"aiv_all_gather_v_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_gather_v_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_gather_v_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {"aiv_all_gather_v_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
+    {"aiv_all_gather_v_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
+    {"aiv_all_gather_v_double", HcclDataType::HCCL_DATA_TYPE_FP64},
 };
 static std::string g_allgathervAivBinaryName = "hccl_aiv_all_gather_v_op.o";
+
+// 同步
+static std::vector<AivKernelInfo> g_syncAivKernelInfoList = {
+    {"hccl_aiv_sync", HcclDataType::HCCL_DATA_TYPE_RESERVED},
+    {"hccl_aiv_sync_rdma", HcclDataType::HCCL_DATA_TYPE_RESERVED, KernelArgsType::ARGS_TYPE_SUPERPOD},
+};
+static std::string g_syncAivBinaryName = "hccl_aiv_sync_op.o";
 
 static std::map<HcclCMDType, std::pair<std::string, std::vector<AivKernelInfo>>> g_aivKernelInfoMap = {
     {HcclCMDType::HCCL_CMD_ALLREDUCE, {g_allreduceAivBinaryName, g_allreduceAivKernelInfoList}},
@@ -212,6 +246,7 @@ static std::map<HcclCMDType, std::pair<std::string, std::vector<AivKernelInfo>>>
     {HcclCMDType::HCCL_CMD_ALLTOALLVC, {g_alltoallvcAivBinaryName, g_alltoallvcAivKernelInfoList}},
     {HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, {g_reducescattervAivBinaryName, g_reducescattervAivKernelInfoList}},
     {HcclCMDType::HCCL_CMD_ALLGATHER_V, {g_allgathervAivBinaryName, g_allgathervAivKernelInfoList}},
+    {HcclCMDType::HCCL_CMD_INVALID, {g_syncAivBinaryName, g_syncAivKernelInfoList}},
 };
 
 using AivKernelArgs = struct AivKernelArgsDef {
@@ -572,6 +607,153 @@ u32 GetAivTimeout(s32 execTimeOut, bool isSetByConfig) {
     return timeout < AIV_TIMEOUT_MAX_US ? timeout : AIV_TIMEOUT_MAX_US;
 }
 
+HcclResult BarrierForMulServer(const AivResourceArgs &resourceArgs, s32 step, const AivTopoArgs &topoArgs, void* args,
+    u32 argsSize, s32 execTimeOut, bool execTimeOutSet)
+{
+    uint64_t beginTime = 0;
+    SetAivProfilingInfoBeginTime(beginTime);
+    HcclResult ret = HcclResult::HCCL_E_PARA;
+    aclrtLaunchKernelCfg cfg;
+    aclrtLaunchKernelAttr attr[AIV_ATTRNUM_THREE];
+    attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
+    attr[0].value.schemMode = 1;
+    attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US;
+    attr[1].value.timeoutUs.timeoutLow = GetAivTimeout(execTimeOut, execTimeOutSet);
+    attr[1].value.timeoutUs.timeoutHigh = 0;
+    attr[2].id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE;
+    attr[2].value.engineType = ACL_RT_ENGINE_TYPE_AIV;
+    cfg.numAttrs = AIV_ATTRNUM_THREE;
+    cfg.attrs = attr;
+ 
+    u32 rank = topoArgs.rank;
+    u8* flagAddr = static_cast<u8 *>(resourceArgs.buffersIn[0]);
+ 
+    aclrtFuncHandle funcHandle;
+    s8* stubFunc = GetStubFunc(HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED,
+        KernelArgsType::ARGS_TYPE_SUPERPOD);
+    ret = GetKernelFunc(funcHandle, stubFunc);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][BarrierForMulServer] errNo[0x%016llx] GetKernelFunc failed, "
+            "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
+    aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.numBlocks, resourceArgs.stream,
+            &cfg, args, argsSize, nullptr, 0);
+    if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
+        aclError aclGetRet = aclrtBinaryGetFunction(g_binHandleMap[HcclCMDType::HCCL_CMD_INVALID], g_aivNameMap[stubFunc].c_str(), &funcHandle);
+        CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
+            HCCL_E_NOT_FOUND);
+        aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.numBlocks, resourceArgs.stream,
+            &cfg, args, argsSize, nullptr, 0);
+    }
+    CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
+ 
+    struct TaskParaGeneral taskParaGeneral;
+    TaskParaAiv taskParaAiv(HcclCMDType::HCCL_CMD_INVALID, step, 0, resourceArgs.numBlocks, topoArgs.rankSize, -1,
+        flagAddr, rank);
+    taskParaGeneral.isMainStream = true;
+    taskParaGeneral.stream = resourceArgs.stream;
+    taskParaGeneral.beginTime = beginTime;
+    taskParaGeneral.aiv = taskParaAiv;
+ 
+    AlgWrap::GetInstance().TaskAivProfiler(topoArgs.identify, taskParaGeneral);
+ 
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][BarrierForMulServer] errNo[0x%016llx] rtKernelLaunch aiv fail, "
+        "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
+    return HCCL_SUCCESS;
+}
+
+HcclResult LaunchSyncKernel(aclrtLaunchKernelCfg &cfg, AivKernelArgs &aivKernelArgs, rtStream_t stream, s32 step, const std::string& comm)
+{
+    uint64_t beginTime = 0;
+    SetAivProfilingInfoBeginTime(beginTime);
+
+    aclrtFuncHandle funcHandle;
+    s8* stubFunc = GetStubFunc(HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED);
+    HcclResult ret = GetKernelFunc(funcHandle, stubFunc);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][Barrier] errNo[0x%016llx] GetKernelFunc failed, "
+        "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
+    
+    aivKernelArgs.tag = step;
+    aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, aivKernelArgs.rankSize, stream,
+        &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
+    if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
+        aclError aclGetRet = aclrtBinaryGetFunction(g_binHandleMap[HcclCMDType::HCCL_CMD_INVALID], g_aivNameMap[stubFunc].c_str(), &funcHandle);
+        CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
+            HCCL_E_NOT_FOUND);
+        aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, aivKernelArgs.rankSize, stream,
+            &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
+    }
+    CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
+    
+    struct TaskParaGeneral taskParaGeneral;
+    u8* flagAddr = static_cast<u8 *>(const_cast<void*>(aivKernelArgs.buffersOut[aivKernelArgs.rank]));
+    TaskParaAiv taskParaAiv(HcclCMDType::HCCL_CMD_INVALID, step, 0, aivKernelArgs.rankSize, aivKernelArgs.rankSize, -1, flagAddr, aivKernelArgs.rank);
+    taskParaGeneral.isMainStream = true;
+    taskParaGeneral.stream = stream;
+    taskParaGeneral.beginTime = beginTime;
+    taskParaGeneral.aiv = taskParaAiv;
+
+    AlgWrap::GetInstance().TaskAivProfiler(comm, taskParaGeneral);
+    return HCCL_SUCCESS;
+}
+
+HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs, AivAlgArgs algArgs)
+{
+    if (algArgs.argsType == KernelArgsType::ARGS_TYPE_SERVER && (topoArgs.devType != DevType::DEV_TYPE_910_93 || topoArgs.serverNum == 1)) {
+        u32 rankSize = topoArgs.rankSize;
+        rtStream_t stream = resourceArgs.stream;
+        const std::string& comm = topoArgs.identify;
+        u32 numBlocks = resourceArgs.numBlocks;
+        s32 execTimeOut = algArgs.execTimeOut;
+        bool execTimeOutSet = algArgs.execTimeOutSet;
+
+        CHK_PRT_RET(numBlocks < rankSize,
+            HCCL_ERROR("[ClearAivSyncBuf]aivCore[%u] is invalid, at least need [%u].", numBlocks, rankSize), HCCL_E_PARA);
+
+        aclrtLaunchKernelCfg cfg;
+        aclrtLaunchKernelAttr attr[AIV_ATTRNUM_THREE];
+        attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
+        attr[0].value.schemMode = 1;
+        attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US;
+        attr[1].value.timeoutUs.timeoutLow = GetAivTimeout(execTimeOut, execTimeOutSet);
+        attr[1].value.timeoutUs.timeoutHigh = 0;
+        attr[2].id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE;
+        attr[2].value.engineType = ACL_RT_ENGINE_TYPE_AIV;
+        cfg.numAttrs = AIV_ATTRNUM_THREE;
+        cfg.attrs = attr;
+
+        AivKernelArgs aivKernelArgs {
+            cclBuffersOut, cclBuffersOut, nullptr, nullptr, topoArgs.rank, rankSize, 0,
+            HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclReduceOp::HCCL_REDUCE_RESERVED, 0, 0, rankSize
+        };
+
+        CHK_RET(LaunchSyncKernel(cfg, aivKernelArgs, stream, STEP_ONE, comm));
+        CHK_RET(LaunchSyncKernel(cfg, aivKernelArgs, stream, STEP_TWO, comm));
+        CHK_RET(LaunchSyncKernel(cfg, aivKernelArgs, stream, STEP_THREE, comm));
+    }
+    HCCL_INFO("[AIV][ClearAivSyncBuf] clearaiv done.");
+    return HCCL_SUCCESS;
+}
+
+HcclResult ClearAivSyncBufForMulServer(const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs, void* args,
+    u32 argsSize, AivAlgArgs algArgs)
+{
+    CHK_RET(BarrierForMulServer(resourceArgs, 1, topoArgs, args, argsSize, algArgs.execTimeOut, algArgs.execTimeOutSet));
+ 
+    u8* flagAddr = static_cast<u8 *>(resourceArgs.buffersOut[0]);
+    DeviceMem zeroMem = DeviceMem::create(flagAddr + AIV_FLAG_AREA_SIZE, AIV_FLAG_AREA_SIZE);
+    DeviceMem flagMem = DeviceMem::create(flagAddr, AIV_FLAG_AREA_SIZE);
+ 
+    CHK_RET(hrtMemAsyncCopy(flagMem.ptr(), AIV_FLAG_AREA_SIZE, zeroMem.ptr(), AIV_FLAG_AREA_SIZE,
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, resourceArgs.stream));
+    
+    CHK_RET(BarrierForMulServer(resourceArgs, RESET_TAIL_SYNC_TAG, topoArgs, args, argsSize, algArgs.execTimeOut,
+        algArgs.execTimeOutSet));
+ 
+    HCCL_INFO("[AIV][ClearAivSyncBufForMulServer] clearaiv done");
+    return HCCL_SUCCESS;
+}
+
 void TaskAivProfilerWrap(const AivOpArgs& opArgs, const AivTopoArgs& topoArgs,
     const AivResourceArgs& resourceArgs, const AivAlgArgs& algArgs, const AivProfilingInfo& aivProfilingInfo,
     void* flagMem)
@@ -649,6 +831,13 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &
 
     TaskAivProfilerWrap(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo,
         (algArgs.argsType != KernelArgsType::ARGS_TYPE_SERVER) ? resourceArgs.buffersOut[0]: resourceArgs.buffersOut[topoArgs.rank]);
+    if (resourceArgs.aivTag == TAG_RESET_COUNT) {
+        if (algArgs.isNpuDirectRoce) {
+            CHK_RET(ClearAivSyncBufForMulServer(resourceArgs, topoArgs, args, argsSize, algArgs));
+        } else {
+            CHK_RET(ClearAivSyncBuf(resourceArgs.buffersOut, resourceArgs, topoArgs, algArgs));
+        }
+    }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][ExecuteKernelLaunchInner] errNo[0x%016llx] rtKernelLaunch aiv fail, "
         "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);

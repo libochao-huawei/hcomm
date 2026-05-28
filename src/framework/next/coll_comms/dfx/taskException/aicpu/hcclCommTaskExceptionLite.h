@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef HCCL_COMM_TASKEXCEPTION_H
-#define HCCL_COMM_TASKEXCEPTION_H
+#ifndef HCCL_COMM_TASKEXCEPTION_LIFT_H
+#define HCCL_COMM_TASKEXCEPTION_LIFT_H
 
 #include "daemon_func.h"
 #include "mirror_task_manager.h"
@@ -40,10 +40,8 @@ private:
     uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
     HcclResult PrintTaskContextInfo(CollCommAicpu *aicpuComm, u32 sqId, u32 taskId);
     std::string GetGroupInfo(const Hccl::TaskInfo& taskInfo);
-    std::string GetOpDataInfo(const Hccl::TaskInfo& taskInfo);
 
     void PrintEid(const Hccl::TaskInfo& taskInfo);
-    std::string GetBaseInfo(const Hccl::TaskInfo& taskInfo);
 
     bool initFlag_{false};
     bool stopCall_{false};

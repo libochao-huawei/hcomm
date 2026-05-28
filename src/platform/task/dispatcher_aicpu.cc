@@ -652,7 +652,6 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
                 CHK_RET(LaunchTask(it->second, false));
             }
         }
-
         u64 curUsec = GetCurAicpuTimestamp();
         if (dfxTimeOutConfig_.sqFullWaitTimeOut != 0 && 
             (curUsec - startUsec > NANOSECOND_TO_SECOND * dfxTimeOutConfig_.sqFullWaitTimeOut)) {
@@ -858,8 +857,7 @@ HcclResult DispatcherAiCpu::LaunchAllTasks()
     for (auto it = streamMap_.begin(); it != streamMap_.end(); ++it) {
         HcclResult ret = LaunchTask(it->second, true);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("DispatcherAiCpu][LaunchAllTasks] "\
-                "launch task failed, sqid:%u, ret:%u", it->second.sqId(), ret);
+            HCCL_ERROR("DispatcherAiCpu][LaunchAllTasks] launch task failed, sqid:%u, ret:%u", it->second.sqId(), ret);
             return ret;
         }
     }

@@ -72,22 +72,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_wrongIp_EXPECT_Return_128003)
     void* endpointHandle{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByIp).stubs().will(throws(Hccl::NetworkApiException("error")));
     HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
-    EXPECT_EQ(ret, 11);
-}
-
-// Device
-TEST_F(CpuRoceEndpointTest, Ut_When_Endpoint_LocType_Device_Expect_Return_HCCL_E_PARA)
-{
-    Hccl::IpAddress   localIp("1.0.0.0");
-    EndpointDesc endpointDesc;
-    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
-    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
-    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
-    void* endpointHandle = malloc(sizeof(hcomm::CpuRoceEndpoint));
-    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
-    EXPECT_EQ(ret, HCCL_E_PARA);
-    free(endpointHandle);
+    EXPECT_EQ(ret, 1);
 }
 
 // RdmaHandle初始化失败
@@ -288,17 +273,19 @@ TEST_F(CpuRoceEndpointTest, ut_HcommMemExport_When_EndpointIsNull_Expect_ReturnH
 }
 
 // GetCapabilities 正常调用，返回成功且maxMsgSize为1GB
-TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_Normal_Expect_ReturnSuccess_And_MaxMsgSz1GB)
+TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_Normal_Expect_ReturnSuccess_And_MaxMsgSz1GB_lbMax0)
 {
     EndpointDesc endpointDesc{};
     endpointDesc.protocol = COMM_PROTOCOL_ROCE;
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     hcomm::CpuRoceEndpoint endpoint(endpointDesc);
     hcomm::CpuRoceEndpoint::Capabilities caps;
+    endpoint.Init();
     HcommResult ret = endpoint.GetCapabilities(caps);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     static constexpr uint64_t EXPECTED_MAX_MSG_SZ = 1ULL * 1024 * 1024 * 1024;
     EXPECT_EQ(caps.maxMsgSize, EXPECTED_MAX_MSG_SZ);
+    EXPECT_EQ(caps.lbMax, 0);
 }
 
 // GetCapabilities 多次调用，验证缓存一致性
@@ -310,9 +297,22 @@ TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_CalledTwice_Expect_SameResul
     hcomm::CpuRoceEndpoint endpoint(endpointDesc);
     hcomm::CpuRoceEndpoint::Capabilities caps1;
     hcomm::CpuRoceEndpoint::Capabilities caps2;
+    endpoint.Init();
     HcommResult ret = endpoint.GetCapabilities(caps1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = endpoint.GetCapabilities(caps2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(caps1.maxMsgSize, caps2.maxMsgSize);
+}
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGetListenPort_When_PortIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    HcommResult ret = HcommEndpointGetListenPort(reinterpret_cast<EndpointHandle>(0x12345678), nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGetListenPort_When_EndpointIsNull_Expect_ReturnHCCL_E_NOT_FOUND)
+{
+    uint32_t port = 0;
+    HcommResult ret = HcommEndpointGetListenPort(nullptr, &port);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }

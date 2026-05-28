@@ -16,6 +16,8 @@
 #include "hccl_common.h"
 #include "exception_handler.h"
 #include "rdma_handle_manager.h"
+#include "orion_adapter_hccp.h"
+#include "env_config/env_config.h"
 
 namespace hcomm {
 
@@ -244,6 +246,172 @@ HcclResult TpMgr::HandleCompletedRequest(const TpMgr::RequestCtx reqCtx,
     
     tpInfo = infoMap[locAddr][rmtAddr].tpInfo;
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpMgr::FindAndGetTpAttr(const TpHandle tpHandle, TpAttrInfo &tpAttrInfo)
+{
+    std::lock_guard<std::mutex> lock(tpAttrCtxMutex_);
+    auto attrIter = tpAttrCtxMap_.find(tpHandle);
+    if (attrIter != tpAttrCtxMap_.end()) {
+        attrIter->second.useCnt += 1;
+        tpAttrInfo = attrIter->second.tpAttrInfo;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    return HcclResult::HCCL_E_NOT_FOUND;
+}
+
+HcclResult TpMgr::GetTpAttr(const GetTpAttrParam &param, TpAttrInfo &tpAttrInfo, CtxHandle ctxHandle)
+{
+    const TpHandle tpHandle = param.tpHandle;
+    if (FindAndGetTpAttr(tpHandle, tpAttrInfo) == HcclResult::HCCL_SUCCESS) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    std::unique_lock<std::mutex> reqCtxLock(tpAttrReqMutex_);
+    auto reqCtxIter = tpAttrReqCtxMap_.find(tpHandle);
+    if (reqCtxIter == tpAttrReqCtxMap_.end()) {
+        HCCL_INFO("[TpMgr][%s] get new tpAttr, param[%s].", __func__,
+            param.Describe().c_str());
+
+        TpAttrRequestCtx &reqCtx = tpAttrReqCtxMap_[tpHandle];
+        CHK_RET(StartGetTpAttrRequest(param, reqCtx, ctxHandle));
+        return HcclResult::HCCL_E_AGAIN;
+    }
+
+    auto &reqCtx = reqCtxIter->second;
+    auto ret = CheckRequestResult(reqCtx.handle);
+    if (ret == HcclResult::HCCL_E_AGAIN) {
+        return ret;
+    }
+    CHK_RET(ret);
+
+    TpAttrRequestCtx completedReqCtx = reqCtxIter->second;
+    tpAttrReqCtxMap_.erase(reqCtxIter);
+    reqCtxLock.unlock();
+
+    return HandleCompletedTpAttrRequest(std::move(completedReqCtx), tpHandle, tpAttrInfo);
+}
+
+HcclResult TpMgr::StartGetTpAttrRequest(const GetTpAttrParam &param,
+    TpMgr::TpAttrRequestCtx &reqCtx, CtxHandle ctxHandle) const
+{
+    void *raReqHandle = nullptr;
+    s32 ret = RaGetTpAttrAsync(ctxHandle, param.tpHandle, 
+        const_cast<uint32_t*>(&param.attrBitmap), &reqCtx.tpAttr, &raReqHandle);
+    if (ret != 0 || !raReqHandle) {
+        HCCL_ERROR("[TpMgr][%s] failed, call RaGetTpAttrAsync error[%d] raReqHandle[%p], "
+            "tpHandle[0x%llx] attrBitmap[0x%x].", __func__, ret, raReqHandle,
+            param.tpHandle, param.attrBitmap);
+        return HcclResult::HCCL_E_NETWORK;
+    }
+
+    reqCtx.handle = reinterpret_cast<RequestHandle>(raReqHandle);
+    HCCL_INFO("[TpMgr][%s] success, tpHandle[0x%llx] reqHandle[%llu].",
+        __func__, param.tpHandle, reqCtx.handle);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpMgr::HandleCompletedTpAttrRequest(const TpMgr::TpAttrRequestCtx reqCtx,
+    const TpHandle tpHandle, TpAttrInfo &tpAttrInfo)
+{
+    TpAttrInfo tmpTpAttrInfo(reqCtx.tpAttr);
+
+    std::lock_guard<std::mutex> lock(tpAttrCtxMutex_);
+    tpAttrCtxMap_[tpHandle] = {std::move(tmpTpAttrInfo), 1};
+    
+    tpAttrInfo = tpAttrCtxMap_[tpHandle].tpAttrInfo;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpMgr::ReleaseTpAttr(const TpHandle tpHandle, const TpAttrInfo &tpAttrInfo)
+{
+    std::lock_guard<std::mutex> lock(tpAttrCtxMutex_);
+    auto attrIter = tpAttrCtxMap_.find(tpHandle);
+    if (attrIter == tpAttrCtxMap_.end()) {
+        HCCL_ERROR("[TpMgr][%s] failed, tp attr is not found, "
+            "tpHandle[0x%llx].", __func__, tpHandle);
+        return HcclResult::HCCL_E_NOT_FOUND;
+    }
+
+    if (attrIter->second.useCnt > 1) {
+        attrIter->second.useCnt -= 1;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    tpAttrCtxMap_.erase(attrIter);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult TpMgr::GetTpTotalTimeout(const TpAttrInfo &tpAttrInfo, uint32_t &tpTimeOutMs)
+{
+    uint8_t rawAtGear = tpAttrInfo.tpAttr.at;
+    uint8_t rawRetryTimes = tpAttrInfo.tpAttr.retryTimesInit;
+
+    uint8_t finalAtGear = rawAtGear;
+    if (rawAtGear < AT_GEAR_MIN || rawAtGear > AT_GEAR_MAX) {
+        finalAtGear = AT_GEAR_DEFAULT;
+        HCCL_WARNING("%s Invalid at gear[%u], expect [%u, %u], use default gear[%u].",
+            __func__, rawAtGear, AT_GEAR_MIN, AT_GEAR_MAX, finalAtGear);
+    }
+
+    uint32_t singleAtTimeoutMs = AT_TIMEOUT_MAP[finalAtGear];
+    tpTimeOutMs = singleAtTimeoutMs * static_cast<uint32_t>(rawRetryTimes + 1);
+
+    HCCL_INFO("%s TP timeout calc success: raw_at_gear[%u], final_at_gear[%u], "
+        "single_timeout[%ums], retry_times[%u], total_timeout[%ums].",
+        __func__, rawAtGear, finalAtGear, singleAtTimeoutMs, rawRetryTimes, tpTimeOutMs);
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+static uint32_t TaHwValueToMs(uint8_t hwValue)
+{
+    uint8_t gear = hwValue / 8;
+    switch (gear) {
+        case TA_GEAR_INDEX_0: return TA_TIMEOUT_MS_GEAR0;
+        case TA_GEAR_INDEX_1: return TA_TIMEOUT_MS_GEAR1;
+        case TA_GEAR_INDEX_2: return TA_TIMEOUT_MS_GEAR2;
+        case TA_GEAR_INDEX_3: return TA_TIMEOUT_MS_GEAR3;
+        default: return TA_TIMEOUT_MS_GEAR2;
+    }
+}
+
+static uint8_t FindMinTaHwValue(uint32_t tpTotalTimeoutMs)
+{
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR0) {
+        return TA_HW_GEAR0_BASE;
+    }
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR1) {
+        return TA_HW_GEAR1_BASE;
+    }
+    if (tpTotalTimeoutMs < TA_TIMEOUT_MS_GEAR2) {
+        return TA_HW_GEAR2_BASE;
+    }
+    return TA_HW_GEAR3_BASE;
+}
+
+uint8_t TpMgr::CalcTaTimeout(const TpAttrInfo &tpAttrInfo)
+{
+    constexpr uint8_t UB_TIMEOUT_DEFAULT = 8; // 默认 UBC_CTP 和 UBC_TP 超时配置为8
+    uint8_t envValue = static_cast<uint8_t>(Hccl::EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
+    uint32_t envTimeoutMs = TaHwValueToMs(envValue);
+    
+    uint32_t tpTimeOutMs = 0;
+    (void)GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs);
+    
+    uint8_t errTimeout = UB_TIMEOUT_DEFAULT;
+    if (envTimeoutMs < tpTimeOutMs) {
+        errTimeout = FindMinTaHwValue(tpTimeOutMs);
+        HCCL_WARNING("[TpMgr][%s] Env timeout [%ums] < TP timeout [%ums]. Auto upgrade TA to hw_val[%u] (%ums).",
+            __func__, envTimeoutMs, tpTimeOutMs, errTimeout, TaHwValueToMs(errTimeout));
+    } else {
+        errTimeout = envValue;
+        HCCL_INFO("[TpMgr][%s] Env timeout [%ums] >= TP timeout [%ums]. Use env gear base hw_val[%u] (%ums).",
+            __func__, envTimeoutMs, tpTimeOutMs, envValue, envTimeoutMs);
+    }
+    
+    return errTimeout;
 }
 
 TpMgr::InfoCtxMap& TpMgr::GetInfoCtxMap(const TpProtocol tpProtocol)

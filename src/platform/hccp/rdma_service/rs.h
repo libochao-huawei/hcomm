@@ -165,7 +165,7 @@ RS_ATTRI_VISI_DEF int RsTypicalRegisterMr(unsigned int phyId, unsigned int rdevI
 RS_ATTRI_VISI_DEF int RsRemapMr(unsigned int phyId, unsigned int rdevIndex, struct MemRemapInfo memList[],
     unsigned int memNum);
 RS_ATTRI_VISI_DEF int RsTypicalDeregisterMr(unsigned int phyId, unsigned int devIndex, unsigned long long addr);
-RS_ATTRI_VISI_DEF int RsDeregisterMr(void *mrHandle);
+RS_ATTRI_VISI_DEF int RsDeregisterMr(unsigned int phyId, unsigned int rdevIndex, void *mrHandle);
 
 enum RsSendFlags {
     RS_SEND_FENCE  = 1 << 0,
@@ -198,7 +198,6 @@ RS_ATTRI_VISI_DEF int RsRdevInit(struct rdev rdevInfo, unsigned int notifyType, 
 RS_ATTRI_VISI_DEF int RsRdevInitWithBackup(struct rdev rdevInfo, struct rdev backupRdevInfo,
     unsigned int notifyType, unsigned int *rdevIndex);
 RS_ATTRI_VISI_DEF int RsRdevGetPortStatus(unsigned int phyId, unsigned int rdevIndex, enum PortStatus *status);
-RS_ATTRI_VISI_DEF int RsNdaGetDirectFlag(unsigned int phyId, unsigned int rdevIndex, int *directFlag);
 RS_ATTRI_VISI_DEF int RsGetLbMax(unsigned int phyId, unsigned int rdevIndex, int *lbMax);
 RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, unsigned int rdevIndex);
 
@@ -268,6 +267,7 @@ enum ProductType {
     PRODUCT_TYPE_910_93,
     PRODUCT_TYPE_950,
     PRODUCT_TYPE_910_96,
+    PRODUCT_TYPE_350,
     PRODUCT_TYPE_OTHERS,
 };
 
@@ -335,7 +335,8 @@ static inline bool RsIsTlvSupported(void)
     enum ProductType productType;
     productType = RsGetProductType(0); // Ensure that RsGetProductType has been called at least once
     return (productType == PRODUCT_TYPE_910B || productType == PRODUCT_TYPE_910_93 ||
-        productType == PRODUCT_TYPE_950 || productType == PRODUCT_TYPE_910_96);
+        productType == PRODUCT_TYPE_950 || productType == PRODUCT_TYPE_910_96 ||
+        productType == PRODUCT_TYPE_350);
 }
 
 static inline bool RsIsRdmaSupported(void)
@@ -350,7 +351,8 @@ static inline bool RsIsUdmaSupported(void)
 {
     enum ProductType productType;
     productType = RsGetProductType(0);
-    return (productType == PRODUCT_TYPE_950 || productType == PRODUCT_TYPE_910_96);
+    return (productType == PRODUCT_TYPE_950 || productType == PRODUCT_TYPE_910_96 ||
+        productType == PRODUCT_TYPE_350);
 }
 
 static inline bool RsIsCustomInterfaceSupported(void)

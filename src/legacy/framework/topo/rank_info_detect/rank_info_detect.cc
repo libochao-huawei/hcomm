@@ -25,6 +25,7 @@
 #include "root_handle_v2.h"
 #include "bootstrap_ip.h"
 #include "preempt_port_manager.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
@@ -166,6 +167,18 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
     CHK_PRT_THROW(hostIp_.IsInvalid(), HCCL_ERROR("[RankInfoDetect::%s] get hostIp fail.", __func__),
         InternalException, "get hostIp fail");
 
+    // 获取hostPort（与SetupServer中获取监听端口的逻辑一致）
+    hostPort_ = GetHostListenPort();
+    if (hostPort_ == HCCL_INVALID_PORT) {
+        auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
+        SocketHandle hostSocketHandle = HostSocketHandleManager::GetInstance().Create(devPhyId_, hostIp_);
+        hostPortSocket_ = std::make_shared<Socket>(
+            hostSocketHandle, hostIp_, HCCL_INVALID_PORT, hostIp_,
+            "hostport_preempt", SocketRole::SERVER, NicType::HOST_NIC_TYPE);
+        PreemptPortManager::GetInstance(devLogicId_).ListenPreempt(hostPortSocket_, portRange, hostPort_);
+        HCCL_INFO("[RankInfoDetect::%s] preempt hostPort[%u] success.", __func__, hostPort_);
+    }
+
     // 创建clientSocket
     std::shared_ptr<Socket> clientSocket = ClientInit(rootHandle);
 
@@ -173,7 +186,7 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
     rankInfoDetectClient = std::make_shared<RankInfoDetectClient>(devPhyId_, rankSize, rankId, clientSocket);
 
     // 2. 调用RankInfoDetectClient.Setup, 获取rankTable
-    rankInfoDetectClient->Setup(rankTable_);
+    rankInfoDetectClient->Setup(rankTable_, hostPort_);
 
     HCCL_INFO("[RankInfoDetect::%s] setup agent end.", __func__);
 }
@@ -313,6 +326,11 @@ void RankInfoDetect::WaitComplete(u32 listenPort, u32 listenStatus) const
         } else {
             const auto elapsed = chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - start);
             if (elapsed > timeout) {
+                RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                    std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
+                        "after %lld seconds. Timeout was set to %lld seconds. Check whether node %s reports an error.",
+                        static_cast<long long>(elapsed.count()), static_cast<long long>(timeout.count()),
+                        identifier_.c_str())}));
                 THROW<TimeoutException>(StringFormat("[RankInfoDetect::%s] wait port[%u] complete timeout[%lld s]",
                     __func__, listenPort, elapsed));
             }

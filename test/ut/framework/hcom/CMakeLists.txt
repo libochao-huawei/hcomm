@@ -10,6 +10,7 @@
 set(src_to_test_list
     main.cc
     ut_HcclGetOpScratchMemSize_API_test.cc
+    ut_HcomSelectAlg_API_test.cc
 )
 
 add_executable(hccl_utest_framework_hcom ${src_to_test_list})
@@ -38,9 +39,6 @@ target_compile_options(hccl_utest_framework_hcom PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_framework_hcom PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
 target_link_libraries(hccl_utest_framework_hcom PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

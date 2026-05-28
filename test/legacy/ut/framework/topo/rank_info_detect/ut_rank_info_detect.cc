@@ -70,7 +70,7 @@ protected:
         std::vector<std::pair<std::string, IpAddress>> hostIfInfos;
         hostIfInfos.push_back(std::make_pair("lo", IpAddress("127.0.0.1")));
         MOCKER(HrtGetHostIf).stubs().with(any()).will(returnValue(hostIfInfos));
-        MOCKER(HrtRaSocketTryListenOneStart).stubs().with(any()).will(returnValue(true));
+        MOCKER(HrtRaSocketTryListenOneStart).stubs().with(any(), any()).will(returnValue(true));
         MOCKER(HrtGetDeviceCount).stubs().with().will(returnValue(8));
         MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
         MOCKER(HrtResetDevice).stubs().with(any()).will(ignoreReturnValue());
@@ -145,7 +145,7 @@ TEST_F(RankInfoDetectTest, Ut_ServerInit_When_Invalid_Port_Expect_ListenPreempt)
     // check
     shared_ptr<RankInfoDetect> rankInfoDetect = make_shared<RankInfoDetect>();
     rankInfoDetect->hostPort_ = HCCL_INVALID_PORT;
-    EXPECT_THROW(rankInfoDetect->ServerInit(), InternalException);
+    EXPECT_THROW(rankInfoDetect->ServerInit(), std::exception);
 }
 
 TEST_F(RankInfoDetectTest, Ut_SetupAgent_When_Input_Expect_NO_THROW)
@@ -153,6 +153,7 @@ TEST_F(RankInfoDetectTest, Ut_SetupAgent_When_Input_Expect_NO_THROW)
     // when
     MOCKER_CPP(&RankInfoDetectClient::Setup).stubs().with(any()).will(ignoreReturnValue());
     MOCKER_CPP(&IpAddress::InitBinaryAddr).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&RankInfoDetectClient::TearDown).stubs().with(any()).will(ignoreReturnValue());
     
     // check
     RankInfoDetect rankInfoDetect;

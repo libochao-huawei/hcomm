@@ -18,6 +18,7 @@
 #include "orion_adapter_rts.h"
 #include "internal_exception.h"
 #include "rdma_handle_manager.h"
+#include "env_config/env_config.h"
 
 #include "ccu_eid_info.h"
 #include "ccu_res_specs.h"
@@ -46,9 +47,9 @@ constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::TP; // 环回使用TP避�
 
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuComponent ccuComponent[MAX_MODULE_DEVICE_NUM];
+    static CcuComponent ccuComponent[MAX_MODULE_DEVICE_NUM + 1];
 
-    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
         THROW<InvalidParamsException>("[CcuComponent][%s] failed, devLogicId[%d] should be less "
             "than %u.", __func__, deviceLogicId, MAX_MODULE_DEVICE_NUM);
     }
@@ -86,6 +87,17 @@ void CcuComponent::Deinit()
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
         CleanDieCkes(dieId);
     }
+
+    for (const auto &item : tpAttrInfoMap) {
+        const auto &ipAddr = item.first;
+        const auto &tpAttrInfo = item.second;
+        const auto &tpInfoIter = tpInfoMap.find(ipAddr);
+        if (tpInfoIter != tpInfoMap.end() && tpInfoIter->second.tpHandle != 0) {
+            (void)TpManager::GetInstance(devLogicId)
+                .ReleaseTpAttr(tpInfoIter->second.tpHandle, tpAttrInfo);
+        }
+    }
+    tpAttrInfoMap.clear();
 
     for (const auto &item : tpInfoMap) {
         const auto &ipAddr = item.first;
@@ -154,13 +166,17 @@ static HcclResult FindOneUsableEid(const uint32_t devLogicId, const uint8_t dieI
     std::string name;
     bool findFlag = false;
     u32 devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+
+    // 如果无法查询设备是否为uboe设备，报错退出
+    CHK_RET(HrtGetUboeFlagEnable(devPhyId));
+
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
     // 当前结论，需要选择可以申请到Tp handle的eid
     for (auto &eidInfo : eidInfoList) {
-        if (eidInfo.dieId != dieId) {
+        // 如果是UBOE设备，则跳过
+        if (HrtCheckUboeSupported(eidInfo.devFeature) || (eidInfo.dieId != dieId)) {
             continue;
         }
-
         const RdmaHandle rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, eidInfo.ipAddress);
         const bool rtpEnable = rdmaHandleMgr.GetRtpEnable(rdmaHandle);
         if (rtpEnable) {
@@ -380,9 +396,10 @@ JettyImportCfg GetJettyImportCfg(const TpInfo &tpInfo, const uint32_t &psn)
 HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const IpAddress &ipAddr,
     const vector<JettyInfo> &jettyInfos)
 {
+    Hccl::CqCreateInfo cqInfo{0};
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
     const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
-    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle, HrtUbJfcMode::CCU_POLL);
+    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle, cqInfo, HrtUbJfcMode::CCU_POLL);
 
     const auto &rmaBufferIter = localCcuRmaBufferMap.find(dieId);
     CHK_PRT_RET(rmaBufferIter == localCcuRmaBufferMap.end(),
@@ -394,17 +411,20 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
     const auto ccuBufTokenValue = ccuRmaBuffer->GetTokenValue();
     const auto tokenIdHandle = ccuRmaBuffer->GetTokenIdHandle();
     
+    const auto &tpInfo = GetTpInfo(ipAddr);
+    const auto tpAttrInfo = GetLoopTpAttr(ipAddr, tpInfo.tpHandle);
+    const uint8_t errTimeout = TpManager::CalcTaTimeout(tpAttrInfo);
+
     auto &createdVec = createdOutParamMap[dieId];
     auto &importedVec = importedOutParamMap[dieId];
     for (const auto &jettyInfo : jettyInfos) {
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
         const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
-            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth, errTimeout};
         auto createdOutParam = HrtRaUbCreateJetty(rdmaHandle, req);
         createdVec.emplace_back(createdOutParam);
 
-        const auto &tpInfo = GetTpInfo(ipAddr);
         const auto psn = GetPsn(ipAddr);
         const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
         const auto importedOutParam = RaUbTpImportJetty(rdmaHandle, createdOutParam.key,
@@ -450,6 +470,42 @@ TpInfo CcuComponent::GetTpInfo(const IpAddress &ipAddr)
     }
 
     return srcIter->second;
+}
+
+TpAttrInfo CcuComponent::GetLoopTpAttr(const IpAddress &ipAddr, const TpHandle tpHandle)
+{
+    const auto &srcIter = tpAttrInfoMap.find(ipAddr);
+    if (srcIter != tpAttrInfoMap.end()) {
+        return srcIter->second;
+    }
+
+    auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
+    const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+
+    constexpr uint32_t TP_ATTR_BITMAP = 0;
+    const GetTpAttrParam tpAttrParam = {tpHandle, TP_ATTR_BITMAP};
+
+    TpAttrInfo tpAttrInfo{};
+    auto &tpMgr = TpManager::GetInstance(devLogicId);
+    const auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
+    const auto startTime = std::chrono::steady_clock::now();
+
+    HcclResult ret = tpMgr.GetTpAttr(tpAttrParam, tpAttrInfo, rdmaHandle);
+    while (ret == HcclResult::HCCL_E_AGAIN) {
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            THROW<InternalException>("[CcuComponent][%s] failed, get tp attr "
+                "timeout[%d ms], devLogicId[%d].", __func__, timeout, devLogicId);
+        }
+        ret = tpMgr.GetTpAttr(tpAttrParam, tpAttrInfo, rdmaHandle);
+    }
+
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<InternalException>("[CcuComponent][%s] failed, ret[%u], "
+            "devLogicId[%d].", __func__, ret, devLogicId);
+    }
+
+    tpAttrInfoMap[ipAddr] = tpAttrInfo;
+    return tpAttrInfo;
 }
 
 inline uint32_t GetRandomNum()
@@ -510,6 +566,7 @@ HcclResult CcuComponent::ConfigLoopChannel(const uint8_t dieId, const IpAddress 
         });
     }
 
+    CHK_PTR_NULL(channelMgrs[dieId]);
     return channelMgrs[dieId]->Config(cfg);
 }
 
@@ -611,6 +668,7 @@ HcclResult CcuComponent::AllocChannels(const uint8_t dieId, const ChannelPara &c
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
 
+    CHK_PTR_NULL(channelMgrs[dieId]);
     auto ret = channelMgrs[dieId]->Alloc(channelPara, channelInfos);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed, feId[%u], devLogicId[%d], dieId[%u].",
@@ -630,6 +688,7 @@ HcclResult CcuComponent::ConfigChannel(const uint8_t dieId, const ChannelCfg &cf
             "devLogicId[%d], dieId[%u].", __func__, channelId, devLogicId, dieId),
         HcclResult::HCCL_E_PARA);
 
+    CHK_PTR_NULL(channelMgrs[dieId]);
     auto ret = channelMgrs[dieId]->Config(cfg);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed, channelId[%u], devLogicId[%d], dieId[%u].",
@@ -647,6 +706,7 @@ HcclResult CcuComponent::ReleaseChannel(const uint8_t dieId, const uint32_t chan
             "devLogicId[%d], dieId[%u].", __func__, channelId, devLogicId, dieId),
         HcclResult::HCCL_E_PARA);
 
+    CHK_PTR_NULL(channelMgrs[dieId]);
     auto ret = channelMgrs[dieId]->Release(channelId);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed, channelId[%u], devLogicId[%d], dieId[%u].",
@@ -677,6 +737,7 @@ HcclResult CcuComponent::AllocRes(const uint8_t dieId, const ResType resType, co
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
 
+    CHK_PTR_NULL(resAllocators[dieId]);
     auto ret = resAllocators[dieId]->Alloc(resType, num, consecutive, resInfos);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed, resType[%s], num[%u], devLogicId[%d], dieId[%u].",
@@ -691,6 +752,7 @@ HcclResult CcuComponent::ReleaseRes(const uint8_t dieId, const ResType resType, 
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
 
+    CHK_PTR_NULL(resAllocators[dieId]);
     auto ret = resAllocators[dieId]->Release(resType, startId, num);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed, resType[%s], startId[%u], num[%u], "
@@ -704,6 +766,7 @@ HcclResult CcuComponent::ReleaseRes(const uint8_t dieId, const ResType resType, 
 HcclResult CcuComponent::AllocIns(const uint8_t dieId, const uint32_t num, ResInfo &insInfo)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
+    CHK_PTR_NULL(resAllocators[dieId]);
 
     vector<ResInfo> resInfos;
     auto ret = resAllocators[dieId]->Alloc(ResType::INS, num, true, resInfos);
@@ -719,6 +782,7 @@ HcclResult CcuComponent::AllocIns(const uint8_t dieId, const uint32_t num, ResIn
 HcclResult CcuComponent::ReleaseIns(const uint8_t dieId, const ResInfo &insInfo)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
+    CHK_PTR_NULL(resAllocators[dieId]);
 
     auto ret = resAllocators[dieId]->Release(ResType::INS, insInfo.startId, insInfo.num);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
@@ -732,6 +796,7 @@ HcclResult CcuComponent::ReleaseIns(const uint8_t dieId, const ResInfo &insInfo)
 HcclResult CcuComponent::AllocCke(const uint8_t dieId, const uint32_t num, vector<ResInfo> &ckeInfos)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
+    CHK_PTR_NULL(resAllocators[dieId]);
 
     auto ret = resAllocators[dieId]->Alloc(ResType::CKE, num, false, ckeInfos);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
@@ -745,6 +810,7 @@ HcclResult CcuComponent::AllocCke(const uint8_t dieId, const uint32_t num, vecto
 HcclResult CcuComponent::ReleaseCke(const uint8_t dieId, const vector<ResInfo> &ckeInfos)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
+    CHK_PTR_NULL(resAllocators[dieId]);
 
     for (auto &ckeInfo : ckeInfos) {
         auto ret = resAllocators[dieId]->Release(ResType::CKE, ckeInfo.startId, ckeInfo.num);
@@ -760,6 +826,7 @@ HcclResult CcuComponent::ReleaseCke(const uint8_t dieId, const vector<ResInfo> &
 HcclResult CcuComponent::AllocXn(const uint8_t dieId, const uint32_t num, vector<ResInfo> &xnInfos)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
+    CHK_PTR_NULL(resAllocators[dieId]);
 
     auto ret = resAllocators[dieId]->Alloc(ResType::XN, num, false, xnInfos);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
@@ -773,6 +840,7 @@ HcclResult CcuComponent::AllocXn(const uint8_t dieId, const uint32_t num, vector
 HcclResult CcuComponent::ReleaseXn(const uint8_t dieId, const vector<ResInfo> &xnInfos)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
+    CHK_PTR_NULL(resAllocators[dieId]);
 
     for (auto &xnInfo : xnInfos) {
         auto ret = resAllocators[dieId]->Release(ResType::XN, xnInfo.startId, xnInfo.num);
@@ -897,7 +965,7 @@ HcclResult CcuComponent::CleanTaskKillState() const
     return HcclResult::HCCL_SUCCESS;
 }
 
-std::array<bool, MAX_CCU_IODIE_NUM> CcuComponent::GetDieEnableFlags() const
+const std::array<bool, MAX_CCU_IODIE_NUM> &CcuComponent::GetDieEnableFlags() const
 {
     return dieEnableFlags;
 }

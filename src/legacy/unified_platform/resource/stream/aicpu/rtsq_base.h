@@ -20,6 +20,8 @@
 #include "reduce_in.h"
 #include "not_support_exception.h"
 #include "ub_jetty_lite.h"
+
+#include "ascend_hal.h"
 namespace aicpu {
 void __attribute__((weak)) __attribute__((visibility("default"))) GetSqeId(const uint32_t num, uint32_t &start, uint32_t &end);
 }
@@ -33,22 +35,22 @@ public:
 
     virtual void Reset();
 
-    virtual u32 GetSqDepth()
+    inline u32 GetSqDepth()
     {
         return sqDepth_;
     }
 
-    virtual u32 GetHead()
+    inline u32 GetHead()
     {
         return sqHead_;
     }
 
-    virtual u32 GetTail()
+    inline u32 GetTail()
     {
         return sqTail_;
     }
 
-    virtual u32 GetTaskId()
+    inline u32 GetTaskId()
     {
         return taskId_;
     }
@@ -59,6 +61,11 @@ public:
     }
 
     virtual void LaunchTask()
+    {
+        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+    }
+
+    virtual void TryLaunchTask()
     {
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
@@ -217,6 +224,7 @@ protected:
     u64 sqBaseAddr_{0};
 
     u32 taskId_{0}; // 填写到SQE中的taskId，现改为由AICPU组件提供的sqeId维护
+    u32 taskIdEnd_{0}; // 当前流已经申请到的最大taskId
 
     std::function<void()> checkOpExecStatusCallback_{nullptr};
 
@@ -227,17 +235,23 @@ protected:
     void ConfigSqTail(u32 value);
     void ConfigDisableToEnable(u32 value);
 
-    HcclResult SetTaskIdBySqeId();
+    inline void SetTaskIdBySqeId()
+    {
+        if (taskId_ < taskIdEnd_) {
+            taskId_++;
+        } else {
+            constexpr u32 PER_GET_SQE_ID_NUM = 1024; // 一次性申请sqeId数量
+            aicpu::GetSqeId(PER_GET_SQE_ID_NUM, taskId_, taskIdEnd_); // aicpu框架保证 taskId_ < taskIdEnd_
+        }
+        return;
+    }
 
 private:
     u64 QuerySqBaseAddr();
     u32 QueryCqeStatus();
 
-    MAKE_ENUM(QueryDrvSqCqPtopType, HEAD, TAIL, DEPTH, CQE_STATUS)
-    u32 QuerySqStatusByType(QueryDrvSqCqPtopType givenType);
-
-    MAKE_ENUM(ConfigDrvSqCqPtopType, TAIL, DISABLE_TO_ENABLE)
-    void ConfigSqStatusByType(ConfigDrvSqCqPtopType givenType, u32 value);
+    u32 QuerySqStatusByType(drvSqCqPropType_t givenType);
+    void ConfigSqStatusByType(drvSqCqPropType_t givenType, u32 value);
 };
 
 } // namespace Hccl

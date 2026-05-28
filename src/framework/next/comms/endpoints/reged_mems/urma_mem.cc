@@ -25,12 +25,16 @@ UbRegedMemMgr::UbRegedMemMgr()
 {
     localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
 }
-    
+
 HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localUbRmaBufferMgr_);
     CHK_PTR_NULL(memHandle);
+    CHK_PTR_NULL(mem.addr);
+    CHK_PRT_RET(mem.size == 0, HCCL_ERROR("[%s] mem size is zero", __func__), HCCL_E_PARA);
+    CHK_PRT_RET(mem.type == COMM_MEM_TYPE_INVALID, 
+        HCCL_ERROR("[%s] invalid mem type [%d]", __func__, mem.type), HCCL_E_PARA);
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> localUbRmaBuffer = nullptr;
 
@@ -55,9 +59,13 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
                 return HCCL_E_PTR);
         }
     }
-    
+
+    // 重新构造key确保注册到计数器的key和接口返回的memHandle对应
+    hccl::BufferKey<uintptr_t, u64> actualRegKey(localUbRmaBuffer->GetAddr(),
+        static_cast<uint64_t>(localUbRmaBuffer->GetSize()));
+
     // 注册到LocalUbRmaBuffer计数器
-    auto resultPair = localUbRmaBufferMgr_->AddWithoutCheck(tempKey, localUbRmaBuffer);
+    auto resultPair = localUbRmaBufferMgr_->AddWithoutCheck(actualRegKey, localUbRmaBuffer);
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);

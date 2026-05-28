@@ -67,7 +67,13 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     ccuTransport.reset(new (std::nothrow)
         CcuTransport(socket, std::move(ccuConnection), bufferInfos));
     CHK_PTR_NULL(ccuTransport);
-    CHK_RET(ccuTransport->Init());
+    // 可能申请xn cke失败，需要回退
+    auto ret = ccuTransport->Init();
+    if (ret == HcclResult::HCCL_E_UNAVAIL) {
+        HCCL_WARNING("[%s] ccuTransport init failed, ccu transport resources unavailable.", __func__);
+        return ret;
+    }
+    CHK_RET(ret);
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -441,8 +447,9 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
 {
     u32 rmtBufferNum{0};
     binaryStream >> rmtBufferNum;
-    CHK_PRT_RET(rmtBufferNum > MAX_BUFFER_NUM,
-        HCCL_ERROR("[CcuTransport][BufferInfoUnpack] rmtBufferNum[%u] exceeds limit[%u]", rmtBufferNum, MAX_BUFFER_NUM),
+    CHK_PRT_RET(rmtBufferNum == 0 || rmtBufferNum > MAX_BUFFER_NUM,
+        HCCL_ERROR("[CcuTransport][BufferInfoUnpack] rmtBufferNum[%u] is zero or exceeds limit[%u]",
+            rmtBufferNum, MAX_BUFFER_NUM),
         HCCL_E_PARA);
     HCCL_INFO("[CcuTransport][BufferInfoUnpack] rmtBufferNum[%u]", rmtBufferNum);
     for (u32 pos = 0; pos < rmtBufferNum; ++pos) {
@@ -626,6 +633,12 @@ std::string CcuTransport::Describe() const
     description += Hccl::StringFormat("CkesRes size: %u, ", ckesRes_.size());
     description += Hccl::StringFormat("XnsRes size: %u.", xnsRes_.size());
     return description;
+}
+
+HcclResult CcuTransport::Describe(std::string &dfxMsg)
+{
+    CHK_RET(ccuConnection_->Describe(dfxMsg));
+    return HcclResult::HCCL_SUCCESS;
 }
 
 void CcuTransport::Clean()

@@ -17,6 +17,7 @@
 #include "adapter_rts_common.h"
 #include "hccp_peer_manager.h"
 #include "server_socket_manager.h"
+#include "hccp.h"
 
 using Hccl::HcclException;
 using std::string;
@@ -26,6 +27,15 @@ namespace hcomm {
 CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
     : Endpoint(endpointDesc)
 {
+}
+
+CpuRoceEndpoint::~CpuRoceEndpoint() noexcept
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    if (dynamicPort_ != HCCL_INVALID_PORT) {
+        ServerSocketStopListen(dynamicPort_);
+    }
+    dynamicPort_ = HCCL_INVALID_PORT;
 }
 
 HcclResult CpuRoceEndpoint::Init()
@@ -74,8 +84,8 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
     HCCL_INFO("[CpuRoceEndpoint::%s] devicePhyId[%u] ipAddress[%s]",
         __func__, devPhyId, ipAddr.Describe().c_str());
 
-    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, devPhyId, port));
-
+    uint32_t requestPort = port;
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, devPhyId, &requestPort));
     return HCCL_SUCCESS;
 }
 
@@ -93,6 +103,41 @@ HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
     Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult CpuRoceEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    CHK_PTR_NULL(port);
+    s32 devId = 0;
+    CHK_RET(hrtGetDevice(&devId));
+    u32 devPhyId = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+
+    Hccl::IpAddress ipAddr{};
+    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
+    Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
+
+    HCCL_INFO("[CpuRoceEndpoint::%s] devicePhyId[%u] ipAddress[%s]",
+        __func__, devPhyId, ipAddr.Describe().c_str());
+
+    // 已有监听端口则直接返回
+    if (dynamicPort_ != HCCL_INVALID_PORT) {
+        *port = dynamicPort_;
+        HCCL_INFO("[CpuRoceEndpoint::%s] already listening, return existing port[%u]", __func__, dynamicPort_);
+        return HCCL_SUCCESS; 
+    }
+    uint32_t requestPort = 0;
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, devPhyId, &requestPort));
+    if (requestPort == 0 || requestPort == HCCL_INVALID_PORT) {
+        HCCL_ERROR("[CpuRoceEndpoint::%s] get listen port failed, port is invalid", __func__);
+        return HCCL_E_NETWORK;
+    }
+    dynamicPort_ = requestPort;
+    *port = dynamicPort_;
     return HCCL_SUCCESS;
 }
 
@@ -139,6 +184,12 @@ HcclResult CpuRoceEndpoint::GetCapabilities(Capabilities &caps)
     if (!isCapabilitiesAvailable_) {
         // 待 HCCP 提供查询设备支持的最大发送消息的接口后，查询设备实际值。
         capabilities_.maxMsgSize = RDMA_MAX_WR_LENGTH;
+        uint32_t ret = RaGetLbMax(this->regedMemMgr_->rdmaHandle_, &(capabilities_.lbMax));
+        CHK_PRT_RET(ret != 0,
+            HCCL_ERROR("[CpuRoceEndpoint::GetCapabilities][GetLbMax]errNo[0x%016llx] RaGetLbMax fail. "
+            "return[%d], params: rdmaHandle[%p], lbMax[%d]",
+            HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, this->regedMemMgr_->rdmaHandle_, capabilities_.lbMax),
+            HCCL_E_NETWORK);
         isCapabilitiesAvailable_ = true;
     }
     caps = capabilities_;

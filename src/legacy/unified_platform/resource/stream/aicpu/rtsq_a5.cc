@@ -21,25 +21,30 @@
 #include "communicator_impl_lite_manager.h"
 #ifdef CCL_KERNEL_AICPU
 #include "hccl_api_data_aicpu_ts.h"
+#include "aicpu_indop_env.h"
 #endif
 
 namespace Hccl {
 using namespace std;
 constexpr u32 RTSQ_A5_PART_ID   = 0;
 constexpr u32 PRINT_INTERVAL  = 30;
+const std::chrono::seconds RTSQ_FULL_PRINT_INTERVAL(PRINT_INTERVAL); // 打印间隔30s
+
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId) : RtsqBase(devPhyId, streamId, sqId)
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_ = 0;
-    }
+    SetTaskIdBySqeId();
+    rtsqFullTimeoutValue_ = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout + 20; // rtsq full超时时间: X+20s
+    rtsqFullTimeout_ = std::chrono::seconds(rtsqFullTimeoutValue_);
 }
 
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase(devPhyId, streamId, sqId)
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_ = 0;
-    }
+    SetTaskIdBySqeId();
     launchFlag_ = launchFlag;
+#ifdef CCL_KERNEL_AICPU
+    rtsqFullTimeoutValue_ = hcomm::GetNotifyWaitTimeout() + 20; // rtsq full超时时间: X+20s
+#endif
+    rtsqFullTimeout_ = std::chrono::seconds(rtsqFullTimeoutValue_);
 }
 
 void RtsqA5::Reset()
@@ -57,7 +62,7 @@ void RtsqA5::Reset()
 // 计算head和tail之间的距离
 u32 RtsqA5::GetTailToHeadDist() const
 {
-    if (sqHead_ == sqTail_) { // 头尾相同，则距离大小为sq深度
+    if (UNLIKELY(sqHead_ == sqTail_)) { // 头尾相同，则距离大小为sq深度
         return sqDepth_;
     }
     return (sqTail_ < sqHead_) ? (sqHead_ - sqTail_) : (sqDepth_ - (sqTail_ - sqHead_));
@@ -66,30 +71,39 @@ u32 RtsqA5::GetTailToHeadDist() const
 void RtsqA5::MakeSureAvailableSpace()
 {
     u32  availableSpace = GetTailToHeadDist();
-    auto startTime      = std::chrono::steady_clock::now();
-    auto timeoutValue
-        = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout + 20; // rtsq full超时时间: X+20s
-    auto                       timeout = std::chrono::seconds(timeoutValue);
-    const std::chrono::seconds printInterval(PRINT_INTERVAL); // 打印间隔30s
-    auto                       lastPrintTime = std::chrono::steady_clock::now() - printInterval;
-    HCCL_INFO("RtsqA5::%s timeout: %u s, cur head: %u, tail: %u, sqId: %u", __func__, timeoutValue, sqHead_, sqTail_,
-              sqId_);
+    auto startTime = std::chrono::steady_clock::now();
+    auto lastPrintTime = startTime - RTSQ_FULL_PRINT_INTERVAL;
+    HCCL_INFO("[%s]sqId:%u, rtsqFullTimeoutValue: %u s, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
+        __func__, sqId_, rtsqFullTimeoutValue_, sqHead_, sqTail_, pendingSqeCnt);
 
-    HCCL_INFO("RtsqA5::%s start", __func__);
     while (availableSpace <= pendingSqeCnt) {
-        if (UNLIKELY(std::chrono::steady_clock::now() - lastPrintTime >= printInterval)) {
-            HCCL_INFO("RtsqA5::%s while loop availableSpace %u <= pendingSqeCnt %u", __func__, availableSpace,
-                      pendingSqeCnt);
-            lastPrintTime = std::chrono::steady_clock::now();
+        sqHead_        = QuerySqHead();
+        availableSpace = GetTailToHeadDist();
+        if (availableSpace > pendingSqeCnt) {
+            break; // 避免head没更新导致假反压
         }
-        if (UNLIKELY((std::chrono::steady_clock::now() - startTime) >= timeout)) { // timeout内还是不能向RTSQ中写入值，报错
-            auto msg = StringFormat("Rtsq full, timeout %u. cur head: %u, sqId: %u", timeoutValue, sqHead_, sqId_);
+
+        auto curTime = std::chrono::steady_clock::now();
+        if (UNLIKELY(curTime - lastPrintTime >= RTSQ_FULL_PRINT_INTERVAL)) {
+            HCCL_RUN_INFO("[%s]while loop, sqId:%u, sqHead:%u, sqTail:%u, availableSpace:%u, pendingSqeCnt:%u, "
+                "rtsqFullTimeoutValue:%u s", __func__, sqId_, sqHead_, sqTail_, availableSpace, pendingSqeCnt, rtsqFullTimeoutValue_);
+            lastPrintTime = curTime;
+        }
+        if (UNLIKELY((curTime - startTime) >= rtsqFullTimeout_)) { // timeout内还是不能向RTSQ中写入值，报错
+            auto msg = StringFormat("Rtsq full, rtsqFullTimeoutValue %u. sqId:%u, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
+                rtsqFullTimeoutValue_, sqId_, sqHead_, sqTail_, pendingSqeCnt);
             HCCL_ERROR("%s", msg.c_str());
             THROW<InternalException>(msg);
         }
-        sqHead_        = QuerySqHead();
-        availableSpace = GetTailToHeadDist();
 
+#ifdef CCL_KERNEL_AICPU
+        HcclResult ret = HandleDispatchAllStreams();
+        if (UNLIKELY(ret != HCCL_SUCCESS)) {
+            auto msg = StringFormat("RtsqA5::%s HandleDispatchAllStreams failed, ret = %d, sqId:%u, ", __func__, ret, sqId_);
+            HCCL_ERROR("%s", msg.c_str());
+            THROW<InternalException>(msg);
+        }
+#endif
         if (checkOpExecStatusCallback_ != nullptr) {
             checkOpExecStatusCallback_();
         }
@@ -98,40 +112,39 @@ void RtsqA5::MakeSureAvailableSpace()
 
 void RtsqA5::CopyLocBufToSq()
 {
-    sqHead_        = QuerySqHead();
     u8 *sqCurrAddr = reinterpret_cast<u8 *>(sqBaseAddr_) + sqTail_ * rtsqSqeSize;
     if (sqTail_ >= sqHead_) {
         u32 depthLeft = sqDepth_ - sqTail_;
         if (pendingSqeCnt <= depthLeft) { // 没有回绕
             HCCL_INFO("RtsqA5::%s copy sqe from sqe buffer, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, size: %u, depth remain: %u", 
                 __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt, depthLeft);
-            int ret = memcpy_s(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * rtsqSqeSize);
+            int ret = memcpy_sp(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * rtsqSqeSize);
             if (UNLIKELY(ret != 0)) {
-                THROW<InternalException>(StringFormat("RtsqA5::%s sqe memcpy_s failed, ret = %d", __func__, ret));
+                THROW<InternalException>(StringFormat("RtsqA5::%s sqe memcpy_sp failed, ret = %d", __func__, ret));
             }
         } else {
             HCCL_INFO("RtsqA5::%s copy sqe twice, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, cnt: %u, depth remain: %u", 
                 __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt, depthLeft);
             // 先拷贝rtsq里剩余空间大小
-            int ret = memcpy_s(sqCurrAddr, depthLeft * AC_SQE_SIZE, locBuf, depthLeft * rtsqSqeSize);
+            int ret = memcpy_sp(sqCurrAddr, depthLeft * AC_SQE_SIZE, locBuf, depthLeft * rtsqSqeSize);
             if (ret != 0) {
                 THROW<InternalException>(
-                    StringFormat("RtsqA5::%s rtsq remaining space memcpy_s failed, ret = %d", __func__, ret));
+                    StringFormat("RtsqA5::%s rtsq remaining space memcpy_sp failed, ret = %d", __func__, ret));
             }
             // 拷贝剩余sqe
-            ret = memcpy_s(reinterpret_cast<u8 *>(sqBaseAddr_), sqHead_ * rtsqSqeSize, locBuf + depthLeft * rtsqSqeSize,
+            ret = memcpy_sp(reinterpret_cast<u8 *>(sqBaseAddr_), sqHead_ * rtsqSqeSize, locBuf + depthLeft * rtsqSqeSize,
                            (pendingSqeCnt - depthLeft) * AC_SQE_SIZE);
             if (UNLIKELY(ret != 0)) {
                 THROW<InternalException>(
-                    StringFormat("RtsqA5::%s remaining sqe memcpy_s failed, ret = %d", __func__, ret));
+                    StringFormat("RtsqA5::%s remaining sqe memcpy_sp failed, ret = %d", __func__, ret));
             }
         }
     } else {
         HCCL_INFO("RtsqA5::%s copy sqe from sqe buffer, tail < head, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, size: %u", 
                 __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt);
-        int ret = memcpy_s(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * rtsqSqeSize);
+        int ret = memcpy_sp(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * rtsqSqeSize);
         if (UNLIKELY(ret != 0)) {
-            THROW<InternalException>(StringFormat("RtsqA5::%s sqe memcpy_s failed, ret = %d", __func__, ret));
+            THROW<InternalException>(StringFormat("RtsqA5::%s sqe memcpy_sp failed, ret = %d", __func__, ret));
         }
     }
 }
@@ -148,39 +161,60 @@ void RtsqA5::LaunchTask()
     // 确保 rtsq 有足够空间放pending SQE
     MakeSureAvailableSpace();
 
+    if (pendingSqeCnt == 0) {
+        return;
+    }
     // localBuffer拷贝到 RTSQ
     CopyLocBufToSq();
 
     // 更新tail，触发芯片执行
-    if (UNLIKELY(sqDepth_ == 0)) {
-        THROW<InternalException>("sqDepth_ cannot be zero.");
-    }
-    if (UNLIKELY(pendingSqeCnt > (UINT32_MAX - sqTail_))) {
-        THROW<InternalException>("integer overflow occurs");
-    }
     u32 newTail = (sqTail_ + pendingSqeCnt) % sqDepth_;
     ConfigSqTail(newTail);
     sqTail_ = newTail;
 
     // 清空本地的locBuffer和sqeCnt数目
+    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
     pendingSqeCnt = 0;
     (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt); // locBuffer清零
+}
+
+void RtsqA5::TryLaunchTask()
+{
+    HCCL_DEBUG("RtsqA5::%s: START, pendingSqeCnt[%u]", __func__, pendingSqeCnt);
+
+    if (pendingSqeCnt == 0) {
+        HCCL_DEBUG("RtsqA5::%s: pendingSqeCnt is %u, return", __func__, pendingSqeCnt);
+        return;
+    }
+
+    sqHead_ = QuerySqHead();
+    u32 availableSpace = GetTailToHeadDist();
+    if (availableSpace <= pendingSqeCnt) {
+        HCCL_DEBUG("RtsqA5::%s: no enough space, availableSpace[%u] < pendingSqeCnt[%u], return", __func__,
+                  availableSpace, pendingSqeCnt);
+        return;
+    }
+
+    CopyLocBufToSq();
+
+    u32 newTail = (sqTail_ + pendingSqeCnt) % sqDepth_;
+    ConfigSqTail(newTail);
+    sqTail_ = newTail;
+
+    pendingSqeCnt = 0;
+    (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt);
     HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
 }
 
 u8 *RtsqA5::GetCurrSqeBuffer()
 {
-    CHECK_NULLPTR(locBuf + pendingSqeCnt * rtsqSqeSize, "[GetCurrSqeBuffer] return nullptr!");
     return locBuf + pendingSqeCnt * rtsqSqeSize;
 }
 
 void RtsqA5::RefreshInfo()
 {
-    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
-        taskId_++;
-    }
+    SetTaskIdBySqeId();
     pendingSqeCnt++;
-    HCCL_INFO("RtsqA5::%s: Updated: taskId_[%u], pendingSqeCnt[%u]", __func__, taskId_, pendingSqeCnt);
     
 #ifdef CCL_KERNEL_AICPU
     if (launchFlag_ && !IsBatchLaunchMode()) {
@@ -204,7 +238,6 @@ void RtsqA5::NotifyWait(u32 notifyId)
 void RtsqA5::NotifyWait(u32 notifyId, u32 timeout)
 {
     BuildA5SqeNotifyWait(streamId_, taskId_, notifyId, timeout, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::NotifyWait: notifyWait Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::NotifyWait: streamId %u, taskId %u, notifyId %u, timeout %u", streamId_, taskId_, notifyId, timeout);
     RefreshInfo();
 }
@@ -212,7 +245,6 @@ void RtsqA5::NotifyWait(u32 notifyId, u32 timeout)
 void RtsqA5::NotifyRecordLoc(u32 notifyId)
 {
     BuildA5SqeNotifyRecord(streamId_, taskId_, notifyId, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::NotifyRecordLoc: notifyRecordLoc Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::NotifyRecordLoc: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
     RefreshInfo();
 }
@@ -220,8 +252,6 @@ void RtsqA5::NotifyRecordLoc(u32 notifyId)
 void RtsqA5::Cnt1toNNotifyWait(u32 notifyId, u32 value)
 {
     BuildA5SqeCnt1toNNotifyWait(streamId_, taskId_, notifyId, value, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::Cnt1toNNotifyWait: Cnt1toNNotifyWait Sqe: %s",
-              Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::Cnt1toNNotifyWait: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
     RefreshInfo();
 }
@@ -229,8 +259,6 @@ void RtsqA5::Cnt1toNNotifyWait(u32 notifyId, u32 value)
 void RtsqA5::Cnt1toNNotifyRecord(u32 notifyId, u32 value)
 {
     BuildA5SqeCnt1toNNotifyRecord(streamId_, taskId_, notifyId, value, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::Cnt1toNNotifyRecord: Cnt1toNNotifyRecord Sqe: %s",
-              Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::Cnt1toNNotifyWait: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
     RefreshInfo();
 }
@@ -238,8 +266,6 @@ void RtsqA5::Cnt1toNNotifyRecord(u32 notifyId, u32 value)
 void RtsqA5::CntNto1NotifyWait(u32 notifyId, u32 value)
 {
     BuildA5SqeCntNto1NotifyWait(streamId_, taskId_, notifyId, value, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::CntNto1NotifyWait: CntNto1NotifyWait Sqe: %s",
-              Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::CntNto1NotifyWait: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
     RefreshInfo();
 }
@@ -247,8 +273,6 @@ void RtsqA5::CntNto1NotifyWait(u32 notifyId, u32 value)
 void RtsqA5::CntNto1NotifyRecord(u32 notifyId, u32 value)
 {
     BuildA5SqeCntNto1NotifyRecord(streamId_, taskId_, notifyId, value, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::CntNto1NotifyRecord: BuildA5SqeCntNto1NotifyRecord Sqe: %s",
-              Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::CntNto1NotifyRecord: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
     RefreshInfo();
 }
@@ -258,7 +282,8 @@ void RtsqA5::SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId)
     // 不带reduce的拷贝，opcode填0
     (void)partId;
     BuildA5SqeSdmaCopy(streamId_, taskId_, dstAddr, srcAddr, size, RTSQ_A5_PART_ID, 0, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::SdmaCopy: SdmaCopy Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
+    HCCL_INFO("RtsqA5::SdmaCopy: streamId %u, taskId %u, srcAddr 0x%llx, dstAddr 0x%llx, size %u", streamId_, taskId_,
+        srcAddr, dstAddr, size);
     RefreshInfo();
 }
 
@@ -290,7 +315,8 @@ void RtsqA5::SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const Re
     u8 type = static_cast<u8>(DataTypeToStarsDataTypeMap.at(reduceIn.dataType));
 
     BuildA5SqeSdmaCopy(streamId_, taskId_, dstAddr, srcAddr, size, RTSQ_A5_PART_ID, (op | type), GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::SdmaReduce: SdmaReduce Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
+    HCCL_INFO("RtsqA5::SdmaReduce: streamId %u, taskId %u, srcAddr 0x%llx, dstAddr 0x%llx, size %u", streamId_, taskId_,
+        srcAddr, dstAddr, size);
     RefreshInfo();
 }
 
@@ -330,7 +356,6 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
 {
     // piValue需要使用u16数据类型，保证自然增长，用于判断是否翻转
     BuildA5SqeUbDbSend(streamId_, taskId_, jettyLiteId, piValue, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::UbDbSend: UbDbSend Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("[RtsqA5][UbDbSend] piValue(UbPi):%u, SqTail(Rtsq Pi):%u", piValue, sqTail_);
     RefreshInfo();
 }
@@ -338,7 +363,6 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
 void RtsqA5::CCoreNotifyWait(u64 waitAddr, u64 curTurnCntAddr, bool last)
 {
     BuildA5SqeCCoreNotifyWait(streamId_, taskId_, waitAddr, curTurnCntAddr, last, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::CCoreNotifyWait: CCoreNotifyWait Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::CCoreNotifyWait: streamId %u, taskId %u, waitAddr %llu, curTurnCntAddr %llu, last %d", streamId_,
               taskId_, waitAddr, curTurnCntAddr, last);
     RefreshInfo();
@@ -347,7 +371,6 @@ void RtsqA5::CCoreNotifyWait(u64 waitAddr, u64 curTurnCntAddr, bool last)
 void RtsqA5::CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr)
 {
     BuildA5SqeCCoreNotifyRecord(streamId_, taskId_, recordAddr, curTurnCntAddr, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::CCoreNotifyRecord: CCoreNotifyRecord Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::CCoreNotifyRecord: streamId %u, taskId %u, recordAddr %llu, curTurnCntAddr %llu", streamId_, taskId_,
               recordAddr, curTurnCntAddr);
     RefreshInfo();
@@ -356,7 +379,6 @@ void RtsqA5::CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr)
 void RtsqA5::P2PWriteValue(u64 remoteAddr, u32 writeValue)
 {
     BuildA5SqeP2pWriteValue(streamId_, taskId_, remoteAddr, writeValue, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::P2PWriteValue: P2PWriteValue Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::P2PWriteValue: streamId %u, taskId %u, remoteAddr %llu, writeValue %llu",
         streamId_, taskId_, remoteAddr, writeValue);
     RefreshInfo();

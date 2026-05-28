@@ -47,6 +47,7 @@ set(hccl_utest_misc_list
     # ut_hccl_transport_p2p.cc
     # ut_onesided_service.cc
     ut_transport_mem.cc
+    ut_transport_ibverbs.cc
     ut_load_backup_ip.cc
     # ut_backup_link.cc
     ut_adapter.cc
@@ -54,6 +55,7 @@ set(hccl_utest_misc_list
     ut_switch_nic_fsm.cc
     ut_interface_multithread.cc
     ut_topoinfo_exchange_agent.cc
+    ut_exchange_info.cc
 )
 add_executable(hccl_utest_misc ${hccl_utest_misc_list})
 
@@ -77,10 +79,6 @@ target_compile_options(hccl_utest_misc PRIVATE
     -Os
     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
-)
-
-target_link_directories(hccl_utest_misc PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
 
 target_link_libraries(hccl_utest_misc PRIVATE

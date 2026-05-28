@@ -57,7 +57,7 @@ public:
     HcclResult ReleaseCke(const uint8_t dieId, const std::vector<ResInfo> &ckeInfos);
     HcclResult AllocXn(const uint8_t dieId, const uint32_t num, std::vector<ResInfo> &xnInfos);
     HcclResult ReleaseXn(const uint8_t dieId, const std::vector<ResInfo> &xnInfos);
-    std::array<bool, CCU_MAX_IODIE_NUM> GetDieEnableFlags() const;
+    const std::array<bool, CCU_MAX_IODIE_NUM> &GetDieEnableFlags() const;
 
     HcclResult CleanTaskKillState() const;
     HcclResult CleanDieCkes(const uint8_t dieId) const;
@@ -81,6 +81,7 @@ private:
     HcclResult CreateAndImportLoopJettys(const uint8_t dieId, const CommAddr &commAddr,
         const std::vector<JettyInfo> &jettyInfos);
     HcclResult GetLoopTpInfo(const uint8_t dieId, const CommAddr &commAddr, TpInfo &tpInfo);
+    HcclResult GetLoopTpAttr(const uint8_t dieId, const CommAddr &commAddr, TpAttrInfo &tpAttrInfo);
     uint32_t GetNewPsn();
     HcclResult ConfigLoopChannel(const uint8_t dieId, const CommAddr &commAddr,
         const ChannelInfo &channelInfo);
@@ -121,6 +122,7 @@ private:
     using ImportOutParamPair = std::pair<CtxHandle, HrtRaUbJettyImportedOutParam>;
     std::unordered_map<uint8_t, std::vector<ImportOutParamPair>> importedOutParamMap_{};
     std::unordered_map<uint8_t, TpInfo> tpInfoMap_{};
+    std::unordered_map<uint8_t, TpAttrInfo> tpAttrInfoMap_{};
     enum class CcuTaskKillStatus : uint8_t { INIT = 0, TASK_KILL = 1, KILL_DONE = 2, CLEAN_TIF = 3, INVALID = 4};
     CcuTaskKillStatus status{CcuTaskKillStatus::INVALID};
 };

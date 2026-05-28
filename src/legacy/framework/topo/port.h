@@ -64,7 +64,6 @@ inline LinkProtoType LinkProtocol2LinkProtoType(LinkProtocol linkProtocol)
         THROW<NotSupportException>(StringFormat("[LinkProtocol2LinkProtoType] linkProtocol[%s] don't support.",
             linkProtocol.Describe().c_str()));
     }
-    HCCL_INFO("[LinkProtocol2LinkProtoType] linkType is[%s]", linkType.Describe().c_str());
     return linkType;
 }
 
@@ -177,7 +176,7 @@ class HostNetPortType : public BasePortType {
 public:
     HostNetPortType(ConnectProtoType proto) : BasePortType(PortDeploymentType::HOST_NET)
     {
-        if (proto != ConnectProtoType::TCP && proto != ConnectProtoType::RDMA) {
+        if (proto != ConnectProtoType::TCP && proto != ConnectProtoType::RDMA && proto != ConnectProtoType::UB) {
             THROW<InvalidParamsException>(StringFormat("HostNetPortType::HostNetPortType proto invalid"));
         }
         proto_ = proto;

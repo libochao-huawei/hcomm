@@ -91,9 +91,10 @@ public:
     class Peer : public Node {
     public:
         using NetInstancePtr = const NetInstance *;
-        Peer(RankId rankId, LocalId localId, LocalId replacedLocalId, DeviceId deviceId, u32 devicePort = DEFAULT_LISTENING_PORT)
+        Peer(RankId rankId, LocalId localId, LocalId replacedLocalId, DeviceId deviceId, u32 devicePort = DEFAULT_LISTENING_PORT,
+             u32 hostPort = DEFAULT_LISTENING_PORT)
             : Node(NodeType::PEER), rankId_(rankId), localId_(localId), replacedLocalId_(replacedLocalId),
-              deviceId_(deviceId), devicePort_(devicePort)
+              deviceId_(deviceId), devicePort_(devicePort), hostPort_(hostPort)
         {
             nodeId_ = GenerateNodeId(rankId);
         }
@@ -104,6 +105,7 @@ public:
         RankId        GetRankId() const;
         DeviceId      GetDeviceId() const;
         u32           GetDevicePort() const;
+        u32           GetHostPort() const;
         std::set<u32> GetLevels() const;
         NetInstancePtr   GetNetInstance(u32 level) const;
         std::map<std::string, IpAddress> GetPortAddrMapLayer0() const;
@@ -115,6 +117,7 @@ public:
         LocalId                  replacedLocalId_;
         DeviceId                 deviceId_;
         u32                      devicePort_;
+        u32                      hostPort_;
         std::set<u32>            netLayers_;
         std::map<std::string, IpAddress> portAddrMapLayer0_{}; // layer0 层端口与IpAddress的映射。
         std::vector<NetInstancePtr> netInsts_; // 下标为level，约束：level从0递增

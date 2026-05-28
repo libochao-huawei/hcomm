@@ -97,6 +97,22 @@ HcclResult HcclCommDeregMem(HcclComm comm, const char *memTag, const void* memHa
     return HCCL_SUCCESS;
 }
 
+HcclResult GetHcclBufferWithClearFlag(HcclComm comm, void **buffer, uint64_t *size, bool clearFlag)
+{
+    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    const std::string &commId = hcclComm->GetIdentifier();
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    auto myRank = collComm->GetMyRank();
+    CHK_PTR_NULL(myRank);
+    CommMems* commMem = myRank->GetCommMems();
+    CHK_PTR_NULL(commMem);
+    CHK_RET(commMem->GetHcclBuffer(*buffer, *size));
+    CHK_RET(commMem->HcclBufferMemset(*buffer, *size, clearFlag));
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
 {
     CHK_PRT_RET(buffer == nullptr, HCCL_ERROR("[%s] buffer is null", __func__), HCCL_E_PTR);
@@ -106,20 +122,19 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
-            auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
-            const std::string &commId = hcclComm->GetIdentifier();
-            hccl::CollComm* collComm = hcclComm->GetCollComm();
-            CHK_PTR_NULL(collComm);
-            auto myRank = collComm->GetMyRank();
-            CHK_PTR_NULL(myRank);
-            CommMems* commMem = myRank->GetCommMems();
-            CHK_PTR_NULL(commMem);
-            CHK_RET(commMem->GetHcclBuffer(*buffer, *size));
-            return HCCL_SUCCESS;
+            return GetHcclBufferWithClearFlag(comm, buffer, size, false);
         }());
 #endif
 
-    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    hccl::MyRank *myRank = static_cast<hccl::MyRank *>(hcclComm->GetMyRank());
+    if (hcclComm->GetConnectMode() && myRank != nullptr) {
+        CommMems *commMem = myRank->GetCommMems();
+        CHK_PTR_NULL(commMem);
+        CHK_RET(commMem->GetHcclBuffer(*buffer, *size));
+        return HCCL_SUCCESS;
+    }
+
     std::string commId = hcclComm->GetIdentifier();
     HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
     HcclResult ret = HCCL_SUCCESS;
@@ -135,4 +150,21 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
     *size = commBuffer.size;
     HCCL_RUN_INFO("Entry-%s: success: comm[%s], buffer[%p] size[%llu]", __func__, commId.c_str(), *buffer, *size);
     return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetHcclBufferCleared(HcclComm comm, void **buffer, uint64_t *size)
+{
+    CHK_PRT_RET(buffer == nullptr, HCCL_ERROR("[%s] buffer is null", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(size == nullptr, HCCL_ERROR("[%s] size is null", __func__), HCCL_E_PTR);
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            return GetHcclBufferWithClearFlag(comm, buffer, size, true);
+        }());
+#endif
+
+    HCCL_ERROR("HcclGetHcclBufferCleared is not supported");
+    return HCCL_E_NOT_SUPPORT;
 }

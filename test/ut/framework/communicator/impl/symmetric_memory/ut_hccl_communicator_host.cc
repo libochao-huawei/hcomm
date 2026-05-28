@@ -44,7 +44,8 @@ protected:
     }
 };
 
-TEST_F(HcclCommunicatorHostTest, Ut_InitSymmetricMemory_When_Normal_Expect_ReturnIsHCCL_SUCCESS) {
+TEST_F(HcclCommunicatorHostTest, Ut_InitSymmetricMemory_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+{
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     hcclCommunicator->rankInfoList_.resize(2);
     hcclCommunicator->realUserRank_ = 0;
@@ -55,7 +56,8 @@ TEST_F(HcclCommunicatorHostTest, Ut_InitSymmetricMemory_When_Normal_Expect_Retur
     EXPECT_NE(hcclCommunicator->symmetricMemory_, nullptr);
 }
 
-TEST_F(HcclCommunicatorHostTest, Ut_InitSymmetricMemory_When_StrideIsValid_Expect_ReturnsIsHCCL_SUCCESS) {
+TEST_F(HcclCommunicatorHostTest, Ut_InitSymmetricMemory_When_StrideIsValid_Expect_ReturnsIsHCCL_SUCCESS)
+{
     HcclCommConfig config;
     HcclCommConfigInit(&config);
     config.hcclSymWinMaxMemSizePerRank = 8;
@@ -71,7 +73,8 @@ TEST_F(HcclCommunicatorHostTest, Ut_InitSymmetricMemory_When_StrideIsValid_Expec
     EXPECT_NE(hcclCommunicator->symmetricMemory_, nullptr);
 }
 
-TEST_F(HcclCommunicatorHostTest, Ut_InitSymmetricMemory_When_SuperPodNumGreaterThanOne_Expect_ReturnIsHCCL_SUCCESS) {
+TEST_F(HcclCommunicatorHostTest, Ut_InitSymmetricMemory_When_SuperPodNumGreaterThanOne_Expect_ReturnIsHCCL_SUCCESS)
+{
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     hcclCommunicator->superPodNum_ = 2;
     HcclResult ret = hcclCommunicator->InitSymmetricMemory();
@@ -81,7 +84,8 @@ TEST_F(HcclCommunicatorHostTest, Ut_InitSymmetricMemory_When_SuperPodNumGreaterT
     EXPECT_EQ(hcclCommunicator->symmetricMemory_, nullptr);
 }
 
-TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_Normal_Expect_ReturnIsTrue) {
+TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_Normal_Expect_ReturnIsTrue)
+{
     MOCKER_CPP(&SymmetricMemory::FindSymmetricWindow).stubs().will(returnValue(HCCL_SUCCESS));
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     hcclCommunicator->rankInfoList_.resize(2);
@@ -97,8 +101,8 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_Normal_Expect_
     hcclCommunicator->multiModuleDiffDeviceNumMode_ = false;
 
     OpParam opParam;
-    opParam.inputSymWindow = reinterpret_cast<void*>(0x1000);
-    opParam.outputSymWindow = reinterpret_cast<void*>(0x2000);
+    opParam.inputSymWindow = reinterpret_cast<void *>(0x1000);
+    opParam.outputSymWindow = reinterpret_cast<void *>(0x2000);
     opParam.aicpuUnfoldMode = true;
 
     bool retBool = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
@@ -106,7 +110,8 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_Normal_Expect_
     GlobalMockObject::verify();
 }
 
-TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_AicpuUnfoldIsFalse_Expect_ReturnIsFalse) {
+TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_AicpuUnfoldIsFalse_Expect_ReturnIsFalse)
+{
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     hcclCommunicator->rankInfoList_.resize(2);
     hcclCommunicator->realUserRank_ = 0;
@@ -121,7 +126,8 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_AicpuUnfoldIsF
     EXPECT_EQ(retBool, false);
 }
 
-TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_WorkFlowModeIsNotOpBase_Expect_ReturnIsFalse) {
+TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_WorkFlowModeIsNotOpBase_Expect_ReturnIsFalse)
+{
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     hcclCommunicator->rankInfoList_.resize(2);
     hcclCommunicator->realUserRank_ = 0;
@@ -137,7 +143,8 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_WorkFlowModeIs
     EXPECT_EQ(retBool, false);
 }
 
-TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_deviceTypeIsNot910_93_Expect_ReturnIsFalse) {
+TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_deviceTypeIsNot910_93_Expect_ReturnIsFalse)
+{
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     hcclCommunicator->rankInfoList_.resize(2);
     hcclCommunicator->realUserRank_ = 0;
@@ -152,7 +159,9 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_deviceTypeIsNo
     EXPECT_EQ(retBool, false);
 }
 
-TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_multiModuleDiffDeviceNumModeIsTrue_Expect_ReturnIsFalse) {
+TEST_F(
+    HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_multiModuleDiffDeviceNumModeIsTrue_Expect_ReturnIsFalse)
+{
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     hcclCommunicator->rankInfoList_.resize(2);
     hcclCommunicator->realUserRank_ = 0;
@@ -169,7 +178,9 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_multiModuleDif
     EXPECT_EQ(retBool, false);
 }
 
-TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_FindSymmetricWindowReturnIsHCCL_E_NOT_FOUND_Expect_ReturnIsFalse) {
+TEST_F(HcclCommunicatorHostTest,
+    Ut_IsSupportSymmetricMemory_When_FindSymmetricWindowReturnIsHCCL_E_NOT_FOUND_Expect_ReturnIsFalse)
+{
     MOCKER_CPP(&SymmetricMemory::FindSymmetricWindow).stubs().will(returnValue(HCCL_E_NOT_FOUND));
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     hcclCommunicator->rankInfoList_.resize(2);
@@ -191,55 +202,213 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_FindSymmetricW
 
 class TestHcclCommunicator {
 public:
-    HcclResult AicpuInitOpTilingDataBuf(const OpParam &opParam, const HcclCMDType &opType, 
-        const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 dynamicDataSize) {
+    HcclResult AicpuInitOpTilingDataBuf(const OpParam &opParam, const HcclCMDType &opType,
+        const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 dynamicDataSize)
+    {
         MOCKER_CPP(&HcclCommunicator::InitAndCheckAicpuOrderNotify).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HcclCommunicator::BuildHierarchicalAlgOption).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HcclCommunicator::UpdateOpIndex).stubs().will(returnValue(0));
         MOCKER_CPP(&HcclCommunicator::GetOrderLaunchMode).stubs().will(returnValue(0));
         MOCKER_CPP(&HcclCommunicator::AicpuInitOpTilingDataFromOpParam).stubs().will(returnValue(HCCL_SUCCESS));
-        
+
         return hcclCommunicator->AicpuInitOpTilingDataBuf(opParam, opType, kernelName, opTilingInfo, dynamicDataSize);
     }
-    
-    HcclCommunicator* hcclCommunicator;
+
+    HcclCommunicator *hcclCommunicator;
 };
 
-TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Expect_SkipIsDirectRemoteRank) {
+TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Expect_SkipIsDirectRemoteRank)
+{
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
     hcclCommunicator->rankInfoList_.resize(2);
     hcclCommunicator->realUserRank_ = 0;
     hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910B;
     hcclCommunicator->isGroupMode_ = true;
     hcclCommunicator->userRankSize_ = 2;
-    
+
     OpParam opParam;
     opParam.opType = HcclCMDType::HCCL_CMD_BATCH_SEND_RECV;
     opParam.BatchSendRecvDataDes.itemNum = 1;
-    
+
     HcclSendRecvItem sendRecvInfo;
     opParam.BatchSendRecvDataDes.sendRecvItemsPtr = &sendRecvInfo;
-    
+
     u8 isDirectRemoteRank[2] = {1, 0};
     opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
-    
+
     AicpuOpTiling opTilingInfo;
     opTilingInfo.algName = "test_alg";
     opTilingInfo.newTag = "test_new_tag";
     opTilingInfo.floatOverflowMode = 0;
     opTilingInfo.dumpDebug = 0;
-    
+
     std::string kernelName = "test_kernel";
     u64 dynamicDataSize = 0;
-    
+
     TestHcclCommunicator testComm;
     testComm.hcclCommunicator = hcclCommunicator.get();
 
-    HcclResult ret = testComm.AicpuInitOpTilingDataBuf(opParam, HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, kernelName, opTilingInfo, dynamicDataSize);
-    
+    HcclResult ret = testComm.AicpuInitOpTilingDataBuf(
+        opParam, HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, kernelName, opTilingInfo, dynamicDataSize);
+
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    
+
     EXPECT_EQ(hcclCommunicator->deviceType_, DevType::DEV_TYPE_910B);
     EXPECT_EQ(hcclCommunicator->isGroupMode_, true);
     EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
+}
+
+static void TestConstructParam(HcclCommParams &params, RankTable_t &rankTable)
+{
+    string commId = "comm ";
+    memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
+    params.rank = 0;
+    params.totalRanks = 4;
+    params.isHeterogComm = false;
+    params.logicDevId = 0;
+    params.commWorkMode = WorkMode::HCCL_MODE_NORMAL;
+    params.deviceType = DevType::DEV_TYPE_910_93;
+
+    rankTable.collectiveId = "192.168.0.101-8000-8001";
+    vector<RankInfo_t> rankVec(4);
+    rankVec[0].rankId = 0;
+    rankVec[0].deviceInfo.devicePhyId = 0;
+    HcclIpAddress ipAddr1(1694542016);
+    rankVec[0].deviceInfo.deviceIp.push_back(ipAddr1); // 101.0.168.192
+    rankVec[0].serverIdx = 0;
+    rankVec[0].serverId = "192.168.0.101";
+    rankVec[1].rankId = 1;
+    rankVec[1].deviceInfo.devicePhyId = 1;
+    HcclIpAddress ipAddr2(1694542017);
+    rankVec[1].deviceInfo.deviceIp.push_back(ipAddr2); // 101.0.168.192
+    rankVec[1].serverIdx = 0;
+    rankVec[1].serverId = "192.168.0.101";
+    rankVec[2].rankId = 2;
+    rankVec[2].deviceInfo.devicePhyId = 0;
+    HcclIpAddress ipAddr3(1711319232);
+    rankVec[2].deviceInfo.deviceIp.push_back(ipAddr3); // 101.0.168.192
+    rankVec[2].serverIdx = 1;
+    rankVec[2].serverId = "192.168.0.102";
+    rankVec[3].rankId = 3;
+    rankVec[3].deviceInfo.devicePhyId = 1;
+    HcclIpAddress ipAddr4(1711319233);
+    rankVec[3].deviceInfo.deviceIp.push_back(ipAddr4); // 101.0.168.192
+    rankVec[3].serverIdx = 1;
+    rankVec[3].serverId = "192.168.0.102";
+    rankTable.rankList.assign(rankVec.begin(), rankVec.end());
+    rankTable.rankNum = 4;
+    rankTable.deviceNum = 4;
+    rankTable.serverNum = 2;
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_Normal_Expect_ReturnHCCL_SUCCESS)
+{
+    HcclResult ret = HCCL_SUCCESS;
+
+    HcclCommParams params;
+    RankTable_t rankTable;
+    TestConstructParam(params, rankTable);
+    params.deviceType = DevType::DEV_TYPE_910_93;
+    std::unique_ptr<HcclCommunicator> implBase(new (std::nothrow) HcclCommunicator());
+
+    MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::AllocAlgResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    ret = implBase->AtomicInitSet();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = implBase->Init(params, rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    std::string tag = "test";
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    u64 count = 1024;
+
+    void *inputPtr = malloc(count * sizeof(int8_t));
+    void *outputPtr = malloc(count * sizeof(int8_t));
+
+    bool clearEnable = true;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    HcclReduceOp op = HCCL_REDUCE_SUM;
+    void *commContext = nullptr;
+    u64 len = 0;
+    u32 aivCoreLimit = 2;
+
+    ret = implBase->HcclGetAlgExecParam(
+        tag, opType, count, inputPtr, outputPtr, clearEnable, dataType, op, commContext, len, aivCoreLimit);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    free(inputPtr);
+    free(outputPtr);
+}
+TEST_F(HcclCommunicatorHostTest, Ut_CreateMyRank_Success_Expect_HCCL_SUCCESS)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910B;
+
+    RankTable_t rankTable;
+    rankTable.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+    DeviceInfo_t deviceInfo;
+    deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    RankInfo_t rankInfo;
+    rankInfo.rankId = 0;
+    rankInfo.deviceInfo = deviceInfo;
+    rankTable.rankList.push_back(rankInfo);
+    RankInfo_t rankInfo2;
+    rankInfo2.rankId = 1;
+    rankInfo2.deviceInfo = deviceInfo;
+    rankTable.rankList.push_back(rankInfo2);
+
+    HcclCommParams params;
+    params.rank = 0;
+    HcclTopoAttr topoAttr;
+
+    hcclCommunicator->commConfig_ = CommConfig();
+    hcclCommunicator->binHandle_ = nullptr;
+    hcclCommunicator->myRank_ = nullptr;
+
+    HcclResult ret = hcclCommunicator->CreateMyRank(params, rankTable, topoAttr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(hcclCommunicator->myRank_, nullptr);
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_InitMyRank_Success_Expect_HCCL_SUCCESS)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910B;
+    hcclCommunicator->commConfig_ = CommConfig();
+    hcclCommunicator->binHandle_ = nullptr;
+    hcclCommunicator->userRankSize_ = 2;
+
+    RankTable_t rankTable;
+    rankTable.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+    DeviceInfo_t deviceInfo;
+    deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    RankInfo_t rankInfo;
+    rankInfo.rankId = 0;
+    rankInfo.deviceInfo = deviceInfo;
+    rankTable.rankList.push_back(rankInfo);
+    RankInfo_t rankInfo2;
+    rankInfo2.rankId = 1;
+    rankInfo2.deviceInfo = deviceInfo;
+    rankTable.rankList.push_back(rankInfo2);
+
+    HcclCommParams params;
+    params.rank = 0;
+    HcclTopoAttr topoAttr;
+
+    hcclCommunicator->myRankConnectMode_ = 1;
+    MOCKER_CPP(&HcclCommunicator::CreateCommCCLbuffer).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&MyRank::Init).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclResult retCreate = hcclCommunicator->CreateMyRank(params, rankTable, topoAttr);
+    EXPECT_EQ(retCreate, HCCL_SUCCESS);
+    EXPECT_NE(hcclCommunicator->myRank_, nullptr);
+
+    HcclResult ret = hcclCommunicator->InitMyRank();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }

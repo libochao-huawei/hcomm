@@ -130,7 +130,9 @@ public:
 
     virtual RemoteRmaBufManager &GetRemoteRmaBufManager() const;
 
-    virtual QueueNotifyManager &GetQueueNotifyManager() const;
+    virtual QueueNotifyManager &GetAicpuQueueNotifyManager() const;
+
+    virtual QueueNotifyManager &GetCcuQueueNotifyManager() const;
 
     virtual ConnLocalNotifyManager &GetConnLocalNotifyManager() const;
 
@@ -230,6 +232,9 @@ public:
     HcclResult GetLocalCclBuffer(void **addr, uint64_t *size);
     HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
     HcclResult CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated);
+    HcclResult AllocAndRegKFCWorkSpace(uint64_t size);
+    HcclResult GetKFCWorkSpaceVA(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
+    HcclResult DestroyKFCWorkSpaceVA();
 
     bool IsWorldGroup() const;
 
@@ -385,6 +390,13 @@ public:
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
     bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
     HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
+    HcclResult SaveDpuStreamId();
+    uint32_t GetDpuStreamId() {
+        return dpuStreamId;
+    }
+     
+    HcclResult GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap);
+    HcclResult SetRankIpPortMap(const RankIpPortMapPtr& rankIpPortMap);
 
 private:
     std::string                                id;
@@ -399,11 +411,12 @@ private:
     DevId                                      devLogicId;
     HcclCommConfig                             config;
     std::shared_ptr<RankGraph>                 rankGraph;
-
+    uint32_t                                   dpuStreamId{0};
     unique_ptr<DataBufManager>                 dataBufferManager;
     unique_ptr<LocalRmaBufManager>             localRmaBufManager;
     unique_ptr<RemoteRmaBufManager>            remoteRmaBufManager;
-    unique_ptr<QueueNotifyManager>             queueNotifyManager;
+    unique_ptr<QueueNotifyManager>             aicpuQueueNotifyManager_;
+    unique_ptr<QueueNotifyManager>             ccuQueueNotifyManager_;
     unique_ptr<QueueWaitGroupCntNotifyManager> queueWaitGroupCntNotifyManager;
     unique_ptr<QueueBcastPostCntNotifyManager> queueBcastPostCntNotifyManager;
     unique_ptr<ConnLocalNotifyManager>         connLocalNotifyManager;
@@ -472,6 +485,10 @@ private:
     bool isFirstBarrier = true;
     // Dpu Kernel Launch 申请的共享内存
     void* hostShareBuf{nullptr};
+    void* va_{nullptr};
+    void* accessVA_{nullptr};
+    int64_t connectType_{0};
+    std::unordered_map<std::string, std::shared_ptr<DevBuffer>> tagWorkspaceVAMap_;
     aclrtStream dpuStream;
     aclrtContext dpuContext;
     aclrtContext npuContext;
@@ -479,7 +496,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Buffer>> offloadScrachBufferMap;
     BinaryStream                                             staticBinaryInfo; // 静态信息序列化流
 
-    CommStatus status{CommStatus::COMM_IDLE}; // 通信域状态
+    std::atomic<CommStatus> status_{CommStatus::COMM_IDLE}; // 通信域状态
     std::vector<u32>                           rankIdsVec; // 子通信域使用：序列化解析
     std::unique_ptr<RankTableInfo>             ranktableInfo;  // 主通信域使用：序列化解析
     std::shared_ptr<TopoInfo>                  topoInfo;  // 主通信域使用：序列化解析
@@ -534,7 +551,7 @@ private:
     void LaunchConvertCollOperatorA2A(const CollOpParams &opParams, bool isHcomSelectAlg = false);
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
     void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize, bool isHcomSelectAlg = false) const;
-    void ConvertCollOperatorMemV(const CollOpParams &opParams);
+    void ConvertCollOperatorMemV(const CollOpParams &opParams, bool isHcomSelectAlg = false);
     void RegisterAicpuKernel();
 
     // dpu相关
@@ -593,6 +610,8 @@ private:
 
     // AICPU场景aclgraph专用
     HcclResult OffloadResourcePre(std::string &opTag, const CollOpParams &opParams);
+    
+    RankIpPortMapPtr rankIpPortMap_;
 };
 } // namespace Hccl
 

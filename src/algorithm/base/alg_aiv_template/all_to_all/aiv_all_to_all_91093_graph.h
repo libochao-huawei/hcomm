@@ -47,7 +47,7 @@ __aicore__ inline void AivAll2AllGraph91093::Process(GM_ADDR buffOut0, GM_ADDR c
     BatchRecordWait(tag, buffersOut, AivNotifyType::DataSignal);
 
     // 最后一个核做localcopy
-    if (GetBlockIdx() == numBlocks_ - 1) {
+    if (blockIdx_ == numBlocks_ - 1) {
         CpGM2GM(outputGM + rank_ * len, inputGM + rank_ * len, len);
     }
 }
@@ -84,7 +84,13 @@ __aicore__ inline void sk_all_to_all_crossnode(SUPERKERNEL_ARGS_DEF)
         op.Process<uint8_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
     } else if (op.dataType_ == HCCL_DATA_TYPE_UINT16) {
         op.Process<uint16_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
-    } else {
+    } else if (op.dataType_ == HCCL_DATA_TYPE_UINT32){
         op.Process<uint32_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_INT64) {
+        op.Process<int64_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_UINT64) {
+        op.Process<uint64_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_FP64){
+        op.Process<double>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
     }
 }

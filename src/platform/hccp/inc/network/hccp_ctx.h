@@ -30,7 +30,7 @@ struct HccpDevEidInfo {
     uint32_t dieId;
     uint32_t chipId;
     uint32_t funcId;
-    uint32_t resv;
+    uint32_t devFeature;
 };
 
 struct CtxInitCfg {
@@ -115,7 +115,10 @@ struct DevBaseAttr {
         } ub;
     };
 
-    uint32_t resv[16U];
+    uint32_t maxReadSize;
+    uint32_t maxWriteSize;
+    uint64_t maxMsgSize;
+    uint32_t resv[12U];
 };
 
 struct HccpMemInfo {
@@ -359,7 +362,7 @@ struct QpCreateAttr {
             void *tokenIdHandle; /**< NULL means unspecified */
             uint32_t tokenValue; /**< refer to urma_token_t; jfr_cfg->token_value */
             uint8_t priority; /**< the priority of JFS. services with low delay need set high priority. Range:[0-0xf] */
-            uint8_t rnrRetry; /**< the RNR retry count when receive RNR reponse; Range:[0-7] */
+            uint8_t rnrRetry; /**< the RNR retry count when receive RNR response; Range:[0-7] */
             uint8_t errTimeout; /**< the timeout to report error. Range: [0-31] */
             union {
                 struct {
@@ -574,12 +577,16 @@ struct CrErrInfo {
     uint32_t resv[2U];
 };
 
+#define CONTEXT_MAX_LEN 512U
+
 struct AsyncEvent {
     uint32_t resId;
     uint32_t eventType;
+    uint8_t context[CONTEXT_MAX_LEN];
+    unsigned int len;
 };
 
-#define ASYNC_EVENT_MAX_NUM 128U
+#define ASYNC_EVENT_MAX_NUM 4U
 
 /**
  * @ingroup libudma
@@ -933,6 +940,18 @@ HCCP_ATTRI_VISI_DEF int RaCtxGetAuxInfo(void *ctxHandle, struct HccpAuxInfoIn *i
 */
 HCCP_ATTRI_VISI_DEF int RaCtxGetCrErrInfoList(void *ctxHandle, struct CrErrInfo *infoList,
     unsigned int *num);
+
+/**
+ * @ingroup libudma
+ * @brief get jetty context info by qpHandle
+ * @param qpHandle [IN] qpHandle
+ * @param context [IN/OUT] context buffer, max len is CONTEXT_MAX_LEN
+ * @param len [IN/OUT] len of context
+ * @see RaCtxQpCreate
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxGetJettyContext(void *qpHandle, uint8_t context[], unsigned int *len);
 #ifdef __cplusplus
 }
 #endif

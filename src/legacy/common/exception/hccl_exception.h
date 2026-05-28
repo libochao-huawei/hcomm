@@ -19,7 +19,7 @@
 #include <execinfo.h>
 
 namespace Hccl {
-class HcclException : std::exception {
+class HcclException : public std::exception {
 public:
     explicit HcclException(const ExceptionType &exceptionType, const std::string &userDefinedMsg) 
         : exceptionType(exceptionType), userDefinedMsg(userDefinedMsg), 

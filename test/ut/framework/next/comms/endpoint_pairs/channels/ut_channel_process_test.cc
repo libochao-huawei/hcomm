@@ -70,52 +70,58 @@ TEST_F(TestChannelProcess, Ut_TestFillChannelD2HMap_When_ListNumZero_Return_HCCL
 // LaunchChannelKernelCommon 空指针和参数校验测试
 TEST_F(TestChannelProcess, Ut_TestLaunchChannelKernelCommon_When_ChannelHandlesNullptr_Return_HCCL_E_PTR)
 {
+    HcommChannelDesc hcommDescs[1] = {};
     ChannelHandle hostHandles[1] = {};
     HcclResult ret = hcomm::ChannelProcess::LaunchChannelKernelCommon(
-        nullptr, hostHandles, 1, "test_tag", nullptr, "test_kernel", false);
+        nullptr, hostHandles, hcommDescs, 1, "test_tag", nullptr, "test_kernel", false);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(TestChannelProcess, Ut_TestLaunchChannelKernelCommon_When_HostChannelHandlesNullptr_Return_HCCL_E_PTR)
 {
+    HcommChannelDesc hcommDescs[1] = {};
     ChannelHandle deviceHandles[1] = {};
     HcclResult ret = hcomm::ChannelProcess::LaunchChannelKernelCommon(
-        deviceHandles, nullptr, 1, "test_tag", nullptr, "test_kernel", false);
+        deviceHandles, nullptr, hcommDescs, 1, "test_tag", nullptr, "test_kernel", false);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(TestChannelProcess, Ut_TestLaunchChannelKernelCommon_When_ListNumZero_Return_HCCL_E_PARA)
 {
+    HcommChannelDesc hcommDescs[1] = {};
     ChannelHandle deviceHandles[1] = {};
     ChannelHandle hostHandles[1] = {};
     HcclResult ret = hcomm::ChannelProcess::LaunchChannelKernelCommon(
-        deviceHandles, hostHandles, 0, "test_tag", nullptr, "test_kernel", false);
+        deviceHandles, hostHandles, hcommDescs, 0, "test_tag", nullptr, "test_kernel", false);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
 // SaveChannels 空指针和参数校验测试
 TEST_F(TestChannelProcess, Ut_TestSaveChannels_When_TargetChannelsNullptr_Return_HCCL_E_PTR)
 {
+    HcommChannelDesc hcommDescs[1] = {};
     ChannelHandle userChannels[1] = {};
     HcclResult ret = hcomm::ChannelProcess::SaveChannels(
-        nullptr, userChannels, 1, COMM_ENGINE_AICPU, nullptr);
+        nullptr, userChannels, hcommDescs, 1, COMM_ENGINE_AICPU, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(TestChannelProcess, Ut_TestSaveChannels_When_UserChannelsNullptr_Return_HCCL_E_PTR)
 {
+    HcommChannelDesc hcommDescs[1] = {};
     ChannelHandle targetChannels[1] = {};
     HcclResult ret = hcomm::ChannelProcess::SaveChannels(
-        targetChannels, nullptr, 1, COMM_ENGINE_AICPU, nullptr);
+        targetChannels, nullptr, hcommDescs, 1, COMM_ENGINE_AICPU, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(TestChannelProcess, Ut_TestSaveChannels_When_ChannelNumZero_Return_HCCL_E_PARA)
 {
+    HcommChannelDesc hcommDescs[1] = {};
     ChannelHandle targetChannels[1] = {};
     ChannelHandle userChannels[1] = {};
     HcclResult ret = hcomm::ChannelProcess::SaveChannels(
-        targetChannels, userChannels, 0, COMM_ENGINE_AICPU, nullptr);
+        targetChannels, userChannels, hcommDescs, 0, COMM_ENGINE_AICPU, nullptr);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -172,4 +178,64 @@ TEST_F(TestChannelProcess, Ut_ChannelResume_When_ResumeConcurrencyFails_ReturnsE
 TEST_F(TestChannelProcess, Ut_ChannelResume_NullList_Returns_E_PARA) {
     auto ret = hcomm::ChannelProcess::ChannelResume(nullptr, 1);
     EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(TestChannelProcess, Ut_LaunchChannelKernel_When_ChannelKindIsUBOE_CallsChannelKernelLaunchForBase) {
+    HcommChannelDesc hcommDescs[1] = {};
+    ChannelHandle deviceHandles[1] = {};
+
+    class FakeUboeChannel : public hcomm::Channel {
+    public:
+        hcomm::HcommChannelKind GetChannelKind() const override {
+            return hcomm::HcommChannelKind::AICPU_TS_UBOE;
+        }
+        HcclResult Init() override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult GetNotifyNum(uint32_t *notifyNum) const override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override {
+            return HCCL_SUCCESS;
+        }
+        hcomm::ChannelStatus GetStatus() override {
+            return hcomm::ChannelStatus::READY;
+        }
+        HcclResult Clean() override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult Resume() override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult Write(void *dst, const void *src, uint64_t len) override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult Read(void *dst, const void *src, uint64_t len) override {
+            return HCCL_SUCCESS;
+        }
+        HcclResult ChannelFence() override {
+            return HCCL_SUCCESS;
+        }
+    };
+
+    FakeUboeChannel fakeChannel;
+    ChannelHandle hostHandles[1] = {reinterpret_cast<ChannelHandle>(&fakeChannel)};
+
+    MOCKER_CPP(&hcomm::ChannelProcess::LaunchChannelKernelCommon,
+        HcclResult(ChannelHandle*, ChannelHandle*, HcommChannelDesc*, uint32_t, const std::string&, aclrtBinHandle, const std::string&, bool))
+        .stubs()
+        .with(any(), any(), any(), any(), any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    auto ret = hcomm::ChannelProcess::LaunchChannelKernel(deviceHandles, hostHandles, hcommDescs, 1, nullptr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }

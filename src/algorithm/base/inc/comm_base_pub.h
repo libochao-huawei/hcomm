@@ -120,7 +120,7 @@ public:
     HcclResult BuildQuerry(u32& status);
     HcclResult SetHDCModeInfo(
         std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &rankDevicePhyIdNicInfoMap,
-        std::vector<u32> &ranksPort, bool isSetHDCModeInfo, bool isUseRankPort);
+        std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort, bool isSetHDCModeInfo, bool isUseRankPort);
     u32 IsSupportMC2(const std::string &tag);
     void Break()
     {
@@ -177,6 +177,7 @@ protected:
     std::vector<TransportType> transportType_;
     std::unordered_map<std::string, std::map<u32, HcclIpAddress>> rankDevicePhyIdNicInfoMap_;
     std::vector<u32> ranksPort_;
+    std::vector<u32> vnicRanksPort_;
 
     s32 deviceLogicId_;
     u32 devicePhyId_;

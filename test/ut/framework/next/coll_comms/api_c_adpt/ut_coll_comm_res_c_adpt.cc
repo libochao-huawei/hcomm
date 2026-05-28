@@ -7,10 +7,13 @@
 #include "llt_hccl_stub_rank_graph.h"
 #include <string>
 #include "mockcpp/mockcpp.hpp"
+#include "cluster_monitor.h"
+#include "host/host_cpu_roce_channel.h"
 
 #define private public
 
 using namespace hccl;
+using namespace hcomm;
 
 class HcclChannelDescTest : public BaseInit {
 public:
@@ -19,7 +22,6 @@ public:
         BaseInit::SetUp();
         const char *fakeA5SocName = "Ascend950PR_958b";
         MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
-        MOCKER(&MyRank::CreateChannels).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER(&HcclCommDfx::ReportKernel).stubs().will(returnValue(HCCL_SUCCESS));
         SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
         EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -59,7 +61,8 @@ protected:
         HcclCommConfig config;
         config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
         config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
-        config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level       
+        config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level 
+        unsetenv("HCCL_DFS_CONFIG");      
         ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
         CollComm* collComm = hcclCommPtr->GetCollComm();
         comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -70,7 +73,7 @@ protected:
         HcclChannelDescInit(channelDesc.data(), 1);
         channelDesc[0].remoteRank = 2;
         channelDesc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_ROCE;
-        channelDesc[0].notifyNum = 65;
+        channelDesc[0].notifyNum = 50;
         channelDesc[0].roceAttr.queueNum = 3;
         channelDesc[0].roceAttr.retryCnt = 3;
         channelDesc[0].roceAttr.retryInterval = 20;
@@ -89,8 +92,9 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_IsCommunicatorV2_Is_T
     std::vector<HcclChannelDesc> channelDesc(1);
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
-
-    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+    MOCKER(&MyRank::CreateChannels).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommDpuChannelRegisterDfx).stubs().will(returnValue(0));
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CPU, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -103,7 +107,7 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_TcIsInvaild_ReturnHCC
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
 
-    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CPU, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -116,7 +120,7 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_SlIsInvaild_ReturnHCC
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
 
-    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CPU, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -127,7 +131,7 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_RetryIntervalIsInvail
     GetChannelDesc(channelDesc);
     channelDesc[0].roceAttr.retryInterval = 30; // 单独赋非法值
 
-    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CPU, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -137,7 +141,47 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_RetryCntIsInvaild_Ret
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
     channelDesc[0].roceAttr.retryCnt = 10; // 单独赋非法值
+    MOCKER(&MyRank::BatchCreateSockets).stubs().will(returnValue(HCCL_SUCCESS));
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CPU, channelDesc.data(), 1, channels.data());
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_Notifynum_Exceeds_Return_Error)
+{
+    std::vector<HcclChannelDesc> channelDesc(1);
+    std::vector<ChannelHandle> channels(1);
+    GetChannelDesc(channelDesc);
+    channelDesc[0].notifyNum = 65;
+    MOCKER(&hcomm::ClusterMonitor::RegisterToClusterMonitor).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_BuildConnection_Fails_Return_Error)
+{
+    std::vector<HcclChannelDesc> channelDesc(1);
+    std::vector<ChannelHandle> channels(1);
+    GetChannelDesc(channelDesc);
+    
+    // Mock BuildConnection 失败
+    MOCKER(&HostCpuRoceChannel::BuildConnection).stubs().will(returnValue(HCCL_E_NETWORK));
+    
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_IbvPostRecv_Fails_Return_Error)
+{
+    std::vector<HcclChannelDesc> channelDesc(1);
+    std::vector<ChannelHandle> channels(1);
+    GetChannelDesc(channelDesc);
+    
+    // Mock BuildConnection 成功
+    MOCKER(&HostCpuRoceChannel::BuildConnection).stubs().will(returnValue(HCCL_SUCCESS));
+    // Mock IbvPostRecv 失败
+    MOCKER(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_E_INTERNAL));
+    
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }

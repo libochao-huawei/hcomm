@@ -24,7 +24,7 @@ __aicore__ inline void AivAllGatherBigGraph910B::Process(GM_ADDR input, GM_ADDR 
 {
     uint32_t avgLengthPerSlice = len;
     uint32_t avgSizePerSlice = avgLengthPerSlice * sizeof(T);
-    uint32_t targetRank = GetBlockIdx(); 
+    uint32_t targetRank = blockIdx_; 
 
     // 共用16个flag
     __gm__ T *inputGm = (__gm__ T *)input;
@@ -85,6 +85,12 @@ __aicore__ inline void sk_all_gather_910b_bigdata(SUPERKERNEL_ARGS_DEF)
         op.Process<uint16_t>(input, output, op.len_, op.tag_);
     #elif defined HCCL_DTYPE_UINT32
         op.Process<uint32_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_INT64
+        op.Process<int64_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_UINT64
+        op.Process<uint64_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_FP64
+        op.Process<double>(input, output, op.len_, op.tag_);
     #else
     #endif
 }

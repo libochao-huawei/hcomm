@@ -11,9 +11,15 @@
 set(src_list
     host_cpu_roce_channel.cc
     host_rdma_connection.cc
+    host_cpu_urma_channel.cc
     dpu_notify/dpu_notify_manager.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${src_list}
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()

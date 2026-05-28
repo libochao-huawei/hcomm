@@ -265,8 +265,9 @@ HcclResult HcclCommAicpu::InitZeroCopyExchanger(const HcclOpResParam *commParam)
             // NS快恢场景，需要提前终止
             HcclOpExecFSM fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_INIT;
             KfcError errorCode = KfcError::kNone;
+            SetCommRecoveryFlag(true);
             UpdateOpExecStatus(fsmState, KfcStatus::kStoplaunch, errorCode, 0);
-            HCCL_INFO("[HcclCommAicpu][nSecStopFunc] need stop launch");
+            HCCL_RUN_INFO("[HcclCommAicpu][nSecStopFunc] need stop launch");
             return true;
         } else {
             return true;
@@ -282,7 +283,7 @@ HcclResult HcclCommAicpu::InitZeroCopyExchanger(const HcclOpResParam *commParam)
 
     // 通信域第一次初始化时，如果IPC内存有不为空的则认为是使能该特性
     isZeroCopy_ = false;
-    for (u32 i = 0; i < MAX_MODULE_DEVICE_NUM; ++i) {
+    for (u32 i = 0; i < AICPU_ZERO_COPY_MAX_DEVICE_NUM_A3; ++i) {
         if (commParam->zeroCopyIpcPtrs[i] != 0) {
             isZeroCopy_ = true;
             break;
@@ -2126,7 +2127,7 @@ HcclResult HcclCommAicpu::CalSendRecvInfoFor910B(const std::string &algName, con
     std::unique_ptr<CollExecutorBase> &executor)
 {
     // A2 AICPU才有机会走入RunAlltoAllVStaged
-    if (algName == "RunAlltoAllVStaged") {
+    if (algName == "RunAlltoAllVStaged" || algName == "RunAlltoAllVFullMesh") {
         CHK_PRT_RET(executor.get() == nullptr,
             HCCL_ERROR("[HcclCommAicpu][%s]Fail to find executor for algName[%s]", __func__, algName.c_str()),
             HCCL_E_PARA);
@@ -2170,7 +2171,7 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
             CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
             CHK_RET(IncreAllocTransportResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
         }
-    } else if (algName == "RunAlltoAllVStaged") {
+    } else if (algName == "RunAlltoAllVStaged" || algName == "RunAlltoAllVFullMesh") {
         AlgResourceRequest resRequest;
         CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
         HCCL_INFO("[%s] check if need refresh resource for alg[%s], tag[%s], old[%lu], new[%lu]",
@@ -5296,7 +5297,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
-    CHK_RET(taskExecption_.Init(devId_, localUserRank_, identifier_));
+    CHK_RET(taskExecption_.Init(devId_, topoInfo_.userRank, identifier_));
     CHK_RET(RegisterProfCallBack());
 
     if (topoInfo_.deviceType == DevType::DEV_TYPE_950) {
@@ -5446,8 +5447,9 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     CHK_PTR_NULL(commParam);
     CHK_PTR_NULL(commParam->channelList);
     HcclIndOpChannelRemoteResV2 &remoteResV2 = commParam->remoteResV2[channelIndex];
+    u32 linkType = static_cast<u32>(remoteResV2.channelP2p.transportAttr.linkType);
     std::string channelKey = std::string(commParam->channelTag) + ":" + std::to_string(commParam->engine) + ":" +
-        std::to_string(remoteResV2.remoteRank) + ":" + std::to_string(CommProtocol::COMM_PROTOCOL_HCCS);
+        std::to_string(remoteResV2.remoteRank) + ":" + std::to_string(linkType);
     HCCL_INFO("%s channelKey[%s]", __func__, channelKey.c_str());
     if (channelHandleMap_.find(channelKey) != channelHandleMap_.end()) {
         HCCL_ERROR("[%s]the channel has existed.", __func__);

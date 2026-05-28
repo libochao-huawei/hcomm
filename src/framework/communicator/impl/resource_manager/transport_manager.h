@@ -202,6 +202,7 @@ public:
         const std::vector<RankInfo> &rankInfoList,
         RankId userRank,
         const std::string &identifier,
+        const std::string &commName,
         s32 deviceLogicId,
         NICDeployment nicDeployment,
         bool isHaveCpuRank,
@@ -296,6 +297,9 @@ private:
         bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult IsInterServer(const u32 dstRank, bool& isInterServer);
     HcclResult PrintErrorInfo(NicType nicType);
+    uint32_t GetConnectMode(RankId remoteRank);
+    HcclResult GetTransNewTag(const std::string &tag, std::string &newTag, RankId remoteRank,
+        bool &isInterRdma, u32 subCommIndex, TransportLinkType linkType, HcclRankLinkInfo remoteLink, uint32_t mode);
     HcclResult CreateBatchSendRecvLinks(const std::string &tag, const TransportIOMem &transMem,
         struct LinkPoolPara &linkPoolPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
         bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
@@ -315,7 +319,8 @@ private:
     const std::unique_ptr<NotifyPool> &notifyPool_;
     const std::vector<RankInfo> &rankInfoList_;
     RankId userRank_;
-    std::string identifier_;
+    std::string identifier_; // udi + commName, udi用户未定义时与commName一致
+    std::string commName_; // 通信域名称，用于建链tag拼接
     s32 deviceLogicId_;
     NICDeployment nicDeployment_;
     bool isHaveCpuRank_{ false };

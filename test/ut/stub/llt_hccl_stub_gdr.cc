@@ -3496,6 +3496,16 @@ int RaNormalQpDestroy(void *qp_handle)
     return 0;
 }
 
+int RaGetLbMax(void *rdevHandle, int *lbMax)
+{
+    return 0;
+}
+
+int RaSetQpLbValue(void *qpHandle, int lbValue)
+{
+    return 0;
+}
+
 int RaSetQpAttrQos(void *qpHandle, struct QosAttr *attr)
 {
     return 0;
@@ -4290,4 +4300,22 @@ int RaRestoreSnapshot(struct RaInfo *info)
 {
     HCCL_INFO("call %s", __func__);
     return 0;
+}
+
+void ClearRdevNicInfo()
+{
+    std::unique_lock<std::mutex> lock(g_raNicMutex);
+    for (u32 i = 0; i < DEV_MAX; i++) {
+        gRdevNicInfo[i].dev_id = 0;
+        gRdevNicInfo[i].local_ip = 0;
+        gRdevNicInfo[i].idx = 0;
+        gRdevNicInfo[i].pid = 0;
+    }
+    for (u32 i = 0; i < DEV_MAX; i++) {
+        gRdevVnicInfo[i].dev_id = 0;
+        gRdevVnicInfo[i].local_ip = 0;
+        gRdevVnicInfo[i].idx = 0;
+        gRdevVnicInfo[i].pid = 0;
+    }
+    HCCL_INFO("ClearRdevNicInfo done");
 }

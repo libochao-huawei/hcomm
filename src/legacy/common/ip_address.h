@@ -86,6 +86,19 @@ public:
         InitBinaryAddr(ip);
     }
 
+    explicit IpAddress(const union BinaryAddr &ip, s32 family, const uint8_t* eid)
+    : family_(family)
+    {
+        binaryAddr_ = ip;
+        if (eid != nullptr) {
+            // 安全复制原始EID
+            s32 sRet = memcpy_s(eid_.raw, sizeof(eid_.raw), eid, URMA_EID_LEN);
+            if (sRet != 0) {
+                THROW<InternalException>("[IpAddress]memcpy_s failed when setting original EID");
+            }
+        }
+    }
+
     explicit IpAddress(const union BinaryAddr &ip, s32 family, s32 scopeID = 0) : family_(family), scopeID_(scopeID)
     {
         binaryAddr_ = ip;
@@ -302,9 +315,9 @@ public:
         string desc = StringFormat("IpAddress[%s, ", eid_.Describe().c_str());
         
         if (family_ == AF_INET) {
-            desc += StringFormat("AF=v4, addr=%s]", GetIpStr().c_str());
+            desc += StringFormat("AF=IPv4, addr=%s]", GetIpStr().c_str());
         } else {
-            desc += StringFormat("AF=v6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID_);
+            desc += StringFormat("AF=IPv6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID_);
         }
         return desc;
     }
@@ -337,9 +350,14 @@ public:
     explicit IpAddress(BinaryStream &binaryStream) // 基于序列化数据得到IpAddress
     {
         binaryStream >> family_ >> scopeID_;
+        // 打印family_、scopeID_
+        HCCL_INFO("[IpAddress::%s] family_[%d], scopeID_[%d]",
+            __func__, family_, scopeID_);
         char        dst[INET6_ADDRSTRLEN]{0};
         binaryStream >> dst;
         std::string ip = dst; 
+        // 打印ip
+        HCCL_INFO("[IpAddress::%s] ip_[%s]", __func__, ip.c_str());
         InitBinaryAddr(ip);
         binaryStream >> eid_.raw; // 恢复eid.raw，覆盖eid
     }

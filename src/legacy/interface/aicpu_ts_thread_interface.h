@@ -12,18 +12,19 @@
 #define AICPU_TS_THREAD_INTERFACE_H
 
 #include "hccl_types.h"
+#include "stream_lite.h"
 
 namespace Hccl {
 
 class IAicpuTsThread {
 public:
-    IAicpuTsThread();
+    IAicpuTsThread(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t logicCqids);
 
     ~IAicpuTsThread();
 
-    void StreamLiteInit(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t logicCqids);
-
     void LaunchTask() const;
+
+    void TryLaunchTask() const;
 
     HcclResult NotifyWait(uint32_t notifyId) const;
 
@@ -36,12 +37,18 @@ public:
     HcclResult SdmaReduce(uint64_t dstAddr, uint64_t srcAddr, uint64_t sizeByte, uint32_t dataTypeRaw,
                           uint32_t reduceOpRaw) const;
 
-    HcclResult GetStreamLitePtr(void **streamLitePtrPtr) const;
+    inline void* GetStreamLitePtr() const
+    {
+        return streamLiteVoidPtr_;
+    }
 
-    HcclResult GetSqId(uint32_t &sqId) const;
+    inline uint32_t GetSqId() const
+    {
+        return static_cast<StreamLite *>(streamLiteVoidPtr_)->GetSqId();
+    }
 
 private:
-    void *streamLiteVoidPtr_ = nullptr;
+    void *streamLiteVoidPtr_{nullptr};
 };
 
 } // namespace Hccl

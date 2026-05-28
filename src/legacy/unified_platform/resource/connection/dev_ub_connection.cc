@@ -18,6 +18,7 @@
 #include "rma_conn_exception.h"
 #include "rdma_handle_manager.h"
 #include "exchange_ub_conn_dto.h"
+#include "env_config/env_config.h"
 
 namespace Hccl {
 
@@ -45,8 +46,9 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
         jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandleAndCqInfo(rdmaHandle, cqInfo_, jfcMode);
     }
     else {
-        jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, jfcMode);
+        jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, cqInfo_, jfcMode);
     }
+    isdevUsed = devUsed;
 
     sqDepth = OPBASED_UB_SQ_DEPTH_MAX;
     if (opMode == OpMode::OFFLOAD && devUsed == false) {
@@ -57,8 +59,6 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
     if (sqDepth > (UINT32_MAX / UB_SQ_WQEBB_SIZE / WQE_NUM_PER_SQE)) {
         THROW<InternalException>("integer overflow occurs");
     }
-
-    CreateJetty(devUsed);
 }
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
@@ -83,6 +83,7 @@ DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAd
     : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {
     tpProtocol = TpProtocol::UBOE;
+    jettyTimeOut = 16; // UBoE场景的默认TA配置为16
 }
 
 std::vector<char> DevUbConnection::GetUniqueId() const
@@ -132,6 +133,26 @@ void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
     memcpy_s(wq.rmtEid, sizeof(wq.rmtEid), rmtEid.raw, sizeof(wq.rmtEid));
 }
 
+void DevUbConnection::SetSqContextInfo(SqContext &sq)
+{
+    sq.contextInfo.ubJfs.jfsID = jettyId;
+    sq.contextInfo.ubJfs.dbVa = dbAddr;
+    sq.contextInfo.ubJfs.sqVa = sqBuffVa;
+    sq.contextInfo.ubJfs.sqDepth = sqDepth * WQE_NUM_PER_SQE;
+    sq.contextInfo.ubJfs.tpID = tpn;
+    memcpy_s(sq.contextInfo.ubJfs.remoteEID, sizeof(sq.contextInfo.ubJfs.remoteEID), rmtEid.raw,
+        sizeof(sq.contextInfo.ubJfs.remoteEID));
+}
+ 
+void DevUbConnection::SetCqContextInfo(CqContext &cq)
+{
+    cq.contextInfo.ubJfc.jfcID = cqInfo_.id;
+    cq.contextInfo.ubJfc.scqVa = cqInfo_.va;
+    cq.contextInfo.ubJfc.cqeSize = cqInfo_.cqeSize;
+    cq.contextInfo.ubJfc.cqDepth = cqInfo_.cqDepth;
+    cq.contextInfo.ubJfc.dbVa = cqInfo_.swdbAddr;
+}
+
 void DevUbConnection::Connect()
 {
     GetStatus();
@@ -141,6 +162,59 @@ inline uint32_t GetRandomNum()
 {
     uint32_t randNum = std::rand();
     return randNum;
+}
+
+HcclResult DevUbConnection::CalcTotalTimeout(uint32_t &outTotalTimeoutMs)
+{
+    TpHandle tpHandle = tpInfo.tpHandle;
+    uint32_t attrBitmap = 0;
+    struct TpAttr tpAttr = {0};
+    u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    CHK_RET(HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
+    TpAttrInfo tpAttrInfo = TpAttrInfo(tpAttr);
+    CHK_RET(TpManager::GetTpTotalTimeout(tpAttrInfo, outTotalTimeoutMs));
+    return HCCL_SUCCESS;
+}
+
+void DevUbConnection::GetTimeOut() // 直接基于环境变量控制
+{
+    if (tpProtocol == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
+        HCCL_ERROR(
+            "[DevUbConnection][%s] failed, tpProtocol[%s] is not expected.", __func__, tpProtocol.Describe().c_str());
+        ThrowAbnormalStatus(std::string(__func__));
+    }
+
+    uint8_t envValue = static_cast<uint8_t>(EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
+    uint32_t envTimeOut = TpManager::TaHwValueToMs(envValue);
+
+    if (tpProtocol == TpProtocol::CTP) {
+        jettyTimeOut = envValue;
+        HCCL_INFO("%s [UbCtp] Env Value [%u] (%ums).", __func__, envValue, envTimeOut);
+        return;
+    }
+
+    if (tpProtocol == TpProtocol::UBOE) {
+        envValue = static_cast<uint8_t>(EnvConfig::GetInstance().GetRdmaConfig().GetUboeTimeOut());
+        envTimeOut = TpManager::TaHwValueToMs(envValue);
+        HCCL_INFO("%s [UBoE] Env Value [%u] (%ums).", __func__, envValue, envTimeOut);
+    }
+
+    uint32_t tpTimeOut = 0;
+    CalcTotalTimeout(tpTimeOut);
+    if (envTimeOut < tpTimeOut) {
+        // 规则: 如果环境变量时间 < TP总超时，选择大于TP总超时的最小TA挡位
+        jettyTimeOut = TpManager::FindMinTaHwValue(tpTimeOut);
+        HCCL_WARNING("%s Env timeout [%ums] < TP timeout [%ums]. Auto upgrade TA to hw_val[%u] (%ums).", __func__,
+            envTimeOut, tpTimeOut, envValue, tpTimeOut);
+    } else {
+        // 规则: 否则，直接使用环境变量对应的挡位 (对齐到 0/8/16/24)
+        // 注意：这里我们取环境变量所在挡位的基准值 (例如 env=10 -> 取 8)
+        jettyTimeOut = envValue;
+        HCCL_INFO("%s Env timeout [%ums] >= TP timeout [%ums]. Use env gear base hw_val[%u] (%ums).", __func__,
+            envTimeOut, tpTimeOut, envValue, envTimeOut);
+    }
+
+    HCCL_INFO("%s final TA Timeout [%u] (%ums).", __func__, jettyTimeOut);
 }
 
 RmaConnStatus DevUbConnection::GetStatus()
@@ -154,19 +228,25 @@ RmaConnStatus DevUbConnection::GetStatus()
             HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
                       ubConnStatus.Describe().c_str());
 
-            SetJettyInfo();
-
             if (!GetTpInfo()) {
-                ubConnStatus = UbConnStatus::TP_INFO_GETTING;
                 break;
             }
+            GetTimeOut();
+            CreateJetty(isdevUsed);
+ 
+            if (!CheckRequestResult()) {
+                ubConnStatus = UbConnStatus::JETTY_CREATING;
+                break;
+            }
+            SetJettyInfo();
 
             status       = RmaConnStatus::EXCHANGEABLE;
             ubConnStatus = UbConnStatus::JETTY_CREATED;
             break;
         }
-        case UbConnStatus::TP_INFO_GETTING: {
-            if (GetTpInfo()) {
+        case UbConnStatus::JETTY_CREATING: {
+            if (CheckRequestResult()) {
+                SetJettyInfo();
                 status       = RmaConnStatus::EXCHANGEABLE;
                 ubConnStatus = UbConnStatus::JETTY_CREATED;
             }
@@ -301,7 +381,7 @@ void DevUbConnection::CreateJetty(const bool devUsed)
         HrtJettyMode::HOST_OPBASE, // 默认HOST单算子模式
         0, // HOST展开与AICPU展开传入jetty id为0，申请一个新的jetty
         0, // va由底层分配，此处填0即可。
-        size, 0, sqDepth}; // 非CCUv2不需要填写sqeBufIndex
+        size, 0, sqDepth, jettyTimeOut}; // 非CCUv2不需要填写sqeBufIndex
 
     if (opMode == OpMode::OFFLOAD) { // HOST展开图模式切换模式
         req.jettyMode = HrtJettyMode::HOST_OFFLOAD;
@@ -444,6 +524,7 @@ static void PrepareUbSendWrReqParamForWriteOrRead(HrtRaUbSendWrReqParam &sendWrR
     sendWrReq.size       = localMemBuf.size;
     sendWrReq.localAddr  = localMemBuf.addr;
     sendWrReq.remoteAddr = remoteMemBuf.addr;
+
     sendWrReq.lmemHandle = localMemBuf.memHandle;
     sendWrReq.rmemHandle = remoteMemBuf.memHandle;
     sendWrReq.handle     = remoteJettyHandle;
@@ -809,6 +890,36 @@ string DevUbConnection::Describe() const
                         funcId, jettyId, sqBuffVa, sqDepth, tpn, dbAddr);
 }
 
+HcclResult DevUbConnection::Describe(std::string &dfxMsg)
+{
+    uint16_t udpSport = 0xFFFF; // 无法获取实际的udpSport，使用0xFFFF表示未知
+    if (tpProtocol == TpProtocol::TP) {
+        struct TpAttr tpAttr {0};
+        uint32_t attrBitmap = 1 << 13; // 13对应dataUdpSrcport
+        TRY_CATCH_PRINT_ERROR(
+            u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+            HcclResult ret = HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle);
+            if (ret == HCCL_E_NOT_SUPPORT) {
+                HCCL_ERROR("[DevUbConnection::%s] this package does not support RaGetTpAttrAsync for device,"
+                    " please change new package, devPhyId[%u]", __func__, devicePhyId);
+                return ret;
+            } else if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[DevUbConnection::%s] failed, hccl result[%d]", __func__, ret);
+                return ret;
+            }
+        );
+        udpSport = tpAttr.dataUdpSrcport;
+    }
+    udpSport = udpSport & 0xFF;
+
+    std::string dfxStr = StringFormat("chip id[%u] die id[%u] func id[%u] jetty id[%u] "
+        "local %s remote %s udp sport[%u]",
+        devLogicId, dieId, funcId, jettyId, locEid.Describe().c_str(), rmtEid.Describe().c_str(), udpSport);
+    dfxMsg += dfxStr;
+    HCCL_INFO("[DevUbConnection::%s] %s", __func__, dfxStr.c_str());
+    return HCCL_SUCCESS;
+}
+
 void DevUbConnection::AddNop(const Stream &stream)
 {
     if (opMode != OpMode::OFFLOAD) {
@@ -970,7 +1081,8 @@ HcclResult DevUbConnection::GetTpAttrAsync()
     uint32_t attrBitmap = 0;
     struct TpAttr tpAttr = {0};
 
-    CHK_RET(HrtRaGetTpAttrAsync(rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
+    u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    CHK_RET(HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
     HCCL_INFO("[DevUbConnection::%s] locIpv4Addr[%s], rmtIpv4Addr[%s], locAddr[%s], rmtAddr[%s]",
         __func__, locIpv4Addr.Describe().c_str(), rmtIpv4Addr.Describe().c_str(),
         locAddr.Describe().c_str(), rmtAddr.Describe().c_str());

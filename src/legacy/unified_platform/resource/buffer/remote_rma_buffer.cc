@@ -27,7 +27,10 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto) : RemoteRmaBu
     ipcAddr         = dto.addr;
     ipcOffset       = dto.offset;
     size            = dto.size;
+    memTag          = dto.memTag;
     (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
+    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer]ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] memTag[%s]",
+              ipcAddr, ipcOffset, ipcName, memTag.c_str());
     myPid = HrtDeviceGetBareTgid();
     if (myPid == remotePid) {
         HCCL_INFO("RemoteIpcRmaBuffer: myPid is equal to remotePid, do not need to open memory");
@@ -48,9 +51,10 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto, const string 
     ipcAddr         = dto.addr;
     ipcOffset       = dto.offset;
     size            = dto.size;
+    memTag          = dto.memTag;
     (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
-    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] tag[%s] ipcAddr[%llu] ipcOffset[%llu] ipcName[%s]", tag.c_str(),
-              ipcAddr, ipcOffset, ipcName);
+    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] tag[%s] ipcAddr[%llu] ipcOffset[%llu] ipcName[%s] memTag[%s]", tag.c_str(),
+              ipcAddr, ipcOffset, ipcName, memTag.c_str());
     ipcPtr   = HrtIpcOpenMemory(ipcName);
     addr     = reinterpret_cast<uintptr_t>(ipcPtr) + ipcOffset;
     isOpened = true;
@@ -137,6 +141,7 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
     if (keySize != 0) {
         auto res        = HrtRaUbRemoteMemImport(rdmaHandle1, key, keySize, tokenValue);
         memHandle       = res.handle;
+        segVa = res.targetSegVa;
     } else {
         HCCL_INFO("[RemoteUbRmaBuffer] key is 0, do not need to import memory");
         memHandle = 0;
@@ -146,8 +151,8 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
 
 string RemoteUbRmaBuffer::Describe() const
 {
-    return StringFormat("RemoteUbRmaBuffer[rdmaHandle=%p, addr=0x%llx, size=0x%llx, memHandle=%p]",
-                        rdmaHandle, addr, size, memHandle);
+    return StringFormat("RemoteUbRmaBuffer[rdmaHandle=%p, addr=0x%llx, size=0x%llx, memHandle=%p segVa=%llu]",
+                        rdmaHandle, addr, size, memHandle, segVa);
 }
 
 } // namespace Hccl

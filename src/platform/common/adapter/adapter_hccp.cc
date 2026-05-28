@@ -33,13 +33,13 @@
 using namespace hccl;
 using namespace std;
 
-/* 检查函数返回值是否为ROCE_ENOMEM_RET, 记录指定日志, 并返回HCCL_E_OOM */
+/* 检查函数返回值是否为ROCE_ENOMEM_RET, 记录指定日志, 并返回HCCL_E_OOM, 内存大小取决于qp深度配置 */
 #define CHK_OOM_RET(ret, qpInfo)                                                                                    \
     do {                                                                                                            \
         if ((ret) == ROCE_ENOMEM_RET) {                                                                                     \
             RPT_ENV_ERR(true, "EI0011",                                                                             \
                 std::vector<std::string>({"memory_size"}),                                                          \
-                std::vector<std::string>({"size: [0.25MB, 3MB], Affected by QP depth configuration."}));            \
+                std::vector<std::string>({"262144~3145728"}));            \
             HCCL_ERROR("[%s] ra qp create fail, reason: out of memory. qpInfo:[%s], return: ret[%d]",               \
                 __func__, (qpInfo), (ret));                                                                         \
             return HCCL_E_OOM;                                                                                      \
@@ -717,7 +717,7 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
         vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()),
-        "[IP]", string(deviceIp[0].GetReadableIP()) })
+        "IP", string(deviceIp[0].GetReadableIP()) })
     );
 #endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
@@ -747,15 +747,17 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
 #ifndef HCCD
-    vector<HcclIpAddress> deviceIp;
-    CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
-    CHK_PRT_RET(deviceIp.size() < 1,
-        HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
-    RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
-        "EI0014",
-        vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "[IP]", string(deviceIp[0].GetReadableIP()) })
-    );
+    if (init_info.mode != NETWORK_PEER_ONLINE) {
+        vector<HcclIpAddress> deviceIp;
+        CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
+        CHK_PRT_RET(deviceIp.size() < 1,
+            HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
+        RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
+            "EI0014",
+            vector<string>({ "value", "variable" ,"expect" }),
+            vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "IP", string(deviceIp[0].GetReadableIP()) })
+        );
+    }
 #endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -798,7 +800,7 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "[IP]", string(deviceIp[0].GetReadableIP()) })
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "IP", string(deviceIp[0].GetReadableIP()) })
     );
 #endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
@@ -1698,8 +1700,10 @@ HcclResult hrtGetIfNum(struct RaGetIfattr &config, u32 &num)
     }
 
     s32 ret = DlRaFunction::GetInstance().dlRaGetIfNum(&config, &num);
-    CHK_PRT_RET(ret != 0, HCCL_ERROR("[Get][IfNum]errNo[0x%016llx] ra get if num fail. ret[%d], num[%u]", \
-        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num), HCCL_E_TCP_CONNECT);
+    constexpr s32 MAX_SUPPORT_IFNUM = 65536;
+    CHK_PRT_RET((ret != 0 || num > MAX_SUPPORT_IFNUM), HCCL_ERROR("[Get][IfNum]errNo[0x%016llx] ra get if num fail."
+        " ret[%d], num[%u] should be less than [%u]", \
+        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num, MAX_SUPPORT_IFNUM), HCCL_E_TCP_CONNECT);
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtGetIfNum]Does not support this interface.");
@@ -2042,21 +2046,21 @@ HcclResult CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& qp, b
     // Hdc模式下HCCP不支持hrtRaGetQpContext接口
     HcclResult ret = SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateQp] SetQpAttrQos fail, ret[%d], destory QP", ret);
+        HCCL_ERROR("[CreateQp] SetQpAttrQos fail, ret[%d], destroy QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
     // 配置RDMA Timeout时间
     ret = SetQpAttrTimeOut(qp.qpHandle);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateQp] SetQpAttrTimeOut fail, ret[%d], destory QP", ret);
+        HCCL_ERROR("[CreateQp] SetQpAttrTimeOut fail, ret[%d], destroy QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
     // 配置RDMA Retry Cnt重传次数
     ret = SetQpAttrRetryCnt(qp.qpHandle);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateQp] SetQpAttrRetryCnt fail, ret[%d], destory QP", ret);
+        HCCL_ERROR("[CreateQp] SetQpAttrRetryCnt fail, ret[%d], destroy QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
@@ -2081,21 +2085,21 @@ HcclResult CreateNormalQp(RdmaHandle rdmaHandle, QpInfo& qp)
     CHK_RET(hrtRaNormalQpCreate(rdmaHandle, &ibQpAttr, qp.qpHandle, qp.qp));
     HcclResult ret = SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateNormalQp] SetQpAttrQos fail, ret[%d], destory QP", ret);
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrQos fail, ret[%d], destroy QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
     // 配置RDMA Timeout时间
     ret = SetQpAttrTimeOut(qp.qpHandle);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateNormalQp] SetQpAttrTimeOut fail, ret[%d], destory QP", ret);
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrTimeOut fail, ret[%d], destroy QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
     // 配置RDMA Retry Cnt重传次数
     ret = SetQpAttrRetryCnt(qp.qpHandle);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateNormalQp] SetQpAttrRetryCnt fail, ret[%d], destory QP", ret);
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrRetryCnt fail, ret[%d], destroy QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
@@ -2126,7 +2130,7 @@ HcclResult CreateCqAndQp(RdmaHandle &rdmaHandle, string &label, QpConfig &config
             info.srqCq, info.srqContext);
         HcclResult ret = CreateNormalQp(rdmaHandle, qp);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[CreateCqAndQp] CreateNormalQp fail, ret[%d], destory CQ", ret);
+            HCCL_ERROR("[CreateCqAndQp] CreateNormalQp fail, ret[%d], destroy CQ", ret);
             DestroyCq(rdmaHandle, cq);
             return ret;
         }
@@ -2231,7 +2235,7 @@ HcclResult CreateQpWithCq(RdmaHandle rdmaHandle, s32 sqEvent, s32 rqEvent,
     } else {
         HcclResult ret = CreateNormalQp(rdmaHandle, qp);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[CreateQpWithCq] CreateNormalQp fail, ret[%d], destory CQ", ret);
+            HCCL_ERROR("[CreateQpWithCq] CreateNormalQp fail, ret[%d], destroy CQ", ret);
             DestroyCq(rdmaHandle, cq);
             return ret;
         }
@@ -2276,19 +2280,19 @@ HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct AiQpInfo &aiQpInfo, QpInfo &
 
     HcclResult ret = SetQpAttrQos(info.qpHandle, info.trafficClass, info.serviceLevel);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateAiQp] SetQpAttrQos fail, ret[%d], destory qpHandle", ret);
+        HCCL_ERROR("[CreateAiQp] SetQpAttrQos fail, ret[%d], destroy qpHandle", ret);
         HrtRaQpDestroy(info.qpHandle);
         return ret;
     }
     ret = SetQpAttrTimeOut(info.qpHandle);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateAiQp] SetQpAttrTimeOut fail, ret[%d], destory qpHandle", ret);
+        HCCL_ERROR("[CreateAiQp] SetQpAttrTimeOut fail, ret[%d], destroy qpHandle", ret);
         HrtRaQpDestroy(info.qpHandle);
         return ret;
     }
     ret = SetQpAttrRetryCnt(info.qpHandle);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateAiQp] SetQpAttrRetryCnt fail, ret[%d], destory qpHandle", ret);
+        HCCL_ERROR("[CreateAiQp] SetQpAttrRetryCnt fail, ret[%d], destroy qpHandle", ret);
         HrtRaQpDestroy(info.qpHandle);
         return ret;
     }

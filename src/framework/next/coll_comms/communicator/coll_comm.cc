@@ -32,6 +32,14 @@ CollComm::~CollComm()
 {
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
+    // dpu的兜底上报 - 异常退出时捕获异常避免二次崩溃
+    if (hcclCommDfx_ != nullptr) {
+        DECTOR_TRY_CATCH("CollComm", hcclCommDfx_->ReportAllTasks(true));
+    }
+    for (auto streamId : aicpuStreamIds_) {
+        hcomm::TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_);
+    }
+    aicpuStreamIds_.clear();
     (void)DestroyAicpuComm();
 }
 
@@ -46,6 +54,8 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     uint32_t rankNum = 0;
     CHK_PTR_NULL(rankgraph_);
     CHK_RET(rankgraph_->GetRankSize(&rankNum));
+    CHK_RET(GetRankIpPortMap());
+
     u32 threadNum = 0xffffffff;
     u32 notifyNumPerThread = 0xffffffff;
     if (!commEngineResMgr_) {
@@ -58,7 +68,9 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
     }
 
-    EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get()), return HCCL_E_PTR);
+    EXECEPTION_CATCH(
+        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get(), rankIpPortMap_),
+        return HCCL_E_PTR);
     uint32_t opExpansionMode = 0;
     if (config) {
         opExpansionMode = config->hcclOpExpansionMode;
@@ -77,8 +89,6 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         CHK_RET(config_.SetConfigServiceLevel(sl));
     }
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
-    s32 deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
     CHK_RET(hrtGetDevice(&deviceLogicId_));
 
     CHK_RET(InitHDCommunicate());
@@ -86,7 +96,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
  	if (!hcclCommDfx_) {
         EXECEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
  	}
- 	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_));
+ 	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_, rankId_));
     CHK_RET(InitTaskExceptionHandler());
 
     CHK_RET(InitKfcAndRegisterCollComm());
@@ -174,6 +184,7 @@ HcclCommStatus CollComm::GetCommStatus() const
 
 HcclResult CollComm::Suspend()
 {
+    HCCL_RUN_INFO("[CollComm][Suspend] commId[%s] start to suspend.", commId_.c_str());
     if (commStatus_ == HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
         HCCL_WARNING("[CollComm][Suspend] The current communication has been suspended, no need to suspend again.");
         return HcclResult::HCCL_SUCCESS;
@@ -185,6 +196,7 @@ HcclResult CollComm::Suspend()
 
 HcclResult CollComm::Clean()
 {
+    HCCL_RUN_INFO("[CollComm][Clean] commId[%s] start to clean.", commId_.c_str());
     if (commStatus_ != HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
         HCCL_ERROR("[CollComm][Clean] The current communication is not suspended, cannot clean, status is [%u]", 
             static_cast<uint32_t>(commStatus_));
@@ -240,6 +252,7 @@ void CollComm::RegisterAicpuTaskExceptionCallback(u32 streamId)
     auto getAicpuTaskExceptionCallBack = [this]() {return this->GetAicpuTaskException();};
     hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_,
         getAicpuTaskExceptionCallBack);
+    aicpuStreamIds_.insert(static_cast<s32>(streamId));
     return ;
 }
 
@@ -260,6 +273,17 @@ Hccl::ErrorMessageReport CollComm::GetAicpuTaskException()
 uint32_t CollComm::UpdateIndex()
 {
     return index_ += 1;
+}
+
+HcclResult CollComm::GetRankIpPortMap()
+{
+    Hccl::HcclCommunicator* commV2 = static_cast<Hccl::HcclCommunicator*>(comm_);
+    CHK_PTR_NULL(commV2);
+    CHK_RET(commV2->GetRankIpPortMap(rankIpPortMap_));
+    CHK_PTR_NULL(rankIpPortMap_);
+    // rankIpPortMap_ 在单卡多进程场景下，用于保证端口不冲突
+    // 该映射表记录了：Rank ID -> (IP地址 -> 已占用的端口号)
+    return HCCL_SUCCESS;
 }
 
 }  // namespace hccl

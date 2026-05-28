@@ -13,6 +13,8 @@ set(src_to_test_list
     snapshot/ut_snapshot.cc
     recovery/operator_retry/ut_opretry_server.cc
     recovery/operator_retry/ut_opretry_base.cc
+    recovery/operator_retry/ut_opretry_link_manage.cc
+    heartbeat/ut_error_cqe.cc
 )
 
 add_executable(hccl_utest_framework_cluster_maintenance ${src_to_test_list})
@@ -41,9 +43,6 @@ target_compile_options(hccl_utest_framework_cluster_maintenance PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_framework_cluster_maintenance PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
 target_link_libraries(hccl_utest_framework_cluster_maintenance PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

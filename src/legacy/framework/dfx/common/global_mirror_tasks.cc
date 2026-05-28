@@ -152,14 +152,14 @@ HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, 
         return taskInfo->taskId_ == taskId;
     };
 
-    auto task = *queue->Find(FindTask);
-    if (task == *queue->End()) {
+    auto task = queue->Find(FindTask);
+    if (*task == *queue->End()) {
         HCCL_RUN_INFO("[%s]devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u] do not found.",
             __func__, devId, streamId, taskId);
         return HCCL_E_NOT_FOUND;
     };
 
-    curTask = (*task);
+    curTask = *(*task);
     HCCL_INFO("[%s]success, devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u].", __func__, devId, streamId, taskId);
     return HCCL_SUCCESS;
 }

@@ -202,7 +202,7 @@ TEST_F(CollServiceDefaultImplTest, alloc_queue_notify_for_single_queue)
     auto queueNotifyManager = std::make_unique<QueueNotifyManager>(comm);
     auto queueWaitGroupCntNotifyManager = std::make_unique<QueueWaitGroupCntNotifyManager>();
     CollServiceDefaultImpl service(&comm);
-    comm.queueNotifyManager = std::move(queueNotifyManager);
+    comm.ccuQueueNotifyManager_ = std::move(queueNotifyManager);
     comm.queueWaitGroupCntNotifyManager = std::move(queueWaitGroupCntNotifyManager);
 
     InsQueue insQueue;
@@ -219,7 +219,7 @@ TEST_F(CollServiceDefaultImplTest, alloc_cnt_notify_for_single_queue)
     auto queueNotifyManager = std::make_unique<QueueNotifyManager>(comm);
     auto queueBcastPostCntNotifyManager = std::make_unique<QueueBcastPostCntNotifyManager>();
     CollServiceDefaultImpl service(&comm);
-    comm.queueNotifyManager = std::move(queueNotifyManager);
+    comm.ccuQueueNotifyManager_ = std::move(queueNotifyManager);
     comm.queueBcastPostCntNotifyManager = std::move(queueBcastPostCntNotifyManager);
 
     InsQueue insQueue;
@@ -284,7 +284,8 @@ TEST_F(CollServiceDefaultImplTest, col_service_default_impl_load_with_op_based_m
     shared_ptr<InsQueue> insQueue = make_shared<InsQueue>();
     MOCKER_CPP(&PrimTranslator::Translate).stubs().will(returnValue(insQueue));
 
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs();
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs();
 
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs();
 
@@ -357,7 +358,8 @@ TEST_F(CollServiceDefaultImplTest, coll_service_default_impl_orchestrate_with_in
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER_CPP(&CollServiceDefaultImpl::RegisterOpBufToBufMgr).stubs();
     MOCKER_CPP(&CollServiceDefaultImpl::RegisterOpbasedStream).stubs();
-    MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs();
+    MOCKER_CPP(&SocketManager::BatchCreateSockets, void(SocketManager::*)(const std::vector<LinkData>&))
+        .stubs();
     MOCKER_CPP(&CollServiceBase::SaveMirrorDfxOpInfo).stubs();
 
     vector<LinkData> links;

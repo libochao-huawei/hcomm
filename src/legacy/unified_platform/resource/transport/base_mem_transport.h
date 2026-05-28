@@ -18,7 +18,7 @@
 #include "remote_rma_buffer.h"
 #include "../../resource/connection/rma_connection.h"
 #include "local_notify.h"
-#include "remote_notify.h"
+#include "ipc_remote_notify.h"
 #include "local_cnt_notify.h"
 #include "op_mode.h"
 #include "mem_transport_common.h"
@@ -208,6 +208,11 @@ public:
         attr.opAcceState = opAcceState;
     }
 
+    void SetIsHost()
+    {
+        isHost_ = true;
+    }
+
     string GetLinkDescInfo();
     string DescribeSocket() const;
 protected:
@@ -229,6 +234,7 @@ protected:
     u32 bufferNum{0};
     u32 connNum{0};
     u32 exchangeDataSize{0}; // 交换的消息大小
+    bool isHost_{false};
 
     void SetBaseStatusReady();
 

@@ -26,6 +26,7 @@
 #include "launch_aicpu.h"
 #include "launch_device.h"
 #include "sal_pub.h"
+#include "env_config/env_config.h"
 
 namespace hccl
 {
@@ -33,7 +34,7 @@ namespace hccl
                                    HcclDataType dataType, HcclReduceOp op, HcclRtStream stream, SyncMode syncMode)
     {
         /* 增加输出日志关键字 */
-        HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]",
+        HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]",
                    tag.c_str(), inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(),
                    GetReduceOpEnumStr(op).c_str());
 
@@ -62,7 +63,7 @@ namespace hccl
                                            HcclDataType dataType, HcclReduceOp op, HcclRtStream stream, SyncMode syncMode)
     {
         /* 增加输出日志关键字 */
-        HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]", tag.c_str(),
+        HCCL_INFO("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s], op[%s]", tag.c_str(),
                    inputPtr, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
 
         /* * 入参检查 */
@@ -256,11 +257,49 @@ namespace hccl
         return communicator_->GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
     }
 
+    HcclResult hcclComm::GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum)
+    {
+        return communicator_->GetTopoInstsByLayer(netLayer, topoInsts, topoInstNum);
+    }
+
+    HcclResult hcclComm::GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType)
+    {
+        return communicator_->GetTopoType(netLayer, topoInstId, topoType);
+    }
+
+    HcclResult hcclComm::GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum)
+    {
+        return communicator_->GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum);
+    }
+
+    HcclResult hcclComm::GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num)
+    {
+        return communicator_->GetEndpointNum(netLayer, topoInstId, num);
+    }
+
+    HcclResult hcclComm::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc)
+    {
+        return communicator_->GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
+    }
+
     HcclResult hcclComm::GetRankGraph(GraphType type, void **graph, uint32_t *len)
     {
         return communicator_->GetRankGraph(type, graph, len);
     }
 
+    uint32_t hcclComm::GetConnectMode()
+    {
+        return communicator_->GetConnectMode();
+    }
+
+    void *hcclComm::GetMyRank()
+    {
+        return (void *)communicator_->GetMyRank();
+    }
+    HcclResult hcclComm::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
+    {
+        return communicator_->GetDevMemWorkSpace(memTag, size, addr, newCreated);
+    }
     HcclResult hcclComm::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize)
     {
@@ -270,6 +309,13 @@ namespace hccl
     HcclResult hcclComm::GetHeterogMode(HcclHeterogMode *mode)
     {
         return communicator_->GetHeterogMode(mode);
+    }
+
+    inline uint32_t GetCollCommOpExpansionMode(CollComm *collComm)
+    {
+        auto *myRank = collComm->GetMyRank();
+        CHK_PTR_NULL(myRank);
+        return myRank->GetOpExpansionMode();
     }
 
     HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
@@ -300,6 +346,41 @@ namespace hccl
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(commAicpuParam_.deviceLogicId), commAicpuParam_.devicePhyId));
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
+        CHK_RET(InitBinHandle());
+        CHK_PTR_NULL(commV2);
+
+        EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
+            return HCCL_E_PTR);
+
+        CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
+        CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
+            commAicpuParam_.kfcStatusTransferD2HParams));
+        commAicpuParam_.userRank = collComm_->GetMyRankId();
+        commAicpuParam_.userRankSize = collComm_->GetRankSize();
+        commAicpuParam_.commConfig.taskExceptionEnable =
+            Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().taskExceptionEnable;
+        commAicpuParam_.commConfig.notifyWaitTimeout =
+            Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
+        const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
+        HCCL_RUN_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], "
+            "userRank[%u], userRankSize[%u], opExpansionMode[%u], taskExceptionEnable[%d], notifyWaitTimeout[%u].",
+            __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
+            commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize, opExpansionMode,
+            commAicpuParam_.commConfig.taskExceptionEnable, commAicpuParam_.commConfig.notifyWaitTimeout);
+
+        const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
+        if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
+            // 当前需要支持coll comm与legacy comm混跑，coll comm确定加速模式后，需要设置comm加速模式
+            auto *commImplV2 = static_cast<Hccl::HcclCommunicator *>(commV2);
+            constexpr bool isCcuMsAvailable = false; // 禁止legacy通信域使用ms模式，避免抢占过多coll comm ccu可用资源
+            CHK_RET(commImplV2->SetAccelerator(static_cast<int32_t>(opExpansionMode), isCcuMsAvailable));
+        }
+
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult hcclComm::InitBinHandle()
+    {
         std::string jsonPath;
         CHK_RET(GetKernelFilePath(jsonPath));
         jsonPath += "ccl_kernel.json";
@@ -307,25 +388,8 @@ namespace hccl
         HcclResult retCode = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle_);
         CHK_PRT_RET(retCode != HCCL_SUCCESS,
             HCCL_ERROR("[InitCollComm]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
-                    "cpuKernelMode[%u].",
-                retCode,
-                jsonPath.c_str(),
-                ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE,
-                0),
+                       "cpuKernelMode[%u].", retCode, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0),
             retCode);
-        CHK_PTR_NULL(commV2);
-
-        EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
-        return HCCL_E_PTR);
-
-        CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
-        CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
-            commAicpuParam_.kfcStatusTransferD2HParams));
-        commAicpuParam_.userRank = collComm_->GetMyRankId();
-        commAicpuParam_.userRankSize = collComm_->GetRankSize();
-        HCCL_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], userRank[%u], userRankSize[%u]",
-            __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
-            commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize);
         return HCCL_SUCCESS;
     }
 
@@ -383,7 +447,6 @@ namespace hccl
     HcclComm hcclComm::GetCommunicatorV2()
     {
         if (collComm_ == nullptr) {
-            HCCL_ERROR("[HcclComm][GetCommunicatorV2]collComm_ is nullptr");
             return nullptr;
         }
         return collComm_->GetCommunicatorV2();
@@ -409,7 +472,8 @@ namespace hccl
         if (IsCommunicatorV2()) {
             status = collComm_->GetCommStatus();
         } else {
-            status = HcclCommStatus::HCCL_COMM_STATUS_READY;
+            HCCL_ERROR("[%s] deviceType is not support", __func__);
+            return HCCL_E_NOT_SUPPORT;
         }
         return HCCL_SUCCESS;
     }

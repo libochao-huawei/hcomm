@@ -93,6 +93,38 @@ private:
         tempAlgInterAG.SetDataType(dataType_);
     }
 
+    // 统一设置 TemplateDataParams 的公共字段
+    inline void SetTemplateDataParams(
+        TemplateDataParams &params,
+        BufferType inBuffType, BufferType outBuffType,
+        u64 inBuffBaseOff, u64 outBuffBaseOff, u64 scratchBuffBaseOff,
+        u64 sliceSize, u64 inputSliceStride, u64 outputSliceStride,
+        u32 repeatNum, u64 inputRepeatStride, u64 outputRepeatStride,
+        u64 tailSize) const
+    {
+        params.buffInfo.inBuffType      = inBuffType;
+        params.buffInfo.outBuffType     = outBuffType;
+        params.buffInfo.scratBuffType   = BufferType::SCRATCH;
+        params.buffInfo.inBuffBaseOff   = inBuffBaseOff;
+        params.buffInfo.outBuffBaseOff  = outBuffBaseOff;
+        params.buffInfo.scratchBuffBaseOff = scratchBuffBaseOff;
+        params.sliceSize            = sliceSize;
+        params.inputSliceStride     = inputSliceStride;
+        params.outputSliceStride    = outputSliceStride;
+        params.repeatNum            = repeatNum;
+        params.inputRepeatStride    = inputRepeatStride;
+        params.outputRepeatStride   = outputRepeatStride;
+        params.tailSize             = tailSize;
+    }
+
+    // 计算 Gen*Params1 中 intra 函数的公共 dataCountTmp
+    inline u64 CalcDataCountTmp1(u64 dataCount) const
+    {
+        return (rankIdxLevel1_ != rankSizeLevel1_ - 1)
+            ? dataCount / rankSize_ * rankSizeLevel0_
+            : dataCount - dataCount / rankSize_ * rankSizeLevel0_ * (rankSizeLevel1_ - 1);
+    }
+
     inline HcclResult CalcQue(AlgTempResReq &resReqIntraRS, AlgTempResReq &resReqInterRS,
                             AlgTempResReq &resReqIntraAG, AlgTempResReq &resReqInterAG)
     {
@@ -125,6 +157,8 @@ private:
 
     uint64_t rankIdxLevel0_{0};
     uint64_t rankIdxLevel1_{0};
+
+    u64 sliceCount_;
 
     std::vector<std::vector<RankId>>              virtRanks_;
     std::vector<std::map<RankId, u32>>            virtRankMap_; // map<virtRank, virtRankOrder>

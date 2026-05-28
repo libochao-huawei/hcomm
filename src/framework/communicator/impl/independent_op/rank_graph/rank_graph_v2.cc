@@ -32,6 +32,19 @@ HcclResult RankGraphV2::GetDevicePort(const uint32_t rank, uint32_t *devPort)
     return HCCL_SUCCESS;
 }
 
+HcclResult RankGraphV2::GetListenPort(const uint32_t rank, uint32_t *listenPort, EndpointLocType locType)
+{
+    if (locType == EndpointLocType::ENDPOINT_LOC_TYPE_DEVICE) {
+        CHK_RET(pImpl->GetDevicePort(rank, listenPort));
+    } else if (locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
+        CHK_RET(pImpl->GetHostPort(rank, listenPort));
+    } else {
+        HCCL_ERROR("[%s] Invalid locType[%d] for rank[%u]", __func__, locType, rank);
+        return HcclResult::HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult RankGraphV2::GetRankId(uint32_t *rank)
 {
     return pImpl->GetRankId(rank);
@@ -46,6 +59,11 @@ HcclResult RankGraphV2::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t d
 HcclResult RankGraphV2::GetRankGraphInfo(GraphType type, void **graph, uint32_t *len)
 {
     return pImpl->GetRankGraphInfo(graph, len);
+}
+
+HcclResult RankGraphV2::GetDeviceId(uint32_t rankId, uint32_t *deviceId)
+{
+    return pImpl->GetDeviceId(rankId, deviceId);
 }
 
 HcclResult RankGraphV2::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)

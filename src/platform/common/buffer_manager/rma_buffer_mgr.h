@@ -12,7 +12,9 @@
 #define RMA_BUFFER_MGR_H
 
 #include <map>
+#include <utility>
 #include "buffer_key.h"
+#include "log.h"
 
 namespace hccl {
 template<typename KeyType, typename BufferType, template <typename...> class M = std::map, typename... MapArgs>
@@ -132,6 +134,16 @@ public:
         return false; 
     }
 
+    ConstIterator Begin()
+    {
+        return intervalTree_.begin();
+    }
+
+    ConstIterator Next(ConstIterator it)
+    {
+        return std::next(it);
+    }
+
     ConstIterator End()
     {
         return intervalTree_.end();
@@ -144,6 +156,14 @@ public:
     {
         for (const auto& pair : intervalTree_) {
             HCCL_INFO("Key: %s, Value: %p", pair.first.ToString().c_str(), pair.second.buffer.get());
+        }
+    }
+
+    template<typename Fn>
+    void ForEach(Fn &&fn) const
+    {
+        for (const auto &pair : intervalTree_) {
+            std::forward<Fn>(fn)(pair.first, pair.second.buffer);
         }
     }
 

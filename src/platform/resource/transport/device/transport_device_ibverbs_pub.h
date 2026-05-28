@@ -13,6 +13,10 @@
 
 #include <functional>
 #include <atomic>
+#include <cstdint>
+#include <memory>
+#include "buffer_key.h"
+#include "rma_buffer_mgr.h"
 #include "transport_ibverbs_pub.h"
 
 namespace hccl {
@@ -75,6 +79,9 @@ public:
     HcclResult ReadAsync(struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf,
         Stream &stream) override;
 
+    HcclResult BatchTransferAsync(const HcommBatchTransferDesc *transferDescs, uint32_t descNum,
+        Stream &stream) override;
+
     HcclResult PostReady(Stream &stream);
     HcclResult WaitReady(Stream &stream);
 
@@ -124,12 +131,38 @@ public:
 
 private:
     bool IsModifyToAtomicWrite();
+    using DeviceMemDetailsRmaMgr = RmaBufferMgr<BufferKey<uintptr_t, u64>, std::shared_ptr<RoceMemDetails>>;
+    HcclResult InitMemDetails();
+    HcclResult BuildMemDetailsRmaMgrs();
+    HcclResult BatchTransferImpl(const HcommBatchTransferDesc *transferDescs, uint32_t descNum,
+        Stream &stream);
+    HcclResult ResolveTransferDesc(const HcommBatchTransferDesc &desc,
+        const void *&remoteAddr, const void *&localAddr, u64 &length, WqeType &wqeType,
+        struct WrAuxInfo &aux);
+    HcclResult SubmitWqeBatch(std::vector<WrInformation> &wrInfoVec, Stream &stream);
+
+    struct RdmaAddrKeyResolveParam {
+        const void *remoteAddr{nullptr};
+        const void *localAddr{nullptr};
+        u64 length{0};
+        u32 dstKey{0};
+        u32 srcKey{0};
+        void *transLocalAddr{nullptr};
+        void *transRemoteAddr{nullptr};
+    };
+    HcclResult ResolveRdmaAddrsAndKeys(RdmaAddrKeyResolveParam &param);
+    HcclResult ResolveRdmaKeysFromMemDetails(RdmaAddrKeyResolveParam &param);
+    HcclResult ResolveRdmaKeysFromIoMemRanges(RdmaAddrKeyResolveParam &param);
+
     TransportDeviceIbverbsData transDevIbverbsData_;
     void *notifyValueAddr_ = nullptr;
     MemDetails localInputMem_;
     MemDetails localOutputMem_;
     static std::atomic<u64> wrIdOffset_;
     u32  multiQpThreshold_{HCCL_MULTI_QP_THRESHOLD_DEFAULT};
+    std::unique_ptr<DeviceMemDetailsRmaMgr> localMemDetailsRmaMgr_;
+    std::unique_ptr<DeviceMemDetailsRmaMgr> remoteMemDetailsRmaMgr_;
+    bool useMemDetailsLookup_{false};
 };
 }  // namespace hccl
 

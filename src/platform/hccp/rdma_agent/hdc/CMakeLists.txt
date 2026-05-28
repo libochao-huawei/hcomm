@@ -45,19 +45,10 @@ target_include_directories(ra_hdc PRIVATE
     ${ASYNC_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
 
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-
-    # runtime头文件
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-
     # rdma头文件
     ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
 
     # HCCP Legacy
     ${CMAKE_CURRENT_SOURCE_DIR}/../comm/ctx
@@ -72,23 +63,10 @@ if(NOT BUILD_OPEN_PROJECT)
     )
 endif()
 
-target_link_directories(ra_hdc PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
-)
-if (DEVICE_MODE)
-    target_link_directories(ra_hdc PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
-endif()
-
 target_compile_options(ra_hdc PRIVATE
     -Werror -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11 -Wextra
     -fstack-protector-strong
     $<$<CONFIG:Debug>:-g>
-)
-
-target_compile_definitions(ra_hdc PRIVATE
-
 )
 
 target_link_options(ra_hdc PRIVATE
@@ -97,6 +75,9 @@ target_link_options(ra_hdc PRIVATE
 )
 
 target_link_libraries(ra_hdc PRIVATE
+    $<BUILD_INTERFACE:ascend_hal_headers>
+    $<BUILD_INTERFACE:msprof_headers>
+    $<BUILD_INTERFACE:slog_headers>
     -Wl,--no-as-needed
     c_sec
     $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
@@ -109,6 +90,10 @@ target_compile_definitions(ra_hdc PRIVATE
     LOG_HOST
 )
 
-install(TARGETS  ra_hdc
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
-)
+# 安装
+if((NOT BUILD_OPEN_PROJECT) OR (PRODUCT_SIDE STREQUAL "host"))
+    install(TARGETS ra_hdc
+        LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+endif()
