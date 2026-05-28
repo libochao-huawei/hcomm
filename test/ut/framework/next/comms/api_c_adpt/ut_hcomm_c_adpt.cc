@@ -147,11 +147,11 @@ TEST_F(HcommCAdptTest, ut_HcommChannelGetRemoteMems_When_Normal_Expect_Success)
     CommMem* remoteMem = nullptr;
     uint32_t memNum = 0;
     char* memTagsStorage[2] = {nullptr, nullptr};
-    char** memTags = memTagsStorage;
+    char** memInfos = memTagsStorage;
     MOCKER(ChannelProcess::ChannelGetRemoteMems)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
-    HcommResult ret = HcommChannelGetRemoteMems(channelHandle, &memNum, &remoteMem, &memTags);
+    HcommResult ret = HcommChannelGetRemoteMems(channelHandle, &memNum, &remoteMem, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 

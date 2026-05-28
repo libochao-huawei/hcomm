@@ -971,10 +971,10 @@ HcclResult AicpuTsRoceChannelV2::GetRemoteMems(uint32_t *memNum, CommMem **remot
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[AicpuTsRoceChannelV2::%s] remoteMem is nullptr", __func__), HCCL_E_PTR);
-    CHK_PRT_RET(memTags == nullptr, HCCL_ERROR("[AicpuTsRoceChannelV2::%s] memTags is nullptr", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(memInfos == nullptr, HCCL_ERROR("[AicpuTsRoceChannelV2::%s] memInfos is nullptr", __func__), HCCL_E_PTR);
     CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[AicpuTsRoceChannelV2::%s] memNum is nullptr", __func__), HCCL_E_PTR);
     *remoteMem = nullptr;
-    *memTags = nullptr;
+    *memInfos = nullptr;
     *memNum = 0;
 
     if (rmtRmaBuffers_.size() == 0) {

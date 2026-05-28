@@ -521,11 +521,11 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_NullParam_Expect_HCCL_E_PTR
     // GetRemoteMems
     CommMem *remoteMem;
     uint32_t memNum{11119999};
-    char **memTagsArray = nullptr;
-    HcclResult ret = impl_->GetRemoteMems(&memNum, &remoteMem, &memTagsArray);
+    char **memInfosArray = nullptr;
+    HcclResult ret = impl_->GetRemoteMems(&memNum, &remoteMem, &memInfosArray);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 0);
-    ret = impl_->GetRemoteMems((uint32_t *)nullptr, &remoteMem, &memTagsArray);
+    ret = impl_->GetRemoteMems((uint32_t *)nullptr, &remoteMem, &memInfosArray);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -550,8 +550,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_RemoteMemExists_Expect_Succ
     // GetRemoteMems
     uint32_t memNum = 0;  // 接收内存块数量
     std::vector<CommMem *> remoteMemList(5);
-    char **memTags = nullptr;
-    HcclResult ret = impl_->GetRemoteMems(&memNum, remoteMemList.data(), &memTags);
+    char **memInfos = nullptr;
+    HcclResult ret = impl_->GetRemoteMems(&memNum, remoteMemList.data(), &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 2);
 }
@@ -2025,10 +2025,10 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_OnlyCclBuffer_Expect_Succes
         std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, cclBufDto));
 
     CommMem *remoteMem = nullptr;
-    char **memTag = nullptr;
+    char **memInfos = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = impl_->GetRemoteMems(&memNum, &remoteMem, &memTag);
+    HcclResult ret = impl_->GetRemoteMems(&memNum, &remoteMem, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 1);
 }
@@ -2055,13 +2055,13 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_UserBuffersExist_Expect_Suc
     impl_->rmtRmaBuffers_.emplace_back(std::move(userBuf2));
 
     CommMem *remoteMem = nullptr;
-    char **memTag = nullptr;
+    char **memInfos = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = impl_->GetRemoteMems(&memNum, &remoteMem, &memTag);
+    HcclResult ret = impl_->GetRemoteMems(&memNum, &remoteMem, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 3);
 
     ASSERT_NE(remoteMem, nullptr);
-    ASSERT_NE(memTag, nullptr);
+    ASSERT_NE(memInfos, nullptr);
 }
