@@ -64,7 +64,7 @@ protected:
         s32 portNum = -1;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(any(), outBound(portNum))
+            .with(_, outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
@@ -342,7 +342,7 @@ TEST_F(CommInnerTest, ut_TransportInit)
 {
     MOCKER_CPP(&CommBase::SetTransportType)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     s32 ret = HCCL_SUCCESS;
@@ -398,7 +398,7 @@ TEST_F(CommInnerTest, ut_TransportInit)
     TransportRoce transport(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transport, &TransportRoce::Init)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     comm_inner->transportType_[0] = TransportType::TRANS_TYPE_ROCE;
@@ -538,7 +538,7 @@ TEST_F(CommInnerTest, ut_create_dest_link_memorry_error)
 {
     MOCKER_CPP(&CommBase::TransportInit)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_E_MEMORY));
 
     s32 ret = HCCL_SUCCESS;

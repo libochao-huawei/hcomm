@@ -211,7 +211,7 @@ protected:
         s32 portNum = 7;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(any(), outBound(portNum))
+            .with(_, outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         DlTdtFunction::GetInstance().DlTdtFunctionInit();
         DlRaFunction::GetInstance().DlRaFunctionInit();

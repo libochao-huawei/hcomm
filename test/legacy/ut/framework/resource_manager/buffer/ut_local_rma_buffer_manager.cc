@@ -38,9 +38,9 @@ protected:
 
     virtual void SetUp()
     {
-        MOCKER(HrtIpcSetMemoryName).stubs().with(any(), any(), any(), any());
-        MOCKER(HrtDevMemAlignWithPage).stubs().with(any(), any(), any(), any(), any());
-        MOCKER(HrtIpcDestroyMemoryName).stubs().with(any());
+        MOCKER(HrtIpcSetMemoryName).stubs().with(_, _, _, _);
+        MOCKER(HrtDevMemAlignWithPage).stubs().with(_, _, _, _, _);
+        MOCKER(HrtIpcDestroyMemoryName).stubs().with(_);
         MOCKER(GetUbToken).stubs().will(returnValue(1));
 
         devBuffer = DevBuffer::Create(0x100, 0x100);
@@ -89,8 +89,8 @@ TEST_F(LocalRmaBufManagerTest, reg_port_ub_first_time_get_then_second_throw)
 
     void *rdmaHandle = (void *)0x200;
 
-    MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
-    MOCKER_CPP(&RdmaHandleManager::Get).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+    MOCKER(HrtRaUbCtxInit).stubs().with(_, _).will(returnValue(rdmaHandle));
+    MOCKER_CPP(&RdmaHandleManager::Get).stubs().with(_, _).will(returnValue(rdmaHandle));
     RdmaHandleManager::GetInstance().tokenInfoMap[rdmaHandle] = make_unique<TokenInfoManager>(0, rdmaHandle);
 
     auto res = localRmaBufManager.Reg(opTag, bufferType, devBuffer, port, LinkProtocol::UB_CTP);
@@ -104,7 +104,7 @@ TEST_F(LocalRmaBufManagerTest, reg_port_ub_first_time_get_then_second_throw)
 
 TEST_F(LocalRmaBufManagerTest, reg_port_ub_first_time_get_then_second_no_throw_aicpu)
 {
-    MOCKER(HrtUbDevQueryInfo).stubs().with(any(), any());
+    MOCKER(HrtUbDevQueryInfo).stubs().with(_, _);
 
     CommunicatorImpl comm;
     LocalRmaBufManager localRmaBufManager(comm);
@@ -114,8 +114,8 @@ TEST_F(LocalRmaBufManagerTest, reg_port_ub_first_time_get_then_second_no_throw_a
  
     void *rdmaHandle = (void *)0x200;
  
-    MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
-    MOCKER_CPP(&RdmaHandleManager::Get).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+    MOCKER(HrtRaUbCtxInit).stubs().with(_, _).will(returnValue(rdmaHandle));
+    MOCKER_CPP(&RdmaHandleManager::Get).stubs().with(_, _).will(returnValue(rdmaHandle));
  
     auto res = localRmaBufManager.Reg(opTag, bufferType, devBuffer, port, LinkProtocol::UB_CTP);
     EXPECT_NE(nullptr, res);

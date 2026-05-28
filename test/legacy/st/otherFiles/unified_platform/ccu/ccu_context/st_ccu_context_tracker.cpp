@@ -128,7 +128,7 @@ TEST_F(CcuContextTrackerTest, TrackerTest)
 {
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(_).will(returnValue(true));
     MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
@@ -137,7 +137,7 @@ TEST_F(CcuContextTrackerTest, TrackerTest)
     MOCKER(CcuDeviceManager::AllocXn).stubs().will(invoke(CtxAllocXnStub));
     MOCKER(&CcuDeviceManager::GetLoopChannelId)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(_, _, _, _)
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     JfcHandle jfcHandle = 1;
     MOCKER(HrtRaUbCreateJfc).defaults().will(returnValue(jfcHandle));

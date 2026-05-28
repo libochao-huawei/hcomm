@@ -34,7 +34,7 @@ protected:
     {
         MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<DevId>(0)));
         void *rdmaHandle = (void*)0x200;
-        MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+        MOCKER(HrtRaUbCtxInit).stubs().with(_, _).will(returnValue(rdmaHandle));
         std::cout << "A Test case in TpManagerTest SetUP" << std::endl;
     }
 
@@ -103,7 +103,7 @@ TEST_F(TpManagerTest, tp_manager_get_infos_not_found)
     uint32_t errNum = 0;
     RequestHandle reqHandle = 0x12345678;
     MOCKER(RaUbGetTpInfoAsync).stubs()
-        .with(any(), any(), any(), outBound(errNum))
+        .with(_, _, _, outBound(errNum))
         .will(returnValue(reqHandle));
     HcclResult result;
     int32_t devLogicId = 0;
@@ -125,7 +125,7 @@ TEST_F(TpManagerTest, tp_manager_redo_get_infos_not_found)
     uint32_t errNum = 0;
     RequestHandle reqHandle = 0x12345678;
     MOCKER(RaUbGetTpInfoAsync).stubs()
-        .with(any(), any(), any(), outBound(errNum))
+        .with(_, _, _, outBound(errNum))
         .will(returnValue(reqHandle));
     HcclResult result;
     int32_t devLogicId = 0;

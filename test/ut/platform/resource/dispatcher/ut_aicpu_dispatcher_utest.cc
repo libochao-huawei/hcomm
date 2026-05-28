@@ -62,7 +62,7 @@ protected:
         s32 portNum = 7;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(any(), outBound(portNum))
+            .with(_, outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         std::cout << "DispatcherAiCpu_UT Test SetUP" << std::endl;
     }
@@ -96,7 +96,7 @@ TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuLaunchTaskEx)
 
     MOCKER_CPP(&DispatcherAiCpu::LaunchTask, HcclResult(DispatcherAiCpu::*)(hccl::Stream &, bool))
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_E_INTERNAL))
         .then(returnValue(HCCL_SUCCESS))
         .then(returnValue(HCCL_E_INTERNAL))
@@ -687,7 +687,7 @@ TEST_F(DispatcherAiCpu_UT, ut_LaunchTask_IterateOtherStreams)
     uint32_t queryHead = 98;
     MOCKER(QuerySqStatusByType)
         .stubs()
-        .with(any(), any(), any(), outBound(queryHead))
+        .with(_, _, _, outBound(queryHead))
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(ConfigSqStatusByType)
@@ -728,7 +728,7 @@ TEST_F(DispatcherAiCpu_UT, ut_WaitRtsq_IterateOtherStreams)
     uint32_t queryHead = 95;
     MOCKER(QuerySqStatusByType)
         .stubs()
-        .with(any(), any(), any(), outBound(queryHead))
+        .with(_, _, _, outBound(queryHead))
         .will(returnValue(HCCL_SUCCESS));
 
     dispatcherAiCpu->dfxTimeOutConfig_.sqFullWaitTimeOut = 0;

@@ -34,9 +34,9 @@ protected:
 
     virtual void SetUp()
     {
-        MOCKER(HrtIpcSetMemoryName).stubs().with(any(), any(), any(), any());
-        MOCKER(HrtDevMemAlignWithPage).stubs().with(any(), any(), any(), any(), any());
-        MOCKER(HrtIpcDestroyMemoryName).stubs().with(any());
+        MOCKER(HrtIpcSetMemoryName).stubs().with(_, _, _, _);
+        MOCKER(HrtDevMemAlignWithPage).stubs().with(_, _, _, _, _);
+        MOCKER(HrtIpcDestroyMemoryName).stubs().with(_);
 
         std::cout << "A Test case in LocalRmaBuffer SetUP." << std::endl;
     }
@@ -111,6 +111,6 @@ TEST_F(LocalRmaBufferTest, generate_safe_random_number)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(1));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
-    MOCKER(HrtRaGetSecRandom).stubs().with(any(), any());
+    MOCKER(HrtRaGetSecRandom).stubs().with(_, _);
     u32 token = GetUbToken();
 }

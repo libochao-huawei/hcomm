@@ -63,7 +63,7 @@ protected:
         s32 portNum = -1;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(any(), outBound(portNum))
+            .with(_, outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
@@ -121,16 +121,16 @@ TEST_F(HeterogSendRecvTest, ut_mr_manager)
     };
     MOCKER(hrtIbvPostSrqRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(0));
     MOCKER_CPP(&TransportHeterogEventRoce::IssueRecvWqe)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(0));
 
     MOCKER(hrtRaSocketWhiteListAdd)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret;
@@ -247,19 +247,19 @@ TEST_F(HeterogSendRecvTest, ut_mr_manager)
     MrManager::GetInstance().TransMrInfo(qpHandle, size, mrinfo);
     MOCKER(hrtHalHostRegister)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtRaMrDereg)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtRaMrReg)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtHalHostUnregister)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
     void *stub;
     MrInfo MrInformation;
@@ -283,7 +283,7 @@ TEST_F(HeterogSendRecvTest, ut_mr_manager)
     MrManager::GetInstance().IsRequireMapping(buff, size - 1, stub);
     MOCKER_CPP(&MrManager::GetMrInfo)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     u64 dva = reinterpret_cast<uintptr_t>(stub);
     ret = MrManager::GetInstance().GetDevVirAddr(buff, size, dva);

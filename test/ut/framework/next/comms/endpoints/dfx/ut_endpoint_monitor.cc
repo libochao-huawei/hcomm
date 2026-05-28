@@ -139,27 +139,27 @@ TEST_F(EndpointMonitorTest, Ut_ProcessUbAsyncEvents_CoverAllBranches)
         HCCL_E_PARA);
     EXPECT_EQ(g_monitor.RegisterToEndpointMonitor(0, nullptr), HCCL_E_PTR);
 
-    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(_, outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
     MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_NOT_SUPPORT));
     EXPECT_EQ(g_monitor.RegisterToEndpointMonitor(0, reinterpret_cast<EndpointHandle>(&myUtEndpoint)), HCCL_SUCCESS);
     EXPECT_EQ(g_monitor.UnRegisterToEndpointMonitor(), HCCL_SUCCESS);
     GlobalMockObject::verify();
 
     g_monitor.epHandleSet_.emplace(reinterpret_cast<u64>(&myUtEndpoint));
-    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(_, outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
     MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(&EndpointMonitor::PrintUbAsyncEventsContext).stubs();
     g_monitor.ProcessUbAsyncEvents();
     EXPECT_EQ(g_monitor.epHandleSet_.size(), 1);
     GlobalMockObject::verify();
 
-    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(_, outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
     MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_NOT_SUPPORT));
     g_monitor.ProcessUbAsyncEvents();
     EXPECT_EQ(g_monitor.epHandleSet_.size(), 0);
     GlobalMockObject::verify();
 
-    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(_, outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
     MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_INTERNAL));
     g_monitor.ProcessUbAsyncEvents();
     EXPECT_EQ(g_monitor.epHandleSet_.size(), 0);

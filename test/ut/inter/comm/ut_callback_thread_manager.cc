@@ -82,7 +82,7 @@ protected:
         s32 portNum = -1;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(any(), outBound(portNum))
+            .with(_, outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         std::cout << "A TestCase SetUP" << std::endl;
     }

@@ -32,9 +32,9 @@ protected:
 
     virtual void SetUp()
     {
-        MOCKER(HrtIpcSetMemoryName).stubs().with(any(), any(), any(), any());
-        MOCKER(HrtDevMemAlignWithPage).stubs().with(any(), any(), any(), any(), any());
-        MOCKER(HrtIpcDestroyMemoryName).stubs().with(any());
+        MOCKER(HrtIpcSetMemoryName).stubs().with(_, _, _, _);
+        MOCKER(HrtDevMemAlignWithPage).stubs().with(_, _, _, _, _);
+        MOCKER(HrtIpcDestroyMemoryName).stubs().with(_);
 
         std::cout << "A Test case in LocalRdmaRmaBuffer SetUP." << std::endl;
     }

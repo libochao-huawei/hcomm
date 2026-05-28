@@ -43,11 +43,11 @@ protected:
                                       Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
         
         MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-        MOCKER(Hccl::HrtRaNdaQpCreate).stubs().with(any(), any(), any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER(Hccl::HrtRaNdaCqCreate).stubs().with(any(), any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER(Hccl::HrtRaNdaCqDestroy).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER(Hccl::HrtRaQpDestroy).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER(RaGetQpAttr).stubs().with(any(), any()).will(returnValue(0));
+        MOCKER(Hccl::HrtRaNdaQpCreate).stubs().with(_, _, _, _, _, _).will(returnValue(HCCL_SUCCESS));
+        MOCKER(Hccl::HrtRaNdaCqCreate).stubs().with(_, _, _, _, _).will(returnValue(HCCL_SUCCESS));
+        MOCKER(Hccl::HrtRaNdaCqDestroy).stubs().with(_, _).will(returnValue(HCCL_SUCCESS));
+        MOCKER(Hccl::HrtRaQpDestroy).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+        MOCKER(RaGetQpAttr).stubs().with(_, _).will(returnValue(0));
     }
 
     virtual void TearDown()

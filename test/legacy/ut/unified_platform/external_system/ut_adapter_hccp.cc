@@ -254,7 +254,7 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketNonBlockSendHeart_When_Input_normal_Expect
     u64 sendSizeStub = 123;
     u64 fd = 0;
     SocketHandle socketHandle = &fd;
-    MOCKER(RaSocketSend).stubs().with(any(), any(), any(), outBoundP(&sendSizeStub, sizeof(sendSizeStub)))
+    MOCKER(RaSocketSend).stubs().with(_, _, _, outBoundP(&sendSizeStub, sizeof(sendSizeStub)))
         .will(returnValue(0));
 
     u64 sentSize = 0;
@@ -269,7 +269,7 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketNonBlockRecvHeart_When_Input_normal_Expect
     u64 recvSizeStub = 123;
     u64 fd = 0;
     SocketHandle socketHandle = &fd;
-    MOCKER(RaSocketRecv).stubs().with(any(), any(), any(), outBoundP(&recvSizeStub, sizeof(recvSizeStub)))
+    MOCKER(RaSocketRecv).stubs().with(_, _, _, outBoundP(&recvSizeStub, sizeof(recvSizeStub)))
         .will(returnValue(0));
 
     u64 recvedSize = 0;
@@ -285,7 +285,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketInit_OK)
     SocketHandle socketHandle = static_cast<void *>(num);
     MOCKER(RaSocketInit)
         .stubs()
-        .with(any(), any(), outBoundP(&socketHandle, sizeof(socketHandle)))
+        .with(_, _, outBoundP(&socketHandle, sizeof(socketHandle)))
         .will(returnValue(0));
 
     struct RaInterface rdevInfo;
@@ -303,7 +303,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketInit_NOK)
     SocketHandle socketHandle = static_cast<void *>(num);
     MOCKER(RaSocketInit)
         .stubs()
-        .with(any(), any(), outBoundP(&socketHandle, sizeof(socketHandle)))
+        .with(_, _, outBoundP(&socketHandle, sizeof(socketHandle)))
         .will(returnValue(1));
 
     struct RaInterface rdevInfo;
@@ -320,7 +320,7 @@ TEST_F(AdapterHccpTest, HrtHrtRaRdmaInit_NOK)
     RdmaHandle rdmaHandle = static_cast<void *>(num);
     MOCKER(RaRdevInit)
         .stubs()
-        .with(any(), any(), any(), outBoundP(&rdmaHandle, sizeof(rdmaHandle)))
+        .with(_, _, _, outBoundP(&rdmaHandle, sizeof(rdmaHandle)))
         .will(returnValue(1));
 
     struct RaInterface rdevInfo;
@@ -337,7 +337,7 @@ TEST_F(AdapterHccpTest, HrtHrtRaRdmaInit_return_HCCP_ELINKDOWN_NOK)
     RdmaHandle rdmaHandle = static_cast<void *>(num);
     MOCKER(RaRdevInit)
         .stubs()
-        .with(any(), any(), any(), outBoundP(&rdmaHandle, sizeof(rdmaHandle)))
+        .with(_, _, _, outBoundP(&rdmaHandle, sizeof(rdmaHandle)))
         .will(returnValue(HCCP_ELINKDOWN));
 
     struct RaInterface rdevInfo;
@@ -354,7 +354,7 @@ TEST_F(AdapterHccpTest, HrtRaQpCreate_NOK)
     QpHandle connHandle = static_cast<void *>(num);
     MOCKER(RaQpCreate)
         .stubs()
-        .with(any(), any(), any(), outBoundP(&connHandle, sizeof(connHandle)))
+        .with(_, _, _, outBoundP(&connHandle, sizeof(connHandle)))
         .will(returnValue(1));
 
     RdmaHandle rdmaHandle;
@@ -368,7 +368,7 @@ TEST_F(AdapterHccpTest, HrtGetRaQpStatus_NOK)
 {
     // Given
     s32 status = 1;
-    MOCKER(RaGetQpStatus).stubs().with(any(), outBoundP(&status, sizeof(status))).will(returnValue(1));
+    MOCKER(RaGetQpStatus).stubs().with(_, outBoundP(&status, sizeof(status))).will(returnValue(1));
 
     QpHandle qpHandle;
     // when
@@ -379,7 +379,7 @@ TEST_F(AdapterHccpTest, HrtGetRaQpStatus_NOK)
 TEST_F(AdapterHccpTest, HrtRaMrReg_deReg_NOK)
 {
     // Given
-    MOCKER(RaMrReg).stubs().with(any(), any()).will(returnValue(1));
+    MOCKER(RaMrReg).stubs().with(_, _).will(returnValue(1));
 
     QpHandle       qpHandle;
     struct RaMrInfo mrInfo;
@@ -387,7 +387,7 @@ TEST_F(AdapterHccpTest, HrtRaMrReg_deReg_NOK)
 
     EXPECT_THROW(HrtRaMrReg(qpHandle, mrInfo), NetworkApiException);
 
-    MOCKER(RaMrDereg).stubs().with(any(), any()).will(returnValue(1));
+    MOCKER(RaMrDereg).stubs().with(_, _).will(returnValue(1));
     EXPECT_THROW(HrtRaMrDereg(qpHandle, mrInfo), NetworkApiException);
 }
 
@@ -552,14 +552,14 @@ TEST_F(AdapterHccpTest, HrtRaUbPostSend_ok)
 
 TEST_F(AdapterHccpTest, HrtGetHosIf_nok_ra_get_ifnum_error)
 {
-    MOCKER(RaGetIfnum).stubs().with(any(), any()).will(returnValue(1));
+    MOCKER(RaGetIfnum).stubs().with(_, _).will(returnValue(1));
     EXPECT_THROW(HrtGetHostIf(0), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, HrtGetHosIf_nok_ra_get_ifnum_zero)
 {
     unsigned int fakeNum = 0;
-    MOCKER(RaGetIfnum).stubs().with(any(), outBoundP(&fakeNum, sizeof(fakeNum))).will(returnValue(0));
+    MOCKER(RaGetIfnum).stubs().with(_, outBoundP(&fakeNum, sizeof(fakeNum))).will(returnValue(0));
     auto hostIfs = HrtGetHostIf(0);
     EXPECT_EQ(true, hostIfs.empty());
 }
@@ -568,8 +568,8 @@ TEST_F(AdapterHccpTest, HrtGetHosIf_nok_ra_get_ifaddrs_error)
 {
 
     unsigned int fakeNum = 1;
-    MOCKER(RaGetIfnum).stubs().with(any(), outBoundP(&fakeNum, sizeof(fakeNum))).will(returnValue(0));
-    MOCKER(RaGetIfaddrs).stubs().with(any(), any(), any()).will(returnValue(1));
+    MOCKER(RaGetIfnum).stubs().with(_, outBoundP(&fakeNum, sizeof(fakeNum))).will(returnValue(0));
+    MOCKER(RaGetIfaddrs).stubs().with(_, _, _).will(returnValue(1));
 
     EXPECT_THROW(HrtGetHostIf(0), NetworkApiException);
 }
@@ -577,7 +577,7 @@ TEST_F(AdapterHccpTest, HrtGetHosIf_nok_ra_get_ifaddrs_error)
 TEST_F(AdapterHccpTest, HrtGetHosIf_ok)
 {
     unsigned int fakeNum = 1;
-    MOCKER(RaGetIfnum).stubs().with(any(), outBoundP(&fakeNum, sizeof(fakeNum))).will(returnValue(0));
+    MOCKER(RaGetIfnum).stubs().with(_, outBoundP(&fakeNum, sizeof(fakeNum))).will(returnValue(0));
 
     IpAddress             addr(1);
     struct InterfaceInfo ifAddrInfos[1];
@@ -590,7 +590,7 @@ TEST_F(AdapterHccpTest, HrtGetHosIf_ok)
 
     MOCKER(RaGetIfaddrs)
         .stubs()
-        .with(any(), outBoundP(ifAddrInfos, sizeof(ifAddrInfos)), outBoundP(&fakeNum, sizeof(fakeNum)))
+        .with(_, outBoundP(ifAddrInfos, sizeof(ifAddrInfos)), outBoundP(&fakeNum, sizeof(fakeNum)))
         .will(returnValue(0));
 
     auto hostIfs = HrtGetHostIf(0);
@@ -615,7 +615,7 @@ TEST_F(AdapterHccpTest, HrtGetDeviceIp_nok)
 TEST_F(AdapterHccpTest, HrtGetDeviceIp_ok)
 {
     unsigned int fakeNum = 1;
-    MOCKER(RaGetIfnum).stubs().with(any(), outBoundP(&fakeNum, sizeof(fakeNum))).will(returnValue(0));
+    MOCKER(RaGetIfnum).stubs().with(_, outBoundP(&fakeNum, sizeof(fakeNum))).will(returnValue(0));
 
     u32 devPhyId = 0;
     IpAddress addr(1);
@@ -629,7 +629,7 @@ TEST_F(AdapterHccpTest, HrtGetDeviceIp_ok)
 
     MOCKER(RaGetIfaddrs)
         .stubs()
-        .with(any(), outBoundP(ifAddrInfos, sizeof(ifAddrInfos)), outBoundP(&fakeNum, sizeof(fakeNum)))
+        .with(_, outBoundP(ifAddrInfos, sizeof(ifAddrInfos)), outBoundP(&fakeNum, sizeof(fakeNum)))
         .will(returnValue(0));
 
     auto deviceIps = HrtGetDeviceIp(devPhyId);
@@ -642,7 +642,7 @@ TEST_F(AdapterHccpTest, HrtGetDeviceIp_ok)
 
 TEST_F(AdapterHccpTest, HrtRaUbPostNops_exception)
 {
-    MOCKER(RaBatchSendWr).stubs().with(any()).will(returnValue(1));
+    MOCKER(RaBatchSendWr).stubs().with(_).will(returnValue(1));
     EXPECT_THROW(HrtRaUbPostNops(0, 0, 1), NetworkApiException);
 }
 
@@ -680,7 +680,7 @@ TEST_F(AdapterHccpTest, RaUbUnimportJettyAsync_exception)
 
 TEST_F(AdapterHccpTest, RaGetAsyncReqResult_return_others_eagain)
 {
-    MOCKER(RaGetAsyncReqResult).stubs().with(any(), any()).will(returnValue(OTHERS_EAGAIN));
+    MOCKER(RaGetAsyncReqResult).stubs().with(_, _).will(returnValue(OTHERS_EAGAIN));
     RequestHandle reqHandle = 12;
     HrtRaGetAsyncReqResult(reqHandle);
     GlobalMockObject::verify();
@@ -688,7 +688,7 @@ TEST_F(AdapterHccpTest, RaGetAsyncReqResult_return_others_eagain)
 
 TEST_F(AdapterHccpTest, RaGetAsyncReqResult_return_error)
 {
-    MOCKER(RaGetAsyncReqResult).stubs().with(any(), any()).will(returnValue(OTHERS_EAGAIN+1));
+    MOCKER(RaGetAsyncReqResult).stubs().with(_, _).will(returnValue(OTHERS_EAGAIN+1));
     RequestHandle reqHandle = 12;
     EXPECT_THROW(HrtRaGetAsyncReqResult(reqHandle), NetworkApiException);
     GlobalMockObject::verify();
@@ -697,7 +697,7 @@ TEST_F(AdapterHccpTest, RaGetAsyncReqResult_return_error)
 TEST_F(AdapterHccpTest, RaGetAsyncReqResult_return_zero_result_error)
 {
     int fakeResult = 12345;
-    MOCKER(RaGetAsyncReqResult).stubs().with(any(), outBoundP(&fakeResult)).will(returnValue(0));
+    MOCKER(RaGetAsyncReqResult).stubs().with(_, outBoundP(&fakeResult)).will(returnValue(0));
     RequestHandle reqHandle = 12;
     EXPECT_THROW(HrtRaGetAsyncReqResult(reqHandle), NetworkApiException);
     GlobalMockObject::verify();
@@ -723,7 +723,7 @@ TEST_F(AdapterHccpTest, RaGetOneSocket_return_err_2)
 {
     u32 connectedNum = 2;
     MOCKER(RaGetSockets).stubs()
-        .with(any(), any(), any(), outBoundP(&connectedNum))
+        .with(_, _, _, outBoundP(&connectedNum))
         .will(returnValue(0));
 
     SocketHandle socketHandle = nullptr;
@@ -740,7 +740,7 @@ TEST_F(AdapterHccpTest, RaGetOneSocket_return_err_2)
 TEST_F(AdapterHccpTest, RaSocketCloseOneAsync_return_ok)
 {
     MOCKER(RaSocketBatchCloseAsync).stubs()
-        .with(any(), any(), any())
+        .with(_, _, _)
         .will(returnValue(0));
 
     SocketHandle socketHandle = nullptr;
@@ -753,7 +753,7 @@ TEST_F(AdapterHccpTest, RaSocketCloseOneAsync_return_ok)
 TEST_F(AdapterHccpTest, RaSocketListenOneStopAsync_return_ok)
 {
     MOCKER(RaSocketListenStopAsync).stubs()
-        .with(any(), any(), any())
+        .with(_, _, _)
         .will(returnValue(0));
 
     SocketHandle socketHandle = nullptr;
@@ -773,7 +773,7 @@ TEST_F(AdapterHccpTest, RaUbAllocTokenIdHandle_ok)
 
 TEST_F(AdapterHccpTest, RaUbFreeTokenIdHandle_exception)
 {
-    MOCKER(RaCtxTokenIdFree).stubs().with(any()).will(returnValue(1));
+    MOCKER(RaCtxTokenIdFree).stubs().with(_).will(returnValue(1));
     RdmaHandle handle = (void *)0x1234;
     TokenIdHandle tokenIdHandle = 1234;
     EXPECT_THROW(RaUbFreeTokenIdHandle(handle, tokenIdHandle), NetworkApiException);
@@ -782,7 +782,7 @@ TEST_F(AdapterHccpTest, RaUbFreeTokenIdHandle_exception)
 void MockRaSocketRecv(int ret, unsigned long long recvSize)
 {
     MOCKER(RaSocketRecv).stubs()
-        .with(any(), any(), any(), outBoundP(&recvSize, sizeof(recvSize)))
+        .with(_, _, _, outBoundP(&recvSize, sizeof(recvSize)))
         .will(returnValue(ret));
 }
 
@@ -851,7 +851,7 @@ TEST_F(AdapterHccpTest, Ut_HraGetRtpEnable_When_RTP_Equals_1_Expect_Return_True)
     DevBaseAttr out {};
     out.ub.priorityInfo[0].tpType.bs.rtp = 1;
     MOCKER(RaGetDevBaseAttr).stubs()
-        .with(any(), outBoundP(&out, sizeof(out)))
+        .with(_, outBoundP(&out, sizeof(out)))
         .will(returnValue(0));
     RdmaHandle handle = (void *)0x1234;
 
@@ -862,7 +862,7 @@ TEST_F(AdapterHccpTest, Ut_HraGetRtpEnable_When_RTP_Equals_0_Expect_Return_False
 {
     DevBaseAttr out {};
     MOCKER(RaGetDevBaseAttr).stubs()
-        .with(any(), outBoundP(&out, sizeof(out)))
+        .with(_, outBoundP(&out, sizeof(out)))
         .will(returnValue(0));
     RdmaHandle handle = (void *)0x1234;
 
@@ -901,7 +901,7 @@ TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_InterfaceVersionTooLow_Expect_
     u32 lowVersion = 0;
 
     MOCKER(RaGetInterfaceVersion).stubs()
-        .with(any(), any(), outBoundP(&lowVersion, sizeof(lowVersion)))
+        .with(_, _, outBoundP(&lowVersion, sizeof(lowVersion)))
         .will(returnValue(0));
 
     HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
@@ -918,7 +918,7 @@ TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_RaGetTlsEnableFails_Expect_Ret
     u32 supportVersion = 1;
 
     MOCKER(RaGetInterfaceVersion).stubs()
-        .with(any(), any(), outBoundP(&supportVersion, sizeof(supportVersion)))
+        .with(_, _, outBoundP(&supportVersion, sizeof(supportVersion)))
         .will(returnValue(0));
     MOCKER(RaGetTlsEnable).stubs().will(returnValue(-1));
 
@@ -937,10 +937,10 @@ TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_TlsEnableIsTrue_Expect_ReturnS
     bool tlsEnable = true;
 
     MOCKER(RaGetInterfaceVersion).stubs()
-        .with(any(), any(), outBoundP(&supportVersion, sizeof(supportVersion)))
+        .with(_, _, outBoundP(&supportVersion, sizeof(supportVersion)))
         .will(returnValue(0));
     MOCKER(RaGetTlsEnable).stubs()
-        .with(any(), outBoundP(&tlsEnable, sizeof(tlsEnable)))
+        .with(_, outBoundP(&tlsEnable, sizeof(tlsEnable)))
         .will(returnValue(0));
 
     HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
@@ -958,10 +958,10 @@ TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_TlsEnableIsFalse_Expect_Return
     bool tlsEnable = false;
 
     MOCKER(RaGetInterfaceVersion).stubs()
-        .with(any(), any(), outBoundP(&supportVersion, sizeof(supportVersion)))
+        .with(_, _, outBoundP(&supportVersion, sizeof(supportVersion)))
         .will(returnValue(0));
     MOCKER(RaGetTlsEnable).stubs()
-        .with(any(), outBoundP(&tlsEnable, sizeof(tlsEnable)))
+        .with(_, outBoundP(&tlsEnable, sizeof(tlsEnable)))
         .will(returnValue(0));
 
     HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
@@ -986,7 +986,7 @@ TEST_F(AdapterHccpTest, HrtRaGetEidByIp_ok)
 
     MOCKER(RaGetEidByIp)
         .stubs()
-        .with(any(), any(), outBoundP(fakeEid, sizeof(fakeEid)), outBoundP(&fakeNum, sizeof(fakeNum)))
+        .with(_, _, outBoundP(fakeEid, sizeof(fakeEid)), outBoundP(&fakeNum, sizeof(fakeNum)))
         .will(returnValue(0));
 
     HcclResult ret = HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList);
@@ -1021,7 +1021,7 @@ TEST_F(AdapterHccpTest, HrtRaGetEidByIp_count_mismatch_returns_internal)
 
     MOCKER(RaGetEidByIp)
         .stubs()
-        .with(any(), any(), outBoundP(fakeEid, sizeof(fakeEid)), outBoundP(&returnedNum, sizeof(returnedNum)))
+        .with(_, _, outBoundP(fakeEid, sizeof(fakeEid)), outBoundP(&returnedNum, sizeof(returnedNum)))
         .will(returnValue(0));
 
     HcclResult ret = HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList);
@@ -1039,7 +1039,7 @@ TEST_F(AdapterHccpTest, HrtRaGetEidByIp_empty_input_ok)
     unsigned int returnedNum = 0;
     MOCKER(RaGetEidByIp)
         .stubs()
-        .with(any(), any(), any(), outBoundP(&returnedNum, sizeof(returnedNum)))
+        .with(_, _, _, outBoundP(&returnedNum, sizeof(returnedNum)))
         .will(returnValue(0));
 
     HcclResult ret = HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList);
@@ -1054,7 +1054,7 @@ TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_VersionEnough_Expect_Success)
     u32 mock_version = GET_UBOE_FLAG_ENABLE_VERSION;
     MOCKER(RaGetInterfaceVersion)
         .stubs()
-        .with(any(), any(), outBoundP(&mock_version, sizeof(s32)))
+        .with(_, _, outBoundP(&mock_version, sizeof(s32)))
         .will(returnValue(0));
 
     HcclResult ret = HrtGetUboeFlagEnable(devPhyId);
@@ -1068,7 +1068,7 @@ TEST_F(AdapterHccpTest, ut_HrtGetUboeFlagEnable_When_VersionNotEnough_Expect_Not
     u32 mock_version = GET_UBOE_FLAG_ENABLE_VERSION - 1;
     MOCKER(RaGetInterfaceVersion)
         .stubs()
-        .with(any(), any(), outBoundP(&mock_version, sizeof(s32)))
+        .with(_, _, outBoundP(&mock_version, sizeof(s32)))
         .will(returnValue(0));
     
     HcclResult ret = HrtGetUboeFlagEnable(devPhyId);

@@ -50,7 +50,7 @@ TEST_F(TraceTest, save_test)
     auto size = sizeof(buffer);
     MOCKER(TraceSubmit)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(true));
     Trace trace;
     trace.Save(buffer);

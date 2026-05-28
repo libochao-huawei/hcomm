@@ -95,13 +95,13 @@ protected:
         Hccl::DevType dev = Hccl::DevType::DEV_TYPE_950;
         MOCKER(Hccl::HrtGetDevice).stubs().will(returnValue(0));
         MOCKER(Hccl::HrtGetDeviceType).stubs().will(returnValue(dev));
-        MOCKER(Hccl::HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<Hccl::DevId>(0)));
+        MOCKER(Hccl::HrtGetDevicePhyIdByIndex).stubs().with(_).will(returnValue(static_cast<Hccl::DevId>(0)));
         
         DevType devType = DevType::DEV_TYPE_950;
  	    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
         // MOCKER(hrtGetDeviceType).stubs().with(outBound(dev)).will(returnValue(HCCL_SUCCESS));
         RdmaHandle rdmaHandle = (void *)0x1000000;
-        MOCKER(Hccl::HrtRaRdmaInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+        MOCKER(Hccl::HrtRaRdmaInit).stubs().with(_, _).will(returnValue(rdmaHandle));
         MOCKER(HcommEndpointStartListen).stubs().will(returnValue(static_cast<HcommResult>(HCCL_SUCCESS)));
         EndpointDesc endpointDesc{};
         endpointDesc.protocol = COMM_PROTOCOL_ROCE;
@@ -146,12 +146,12 @@ protected:
         MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-        MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
@@ -266,12 +266,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Normal_Expect_HCCL_SUCCESS)
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
@@ -309,21 +309,21 @@ TEST_F(HostCpuRoceChannelTest, Ut_Init_When_ExchangeAllMemsIsTrue_And_SocketIsNu
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
     uint32_t memHandleNum = 1;
     MOCKER(HcommMemGetAllMemHandles)
         .stubs()
-        .with(any(), outBound(&memHandle), outBound(&memHandleNum))
+        .with(_, outBound(&memHandle), outBound(&memHandleNum))
         .will(returnValue(static_cast<HcommResult>(HCCL_SUCCESS)));
-    MOCKER_CPP(&hcomm::SocketMgr::GetSocket).stubs().with(any(), outBound(fakeSocket)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::SocketMgr::GetSocket).stubs().with(_, outBound(fakeSocket)).will(returnValue(HCCL_SUCCESS));
     // construct
     channelDesc.exchangeAllMems = true;
     channelDesc.memHandles = nullptr;
@@ -436,12 +436,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ExchangeData_Failed_Expect_FAILED)
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_E_ROCE_CONNECT));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_E_ROCE_CONNECT));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());
@@ -473,12 +473,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ModifyQp_Failed_Expect_FAILED)
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_E_ROCE_CONNECT));
     MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
@@ -565,12 +565,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     MockGetQpInfos();
@@ -624,12 +624,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_PrepareWriteWrResource_Expect_SUCCESS)
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::FindLocalBuffer).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::FindRemoteBuffer).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
@@ -707,7 +707,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_HostCpuRoceChannel_Pack_And_Unpack_Expect
     localQpAttr.udpSport = 1;
     localQpAttr.psn = 2;
     localQpAttr.gidIdx = 3;
-    MOCKER(RaGetQpAttr).stubs().with(any(), outBoundP(&localQpAttr)).will(returnValue(0));
+    MOCKER(RaGetQpAttr).stubs().with(_, outBoundP(&localQpAttr)).will(returnValue(0));
 
     Hccl::BinaryStream binaryStream;
     impl_->NotifyVecPack(binaryStream);
@@ -731,12 +731,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_WqeNumIsZero_Expect_HCCL_SUC
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     MockGetQpInfos();
@@ -805,12 +805,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_Write_When_Normal_Expect_HCCL_SUCCESS)
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
@@ -860,12 +860,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_Read_When_Normal_Expect_HCCL_SUCCESS)
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
@@ -1009,12 +1009,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_ExchangeCapability_MagicMismatch_Fallback_To_N
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // 直接Mock ExchangeCapability返回HCCL_E_INTERNAL模拟魔数不匹配
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_E_INTERNAL));
@@ -1040,12 +1040,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_ExchangeCapability_ValidationFailed_Expect_INT
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // 直接Mock ExchangeCapability返回HCCL_E_INTERNAL模拟校验失败
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_E_INTERNAL));
@@ -1280,12 +1280,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetStatus_HybridMode_Calls_ExchangeDataHybird)
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     // Mock ExchangeCapability 返回成功并设置 isHybridMode_ = true
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(invoke(ExchangeCapabilityHybridStub));
     // Mock ExchangeDataHybird 返回成功
@@ -1330,12 +1330,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetStatus_HybridMode_ConnectSingleQpHybrid_Fai
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeDataHybird).stubs().will(returnValue(HCCL_SUCCESS));
     // Mock ConnectSingleQpHybrid 返回超时错误
@@ -1681,12 +1681,12 @@ TEST_F(HostCpuRoceChannelTest, Ut_ExchangeCapability_DirectCall_Success_Expect_H
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(_).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
 
     void *memHandle = static_cast<void *>(localRdmaRmaBuffer.get());

@@ -111,7 +111,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_EschedAckCallback)
     unsigned int msgLen = 0;
     MOCKER(hrtHalSubmitEvent)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     TransportHeterogEventTcp::EschedAckCallbackRecvRequest(devId, subeventId, msg, msgLen);
@@ -128,32 +128,32 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_Init)
 {
     MOCKER(hrtHalSubmitEvent)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&TransportHeterog::SocketClose)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&TransportHeterogEventTcp::GetNetworkResource)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&TransportHeterogEventTcp::RegisterEschedAckCallback)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&TransportHeterogEventTcp::ConnectAsync)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&TransportHeterogEventTcp::DelEpollEvents)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     HcclIpAddress invalidIp;
     TransportHeterogEventTcp transportHetTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo);
@@ -164,27 +164,27 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_Init)
 
     MOCKER_CPP(&TransportHeterog::CheckRecvMsgAndRequestBuffer)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&TransportHeterogEventTcp::GetNetworkResource)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&TransportHeterogEventTcp::RegisterEschedAckCallback)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     // MOCKER_CPP(&TransportHeterog::InitTransportConnect)
     // .stubs()
-    // .with(any())
+    // .with(_)
     // .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP_VIRTUAL(transportHetTcp, &TransportHeterogEventTcp::LoopStateProcess)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(stub_LoopStateProcess));
 
     SocketInfoT socket;
@@ -200,11 +200,11 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_RegisterEschedAckCallback)
 {
     MOCKER_CPP(&DlHalFunction::DlHalFunctionInit)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtHalEschedRegisterAckFunc)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
@@ -216,7 +216,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_ReportSendComp)
 {
     MOCKER(hrtHalSubmitEvent)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     HcclRequestInfo request;
     HcclIpAddress invalidIp;
@@ -239,7 +239,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_ReportEnvelpComp)
 {
     MOCKER(hrtHalSubmitEvent)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     HcclEnvelopeSummary envelopeSummary;
     HcclIpAddress invalidIp;
@@ -262,7 +262,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_ReportRecvComp)
 {
     MOCKER(hrtHalSubmitEvent)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     HcclRequestInfo request;
     HcclIpAddress invalidIp;
@@ -305,15 +305,15 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_EnterStateProcess)
 
     MOCKER_CPP(&TransportHeterog::CheckConsistentFrame)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterog::TryTransition)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtRaSocketBatchClose)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     nextState = ConnState::CONN_STATE_CHECK_CF;
     ret = transportHeterogTcp->EnterStateProcess(nextState);
@@ -337,18 +337,18 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_LoopStateProcess)
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
     MOCKER(hrtRaSocketBatchClose)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterog::ConnectSocket)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     HcclResult ret = transportHeterogTcp->LoopStateProcess();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     MOCKER_CPP(&TransportHeterog::GetSocket)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     transportHeterogTcp->connState_ = ConnState::CONN_STATE_GET_CHECK_SOCKET;
     ret = transportHeterogTcp->LoopStateProcess();
@@ -356,7 +356,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_LoopStateProcess)
 
     MOCKER_CPP(&TransportHeterog::SocketSend)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     transportHeterogTcp->connState_ = ConnState::CONN_STATE_SEND_CF;
     ret = transportHeterogTcp->LoopStateProcess();
@@ -368,7 +368,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_LoopStateProcess)
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
     MOCKER_CPP(&TransportHeterog::SocketRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     transportHeterogTcp->connState_ = ConnState::CONN_STATE_RECV_CF;
     ret = transportHeterogTcp->LoopStateProcess();
@@ -503,23 +503,23 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_Connect)
 
     MOCKER_CPP_VIRTUAL(transportHeterogTcp, &TransportHeterogEventTcp::Isend)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(stub_Isend));
 
     MOCKER_CPP_VIRTUAL(transportHeterogTcp, &TransportHeterogEventTcp::Test)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(stub_Test));
 
     HcclMessageInfo msg;
     MOCKER_CPP_VIRTUAL(transportHeterogTcp, &TransportHeterogEventTcp::Improbe)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(stub_Improbe));
 
     MOCKER_CPP_VIRTUAL(transportHeterogTcp, &TransportHeterogEventTcp::Imrecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(stub_Imrecv));
 
     u32 localUserRank = 0;
@@ -538,11 +538,11 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_infer_DelEpollEvents)
 {
     MOCKER(hrtRaCtlEventHandle)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtRaSocketBatchClose)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
@@ -560,11 +560,11 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_infer_AddEpollEvents)
 {
     MOCKER(hrtRaCtlEventHandle)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtRaSocketBatchClose)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
@@ -582,7 +582,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_infer_CreateEventHandle)
 {
     MOCKER(hrtRaCreateEventHandle)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
@@ -600,7 +600,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_infer_CreateEventHandle)
 
     MOCKER(hrtRaCreateEventHandle)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_E_TCP_TRANSFER))
     .then(returnValue(HCCL_SUCCESS))
     .then(returnValue(HCCL_E_TCP_TRANSFER));
@@ -623,7 +623,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_infer_DestroyEventHandle)
 {
     MOCKER(hrtRaDestroyEventHandle)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
@@ -639,7 +639,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_infer_DestroyEventHandle)
 
     MOCKER(hrtRaDestroyEventHandle)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_E_TCP_TRANSFER))
     .then(returnValue(HCCL_SUCCESS))
     .then(returnValue(HCCL_E_TCP_TRANSFER));
@@ -664,7 +664,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_infer_WaitEvents)
     s32 timeout = 10;
     MOCKER(hrtRaWaitEventHandle)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = transportHeterogTcp->WaitEvents(epollEventInfo, eventInfos, eventStatus, fdHandle, timeout);
@@ -674,7 +674,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_infer_WaitEvents)
     u32 stub = 1;
     MOCKER(hrtRaWaitEventHandle)
     .stubs()
-    .with(any(), any(), any(), any(), outBound(stub))
+    .with(_, _, _, _, outBound(stub))
     .will(returnValue(HCCL_SUCCESS));
     SocketEventInfo seInfo{};
     seInfo.fdHandle = fdHandle;
@@ -696,21 +696,21 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_BlockSend)
 {
     MOCKER(hrtRaSocketBatchClose)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&LocklessRingMemoryAllocate<HcclRequestInfo>::Alloc)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(stub_HcclRequestInfo_Alloc_tcp));
     bool envCompleted = true;
     bool tranCompleted = true;
     MOCKER_CPP(&TransportHeterogEventTcp::SendNoBlock)
     .stubs()
-    .with(any(), any(), any(), any(), outBound(envCompleted), outBound(tranCompleted))
+    .with(_, _, _, _, outBound(envCompleted), outBound(tranCompleted))
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterogEventTcp::WaitEvents)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclIpAddress invalidIp;
@@ -744,7 +744,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_NoBlockRecv)
     s32 res = 0;
     MOCKER(hrtRaSocketRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(hrtRaSocketRecvStub));
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
@@ -761,7 +761,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_NoBlockRecv)
     res = 0;
     MOCKER(hrtRaSocketRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(res));
     ret = transportHeterogTcp->NoBlockRecv(fdHandle, recvBuffer, byteSize, recvSize);
     if (ret == HCCL_E_TCP_TRANSFER) {
@@ -784,7 +784,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_NoBlockRecv)
     res = -1;
     MOCKER(hrtRaSocketRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(res));
     ret = transportHeterogTcp->NoBlockRecv(fdHandle, recvBuffer, byteSize, recvSize);
     if (ret == HCCL_E_TCP_TRANSFER) {
@@ -816,7 +816,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_WaitEvents)
     s32 timeout = 10;
     MOCKER(hrtRaWaitEventHandle)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(hrtRaWaitEventHandleStub));
 
     SocketEventInfo seInfo{};
@@ -837,7 +837,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_WaitEvents)
 
     MOCKER(hrtRaWaitEventHandle)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_E_NOT_SUPPORT));
     ret = transportHeterogTcp->WaitEvents(epollEventInfo, eventInfos, eventStatus, fdHandle, timeout);
     if (ret == HCCL_SUCCESS) {
@@ -865,7 +865,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_BlockRecv)
 {
     MOCKER(hrtRaSocketBatchClose)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
@@ -889,25 +889,25 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_BlockRecv)
 
     MOCKER_CPP(&TransportHeterogEventTcp::WaitEvents)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_E_PARA));
     transportHeterogTcp->BlockRecv(recvData, matched, transport, waitTimeOut, waitPayloadTimeOut);
     GlobalMockObject::verify();
 
     MOCKER_CPP(&TransportHeterogEventTcp::WaitEvents)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_E_AGAIN));
     transportHeterogTcp->BlockRecv(recvData, matched, transport, waitTimeOut, waitPayloadTimeOut);
     GlobalMockObject::verify();
 
     MOCKER_CPP(&TransportHeterogEventTcp::WaitEvents)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtRaSocketBlockRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     transportHeterogTcp->BlockRecv(recvData, false, transport, waitTimeOut, waitPayloadTimeOut);
 
@@ -916,15 +916,15 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_BlockRecv)
 
     MOCKER_CPP(&TransportHeterogEventTcp::NoBlockRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_E_TCP_TRANSFER));
     MOCKER_CPP(&TransportHeterogEventTcp::WaitEvents)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtRaSocketBlockRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(hrtRaSocketBlockRecvStub));
 
     transportHeterogTcp->BlockRecv(recvData, true, transport, waitTimeOut, waitPayloadTimeOut);
@@ -932,19 +932,19 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_BlockRecv)
 
     MOCKER(hrtRaSocketBatchClose)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterogEventTcp::NoBlockRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_E_TCP_TRANSFER));
     MOCKER_CPP(&TransportHeterogEventTcp::WaitEvents)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtRaSocketBlockRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(hrtRaSocketBlockRecvFalse));
     HcclResult ret = transportHeterogTcp->BlockRecv(recvData, true, transport, waitTimeOut, waitPayloadTimeOut);
     EXPECT_EQ(ret, HCCL_E_TCP_TRANSFER);
@@ -953,35 +953,35 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_BlockRecv)
 
     MOCKER(hrtGetDevice)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterog::SetDeviceIndex)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterog::CheckRecvMsgAndRequestBuffer)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterogEventTcp::GetNetworkResource)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterogEventTcp::RegisterEschedAckCallback)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     // MOCKER_CPP(&TransportHeterog::InitTransportConnect)
     // .stubs()
-    // .with(any())
+    // .with(_)
     // .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterog::ConnectAsync)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterogEventTcp::Connect)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     transportHeterogTcp->Init(0, 0);
 

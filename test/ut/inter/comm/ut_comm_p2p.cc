@@ -53,7 +53,7 @@ protected:
         s32 portNum = -1;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(any(), outBound(portNum))
+            .with(_, outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
@@ -334,7 +334,7 @@ TEST_F(CommP2PTest, ut_CommP2P_init)
     u32 ifnumVersion = 3;
     MOCKER(hrtRaGetInterfaceVersion)
     .stubs()
-    .with(any(), any(), outBoundP(&ifnumVersion))
+    .with(_, _, outBoundP(&ifnumVersion))
     .will(returnValue(HCCL_SUCCESS));
 
     char collectiveId[SAL_UNIQUE_ID_BYTES];
@@ -372,7 +372,7 @@ TEST_F(CommP2PTest, ut_CommP2P_init_err0)
     u32 ifnumVersion = 3;
     MOCKER(hrtRaGetInterfaceVersion)
     .stubs()
-    .with(any(), any(), outBoundP(&ifnumVersion))
+    .with(_, _, outBoundP(&ifnumVersion))
     .will(returnValue(HCCL_SUCCESS));
     RankInfo tmp_para_0;
     tmp_para_0.userRank = 0;
@@ -478,7 +478,7 @@ TEST_F(CommP2PTest, ut_CommP2P_init_err1)
     u32 ifnumVersion = 3;
     MOCKER(hrtRaGetInterfaceVersion)
     .stubs()
-    .with(any(), any(), outBoundP(&ifnumVersion))
+    .with(_, _, outBoundP(&ifnumVersion))
     .will(returnValue(HCCL_SUCCESS));
 
     RankInfo tmp_para_0;
@@ -584,7 +584,7 @@ TEST_F(CommP2PTest, ut_CommP2P_init_err2)
     u32 ifnumVersion = 3;
     MOCKER(hrtRaGetInterfaceVersion)
     .stubs()
-    .with(any(), any(), outBoundP(&ifnumVersion))
+    .with(_, _, outBoundP(&ifnumVersion))
     .will(returnValue(HCCL_SUCCESS));
 
     RankInfo tmp_para_0;
