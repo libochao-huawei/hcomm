@@ -247,14 +247,14 @@ function build_hcomm() {
     fi
 
     # 编译
-    cmake --build . -j${CPU_NUM}
+    cmake --build . ${JOB_NUM}
     if [ $? -ne 0 ]; then
         log "Error: cmake build failed"
         return 1
     fi
 
     # 打包
-    make package -j${CPU_NUM}
+    make package ${JOB_NUM}
     if [ $? -ne 0 ]; then
         log "Error: make package failed"
         return 1
