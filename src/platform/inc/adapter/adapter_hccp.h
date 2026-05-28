@@ -334,6 +334,7 @@ HcclResult HrtRaGetTlsEnable(struct RaInfo *info, bool *tlsEnable);
 // 目前该接口只支持peer模式，且只适用于终止未建链成功的链路，即未get_socket成功的链路
 HcclResult hrtRaSocketNonBlockBatchAbort(SocketConnectInfoT conn[], u32 num);
 HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo);
+HcclResult CreateTypicalCq(RdmaHandle rdmaHandle, u32 cqDepth, u32 &cqn, void **cqHandle);
 HcclResult IsSupportRaSocketAbort(bool& isSupportRaSocketAbort);
 HcclResult hrtRaGetSecRandom(struct RaInfo *info, unsigned int* token);
 HcclResult hrtRaGetDevEidInfoNum(RaInfo info, unsigned int* num);

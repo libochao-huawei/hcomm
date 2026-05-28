@@ -2718,6 +2718,30 @@ rs_cq_create_err:
     return ret;
 }
 
+RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth,
+    unsigned int *cqn, struct rdma_lite_device_cq_attr *deviceCqAttr)
+{
+    int ret;
+    struct RsRdevCb *rdevCb = NULL;
+
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
+    if (ret) {
+        hccp_err("rs_query_rdev_cb phyId[%u] rdevIndex[%u], ret %d", phyId, rdevIndex, ret);
+        return ret;
+    }
+
+    ret = RsDrvTypicalCqCreate(rdevCb, cqDepth, cqn, deviceCqAttr);
+    if (ret) {
+        hccp_err("rs_drv_typical_cq_create failed, cqDepth[%u] ret[%d]", cqDepth, ret);
+        return ret;
+    }
+
+    hccp_info("RsTypicalCqCreate success: phyId[%u] rdevIndex[%u] cqn[%u] cqDepth[%u]",
+        phyId, rdevIndex, *cqn, cqDepth);
+
+    return 0;
+}
+
 RS_ATTRI_VISI_DEF int RsCqDestroy(unsigned int phyId, unsigned int rdevIndex, struct CqAttr *attr)
 {
     int ret;

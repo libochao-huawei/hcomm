@@ -150,6 +150,9 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
     dlRaTypicalSendWr =
         (int(*)(QpHandle, struct SendWr*, struct SendWrRsp*))HcclDlsym(handle_, "RaTypicalSendWr");
     CHK_SMART_PTR_NULL(dlRaTypicalSendWr);
+    dlRaTypicalCqCreate =
+        (int(*)(RdmaHandle, unsigned int, unsigned int*, void**))HcclDlsym(handle_, "RaTypicalCqCreate");
+    CHK_SMART_PTR_NULL(dlRaTypicalCqCreate);
     dlRaAiQpCreate = (int (*)(RdmaHandle, struct QpExtAttrs *, struct AiQpInfo *, QpHandle *))HcclDlsym(handle_,
         "RaAiQpCreate");
     CHK_SMART_PTR_NULL(dlRaAiQpCreate);

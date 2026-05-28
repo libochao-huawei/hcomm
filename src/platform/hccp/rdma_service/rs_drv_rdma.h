@@ -67,6 +67,8 @@ int RsDrvQpCreateWithAttrs(struct RsQpCb *qpCb, struct RsQpNormWithAttrs *qpNorm
 void RsDrvQpDestroy(struct RsQpCb *qpCb);
 int RsDrvCreateCqEvent(struct RsCqContext *cqContext, struct CqAttr *attr);
 int RsDrvCreateCqWithChannel(struct RsCqContext *cqContext, struct CqAttr *attr);
+int RsDrvTypicalCqCreate(struct RsRdevCb *rdevCb, unsigned int cqDepth, unsigned int *cqn,
+    struct rdma_lite_device_cq_attr *deviceCqAttr);
 int RsDrvDestroyCqEvent(struct RsCqContext *cqContext);
 int RsDrvNormalQpCreate(struct RsQpCb *qpCb, struct ibv_qp_init_attr *qpInitAttr);
 int RsDrvInitCqeErrInfo(void);
