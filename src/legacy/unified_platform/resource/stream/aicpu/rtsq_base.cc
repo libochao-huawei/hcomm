@@ -42,6 +42,7 @@ void RtsqBase::Reset()
     sqDepth_ = QuerySqDepth();
     sqBaseAddr_ = QuerySqBaseAddr();
     SetTaskIdBySqeId();
+    HCCL_INFO("%s, %s", __func__, GetHwSqDescribe().c_str());
 }
 
 std::string RtsqBase::GetHwSqDescribe()
