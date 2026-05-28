@@ -42,7 +42,9 @@ private:
 
 private:
     SocketMgr() {};
-    ~SocketMgr() {};
+    ~SocketMgr() {
+        HCCL_INFO("[~SocketMgr] SocketMgr xigou");
+    };
     SocketMgr(const SocketMgr&) = delete;
     SocketMgr& operator=(const SocketMgr&) = delete;
 

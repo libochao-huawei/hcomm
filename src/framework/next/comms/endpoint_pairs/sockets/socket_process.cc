@@ -33,6 +33,7 @@ SocketProcess &SocketProcess::GetInstance(s32 deviceLogicId)
 
 SocketProcess::~SocketProcess()
 {
+    HCCL_INFO("[~SocketProcess] SocketProcess xigou");
     unique_lock<std::mutex> lock(mutex_);
     isInit_ = false;
     for (auto &socketItem : serverSocketMap_) {
