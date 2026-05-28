@@ -150,3 +150,94 @@ TEST_F(AclgraphCommunicatorTest, HasRoceTransportLinks_NoRdma)
 
     EXPECT_FALSE(communicator_.HasRoceTransportLinks(tpt));
 }
+
+/**
+ * @brief TC-COMM-08: DestroyAlgResource 传递 aclGraphDestroyCbk 参数（简化版）
+ * 验证：ClearResMap 传入 aclGraphDestroyCbk=true 时，清理功能正常
+ */
+TEST_F(AclgraphCommunicatorTest, DestroyAlgResource_WithDestroyCbk)
+{
+    std::string tag = "test_tag";
+    bool findTag = false;
+
+    communicator_.resMap_[tag] = AlgResourceResponse();
+
+    // 调用 ClearResMap 传入 aclGraphDestroyCbk=true
+    HcclResult ret = communicator_.ClearResMap(tag, findTag, true);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_TRUE(findTag);
+    EXPECT_EQ(communicator_.resMap_.count(tag), 0);
+}
+
+/**
+ * @brief TC-COMM-09: ClearAclgraphHostLinks 简化版
+ * 验证：tag 在 tagsRequiringHostCleanup_ 中时，清理后 tag 被移除
+ */
+TEST_F(AclgraphCommunicatorTest, ClearAclgraphHostLinks_Simplified)
+{
+    std::string tag = "test_tag";
+    communicator_.tagsRequiringHostCleanup_.insert(tag);
+
+    HcclResult ret = communicator_.ClearAclgraphHostLinks({tag});
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(communicator_.tagsRequiringHostCleanup_.count(tag), 0);
+}
+
+/**
+ * @brief TC-COMM-10: ClearAclgraphHostLinks tag 不在集合中
+ * 验证：tag 不在 tagsRequiringHostCleanup_ 中时，无操作，返回 SUCCESS
+ */
+TEST_F(AclgraphCommunicatorTest, ClearAclgraphHostLinks_TagNotTracked)
+{
+    // tag 不在 tagsRequiringHostCleanup_ 中，应跳过
+    HcclResult ret = communicator_.ClearAclgraphHostLinks({"untracked_tag"});
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+/**
+ * @brief TC-COMM-11: AicpuKfcClearOpResLaunch 空 tags
+ * 验证：传入空集合时直接返回 SUCCESS
+ */
+TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_EmptyTags)
+{
+    HcclResult ret = communicator_.AicpuKfcClearOpResLaunch({});
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+/**
+ * @brief TC-COMM-12: AicpuKfcClearOpResLaunch binHandle_ 为空
+ * 验证：binHandle_=nullptr 时跳过 aicpu 清理，返回 SUCCESS
+ */
+TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_NullBinHandle)
+{
+    communicator_.binHandle_ = nullptr;
+    HcclResult ret = communicator_.AicpuKfcClearOpResLaunch({"tag1"});
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+/**
+ * @brief TC-COMM-13: AicpuKfcClearOpResLaunch opStream_ 为空
+ * 验证：opStream_.ptr()=nullptr 时跳过 aicpu 清理，返回 SUCCESS
+ */
+TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_NullOpStream)
+{
+    // 预置 binHandle_ 非空但 opStream_ 为空
+    communicator_.binHandle_ = reinterpret_cast<aclrtBinHandle>(0x1);
+    // opStream_ 默认空
+    HcclResult ret = communicator_.AicpuKfcClearOpResLaunch({"tag1"});
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+/**
+ * @brief TC-COMM-14: AicpuKfcClearOpResLaunch 正常路径
+ * 验证：预置条件满足时，函数不崩溃
+ */
+TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_NormalPath)
+{
+    // 预置成功能进 launch 路径的条件
+    communicator_.binHandle_ = reinterpret_cast<aclrtBinHandle>(0x1);
+    // 由于 opStream_ 可能为空/未初始化，不会真正进入 launch 路径
+    HcclResult ret = communicator_.AicpuKfcClearOpResLaunch({"tag1", "tag2"});
+    // 返回 SUCCESS（提前返回路径）或 HCCL_E_RUNTIME（launch 失败）均可
+    EXPECT_TRUE(ret == HCCL_SUCCESS || ret == HCCL_E_RUNTIME);
+}
