@@ -182,4 +182,43 @@ HcclResult ServerSocketManager::HostSocketStopListen(const Hccl::PortData& local
     return HCCL_E_NOT_FOUND;
 }
 
+void ServerSocketManager::DeInit(u32 devPhyId)
+{
+    HCCL_INFO("[ServerSocketManager][%s] DeInit[%d]", __func__, devPhyId);
+    auto &inst = GetInstance();
+    {
+        std::lock_guard<std::mutex> lock(inst.deviceMutex_);
+        for (auto it = inst.deviceServerSocketMap_.begin(); it != inst.deviceServerSocketMap_.end();) {
+            if (static_cast<uint32_t>(it->first.GetRankId()) == devPhyId) {
+                for (auto &portEntry : it->second) {
+                    if (portEntry.second.first != nullptr) {
+                        portEntry.second.first->Destroy();
+                        portEntry.second.first.reset();
+                    }
+                }
+                it = inst.deviceServerSocketMap_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(inst.hostMutex_);
+        for (auto it = inst.hostServerSocketMap_.begin(); it != inst.hostServerSocketMap_.end();) {
+            if (static_cast<uint32_t>(it->first.GetRankId()) == devPhyId) {
+                for (auto &portEntry : it->second) {
+                    if (portEntry.second.first != nullptr) {
+                        portEntry.second.first->Destroy();
+                        portEntry.second.first.reset();
+                    }
+                }
+                it = inst.hostServerSocketMap_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
+
 } // namespace hcomm
