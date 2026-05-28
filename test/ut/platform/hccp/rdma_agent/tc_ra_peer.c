@@ -14,6 +14,7 @@
 #include "securec.h"
 #include "ut_dispatch.h"
 #include "rs.h"
+#include "hccp.h"
 extern int RaPeerSetConnParam(struct SocketInfoT conn[],
     struct SocketFdData rsConn[], unsigned int i, int bufSize);
 extern int RaRdevInitCheckIp(int mode, struct rdev rdevInfo, char localIp[]);
@@ -51,10 +52,10 @@ void TcPeer()
     int maxSize = 2050;
     int access = 0;
     struct SendWr *wr = NULL;
-    int wqeIndex = 0;
+    struct SendWrRsp wqeIndex = {0};
     int index = 0;
     unsigned long pa = 0;
-    unsigned long va = 0;
+    unsigned long long va = 0;
     struct QpPeerInfo *qpInfo = NULL;
     struct SocketConnectInfoT conn[1];
     struct SocketListenInfoT listen[1];
@@ -114,7 +115,7 @@ void TcPeer()
 
     info[0].socketHandle = socketHandle;
     info[0].status = 1;
-    mocker((stub_fn_t)calloc, 10, NULL);
+    mocker((stub_fn_t)calloc, 10, 0);
     ret = RaPeerGetSockets(0, 0, info, 1);
     EXPECT_INT_EQ(-12, ret);
     mocker_clean();
@@ -232,7 +233,7 @@ void TcPeer()
     struct RecvWrlistData revWr = {0};
     revWr.wrId = 100;
     revWr.memList.lkey = 0xff;
-    revWr.memList.addr = addr;
+    revWr.memList.addr = (uint64_t)addr;
     revWr.memList.len = size;
     unsigned int recvNum = 1;
     unsigned int revCompleteNum = 0;
@@ -285,7 +286,7 @@ void TcPeer()
     struct SocketInfoT infoErrRs[1];
     infoErrRs[0].socketHandle = socketHandle;
     infoErrRs[0].fdHandle = NULL;
-    mocker((stub_fn_t)calloc, 10, NULL);
+    mocker((stub_fn_t)calloc, 10, 0);
     ret = RaPeerGetSockets(0, 0, infoErrRs, 1);
     EXPECT_INT_EQ(1, ret);
     mocker_clean();
@@ -330,7 +331,7 @@ void TcPeer()
 
 	qpHandle = NULL;
     qpHandleWithAttr = NULL;
-    mocker((stub_fn_t)calloc, 10, NULL);
+    mocker((stub_fn_t)calloc, 10, 0);
     ret  = RaPeerQpCreate(rdmaHandle, flag, qpMode, &qpHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     EXPECT_ADDR_EQ(NULL, qpHandle);
@@ -531,7 +532,7 @@ void TcPeerFail()
     struct rdev rdevInfo;
 	rdevInfo.phyId = 0;
     struct SocketWlistInfoT whiteList[1];
-    mocker((stub_fn_t)inet_ntoa, 10, NULL);
+    mocker((stub_fn_t)inet_ntoa, 10, 0);
     RaPeerSocketWhiteListAdd(rdevInfo, whiteList, 1);
     RaPeerSocketWhiteListDel(rdevInfo, whiteList, 1);
     mocker_clean();
@@ -659,23 +660,23 @@ void TcRaPeerNormalQpCreate()
     rdmaHandle.rdevInfo.phyId = 0;
     rdmaHandle.rdevIndex = 0;
     void** qp = NULL;
-    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, &qpHandle, qp);
+    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, (void **)&qpHandle, qp);
     EXPECT_INT_EQ(0, ret);
 
     ret = RaPeerNormalQpDestroy(qpHandle);
     EXPECT_INT_EQ(0, ret);
 
-    mocker((stub_fn_t)calloc, 3, NULL);
-    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, &qpHandle, qp);
+    mocker((stub_fn_t)calloc, 3, 0);
+    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, (void **)&qpHandle, qp);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 
     mocker((stub_fn_t)RsNormalQpCreate, 3, -1);
-    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, &qpHandle, qp);
+    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, (void **)&qpHandle, qp);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, &qpHandle, qp);
+    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, (void **)&qpHandle, qp);
     EXPECT_INT_EQ(0, ret);
     mocker((stub_fn_t)RsNormalQpDestroy, 3, -1);
     ret = RaPeerNormalQpDestroy(qpHandle);
@@ -734,11 +735,11 @@ void TcRaLoopbackQpCreate()
     int ret = 0;
 
     mocker(RaRdevInitCheckIp, 10, 0);
-    ret = RaRdevInit(NETWORK_PEER_ONLINE, NO_USE, rdevInfo, &rdmaHandle);
+    ret = RaRdevInit(NETWORK_PEER_ONLINE, NO_USE, rdevInfo, (void **)&rdmaHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = RaRdevGetHandle(rdevInfo.phyId, &rdmaHandle2);
+    ret = RaRdevGetHandle(rdevInfo.phyId, (void **)&rdmaHandle2);
     EXPECT_INT_EQ(0, ret);
-    EXPECT_INT_EQ(rdmaHandle, rdmaHandle2);
+    EXPECT_INT_EQ((intptr_t)rdmaHandle, (intptr_t)rdmaHandle2);
     mocker_clean();
 
     struct LoopbackQpPair qpPair;

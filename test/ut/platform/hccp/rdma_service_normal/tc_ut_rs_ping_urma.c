@@ -49,6 +49,8 @@ extern int RsPongJettyFindAllocTargetNode(struct RsPingCtxCb *pingCb, struct Pin
 extern int RsPongJettyFindTargetNode(struct RsPingCtxCb *pingCb, struct PingQpInfo *target,
     struct RsPongTargetInfo **node);
 extern int RsGetJettyInfo(struct PingQpInfo *qpInfo, urma_jetty_id_t *jettyId, urma_eid_t *eid);
+extern int RsPingUrmaPostSend(struct RsPingCtxCb *pingCb, struct RsPingTargetInfo *target);
+extern void RsPingUrmaResetRecvBuffer(struct RsPingCtxCb *pingCb);
 
 urma_jfc_t gTmpJfc;
 static struct rs_cb gTmpRsCb;
@@ -189,7 +191,7 @@ void TcRsPingTargetAddDelUrma()
     mocker_invoke(RsGetPingCb, RsGetPingCbUrmaStub, 2);
     ret = RsPingTargetAdd(&rdev, &target);
     EXPECT_INT_EQ(ret, 0);
-    ret = RsPingTargetDel(&rdev, &target, &num);
+    ret = RsPingTargetDel(&rdev, (struct PingTargetCommInfo *)&target, &num);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
@@ -210,7 +212,7 @@ void TcRsPingTargetAddDelUrma()
     gTmpPingCb.taskStatus = RS_PING_TASK_RESET;
     mocker_invoke(RsGetPingCb, RsGetPingCbUrmaStub, 1);
     mocker(RsPingUrmaFindTargetNode, 1, -1);
-    ret = RsPingTargetDel(&rdev, &target, &num);
+    ret = RsPingTargetDel(&rdev, (struct PingTargetCommInfo *)&target, &num);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
@@ -494,12 +496,12 @@ void TcRsPingCommonPollSendJfc()
     int ret;
 
     mocker(RsUrmaPollJfc, 1, -1);
-    ret = RsPingCommonPollSendJfc(&qpCb);
+    ret = RsPingCommonPollSendJfc((struct RsPingLocalJettyCb *)&qpCb);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
     mocker(RsUrmaPollJfc, 1, 1);
-    ret = RsPingCommonPollSendJfc(&qpCb);
+    ret = RsPingCommonPollSendJfc((struct RsPingLocalJettyCb *)&qpCb);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }

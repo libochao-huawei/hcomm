@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 /*
 void *mmap(void *addr, size_t length, int prot, int flags,
                   int fd, off_t offset)
