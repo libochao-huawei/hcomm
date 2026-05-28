@@ -10,14 +10,18 @@
 #include <chrono>
 #include <climits>
 #include <memory>
+#include <atomic>
 #include "config_log.h"
 #include "launch_device.h"
 #include "op_task_config.h"
 #include "hccl_common_v2.h"
+#include "ascend_hal.h"
 #include "orion_adapter_rts.h"
+#include "orion_adapter_hal.h"
 #include "hccl_dpu_manager.h"
 
 namespace hccl {
+static std::atomic<u32> g_commDpuManagerNum(0);
 constexpr uint8_t DEVICE_SIGNAL_SECOND = 2;
 constexpr uint8_t DEVICE_SIGNAL_THIRD = 3;
 constexpr uint32_t TEMP_DEV_TYPE_DPU = 0; // 临时适配，后续rts接口上库之后使用rts的定义
@@ -36,7 +40,6 @@ DpuManager::DpuManager()
 
 DpuManager::~DpuManager()
 {
-    DeInitDpuKernel();
 }
 
 HcclResult DpuManager::CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated)
@@ -61,13 +64,89 @@ std::shared_ptr<Hccl::DevBuffer> DpuManager::GetKFCWorkSpace(const char *memTag)
     return it != tagWorkspaceMap_.end() ? it->second : nullptr;
 }
 
+HcclResult DpuManager::AllocAndRegKFCWorkSpace(uint64_t size)
+{
+    accessVA_ = nullptr;
+    drvError_t ret = DRV_ERROR_NONE;
+
+    va_ = Hccl::HrtMalloc(size, ACL_MEM_TYPE_HIGH_BAND_WIDTH);
+    ret = halHostRegister(va_, size, DEV_SVM_MAP_HOST, devLogicId_, &accessVA_);
+    if (ret != DRV_ERROR_NONE) {
+        HCCL_ERROR("DpuManager halHostRegister failed, ret: %d", ret);
+        if (va_ != nullptr) {
+            Hccl::HrtFree(va_);
+        }
+        return HCCL_E_DRV;
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult DpuManager::DestroyKFCWorkSpaceVA()
+{
+    if (accessVA_ == nullptr && va_ == nullptr) {
+        HCCL_RUN_WARNING("[%s]accessVA_/va_ is nullptr", __func__);
+        return HCCL_SUCCESS;
+    }
+
+    // 必须先halHostUnregister解除映射，再释放设备内存，否则HrtFree会因内存被pin住而异常
+    if (accessVA_ != nullptr) {
+        drvError_t drvRet = halHostUnregister(accessVA_, devLogicId_);
+        if (drvRet != DRV_ERROR_NONE) {
+            HCCL_ERROR("DpuManager halHostUnregister failed, drvRet[%d]", drvRet);
+        }
+    }
+
+    if (va_ != nullptr) {
+        Hccl::HrtFree(va_);
+    }
+
+    va_ = nullptr;
+    accessVA_ = nullptr;
+    tagWorkspaceVAMap_.erase(DPUTAG);
+    return HCCL_SUCCESS;
+}
+
+HcclResult DpuManager::GetKFCWorkSpaceVA(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
+{
+    if (memTag != DPUTAG) {
+        HCCL_ERROR("DpuManager::GetKFCWorkSpaceVA, memTag is invalid, memTag: %s", memTag.c_str());
+        return HCCL_E_PARA;
+    }
+    auto iter = tagWorkspaceVAMap_.find(memTag);
+    if (iter != tagWorkspaceVAMap_.end()) {
+        std::shared_ptr<Hccl::DevBuffer> oldWorkspace = iter->second;
+        if (*size != static_cast<uint64_t>(oldWorkspace.get()->GetSize())) {
+            HCCL_ERROR("DpuManager::GetKFCWorkSpaceVA, The size of oldWorkspace %p is non-consistent, target size compare now size: %llu->%llu", *addr, *size, oldWorkspace.get()->GetSize());
+            return HCCL_E_PARA;
+        }
+        *addr = reinterpret_cast<void *>(oldWorkspace.get()->GetAddr());
+        if (newCreated != nullptr) {
+            *newCreated = false;
+        }
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    CHK_RET(AllocAndRegKFCWorkSpace(*size));
+    std::shared_ptr<Hccl::DevBuffer> newWorkspace = Hccl::DevBuffer::Create(reinterpret_cast<uintptr_t>(accessVA_), *size);
+    tagWorkspaceVAMap_.insert(make_pair(memTag, newWorkspace));
+    if (newCreated != nullptr) {
+        *newCreated = true;
+    }
+    *addr = reinterpret_cast<void *>(newWorkspace.get()->GetAddr());
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult DpuManager::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
 {
+    if (memTag == DPUTAG) {
+        return GetKFCWorkSpaceVA(memTag, size, addr, newCreated);
+    }
     auto iter = tagWorkspaceMap_.find(memTag);
     if (iter != tagWorkspaceMap_.end()) {
         std::shared_ptr<Hccl::DevBuffer> oldWorkspace = iter->second;
         if (*size != static_cast<uint64_t>(oldWorkspace.get()->GetSize())) {
-            HCCL_ERROR("HcclCommunicator::GetDevMemWorkSpace, The size of oldWorkspace %p is non-consistent, "
+            HCCL_ERROR("DpuManager::GetDevMemWorkSpace, The size of oldWorkspace %p is non-consistent, "
                        "target size compare now size: %llu->%llu",
                 *addr, *size, oldWorkspace.get()->GetSize());
             return HCCL_E_PARA;
@@ -113,8 +192,7 @@ HcclResult DpuManager::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     g_hostArgsTemp.commId = commId_;
     g_hostArgsTemp.memorySize = SHARE_HBM_MEMORY_SIZE;
     g_hostArgsTemp.hostMem = hostShareBuf_;
-    auto shMem = GetKFCWorkSpace(DPUTAG);
-    g_hostArgsTemp.deviceMem = reinterpret_cast<void *>(shMem->GetAddr());
+    g_hostArgsTemp.deviceMem = accessVA_;
     g_hostArgsTemp.deviceId = devLogicId_;
 
     HCCL_INFO("[DpuManager::%s] DpuKernelLaunchParam{commId:%s; memorySize:%u; deviceMem:%p; hostMem:%p}", __func__,
@@ -188,12 +266,11 @@ HcclResult DpuManager::InitAndLaunchDpuKernel()
     // 申请共享内存(需要在npu ctx 下进行)
     bool newCreate = false;
     uint64_t memSize = static_cast<uint64_t>(SHARE_HBM_MEMORY_SIZE);
-    HcclResult memRet = CreateWorkspaceBuf(DPUTAG, &memSize, &newCreate);
+    HcclResult memRet = GetKFCWorkSpaceVA(DPUTAG, &memSize, &accessVA_, &newCreate);
     if (memRet != HCCL_SUCCESS) {
         HCCL_ERROR("[DpuManager::InitCommResource] Alloc Share HBM Failed");
         return HCCL_E_RUNTIME;
     }
-    hostShareBuf_ = malloc(SHARE_HBM_MEMORY_SIZE);
 
     // 设置XPU
     HCCL_INFO("[DpuManager::%s] Switch to Dpu Ctx", __func__);
@@ -214,6 +291,9 @@ HcclResult DpuManager::InitAndLaunchDpuKernel()
     aclrtFuncHandle funcHandle;
     CHK_RET(PrepareDpuKernelResource(funcHandle));
 
+    hostShareBuf_ = malloc(SHARE_HBM_MEMORY_SIZE);
+    CHK_PTR_NULL(hostShareBuf_);
+
     // 下发
     CHK_RET(LaunchDpuKernel(funcHandle));
 
@@ -226,6 +306,7 @@ HcclResult DpuManager::InitAndLaunchDpuKernel()
 
     HCCL_INFO("[DpuManager::%s] Launch Dpu Kernel End", __func__);
     isDpuKernelLaunched_ = true;
+    g_commDpuManagerNum++;
     return HCCL_SUCCESS;
 }
 
@@ -236,43 +317,47 @@ HcclResult DpuManager::InitDpuKernel()
     return HCCL_SUCCESS;
 }
 
-HcclResult DpuManager::WaitDpuKernelThreadTerminate()
-{
-    auto shMem = GetKFCWorkSpace(DPUTAG);
-    if (shMem == nullptr) {
-        HCCL_ERROR("[DpuManager::%s] GetKFCWorkSpace failed, shMem is null", __func__);
-        return HCCL_E_MEMORY;
-    }
-    uint8_t *dstPtr = reinterpret_cast<uint8_t *>(shMem->GetAddr());
-    uint8_t flag = DEVICE_SIGNAL_SECOND;
-    auto ret = aclrtMemcpy(dstPtr, sizeof(flag), &flag, sizeof(flag), aclrtMemcpyKind::ACL_MEMCPY_HOST_TO_DEVICE);
-    if (ret != ACL_SUCCESS) {
-        HCCL_ERROR("[DpuManager::%s] Terminate TaskRun Fail", __func__);
-        return HCCL_E_RUNTIME;
-    }
-    HcclUs startTime = std::chrono::steady_clock::now();
-    auto timeout = std::chrono::milliseconds(waitTransportReadyTimeoutMs_);
-    do {
-        if (std::chrono::steady_clock::now() - startTime >= timeout) {
-            HCCL_ERROR("[DpuManager::%s] Wait Terminate TaskRun TimeOut", __func__);
-            return HCCL_E_TIMEOUT;
-        }
-        if (aclrtMemcpy(&flag, sizeof(flag), dstPtr, sizeof(flag), aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST)
-            != ACL_SUCCESS) {
-            HCCL_ERROR("[DpuManager::%s] Read Terminate TaskRun Signal Fail", __func__);
-            return HCCL_E_RUNTIME;
-        }
-    } while (flag != DEVICE_SIGNAL_THIRD);
-    return HCCL_SUCCESS;
-}
-
 HcclResult DpuManager::DeInitDpuKernel()
 {
+    (void)DestroyDpuKernelResource();
+    (void)DestroyKFCWorkSpaceVA();
     if (hostShareBuf_ != nullptr) {
         free(hostShareBuf_);
         hostShareBuf_ = nullptr;
     }
+    return HCCL_SUCCESS;
+}
 
+HcclResult DpuManager::WaitDpuKernelThreadTerminate()
+{
+    if (!isDpuKernelLaunched_) {
+        return HCCL_SUCCESS;
+    }
+    if (accessVA_ == nullptr) {
+        HCCL_ERROR("[CommunicatorImpl::%s] accessVA_ is nullptr", __func__);
+        return HCCL_E_MEMORY;
+    }
+    uint8_t  flag   = DEVICE_SIGNAL_SECOND;
+    errno_t ret = memcpy_s(accessVA_, sizeof(flag), &flag, sizeof(flag));
+    if (ret != EOK) {
+        HCCL_ERROR("Terminate TaskRun Fail, return[%d]", ret);
+        return HCCL_E_INTERNAL;
+    }
+    do {
+        ret = memcpy_s(&flag, sizeof(flag), accessVA_, sizeof(flag));
+        if (ret != EOK) {
+            HCCL_ERROR("Read Terminate TaskRun Signal Fail, return[%d]", ret);
+            return HCCL_E_INTERNAL;
+        }
+    } while (flag != DEVICE_SIGNAL_THIRD);
+
+    return HCCL_SUCCESS;
+}
+
+
+HcclResult DpuManager::DestroyDpuKernelResource()
+{
+    // 终止Dpu Kernel的TaskRun
     if (!isDpuKernelLaunched_) {
         return HCCL_SUCCESS;
     }
@@ -280,29 +365,38 @@ HcclResult DpuManager::DeInitDpuKernel()
     CHK_RET(WaitDpuKernelThreadTerminate());
 
     // 切换回 dpu ctx
-    if (ACL_SUCCESS != aclrtSetCurrentContext(dpuContext_)) {
-        HCCL_ERROR("[DpuManager::%s] set dpu Ctx Failed", __func__);
+    aclError aclRet = aclrtSetCurrentContext(dpuContext_);
+    if (ACL_SUCCESS != aclRet) {
+        HCCL_ERROR("set dpu Ctx Failed, aclReturn[%d]", aclRet);
         return HCCL_E_RUNTIME;
     }
     // 销毁局部流
-    HCCL_INFO("[DpuManager::%s] Destroy Stream", __func__);
-    if (aclrtDestroyStreamForce(dpuStream_) != ACL_SUCCESS) {
-        HCCL_ERROR("[DpuManager::%s] Destroy Stream Failed", __func__);
+    aclRet = aclrtDestroyStreamForce(dpuStream_);
+    if (ACL_SUCCESS != aclRet) {
+        HCCL_ERROR("Destroy Stream Failed, aclReturn[%d]", aclRet);
+        aclRet = aclrtSetCurrentContext(npuContext_);
+        CHK_PRT_RET(aclRet == ACL_SUCCESS, HCCL_ERROR("set npu Ctx Failed, aclReturn[%d]", aclRet), HCCL_E_RUNTIME);
         return HCCL_E_RUNTIME;
     }
-    // reset DPU kernel 线程
-    HCCL_INFO("[DpuManager::%s] Start to reset DPU device", __func__);
-    if (Hccl::HrtResetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
-        HCCL_ERROR("[DpuManager::%s] ResetXpuDevice Failed", __func__);
-        return HCCL_E_RUNTIME;
+    if (g_commDpuManagerNum > 1) {
+        g_commDpuManagerNum--;
+    } else {
+        // reset DPU kernel 线程
+        HcclResult ret = Hccl::HrtResetXpuDevice(TEMP_DEV_TYPE_DPU, 0);
+        if (HCCL_SUCCESS != ret) {
+            HCCL_ERROR("ResetXpuDevice Failed, return[%d]", ret);
+            aclRet = aclrtSetCurrentContext(npuContext_);
+            CHK_PRT_RET(aclRet == ACL_SUCCESS, HCCL_ERROR("set npu Ctx Failed, aclReturn[%d]", aclRet), HCCL_E_RUNTIME);
+            return HCCL_E_RUNTIME;
+        }
     }
     // 切回 npu ctx
-    if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext_)) {
-        HCCL_ERROR("[DpuManager::%s] set npu Ctx Failed", __func__);
+    aclRet = aclrtSetCurrentContext(npuContext_);
+    if (ACL_SUCCESS != aclRet) {
+        HCCL_ERROR("set npu Ctx Failed, aclReturn[%d]", aclRet);
         return HCCL_E_RUNTIME;
     }
 
-    isDpuKernelLaunched_ = false;
     return HCCL_SUCCESS;
 }
 

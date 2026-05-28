@@ -39,7 +39,7 @@ public:
     HcclResult Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config);
 
     inline CommConfig& GetCommConfig() { return config_;}
-    inline RankGraph* GetRankGraph() { return rankgraph_.get(); }
+    inline RankGraph* GetRankGraph() { return rankgraph_; }
     inline CommEngineResMgr* GetCommEngineResMgr() { return commEngineResMgr_.get(); }
     inline ContextManager* GetContextManager() { return contextMgr_.get(); }
     inline CommMemMgr* GetCommMemMgr() { return commMemMgr_.get(); }
@@ -99,11 +99,25 @@ public:
     HcclResult Resume();
 
 private:
+    HcclResult ValidateConfig(const HcclCommConfig *config);
     HcclResult DestroyAicpuComm();
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
     HcclResult GetRankIpPortMap();
+
+    /* 
+     * CollComm初始化方式：
+     *      fullMode：给A5及后续新架构使用，完整的CollComm初始化和资源管理
+     *      SimpleMode：给A2/A3老芯片使用，由于架构限制，仅将RankGraph、MyRank等放入CollComm管理，简化CollComm实现
+     */
+    HcclResult InitFullMode(void* rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig* config);
+    HcclResult InitSimpleMode(void* rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig* config);
+
+    /* A2/A3：使用simpleMode兼容模式没有CommV2，使用简化版的CollComm代理rankgraph、myrank对象，其他功能暂不实现
+     * A5&&下一代：使用fullMode全功能collComm模式
+     */
+    bool IsFullMode() const { return comm_ != nullptr; }
 
     void* comm_{nullptr};
     uint32_t rankId_{};
@@ -116,7 +130,7 @@ private:
     uint32_t index_{0};
     std::unordered_set<s32> aicpuStreamIds_;
 
-    std::unique_ptr<RankGraph> rankgraph_{nullptr};
+    RankGraph* rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
     std::unique_ptr<ContextManager>  contextMgr_{nullptr};
     std::unique_ptr<CommMemMgr> commMemMgr_{nullptr};

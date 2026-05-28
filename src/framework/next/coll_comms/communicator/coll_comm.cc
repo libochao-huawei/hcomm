@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "coll_comm.h"
-// #include "rank_graphs/rank_graph.h"
 #include "exception_handler.h"
 #include "rank_graph_v2.h"
 #include "coll_comm_mgr.h"
@@ -30,6 +29,15 @@ CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, co
 
 CollComm::~CollComm()
 {
+    if (!IsFullMode()) { // SimpleMode是简化版collComm，只初始化了myrank、rankgraph未初始化以下资源，不需要析构处理
+        return;
+    }
+
+    // fullMode collComm正常析构，rankgraph_在fullMode下是自己new的，需要释放
+    if (rankgraph_ != nullptr) {
+        delete rankgraph_;
+        rankgraph_ = nullptr;
+    }
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     // dpu的兜底上报 - 异常退出时捕获异常避免二次崩溃
@@ -43,14 +51,72 @@ CollComm::~CollComm()
     (void)DestroyAicpuComm();
 }
 
+HcclResult CollComm::ValidateConfig(const HcclCommConfig *config)
+{
+    if (config == nullptr) {
+        return HCCL_SUCCESS;
+    }
+    u32 tc = config->hcclRdmaTrafficClass;
+    CHK_PRT_RET((tc != TC_DEFAULT) && (tc > TC_MAX || (tc % MULTIPLE != 0)),
+        HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255] "
+            "and a multiple of 4",
+            HCCL_ERROR_CODE(HCCL_E_PARA), tc),
+        HCCL_E_PARA);
+    CHK_RET(config_.SetConfigTrafficClass(tc));
+
+    u32 sl = config->hcclRdmaServiceLevel;
+    CHK_PRT_RET((sl != SL_DEFAULT) && (sl > SL_MAX),
+        HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaServiceLevel[%u], must be 0xFFFFFFFF or in [0,7]",
+            HCCL_ERROR_CODE(HCCL_E_PARA), sl),
+        HCCL_E_PARA);
+    CHK_RET(config_.SetConfigServiceLevel(sl));
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config)
+{
+    if (IsFullMode()) { // A5和下一代
+        return InitFullMode(rankGraph, binHandle, cclBuffer, config);
+    } else { // A2/A3使用简化版CollComm
+        return InitSimpleMode(rankGraph, binHandle, cclBuffer, config);
+    }
+}
+
+HcclResult CollComm::InitSimpleMode(void* rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig* config)
 {
     CHK_PTR_NULL(rankGraph);
 
     EXCEPTION_HANDLE_BEGIN
 
     CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
-    EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
+
+    // SimpleMode: A2/A3的RankGraph是保存在hccl::Communicator中的静态对象裸指针，CollComm不负责释放
+    rankgraph_ = static_cast<RankGraph*>(rankGraph);
+
+    uint32_t rankNum = 0;
+    CHK_PTR_NULL(rankgraph_);
+    CHK_RET(rankgraph_->GetRankSize(&rankNum));
+
+    EXECEPTION_CATCH(
+        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_, rankIpPortMap_),
+        return HCCL_E_PTR);
+
+    uint32_t opExpansionMode = (config != nullptr) ? config->hcclOpExpansionMode : 0;
+    CHK_RET(ValidateConfig(config));
+    CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
+
+    EXCEPTION_HANDLE_END
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollComm::InitFullMode(void* rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig* config)
+{
+    CHK_PTR_NULL(rankGraph);
+
+    EXCEPTION_HANDLE_BEGIN
+
+    CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
+    rankgraph_ = new RankGraphV2(rankGraph);
     uint32_t rankNum = 0;
     CHK_PTR_NULL(rankgraph_);
     CHK_RET(rankgraph_->GetRankSize(&rankNum));
@@ -69,7 +135,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     }
 
     EXECEPTION_CATCH(
-        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get(), rankIpPortMap_),
+        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_, rankIpPortMap_),
         return HCCL_E_PTR);
     uint32_t opExpansionMode = 0;
     if (config) {
