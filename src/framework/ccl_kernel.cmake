@@ -79,6 +79,7 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/framework/next/coll_comms/rank
     ${HCOMM_DIR}/src/framework/next/coll_comms/rank_pairs
     ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/profiling/aicpu
+    ${HCOMM_DIR}/src/framework/device
 
     # src/platform 头文件
     ${HCOMM_DIR}/src/platform/inc
