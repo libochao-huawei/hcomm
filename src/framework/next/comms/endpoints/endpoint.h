@@ -77,12 +77,7 @@ public:
         return HCCL_SUCCESS;
     }
 
-    virtual HcclResult CheckFeature(HcommEndpointFeatureType featureType, bool &value)
-    {
-        (void)featureType;
-        value = false;
-        return HCCL_E_NOT_SUPPORT;
-    }
+    static HcclResult CheckFeature(const EndpointDesc &endpointDesc, HcommEndpointFeatureType featureType, bool &value);
 
     // 获取UB异步事件
     HcclResult GetAsyncEventsContext(uint32_t devPhyId, struct AsyncEvent events[], uint32_t &num);

@@ -18,7 +18,6 @@
 #include "hccp_peer_manager.h"
 #include "server_socket_manager.h"
 #include "hccp.h"
-#include "hccp_nda.h"
 
 using Hccl::HcclException;
 using std::string;
@@ -195,25 +194,6 @@ HcclResult CpuRoceEndpoint::GetCapabilities(Capabilities &caps)
     }
     caps = capabilities_;
     HCCL_INFO("[CpuRoceEndpoint::%s] SUCCESS.", __func__);
-    return HCCL_SUCCESS;
-}
-
-HcclResult CpuRoceEndpoint::CheckFeature(HcommEndpointFeatureType featureType, bool &value)
-{
-    if (featureType != HCOMM_ENDPOINT_FEATURE_NDA) {
-        HCCL_WARNING("[%s] unsupported featureType[%d]", __func__, featureType);
-        value = false;
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    CHK_PTR_NULL(ctxHandle_);
-    s32 directFlag = 0;
-    s32 ret = RaNdaGetDirectFlag(ctxHandle_, &directFlag);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] failed to get directFlag, ret[%d]", __func__, ret), HCCL_E_INTERNAL);
-    value = (directFlag != DIRECT_FLAG_NOTSUPP);
-    HCCL_INFO("[%s] %s NDA, rdmaHandle[%p], directFlag[%d]",
-        __func__, value ? "support" : "not support", ctxHandle_, directFlag);
     return HCCL_SUCCESS;
 }
 }

@@ -722,30 +722,5 @@ HcommResult HcommEndpointCheckFeature(HcommEndpointFeatureType featureType, cons
     CHK_PTR_NULL(endpointDesc);
     CHK_PTR_NULL(value);
 
-    if (featureType == HCOMM_ENDPOINT_FEATURE_NDA) {
-        if (endpointDesc->protocol != COMM_PROTOCOL_ROCE || endpointDesc->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
-            HCCL_WARNING("[%s] not support NDA, protocol[%d], locType[%d]",
-                __func__, endpointDesc->protocol, endpointDesc->loc.locType);
-            *value = false;
-            return HCCL_SUCCESS;
-        }
-
-        EXCEPTION_HANDLE_BEGIN
-        Endpoint *endpoint = g_EndpointMap.GetEndpointByDesc(*endpointDesc);
-        if (endpoint == nullptr) {
-            EndpointHandle handle = nullptr;
-            HcommResult ret = HcommEndpointCreate(endpointDesc, &handle);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] HcommEndpointCreate failed, ret[%d]", __func__, ret), (HcclResult)ret);
-            endpoint = g_EndpointMap.GetEndpoint(handle);
-            CHK_PTR_NULL(endpoint);
-        }
-        CHK_RET(endpoint->CheckFeature(featureType, *value));
-        EXCEPTION_HANDLE_END
-    } else {
-        HCCL_WARNING("[%s] unsupported featureType[%d]", __func__, featureType);
-        *value = false;
-    }
-
-    return HCCL_SUCCESS;
+    return static_cast<HcommResult>(Endpoint::CheckFeature(*endpointDesc, featureType, *value));
 }
