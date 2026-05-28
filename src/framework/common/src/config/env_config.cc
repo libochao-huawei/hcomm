@@ -843,11 +843,6 @@ const InconsistentCheckMode& GetExternalInconsistentCheckSwitch()
     return g_envConfig.inconsistentCheckSwitch;
 }
 
-HcclResult SetExternalInconsistentCheckSwitch(InconsistentCheckMode mode)
-{
-    g_envConfig.inconsistentCheckSwitch = mode;
-}
-
 HcclResult ParseHcclAlgo()
 {
     char* mmSysGetEnvValue = nullptr;
