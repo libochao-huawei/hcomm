@@ -3408,28 +3408,27 @@ HcclResult CommunicatorImpl::AllocAndRegKFCWorkSpace(uint64_t size)
 {
     CHK_RET(HrtHalGetDeviceInfo(devLogicId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType_));
     accessVA_ = nullptr;
-    drvError_t ret = DRV_ERROR_NONE;
+    HcclResult ret = HCCL_SUCCESS;
     if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
         va_ = HrtMalloc(size, ACL_MEM_TYPE_HIGH_BAND_WIDTH);
-        ret = halHostRegister(va_, size, DEV_SVM_MAP_HOST, devLogicId, &accessVA_);
+        ret = HrtHalHostRegister(va_, size, DEV_SVM_MAP_HOST, devLogicId, &accessVA_);
     } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
-        va_ = malloc(size);
-        CHK_PTR_NULL(va_);
-        ret = halHostRegister(va_, size, HOST_SVM_MAP_DEV, devLogicId, &accessVA_);
+        va_ = HrtMallocHost(size);
+        ret = HrtHalHostRegister(va_, size, HOST_MEM_MAP_DEV_PCIE_TH, devLogicId, &accessVA_);
     } else {
         return HCCL_E_NOT_SUPPORT;
     }
-    if (ret != DRV_ERROR_NONE) {
-        HCCL_ERROR("halHostRegister failed, ret: %d, connect type: %ld", ret, connectType_);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HrtHalHostRegister failed, ret: %d, connect type: %ld", ret, connectType_);
         if (va_ != nullptr) {
             if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
                 HrtFree(va_);
             } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
-                free(va_);
+                HrtFreeHost(va_);
             }
             va_ = nullptr;
         }
-        return HCCL_E_DRV;
+        return ret;
     }
     return HCCL_SUCCESS;
 }
@@ -3470,19 +3469,19 @@ HcclResult CommunicatorImpl::DestroyKFCWorkSpaceVA()
         return HCCL_SUCCESS;
     }
 
-    // 必须先halHostUnregister解除映射，再释放设备内存，否则HrtFree会因内存被pin住而异常
+    // 必须先HrtHalHostUnregister解除映射，再释放设备内存，否则HrtFree会因内存被pin住而异常
     if (accessVA_ != nullptr) {
-        drvError_t drvRet = halHostUnregister(accessVA_, devLogicId);
-        if (drvRet != DRV_ERROR_NONE) {
-            HCCL_ERROR("halHostUnregister failed, drvRet[%d]", drvRet);
+        HcclResult drvRet = HrtHalHostUnregister(accessVA_, devLogicId);
+        if (drvRet != HCCL_SUCCESS) {
+            HCCL_ERROR("HrtHalHostUnregister failed, connectType[%ld], drvRet[%d]", connectType_, drvRet);
         }
     }
 
     if (va_ != nullptr) {
         if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
-            DECTOR_TRY_CATCH("KFCWorkSpace", HrtFree(va_));
+            TRY_CATCH_RETURN(HrtFree(va_));
         } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
-            free(va_);
+            TRY_CATCH_RETURN(HrtFreeHost(va_));
         }
     }
 
