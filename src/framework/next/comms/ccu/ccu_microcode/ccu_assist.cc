@@ -124,15 +124,16 @@ uint16_t GetUBDataType(Hccl::DataType dataType)
     return ubDataTypeMap[dataType];
 }
 
-uint64_t GetTokenInfo(uint64_t va, uint64_t size)
+HcclResult GetTokenInfo(uint64_t va, uint64_t size, uint64_t &token)
 {
     rtMemUbTokenInfo info{};
     info.va   = va;
     info.size = size;
     if (RtsUbDevQueryInfo(QUERY_PROCESS_TOKEN, info) != HcclResult::HCCL_SUCCESS) {
-        Hccl::THROW<Hccl::CcuApiException>("failed to query tokenInfo.");
+        return HcclResult::HCCL_E_INTERNAL;
     }
-    return CcuRep::GetToken(info.tokenId, info.tokenValue, 1);
+    token = CcuRep::GetToken(info.tokenId, info.tokenValue, 1);
+    return HcclResult::HCCL_SUCCESS;
 }
 
 }; // namespace CcuRep
