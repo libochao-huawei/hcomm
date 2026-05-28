@@ -6328,7 +6328,7 @@ namespace hccl
         // 记录主流相关信息, 给profiling和task exception使用
         HCCL_PROFILER_ADD_STREAM_BY_STREAMID(param.stream.id(), param.tag, 0, algType);
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-             hccl::ProfilingManagerPub::GetAddtionInfoState() &&
+             hccl::ProfilingManagerPub::GetAdditionInfoState() &&
              hccl::ProfilingManagerPub::GetTaskApiState()) &&
              !param.isCapture) {
             return HCCL_SUCCESS;

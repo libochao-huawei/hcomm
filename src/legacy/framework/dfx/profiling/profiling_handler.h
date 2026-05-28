@@ -147,36 +147,34 @@ public:
     bool GetHcclNodeState() const;
     bool GetHcclL0State() const;
     bool GetHcclL1State() const;
-    bool GetHcclL2State() const;
     int32_t CommandHandle(uint32_t rtType, void *data, uint32_t len) const; 
     void Init();
     void ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
-                               const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm);
+                                const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm);
     void ReportHcclMC2CommInfo(const u32 kfcStreamId, const std::vector<u32> &aicpuStreamsId, const std::string &id,
-                                RankId myRank, u32 rankSize, RankId rankInParentComm);
-    void ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId);
-    void ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId);
+                                 RankId myRank, u32 rankSize, RankId rankInParentComm);
+    void ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId, bool cachedReq);
+    void ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId, bool cachedReq);
 private:
     explicit ProfilingHandler();
 
     void ReportAclApi(uint32_t cmdType, uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId,
                             uint32_t threadId) const;
 
-    void ReportHcclOpApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId) const;
-    void ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId);
+    void ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId, bool cachedReq);
     void ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void* data, uint32_t len) const;
 
     void StartSubscribe(uint64_t profconfig);
     void StartTaskApiSubscribe();
     void StartHostApiSubscribe();
-    void StartAddtionInfoSubscribe();
+    void StartAdditionInfoSubscribe();
     void StartHostHcclOpSubscribe();
-    void StartL2Subscribe();
+    void StartCcuSubscribe();
     void StopSubscribe();
 
     void CallProfRegHostApi() const;
     void ReportStoragedCompactInfo();
-    void ReportMc2AddtionInfo();
+    void ReportMc2AdditionInfo();
 
     void CallProfRegTaskTypeApi() const;
     void ReportStoragedTaskApi();
@@ -189,7 +187,7 @@ private:
     void GetProfCommonInfo(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const;
     void GetProfTaskSpecificInfo(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const;
     void GetDpuProfInfo(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const;
-    void CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const;
+    void CallAdditionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const;
 
     void ReportCcuInfo(const TaskInfo &taskInfo) const;
     void GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const;
@@ -199,7 +197,7 @@ private:
     void DumpHCCLReportData(const TaskInfo &taskInfo, const HCCLReportData &hcclReportData) const;
     void DumpCcuGroupInfo(const MsprofCcuGroupInfo& ccuGroupInfo) const;
     uint64_t GetProfHashId(const char *name, uint32_t len) const;
-    void ReportMc2AddtionInfo(uint64_t timeStamp, const void* data, int len);
+    void ReportMc2AdditionInfo(uint64_t timeStamp, const void* data, int len);
 
 private:
     static ProfilingHandler instance_;
@@ -208,19 +206,16 @@ private:
     bool                    enableHcclNode_{false};
     bool                    enableHcclL0_{false};
     bool                    enableHcclL1_{false};
-    bool                    enableHcclL2_{false};
 
-    std::vector<DfxOpInfo>          cacheOpInfos_{};
     std::vector<TaskInfo>           cacheTaskInfos_{};
     std::queue<MsprofApi>           cachedTaskApiInfo_{};
     std::queue<MsprofCompactInfo>   cacheHcclOpInfo_{};
-    std::queue<MsprofAdditionalInfo>  cacheHcclAddtionInfo_{};
+    std::queue<MsprofAdditionalInfo>  cacheHcclAdditionInfo_{};
     std::map<std::string, uint64_t> str2HashId_{};
-    std::mutex cacheOpInfosMutex_;
     std::mutex cacheTaskInfosMutex_;
     std::mutex cachedTaskApiInfoMutex_;
     std::mutex cacheHcclOpInfoMutex_;
-    std::mutex cacheHcclAddtionInfoMutex_;
+    std::mutex cacheHcclAdditionInfoMutex_;
 };
 } // namespace Hccl
 

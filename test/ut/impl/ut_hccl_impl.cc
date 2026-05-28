@@ -5010,7 +5010,7 @@ TEST_F(HcclImplTest, ut_hcclimpl_AiCpuSetCommResource_MultiServer)
 
     // 配置profiling开关
     auto &profilingManager = hccl::ProfilingManager::Instance();
-    profilingManager.StartAddtionInfoSubscribe();
+    profilingManager.StartAdditionInfoSubscribe();
 
     MachinePara machinePara;
     machinePara.localDeviceId = 0;
@@ -5221,7 +5221,7 @@ TEST_F(HcclImplTest, ut_hcclimpl_AiCpuSetCommResource_AIVHierarchy)
 
     // 配置profiling开关
     auto &profilingManager = hccl::ProfilingManager::Instance();
-    profilingManager.StartAddtionInfoSubscribe();
+    profilingManager.StartAdditionInfoSubscribe();
 
     machine_para.localDeviceId = 0;
     std::chrono::milliseconds timeout;
@@ -5407,7 +5407,7 @@ TEST_F(HcclImplTest, ut_hcclimpl_AiCpuSetCommResource_AIVRoce)
 
     // 配置profiling开关
     auto &profilingManager = hccl::ProfilingManager::Instance();
-    profilingManager.StartAddtionInfoSubscribe();
+    profilingManager.StartAdditionInfoSubscribe();
 
     machine_para.localDeviceId = 0;
     std::chrono::milliseconds timeout;
@@ -6415,7 +6415,7 @@ TEST_F(HcclImplTest, ut_hcclimpl_AiCpuSetCommResource_EnvTest)
 
     // 配置profiling开关
     auto &profilingManager = hccl::ProfilingManager::Instance();
-    profilingManager.StartAddtionInfoSubscribe();
+    profilingManager.StartAdditionInfoSubscribe();
 
     // MachinePara machinePara;
     machine_para.localDeviceId = 0;

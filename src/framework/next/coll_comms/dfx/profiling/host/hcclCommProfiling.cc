@@ -13,7 +13,7 @@
 #include "../../../../../legacy/framework/dfx/profiling/dlprof_function.h"
 namespace hccl {
 
-HcclResult HcclCommProfiling::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId) {
+HcclResult HcclCommProfiling::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId, bool cachedReq) {
     u64 endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     uint64_t cmdItemId = Hccl::DlProfFunction::GetInstance().dlMsprofStr2Id(kernelName.c_str(), kernelName.length());
     EXCEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeApi(beginTime, endTime, cmdItemId, threadId), return HCCL_E_PTR);

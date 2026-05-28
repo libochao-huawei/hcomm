@@ -651,9 +651,6 @@ void AicpuTsUboeChannel::ProcessUboeState()
 ChannelStatus AicpuTsUboeChannel::GetStatus()
 {
     if (channelStatus == ChannelStatus::READY ) {
-        if (socket_ != nullptr) {
-            SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
-        }
         return channelStatus;
     }
     if (channelStatus == ChannelStatus::INIT) uboeStatus = UboeStatus::INIT;
@@ -661,6 +658,10 @@ ChannelStatus AicpuTsUboeChannel::GetStatus()
     if (!IsSocketReady()) return channelStatus;
 
     ProcessUboeState();
+    if (channelStatus == ChannelStatus::READY && socket_ != nullptr) {
+        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        socket_ = nullptr;
+    }
 
     return channelStatus;
 }
