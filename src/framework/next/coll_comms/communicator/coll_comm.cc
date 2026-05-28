@@ -189,6 +189,9 @@ HcclResult CollComm::Suspend()
         HCCL_WARNING("[CollComm][Suspend] The current communication has been suspended, no need to suspend again.");
         return HcclResult::HCCL_SUCCESS;
     }
+
+    CHK_SMART_PTR_NULL(myRank_);
+
     commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
 
     return myRank_->StopLaunch();
@@ -206,6 +209,9 @@ HcclResult CollComm::Clean()
         HCCL_WARNING("[CollComm][Clean] The current communication has been cleaned, no need to clean again.");
         return HcclResult::HCCL_SUCCESS;
     }
+
+    CHK_SMART_PTR_NULL(myRank_);
+
     isCleaned_ = true;
 
     // 先清理Host
@@ -234,7 +240,7 @@ HcclResult CollComm::Resume()
 
     commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
     isCleaned_ = false;
-    HCCL_INFO("[CollComm][Resume] Resume success.");
+    HCCL_INFO("[CollComm][Resume] commId[%s] resume success.", commId_.c_str());
     return HcclResult::HCCL_SUCCESS;
 }
 
