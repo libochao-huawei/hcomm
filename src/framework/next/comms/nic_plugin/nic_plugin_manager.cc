@@ -154,9 +154,6 @@ void LoadDefaultDirectory(const std::string &pluginDir)
     }
     std::vector<std::string> soPaths;
     for (dirent *entry = readdir(dir); entry != nullptr; entry = readdir(dir)) {
-        if (entry->d_name == nullptr) {
-            continue;
-        }
         const std::string name(entry->d_name);
         if (name == "." || name == ".." || !EndsWithSo(name)) {
             continue;
