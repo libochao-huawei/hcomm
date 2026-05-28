@@ -19,6 +19,7 @@
 #include "rs_nda.h"
 #include "tc_ra_nda.h"
 
+extern int RaQpDestroy(void *qpHandle);
 extern struct RaRdmaOps gRaPeerRdmaOps;
 
 void TcRaNdaGetDirectFlag()
