@@ -98,4 +98,21 @@ void SocketHandleManager::DestroyAll()
     hccpSocketHandleMap.clear();
 }
 
+void SocketHandleManager::DestroyByDevice(u32 devicePhyId)
+{
+    std::lock_guard<std::mutex> lock(socketHandleLock);
+    if(devicePhyId >= hccpSocketHandleMap.size()) {
+        return;
+    }
+    for(u32 j=0; j < hccpSocketHandleMap[devicePhyId].size(); ++j) {
+        for(auto &iterHandle : hccpSocketHandleMap[devicePhyId][j]) {
+            if (iterHandle.second != nullptr) {
+                DECTOR_TRY_CATCH("RaSocketDeinit", HrtRaSocketDeInit(iterHandle.second));
+                iterHandle.second = nullptr;
+            }
+        }
+        hccpSocketHandleMap[devicePhyId][j].clear();
+    }
+}
+
 } // namespace Hccl

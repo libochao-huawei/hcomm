@@ -32,6 +32,7 @@ public:
     HcclResult UpdateSocketConfig(const Hccl::SocketConfig*& socketConfig, Hccl::Socket*& socket);
     HcclResult DeleteWhiteList(Hccl::Socket* socket);
     HcclResult DestroySocket(Hccl::Socket* socket);
+    static void SocketMgr::DeInit(u32 devPhyId);
     static SocketMgr& GetInstance(s32 phyId);
 
 private:
