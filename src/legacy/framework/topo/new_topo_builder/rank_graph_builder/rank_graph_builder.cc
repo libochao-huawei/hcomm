@@ -301,6 +301,19 @@ void RankGraphBuilder::CheckNetLayerFromPhyTopo(const u32 netLayer) const
 // 2. RankGraph中添加NetInstance， Peer， Fabric，
 void RankGraphBuilder::BuildFromRankTable()
 {
+    for (const auto &rankInfo : rankTable_->ranks) {
+        const bool hasLayer0 = std::any_of(rankInfo.rankLevelInfos.begin(), rankInfo.rankLevelInfos.end(),
+            [](const RankLevelInfo &levelInfo) {
+                return levelInfo.netLayer == 0;
+            });
+        if (!hasLayer0) {
+            THROW<InvalidParamsException>(StringFormat(
+                "[RankGraphBuilder][BuildFromRankTable] rankId[%u] ranktable does not contain netLayer[0], "
+                "only layer1 is not supported.",
+                rankInfo.rankId));
+        }
+    }
+
     // 保存NetInstance指针以便后续执行Add操作
     tempNetInsts_.resize(MAX_NET_LAYER);   //为了方便修改RankGraph的NetInstance，共享指针。
 
