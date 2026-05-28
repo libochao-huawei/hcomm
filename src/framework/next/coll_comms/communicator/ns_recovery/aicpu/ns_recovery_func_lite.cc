@@ -59,7 +59,7 @@ void NsRecoveryFuncLite::HandleStopLaunch(CollCommAicpu *deviceComm) const
     deviceComm->GetNsRecoveryLitePtr()->SetNeedClean(true);
     deviceComm->SetCommmStatus(HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
     deviceComm->GetNsRecoveryLitePtr()->BackGroundSetStatus(Hccl::KfcStatus::STOP_LAUNCH_DONE);
-    HCCL_INFO("[NsRecovery][BackGround] send KfcStatus[STOP_LAUNCH_DONE]");
+    HCCL_INFO("[NsRecovery][BackGround] commId[%s] send KfcStatus[STOP_LAUNCH_DONE]", deviceComm->GetIdentifier().c_str());
 }
 
 void NsRecoveryFuncLite::HandleClean(CollCommAicpu *deviceComm)
@@ -72,12 +72,11 @@ void NsRecoveryFuncLite::HandleClean(CollCommAicpu *deviceComm)
         return;
     }
     HCCL_INFO("[NsRecovery][BackGround] received KfcCommand[NS_CLEAN]");
-    deviceComm->Clean();
     StreamClean(deviceComm);
+    deviceComm->Clean();
     deviceComm->GetNsRecoveryLitePtr()->SetNeedClean(false);
     deviceComm->GetNsRecoveryLitePtr()->BackGroundSetStatus(Hccl::KfcStatus::CLEAN_DONE);
-    deviceComm->GetNsRecoveryLitePtr()->ResetErrorReported();
-    HCCL_INFO("[NsRecovery][BackGround] send KfcStatus[CLEAN_DONE]");
+    HCCL_INFO("[NsRecovery][BackGround] commId[%s] send KfcStatus[CLEAN_DONE]", deviceComm->GetIdentifier().c_str());
 }
 
 constexpr u64 DEVICE_QUERY_TIMEOUT_NSEC = 5000000000U; // 5秒
@@ -104,7 +103,7 @@ void NsRecoveryFuncLite::StreamClean(CollCommAicpu *deviceComm)
         Hccl::StreamLite *streamLitePtr = reinterpret_cast<Hccl::StreamLite *>(thread->GetStreamLitePtr());
         streamLitePtr->GetRtsq()->Reset();
     }
-    HCCL_INFO("[NsRecovery][BackGround] StreamClean success.");
+    HCCL_INFO("[NsRecovery][BackGround] commId[%s] streamClean success.", deviceComm->GetIdentifier().c_str());
 }
 
 constexpr u64 NSEC_PER_SEC = 1000000000U;
