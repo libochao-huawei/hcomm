@@ -252,9 +252,9 @@ HcclResult HcomGenerteRanktable(std::string &rankTableM, std::string &rankId)
     CHK_RET(GenerateRootInfo(rootHandle));
 
     std::shared_ptr<TopoInfoDetect> topoDetectAgent;
-    EXECEPTION_CATCH(topoDetectAgent = std::make_shared<TopoInfoDetect>(), return HCCL_E_PTR);
+    EXCEPTION_CATCH(topoDetectAgent = std::make_shared<TopoInfoDetect>(), return HCCL_E_PTR);
     std::shared_ptr<TopoInfoDetect> topoDetectServer;
-    EXECEPTION_CATCH(topoDetectServer = std::make_shared<TopoInfoDetect>(), return HCCL_E_PTR);
+    EXCEPTION_CATCH(topoDetectServer = std::make_shared<TopoInfoDetect>(), return HCCL_E_PTR);
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));

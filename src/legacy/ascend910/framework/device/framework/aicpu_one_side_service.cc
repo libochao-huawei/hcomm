@@ -73,7 +73,7 @@ std::shared_ptr<HcclOneSideServiceAicpu> HcclOneSideServiceAicpu::GetService(con
     if (serviceIter == services_.cend()) {
         rwlock.readUnlock();
         std::shared_ptr<HcclOneSideServiceAicpu> service;
-        EXECEPTION_CATCH(service = std::make_shared<HcclOneSideServiceAicpu>(), return nullptr);
+        EXCEPTION_CATCH(service = std::make_shared<HcclOneSideServiceAicpu>(), return nullptr);
         CHK_PRT_RET(service == nullptr, HCCL_ERROR("[GetService] Alloc failed, tag[%s].", tag.c_str()), nullptr);
         HcclResult ret = service->Init(tag, tilingData);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[GetService] Init failed, tag[%s].", tag.c_str()), nullptr);
@@ -150,7 +150,7 @@ HcclResult HcclOneSideServiceAicpu::InitOpNotifyObj()
             HCCL_E_PARA);
 
         std::shared_ptr<LocalNotify> notify;
-        EXECEPTION_CATCH((notify = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((notify = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(notify);
         CHK_RET(notify->Init(signalInfo, NotifyLoadType::DEVICE_NOTIFY));
         opNotifies_.push_back(notify);
@@ -230,7 +230,7 @@ HcclResult HcclOneSideServiceAicpu::PrepareRdmaLink(u32 remoteRankId, const stru
         attrInfo.remoteRankId = remoteRankId;
         attrInfo.timeout = linkTimeout_;
         std::shared_ptr<TransportMem> link;
-        EXECEPTION_CATCH(link = TransportMem::Create(TransportMem::TpType::ROCE_DEVICE, qpInfo, dispatcher_, attrInfo),
+        EXCEPTION_CATCH(link = TransportMem::Create(TransportMem::TpType::ROCE_DEVICE, qpInfo, dispatcher_, attrInfo),
             return HCCL_E_MEMORY);
         CHK_SMART_PTR_NULL(link);
         rdmaLinks_[remoteRankId] = link;

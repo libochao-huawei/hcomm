@@ -42,9 +42,9 @@ HcclResult UbMemRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, vo
         localIpcRmaBuffer = findPair.second;
     } else {
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
-        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, 
+        EXCEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, 
             static_cast<HcclMemType>(mem.type), memTag)), return HCCL_E_PTR);
-        EXECEPTION_CATCH((localIpcRmaBuffer = std::make_shared<Hccl::LocalIpcRmaBuffer>(localBufferPtr)), return HCCL_E_PTR);
+        EXCEPTION_CATCH((localIpcRmaBuffer = std::make_shared<Hccl::LocalIpcRmaBuffer>(localBufferPtr)), return HCCL_E_PTR);
     }
 
     // 增加到LocalIpcRmaBuffer计数器
@@ -84,7 +84,7 @@ HcclResult UbMemRegedMemMgr::UnregisterMemory(void* memHandle)
     // 从LocalIpcRmaBuffer计数器删除HcclBuf
     hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
     bool isDeleted = false;
-    EXECEPTION_CATCH(isDeleted = localIpcRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
+    EXCEPTION_CATCH(isDeleted = localIpcRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
     // 计数器大于1时，仅减少引用计数
     if (!isDeleted) {
         HCCL_INFO("[%s] Memory reference count is larger than 0, just decrease the reference count.", __func__);

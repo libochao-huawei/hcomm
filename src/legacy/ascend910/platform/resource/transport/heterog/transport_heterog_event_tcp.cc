@@ -767,7 +767,7 @@ HcclResult TransportHeterogEventTcp::BlockRecv(const TransData &recvData, bool m
 
             // matched为false，获取到fdHandle之后，都变成匹配接收的方式，即matched为true。
             if (!eventStatus.matched) {
-                EXECEPTION_CATCH(transport = gFdhandleToTransportMap.at(fdHandle), return HCCL_E_TCP_TRANSFER);
+                EXCEPTION_CATCH(transport = gFdhandleToTransportMap.at(fdHandle), return HCCL_E_TCP_TRANSFER);
                 eventStatus.matched = true;
             }
 

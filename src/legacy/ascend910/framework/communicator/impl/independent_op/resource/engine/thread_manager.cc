@@ -116,7 +116,7 @@ HcclResult ThreadMgr::SupplementNotify(CommEngine engine, uint32_t threadNum, ui
         }
 
         std::unique_ptr<ThreadHandle[]> threadHandle;
-        EXECEPTION_CATCH(threadHandle = std::make_unique<ThreadHandle[]>(needSupplementThread.size()),
+        EXCEPTION_CATCH(threadHandle = std::make_unique<ThreadHandle[]>(needSupplementThread.size()),
             return HCCL_E_PTR);
         for (uint32_t i = 0; i < needSupplementThread.size(); ++i) {
             threadHandle[i] = hostToDeviceThreadHandle_[reinterpret_cast<ThreadHandle>(needSupplementThread[i].get())];
@@ -170,7 +170,7 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
             callbacks_.setAicpuCommState(true);
         }
 
-        EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
+        EXCEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
             return HCCL_E_PTR);
         HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunchForComm start");
         ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(newThreads, commId_, hostHandle, binHandle_);
@@ -296,7 +296,7 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
             callbacks_.setAicpuCommState(true);
         }
 
-        EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
+        EXCEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
             return HCCL_E_PTR);
         HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch start");
         ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(newThreads, commId_, hostHandle, binHandle_);
@@ -366,7 +366,7 @@ HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
     NotifyLoadType notifyLoadType;
     CHK_RET(CommHostEngineToNotifyLoadType(engine, notifyLoadType));
     std::shared_ptr<CpuTsThread> handle;
-    EXECEPTION_CATCH(handle = std::make_shared<CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
+    EXCEPTION_CATCH(handle = std::make_shared<CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());
     handle->SetIsMaster(true);
 
@@ -442,7 +442,7 @@ HcclResult ThreadMgr::ThreadExportToCommEngineAicpu(uint32_t threadNum, const Th
             callbacks_.setAicpuCommState(true);
         }
         std::unique_ptr<ThreadHandle[]> aicpuHandle;
-        EXECEPTION_CATCH(aicpuHandle = std::make_unique<ThreadHandle[]>(hostThreads.size()),
+        EXCEPTION_CATCH(aicpuHandle = std::make_unique<ThreadHandle[]>(hostThreads.size()),
                          return HCCL_E_PTR);
         HcclResult ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(hostThreads, commId_, aicpuHandle, binHandle_);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
