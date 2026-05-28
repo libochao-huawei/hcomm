@@ -152,10 +152,14 @@ void RtsqA5::CopyLocBufToSq()
 // 向芯片RTSQ VA中写入 SQE，并触发芯片执行
 void RtsqA5::LaunchTask()
 {
-    HCCL_INFO("RtsqA5::%s: START, pendingSqeCnt[%u]", __func__, pendingSqeCnt);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::%s: START, sqId[%u], streamId[%u], pendingSqeCnt[%u], "
+              "head[%u], tail[%u]",
+              __func__, sqId_, streamId_, pendingSqeCnt, sqHead_, sqTail_);
 
     if (pendingSqeCnt == 0) { // 没有SQE ，直接返回
-        HCCL_INFO("RtsqA5::%s: pendingSqeCnt is %u, return", __func__, pendingSqeCnt);
+        HCCL_INFO("YYYYYY hcomm order RtsqA5::%s: pendingSqeCnt is %u, return, sqId[%u], "
+                  "streamId[%u], head[%u], tail[%u]",
+                  __func__, pendingSqeCnt, sqId_, streamId_, sqHead_, sqTail_);
         return;
     }
     // 确保 rtsq 有足够空间放pending SQE
@@ -173,7 +177,9 @@ void RtsqA5::LaunchTask()
     sqTail_ = newTail;
 
     // 清空本地的locBuffer和sqeCnt数目
-    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::%s: END, sqId[%u], streamId[%u], pendingSqeCnt[%u], "
+              "sqHead_[%u] sqTail_[%u]",
+              __func__, sqId_, streamId_, pendingSqeCnt, sqHead_, sqTail_);
     pendingSqeCnt = 0;
     (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt); // locBuffer清零
 }
@@ -238,14 +244,18 @@ void RtsqA5::NotifyWait(u32 notifyId)
 void RtsqA5::NotifyWait(u32 notifyId, u32 timeout)
 {
     BuildA5SqeNotifyWait(streamId_, taskId_, notifyId, timeout, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::NotifyWait: streamId %u, taskId %u, notifyId %u, timeout %u", streamId_, taskId_, notifyId, timeout);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::NotifyWait: sqId %u, streamId %u, taskId %u, notifyId %u, "
+              "timeout %u, head %u, tail %u",
+              sqId_, streamId_, taskId_, notifyId, timeout, sqHead_, sqTail_);
     RefreshInfo();
 }
 
 void RtsqA5::NotifyRecordLoc(u32 notifyId)
 {
     BuildA5SqeNotifyRecord(streamId_, taskId_, notifyId, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::NotifyRecordLoc: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::NotifyRecordLoc: sqId %u, streamId %u, taskId %u, notifyId %u, "
+              "head %u, tail %u",
+              sqId_, streamId_, taskId_, notifyId, sqHead_, sqTail_);
     RefreshInfo();
 }
 
@@ -282,8 +292,9 @@ void RtsqA5::SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId)
     // 不带reduce的拷贝，opcode填0
     (void)partId;
     BuildA5SqeSdmaCopy(streamId_, taskId_, dstAddr, srcAddr, size, RTSQ_A5_PART_ID, 0, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::SdmaCopy: streamId %u, taskId %u, srcAddr 0x%llx, dstAddr 0x%llx, size %u", streamId_, taskId_,
-        srcAddr, dstAddr, size);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::SdmaCopy: sqId %u, streamId %u, taskId %u, srcAddr 0x%llx, "
+              "dstAddr 0x%llx, size %u, head %u, tail %u",
+              sqId_, streamId_, taskId_, srcAddr, dstAddr, size, sqHead_, sqTail_);
     RefreshInfo();
 }
 
@@ -363,16 +374,18 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
 void RtsqA5::CCoreNotifyWait(u64 waitAddr, u64 curTurnCntAddr, bool last)
 {
     BuildA5SqeCCoreNotifyWait(streamId_, taskId_, waitAddr, curTurnCntAddr, last, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::CCoreNotifyWait: streamId %u, taskId %u, waitAddr %llu, curTurnCntAddr %llu, last %d", streamId_,
-              taskId_, waitAddr, curTurnCntAddr, last);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::CCoreNotifyWait: sqId %u, streamId %u, taskId %u, "
+              "waitAddr %llu, curTurnCntAddr %llu, last %d, head %u, tail %u",
+              sqId_, streamId_, taskId_, waitAddr, curTurnCntAddr, last, sqHead_, sqTail_);
     RefreshInfo();
 }
 
 void RtsqA5::CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr)
 {
     BuildA5SqeCCoreNotifyRecord(streamId_, taskId_, recordAddr, curTurnCntAddr, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::CCoreNotifyRecord: streamId %u, taskId %u, recordAddr %llu, curTurnCntAddr %llu", streamId_, taskId_,
-              recordAddr, curTurnCntAddr);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::CCoreNotifyRecord: sqId %u, streamId %u, taskId %u, "
+              "recordAddr %llu, curTurnCntAddr %llu, head %u, tail %u",
+              sqId_, streamId_, taskId_, recordAddr, curTurnCntAddr, sqHead_, sqTail_);
     RefreshInfo();
 }
 

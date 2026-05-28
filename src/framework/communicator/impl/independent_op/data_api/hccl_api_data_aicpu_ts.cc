@@ -48,6 +48,27 @@ static bool ShouldSkipAicpuDfx()
     return false;
 }
 
+static void GetA5OrderThreadInfo(Thread *threadPtr, Hccl::StreamLite *&streamLite, Hccl::RtsqBase *&rtsq,
+    uint32_t &sqId, uint32_t &taskId)
+{
+    streamLite = nullptr;
+    rtsq = nullptr;
+    sqId = 0;
+    taskId = 0;
+    if (threadPtr == nullptr || !threadPtr->IsDeviceA5()) {
+        return;
+    }
+    streamLite = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+    if (streamLite == nullptr) {
+        return;
+    }
+    sqId = streamLite->GetSqId();
+    rtsq = streamLite->GetRtsq();
+    if (rtsq != nullptr) {
+        taskId = rtsq->GetTaskId();
+    }
+}
+
 void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
 }
@@ -112,7 +133,20 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
+        Hccl::StreamLite *streamLite = nullptr;
+        Hccl::RtsqBase *rtsq = nullptr;
+        uint32_t sqId = 0;
+        uint32_t taskIdBefore = 0;
+        GetA5OrderThreadInfo(threadPtr, streamLite, rtsq, sqId, taskIdBefore);
+        HCCL_INFO("YYYYYY hcomm order [HcommLocalCopyOnThread] begin, thread[0x%llx], streamLite[%p], "
+                  "rtsq[%p], sqId[%u], taskIdBefore[%u], dst[0x%llx], src[0x%llx], len[%llu].",
+                  thread, streamLite, rtsq, sqId, taskIdBefore,
+                  static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(dst)),
+                  static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(src)), len);
         EXECEPTION_CATCH(ret = threadPtr->LocalCopy(dst, src, len), ret = HCCL_E_INTERNAL);
+        HCCL_INFO("YYYYYY hcomm order [HcommLocalCopyOnThread] end, thread[0x%llx], streamLite[%p], "
+                  "rtsq[%p], sqId[%u], taskIdBefore[%u], ret[%u].",
+                  thread, streamLite, rtsq, sqId, taskIdBefore, static_cast<uint32_t>(ret));
     } else {
         HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
         HcclBuf dstBuf{dst, len, nullptr};
@@ -173,7 +207,21 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
         LocalNotify *const notifyPtr = dstThreadPtr->GetNotify(dstNotifyIdx);
         CHK_PTR_NULL(notifyPtr);
         const uint32_t notifyId = notifyPtr->notifyId_;
+        Hccl::StreamLite *streamLite = nullptr;
+        Hccl::RtsqBase *rtsq = nullptr;
+        uint32_t sqId = 0;
+        uint32_t taskIdBefore = 0;
+        GetA5OrderThreadInfo(threadPtr, streamLite, rtsq, sqId, taskIdBefore);
+        HCCL_INFO("YYYYYY hcomm order [HcommThreadNotifyRecordOnThread] begin, thread[0x%llx], "
+                  "dstThread[0x%llx], dstNotifyIdx[%u], notifyId[%u], streamLite[%p], rtsq[%p], "
+                  "sqId[%u], taskIdBefore[%u].",
+                  thread, dstThread, dstNotifyIdx, notifyId, streamLite, rtsq, sqId, taskIdBefore);
         EXECEPTION_CATCH(ret = threadPtr->LocalNotifyRecord(notifyId), ret = HCCL_E_INTERNAL);
+        HCCL_INFO("YYYYYY hcomm order [HcommThreadNotifyRecordOnThread] end, thread[0x%llx], "
+                  "dstThread[0x%llx], dstNotifyIdx[%u], notifyId[%u], streamLite[%p], rtsq[%p], "
+                  "sqId[%u], taskIdBefore[%u], ret[%u].",
+                  thread, dstThread, dstNotifyIdx, notifyId, streamLite, rtsq, sqId, taskIdBefore,
+                  static_cast<uint32_t>(ret));
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -200,7 +248,21 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
         LocalNotify *const notifyPtr = threadPtr->GetNotify(notifyIdx);
         CHK_PTR_NULL(notifyPtr);
         const uint32_t notifyId = notifyPtr->notifyId_;
+        Hccl::StreamLite *streamLite = nullptr;
+        Hccl::RtsqBase *rtsq = nullptr;
+        uint32_t sqId = 0;
+        uint32_t taskIdBefore = 0;
+        GetA5OrderThreadInfo(threadPtr, streamLite, rtsq, sqId, taskIdBefore);
+        HCCL_INFO("YYYYYY hcomm order [HcommThreadNotifyWaitOnThread] begin, thread[0x%llx], "
+                  "notifyIdx[%u], notifyId[%u], timeout[%u], streamLite[%p], rtsq[%p], sqId[%u], "
+                  "taskIdBefore[%u].",
+                  thread, notifyIdx, notifyId, timeout, streamLite, rtsq, sqId, taskIdBefore);
         EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId, timeout), ret = HCCL_E_INTERNAL);
+        HCCL_INFO("YYYYYY hcomm order [HcommThreadNotifyWaitOnThread] end, thread[0x%llx], "
+                  "notifyIdx[%u], notifyId[%u], timeout[%u], streamLite[%p], rtsq[%p], sqId[%u], "
+                  "taskIdBefore[%u], ret[%u].",
+                  thread, notifyIdx, notifyId, timeout, streamLite, rtsq, sqId, taskIdBefore,
+                  static_cast<uint32_t>(ret));
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -388,6 +450,9 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
         CHK_PTR_NULL(ubTransportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
+        Hccl::RtsqBase *rtsq = streamLitePtr->GetRtsq();
+        const uint32_t sqId = streamLitePtr->GetSqId();
+        const uint32_t taskIdBefore = rtsq == nullptr ? 0 : rtsq->GetTaskId();
 
         Hccl::RmaBufferLite locRmaBuf;
         ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(src), len, locRmaBuf);
@@ -396,7 +461,15 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
             __func__, thread, channel, dst, src, len), ret);
         const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dst), len};
 
+        HCCL_INFO("YYYYYY hcomm order [HcommWriteOnThread] begin, thread[0x%llx], channel[0x%llx], "
+                  "streamLite[%p], rtsq[%p], sqId[%u], taskIdBefore[%u], dst[0x%llx], src[0x%llx], len[%llu].",
+                  thread, channel, streamLitePtr, rtsq, sqId, taskIdBefore,
+                  static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(dst)),
+                  static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(src)), len);
         EXECEPTION_CATCH(ubTransportLitePtr->Write(locRmaBuf, rmtBuf, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        HCCL_INFO("YYYYYY hcomm order [HcommWriteOnThread] end, thread[0x%llx], channel[0x%llx], "
+                  "streamLite[%p], rtsq[%p], sqId[%u], taskIdBefore[%u], ret[%u].",
+                  thread, channel, streamLitePtr, rtsq, sqId, taskIdBefore, static_cast<uint32_t>(ret));
     } else {
         HcclBuf locBuf{const_cast<void *>(src), len, nullptr};
         HcclBuf rmtBuf{dst, len, nullptr};
@@ -783,9 +856,20 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
         CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
-        HCCL_INFO("channel streamlite ptr %p.", streamLitePtr);
+        Hccl::RtsqBase *rtsq = streamLitePtr->GetRtsq();
+        const uint32_t sqId = streamLitePtr->GetSqId();
+        const uint32_t taskIdBefore = rtsq == nullptr ? 0 : rtsq->GetTaskId();
 
+        HCCL_INFO("YYYYYY hcomm order [HcommChannelNotifyRecordOnThread] begin, thread[0x%llx], "
+                  "channel[0x%llx], remoteNotifyIdx[%u], streamLite[%p], rtsq[%p], sqId[%u], "
+                  "taskIdBefore[%u].",
+                  thread, channel, remoteNotifyIdx, streamLitePtr, rtsq, sqId, taskIdBefore);
         EXECEPTION_CATCH(transportLitePtr->Post(remoteNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        HCCL_INFO("YYYYYY hcomm order [HcommChannelNotifyRecordOnThread] end, thread[0x%llx], "
+                  "channel[0x%llx], remoteNotifyIdx[%u], streamLite[%p], rtsq[%p], sqId[%u], "
+                  "taskIdBefore[%u], ret[%u].",
+                  thread, channel, remoteNotifyIdx, streamLitePtr, rtsq, sqId, taskIdBefore,
+                  static_cast<uint32_t>(ret));
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -819,8 +903,20 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
         CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
+        Hccl::RtsqBase *rtsq = streamLitePtr->GetRtsq();
+        const uint32_t sqId = streamLitePtr->GetSqId();
+        const uint32_t taskIdBefore = rtsq == nullptr ? 0 : rtsq->GetTaskId();
 
+        HCCL_INFO("YYYYYY hcomm order [HcommChannelNotifyWaitOnThread] begin, thread[0x%llx], "
+                  "channel[0x%llx], localNotifyIdx[%u], timeOut[%u], streamLite[%p], rtsq[%p], "
+                  "sqId[%u], taskIdBefore[%u].",
+                  thread, channel, localNotifyIdx, timeOut, streamLitePtr, rtsq, sqId, taskIdBefore);
         EXECEPTION_CATCH(transportLitePtr->WaitWithTimeout(localNotifyIdx, *streamLitePtr, timeOut), ret = HCCL_E_INTERNAL);
+        HCCL_INFO("YYYYYY hcomm order [HcommChannelNotifyWaitOnThread] end, thread[0x%llx], "
+                  "channel[0x%llx], localNotifyIdx[%u], timeOut[%u], streamLite[%p], rtsq[%p], "
+                  "sqId[%u], taskIdBefore[%u], ret[%u].",
+                  thread, channel, localNotifyIdx, timeOut, streamLitePtr, rtsq, sqId, taskIdBefore,
+                  static_cast<uint32_t>(ret));
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
