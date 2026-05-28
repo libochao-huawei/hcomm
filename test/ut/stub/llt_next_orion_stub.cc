@@ -180,6 +180,10 @@ std::pair<TokenIdHandle, uint32_t> RdmaHandleManager::GetTokenIdInfo(
     return {0x12345678, 12345678};
 }
 
+void RdmaHandleManager::DeInit(u32 devPhyId)
+{
+}
+
 bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
 {
     return true;
@@ -379,6 +383,10 @@ SocketHandle SocketHandleManager::Create(DevId devicePhyId, const PortData &loca
 {
     int a = 0x12345678;
     return (void *)&a;
+}
+
+void SocketHandleManager::DeInit(u32 devPhyId)
+{
 }
 
 std::shared_ptr<TopoInfo> RankGraphBuilder::GetTopoInfo()
@@ -1390,6 +1398,10 @@ HccpHdcManager &HccpHdcManager::GetInstance()
 }
 
 void HccpHdcManager::Init(u32 deviceLogicId)
+{
+}
+
+void HccpHdcManager::DeInit(u32 deviceLogicId)
 {
 }
 
