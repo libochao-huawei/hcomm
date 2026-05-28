@@ -47,8 +47,6 @@ public:
         // 按需扩展
     };
     HcclResult GetCapabilities(Capabilities &caps);
-
-    HcclResult CheckFeature(HcommEndpointFeatureType featureType, bool &value) override;
 private:
     std::mutex portMutex_;
     u32 dynamicPort_{HCCL_INVALID_PORT};
