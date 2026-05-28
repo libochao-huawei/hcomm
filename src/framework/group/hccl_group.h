@@ -34,6 +34,8 @@ HcclResult commInitTaskAppend(std::shared_ptr<struct hcclAsyncJob> job, HcclResu
 
 HcclResult taskAppend(HcclComm comm, hcclOpInfo& info);
 
+HcclResult HcclGroupAddP2pTask(HcclComm comm, const HcclP2pTask& task, const HcclOpP2pDesc& p2pDesc);
+
 #ifdef __cplusplus
 }
 #endif
