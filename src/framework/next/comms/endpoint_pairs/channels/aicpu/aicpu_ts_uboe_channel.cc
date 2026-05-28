@@ -34,6 +34,14 @@ AicpuTsUboeChannel::AicpuTsUboeChannel(EndpointHandle endpointHandle, const Hcom
 {
 }
 
+AicpuTsUboeChannel::~AicpuTsUboeChannel()
+{
+    if (socket_ != nullptr) {
+        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        socket_ = nullptr;
+    }
+}
+
 HcclResult AicpuTsUboeChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
 {
@@ -88,7 +96,6 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
         CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
     }
 
-    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 
@@ -224,7 +231,7 @@ HcclResult AicpuTsUboeChannel::BuildSocket()
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
     bool noRankId = true;
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
+    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
     isRecvFirst_ = socket_->GetRole() == Hccl::SocketRole::CLIENT ? true : false;
 
     return HCCL_SUCCESS;
@@ -232,12 +239,16 @@ HcclResult AicpuTsUboeChannel::BuildSocket()
 
 HcclResult AicpuTsUboeChannel::Init()
 {
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
     CHK_RET(ParseInputParam());
     CHK_RET(BuildSocket());
     CHK_RET(BuildNotify());
     localRmaBuffers_.clear();
     commonRes_.bufferVec.clear();
     CHK_RET(BuildBuffer(bufs_));
+
     return HCCL_SUCCESS;
 }
 
@@ -668,12 +679,18 @@ void AicpuTsUboeChannel::ProcessUboeState()
 
 ChannelStatus AicpuTsUboeChannel::GetStatus()
 {
-    if (channelStatus == ChannelStatus::READY) return channelStatus;
+    if (channelStatus == ChannelStatus::READY ) {
+        return channelStatus;
+    }
     if (channelStatus == ChannelStatus::INIT) uboeStatus = UboeStatus::INIT;
 
     if (!IsSocketReady()) return channelStatus;
 
     ProcessUboeState();
+    if (channelStatus == ChannelStatus::READY && socket_ != nullptr) {
+        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        socket_ = nullptr;
+    }
 
     return channelStatus;
 }
