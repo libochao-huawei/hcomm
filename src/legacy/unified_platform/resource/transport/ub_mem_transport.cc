@@ -1100,6 +1100,7 @@ HcclResult UbMemTransport::Init()
  
 HcclResult UbMemTransport::DeInit() const
 {
+    HCCL_INFO("[SocketMgr][%s] destroy a socket[%p] in UbMemTransport deinit", __func__, static_cast<void*>(socket));
     socket->Destroy();
     return HCCL_SUCCESS;
 }
