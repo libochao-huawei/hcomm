@@ -99,6 +99,18 @@ HcclResult hcclCreateAscendQPWithAttr(AscendQPInfo* ascendQPInfo)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclCreateAscendCQWithAttr(AscendCQInfo* ascendCQInfo)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(ascendCQInfo);
+    CHK_RET(CheckDepth(ascendCQInfo->cqDepth));
+    CHK_RET(TypicalQpManager::GetInstance().CreateCq(*ascendCQInfo));
+    HCCL_INFO("hcclCreateAscendCQWithAttr success! cqn[%u], cqDepth[%u]",
+        ascendCQInfo->cqn, ascendCQInfo->cqDepth);
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclModifyAscendQP(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQPInfo)
 {
     s32 deviceLogicId = 0;
