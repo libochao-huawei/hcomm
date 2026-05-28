@@ -11,6 +11,7 @@
 #define AICPU_TS_UB_CHANNEL_BASE_H
 
 #include "../channel.h"
+#include "../../sockets/socket_mgr.h"
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "../../../../../../legacy/framework/resource_manager/socket/socket_manager.h"
 #include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"

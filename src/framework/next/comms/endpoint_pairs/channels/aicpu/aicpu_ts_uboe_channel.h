@@ -55,7 +55,6 @@ private:
         std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult ParseInputParam();
     HcclResult BuildConnection();
-    HcclResult BuildNotify();
     HcclResult BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult BuildUbMemTransport();
     HcclResult BuildSocket();
