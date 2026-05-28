@@ -880,7 +880,7 @@ extern HcclResult HcclTaskExceptionRegCallBack(HcclTaskExceptionCallback callbac
 {
     HCCL_INFO("[%s] START, callback[%p].", __func__, callback);
     s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId))；
+    CHK_RET(hrtGetDevice(&devLogicId));
     hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(
         static_cast<size_t>());
     CHK_PTR_NULL(handler);
