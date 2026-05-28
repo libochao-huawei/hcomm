@@ -41,7 +41,7 @@ class IHcclOneSidedService;
 
 class hcclComm {
 public:
-    explicit hcclComm(u64 inCCLbufferSize = 0, u64 outCCLbufferSize = 0, std::string identifier = "", std::string cclBuffName = "");
+    explicit hcclComm(u64 inCCLbufferSize = 0, u64 outCCLbufferSize = 0, std::string identifier = "", std::string cclBufferName = "");
     ~hcclComm();
 
     /**********************************************************************

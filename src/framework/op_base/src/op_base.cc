@@ -53,7 +53,7 @@
 using namespace std;
 using namespace hccl;
 
-typedef int32_t Callback(uint64_t, int32_t);
+using Callback = int32_t(uint64_t, int32_t);
 
 const std::string HCCL_ALLTOALL = "ALLTOALL";
 const std::string HCCL_ALLTOALLV = "ALLTOALLV";
