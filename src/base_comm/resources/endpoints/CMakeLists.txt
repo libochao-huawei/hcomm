@@ -29,3 +29,4 @@ endif()
 
 add_subdirectory(server_socket)
 add_subdirectory(net_dev)
+add_subdirectory(dfx)
