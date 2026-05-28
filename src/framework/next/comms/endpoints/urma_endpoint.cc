@@ -30,6 +30,12 @@ UrmaEndpoint::~UrmaEndpoint() noexcept
         ServerSocketStopListen(dynamicPort_);
     }
     dynamicPort_ = HCCL_INVALID_PORT;
+
+    s32 deviceLogicId;
+    HcclResult ret = hrtGetDevice(&deviceLogicId);
+    if (ret == HCCL_SUCCESS) {
+        Hccl::HccpHdcManager::GetInstance().DeInit(static_cast<u32>(deviceLogicId));
+    }
 }
 
 HcclResult UrmaEndpoint::Init()
