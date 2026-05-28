@@ -210,13 +210,16 @@ std::string GetReduceTypeStr(DataType dataType, ReduceOp opType)
     return ccuRepDataTypeStr[dataType] + "_" + ccuRepOpTypeStr[opType];
 }
 
-uint64_t GetTokenInfo(uint64_t va, uint64_t size)
+HcclResult GetTokenInfo(uint64_t va, uint64_t size, uint64_t &token)
 {
     rtMemUbTokenInfo info;
     info.va   = va;
     info.size = size;
-    HrtUbDevQueryInfo(QUERY_PROCESS_TOKEN, &info);
-    return CcuRep::GetToken(info.tokenId, info.tokenValue, 1);
+    if (HrtUbDevQueryInfo(QUERY_PROCESS_TOKEN, &info) != HcclResult::HCCL_SUCCESS) {
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    token = CcuRep::GetToken(info.tokenId, info.tokenValue, 1);
+    return HcclResult::HCCL_SUCCESS;
 }
 
 }; // namespace CcuRep
