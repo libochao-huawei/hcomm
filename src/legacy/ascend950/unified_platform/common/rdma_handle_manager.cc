@@ -368,4 +368,69 @@ HcclResult RdmaHandleManager::GetEidByIpv4Addr(const IpAddress& addr, IpAddress&
     return HCCL_SUCCESS;
 }
 
+void RdmaHandleManager::DeInit(u32 devPhyId)
+{
+    HCCL_INFO("[RdmaHandleManager][%s] DeInit[%d]", __func__, devPhyId);
+    std::lock_guard<std::mutex> lock(managerMutex);
+
+    if(destroyed_) {
+        HCCL_INFO("[RdmaHandleManager][%s] already destroyed", __func__);
+        return;
+    }
+
+    if (devPhyId >= rdmaHandleMap.size()) {
+        HCCL_INFO("[RdmaHandleManager][%s] devPhyId[%u] is out of range", __func__, devPhyId);
+        return;
+    }
+
+    struct HandleInfo {
+        RdmaHandle handle;
+        u32 protoIndex;
+    };
+
+    std::vector<HandleInfo> handlesToCleanup;
+    for(u32 j = 0; j < rdmaHandleMap[devPhyId].size(); ++j) {
+        for (auto &handleIter : rdmaHandleMap[devPhyId][j]) {
+            if (handleIter.second != nullptr) {
+                handlesToCleanup.push_back({handleIter.second, j});
+            }
+        }
+        rdmaHandleMap[devPhyId][j].clear();
+    }
+
+    for(auto &info : handlesToCleanup) {
+        RdmaHandle handle = info.handle;
+        auto jfcIt = jfcHandleMap.find(handle);
+        if (jfcIt != jfcHandleMap.end()) {
+            for (auto &modeIter : jfcIt->second) {
+                DECTOR_TRY_CATCH("jfc handle destroy", HrtRaUbDestroyJfc(handle, modeIter.second));
+            }
+            jfcHandleMap.erase(jfcIt);
+        }
+
+        if(info.protoIndex == RDMA_HANDLE_INDEX) {
+            auto modeIt = netWorkModeMap.find(handle);
+            if (modeIt != netWorkModeMap.end()) {
+                DECTOR_TRY_CATCH("rdma handle deinit", HrtRaRdmaDeInit(handle, modeIt->second));
+                netWorkModeMap.erase(modeIt);
+            }
+        }
+
+        if (info.protoIndex == UB_HANDLE_INDEX) {
+            auto tokenIt = tokenInfoMap.find(handle);
+            if (tokenIt != tokenInfoMap.end()) {
+                if (tokenIt->second != nullptr) {
+                    DECTOR_TRY_CATCH("token id handle destroy", tokenIt->second->Destroy());
+                }
+                DECTOR_TRY_CATCH("ub handle destroy", HrtRaUbCtxDestroy(handle));
+                tokenInfoMap.erase(tokenIt);
+            } else {
+                DECTOR_TRY_CATCH("ub handle destroy", HrtRaUbCtxDestroy(handle));
+            }
+        }
+        DieAndFuncIdMap.erase(handle);
+        RtpEnableMap.erase(handle);
+    }
+}
+
 } // namespace Hccl

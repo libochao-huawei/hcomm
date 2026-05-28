@@ -47,6 +47,7 @@ public:
     RdmaHandleManager(const RdmaHandleManager &rdmaHandleManager) = delete;
     RdmaHandleManager &operator=(const RdmaHandleManager &rdmaHandleManager) = delete;
     void DestroyAll();
+    void DeInit(u32 devPhyId);
 
     HcclResult GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr);
     void UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress, u32 devPhyId);
