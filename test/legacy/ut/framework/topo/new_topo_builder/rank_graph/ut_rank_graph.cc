@@ -222,6 +222,7 @@ std::shared_ptr<RankGraph> create4pclosRankGraph(RankId myRank) {
     netInstMixPcie->AddNode(peer1);
     netInstMixPcie->AddNode(peer2);
     netInstMixPcie->AddNode(peer3);
+    netInstMixPcie->AddNode(fabric);
 
     peer0->AddNetInstance(netInstMixPcie);
     peer1->AddNetInstance(netInstMixPcie);
@@ -395,7 +396,7 @@ TEST_F(RankGraphTest, ut_IsSymmetric_When_Normal_Expect_SUCCESS) {
 
 TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
     auto rankGraph = create4pclosRankGraph(myRank);
-    constexpr u32 layer = 1;
+    constexpr u32 layer = 0;
     constexpr u32 missingTopoInstId = 0;
     constexpr u32 nullTopoInstId = 1;
     constexpr u32 noParentTopoInstId = 2;
@@ -403,8 +404,7 @@ TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
 
     vector<u32> subRankIds = {0, 1, 2, 3};
     std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(subRankIds);
-    EXPECT_EQ(2, subRankGraph->GetLocalInstSize(0));
-    EXPECT_EQ(4, subRankGraph->GetLocalInstSize(1));
+    EXPECT_EQ(4, subRankGraph->GetLocalInstSize(layer));
 
     std::vector<u32> ranks;
     u32 rankNum = 0;
