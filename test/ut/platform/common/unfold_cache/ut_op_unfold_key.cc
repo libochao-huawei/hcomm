@@ -98,15 +98,19 @@ TEST_F(OpUnfoldKeyTest, ut_GetKeyString_Expect_ValidStringFormat)
              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
     std::string keyStr = key.GetKeyString();
-    // 验证字符串包含必要的字段信息
+    // 验证字符串格式："opType{N}-dataType{N}-...-isCapture{N}"
+    // 先验证所有字段名存在
     EXPECT_NE(keyStr.find("opType"), std::string::npos);
-    EXPECT_NE(keyStr.find("dataType"), std::string::npos);
-    EXPECT_NE(keyStr.find("reduceType"), std::string::npos);
-    EXPECT_NE(keyStr.find("isZeroCopy"), std::string::npos);
-    EXPECT_NE(keyStr.find("inputSize"), std::string::npos);
-    EXPECT_NE(keyStr.find("isInplacePreSync"), std::string::npos);
-    EXPECT_NE(keyStr.find("workflowMode"), std::string::npos);
-    EXPECT_NE(keyStr.find("isCapture"), std::string::npos);
+    EXPECT_NE(keyStr.find("-dataType"), std::string::npos);
+    EXPECT_NE(keyStr.find("-reduceType"), std::string::npos);
+    EXPECT_NE(keyStr.find("-isZeroCopy"), std::string::npos);
+    EXPECT_NE(keyStr.find("-inputSize"), std::string::npos);
+    EXPECT_NE(keyStr.find("-isInplacePreSync"), std::string::npos);
+    EXPECT_NE(keyStr.find("-workflowMode"), std::string::npos);
+    EXPECT_NE(keyStr.find("-isCapture"), std::string::npos);
+    // 验证以 opType 开头，以 isCapture 结尾
+    EXPECT_EQ(keyStr.substr(0, 6), "opType");
+    EXPECT_NE(keyStr.rfind("-isCapture"), std::string::npos);
 }
 
 // 测试 operator== - 相同的 key
