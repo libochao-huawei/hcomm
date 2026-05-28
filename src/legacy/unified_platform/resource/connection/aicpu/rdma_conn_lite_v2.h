@@ -50,6 +50,10 @@ public:
 
     std::string Describe() override;
 
+    // 把基类的同名重载暴露到派生类作用域，避免被隐藏
+    using RmaConnLite::Write;
+    using RmaConnLite::WriteWithNotify;
+
     // ========== 厂商初始化接口 ==========
     void GetVendorOps();
 
