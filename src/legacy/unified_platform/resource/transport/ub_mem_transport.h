@@ -74,7 +74,7 @@ public:
         return static_cast<u32>(baseStatus);
     }
 
-    HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags);
+    HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos);
     HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp);
 

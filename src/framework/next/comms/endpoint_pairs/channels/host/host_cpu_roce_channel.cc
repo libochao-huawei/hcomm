@@ -573,14 +573,14 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags)
+HcclResult HostCpuRoceChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMems] remoteMem is nullptr"), HCCL_E_PTR);
     CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMems] memNum is nullptr"), HCCL_E_PTR);
-    CHK_PRT_RET(memTags == nullptr, HCCL_ERROR("[GetRemoteMems] memTags is nullptr"), HCCL_E_PTR);
+    CHK_PRT_RET(memInfos == nullptr, HCCL_ERROR("[GetRemoteMems] memInfos is nullptr"), HCCL_E_PTR);
  
     *remoteMem = nullptr;
-    *memTags = nullptr;
+    *memInfos = nullptr;
     *memNum = 0;
  
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
@@ -612,7 +612,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteM
     }
 
     *remoteMem = userRemoteMems_.data();
-    *memTags = tagPointers_.data();
+    *memInfos = tagPointers_.data();
     *memNum = totalCount;
     return HCCL_SUCCESS;
 }

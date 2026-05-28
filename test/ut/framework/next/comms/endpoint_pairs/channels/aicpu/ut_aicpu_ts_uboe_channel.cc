@@ -343,9 +343,9 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NoBuffers_ReturnsSuccess) {
 
     CommMem* remoteMem = nullptr;
     uint32_t memNum = 0;
-    char** memTags = nullptr;
+    char** memInfos = nullptr;
 
-    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memTags);
+    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(remoteMem, nullptr);
     EXPECT_EQ(memNum, 0U);
@@ -372,8 +372,8 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithBuffers_ReturnsCorrectData) 
 
     CommMem* remoteMem = nullptr;
     uint32_t memNum = 0;
-    char** memTags = nullptr;
-    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memTags);
+    char** memInfos = nullptr;
+    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 2U);
     ASSERT_NE(remoteMem, nullptr);
@@ -382,13 +382,13 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithBuffers_ReturnsCorrectData) 
     EXPECT_EQ(remoteMem[0].type, HCCL_MEM_TYPE_DEVICE);
     EXPECT_EQ(remoteMem[0].addr, reinterpret_cast<void*>(0x1000));
     EXPECT_EQ(remoteMem[0].size, 4096U);
-    EXPECT_STREQ(memTags[0], "ccl_buffer");
+    EXPECT_STREQ(memInfos[0], "ccl_buffer");
 
     // 验证第二个内存区域
     EXPECT_EQ(remoteMem[1].type, HCCL_MEM_TYPE_HOST);
     EXPECT_EQ(remoteMem[1].addr, reinterpret_cast<void*>(0x2000));
     EXPECT_EQ(remoteMem[1].size, 8192U);
-    EXPECT_STREQ(memTags[1], "user_buffer");
+    EXPECT_STREQ(memInfos[1], "user_buffer");
 }
 
 TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NullParams_ReturnsError) {
@@ -402,13 +402,13 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_NullParams_ReturnsError) {
     ch.rmtBufferVec_.push_back(std::move(cclBuf));
 
     CommMem* remoteMem = nullptr;
-    char** memTag = nullptr;
+    char** memInfos = nullptr;
     uint32_t memNum = 0;
 
     // 传入无效参数，期望返回参数错误（具体错误码视实现而定，当前返回 HCCL_E_PARA）
-    EXPECT_EQ(ch.GetRemoteMems(&memNum, nullptr, &memTag), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(&memNum, nullptr, &memInfos), HCCL_E_PARA);
     EXPECT_EQ(ch.GetRemoteMems(&memNum, &remoteMem, nullptr), HCCL_E_PARA);
-    EXPECT_EQ(ch.GetRemoteMems(nullptr, &remoteMem, &memTag), HCCL_E_PARA);
+    EXPECT_EQ(ch.GetRemoteMems(nullptr, &remoteMem, &memInfos), HCCL_E_PARA);
 }
 
 TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccess) {
@@ -427,14 +427,14 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccess) {
     ch.cacheValid_ = false;
 
     CommMem* remoteMem = nullptr;
-    char** memTag = nullptr;
+    char** memInfos = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memTag);
+    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 1U);
     ASSERT_NE(remoteMem, nullptr);
-    // memTag 在数量为0时也可能为 nullptr，不强制检查
+    // memInfos 在数量不为0时也可能为 nullptr，不强制检查
 }
 
 TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithUserBuffers_ReturnsCorrectData) {
@@ -466,26 +466,26 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithUserBuffers_ReturnsCorrectDa
     ch.cacheValid_ = false; // 强制重新构建缓存
 
     CommMem* remoteMem = nullptr;
-    char** memTag = nullptr;
+    char** memInfos = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memTag);
+    HcclResult ret = ch.GetRemoteMems(&memNum, &remoteMem, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 3U);
     ASSERT_NE(remoteMem, nullptr);
-    ASSERT_NE(memTag, nullptr);
+    ASSERT_NE(memInfos, nullptr);
 
     // 验证第一个用户内存（索引1）
     EXPECT_EQ(remoteMem[1].type, COMM_MEM_TYPE_DEVICE);
     EXPECT_EQ(remoteMem[1].addr, reinterpret_cast<void*>(0x2000));
     EXPECT_EQ(remoteMem[1].size, 8192U);
-    EXPECT_STREQ(memTag[1], "user1");
+    EXPECT_STREQ(memInfos[1], "user1");
 
     // 验证第二个用户内存（索引2）
     EXPECT_EQ(remoteMem[2].type, COMM_MEM_TYPE_DEVICE);
     EXPECT_EQ(remoteMem[2].addr, reinterpret_cast<void*>(0x3000));
     EXPECT_EQ(remoteMem[2].size, 16384U);
-    EXPECT_STREQ(memTag[2], "user2");
+    EXPECT_STREQ(memInfos[2], "user2");
 }
 
 TEST_F(AicpuTsUboeChannelTest, Ut_GetStatusReady_SocketNotNullptr) {

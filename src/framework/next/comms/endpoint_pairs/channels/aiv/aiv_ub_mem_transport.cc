@@ -275,13 +275,11 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     }
 }
 
-HcclResult AivUbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags) 
+HcclResult AivUbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos) 
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t userMemCount = rmtBufferVec_.size();
     if (userMemCount == 0) {
-        *remoteMem = nullptr;
-        *memTags = nullptr;
         *memNum = 0;
         HCCL_WARNING("[AivUbMemTransport::%s] bufferNum is 0.", __func__);
         return HCCL_SUCCESS;
@@ -295,7 +293,7 @@ HcclResult AivUbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMe
     };
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> remoteMemCtx{
         userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memTags, memNum};
+        cacheBuilder, remoteMem, memInfos, memNum};
     CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
