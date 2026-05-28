@@ -215,7 +215,9 @@ uint64_t GetTokenInfo(uint64_t va, uint64_t size)
     rtMemUbTokenInfo info;
     info.va   = va;
     info.size = size;
-    HrtUbDevQueryInfo(QUERY_PROCESS_TOKEN, &info);
+    if (HrtUbDevQueryInfo(QUERY_PROCESS_TOKEN, &info) != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("failed to query tokenInfo.");
+    }
     return CcuRep::GetToken(info.tokenId, info.tokenValue, 1);
 }
 

@@ -401,7 +401,8 @@ HcclResult CtxMgrImp::InstantiationTranslator(uint16_t dieId)
 
     // 先获取hbm token，避免创建mission时循环获取
     DevBuffer tmpDevMem{1}; 
-    auto hbmTokenInfo = GetTokenInfo(tmpDevMem.GetAddr(), 1);
+    uint64_t hbmTokenInfo = 0;
+    TRY_CATCH_RETURN(hbmTokenInfo = GetTokenInfo(tmpDevMem.GetAddr(), 1));
 
     // 实例化CcuRepReferenceManager和CcuRepTranslator，并为CcuRepReferenceManager绑定物理资源
     for (uint32_t i = 0; i < 16; i++) {  // mgr有16个
