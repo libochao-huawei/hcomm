@@ -123,16 +123,13 @@ protected:
     }
 
     HcclResult WaitSqFree(uint32_t wqeNum) {
-        // 读取Sq CI指针
-        auto status = memcpy_s(&sqTail_, sizeof(uint32_t), (void *)sqContext_->tailAddr, sizeof(uint32_t));
-        if (UNLIKELY(status != 0)) {
-            THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] read sq tail failed, ret = %d", __func__, status));
-        }
-        // TODO 超时退出机制
         while (1) {
             HCCL_INFO("[RdmaBaseOps::%s] Operate : sqTail = %u", __func__, sqTail_);
             // sq队列能放下
-            memcpy_s(&sqTail_, sizeof(uint32_t), (void *)sqContext_->tailAddr, sizeof(uint32_t));
+            auto status = memcpy_s(&sqTail_, sizeof(uint32_t), (void *)sqContext_->tailAddr, sizeof(uint32_t));
+            if (UNLIKELY(status != 0)) {
+                THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] read sq tail failed, ret = %d", __func__, status));
+            }
             if (static_cast<uint32_t>(sqHead_ - sqTail_ + wqeNum) <= sqContext_->depth) {
                 break;
             }

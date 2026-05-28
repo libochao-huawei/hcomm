@@ -83,7 +83,7 @@ void RdmaConnLiteV2::GetVendorOps()
     }
     switch (dmaMode_) {
         case 0 : {   // [PCIe] QBUF_DMA_MODE_DEFAULT
-            HCCL_INFO("[RdmaConnLiteV2::%s] Now AIcpu NDA doesn't support PCIE !", __func__);
+            HCCL_INFO("[RdmaConnLiteV2::%s] Now Aicpu NDA doesn't support PCIE !", __func__);
             rdmaOps_ = nullptr;
             break;
         }
@@ -91,12 +91,26 @@ void RdmaConnLiteV2::GetVendorOps()
             rdmaOps_ = std::make_unique<Rdma1825Ops>(&sqContext, &cqContext);
             break;
         }
+        default: {
+            HCCL_INFO("[RdmaConnLiteV2::%s] Now dmaMode is invalid !", __func__);
+            rdmaOps_ = nullptr;
+            break;
+        }
+    }
+}
+
+// 检查Ops不能为空
+void RdmaConnLiteV2::CheckVendorOp()
+{
+    if (UNLIKELY(rdmaOps_ == nullptr)) {
+        THROW<InternalException>(StringFormat("NDA Op is null. "));
     }
 }
 
 void RdmaConnLiteV2::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, u64 &dbAddr, u64 &dbValue)
 {
     HCCL_INFO("[RdmaConnLiteV2::%s] Write start, loc size = %u", __func__, loc.GetSize());
+    CheckVendorOp();
     
     u64 len = loc.GetSize();
     u32 rdmaSendRepeat = len / RDMA_DMA_MAX_SIZE;
@@ -115,7 +129,7 @@ void RdmaConnLiteV2::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite 
         u32 sliceSize   = RDMA_DMA_MAX_SIZE;
 
         // 如果是余数段
-        if (sliceIdx == rdmaSendRepeat - 1) {
+        if (sliceIdx == rdmaSendRepeat - 1 && rdmaSendRemain > 0) {
             sliceSize = rdmaSendRemain;
         }
 
@@ -141,7 +155,8 @@ void RdmaConnLiteV2::WriteWithNotify(
     const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify, u64 &dbAddr, u64 &dbValue)
 {
     HCCL_INFO("[RdmaConnLiteV2::%s] WriteWithNotify start, loc size = %u", __func__, loc.GetSize());
-    
+    CheckVendorOp();
+
     u64 len = loc.GetSize();
     u32 rdmaSendRepeat = len / RDMA_DMA_MAX_SIZE;
     u32 rdmaSendRemain = len % RDMA_DMA_MAX_SIZE;

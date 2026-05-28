@@ -56,6 +56,7 @@ public:
 
     // ========== 厂商初始化接口 ==========
     void GetVendorOps();
+    void CheckVendorOp();
 
     // ========== 数据面：RMA 数据传输 ==========
     void Write(const RmaBufSliceLite    &loc,
