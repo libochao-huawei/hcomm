@@ -283,4 +283,8 @@ elseif(BUILD_OPEN_PROJECT)
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ ${INSTALL_OPTIONAL}
         COMPONENT hcomm
     )
+
+    if(EXISTS "${HCOMM_DIR}/plugins/host_nic/CMakeLists.txt")
+        add_subdirectory(plugins/host_nic)
+    endif()
 endif()
