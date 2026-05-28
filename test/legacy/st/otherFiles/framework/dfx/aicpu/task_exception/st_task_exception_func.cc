@@ -16,11 +16,14 @@
 #define protected public
 #include "task_exception_func.h"
 #include "rtsq_base.h"
+#include "hcclCommTaskException.h"
+#include "orion_adapter_rts.h"
 #undef private
 #undef protected
 
 using namespace std;
 using namespace Hccl;
+using namespace hcomm;
 
 class TaskExceptionFuncTest : public testing::Test {
 protected:   
@@ -182,4 +185,87 @@ TEST_F(TaskExceptionFuncTest, ShouldContinueOnNonNoneError)
     instance.Register(&streamLite);
     MOCKER(halCqReportRecv).stubs().with(any(), any()).will(returnValue(static_cast<error_t>((int)DRV_ERROR_NO_DEVICE)));
     instance.Call();
+}
+
+static bool g_aivCallbackCalled = false;
+static aclrtExceptionInfo* g_receivedExceptionInfo = nullptr;
+void MockAivTaskExceptionCallback(aclrtExceptionInfo *exceptionInfo)
+{
+    g_aivCallbackCalled = true;
+    g_receivedExceptionInfo = exceptionInfo;
+}
+
+TEST_F(TaskExceptionFuncTest, SetTaskExceptionCallback_ShouldClearOldAndSetNewCallback)
+{
+    hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(0);
+    ASSERT_NE(handler, nullptr);
+
+    handler->SetTaskExceptionCallback(nullptr);
+    handler->SetTaskExceptionCallback(MockAivTaskExceptionCallback);
+
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.streamid = 1;
+    exceptionInfo.taskid = 100;
+    exceptionInfo.retcode = 0x1234;
+
+    g_aivCallbackCalled = false;
+    g_receivedExceptionInfo = nullptr;
+    handler->CallTaskExceptionCallbacks(&exceptionInfo);
+
+    EXPECT_TRUE(g_aivCallbackCalled);
+    EXPECT_EQ(g_receivedExceptionInfo, reinterpret_cast<aclrtExceptionInfo*>(&exceptionInfo));
+}
+
+TEST_F(TaskExceptionFuncTest, SetTaskExceptionCallback_WithNullptr_ShouldClearCallbacks)
+{
+    hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(0);
+    ASSERT_NE(handler, nullptr);
+
+    handler->SetTaskExceptionCallback(MockAivTaskExceptionCallback);
+    handler->SetTaskExceptionCallback(nullptr);
+
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+
+    g_aivCallbackCalled = false;
+    g_receivedExceptionInfo = nullptr;
+    handler->CallTaskExceptionCallbacks(&exceptionInfo);
+
+    EXPECT_FALSE(g_aivCallbackCalled);
+    EXPECT_EQ(g_receivedExceptionInfo, nullptr);
+}
+
+TEST_F(TaskExceptionFuncTest, CallTaskExceptionCallbacks_WithNullCallbackInVector_ShouldSkip)
+{
+    hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(0);
+    ASSERT_NE(handler, nullptr);
+
+    handler->SetTaskExceptionCallback(MockAivTaskExceptionCallback);
+
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+
+    g_aivCallbackCalled = false;
+    handler->CallTaskExceptionCallbacks(&exceptionInfo);
+
+    EXPECT_TRUE(g_aivCallbackCalled);
+}
+
+TEST_F(TaskExceptionFuncTest, GetHandler_WithValidDevId_ShouldReturnHandler)
+{
+    hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(0);
+    EXPECT_NE(handler, nullptr);
+
+    handler = hcomm::TaskExceptionHostManager::GetHandler(127);
+    EXPECT_NE(handler, nullptr);
+}
+
+TEST_F(TaskExceptionFuncTest, GetHandler_WithInvalidDevId_ShouldReturnNullptr)
+{
+    hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(128);
+    EXPECT_EQ(handler, nullptr);
+
+    handler = hcomm::TaskExceptionHostManager::GetHandler(200);
+    EXPECT_EQ(handler, nullptr);
 }

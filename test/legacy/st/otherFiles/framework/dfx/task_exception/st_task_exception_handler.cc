@@ -29,6 +29,7 @@
 #include "ccu_transport_manager.h"
 #include "mc2_global_mirror_tasks.h"
 #include "mc2_compont.h"
+#include "hcclCommTaskException.h"
 #undef private
 #undef protected
 
@@ -36,6 +37,7 @@
 using namespace std;
 using namespace Hccl;
 using namespace CcuRep;
+using namespace hcomm;
 
 class TaskExceptionHandlerTest : public testing::Test {
 protected:
@@ -774,4 +776,130 @@ TEST_F(TaskExceptionHandlerTest, test_process_mc2)
     MOCKER(HrtRaCustomChannel).stubs();
 
     TaskExceptionHandler::Process(&exceptionInfo);
+}
+
+static bool g_aivExceptionHandlerCallbackCalled = false;
+static aclrtExceptionInfo* g_receivedAivExceptionInfo = nullptr;
+void MockAivExceptionHandlerCallback(aclrtExceptionInfo *exceptionInfo)
+{
+    g_aivExceptionHandlerCallbackCalled = true;
+    g_receivedAivExceptionInfo = exceptionInfo;
+}
+
+TEST_F(TaskExceptionHandlerTest, test_set_task_exception_callback_with_valid_callback)
+{
+    TaskExceptionHost* handler = TaskExceptionHostManager::GetHandler(0);
+    ASSERT_NE(handler, nullptr);
+
+    handler->SetTaskExceptionCallback(MockAivExceptionHandlerCallback);
+
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.streamid = 1;
+    exceptionInfo.taskid = 100;
+    exceptionInfo.retcode = 0x1234;
+
+    g_aivExceptionHandlerCallbackCalled = false;
+    g_receivedAivExceptionInfo = nullptr;
+    handler->CallTaskExceptionCallbacks(&exceptionInfo);
+
+    EXPECT_TRUE(g_aivExceptionHandlerCallbackCalled);
+    EXPECT_EQ(g_receivedAivExceptionInfo, reinterpret_cast<aclrtExceptionInfo*>(&exceptionInfo));
+}
+
+TEST_F(TaskExceptionHandlerTest, test_set_task_exception_callback_with_nullptr)
+{
+    TaskExceptionHost* handler = TaskExceptionHostManager::GetHandler(0);
+    ASSERT_NE(handler, nullptr);
+
+    handler->SetTaskExceptionCallback(MockAivExceptionHandlerCallback);
+    handler->SetTaskExceptionCallback(nullptr);
+
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+
+    g_aivExceptionHandlerCallbackCalled = false;
+    g_receivedAivExceptionInfo = nullptr;
+    handler->CallTaskExceptionCallbacks(&exceptionInfo);
+
+    EXPECT_FALSE(g_aivExceptionHandlerCallbackCalled);
+    EXPECT_EQ(g_receivedAivExceptionInfo, nullptr);
+}
+
+TEST_F(TaskExceptionHandlerTest, test_process_calls_task_exception_callback)
+{
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
+    shared_ptr<DfxOpInfo> dfxOpInfo = make_shared<DfxOpInfo>();
+    CommunicatorImpl communicator{};
+    communicator.id = "GroupName";
+    communicator.rankSize = 4;
+    communicator.myRank = 1;
+    dfxOpInfo->comm_ = &communicator;
+    mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
+
+    shared_ptr<TaskInfo> taskInfo = InitTaskInfo(0, 0);
+    taskInfo->taskParam_.taskType = TaskParamType::TASK_NOTIFY_WAIT;
+    taskInfo->taskParam_.taskPara.Notify.notifyID = 0xaaaabbbbcccc;
+    mirrorTaskManager.AddTaskInfo(taskInfo);
+
+    TaskExceptionHost* handler = TaskExceptionHostManager::GetHandler(0);
+    ASSERT_NE(handler, nullptr);
+    handler->SetTaskExceptionCallback(MockAivExceptionHandlerCallback);
+
+    g_aivExceptionHandlerCallbackCalled = false;
+    g_receivedAivExceptionInfo = nullptr;
+
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.streamid = 0;
+    exceptionInfo.taskid = 0;
+    TaskExceptionHost::Process(&exceptionInfo);
+
+    EXPECT_TRUE(g_aivExceptionHandlerCallbackCalled);
+    EXPECT_NE(g_receivedAivExceptionInfo, nullptr);
+
+    handler->SetTaskExceptionCallback(nullptr);
+    globalMirrorTasks.DestroyQueue(0, 0);
+}
+
+TEST_F(TaskExceptionHandlerTest, test_process_with_different_device_id)
+{
+    TaskExceptionHost* handler0 = TaskExceptionHostManager::GetHandler(0);
+    TaskExceptionHost* handler1 = TaskExceptionHostManager::GetHandler(1);
+    ASSERT_NE(handler0, nullptr);
+    ASSERT_NE(handler1, nullptr);
+
+    handler0->SetTaskExceptionCallback(MockAivExceptionHandlerCallback);
+    handler1->SetTaskExceptionCallback(nullptr);
+
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 1;
+    exceptionInfo.streamid = 0;
+    exceptionInfo.taskid = 0;
+
+    g_aivExceptionHandlerCallbackCalled = false;
+    TaskExceptionHost::Process(&exceptionInfo);
+
+    EXPECT_FALSE(g_aivExceptionHandlerCallbackCalled);
+
+    exceptionInfo.deviceid = 0;
+    g_aivExceptionHandlerCallbackCalled = false;
+    TaskExceptionHost::Process(&exceptionInfo);
+
+    EXPECT_TRUE(g_aivExceptionHandlerCallbackCalled);
+
+    handler0->SetTaskExceptionCallback(nullptr);
+}
+
+TEST_F(TaskExceptionHandlerTest, test_task_exception_host_manager_get_handler_boundary)
+{
+    TaskExceptionHost* handler = TaskExceptionHostManager::GetHandler(0);
+    EXPECT_NE(handler, nullptr);
+
+    handler = TaskExceptionHostManager::GetHandler(127);
+    EXPECT_NE(handler, nullptr);
+
+    handler = TaskExceptionHostManager::GetHandler(128);
+    EXPECT_EQ(handler, nullptr);
 }
