@@ -23,6 +23,7 @@ if(TARGET hccl_v2)
             tokenInfo_manager.cc
             dlhal_function_v2.cc
             orion_adapter_hal.cc
+            orion_adapter_hal_host.cc
     )
 endif()
 
@@ -31,5 +32,6 @@ if(TARGET ccl_kernel)
             dev_capability.cc
             dlhal_function_v2.cc
             orion_adapter_hal.cc
+            orion_adapter_hal_device.cc
     )
 endif()
