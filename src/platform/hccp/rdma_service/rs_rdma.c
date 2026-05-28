@@ -634,22 +634,44 @@ RS_ATTRI_VISI_DEF int RsMrDereg(unsigned int phyId, unsigned int rdevIndex, unsi
     return 0;
 }
 
-STATIC int RsMemRegisterUbSegment(int directFlag, unsigned int logicId, uint64_t addr, uint64_t len)
+STATIC int RsMemRegisterUbSegment(int directFlag, uint64_t addr, uint64_t len)
 {
+    struct DVattribute attr = {0};
+    int ret = 0;
+
     if (directFlag != DIRECT_FLAG_UB) {
         return 0;
     }
 
-    return DlHalMemRegUbSegment(logicId, addr, len);
+    ret = DlDrvMemGetAttribute(addr, &attr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("DlDrvMemGetAttribute failed, ret:%d", ret), ret);
+
+    if (attr.memType == DV_MEM_LOCK_DEV) {
+        ret = DlHalMemRegUbSegment(attr.devId, addr, len);
+        CHK_PRT_RETURN(ret != 0, hccp_err("DlHalMemRegUbSegment failed, ret:%d devId:%u len:%u",
+            ret, attr.devId, len), ret);
+    }
+
+    return ret;
 }
 
-STATIC int RsMemUnRegisterUbSegment(int directFlag, unsigned int logicId, uint64_t addr)
+STATIC int RsMemUnRegisterUbSegment(int directFlag, uint64_t addr)
 {
+    struct DVattribute attr = {0};
+    int ret = 0;
+
     if (directFlag != DIRECT_FLAG_UB) {
         return 0;
     }
 
-    return DlHalMemUnRegUbSegment(logicId, addr);
+    ret = DlDrvMemGetAttribute(addr, &attr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("DlDrvMemGetAttribute failed, ret:%d", ret), ret);
+
+    if (attr.memType == DV_MEM_LOCK_DEV) {
+        ret = DlHalMemUnRegUbSegment(attr.devId, addr);
+    }
+
+    return ret;
 }
 
 RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, struct RdmaMrRegInfo *mrRegInfo,
@@ -676,8 +698,7 @@ RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, s
     CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
         chipId, ret), ret);
 
-    ret = RsMemRegisterUbSegment(rdevCb->directFlag, rdevCb->rsCb->logicId, (uint64_t)(uintptr_t)mrRegInfo->addr,
-        mrRegInfo->len);
+    ret = RsMemRegisterUbSegment(rdevCb->directFlag, (uint64_t)(uintptr_t)mrRegInfo->addr, mrRegInfo->len);
     if (ret != 0) {
         hccp_err("RsMemRegisterUbSegment failed, ret[%d] vendor_id[0x%x] part_id[0x%x] directFlag[%u] "
             "addr[0x%llx] len[0x%llx]", ret, rdevCb->deviceAttr.vendor_id, rdevCb->deviceAttr.vendor_part_id,
@@ -699,7 +720,7 @@ RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, s
     hccp_info("rs_register_mr succ");
     return ret;
 mr_reg_err:
-    (void)RsMemUnRegisterUbSegment(rdevCb->directFlag, rdevCb->rsCb->logicId, (uint64_t)(uintptr_t)mrRegInfo->addr);
+    (void)RsMemUnRegisterUbSegment(rdevCb->directFlag, (uint64_t)(uintptr_t)mrRegInfo->addr);
 mem_reg_err:
     mrRegInfo->lkey = 0;
 
@@ -944,6 +965,7 @@ RS_ATTRI_VISI_DEF int RsDeregisterMr(unsigned int phyId, unsigned int rdevIndex,
     RS_CHECK_POINTER_NULL_RETURN_INT(mrHandle);
 
     struct ibv_mr *rsMrHandle = (struct ibv_mr *)mrHandle;
+    uint64_t addr = (uint64_t)(uintptr_t)rsMrHandle->addr;
     struct RsRdevCb *devCb = NULL;
     unsigned int chipId;
     int ret = 0;
@@ -955,13 +977,13 @@ RS_ATTRI_VISI_DEF int RsDeregisterMr(unsigned int phyId, unsigned int rdevIndex,
     CHK_PRT_RETURN(ret != 0 || devCb == NULL, hccp_err("rs_rdev2rdev_cb get dev_cb failed for chip_id[%u], ret[%d]",
         chipId, ret), -ENODEV);
 
-    ret = RsMemUnRegisterUbSegment(devCb->directFlag, devCb->rsCb->logicId, (uint64_t)(uintptr_t)rsMrHandle->addr);
+    ret = RsDrvMrDereg(rsMrHandle);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_drv_mr_dereg failed ret[%d]", ret), -EACCES);
+
+    ret = RsMemUnRegisterUbSegment(devCb->directFlag, addr);
     CHK_PRT_RETURN(ret != 0, hccp_err("RsMemUnRegisterUbSegment failed ret[%d], vendor_id[0x%x] part_id[0x%x]"
         " directFlag[%u]", ret, devCb->deviceAttr.vendor_id, devCb->deviceAttr.vendor_part_id,
         devCb->directFlag), ret);
-
-    ret = RsDrvMrDereg(rsMrHandle);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_drv_mr_dereg failed ret[%d]", ret), -EACCES);
 
     hccp_info("rs_deregister_mr succ");
     return 0;
