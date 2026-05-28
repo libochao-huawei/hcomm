@@ -22,6 +22,13 @@
 
 using namespace hccl;
 
+static int g_launchCallCount = 0;
+static HcclResult LaunchCountStub(const rtStream_t, void*, u32, aclrtBinHandle, const char*, bool, u16, void*, u32)
+{
+    ++g_launchCallCount;
+    return HCCL_SUCCESS;
+}
+
 class AclgraphCommunicatorTest : public testing::Test {
 protected:
     void SetUp() override
@@ -228,7 +235,7 @@ TEST_F(AclgraphCommunicatorTest, ClearAclgraphHostLinks_FullPath)
 
     // 1. 预置 host 端 HccltagRemoteResV2（模拟通信域分配的 remote res）
     HccltagRemoteResV2 remoteResV2;
-    ListCommonInit(&remoteResV2.nextTagRes);
+    ListCommonInit(&remoteResV2.nextTagRes, &remoteResV2.nextTagRes);
     HccltagRemoteResV2 *hostPtr = &remoteResV2;
     // 将 HostMem 包装 remoteResV2 的指针后存入 hostMemVec_
     auto hostMem = std::make_shared<HostMem>(HostMem::create(hostPtr, sizeof(remoteResV2)));
@@ -319,8 +326,9 @@ TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_LaunchPath)
     MOCKER(AicpuAclKernelLaunchV2)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
-    // 使用默认实现，或 mock 返回成功
-    // hcclStreamSynchronize 的 stub 可能在 llt_hccl_stub 中已有默认实现
+    MOCKER(hcclStreamSynchronize)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = communicator_.AicpuKfcClearOpResLaunch({"tag1", "tag2"});
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -345,21 +353,21 @@ TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_MultiBatch)
         manyTags.insert("tag_" + std::to_string(i));
     }
 
-    int launchCallCount = 0;
+    g_launchCallCount = 0;
     MOCKER(hrtMemSyncCopy)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(AicpuAclKernelLaunchV2)
         .stubs()
-        .will(invoke([&launchCallCount](const rtStream_t, void*, u32, aclrtBinHandle, const char*, bool, u16, void*, u32) {
-            ++launchCallCount;
-            return HCCL_SUCCESS;
-        }));
+        .will(invoke(LaunchCountStub));
+    MOCKER(hcclStreamSynchronize)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = communicator_.AicpuKfcClearOpResLaunch(manyTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // 应分 2 批 launch（MAX_BATCH + 10 需要 2 批）
-    EXPECT_GE(launchCallCount, 2);
+    EXPECT_EQ(g_launchCallCount, 2);
 }
 
 /**
