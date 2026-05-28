@@ -42,8 +42,8 @@ add_library(intf_pub INTERFACE)
 
 target_link_libraries(intf_pub INTERFACE
     $<BUILD_INTERFACE:intf_pub_base>
-    json
+    $<BUILD_INTERFACE:json>
     $<$<BOOL:${ENABLE_TEST}>:mockcpp>
-    $<$<BOOL:${ENABLE_TEST}>:gtest>
+    $<$<BOOL:${ENABLE_TEST}>:GTest::gtest>
     -Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib
 )

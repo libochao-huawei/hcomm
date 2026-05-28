@@ -15,9 +15,7 @@ set(include_list
 
     // 第三方
     ${RDMA_CORE_INCLUDE_DIR}
-    ${THIRD_PARTY_PATH}/json/include
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
-    ${THIRD_PARTY_PATH}/protobuf/include
 )
 
 file(GLOB_RECURSE ALG_CCU_CONTEXT_SRC "${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/*.cc")
@@ -53,7 +51,6 @@ set(david_to_test_list
 )
 
 add_library(hccl_orion_alg_test SHARED ${david_to_test_list})
-add_dependencies(hccl_orion_alg_test protobuf)  # 依赖 protobuf
 
 #头文件搜索路径
 target_include_directories(hccl_orion_alg_test PRIVATE
@@ -61,6 +58,7 @@ target_include_directories(hccl_orion_alg_test PRIVATE
 )
 
 target_compile_definitions(hccl_orion_alg_test PRIVATE
+    google=ascend_private
     -DOPEN_HCCL_TEST
     _GLIBCXX_USE_CXX11_ABI=0
 )
@@ -76,7 +74,7 @@ target_link_libraries(hccl_orion_alg_test PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    ${THIRD_PARTY_PATH}/protobuf/lib64/libprotobuf.so
+    ascend_protobuf
     -lrt
     -ldl
 )
