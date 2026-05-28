@@ -145,10 +145,10 @@ TEST_F(AclgraphCallbackTest, ListCommonRemove_NormalNode)
 {
     ListCommon nodes[3];
     for (int i = 0; i < 3; i++) {
-        ListCommonInit(&nodes[i]);
+        ListCommonInit(&nodes[i], &nodes[i]);
     }
-    ListCommonAddHead(&nodes[1], &nodes[0]);
-    ListCommonAddHead(&nodes[2], &nodes[1]);
+    ListCommonAddHead(&nodes[1], &nodes[1], &nodes[0], &nodes[0]);
+    ListCommonAddHead(&nodes[2], &nodes[2], &nodes[1], &nodes[1]);
     ListCommonRemove(&nodes[1]);
     EXPECT_EQ(reinterpret_cast<ListCommon*>(nodes[0].nextHost), &nodes[2]);
     EXPECT_EQ(reinterpret_cast<ListCommon*>(nodes[2].preHost), &nodes[0]);
@@ -164,7 +164,7 @@ TEST_F(AclgraphCallbackTest, ListCommonRemove_Nullptr)
 TEST_F(AclgraphCallbackTest, ListCommonRemove_SelfLoopNode)
 {
     ListCommon node;
-    ListCommonInit(&node);
+    ListCommonInit(&node, &node);
     ListCommonRemove(&node);
     EXPECT_EQ(reinterpret_cast<ListCommon*>(node.nextHost), &node);
     EXPECT_EQ(reinterpret_cast<ListCommon*>(node.preHost), &node);
