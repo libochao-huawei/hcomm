@@ -56,6 +56,10 @@ struct RsOps {
     int (*qpDestroy)(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn);
     int (*typicalQpModify)(unsigned int phyId, unsigned int rdevIndex, struct TypicalQp localQpInfo,
         struct TypicalQp remoteQpInfo, unsigned int *udpSport);
+    int (*typicalCqCreate)(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth,
+        unsigned int *cqn);
+    int (*getLiteCqAttr)(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
+        struct rdma_lite_device_cq_attr *deviceCqAttr);
     int (*qpBatchModify)(unsigned int phyId, unsigned int rdevIndex, int status, int qpn[], int qpnNum);
     int (*qpConnectAsync)(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int fd);
     int (*getQpStatus)(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
@@ -110,6 +114,7 @@ struct RsOps gRaRsOps = {
     .qpCreateWithAttrs = RsQpCreateWithAttrs,
     .qpDestroy = RsQpDestroy,
     .typicalQpModify = RsTypicalQpModify,
+    .typicalCqCreate = RsTypicalCqCreate,
     .qpBatchModify = RsQpBatchModify,
     .qpConnectAsync = RsQpConnectAsync,
     .getQpStatus = RsGetQpStatus,
@@ -134,6 +139,7 @@ struct RsOps gRaRsOps = {
     .getCqeErrInfo = RsGetCqeErrInfo,
     .getLiteRdevCap = RsGetLiteRdevCap,
     .getLiteQpCqAttr = RsGetLiteQpCqAttr,
+    .getLiteCqAttr = RsGetLiteCqAttr,
     .getLiteConnectedInfo = RsGetLiteConnectedInfo,
     .getLiteMemAttr = RsGetLiteMemAttr,
     .getLiteSupport = RsGetLiteSupport,
@@ -500,6 +506,51 @@ STATIC int RaRsTypicalQpCreate(char *inBuf, char *outBuf, int *outLen, int *opRe
     createData->rxData.gidIdx = qpResp.gidIdx;
     createData->rxData.psn = qpResp.psn;
     createData->rxData.gid = qpResp.gid;
+
+    return 0;
+}
+
+STATIC int RaRsTypicalCqCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpTypicalCqCreateData *createData = (union OpTypicalCqCreateData *)(inBuf +
+        sizeof(struct MsgHead));
+    unsigned int cqn = 0;
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTypicalCqCreateData), sizeof(struct MsgHead), rcvBufLen,
+        opResult);
+
+    *opResult = gRaRsOps.typicalCqCreate(createData->txData.phyId, createData->txData.rdevIndex,
+        createData->txData.cqDepth, &cqn);
+    if (*opResult != 0) {
+        hccp_err("typical cq create failed ret[%d].", *opResult);
+        return 0;
+    }
+
+    createData = (union OpTypicalCqCreateData *)(outBuf + sizeof(struct MsgHead));
+    createData->rxData.cqn = cqn;
+
+    return 0;
+}
+
+STATIC int RaRsGetLiteCqAttr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpGetLiteCqAttrData *getLiteCqAttrData =
+        (union OpGetLiteCqAttrData *)(inBuf + sizeof(struct MsgHead));
+    unsigned int cqn = getLiteCqAttrData->txData.cqn;
+    struct rdma_lite_device_cq_attr deviceCqAttr = {0};
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(
+        sizeof(union OpGetLiteCqAttrData), sizeof(struct MsgHead), rcvBufLen, opResult);
+
+    *opResult = gRaRsOps.getLiteCqAttr(getLiteCqAttrData->txData.phyId,
+        getLiteCqAttrData->txData.rdevIndex, cqn, &deviceCqAttr);
+    if (*opResult != 0) {
+        hccp_err("get lite cq attr failed ret[%d], cqn[%u].", *opResult, cqn);
+        return 0;
+    }
+
+    getLiteCqAttrData = (union OpGetLiteCqAttrData *)(outBuf + sizeof(struct MsgHead));
+    getLiteCqAttrData->rxData.deviceCqAttr = deviceCqAttr;
 
     return 0;
 }
@@ -1539,6 +1590,7 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_AI_QP_CREATE, RaRsAiQpCreate, sizeof(union OpAiQpCreateData)},
     {RA_RS_AI_QP_CREATE_WITH_ATTRS, RaRsAiQpCreateWithData, sizeof(union OpAiQpCreateWithAttrsData)},
     {RA_RS_TYPICAL_QP_CREATE, RaRsTypicalQpCreate, sizeof(union OpTypicalQpCreateData)},
+    {RA_RS_TYPICAL_CQ_CREATE, RaRsTypicalCqCreate, sizeof(union OpTypicalCqCreateData)},
     {RA_RS_QP_DESTROY, RaRsQpDestroy, sizeof(union OpQpDestroyData)},
     {RA_RS_TYPICAL_QP_MODIFY, RaRsTypicalQpModify, sizeof(union OpTypicalQpModifyData)},
     {RA_RS_QP_BATCH_MODIFY, RaRsQpBatchModify, sizeof(union OpQpBatchModifyData)},
@@ -1591,6 +1643,7 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_GET_LITE_SUPPORT, RaRsGetLiteSupport, sizeof(union OpLiteSupportData)},
     {RA_RS_GET_LITE_RDEV_CAP, RaRsGetLiteRdevCap, sizeof(union OpLiteRdevCapData)},
     {RA_RS_GET_LITE_QP_CQ_ATTR, RaRsGetLiteQpCqAttr, sizeof(union OpLiteQpCqAttrData)},
+    {RA_RS_GET_LITE_CQ_ATTR, RaRsGetLiteCqAttr, sizeof(union OpGetLiteCqAttrData)},
     {RA_RS_GET_LITE_CONNECTED_INFO, RaRsGetLiteConnectedInfo, sizeof(union OpLiteConnectedInfoData)},
     {RA_RS_GET_LITE_MEM_ATTR, RaRsGetLiteMemAttr, sizeof(union OpLiteMemAttrData)},
     {RA_RS_PING_INIT, RaRsPingInit, sizeof(union OpPingInitData)},

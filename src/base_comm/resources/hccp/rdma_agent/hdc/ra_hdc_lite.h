@@ -17,6 +17,7 @@
 #include "hccp_common.h"
 #include "ra.h"
 #include "ra_rs_comm.h"
+#include "ra_hdc_rdma.h"
 
 #define RA_SGLIST_MAX       16
 #define RA_QP_32K_DEPTH         32767
@@ -78,6 +79,18 @@ union OpLiteQpCqAttrData {
     } rxData;
 };
 
+union OpGetLiteCqAttrData {
+    struct {
+        unsigned int phyId;
+        unsigned int rdevIndex;
+        unsigned int cqn;
+    } txData;
+
+    struct {
+        struct rdma_lite_device_cq_attr deviceCqAttr;
+    } rxData;
+};
+
 union OpLiteMemAttrData {
     struct {
         unsigned int phyId;
@@ -122,6 +135,10 @@ int RaHdcLiteRecvWrlist(struct RaQpHandle *qpHdc, struct RecvWrlistData *wr, uns
     unsigned int *completeNum);
 int RaHdcLitePollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries,
     struct rdma_lite_wc_v2 *liteWc);
+int RaHdcLiteCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth,
+    union OpTypicalCqCreateData *cqData, struct rdma_lite_cq **liteCq);
+int RaHdcLiteGetCqAttr(struct RaRdmaHandle *rdmaHandle, unsigned int cqn,
+    struct rdma_lite_device_cq_attr *deviceCqAttr);
 int RaHdcLiteInitCqeErrInfo(unsigned int phyId);
 void RaHdcLiteDeinitCqeErrInfo(unsigned int phyId);
 void RaHdcLiteGetCqeErrInfo(unsigned int phyId, struct CqeErrInfo *info);
