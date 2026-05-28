@@ -196,7 +196,10 @@ RmaBufSliceLite RoceTransportLiteImpl::GetRmaBufSlicelite(const RmaBufferLite &l
 
 RmaBufSliceLite RoceTransportLiteImpl::GetNotifySlicelite(u32 index) const
 {
-    return RmaBufSliceLite(0, 0, 0, 0);
+    return RmaBufSliceLite(
+        notifyValueBuffer_->GetAddr(), 
+        notifyValueBuffer_->GetSize(), 
+        notifyValueBuffer_->GetLkey(), 0);
 }
 
 RmtRmaBufSliceLite RoceTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtBuf) const

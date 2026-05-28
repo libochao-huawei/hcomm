@@ -19,6 +19,8 @@
 #include "binary_stream.h"
 #include "stream.h"
 #include "stream_lite.h"
+#include "rtsq_base.h"
+#include "sqe.h"
 #include "rdma_conn_lite_v2.h"
 
 #define private public
@@ -182,7 +184,7 @@ static std::vector<char> BuildConnUniqueIds(u32 connNum)
         cq.dbVa = 0x60000;
         cq.dbMode = 0;
 
-        std::vector<char> singleConn = BuildSingleConnUniqueId(0, sq, cq);
+        std::vector<char> singleConn = BuildSingleConnUniqueId(1, sq, cq);
         result.insert(result.end(), singleConn.begin(), singleConn.end());
     }
     return result;
@@ -235,6 +237,10 @@ protected:
     virtual void SetUp()
     {
         std::cout << "A Test case in RoceTransportLiteImplTest SetUP" << std::endl;
+        MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
+        MOCKER_CPP(&RtsqBase::QuerySqDepth).stubs().with(any()).will(returnValue(static_cast<u32>(AC_SQE_MAX_CNT)));
+        MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
+        MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
         uniqueId_ = BuildTransportUniqueId(NOTIFY_NUM, BUFFER_NUM, CONN_NUM);
     }
 
@@ -248,6 +254,7 @@ protected:
     u32 BUFFER_NUM = 1;
     u32 CONN_NUM = 1;
     std::vector<char> uniqueId_;
+    u8  mockSq[AC_SQE_SIZE * AC_SQE_MAX_CNT]{0};
 };
 
 TEST_F(RoceTransportLiteImplTest, Ut_When_Construct_Expect_Success)
@@ -467,7 +474,7 @@ TEST_F(RoceTransportLiteImplTest, Ut_When_ConnVecValues_Expect_Correct)
     ASSERT_EQ(transport.connVec_.size(), static_cast<size_t>(CONN_NUM));
     for (u32 i = 0; i < CONN_NUM; i++) {
         EXPECT_NE(transport.connVec_[i], nullptr);
-        EXPECT_EQ(transport.connVec_[i]->dmaMode_, 0u);
+        EXPECT_EQ(transport.connVec_[i]->dmaMode_, 1u);
         EXPECT_EQ(transport.connVec_[i]->sqContext.qpn, 1u + i);
         EXPECT_EQ(transport.connVec_[i]->cqContext.cqn, 2u + i);
     }
@@ -475,22 +482,34 @@ TEST_F(RoceTransportLiteImplTest, Ut_When_ConnVecValues_Expect_Correct)
     std::cout << "End Ut_When_ConnVecValues_Expect_Correct" << std::endl;
 }
 
-// TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_write)
-// {
-//     std::cout << "Start Ut_RoceTransportLite_write" << std::endl;
+TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_write)
+{
+    std::cout << "Start Ut_RoceTransportLite_write" << std::endl;
     
-//     RoceTransportLiteImpl transport(uniqueId_);
+    RoceTransportLiteImpl transport(uniqueId_);
     
-//     ASSERT_EQ(transport.connVec_.size(), static_cast<size_t>(CONN_NUM));
+    ASSERT_EQ(transport.connVec_.size(), static_cast<size_t>(CONN_NUM));
 
-//     RmaBufferLite locBuf(0x4000, 2048, 0x400, 0);
-//     Hccl::Buffer rmtBuf{0x5000, 0x200};
-//     StreamLite stream(0, 0, 0, 0);
-//     MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-//     MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
-//     MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
-//     // 执行到rtsq，主动报NotSupportException
-//     EXPECT_THROW(transport.Write(locBuf, rmtBuf, stream), NotSupportException);
+    RmaBufferLite locBuf(0x4000, 2048, 0x400, 0);
+    Hccl::Buffer rmtBuf{0x5000, 0x200};
+
+    std::cout << "Before stream create " << std::endl;
+    std::vector<char> uniqueId{};
+    StreamLite stream(uniqueId);
+    MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(any()).will(returnValue(1));
+    MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(any()).will(returnValue(1));
+
+    std::cout << "After stream create " << std::endl;
+    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(static_cast<void(RdmaConnLiteV2::*)(
+        const RmaBufSliceLite&,
+        const RmtRmaBufSliceLite&,
+        unsigned long long&,
+        unsigned long long&)>(&RdmaConnLiteV2::Write)).stubs();
+    // 执行到rtsq，主动报NotSupportException
+    EXPECT_NO_THROW(transport.Write(locBuf, rmtBuf, stream));
     
-//     std::cout << "End Ut_RoceTransportLite_write" << std::endl;
-// }
+    std::cout << "End Ut_RoceTransportLite_write" << std::endl;
+}
