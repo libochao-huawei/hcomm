@@ -15,5 +15,8 @@ typedef enum {
     HCCL_OP_EXPANSION_MODE_AIV      = 1,   /* 在Device侧 Vector Core (AIV) 上展开。 */
     HCCL_OP_EXPANSION_MODE_HOST     = 2,   /* 在Host侧CPU上展开，Device 侧根据硬件型号自动选择调度器。 */
     HCCL_OP_EXPANSION_MODE_HOST_TS  = 3,   /* 在Host侧CPU上展开，由Host向Device Task Scheduler下发任务，Device侧进行调度执行。 */
+    HCCL_OP_EXPANSION_MODE_CCU_MS = 4,      /* 在Device侧CCU上展开，使用MS模式。 */
+    HCCL_OP_EXPANSION_MODE_CCU_SCHED = 5,   /* 在Device侧CCU上展开，使用调度器模式。 */
+    HCCL_OP_EXPANSION_MODE_AIV_ONLY = 6     /* 在Device侧 Vector Core (AIV) 上展开，仅使用AIV模式。 */
 } HcclOpExpansionMode;
 ```
