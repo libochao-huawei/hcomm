@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <memory>
 #include <unordered_map>
+#include <map>
 #include "sal.h"
 #include "network_api_exception.h"
 #include "internal_exception.h"
@@ -1862,11 +1863,29 @@ inline IpAddress HccpEidToIpAddress(union HccpEid& hccpEid)
 
 std::vector<HrtDevEidInfo> HrtRaGetDevEidInfoList(const HRaInfo &raInfo)
 {
+    // 函数内部静态缓存，按 (mode, phyId) 缓存结果，避免重复调用底层接口
+    static map<pair<int, uint32_t>, vector<HrtDevEidInfo>> g_devEidInfoCache;
+    // 缓存线程安全锁
+    static mutex g_cacheMutex;
+
+    int mode = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
+    pair<int, uint32_t> key{mode, raInfo.phyId};
+
+    // 持有锁查表，命中直接返回
+    {
+        lock_guard<mutex> lock(g_cacheMutex);
+        auto it = g_devEidInfoCache.find(key);
+        if (it != g_devEidInfoCache.end()) {
+            HCCL_INFO("[HrtRaGetDevEidInfoList] Cache hit: mode=%d, phyId=%u", mode, raInfo.phyId);
+            return it->second;
+        }
+    }
+
     std::vector<HrtDevEidInfo> hrtDevEidInfo;
     struct RaInfo info {};
     u32 num = 0;
 
-    info.mode = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
+    info.mode = mode;
     info.phyId = raInfo.phyId;
 
     HCCL_INFO("[HrtRaGetDevEidInfoList] Input params: mode=%d, phyId=%u", info.mode, info.phyId);
@@ -1900,6 +1919,12 @@ std::vector<HrtDevEidInfo> HrtRaGetDevEidInfoList(const HRaInfo &raInfo)
                 hrtDevEidInfo[i].type, hrtDevEidInfo[i].eidIndex,
                 hrtDevEidInfo[i].dieId, hrtDevEidInfo[i].chipId,
                 hrtDevEidInfo[i].funcId, hrtDevEidInfo[i].devFeature);
+    }
+
+    // 持有锁写入缓存，后续相同请求直接命中
+    {
+        lock_guard<mutex> lock(g_cacheMutex);
+        g_devEidInfoCache[key] = hrtDevEidInfo;
     }
 
     return hrtDevEidInfo;
