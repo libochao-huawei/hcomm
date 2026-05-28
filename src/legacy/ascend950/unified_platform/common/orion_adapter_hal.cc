@@ -11,11 +11,11 @@
 
 #include "dlhal_function_v2.h"
 #include "ascend_hal_error.h"
+#include "acl/acl_rt.h"
 #include "log.h"
 
 namespace Hccl
 {
-    
 HcclResult HrtHalDrvQueryProcessHostPid(int pid, unsigned int *chipId, unsigned int *vfid,
     unsigned int *hostPid, unsigned int *cpType)
 {
@@ -41,5 +41,4 @@ HcclResult HrtHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoT
         "return[%d].", HCCL_ERROR_CODE(HCCL_E_DRV), ret), HCCL_E_DRV);
     return HCCL_SUCCESS;
 }
-
 }
