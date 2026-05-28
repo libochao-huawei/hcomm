@@ -396,7 +396,7 @@ TEST_F(ProfilingHandlerTest, GetInitCacheData_test){
     handler.StartHostApiSubscribe();
     handler.StartHostHcclOpSubscribe();
     handler.StartTaskApiSubscribe();
-    handler.StartAddtionInfoSubscribe();
+    handler.StartAdditionInfoSubscribe();
     handler.StartCcuSubscribe();
     handler.StopSubscribe();
 }
