@@ -472,3 +472,19 @@ TEST_F(RoceTransportLiteImplTest, Ut_When_ConnVecValues_Expect_Correct)
     
     std::cout << "End Ut_When_ConnVecValues_Expect_Correct" << std::endl;
 }
+
+// TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_write)
+// {
+//     std::cout << "Start Ut_RoceTransportLite_write" << std::endl;
+    
+//     RoceTransportLiteImpl transport(uniqueId_);
+    
+//     ASSERT_EQ(transport.connVec_.size(), static_cast<size_t>(CONN_NUM));
+
+//     RmaBufSliceLite locSLice(0x1000, 2048, 0x11, 0);
+//     RmtRmaBufSliceLite rmtSlice(0x2000, 2048, 0x22, 0, 0);
+//     Stream stream;
+//     EXPECT_THROW(transport.Write(locSlice, rmtSlice, stream), NotSupportException);
+    
+//     std::cout << "End Ut_RoceTransportLite_write" << std::endl;
+// }

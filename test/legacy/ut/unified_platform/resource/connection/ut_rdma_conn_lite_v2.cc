@@ -276,3 +276,21 @@ TEST_F(RdmaConnLiteV2Test, Ut_When_DbModeSw_Expect_Correct)
     
     std::cout << "End Ut_When_DbModeSw_Expect_Correct" << std::endl;
 }
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_Write_SmallSize_Expect_SingleSlice)
+{
+    std::cout << "Start Ut_When_Write_SmallSize_Expect_SingleSlice" << std::endl;
+
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    // size < RDMA_DMA_MAX_SIZE，应只有 1 个分片(余数段)
+    RmaBufSliceLite loc(0x1000, 4096, 0x11, 0);
+    RmtRmaBufSliceLite rmt(0x2000, 4096, 0x22, 0, 0);
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    EXPECT_NO_THROW(connLite.Write(loc, rmt, dbAddr, dbValue));
+
+    std::cout << "End Ut_When_Write_SmallSize_Expect_SingleSlice" << std::endl;
+}

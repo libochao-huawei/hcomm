@@ -16,28 +16,28 @@ constexpr u64 RDMA_DMA_MAX_SIZE = 0x80000000; // Byte, RDMA一次传输的最大
 void RdmaConnLiteV2::ParseSqContext(std::vector<char>& data)
 {
     BinaryStream binaryStream(data);
-    binaryStream >> sqContext_.qpn;
-    binaryStream >> sqContext_.sqVa;
-    binaryStream >> sqContext_.wqeSize;
-    binaryStream >> sqContext_.depth;
-    binaryStream >> sqContext_.headAddr;
-    binaryStream >> sqContext_.tailAddr;
-    binaryStream >> sqContext_.sl;
-    binaryStream >> sqContext_.dbVa;
-    binaryStream >> sqContext_.dbMode;
+    binaryStream >> sqContext.qpn;
+    binaryStream >> sqContext.sqVa;
+    binaryStream >> sqContext.wqeSize;
+    binaryStream >> sqContext.depth;
+    binaryStream >> sqContext.headAddr;
+    binaryStream >> sqContext.tailAddr;
+    binaryStream >> sqContext.sl;
+    binaryStream >> sqContext.dbVa;
+    binaryStream >> sqContext.dbMode;
 }
 
 void RdmaConnLiteV2::ParseCqContext(std::vector<char>& data)
 {
     BinaryStream binaryStream(data);
-    binaryStream >> cqContext_.cqn;
-    binaryStream >> cqContext_.cqVa;
-    binaryStream >> cqContext_.cqeSize;
-    binaryStream >> cqContext_.cqDepth;
-    binaryStream >> cqContext_.headAddr;
-    binaryStream >> cqContext_.tailAddr;
-    binaryStream >> cqContext_.dbVa;
-    binaryStream >> cqContext_.dbMode;
+    binaryStream >> cqContext.cqn;
+    binaryStream >> cqContext.cqVa;
+    binaryStream >> cqContext.cqeSize;
+    binaryStream >> cqContext.cqDepth;
+    binaryStream >> cqContext.headAddr;
+    binaryStream >> cqContext.tailAddr;
+    binaryStream >> cqContext.dbVa;
+    binaryStream >> cqContext.dbMode;
 }
 
 RdmaConnLiteV2::RdmaConnLiteV2(std::vector<char>& uniqueId) : RmaConnLite()
@@ -53,9 +53,9 @@ RdmaConnLiteV2::RdmaConnLiteV2(std::vector<char>& uniqueId) : RmaConnLite()
     binaryStream >> cqUniqueId;
     ParseCqContext(cqUniqueId);
 
-    qpVa_ = sqContext_.sqVa;
-    sqVa_ = sqContext_.sqVa;
-    sqDepth_ = sqContext_.depth;
+    qpVa_ = sqContext.sqVa;
+    sqVa_ = sqContext.sqVa;
+    sqDepth_ = sqContext.depth;
 
     // 确定厂商
     GetVendorOps();
@@ -69,10 +69,10 @@ std::string RdmaConnLiteV2::Describe()
         "RdmaConnLiteV2[QPN=%u, SQ_VA=0x%llx, WQE_SIZE=%u, SQ_DEPTH=%u, SQ_HEAD_ADDR=0x%llx, SQ_TAIL_ADDR=0x%llx, "
         "SL=%u, SQ_DB_VA=0x%llx, SQ_DB_MODE=%d, CQN=%u, CQ_VA=0x%llx, CQE_SIZE=%u, CQ_DEPTH=%u, "
         "CQ_HEAD_ADDR=0x%llx, CQ_TAIL_ADDR=0x%llx, CQ_DB_VA=0x%llx, CQ_DB_MODE=%d]",
-        sqContext_.qpn, sqContext_.sqVa, sqContext_.wqeSize, sqContext_.depth, sqContext_.headAddr, sqContext_.tailAddr,
-        sqContext_.sl, sqContext_.dbVa, sqContext_.dbMode,
-        cqContext_.cqn, cqContext_.cqVa, cqContext_.cqeSize, cqContext_.cqDepth,
-        cqContext_.headAddr, cqContext_.tailAddr, cqContext_.dbVa, cqContext_.dbMode
+        sqContext.qpn, sqContext.sqVa, sqContext.wqeSize, sqContext.depth, sqContext.headAddr, sqContext.tailAddr,
+        sqContext.sl, sqContext.dbVa, sqContext.dbMode,
+        cqContext.cqn, cqContext.cqVa, cqContext.cqeSize, cqContext.cqDepth,
+        cqContext.headAddr, cqContext.tailAddr, cqContext.dbVa, cqContext.dbMode
     );
 }
 
@@ -88,7 +88,7 @@ void RdmaConnLiteV2::GetVendorOps()
             break;
         }
         case 1: {  // [UB] QBUF_DMA_MODE_INDEP_UB
-            rdmaOps_ = std::make_unique<Rdma1825Ops>(&sqContext_, &cqContext_);
+            rdmaOps_ = std::make_unique<Rdma1825Ops>(&sqContext, &cqContext);
             break;
         }
     }

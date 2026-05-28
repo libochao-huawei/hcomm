@@ -75,8 +75,8 @@ private:
     void ParseCqContext(std::vector<char>& data);
 
     uint32_t            dmaMode_{0};
-    RdmaSqContextLite   sqContext_{};
-    RdmaCqContextLite   cqContext_{};
+    RdmaSqContextLite   sqContext{};
+    RdmaCqContextLite   cqContext{};
 
     // ========== 厂商 Ops（工厂模式，负责具体厂商 ops 创建）==========
     std::unique_ptr<RdmaBaseOps> rdmaOps_ = nullptr;
