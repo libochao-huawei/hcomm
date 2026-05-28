@@ -459,6 +459,249 @@ inline void groupLocalResetJobState()
     return;
 }
 
+static HcclResult LaunchNotifyRecordToThread(HcclComm comm, stream unfoldStream, ThreadHandle srcThread,
+    ThreadHandle dstThread, uint32_t dstNotifyIdx std::string kernelName)
+{
+    aclrtFuncHandle funcHandle;
+    aclrtArgsHandle argsHandle;
+    // 1. 获取 function handle
+    auto binKernelHandle = comm->GetBinHandle();
+    aclError ret = aclrtBinaryGetFunction(binKernelHandle, kernelName.c_str(), &funcHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 2. 初始化 args handle
+    ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 3. 准备参数并 append
+    ThreadNotifyRecordParam param;
+    param.thread = srcThread;
+    param.dstThread = dstThread;
+    param.dstNotifyIdx = dstNotifyIdx;
+    aclrtParamHandle paraHandle;
+    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(ThreadNotifyRecordParam), &paraHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 4. finalize args
+    ret = aclrtKernelArgsFinalize(argsHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 5. 下发 kernel
+    aclrtLaunchKernelCfg cfg;
+    aclrtLaunchKernelAttr attr;
+    attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+    attr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    cfg.numAttrs = 1;
+    cfg.attrs = &attr;
+    constexpr u32 numBlocks = 1;
+
+    ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, unfoldStream, &cfg, argsHandle, nullptr);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    return HCCL_SUCCESS;
+}
+
+static HcclResult LaunchNotifyWaitToThread(
+    HcclComm comm, stream unfoldStream, ThreadHandle srcThread, uint32_t dstNotifyIdx, std::string kernelName)
+{
+    aclrtFuncHandle funcHandle;
+    aclrtArgsHandle argsHandle;
+    // 1. 获取 function handle
+    auto binKernelHandle = comm->GetBinHandle();
+    aclError ret = aclrtBinaryGetFunction(binKernelHandle, kernelName.c_str(), &funcHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 2. 初始化 args handle
+    ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 3. 准备参数并 append
+    ThreadNotifyWaitParam param;
+    param.thread = srcThread;
+    param.dstNotifyIdx = dstNotifyIdx;
+    aclrtParamHandle paraHandle;
+    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(ThreadNotifyRecordParam), &paraHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 4. finalize args
+    ret = aclrtKernelArgsFinalize(argsHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 5. 下发 kernel
+    aclrtLaunchKernelCfg cfg;
+    aclrtLaunchKernelAttr attr;
+    attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+    attr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    cfg.numAttrs = 1;
+    cfg.attrs = &attr;
+    constexpr u32 numBlocks = 1;
+
+    ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, unfoldStream, &cfg, argsHandle, nullptr);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    return HCCL_SUCCESS;
+}
+
+static HcclResult LaunchP2pExec(HcclComm comm, stream usrStream, hccl::HcclKernelFuncInfo funcInfo, void *funcArgs,
+    ThreadHandle sendRecvStream, std::string kernelName)
+{
+    aclrtFuncHandle funcHandle;
+    aclrtArgsHandle argsHandle;
+    // 1. 获取 function handle
+    auto binKernelHandle = comm->GetBinHandle();
+    aclError ret = aclrtBinaryGetFunction(binKernelHandle, kernelName.c_str(), &funcHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 2. 初始化 args handle
+    ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 3. 准备参数并 append
+    P2pGroupAicpuKernelParam param;
+    param.funcInfo = funcInfo;
+    param.funcArgs = funcArgs;
+    param.sendRecvStream = sendRecvStream;
+
+    aclrtParamHandle paraHandle;
+    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(ThreadNotifyRecordParam), &paraHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 4. finalize args
+    ret = aclrtKernelArgsFinalize(argsHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    // 5. 下发 kernel
+    aclrtLaunchKernelCfg cfg;
+    aclrtLaunchKernelAttr attr;
+    attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+    attr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    cfg.numAttrs = 1;
+    cfg.attrs = &attr;
+    constexpr u32 numBlocks = 1;
+
+    ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, usrStream, &cfg, argsHandle, nullptr);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed, "
+                   "kernelName:%s",
+            ret, kernelName.c_str()),
+        HCCL_E_RUNTIME);
+
+    return HCCL_SUCCESS;
+}
+
+static HcclResult groupLaunchA5()
+{
+    constexpr u32 hostNotifyWaitTime = NOTIFY_DEFAULT_WAIT_TIME + HOST_NOTIFY_TIMEOUT_OFFSET;
+    /*新建send/recv流*/
+    ThreadHandle aicpuSendThread = 0, aicpuRecvThread = 0;
+    CHK_RET(HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 1, 1, &aicpuSendThread));
+    CHK_RET(HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 1, 1, &aicpuRecvThread));
+
+    for (HcclComm comm : hcclGroupCommList) {
+        std::vector<HcclP2pTask> sortedSendQue;
+        std::vector<HcclP2pTask> sortedRecvQue;
+        CHK_RET(HcclP2pTaskSchedule(comm, sortedSendQue, sortedRecvQue));
+        aclrtStream usrStream = nullptr;
+        ThreadHandle cpuTsThread = 0;
+        ThreadHandle exportedAicpuTsThread = 0;
+        ThreadHandle exportedCpuTsSendThread = 0;
+        ThreadHandle exportedCpuTsRecvThread = 0;
+        if (!sortedSendQue.empty()) {
+            usrStream = sortedSendQue[0].stream;
+        } else if (!sortedRecvQue.empty()) {
+            usrStream = sortedRecvQue[0].stream;
+        } else {
+            continue;
+        }
+        CHK_RET(HcclThreadAcquireWithStream(comm, COMM_ENGINE_CPU_TS, usrStream, 2, &cpuTsThread));
+        CHK_RET(HcclThreadExportToCommEngine(comm, 1, &cpuTsThread, COMM_ENGINE_AICPU_TS, &exportedAicpuTsThread));
+
+        CHK_RET(HcclThreadExportToCommEngine(comm, 1, &aicpuSendThread, COMM_ENGINE_CPU_TS, &exportedCpuTsSendThread));
+        CHK_RET(HcclThreadExportToCommEngine(comm, 1, &aicpuRecvThread, COMM_ENGINE_CPU_TS, &exportedCpuTsRecvThread));
+        CHK_RET(static_cast<HcclResult>(HcommThreadNotifyRecordOnThread(cpuTsThread, exportedCpuTsSendThread, 0)));
+        CHK_RET(static_cast<HcclResult>(HcommThreadNotifyRecordOnThread(cpuTsThread, exportedCpuTsRecvThread, 0)));
+
+        // 下发wait kernel
+        CHK_RET(LaunchNotifyWaitToThread(usrStream, aicpuSendThread, 0, "RunAicpuNotifyWait"));
+        CHK_RET(LaunchNotifyWaitToThread(usrStream, aicpuRecvThread, 0, "RunAicpuNotifyWait"));
+        /*待定，最好还是send/recv交替着发*/
+        for (const auto &task : sortedSendQue) {
+            CHK_RET(
+                LaunchP2pExec(task.stream, task.funcInfo, task.args, aicpuSendThread, "HcclP2pLaunchGroupAicpuKernel"));
+        }
+
+        for (const auto &task : sortedRecvQue) {
+            CHK_RET(
+                LaunchP2pExec(task.stream, task.funcInfo, task.args, aicpuRecvThread, "HcclP2pLaunchGroupAicpuKernel"));
+        }
+        // 下发record kernel
+        CHK_RET(
+            LaunchNotifyRecordToThread(usrStream, aicpuSendThread, exportedAicpuTsThread, 0, "RunAicpuNotifyRecord"));
+        CHK_RET(
+            LaunchNotifyRecordToThread(usrStream, aicpuRecvThread, exportedAicpuTsThread, 1, "RunAicpuNotifyRecord"));
+
+        CHK_RET(static_cast<HcclResult>(HcommThreadNotifyWaitOnThread(cpuTsThread, 0, hostNotifyWaitTime)));
+        CHK_RET(static_cast<HcclResult>(HcommThreadNotifyWaitOnThread(cpuTsThread, 1, hostNotifyWaitTime)));
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclGroupEnd()
 {
     if (hcclGroupDepth == 0) {
@@ -470,6 +713,11 @@ HcclResult HcclGroupEnd()
     }
     HCCL_INFO("[HcclGroupEnd] hcclGroupDepth=[%d]", hcclGroupDepth);
     /*遇到最后一个HcclGroupEnd才处理group内的所有任务*/
+
+    if (devType == DevType::DEV_TYPE_950) {
+        CHK_RET(groupLaunchA5());
+        return HCCL_SUCCESS;
+    }
 
     groupLaunch();
     HCCL_INFO("[GroupEnd] done groupLaunch");
