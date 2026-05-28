@@ -18,5 +18,9 @@ namespace Hccl
 HcclResult HrtHalDrvQueryProcessHostPid(int pid, unsigned int *chipId, unsigned int *vfid,
     unsigned int *hostPid, unsigned int *cpType);
 HcclResult HrtHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value);
+#ifndef CCL_KERNEL_AICPU
+HcclResult HrtHalHostRegister(void *srcPtr, uint64_t size, uint32_t flag, uint32_t devid, void **dstPtr);
+HcclResult HrtHalHostUnregister(void *ptr, uint32_t devid);
+#endif
 }
 #endif
