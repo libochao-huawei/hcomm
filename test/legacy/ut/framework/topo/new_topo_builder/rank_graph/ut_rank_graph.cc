@@ -300,6 +300,55 @@ TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
     EXPECT_EQ(2, subRankGraph->GetLocalInstSize(2));
 }
 
+TEST_F(RankGraphTest, ut_AddNewLink_When_TopoInstStatusVaries_Expect_UpdateMatchedTopoInstOnly)
+{
+    constexpr u32 layer = 0;
+    constexpr u32 missingTopoInstId = 0;
+    constexpr u32 nullTopoInstId = 1;
+    constexpr u32 noParentTopoInstId = 2;
+    constexpr u32 parentTopoInstId = 3;
+    constexpr RankId parentMyRank = 0;
+    constexpr RankId otherRank = 1;
+
+    auto oldNetInstance = std::make_shared<InnerNetInstance>(layer, "layer0_1");
+    auto newNetInstance = std::make_shared<InnerNetInstance>(layer, "layer0_1");
+    auto oldPeer0 = createPeer(0, 0, 0);
+    auto oldPeer1 = createPeer(1, 1, 1);
+    auto newPeer0 = createPeer(0, 0, 0);
+    auto newPeer1 = createPeer(1, 1, 1);
+    RankId2PeerMap tmpPeers = {{0, newPeer0}, {1, newPeer1}};
+
+    std::set<std::string> ports = {"0/0"};
+    std::set<LinkProtocol> protocols = {LinkProtocol::UB_TP};
+    auto makeIface = [&](u32 topoInstId) {
+        return std::make_shared<NetInstance::ConnInterface>(IpAddress(0), ports, AddrPosition::HOST,
+            LinkType::PEER2PEER, protocols, TopoType::MESH_1D, topoInstId);
+    };
+
+    oldNetInstance->UpdateTopoInst(noParentTopoInstId, TopoType::MESH_1D, otherRank);
+    oldNetInstance->topoInsts_[nullTopoInstId] = nullptr;
+    oldNetInstance->UpdateTopoInst(parentTopoInstId, TopoType::MESH_1D, parentMyRank);
+
+    NetInstance::Link skipLink(oldPeer0, oldPeer1, makeIface(missingTopoInstId), makeIface(noParentTopoInstId),
+        LinkType::PEER2PEER, protocols);
+    EXPECT_NO_THROW(AddNewLink(layer, skipLink, 0, 1, newNetInstance, tmpPeers, oldNetInstance.get(), parentMyRank));
+
+    std::vector<u32> ranks;
+    u32 rankNum = 0;
+    EXPECT_EQ(HCCL_E_PARA, newNetInstance->GetRanksByTopoInst(missingTopoInstId, ranks, rankNum));
+    EXPECT_EQ(HCCL_E_PARA, newNetInstance->GetRanksByTopoInst(noParentTopoInstId, ranks, rankNum));
+
+    NetInstance::Link updateLink(oldPeer0, oldPeer1, makeIface(nullTopoInstId), makeIface(parentTopoInstId),
+        LinkType::PEER2PEER, protocols);
+    EXPECT_NO_THROW(AddNewLink(layer, updateLink, 0, 1, newNetInstance, tmpPeers, oldNetInstance.get(), parentMyRank));
+
+    EXPECT_EQ(HCCL_E_PARA, newNetInstance->GetRanksByTopoInst(nullTopoInstId, ranks, rankNum));
+    EXPECT_EQ(HCCL_SUCCESS, newNetInstance->GetRanksByTopoInst(parentTopoInstId, ranks, rankNum));
+    EXPECT_EQ(1U, rankNum);
+    ASSERT_EQ(1U, ranks.size());
+    EXPECT_EQ(1U, ranks[0]);
+}
+
 TEST_F(RankGraphTest, ut_GetEndpointNum_When_Normal_Expect_SUCCESS)
 {
     auto rankGraph = create4pRankGraph(myRank);
