@@ -650,24 +650,41 @@ void CcuTransport::Clean()
 
 HcclResult CcuTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
-    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteUserMems] remoteMem is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memInfos, HCCL_ERROR("[GetRemoteUserMems] memInfos is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteUserMems] memNum is nullptr"), HCCL_E_PARA);
+    *(remoteMem) = nullptr;
+    *(memInfos) = nullptr;
+    *(memNum) = 0;
     uint32_t userMemCount = rmtBufferInfos_.size();
     if (userMemCount == 0) {
-        *memNum = 0;
-        HCCL_WARNING("[CcuTransport::%s] bufferNum is 0.", __func__);
+        HCCL_WARNING("[%s] bufferNum is 0.", __func__);
         return HCCL_SUCCESS;
     }
-    auto cacheBuilder = [](CclBufferInfo &rmtBuffer, CommMem &mem) -> HcclResult {
-        mem.type = rmtBuffer.type;
-        mem.addr = reinterpret_cast<void *>(rmtBuffer.addr);
-        mem.size = rmtBuffer.size;
-        return HCCL_SUCCESS;
-    };
-    Hccl::RemoteMemCtx<CclBufferInfo> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memInfos, memNum};
-    CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
-    return HcclResult::HCCL_SUCCESS;
+    // 检查是否有缓存
+    if (!cacheValid_) {
+        remoteUserMems_.clear();
+        tagCopies_.clear();
+        tagCopies_.reserve(userMemCount);
+        tagPointers_.clear();
+        tagPointers_.reserve(userMemCount);
+        for (uint32_t i = 0; i < userMemCount; ++i) {
+            CommMem mem{};
+            mem.type = rmtBufferInfos_[i].type;
+            mem.addr = reinterpret_cast<void *>(rmtBufferInfos_[i].addr);
+            mem.size = rmtBufferInfos_[i].size;
+            remoteUserMems_.push_back(mem);
+            const char* src = rmtBufferInfos_[i].memTag.data();
+            std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
+            tagCopies_.push_back(std::move(tagCopy));
+            tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
+        }
+        cacheValid_ = true;
+    }
+    *(remoteMem) = remoteUserMems_.data();
+    *(memInfos) = tagPointers_.data();
+    *(memNum) = userMemCount;
+    return HCCL_SUCCESS;
 }
 
 HcclResult CcuTransport::CheckSocketStatus()

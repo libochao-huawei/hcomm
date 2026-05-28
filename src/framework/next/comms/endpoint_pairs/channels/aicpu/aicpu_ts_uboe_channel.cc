@@ -260,25 +260,9 @@ HcclResult AicpuTsUboeChannel::GetNotifyNum(uint32_t *notifyNum) const
 HcclResult AicpuTsUboeChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    if (rmtBufferVec_.size() == 0) {
-        *remoteMem = nullptr;
-        *memInfos = nullptr;
-        *memNum = 0;
-        HCCL_WARNING("[GetRemoteMems] bufferNum is 0.");
-        return HCCL_SUCCESS;
-    }
-    uint32_t userMemCount = rmtBufferVec_.size();
-    auto cacheBuilder = [](std::unique_ptr<Hccl::RemoteUbRmaBuffer> &rmtBuffer, CommMem &mem) -> HcclResult {
-        CHK_PTR_NULL(rmtBuffer);
-        mem.type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
-        mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-        mem.size = rmtBuffer->GetSize();
-        return HCCL_SUCCESS;
-    };
-    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memInfos, memNum};
-    CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
+    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{cacheValid_, rmtBufferVec_,
+    remoteUserMems_, tagCopies_, tagPointers_, remoteMem, memInfos, memNum};
+    CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 

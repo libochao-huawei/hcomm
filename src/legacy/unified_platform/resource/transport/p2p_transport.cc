@@ -561,22 +561,8 @@ std::vector<char> P2PTransport::GetRmtBufferUniqueIds() const
 HcclResult P2PTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    uint32_t userMemCount = rmtBufferVec.size();
-    if (userMemCount == 0) {
-        *memNum = 0;
-        HCCL_WARNING("[P2PTransport][GetRemoteMems] bufferNum is 0.");
-        return HCCL_SUCCESS;
-    }
-    auto cacheBuilder = [](std::unique_ptr<RemoteIpcRmaBuffer> &rmtBuffer, CommMem &mem) -> HcclResult {
-        CHK_PTR_NULL(rmtBuffer);
-        mem.type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
-        mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-        mem.size = rmtBuffer->GetSize();
-        return HCCL_SUCCESS;
-    };
-    RemoteMemCtx<std::unique_ptr<RemoteIpcRmaBuffer>> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferVec, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memInfos, memNum};
+    Hccl::RemoteMemCtx<std::unique_ptr<RemoteIpcRmaBuffer>> remoteMemCtx{cacheValid_, rmtBufferVec,
+    remoteUserMems_, tagCopies_, tagPointers_, remoteMem, memInfos, memNum};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }

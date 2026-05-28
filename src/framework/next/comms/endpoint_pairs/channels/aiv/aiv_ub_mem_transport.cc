@@ -275,26 +275,12 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     }
 }
 
-HcclResult AivUbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos) 
+HcclResult AivUbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    uint32_t userMemCount = rmtBufferVec_.size();
-    if (userMemCount == 0) {
-        *memNum = 0;
-        HCCL_WARNING("[AivUbMemTransport::%s] bufferNum is 0.", __func__);
-        return HCCL_SUCCESS;
-    }
-    auto cacheBuilder = [](std::unique_ptr<Hccl::RemoteIpcRmaBuffer> &rmtBuffer, CommMem &mem) -> HcclResult {
-        CHK_PTR_NULL(rmtBuffer);
-        mem.type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
-        mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
-        mem.size = rmtBuffer->GetSize();
-        return HCCL_SUCCESS;
-    };
-    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> remoteMemCtx{
-        userMemCount, cacheValid_, rmtBufferVec_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memInfos, memNum};
-    CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
+    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> remoteMemCtx{cacheValid_, rmtBufferVec_,
+    remoteUserMems_, tagCopies_, tagPointers_, remoteMem, memInfos, memNum};
+    CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 

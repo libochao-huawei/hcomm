@@ -405,45 +405,12 @@ bool AivUrmaTransport::IsSocketReady()
     return false;
 }
 
-HcclResult AivUrmaTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags)
+HcclResult AivUrmaTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[AivUrmaTransport::%s] remoteMem is nullptr", __func__), HCCL_E_PTR);
-    CHK_PRT_RET(memTags == nullptr, HCCL_ERROR("[AivUrmaTransport::%s] memTags is nullptr", __func__), HCCL_E_PTR);
-    CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[AivUrmaTransport::%s] memNum is nullptr", __func__), HCCL_E_PTR);
-    *remoteMem = nullptr;
-    *memTags = nullptr;
-    *memNum = 0;
- 
-    if (rmtBufferVec_.size() == 0) {
-        HCCL_WARNING("[AivUrmaTransport::%s] bufferNum is 0.", __func__);
-        return HCCL_SUCCESS;
-    }
- 
-    uint32_t userMemCount = static_cast<uint32_t>(rmtBufferVec_.size());
- 
-    if (!cacheValid_) {
-        remoteUserMems_.resize(userMemCount);
-        tagCopies_.clear();
-        tagCopies_.reserve(userMemCount);
-        tagPointers_.clear();
-        tagPointers_.reserve(userMemCount);
-        for (uint32_t i = 0; i < userMemCount; ++i) {
-            auto& aivUbRmtBuffer = rmtBufferVec_[i];
-            CHK_PTR_NULL(aivUbRmtBuffer);
-            remoteUserMems_[i].type = hccl::ConvertHcclToCommMemType(aivUbRmtBuffer->GetMemType());
-            remoteUserMems_[i].addr = reinterpret_cast<void *>(aivUbRmtBuffer->GetAddr());
-            remoteUserMems_[i].size = aivUbRmtBuffer->GetSize();
-            std::string tagCopy = aivUbRmtBuffer->GetMemTag();
-            tagCopies_.push_back(std::move(tagCopy));
-            tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
-        }
-        cacheValid_ = true;
-    }
- 
-    *remoteMem = remoteUserMems_.data();
-    *memNum = userMemCount;
-    *memTags = tagPointers_.data();
+    Hccl::RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{cacheValid_, rmtBufferVec_,
+        remoteUserMems_, tagCopies_, tagPointers_, remoteMem, memInfos, memNum};
+    CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
  
