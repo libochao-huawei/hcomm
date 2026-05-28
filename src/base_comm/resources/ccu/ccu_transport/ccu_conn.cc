@@ -29,17 +29,6 @@
 
 namespace hcomm {
 
-namespace {
-// RsJettyKeyInfo 布局中 jettyId.eid 位于 key 起始；与 GetTpInfo 一致使用链路 EID
-void PatchJettyKeyLinkEid(u8 *qpKey, const u32 keyLen, const Hccl::Eid &linkEid)
-{
-    if (qpKey == nullptr || keyLen < URMA_EID_LEN) {
-        return;
-    }
-    (void)memcpy_s(qpKey, keyLen, linkEid.raw, URMA_EID_LEN);
-}
-} // namespace
-
 CcuConnection::CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys), qos_(qos)
@@ -311,7 +300,9 @@ HcclResult CcuConnection::Serialize(std::vector<char> &dtoData)
         const auto &outParam = ccuJetty->GetJettyedOutParam();
         u8 patchedKey[HRT_UB_QP_KEY_MAX_LEN]{0};
         (void)memcpy_s(patchedKey, sizeof(patchedKey), outParam.key, outParam.keySize);
-        PatchJettyKeyLinkEid(patchedKey, outParam.keySize, locIpAddr.GetEid());
+        if (outParam.keySize >= URMA_EID_LEN) {
+            (void)memcpy_s(patchedKey, outParam.keySize, locIpAddr.GetEid().raw, URMA_EID_LEN);
+        }
         dtoStream << patchedKey;
         dtoStream << outParam.keySize;
     }
@@ -420,7 +411,9 @@ HcclResult CcuConnection::StartImportJettyRequest(uint32_t jettyIndex, RequestHa
     Hccl::IpAddress rmtIpAddr{};
     CHK_RET(CommAddrToIpAddress(rmtAddr_, rmtIpAddr));
     auto &importCtx = importJettyCtxs_[jettyIndex];
-    PatchJettyKeyLinkEid(importCtx.remoteQpKey, importCtx.inParam.keyLen, rmtIpAddr.GetEid());
+    if (importCtx.inParam.keyLen >= URMA_EID_LEN) {
+        (void)memcpy_s(importCtx.remoteQpKey, importCtx.inParam.keyLen, rmtIpAddr.GetEid().raw, URMA_EID_LEN);
+    }
     importCtx.inParam.key = importCtx.remoteQpKey;
     auto &importCtxInParam = importCtx.inParam;
     importCtxInParam.jettyImportCfg = jettyImportCfg_;
