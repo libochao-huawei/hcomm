@@ -173,7 +173,7 @@ int32_t mmDladdr(void *addr, mmDlInfo *info)
 }
 
 char *mmDlerror(void) {
-    return '0';
+    return "0";
 }
 
 typedef struct {
