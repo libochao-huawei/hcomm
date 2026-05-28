@@ -26,7 +26,7 @@ target_sources(hccl_st_fwk
 )
 
 target_compile_options(hccl_st_fwk PRIVATE
-        -std=c++14
+        -std=c++17
         -Werror
         -fno-common
         -fno-strict-aliasing
