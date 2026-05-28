@@ -581,7 +581,9 @@ HcclResult CcuKernelMgr::InstantiationTranslator(const uint16_t dieId)
 
     std::pair<uint64_t, uint64_t> ccuTokenInfo(tokenId, tokenValue);
     Hccl::DevBuffer tmpDevMem{1}; // 临时申请device hbm内存用于查询token信息
-    auto hbmTokenInfo = GetTokenInfo(tmpDevMem.GetAddr(), 1);
+    uint64_t hbmTokenInfo = 0;
+    ret = GetTokenInfo(tmpDevMem.GetAddr(), 1, hbmTokenInfo);
+    CHK_RET(ret);
 
     CcuResReq totalResReq{};
     // 实例化CcuRepReferenceManager和CcuRepTranslator，并为CcuRepReferenceManager绑定物理资源
