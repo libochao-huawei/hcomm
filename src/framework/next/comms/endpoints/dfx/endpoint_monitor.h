@@ -41,6 +41,7 @@ private:
 
     void ProcessUbAsyncEvents();
     void PrintUbAsyncEventsContext(u32 devPhyId, const struct AsyncEvent &event);
+    HcclResult GetAsyncEventsContextStub(uint32_t devPhyId, struct AsyncEvent events[], uint32_t &num);
 
     static constexpr u32 MONITOR_INTERVAL = 50;     
     std::unique_ptr<std::thread> endpointMonitorThread_;

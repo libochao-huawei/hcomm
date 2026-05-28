@@ -150,6 +150,41 @@ HcclResult EndpointMonitor::DeInit(s32 deviceLogicId)
     return HCCL_SUCCESS;
 }
 
+HcclResult EndpointMonitor::GetAsyncEventsContextStub(uint32_t devPhyId, struct AsyncEvent events[], uint32_t &num)
+{
+    static u32 yesOrno = 0;
+    ++yesOrno;
+    if (yesOrno < 20 || yesOrno > 80) {
+        num = 0;
+        return HCCL_SUCCESS;
+    }
+
+    for (u32 i = 0; i < num; ++i) {
+        events[i].resId = i;
+        events[i].resId = i + 100;
+        events[i].context[0] = 1;
+        events[i].context[1] = 2;
+        events[i].context[2] = 3;
+        events[i].context[3] = 4;
+        events[i].context[4] = 5;
+        events[i].context[5] = 6;
+        events[i].context[6] = 7;
+        events[i].context[7] = 8;
+        events[i].context[8] = 9;
+        events[i].context[9] = 10;
+        events[i].context[10] = 11;
+        events[i].context[11] = 12;
+        events[i].context[12] = 13;
+        events[i].context[13] = 14;
+        events[i].context[14] = 15;
+        events[i].context[15] = 16;
+        events[i].context[16] = 17;
+        events[i].len = 17;
+    }
+
+    return HCCL_SUCCESS;
+}
+
 void EndpointMonitor::ProcessUbAsyncEvents()
 {
     std::lock_guard<std::mutex> lock(threadLock_);
@@ -167,6 +202,9 @@ void EndpointMonitor::ProcessUbAsyncEvents()
                 __func__, devPhyId_, ret, localEpPtr);
             continue;
         }
+
+        num = ASYNC_EVENT_MAX_NUM;
+        GetAsyncEventsContextStub(devPhyId_, events_, num);
 
         HCCL_INFO("[EndpointMonitor][%s] devPhyId[%u] fetched %u events", __func__, devPhyId_, num);
         for (u32 i = 0; i < num; ++i) {
