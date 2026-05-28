@@ -205,3 +205,16 @@ TEST_F(HcclCommDfxTest, Ut_Add_Get_ChannelRemoteRankId)
 
     EXPECT_NE(dfxLite_->GetChannelRemoteRankId(0x123, value), HCCL_SUCCESS);
 }
+
+// 测试 IsOpBase - OFFLOAD 模式返回 false
+TEST_F(HcclCommDfxTest, Ut_IsOpBase_When_OpModeIsOffload_Expect_ReturnFalse)
+{
+    auto opInfo = std::make_shared<Hccl::DfxOpInfo>();
+    opInfo->op_.opMode = Hccl::OpMode::OFFLOAD;
+    dfx_->mirrorTaskManager_->SetCurrDfxOpInfo(opInfo);
+
+    bool isOpBase = true;
+    HcclResult ret = dfx_->IsOpBase(isOpBase);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_FALSE(isOpBase);
+}
