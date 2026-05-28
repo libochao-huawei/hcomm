@@ -400,14 +400,42 @@ TEST_F(RankGraphTest, ut_IsSymmetric_When_Normal_Expect_SUCCESS) {
 TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
     auto rankGraph = create4pclosRankGraph(myRank);
     constexpr u32 layer = 0;
-    constexpr u32 missingTopoInstId = 0;
-    constexpr u32 nullTopoInstId = 1;
-    constexpr u32 noParentTopoInstId = 2;
-    constexpr u32 parentTopoInstId = 3;
+    constexpr u32 mesh01TopoInstId = 0;
+    constexpr u32 mesh23TopoInstId = 1;
+    constexpr u32 closTopoInstId = 2;
+
+    auto meshPath = rankGraph->GetPaths(layer, 0, 1);
+    EXPECT_GE(meshPath.size(), 1U);
+    ASSERT_GE(meshPath[0].links.size(), 1U);
+    EXPECT_EQ(LinkType::PEER2PEER, meshPath[0].links[0].GetType());
+
+    auto closPath = rankGraph->GetPaths(layer, 0, 2);
+    ASSERT_EQ(1U, closPath.size());
+    ASSERT_EQ(2U, closPath[0].links.size());
+    EXPECT_EQ(LinkType::PEER2NET, closPath[0].links[0].GetType());
+    EXPECT_EQ(LinkType::PEER2NET, closPath[0].links[1].GetType());
 
     vector<u32> subRankIds = {0, 1, 2, 3};
     std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(subRankIds);
     EXPECT_EQ(4, subRankGraph->GetLocalInstSize(layer));
+
+    std::vector<u32> ranks;
+    u32 rankNum = 0;
+    EXPECT_EQ(HCCL_SUCCESS, subRankGraph->GetRanksByTopoInst(layer, mesh01TopoInstId, ranks, rankNum));
+    EXPECT_EQ(2U, rankNum);
+    ASSERT_EQ(2U, ranks.size());
+    EXPECT_EQ(0U, ranks[0]);
+    EXPECT_EQ(1U, ranks[1]);
+
+    EXPECT_EQ(HCCL_E_PARA, subRankGraph->GetRanksByTopoInst(layer, mesh23TopoInstId, ranks, rankNum));
+
+    EXPECT_EQ(HCCL_SUCCESS, subRankGraph->GetRanksByTopoInst(layer, closTopoInstId, ranks, rankNum));
+    EXPECT_EQ(4U, rankNum);
+    ASSERT_EQ(4U, ranks.size());
+    EXPECT_EQ(0U, ranks[0]);
+    EXPECT_EQ(1U, ranks[1]);
+    EXPECT_EQ(2U, ranks[2]);
+    EXPECT_EQ(3U, ranks[3]);
 }
 
 TEST_F(RankGraphTest, ut_GetEndpointNum_When_Normal_Expect_SUCCESS)
