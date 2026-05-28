@@ -88,4 +88,29 @@ HcommResMgr::~HcommResMgr()
     // 未来需在析构函数中主动调用各种单例销毁流程，保证销毁时序
 }
 
+static EndpointDeviceStateCallback(int32_t deviceId, aclrtDeviceState state, void *args)
+{
+    HCCL_INFO("[EndpointDeviceStateCallback] deviceId[%d] stat[%d] ", deviceId, static_cast<int>(state));
+    
+    // 仅处理设备重置前状态
+    if (state != ACL_RT_DEVICE_STATE_RESET_PRE) {
+        return;
+    }
+    u32 devPhyId = Hccl::HrtGetDevicePhyIdByIndex(deviceId);
+    SocketMgr::DeInit(devPhyId);
+    ServerSocketMgr::DeInit(devPhyId);
+    ServerSocketManager::DeInit(devPhyId);
+    
+    Hccl::RdmaHandleManager::GetInstance().DeInit(devPhyId);
+    Hccl::SocketHandleManager::GetInstance().DeInit(devPhyId);
+}
+
+__attribute__((construct)) void EndpointCallBackInit()
+{
+    aclError ret = aclrtRegDeviceStateCallback("hcomm_res_mgr", EndpointDeviceStateCallback, nullptr);
+    if (ret != ACT_SUCCESS) {
+        HCCL_WARNING("[EndpointCallBackInit] aclrtRegDeviceStateCallback failed, ret[%d]", ret);
+    }
+}
+
 } // namespace hcomm
