@@ -34,7 +34,7 @@ std::mutex ProfilingManager::reportDataOpQueueMutex_;
 
 ProfilingManager::ProfilingManager()
     : reporterCallback_(nullptr), isHostApiSubscribe_(HCCL_E_NOT_SUPPORT),
-    isTaskApiSubscribe_(HCCL_E_NOT_SUPPORT), isAddtionInfoSubscribe_(HCCL_E_NOT_SUPPORT)
+    isTaskApiSubscribe_(HCCL_E_NOT_SUPPORT), isAdditionInfoSubscribe_(HCCL_E_NOT_SUPPORT)
 {}
 
 ProfilingManager::~ProfilingManager()
@@ -148,7 +148,7 @@ HcclResult ProfilingManager::CallMsprofReportNodeInfo(uint64_t beginTime, uint64
         CHK_RET(CallMsprofReportHostNodeApi(beginTime, endTime, itemId, threadId));
     }
     // additionInfo开关 1) 开启: 单算子、静态图模式均上报; 关闭: 静态图或者acl graph场景模式缓存, 单算子不上报
-    if (isAddtionInfoSubscribe_ == HCCL_SUCCESS || mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB || GetThreadCaptureStatus()) {
+    if (isAdditionInfoSubscribe_ == HCCL_SUCCESS || mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB || GetThreadCaptureStatus()) {
         CHK_RET(CallMsprofReportHostNodeBasicInfo(endTime, itemId, threadId));
     }
     return HCCL_SUCCESS;
@@ -169,7 +169,7 @@ HcclResult ProfilingManager::CallMsprofReportHostApi(HcclCMDType cmdType, uint64
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && IsLaunchKernelMode() != true) {
         CHK_RET(CallMsprofReportHostAclApi(type, beginTime, endTime, itemId, threadId));
         CHK_RET(CallMsprofReportHostNodeApi(beginTime, endTime, itemId, threadId));
-        if (isAddtionInfoSubscribe_ == HCCL_SUCCESS || GetThreadCaptureStatus()) {
+        if (isAdditionInfoSubscribe_ == HCCL_SUCCESS || GetThreadCaptureStatus()) {
             CHK_RET(CallMsprofReportHostNodeBasicInfo(endTime, itemId, threadId, numBlocks));
         }
     }
@@ -273,7 +273,7 @@ HcclResult ProfilingManager::CallMsprofReportHostNodeBasicInfo(
             static_cast<u32>(deviceLogicId), maxDeviceNum), HCCL_E_INTERNAL);
         std::unique_lock<std::mutex> lock(reportCompactInfoMutex_[deviceLogicId]);
         storageCompactInfo_[deviceLogicId].push(reporterData);
-        if (isAddtionInfoSubscribe_ != HCCL_SUCCESS) {
+        if (isAdditionInfoSubscribe_ != HCCL_SUCCESS) {
             return HCCL_SUCCESS;
         }
     }
@@ -517,7 +517,7 @@ HcclResult ProfilingManager::ReportAdditionInfo(
 {
     HcclWorkflowMode mode = GetWorkflowMode();
     // 1、单算子场景，如果订阅开关没有开, 且上报的不是contextID,直接退出;
-    if ((isAddtionInfoSubscribe_  != HCCL_SUCCESS) &&
+    if ((isAdditionInfoSubscribe_  != HCCL_SUCCESS) &&
         (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
         (type != MSPROF_REPORT_NODE_CONTEXT_ID_INFO_TYPE) &&
         !GetThreadCaptureStatus()) {
@@ -537,7 +537,7 @@ HcclResult ProfilingManager::ReportAdditionInfo(
     if ((mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) || GetThreadCaptureStatus() ||
         (isFftsDispatcher_.load() &&  // 3、FFTS+下发场景，addition开关打开，缓存对应数据
         (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-        (isAddtionInfoSubscribe_ == HCCL_SUCCESS))) {
+        (isAdditionInfoSubscribe_ == HCCL_SUCCESS))) {
         // 缓存对应数据
         s32 deviceLogicId = -1;
         CHK_RET(hrtGetDevice(&deviceLogicId));
@@ -549,7 +549,7 @@ HcclResult ProfilingManager::ReportAdditionInfo(
             static_cast<u32>(deviceLogicId), maxDeviceNum), HCCL_E_INTERNAL);
         std::unique_lock<std::mutex> lock(reportAddInfoMutex_[deviceLogicId]);
         storageAdditionInfo_[deviceLogicId].push(reporterData);
-        if (isFftsDispatcher_ || isAddtionInfoSubscribe_ != HCCL_SUCCESS) {
+        if (isFftsDispatcher_ || isAdditionInfoSubscribe_ != HCCL_SUCCESS) {
             return HCCL_SUCCESS;
         }
     }
@@ -574,7 +574,7 @@ HcclResult ProfilingManager::CallMsprofReportAdditionInfo(
 HcclResult ProfilingManager::CallMsprofReportEsAdditionInfo(
     uint32_t type, uint64_t timeStamp, const void *data, int len) const
 {
-    if (isAddtionInfoSubscribe_ != HCCL_SUCCESS) {
+    if (isAdditionInfoSubscribe_ != HCCL_SUCCESS) {
         return HCCL_SUCCESS;
     }
     MsprofAdditionalInfo reporterData{};
