@@ -21,9 +21,9 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
 | 参数名 | 输入/输出 | 描述 |
 | --- | --- | --- |
 | thread | 输入 | 通信线程句柄，当前无作用，传入 0 即可。 |
-| channel | 输入 | 通信通道句柄，为通过[HcommChannelCreate](../../../control_plane_api/basic_resource_mgmt/HcommChannelCreate.md)或[HcclChannelAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelAcquire.md)接口获取到的channels。<br>ChannelHandle类型的定义可参见[ChannelHandle](../../../datatype_definition/ChannelHandle.md)。 |
-| dst | 输出 | 目的内存地址。基础通信场景下，写发起端应使用通过[HcommMemImport](../../../control_plane_api/basic_resource_mgmt/HcommMemImport.md)导入的对端内存地址；集合通信场景下，为使用[HcclChannelGetHcclBuffer](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelGetHcclBuffer.md)获取到的对端通信内存地址。 |
-| src | 输入 | 源内存地址。基础通信场景下，为通过[HcommMemReg](../../../control_plane_api/basic_resource_mgmt/HcommMemReg.md)注册的本端内存地址；集合通信场景下，为使用[HcclGetHcclBuffer](../../../control_plane_api/comms_domain_resource_mgmt/HcclGetHcclBuffer.md)、[HcclChannelGetHcclBuffer](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelGetHcclBuffer.md)获取到的本端内存地址。 |
+| channel | 输入 | 通信通道句柄，为通过[HcclChannelAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelAcquire.md)接口获取到的channels。<br>ChannelHandle类型的定义可参见[ChannelHandle](../../../datatype_definition/ChannelHandle.md)。 |
+| dst | 输出 | 目的内存地址，使用[HcclGetHcclBuffer](../../../control_plane_api/comms_domain_resource_mgmt/HcclGetHcclBuffer.md)、[HcclChannelGetHcclBuffer](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelGetHcclBuffer.md)获取到的内存。 |
+| src | 输入 | 源内存地址，使用[HcclGetHcclBuffer](../../../control_plane_api/comms_domain_resource_mgmt/HcclGetHcclBuffer.md)、[HcclChannelGetHcclBuffer](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelGetHcclBuffer.md)获取到的本端内存地址。 |
 | len | 输入 | 数据长度（字节），需大于0。 |
 | remoteNotifyIdx | 输入 | 通信通道另一端的Notify索引。<br>取值范围：[0, notifyNum)。<br>notifyNum为[HcommChannelCreate](../../../control_plane_api/basic_resource_mgmt/HcommChannelCreate.md)或[HcclChannelAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelAcquire.md)接口传入的channelDesc参数中的notifyNum。 |
 
@@ -40,10 +40,6 @@ int32_t：接口成功返回0，其他失败。
 - 该接口返回成功仅表示带通知写请求提交成功。如需确认本端通道上已提交的写操作完成，调用方应调用[HcommChannelFenceOnThread](HcommChannelFenceOnThread.md)等待通道上已提交的写操作完成。
 
 ## 调用示例
-
-### 集合通信示例
-
-以下代码在写发起端调用，将本端通信内存写入对端通信内存，并通知对端。
 
 ```c
 // 省略：创建通信域句柄 comm
@@ -89,117 +85,4 @@ ret = HcommChannelFenceOnThread(0, channel);
 uint32_t lclNotifyIdx = 0;
 uint32_t notifyTimeout = 0;
 int32_t ret = HcommChannelNotifyWaitOnThread(0, channel, lclNotifyIdx, notifyTimeout);
-```
-
-### 基础通信示例
-
-以Host RoCE H2D场景为例。
-Client端为写发起端，提供Host源内存；Server端为写入目标端，提供Device目的内存，并等待Client端发送的Notify。
-
-#### Server 端
-
-```c
-// 申请Server端Endpoint资源
-const EndpointDesc serverEndpointDesc = {
-    .protocol = COMM_PROTOCOL_ROCE,
-    .commAddr = {
-        .type = COMM_ADDR_TYPE_IP_V4,
-        .addr = {{192, 168, 1, 101}}
-    },
-    .loc = {
-        .locType = ENDPOINT_LOC_TYPE_HOST
-    },
-    .raws = {0}
-};
-EndpointHandle serverEndpointHandle = nullptr;
-HcommResult result = HcommEndpointCreate(&serverEndpointDesc, &serverEndpointHandle);
-
-// 注册Server端内存
-CommMem serverDeviceMem = {
-    .type = COMM_MEM_TYPE_DEVICE,
-    .addr = serverDeviceAddr,
-    .size = dataLen
-};
-HcommMemHandle serverMemHandle = nullptr;
-result = HcommMemReg(serverEndpointHandle, "server_device_mem", &serverDeviceMem, &serverMemHandle);
-
-// 导出Server端内存描述
-void *serverMemDesc = nullptr;
-uint32_t serverMemDescLen = 0;
-result = HcommMemExport(serverEndpointHandle, serverMemHandle, &serverMemDesc, &serverMemDescLen);
-
-// 省略：
-// Server端将serverEndpointDesc、serverMemDesc、serverMemDescLen发送给Client端
-// Server端获取clientEndpointDesc
-
-// 申请Server端通信通道资源
-HcommChannelDesc serverChannelDesc = {};
-result = HcommChannelDescInit(&serverChannelDesc, 1);
-serverChannelDesc.remoteEndpoint = clientEndpointDesc;
-serverChannelDesc.notifyNum = 1;
-serverChannelDesc.exchangeAllMems = true; // 让Channel创建时自动关联本端memHandle。
-serverChannelDesc.role = HCOMM_SOCKET_ROLE_SERVER;
-serverChannelDesc.roceAttr.queueNum = 1;
-ChannelHandle serverChannel = 0;
-result = HcommChannelCreate(serverEndpointHandle, COMM_ENGINE_CPU, &serverChannelDesc, 1, &serverChannel);
-
-// 等待Client端写入数据并发送Notify
-uint32_t lclNotifyIdx = 0;
-uint32_t notifyTimeout = 0;
-int32_t ret = HcommChannelNotifyWaitOnThread(0, serverChannel, lclNotifyIdx, notifyTimeout);
-```
-
-#### Client 端
-
-```c
-// 申请Client端Endpoint资源
-const EndpointDesc clientEndpointDesc = {
-    .protocol = COMM_PROTOCOL_ROCE,
-    .commAddr = {
-        .type = COMM_ADDR_TYPE_IP_V4,
-        .addr = {{192, 168, 1, 100}}
-    },
-    .loc = {
-        .locType = ENDPOINT_LOC_TYPE_HOST
-    },
-    .raws = {0}
-};
-EndpointHandle clientEndpointHandle = nullptr;
-result = HcommEndpointCreate(&clientEndpointDesc, &clientEndpointHandle);
-
-// 注册Client端内存
-CommMem clientHostMem = {
-    .type = COMM_MEM_TYPE_HOST,
-    .addr = clientHostAddr,
-    .size = dataLen
-};
-HcommMemHandle clientMemHandle = nullptr;
-result = HcommMemReg(clientEndpointHandle, "client_host_mem", &clientHostMem, &clientMemHandle);
-
-// 省略：
-// Client端将clientEndpointDesc发送给Server端
-// Client端获取serverEndpointDesc、serverMemDesc、serverMemDescLen
-
-// 导入Server端内存描述
-CommMem importedServerDeviceMem = {};
-result = HcommMemImport(clientEndpointHandle, serverMemDesc, serverMemDescLen, &importedServerDeviceMem);
-
-// 申请Client端通信通道资源
-HcommChannelDesc clientChannelDesc = {};
-result = HcommChannelDescInit(&clientChannelDesc, 1);
-clientChannelDesc.remoteEndpoint = serverEndpointDesc;
-clientChannelDesc.notifyNum = 1;
-clientChannelDesc.exchangeAllMems = true; // 让Channel创建时自动关联本端memHandle。
-clientChannelDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
-clientChannelDesc.roceAttr.queueNum = 1;
-ChannelHandle clientChannel = 0;
-result = HcommChannelCreate(clientEndpointHandle, COMM_ENGINE_CPU, &clientChannelDesc, 1, &clientChannel);
-
-// 将Client端内存写入Server端内存，并通知Server端
-uint32_t rmtNotifyIdx = 0;
-int32_t ret = HcommWriteWithNotifyNbiOnThread(0, clientChannel, importedServerDeviceMem.addr,
-    clientHostMem.addr, dataLen, rmtNotifyIdx);
-
-// 等待通信通道上已提交的写操作完成
-ret = HcommChannelFenceOnThread(0, clientChannel);
 ```
