@@ -15,7 +15,7 @@
 #include "exchange_rdma_buffer_dto.h"
 
 namespace Hccl {
-
+constexpr size_t SIZE = 4096U;
 LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle)
     : LocalRmaBuffer(buf, RmaType::RDMA), rdmaHandle(rdmaHandle)
 {
@@ -29,6 +29,7 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
                    bufSize);
         THROW<InvalidParamsException>("[%s] failed, param error.", __func__);
     }
+    bufSize = bufSize / SIZE * SIZE; // 4K对齐
     // 注册内存
     struct MrInfoT mrInfo;
     mrInfo.addr   = reinterpret_cast<void *>(bufAddr);
