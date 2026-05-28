@@ -521,9 +521,9 @@ HcclResult AivUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AivUrmaChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags)
+HcclResult AivUrmaChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
-    return transport_->GetRemoteMems(memNum, remoteMem, memTags);
+    return transport_->GetRemoteMems(memNum, remoteMem, memInfos);
 }
 
 HcclResult AivUrmaChannel::Clean()

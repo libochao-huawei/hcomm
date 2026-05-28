@@ -944,25 +944,27 @@ void UbMemTransport::SaveDfxTaskInfo(const TaskParam &taskParam)
     callback(streamId, taskId, taskParam);
 }
 
-HcclResult UbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memTags)
+HcclResult UbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    if (rmtBufferVec.size() == 0) {
+    uint32_t userMemCount = rmtBufferVec.size();
+    if (userMemCount == 0) {
         *memNum = 0;
         HCCL_WARNING("[UbMemTransport][GetRemoteMems] bufferNum is 0.");
         return HCCL_SUCCESS;
     }
-    uint32_t userMemCount = rmtBufferVec.size();
-    auto cacheBuilder = [](std::unique_ptr<RemoteUbRmaBuffer> &rmtBuffer, CommMem &mem) -> HcclResult {
+    auto cacheBuilder = [](std::unique_ptr<RemoteUbRmaBuffer> &rmtBuffer, CommMem &mem,
+        std::string &tagCopy) -> HcclResult {
         CHK_PTR_NULL(rmtBuffer);
         mem.type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
         mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         mem.size = rmtBuffer->GetSize();
+        tagCopy = rmtBuffer->GetMemTag();
         return HCCL_SUCCESS;
     };
     RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{
         userMemCount, cacheValid_, rmtBufferVec, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
-        cacheBuilder, remoteMem, memTags, memNum};
+        cacheBuilder, remoteMem, memInfos, memNum};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
