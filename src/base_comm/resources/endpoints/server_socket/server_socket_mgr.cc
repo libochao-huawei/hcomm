@@ -12,6 +12,8 @@
 #include "server_socket_mgr.h"
 #include "hccl_common.h"
 #include "exception_handler.h"
+#include "exception_util.h"
+#include "hccl_exception.h"
 #include "orion_adpt_utils.h"
 #include "socket_handle_manager.h"
 
@@ -99,6 +101,28 @@ HcclResult ServerSocketMgr::ListenStart_(const CommAddr &commAddr, const Hccl::N
     }
     EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
+}
+
+void ServerSocketMgr::DeInit(u32 devPhyId)
+{
+    HCCL_INFO("[ServerSocketMgr][%s] DeInit[%u]", __func__, devPhyId);
+    auto &inst = GetInstance(devPhyId);
+    std::lock_guard<std::mutex> lock(inst.innerMutex_);
+    for (auto &it : inst.deviceServerSocketMap_) {
+        if (it.second != nullptr) {
+            DECTOR_TRY_CATCH("ServerSocketMgr", it.second->Destroy());
+            it.second.reset();
+        }
+    }
+    inst.deviceServerSocketMap_.clear();
+
+    for (auto &it : inst.hostServerSocketMap_) {
+        if (it.second != nullptr) {
+            DECTOR_TRY_CATCH("ServerSocketMgr", it.second->Destroy());
+            it.second.reset();
+        }
+    }
+    inst.hostServerSocketMap_.clear();
 }
 
 }; // namespace hcomm
