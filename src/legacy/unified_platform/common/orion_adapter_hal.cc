@@ -12,6 +12,7 @@
 #include "dlhal_function_v2.h"
 #include "ascend_hal_error.h"
 #include "log.h"
+#include "acl/acl_rt.h"
 
 namespace Hccl
 {
@@ -39,6 +40,43 @@ HcclResult HrtHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoT
         "return[%d].", HCCL_ERROR_CODE(DRV_ERROR_NOT_SUPPORT), ret), HCCL_E_NOT_SUPPORT);
     CHK_PRT_RET(ret != DRV_ERROR_NONE, HCCL_ERROR("errNo[0x%016llx] HrtHalGetDeviceInfo fail,"
         "return[%d].", HCCL_ERROR_CODE(HCCL_E_DRV), ret), HCCL_E_DRV);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtHalHostRegister(void *srcPtr, uint64_t size, uint32_t flag, uint32_t devid, void **dstPtr)
+{
+    CHK_PTR_NULL(srcPtr);
+    CHK_PTR_NULL(dstPtr);
+    int32_t logicId = 0;
+    aclError aclRet = aclrtGetLogicDevIdByUserDevId(devid, &logicId);
+    if (aclRet != ACL_SUCCESS) {
+        HCCL_ERROR("[%s]aclrtGetLogicDevIdByUserDevId failed, devid: %d, ret: %d", __func__, devid, aclRet);
+        return HCCL_E_RUNTIME;
+    }
+
+    drvError_t ret = halHostRegister(srcPtr, size, flag, logicId, dstPtr);
+    if (ret != DRV_ERROR_NONE) {
+        HCCL_ERROR("halHostRegister failed, ret: %d", ret);
+        return HCCL_E_DRV;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtHalHostUnregister(void *ptr, uint32_t devid)
+{
+    CHK_PTR_NULL(ptr);
+    int32_t logicId = 0;
+    aclError aclRet = aclrtGetLogicDevIdByUserDevId(devid, &logicId);
+    if (aclRet != ACL_SUCCESS) {
+        HCCL_ERROR("[%s]aclrtGetLogicDevIdByUserDevId failed, devid: %d, ret: %d", __func__, devid, aclRet);
+        return HCCL_E_RUNTIME;
+    }
+
+    drvError_t ret = halHostUnregister(ptr, logicId);
+    if (ret != DRV_ERROR_NONE) {
+        HCCL_ERROR("halHostUnregister failed, ret: %d", ret);
+        return HCCL_E_DRV;
+    }
     return HCCL_SUCCESS;
 }
 
