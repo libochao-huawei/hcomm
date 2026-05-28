@@ -52,7 +52,7 @@ protected:
         s32 portNum = -1;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(any(), outBound(portNum))
+            .with(_, outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
@@ -112,7 +112,7 @@ TEST_F(RetryTest, ut_retry_ServerCheckOp_When_CheckFail_Expect_RetryErrTrue)
     RetryContext context(ServerSockets, retryServerCheckOp, agentInfo);
     context.isNeedReportOpRetryErr = false;
 
-    MOCKER_CPP(&OpRetryBase::CheckRetryInfo).stubs().with(any()).will(returnValue(HCCL_E_OPRETRY_FAIL));
+    MOCKER_CPP(&OpRetryBase::CheckRetryInfo).stubs().with(_).will(returnValue(HCCL_E_OPRETRY_FAIL));
     HcclResult ret = retryServerCheckOp->ProcessEvent(&context);
 
     EXPECT_EQ(ret, HCCL_SUCCESS);

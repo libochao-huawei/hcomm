@@ -34,12 +34,12 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_Resume_MockedBuilds_Returns_SUCCESS) {
     // Mock private helper methods BuildConnection and BuildUbMemTransport
     MOCKER_CPP(&AicpuTsUrmaChannel::BuildConnection, HcclResult(AicpuTsUrmaChannel::*)())
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&AicpuTsUrmaChannel::BuildUbMemTransport, HcclResult(AicpuTsUrmaChannel::*)())
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     auto ret = ch.Resume();
@@ -91,7 +91,7 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
 
     MOCKER_CPP(&Hccl::UbMemTransport::Describe, HcclResult (Hccl::UbMemTransport::*)(std::string&))
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS))
         .then(returnValue(HCCL_E_PARA)); // 连续两次调用，第一次成功，第二次失败
 

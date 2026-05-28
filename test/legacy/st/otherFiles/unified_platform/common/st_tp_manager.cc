@@ -100,7 +100,7 @@ TEST_F(TpManagerTest, tp_manager_get_infos_not_found)
     uint32_t errNum = 0;
     RequestHandle reqHandle = 0x12345678;
     MOCKER(RaUbGetTpInfoAsync).stubs()
-        .with(any(), any(), any(), outBound(errNum))
+        .with(_, _, _, outBound(errNum))
         .will(returnValue(reqHandle));
     HcclResult result;
     int32_t devLogicId = 0;
@@ -122,7 +122,7 @@ TEST_F(TpManagerTest, tp_manager_redo_get_infos_not_found)
     uint32_t errNum = 0;
     RequestHandle reqHandle = 0x12345678;
     MOCKER(RaUbGetTpInfoAsync).stubs()
-        .with(any(), any(), any(), outBound(errNum))
+        .with(_, _, _, outBound(errNum))
         .will(returnValue(reqHandle));
     HcclResult result;
     int32_t devLogicId = 0;

@@ -71,7 +71,7 @@ protected:
         s32 portNum = -1;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(any(), outBound(portNum))
+            .with(_, outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         std::cout << "MPI_RecvTask_Test SetUP" << std::endl;
     }
@@ -85,7 +85,7 @@ TEST_F(MPI_RecvTask_Test, ut_recv_RecvDataCb)
 {
     MOCKER_CPP(&TcpRecvTask::RecvData)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     void *fdHandle = nullptr;
@@ -101,7 +101,7 @@ TEST_F(MPI_RecvTask_Test, ut_recv_task_init)
     HCCL_INFO("st_recv_task_init");
     MOCKER(hrtSetRecvDataCallback)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     SocketInfoT socketInfo;
@@ -140,11 +140,11 @@ TEST_F(MPI_RecvTask_Test, ut_recv_task_RecvData)
     s32 returnData = 0;
     MOCKER(hrtRaSocketBlockRecv)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterogEventTcp::ReportEnvelpComp)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     TcpRecvTask::GetRecvTaskInstance()->fdTransportMap_[fdHandlePtr] = transportPtr;
@@ -174,15 +174,15 @@ TEST_F(MPI_RecvTask_Test, ut_recv_task_RecvData)
     returnData = 0;
     MOCKER(hrtRaSocketRecv)
     .stubs()
-    .with(any(), any(), any(), outBoundP(&recvSize, sizeof(recvSize)))
+    .with(_, _, _, outBoundP(&recvSize, sizeof(recvSize)))
     .will(returnValue(returnData));
     MOCKER(hrtEpollCtlMod)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportHeterogEventTcp::ReportRecvComp)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     ret = TcpRecvTask::GetRecvTaskInstance()->RecvData(fdHandlePtr);
@@ -196,7 +196,7 @@ TEST_F(MPI_RecvTask_Test, ut_recv_task_RecvData)
     returnData = 0;
     MOCKER(hrtRaSocketRecv)
     .stubs()
-    .with(any(), any(), any(), outBoundP(&recvSize, sizeof(recvSize)))
+    .with(_, _, _, outBoundP(&recvSize, sizeof(recvSize)))
     .will(returnValue(returnData));
     ret = TcpRecvTask::GetRecvTaskInstance()->RecvData(fdHandlePtr);
     EXPECT_EQ(ret, HCCL_E_TCP_TRANSFER);
@@ -205,7 +205,7 @@ TEST_F(MPI_RecvTask_Test, ut_recv_task_RecvData)
     returnData = SOCK_EAGAIN;
     MOCKER(hrtRaSocketRecv)
     .stubs()
-    .with(any(), any(), any(), outBoundP(&recvSize, sizeof(recvSize)))
+    .with(_, _, _, outBoundP(&recvSize, sizeof(recvSize)))
     .will(returnValue(returnData));
     ret = TcpRecvTask::GetRecvTaskInstance()->RecvData(fdHandlePtr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -214,7 +214,7 @@ TEST_F(MPI_RecvTask_Test, ut_recv_task_RecvData)
     returnData = SOCK_ENOENT;
     MOCKER(hrtRaSocketRecv)
     .stubs()
-    .with(any(), any(), any(), outBoundP(&recvSize, sizeof(recvSize)))
+    .with(_, _, _, outBoundP(&recvSize, sizeof(recvSize)))
     .will(returnValue(returnData));
     ret = TcpRecvTask::GetRecvTaskInstance()->RecvData(fdHandlePtr);
     EXPECT_EQ(ret, HCCL_E_TCP_TRANSFER);
@@ -242,7 +242,7 @@ TEST_F(MPI_RecvTask_Test, ut_recv_task_SetRecvTask)
 
     MOCKER(hrtEpollCtlMod)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(0));
     HcclResult ret = TcpRecvTask::GetRecvTaskInstance()->SetRecvTask(fdHandlePtr, &request);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -250,7 +250,7 @@ TEST_F(MPI_RecvTask_Test, ut_recv_task_SetRecvTask)
     request.transportRequest.transData.count = 0;
     MOCKER_CPP(&TransportHeterogEventTcp::ReportRecvComp)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
     ret = TcpRecvTask::GetRecvTaskInstance()->SetRecvTask(fdHandlePtr, &request);
     EXPECT_EQ(ret, HCCL_SUCCESS);

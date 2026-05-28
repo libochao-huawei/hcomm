@@ -47,15 +47,15 @@ protected:
         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
         MOCKER(&CcuDeviceManager::GetLoopChannelId)
             .stubs()
-            .with(any(), any(), any(), any())
+            .with(_, _, _, _)
             .will(returnValue(HcclResult::HCCL_SUCCESS));
         MOCKER(&CcuDeviceManager::GetXnBaseAddr)
             .stubs()
-            .with(any(), any(), any())
+            .with(_, _, _)
             .will(returnValue(HcclResult::HCCL_SUCCESS));
         MOCKER(&CcuDeviceManager::GetCcuResourceSpaceTokenInfo)
             .stubs()
-            .with(any(), any(), any(), any())
+            .with(_, _, _, _)
             .will(returnValue(HcclResult::HCCL_SUCCESS));
     }
 

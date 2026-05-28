@@ -136,191 +136,191 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Roce)
     std::string commTag = "SocketManagerTest";
     MOCKER(hrtRaCreateCq)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(0));
 
     MOCKER(hrtRaNormalQpCreate)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(0));
 
     MOCKER(HrtRaQpCreate)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&MrManager::ReleaseKey)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&MrManager::GetKey)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&MrManager::DeInit, HcclResult (MrManager::*)(const void *))
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&MrManager::InitMrManager, HcclResult (MrManager::*)(void *))
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(HrtRaMrReg)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(hrtRaSocketBlockRecv)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(hrtRaSocketBlockSend)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&TransportRoceMem::RecoverNotifyMsg)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(HrtRaQpNonBlockConnectAsync)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(hrtRaSocketBatchClose)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(DestroyQpWithCq)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     int qpStatus = 1;
     MOCKER(hrtGetRaQpStatus)
         .stubs()
-        .with(any())
+        .with(_)
         .will(invoke(hrtGetRaQpStatusStub));
 
     MOCKER(CreateQp)
         .stubs()
-        .with(any())
+        .with(_)
         .will(invoke(stub_CreateQp1));
 
     MOCKER(CreateNormalQp, HcclResult (*)(RdmaHandle, QpInfo&))
         .stubs()
-        .with(any())
+        .with(_)
         .will(invoke(stub_CreateNormalQp1));
 
     MOCKER(CreateQpWithCq)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&MrManager::GetDevVirAddr)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(HrtRaSendWrV2)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtRDMASend)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtRDMADBSend)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(hrtCtxSetCurrent)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtRaGetNotifyBaseAddr)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(hrtRaPollCq)
         .stubs()
-        .with(any())
+        .with(_)
         .will(invoke(hrtRaPollCqStub));
 
     MOCKER(LocalIpcNotify::Wait)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&DispatcherPub::SignalWait,
             HcclResult(DispatcherPub:: *)(HcclRtNotify, HcclRtStream, u32, u32, s32, u32, bool))
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(HrtRaMrDereg)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&NotifyPool::RegisterOp)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&NotifyPool::UnregisterOp)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&NotifyPool::Alloc)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&LocalIpcNotify::Grant)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&LocalIpcNotify::GetNotifyOffset)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&LocalIpcNotify::GetNotifyData).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&LocalIpcNotify::GetNotifyData).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
     MOCKER(RaQpConnectAsync)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(EOK));
 
     MOCKER_CPP(&HcclSocket::DeInit)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&HcclSocket::Close).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclSocket::Close).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaDeRegGlobalMr).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaDeRegGlobalMr).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaRegGlobalMr).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaRegGlobalMr).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&NetworkManager::StopHostNet).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&NetworkManager::StopHostNet).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&NetDevContext::Deinit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&NetDevContext::Deinit).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclNetCloseDev).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcclNetCloseDev).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
     Stream stream(StreamType::STREAM_TYPE_OFFLINE);
     //init dispatcher
@@ -465,18 +465,18 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Ipc)
 
     MOCKER_CPP(&HcclSocket::DeInit)
         .stubs()
-        .with(any())
+        .with(_)
         .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&HcclSocket::Close).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclSocket::Close).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&NetworkManager::StopHostNet).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&NetworkManager::StopHostNet).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&NetDevContext::Deinit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&NetDevContext::Deinit).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclNetCloseDev).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcclNetCloseDev).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtMemAsyncCopy).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtMemAsyncCopy).stubs().with(_).will(returnValue(HCCL_SUCCESS));
 
     Stream stream(StreamType::STREAM_TYPE_OFFLINE);
     //init dispatcher
@@ -635,7 +635,7 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_exchange)
     HcclResult ret;
     MOCKER_CPP(&HcclSocket::Send, HcclResult(HcclSocket::*)(const void *, u64))
     .stubs()
-    .with(any())
+    .with(_)
     .then(returnValue(HCCL_SUCCESS));
 
     TransportMem::RmaMemDesc remoteMemDescRecv;
@@ -923,7 +923,7 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_exchange)
 
     MOCKER_CPP(&HcclSocket::Send, HcclResult(HcclSocket::*)(const void *, u64))
     .stubs()
-    .with(any())
+    .with(_)
     .then(returnValue(HCCL_SUCCESS));
 
     TransportMem::RmaMemDesc remoteMemDescRecv;
@@ -1003,7 +1003,7 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_CheckRaSendNormalWrlistS
     .will(returnValue(false));
     MOCKER(IsSupportRaSendNormalWrlist)
     .stubs()
-    .with(any())
+    .with(_)
     .will(invoke(stub_IsSupportRaSendNormalWrlist));
     auto ret = transport->CheckRaSendNormalWrlistSupport();
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);

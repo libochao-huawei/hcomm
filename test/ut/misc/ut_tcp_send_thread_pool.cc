@@ -87,14 +87,14 @@ TEST_F(MPI_SendThreadPool_Test, ut_SendThreadPool_Init_Bind_CPU)
     DlHalFunction::GetInstance().DlHalFunctionInit();
     MOCKER_CPP(&TcpSendThreadPool::RunTask)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     bool envCompleted = true;
     bool tranCompleted = true;
     MOCKER_CPP(&TransportHeterogEventTcp::SendNoBlock)
     .stubs()
-    .with(any(), any(), any(), any(), outBound(envCompleted), outBound(tranCompleted))
+    .with(_, _, _, _, outBound(envCompleted), outBound(tranCompleted))
     .will(returnValue(HCCL_SUCCESS));
 
     u32 devId = 0;
@@ -112,7 +112,7 @@ TEST_F(MPI_SendThreadPool_Test, ut_GetThreadNum)
     u32 output = 0;
     MOCKER_CPP(&TcpSendThreadPool::RunTask)
     .stubs()
-    .with(any())
+    .with(_)
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER(hrtDrvGetPlatformInfo)
@@ -161,7 +161,7 @@ TEST_F(MPI_SendThreadPool_Test, ut_LoadBalancing)
     bool tranCompleted = true;
     MOCKER_CPP(&TransportHeterogEventTcp::SendNoBlock)
     .stubs()
-    .with(any(), any(), any(), any(), outBound(envCompleted), outBound(tranCompleted))
+    .with(_, _, _, _, outBound(envCompleted), outBound(tranCompleted))
     .will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&TransportHeterogEventTcp::ReportSendComp)

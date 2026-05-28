@@ -190,7 +190,7 @@ TEST_F(CcuKernelTest, AddCcuProfilingInfo_Normal) {
     handle = &channelHandle;
     MOCKER_CPP(&ChannelProcess::ChannelGet)
         .stubs()
-        .with(any(),outBoundP(handle, sizeof(handle)))
+        .with(_,outBoundP(handle, sizeof(handle)))
         .will(returnValue(HCCL_SUCCESS));  
     kernel_->Work();
     HcclResult ret = kernel_->AddCcuProfiling(testGroupInfo, testChannelsVec, testDataType, 
@@ -207,7 +207,7 @@ TEST_F(CcuKernelTest, AddProfilingInfo_Normal) {
     handle = &channelHandle;
     MOCKER_CPP(&ChannelProcess::ChannelGet)
         .stubs()
-        .with(any(),outBoundP(handle, sizeof(handle)))
+        .with(_,outBoundP(handle, sizeof(handle)))
         .will(returnValue(HCCL_SUCCESS));  
     kernel_->Work();
     HcclResult ret = kernel_->AddCcuProfiling(&testChannelsArr, 1, testDataType, 
@@ -518,11 +518,11 @@ public:
         BaseInit::SetUp();
         MOCKER(hrtGetDevicePhyIdByIndex)
             .stubs()
-            .with(any(), any())
+            .with(_, _)
             .will(returnValue(HCCL_SUCCESS));
         MOCKER(HccpRaCustomChannel)
             .stubs()
-            .with(any(), any(), any(), any())
+            .with(_, _, _, _)
             .will(returnValue(HCCL_SUCCESS));
         baseInfo_.dieId = 0;
         baseInfo_.deviceId = 0;
@@ -1011,11 +1011,11 @@ TEST_F(CcuRepContextTest, AddProfilingchannel_Normal) {
     uint32_t  channelid =2;
     MOCKER_CPP(&ChannelProcess::ChannelGet)
         .stubs()
-        .with(any(),outBoundP(handle, sizeof(handle)))
+        .with(_,outBoundP(handle, sizeof(handle)))
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuUrmaChannel::GetLocCkeByIndex)
         .stubs()
-        .with(any(),outBound(locCkeId))
+        .with(_,outBound(locCkeId))
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuUrmaChannel::GetChannelId)
         .stubs()
@@ -1040,7 +1040,7 @@ TEST_F(CcuRepContextTest, AddProfilingchannelNum_Normal) {
     uint32_t  channelid =2;
     MOCKER_CPP(&ChannelProcess::ChannelGet)
         .stubs()
-        .with(any(),outBoundP(handle, sizeof(handle)))
+        .with(_,outBoundP(handle, sizeof(handle)))
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuUrmaChannel::GetChannelId)
         .stubs()
@@ -1069,7 +1069,7 @@ TEST_F(CcuRepContextTest, AddProfilingchannelNumMuch_Normal) {
     HcommReduceOp hcommOpType = HcommReduceOp::HCOMM_REDUCE_SUM;
     MOCKER_CPP(&ChannelProcess::ChannelGet)
         .stubs()
-        .with(any(),outBoundP(handle, sizeof(handle)))
+        .with(_,outBoundP(handle, sizeof(handle)))
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuUrmaChannel::GetChannelId)
         .stubs()
@@ -1133,7 +1133,7 @@ TEST_F(CcuComponentTest, CcuComponentTestSetProcess) {
     // 模拟HccpRaCustomChannel
     MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(_, _, _, _)
         .will(returnValue(HCCL_SUCCESS));
     auto ret = CcuComponent::GetInstance(0).SetProcess(opCode);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
@@ -1160,11 +1160,11 @@ TEST_F(CcuComponentTest, CleanDiId) {
     uint32_t ckeNum =1;
     MOCKER_CPP(&CcuResSpecifications::GetCkeNum)
         .stubs()
-        .with(any(),outBound(ckeNum))
+        .with(_,outBound(ckeNum))
         .will(returnValue(HCCL_SUCCESS));
      MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(_, _, _, _)
         .will(returnValue(HCCL_SUCCESS));
     CcuComponent::GetInstance(0).dieEnableFlags_[0] = true;
     auto ret = CcuComponent::GetInstance(0).CleanDieCkes(IODIE);

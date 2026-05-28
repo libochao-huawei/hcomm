@@ -186,7 +186,7 @@ TEST_F(HcommCAdptTest, ut_HcommChannelGetPtrByHandle_When_AivUrma_Expect_FillArr
 
     MOCKER(ChannelProcess::ChannelGet)
         .stubs()
-        .with(any(), outBoundP(&channel, sizeof(channel)))
+        .with(_, outBoundP(&channel, sizeof(channel)))
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&hcomm::AivUrmaChannel::BuildChannelEntityToDevice, HcclResult(hcomm::AivUrmaChannel::*)(void **))
         .stubs()
@@ -210,7 +210,7 @@ TEST_F(HcommCAdptTest, ut_HcommChannelGetPtrByHandle_When_ChannelKindUnsupported
 
     MOCKER(ChannelProcess::ChannelGet)
         .stubs()
-        .with(any(), outBoundP(&channel, sizeof(channel)))
+        .with(_, outBoundP(&channel, sizeof(channel)))
         .will(returnValue(HCCL_SUCCESS));
 
     HcommResult ret = HcommChannelGetPtrByHandle(channelList, 1, channelPtr);

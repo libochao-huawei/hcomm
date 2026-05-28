@@ -57,9 +57,9 @@ protected:
     virtual void SetUp() {
         std::cout << "A Test case in RankInfoDetectClientTest SetUP" << std::endl;
         socketHandle = new int(0);
-        MOCKER(HrtRaSocketInit).stubs().with(any(), any()).will(returnValue(socketHandle));
-        MOCKER_CPP(&HccpPeerManager::Init).stubs().with(any());
-        MOCKER_CPP(&HccpPeerManager::DeInit).stubs().with(any());
+        MOCKER(HrtRaSocketInit).stubs().with(_, _).will(returnValue(socketHandle));
+        MOCKER_CPP(&HccpPeerManager::Init).stubs().with(_);
+        MOCKER_CPP(&HccpPeerManager::DeInit).stubs().with(_);
         IpAddress serverIp = IpAddress("10.0.0.10");
         u32 hostPort = 60001;
         IpAddress hostIp_ = IpAddress("192.168.1.8");
@@ -104,7 +104,7 @@ TEST_F(RankInfoDetectClientTest, st_SendAgentIdAndRankSize_When_Normal_Expect_Su
 {
     MOCKER(HrtRaSocketBlockSend)
         .stubs()
-        .with(any(), any())
+        .with(_, _)
         .will(returnValue(true));
 
     EXPECT_NO_THROW(rankInfoDetectClient_->SendAgentIdAndRankSize());
@@ -133,7 +133,7 @@ TEST_F(RankInfoDetectClientTest, st_ConstructRankTable_When_Normal_Expect_Succes
     MOCKER(realpath) 
         .stubs()  
         .with(
-            any(), 
+            _, 
             outBoundP(
                 const_cast<char*>(testJsonPath.c_str()),  
                 testJsonPath.size() + 1                   
@@ -175,8 +175,8 @@ TEST_F(RankInfoDetectClientTest, st_RecvRankTable_When_Normal_Expect_Success)
 
     // 取rankInfoMsg的data() （const char *）
     MOCKER(aclrtMallocHostWithCfg).stubs().will(returnValue(1));
-    MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue((void*)rankInfoMsg.data()));
-    MOCKER(HrtFreeHost).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(HrtMallocHost).stubs().with(_).will(returnValue((void*)rankInfoMsg.data()));
+    MOCKER(HrtFreeHost).stubs().with(_).will(ignoreReturnValue());
     void *msg = rankInfoMsg.data();
     u64 msgLen = rankInfoMsg.size();
     u64 &revMsgLen = msgLen;

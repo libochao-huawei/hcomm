@@ -48,7 +48,7 @@ TEST_F(AdapterQosTest, HrtGetQosConfig_return_ok)
 
     MOCKER(QosGetStreamEngineQos)
         .stubs()
-        .with(any(), any(), any(), outBoundP(&info, sizeof(info)))
+        .with(_, _, _, outBoundP(&info, sizeof(info)))
         .will(returnValue(QosErrorCode::QOS_SUCCESS));
 
     // when

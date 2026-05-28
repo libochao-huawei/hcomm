@@ -19,7 +19,7 @@ public:
         UT_USE_1SERVER_1RANK_AS_DEFAULT;
         MOCKER_CPP(GetExternalInputHcclEnableEntryLog)
             .stubs()
-            .with(any())
+            .with(_)
             .will(returnValue(true));
     }
 

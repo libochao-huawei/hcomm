@@ -312,14 +312,14 @@ TEST(CollServiceDefaultImplTest, test_base_register_offload_buf)
     MOCKER(HrtDevMemAlignWithPage).stubs();
     MOCKER(HrtIpcDestroyMemoryName).stubs();
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
-    MOCKER(HrtMemset).stubs().with(any(), any(), any(), any());
+    MOCKER(HrtMalloc).stubs().with(_,_).will(returnValue(devPtr));
+    MOCKER(HrtMemset).stubs().with(_, _, _, _);
     MOCKER_CPP(&CommunicatorImpl::InitNotifyFixedValue).stubs().will(ignoreReturnValue());
     GenRankTableFile4p();
     GenTopoFile();
 
     MOCKER_CPP(&CommunicatorImpl::InitCollService).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(HrtSetDevice).stubs().with(_).will(ignoreReturnValue());
 
     std::shared_ptr<DevBuffer> devBuf = DevBuffer::Create(0x100, 0x100);
     LocalIpcRmaBuffer localRmaBuf(devBuf);
@@ -450,7 +450,7 @@ TEST(CollServiceDefaultImplTest, test_orchestrate_with_ins)
     HcclResult(CollAlgComponent::*)(
         const CollAlgOperator &op, const CollAlgParams &params, const string &algName, InsQuePtr queue))
     .stubs()
-    .with(any(), any(), any(), any())
+    .with(_, _, _, _)
     .will(returnValue(HcclResult::HCCL_SUCCESS));
     EXPECT_NO_THROW(service.OrchestrateWithIns(op));
 }
@@ -565,7 +565,7 @@ TEST(CollServiceDefaultImplTest, coll_service_default_impl_orchestrate_with_ins_
     HcclResult(CollAlgComponent::*)(
         const CollAlgOperator &op, const CollAlgParams &params, const string &algName, InsQuePtr queue))
     .stubs()
-    .with(any(), any(), any(), any())
+    .with(_, _, _, _)
     .will(returnValue(HcclResult::HCCL_SUCCESS));
     service.connectionsBuilders[comm.id] = std::make_unique<ConnectionsBuilder>(comm);
 
@@ -590,7 +590,7 @@ TEST(CollServiceDefaultImplTest, coll_service_default_impl_orchestrate_with_ins_
     op.outputMem = DevBuffer::Create(0x100, 1);
     op.scratchMem = DevBuffer::Create(0x100, 1);
     s32 fakeStreamId = 123;
-    MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
+    MOCKER(HrtGetStreamId).stubs().with(_).will(returnValue(0));
     auto stream = std::make_unique<Stream>(nullptr);
     comm.streamManager->opbase->master = make_unique<Stream>(&comm);
     comm.currentCollOperator->opMode = OpMode::OPBASE;
@@ -605,7 +605,7 @@ TEST(CollServiceDefaultImplTest, coll_service_default_impl_orchestrate_with_ins_
         });
     algoCfg.bufferSize.isParsed = true;
     MOCKER_CPP(&EnvConfig::GetAlgoConfig).stubs().will(returnValue(algoCfg));
-    MOCKER_CPP(&CollServiceBase::SaveMirrorDfxOpInfo).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&CollServiceBase::SaveMirrorDfxOpInfo).stubs().with(_).will(ignoreReturnValue());
     EXPECT_NO_THROW(service.LoadWithOpBasedMode(op, std::move(stream)));
 }
 
@@ -672,32 +672,32 @@ TEST(CollServiceDefaultImplTest, col_service_default_impl_update_ub_ci_if_need_s
     CollServiceDefaultImpl service(&comm);
     service.updatingUbCiEvent = nullptr;
     MOCKER(IfNeedUpdatingUbCi).stubs().will(returnValue(true));
-    MOCKER_CPP(&UbCiUpdaterManager::SaveConnsCi).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&UbCiUpdaterManager::SaveConnsCi).stubs().with(_).will(ignoreReturnValue());
     CollOperator op;
     op.opTag = "test";
     service.UpdateUbCiIfNeed(op.opTag);
     service.updatingUbCiEvent = make_unique<MaskEvent>();
     RtEvent_t fakePtr = nullptr;
     aclrtEventWaitStatus status = ACL_EVENT_WAIT_STATUS_COMPLETE;
-    MOCKER(aclrtQueryEventWaitStatus).stubs().with(any(), outBoundP(&status, sizeof(status))).will(returnValue(ACL_SUCCESS));
-    MOCKER_CPP(&UbCiUpdaterManager::UpdateConnsCi).stubs().with(any());
+    MOCKER(aclrtQueryEventWaitStatus).stubs().with(_, outBoundP(&status, sizeof(status))).will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(&UbCiUpdaterManager::UpdateConnsCi).stubs().with(_);
     service.UpdateUbCiIfNeed(op.opTag);
 }
 
 TEST(CollServiceDefaultImplTest, AddCountTask)
 {
     GlobalMockObject::verify();
-    MOCKER(HrtStreamDestroy).stubs().with(any());
+    MOCKER(HrtStreamDestroy).stubs().with(_);
     void *ptr = nullptr;
-    MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
-    MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
+    MOCKER(HrtStreamCreateWithFlags).stubs().with(_, _).will(returnValue(ptr));
+    MOCKER(HrtGetStreamId).stubs().with(_).will(returnValue(0));
     DevType devType = DevType::DEV_TYPE_910A;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
-    MOCKER(HrtReduceAsync).stubs().with(any());
-    MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
+    MOCKER(HrtReduceAsync).stubs().with(_);
+    MOCKER(HrtMemcpy).stubs().with(_, _, _, _, _);
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
-    MOCKER(HrtMemset).stubs().with(any(), any(), any(), any());
+    MOCKER(HrtMalloc).stubs().with(_,_).will(returnValue(devPtr));
+    MOCKER(HrtMemset).stubs().with(_, _, _, _);
  
     CommunicatorImpl comm;
     comm.streamManager = make_unique<StreamManager>(&comm);

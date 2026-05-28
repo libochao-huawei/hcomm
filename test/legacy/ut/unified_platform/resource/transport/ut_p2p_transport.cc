@@ -124,22 +124,22 @@ protected:
     virtual void SetUp()
     {
         std::cout << "A Test case in P2PTransport SetUP" << std::endl;
-        MOCKER(HrtMemAsyncCopy).stubs().with(any());
-        MOCKER(HrtReduceAsync).stubs().with(any());
-        MOCKER(aclrtCreateStreamWithConfig).stubs().with(any(), any()).will(returnValue((void *)100));
-        MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
+        MOCKER(HrtMemAsyncCopy).stubs().with(_);
+        MOCKER(HrtReduceAsync).stubs().with(_);
+        MOCKER(aclrtCreateStreamWithConfig).stubs().with(_, _).will(returnValue((void *)100));
+        MOCKER(HrtGetStreamId).stubs().with(_).will(returnValue(0));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
-        MOCKER(HrtIpcOpenNotify).stubs().with(any()).will(returnValue((void *)fakeNotifyHandleAddr));
+        MOCKER(HrtIpcOpenNotify).stubs().with(_).will(returnValue((void *)fakeNotifyHandleAddr));
         MOCKER(HrtDeviceGetBareTgid).stubs().will(returnValue(fakePid));
         MOCKER(HrtGetDevice).stubs().will(returnValue(0));
         MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
-        MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
+        MOCKER(HrtIpcSetNotifyName).stubs().with(_, outBoundP(fakeName, sizeof(fakeName)), _);
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-        MOCKER(HrtNotifyGetAddr).stubs().with(any()).will(returnValue(fakeAddress));
+        MOCKER(HrtNotifyGetAddr).stubs().with(_).will(returnValue(fakeAddress));
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
 
-        MOCKER(HrtNotifyRecord).stubs().with(any());
-        MOCKER(HrtNotifyWaitWithTimeOut).stubs().with(any());
+        MOCKER(HrtNotifyRecord).stubs().with(_);
+        MOCKER(HrtNotifyWaitWithTimeOut).stubs().with(_);
     }
 
     virtual void TearDown()
