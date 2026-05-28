@@ -35,7 +35,7 @@ public:
     static SocketMgr& GetInstance(s32 phyId);
 
 private:
-    HcclResult Init();
+    HcclResult Init(const Hccl::SocketConfig &socketConfig);
     HcclResult GetSocketHandle(const Hccl::SocketConfig &socketConfig, Hccl::SocketHandle &socketHandle);
     HcclResult AddWhiteList(const Hccl::SocketConfig &socketConfig, const Hccl::SocketHandle &socketHandle);
     HcclResult CreateSocket(const Hccl::SocketConfig &socketConfig, const Hccl::SocketHandle &socketHandle);
@@ -47,6 +47,7 @@ private:
     SocketMgr& operator=(const SocketMgr&) = delete;
 
     bool isLoaded_{false};
+    bool isHostOnlyInit_{false};
     uint32_t devicePhyId_{};
     uint32_t serverListenPort_{};
     std::unordered_map<Hccl::SocketConfig, std::unique_ptr<Hccl::Socket>> socketMap_{};

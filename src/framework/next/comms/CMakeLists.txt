@@ -14,6 +14,7 @@ add_subdirectory(endpoints)
 add_subdirectory(endpoint_pairs)
 add_subdirectory(comm_engine_res)
 add_subdirectory(api_c_adpt)
+add_subdirectory(nic_plugin)
 
 set(src_list
     hcomm_res_mgr.cc
@@ -31,6 +32,7 @@ if(TARGET hcomm)
         ${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoint_pairs
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoints
+        ${CMAKE_CURRENT_SOURCE_DIR}/nic_plugin
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/reged_mems
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/net_dev
         ${CMAKE_CURRENT_SOURCE_DIR}/ccu/pub_inc
