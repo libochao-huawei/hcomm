@@ -23,6 +23,7 @@
 #include "hcclCommTaskExceptionLite.h"
 #include "coll_comm_aicpu_destroy_func.h"
 #include "aicpu_indop_env.h"
+#include "aicpu_hdc.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
@@ -70,17 +71,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 
 HcclResult CollCommAicpu::InitHDCommunicate(CommAicpuParam *commAicpuParam)
 {
-    if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
-        EXCEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
-        CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
-        CHK_RET(kfcControlTransferH2D_->InitDevice(commAicpuParam->kfcControlTransferH2DParams));
-    }
-    if (commAicpuParam->kfcStatusTransferD2HParams.buffLen != 0 && kfcStatusTransferD2H_ == nullptr) {
-        EXCEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
-        CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
-        CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
-    }
-    return HCCL_SUCCESS;
+    return hcomm::InitHDCommunicateHelper(commAicpuParam, kfcControlTransferH2D_, kfcStatusTransferD2H_);
 }
 
 void CollCommAicpu::InitIndopEnv(CommAicpuParam *commAicpuParam)

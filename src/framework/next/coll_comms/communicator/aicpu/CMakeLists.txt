@@ -23,5 +23,6 @@ if(TARGET ccl_kernel)
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${HCOMM_DIR}/src/framework/next/coll_comms/communicator/ns_recovery/aicpu
+        ${HCOMM_DIR}/src/framework/device/framework
     )
 endif()

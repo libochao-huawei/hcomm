@@ -10,8 +10,29 @@
 
 #include "aicpu_hdc.h"
 #include "utils/aicpu_hdc_utils.h"
+#include "aicpu_init_param.h"
 
 using namespace hccl;
+
+namespace hcomm {
+HcclResult InitHDCommunicateHelper(
+    CommAicpuParam *commAicpuParam,
+    std::shared_ptr<hccl::HDCommunicate> &kfcControlTransferH2D,
+    std::shared_ptr<hccl::HDCommunicate> &kfcStatusTransferD2H)
+{
+    if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D == nullptr) {
+        EXCEPTION_CATCH((kfcControlTransferH2D = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(kfcControlTransferH2D);
+        CHK_RET(kfcControlTransferH2D->InitDevice(commAicpuParam->kfcControlTransferH2DParams));
+    }
+    if (commAicpuParam->kfcStatusTransferD2HParams.buffLen != 0 && kfcStatusTransferD2H == nullptr) {
+        EXCEPTION_CATCH((kfcStatusTransferD2H = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(kfcStatusTransferD2H);
+        CHK_RET(kfcStatusTransferD2H->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
+    }
+    return HCCL_SUCCESS;
+}
+} // namespace hcomm
 
 HcclResult AicpuHdc::InitOpExecStatus(std::shared_ptr<hccl::HDCommunicate> d2hTransfer, HcclOpIdentifier &opId)
 {

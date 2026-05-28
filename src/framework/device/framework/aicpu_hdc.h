@@ -14,6 +14,14 @@
 #include <memory>
 #include "aicpu_operator_pub.h"
 #include "hdc_pub.h"
+#include "aicpu_init_param.h"
+
+namespace hcomm {
+HcclResult InitHDCommunicateHelper(
+    CommAicpuParam *commAicpuParam,
+    std::shared_ptr<hccl::HDCommunicate> &kfcControlTransferH2D,
+    std::shared_ptr<hccl::HDCommunicate> &kfcStatusTransferD2H);
+} // namespace hcomm
 
 class AicpuHdc {
 public:
