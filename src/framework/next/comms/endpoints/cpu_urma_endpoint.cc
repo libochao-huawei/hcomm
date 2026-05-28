@@ -61,7 +61,7 @@ HcclResult CpuUrmaEndpoint::Init()
         ipAddr.Describe().c_str(),
         ctxHandle_);
 
-    EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_PARA);
+    EXCEPTION_CATCH(regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_PARA);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
     return HCCL_SUCCESS;
 }

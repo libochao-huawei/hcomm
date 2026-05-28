@@ -436,7 +436,7 @@ HcclResult HcclCommConn::InitTransport(u32 role, HcclAddr &localAddr, SocketInfo
         HcclIpAddress(remoteAddr_.info.tcp.ipv4Addr).GetReadableIP(), remoteAddr_.info.tcp.port);
 
     transportResourceInfo_.isRawConn = true;
-    EXECEPTION_CATCH((transport_ = make_unique<TransportHeterogRawRoce>(linkTag, selfIp, peerIp,
+    EXCEPTION_CATCH((transport_ = make_unique<TransportHeterogRawRoce>(linkTag, selfIp, peerIp,
         remoteAddr_.info.tcp.port, localAddr_.info.tcp.port, transportResourceInfo_)), return HCCL_E_PTR);
 
     CHK_SMART_PTR_NULL(transport_);

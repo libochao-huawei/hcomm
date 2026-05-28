@@ -258,11 +258,11 @@ HcclResult SocketProcess::BuildSocket(SocketDesc *socketDesc, const std::string 
         if (serverSocketHandle == nullptr) {
             serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Create(devicePhyId_, localListenPair.first);
         }
-        EXECEPTION_CATCH(serverSocketMap_[localListenPair] = std::make_unique<Hccl::Socket>(
+        EXCEPTION_CATCH(serverSocketMap_[localListenPair] = std::make_unique<Hccl::Socket>(
             serverSocketHandle, ipaddr, localListenPair.second, ipaddr, socketDesc->tag,
             Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
         HCCL_INFO("[%s] listen_socket_info[%s]", __func__, serverSocketMap_[localListenPair].get()->Describe().c_str());
-        EXECEPTION_CATCH(serverSocketMap_[localListenPair].get()->Listen(), return HCCL_E_INTERNAL);
+        EXCEPTION_CATCH(serverSocketMap_[localListenPair].get()->Listen(), return HCCL_E_INTERNAL);
     }
     HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());
 

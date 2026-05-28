@@ -241,12 +241,12 @@ HcclResult HcclCommAicpu::InitOpRetry(const HcclOpResParam *commParam)
         retryIntervalTime_);
 
     if (commParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
-        EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
         CHK_RET(kfcControlTransferH2D_->InitDevice(commParam->kfcControlTransferH2DParams));
     }
     if (commParam->kfcStatusTransferD2HParams.buffLen != 0 && kfcStatusTransferD2H_ == nullptr) {
-        EXECEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commParam->kfcStatusTransferD2HParams));
     }
@@ -277,7 +277,7 @@ HcclResult HcclCommAicpu::InitZeroCopyExchanger(const HcclOpResParam *commParam)
     u32 timeoutSec = commParam->config.notifyWaitTime;
     HCCL_INFO("[HcclCommAicpu][InitZeroCopyExchanger] set timeout is [%u s]", timeoutSec);
 
-    EXECEPTION_CATCH((ZeroCopyExchanger_ =
+    EXCEPTION_CATCH((ZeroCopyExchanger_ =
         std::make_shared<hccl::AicpuZeroCopyExchanger>(commParam->localUsrRankId, commParam->rankSize,
         commParam, nSecStopFunc, timeoutSec, topoInfo_.deviceNumPerAggregation, taskMonitorInterval_)), return HCCL_E_PTR);
 
@@ -930,7 +930,7 @@ HcclResult HcclCommAicpu::InitAndVerifySignal(const HcclSignalInfo &signalInfo, 
     }
 
     std::shared_ptr<T> notify;
-    EXECEPTION_CATCH((notify = std::make_shared<T>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((notify = std::make_shared<T>()), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(notify);
     CHK_RET(notify->Init(signalInfo, NotifyLoadType::DEVICE_NOTIFY));
     notifyVec.push_back(notify);
@@ -991,7 +991,7 @@ HcclResult HcclCommAicpu::InitLocalTagRes(const ListCommon &head, bool reAllocFl
             }
             DeviceMem loalScratchmem = DeviceMem::create(scratchMemPtr, tagRes->ScratchmemSize);
             std::shared_ptr<DeviceMem> loalScratchmemPtr;
-            EXECEPTION_CATCH(
+            EXCEPTION_CATCH(
                 (loalScratchmemPtr = std::make_shared<DeviceMem>(std::move(loalScratchmem))), return HCCL_E_PTR);
             CHK_SMART_PTR_NULL(loalScratchmemPtr);
             if (tagScratchMem_.find(tag) == tagScratchMem_.end()) {
@@ -1073,7 +1073,7 @@ HcclResult HcclCommAicpu::InitAndVerifySingleSignal(const HcclSignalInfo &signal
     }
     HcclSignalInfo tmpSignalInfo;
 
-    EXECEPTION_CATCH((notify = std::make_shared<T>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((notify = std::make_shared<T>()), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(notify);
     CHK_RET(notify->Init(signalInfo, NotifyLoadType::DEVICE_NOTIFY));
     CHK_RET(notify->GetNotifyData(tmpSignalInfo));
@@ -5249,12 +5249,12 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     HCCL_INFO("[%s] Ctx_temp[%p]", __func__, (void*)Ctx_temp);
     (void)RegisterLoadTaskCallBack(Ctx_temp->GetDispatcher(), nullptr, dfx::TaskProfilingCallBack); //注册dispatcher
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
-        EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
         CHK_RET(kfcControlTransferH2D_->InitDevice(commAicpuParam->kfcControlTransferH2DParams));
     }
     if (commAicpuParam->kfcStatusTransferD2HParams.buffLen != 0 && kfcStatusTransferD2H_ == nullptr) {
-        EXECEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
@@ -5291,7 +5291,7 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
             HCCL_INFO("[HcclCommAicpu][%s] %s", __func__, oss.str().c_str());
         }
         std::shared_ptr<AicpuTsThread> thread;
-        EXECEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
+        EXCEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
         HcclResult ret = thread->Init();
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] failed at index %u",

@@ -63,7 +63,7 @@ HcclResult OpRetryBase::Handle(RetryContext* retryCtx)
 
     if (!retryCtx->IsRootRetryCtx() && retryCtx->isAgentStateWaitResume_ && retryCtx->GetRetryState() != RETRY_STATE_AGENT_WAIT_RESUME) {
         std::shared_ptr<OpRetryBase> retryPtr = nullptr;
-        EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentWaitResume>(), return HCCL_E_PTR);
+        EXCEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentWaitResume>(), return HCCL_E_PTR);
         retryCtx->SetRetryState(RETRY_STATE_AGENT_WAIT_RESUME, retryPtr);
         retryCtx->ResetAgentState();
         HCCL_INFO("[OpRetry][Agent]switch to wait resume.");
@@ -72,7 +72,7 @@ HcclResult OpRetryBase::Handle(RetryContext* retryCtx)
 
     if (retryCtx->IsRootRetryCtx() && retryCtx->isServerStateWaitResume_ && retryCtx->GetRetryState() != RETRY_STATE_SERVER_WAIT_RESUME) {
         std::shared_ptr<OpRetryBase> retryPtr = nullptr;
-        EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryServerWaitResume>(), return HCCL_E_PTR);
+        EXCEPTION_CATCH(retryPtr = std::make_shared<OpRetryServerWaitResume>(), return HCCL_E_PTR);
         retryCtx->SetRetryState(RETRY_STATE_SERVER_WAIT_RESUME, retryPtr);
         retryCtx->ResetServerState();
         HCCL_INFO("[OpRetry][Server]switch to wait resume.");

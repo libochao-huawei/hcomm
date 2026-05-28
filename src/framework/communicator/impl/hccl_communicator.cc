@@ -591,12 +591,12 @@ namespace hccl
         if (GetSupportHDCommunicate())
         {
             // 初始化aicpu进程host-device共享内存
-            EXECEPTION_CATCH((kfcControlTransferH2D_ =
+            EXCEPTION_CATCH((kfcControlTransferH2D_ =
                                   std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_H2D, sizeof(KfcExecControl))),
                              return HCCL_E_PTR);
             CHK_RET(kfcControlTransferH2D_->InitHost());
 
-            EXECEPTION_CATCH((kfcStatusTransferD2H_ =
+            EXCEPTION_CATCH((kfcStatusTransferD2H_ =
                                   std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(KfcExecStatus))),
                              return HCCL_E_PTR);
             CHK_RET(kfcStatusTransferD2H_->InitHost());
@@ -604,12 +604,12 @@ namespace hccl
             if (IsEnableCustom())
             {
                 // 初始化custom进程host-device共享内存
-                EXECEPTION_CATCH((customControlTransferH2D_ =
+                EXCEPTION_CATCH((customControlTransferH2D_ =
                                       std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_H2D, sizeof(KfcExecControl))),
                                  return HCCL_E_PTR);
                 CHK_RET(customControlTransferH2D_->InitHost());
 
-                EXECEPTION_CATCH((customStatusTransferD2H_ =
+                EXCEPTION_CATCH((customStatusTransferD2H_ =
                                       std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(KfcExecStatus))),
                                  return HCCL_E_PTR);
                 CHK_RET(customStatusTransferD2H_->InitHost());

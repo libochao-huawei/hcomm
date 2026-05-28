@@ -156,7 +156,7 @@ HcclResult TcpSendThreadPool::Init(u32 devId)
                 TaskQueueManager_[i].taskQueues = make_pair(mainThreadTaskQueue, swapThreadTaskQueue);
                 TaskQueueManager_[i].threadTaskQueuePtr = &TaskQueueManager_[i].taskQueues.first;
             }
-            EXECEPTION_CATCH((threads_[i] = make_unique<thread>(&TcpSendThreadPool::RunTask, this, i)),
+            EXCEPTION_CATCH((threads_[i] = make_unique<thread>(&TcpSendThreadPool::RunTask, this, i)),
                 return HCCL_E_PTR);
         }
     }
