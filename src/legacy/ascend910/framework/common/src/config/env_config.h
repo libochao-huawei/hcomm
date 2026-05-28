@@ -58,7 +58,6 @@ const bool& GetExternalInputHcclHeartBeatEnable();
 const bool& GetExternalInputStuckDetect();
 
 const InconsistentCheckMode& GetExternalInconsistentCheckSwitch();
-HcclResult SetExternalInconsistentCheckSwitch(InconsistentCheckMode mode);
 
 s32& GetExternalInputDfsConnectionFaultDetectionTime();
 
