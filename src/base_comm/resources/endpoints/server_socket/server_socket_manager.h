@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef SERVER_SOCKET_MGR_H
-#define SERVER_SOCKET_MGR_H
+#ifndef SERVER_SOCKET_MANAGER_H
+#define SERVER_SOCKET_MANAGER_H
 #include <mutex>
 #include <unordered_map>
 #include "hccl/hccl_res.h"
@@ -39,6 +39,7 @@ public:
 
     HcclResult ServerSocketStartListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t devPhyId, uint32_t *port);
     HcclResult ServerSocketStopListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t port);
+    static void DeInit(u32 devPhyId);
 
 private:
     ServerSocketManager()

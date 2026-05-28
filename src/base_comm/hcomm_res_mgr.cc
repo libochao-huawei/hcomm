@@ -33,6 +33,8 @@
 #include "resources/ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_kernel_mgr.h"
 #include "../endpoint_pairs/sockets/socket_process.h"
+#include "server_socket_mgr.h"
+#include "server_socket_manager.h"
 
 namespace hcomm {
 
@@ -86,6 +88,33 @@ HcommResMgr::~HcommResMgr()
 {
     // 临时方案：最小化修改不做处理
     // 未来需在析构函数中主动调用各种单例销毁流程，保证销毁时序
+}
+
+static void EndpointDeviceStateCallback(int32_t deviceId, aclrtDeviceState state, void *args)
+{
+    HCCL_INFO("[EndpointDeviceStateCallback] deviceId[%d] stat[%d] ", deviceId, static_cast<int>(state));
+    
+    // 仅处理设备重置前状态
+    if (state != ACL_RT_DEVICE_STATE_RESET_PRE) {
+        return;
+    }
+    u32 devPhyId = Hccl::HrtGetDevicePhyIdByIndex(deviceId);
+    SocketMgr::DeInit(devPhyId);
+    ServerSocketMgr::DeInit(devPhyId);
+    ServerSocketManager::DeInit(devPhyId);
+
+    Hccl::RdmaHandleManager::GetInstance().DeInit(devPhyId);
+    Hccl::SocketHandleManager::GetInstance().DeInit(devPhyId);
+
+    Hccl::HccpHDcMagager::GetInstance().Deinit(deviceId);
+}
+
+__attribute__((constructor)) void EndpointCallBackInit()
+{
+    aclError ret = aclrtRegDeviceStateCallback("hcomm_res_mgr", EndpointDeviceStateCallback, nullptr);
+    if (ret != ACL_SUCCESS) {
+        HCCL_WARNING("[EndpointCallBackInit] aclrtRegDeviceStateCallback failed, ret[%d]", ret);
+    }
 }
 
 } // namespace hcomm
