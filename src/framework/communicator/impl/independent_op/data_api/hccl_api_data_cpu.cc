@@ -29,6 +29,7 @@
 #include "exception_handler.h"
 #include "task_info.h"
 #include "task_param.h"
+#include "nic_plugin_manager.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -44,6 +45,14 @@ bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
         dataType == HCOMM_DATA_TYPE_INT16 || dataType == HCOMM_DATA_TYPE_INT32 || dataType == HCOMM_DATA_TYPE_BFP16);
     bool checkReduceType = (op == HCOMM_REDUCE_SUM || op == HCOMM_REDUCE_MAX || op == HCOMM_REDUCE_MIN);
     return checkDataType && checkReduceType;
+}
+
+hcomm::PluginChannelCtx *GetPluginChannelCtx(ChannelHandle channel)
+{
+    if (!IS_PLUGIN_HANDLE(channel)) {
+        return nullptr;
+    }
+    return PLUGIN_CH_CTX(channel);
 }
 
 int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
@@ -247,6 +256,15 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->write == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->write(pluginChannel->ctx, thread, dst, src, len);
+    }
+
     AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -269,6 +287,15 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
 int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
     const HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum)
 {
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->batchTransfer == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->batchTransfer(pluginChannel->ctx, thread, transferDescs, transferDescNum);
+    }
+
     HCCL_ERROR(" [HcommBatchTransferOnThread] not support in cpu");
     return HCCL_E_NOT_SUPPORT;
 }
@@ -282,6 +309,15 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->writeReduce == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->writeReduce(pluginChannel->ctx, thread, dst, src, count, dataType, reduceOp);
+    }
+
     CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[HcommWriteReduceOnThread]Not support reduce, "
         "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
     AddThreadWithTag(thread);
@@ -311,6 +347,16 @@ HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel,
 {
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->writeReduceWithNotify == nullptr) {
+            return static_cast<HcclResult>(hcomm::UnsupportedPluginOp(__func__));
+        }
+        return static_cast<HcclResult>(pluginChannel->ops->writeReduceWithNotify(pluginChannel->ctx, thread, dst, src,
+            count, dataType, reduceOp, remoteNotifyIdx));
+    }
+
     CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[CommWriteReduceWithNotify]Not support reduce, "
         "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
     AddThreadWithTag(thread);
@@ -333,6 +379,15 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
 
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->writeWithNotify == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->writeWithNotify(pluginChannel->ctx, thread, dst, src, len, remoteNotifyIdx);
+    }
+
     AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -360,6 +415,16 @@ int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle ch
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->writeReduceWithNotify == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->writeReduceWithNotify(pluginChannel->ctx, thread, dst, src, count, dataType,
+            reduceOp, remoteNotifyIdx);
+    }
+
     AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -386,6 +451,15 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->read == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->read(pluginChannel->ctx, thread, dst, src, len);
+    }
+
     AddThreadWithTag(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -413,6 +487,15 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->readReduce == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->readReduce(pluginChannel->ctx, thread, dst, src, count, dataType, reduceOp);
+    }
+
     CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[HcommReadReduceOnThread]Not support reduce, "
         "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
     AddThreadWithTag(thread);
@@ -445,6 +528,14 @@ int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *
     (void)thread;
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->writeNbi == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->writeNbi(pluginChannel->ctx, thread, dst, src, len);
+    }
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -465,6 +556,14 @@ int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *
 
 int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->writeNbiNt == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->writeNbiNt(pluginChannel->ctx, dst, src, len);
+    }
     return HcommWriteNbiOnThread(0, channel, dst, src, len);
 }
 
@@ -477,6 +576,14 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
     (void)thread;
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->writeWithNotifyNbi == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->writeWithNotifyNbi(pluginChannel->ctx, thread, dst, src, len, remoteNotifyIdx);
+    }
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -498,6 +605,14 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
 int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
 {
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->writeWithNotifyNbiNt == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->writeWithNotifyNbiNt(pluginChannel->ctx, dst, src, len, remoteNotifyIdx);
+    }
     return HcommWriteWithNotifyNbiOnThread(0, channel, dst, src, len, remoteNotifyIdx);
 }
 
@@ -509,6 +624,14 @@ int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *d
     (void)thread;
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->readNbi == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->readNbi(pluginChannel->ctx, thread, dst, src, len);
+    }
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -529,12 +652,29 @@ int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *d
 
 int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->readNbiNt == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->readNbiNt(pluginChannel->ctx, dst, src, len);
+    }
     return HcommReadNbiOnThread(0, channel, dst, src, len);
 }
 
 int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx);
+
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->notifyRecord == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->notifyRecord(pluginChannel->ctx, thread, remoteNotifyIdx);
+    }
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -561,6 +701,15 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
 
 int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->notifyRecordNt == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->notifyRecordNt(pluginChannel->ctx, remoteNotifyIdx);
+    }
+
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType != DevType::DEV_TYPE_950) {
@@ -572,6 +721,15 @@ int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx
 int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut);
+
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->notifyWait == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->notifyWait(pluginChannel->ctx, thread, localNotifyIdx, timeOut);
+    }
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -598,6 +756,15 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
 
 int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut)
 {
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->notifyWaitNt == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->notifyWaitNt(pluginChannel->ctx, localNotifyIdx, timeOut);
+    }
+
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType != DevType::DEV_TYPE_950) {
@@ -609,6 +776,15 @@ int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, u
 HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后的任务保序
 {
     HCCL_DEBUG("[CommFence] thread[0x%llx], channel[0x%llx].", thread, channel);
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->fence == nullptr) {
+            return static_cast<HcclResult>(hcomm::UnsupportedPluginOp(__func__));
+        }
+        return static_cast<HcclResult>(pluginChannel->ops->fence(pluginChannel->ctx, thread));
+    }
+
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
 
@@ -690,6 +866,15 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 
     (void)thread;
 
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->fence == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->fence(pluginChannel->ctx, thread);
+    }
+
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
@@ -707,6 +892,14 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 
 int32_t HcommChannelFence(ChannelHandle channel)
 {
+    hcomm::PluginChannelCtx *pluginChannel = GetPluginChannelCtx(channel);
+    if (pluginChannel != nullptr) {
+        CHK_PTR_NULL(pluginChannel->ops);
+        if (pluginChannel->ops->fenceNt == nullptr) {
+            return hcomm::UnsupportedPluginOp(__func__);
+        }
+        return pluginChannel->ops->fenceNt(pluginChannel->ctx);
+    }
     return HcommChannelFenceOnThread(0, channel);
 }
 
