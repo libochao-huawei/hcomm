@@ -16,6 +16,10 @@
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuKfcResInitV2(void *args);
 __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *args);
+__attribute__((visibility("default"))) uint32_t RunAicpuNotifyRecord(void *args);
+__attribute__((visibility("default"))) uint32_t RunAicpuNotifyWait(void *args);
+__attribute__((visibility("default"))) uint32_t HcclP2pLaunchNonGroupSynAicpuKernel(void *args);
+__attribute__((visibility("default"))) uint32_t HcclP2pLaunchGroupAicpuKernel(void *args);
 }
 
 #endif // __MC2_AICPU_INTERFACE_HPP__
