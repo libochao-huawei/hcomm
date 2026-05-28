@@ -15,6 +15,8 @@
 #include "hcomm_res_defs.h"
 #include "channel_process.h"
 #include "endpoint_map.h"
+#include "env_config/env_config.h"
+#include "next/comms/nic_plugin/nic_plugin_manager.h"
 #include "orion_adpt_utils.h"
 #include "hccp_peer_manager.h"
 #include "rdma_handle_manager.h"
@@ -22,6 +24,119 @@
 #include "adapter_rts_common.h"
 
 using namespace hcomm;
+
+namespace {
+struct FakePluginChannelState {
+    uint32_t getStatusCalls = 0;
+};
+
+struct FakePluginScenario {
+    uint32_t readyAfterCalls = 1;
+    HcommResult getStatusRet = HCCL_SUCCESS;
+    uint32_t createCalls = 0;
+    uint32_t destroyCalls = 0;
+};
+
+FakePluginScenario g_fakePluginScenario;
+
+int32_t FakePluginCreateChannel(void *epCtx, const void *channelDescRaw, uint32_t chDescLen,
+    void **outCtx, HcommNicChannelOps **outOps);
+int32_t FakePluginGetStatus(void *ctx, int32_t *status);
+void FakePluginDestroyChannel(void *ctx);
+
+HcommNicChannelOps g_fakeChannelOps = {
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    FakePluginDestroyChannel,
+    FakePluginGetStatus,
+    nullptr,
+    nullptr
+};
+
+HcommNicPluginInfo g_fakePluginInfo = {
+    HCOMM_NIC_PLUGIN_ABI_VERSION,
+    "fake_plugin",
+    1,
+    {HCOMM_NIC_PROTO_ROCE}
+};
+
+NicPluginEntry g_fakePluginEntry = {
+    nullptr,
+    &g_fakePluginInfo,
+    nullptr,
+    FakePluginCreateChannel
+};
+
+HcommNicEndpointOps g_fakeEndpointOps = {};
+
+int32_t FakePluginCreateChannel(void *epCtx, const void *channelDescRaw, uint32_t chDescLen,
+    void **outCtx, HcommNicChannelOps **outOps)
+{
+    (void)epCtx;
+    (void)channelDescRaw;
+    (void)chDescLen;
+    g_fakePluginScenario.createCalls++;
+    *outCtx = new FakePluginChannelState();
+    *outOps = &g_fakeChannelOps;
+    return HCCL_SUCCESS;
+}
+
+int32_t FakePluginGetStatus(void *ctx, int32_t *status)
+{
+    if (g_fakePluginScenario.getStatusRet != HCCL_SUCCESS) {
+        return g_fakePluginScenario.getStatusRet;
+    }
+    auto *state = static_cast<FakePluginChannelState *>(ctx);
+    state->getStatusCalls++;
+    *status = state->getStatusCalls >= g_fakePluginScenario.readyAfterCalls ? 0 : 1;
+    return HCCL_SUCCESS;
+}
+
+void FakePluginDestroyChannel(void *ctx)
+{
+    g_fakePluginScenario.destroyCalls++;
+    delete static_cast<FakePluginChannelState *>(ctx);
+}
+
+EndpointHandle MakeFakePluginEndpointHandle()
+{
+    static int endpointCtx = 0;
+    static PluginEndpointCtx pluginEndpoint = {
+        &g_fakeEndpointOps,
+        &endpointCtx,
+        &g_fakePluginEntry
+    };
+    return MAKE_PLUGIN_EP_HANDLE(&pluginEndpoint);
+}
+
+void ResetFakePluginScenario()
+{
+    g_fakePluginScenario = {};
+    g_fakePluginScenario.readyAfterCalls = 1;
+    g_fakePluginScenario.getStatusRet = HCCL_SUCCESS;
+}
+} // namespace
 
 HcclResult StubServerSocketGetListenPort(Endpoint* /*endpoint*/, uint32_t* port)
 {
@@ -237,6 +352,80 @@ TEST_F(HcommCAdptTest, ut_HcommChannelCreate_When_NotAiCpu_Expect_Success)
         .will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommChannelCreate(endpointHandle, COMM_ENGINE_CPU, &channelDesc, 1, channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommChannelCreate_Plugin_When_StatusReadyLater_Expect_BlockUntilReady)
+{
+    ResetFakePluginScenario();
+    g_fakePluginScenario.readyAfterCalls = 3;
+    EndpointHandle endpointHandle = MakeFakePluginEndpointHandle();
+    HcommChannelDesc channelDesc{};
+    (void)HcommChannelDescInit(&channelDesc, 1);
+    ChannelHandle channels[1] = {0};
+
+    HcommResult ret = HcommChannelCreate(endpointHandle, COMM_ENGINE_CPU, &channelDesc, 1, channels);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(g_fakePluginScenario.createCalls, 1);
+    EXPECT_TRUE(IS_PLUGIN_HANDLE(channels[0]));
+    auto *pluginChannel = PLUGIN_CH_CTX(channels[0]);
+    auto *state = static_cast<FakePluginChannelState *>(pluginChannel->ctx);
+    EXPECT_GE(state->getStatusCalls, 3U);
+    EXPECT_EQ(g_fakePluginScenario.destroyCalls, 0);
+    EXPECT_EQ(HcommChannelDestroy(channels, 1), HCCL_SUCCESS);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommChannelCreate_Plugin_When_GetStatusError_Expect_DestroyAndReturnError)
+{
+    ResetFakePluginScenario();
+    g_fakePluginScenario.getStatusRet = HCCL_E_PARA;
+    EndpointHandle endpointHandle = MakeFakePluginEndpointHandle();
+    HcommChannelDesc channelDesc{};
+    (void)HcommChannelDescInit(&channelDesc, 1);
+    ChannelHandle channels[1] = {0};
+
+    HcommResult ret = HcommChannelCreate(endpointHandle, COMM_ENGINE_CPU, &channelDesc, 1, channels);
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(g_fakePluginScenario.createCalls, 1);
+    EXPECT_EQ(g_fakePluginScenario.destroyCalls, 1);
+    EXPECT_EQ(channels[0], 0);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommChannelCreate_Plugin_When_Timeout_Expect_DestroyAndReturnTimeout)
+{
+    ResetFakePluginScenario();
+    g_fakePluginScenario.readyAfterCalls = 0xFFFFFFFF;
+    EndpointHandle endpointHandle = MakeFakePluginEndpointHandle();
+    HcommChannelDesc channelDesc{};
+    (void)HcommChannelDescInit(&channelDesc, 1);
+    ChannelHandle channels[1] = {0};
+    MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
+        .stubs()
+        .with(any())
+        .will(returnValue((s32)(0)));
+
+    HcommResult ret = HcommChannelCreate(endpointHandle, COMM_ENGINE_CPU, &channelDesc, 1, channels);
+
+    EXPECT_EQ(ret, HCCL_E_TIMEOUT);
+    EXPECT_EQ(g_fakePluginScenario.createCalls, 1);
+    EXPECT_EQ(g_fakePluginScenario.destroyCalls, 1);
+    EXPECT_EQ(channels[0], 0);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommChannelCreate_Plugin_When_EngineNotCpu_Expect_NotSupport)
+{
+    ResetFakePluginScenario();
+    EndpointHandle endpointHandle = MakeFakePluginEndpointHandle();
+    HcommChannelDesc channelDesc{};
+    (void)HcommChannelDescInit(&channelDesc, 1);
+    ChannelHandle channels[1] = {0};
+
+    HcommResult ret = HcommChannelCreate(endpointHandle, COMM_ENGINE_AICPU, &channelDesc, 1, channels);
+
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(g_fakePluginScenario.createCalls, 0);
+    EXPECT_EQ(g_fakePluginScenario.destroyCalls, 0);
 }
 
 TEST_F(HcommCAdptTest, ut_HcommEngineCtxCopy_When_CPU_Expect_Success)
