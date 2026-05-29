@@ -581,9 +581,7 @@ bool NeedUpdateTopoInstForSubGraph(const NetInstance *oldNetInstance, u32 topoIn
         return false;
     }
     if (topoInstIter->second == nullptr) {
-        HCCL_WARNING("[SubRankGraph][NeedUpdateTopoInstForSubGraph] skip topoInstId[%u], parentMyRank[%u], "
-                     "topoInst is null in parent netInstId[%s]",
-                     topoInstId, parentMyRank, oldNetInstance->GetNetInstId().c_str());
+        THROW<NullPtrException>(StringFormat("[SubRankGraph][NeedUpdateTopoInstForSubGraph] topoInstId %u has no TopoInst", topoInstId));
         return false;
     }
     return topoInstIter->second->ranks.count(parentMyRank) > 0;
