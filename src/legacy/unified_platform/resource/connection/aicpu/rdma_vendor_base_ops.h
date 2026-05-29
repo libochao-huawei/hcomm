@@ -143,26 +143,24 @@ protected:
         auto startTime = std::chrono::steady_clock::now();
 
         HCCL_INFO("[RdmaBaseOps::%s] Operate: sqTail = %u", __func__, sqTail_);
-        while (true) {
+        while (!timeOutFlag) {
             auto status = memcpy_s(&sqTail_, sizeof(uint32_t), (void *)sqContext_->tailAddr, sizeof(uint32_t));
             if (UNLIKELY(status != 0)) {
                 THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] read sq tail failed, ret = %d", __func__, status));
             }
 
-            // sq队列能放下
-            timeOutFlag = (std::chrono::steady_clock::now() - startTime) > timeout_;
-            if (timeOutFlag ||  static_cast<uint32_t>(sqHead_ - sqTail_ + wqeNum) <= sqContext_->depth) {
-                break;
+            // sq 队列能放下，直接成功返回
+            if (static_cast<uint32_t>(sqHead_ - sqTail_ + wqeNum) <= sqContext_->depth) {
+                return HCCL_SUCCESS;
             }
+
+            timeOutFlag = (std::chrono::steady_clock::now() - startTime) > timeout_;
         }
 
-        // 超时处理 
-        if (timeOutFlag) {
-            HCCL_ERROR("[RdmaBaseOps::%s] Sq is Full !! Operate: sqTail = %u Failed. ", __func__, sqTail_);
-            return HCCL_E_TIMEOUT;
-        }
-
-        return HCCL_SUCCESS;
+        // 超时处理
+        HCCL_ERROR("[RdmaBaseOps::%s] Sq is Full !! Operate: sqTail = %u Failed. ",
+                __func__, sqTail_);
+        return HCCL_E_TIMEOUT;
     }
 
     // 将PI更新到硬件可见地址

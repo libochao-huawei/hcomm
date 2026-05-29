@@ -103,7 +103,7 @@ void RdmaConnLiteV2::GetVendorOps()
 void RdmaConnLiteV2::CheckVendorOp()
 {
     if (UNLIKELY(rdmaOps_ == nullptr)) {
-        THROW<InternalException>(StringFormat("NDA Op is null. "));
+        THROW<InternalException>(StringFormat("NDA Op is null. Now dmaMode_ is %d.", dmaMode_));
     }
 }
 
