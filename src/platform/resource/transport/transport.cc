@@ -326,6 +326,12 @@ HcclResult Transport::GetLocalRdmaNotify(std::vector<HcclSignalInfo> &rdmaNotify
     return pimpl_->GetLocalRdmaNotify(rdmaNotify);
 }
 
+HcclResult Transport::GetFlushLocalDataNotify(void* &localAddr, uint32_t& lkey, HcclSignalInfo &dataNotify)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->GetFlushLocalDataNotify(localAddr, lkey, dataNotify);
+}
+
 HcclResult Transport::GetRemoteRdmaNotifyAddrKey(std::vector<AddrKey> &rdmaNotifyAddr)
 {
     CHK_PTR_NULL(pimpl_);
@@ -686,5 +692,23 @@ HcclResult Transport::HcclBatchWrite(const TransportDeviceNormalData &ibvData,
     HCCL_ERROR("[Transport][HcclBatchWrite]Does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
+}
+
+HcclResult Transport::Flush(Stream &stream, uint32_t timeout)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->Flush(stream, timeout);
+}
+
+HcclResult Transport::InitFlushNotifyInfo()
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->InitFlushNotifyInfo();
+}
+
+HcclResult Transport::GetFlushRemSrcMem(void* &remoteAddr, uint32_t &remoteKey, uint32_t &size)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->GetFlushRemSrcMem(remoteAddr, remoteKey, size);
 }
 }
