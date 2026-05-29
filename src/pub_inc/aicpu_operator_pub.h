@@ -238,11 +238,8 @@ constexpr u32 AICPU_MAX_RANK_NUM = 128 * 1024;
 constexpr u32 MAX_RANK_NUM_A3 = 768;
 constexpr u32 HCOMID_MAX_LENGTH = 256;
 
-// aclgraph销毁场景下，从host端投递到aicpu端的清理任务payload。
-// 与HcclKFCTilingData独立，避免污染现有通信任务结构体。
-// host端通过RunAicpuKfcClearOpRes作为kernel name投递，aicpu端按group定位HcclCommAicpu后批量清tags关联资源。
-// 单批最多HCCL_KFC_CLEAR_OP_RES_MAX_BATCH个tag，超出由host端分批launch（同一buffer复用）。
-constexpr u32 HCCL_KFC_CLEAR_OP_RES_MAGIC = 0x484B4346U; // 'HKCF'，aicpu端校验防误投
+// aclgraph 销毁场景下从 host 端投递到 aicpu 端的清理任务 payload，与 HcclKFCTilingData 独立；host 端通过 RunAicpuKfcClearOpRes 投递，aicpu 端按 group 定位 HcclCommAicpu 后批量清 tags
+constexpr u32 HCCL_KFC_CLEAR_OP_RES_MAGIC = 0x484B4346U; // 'HKCF'，aicpu 端校验防误投
 constexpr u32 HCCL_KFC_CLEAR_OP_RES_MAX_BATCH = 10240U;  // 单次 launch 最多清的 tag 数；10240×256B ≈ 2.5MB
 struct HcclKfcClearOpResTilingData {
     u32 magic;                                                                  // 必须等于HCCL_KFC_CLEAR_OP_RES_MAGIC
@@ -303,8 +300,7 @@ static inline void ListCommonAddHead(struct ListCommon *newDeviceL, struct ListC
     headHostL->nextDevice = reinterpret_cast<u64>(newDeviceL);
 }
 
-// 跟 ListCommonAddHead 对称的双链表 unlink：同时维护 host 和 device 两套 prev/next 指针。
-// 调用方负责后续释放节点关联的内存；本函数只调整链表指针。
+// 跟 ListCommonAddHead 对称的双链表 unlink，同时维护 host 和 device 两套 prev/next 指针
 static inline void ListCommonRemove(struct ListCommon *nodeHostL)
 {
     if (nodeHostL == nullptr) {

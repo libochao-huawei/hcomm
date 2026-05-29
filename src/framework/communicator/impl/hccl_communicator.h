@@ -388,9 +388,7 @@ public:
         void* tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
         const std::string &tag, bool isCustom);
     HcclResult InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode);
-    // aclgraph销毁时批量清理aicpu端 tags 关联资源；走RunAicpuKfcClearOpRes kernel，
-    // 同一communicator下整批tag一次launch（超MAX_BATCH分批），payload走持久HBM buffer。
-    // aicpu端按group定位HcclCommAicpu后for循环ClearOpResource。
+    // aclgraph 销毁时批量清理 aicpu 端 tags；走 RunAicpuKfcClearOpRes kernel，超 MAX_BATCH 分批
     HcclResult AicpuKfcClearOpResLaunch(const std::unordered_set<std::string> &tags);
     HcclResult ClearAclgraphHostLinks(const std::unordered_set<std::string> &tags);
     virtual HcclResult Mc2AiCpuStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
@@ -970,12 +968,9 @@ private:
     DeviceMem workSpace_;
     DeviceMem mc2DeviceMem_;
     std::vector<DeviceMem> extraMem_;
-    // aclgraph 销毁时 host→aicpu 投递 HcclKfcClearOpResTilingData 的常驻 HBM buffer，
-    // lazy alloc 在 AicpuKfcClearOpResLaunch 首次调用；析构靠 DeviceMem RAII。
+    // aclgraph 销毁时投递 HcclKfcClearOpResTilingData 的 HBM buffer，lazy alloc，RAII 析构
     DeviceMem aicpuCleanupBuf_;
-    // host 侧 payload 暂存 buffer：HcclKfcClearOpResTilingData 在 10k batch 时达 ~2.5MB，
-    // 若每次 launch 在栈上 value-init 整个结构体会有爆栈风险（ACL runtime callback
-    // worker thread 栈可能 <2MB，未在 ACL 文档钉死）。改为 heap 持久持有 + 复用。
+    // host 侧 payload buffer（heap 持有），避免 ~2.5MB 结构体在栈上 value-init 爆栈
     std::unique_ptr<HcclKfcClearOpResTilingData> aicpuCleanupHostBuf_;
     std::vector<HcclRtEvent> aiCpuNoIpcEvnet_;
     bool isDiffDeviceModule_;
@@ -1076,9 +1071,7 @@ private:
     void *zeroCopyIpcPtrs_[AICPU_ZERO_COPY_MAX_DEVICE_NUM_A3] {};
     std::atomic<HcclCommState> state_{HcclCommState::IDLE};
     std::unordered_map<std::string, std::string> newTagToTagMap_;
-    // ClearResMap 强清块依据: zerocopy hex prefix tag + cnt 副本 _CaptureN tag,
-    // 跨 iter 在 rankTagRemoteRes_/hostMemVec_/deviceMemVec_/nextTagRes 链表累积新 entry,
-    // 必须 RPC sync aicpu 后 host 端 ListCommonRemove + 配对 erase 释放。
+    // zerocopy hex prefix tag + cnt 副本 _CaptureN tag，跨 iter 累积新 entry
     std::unordered_set<std::string> tagsRequiringHostCleanup_;
     static std::mutex linkResMapMutex_;
     static std::unordered_map<Transport*, LinkInfo> linkResMap_;

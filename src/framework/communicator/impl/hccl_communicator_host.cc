@@ -7454,13 +7454,7 @@ namespace hccl
             HCCL_WARNING("[AicpuKfcClearOpResLaunch] opStream_ null, skip aicpu cleanup; tagCount[%zu]", tags.size());
             return HCCL_SUCCESS;
         }
-        // aclrtLaunchKernelWithHostArgs 的 host args 通道有 size 上限, 大 payload 直接走 args/tiling 通道会被
-        // runtime 拒绝(errorCode=0x2a)。沿用 RunAicpuKfcResInit 模式: HBM buffer 持载, args 只放
-        // KFCResInitTask{context, isCustom} (16B) 包装, context 是 device buffer 地址。
-        // aicpuCleanupBuf_ (device) + aicpuCleanupHostBuf_ (host heap) 都是 communicator 成员复用:
-        //   - device 端: 避免每次 destroy alloc/free HBM
-        //   - host 端: 避免在栈上 value-init ~2.5MB 结构体 (ACL callback worker thread 栈风险)
-        // 同一 communicator 的 cleanup launch 由 AclgraphCallback::resMutex_ 串行化, 不需要并发锁。
+        // host args 通道有 size 上限，大 payload 走 args/tiling 会被拒绝。沿用 RunAicpuKfcResInit 模式：HBM buffer 持载 payload
         if (!aicpuCleanupBuf_) {
             CHK_RET(DeviceMem::alloc(aicpuCleanupBuf_, sizeof(HcclKfcClearOpResTilingData)));
         }
@@ -7470,19 +7464,14 @@ namespace hccl
         }
         HcclKfcClearOpResTilingData &payload = *aicpuCleanupHostBuf_;
 
-        // 必须与 aicpu_kfc_def.h 中 KFCResInitTask(u64 context; bool isCustom) 布局一致，
-        // aicpu 端 RunAicpuKfcClearOpRes 按该结构体解包。
+        // 必须与 aicpu_kfc_def.h 中 KFCResInitTask 布局一致，aicpu 端按此解包
         struct KFCResInitTask { u64 context; bool isCustom; };
         KFCResInitTask initTask = { reinterpret_cast<u64>(aicpuCleanupBuf_.ptr()), false };
         const u16 timeOut = MAX_VALUE_U16;
         const size_t groupCopyLen = std::min(identifier_.length() + 1, sizeof(payload.group));
         size_t totalBatches = 0;
 
-        // 分批 launch: 同 buffer 复用, 每批最多 HCCL_KFC_CLEAR_OP_RES_MAX_BATCH 个 tag。
-        // launch 后 hcclStreamSynchronize 保证 aicpu kernel 完成才覆盖 buffer 下一批; 不 sync 则下一轮
-        // memcpy 会与 aicpu 端读冲突。一次 destroy callback 内 tags 通常 << MAX_BATCH, 多数情况只 1 批。
-        // payload 是 communicator 成员复用, 不每次 value-init 整个结构体; aicpu 端只读 tagCount 范围内的
-        // tags, payload.tags[tagCount..] 的脏数据不影响正确性。
+        // 分批 launch：同 buffer 复用，每批最多 MAX_BATCH 个 tag；launch 后 sync 保证 aicpu 完成才覆盖 buffer 下一批
         auto it = tags.begin();
         while (it != tags.end()) {
             payload.magic = HCCL_KFC_CLEAR_OP_RES_MAGIC;

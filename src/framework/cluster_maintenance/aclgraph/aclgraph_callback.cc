@@ -54,11 +54,7 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
 
     bool isResourceReleaseFailed = false;
     for (auto &commIt : modelIt->second) {
-        // 1. 整批 RPC sync: aicpu 端一次 launch erase 所有 tag 的 7 map entry, 内含
-        //    hcclStreamSynchronize, 返回后 aicpu 端不再访问这些 tag 的 device ListCommon
-        //    镜像; 这是步骤 3 host 端 ListCommonRemove + 配对 erase race-free 的前置屏障。
-        //    aicpu kernel 内 for 循环单 tag 失败不阻断后续, 因此 aicpuRet != SUCCESS 通常意味着
-        //    launch/sync 通道异常, 而非 erase 语义失败。
+        // 1. 整批 RPC sync aicpu 端：一次 launch erase 所有 tag 的 7 map entry，内含 sync，返回后 aicpu 不再访问这些 tag
         HcclResult aicpuRet = commIt.first->AicpuKfcClearOpResLaunch(commIt.second);
         if (aicpuRet != HCCL_SUCCESS) {
             HCCL_RUN_WARNING("[%s] modelID[%llu] aicpu batch sync fail, tagCount[%zu] ret[%d]; "
@@ -67,9 +63,7 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
             isResourceReleaseFailed = true;
         }
 
-        // 2. host 端逐 tag 清自己 resMap_/tagStreamInfo_/... (host 进程内状态, 与 aicpu sync
-        //    独立; aicpu 失败也要清, 否则 host 端 resMap_ 残留, 下次同 tag 进入 ExecOp 拿到
-        //    stale AlgResourceResponse)
+        // 2. host 端逐 tag 清自己 resMap_/tagStreamInfo_ 等 host 进程内状态，与 aicpu sync 独立；aicpu 失败也要清，否则 resMap_ 残留
         for (auto &newTag : commIt.second) {
             ret = commIt.first->ClearOpResource(newTag, true);
             if (ret != HCCL_SUCCESS) {
@@ -79,8 +73,7 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
             }
             HCCL_DEBUG("[%s] modelID[%llu] tag[%s] host resource release finish", __func__, modelId, newTag.c_str());
         }
-        // 3. aicpu 已 sync, host 端整批 ListCommonRemove + 三容器 erase race-free;
-        //    aicpu 失败时跳过, tagsRequiringHostCleanup_ 内 tag 保留至 communicator 析构
+        // 3. aicpu 已 sync，host 端整批 ListCommonRemove + 三容器 erase race-free；aicpu 失败时跳过，tag 保留至析构
         if (aicpuRet == HCCL_SUCCESS) {
             (void)commIt.first->ClearAclgraphHostLinks(commIt.second);
         }

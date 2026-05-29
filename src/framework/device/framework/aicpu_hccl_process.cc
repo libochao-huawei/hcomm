@@ -367,9 +367,7 @@ u32 AicpuHcclProcess::AicpuRpcClearOpRes(const struct HcclKfcClearOpResTilingDat
     }
     const std::string groupStr(group);
 
-    // GetCommbyGroup 独占占用槽位（与 ExecOp 互斥），保证清理不与正在跑的 op 竞争。
-    // 一次 GetCommbyGroup 覆盖整批 tag, 避免在循环内反复抢占槽位; 整批结束后一次 Release。
-    // 超时 10ms 后返回 nullptr；超时不重试，留给下一轮 destroy callback 再清。
+    // GetCommbyGroup 独占占用槽位（与 ExecOp 互斥），一次覆盖整批 tag 避免循环内反复抢占；超时 10ms 返回 nullptr
     hccl::HcclCommAicpu *commAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(groupStr);
     if (commAicpu == nullptr) {
         HCCL_WARNING("[AicpuRpcClearOpRes] group[%s] not found or busy, skip batch; tagCount[%u]",
