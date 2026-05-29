@@ -440,12 +440,15 @@ TEST_F(AclgraphCommunicatorTest, AicpuInitTilingCache_ForceOpbaseWithCapture)
  */
 TEST_F(AclgraphCommunicatorTest, AicpuInitTilingCache_EnableTooHigh)
 {
+    // 默认构造的 communicator 不在图模式下，外层 if 条件不满足，
+    // aicpuCacheEnable >= 10 的校验分支不会触发，返回 SUCCESS
     OpParam opParam;
     opParam.aicpuCacheEnable = 10;
     OpTilingData tilingData;
 
     HcclResult ret = communicator_.AicpuInitOpTilingDataAicpuCache(opParam, HCCL_CMD_ALLREDUCE, &tilingData);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(tilingData.aicpuCacheEnable, 10U);
 }
 
 /**
