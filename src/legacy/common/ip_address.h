@@ -52,9 +52,17 @@ union Eid {
 
     string Describe() const
     {
-        return StringFormat("eid[%016llx:%016llx]",
-                            static_cast<unsigned long long>(be64toh(in6.subnetPrefix)),
-                            static_cast<unsigned long long>(be64toh(in6.interfaceId)));
+        uint64_t subnet = be64toh(in6.subnetPrefix);
+        uint64_t ifId = be64toh(in6.interfaceId);
+        return StringFormat("%04llx:%04llx:%04llx:%04llx:%04llx:%04llx:%04llx:%04llx",
+                            static_cast<unsigned long long>((subnet >> 48) & 0xFFFF),
+                            static_cast<unsigned long long>((subnet >> 32) & 0xFFFF),
+                            static_cast<unsigned long long>((subnet >> 16) & 0xFFFF),
+                            static_cast<unsigned long long>(subnet & 0xFFFF),
+                            static_cast<unsigned long long>((ifId >> 48) & 0xFFFF),
+                            static_cast<unsigned long long>((ifId >> 32) & 0xFFFF),
+                            static_cast<unsigned long long>((ifId >> 16) & 0xFFFF),
+                            static_cast<unsigned long long>(ifId & 0xFFFF));
     }
 
     bool operator==(const Eid &that) const
