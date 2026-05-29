@@ -567,12 +567,26 @@ void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &
         || exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE
         || exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE
         || exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB) {
+        hccl::CollComm *collComm = static_cast<hccl::CollComm*>(exceptionTaskInfo.dfxOpInfo_->comm_);
+
+        std::string localServerId = "";
+        GetAicpuCqeErrNetInstanceByRankId(collComm, errorMessage.rankId, localServerId);
+        u32 localDeviceId = INVALID_VALUE_RANKID;
+        GetAicpuCqeErrRemoteLocalIdByRankId(collComm, errorMessage.rankId, localDeviceId);
+        std::string remoteServerId = "";
+        GetAicpuCqeErrNetInstanceByRankId(collComm, errorMessage.remoteUserRank, remoteServerId);
+        u32 remoteDeviceId = INVALID_VALUE_RANKID;
+        GetAicpuCqeErrRemoteLocalIdByRankId(collComm, errorMessage.remoteUserRank, remoteDeviceId);
+
+        Hccl::IpAddress localAddr(errorMessage.locEid);
+        Hccl::IpAddress remoteAddr(errorMessage.rmtEid);
         HCCL_ERROR("[ReportErrorMsg] EI0018");
         RPT_INPUT_ERR(true,
             "EI0018",
             std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp", "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
             std::vector<std::string>({
-                "", std::to_string(exceptionInfo->deviceid), errorMessage.locEid.Describe().c_str(), "", "", errorMessage.rmtEid.Describe().c_str()})
+                localServerId, std::to_string(localDeviceId), localAddr.GetReverseEid().Describe().c_str(),
+                remoteServerId, std::to_string(remoteDeviceId), remoteAddr.GetReverseEid().Describe().c_str()})
             );
     }
 }
