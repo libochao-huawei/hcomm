@@ -52,27 +52,36 @@ namespace hccl {
         std::shared_ptr<AicpuZeroCopyExchanger>& zeroCopyExchangerPtr, const HcclWorkflowMode workflowMode,
         const DeviceMem& tinySendRecvMem, std::function<HcclResult()> setProfStartCallback)
     {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+
         needExecute = true;
         isCacheMiss = false;
 
         CHK_PTR_NULL(opUnfoldCachePtr_);
 
-        // Dump main stream and slave streams addr and id for debug
-        HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] mainStream with streamId[%u] and id[%u]",
-            mainStream.GetHcclStreamInfo().actualStreamId, mainStream.id());
-        for (size_t i = 0; i < slaveStreams.size(); ++i) {
-            Stream &slaveStream = slaveStreams[i];
-            HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] %uth slaveStream with streamId[%u] and id[%u]",
-                i, slaveStream.GetHcclStreamInfo().actualStreamId, slaveStream.id());
-        }
-
-        // 判断是否需要cache
         bool needCache = false;
-        CHK_RET(NeedOpUnfoldCache(algName, param, algResource, isDeviceMode, topoinfo, topoMatcherPtr, algContext, workflowMode, needCache));
-        HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] needCache[%u]", needCache);
+
+        {
+            MY_TIMER("LookupOpUnfoldCache_step1");
+
+            // Dump main stream and slave streams addr and id for debug
+            HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] mainStream with streamId[%u] and id[%u]",
+                mainStream.GetHcclStreamInfo().actualStreamId, mainStream.id());
+            for (size_t i = 0; i < slaveStreams.size(); ++i) {
+                Stream &slaveStream = slaveStreams[i];
+                HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] %uth slaveStream with streamId[%u] and id[%u]",
+                    i, slaveStream.GetHcclStreamInfo().actualStreamId, slaveStream.id());
+            }
+
+            // 判断是否需要cache
+            CHK_RET(NeedOpUnfoldCache(algName, param, algResource, isDeviceMode, topoinfo, topoMatcherPtr, algContext, workflowMode, needCache));
+            HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] needCache[%u]", needCache);
+        }
 
         // Cacheable算子
         if (needCache) {
+            MY_TIMER("LookupOpUnfoldCache_step2");
+
             // 将streams中已有的task强制下发, 放置cache缓存跟算子编排无关的SQE
             // 注意: cache miss需要先强制下发, 避免缓存和算子展开无关的SQE; cache hit也需要强制下发, 否则LaunchNewTask只会下发cache里的, 而不会下发stream里的
             CHK_PTR_NULL(dispatcherPtr);
@@ -148,6 +157,8 @@ namespace hccl {
 
     HcclResult AicpuCacheManager::PreProcessForCacheMiss(const OpParam &param, std::unique_ptr<CollExecutorBase> &executor)
     {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+        
         // 第一个需要cache的alltoallv类算子
         // 注意: 只有当alltoallv的algName为"RunAlltoAllDirectFullmesh"时, 才会进入cache, 所以使用的一定是CollRunAlltoAllDirectFullmesh executor
         if (IsAlltoallvType(param.opType)) {
@@ -163,6 +174,8 @@ namespace hccl {
         Stream& mainStream, std::vector<Stream>& slaveStreams, void* dispatcherPtr, const HcclTopoInfo& topoinfo,
         const AlgOpContext& algContext, const HcclWorkflowMode workflowMode)
     {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+
         // Cache miss会设置launch context to enable cache admission -> 需要清理launch context, DispatcherAicpu不会再admit当前算子后续展开的SQE
         // 注意: AicpuCacheManager下dispatcher一定是DispatcherAicpu
         CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcherPtr))->ClearLaunchContext());
@@ -272,6 +285,8 @@ namespace hccl {
         const AlgResourceResponse& algResource, const bool isDeviceMode, const HcclTopoInfo& topoinfo,
         std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext, const HcclWorkflowMode workflowMode,
         bool& needCache) {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+
         // 初始化为不需要op-unfold cache
         needCache = false;
 
@@ -689,6 +704,8 @@ namespace hccl {
     HcclResult AicpuCacheManager::GetOpUnfoldKey(const OpParam &param, OpUnfoldKey& key, const HcclTopoInfo& topoinfo,
         const AlgOpContext& algContext, const HcclWorkflowMode workflowMode)
     {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+        
         // 注意: 由于GetOpUnfoldKey前已经做过NeedOpUnfoldCache检查, 这里不再做重复检验
 
         // 准备sendType和inputSize
@@ -763,6 +780,8 @@ namespace hccl {
         const HcclTopoInfo& topoinfo, std::shared_ptr<AicpuZeroCopyExchanger>& zeroCopyExchangerPtr,
         const HcclWorkflowMode workflowMode, const DeviceMem& tinySendRecvMem)
     {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+        
         // 注意: 由于PrepareUserMemRanges前已经做过NeedOpUnfoldCache检查, 这里不再做重复检验
 
         const uint32_t rankSize = topoinfo.userRankSize;

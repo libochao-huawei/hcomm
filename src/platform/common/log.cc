@@ -29,3 +29,9 @@ bool IsErrorToWarn()
 {
     return g_hcclErrToWarn;
 }
+
+// TODOSSY: 性能打点
+#ifdef ENABLE_CACHE_BREAKDOWN
+uint64_t HcclTimer::timerCounter = 0;
+std::vector<TimerEntry> HcclTimer::timerEntries;
+#endif
