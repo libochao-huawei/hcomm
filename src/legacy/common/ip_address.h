@@ -52,7 +52,7 @@ union Eid {
 
     string Describe() const
     {
-        return StringFormat("eid[%016llx:%016llx]",
+        return StringFormat("%016llx:%016llx",
                             static_cast<unsigned long long>(be64toh(in6.subnetPrefix)),
                             static_cast<unsigned long long>(be64toh(in6.interfaceId)));
     }
