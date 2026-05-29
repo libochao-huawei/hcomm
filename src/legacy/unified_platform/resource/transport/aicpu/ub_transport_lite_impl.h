@@ -83,6 +83,7 @@ public:
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
+    u32 rmtbufferNum{0};
     u32 connNum{0};
     bool fence_{false};
     bool taskExceptionEnable_{true};
