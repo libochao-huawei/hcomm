@@ -993,6 +993,20 @@ int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
     HCCL_ERROR("[%s]Does not support this interface.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
+
+int32_t HcommChannelFlushOnThread(ThreadHandle thread, ChannelHandle channel)
+{
+    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+    Stream *stream = GetStream(thread);
+    CHK_PTR_NULL(stream);
+
+    HcclResult ret = HcclRemoteFlush(stream, reinterpret_cast<void *>(channel));
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] Run FAIL. thread[0x%llx], channel[0x%llx].", __func__, thread, channel), ret);
+
+    return HCCL_SUCCESS;
+}
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
