@@ -348,7 +348,7 @@ HcclResult ChannelManager::BuildOpRemoteChannelP2pResParam(const LINK &link, Hcc
     CHK_RET(link->GetRemoteNotify(rmtIpcSignals));
 
     for (size_t i = 0; i < locIpcSignals.size(); i++) {
-        CHK_RET(CheckNotifyOrQPMaxNum(notifyNum, LINK_P2P_MAX_NUM, true));
+        CHK_RET(CheckNotifyOrQPMaxNum(notifyNum, P2P_NOTIFY_MAX_NUM, true));
         linkp2p.localIpcSignal[notifyNum] = locIpcSignals[i];
         linkp2p.remoteIpcSignal[notifyNum] = rmtIpcSignals[i];
         notifyNum++;
