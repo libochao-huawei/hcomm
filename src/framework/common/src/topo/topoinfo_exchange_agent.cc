@@ -831,7 +831,6 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterBackupDeviceIP(RankTable_t &clust
                     errormessage.c_str());
                 return HCCL_E_PARA;
             }
-
         }
     }
     return HCCL_SUCCESS;
@@ -945,7 +944,6 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
             return HCCL_E_PARA;
         }
 
-
         auto iter = superPodSrvIdMap.find(rankInfo[i].superPodId);
         if (iter == superPodSrvIdMap.end()) {
             std::set<std::string> serverIdSet;
@@ -977,7 +975,6 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
                     errormessage.c_str());
                 return HCCL_E_PARA;
             }
-
         }
     }
 

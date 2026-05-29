@@ -112,7 +112,7 @@ TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_S
     EXPECT_EQ(res, HCCL_E_PTR);
 }
 
-TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_MultipleDescs_Expect_ReturnHCCL_E_NOT_SUPPORT)
+TEST_F(UtAicpuTsHcommBatchTransferOnThread, Ut_HcommBatchTransferOnThread_When_MultipleDescs_Expect_ReturnHCCL_HCCL_SUCCESS)
 {
     transferDescs[0].transferInfo.write.len = len;
     transferDescs[0].transferInfo.write.dst = dst;

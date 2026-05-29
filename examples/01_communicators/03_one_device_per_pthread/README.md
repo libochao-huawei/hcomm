@@ -14,7 +14,7 @@
 
 ## 目录结构
 
-```text
+```
 ├── main.cc                   # 样例源文件
 ├── Makefile                  # 编译/构建配置文件
 └── one_device_per_pthread    # 编译生成的可执行文件
