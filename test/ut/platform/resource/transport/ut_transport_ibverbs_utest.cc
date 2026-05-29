@@ -164,3 +164,28 @@ TEST_F(TransportIbverbs_UT, BatchTransferAsync_NullPtr)
     EXPECT_EQ(ret, HCCL_E_PTR);
     GlobalMockObject::verify();
 }
+
+TEST_F(TransportIbverbs_UT, test_Flush)
+{
+    MOCKER_CPP(&TransportDeviceIbverbs::UseMultiQp, HcclResult(TransportDeviceIbverbs*)(struct SendWr, Stream&, WqeType, u64, u32))
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&DispatcherPub::SignalWait,
+        HcclResult(DispatcherPub:: *)(HcclRtNotify, HcclRtStream, u32, u32, s32, u32, bool))
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+
+    std::shared_ptr<TransportDeviceIbverbs> ibverbs = std::make_shared<TransportDeviceIbverbs>(
+        dispatcher, notifyPool, machinePara, timeout, transDevIbverbsData);
+    
+    ibverbs->dataNotify_ = (void*)(0x8888);
+    ibverbs->memMsg_[MemType::DATA_NOTIFY_MEM].addr=(void*)(0x9999);
+    ibverbs->memMsg_[MemType::NOTIFY_SRC_MEM].addr=(void*)(0x8899);
+
+    Stream stream;
+    HcclResult ret = ibverbs->Flush(stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+    GlobalMockObject::verify();
+}
