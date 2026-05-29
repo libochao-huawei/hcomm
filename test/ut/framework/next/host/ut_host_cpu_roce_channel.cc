@@ -3,6 +3,7 @@
 #include <mockcpp/mockcpp.hpp>
 #include <vector>
 #include <iostream>
+#include <stdio.h>
 #include "host_socket_handle_manager.h"
 #include "cpu_roce_endpoint.h"
 #include "buffer/local_rdma_rma_buffer.h"
@@ -22,6 +23,18 @@
 
 #define private public
 using namespace hcomm;
+
+void RptInputErr(std::string error_code, std::vector<std::string> key,
+    std::vector<std::string> value)
+{
+    printf("\n=== RptInputErr ===\n");
+    printf("ErrorCode: %s\n", error_code.c_str());
+    for (size_t i = 0; i < key.size() && i < value.size(); i++) {
+        printf("  %s: %s\n", key[i].c_str(), value[i].c_str());
+    }
+    printf("====================\n");
+    fflush(stdout);
+}
 
 // ==================== Hybrid Mode Stub Functions ====================
 static bool RecvWithWrongMagicStub(Hccl::Socket *socket, void *buf, uint32_t size)
