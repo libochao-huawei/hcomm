@@ -169,8 +169,7 @@ public:
     HcclResult UpdateOpExecStatus(HcclOpExecFSM &fsmState, KfcStatus state, KfcError &errorCode, uint32_t retryCnt);
     HcclResult ResetOpRetryException(HcclCMDType opType);
     HcclResult CleanAllRoceResource();
-    // aclgraph销毁时通过KFC投递清理aicpu端单一tag的全部关联资源(resMap_/linkRes_/SIO/RDMA/scratchMem/notify ack)，
-    // 配合host端AclgraphCallback使用，避免_CaptureN tag在aicpu侧resMap_单调累积导致driver signal/notify表满。
+    // aclgraph 销毁时通过 KFC 投递清理 aicpu 端单一 tag 的全部关联资源，配合 host 端 AclgraphCallback 使用
     HcclResult ClearOpResource(const std::string &tag);
     HcclResult SwitchNic();
     HcclResult ResumeChangeLink();

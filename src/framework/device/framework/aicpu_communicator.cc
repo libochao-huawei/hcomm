@@ -1571,7 +1571,7 @@ HcclResult HcclCommAicpu::CleanAllRoceResource(){
 
 HcclResult HcclCommAicpu::ClearOpResource(const std::string &tag)
 {
-    // 与GetAlgResponseRes/AllocAlgResource/ReAllocTransportResource互斥，避免读写竞争resMap_/linkRes_
+    // 与 GetAlgResponseRes/AllocAlgResource/ReAllocTransportResource 互斥，避免读写竞争 resMap_/linkRes_
     std::lock_guard<std::mutex> lock(preemptMutexForResMap_);
 
     auto eraseTagFromAll = [this](const std::string &t) -> bool {
@@ -1618,8 +1618,7 @@ HcclResult HcclCommAicpu::ClearOpResource(const std::string &tag)
         return hit;
     };
 
-    // 与host端ClearOpResource对齐：尝试base/_host/_device三种后缀
-    // host侧host.cc按这三种后缀清自己的resMap_；aicpu侧资源命名可能落在三者之一
+    // 与 host 端 ClearOpResource 对齐：尝试 base/_host/_device 三种后缀
     bool found = false;
     found = eraseTagFromAll(tag) || found;
     found = eraseTagFromAll(tag + "_host") || found;
