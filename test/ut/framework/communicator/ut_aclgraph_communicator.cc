@@ -314,7 +314,8 @@ TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_LaunchPath)
 {
     // 预置成功能进 launch 路径的条件
     communicator_.binHandle_ = reinterpret_cast<aclrtBinHandle>(0x1);
-    communicator_.opStream_ = Stream(reinterpret_cast<rtStream_t>(0x1234), true);
+    // 直接设置内部 stream_ 指针，避免 Stream(fake_ptr) 构造函数调用 InitStream 触发 hrt 函数访问
+    communicator_.opStream_.stream_ = reinterpret_cast<void *>(0x1234);
     communicator_.identifier_ = "test_group";
     // 预置 buffer 避免走 DeviceMem::alloc 路径（需要 mock 该静态方法）
     communicator_.aicpuCleanupBuf_ = DeviceMem(reinterpret_cast<void *>(0x5678), 4096, false);
@@ -343,7 +344,7 @@ TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_LaunchPath)
 TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_MultiBatch)
 {
     communicator_.binHandle_ = reinterpret_cast<aclrtBinHandle>(0x1);
-    communicator_.opStream_ = Stream(reinterpret_cast<rtStream_t>(0x1234), true);
+    communicator_.opStream_.stream_ = reinterpret_cast<void *>(0x1234);
     communicator_.identifier_ = "test_group";
     communicator_.aicpuCleanupBuf_ = DeviceMem(reinterpret_cast<void *>(0x5678), 4096, false);
     communicator_.aicpuCleanupHostBuf_.reset(new (std::nothrow) HcclKfcClearOpResTilingData());
