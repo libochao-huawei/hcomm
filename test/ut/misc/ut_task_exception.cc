@@ -441,7 +441,7 @@ TEST_F(TaskExceptionTest, ut_task_exception_callback__cqe_heartbeat)
 
     taskExceptionHandler.Callback(&rtExceptionInfo1);
 }
-#endif
+
 
 HcclResult stub_hrtGetStreamAvailableNum(u32 &maxStrCount)
 {
@@ -990,3 +990,4 @@ TEST_F(TaskExceptionTest, Ut_RegisterGetAicpuTaskExceptionCallBack_When_Normal_E
                 g_communicatorCallbackMap[deviceLogicId].end());
     g_communicatorCallbackMap.fill({});
 }
+#endif
