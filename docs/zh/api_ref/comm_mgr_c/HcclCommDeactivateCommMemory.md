@@ -5,21 +5,25 @@
 
 ## 产品支持情况
 
-<cann-filter npu-type="950">
-
-- Ascend 950PR/Ascend 950DT：不支持</cann-filter>
-<cann-filter npu-type="A3">
-- Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持</cann-filter>
-<cann-filter npu-type="910b">
-- Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持</cann-filter>
-<cann-filter npu-type="310p">
-- Atlas 推理系列产品：不支持</cann-filter>
-<cann-filter npu-type="910">
-- Atlas 训练系列产品：不支持</cann-filter>
+<!-- npu="950" id1 -->
+- Ascend 950PR/Ascend 950DT：不支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
+<!-- end id3 -->
+<!-- npu="310p" id4 -->
+- Atlas 推理系列产品：不支持
+<!-- end id4 -->
+<!-- npu="910" id5 -->
+- Atlas 训练系列产品：不支持
+<!-- end id5 -->
 
 ## 功能说明
 
-将已经激活的虚拟内存反激活，反激活后如果再使用该地址进行集合通信，将不会使能零拷贝功能。
+将已经激活的虚拟内存反激活，反激活后如果再使用该地址进行集合通信，将无法开启零拷贝功能。
 
 ## 函数原型
 
