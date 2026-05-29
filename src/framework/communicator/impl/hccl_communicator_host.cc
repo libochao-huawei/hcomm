@@ -1017,6 +1017,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::ClearResMap(const std::string &tag, bool &findTag, bool aclGraphDestroyCbk)
     {
+        findTag = false;
         auto resIter = resMap_.find(tag);
         if (resIter != resMap_.end()) {
             findTag = true;

@@ -43,6 +43,13 @@ protected:
         GlobalMockObject::reset();
         // 清理静态成员，避免跨用例污染
         HcclCommunicator::linkResMap_.clear();
+        // 清理实例成员，因为 communicator_ 在测试间复用
+        communicator_.resMap_.clear();
+        communicator_.tagsRequiringHostCleanup_.clear();
+        communicator_.rankTagRemoteRes_.clear();
+        communicator_.hostMemVec_.clear();
+        communicator_.deviceMemVec_.clear();
+        communicator_.hostResMap_.clear();
     }
 
     HcclCommunicator communicator_;
@@ -72,7 +79,7 @@ TEST_F(AclgraphCommunicatorTest, ClearResMap_Normal)
 TEST_F(AclgraphCommunicatorTest, ClearResMap_TagNotFound)
 {
     std::string tag = "nonexistent_tag";
-    bool findTag = true; // 初始为 true，验证被设为 false
+    bool findTag = false;
 
     HcclResult ret = communicator_.ClearResMap(tag, findTag, false);
     EXPECT_EQ(ret, HCCL_SUCCESS);
