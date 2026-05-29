@@ -12,6 +12,7 @@
 #define HCCL_COMM_H_
 
 #include <hccl/hccl_types.h>
+#include <hccl/hccl_res.h>
 #include <acl/acl.h>
 
 #ifndef HCOMM_WEAK_SYMBOL
@@ -308,6 +309,24 @@ extern HcclResult HcclGroupStart();
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclGroupEnd();
+
+/**
+ * @brief Launch AICPU kernel for P2P task
+ *
+ * @param comm Communication domain handle
+ * @param opInfo Operator descriptor parameters
+ * @param funcInfo Kernel function info (dynamic library name and kernel function name)
+ * @param args Kernel function input parameters
+ * @param argSize Kernel function input parameter size in bytes
+ * @param aicpuThreadHandle AICPU communication main stream thread handle
+ * @param userStream User host main stream
+ * @return HcclResult
+ *   HCCL_SUCCESS: success
+ *   HCCL_E_NOT_SUPPORT: HcclGroupStart not called
+ *   HCCL_E_INTERNAL: internal error (async task failure, communication task failure)
+ */
+extern HcclResult HcclAicpuKernelLaunch(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
+    void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream);
 
 /**
  * @brief Register a memory window for HCCL communication.

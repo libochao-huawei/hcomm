@@ -20,6 +20,8 @@ extern "C" {
 
 HcclResult HcclGroupStart();
 HcclResult HcclGroupEnd();
+HcclResult HcclAicpuKernelLaunch(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
+    void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream);
 
 #ifdef __cplusplus
 }

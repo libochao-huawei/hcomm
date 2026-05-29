@@ -371,6 +371,9 @@ public:
     bool GetAicpuCommState();
     HcclResult KernelLaunchAicpuCommInit();
     bool IsCommunicatorV2();
+    ThreadHandle GetDedicatedThread(uint8_t useType);
+    HcclResult SetDedicatedThread(uint8_t useType, ThreadHandle thread);
+    bool HasDedicatedThread(uint8_t useType);
 #ifndef HCCD
     HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
         HcclMem cclBuffer,const std::string &commName, HcclCommConfig *config);
@@ -456,6 +459,8 @@ private:
     aclrtBinHandle binHcclHandle_ = nullptr;
     DevType devType_ = DevType::DEV_TYPE_COUNT;
     u32 hcclQos_;
+    std::mutex dedicatedThreadMutex_;
+    std::unordered_map<uint8_t, ThreadHandle> dedicatedThreadMap_;
 #ifndef CCL_KERNEL_AICPU
     // 独立算子专用成员变量
     IndependentOp independentOp_;
