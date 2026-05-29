@@ -251,12 +251,6 @@ struct HcclKfcClearOpResTilingData {
     char tags[HCCL_KFC_CLEAR_OP_RES_MAX_BATCH][TAG_MAX_LENGTH];                 // 待清理 op tag 列表，含_Capture后缀
 };
 
-// host→aicpu KFC kernel 通用启动任务，aicpu_kfc_def.h 中也有一份相同定义
-struct KFCResInitTask {
-    u64 context;
-    bool isCustom;
-};
-
 struct HcclOpConfigV2 {
     u8 deterministic;  // 确定性计算开关
 };
