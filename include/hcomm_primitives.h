@@ -501,6 +501,14 @@ extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle chan
  */
 extern int32_t HcommChannelFence(ChannelHandle channel);
 
+/**
+ * @brief 单边阻塞等待所有任务完成
+ * @param[in] thread 线程句柄
+ * @param[in] channel 通道句柄
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommChannelFlush(ThreadHandle thread, ChannelHandle channel, uint32_t timeout);
+
 /** @} */  // 算子编程接口
 #ifdef __cplusplus
 }
