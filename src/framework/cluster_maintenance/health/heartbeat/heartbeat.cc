@@ -1544,6 +1544,7 @@ void Heartbeat::HeartbeatStatusMonitor()
     HcclResult ret;
     auto counterStat = CounterStat();
     InitStuckDetection(counterStat);
+    bool isCheckOn = (GetExternalInconsistentCheckSwitch() == InconsistentCheckMode::ON);
     while (startSendRecvTask_) {
         CheckSnapshotStatus();
         if (isPaused_) {
@@ -1562,7 +1563,7 @@ void Heartbeat::HeartbeatStatusMonitor()
                 HCCL_DEBUG("rank[%s] Try to Send HeartBeat to rank[%s]", FormatUId(uid_).c_str(),
                     FormatUId(rem).c_str());
                 rankId2SocketMap_[rem].lostNum++;
-                if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) {
+                if (!isCheckOn) {
                     ret = SendFrame(rem, uid_, uid_,
                         (counterStat.issueCnt != 0) ? HeartBeatStatus::HEARTBEAT_STUCK : HeartBeatStatus::HEARTBEAT_OK);
                 } else {
@@ -1581,7 +1582,7 @@ void Heartbeat::HeartbeatStatusMonitor()
         for (auto iter = rankId2SocketMap_.begin(); iter != rankId2SocketMap_.end(); iter++) {
             UIDType rem = iter->first;
             HCCL_DEBUG("rank[%s] Try to Recv from rank[%s]", FormatUId(uid_).c_str(), FormatUId(rem).c_str());
-            if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON)
+            if (!isCheckOn)
             {
                 ret = RecvFrame(rem);
             } else {
@@ -1600,7 +1601,7 @@ void Heartbeat::HeartbeatStatusMonitor()
         ProcessLock_.unlock();
 
         auto sleeptime = BROADCAST_INTERVAL_WITH_CHECK;
-        if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) {
+        if (!isCheckOn) {
             sleeptime = BROADCAST_INTERVAL;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
