@@ -8,12 +8,14 @@
 #define CCU_CONTEXT_ASSIST_PUB_H
 
 #include <cstdint>
+#include "hccl_types.h"
 
 namespace hcomm {
 namespace CcuRep {
 
 // 辅助函数
 uint64_t GetTokenInfo(uint64_t va, uint64_t size);
+HcclResult GetTokenInfoNew(uint64_t va, uint64_t size, uint64_t &token);
 
 }; // namespace CcuRep
 }; // namespace hcomm
