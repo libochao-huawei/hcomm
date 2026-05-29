@@ -1570,7 +1570,9 @@ void Heartbeat::HeartbeatStatusMonitor()
                     ret = SendFrameWithOpCheck(rem, uid_, uid_,
                         (counterStat.issueCnt != 0) ? HeartBeatStatus::HEARTBEAT_STUCK : HeartBeatStatus::HEARTBEAT_OK, opInfoTagQueueFrame);
                 }
-                ret == HCCL_E_INTERNAL ? errorSocket_.push_back(rem) : void(0);
+                if (ret == HCCL_E_INTERNAL) {
+                    errorSocket_.push_back(rem);
+                }
             }
             DelErrorSocket();
             ProcessCqeErrInfo();
