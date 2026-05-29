@@ -200,8 +200,8 @@ HcclResult TransportIbverbs::Init()
     if (machinePara_.userMemEnable) {
         CHK_SMART_PTR_NULL(machinePara_.inputMem);
         CHK_SMART_PTR_NULL(machinePara_.outputMem);
-        CHK_SMART_PTR_NULL(notifyPool_);
     }
+    CHK_SMART_PTR_NULL(notifyPool_);
     CHK_PTR_NULL(dispatcher_);
     CHK_RET(CheckDeviceId());
     CHK_RET(CheckExchangeData());
@@ -297,6 +297,9 @@ HcclResult TransportIbverbs::FillExchangeDataTotalSize()
         if (UseMultiQp()) {
             exchangeDataTotalSize_ += qpsPerConnection_ * sizeof(MemMsg);  // 多QP下新增协商内容
         }
+    } else {
+        exchangeDataTotalSize_ += sizeof(MemMsg); // Flush用到了dataNotify_
+        exchangeDataTotalSize_ += sizeof(MemMsg); // 本端notify srcmem, 用于Flush
     }
     if (!isHybridMode_) {
         exchangeDataTotalSize_ += machinePara_.exchangeInfo.size();
@@ -317,7 +320,7 @@ HcclResult TransportIbverbs::FillExchangeDataTotalSize()
         exchangeDataTotalSize_ += sizeof(MemMsg)*machinePara_.userHostMem.size();
     }
 
-    HCCL_DEBUG("[TransportIbverbs][FillExchangeDataTotalSize] exchangeDataTotalSize[%llu]", exchangeDataTotalSize_);
+    HCCL_ERROR("[TransportIbverbs][FillExchangeDataTotalSize] exchangeDataTotalSize[%llu], sizeof(MemMsg)[%llu]", exchangeDataTotalSize_, sizeof(MemMsg));
     return HCCL_SUCCESS;
 }
 
@@ -367,6 +370,19 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
             CHK_RET(CreateNotifyBuffer(dataAckNotify_, MemType::DATA_ACK_NOTIFY_MEM,
                 exchangeDataPtr, exchangeDataBlankSize));
         }
+    } else {
+        if (machinePara_.isAicpuModeEn) {
+            CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM,
+                exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
+        } else {
+            CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM, exchangeDataPtr,
+                exchangeDataBlankSize));
+        }
+        // Flush操作需读取对端srcmem
+        CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, exchangeDataBlankSize,
+            reinterpret_cast<void *>(&memMsg_[static_cast<u32>(MemType::NOTIFY_SRC_MEM)]), sizeof(MemMsg)));
+        exchangeDataPtr += sizeof(MemMsg);
+        exchangeDataBlankSize -= sizeof(MemMsg);
     }
     if (!isHybridMode_) {
         CHK_RET(ConstructExchangeDataForSend(exchangeDataPtr, exchangeDataBlankSize));
@@ -403,6 +419,7 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
 
     if (machinePara_.isIndOp) {
         CHK_RET(RegCustomUserMem(exchangeDataPtr, exchangeDataBlankSize));
+        HCCL_DEBUG("[TransportIbverbs] exchangeDataBlankSize[%llu], sizeof(MemMsg)[%u].", exchangeDataBlankSize, sizeof(MemMsg));
     }
 
     if (exchangeDataBlankSize != 0) {
@@ -473,6 +490,9 @@ HcclResult TransportIbverbs::ParseReceivedExchangeData()
             HCCL_E_MEMORY);
         CHK_RET(GetRemoteAddr(MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
         CHK_RET(GetRemoteAddr(MemType::DATA_ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+    } else {
+        CHK_RET(GetRemoteAddr(MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        CHK_RET(GetRemoteAddr(MemType::NOTIFY_SRC_MEM, exchangeDataPtr, exchangeDataBlankSize));
     }
 
     if (!isHybridMode_) {
@@ -769,11 +789,10 @@ HcclResult TransportIbverbs::InitQpConnect()
 
     CHK_RET(FillExchangeDataTotalSize());
 
-    CHK_RET(ConstructExchangeForSend());
-
     // 注册notify 内存信息
     CHK_RET(CreateNotifyValueBuffer());
 
+    CHK_RET(ConstructExchangeForSend());
     HCCL_DEBUG("[TransportIbverbs] resource create done exchangeDataTotalSize_[%llu]", exchangeDataTotalSize_);
 
     HcclResult ret = defaultSocket_->Send(exchangeDataForSend_.data(), exchangeDataTotalSize_);
@@ -2025,7 +2044,6 @@ HcclResult TransportIbverbs::RegCustomUserMem(u8 *&exchangeDataPtr, u64 &exchang
     return HCCL_SUCCESS;
 }
 
-
 HcclResult TransportIbverbs::GetMemInfo(UserMemType memType, void **dstMemPtr, u64 *dstMemSize)
 {
     switch (memType) {
@@ -2135,10 +2153,6 @@ HcclResult TransportIbverbs::GetRemoteNotifyAddr(u8*& exchangeDataPtr, u64& exch
 
 HcclResult TransportIbverbs::CreateNotifyValueBuffer()
 {
-    if (!machinePara_.userMemEnable) {
-        HCCL_INFO("userMemEnable is false, no need to create notify value buffer");
-        return HCCL_SUCCESS;
-    }
     std::unique_lock<std::mutex> lock(notifyValueMutex_[machinePara_.deviceLogicId]);
     if (notifyValueMem_[machinePara_.deviceLogicId].ptr() == nullptr) {
         u64 notifyVaule = 1; // notify值写1表示record
@@ -2786,4 +2800,40 @@ HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
     return HCCL_SUCCESS;
 }
 
+HcclResult TransportIbverbs::GetFlushRemSrcMem(void **remoteAddr, uint32_t *remoteKey, uint32_t *size)
+{
+    auto opType = static_cast<u32>(MemType::NOTIFY_SRC_MEM);
+    if (remoteAddr) *remoteAddr = remoteMemMsg_[opType].addr;
+    if (remoteKey) *remoteKey = remoteMemMsg_[opType].lkey;
+    if (size) *size = remoteMemMsg_[opType].len;
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportIbverbs::Flush(Stream &stream)
+{
+    auto remoteType = static_cast<u32>(MemType::NOTIFY_SRC_MEM);
+    auto localType = static_cast<u32>(MemType::DATA_NOTIFY_MEM);
+    CHK_PTR_NULL(memMsg_[localType].addr);
+    CHK_PTR_NULL(remoteMemMsg_[remoteType].addr);
+    CHK_RET(Fence());
+    std::vector<WqeInfo> wqeInfoVec;
+    WrAuxInfo aux = {};
+    CHK_RET(AddWqeList(remoteMemMsg_[remoteType].addr,
+        memMsg_[localType].addr, memMsg_[localType].len,
+        WqeType::WQE_TYPE_READ_DATA, aux, wqeInfoVec));
+    CHK_RET(RdmaSendAsync(wqeInfoVec, stream, false));
+    CHK_SMART_PTR_NULL(dataNotify_);
+    CHK_RET(LocalIpcNotify::Wait(stream, dispatcher_, dataNotify_, INVALID_VALUE_STAGE,
+        NOTIFY_INVALID_WAIT_TIME, machinePara_.localUserrank, machinePara_.remoteWorldRank));
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportIbverbs::GetFlushLocalDataNotify(void **localAddr, uint32_t *lkey, HcclSignalInfo &dataNotify)
+{
+    if (localAddr) *localAddr = memMsg_[DATA_NOTIFY_MEM].addr;
+    if (lkey) *lkey = memMsg_[DATA_NOTIFY_MEM].lkey;
+    CHK_SMART_PTR_NULL(dataNotify_);
+    CHK_RET(dataNotify_->GetNotifyData(dataNotify));
+    return HCCL_SUCCESS;
+}
 }  // namespace hccl

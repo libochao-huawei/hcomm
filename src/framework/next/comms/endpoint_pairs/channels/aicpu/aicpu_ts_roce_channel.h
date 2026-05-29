@@ -79,6 +79,7 @@ private:
     {
         return isLocalIpClient_ ? "client" : "server";
     }
+    HcclResult SerializeFlushNotifyInfo(HcommRoceChannelRes &res) const;
 
     EndpointHandle endpointHandle_{};
     HcommChannelDesc channelDesc_{};
@@ -94,7 +95,7 @@ private:
     DispatcherCtxPtr dispatcherCtx_{nullptr};
     bool ownsDispatcherCtx_{false};
 
-    std::unique_ptr<hccl::NotifyPool> notifyPoolHolder_{};
+    std::unique_ptr<hccl::NotifyPool> notifyPool_{};
     hccl::MachinePara machinePara_{};
     hccl::TransportPara transportPara_{};
     std::unique_ptr<hccl::Transport> transport_{};
