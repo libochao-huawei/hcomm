@@ -341,13 +341,25 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
     CHK_PTR_NULL(threadPtr);
 
     if (threadPtr->IsDeviceA5()) {
-        HCCL_INFO("[%s] Running on A5.", __func__);
+        HCCL_INFO("YYYYYY hcomm order [CommTaskLaunch] begin, threadNum[%u].", threadNum);
         for (uint32_t i = 0; i < threadNum; i++) {
             Thread *threadPtrLoop = reinterpret_cast<Thread *>(threads[i]);
             CHK_PTR_NULL(threadPtrLoop);
-            HCCL_INFO("[%s] Launching task in thread[0x%llx].", __func__, threads[i]);
+            Hccl::StreamLite *streamLite = nullptr;
+            Hccl::RtsqBase *rtsq = nullptr;
+            uint32_t sqId = 0;
+            uint32_t taskIdBefore = 0;
+            GetA5OrderThreadInfo(threadPtrLoop, streamLite, rtsq, sqId, taskIdBefore);
+            HCCL_INFO("YYYYYY hcomm order [CommTaskLaunch] launch begin, idx[%u], thread[0x%llx], "
+                      "streamLite[%p], rtsq[%p], sqId[%u], taskIdBefore[%u].",
+                      i, threads[i], streamLite, rtsq, sqId, taskIdBefore);
             EXECEPTION_CATCH(threadPtrLoop->LaunchTask(), return HCCL_E_INTERNAL);
+            uint32_t taskIdAfter = (rtsq == nullptr) ? 0 : rtsq->GetTaskId();
+            HCCL_INFO("YYYYYY hcomm order [CommTaskLaunch] launch end, idx[%u], thread[0x%llx], "
+                      "streamLite[%p], rtsq[%p], sqId[%u], taskIdBefore[%u], taskIdAfter[%u].",
+                      i, threads[i], streamLite, rtsq, sqId, taskIdBefore, taskIdAfter);
         }
+        HCCL_INFO("YYYYYY hcomm order [CommTaskLaunch] end, threadNum[%u].", threadNum);
         return HCCL_SUCCESS;
     }
 
@@ -374,13 +386,26 @@ HcclResult DispatchAllStreams(ThreadHandle *threads, uint32_t threadNum)
         return HCCL_E_NOT_SUPPORT;
     }
 
+    HCCL_INFO("YYYYYY hcomm order [DispatchAllStreams] begin, threadNum[%u].", threadNum);
     for (uint32_t i = 0; i < threadNum; i++) {
         Thread *threadPtrLoop = reinterpret_cast<Thread *>(threads[i]);
         CHK_PTR_NULL(threadPtrLoop);
 
-        HCCL_DEBUG("[%s] Dispatching streams in thread[0x%llx].", __func__, threads[i]);
+        Hccl::StreamLite *streamLite = nullptr;
+        Hccl::RtsqBase *rtsq = nullptr;
+        uint32_t sqId = 0;
+        uint32_t taskIdBefore = 0;
+        GetA5OrderThreadInfo(threadPtrLoop, streamLite, rtsq, sqId, taskIdBefore);
+        HCCL_INFO("YYYYYY hcomm order [DispatchAllStreams] try launch begin, idx[%u], thread[0x%llx], "
+                  "streamLite[%p], rtsq[%p], sqId[%u], taskIdBefore[%u].",
+                  i, threads[i], streamLite, rtsq, sqId, taskIdBefore);
         threadPtrLoop->TryLaunchTask();
+        uint32_t taskIdAfter = (rtsq == nullptr) ? 0 : rtsq->GetTaskId();
+        HCCL_INFO("YYYYYY hcomm order [DispatchAllStreams] try launch end, idx[%u], thread[0x%llx], "
+                  "streamLite[%p], rtsq[%p], sqId[%u], taskIdBefore[%u], taskIdAfter[%u].",
+                  i, threads[i], streamLite, rtsq, sqId, taskIdBefore, taskIdAfter);
     }
+    HCCL_INFO("YYYYYY hcomm order [DispatchAllStreams] end, threadNum[%u].", threadNum);
     return HCCL_SUCCESS;
 }
 
@@ -674,6 +699,9 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
         CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
+        Hccl::RtsqBase *rtsq = streamLitePtr->GetRtsq();
+        const uint32_t sqId = streamLitePtr->GetSqId();
+        const uint32_t taskIdBefore = rtsq == nullptr ? 0 : rtsq->GetTaskId();
 
         Hccl::RmaBufferLite locRmaBuf;
         ret = transportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
@@ -682,7 +710,15 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
             __func__, thread, channel, dst, src, len), ret);
         const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(src), len};
 
+        HCCL_INFO("YYYYYY hcomm order [HcommReadOnThread] begin, thread[0x%llx], channel[0x%llx], "
+                  "streamLite[%p], rtsq[%p], sqId[%u], taskIdBefore[%u], dst[0x%llx], src[0x%llx], len[%llu].",
+                  thread, channel, streamLitePtr, rtsq, sqId, taskIdBefore,
+                  static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(dst)),
+                  static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(src)), len);
         EXECEPTION_CATCH(transportLitePtr->Read(locRmaBuf, rmtBuf, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        HCCL_INFO("YYYYYY hcomm order [HcommReadOnThread] end, thread[0x%llx], channel[0x%llx], "
+                  "streamLite[%p], rtsq[%p], sqId[%u], taskIdBefore[%u], ret[%u].",
+                  thread, channel, streamLitePtr, rtsq, sqId, taskIdBefore, static_cast<uint32_t>(ret));
     } else {
         HcclBuf locBuf{dst, len, nullptr};
         HcclBuf rmtBuf{const_cast<void *>(src), len, nullptr};
@@ -773,7 +809,17 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
         CHK_PTR_NULL(ubTransportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
+        Hccl::RtsqBase *rtsq = streamLitePtr->GetRtsq();
+        const uint32_t sqId = streamLitePtr->GetSqId();
+        const uint32_t taskIdBefore = rtsq == nullptr ? 0 : rtsq->GetTaskId();
+        HCCL_INFO("YYYYYY hcomm order [HcommBatchTransferOnThread] begin, thread[0x%llx], channel[0x%llx], "
+                  "streamLite[%p], rtsq[%p], sqId[%u], taskIdBefore[%u], transferDescNum[%u].",
+                  thread, channel, streamLitePtr, rtsq, sqId, taskIdBefore, transferDescNum);
         ret = ubTransportLitePtr->ExecuteBatchTransfer(streamLitePtr, transferDescs, transferDescNum);
+        HCCL_INFO("YYYYYY hcomm order [HcommBatchTransferOnThread] end, thread[0x%llx], channel[0x%llx], "
+                  "streamLite[%p], rtsq[%p], sqId[%u], taskIdBefore[%u], transferDescNum[%u], ret[%u].",
+                  thread, channel, streamLitePtr, rtsq, sqId, taskIdBefore, transferDescNum,
+                  static_cast<uint32_t>(ret));
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);

@@ -186,18 +186,23 @@ void RtsqA5::LaunchTask()
 
 void RtsqA5::TryLaunchTask()
 {
-    HCCL_DEBUG("RtsqA5::%s: START, pendingSqeCnt[%u]", __func__, pendingSqeCnt);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::%s: START, sqId[%u], streamId[%u], pendingSqeCnt[%u], "
+              "head[%u], tail[%u]",
+              __func__, sqId_, streamId_, pendingSqeCnt, sqHead_, sqTail_);
 
     if (pendingSqeCnt == 0) {
-        HCCL_DEBUG("RtsqA5::%s: pendingSqeCnt is %u, return", __func__, pendingSqeCnt);
+        HCCL_INFO("YYYYYY hcomm order RtsqA5::%s: pendingSqeCnt is %u, return, sqId[%u], "
+                  "streamId[%u], head[%u], tail[%u]",
+                  __func__, pendingSqeCnt, sqId_, streamId_, sqHead_, sqTail_);
         return;
     }
 
     sqHead_ = QuerySqHead();
     u32 availableSpace = GetTailToHeadDist();
     if (availableSpace <= pendingSqeCnt) {
-        HCCL_DEBUG("RtsqA5::%s: no enough space, availableSpace[%u] < pendingSqeCnt[%u], return", __func__,
-                  availableSpace, pendingSqeCnt);
+        HCCL_INFO("YYYYYY hcomm order RtsqA5::%s: no enough space, availableSpace[%u] <= "
+                  "pendingSqeCnt[%u], return, sqId[%u], streamId[%u], head[%u], tail[%u]",
+                  __func__, availableSpace, pendingSqeCnt, sqId_, streamId_, sqHead_, sqTail_);
         return;
     }
 
@@ -209,7 +214,9 @@ void RtsqA5::TryLaunchTask()
 
     pendingSqeCnt = 0;
     (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt);
-    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::%s: END, sqId[%u], streamId[%u], pendingSqeCnt[%u], "
+              "sqHead_[%u], sqTail_[%u]",
+              __func__, sqId_, streamId_, pendingSqeCnt, sqHead_, sqTail_);
 }
 
 u8 *RtsqA5::GetCurrSqeBuffer()
@@ -326,8 +333,10 @@ void RtsqA5::SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const Re
     u8 type = static_cast<u8>(DataTypeToStarsDataTypeMap.at(reduceIn.dataType));
 
     BuildA5SqeSdmaCopy(streamId_, taskId_, dstAddr, srcAddr, size, RTSQ_A5_PART_ID, (op | type), GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::SdmaReduce: streamId %u, taskId %u, srcAddr 0x%llx, dstAddr 0x%llx, size %u", streamId_, taskId_,
-        srcAddr, dstAddr, size);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::SdmaReduce: sqId %u, streamId %u, taskId %u, "
+              "srcAddr 0x%llx, dstAddr 0x%llx, size %u, head %u, tail %u, reduceOp %s, dataType %s",
+              sqId_, streamId_, taskId_, srcAddr, dstAddr, size, sqHead_, sqTail_,
+              reduceIn.reduceOp.Describe().c_str(), reduceIn.dataType.Describe().c_str());
     RefreshInfo();
 }
 
@@ -367,7 +376,9 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
 {
     // piValue需要使用u16数据类型，保证自然增长，用于判断是否翻转
     BuildA5SqeUbDbSend(streamId_, taskId_, jettyLiteId, piValue, GetCurrSqeBuffer());
-    HCCL_INFO("[RtsqA5][UbDbSend] piValue(UbPi):%u, SqTail(Rtsq Pi):%u", piValue, sqTail_);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::UbDbSend: sqId %u, streamId %u, taskId %u, piValue %u, "
+              "head %u, tail %u",
+              sqId_, streamId_, taskId_, piValue, sqHead_, sqTail_);
     RefreshInfo();
 }
 
@@ -392,8 +403,9 @@ void RtsqA5::CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr)
 void RtsqA5::P2PWriteValue(u64 remoteAddr, u32 writeValue)
 {
     BuildA5SqeP2pWriteValue(streamId_, taskId_, remoteAddr, writeValue, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::P2PWriteValue: streamId %u, taskId %u, remoteAddr %llu, writeValue %llu",
-        streamId_, taskId_, remoteAddr, writeValue);
+    HCCL_INFO("YYYYYY hcomm order RtsqA5::P2PWriteValue: sqId %u, streamId %u, taskId %u, "
+              "remoteAddr %llu, writeValue %u, head %u, tail %u",
+              sqId_, streamId_, taskId_, remoteAddr, writeValue, sqHead_, sqTail_);
     RefreshInfo();
 }
 }
