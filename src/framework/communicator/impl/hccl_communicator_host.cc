@@ -7823,7 +7823,7 @@ namespace hccl
             timeOut = opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC;
         }
         HcclResult ret = AicpuAclKernelLaunchV2(stm, reinterpret_cast<void *>(&context), sizeof(context),
-            binHandle, kernelName, false, timeOut, tilingDataPtr, tilingDataSize);
+            binHandle, kernelName, false, timeOut, tilingDataPtr, tilingDataSize, identifier_);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[HcclCommunicator][AicpuUnfoldKernelLaunchV2]isCustom[%d] binHandle[%p]",
                 isCustom, binHandle), ret);
