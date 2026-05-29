@@ -416,6 +416,8 @@ HcclResult DispatcherAiCpu::MemcpyAsync(hccl::DeviceMem &dst, const hccl::Device
 
 HcclResult DispatcherAiCpu::ClearLaunchContext()
 {
+    FUNCTION_TRACE; // TODOSSY: 性能打点
+
     HCCL_INFO("[DispatcherAiCpu][ClearLaunchContext] clear launch context");
 
     key_ = OpUnfoldKey();
@@ -431,6 +433,8 @@ HcclResult DispatcherAiCpu::ClearLaunchContext()
 
 HcclResult DispatcherAiCpu::SetLaunchContext(const OpUnfoldKey& key, OpUnfoldCache *cachePtr, const std::vector<OpUnfoldMemRange>& userInputMemRanges, const std::vector<OpUnfoldMemRange>& userOutputMemRanges, const bool isAlltoallv, const AlltoallvMetadata* alltoallvMetadataPtr)
 {
+    FUNCTION_TRACE; // TODOSSY: 性能打点
+
     CHK_PTR_NULL(cachePtr);
 
     HCCL_INFO("[DispatcherAiCpu][SetLaunchContext] set launch context for key %s", key.GetKeyString().c_str());
@@ -453,6 +457,8 @@ HcclResult DispatcherAiCpu::SetLaunchContext(const OpUnfoldKey& key, OpUnfoldCac
 
 HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const std::vector<OpUnfoldMemRange>& userInputMemRanges, const std::vector<OpUnfoldMemRange>& userOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams, const bool profL1Enable, const bool isAlltoallv, const AlltoallvMetadata& alltoallvMetadata, const AlltoallvSendRecvInfo& alltoallvSendRecvInfo)
 {
+    FUNCTION_TRACE; // TODOSSY: 性能打点
+
     // 校验入参
     CHK_PTR_NULL(entryPtr);
     if (isAlltoallv) { // 注意: LaunchNewTask是在缓存命中时调用, 此时无launch context, 所以不能直接通过key_.opType来判断是否为alltoallv算子, 需要框架侧传入
@@ -612,6 +618,8 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
 
 HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
 {
+    FUNCTION_TRACE; // TODOSSY: 性能打点
+
     const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
     HcclSqeContext *sqeContext = stream.GetSqeContextPtr();
     CHK_PTR_NULL(sqeContext);
@@ -1027,6 +1035,8 @@ HcclResult DispatcherAiCpu::GetStreamSqeBufferAddr(hccl::Stream &stream, uint8_t
 }
 
 HcclResult DispatcherAiCpu::WaitRtsq(Stream& stream, const size_t& sqeCount, const bool isBlockLaunch) {
+    FUNCTION_TRACE; // TODOSSY: 性能打点
+
     // 注意: 目前WaitRtsq不会被递归调用, 所以isBlockLaunch永远为true; 为防止以后LaunchTask递归使用WaitRtsq, 编码时考虑isBlockLaunch为false的情况
 
     // 检验入参
@@ -1108,6 +1118,8 @@ HcclResult DispatcherAiCpu::WaitRtsq(Stream& stream, const size_t& sqeCount, con
 }
 
 HcclResult DispatcherAiCpu::MemcpyRtsq(Stream& stream, const size_t sqeCount, const uint8_t *sqeArray, const uint8_t *sqeTypeArray, const AicpuDfxInfo *sqeDfxInfoArray, const bool profL1Enable, const std::vector<uint64_t>& profTimestamps, const size_t profTimestampStartIdx) {
+    FUNCTION_TRACE; // TODOSSY: 性能打点
+    
     // 检验入参
     const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
     if (sqeCount == 0) {

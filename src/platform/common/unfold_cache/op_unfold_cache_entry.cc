@@ -174,6 +174,8 @@ namespace hccl {
     }
 
     OpUnfoldCacheEntry::~OpUnfoldCacheEntry() {
+        std::unordered_map<uint8_t, uint32_t> sqeTypeSqeCountMap; // TODOSSY: 性能打点
+
         size_t sqeArrayCount = sqeArrays_.size();
         size_t totalSqeCount = 0;
         for (size_t arrayIdx = 0; arrayIdx < sqeArrayCount; ++arrayIdx) {
@@ -192,6 +194,16 @@ namespace hccl {
             }
 
             // 同理释放其他空间
+
+            // TODOSSY: 性能打点
+            const uint32_t curSqeCount = srcRefreshAddrInfoArrays_[arrayIdx].size();
+            for (size_t i = 0; i < curSqeCount; ++i) {
+                const uint8_t sqeType = sqeTypeArrays_[arrayIdx][i];
+                if (sqeTypeSqeCountMap.find(sqeType) == sqeTypeSqeCountMap.end()) {
+                    sqeTypeSqeCountMap[sqeType] = 0;
+                }
+                sqeTypeSqeCountMap[sqeType]++;
+            }
 
             // 释放当前SQE type数组
             uint8_t *curSqeTypeArray = sqeTypeArrays_[arrayIdx];
@@ -212,7 +224,12 @@ namespace hccl {
             }
         }
 
-        HCCL_INFO("[OpUnfoldCacheEntry][~OpUnfoldCacheEntry] release %u SQE arrays (%u SQEs in total) from the cache entry", sqeArrayCount, totalSqeCount);
+        HCCL_ERROR("[OpUnfoldCacheEntry][~OpUnfoldCacheEntry] release %u SQE arrays (%u SQEs in total) from the cache entry", sqeArrayCount, totalSqeCount); // TODOSSY: 性能打点
+
+        // TODOSSY: 性能打点
+        for (std::unordered_map<uint8_t, uint32_t>::const_iterator it = sqeTypeSqeCountMap.begin(); it != sqeTypeSqeCountMap.end(); ++it) {
+            HCCL_ERROR("[OpUnfoldCacheEntry][~OpUnfoldCacheEntry] sqeType %u has %u SQEs", it->first, it->second); // TODOSSY: 性能打点
+        }
     }
 
     HcclResult OpUnfoldCacheEntry::GetSqeArrayCount(size_t& sqeArrayCount) const {
@@ -638,6 +655,8 @@ namespace hccl {
         AicpuDfxInfo **sqeDfxInfoArrayPtr, Stream **streamPtrPtr, std::vector<FlipInfo>& flipInfos,
         const bool profL1Enable, std::vector<uint64_t>& profTimestamps, const bool isAlltoallv,
         const AlltoallvMetadata& alltoallvMetadata, const AlltoallvSendRecvInfo& alltoallvSendRecvInfo) {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+            
         HCCL_INFO("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] update and get SQEs from %uth SQE array; isAlltoallv[%u]", arrayIdx, isAlltoallv);
 
         // 检验入参
