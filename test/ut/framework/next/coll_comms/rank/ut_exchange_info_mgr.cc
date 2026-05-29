@@ -5,6 +5,7 @@
 #include "rank_graph_interface.h"
 #include "rank_graph_v2.h"
 #include "hcomm_c_adpt.h"
+#include <hccl/hccl_comm.h>
 #include "channel_process.h"
 #include "base_config.h"
 #define private public
