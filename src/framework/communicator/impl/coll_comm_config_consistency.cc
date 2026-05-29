@@ -91,4 +91,3 @@ uint32_t CollCommConfigConsistency::GetExchangeInfoLen() const
 }
 
 }
-

@@ -12,7 +12,6 @@
 #undef private
 #include "hccl_comm_pub.h"
 #include "llt_hccl_stub_rank_graph.h"
-
 using namespace hccl;
 
 class MyRankTest : public testing::Test {

@@ -61,7 +61,7 @@ private:
     static HcclResult InitNotifys(std::istringstream &iss, size_t notifyNum,
         std::vector<std::unique_ptr<LocalNotify>> &newNotifys);
 #ifndef CCL_KERNEL_AICPU
-    HcclResult NotifyTypeToNotifyLoadType(::NotifyType notifyType, NotifyLoadType &notifyLoadType);
+    HcclResult NotifyTypeToNotifyLoadType(::NotifyType notifyType, NotifyLoadType &notifyLoadType) const;
     std::string commId_;
     aclrtBinHandle binHandle_;
     std::mutex notifyMutex_;

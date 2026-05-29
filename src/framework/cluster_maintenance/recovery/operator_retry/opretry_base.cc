@@ -542,7 +542,7 @@ HcclResult OpRetryBase::Recv(std::shared_ptr<HcclSocket> socket, void *data, u64
     return HCCL_SUCCESS;
 }
 
-HcclResult OpRetryBase::InitChangeLinkInfo(RetryContext* retryCtx, bool incre, bool isGetGroupAllRemoteRank)
+HcclResult OpRetryBase::InitChangeLinkInfo(RetryContext* retryCtx, bool incre, bool isGetGroupAllRemoteRank) const
 {
     std::string newTag = std::string(reinterpret_cast<const char*>(retryCtx->localRetryInfo_.opInfo.opId.newTag));
     std::vector<u32> rankList;
@@ -598,7 +598,7 @@ HcclResult OpRetryBase::InitChangeLinkInfo(RetryContext* retryCtx, bool incre, b
 }
 
 HcclResult OpRetryBase::GetLinkPortStatus(RetryContext* retryCtx, LinkPortStatus &linkPortStatus,
-    bool isGetGroupAllRemoteRank)
+    bool isGetGroupAllRemoteRank) const
 {
     std::string newTag = std::string(reinterpret_cast<const char*>(retryCtx->localRetryInfo_.opInfo.opId.newTag));
     HCCL_RUN_INFO("[OpRetry][Agent]begin to GetLinkPortStatus from: deviceLogicId[%d], identifier[%s] tag[%s]",

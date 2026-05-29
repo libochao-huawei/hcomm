@@ -108,7 +108,6 @@ extern HcclResult HcclCommAddExchangeInfo(HcclComm comm, const void* data, uint3
  * @note 读取后自动清空该remoteRank的交换信息，不可重复读取，在HcclChannelAcquire成功返回后调用
  */
 extern HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength);
-
 /**
  * @brief 重置交换信息
  * @param[in] comm 通信域句柄

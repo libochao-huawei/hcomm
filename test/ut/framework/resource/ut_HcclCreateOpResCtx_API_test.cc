@@ -28,6 +28,10 @@ public:
         GlobalMockObject::verify();
     }
 };
+HcclResult hrtGetDeviceTypeStub910B(DevType &devType) {
+    devType = DevType::DEV_TYPE_910B;
+    return HCCL_SUCCESS;
+}
 
 HcclResult hrtGetDeviceTypeStub91093(DevType &devType) {
     devType = DevType::DEV_TYPE_910_93;
