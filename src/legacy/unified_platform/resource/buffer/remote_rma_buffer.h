@@ -132,6 +132,8 @@ class RemoteUbRmaBuffer : public RemoteRmaBuffer {
 public:
     explicit RemoteUbRmaBuffer(RdmaHandle rdmaHandle);
 
+    RemoteUbRmaBuffer(uintptr_t addr, u64 size, u32 tokenId, u32 tokenValue, HcclMemType memType, std::string &memTag);
+
     RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto);
 
     ~RemoteUbRmaBuffer() override;

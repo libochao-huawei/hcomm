@@ -31,10 +31,6 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1), isRecvFirst_(isRecvFirst)
 {
     HCCL_INFO("source: %s", locCntNotifyRes.Describe().c_str());
-    HcclResult result = FillTagVec(commonLocRes.bufferVec, localUserMemTag_);
-    CHK_RET_THROW(InternalException,
-        StringFormat("[UbMemTransport][UbMemTransport] failed to construct UbMemTransport."),
-        result);
 }
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
@@ -44,44 +40,6 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1)
 {
     HCCL_INFO("source: %s", locCntNotifyRes.Describe().c_str());
-    HcclResult result = FillTagVec(commonLocRes.bufferVec, localUserMemTag_);
-    CHK_RET_THROW(InternalException,
-        StringFormat("[UbMemTransport][UbMemTransport] failed to construct UbMemTransport."),
-        result);
-}
-
-HcclResult UbMemTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
-{
-    bufferNum += bufferVec.size();
-    if (bufferNum == 0) {
-        HCCL_WARNING("[UbMemTransport][FillTagVec] bufferNum is 0.");
-    }
-    if (UNLIKELY(bufferNum > MAX_BUFFER_NUM)) {
-        HCCL_ERROR("[UbMemTransport][FillTagVec] totalBufferNum[%u] exceeds limit[%u]", bufferNum, MAX_BUFFER_NUM);
-        return HCCL_E_PARA;
-    }
-    HCCL_INFO("[UbMemTransport][FillTagVec] bufferNum[%zu]", bufferVec.size());
-    localUserMemTag_.reserve(bufferNum);
-    uint32_t index = 0;
-    for (auto &localRmaBuffer : bufferVec) {
-        std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        if (localRmaBuffer == nullptr) {
-            HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum[%u]", index);
-        } else {
-            CHK_PTR_NULL(localRmaBuffer->GetBuf());
-            std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
-            if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
-                HCCL_ERROR("[UbMemTransport][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
-                return HCCL_E_PARA;
-            }
-            CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
-            HCCL_INFO("[UbMemTransport][FillTagVec] memHandleNum[%u] memTag[%s]", index, memTag.data());
-        }
-        tagVec.push_back(memTag);
-        index++;
-    }
-    return HCCL_SUCCESS;
 }
 
 std::string UbMemTransport::Describe() const
@@ -616,13 +574,6 @@ void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, std::vector<Local
         }
         pos++;
     }
-
-    for (const auto& tag : tagVec) {
-        // 逐个字节传输
-        for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
-            binaryStream << static_cast<u8>(tag[i]);
-        }
-    }
 }
 
 void UbMemTransport::CntNotifyVecPack(BinaryStream &binaryStream)
@@ -702,19 +653,6 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
             HCCL_INFO("unpack buffer pos=%u, rmtRmaBuffer=%s", pos, bufferVec.back()->Describe().c_str());
         }
     }
-
-    rmtMemTagTemp_.clear();
-    if (type == UbRmtBufType::BUFFER) {
-        rmtMemTagTemp_.resize(rmtNum);
-        for (auto& tag : rmtMemTagTemp_) {
-            for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
-                u8 byte;
-                binaryStream >> byte;
-                tag[i] = static_cast<char>(byte);
-            }
-        }
-    }
-    remoteUserMemTag_.insert(remoteUserMemTag_.end(), rmtMemTagTemp_.begin(), rmtMemTagTemp_.end());
 }
 
 bool UbMemTransport::ConnVecUnpackProc(BinaryStream &binaryStream)
@@ -948,7 +886,7 @@ HcclResult UbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, 
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     Hccl::RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{cacheValid_, rmtBufferVec,
-    remoteUserMems_, tagCopies_, tagPointers_, remoteMem, memInfos, memNum};
+    remoteUserMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
@@ -988,14 +926,13 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVe
         return HCCL_SUCCESS;
     }
     locMemTagTemp_.clear();
-    CHK_RET(FillTagVec(bufferVecTemp, locMemTagTemp_));
     HCCL_INFO("[UbMemTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
     sendData.clear();
     BinaryStream sendStream;
     std::vector<std::unique_ptr<RemoteUbRmaBuffer>> rmtBufferTemp{};
     TRY_CATCH_RETURN(
         [&]() -> void {
-            BufferVecPack(sendStream, bufferVecTemp, locMemTagTemp_);
+            BufferVecPack(sendStream, bufferVecTemp);
             sendStream.Dump(sendData);
             u32 sendSize = sendData.size();
             socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
