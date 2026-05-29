@@ -16,6 +16,7 @@
 #include "orion_adapter_hccp.h"
 #include "../../../../../../legacy/service/collective/coll_operator_check.h"
 #include "comm_mems.h"
+#include "user_remote_mem_getter.h"
 
 namespace Hccl {
 constexpr uint32_t FINISH_MSG_SIZE = 128;
@@ -409,7 +410,7 @@ HcclResult AivUrmaTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     Hccl::RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{cacheValid_, rmtBufferVec_,
-        remoteUserMems_, tagCopies_, tagPointers_, remoteMem, memInfos, memNum};
+        remoteUserMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }

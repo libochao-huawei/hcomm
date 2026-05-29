@@ -147,8 +147,8 @@ private:
     ExchangeRdmaConnDto                                     rmtConnDto_;
     std::mutex                                              remoteMemsMutex_{};
     std::vector<CommMem>                                    remoteUserMems_{};
-    std::vector<std::string>                                tagCopies_{};
-    std::vector<char*>                                      tagPointers_{};
+    std::vector<std::string>                                memInfoCopies_{};
+    std::vector<char*>                                      memInfoPointers_{};
     bool                                                    cacheValid_{false};
 
     std::vector<SqContext>                                  sqContextList_{};

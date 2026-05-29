@@ -155,8 +155,8 @@ private:
     // GetRemoteMems 缓存
     bool cacheValid_{false};
     std::vector<CommMem> userRemoteMems_;
-    std::vector<std::string> tagCopies_;
-    std::vector<char*> tagPointers_;
+    std::vector<std::string> memInfoCopies_;
+    std::vector<char*> memInfoPointers_;
 
     uint64_t maxMsgSize_{0};
     uint32_t lbMax_{0};             // 多QP负载均衡

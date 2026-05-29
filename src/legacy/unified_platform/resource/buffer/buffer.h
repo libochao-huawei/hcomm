@@ -69,7 +69,7 @@ protected:
     uintptr_t   addr_{0};
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
-    char mem_Tag_[256]{};
+    char memInfo_[256]{};
 };
 
 } // namespace Hccl

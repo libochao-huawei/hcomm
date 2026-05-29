@@ -114,14 +114,10 @@ private:
     RemoteBufferVec rmtBufferVec;     // 远端 buffer
     RemoteBufferVec rmtCntNotifyVec;  // 远端 cnt Notify
     LocalBufferVec  locBufferVec;     // 本端 buffer
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> locMemTagTemp_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> rmtMemTagTemp_{};
     bool                         cacheValid_ = false; // 当前缓存是否有效
     std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
-    std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
-    std::vector<char*>           tagPointers_;        // Tag 缓存
+    std::vector<std::string>     memInfoCopies_;          // 储存 Tag 字符串副本
+    std::vector<char*>           memInfoPointers_;        // Tag 缓存
 
     void SendDataSize();
     void RecvDataSize();

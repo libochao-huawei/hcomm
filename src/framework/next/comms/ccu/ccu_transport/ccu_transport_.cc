@@ -319,8 +319,7 @@ HcclResult CcuTransport::RecvDataProcess()
     CHK_RET(HandshakeMsgUnpack(binaryStream));
     CHK_RET(ConnInfoUnpackProc(binaryStream));
     CHK_RET(TransResUnpackProc(binaryStream));
-    rmtBufferInfos_.clear();
-    remoteUserMemTag_.clear();
+    rmtbufferVec_.clear();
     CHK_RET(BufferInfoUnpack(binaryStream));
     return HcclResult::HCCL_SUCCESS;
 }
@@ -455,8 +454,13 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
     for (u32 pos = 0; pos < rmtBufferNum; ++pos) {
         CclBufferInfo rmtBufferInfo{};
         rmtBufferInfo.Unpack(binaryStream);
-        rmtBufferInfos_.push_back(rmtBufferInfo);
-        remoteUserMemTag_.push_back(rmtBufferInfo.memTag);
+        std::string memInfo(rmtBufferInfo.memInfo.data(), strnlen(rmtBufferInfo.memInfo.data(), HCCL_RES_TAG_MAX_LEN));
+        if (memInfo == "HcclBuffer") {
+            rmtHcclBufferInfo_ = rmtBufferInfo;
+        }
+        rmtbufferVec_.push_back(make_unique<Hccl::RemoteUbRmaBuffer>(reinterpret_cast<uintptr_t>(rmtBufferInfo.addr),
+            rmtBufferInfo.size, rmtBufferInfo.tokenId, rmtBufferInfo.tokenValue,
+            Hccl::HcclMemTypeToCommMemType(rmtBufferInfo.type), memInfo));
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -605,7 +609,7 @@ HcclResult CcuTransport::GetLocBuffer(CclBufferInfo &bufferInfo, const uint32_t 
 HcclResult CcuTransport::GetRmtBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const
 {
     (void)bufNum;
-    bufferInfo = rmtBufferInfos_[0];
+    bufferInfo = rmtHcclBufferInfo_;
     return HCCL_SUCCESS;
 }
 
@@ -650,40 +654,10 @@ void CcuTransport::Clean()
 
 HcclResult CcuTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
-    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetRemoteUserMems] remoteMem is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!memInfos, HCCL_ERROR("[GetRemoteUserMems] memInfos is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetRemoteUserMems] memNum is nullptr"), HCCL_E_PARA);
-    *(remoteMem) = nullptr;
-    *(memInfos) = nullptr;
-    *(memNum) = 0;
-    uint32_t userMemCount = rmtBufferInfos_.size();
-    if (userMemCount == 0) {
-        HCCL_WARNING("[%s] bufferNum is 0.", __func__);
-        return HCCL_SUCCESS;
-    }
-    // 检查是否有缓存
-    if (!cacheValid_) {
-        remoteUserMems_.clear();
-        tagCopies_.clear();
-        tagCopies_.reserve(userMemCount);
-        tagPointers_.clear();
-        tagPointers_.reserve(userMemCount);
-        for (uint32_t i = 0; i < userMemCount; ++i) {
-            CommMem mem{};
-            mem.type = rmtBufferInfos_[i].type;
-            mem.addr = reinterpret_cast<void *>(rmtBufferInfos_[i].addr);
-            mem.size = rmtBufferInfos_[i].size;
-            remoteUserMems_.push_back(mem);
-            const char* src = rmtBufferInfos_[i].memTag.data();
-            std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
-            tagCopies_.push_back(std::move(tagCopy));
-            tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
-        }
-        cacheValid_ = true;
-    }
-    *(remoteMem) = remoteUserMems_.data();
-    *(memInfos) = tagPointers_.data();
-    *(memNum) = userMemCount;
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{cacheValid_, rmtbufferVec_,
+        remoteUserMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
+    CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 

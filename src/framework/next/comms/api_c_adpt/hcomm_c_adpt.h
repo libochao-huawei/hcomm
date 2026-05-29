@@ -49,7 +49,7 @@ typedef struct {
 struct CommMemInfo {
     CommMem mem {};
     void* bufferHandle {nullptr};
-    char memTag[HCOMM_RES_TAG_MAX_LEN] = {0};
+    char memInfo[HCOMM_RES_TAG_MAX_LEN] = {0};
 };
 
 /**
