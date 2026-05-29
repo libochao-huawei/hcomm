@@ -321,9 +321,13 @@ void AicpuTsRoceChannel::ConfigureTransportParaForRoce()
 
 HcclResult AicpuTsRoceChannel::CreateAndInitTransport(HcclDispatcher dispatcher)
 {
+    notifyPool_.reset(new (std::nothrow) hccl::NotifyPool());
+    CHK_SMART_PTR_NULL(notifyPool_);
+    CHK_RET(notifyPool_->Init(localEp_.loc.device.devPhyId));
+    CHK_RET(notifyPool_->RegisterOp(machinePara_.tag));
     EXECEPTION_CATCH(
         transport_ = std::make_unique<hccl::Transport>(hccl::TransportType::TRANS_TYPE_IBV_EXP, transportPara_, dispatcher,
-            notifyPoolHolder_, machinePara_),
+            notifyPool_, machinePara_),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(transport_);
     HCCL_INFO("[AicpuTsRoceChannel][%s] Transport Init start", SocketRoleTag());
@@ -445,6 +449,7 @@ void AicpuTsRoceChannel::InitSerializeRoceChannelRes(HcommRoceChannelRes &res, s
     res.chipId = LLONG_MAX;
     std::copy_n(aiQpInfos.begin(), static_cast<std::ptrdiff_t>(qpNum), res.QpInfo);
     res.qpsPerConnection = qpNum - static_cast<u32>(qpNum > 1U);
+    SerializeFlushNotifyInfo(res);
 }
 
 HcclResult AicpuTsRoceChannel::BuildSerializeChannelMem(AicpuTsRoceChannelMem &bundle,
@@ -572,5 +577,27 @@ HcclResult AicpuTsRoceChannel::ChannelFence()
 {
     HCCL_INFO("[AicpuTsRoceChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsRoceChannel::SerializeFlushNotifyInfo(HcommRoceChannelRes &res) const
+{
+    void *remoteAddr = nullptr;
+    uint32_t remoteKey = 0;
+    uint32_t notifySize = 0;
+    void *localAddr = nullptr;
+    uint32_t localKey = 0;
+    CHK_SMART_PTR_NULL(transport_);
+    CHK_RET(transport_->GetFlushRemSrcMem(&remoteAddr, &remoteKey, &notifySize));
+    CHK_RET(transport_->GetFlushLocalDataNotify(&localAddr, &localKey, res.localDataSignal));
+
+    res.remoteNotifyAddr = remoteAddr;
+    res.remoteNotifyKey = remoteKey;
+    res.localDataNotifyAddr = localAddr;
+    res.localDataNotifyKey = localKey;
+    res.notifySize = notifySize;
+    HCCL_DEBUG("[%s] remoteNotifyAddr[%p], remoteNotifyKey[%u], localDataNotifyAddr[%p], localDataNotifyKey[%u]," \
+        "notifySize[%u].", __func__, res.remoteNotifyAddr, res.remoteNotifyKey, res.localDataNotifyAddr,
+        res.localDataNotifyKey, res.notifySize);
+    return HCCL_SUCCESS;
 }
 } // namespace hcomm
