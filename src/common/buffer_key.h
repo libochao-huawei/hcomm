@@ -86,11 +86,13 @@ public:
 };
 }
 
+//兼容旧 hccl namespace 引用
 namespace Hccl {
     template<typename A, typename S>
     using BufferKey = hcomm::BufferKey<A, S>;
 }
 
+//兼容旧 Hccl namespace 引用
 namespace hccl {
     template<typename A, typename S>
     using BufferKey = hcomm::BufferKey<A, S>;
