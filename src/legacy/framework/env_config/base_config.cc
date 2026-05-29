@@ -20,28 +20,42 @@ namespace Hccl {
 void EnvHostNicConfig::Parse()
 {
     hcclIfIp.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_IF_IP set by %s to [%s]", hcclIfIp.GetSource(),
+        GetControlIfIp().Describe().c_str());
+
     hcclIfBasePort.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_IF_BASE_PORT set by %s to [%u]", hcclIfBasePort.GetSource(),
+        GetIfBasePort());
+
     hcclSocketIfName.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_SOCKET_IFNAME set by %s to [%s]", hcclSocketIfName.GetSource(),
+        GetSocketIfName().configIfNameStr.c_str());
+
     whitelistDisable.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_WHITELIST_DISABLE set by %s to [%d]", whitelistDisable.GetSource(),
+        whitelistDisable.Get());
+
     if (!whitelistDisable.Get()) {
         hcclWhiteListFile.Parse();
-        HCCL_RUN_INFO("[Init][EnvVarParam]Env config hcclWhiteListFile[%s]", GetWhiteListFile().c_str());
-    }
-    hcclHostSocketPortRange.Parse();
-    hcclDeviceSocketPortRange.Parse();
-    std::ostringstream hosrPortRangeOss;
-    std::ostringstream devicePortRangeOss;
-    for (auto range : GetHostSocketPortRange()) {
-        hosrPortRangeOss << " [" << std::to_string(range.min) << ", " << std::to_string(range.max) << "]";
-    }
-    for (auto range : GetDeviceSocketPortRange()) {
-        devicePortRangeOss << " [" << std::to_string(range.min) << ", " << std::to_string(range.max) << "]";
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_WHITELIST_FILE set by %s to [%s]", hcclWhiteListFile.GetSource(),
+            GetWhiteListFile().c_str());
     }
 
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config hcclIfIp[%s], hcclIfBasePort[%u], hcclSocketIfName[%s], whitelistDisable[%d], "
-                  "hcclHostSocketPortRange[%s], devicePortRangeOss[%s]",
-                  GetControlIfIp().Describe().c_str(), GetIfBasePort(), GetSocketIfName().configIfNameStr.c_str(),
-                  whitelistDisable.Get(), hosrPortRangeOss.str().c_str(), devicePortRangeOss.str().c_str());
+    hcclHostSocketPortRange.Parse();
+    std::ostringstream hosrPortRangeOss;
+    for (auto range : GetHostSocketPortRange()) {
+        hosrPortRangeOss << "[" << range.min << ", " << range.max << "] ";
+    }
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_HOST_SOCKET_PORT_RANGE set by %s to [%s]", hcclHostSocketPortRange.GetSource(),
+        hosrPortRangeOss.str().c_str());
+
+    hcclDeviceSocketPortRange.Parse();
+    std::ostringstream devicePortRangeOss;
+    for (auto range : GetDeviceSocketPortRange()) {
+        devicePortRangeOss << "[" << range.min << ", " << range.max << "] ";
+    }
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_NPU_SOCKET_PORT_RANGE set by %s to [%s]", hcclDeviceSocketPortRange.GetSource(),
+        devicePortRangeOss.str().c_str());
 }
 
 const IpAddress &EnvHostNicConfig::GetControlIfIp() const
@@ -84,9 +98,12 @@ const std::vector<SocketPortRange> &EnvHostNicConfig::GetDeviceSocketPortRange()
 void EnvSocketConfig::Parse()
 {
     hcclSocketFamily.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_SOCKET_FAMILY set by %s to [%d]", hcclSocketFamily.GetSource(),
+        GetSocketFamily());
+
     linkTimeOut.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config hcclSocketFamily[%d], linkTimeOut[%d]s",
-                  GetSocketFamily(), GetLinkTimeOut());
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_CONNECT_TIMEOUT set by %s to [%d]s", linkTimeOut.GetSource(),
+        GetLinkTimeOut());
 }
 
 s32 EnvSocketConfig::GetSocketFamily() const
@@ -105,7 +122,8 @@ void EnvRtsConfig::Parse()
 {
     execTimeOut.Parse();
     aivExecTimeOut.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config execTimeOut[%u]s, aivExecTimeOut[%f]s", GetExecTimeOut(), GetAivExecTimeOut());
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_EXEC_TIMEOUT set by %s to [%u]s", execTimeOut.GetSource(),
+    GetExecTimeOut());
 }
 
 u32 EnvRtsConfig::GetExecTimeOut() const
@@ -123,17 +141,48 @@ double EnvRtsConfig::GetAivExecTimeOut() const
 void EnvRdmaConfig::Parse()
 {
     rdmaTrafficClass.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_TC set by %s to [%u]", rdmaTrafficClass.GetSource(),
+        GetRdmaTrafficClass());
+
     rdmaServerLevel.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_SL set by %s to [%u]", rdmaServerLevel.GetSource(),
+        GetRdmaServerLevel());
+
     rdmaTimeOut.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_TIMEOUT set by %s to [%u]", rdmaTimeOut.GetSource(),
+        GetRdmaTimeOut());
+
     rdmaRetryCnt.Parse();
+<<<<<<< HEAD
+=======
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_RETRY_CNT set by %s to [%u]", rdmaRetryCnt.GetSource(),
+        GetRdmaRetryCnt());
+
+    uboeTimeOut.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_UBOE_TIMEOUT set by %s to [%u]", uboeTimeOut.GetSource(),
+        GetUboeTimeOut());
+
+    ubTimeOut.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_UB_TIMEOUT set by %s to [%u]", ubTimeOut.GetSource(),
+        GetUbTimeOut());
+
+>>>>>>> 9fcfb9c6 (fix env log)
     queueNum.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_QPS_PER_CONNECTION set by %s to [%u]", queueNum.GetSource(),
+        GetRdmaQueueNum());
+
     multiQpThreshold.Parse();
+<<<<<<< HEAD
     uboeTimeOut.Parse();
     ubTimeOut.Parse();
     HCCL_RUN_INFO("[Init][EnvVarParam]Env config rdmaTrafficClass[%u], rdmaServerLevel[%u], rdmaTimeOut[%u], "
                   "rdmaRetryCnt[%u], uboeTimeOut[%u], ubTimeOut[%u]",
         GetRdmaTrafficClass(), GetRdmaServerLevel(), GetRdmaTimeOut(), GetRdmaRetryCnt(), GetRdmaQueueNum(),
         GetRdmaMultiQpThreshold(), GetUboeTimeOut(), GetUbTimeOut());
+=======
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_MULTI_QP_THRESHOLD set by %s to [%u]", multiQpThreshold.GetSource(),
+        GetRdmaMultiQpThreshold());
+>>>>>>> 9fcfb9c6 (fix env log)
 }
 
 u32 EnvRdmaConfig::GetRdmaTrafficClass() const
@@ -181,21 +230,30 @@ u32 EnvRdmaConfig::GetUbTimeOut() const
 void EnvAlgoConfig::Parse()
 {
     primQueueGenName.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] PRIM_QUEUE_GEN_NAME set by %s to [%s]", primQueueGenName.GetSource(),
+        GetPrimQueueGenName().c_str());
+
     hcclAlgoConfig.Parse();
-    bufferSize.Parse();
-    hcclAccelerator_.Parse();
     std::ostringstream hcclAlgoConfigOss;
     for (auto algoConfig : GetAlgoConfig()) {
         OpType opType = algoConfig.first;
-        hcclAlgoConfigOss << " [" << opType.Describe().c_str() << ", ";
+        hcclAlgoConfigOss << "[" << opType.Describe().c_str() << ", ";
         std::vector<HcclAlgoType> algoTypes = algoConfig.second;
         for (auto algoType : algoTypes) {
-           hcclAlgoConfigOss << algoType.Describe().c_str() << " ";
+            hcclAlgoConfigOss << algoType.Describe().c_str() << " ";
         }
         hcclAlgoConfigOss << "]";
     }
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config primQueueGenName[%s], hcclAlgoConfig[%s], bufferSize[%llu], hcclAccelerator[%s]",
-                  GetPrimQueueGenName().c_str(), hcclAlgoConfigOss.str().c_str(), GetBuffSize(), GetHcclAccelerator().Describe().c_str());
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_ALGO set by %s to [%s]", hcclAlgoConfig.GetSource(),
+        hcclAlgoConfigOss.str().c_str());
+
+    bufferSize.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_BUFFSIZE set by %s to [%llu]", bufferSize.GetSource(),
+        GetBuffSize());
+
+    hcclAccelerator_.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_OP_EXPANSION_MODE set by %s to [%s]", hcclAccelerator_.GetSource(),
+        GetHcclAccelerator().Describe().c_str());
 }
 
 const std::string &EnvAlgoConfig::GetPrimQueueGenName() const
@@ -222,12 +280,18 @@ HcclAccelerator EnvAlgoConfig::GetHcclAccelerator() const
 void EnvLogConfig::Parse()
 {
     entryLogEnable.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_ENTRY_LOG_ENABLE set by %s to [%d]", entryLogEnable.GetSource(),
+        GetEntryLogEnable());
+
     cannVersion.Parse();
+    HCCL_RUN_INFO("[HCCL_ENV] LD_LIBRARY_PATH set by %s to [%s]", cannVersion.GetSource(),
+        GetCannVersion().c_str());
+
     dfsConfig.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config entryLogEnable[%d], cannVersion[%s], dfsConfig taskException[%d]"
-                  "dfsConfig cluster_heartbeat[%d]",
-                  GetEntryLogEnable(), GetCannVersion().c_str(), GetDfsConfig().taskExceptionEnable,
-                  GetDfsConfig().clusterHeartBeatEnable);
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_DFS_CONFIG task_exception set by %s to [%d], cluster_heartbeat set by %s to [%d], "
+                  "rankConsistentState set by %s to [%d]",
+        dfsConfig.GetSource(), GetDfsConfig().taskExceptionEnable, dfsConfig.GetSource(),
+        GetDfsConfig().clusterHeartBeatEnable, dfsConfig.GetSource(), GetDfsConfig().rankConsistentState);
 }
 
 bool EnvLogConfig::GetEntryLogEnable() const
@@ -250,7 +314,8 @@ const DfsConfig &EnvLogConfig::GetDfsConfig() const
 void EnvDetourConfig::Parse()
 {
     detourType.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config detourType[%s]", GetDetourType().Describe().c_str());
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_DETOUR set by %s to [%s]", detourType.GetSource(),
+        GetDetourType().Describe().c_str());
 }
 
 HcclDetourType EnvDetourConfig::GetDetourType() const
