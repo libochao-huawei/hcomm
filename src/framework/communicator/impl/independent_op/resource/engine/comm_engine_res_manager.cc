@@ -94,5 +94,4 @@ HcclResult CommEngineResMgr::HcclThreadResGetInfo(ThreadHandle thread, ThreadRes
     return threadMgr_->HcclThreadResGetInfo(thread, resType, infoLen, info);
 }
 
-
 }

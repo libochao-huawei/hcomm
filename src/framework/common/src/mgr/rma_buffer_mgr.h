@@ -139,7 +139,7 @@ public:
         return intervalTree_.begin();
     }
 
-    ConstIterator Next(ConstIterator it)
+    ConstIterator Next(ConstIterator it) const
     {
         return std::next(it);
     }

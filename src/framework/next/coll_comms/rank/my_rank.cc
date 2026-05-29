@@ -861,6 +861,5 @@ CollCommConfigConsistency &MyRank::GetCollCommConfigConsistency()
 {
     return collCommConfigConsistency_;
 }
-
 } // namespace hccl
 

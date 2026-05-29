@@ -88,7 +88,7 @@ std::string NotifyManager::GetBinNotifys(std::vector<std::unique_ptr<LocalNotify
     return uniqueIdStr;
 }
 
-HcclResult NotifyManager::NotifyTypeToNotifyLoadType(::NotifyType notifyType, NotifyLoadType &notifyLoadType)
+HcclResult NotifyManager::NotifyTypeToNotifyLoadType(::NotifyType notifyType, NotifyLoadType &notifyLoadType) const
 {
     switch (notifyType) {
         case ::NOTIFY_TYPE_RTS_NOTIFY:
