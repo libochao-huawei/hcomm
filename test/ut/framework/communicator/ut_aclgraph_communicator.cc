@@ -19,6 +19,8 @@
 #include "mem_host_pub.h"
 #include "mem_device_pub.h"
 #include "stream_pub.h"
+#include "launch_aicpu.h"
+#include "adapter_rts_common.h"
 
 using namespace hccl;
 
