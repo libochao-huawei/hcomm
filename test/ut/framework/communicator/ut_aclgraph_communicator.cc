@@ -25,7 +25,7 @@
 using namespace hccl;
 
 static int g_launchCallCount = 0;
-static HcclResult LaunchCountStub(const rtStream_t, void*, u32, aclrtBinHandle, const char*, bool, u16, void*, u32)
+static HcclResult LaunchCountStub(const rtStream_t, void*, u32, aclrtBinHandle, const std::string &, bool, u16, void*, u32)
 {
     ++g_launchCallCount;
     return HCCL_SUCCESS;
