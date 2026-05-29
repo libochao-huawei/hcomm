@@ -12,10 +12,42 @@
 #define __MC2_AICPU_INTERFACE_H__
 
 #include <cstdint>
+#include "hcomm_res_defs.h"
+#include "hccl_group_utils.h"
+
+struct ThreadNotifyRecordParam {
+    ThreadHandle thread;
+    ThreadHandle dstThread;
+    uint32_t dstNotifyIdx;
+};
+struct ThreadNotifyWaitParam {
+    ThreadHandle thread;
+    uint32_t notifyIdx;
+    uint32_t timeOut;
+};
+
+struct P2pAicpuKernelParam {
+    ThreadNotifyWaitParam waitParam;    // NotifyWait 参数
+    hccl::HcclKernelFuncInfo funcInfo;         // dlopen/func 参数
+    ThreadNotifyRecordParam recordParam; // NotifyRecord 参数
+    void* funcArgs;                      // func执行的参数(OpParam*)
+    ThreadHandle sendRecvStream;         // P2P stream参数
+};
+
+struct P2pGroupAicpuKernelParam {
+    hccl::HcclKernelFuncInfo funcInfo;         // dlopen/func 参数
+    void* funcArgs;                      // func执行的参数(OpParam*)
+    ThreadHandle sendRecvStream;         // P2P stream参数
+};
 
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuKfcResInitV2(void *args);
 __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *args);
+__attribute__((visibility("default"))) uint32_t RunAicpuNotifyRecord(void *args);
+__attribute__((visibility("default"))) uint32_t RunAicpuNotifyWait(void *args);
+__attribute__((visibility("default"))) uint32_t HcclP2pLaunchNonGroupSynAicpuKernel(void *args);
+__attribute__((visibility("default"))) uint32_t HcclP2pLaunchGroupAicpuKernel(void *args);
+
 }
 
 #endif // __MC2_AICPU_INTERFACE_HPP__
