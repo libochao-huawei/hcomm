@@ -33,7 +33,7 @@ public:
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
     HcclResult GetMemTag(char **memTag, uint32_t memNum);
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
-    HcclResult CheckSocketStatus();
+    HcclResult CheckSocketStatus(string socketOpreator);
     HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum);
 
 private:
