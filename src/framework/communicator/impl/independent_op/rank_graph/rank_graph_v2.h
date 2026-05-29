@@ -36,7 +36,7 @@ public:
     HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
  	HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
  	HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
-    HcclResult GetDeviceId(uint32_t rankId, uint32_t *deviceId) override;
+    HcclResult GetDeviceId(uint32_t rankId, uint32_t *deviceId);
 
 private:
     std::unique_ptr<Hccl::IRankGraph> pImpl;
