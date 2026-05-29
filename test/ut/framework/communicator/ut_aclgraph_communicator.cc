@@ -25,7 +25,8 @@
 using namespace hccl;
 
 static int g_launchCallCount = 0;
-static HcclResult LaunchCountStub(const rtStream_t, void*, u32, aclrtBinHandle, const std::string &, bool, u16, void*, u32)
+static HcclResult LaunchCountStub(
+    const rtStream_t, void *, u32, aclrtBinHandle, const std::string &, bool, u16, void *, u32)
 {
     ++g_launchCallCount;
     return HCCL_SUCCESS;
@@ -192,7 +193,7 @@ TEST_F(AclgraphCommunicatorTest, DestroyAlgResource_WithDestroyCbk)
     res.opTransportResponse[0][0].transportRequests.resize(1);
     res.opTransportResponse[0][0].transportRequests[0].isUsedRdma = false; // 非 RDMA
     res.opTransportResponse[0][0].transportRequests[0].isValid = true;
-    
+
     communicator_.resMap_[tag] = res;
     communicator_.linkResMap_[res.opTransportResponse[0][0].virtualLinks[0].get()] = LinkInfo();
     communicator_.linkResMap_[res.opTransportResponse[0][0].links[0].get()] = LinkInfo();
@@ -330,15 +331,9 @@ TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_LaunchPath)
     ASSERT_NE(communicator_.aicpuCleanupHostBuf_, nullptr);
 
     // Mock C 函数
-    MOCKER(hrtMemSyncCopy)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(AicpuAclKernelLaunchV2)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(hcclStreamSynchronize)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtMemSyncCopy).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(AicpuAclKernelLaunchV2).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(hcclStreamSynchronize).stubs().will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = communicator_.AicpuKfcClearOpResLaunch({"tag1", "tag2"});
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -364,41 +359,14 @@ TEST_F(AclgraphCommunicatorTest, KfcClearOpResLaunch_MultiBatch)
     }
 
     g_launchCallCount = 0;
-    MOCKER(hrtMemSyncCopy)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(AicpuAclKernelLaunchV2)
-        .stubs()
-        .will(invoke(LaunchCountStub));
-    MOCKER(hcclStreamSynchronize)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtMemSyncCopy).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(AicpuAclKernelLaunchV2).stubs().will(invoke(LaunchCountStub));
+    MOCKER(hcclStreamSynchronize).stubs().will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = communicator_.AicpuKfcClearOpResLaunch(manyTags);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // 应分 2 批 launch（MAX_BATCH + 10 需要 2 批）
     EXPECT_EQ(g_launchCallCount, 2);
-}
-
-/**
- * @brief TC-COMM-16: AllocAlgResource capture 冲突分支 — tagsRequiringHostCleanup_ 插入
- * 注意：此路径需要完整的 algOperator + resMap_ 预置 + 算子执行流程，
- *       在纯 UT 环境中难以触发。此处标记为 DISABLED，
- *       需要在集成测试或 ST 中覆盖。
- * 覆盖函数：hccl_communicator_host.cc ~4597-4614 和 ~4945-4961
- * 入口：HcclCommunicator::AllocAlgResource 中
- *       opParam.isCapture=true && resMap_.find(newTag)!=end 分支
- */
-TEST_F(AclgraphCommunicatorTest, DISABLED_AllocAlgResource_CaptureConflict_RoceBranch)
-{
-    // 前提条件：
-    // 1. resMap_[tag] 已存在
-    // 2. opParam.isCapture = true
-    // 3. HasRoceTransportLinks(transportReq) = true
-    // 验证：
-    // - tagsRequiringHostCleanup_ 包含新 tag
-    // - InsertNewTagToCaptureResMap 被调用
-    // - captureCnt_ 自增
 }
 
 /**
