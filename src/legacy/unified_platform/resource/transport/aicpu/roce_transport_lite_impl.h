@@ -40,7 +40,7 @@ public:
                          const StreamLite &stream) override;
 
     // ========== 同步 / Notify 接口 ==========
-    // void Post(u32 index, const StreamLite &stream) override;    // NotifyRecord
+    void Post(u32 index, const StreamLite &stream) override;
     void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
 
 private:
@@ -70,7 +70,7 @@ private:
 
     // ========== 底层 Task 构造接口(rtsq) ==========
     void BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue);
-    void BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId);
+    void BuildNotifyWaitTask(u32 notifyId, const StreamLite &stream, u32 timeout);
 };
 
 } // namespace Hccl

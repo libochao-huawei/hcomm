@@ -81,6 +81,9 @@ private:
 
     // ========== 厂商 Ops（工厂模式，负责具体厂商 ops 创建）==========
     std::unique_ptr<RdmaBaseOps> rdmaOps_ = nullptr;
+
+    // ========== 辅助分片写入函数 ==========
+    void DoSliceWrite(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt);
 };
 
 } // namespace Hccl

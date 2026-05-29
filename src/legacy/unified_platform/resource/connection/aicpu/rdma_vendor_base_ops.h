@@ -13,6 +13,7 @@
 #define RDMA_BASE_VENDOR_OPS_H
 
 #include "rma_conn_lite.h"
+#include <chrono>
 
 namespace Hccl {
 
@@ -94,6 +95,9 @@ protected:
     RdmaSqContextLite *sqContext_;
     RdmaCqContextLite *cqContext_;
 
+    // 默认超时时间 30 ms
+    const std::chrono::milliseconds timeout_ = std::chrono::milliseconds(30U);
+
     // vendor扩展点: 每个原子op一个虚函数
     // 默认 NOT_SUPPORT, 各个vendor 只重写自己支持的
     virtual HcclResult BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt) {
@@ -134,17 +138,30 @@ protected:
     }
 
     HcclResult WaitSqFree(uint32_t wqeNum) {
-        while (1) {
-            HCCL_INFO("[RdmaBaseOps::%s] Operate : sqTail = %u", __func__, sqTail_);
-            // sq队列能放下
+        // wq_overflow
+        bool timeOutFlag = false;
+        auto startTime = std::chrono::steady_clock::now();
+
+        HCCL_INFO("[RdmaBaseOps::%s] Operate: sqTail = %u", __func__, sqTail_);
+        while (true) {
             auto status = memcpy_s(&sqTail_, sizeof(uint32_t), (void *)sqContext_->tailAddr, sizeof(uint32_t));
             if (UNLIKELY(status != 0)) {
                 THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] read sq tail failed, ret = %d", __func__, status));
             }
-            if (static_cast<uint32_t>(sqHead_ - sqTail_ + wqeNum) <= sqContext_->depth) {
+
+            // sq队列能放下
+            timeOutFlag = (std::chrono::steady_clock::now() - startTime) > timeout_;
+            if (timeOutFlag ||  static_cast<uint32_t>(sqHead_ - sqTail_ + wqeNum) <= sqContext_->depth) {
                 break;
             }
         }
+
+        // 超时处理 
+        if (timeOutFlag) {
+            HCCL_ERROR("[RdmaBaseOps::%s] Sq is Full !! Operate: sqTail = %u Failed. ", __func__, sqTail_);
+            return HCCL_E_TIMEOUT;
+        }
+
         return HCCL_SUCCESS;
     }
 

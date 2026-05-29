@@ -320,10 +320,23 @@ void RoceTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buff
     BuildRdmaDbSendTask(stream, dbAddr, dbValue);
 }
 
+void RoceTransportLiteImpl::Post(u32 index, const StreamLite &stream)
+{
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    // Post Wqe && return dbValue
+    connVec_[0]->Write(
+        GetNotifySlicelite(index), GetRmtNotifySliceLite(index), dbAddr, dbValue);
+
+    // Ring Doorbell
+    BuildRdmaDbSendTask(stream, dbAddr, dbValue);
+}
+
 void RoceTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
 {
     auto notifyId = localNotifies_[index]->GetId();
-    BuildNotifyWaitTask(stream, notifyId);
+    BuildNotifyWaitTask(notifyId, stream, timeout);
 }
 
 // 下发Rtsq sqe, 敲DB
@@ -333,9 +346,9 @@ void RoceTransportLiteImpl::BuildRdmaDbSendTask(const StreamLite &stream, u64 re
 }
 
 // 下发Rtsq sqe, NotifyWait
-void RoceTransportLiteImpl::BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId)
+void RoceTransportLiteImpl::BuildNotifyWaitTask(u32 notifyId, const StreamLite &stream, u32 timeout)
 {
-    stream.GetRtsq()->NotifyWait(notifyId);
+    stream.GetRtsq()->NotifyWait(notifyId, timeout);
 }
 
 } // namespace Hccl

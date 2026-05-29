@@ -103,13 +103,13 @@ typedef struct {
     uint64_t bufAddr;   /* buffer address that wqe sge indicate; */
     uint32_t rLen;      /* buffer length that wqe sge indicate; */
     uint32_t leKey;     /* buffer lkey that wqe sge indicate; */
-} RoceWqeDataSeg;
+} Roce3WqeDataSeg;
 
 typedef struct {
     Roce3CtrlSeg ctrl;
     Roce3TaskWqeSeg task;
-    RoceWqeDataSeg data;
-} RoceWqeEntry;
+    Roce3WqeDataSeg data;
+} Roce3WqeEntry;
 
 typedef struct {
     uint32_t cqe0;
@@ -188,24 +188,24 @@ public:
 protected:
     HcclResult BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt)
     {
-        RoceWqeEntry wqe{};
+        Roce3WqeEntry wqe{};
         CHK_RET(FillCommonWqe(loc, rmt, &wqe, static_cast<uint32_t>(ROCE3_OPCODE::ROCE_OPCODE_RDMA_WRITE)));
 
-        CHK_RET(CommitWqe(&wqe, sizeof(RoceWqeEntry)));
+        CHK_RET(CommitWqe(&wqe, sizeof(Roce3WqeEntry)));
         return HCCL_SUCCESS;
     }
 
     HcclResult BuildNotifyWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify)
     {
-        RoceWqeEntry wqe{};
+        Roce3WqeEntry wqe{};
         CHK_RET(FillCommonWqe(locNotify, notify, &wqe, static_cast<uint32_t>(ROCE3_OPCODE::ROCE_OPCODE_RDMA_WRITE)));
 
-        CHK_RET(CommitWqe(&wqe, sizeof(RoceWqeEntry)));
+        CHK_RET(CommitWqe(&wqe, sizeof(Roce3WqeEntry)));
         return HCCL_SUCCESS;
     }
 
 private:
-    HcclResult FillCommonWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, RoceWqeEntry *wqe, uint32_t opCode)
+    HcclResult FillCommonWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, Roce3WqeEntry *wqe, uint32_t opCode)
     {
         HCCL_INFO("[Rdma1825Ops::%s] Hcomm RDMA 1825 BuildWrite wqe start, loc size[%u]", __func__, loc.GetSize());
 
@@ -214,8 +214,8 @@ private:
         uint8_t owner = (sqHead_ & (sqContext_->depth)) == 0 ? 0 : 1;
         wqe->ctrl.owner_sl  = (owner << ROCE_WQE_OWNERBIT_SHIFT) | ROCE_WQE_CTRL_VALUE;
 
-        // 指定cqe产生 + task字段的长度
-        wqe->ctrl.df_tsl    = 1U << ROCE_SQ_SIGNAL_SHIFT | ROCE_SQ_VA_VALUE;            
+        // 不产生cqe + task字段的长度
+        wqe->ctrl.df_tsl    = 0U << ROCE_SQ_SIGNAL_SHIFT | ROCE_SQ_VA_VALUE;            
         wqe->ctrl.df_tsl    |= sizeof(Roce3TaskWqeSeg) / ROCE_TASK_SEG_ALIGN;
 
         // fast_dma + SSN + sge长度

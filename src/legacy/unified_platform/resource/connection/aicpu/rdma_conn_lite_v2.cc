@@ -112,37 +112,8 @@ void RdmaConnLiteV2::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite 
     HCCL_INFO("[RdmaConnLiteV2::%s] Write start, loc size = %u", __func__, loc.GetSize());
     CheckVendorOp();
     
-    u64 len = loc.GetSize();
-    u32 rdmaSendRepeat = len / RDMA_DMA_MAX_SIZE;
-    u32 rdmaSendRemain = len % RDMA_DMA_MAX_SIZE;
-
-    // 存在Remain
-    if (rdmaSendRemain > 0) {
-        rdmaSendRepeat++;
-    }
-
-    // 分片transport
-    for (u32 sliceIdx = 0; sliceIdx < rdmaSendRepeat; sliceIdx++) {
-        u64 offset      = sliceIdx * RDMA_DMA_MAX_SIZE;
-        u64 localAddr   = loc.GetAddr() + offset;
-        u64 remoteAddr  = rmt.GetAddr() + offset;
-        u32 sliceSize   = RDMA_DMA_MAX_SIZE;
-
-        // 如果是余数段
-        if (sliceIdx == rdmaSendRepeat - 1 && rdmaSendRemain > 0) {
-            sliceSize = rdmaSendRemain;
-        }
-
-        RmaBufSliceLite locSlice(localAddr, sliceSize, loc.GetLkey(), 0);
-        
-        RmtRmaBufSliceLite rmtSlice(remoteAddr, sliceSize, rmt.GetRkey(), 0, 0);
-
-        HCCL_INFO("[RdmaConnLiteV2::%s] Slice[%llu]: offset=0x%llx, localAddr=0x%llx, remoteAddr=0x%llx, size=0x%u",
-            __func__, sliceIdx, offset, localAddr, remoteAddr, sliceSize);
-
-        // 分片填好wqe
-        rdmaOps_->Write(locSlice, rmtSlice);
-    }
+    // 分片write
+    DoSliceWrite(loc, rmt);
 
     // 构造Doorbell并返回
     rdmaOps_->BuildDoorbell(dbAddr, dbValue);
@@ -157,37 +128,8 @@ void RdmaConnLiteV2::WriteWithNotify(
     HCCL_INFO("[RdmaConnLiteV2::%s] WriteWithNotify start, loc size = %u", __func__, loc.GetSize());
     CheckVendorOp();
 
-    u64 len = loc.GetSize();
-    u32 rdmaSendRepeat = len / RDMA_DMA_MAX_SIZE;
-    u32 rdmaSendRemain = len % RDMA_DMA_MAX_SIZE;
-
-    // 存在Remain
-    if (rdmaSendRemain > 0) {
-        rdmaSendRepeat++;
-    }
-
-    // 分片transport
-    for (u32 sliceIdx = 0; sliceIdx < rdmaSendRepeat; sliceIdx++) {
-        u64 offset      = sliceIdx * RDMA_DMA_MAX_SIZE;
-        u64 localAddr   = loc.GetAddr() + offset;
-        u64 remoteAddr  = rmt.GetAddr() + offset;
-        u32 sliceSize   = RDMA_DMA_MAX_SIZE;
-
-        // 如果是余数段
-        if (sliceIdx == rdmaSendRepeat - 1) {
-            sliceSize = rdmaSendRemain;
-        }
-
-        RmaBufSliceLite locSlice(localAddr, sliceSize, loc.GetLkey(), 0);
-        
-        RmtRmaBufSliceLite rmtSlice(remoteAddr, sliceSize, rmt.GetRkey(), 0, 0);
-
-        HCCL_INFO("[RdmaConnLiteV2::%s] Slice[%llu]: offset=0x%llx, localAddr=0x%llx, remoteAddr=0x%llx, size=0x%u",
-            __func__, sliceIdx, offset, localAddr, remoteAddr, sliceSize);
-
-        // 分片填好wqe
-        rdmaOps_->Write(locSlice, rmtSlice);
-    }
+    // 分片write
+    DoSliceWrite(loc, rmt);
 
     // 补充一个notify操作
     rdmaOps_->NotifyRecord(locNotify, notify);
@@ -196,6 +138,31 @@ void RdmaConnLiteV2::WriteWithNotify(
     rdmaOps_->BuildDoorbell(dbAddr, dbValue);
 
     HCCL_INFO("[RdmaConnLiteV2::%s] end, dbAddr = %llu, dbValue = %llu, conn[%s]", __func__, dbAddr, dbValue, Describe().c_str());
+}
+
+void RdmaConnLiteV2::DoSliceWrite(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt)
+{
+    const u64 len = loc.GetSize();
+    const u32 fullSlices = static_cast<u32>(len / RDMA_DMA_MAX_SIZE);
+    const u32 remain     = static_cast<u32>(len % RDMA_DMA_MAX_SIZE);
+    const u32 totalSlices = fullSlices + (remain > 0 ? 1 : 0);
+
+    for (u32 sliceIdx = 0; sliceIdx < totalSlices; sliceIdx++) {
+        const u64 offset     = static_cast<u64>(sliceIdx) * RDMA_DMA_MAX_SIZE;
+        const u64 localAddr  = loc.GetAddr() + offset;
+        const u64 remoteAddr = rmt.GetAddr() + offset;
+        const u32 sliceSize  = (sliceIdx == totalSlices - 1 && remain > 0)
+                               ? remain : RDMA_DMA_MAX_SIZE;
+
+        RmaBufSliceLite    locSlice(localAddr, sliceSize, loc.GetLkey(), 0);
+        RmtRmaBufSliceLite rmtSlice(remoteAddr, sliceSize, rmt.GetRkey(), 0, 0);
+
+        HCCL_INFO("[RdmaConnLiteV2::%s] Slice[%u]: offset=0x%llx, localAddr=0x%llx, "
+                  "remoteAddr=0x%llx, size=0x%x",
+                  __func__, sliceIdx, offset, localAddr, remoteAddr, sliceSize);
+
+        rdmaOps_->Write(locSlice, rmtSlice);
+    }
 }
 
 } // namespace Hccl
