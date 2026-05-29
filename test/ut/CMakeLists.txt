@@ -329,6 +329,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/arithmetic/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/common/loggers/
 )
 
 add_subdirectory(stub)
