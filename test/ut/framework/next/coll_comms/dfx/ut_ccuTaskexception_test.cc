@@ -1453,3 +1453,65 @@ TEST_F(CcuTaskExceptionTest, Ut_GetChannleIdByCcuErrorInfo)
     bufRead.repType = CcuRep::CcuRepType::LOOP;
     EXPECT_EQ(CcuTaskException::GetChannleIdByCcuErrorInfo(loop), 65535);
 }
+
+#include "ccu_urma_channel.h"
+#include "urma_endpoint.h"
+#include "ccu_channel_ctx_pool.h"
+namespace {
+std::pair<uint8_t, uint32_t> g_lastChannelIdKey{0, 0};
+bool g_getCtxCalled = false;
+
+HcclResult StubGetCcuChannelCtxById(
+hcomm::CcuChannelCtxPool *,
+const std::pair<uint8_t, uint32_t> &key,
+std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx)
+{
+g_lastChannelIdKey = key;
+g_getCtxCalled = true;
+ctx = {};
+return HCCL_SUCCESS;
+}
+} // namespace
+TEST_F(CcuTaskExceptionTest, GetCcuJettys_ReadPath_WithEndpointAndChannelDesc) {
+CcuErrorInfo errorInfo = {};
+errorInfo.repType = CcuRep::CcuRepType::READ;
+errorInfo.dieId = 3;
+errorInfo.msg.transMem.channelId = 101;
+
+EndpointDesc endpointDesc = {};
+HcommChannelDesc channelDesc = {};
+CcuUrmaChannel ccuChannel(reinterpret_cast<EndpointHandle>(0x1234), channelDesc);
+UrmaEndpoint urmaEndpoint(endpointDesc);
+
+void *channelPtr = static_cast<void *>(static_cast<Channel *>(&ccuChannel));
+void *endpointPtr = static_cast<void *>(static_cast<Endpoint *>(&urmaEndpoint));
+CcuChannelCtxPool *channelCtxPool = reinterpret_cast<CcuChannelCtxPool *>(0x1);
+
+g_getCtxCalled = false;
+g_lastChannelIdKey = {0, 0};
+
+MOCKER_CPP(&CcuTaskException::GetCcuChannelHandleById)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+MOCKER(HcommChannelGet)
+    .stubs()
+    .with(any(), outBoundP(&channelPtr, sizeof(channelPtr)))
+    .will(returnValue(HCCL_SUCCESS));
+MOCKER(HcommEndpointGet)
+    .stubs()
+    .with(any(), outBoundP(&endpointPtr, sizeof(endpointPtr)))
+    .will(returnValue(HCCL_SUCCESS));
+MOCKER_CPP(&UrmaEndpoint::GetCcuChannelCtxPool)
+    .stubs()
+    .will(returnValue(channelCtxPool));
+MOCKER_CPP(&CcuChannelCtxPool::GetCcuChannelCtxById)
+    .stubs()
+    .will(invoke(StubGetCcuChannelCtxById));
+
+std::pair<CcuChannelInfo, std::vector<CcuJetty *>> ctx;
+HcclResult ret = CcuTaskException::GetCcuJettys(errorInfo, ctx);
+
+EXPECT_EQ(ret, HCCL_SUCCESS);
+EXPECT_TRUE(g_getCtxCalled);
+EXPECT_EQ(g_lastChannelIdKey.first, errorInfo.dieId);
+EXPECT_EQ(g_lastChannelIdKey.second, errorInfo.msg.transMem.channelId);

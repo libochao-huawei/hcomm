@@ -20,6 +20,7 @@
 #include "ccu_dev_mgr_pub.h"
 #include "ccu_jetty_.h"
 #include "coll_comm.h"
+#include "comm_addr_logger.h"
 
 namespace hcomm {
 using RdmaHandle = void*;
