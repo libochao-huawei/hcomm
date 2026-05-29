@@ -11,7 +11,6 @@
 #include "ccu_assist_v1.h"
 #include "ccu_microcode_v1.h"
 #include "ccu_api_exception.h"
-#include "hcomm_adapter_rts.h"
 #include <gtest/gtest.h>
 #include <mockcpp/mockcpp.hpp>
 
