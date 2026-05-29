@@ -14,7 +14,6 @@
 #include <string>
 #include "launch_aicpu.h"
 #include "log.h"
-// #include "../../framework/common/src/config/env_config.h"
 #include "mmpa_api.h"
 #include "mem_host_pub.h"
 

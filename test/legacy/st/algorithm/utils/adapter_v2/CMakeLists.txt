@@ -116,7 +116,6 @@ add_library(hccl_alg_adaption_v2 SHARED
 
     ${adapter_v2_src_list}
     ${CCU_PLATFORM_SRC}
-    ${HCOMM_DIR}/src/common
 )
 
 #头文件搜索路径
@@ -124,6 +123,7 @@ target_include_directories(hccl_alg_adaption_v2 PRIVATE
     ${include_list}
     ${HCOMM_DIR}/src/common
     ${HCOMM_DIR}/src/common/error_manager
+    ${HCOMM_DIR}/test/stub/depends/pkg_inc/base
 )
 
 target_compile_definitions(hccl_alg_adaption_v2 PRIVATE
