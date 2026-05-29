@@ -96,7 +96,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/platform/inc
     ${HCOMM_DIR}/src/platform/inc/adapter
     ${HCOMM_DIR}/src/platform/common
-    ${HCOMM_DIR}src/common/launch_aicpu
+    ${HCOMM_DIR}/src/common/launch_aicpu
     ${HCOMM_DIR}/src/platform/resource/transport
     ${HCOMM_DIR}/src/platform/resource/transport/heterog
     ${HCOMM_DIR}/src/platform/resource/notify

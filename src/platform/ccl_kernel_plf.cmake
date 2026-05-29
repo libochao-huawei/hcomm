@@ -68,7 +68,6 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/pkg_inc/hccl
 
     ${HCOMM_DIR}/src/pub_inc
-    ${HCOMM_DIR}/src/common/error_manager
     ${HCOMM_DIR}/src/pub_inc/aicpu/
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/new
@@ -126,13 +125,11 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/framework/cluster_maintenance/recovery/operator_retry
     ${HCOMM_DIR}/src/framework/
     ${HCOMM_DIR}/src/framework/common/src/
-    ${HCOMM_DIR}/src/common/launch_aicpu
     ${HCOMM_DIR}/src/framework/common/src/exception
     ${HCOMM_DIR}/src/framework/common/src/config
     ${HCOMM_DIR}/src/framework/common/src/task
     ${HCOMM_DIR}/src/framework/common/src/topo
     ${HCOMM_DIR}/src/framework/common/src/mgr
-    ${HCOMM_DIR}/src/common
     ${HCOMM_DIR}/src/framework/common/src/aicpu
     ${HCOMM_DIR}/src/framework/hcom
     ${HCOMM_DIR}/src/framework/communicator/impl/
@@ -159,7 +156,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/platform/inc/adapter
     ${HCOMM_DIR}/src/common/error_manager
     ${HCOMM_DIR}/src/platform/common/
-    ${HCOMM_DIR}src/common/launch_aicpu
+    ${HCOMM_DIR}/src/common/launch_aicpu
     ${HCOMM_DIR}/src/platform/common/unique
     ${HCOMM_DIR}/src/platform/common/buffer_manager
     ${HCOMM_DIR}/src/common
