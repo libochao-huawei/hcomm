@@ -131,22 +131,6 @@ HcclResult ProcessUbChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelD
     return HCCL_SUCCESS;
 }
 
-HcclResult ProcessUboeChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
-    hccl::hcclComm *hcclComm)
-{
-    (void)channelDescFinal;
-    (void)hcclComm;
-
-    if (channelDesc.channelProtocol != COMM_PROTOCOL_UBOE) {
-        HCCL_ERROR("[%s] unexpected channelProtocol[%d], expect UBOE", __func__,
-            static_cast<int>(channelDesc.channelProtocol));
-        return HCCL_E_PARA;
-    }
-    HCCL_INFO("[%s] channelProtocol[%d] ub comm-domain qos applied in HcommChannelDesc::qos when converting (HcclChannelDesc has no qos field)",
-        __func__, static_cast<int>(channelDesc.channelProtocol));
-    return HCCL_SUCCESS;
-}
-
 HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
 {
     channelDescFinal.remoteRank = channelDesc.remoteRank;
