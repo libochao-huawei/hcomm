@@ -154,41 +154,6 @@ HcclResult AicpuTsUboeChannel::BuildNotify()
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUboeChannel::FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
-{
-    uint64_t bufferNum = bufferVec.size();
-    if (bufferNum == 0) {
-        HCCL_WARNING("[AicpuTsUboeChannel][FillTagVec] bufferNum is 0.");
-    }
-    if (bufferNum > MAX_BUFFER_NUM) {
-        HCCL_ERROR("[AicpuTsUboeChannel][FillTagVec] bufferNum[%u] exceeds limit[%u]", bufferNum, MAX_BUFFER_NUM);
-        return HCCL_E_PARA;
-    }
-    HCCL_INFO("[AicpuTsUboeChannel][FillTagVec] bufferNum[%u]", bufferNum);
-    tagVec.clear();
-    uint32_t index = 0;
-    for (auto &localRmaBuffer : bufferVec) {
-        std::array<char, HCCL_RES_TAG_MAX_LEN> memInfo{};
-        if (localRmaBuffer == nullptr) {
-            HCCL_ERROR("[AicpuTsUboeChannel][FillTagVec] localRmaBuffer is nullptr. memHandleNum[%u]", index);
-            return HCCL_E_PARA;
-        } else {
-            CHK_PTR_NULL(localRmaBuffer->GetBuf());
-            std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
-            if (tag.size() >= HCCL_RES_TAG_MAX_LEN) {
-                HCCL_ERROR("[AicpuTsUboeChannel][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
-                return HCCL_E_PARA;
-            }
-            CHK_SAFETY_FUNC_RET(memcpy_s(memInfo.data(), memInfo.size(), tag.c_str(), tag.size()));
-            HCCL_INFO("[AicpuTsUboeChannel][FillTagVec] memHandleNum[%u] memInfo[%s]", index, memInfo.data());
-        }
-        tagVec.push_back(memInfo);
-        index++;
-    }
-    return HCCL_SUCCESS;
-}
-
 HcclResult AicpuTsUboeChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
 {
     bufferVecTemp_.clear();
@@ -202,7 +167,6 @@ HcclResult AicpuTsUboeChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buf
         commonRes_.bufferVec.push_back(bufferPtr.get());
         localRmaBuffers_.push_back(std::move(bufferPtr));
     }
-    CHK_RET(FillTagVec(commonRes_.bufferVec, localUserMemTag_));
 
     return HCCL_SUCCESS;
 }
