@@ -52,6 +52,8 @@ namespace hccl {
         std::shared_ptr<AicpuZeroCopyExchanger>& zeroCopyExchangerPtr, const HcclWorkflowMode workflowMode,
         const DeviceMem& tinySendRecvMem, std::function<HcclResult()> setProfStartCallback)
     {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+
         needExecute = true;
         isCacheMiss = false;
 
@@ -148,6 +150,8 @@ namespace hccl {
 
     HcclResult AicpuCacheManager::PreProcessForCacheMiss(const OpParam &param, std::unique_ptr<CollExecutorBase> &executor)
     {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+        
         // 第一个需要cache的alltoallv类算子
         // 注意: 只有当alltoallv的algName为"RunAlltoAllDirectFullmesh"时, 才会进入cache, 所以使用的一定是CollRunAlltoAllDirectFullmesh executor
         if (IsAlltoallvType(param.opType)) {
@@ -163,6 +167,8 @@ namespace hccl {
         Stream& mainStream, std::vector<Stream>& slaveStreams, void* dispatcherPtr, const HcclTopoInfo& topoinfo,
         const AlgOpContext& algContext, const HcclWorkflowMode workflowMode)
     {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+
         // Cache miss会设置launch context to enable cache admission -> 需要清理launch context, DispatcherAicpu不会再admit当前算子后续展开的SQE
         // 注意: AicpuCacheManager下dispatcher一定是DispatcherAicpu
         CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcherPtr))->ClearLaunchContext());
@@ -272,6 +278,8 @@ namespace hccl {
         const AlgResourceResponse& algResource, const bool isDeviceMode, const HcclTopoInfo& topoinfo,
         std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext, const HcclWorkflowMode workflowMode,
         bool& needCache) {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+
         // 初始化为不需要op-unfold cache
         needCache = false;
 
@@ -763,6 +771,8 @@ namespace hccl {
         const HcclTopoInfo& topoinfo, std::shared_ptr<AicpuZeroCopyExchanger>& zeroCopyExchangerPtr,
         const HcclWorkflowMode workflowMode, const DeviceMem& tinySendRecvMem)
     {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+        
         // 注意: 由于PrepareUserMemRanges前已经做过NeedOpUnfoldCache检查, 这里不再做重复检验
 
         const uint32_t rankSize = topoinfo.userRankSize;
