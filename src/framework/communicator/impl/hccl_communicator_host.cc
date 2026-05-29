@@ -1856,6 +1856,9 @@ namespace hccl
 
     void HcclCommunicator::DestroyWorkspaceResource(const std::string &tag)
     {
+        if (workSpaceRes_ == nullptr) {
+            return;
+        }
         workSpaceRes_->DestroyWorkspaceResource(tag);
     }
 
