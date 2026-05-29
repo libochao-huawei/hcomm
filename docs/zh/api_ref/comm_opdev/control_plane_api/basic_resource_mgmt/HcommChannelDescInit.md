@@ -6,9 +6,6 @@
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
 
-> [!NOTE]说明
-> 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
-
 ## 功能说明
 
 初始化通信通道描述列表。
@@ -23,7 +20,7 @@ HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, uint32_t descNum
 
 | 参数名 | 输入/输出 | 描述 |
 | --- | --- | --- |
-| channelDesc | 输入 | 通信通道描述列表，列表长度为descNum。<br>HcommChannelDesc类型的定义可参见 [HcommChannelDesc](../../datatype_definition/HcommChannelDesc.md)。 |
+| channelDesc | 输入 | 通信通道描述列表，列表长度为descNum。<br>HcommChannelDesc类型的定义可参见[HcommChannelDesc](../../datatype_definition/HcommChannelDesc.md)。 |
 | descNum | 输入 | 通信通道描述数量。 |
 
 ## 返回值
