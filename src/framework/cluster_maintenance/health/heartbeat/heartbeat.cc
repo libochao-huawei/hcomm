@@ -1562,9 +1562,9 @@ void Heartbeat::HeartbeatStatusMonitor()
                 HCCL_DEBUG("rank[%s] Try to Send HeartBeat to rank[%s]", FormatUId(uid_).c_str(),
                     FormatUId(rem).c_str());
                 rankId2SocketMap_[rem].lostNum++;
-                HeartBeatStatus status = HEARTBEAT_OK;
+                HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
                 if (counterStat.issueCnt != 0) {
-                    status = HEARTBEAT_STUCK;
+                    status = HeartBeatStatus::HEARTBEAT_STUCK;
                 }
                 if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) {
                     ret = SendFrame(rem, uid_, uid_, status);
