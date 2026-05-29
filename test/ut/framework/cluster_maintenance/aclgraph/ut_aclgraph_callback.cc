@@ -39,6 +39,21 @@ rtError_t rtModelGetIdMock(rtModel_t model, uint32_t *modelId)
     return RT_ERROR_NONE;
 }
 
+// Mock: GetStreamCaptureInfo — 设置 rtModel 非空, isCapture=true
+HcclResult GetStreamCaptureInfoMock(aclrtStream stream, aclmdlRI &rtModel, bool &isCapture)
+{
+    rtModel = reinterpret_cast<aclmdlRI>(0x1);
+    isCapture = true;
+    return HCCL_SUCCESS;
+}
+
+// Mock: GetModelId — 设置固定 modelId
+HcclResult GetModelIdMock(aclmdlRI &rtModel, u64 &modelId)
+{
+    modelId = 1;
+    return HCCL_SUCCESS;
+}
+
 class AclgraphCallbackTest : public testing::Test {
 protected:
     void SetUp() override {
@@ -249,11 +264,11 @@ TEST_F(AclgraphCallbackTest, InsertNewTag_CallbackRegistration)
     // Mock 底层 C 函数使 InsertNewTagToCaptureResMap 能正常走完全程
     MOCKER(GetStreamCaptureInfo)
         .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+        .will(invoke(GetStreamCaptureInfoMock));
 
     MOCKER(GetModelId)
         .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+        .will(invoke(GetModelIdMock));
 
     MOCKER(aclmdlRIDestroyRegisterCallback)
         .stubs()
@@ -289,11 +304,11 @@ TEST_F(AclgraphCallbackTest, InsertNewTag_NoDuplicateCallback)
     // 同一个 modelId 第二次插入不应再次注册 callback
     MOCKER(GetStreamCaptureInfo)
         .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+        .will(invoke(GetStreamCaptureInfoMock));
 
     MOCKER(GetModelId)
         .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+        .will(invoke(GetModelIdMock));
 
     MOCKER(aclmdlRIDestroyRegisterCallback)
         .stubs()
