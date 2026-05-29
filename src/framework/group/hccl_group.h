@@ -20,6 +20,8 @@ extern "C" {
 
 HcclResult HcclGroupStart();
 HcclResult HcclGroupEnd();
+HcclResult HcclAicpuKernelLaunch(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
+    void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream);
 
 #ifdef __cplusplus
 }
@@ -33,6 +35,8 @@ extern "C" {
 HcclResult commInitTaskAppend(std::shared_ptr<struct hcclAsyncJob> job, HcclResult (*func)(struct hcclAsyncJob*), HcclComm* comm);
 
 HcclResult taskAppend(HcclComm comm, hcclOpInfo& info);
+
+HcclResult HcclGroupAddP2pTask(HcclComm comm, const HcclP2pTask& task, const HcclOpP2pDesc& p2pDesc);
 
 #ifdef __cplusplus
 }
