@@ -41,6 +41,8 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcResInitV2(void *args)
 
 __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *args)
 {
+    FUNCTION_TRACE; // TODOSSY: 性能打点
+
     if (args == nullptr) {
         HCCL_ERROR("RunAicpuRpcSrvLaunchV2 args is null.");
         return HCCL_E_PARA;

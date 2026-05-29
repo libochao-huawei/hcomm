@@ -97,6 +97,8 @@ HcclCommAicpu::~HcclCommAicpu()
     indOpCommInitialized_ = false;
     initialized_ = false;
 
+    HcclTimer::DumpTimerLogs(); // TODOSSY: 性能打点
+
     HCCL_RUN_INFO("Destruct HcclCommAicpu group[%s] success!", identifier_.c_str());
 }
 
@@ -1954,6 +1956,8 @@ HcclResult HcclCommAicpu::PrepareSymmetricMemory(const OpParam &param, OpCommTra
 HcclResult HcclCommAicpu::ExecOp(const std::string &newTag, const std::string &algName,
                                             OpParam &opParam, const HcclOpResParam *commParam)
 {
+    FUNCTION_TRACE; // TODOSSY: 性能打点
+
     std::unique_ptr<CollExecutorBase> executor;
     hccl::AlgResourceResponse *algResResponse;
     CHK_RET(GetAlgResponseRes(newTag, algName, opParam, commParam, executor, algResResponse));
@@ -3409,6 +3413,8 @@ HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam 
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, uint32_t &beginSqePos,
     uint32_t &endSqePos)
 {
+    FUNCTION_TRACE; // TODOSSY: 性能打点
+
     LogControl logControl(false, false); // 重执行ERROR日志控制，析构时重置日志设置
     PrepareMc2Handler();
     HcclResult ret = HCCL_SUCCESS;
@@ -3459,14 +3465,18 @@ HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam 
             CHK_RET(aicpuCacheManager_.PreProcessForCacheMiss(param, executor));
         }
 
-        // executor设置AlgOpContext
-        CHK_RET(executor->SetAlgOpContext(algOpContext_));
-        (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeStart, {});
-        ret = executor->Orchestrate(param, algResource);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[HcclCommAicpu][Orchestrate]executor process failed algName[%s], ret = %u", algName.c_str(), ret);
-            printTaskExceptionForErr_ |= (ret == HCCL_E_AGAIN);
-            return ret;
+        {
+            MY_TIMER("ExecutorOrchestrate"); // TODOSSY: 性能打点
+
+            // executor设置AlgOpContext
+            CHK_RET(executor->SetAlgOpContext(algOpContext_));
+            (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeStart, {});
+            ret = executor->Orchestrate(param, algResource);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommAicpu][Orchestrate]executor process failed algName[%s], ret = %u", algName.c_str(), ret);
+                printTaskExceptionForErr_ |= (ret == HCCL_E_AGAIN);
+                return ret;
+            }
         }
 
         // Cache miss后执行cache相关的后处理
