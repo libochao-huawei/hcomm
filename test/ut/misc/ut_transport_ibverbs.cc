@@ -238,13 +238,13 @@ TEST_F(TransportIbverbsTest, Ut_FillExchangeDataTotalSize_UserMemEnable_AddsFive
     ibOn.notifyNum_ = 0U;
     ASSERT_EQ(ibOn.FillExchangeDataTotalSize(), HCCL_SUCCESS);
     // userMemEnable=true, notifyNum=0: 添加 2 + 3 = 5 个 MemMsg
-    EXPECT_EQ(ibOn.exchangeDataTotalSize_, baseSize + 5ULL * static_cast<u64>(sizeof(MemMsg)));
+    EXPECT_EQ(ibOn.exchangeDataTotalSize_, baseSize + 3ULL * static_cast<u64>(sizeof(MemMsg)));
 }
 
 TEST_F(TransportIbverbsTest, Ut_FillExchangeDataTotalSize_UserMemEnableTrue_AddsNotifyMemMsg)
 {
     std::chrono::milliseconds timeout{ 1 };
-    // userMemEnable=false: 不添加 notify 相关内容
+    // userMemEnable=false: src mem + datanotify, 共2个
     MachinePara base{};
     base.userMemEnable = false;
     base.notifyNum = 0;
@@ -264,7 +264,7 @@ TEST_F(TransportIbverbsTest, Ut_FillExchangeDataTotalSize_UserMemEnableTrue_Adds
     ib.qpsPerConnection_ = 1U;
     ib.notifyNum_ = 2U;
     ASSERT_EQ(ib.FillExchangeDataTotalSize(), HCCL_SUCCESS);
-    EXPECT_EQ(ib.exchangeDataTotalSize_, baseSize + 5ULL * static_cast<u64>(sizeof(MemMsg)));
+    EXPECT_EQ(ib.exchangeDataTotalSize_, baseSize + 3ULL * static_cast<u64>(sizeof(MemMsg)));
 }
 
 TEST_F(TransportIbverbsTest, Ut_FillExchangeDataTotalSize_UserMemEnableMultiQp_AddsAllMemMsg)
@@ -291,7 +291,7 @@ TEST_F(TransportIbverbsTest, Ut_FillExchangeDataTotalSize_UserMemEnableMultiQp_A
     ib1.qpsPerConnection_ = 3U;
     ib1.notifyNum_ = 1U;
     ASSERT_EQ(ib1.FillExchangeDataTotalSize(), HCCL_SUCCESS);
-    const u64 extra = 8ULL * static_cast<u64>(sizeof(MemMsg));
+    const u64 extra = (8ULL - 2ULL) * static_cast<u64>(sizeof(MemMsg));
     EXPECT_EQ(ib1.exchangeDataTotalSize_, s0 + extra);
 }
 
