@@ -1562,12 +1562,14 @@ void Heartbeat::HeartbeatStatusMonitor()
                 HCCL_DEBUG("rank[%s] Try to Send HeartBeat to rank[%s]", FormatUId(uid_).c_str(),
                     FormatUId(rem).c_str());
                 rankId2SocketMap_[rem].lostNum++;
+                HeartBeatStatus status = HEARTBEAT_OK;
+                if (counterStat.issueCnt != 0) {
+                    status = HEARTBEAT_STUCK;
+                }
                 if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) {
-                    ret = SendFrame(rem, uid_, uid_,
-                        (counterStat.issueCnt != 0) ? HeartBeatStatus::HEARTBEAT_STUCK : HeartBeatStatus::HEARTBEAT_OK);
+                    ret = SendFrame(rem, uid_, uid_, status);
                 } else {
-                    ret = SendFrameWithOpCheck(rem, uid_, uid_,
-                        (counterStat.issueCnt != 0) ? HeartBeatStatus::HEARTBEAT_STUCK : HeartBeatStatus::HEARTBEAT_OK, opInfoTagQueueFrame);
+                    ret = SendFrameWithOpCheck(rem, uid_, uid_, status, opInfoTagQueueFrame);
                 }
                 if (ret == HCCL_E_INTERNAL) {
                     errorSocket_.push_back(rem);
