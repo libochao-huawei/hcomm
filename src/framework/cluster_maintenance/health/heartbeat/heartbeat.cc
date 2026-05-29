@@ -1582,12 +1582,7 @@ void Heartbeat::HeartbeatStatusMonitor()
         for (auto iter = rankId2SocketMap_.begin(); iter != rankId2SocketMap_.end(); iter++) {
             UIDType rem = iter->first;
             HCCL_DEBUG("rank[%s] Try to Recv from rank[%s]", FormatUId(uid_).c_str(), FormatUId(rem).c_str());
-            if (!isCheckOn)
-            {
-                ret = RecvFrame(rem);
-            } else {
-                ret = RecvFrameWithOpCheck(rem);
-            }
+            ret = !isCheckOn ? RecvFrame(rem) : RecvFrameWithOpCheck(rem);
             if (ret == HCCL_E_INTERNAL) {
                 errorSocket_.push_back(rem);
             } else if (rankId2SocketMap_[rem].lostNum >= lostThreshold_) {
@@ -1600,10 +1595,7 @@ void Heartbeat::HeartbeatStatusMonitor()
         ProcessExceptionEvent();
         ProcessLock_.unlock();
 
-        auto sleeptime = BROADCAST_INTERVAL_WITH_CHECK;
-        if (!isCheckOn) {
-            sleeptime = BROADCAST_INTERVAL;
-        }
+        auto sleeptime = !isCheckOn ? BROADCAST_INTERVAL : BROADCAST_INTERVAL_WITH_CHECK;
         std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
     }
     linkThreadRunning_ = false;
