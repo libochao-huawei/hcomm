@@ -154,6 +154,7 @@ protected:
         MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
+<<<<<<< HEAD
         MOCKER_CPP(&SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&SocketMgr::PutSocket).stubs().will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
@@ -176,6 +177,35 @@ protected:
         auto qpInfos = SetupValidQpInfos(count);
         MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
     }
+=======
+        MOCKER_CPP(&HostRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
+    }
+    std::vector<Hccl::QpInfo> SetupValidQpInfos(uint32_t count = 1) {
+        static std::vector<std::unique_ptr<ibv_qp>> qps;
+        static std::vector<std::unique_ptr<ibv_cq>> cqs;
+        qps.clear();
+        cqs.clear();
+        qps.resize(count);
+        cqs.resize(count);
+
+        std::vector<Hccl::QpInfo> qpInfos(count);
+        for (uint32_t i = 0; i < count; i++) {
+            qps[i] = std::make_unique<ibv_qp>();
+            cqs[i] = std::make_unique<ibv_cq>();
+            qps[i]->state = IBV_QPS_RTS;
+            qps[i]->qp_num = 12345 + i;
+            qpInfos[i].qp = qps[i].get();
+            qpInfos[i].sendCq = cqs[i].get();
+            qpInfos[i].recvCq = cqs[i].get();
+            qpInfos[i].context = nullptr;
+        }
+        return qpInfos;
+    }
+    void MockGetQpInfos(uint32_t count = 1) {
+        auto qpInfos = SetupValidQpInfos(count);
+        MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
+    }
+>>>>>>> beta2
     std::unique_ptr<hcomm::HostCpuRoceChannel> CreateInitAndConnect(uint32_t notifyNum = 4)
     {
         memHandle_ = static_cast<void *>(localRdmaRmaBuffer.get());

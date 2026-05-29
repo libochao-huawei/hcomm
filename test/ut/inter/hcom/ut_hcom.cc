@@ -58,7 +58,7 @@
 using namespace std;
 using namespace hccl;
 
-extern HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *IdxList);
+extern HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *inputIdxList);
 extern HcclResult HcomSetGradFusionBySize(const char *group, u32 segmentNum, const float *sizeList);
 extern HcclResult HcomDestroyBackloggedGroup(const std::string &group);
 static nlohmann::json allreduce_topo_switch_connect =

@@ -120,10 +120,17 @@ public:
     u32  GetRdmaServerLevel() const;
     u32  GetRdmaTimeOut() const;
     u32  GetRdmaRetryCnt() const;
+<<<<<<< HEAD
     u32  GetUboeTimeOut() const;
     u32  GetUbTimeOut() const;
     u32  GetRdmaQueueNum() const;
     u32  GetRdmaMultiQpThreshold() const;
+=======
+    u32  GetRdmaQueueNum() const;
+    u32  GetRdmaMultiQpThreshold() const;
+    u32  GetUboeTimeOut() const;
+    u32  GetUbTimeOut() const;
+>>>>>>> beta2
 
 private:
     static constexpr u32 HCCL_RDMA_TC_DEFAULT        = 132; // 默认的traffic class为132(33*4)
@@ -154,14 +161,24 @@ private:
                               CHK_RANGE_CLOSED<u32>(HCCL_RDMA_TIMEOUT_MIN, HCCL_RDMA_TIMEOUT_MAX)};
     CfgField<u32> rdmaRetryCnt{"HCCL_RDMA_RETRY_CNT", u32(HCCL_RDMA_RETRY_CNT_DEFAULT), Str2T<u32>,
                                CHK_RANGE_CLOSED<u32>(HCCL_RDMA_RETRY_CNT_MIN, HCCL_RDMA_RETRY_CNT_MAX)};
+<<<<<<< HEAD
     CfgField<u32> uboeTimeOut{"HCCL_UBOE_TIMEOUT", u32(HCCL_UBOE_TIMEOUT_DEFAULT), Str2T<u32>,
                               CHK_RANGE_CLOSED<u32>(HCCL_UBOE_TIMEOUT_MIN, HCCL_UBOE_TIMEOUT_MAX)};
     CfgField<u32> ubTimeOut{"HCCL_UB_TIMEOUT", u32(HCCL_UB_TIMEOUT_DEFAULT), Str2T<u32>,
                             CHK_RANGE_CLOSED<u32>(HCCL_UB_TIMEOUT_MIN, HCCL_UB_TIMEOUT_MAX)};
+=======
+>>>>>>> beta2
     CfgField<u32> queueNum{"HCCL_RDMA_QPS_PER_CONNECTION", u32(1), Str2T<u32>,
                                CHK_RANGE_CLOSED<u32>(1, 32)};
     CfgField<u32> multiQpThreshold{"HCCL_MULTI_QP_THRESHOLD", u32(512), Str2T<u32>,
                                CHK_RANGE_CLOSED<u32>(1, 8192)};
+<<<<<<< HEAD
+=======
+    CfgField<u32> uboeTimeOut{"HCCL_UBOE_TIMEOUT", u32(HCCL_UBOE_TIMEOUT_DEFAULT), Str2T<u32>,
+                              CHK_RANGE_CLOSED<u32>(HCCL_UBOE_TIMEOUT_MIN, HCCL_UBOE_TIMEOUT_MAX)};
+    CfgField<u32> ubTimeOut{"HCCL_UB_TIMEOUT", u32(HCCL_UB_TIMEOUT_DEFAULT), Str2T<u32>,
+                            CHK_RANGE_CLOSED<u32>(HCCL_UB_TIMEOUT_MIN, HCCL_UB_TIMEOUT_MAX)};
+>>>>>>> beta2
 };
 
 // 算法配置

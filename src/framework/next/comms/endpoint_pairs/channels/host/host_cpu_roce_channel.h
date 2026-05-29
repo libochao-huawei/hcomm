@@ -151,6 +151,7 @@ private:
     std::vector<ExchangeRdmaConnDto> rmtConnDtos_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
     std::vector<int> wqeNums_;
+<<<<<<< HEAD
     bool fenceFlag_{false};
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
     std::unique_ptr<HcclMem[]> remoteMemsPtr_;
@@ -160,6 +161,12 @@ private:
     std::vector<CommMem> userRemoteMems_;
     std::vector<std::string> tagCopies_;
     std::vector<char*> tagPointers_;
+=======
+    std::unique_ptr<SocketMgr> socketMgr_{nullptr};
+    bool fenceFlag_{false};
+    std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
+    std::unique_ptr<HcclMem[]> remoteMemsPtr_;
+>>>>>>> beta2
 
     uint64_t maxMsgSize_{0};
     uint32_t lbMax_{0};             // 多QP负载均衡

@@ -121,6 +121,7 @@ int RaCtxQpQueryBatch(void *qp_handle[], struct JettyAttr attr[], unsigned int *
     return 0;
 }
 
+<<<<<<< HEAD
 int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
 {
     if (directFlag != nullptr) {
@@ -128,6 +129,8 @@ int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
     }
 }
 
+=======
+>>>>>>> beta2
 int RaCtxGetAsyncEvents(void *ctxHandle, struct AsyncEvent events[], unsigned int *num)
 {
     *num = 0;

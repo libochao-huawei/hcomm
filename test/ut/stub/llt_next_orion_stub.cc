@@ -1432,6 +1432,7 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
 }
 
+<<<<<<< HEAD
 void SocketManager::ServerListen(const SocketConfig &socketConfig)
 {
 }
@@ -1441,6 +1442,8 @@ void SocketManager::ConnectSockets(const SocketConfig &socketConfig)
 }
 
 
+=======
+>>>>>>> beta2
 void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
 {
 }

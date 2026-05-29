@@ -294,7 +294,7 @@ namespace hccl
 
     void *hcclComm::GetMyRank()
     {
-        return (void *)communicator_->GetMyRank();
+        return static_cast<void *>(communicator_->GetMyRank());
     }
     HcclResult hcclComm::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
     {
@@ -359,14 +359,22 @@ namespace hccl
         commAicpuParam_.userRankSize = collComm_->GetRankSize();
         commAicpuParam_.commConfig.taskExceptionEnable =
             Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().taskExceptionEnable;
+<<<<<<< HEAD
         commAicpuParam_.commConfig.notifyWaitTimeout =
+=======
+        commAicpuParam_.envConfig.notifyWaitTimeout =
+>>>>>>> beta2
             Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
         const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
         HCCL_RUN_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], "
             "userRank[%u], userRankSize[%u], opExpansionMode[%u], taskExceptionEnable[%d], notifyWaitTimeout[%u].",
             __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
             commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize, opExpansionMode,
+<<<<<<< HEAD
             commAicpuParam_.commConfig.taskExceptionEnable, commAicpuParam_.commConfig.notifyWaitTimeout);
+=======
+            commAicpuParam_.envConfig.taskExceptionEnable, commAicpuParam_.envConfig.notifyWaitTimeout);
+>>>>>>> beta2
 
         const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
         if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {

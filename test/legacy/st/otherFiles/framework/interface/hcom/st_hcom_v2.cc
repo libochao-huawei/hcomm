@@ -43,7 +43,7 @@ using namespace Hccl;
     }                                     \
 } while (0)
  
-extern HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *IdxList);
+extern HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *inputIdxList);
 extern HcclResult HcomSetGradFusionBySize(const char *group, u32 segmentNum, const float *sizeList);
 extern HcclResult HcomDestroyBackloggedGroup(const std::string &group);
  

@@ -7,8 +7,13 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+<<<<<<< HEAD
 #ifndef HCCL_COMM_TASKEXCEPTION_LIFT_H
 #define HCCL_COMM_TASKEXCEPTION_LIFT_H
+=======
+#ifndef HCCL_COMM_TASKEXCEPTION_LITE_H
+#define HCCL_COMM_TASKEXCEPTION_LITE_H
+>>>>>>> beta2
 
 #include "daemon_func.h"
 #include "mirror_task_manager.h"

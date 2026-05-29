@@ -163,11 +163,20 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_BuildConnection_Fails_Ret
     std::vector<HcclChannelDesc> channelDesc(1);
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
+<<<<<<< HEAD
     
     // Mock BuildConnection 失败
     MOCKER(&HostCpuRoceChannel::BuildConnection).stubs().will(returnValue(HCCL_E_NETWORK));
     
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+=======
+    MOCKER_CPP(&MyRank::BatchCreateSockets).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommEndpointCreate).stubs().will(returnValue(0));
+    // Mock BuildConnection 失败
+    MOCKER(&HostCpuRoceChannel::BuildConnection).stubs().will(returnValue(HCCL_E_NETWORK));
+    
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CPU, channelDesc.data(), 1, channels.data());
+>>>>>>> beta2
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -176,12 +185,21 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_IbvPostRecv_Fails_Return_
     std::vector<HcclChannelDesc> channelDesc(1);
     std::vector<ChannelHandle> channels(1);
     GetChannelDesc(channelDesc);
+<<<<<<< HEAD
     
+=======
+    MOCKER_CPP(&MyRank::BatchCreateSockets).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommEndpointCreate).stubs().will(returnValue(0));
+>>>>>>> beta2
     // Mock BuildConnection 成功
     MOCKER(&HostCpuRoceChannel::BuildConnection).stubs().will(returnValue(HCCL_SUCCESS));
     // Mock IbvPostRecv 失败
     MOCKER(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_E_INTERNAL));
     
+<<<<<<< HEAD
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+=======
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CPU, channelDesc.data(), 1, channels.data());
+>>>>>>> beta2
     EXPECT_EQ(ret, HCCL_E_PTR);
 }

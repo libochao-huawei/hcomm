@@ -91,4 +91,7 @@ uint32_t CollCommConfigConsistency::GetExchangeInfoLen() const
 }
 
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> beta2

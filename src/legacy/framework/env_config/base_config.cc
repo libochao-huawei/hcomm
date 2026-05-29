@@ -126,6 +126,7 @@ void EnvRdmaConfig::Parse()
     rdmaServerLevel.Parse();
     rdmaTimeOut.Parse();
     rdmaRetryCnt.Parse();
+<<<<<<< HEAD
     uboeTimeOut.Parse();
     ubTimeOut.Parse();
     queueNum.Parse();
@@ -134,6 +135,16 @@ void EnvRdmaConfig::Parse()
                   "rdmaRetryCnt[%u], uboeTimeOut[%u], ubTimeOut[%u], queueNum[%u], multiQpThreshold[%u]",
                   GetRdmaTrafficClass(), GetRdmaServerLevel(), GetRdmaTimeOut(), GetRdmaRetryCnt(),
                   GetUboeTimeOut(), GetUbTimeOut(), GetRdmaQueueNum(), GetRdmaMultiQpThreshold());
+=======
+    queueNum.Parse();
+    multiQpThreshold.Parse();
+    uboeTimeOut.Parse();
+    ubTimeOut.Parse();
+    HCCL_RUN_INFO("[Init][EnvVarParam]Env config rdmaTrafficClass[%u], rdmaServerLevel[%u], rdmaTimeOut[%u], "
+                  "rdmaRetryCnt[%u], uboeTimeOut[%u], ubTimeOut[%u]",
+        GetRdmaTrafficClass(), GetRdmaServerLevel(), GetRdmaTimeOut(), GetRdmaRetryCnt(), GetRdmaQueueNum(),
+        GetRdmaMultiQpThreshold(), GetUboeTimeOut(), GetUbTimeOut());
+>>>>>>> beta2
 }
 
 u32 EnvRdmaConfig::GetRdmaTrafficClass() const
@@ -156,6 +167,7 @@ u32 EnvRdmaConfig::GetRdmaRetryCnt() const
     return rdmaRetryCnt.Get();
 }
 
+<<<<<<< HEAD
 u32 EnvRdmaConfig::GetUboeTimeOut() const
 {
     return uboeTimeOut.Get();
@@ -165,6 +177,8 @@ u32 EnvRdmaConfig::GetUbTimeOut() const
 {
     return ubTimeOut.Get();
 }
+=======
+>>>>>>> beta2
 u32 EnvRdmaConfig::GetRdmaQueueNum() const
 {
     return queueNum.Get();
@@ -175,6 +189,19 @@ u32 EnvRdmaConfig::GetRdmaMultiQpThreshold() const
     return multiQpThreshold.Get() * 1024;   // KB 转 B
 }
 
+<<<<<<< HEAD
+=======
+u32 EnvRdmaConfig::GetUboeTimeOut() const
+{
+    return uboeTimeOut.Get();
+}
+
+u32 EnvRdmaConfig::GetUbTimeOut() const
+{
+    return ubTimeOut.Get();
+}
+
+>>>>>>> beta2
 // EnvAlgoConfig
 
 void EnvAlgoConfig::Parse()

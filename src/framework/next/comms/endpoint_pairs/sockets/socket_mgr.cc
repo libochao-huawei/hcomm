@@ -313,10 +313,14 @@ HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
             break;
         }
     }
+<<<<<<< HEAD
     if (!socketExist) {
         HCCL_WARNING("[DestroySocket] socket is not exist in socketMap_, nothing to destroy.");
         return HCCL_SUCCESS;
     }
+=======
+
+>>>>>>> beta2
     return HCCL_SUCCESS;
 }
 

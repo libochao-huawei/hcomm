@@ -11,7 +11,11 @@
 #include "aicpu_init_param.h"
 
 namespace hcomm {
+<<<<<<< HEAD
 static DevAicpuCommConfig g_configEnv;
+=======
+static AicpuEnvConfig g_configEnv;
+>>>>>>> beta2
 
 void SetTaskExceptionEnable(bool taskExceptionEnable)
 {

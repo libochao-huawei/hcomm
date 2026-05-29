@@ -54,6 +54,8 @@ public:
 
     void BatchCreateSockets(const SocketConfig &socketConfig);
 
+    void BatchCreateSockets(const SocketConfig &socketConfig);
+
     void ServerInit(PortData &localPort);
 
     static void ServerInitAll(NewRankInfo &rankInfo);

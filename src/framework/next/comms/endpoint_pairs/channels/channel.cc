@@ -31,8 +31,11 @@ HcclResult Channel::CreateChannel(
     EndpointHandle endpointHandle, CommEngine engine, 
     HcommChannelDesc channelDesc, std::shared_ptr<Channel>& channelPtr)
 {
+<<<<<<< HEAD
     DevType deviceType = DevType::DEV_TYPE_COUNT;
     CHK_RET(hrtGetDeviceType(deviceType));
+=======
+>>>>>>> beta2
     std::shared_ptr<Channel> uniqueChannelPtr;
     switch (engine) {
         case COMM_ENGINE_CPU:

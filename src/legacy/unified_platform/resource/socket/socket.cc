@@ -393,7 +393,11 @@ void Socket::GetOneSocket()
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
     
     RaSocketFdHandleParam fdHandleParam(nullptr, 0);
+<<<<<<< HEAD
     EXECEPTION_CATCH(fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param), return);
+=======
+ 	EXECEPTION_CATCH(fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param), return);
+>>>>>>> beta2
     // socket status:0 not connected 1:connected 2:connect timeout 3:connecting
     if (fdHandleParam.status == SOCKET_CONNECTED) {
         // sockete 准备好时，可以读取信息
@@ -416,10 +420,15 @@ void Socket::GetOneSocket()
 
 void Socket::ListenAsync()
 {
+<<<<<<< HEAD
     listenInfo_ = std::make_unique<SocketListenInfoT>();
     listenInfo_->socketHandle = socketHandle;
     listenInfo_->port = listenPort;
     reqHandle = RaSocketListenOneStartAsync(listenInfo_.get());
+=======
+    RaSocketListenParam param(socketHandle, listenPort, localIp);
+    reqHandle = RaSocketListenOneStartAsync(param);
+>>>>>>> beta2
     socketStatus = SocketStatus::LISTEN_STARTING;
 }
 

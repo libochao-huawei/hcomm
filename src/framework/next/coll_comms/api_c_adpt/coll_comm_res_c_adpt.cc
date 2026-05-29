@@ -131,6 +131,10 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_UBC_TP:
         case COMM_PROTOCOL_UBOE:
+<<<<<<< HEAD
+=======
+        case COMM_PROTOCOL_HCCS_ONLY:
+>>>>>>> beta2
             break;
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);

@@ -67,4 +67,8 @@ TEST_F(HcclIndependentOpChannelTest, Ut_BuildChannelRequests_Expect_Success)
     channelDesc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_SIO;
     OpCommTransport  transport = channelManager_.BuildChannelRequests(channelDesc);
     EXPECT_EQ(1, transport.size());
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> beta2

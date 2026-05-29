@@ -618,6 +618,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 
     *memNum = totalCount;
     *remoteMem = remoteMemsPtr_.get();
+<<<<<<< HEAD
     return HCCL_SUCCESS;
 }
 
@@ -674,6 +675,8 @@ HcclResult HostCpuRoceChannel::GetUserRemoteMem(CommMem **remoteMem, char ***mem
     *memTag = tagPointers_.data();
     *memNum = userMemCount;
 
+=======
+>>>>>>> beta2
     return HCCL_SUCCESS;
 }
 

@@ -18,7 +18,10 @@
 #include "log.h"
 #include "hcomm_c_adpt.h"
 #include "hcom_common.h"
+<<<<<<< HEAD
 #include "hcomm/hcomm_res_entity_defs.h"
+=======
+>>>>>>> beta2
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
 #include "thread.h"
@@ -42,8 +45,12 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
+<<<<<<< HEAD
 #include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
 #include "aiv_urma_channel.h"
+=======
+#include "endpoint_monitor.h"
+>>>>>>> beta2
 
 namespace hcomm {
 constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
@@ -238,11 +245,20 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     *endpointHandle = handle;
 
     if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
+<<<<<<< HEAD
         && ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP))) {
         s32 devLogicIdSigned = HcclGetThreadDeviceId();
         CHK_PRT_RET(devLogicIdSigned < 0,
             HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
         EndpointMonitor::GetInstance(devLogicIdSigned).RegisterToEndpointMonitor(devLogicIdSigned, handle);
+=======
+        && ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP)))
+    {
+        s32 devLogicIdSigned = HcclGetThreadDeviceId();
+        CHK_PRT_RET(devLogicIdSigned < 0,
+            HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
+        (void)(EndpointMonitor::GetInstance(devLogicIdSigned).RegisterToEndpointMonitor(devLogicIdSigned, handle));
+>>>>>>> beta2
     }
 
     HCCL_INFO("[%s] endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] create endpointHandle [%p] done.", 
@@ -254,10 +270,18 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
 HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 {
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
+<<<<<<< HEAD
+=======
+
+>>>>>>> beta2
     s32 devLogicIdSigned = HcclGetThreadDeviceId();
     CHK_PRT_RET(devLogicIdSigned < 0,
         HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
     EndpointMonitor::GetInstance(devLogicIdSigned).RemoveEpHandleFromEndpointMonitor(endpointHandle);
+<<<<<<< HEAD
+=======
+
+>>>>>>> beta2
     auto ret = g_EndpointMap.RemoveEndpoint(endpointHandle);
     CHK_PRT_RET(ret == false, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);

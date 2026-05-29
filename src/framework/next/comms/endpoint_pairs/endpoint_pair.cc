@@ -141,6 +141,17 @@ HcclResult EndpointPair::GetSocketInternal(const uint32_t myRank, const uint32_t
         CHK_RET(EnsureSocketMgrCompat(myRank, socketTag));
         socketMgrCompat_->BatchCreateSockets(socketConfig);
     }
+<<<<<<< HEAD
+=======
+
+    std::string linkTag = socketTag;
+    if (linkData.GetReuseIdx() != "0") {
+        linkTag += ("_" + linkData.GetReuseIdx());
+    }
+    Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, linkTag);
+
+    socketMgrCompat_->BatchCreateSockets(socketConfig); // 内部同时处理server端和connect端两类socket
+>>>>>>> beta2
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
     CHK_PTR_NULL(socket);
     EXCEPTION_HANDLE_END

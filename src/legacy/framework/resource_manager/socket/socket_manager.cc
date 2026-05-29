@@ -98,8 +98,31 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 
 void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
 {
+<<<<<<< HEAD
     PrepareLinkAndServerInit(socketConfig);
     if (GetConnectedSocket(socketConfig) == nullptr) {
+=======
+    LinkData link = socketConfig.link;
+
+    // 使用link管理P2PEnable，但是不应该放置在这里
+    if (!Contain(availableLinks, link)) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            std::vector<uint32_t> remoteDevices;
+            remoteDevices.push_back(link.GetRemoteDeviceId());
+            auto ret = P2PEnableManager::GetInstance().WaitP2PEnabled(remoteDevices);
+            if (ret != HCCL_SUCCESS) {
+                THROW<TimeoutException>(
+                    StringFormat("WaitP2PEnabled failed, devicePhyId=%d", link.GetRemoteDeviceId()));
+            }
+        }
+        availableLinks.insert({link});
+    }
+
+    // 统一使用socketConfig管理socket复用
+    if (GetConnectedSocket(socketConfig) == nullptr) {
+        auto portData = link.GetLocalPort();
+        ServerInit(portData);
+>>>>>>> beta2
         AddWhiteList(socketConfig);
         CreateConnectedSocket(socketConfig);
     }
@@ -112,6 +135,7 @@ void SocketManager::AddWhiteList(const SocketConfig &socketConfig)
    
     // 通过虚拟拓扑获取Peer可能为空，如果为空，需要抛异，NullPtrException
     // 这里检查rankGraph完整性的逻辑是什么？
+<<<<<<< HEAD
     SocketRole role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
     if (role == SocketRole::SERVER) {
         if (comm) {
@@ -132,6 +156,25 @@ void SocketManager::AddWhiteList(const SocketConfig &socketConfig)
         AddWhiteList(port, wlistInfoVec);
         socketWlistMap[port] = wlistInfoVec;
     }
+=======
+    if (comm) {
+        auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
+        if (peer == nullptr) {
+            auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
+            THROW<NullPtrException>(msg);
+        }
+    }
+
+    RaSocketWhitelist wlistInfo{};
+    wlistInfo.connLimit = 1;
+    wlistInfo.remoteIp = link.GetRemoteAddr();
+    wlistInfo.tag = socketConfig.GetHccpTag();
+
+    auto port = link.GetLocalPort();
+    vector<RaSocketWhitelist> wlistInfoVec{wlistInfo};
+    AddWhiteList(port, wlistInfoVec);
+    socketWlistMap[port] = wlistInfoVec;
+>>>>>>> beta2
 }
 
 void SocketManager::BatchServerInit(const vector<LinkData> &links)

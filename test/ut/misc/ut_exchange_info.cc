@@ -142,4 +142,7 @@ TEST_F(ExchangeInfoTest, Ut_EndToEnd_When_AddStoreGet_Expect_Consistent)
     ret = collCommConfigConsistency.GetExchangeInfo(1, recvBufSize, recvBuf.data(), &actualLen);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> beta2

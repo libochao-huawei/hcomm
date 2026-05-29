@@ -96,12 +96,15 @@ public:
                                     CommEngine engine, 
                                     HcommChannelDesc channelDesc,
                                     std::shared_ptr<Channel>& out);
+<<<<<<< HEAD
 
 protected:
     void ReleasePtrArrayDevMems();
 
     HcommChannelKind channelKind_{HcommChannelKind::INVALID};
     std::vector<std::shared_ptr<hccl::DeviceMem>> ptrArrayDevMems_{};
+=======
+>>>>>>> beta2
 };
 
 } // namespace hcomm

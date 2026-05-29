@@ -64,8 +64,13 @@ HcclResult ChannelManager::CheckChannelParam(CommEngine engine,
         // 检查是否有不支持协议
         CHK_PRT_RET(channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_HCCS &&
             channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_ROCE &&
+<<<<<<< HEAD
             channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_HCCS_ONLY &&
             channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_SIO,
+=======
+            channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_SIO &&
+            channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_HCCS_ONLY,
+>>>>>>> beta2
             HCCL_ERROR("[%s]Unsupported protocol[%d] found in channeldesc, protocol: %d.", __func__,
                 descIdx, channelDesc[descIdx].channelProtocol), HCCL_E_PARA);
         
@@ -759,7 +764,11 @@ HcclResult ChannelManager::ChannelCommGetHcclBuffer(ChannelHandle channel, CommB
     buffer->size = static_cast<uint64_t>(tempSize);
     buffer->type = HCCL_MEM_TYPE_DEVICE;
     HCCL_INFO("[%s]channel[%llu] channelKey[%s] get remote hccl buffer success, remote addr[%p], size[%u]", 
+<<<<<<< HEAD
         __func__, channel, keyMap_[channel].c_str(), buffer->addr, buffer->size);
+=======
+ 	    __func__, channel, keyMap_[channel].c_str(), buffer->addr, buffer->size);
+>>>>>>> beta2
     return HCCL_SUCCESS;
 }
 

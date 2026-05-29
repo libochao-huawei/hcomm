@@ -164,8 +164,12 @@ private:
     std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>           tagPointers_;        // Tag 缓存
+<<<<<<< HEAD
     const Hccl::SocketConfig*    socketConfig_{nullptr};
     uint32_t    devicePhyId_{};
+=======
+
+>>>>>>> beta2
 };
 
 } // namespace hcomm
