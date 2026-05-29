@@ -3,6 +3,8 @@
 #include <mockcpp/mockcpp.hpp>
 #include <vector>
 #include <iostream>
+#include <cstdio>
+#include "adapter_error_manager_pub.h"
 #include "host_socket_handle_manager.h"
 #include "cpu_roce_endpoint.h"
 #include "buffer/local_rdma_rma_buffer.h"
@@ -22,6 +24,18 @@
 
 #define private public
 using namespace hcomm;
+
+void stub_RptInputErr_print(std::string error_code, std::vector<std::string> key,
+    std::vector<std::string> value)
+{
+    printf("\n=== RptInputErr ===\n");
+    printf("ErrorCode: %s\n", error_code.c_str());
+    for (size_t i = 0; i < key.size() && i < value.size(); i++) {
+        printf("  %s: %s\n", key[i].c_str(), value[i].c_str());
+    }
+    printf("====================\n");
+    fflush(stdout);
+}
 
 // ==================== Hybrid Mode Stub Functions ====================
 static bool RecvWithWrongMagicStub(Hccl::Socket *socket, void *buf, uint32_t size)
@@ -1986,6 +2000,10 @@ TEST_F(HostCpuRoceChannelTest, Ut_ReportWcStatusError_When_Normal_Expect_HCCL_E_
     impl_->localDpuNotifyIds_ = {0};
     impl_->remoteDpuNotifyIds_ = {0};
 
+    MOCKER(RptInputErr)
+        .stubs()
+        .will(invoke(stub_RptInputErr_print));
+
     HcclResult ret = impl_->ReportWcStatusError(IBV_WC_WR_FLUSH_ERR);
     EXPECT_EQ(ret, HCCL_E_NETWORK);
     GlobalMockObject::verify();
@@ -1997,6 +2015,10 @@ TEST_F(HostCpuRoceChannelTest, Ut_ReportWcStatusError_When_VariousStatuses_Expec
     auto impl_ = CreateInitAndConnect();
     impl_->localDpuNotifyIds_ = {0};
     impl_->remoteDpuNotifyIds_ = {0};
+
+    MOCKER(RptInputErr)
+        .stubs()
+        .will(invoke(stub_RptInputErr_print));
 
     std::vector<enum ibv_wc_status> errorStatuses = {
         IBV_WC_WR_FLUSH_ERR,
