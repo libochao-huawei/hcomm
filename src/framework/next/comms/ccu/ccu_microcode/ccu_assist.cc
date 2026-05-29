@@ -135,5 +135,17 @@ uint64_t GetTokenInfo(uint64_t va, uint64_t size)
     return CcuRep::GetToken(info.tokenId, info.tokenValue, 1);
 }
 
+HcclResult GetTokenInfoNew(uint64_t va, uint64_t size, uint64_t &token)
+{
+    rtMemUbTokenInfo info{};
+    info.va   = va;
+    info.size = size;
+    if (RtsUbDevQueryInfo(QUERY_PROCESS_TOKEN, info) != HcclResult::HCCL_SUCCESS) {
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    token = CcuRep::GetToken(info.tokenId, info.tokenValue, 1);
+    return HcclResult::HCCL_SUCCESS;
+}
+
 }; // namespace CcuRep
 }; // namespace hcomm
