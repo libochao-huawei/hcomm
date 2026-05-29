@@ -64,6 +64,23 @@ HcclResult stub_hrtGetStreamAvailableNum(u32 &maxStrCount)
     return HCCL_SUCCESS;
 }
 
+void stub_RptInputErr_print(std::string error_code, std::vector<std::string> key,
+    std::vector<std::string> value)
+{
+    if (error_code == "EI0012") {
+        printf("Execution_Error_SDMA(EI0012): SDMA memory copy task exception occurred. Remote rank: [%s]. Base information: [%s]. "
+            "Task information: [%s]. Communicator information: [%s].\n",
+            value.size() >= 1 ? value[0].c_str() : "0",
+            value.size() >= 2 ? value[1].c_str() : "streamID:[0], taskID[0], taskType:[SDMA], tag:[test_tag], AlgType(level 0-1-2):[ring-ring-ring].",
+            "src:[0x1000], dst:[0x2000], size:[1024], op:[ALLREDUCE], data type:[FLOAT32], link type:[OnChip], remote rank:[0]",
+            "group:[testGroup], user define information[testUdi], rankSize[8], rankId[0 0]\n");
+        printf("    Solution: 1. Check whether the network link is abnormal during the execution.\n"
+            "2. Check whether a process in the cluster exits before an error is reported. If yes, locate the cause of the process exit.\n"
+            "3. Check whether the input/output memory size is correct and whether the memory or communicator is released prematurely.\n");
+    }
+    fflush(stdout);
+}
+
 TEST_F(TaskExceptionErrMsgFlagTest, Ut_ErrMsgFlag_InitialValue_IsFalse)
 {
     EXPECT_FALSE(TaskExceptionHandler::errMsgFlag_.load());
@@ -163,7 +180,7 @@ TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_Sdma_ReportsEI0012
 
     MOCKER(RptInputErr)
         .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+        .will(invoke(stub_RptInputErr_print));
 
     TaskExceptionHandler::PrintAicpuErrorMessage(&exceptionInfo, isExistAicpuError);
 
@@ -200,7 +217,7 @@ TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_ReduceInline_Repor
 
     MOCKER(RptInputErr)
         .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+        .will(invoke(stub_RptInputErr_print));
 
     TaskExceptionHandler::PrintAicpuErrorMessage(&exceptionInfo, isExistAicpuError);
 
