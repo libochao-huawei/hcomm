@@ -1173,6 +1173,10 @@ HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo, std::pa
     CHK_PTR_NULL(endpoint);
     UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
 
+    // 打印localEid和remoteEid
+    CHK_PTR_NULL(ccuEndpoint);
+    HCCL_ERROR("[GetCcuJettys]localEid[%s], remoteEid[%s]",
+        ccuEndpoint->GetEndpointDesc().commAddr.eid, channelImpl->GetChannelDesc().remoteEndpoint.commAddr.eid);
     // UrmaEndpoint -> CcuChannelCtxPool
     CcuChannelCtxPool *ccuChannelCtxPool = ccuEndpoint->GetCcuChannelCtxPool();
     CHK_PTR_NULL(ccuChannelCtxPool);
