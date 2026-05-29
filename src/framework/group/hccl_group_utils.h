@@ -17,6 +17,8 @@
 #include "op_base.h"
 #include "hccl_comm_pub.h"
 
+constexpr s32 MAX_P2P_TASK_NUM = 2048;
+
 namespace hccl{
 
 using hcclGroupJobState_t = enum hcclGroupJobState {
@@ -104,9 +106,32 @@ struct hcclTaskP2p {
     HcclRtStream stream;
 };
 
+struct HcclOpP2pDesc {
+    void* buffer;
+    u8 reserved[8];
+    HcclCMDType cmdType;
+    HcclDataType dataType;
+    u64 count;
+    u32 remoteRank;
+};
+
+struct HcclOpDesc {
+    u32 opDescType; // 0:coll, 1:p2p, 2:alltoall, 3:alltoallv
+    char opName[256];
+    u8 reserved[64];
+    union {
+        HcclOpP2pDesc p2p;
+    };
+};
+
 struct HcclP2pPair {
     u32 sendRank;
     u32 recvRank;
+};
+
+struct HcclKernelFuncInfo {
+    char kernelSo[256];
+    char kernelFuncName[256];
 };
 
 struct HcclP2pTask {

@@ -204,7 +204,7 @@ HcclResult HcclDedicatedThreadAcquire(HcclComm comm, uint8_t useType,
         __func__, commId.c_str(), useType, notifyNumPerThread);
 
     {
-        std::lock_guard<std::mutex> lock(hcclComm->dedicatedThreadMutex_);
+        std::lock_guard<std::mutex> lock(hcclComm->GetDedicatedThreadMutex());
         if (hcclComm->HasDedicatedThread(useType)) {
             *thread = hcclComm->GetDedicatedThread(useType);
             HCCL_RUN_INFO("[%s] reuse dedicated thread, useType[%u], thread[0x%llx]",
@@ -220,7 +220,7 @@ HcclResult HcclDedicatedThreadAcquire(HcclComm comm, uint8_t useType,
             __func__, useType, static_cast<int32_t>(engine), ret), ret);
 
     {
-        std::lock_guard<std::mutex> lock(hcclComm->dedicatedThreadMutex_);
+        std::lock_guard<std::mutex> lock(hcclComm->GetDedicatedThreadMutex());
         ret = hcclComm->SetDedicatedThread(useType, *thread);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] Failed to cache dedicated thread, useType[%u], ret[%d]",
