@@ -62,7 +62,8 @@
 #include "hccl_dpu_manager.h"
 #include "../../../legacy/unified_platform/resource/buffer/dev_buffer.h"
 
-// aclgraph 销毁路径 host 端 payload 复用 buffer 用到，完整定义见 aicpu_operator_pub.h:247
+// aclgraph 销毁路径 host 端 payload 复用 buffer 用到；aicpu_operator_pub.h 已包含完整定义，此处前向声明确保所有构建配置下类型可见
+struct HcclKfcClearOpResTilingData;
 
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
