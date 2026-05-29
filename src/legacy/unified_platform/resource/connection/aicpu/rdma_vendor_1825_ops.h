@@ -16,16 +16,16 @@
 namespace Hccl {
 
 // Necessary helper funcs
-inline uint16_t htons(uint16_t x) {
+inline uint16_t Htons16(uint16_t x) {
     return (((x & 0xffULL) << 8) | ((x & 0xff00ULL) >> 8));
 }
 
-inline uint32_t htonl(uint32_t x) {
+inline uint32_t Htonl32(uint32_t x) {
     return  ((x & 0x000000ffU) << 24) | ((x & 0x0000ff00U) << 8)  |
             ((x & 0x00ff0000U) >> 8)  | ((x & 0xff000000U) >> 24);
 }
 
-inline uint64_t htonll(uint64_t x) {
+inline uint64_t Htonll64(uint64_t x) {
     return  ((x & 0x00000000000000ffULL) << 56) |
             ((x & 0x000000000000ff00ULL) << 40) |
             ((x & 0x0000000000ff0000ULL) << 24) |
@@ -219,12 +219,12 @@ private:
         wqe->ctrl.df_tsl    |= sizeof(Roce3TaskWqeSeg) / ROCE_TASK_SEG_ALIGN;
 
         // fast_dma + SSN + sge长度
-        wqe->ctrl.wf_bdsl   = htons((uint16_t)(0 << ROCE_WQE_FAST_DMA_SHIFT));
-        wqe->ctrl.wf_bdsl   |= htons((sqHead_ & ROCE_WQE_SSN_MASK) << ROCE_WQE_SSN_SHIFT);
-        wqe->ctrl.wf_bdsl   |= htons((uint32_t)1 << (ROCE_WQE_DATA_SEG_SHIFT - WQE_SECTION_ALIGN_SHIFT));
+        wqe->ctrl.wf_bdsl   = Htons16((uint16_t)(0 << ROCE_WQE_FAST_DMA_SHIFT));
+        wqe->ctrl.wf_bdsl   |= Htons16((sqHead_ & ROCE_WQE_SSN_MASK) << ROCE_WQE_SSN_SHIFT);
+        wqe->ctrl.wf_bdsl   |= Htons16((uint32_t)1 << (ROCE_WQE_DATA_SEG_SHIFT - WQE_SECTION_ALIGN_SHIFT));
 
         // cl
-        wqe->ctrl.cl_pi     = htonl(ROCE_WQE_CMP_TASK_LEN1 << ROCE_WQE_CMP_TASK_LEN_SHIFT);
+        wqe->ctrl.cl_pi     = Htonl32(ROCE_WQE_CMP_TASK_LEN1 << ROCE_WQE_CMP_TASK_LEN_SHIFT);
 
         // ----- Task Seg -----
         wqe->task.tskSeg.value = 0;
@@ -233,17 +233,17 @@ private:
         wqe->task.tskSeg.dw0.opType = opCode;
         wqe->task.tskSeg.dw0.se = 0;
 
-        wqe->task.dataLen = htonl(loc.GetSize());
+        wqe->task.dataLen = Htonl32(loc.GetSize());
         wqe->task.immData = 0;
         wqe->task.dw3.value = 0;
-        wqe->task.va = htonll(rmt.GetAddr());
-        wqe->task.rkey = htonl(rmt.GetRkey());
+        wqe->task.va = Htonll64(rmt.GetAddr());
+        wqe->task.rkey = Htonl32(rmt.GetRkey());
         wqe->task.ulp = 0;
 
         // ----- Data Seg -----
-        wqe->data.bufAddr = htonll((uint64_t)loc.GetAddr());
-        wqe->data.leKey = htonl(loc.GetLkey() | ROCE_WQE_NEXT_SGE_INVALID);  // 当前sge就是最后一个
-        wqe->data.rLen = htonl(loc.GetSize());
+        wqe->data.bufAddr = Htonll64((uint64_t)loc.GetAddr());
+        wqe->data.leKey = Htonl32(loc.GetLkey() | ROCE_WQE_NEXT_SGE_INVALID);  // 当前sge就是最后一个
+        wqe->data.rLen = Htonl32(loc.GetSize());
 
         HCCL_INFO("[Rdma1825Ops::%s] Hcomm RDMA 1825 BuildWrite wqe OK", __func__);
         return HCCL_SUCCESS;
