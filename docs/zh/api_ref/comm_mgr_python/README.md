@@ -1,4 +1,4 @@
-# 通信域创建与管理接口（python语言）
+# 通信域创建与管理接口（Python语言）
 
 - [简介](intro.md)
 - [hccl.manage.api](hccl-manage-api.md)

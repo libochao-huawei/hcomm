@@ -247,14 +247,14 @@ function build_hcomm() {
     fi
 
     # 编译
-    cmake --build . -j${CPU_NUM}
+    cmake --build . ${JOB_NUM}
     if [ $? -ne 0 ]; then
         log "Error: cmake build failed"
         return 1
     fi
 
     # 打包
-    make package -j${CPU_NUM}
+    make package ${JOB_NUM}
     if [ $? -ne 0 ]; then
         log "Error: make package failed"
         return 1
@@ -312,10 +312,6 @@ while [[ $# -gt 0 ]]; do
         ;;
     -p|--package-path)
         ascend_package_path="$2"
-        shift 2
-        ;;
-    --nlohmann_path)
-        third_party_nlohmann_path="$2"
         shift 2
         ;;
     --pkg)
@@ -490,10 +486,6 @@ elif [ -d "${DEFAULT_INSTALL_DIR}" ];then
 else
     log "Error: Please set the toolkit package installation directory through parameter -p|--package-path."
     exit 1
-fi
-
-if [ -n "${third_party_nlohmann_path}" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DTHIRD_PARTY_NLOHMANN_PATH=${third_party_nlohmann_path}"
 fi
 
 CUSTOM_OPTION="${CUSTOM_OPTION} -DASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}"

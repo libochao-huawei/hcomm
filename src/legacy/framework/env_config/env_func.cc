@@ -845,8 +845,6 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
     }
     DfsConfig config{taskExceptionEnable, clusterHeartBeatEnable, rankConsistentState};
 
-    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d], cluster_heartbeat [%d] rankConsistentState[%d]",
-        config.taskExceptionEnable, config.clusterHeartBeatEnable, config.rankConsistentState);
     return config;
 }
 

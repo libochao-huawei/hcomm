@@ -148,10 +148,6 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = CommConfig();
-        commName_ = identifier_;
-        if (commConfig_.GetConfigGroupName() != "") {
-            commName_ = commConfig_.GetConfigGroupName();
-        }
         dpuManager_.reset(new (std::nothrow) DpuManager());
         if (dpuManager_ == nullptr) {
             HCCL_ERROR("new DpuManager failed!");
@@ -189,10 +185,6 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = commConfig;
-        commName_ = identifier_;
-        if (commConfig_.GetConfigGroupName() != "") {
-            commName_ = commConfig_.GetConfigGroupName();
-        } 
         dpuManager_.reset(new (std::nothrow) DpuManager());
         if (dpuManager_ == nullptr) {
             HCCL_ERROR("new DpuManager failed!");
@@ -845,6 +837,10 @@ namespace hccl
         commPortConfig_ = params.commPortConfig;
         cclBuffName_ = params.cclBuffName;
         isShareComm_ = !cclBuffName_.empty();
+        commName_ = identifier_;
+        if (!commConfig_.GetConfigUdi().empty()) {    // 如果配置了udi，更新commName_
+            commName_ = commConfig_.GetConfigGroupName();
+        }
 
         HCCL_DEBUG(
             " userRank_: %u realUserRank_: %u userRankSize_: %u deviceLogicId_: %u deviceType_: %u commWorkMode_: %u.",
@@ -6328,7 +6324,7 @@ namespace hccl
         // 记录主流相关信息, 给profiling和task exception使用
         HCCL_PROFILER_ADD_STREAM_BY_STREAMID(param.stream.id(), param.tag, 0, algType);
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-             hccl::ProfilingManagerPub::GetAddtionInfoState() &&
+             hccl::ProfilingManagerPub::GetAdditionInfoState() &&
              hccl::ProfilingManagerPub::GetTaskApiState()) &&
              !param.isCapture) {
             return HCCL_SUCCESS;
