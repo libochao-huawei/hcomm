@@ -212,7 +212,7 @@ namespace hccl {
             }
         }
 
-        HCCL_INFO("[OpUnfoldCacheEntry][~OpUnfoldCacheEntry] release %u SQE arrays (%u SQEs in total) from the cache entry", sqeArrayCount, totalSqeCount);
+        HCCL_ERROR("[OpUnfoldCacheEntry][~OpUnfoldCacheEntry] release %u SQE arrays (%u SQEs in total) from the cache entry", sqeArrayCount, totalSqeCount);
     }
 
     HcclResult OpUnfoldCacheEntry::GetSqeArrayCount(size_t& sqeArrayCount) const {
@@ -638,6 +638,8 @@ namespace hccl {
         AicpuDfxInfo **sqeDfxInfoArrayPtr, Stream **streamPtrPtr, std::vector<FlipInfo>& flipInfos,
         const bool profL1Enable, std::vector<uint64_t>& profTimestamps, const bool isAlltoallv,
         const AlltoallvMetadata& alltoallvMetadata, const AlltoallvSendRecvInfo& alltoallvSendRecvInfo) {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+            
         HCCL_INFO("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] update and get SQEs from %uth SQE array; isAlltoallv[%u]", arrayIdx, isAlltoallv);
 
         // 检验入参

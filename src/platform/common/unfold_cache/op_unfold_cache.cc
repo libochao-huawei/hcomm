@@ -52,6 +52,8 @@ namespace hccl {
     }
 
     HcclResult OpUnfoldCache::FindEntry(const OpUnfoldKey& key, OpUnfoldCacheEntry **entryPtrPtr) const {
+        FUNCTION_TRACE; // TODOSSY: 性能打点
+        
         // 检查入参
         CHK_PTRPTR_NULL(entryPtrPtr); // 检查指针, entryPtrPtr不应该是null, 但*entryPtrPtr应该是null
 
