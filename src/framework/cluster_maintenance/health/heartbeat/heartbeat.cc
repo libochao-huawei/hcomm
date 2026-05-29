@@ -1544,7 +1544,6 @@ void Heartbeat::HeartbeatStatusMonitor()
     HcclResult ret;
     auto counterStat = CounterStat();
     InitStuckDetection(counterStat);
-    bool isCheckOn = (GetExternalInconsistentCheckSwitch() == InconsistentCheckMode::ON);
     while (startSendRecvTask_) {
         CheckSnapshotStatus();
         if (isPaused_) {
@@ -1563,7 +1562,7 @@ void Heartbeat::HeartbeatStatusMonitor()
                 HCCL_DEBUG("rank[%s] Try to Send HeartBeat to rank[%s]", FormatUId(uid_).c_str(),
                     FormatUId(rem).c_str());
                 rankId2SocketMap_[rem].lostNum++;
-                if (!isCheckOn) {
+                if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) {
                     ret = SendFrame(rem, uid_, uid_,
                         (counterStat.issueCnt != 0) ? HeartBeatStatus::HEARTBEAT_STUCK : HeartBeatStatus::HEARTBEAT_OK);
                 } else {
@@ -1584,7 +1583,7 @@ void Heartbeat::HeartbeatStatusMonitor()
         for (auto iter = rankId2SocketMap_.begin(); iter != rankId2SocketMap_.end(); iter++) {
             UIDType rem = iter->first;
             HCCL_DEBUG("rank[%s] Try to Recv from rank[%s]", FormatUId(uid_).c_str(), FormatUId(rem).c_str());
-            ret = !isCheckOn ? RecvFrame(rem) : RecvFrameWithOpCheck(rem);
+            ret = (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) ? RecvFrame(rem) : RecvFrameWithOpCheck(rem);
             if (ret == HCCL_E_INTERNAL) {
                 errorSocket_.push_back(rem);
             } else if (rankId2SocketMap_[rem].lostNum >= lostThreshold_) {
@@ -1597,7 +1596,7 @@ void Heartbeat::HeartbeatStatusMonitor()
         ProcessExceptionEvent();
         ProcessLock_.unlock();
 
-        auto sleeptime = !isCheckOn ? BROADCAST_INTERVAL : BROADCAST_INTERVAL_WITH_CHECK;
+        auto sleeptime = (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) ? BROADCAST_INTERVAL : BROADCAST_INTERVAL_WITH_CHECK;
         std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
     }
     linkThreadRunning_ = false;
