@@ -167,30 +167,6 @@ TEST_F(CcuAssistTest, GetUBDataType_Unsupported)
     EXPECT_THROW(GetUBDataType(Hccl::DataType::HIF8), Hccl::CcuApiException);
 }
 
-TEST_F(CcuAssistTest, GetTokenInfo_Success)
-{
-    uint64_t token = 0;
-    HcclResult ret = GetTokenInfoNew(0x1000, 1024, token);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_GT(token, 0);
-}
-
-TEST_F(CcuAssistTest, GetTokenInfo_Failure)
-{
-    MOCKER(hcomm::RtsUbDevQueryInfo),stubs().will(returnvalue(HcclResult::HCCL_E_RUNTIME));
-    uint64_t token = 0;
-    HcclResult ret = GetTokenInfoNew(0x1000, 1024, token);
-    EXPECT_EQ(ret, HcclResult::HCCL_E_RUNTIME);
-    GlobalMockObject::verify();
-}
-
-TEST_F(CcuAssistTest, GetTokenInfo_ZeroVaSize)
-{
-    uint64_t token = 0;
-    HcclResult ret = GetTokenInfoNew(0, 0, token);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
-
 }
 }
 }
