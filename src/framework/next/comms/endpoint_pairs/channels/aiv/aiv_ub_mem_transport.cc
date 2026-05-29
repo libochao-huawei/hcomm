@@ -349,7 +349,7 @@ HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memT
     return HCCL_SUCCESS;
 }
 
-HcclResult AivUbMemTransport::CheckSocketStatus(string socketOpreator)
+HcclResult AivUbMemTransport::CheckSocketStatus(std::string socketOpreator)
 {
     CHK_PTR_NULL(socket_);
     auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
