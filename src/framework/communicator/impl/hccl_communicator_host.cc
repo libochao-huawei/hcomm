@@ -7466,8 +7466,7 @@ namespace hccl
         }
         HcclKfcClearOpResTilingData &payload = *aicpuCleanupHostBuf_;
 
-        struct KFCInitTask { u64 context; bool isCustom; };
-        KFCInitTask initTask = { reinterpret_cast<u64>(aicpuCleanupBuf_.ptr()), false };
+        KFCResInitTask initTask = { reinterpret_cast<u64>(aicpuCleanupBuf_.ptr()), false };
         const u16 timeOut = MAX_VALUE_U16;
         const size_t groupCopyLen = std::min(identifier_.length() + 1, sizeof(payload.group));
         size_t totalBatches = 0;
