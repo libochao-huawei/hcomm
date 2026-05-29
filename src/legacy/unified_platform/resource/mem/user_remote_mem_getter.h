@@ -42,6 +42,18 @@ struct RemoteMemCtx{
     {};
 };
 
+inline HcclMemType HcclMemTypeToCommMemType(CommMemType type)
+{
+    switch (type) {
+        case COMM_MEM_TYPE_DEVICE:
+            return HCCL_MEM_TYPE_DEVICE;
+        case COMM_MEM_TYPE_HOST:
+            return HCCL_MEM_TYPE_HOST;
+        default:
+            return HCCL_MEM_TYPE_NUM;
+    }
+}
+
 inline CommMemType HcclMemTypeToCommMemType(HcclMemType type)
 {
     switch (type) {
@@ -82,9 +94,11 @@ HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
             mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
             mem.size = rmtBuffer->GetSize();
             remoteMemCtx.remoteUserMems.push_back(mem);
-            std::string tagCopy = rmtBuffer->GetMemTag();;
+            std::string tagCopy = rmtBuffer->GetMemTag();
             remoteMemCtx.tagCopies.push_back(std::move(tagCopy));
             remoteMemCtx.tagPointers.push_back(const_cast<char*>(remoteMemCtx.tagCopies.back().c_str()));
+            HCCL_INFO("[%s] Found buffer[addr:%p, size:%llu, memInfo:%s]", mem.addr, mem.size,
+                remoteMemCtx.tagCopies.back().c_str());
         }
         remoteMemCtx.cacheValid = true;
     }

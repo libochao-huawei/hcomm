@@ -21,6 +21,7 @@
 #include "../../../common/orion_adpt_utils.h"
 #include "../../../sockets/socket_mgr.h"
 #include "comm_mems.h"
+#include "user_remote_mem_getter.h"
 
 namespace hcomm {
 
@@ -155,7 +156,7 @@ HcclResult AicpuTsRoceChannelV2::BuildBuffer()
         HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localRdmaBuffer = memHandles[i];
-            HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
+            HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memInfo[%s].",
                 __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemTag().c_str());
             localRmaBuffers_.emplace_back(localRdmaBuffer.get());
         }
@@ -166,7 +167,7 @@ HcclResult AicpuTsRoceChannelV2::BuildBuffer()
         for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
             CHK_PTR_NULL(channelDesc_.memHandles[i]);
             auto *localRdmaBuffer = reinterpret_cast<Hccl::LocalRdmaRmaBuffer *>(channelDesc_.memHandles[i]);
-            HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
+            HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memInfo[%s].",
                 __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemTag().c_str());
             localRmaBuffers_.emplace_back(localRdmaBuffer);
         }
@@ -971,8 +972,8 @@ HcclResult AicpuTsRoceChannelV2::GetRemoteMems(uint32_t *memNum, CommMem **remot
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> remoteMemCtx{cacheValid_, rmtRmaBuffers_,
-    remoteUserMems_, tagCopies_, tagPointers_, remoteMem, memInfos, memNum};
-    CHK_RET(GetRemoteUserMems(remoteMemCtx));
+    remoteUserMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
+    CHK_RET(Hccl::GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 

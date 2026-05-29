@@ -125,6 +125,11 @@ RemoteUbRmaBuffer::~RemoteUbRmaBuffer()
     }
 }
 
+RemoteUbRmaBuffer(uintptr_t addr, u64 size, u32 tokenId, u32 tokenValue, HcclMemType memType, std::string &memTag) :
+    RemoteRmaBuffer(RmaType::UB), addr(addr), size(size), tokenId(tokenId), tokenValue(tokenValue), memType(memType),
+    memTag(memTag)
+{}
+
 RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto) :
       RemoteRmaBuffer(RmaType::UB), rdmaHandle(rdmaHandle1)
 { // 从 DTO 取得数据，然后生成 memHandle
