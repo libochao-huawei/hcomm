@@ -42,6 +42,8 @@ public:
     HcclResult        UnRegister() ;                              // 向rts注销异常处理方法
     static void Process(rtExceptionInfo_t *exceptionInfo); // 处理异常信息
     static void PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo, const Hccl::TaskInfo& taskInfo, bool &isExistAicpuError);
+    static void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &groupRankContent,
+        const Hccl::ErrorMessageReport &errorMessage, rtExceptionInfo_t *exceptionInfo);
 
 private:
     static std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
@@ -55,6 +57,7 @@ private:
     static void GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo);
     static void GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId);
     static void GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId);
+
 private:
     bool isRegistered_ {false};
 };
