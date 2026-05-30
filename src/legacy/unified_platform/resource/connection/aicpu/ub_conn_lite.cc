@@ -65,8 +65,11 @@ void UbConnLite::FillCommSqe(UdmaSqeCommon *sqe, const RmtRmaBufSliceLite &rmt, 
     sqe->rmtObjId      = rmt.GetTokenId();
     sqe->tokenEn       = 1;
     sqe->rmtTokenValue = rmt.GetTokenValue();
-    sqe->rmtAddrLow    = rmt.GetAddr() & ADDR_BIT_LOW;
-    sqe->rmtAddrHigh   = rmt.GetAddr() >> ADDR_BIT_OFFSET;
+    //sqe->rmtAddrLow    = rmt.GetAddr() & ADDR_BIT_LOW;
+    //sqe->rmtAddrHigh   = rmt.GetAddr() >> ADDR_BIT_OFFSET;
+    sqe->rmtAddrLow    = 123;
+    sqe->rmtAddrHigh   = 0;
+    HCCL_ERROR("%s make a error addr",__func__);
     HCCL_INFO("UbConnLite FillCommSqe UdmaSqeCommon sqe->cqe = %u, sqe->owner = %u sqe->opcode = %u, "
               "sqe->tpn = %u, sqe->rmtObjId = %u, sqe->rmtAddrLow = %u, sqe->rmtAddrHigh = %u, sqe->placeOdr = %u, "
               "sqe->compOrder = %u, sqe->fence = %u", sqe->cqe, sqe->owner, sqe->opcode, sqe->tpn, sqe->rmtObjId,
