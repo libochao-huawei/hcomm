@@ -119,6 +119,7 @@ HcommResult HcommChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHa
 
 HcommResult CheckUbAttr(HcommChannelDesc &channelDesc);
 
+HcommResult CheckRoceAttr(HcommChannelDesc &channelDesc);
 #ifdef __cplusplus
 }
 

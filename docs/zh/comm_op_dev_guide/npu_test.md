@@ -191,7 +191,7 @@ clean:
     参考如下命令，使用root用户在物理机上执行， 以device 0为例：
 
     ```bash
-    npu-smi set -t custom-op-secverify-enable -i 0 -d 1    # 使能验签配置
+    npu-smi set -t custom-op-secverify-enable -i 0 -d 1    # 开启验签配置
     npu-smi set -t custom-op-secverify-mode -i 0 -d 0      # 关闭自定义验签
     ```
 
@@ -200,13 +200,13 @@ clean:
 
 2. 修改AI CPU白名单。
 
-    若用户新增AI CPU算子包，需同步将该AI CPU算子包配置到AI CPU白名单中。以root用户默认安装路径为例，编辑ascend\_package\_load.ini文件：
+    若用户新增AI CPU算子包，需同步将该AI CPU算子包配置到AI CPU白名单中。以root用户默认安装路径为例，编辑ascend_package_load.ini文件：
 
     ```bash
     vim /usr/local/Ascend/cann/conf/ascend_package_load.ini
     ```
 
-    将下列内容追加到ascend\_package\_load.ini中：
+    将下列内容追加到ascend_package_load.ini中：
 
     ```text
     name:<aicpu_kernel_file_name>
@@ -217,7 +217,7 @@ clean:
 
     其中：
 
-    - <aicpu_kernel_file_name\>：表示AI CPU算子包文件名，文件格式为tar.gz，例如：aicpu\_hccl\_custom\_p2p.tar.gz。
+    - <aicpu_kernel_file_name\>：表示AI CPU算子包文件名，文件格式为tar.gz，例如：aicpu_hccl_custom_p2p.tar.gz。
     - <aicpu_kernel_file_path\>：表示AI CPU算子包在CANN包下的相对路径，例如：opp/vendors/cust/aicpu/kernel。
 
 3. 编译并执行测试样例。

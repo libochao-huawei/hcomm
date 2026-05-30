@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef LAUNCH_AICPU_H
 #define LAUNCH_AICPU_H
 
@@ -23,7 +23,6 @@ namespace hccl {
 		aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
 		void *tilingDataPtr, u32 tilingDataSize, const std::string &identify);
     HcclResult GetKernelFilePath(std::string &binaryPath);
-    HcclResult GetCustomKernelFilePath(std::string &binaryPath);
     HcclResult CacheTaskOpInfo(aclrtStream stream, const std::string &identify);
 }
 
