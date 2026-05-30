@@ -294,7 +294,7 @@ namespace hccl
 
     void *hcclComm::GetMyRank()
     {
-        return (void *)(communicator_->GetMyRank());
+        return (void *)communicator_->GetMyRank();
     }
     HcclResult hcclComm::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
     {
