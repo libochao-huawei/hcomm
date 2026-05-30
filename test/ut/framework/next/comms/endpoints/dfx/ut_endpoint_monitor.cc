@@ -19,7 +19,7 @@
 #include "adapter_rts_common.h"
 #include "endpoint.h"
 #define private public
-#include "dfx/endpoint_monitor.h"
+#include "endpoint_monitor.h"
 #undef private
 
 using namespace hcomm;
