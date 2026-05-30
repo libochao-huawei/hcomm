@@ -113,6 +113,20 @@ constexpr u32 NOTIFY_GROUPS_1V1 = 2;
 
 u32 maxStrCount = 0;
 u32 maxTaskCount = 0;
+
+std::string GetReduceOpString(HcclReduceOp op)
+{
+    u32 opVal = static_cast<u32>(op);
+    return opVal < ProfilerBase::opString.size() ? std::to_string(ProfilerBase::opString[opVal])
+                                                 : "Unknown";
+}
+
+std::string GetDataTypeString(HcclDataType dataType)
+{
+    u32 dtVal = static_cast<u32>(dataType);
+    return dtVal < ProfilerBase::dataTypeString.size() ? std::to_string(ProfilerBase::dataTypeString[dtVal])
+                                                       : "Unknown";
+}
 }
 array<map<int, shared_ptr<deque<TaskInfo>>>, MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::taskMap;
 array<std::mutex, MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::taskMapMutex;
@@ -327,8 +341,8 @@ string TaskInfo::GetParaReduce()
             << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskPara.Reduce.dst)) << "], size:"
             << "[0x"
             << std::hex << static_cast<u64>(taskPara.Reduce.size * ProfilerBase::sizeOf[taskPara.Reduce.dataType])
-            << "], op:[" << std::to_string(ProfilerBase::opString[taskPara.Reduce.op]) << "], data type:["
-            << std::to_string(ProfilerBase::dataTypeString[taskPara.Reduce.dataType]) << "], link type:["
+            << "], op:[" << GetReduceOpString(taskPara.Reduce.op) << "], data type:["
+            << GetDataTypeString(taskPara.Reduce.dataType) << "], link type:["
             << GetLinkTypeName(taskPara.Reduce.linkType) << "], remote rank:["
             << ((taskPara.Reduce.remoteUserRank == INVALID_VALUE_RANKID) ? "local" :
                 to_string(taskPara.Reduce.remoteUserRank)) << "]";
@@ -473,8 +487,8 @@ string CtxInfo::GetCtxParaReduce()
             << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(ctxPara.Reduce.dst)) << "], size:"
             << "[0x"
             << std::hex << static_cast<u64>(ctxPara.Reduce.size * ProfilerBase::sizeOf[ctxPara.Reduce.dataType])
-            << "], op:[" << std::to_string(ProfilerBase::opString[ctxPara.Reduce.op]) << "], data type:["
-            << std::to_string(ProfilerBase::dataTypeString[ctxPara.Reduce.dataType]) << "], link type:["
+            << "], op:[" << GetReduceOpString(ctxPara.Reduce.op) << "], data type:["
+            << GetDataTypeString(ctxPara.Reduce.dataType) << "], link type:["
             << GetLinkTypeName(ctxPara.Reduce.linkType) << "], remote rank:["
             << ((ctxPara.Reduce.remoteUserRank == INVALID_VALUE_RANKID) ? "local" :
                 to_string(ctxPara.Reduce.remoteUserRank)) << "]";
