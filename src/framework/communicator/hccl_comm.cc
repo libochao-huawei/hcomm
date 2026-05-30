@@ -1561,4 +1561,8 @@ aclrtBinHandle hcclComm::GetBinHcclHandle()
     return binHcclHandle_;
 }
 
+std::mutex &hcclComm::GetDedicatedThreadMutex()
+{
+    return dedicatedThreadMutex_;
+}
 }  // namespace hccl

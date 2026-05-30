@@ -27,8 +27,6 @@ thread_local s32 hcclP2pTaskNums = 0;
 thread_local std::deque<std::shared_ptr<struct hcclAsyncJob>> hcclInitJobs;
 thread_local std::vector<HcclComm> hcclGroupCommList;
 
-constexpr s32 MAX_P2P_TASK_NUM = 2048;
-
 HcclResult HcclGroupStart()
 {
     hcclGroupDepth++;
@@ -165,129 +163,6 @@ HcclResult HcclP2pSchedulerGenerate(HcclComm comm, u32 rankSize)
 }
 
 namespace hccl{
-HcclResult HcclP2pSchedulerGenerate(HcclComm comm, u32 rankSize)
-{
-    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
-    std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
-    u32 userRank = INVALID_VALUE_RANKID;
-    hcclComm->GetUserRank(userRank);
-    u32 serverNum = hcclComm->GetServerNum();
-    std::vector<RankInfo> rankList = hcclComm->GetRankLists();
-    u32 curlocalRank = rankList[userRank].localRank; // userRank在server内的自然排序号
-
-    // 构建server和rank的映射
-    std::map<u32, std::vector<u32>> serverToRankList;
-    std::map<u32, u32> serverToRankSize;
-    for (u32 rankIdx = 0; rankIdx < rankList.size(); rankIdx++) {
-        u32 serverIdx = rankList[rankIdx].serverIdx;
-        serverToRankList[serverIdx].emplace_back(rankIdx);
-        serverToRankSize[serverIdx]++;
-    }
-
-    // 计算groupSize
-    u32 groupSize = 0;
-    if (serverNum == 1) {
-        groupSize = rankSize;
-    } else {
-        groupSize = rankSize / serverNum;
-        std::vector<u32> serverRankSizeList;
-        for (auto& pair : serverToRankSize) {
-            serverRankSizeList.emplace_back(pair.second);
-        }
-        u32 gcdRes = CalGCD(serverRankSizeList);
-        groupSize = gcdRes;
-    }
-
-    u32 curGroupLocalRankIdx = curlocalRank % groupSize; // userRank在group内的自然排序号
-    u32 curGroupIdx = curlocalRank / groupSize;          // userRank所在group的自然排序号
-    u32 nGroups = rankSize / groupSize;
-    u32 nGroupsPow2 = Pow2Up(nGroups);
-    HCCL_DEBUG("[HcclP2pSchedulerGenerate] groupSize:%u, nGroups:%u, nGroupsPow2:%u", groupSize, nGroups, nGroupsPow2);
-
-    std::vector<u32> groupToServer(nGroups);
-    std::vector<u32> groupToLocalRankBase(nGroups); // group的起始rank在server内的自然排序号 
-    u32 groupIdx = 0;
-    for (auto& pair : serverToRankList) {
-        u32 serverIdx = pair.first;
-        u32 localRankSize = serverToRankSize[serverIdx];
-        u32 localGroupSize = localRankSize / groupSize;
-        for (u32 localGroupIdx = 0; localGroupIdx < localGroupSize; localGroupIdx++) {
-            groupToServer[groupIdx] = serverIdx;
-            groupToLocalRankBase[groupIdx] = localGroupIdx * groupSize;
-            groupIdx++;
-        }
-    }
-    
-    // 生成调度表
-    planner->p2pSchedule.resize(rankSize);
-    u32 round = 0;
-    u32 groupRound = 0;
-    u32 groupDelta = 0;
-    do {
-        if (groupDelta < nGroups) {
-            u32 sendGroupIdx = (curGroupIdx + groupDelta) % nGroups;
-            u32 recvGroupIdx = (curGroupIdx - groupDelta + nGroups) % nGroups;
-            u32 sendServerIdx = groupToServer[sendGroupIdx];
-            u32 recvServerIdx = groupToServer[recvGroupIdx];
-            
-            for (u32 delta = 0; delta < groupSize; delta++) {
-                u32 sendLocalIdx = groupToLocalRankBase[sendGroupIdx] + (curGroupLocalRankIdx + delta) % groupSize;
-                u32 recvLocalIdx = groupToLocalRankBase[recvGroupIdx] 
-                                    + (curGroupLocalRankIdx - delta + groupSize) % groupSize;
-
-                planner->p2pSchedule[round].sendRank = serverToRankList[sendServerIdx][sendLocalIdx];
-                planner->p2pSchedule[round].recvRank = serverToRankList[recvServerIdx][recvLocalIdx];
-                round++;
-            }
-        }
-        groupRound++;
-        groupDelta = (groupDelta + groupRound) & (nGroupsPow2 - 1);
-    } while (groupRound != nGroupsPow2);
-
-    if (rankSize != round) {
-        HCCL_ERROR("[HcclP2pSchedulerGenerate] round:%u is not equal to rankSize:%u", round, rankSize);
-        return HCCL_E_INTERNAL;
-    }
-
-    HCCL_INFO("[HcclP2pSchedulerGenerate] schedule generated, round:%u", round);
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclP2pTaskSchedule(
-    HcclComm comm, std::vector<HcclP2pTask> &sortedSendQue, std::vector<HcclP2pTask> &sortedRecvQue)
-{
-    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
-    HCCL_INFO("[HcclP2pTaskSchedule] nTaskP2p:%u", planner->nTasksP2p);
-
-    u32 epoch = 0;
-    while (planner->nTasksP2p > 0) {
-        for (u32 round = 0; round < planner->rankSize; round++) {
-            u32 sendRank = planner->p2pSchedule[round].sendRank;
-            u32 recvRank = planner->p2pSchedule[round].recvRank;
-
-            if (!planner->peers[sendRank].sendQue.empty()) {
-                auto &sendTask = planner->peers[sendRank].sendQue.front();
-                sortedSendQue.emplace_back(sendTask);
-                planner->peers[sendRank].sendQue.pop_front();
-                planner->nTasksP2p--;
-            }
-
-            if (!planner->peers[recvRank].recvQue.empty()) {
-                auto &recvTask = planner->peers[recvRank].recvQue.front();
-                sortedRecvQue.emplace_back(recvTask);
-                planner->peers[recvRank].recvQue.pop_front();
-                planner->nTasksP2p--;
-            }
-        }
-        epoch++;
-    }
-    HCCL_INFO("[HcclP2pTaskSchedule] done, use epochs:%u, sendQueSize:%u, recvQueSize:%u ", epoch,
-        static_cast<u32>(sortedSendQue.size()), static_cast<u32>(sortedRecvQue.size()));
-
-    return HCCL_SUCCESS;
-}
-
 HcclResult HcclP2pTaskSchedule(
     HcclComm comm, std::vector<HcclP2pTask> &sortedSendQue, std::vector<HcclP2pTask> &sortedRecvQue)
 {
@@ -426,72 +301,110 @@ HcclResult commInitTaskAppend(std::shared_ptr<struct hcclAsyncJob> job, HcclResu
 
 constexpr u32 KERNEL_TIMEOUT_OFFSET = 300;
 
-static HcclResult AicpuKernelLaunchDirect(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
+static HcclResult HcclGetUnfoldStream(HcclComm comm, ThreadHandle unfoldThread,
+    bool isOffloadMode, aclrtStream fallbackStream, aclrtStream &resolvedStream)
+{
+    resolvedStream = fallbackStream;
+    if (isOffloadMode) {
+        HCCL_INFO("[HcclGetUnfoldStream] offload mode, use fallback stream");
+        return HCCL_SUCCESS;
+    }
+    if (unfoldThread == 0) {
+        HCCL_INFO("[HcclGetUnfoldStream] unfoldThread is 0, use fallback stream");
+        return HCCL_SUCCESS;
+    }
+
+    void* threadStreamInfo = nullptr;
+    HcclResult ret = HcclThreadResGetInfo(comm, unfoldThread,
+        THREAD_RES_TYPE_STREAM, sizeof(aclrtStream), &threadStreamInfo);
+    if (ret == HCCL_E_NOT_SUPPORT) {
+        HCCL_INFO("[HcclGetUnfoldStream] HcclThreadResGetInfo not supported, use fallback stream");
+        resolvedStream = fallbackStream;
+        return HCCL_SUCCESS;
+    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[HcclGetUnfoldStream] HcclThreadResGetInfo failed, unfoldThread[0x%llx], ret[%d]",
+            unfoldThread, ret), ret);
+
+    if (threadStreamInfo != nullptr) {
+        resolvedStream = *static_cast<aclrtStream*>(threadStreamInfo);
+        HCCL_INFO("[HcclGetUnfoldStream] use unfold stream, resolvedStream[%p]", resolvedStream);
+    }
+    return HCCL_SUCCESS;
+}
+
+static HcclResult AicpuKernelLaunchDirect(HcclComm comm, hccl::HcclOpDesc opInfo, hccl::HcclKernelFuncInfo funcInfo,
     void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream)
 {
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string kernelName = "HcclLaunchAicpuKernel";
     aclrtFuncHandle funcHandle;
     aclrtArgsHandle argsHandle;
-    // 注意，目前开源HCCL加载AICPU kernel使用的是从json文件加载
-    // 详见load_kernel.cc中的LoadAICPUKernel函数，且只实现了scatter的，先共用scatter的
-    aclError ret = aclrtBinaryGetFunction(g_binKernelHandle, kernelName.c_str(), &funcHandle);
+    aclError ret = aclrtBinaryGetFunction(hcclComm->GetBinHandle(), kernelName.c_str(), &funcHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, "
         "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
     ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, "
         "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
     aclrtParamHandle paraHandle;
-    size_t paramSize = sizeof(OpParam) + param.varMemSize;
-    ret = aclrtKernelArgsAppend(argsHandle, &param, paramSize, &paraHandle);
+    size_t paramSize = argSize;
+    ret = aclrtKernelArgsAppend(argsHandle, args, paramSize, &paraHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append "
         "size %u, kernelName:%s", ret, paramSize, kernelName.c_str()), HCCL_E_RUNTIME);
     ret = aclrtKernelArgsFinalize(argsHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, "
         "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
 
-    u32 kernelTimeoutTmp = param.execTimeout + KERNEL_TIMEOUT_OFFSET;
-    u16 kernelLaunchTimeout = (kernelTimeoutTmp > UINT16_MAX) ? UINT16_MAX : static_cast<u16>(kernelTimeoutTmp);
     aclrtLaunchKernelCfg cfg;
     aclrtLaunchKernelAttr attr;
     attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-    attr.value.timeout = kernelLaunchTimeout;
+    attr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
     cfg.numAttrs = 1;
     cfg.attrs = &attr;
     constexpr u32 numBlocks = 1;
-    HCCL_INFO("[AicpuKernelLaunch] unfoldThread [%lu]", unfoldThread);  // 通过Thread获取展开流stream
-    void* unfoldStream = nullptr;
-    auto& HcclThreadResGetInfoFunc = ops_hccl::DlHcommFunction::GetInstance();
-    ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, unfoldStream, &cfg, argsHandle, nullptr);
+
+    aclrtStream launchStream = nullptr;
+    CHK_RET(HcclGetUnfoldStream(comm, aicpuThreadHandle, false, userStream, launchStream));
+
+    ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, launchStream, &cfg, argsHandle, nullptr);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[LoadCustomKernel][aclrtLaunchKernelWithConfig]"
-        "errNo[0x%016llx] launch kernel failed", ret), HCCL_E_OPEN_FILE_FAILURE);
+        "errNo[0x%016llx] launch kernel failed, launchStream[%p]", ret, launchStream), HCCL_E_OPEN_FILE_FAILURE);
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAicpuKernelLaunch(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
+HcclResult HcclAicpuKernelLaunch(HcclComm comm, hccl::HcclOpDesc opInfo, hccl::HcclKernelFuncInfo funcInfo,
     void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(userStream);
 
+    hccl::HcclOpDesc &opInfoInternal = reinterpret_cast<hccl::HcclOpDesc&>(opInfo);
+    hccl::HcclKernelFuncInfo &funcInfoInternal = reinterpret_cast<hccl::HcclKernelFuncInfo&>(funcInfo);
+
     HCCL_INFO("[HcclAicpuKernelLaunch] opDescType[%u], kernelSo[%s], kernelFuncName[%s], argSize[%u], "
         "aicpuThreadHandle[%lu], hcclGroupDepth[%d]",
-        opInfo.opDescType, funcInfo.kernelSo, funcInfo.kernelFuncName, argSize, aicpuThreadHandle, hcclGroupDepth);
+        opInfoInternal.opDescType, funcInfoInternal.kernelSo, funcInfoInternal.kernelFuncName,
+        argSize, aicpuThreadHandle, hcclGroupDepth);
+
+    aclrtStream resolvedStream = nullptr;
+    bool isOffloadMode = (aicpuThreadHandle == 0);
+    CHK_RET(HcclGetUnfoldStream(comm, aicpuThreadHandle, isOffloadMode, userStream, resolvedStream));
 
     if (hcclGroupDepth > 0) {
         HCCL_INFO("[HcclAicpuKernelLaunch] group mode, add p2p task");
         HcclP2pTask task;
-        task.desc = opInfo.p2p;
-        task.stream = userStream;
-        task.funcInfo = funcInfo;
+        task.desc = opInfoInternal.p2p;
+        task.stream = resolvedStream;
+        task.funcInfo = funcInfoInternal;
         task.args = args;
         task.argSize = argSize;
-        CHK_RET(HcclGroupAddP2pTask(comm, task, opInfo.p2p));
+        CHK_RET(HcclGroupAddP2pTask(comm, task, opInfoInternal.p2p));
         hcclP2pTaskNums++;
         return HCCL_SUCCESS;
     }
 
     HCCL_INFO("[HcclAicpuKernelLaunch] non-group mode, direct launch");
-    return AicpuKernelLaunchDirect(comm, opInfo, funcInfo, args, argSize, aicpuThreadHandle, userStream);
+    return AicpuKernelLaunchDirect(comm, opInfoInternal, funcInfoInternal, args, argSize, aicpuThreadHandle, resolvedStream);
 }
 
 void *hcclAsyncJobMain(void *arg)
@@ -633,7 +546,6 @@ static HcclResult groupLaunch()
         doLaunches(comm);
     }
     HCCL_INFO("[groupLaunch] doLaunches done");
-    //流同步
     for (HcclComm comm : hcclGroupCommList){
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
