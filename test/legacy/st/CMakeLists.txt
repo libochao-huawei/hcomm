@@ -100,7 +100,7 @@ IF (DEFINED ENV{HCCL_LOCAL_BUILD})
     )
 
     target_link_libraries(hccl_v2_stest PRIVATE
-            $<BUILD_INTERFACE:intf_pub>
+            $<BUILD_INTERFACE:intf_llt_pub>
             $<BUILD_INTERFACE:hccl_headers>
             hccl_st_fwk
             hccl_headers

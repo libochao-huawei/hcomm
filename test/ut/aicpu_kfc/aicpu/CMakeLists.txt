@@ -26,7 +26,7 @@ target_compile_options(aicpu_kfc_utest_aicpu PRIVATE
 )
 
 target_link_libraries(aicpu_kfc_utest_aicpu  PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
