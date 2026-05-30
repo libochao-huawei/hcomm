@@ -127,6 +127,10 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_CTX_GET_AUX_INFO, 1},
     {RA_RS_CTX_GET_CR_ERR_INFO_LIST, 1},
     {RA_RS_CTX_GET_UB_CONTEXT, 1},
+    {RA_RS_LMEM_BATCH_REG, 1},
+    {RA_RS_LMEM_BATCH_UNREG, 1},
+    {RA_RS_RMEM_BATCH_IMPORT, 1},
+    {RA_RS_RMEM_BATCH_UNIMPORT, 1},
 
     // inner opcode version
     {RA_RS_HDC_SESSION_CLOSE, 1},
