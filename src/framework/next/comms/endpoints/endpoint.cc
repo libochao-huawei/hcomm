@@ -17,6 +17,8 @@
 #include "cpu_urma_endpoint.h"
 #include "aicputs_hccs_endpoint.h"
 #include "../../../../platform/hccp/inc/private/network/ra_rs_comm.h"
+#include "hccp_nda.h"
+#include "adapter_rts_common.h"
 
 namespace hcomm{
 static bool IsSupported(const EndpointDesc &endpointDesc)
@@ -118,6 +120,43 @@ HcclResult Endpoint::GetAsyncEventsContext(uint32_t devPhyId, struct AsyncEvent 
             (void *)ctxHandle_, ret);
         return HCCL_E_INTERNAL;
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult Endpoint::CheckFeature(const EndpointDesc &endpointDesc, HcommEndpointFeatureType featureType, bool &value)
+{
+    if (featureType == HCOMM_ENDPOINT_FEATURE_NDA) {
+        if (endpointDesc.protocol != COMM_PROTOCOL_ROCE || endpointDesc.loc.locType != ENDPOINT_LOC_TYPE_HOST) {
+            HCCL_WARNING("[%s] not support NDA, protocol[%d], locType[%d]",
+                __func__, endpointDesc.protocol, endpointDesc.loc.locType);
+            value = false;
+            return HCCL_SUCCESS;
+        }
+
+        Hccl::IpAddress ipAddr{};
+        CHK_RET(CommAddrToIpAddress(endpointDesc.commAddr, ipAddr));
+        s32 devId = 0;
+        CHK_RET(hrtGetDevice(&devId));
+        u32 devPhyId = 0;
+        CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+
+        auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
+        void *rdmaHandle = static_cast<void *>(
+            rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET));
+        CHK_PTR_NULL(rdmaHandle);
+
+        s32 directFlag = 0;
+        s32 ret = RaNdaGetDirectFlag(rdmaHandle, &directFlag);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] failed to get directFlag, ret[%d]", __func__, ret), HCCL_E_INTERNAL);
+        value = (directFlag != DIRECT_FLAG_NOTSUPP);
+        HCCL_INFO("[%s] %s NDA, rdmaHandle[%p], directFlag[%d]",
+            __func__, value ? "support" : "not support", rdmaHandle, directFlag);
+    } else {
+        HCCL_WARNING("[%s] unsupported featureType[%d]", __func__, featureType);
+        value = false;
+    }
+
     return HCCL_SUCCESS;
 }
 }
