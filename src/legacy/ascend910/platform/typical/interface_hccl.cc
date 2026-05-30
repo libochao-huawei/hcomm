@@ -315,6 +315,39 @@ HcclResult hcclDeRegisterMem(AscendMrInfo* memInfo)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclRdmaMemRegister(AscendMrAttr* memInfo)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(memInfo);
+    MrInfoT mrInfo = {};
+    mrInfo.addr = reinterpret_cast<void *>(static_cast<uintptr_t>(memInfo->addr));
+    mrInfo.size = memInfo->size;
+    mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;
+    CHK_RET(TypicalMrManager::GetInstance().RegisterMem(mrInfo));
+    memInfo->lkey = mrInfo.lkey;
+    memInfo->rkey = mrInfo.rkey;
+    HCCL_RUN_INFO("[hcclRdmaMemRegister] Register MR addr[%p], size[%llu], lkey[%u], rkey[%u].",
+        mrInfo.addr, mrInfo.size, mrInfo.lkey, mrInfo.rkey);
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclRdmaMemDeRegister(AscendMrAttr* memInfo)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(memInfo);
+    MrInfoT mrInfo = {};
+    mrInfo.addr = reinterpret_cast<void *>(static_cast<uintptr_t>(memInfo->addr));
+    mrInfo.size = memInfo->size;
+    mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;
+    mrInfo.lkey = memInfo->lkey;
+    CHK_RET(TypicalMrManager::GetInstance().DeRegisterMem(mrInfo));
+    HCCL_RUN_INFO("[hcclRdmaMemDeRegister] DeRegister MR addr[%p], size[%llu], lkey[%u].",
+        mrInfo.addr, mrInfo.size, mrInfo.lkey);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclSendByAscendQP(void* sendBuf, uint64_t count, HcclDataType dataType,
     AscendSendRecvInfo* sendRecvInfo, aclrtStream stream)
 {
