@@ -34,7 +34,7 @@ add_dependencies(orion_alg_aiv_1d_testcase
 )
  
 target_link_libraries(orion_alg_aiv_1d_testcase PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_alg_analyzer_legacy
     hccl_orion_alg_test
     hccl_alg_adaption_v2

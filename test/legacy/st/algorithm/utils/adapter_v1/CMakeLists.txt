@@ -220,6 +220,7 @@ if(HOST_HCCL_LLT STREQUAL "1")
     )
 else()
     target_link_libraries(hccl_alg_adaption PRIVATE
+        $<BUILD_INTERFACE:intf_llt_pub>
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:rdma_core_headers>

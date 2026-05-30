@@ -120,7 +120,7 @@ target_link_options(rdma_agent_utest PRIVATE
 )
 
 target_link_libraries(rdma_agent_utest PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     -lrt
     -pthread

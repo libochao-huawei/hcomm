@@ -43,7 +43,7 @@ target_compile_options(hcomm_utest_api_data_cpu PRIVATE
 )
 
 target_link_libraries(hcomm_utest_api_data_cpu PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
