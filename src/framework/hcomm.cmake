@@ -100,6 +100,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/platform/resource/socket
     ${HCOMM_DIR}/src/platform/hccp/inc
     ${HCOMM_DIR}/src/platform/hccp/inc/network
+    ${HCOMM_DIR}/src/platform/hccp/inc/private/network
     ${HCOMM_DIR}/src/platform/hccp/external_depends/ubengine
 
     # src/legacy 头文件
