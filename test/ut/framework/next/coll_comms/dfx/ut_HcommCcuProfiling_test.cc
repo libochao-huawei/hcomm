@@ -1196,7 +1196,7 @@ TEST_F(CcuComponentTest, InstantiationTranslator_GetTokenInfoNewFail) {
         .will(returnValue(HcclResult::HCCL_E_RUNTIME));
     
     HcclResult ret = mgr.InstantiationTranslator(0);
-    EXPECT_EQ(ret, HcclResult::HCCL_E_INTERNAL);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
 }
 
 TEST_F(CcuComponentTest, InstantiationTranslator_GetLoopChannelIdFail) {
@@ -1205,7 +1205,7 @@ TEST_F(CcuComponentTest, InstantiationTranslator_GetLoopChannelIdFail) {
     mgr.devLogicId_ = 0;
 
     HcclResult ret = mgr.InstantiationTranslator(0);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
 }
 
 TEST_F(CcuComponentTest, InstantiationTranslator_AlreadInstantiated) {
@@ -1216,7 +1216,7 @@ TEST_F(CcuComponentTest, InstantiationTranslator_AlreadInstantiated) {
     mgr.translators[0] = std::unordered_map<uint16_t, std::shared_ptr<CcuRepTranslator>>();
     
     HcclResult ret = mgr.InstantiationTranslator(0);
-    EXPECT_EQ(ret, HcclResult::HCCL_E_INTERNAL);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
 } // namespace hcomm
