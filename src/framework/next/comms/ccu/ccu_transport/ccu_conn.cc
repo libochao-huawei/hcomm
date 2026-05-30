@@ -285,8 +285,6 @@ HcclResult CcuConnection::Serialize(std::vector<char> &dtoData)
     dtoStream << ccuBufAddr_;
     dtoStream << ccuBufTokenId_;
     dtoStream << ccuBufTokenValue_;
-    rmtCcuBufTokenId_ = 123;
-    rmtCcuBufTokenValue_ = 123;
     HCCL_INFO("[CcuConnection][%s], ccuBufAddr[%llx]", __func__, ccuBufAddr_);
 
     dtoStream << jettyNum_;
