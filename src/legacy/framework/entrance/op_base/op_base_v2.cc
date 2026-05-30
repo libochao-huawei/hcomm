@@ -185,8 +185,8 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
     } while (0);
     
     if (errorFlag) {
-        HCCL_ERROR("[Init][CreateCommConfig]CreateCommConfig failed,  rank[%u],"\
-            "return[0x%016llx]", rank, HCCL_ERROR_CODE(ret));
+        HCCL_ERROR("[Init][CreateCommConfig]CreateCommConfig failed, rank[%u], commId[%s],"\
+            "return[0x%016llx]", rank, commId.c_str(), HCCL_ERROR_CODE(ret));
         (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
         *comm = nullptr;
         return ret;
@@ -256,8 +256,8 @@ HcclResult CreateCommConfigRootInfo(uint32_t rank, const HcclCommConfig *config,
     } while (0);
 
     if (errorFlag) {
-        HCCL_ERROR("[Init][%s]CreateCommConfigRootInfo failed return[0x%016llx]", __func__, 
-            HCCL_ERROR_CODE(ret));
+        HCCL_ERROR("[Init][%s]CreateCommConfigRootInfo failed return[0x%016llx] rank[%u] identifier[%s] commName[%s] udi[%s]",
+            __func__, HCCL_ERROR_CODE(ret), rank, identifier.c_str(), hcclConf->hcclCommName, hcclConf->hcclUdi);
         (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
         *comm = nullptr;
         return ret;
@@ -352,16 +352,16 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
     } while (0);
  	 
     if (errorFlag) {
-        HCCL_ERROR("[Init][%s]HcclCommInitClusterInfoV2 failed, clusterInfo[%s], rank[%u], deviceLogicId[%d], devPhyId[%d],"\
+        HCCL_ERROR("[Init][%s]HcclCommInitClusterInfoV2 failed, clusterInfo[%s], rank[%u], deviceLogicId[%d], devPhyId[%d], commId[%s]"\
             "return[0x%016llx]", __func__, clusterInfo, rank,
-            deviceLogicId, devPhyId, HCCL_ERROR_CODE(ret));
+            deviceLogicId, devPhyId, commId.c_str(), HCCL_ERROR_CODE(ret));
         (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
         *comm = nullptr;
         return ret;
     }
     /* 关键状态记录 */
-    HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d], devPhyId[%d].",
-        __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId, devPhyId);
+    HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d], devPhyId[%d], commId[%s].",
+        __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId, devPhyId, commId.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -386,8 +386,8 @@ HcclResult HcclCommInitClusterInfoMemConfigV2(const char *rankTableString, uint3
         return HCCL_E_INTERNAL;
     };
     HcclResult ret = ParseJsonAndCreateComm(data, rank, config, comm, rankTableM);
-    CHK_PRT_RET(ret, HCCL_ERROR("[Parse][Json]errNo[0x%016llx] and create comm failed.",
-        HCCL_ERROR_CODE(ret)), static_cast<HcclResult>(ret));
+    CHK_PRT_RET(ret, HCCL_ERROR("[Parse][Json]errNo[0x%016llx] and create comm failed, commName[%s.",
+        HCCL_ERROR_CODE(ret), config->hcclCommName), static_cast<HcclResult>(ret));
     HCCL_INFO("HcclCommInitClusterInfoMemConfigV2 End, commName[%s]", config->hcclCommName);
     return HCCL_SUCCESS;
 }
@@ -398,7 +398,8 @@ HcclResult HcclCommInitClusterInfoConfigV2(
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    HCCL_RUN_INFO("Entry-HcclCommInitClusterInfoConfig V950, commEngine[%u]", config->hcclOpExpansionMode);
+    HCCL_RUN_INFO("Entry-HcclCommInitClusterInfoConfig V950, commEngine[%u], commId[%s]", config->hcclOpExpansionMode,
+        config->hcclCommName);
 
     CHK_RET(CallSingletons()); // 临时规避，在初始化通信域前声明单例保证时序
 
@@ -487,9 +488,6 @@ HcclResult HcclGetDpuSteamIdV2(HcclComm comm, u32 &dpuStreamId) {
     return HCCL_SUCCESS;
 }
 
-
-
-
 HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag)
 {
     HCCL_RUN_INFO("[HcclTaskUnRegisterV2] start to unregister task, g_taskServiceMap.size()==%zu", g_taskServiceMap.size());
@@ -546,7 +544,7 @@ HcclResult GetDeviceCommV2(uint32_t ndev, const HcclRootInfo &rootHandle, const 
     HcclResult ret = HcclCommInitRootInfoV2(ndev, &rootHandle, rank, &comm, identifier);
     if (ret != HCCL_SUCCESS || comm == nullptr) {
         comm = nullptr;
-        HCCL_ERROR("[GetDeviceComm] rank[%d] Get device comm failed!", rank);
+        HCCL_ERROR("[GetDeviceComm] rank[%d] Get device comm failed, ret[%d]!", rank, ret);
         TRY_CATCH_RETURN(HrtSetDevice(logicDeviceId));
         return ret;
     }
@@ -958,9 +956,9 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
     } while (0);
  	 
     if (errorFlag) {
-        HCCL_ERROR("[Init][%s]HcclCreateSubCommConfigV2 failed, deviceLogicId[%d], devPhyId[%d],"\
-            "return[0x%016llx]", __func__,
-            logicDevId, devPhyId, HCCL_ERROR_CODE(ret));
+        HCCL_ERROR("[Init][%s]HcclCreateSubCommConfigV2 failed, deviceLogicId[%d], devPhyId[%d], sub comm[%s], world comm[%s]"\
+            "return[0x%016llx], ", __func__,
+            logicDevId, devPhyId, subCommIdStr.c_str(), commId.c_str(), HCCL_ERROR_CODE(ret));
         (void)HcclCommDestroyV2(subCommunicator.get());
         *subComm = nullptr;
         return ret;
@@ -996,7 +994,8 @@ HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
         communicator->GetId().c_str(), communicator->GetId().size(), commName);
     s32 ret = strncpy_s(
         commName, ROOTINFO_INDENTIFIER_MAX_LENGTH, communicator->GetId().c_str(), communicator->GetId().size() + 1);
-    CHK_PRT_RET(ret != EOK, HCCL_ERROR("HcclGetCommName str copy fail. return[%d]", ret), HCCL_E_INTERNAL);
+    CHK_PRT_RET(ret != EOK, HCCL_ERROR("HcclGetCommName str copy fail. return[%d], commId[%s]", ret, communicator->GetId().c_str()),
+        HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
 
@@ -1011,7 +1010,7 @@ HcclResult HcclGetRankSizeV2(HcclComm comm, uint32_t *rankSize)
                   deviceLogicId, devPhyId);
     auto ret = communicator->GetRankSize(rankSize);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclGetRankSizeV2 failed, rankSize = %u", *rankSize);
+        HCCL_ERROR("HcclGetRankSizeV2 failed, rankSize[%u], commId[%s]", *rankSize, communicator->GetId().c_str());
         return HCCL_E_INTERNAL;
     }
     /* 关键状态记录 */
@@ -1373,7 +1372,8 @@ HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2
 
     HcclResult ret = communicator->AllocCommResource(mc2Tiling, commContext);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclAllocComResourceByTilingV2]AllocCommResource fail, errNo[%d]", ret), ret);
+        HCCL_ERROR("[HcclAllocComResourceByTilingV2]AllocCommResource fail, errNo[%d], commIdentifier[%s]", ret,
+        commIdentifier.c_str()), ret);
 
     u32 totalServerNum = 0;
     for (auto hcclGroupMap : opbasedCommInfoV2.hcclGroupMap) {
@@ -1382,8 +1382,8 @@ HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2
 
     CHK_PRT_RET(totalServerNum > MAX_CCU_MC2_SERVER_NUM,
         HCCL_ERROR("[%s] the number of operators is %u, "
-            "which exceeds the maximum operator specification of %u supported by CCU MC2.",
-            __func__, totalServerNum, MAX_CCU_MC2_SERVER_NUM), HCCL_E_NOT_SUPPORT);
+            "which exceeds the maximum operator specification of %u supported by CCU MC2, commIdentifier[%s].",
+            __func__, totalServerNum, MAX_CCU_MC2_SERVER_NUM, commIdentifier.c_str()), HCCL_E_NOT_SUPPORT);
     
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
@@ -1661,7 +1661,7 @@ HcclResult RootInfoDetect(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, c
     EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_IDLE), hasException = true);
 
     // 若探测流程异常返回错误信息
-    CHK_PRT_RET(hasException, HCCL_ERROR("[%s] RankInfoDetect SetupAgent fail.", __func__), HCCL_E_INTERNAL);
+    CHK_PRT_RET(hasException, HCCL_ERROR("[%s] RankInfoDetect SetupAgent fail, identifier[%s].", __func__, rootHandle.identifier), HCCL_E_INTERNAL);
 
     // 获取ranktable
     rankInfoDetectAgent->GetRankTable(rankTable);
@@ -1688,7 +1688,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
                             std::vector<std::string>({"RootInfoDetect failed"}));
-        HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
+        HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed, rootHandle[%s].", __func__, HCCL_ERROR_CODE(ret), identifier.c_str());
         rankTable.Dump();
         return ret;
     }
@@ -1773,12 +1773,12 @@ HcclResult HcclCommInitRootInfoV2(
 
     // rootInfo获取rankTable, 基于rankTable创建通信域
     HcclResult ret = CommInitRootInfo(nRanks, rank, rootHandle, identifier, comm);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] errNo[0x%016llx] CommInitRootInfo failed.", __func__, HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] errNo[0x%016llx] CommInitRootInfo failed, identifier[%s].",
+        __func__, HCCL_ERROR_CODE(ret), identifier.c_str()), ret);
 
     /* 关键状态记录 */
-    HCCL_RUN_INFO("HcclCommInitRootInfoV2 success, take time [%lld]us, rankNum[%u], rank[%u]",
-        DURATION_US(TIME_NOW() - startut), nRanks, rank);
+    HCCL_RUN_INFO("HcclCommInitRootInfoV2 success, take time [%lld]us, rankNum[%u], rank[%u], identifier[%s]",
+        DURATION_US(TIME_NOW() - startut), nRanks, rank, identifier.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -1817,7 +1817,7 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
                             std::vector<std::string>({"RootInfoDetect failed"}));
-        HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
+        HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed, identifier[%s].", __func__, HCCL_ERROR_CODE(ret), identifier.c_str());
         rankTable.Dump();
         return ret;
     }
@@ -1827,12 +1827,12 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
 
     // 创建通信域
     ret = CreateCommConfigRootInfo(rank, config, identifier, rankTable, comm);
-    CHK_PRT_RET(ret, HCCL_ERROR("[%s]errNo[0x%016llx] and create comm failed.", __func__,
-        HCCL_ERROR_CODE(ret)), static_cast<HcclResult>(ret));
+    CHK_PRT_RET(ret, HCCL_ERROR("[%s]errNo[0x%016llx] and create comm failed, identifier[%s].", __func__,
+        HCCL_ERROR_CODE(ret), identifier.c_str()), static_cast<HcclResult>(ret));
 
     /* 关键状态记录 */
-    HCCL_RUN_INFO("HcclCommInitRootInfoConfigV2 success, take time [%lld]us, rankNum[%u], rank[%u]",
-        DURATION_US(TIME_NOW() - startut), nRanks, rank);
+    HCCL_RUN_INFO("HcclCommInitRootInfoConfigV2 success, take time [%lld]us, rankNum[%u], rank[%u], identifier[%s]",
+        DURATION_US(TIME_NOW() - startut), nRanks, rank, identifier.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -2065,7 +2065,7 @@ HcclResult ValidateRank(uint32_t rank, Hccl::HcclCommunicator *communicator)
     u32 rankId{INVALID_VALUE_RANKID};
     CHK_RET(communicator->GetRankId(rankId));    
     CHK_RET(HcomCheckUserRankV2(rankSize, rank));
-    CHK_PRT_RET(rankId == rank, HCCL_ERROR("same rank is not allowed"), HCCL_E_PARA);
+    CHK_PRT_RET(rankId == rank, HCCL_ERROR("same rank[%u] is not allowed", rank), HCCL_E_PARA);
     return HCCL_SUCCESS;
 }
 
@@ -2328,7 +2328,7 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
     std::vector<std::string>({"HcclReduceScatterVV2", "nullptr", "sendBuf", "not nullptr"}));
     CHK_PTR_NULL(sendBuf);
     if (op == HCCL_REDUCE_PROD) {
-        HCCL_ERROR("[Check][ReductionOp] Op:[HCCL_REDUCE_PROD] not supported");
+        HCCL_ERROR("[Check][ReductionOp] Op:[HCCL_REDUCE_PROD] not supported, tag[%s]", tag.c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     // opParams组装
@@ -2451,7 +2451,7 @@ HcclResult WaitAllCommReady(s32 deviceLogicId)
 
             // 超时判断
             if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-                HCCL_ERROR("[%s]WaitAllCommReady timeout.", __func__);
+                HCCL_ERROR("[%s]WaitAllCommReady timeout, deviceLogicId[%u].", __func__, deviceLogicId);
                 return HCCL_E_TIMEOUT;
             }
         }
@@ -2513,6 +2513,7 @@ HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTa
     }
     auto ret = communicator->GetCcuTaskInfo(tilingData, ccuTaskGroup);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HcclGetCcuTaskInfo ret[%d] commId[%s]", ret, communicator->GetId().c_str());
         return HCCL_E_INTERNAL;
     }
 
@@ -2541,7 +2542,7 @@ HcclResult HcclSnapshotSave(void *snapshotBuf, uint32_t size, uint32_t step)
     // 获取保存的size
     if ((dataLen + sizeof(dataLen) + sizeof(uint32_t)) != size) {
         // 如果当前size不等于用户传入的size，直接返回报错
-        HCCL_ERROR("[%s] size is not match, userInputSize[%u]", __func__, size);
+        HCCL_ERROR("[%s] size is not match, userInputSize[%u] dataLen[%u]", __func__, size, dataLen);
         return HCCL_E_PARA;
     }
     std::vector<char> data;
@@ -2561,10 +2562,10 @@ HcclResult HcclSnapshotSave(void *snapshotBuf, uint32_t size, uint32_t step)
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] memcpy dataLen failed, return[%d]", __func__, sRet), HCCL_E_MEMORY);
     // 将快照crc值拷贝到用户传入的内存中
     sRet = memcpy_s(static_cast<char *>(snapshotBuf) + sizeof(dataLen), size - sizeof(dataLen), static_cast<void *>(&crcValue), sizeof(crcValue));
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] memcpy failed, return[%d]", __func__, sRet), HCCL_E_MEMORY);
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] memcpy crcValue failed, return[%d]", __func__, sRet), HCCL_E_MEMORY);
     // 将快照拷贝到用户传入的内存中
     sRet = memcpy_s(static_cast<char *>(snapshotBuf) + sizeof(dataLen) + sizeof(crcValue), dataLen, &data[0], dataLen);
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] memcpy failed, return[%d]", __func__, sRet), HCCL_E_MEMORY);
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] memcpy data failed, return[%d]", __func__, sRet), HCCL_E_MEMORY);
     return HCCL_SUCCESS;
 }
 
@@ -2858,7 +2859,7 @@ HcclResult HcclGetNetLayersV2(HcclComm comm, uint32_t **netLayers, uint32_t *net
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto ret = communicator->GetNetLayers(netLayers, netLayerNum);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclGetNetLayersV2 get netLayers from communicator failed ");
+        HCCL_ERROR("HcclGetNetLayersV2 get netLayers from communicator failed, commId[%s], ret[%d]", communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;  // 查询失败返回
     }
     return HCCL_SUCCESS;
@@ -2870,11 +2871,12 @@ HcclResult HcclGetInstSizeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto ret = communicator->GetInstSizeByNetLayer(netLayer, rankNum);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclGetInstSizeByNetLayerV2 get InstSize from communicator failed at netLayer[%u]", netLayer);
+        HCCL_ERROR("HcclGetInstSizeByNetLayerV2 get InstSize from communicator failed at netLayer[%u], commId[%s], ret[%d]",
+            netLayer, communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;  // 查询失败返回
     }
     /* 关键状态记录 */
-    HCCL_INFO("HcclGetInstSizeByNetLayerV2 success, netLayer[%u], rankNum[%u]", netLayer, *rankNum);
+    HCCL_INFO("HcclGetInstSizeByNetLayerV2 success, netLayer[%u], rankNum[%u], commId[%s]", netLayer, *rankNum, communicator->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -2884,11 +2886,12 @@ HcclResult HcclGetInstRanksByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetInstRanksByNetLayer(netLayer, ranks, rankNum);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclGetInstRanksByNetLayerV2 get ranks from communicator failed at netLayer[%u]", netLayer);
+        HCCL_ERROR("HcclGetInstRanksByNetLayerV2 get ranks from communicator failed at netLayer[%u], commId[%s], ret[%d]",
+            netLayer, communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND; // 查询失败返回
     }
     /* 关键状态记录 */
-    HCCL_INFO("HcclGetInstRanksByNetLayerV2 success, netLayer[%u], rankNum[%u]", netLayer, *rankNum);
+    HCCL_INFO("HcclGetInstRanksByNetLayerV2 success, netLayer[%u], rankNum[%u], commId[%s]", netLayer, *rankNum, communicator->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -2898,11 +2901,12 @@ HcclResult HcclGetInstTopoTypeByNetLayerV2(HcclComm comm, uint32_t netLayer, uin
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetInstTopoTypeByNetLayer(netLayer, topoType);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclGetInstTopoTypeByNetLayerV2 get topoType from communicator failed at netLayer[%u]", netLayer);
+        HCCL_ERROR("HcclGetInstTopoTypeByNetLayerV2 get topoType from communicator failed at netLayer[%u], commId[%s], ret[%d]",
+            netLayer, communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;
     }
     /* 关键状态记录 */
-    HCCL_INFO("HcclGetInstTopoTypeByNetLayer success, netLayer[%u] topoType[%u]", netLayer, *topoType);
+    HCCL_INFO("HcclGetInstTopoTypeByNetLayer success, netLayer[%u] topoType[%u], commId[%s]", netLayer, *topoType, communicator->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -2913,12 +2917,12 @@ HcclResult HcclGetInstSizeListByNetLayerV2(HcclComm comm, uint32_t netLayer, uin
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclGetInstSizeListByNetLayerV2 get netInstance size from communicator failed at netLayer[%u]",
-                   netLayer);
+        HCCL_ERROR("HcclGetInstSizeListByNetLayerV2 get netInstance size from communicator failed at netLayer[%u], commId[%s], ret[%d]",
+                   netLayer, communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;
     }
     /* 关键状态记录 */
-    HCCL_INFO("HcclGetInstSizeListByNetLayer success, netLayer[%u] listSize[%u]", netLayer, *listSize);
+    HCCL_INFO("HcclGetInstSizeListByNetLayer success, netLayer[%u] listSize[%u], commId[%s]", netLayer, *listSize, communicator->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -2929,11 +2933,13 @@ HcclResult HcclGetLinksV2(HcclComm comm, uint32_t netLayer, uint32_t srcRank, ui
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetLinks(netLayer, srcRank, dstRank, linkList, listSize);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclGetLinksV2 get links from communicator failed at netLayer[%u]", netLayer);
+        HCCL_ERROR("HcclGetLinksV2 get links from communicator failed at netLayer[%u], commId[%s], ret[%d]",
+            netLayer, communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;
     }
     /* 关键状态记录 */
-    HCCL_INFO("HcclGetLinks success, netLayer[%u], srcRank = %u, dstRank=%u, listSize=%u", netLayer, srcRank, dstRank, *listSize);
+    HCCL_INFO("HcclGetLinks success, netLayer[%u], srcRank = %u, dstRank=%u, listSize=%u, commId=%s", netLayer,
+        srcRank, dstRank, *listSize, communicator->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -2943,11 +2949,12 @@ HcclResult HcclGetTopoInstsByLayerV2(HcclComm comm, uint32_t netLayer, uint32_t 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetTopoInstsByLayer(netLayer, topoInsts, topoInstNum);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclGetTopoInstsByLayer get topoInsts from communicator failed at netLayer[%u]", netLayer);
+        HCCL_ERROR("HcclGetTopoInstsByLayer get topoInsts from communicator failed at netLayer[%u], commId[%s], ret[%d]",
+            netLayer, communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;
     }
     /* 关键状态记录 */
-    HCCL_INFO("HcclGetTopoInstsByLayer success, netLayer[%u], topoInstNum[%u]", netLayer, *topoInstNum);
+    HCCL_INFO("HcclGetTopoInstsByLayer success, netLayer[%u], topoInstNum[%u], commId[%s]", netLayer, *topoInstNum, communicator->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -2957,11 +2964,12 @@ HcclResult HcclGetTopoTypeV2(HcclComm comm, uint32_t netLayer, uint32_t topoInst
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetTopoType(netLayer, topoInstId, topoType);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclGetTopoType get topoType  from communicator failed at netLayer[%u]", netLayer);
+        HCCL_ERROR("HcclGetTopoType get topoType  from communicator failed at netLayer[%u], commId[%s], ret[%d]",
+            netLayer, communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;
     }
     /* 关键状态记录 */
-    HCCL_INFO("HcclGetInstSizeListByNetLayer success,netLayer[%u] topoType[%u]", netLayer, *topoType);
+    HCCL_INFO("HcclGetInstSizeListByNetLayer success,netLayer[%u] topoType[%u], commId[%s]", netLayer, *topoType, communicator->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -2972,7 +2980,8 @@ HcclResult HcclGetRanksByTopoInstV2(HcclComm comm, uint32_t netLayer, uint32_t t
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclGetTopoInstsByLayer get ranks  from communicator failed at netLayer[%u]", netLayer);
+        HCCL_ERROR("HcclGetTopoInstsByLayer get ranks  from communicator failed at netLayer[%u], commId[%s], ret[%d]",
+            netLayer, communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;
     }
     /* 关键状态记录 */
@@ -2986,7 +2995,8 @@ HcclResult HcclRankGraphGetEndpointNumV2(HcclComm comm, uint32_t layer, uint32_t
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetEndpointNum(layer, topoInstId, num);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclRankGraphGetEndpointNum get endpoint num from communicator failed at netLayer[%u] with topoInstId[%u]", layer, topoInstId);
+        HCCL_ERROR("HcclRankGraphGetEndpointNum get endpoint num from communicator failed at netLayer[%u] with topoInstId[%u], commId[%s], ret[%d]",
+            layer, topoInstId, communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;
     }
     return HCCL_SUCCESS;
@@ -2998,7 +3008,8 @@ HcclResult HcclRankGraphGetEndpointDescV2(HcclComm comm, uint32_t layer, uint32_
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetEndpointDesc(layer, topoInstId, descNum, endpointDesc);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclRankGraphGetEndpointDesc get endpoint desc from communicator failed at netLayer[%u]", layer);
+        HCCL_ERROR("HcclRankGraphGetEndpointDesc get endpoint desc from communicator failed at netLayer[%u], commId[%s], ret[%d]",
+            layer, communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;
     }
     return HCCL_SUCCESS;
@@ -3010,7 +3021,8 @@ HcclResult HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclRankGraphGetEndpointInfo get info from communicator failed with endpointAttr [%d]", static_cast<s32>(endpointAttr));
+        HCCL_ERROR("HcclRankGraphGetEndpointInfo get info from communicator failed with endpointAttr [%d], commId[%s], ret[%d]",
+            static_cast<s32>(endpointAttr), communicator->GetId().c_str(), ret);
         return HCCL_E_NOT_FOUND;
     }
     return HCCL_SUCCESS;
