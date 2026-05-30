@@ -136,24 +136,18 @@ TaskExceptionHostManager::~TaskExceptionHostManager() {}
 void TaskExceptionHost::SetTaskExceptionCallback(HcclTaskExceptionCallback callback)
 {
     std::lock_guard<std::mutex> lock(callbackMutex_);
-    callbacks_.clear();
-    if (callback != nullptr) {
-        callbacks_.push_back(callback);
-    }
+    callback_ = callback;
 }
 
 void TaskExceptionHost::CallTaskExceptionCallbacks(rtExceptionInfo_t *exceptionInfo) const
 {
-    std::vector<HcclTaskExceptionCallback> callbacks;
+    HcclTaskExceptionCallback callback;
     {
         std::lock_guard<std::mutex> lock(callbackMutex_);
-        callbacks = callbacks_;
+        callback = callback_;
     }
-
-    for (auto callback : callbacks) {
-        if (callback != nullptr) {
-            callback(reinterpret_cast<aclrtExceptionInfo *>(exceptionInfo));
-        }
+    if (callback != nullptr) {
+        callback(reinterpret_cast<aclrtExceptionInfo *>(exceptionInfo));
     }
 }
 

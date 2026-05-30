@@ -63,7 +63,7 @@ private:
 private:
     bool isRegistered_ {false};
     mutable std::mutex callbackMutex_;
-    std::vector<HcclTaskExceptionCallback> callbacks_;
+    HcclTaskExceptionCallback callback_ {nullptr};
 };
 
 class TaskExceptionHostManager {
