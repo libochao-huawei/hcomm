@@ -210,7 +210,7 @@ typedef struct {
             uint32_t retryInterval;  ///< 重传间隔（ms）
             uint8_t tc;              ///< 流量类别（QoS)
             uint8_t sl;              ///< 服务等级（QoS)
-            uint32_t qpThreshold;    ///< 多QP场景下，每个QP最小数据量(B)
+            uint32_t qpThreshold;    ///< 多QP场景下，每个QP数据量最小阈值(B)
         } roceAttr;
         struct {
             uint32_t qos;            ///< HCCS QoS

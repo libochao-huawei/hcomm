@@ -23,7 +23,7 @@ using namespace hcomm;
 
 namespace MyRankUtils {
 
-HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const RdmaConfig &rdmaConfig)
 {
     HcommChannelDesc hcommDesc{};
     (void)HcommChannelDescInit(&hcommDesc, 1);
@@ -33,6 +33,10 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
     hcommDesc.memHandleNum = hcclDesc.memHandleNum;
     (void)memcpy_s(hcommDesc.raws, sizeof(hcommDesc.raws), hcclDesc.raws, sizeof(hcclDesc.raws));
     
+    if (hcclDesc.protocol == COMM_PROTOCOL_ROCE) {
+        hcommDescs.roceAttr.qpThreshold = rdmaConfig.GetRdmaMultiQpThreshold();
+    }
+
     return hcommDesc;
 }
 
@@ -667,8 +671,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     auto& rdmaConfig = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
     for (u32 i = 0; i < channelNum; ++i) {
-        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
-        hcommDescs[i].roceAttr.qpThreshold = rdmaConfig.GetRdmaMultiQpThreshold();
+        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i], rdmaConfig);
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
 
