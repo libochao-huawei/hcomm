@@ -135,7 +135,7 @@ protected:
     Socket       *socket{nullptr};
     RmaConnType   rmaConnType;
 
-    unordered_map<BufferType, RemoteRmaBuffer *, EnumClassHash> remoteBufs;
+    unordered_map<BufferType, RemoteRmaBuffer *, std::EnumClassHash> remoteBufs;
 };
 
 } // namespace Hccl
