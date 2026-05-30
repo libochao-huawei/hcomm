@@ -1053,18 +1053,18 @@ HcclResult HostCpuRoceChannel::CalcQpTile(const uint64_t len, const uint32_t qpC
     tileLen = len / qpCount;
     tileLenTail = len - (qpCount - 1) * tileLen;
 
-    if ((tileLen != 0) && ((qpCount > 1)) && (tileLen < channelDesc_.roceAttr.qpThreshold)) {
-        uint32_t adaptiveQpNum = (len - 1) / channelDesc_.roceAttr.qpThreshold + 1; // 自适应计算QP数发送数据，保证每个qp分担的数据量满足最小阈值
+    if ((tileLen != 0) && ((qpCount > 1)) && (tileLen < channelDesc_.roceAttr.multiQpThreshold)) {
+        uint32_t adaptiveQpNum = (len - 1) / channelDesc_.roceAttr.multiQpThreshold + 1; // 自适应计算QP数发送数据，保证每个qp分担的数据量满足最小阈值
         actualQpNum = std::min(adaptiveQpNum, qpCount);    // 调整后，不能比原来的QP数更大
         tileLen = len / actualQpNum;
         tileLenTail = len - (actualQpNum - 1) * tileLen;
-        HCCL_INFO("[HostCpuRoceChannel::%s] The data allocated to each Qp (%u) is below the Qp Threshold (%u). "
+        HCCL_INFO("[HostCpuRoceChannel::%s] The data allocated to each Qp (%u) is below the multiQpThreshold (%u). "
                   "Hence, the count of Qp for data sending is adaptively adjusted to %u from %u.",
-                  __func__, tileLen, channelDesc_.roceAttr.qpThreshold, actualQpNum, qpCount);
-        if (tileLen < channelDesc_.roceAttr.qpThreshold) {
+                  __func__, tileLen, channelDesc_.roceAttr.multiQpThreshold, actualQpNum, qpCount);
+        if (tileLen < channelDesc_.roceAttr.multiQpThreshold) {
             HCCL_WARNING("[HostCpuRoceChannel::%s] After self-adaptation, The data allocated to each Qp (%u) "
-                        "is still below the Qp Threshold (%u). Suggest adjusting HCCL_MULTI_QP_THRESHOLD.",
-                        __func__, tileLen, channelDesc_.roceAttr.qpThreshold);
+                        "is still below the multiQpThreshold (%u). Suggest adjusting HCCL_MULTI_QP_THRESHOLD.",
+                        __func__, tileLen, channelDesc_.roceAttr.multiQpThreshold);
         }
     }
     return HCCL_SUCCESS;

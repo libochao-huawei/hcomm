@@ -27,7 +27,7 @@ typedef struct {
             uint32_t retryInterval;   /* 重传间隔，范围为5~24，默认为20 (对应时间4.096*2^20us) */
             uint8_t tc;               /* 流量类别(QoS)，范围为0~255，默认为132 */
             uint8_t sl;               /* 服务等级(QoS)，范围为0~7，默认为4 */
-            uint32_t qpThreshold;     /* 多QP场景下，每个QP最小数据量(B) */
+            uint32_t multiQpThreshold;     /* 多QP场景下，每个QP最小数据量(B) */
         } roceAttr;
         struct {
             uint32_t qos;             /* HCCS QoS */
