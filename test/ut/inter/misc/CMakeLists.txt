@@ -90,6 +90,7 @@ target_compile_options(hccl_utest_inter_misc   PRIVATE
 
 if(BUILD_OPEN_PROJECT) # 蓝区构建
     target_link_libraries(hccl_utest_inter_misc PRIVATE
+        $<BUILD_INTERFACE:intf_llt_pub>
         framework_stub
         mmpa
         $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
