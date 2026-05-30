@@ -195,20 +195,7 @@ HcclResult DevRdmaConnectionV2::GetExchangeDto(std::unique_ptr<Hccl::Serializabl
         return HCCL_E_AGAIN;
     }
 
-    struct QpAttr localQpAttr;
-    s32 ret = RaGetQpAttr(qpHandle_, &localQpAttr);
-    if (ret != 0) {
-        HCCL_ERROR("[DevRdmaConnectionV2::%s]RaGetQpAttr failed, ret[%d]", __func__, ret);
-        return HCCL_E_ROCE_CONNECT;
-    }
-    std::unique_ptr<ExchangeRdmaConnDto> dto= nullptr;
-    EXCEPTION_CATCH(
-        dto = std::make_unique<ExchangeRdmaConnDto>(localQpAttr.qpn, localQpAttr.psn, localQpAttr.gidIdx),
-        return HCCL_E_PTR
-    );
-    CHK_SAFETY_FUNC_RET(memcpy_s(dto->gid_, HCCP_GID_RAW_LEN, localQpAttr.gid, HCCP_GID_RAW_LEN));
-    locQpAttrserial = std::unique_ptr<Hccl::Serializable>(std::move(dto));
-    return HCCL_SUCCESS;
+    return IRdmaConnection::BuildExchangeDto(rdmaHandle_, qpHandle_, locQpAttrserial);
 }
 
 HcclResult DevRdmaConnectionV2::ParseRmtExchangeDto(const Hccl::Serializable &rmtQpAttrSerial)

@@ -14,6 +14,7 @@
 #include "enum_factory.h"
 #include "hccl_common.h"
 #include "exchange_rdma_conn_dto.h"
+#include "../common/irdma_connection.h"
 
 // Orion
 #include "../../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
@@ -21,7 +22,7 @@
 
 namespace hcomm {
 
-class HostRdmaConnection {
+class HostRdmaConnection : public IRdmaConnection {
 public:
     struct QpAttrDto {
         uint32_t qpn{UINT32_MAX};

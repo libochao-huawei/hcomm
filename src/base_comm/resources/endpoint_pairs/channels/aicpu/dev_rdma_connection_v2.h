@@ -17,13 +17,14 @@
 #include "../host/exchange_rdma_conn_dto.h"
 #include "orion_adapter_hccp.h"
 #include "hcomm/hcomm_res_entity_defs.h"
+#include "../../common/irdma_connection.h"
 
 // Orion
 #include "../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
 #include "hccp_nda.h"
 
 namespace hcomm {
-class DevRdmaConnectionV2 {
+class DevRdmaConnectionV2 : public IRdmaConnection {
 public:
     struct QpAttrDto {
         uint32_t qpn{UINT32_MAX};
