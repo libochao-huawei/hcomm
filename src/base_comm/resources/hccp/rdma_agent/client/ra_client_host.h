@@ -62,6 +62,8 @@ struct RaRdmaOps {
         void **qpHandle);
     int (*raTypicalCqCreate)(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn,
         void **cqHandle);
+    int (*raQpCreateWithCQWithAttrs)(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs *extAttrs,
+        unsigned int sendCqn, unsigned int recvCqn, void **qpHandle);
     int (*raLoopbackQpCreate)(struct RaRdmaHandle *rdevHandle, struct LoopbackQpPair *qpPair, void **qpHandle);
     int (*raQpDestroy)(struct RaQpHandle *handle);
     int (*raTypicalQpModify)(struct RaQpHandle *handle, struct TypicalQp *localQpInfo,

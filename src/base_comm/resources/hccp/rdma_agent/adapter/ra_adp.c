@@ -53,6 +53,9 @@ struct RsOps {
         struct RsQpResp *qpResp);
     int (*qpCreateWithAttrs)(unsigned int phyId, unsigned int rdevIndex,
         struct RsQpNormWithAttrs *qpNorm, struct RsQpRespWithAttrs *qpResp);
+    int (*qpCreateWithCQWithAttrs)(unsigned int phyId, unsigned int rdevIndex,
+        unsigned int sendCqn, unsigned int recvCqn,
+        struct RsQpNormWithAttrs *qpNorm, struct RsQpRespWithAttrs *qpResp);
     int (*qpDestroy)(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn);
     int (*typicalQpModify)(unsigned int phyId, unsigned int rdevIndex, struct TypicalQp localQpInfo,
         struct TypicalQp remoteQpInfo, unsigned int *udpSport);
@@ -112,6 +115,7 @@ struct RsOps gRaRsOps = {
     .rdevDeinit = RsRdevDeinit,
     .qpCreate = RsQpCreate,
     .qpCreateWithAttrs = RsQpCreateWithAttrs,
+    .qpCreateWithCQWithAttrs = RsQpCreateWithCQWithAttrs,
     .qpDestroy = RsQpDestroy,
     .typicalQpModify = RsTypicalQpModify,
     .typicalCqCreate = RsTypicalCqCreate,
@@ -395,6 +399,36 @@ STATIC int RaRsQpCreateWithAttrs(char *inBuf, char *outBuf, int *outLen, int *op
     }
 
     createData = (union OpQpCreateWithAttrsData *)(outBuf + sizeof(struct MsgHead));
+    createData->rxData.qpn = qpResp.qpn;
+    createData->rxData.psn = qpResp.psn;
+    createData->rxData.gidIdx = qpResp.gidIdx;
+
+    return 0;
+}
+
+STATIC int RaRsQpCreateWithCQWithAttrs(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpQpCreateWithCQWithAttrsData *createData = NULL;
+    struct RsQpNormWithAttrs qpNorm = { 0 };
+    struct RsQpRespWithAttrs qpResp = { 0 };
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpQpCreateWithCQWithAttrsData), sizeof(struct MsgHead), rcvBufLen,
+        opResult);
+
+    createData = (union OpQpCreateWithCQWithAttrsData *)(inBuf + sizeof(struct MsgHead));
+
+    qpNorm.isExp = 1;
+    qpNorm.isExt = 1;
+    qpNorm.extAttrs = createData->txData.extAttrs;
+
+    *opResult = gRaRsOps.qpCreateWithCQWithAttrs(createData->txData.phyId, createData->txData.rdevIndex,
+        createData->txData.sendCqn, createData->txData.recvCqn, &qpNorm, &qpResp);
+    if (*opResult != 0) {
+        hccp_err("qp create with cq with attrs failed ret[%d].", *opResult);
+        return 0;
+    }
+
+    createData = (union OpQpCreateWithCQWithAttrsData *)(outBuf + sizeof(struct MsgHead));
     createData->rxData.qpn = qpResp.qpn;
     createData->rxData.psn = qpResp.psn;
     createData->rxData.gidIdx = qpResp.gidIdx;
@@ -1587,6 +1621,8 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_SOCKET_RECV, RaRsSocketRecv, sizeof(union OpSocketRecvData)},
     {RA_RS_QP_CREATE, RaRsQpCreate, sizeof(union OpQpCreateData)},
     {RA_RS_QP_CREATE_WITH_ATTRS, RaRsQpCreateWithAttrs, sizeof(union OpQpCreateWithAttrsData)},
+    {RA_RS_QP_CREATE_WITH_CQ_WITH_ATTRS, RaRsQpCreateWithCQWithAttrs,
+        sizeof(union OpQpCreateWithCQWithAttrsData)},
     {RA_RS_AI_QP_CREATE, RaRsAiQpCreate, sizeof(union OpAiQpCreateData)},
     {RA_RS_AI_QP_CREATE_WITH_ATTRS, RaRsAiQpCreateWithData, sizeof(union OpAiQpCreateWithAttrsData)},
     {RA_RS_TYPICAL_QP_CREATE, RaRsTypicalQpCreate, sizeof(union OpTypicalQpCreateData)},

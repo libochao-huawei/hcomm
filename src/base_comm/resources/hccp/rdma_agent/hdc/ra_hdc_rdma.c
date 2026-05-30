@@ -200,6 +200,68 @@ out:
     return ret;
 }
 
+int RaHdcQpCreateWithCQWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs *extAttrs,
+    unsigned int sendCqn, unsigned int recvCqn, void **qpHandle)
+{
+    int flag = (extAttrs->qpAttr.qp_type == IBV_QPT_RC) ? 0 : 1;
+    union OpQpCreateWithCQWithAttrsData opData = {0};
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RaQpHandle *qpHdc = NULL;
+    struct rdma_lite_qp_cap cap;
+    int ret;
+
+    qpHdc = (struct RaQpHandle *)calloc(1, sizeof(struct RaQpHandle));
+    CHK_PRT_RETURN(qpHdc == NULL, hccp_err("[create][ra_hdc_qp_with_cq_attrs]qp_hdc calloc failed phyId(%u)", phyId),
+        -ENOMEM);
+
+    opData.txData.phyId = phyId;
+    opData.txData.rdevIndex = rdmaHandle->rdevIndex;
+    opData.txData.sendCqn = sendCqn;
+    opData.txData.recvCqn = recvCqn;
+    ret = memcpy_s(&opData.txData.extAttrs, sizeof(struct QpExtAttrs), extAttrs, sizeof(struct QpExtAttrs));
+    if (ret) {
+        hccp_err("[create][ra_hdc_qp_with_cq_attrs]memcpy_s for ext_attrs failed, ret:%d", ret);
+        ret = -ESAFEFUNC;
+        goto out;
+    }
+
+    opData.txData.extAttrs.memAlign = rdmaHandle->supportLite;
+    ret = RaHdcProcessMsg(RA_RS_QP_CREATE_WITH_CQ_WITH_ATTRS, phyId, (char *)&opData,
+        sizeof(union OpQpCreateWithCQWithAttrsData));
+    if (ret) {
+        hccp_err("[create][ra_hdc_qp_with_cq_attrs]ra hdc message process failed ret(%d) phyId(%u)", ret, phyId);
+        goto out;
+    }
+
+    RaHdcGetQpHdc(rdmaHandle, flag, extAttrs->qpMode, opData.rxData.qpn, qpHdc);
+    qpHdc->psn = opData.rxData.psn;
+    qpHdc->gidIdx = opData.rxData.gidIdx;
+
+    cap.max_inline_data = extAttrs->qpAttr.cap.max_inline_data;
+    cap.max_send_sge = extAttrs->qpAttr.cap.max_send_sge;
+    cap.max_recv_sge = extAttrs->qpAttr.cap.max_recv_sge;
+    cap.max_send_wr = extAttrs->qpAttr.cap.max_send_wr;
+    cap.max_recv_wr = extAttrs->qpAttr.cap.max_recv_wr;
+    ret = RaHdcLiteQpCreateWithCQ(rdmaHandle, qpHdc, &cap,
+        RaHdcLiteFindTypicalCq(phyId, sendCqn), RaHdcLiteFindTypicalCq(phyId, recvCqn));
+    if (ret) {
+        (void)RaHdcCmdQpDestroy(qpHdc);
+        hccp_err("[create][ra_hdc_qp_with_cq_attrs]ra_hdc_lite_qp_create failed ret(%d) phyId(%u)", ret, phyId);
+        goto out;
+    }
+
+    qpHdc->sqSigAll = extAttrs->qpAttr.sq_sig_all;
+    qpHdc->udpSport = extAttrs->udpSport;
+    qpHdc->sqDepth = cap.max_send_wr;
+    *qpHandle = qpHdc;
+    return 0;
+
+out:
+    free(qpHdc);
+    qpHdc = NULL;
+    return ret;
+}
+
 int RaHdcAiQpCreate(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs *extAttrs,
     struct AiQpInfo *info, void **qpHandle)
 {

@@ -2865,6 +2865,146 @@ RS_ATTRI_VISI_DEF int RsGetLiteCqAttr(unsigned int phyId, unsigned int rdevIndex
     return -EINVAL;
 }
 
+RS_ATTRI_VISI_DEF int RsQpCreateWithCQWithAttrs(unsigned int phyId, unsigned int rdevIndex,
+    unsigned int sendCqn, unsigned int recvCqn,
+    struct RsQpNormWithAttrs *qpNorm, struct RsQpRespWithAttrs *qpResp)
+{
+    struct RsRdevCb *rdevCb = NULL;
+    struct RsQpCb *qpCb = NULL;
+    struct ibv_cq *sendIbCq = NULL;
+    struct ibv_cq *recvIbCq = NULL;
+    struct rdma_lite_device_cq_attr sendDeviceCqAttr;
+    struct rdma_lite_device_cq_attr recvDeviceCqAttr;
+    int qpMode;
+    int ret;
+    int i;
+    bool sendFound = false;
+    bool recvFound = false;
+
+    RS_QP_PARA_CHECK(phyId);
+    CHK_PRT_RETURN(qpResp == NULL, hccp_err("qp_resp is NULL!"), -EINVAL);
+
+    ret = RsQpCheckQpNorm(qpNorm, &qpMode);
+    CHK_PRT_RETURN(ret != 0, hccp_err("check qp mode failed, ret:%d", ret), ret);
+
+    ret = RsQpQueryInfo(phyId, rdevIndex, &rdevCb, qpMode);
+    CHK_PRT_RETURN(ret, hccp_err("query qp info failed:%d", ret), ret);
+
+    for (i = 0; i < gRsTypicalCqCnt; i++) {
+        if (gRsTypicalCqTable[i].phyId == phyId &&
+            gRsTypicalCqTable[i].rdevIndex == rdevIndex &&
+            gRsTypicalCqTable[i].cqn == sendCqn) {
+            sendIbCq = gRsTypicalCqTable[i].ibCq;
+            sendDeviceCqAttr = gRsTypicalCqTable[i].deviceCqAttr;
+            sendFound = true;
+            break;
+        }
+    }
+    CHK_PRT_RETURN(!sendFound,
+        hccp_err("send cq not found: sendCqn[%u] phyId[%u] rdevIndex[%u]", sendCqn, phyId, rdevIndex),
+        -EINVAL);
+
+    for (i = 0; i < gRsTypicalCqCnt; i++) {
+        if (gRsTypicalCqTable[i].phyId == phyId &&
+            gRsTypicalCqTable[i].rdevIndex == rdevIndex &&
+            gRsTypicalCqTable[i].cqn == recvCqn) {
+            recvIbCq = gRsTypicalCqTable[i].ibCq;
+            recvDeviceCqAttr = gRsTypicalCqTable[i].deviceCqAttr;
+            recvFound = true;
+            break;
+        }
+    }
+    CHK_PRT_RETURN(!recvFound,
+        hccp_err("recv cq not found: recvCqn[%u] phyId[%u] rdevIndex[%u]", recvCqn, phyId, rdevIndex),
+        -EINVAL);
+
+    ret = RsCallocQpcb(1, &qpCb);
+    CHK_PRT_RETURN(ret, hccp_err("alloc mem for qp_cb failed, ret:%d errno:%d", ret, errno), -ENOMEM);
+
+    ret = pthread_mutex_init(&qpCb->qpMutex, NULL);
+    if (ret) {
+        hccp_err("pthread_mutex_init failed, ret %d", ret);
+        goto qp_mutex_init_err;
+    }
+
+    ret = pthread_mutex_init(&qpCb->cqeErrInfo.mutex, NULL);
+    if (ret) {
+        hccp_err("pthread_mutex_init failed, ret %d", ret);
+        goto cqe_mutex_init_err;
+    }
+
+    ret = RsQpcbInitWithAttrs(rdevCb, qpCb, qpNorm);
+    if (ret) {
+        hccp_err("create qp tx rx failed ret %d", ret);
+        goto rs_qpcb_init_err;
+    }
+
+    ret = RsInitMemPool(qpCb);
+    if (ret) {
+        hccp_err("init mem pool failed ret %d", ret);
+        goto rs_init_mem_err;
+    }
+
+    // Assign pre-existing CQs (instead of RsDrvCreateCqWithAttrs)
+    qpCb->ibSendCq = sendIbCq;
+    qpCb->ibRecvCq = recvIbCq;
+    qpCb->qpResp.sendCqData = sendDeviceCqAttr;
+    qpCb->qpResp.recvCqData = recvDeviceCqAttr;
+    qpCb->sendCqDepth = sendDeviceCqAttr.depth;
+    qpCb->recvCqDepth = recvDeviceCqAttr.depth;
+
+    ret = RsDrvQpCreateWithAttrs(qpCb, qpNorm);
+    if (ret) {
+        hccp_err("create drv qp create failed:%d", ret);
+        goto create_qp_err;
+    }
+
+    ret = ibv_req_notify_cq(qpCb->ibSendCq, 0);
+    if (ret) {
+        hccp_err("Couldn't request send CQ notification, ret:%d", ret);
+        ret = -EOPENSRC;
+        goto ret_noritfy_cq;
+    }
+
+    ret = ibv_req_notify_cq(qpCb->ibRecvCq, 0);
+    if (ret) {
+        hccp_err("Couldn't request recv CQ notification, ret:%d", ret);
+        ret = -EOPENSRC;
+        goto ret_noritfy_cq;
+    }
+
+    ret = RsQpNotifyMr(rdevCb, qpCb, &qpResp->qpn);
+    if (ret) {
+        hccp_err("store qp notify mr failed:%d", ret);
+        goto ret_noritfy_cq;
+    }
+
+    RsQpPrepareQpResp(qpNorm, qpCb, qpResp);
+
+    return 0;
+
+ret_noritfy_cq:
+    RsDrvQpDestroy(qpCb);
+
+create_qp_err:
+    // Do NOT call RsDrvDestroyCq — CQs are not owned by this QP
+    RsDeinitMemPool(qpCb);
+    (void)RsQpcbDeinit(rdevCb, qpCb);
+
+rs_init_mem_err:
+rs_qpcb_init_err:
+    pthread_mutex_destroy(&qpCb->cqeErrInfo.mutex);
+
+cqe_mutex_init_err:
+    pthread_mutex_destroy(&qpCb->qpMutex);
+
+qp_mutex_init_err:
+    free(qpCb);
+    qpCb = NULL;
+
+    return ret;
+}
+
 RS_ATTRI_VISI_DEF int RsCqDestroy(unsigned int phyId, unsigned int rdevIndex, struct CqAttr *attr)
 {
     int ret;

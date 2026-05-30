@@ -86,6 +86,7 @@ struct RaRdmaOps gRaHdcRdmaOps = {
     .raAiQpCreateWithAttrs = RaHdcAiQpCreateWithAttrs,
     .raTypicalQpCreate = RaHdcTypicalQpCreate,
     .raTypicalCqCreate = RaHdcTypicalCqCreate,
+    .raQpCreateWithCQWithAttrs = RaHdcQpCreateWithCQWithAttrs,
     .raLoopbackQpCreate = NULL,
     .raQpDestroy = RaHdcQpDestroy,
     .raTypicalQpModify = RaHdcTypicalQpModify,
@@ -137,6 +138,7 @@ struct RaRdmaOps gRaPeerRdmaOps = {
     .raAiQpCreateWithAttrs = NULL,
     .raTypicalQpCreate = NULL,
     .raTypicalCqCreate = NULL,
+    .raQpCreateWithCQWithAttrs = NULL,
     .raLoopbackQpCreate = RaPeerLoopbackQpCreate,
     .raQpDestroy = RaPeerQpDestroy,
     .raTypicalQpModify = RaPeerTypicalQpModify,
@@ -1178,6 +1180,55 @@ HCCP_ATTRI_VISI_DEF int RaQpCreateWithAttrs(void *rdevHandle, struct QpExtAttrs 
     ret = rdmaHandleTmp->rdmaOps->raQpCreateWithAttrs(rdmaHandleTmp, extAttrs, qpHandle);
     CHK_PRT_RETURN(ret != 0 || *qpHandle == NULL,
         hccp_err("[create][ra_qp_with_attrs]create qp failed, ret(%d) phyId(%u)", ret, phyId),
+        ConverReturnCode(RDMA_OP, ret));
+
+    return 0;
+}
+
+HCCP_ATTRI_VISI_DEF int RaQpCreateWithCQWithAttrs(void *rdevHandle, struct QpExtAttrs *extAttrs,
+    unsigned int sendCqn, unsigned int recvCqn, void **qpHandle)
+{
+    struct RaRdmaHandle *rdmaHandleTmp = (struct RaRdmaHandle *)rdevHandle;
+    unsigned int phyId;
+    int ret;
+
+    CHK_PRT_RETURN(rdevHandle == NULL || rdmaHandleTmp->rdmaOps == NULL ||
+        rdmaHandleTmp->rdmaOps->raQpCreateWithCQWithAttrs == NULL,
+        hccp_err("[create][ra_qp_with_cq_attrs]rdev_handle is NULL or func is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(qpHandle == NULL, hccp_err("[create][ra_qp_with_cq_attrs]qp_handle is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(extAttrs == NULL, hccp_err("[create][ra_qp_with_cq_attrs]ext_attrs is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(extAttrs->version != QP_CREATE_WITH_ATTR_VERSION,
+        hccp_err("[create][ra_qp_with_cq_attrs]attr version[%d] mismatch, expect [%d]", extAttrs->version,
+        QP_CREATE_WITH_ATTR_VERSION), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(extAttrs->qpMode < 0 || extAttrs->qpMode >= RA_RS_ERR_QP_MODE,
+        hccp_err("[create][ra_qp_with_cq_attrs]QP mode[%d] must greater or equal to 0 and less than %d",
+        extAttrs->qpMode, RA_RS_ERR_QP_MODE), ConverReturnCode(RDMA_OP, -EINVAL));
+    // no need and disallow to set data_plane_flag, set it to default value 0
+    extAttrs->dataPlaneFlag.value = 0;
+
+    phyId = rdmaHandleTmp->rdevInfo.phyId;
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
+        hccp_err("[create][ra_qp_with_cq_attrs]phyId(%u) must greater or equal to 0 and less than %d!", phyId,
+        RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    hccp_run_info("Input parameters: phyId[%u] qp_mode[%d] sendCqn[%u] recvCqn[%u] qpAttr.cap{%u,%u,%u,%u,%u}"\
+        " qp_type[%u] sqSigAll[%d], cnt[%u]", phyId, extAttrs->qpMode, sendCqn, recvCqn,
+        extAttrs->qpAttr.cap.max_send_wr, extAttrs->qpAttr.cap.max_recv_wr,
+        extAttrs->qpAttr.cap.max_send_sge, extAttrs->qpAttr.cap.max_recv_sge,
+        extAttrs->qpAttr.cap.max_inline_data, extAttrs->qpAttr.qp_type, extAttrs->qpAttr.sq_sig_all,
+        rdmaHandleTmp->qpCnt);
+
+    rdmaHandleTmp->qpCnt++;
+    ret = rdmaHandleTmp->rdmaOps->raQpCreateWithCQWithAttrs(rdmaHandleTmp, extAttrs, sendCqn, recvCqn, qpHandle);
+    CHK_PRT_RETURN(ret != 0 || *qpHandle == NULL,
+        hccp_err("[create][ra_qp_with_cq_attrs]create qp failed, ret(%d) phyId(%u)", ret, phyId),
         ConverReturnCode(RDMA_OP, ret));
 
     return 0;

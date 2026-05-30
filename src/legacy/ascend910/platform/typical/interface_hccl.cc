@@ -111,6 +111,59 @@ HcclResult hcclCreateAscendCQWithAttr(AscendCQInfo* ascendCQInfo)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclCreateAscendQPWithCQWithAttr(AscendCQInfo* ascendSendCQInfo, AscendCQInfo* ascendRecvCQInfo,
+    AscendVerbsQPInfo* ascendQPInfo)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(ascendSendCQInfo);
+    CHK_PTR_NULL(ascendRecvCQInfo);
+    CHK_PTR_NULL(ascendQPInfo);
+
+    CHK_RET(TypicalQpManager::GetInstance().ValidateCq(ascendSendCQInfo->cqn));
+    CHK_RET(TypicalQpManager::GetInstance().ValidateCq(ascendRecvCQInfo->cqn));
+
+    struct TypicalQp qpInfo;
+    QpConfigWithCQInfo qpConfigInfo;
+    qpConfigInfo.sendCqn = ascendSendCQInfo->cqn;
+    qpConfigInfo.recvCqn = ascendRecvCQInfo->cqn;
+
+    if (ascendQPInfo->cap.maxSendWr == 0) {
+        qpConfigInfo.sq_depth = DEFAULT_OPBASE_MAX_SEND_WR;
+    } else {
+        qpConfigInfo.sq_depth = ascendQPInfo->cap.maxSendWr;
+    }
+    if (ascendQPInfo->cap.maxRecvWr == 0) {
+        qpConfigInfo.rq_depth = DEFAULT_MAX_RECV_WR;
+    } else {
+        qpConfigInfo.rq_depth = ascendQPInfo->cap.maxRecvWr;
+    }
+
+    CHK_RET(TypicalQpManager::GetInstance().GetCqDepth(ascendSendCQInfo->cqn, qpConfigInfo.scq_depth));
+    CHK_RET(TypicalQpManager::GetInstance().GetCqDepth(ascendRecvCQInfo->cqn, qpConfigInfo.rcq_depth));
+
+    if (ascendQPInfo->qp_type == 0) {
+        ascendQPInfo->qp_type = ASCEND_QPT_RC;
+    }
+
+    u32 poolId;
+    if (HCCL_SUCCESS == RdmaResourceManager::GetInstance().GetResvMemPoolIdByType(HCCN_RESV_MEM_TYPE_PDCCL, poolId)) {
+        qpConfigInfo.use_resv_mem = 1;
+        qpConfigInfo.resv_mem_pool_id = poolId;
+    }
+    CHK_RET(TypicalQpManager::GetInstance().CreateQpWithCQ(qpInfo, qpConfigInfo));
+    ascendQPInfo->qpn = qpInfo.qpn;
+    ascendQPInfo->gidIdx = qpInfo.gidIdx;
+    for (uint32_t i = 0; i < GID_LENGTH; i++) {
+        ascendQPInfo->gid[i] = qpInfo.gid[i];
+    }
+    ascendQPInfo->psn = qpInfo.psn;
+    HCCL_INFO("hcclCreateAscendQPWithCQWithAttr success! qpn[%u], gid index[%u], psn[%u], sendCqn[%u], recvCqn[%u]",
+        ascendQPInfo->qpn, ascendQPInfo->gidIdx, ascendQPInfo->psn, ascendSendCQInfo->cqn, ascendRecvCQInfo->cqn);
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclModifyAscendQP(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQPInfo)
 {
     s32 deviceLogicId = 0;
