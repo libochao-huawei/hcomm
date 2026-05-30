@@ -708,6 +708,12 @@ int RaRsLmemBatchReg(char *inBuf, char *outBuf, int *outLen, int *opResult, int 
 
     RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
     num = opData->txData.num;
+    if (num == 0 || num > LMEM_BATCH_MAX) {
+        hccp_err("num[%u] out of range(0, %d]", num, LMEM_BATCH_MAX);
+        *opResult = -EINVAL;
+        return 0;
+    }
+
     for (i = 0; i < num; i++) {
         ret = gRaRsCtxOps.ctxLmemReg(&devInfo, &opData->txData.memAttrList[i], &opDataOut->rxData.memInfoList[i]);
         if (ret != 0) {
@@ -742,6 +748,12 @@ int RaRsLmemBatchUnreg(char *inBuf, char *outBuf, int *outLen, int *opResult, in
     RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
     num = opData->txData.num;
     opData->rxData.num = num;
+    if (num == 0 || num > LMEM_BATCH_MAX) {
+        hccp_err("num[%u] out of range(0, %d]", num, LMEM_BATCH_MAX);
+        *opResult = -EINVAL;
+        return 0;
+    }
+
     *opResult = 0;
     for (i = 0; i < num; i++) {
         ret = gRaRsCtxOps.ctxLmemUnreg(&devInfo, opData->txData.addrList[i]);
@@ -769,6 +781,12 @@ int RaRsRmemBatchImport(char *inBuf, char *outBuf, int *outLen, int *opResult, i
 
     RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
     num = opData->txData.num;
+    if (num == 0 || num > RMEM_BATCH_MAX) {
+        hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX);
+        *opResult = -EINVAL;
+        return 0;
+    }
+
 
     for (i = 0; i < num; i++) {
         ret = gRaRsCtxOps.ctxRmemImport(&devInfo, &opData->txData.memAttrList[i], &opDataOut->rxData.memInfoList[i]);
@@ -803,6 +821,12 @@ int RaRsRmemBatchUnimport(char *inBuf, char *outBuf, int *outLen, int *opResult,
     RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
     num = opData->txData.num;
     opData->rxData.num = num;
+    if (num == 0 || num > RMEM_BATCH_MAX) {
+        hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX);
+        *opResult = -EINVAL;
+        return 0;
+    }
+
     *opResult = 0;
     for (i = 0; i < num; i++) {
         ret = gRaRsCtxOps.ctxRmemUnimport(&devInfo, opData->txData.addrList[i]);
