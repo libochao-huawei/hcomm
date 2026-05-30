@@ -149,6 +149,8 @@ else()
         ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/runtime/include/external
         ${TOP_DIR}/open_source/json/include
+ 	    ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
+ 	    ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal/hcomm
     )
 
     target_link_libraries(hccl_plf

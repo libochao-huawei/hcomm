@@ -201,6 +201,8 @@ else()
         ${TOP_DIR}/runtime/pkg_inc/runtime
         ${TOP_DIR}/abl/msprof/inc
         ${TOP_DIR}/open_source/json/include
+        ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
+ 	    ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal/hcomm
     )
 
     target_link_libraries(hccd
