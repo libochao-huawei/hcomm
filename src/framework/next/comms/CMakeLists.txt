@@ -33,6 +33,7 @@ if(TARGET hcomm)
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoints
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/reged_mems
         ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/net_dev
+        ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/dfx
         ${CMAKE_CURRENT_SOURCE_DIR}/ccu/pub_inc
     )
 endif()
