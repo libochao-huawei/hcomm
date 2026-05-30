@@ -62,9 +62,6 @@
 #include "hccl_dpu_manager.h"
 #include "../../../legacy/unified_platform/resource/buffer/dev_buffer.h"
 
-// aclgraph 销毁路径 host 端 payload 复用 buffer 用到；aicpu_operator_pub.h 已包含完整定义，此处前向声明确保所有构建配置下类型可见
-struct HcclKfcClearOpResTilingData;
-
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
 
@@ -969,10 +966,12 @@ private:
     DeviceMem workSpace_;
     DeviceMem mc2DeviceMem_;
     std::vector<DeviceMem> extraMem_;
+#ifndef CCL_KERNEL_AICPU
     // aclgraph 销毁时投递 HcclKfcClearOpResTilingData 的 HBM buffer，lazy alloc，RAII 析构
     DeviceMem aicpuCleanupBuf_;
     // host 侧 payload buffer（heap 持有），避免 ~2.5MB 结构体在栈上 value-init 爆栈
     std::unique_ptr<HcclKfcClearOpResTilingData> aicpuCleanupHostBuf_;
+#endif
     std::vector<HcclRtEvent> aiCpuNoIpcEvnet_;
     bool isDiffDeviceModule_;
     bool isDiffDeviceType_;

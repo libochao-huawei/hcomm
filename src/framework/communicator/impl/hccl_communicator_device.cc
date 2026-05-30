@@ -849,6 +849,18 @@ namespace hccl
         return false;
     }
 
+    HcclResult HcclCommunicator::AicpuKfcClearOpResLaunch(const std::unordered_set<std::string> &tags)
+    {
+        (void)tags;
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::ClearAclgraphHostLinks(const std::unordered_set<std::string> &tags)
+    {
+        (void)tags;
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::BuildOpLocalResParam(const AlgResourceResponse &algResource, const std::string &newTag)
     {
         return HCCL_SUCCESS;
