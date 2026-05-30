@@ -320,6 +320,9 @@ RS_ATTRI_VISI_DEF int RsGetLiteQpCqAttr(
     unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteQpCqAttrResp *resp);
 RS_ATTRI_VISI_DEF int RsGetLiteCqAttr(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
     struct rdma_lite_device_cq_attr *deviceCqAttr);
+RS_ATTRI_VISI_DEF int RsQpCreateWithCQWithAttrs(unsigned int phyId, unsigned int rdevIndex,
+    unsigned int sendCqn, unsigned int recvCqn,
+    struct RsQpNormWithAttrs *qpNorm, struct RsQpRespWithAttrs *qpResp);
 RS_ATTRI_VISI_DEF int RsGetLiteConnectedInfo(
     unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteConnectedInfoResp *resp);
 RS_ATTRI_VISI_DEF int RsGetLiteMemAttr(
