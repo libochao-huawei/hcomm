@@ -117,7 +117,7 @@ void TcRsNslbInit()
     int ret;
 
     mocker_invoke(RsGetRsCb, StubRsGetRsCbV2, 10);
-    mocker(calloc, 10, 0);
+    mocker(calloc, 10, NULL);
     ret = RsTlvInit(phyId, &bufferSize);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();

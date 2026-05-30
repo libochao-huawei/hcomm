@@ -280,7 +280,7 @@ void TcRsPingInit()
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    mocker((stub_fn_t)RsIbvCreateCq, 10, 0);
+    mocker((stub_fn_t)RsIbvCreateCq, 10, NULL);
     ret = RsPingCommonInitLocalQp(&tmpRsCb, &pingCb, &rdmaAttr, &qpCb);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
@@ -953,7 +953,7 @@ void TcRsPingInitMrCb()
     EXPECT_INT_NE(ret, 0);
 
     mocker(DlHalBuffAllocAlignEx, 1, 0);
-    mocker(RsDrvMrReg, 1, 0);
+    mocker(RsDrvMrReg, 1, NULL);
     ret = RsPingCommonInitMrCb(&rscb, &pingCb, &mrCb);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
@@ -961,7 +961,7 @@ void TcRsPingInitMrCb()
     mocker(DlHalBuffAllocAlignEx, 1, 0);
     mocker_invoke(RsDrvMrReg, RsDrvMrRegStub, 1);
     mocker_invoke(RsDrvMrDereg, RsDrvMrDeregStub, 1);
-    mocker(calloc, 10, 0);
+    mocker(calloc, 10, NULL);
     ret = RsPingCommonInitMrCb(&rscb, &pingCb, &mrCb);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();

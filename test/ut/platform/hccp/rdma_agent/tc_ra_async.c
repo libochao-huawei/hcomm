@@ -558,7 +558,7 @@ void TcRaHdcGetEidByIpAsync()
     int ret = 0;
 
     mocker_clean();
-    mocker(calloc, 1, 0);
+    mocker(calloc, 1, NULL);
     ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();

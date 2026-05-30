@@ -115,7 +115,7 @@ void TcPeer()
 
     info[0].socketHandle = socketHandle;
     info[0].status = 1;
-    mocker((stub_fn_t)calloc, 10, 0);
+    mocker((stub_fn_t)calloc, 10, NULL);
     ret = RaPeerGetSockets(0, 0, info, 1);
     EXPECT_INT_EQ(-12, ret);
     mocker_clean();
@@ -286,7 +286,7 @@ void TcPeer()
     struct SocketInfoT infoErrRs[1];
     infoErrRs[0].socketHandle = socketHandle;
     infoErrRs[0].fdHandle = NULL;
-    mocker((stub_fn_t)calloc, 10, 0);
+    mocker((stub_fn_t)calloc, 10, NULL);
     ret = RaPeerGetSockets(0, 0, infoErrRs, 1);
     EXPECT_INT_EQ(1, ret);
     mocker_clean();
@@ -331,7 +331,7 @@ void TcPeer()
 
 	qpHandle = NULL;
     qpHandleWithAttr = NULL;
-    mocker((stub_fn_t)calloc, 10, 0);
+    mocker((stub_fn_t)calloc, 10, NULL);
     ret  = RaPeerQpCreate(rdmaHandle, flag, qpMode, &qpHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     EXPECT_ADDR_EQ(NULL, qpHandle);
@@ -532,7 +532,7 @@ void TcPeerFail()
     struct rdev rdevInfo;
 	rdevInfo.phyId = 0;
     struct SocketWlistInfoT whiteList[1];
-    mocker((stub_fn_t)inet_ntoa, 10, 0);
+    mocker((stub_fn_t)inet_ntoa, 10, NULL);
     RaPeerSocketWhiteListAdd(rdevInfo, whiteList, 1);
     RaPeerSocketWhiteListDel(rdevInfo, whiteList, 1);
     mocker_clean();
@@ -666,7 +666,7 @@ void TcRaPeerNormalQpCreate()
     ret = RaPeerNormalQpDestroy(qpHandle);
     EXPECT_INT_EQ(0, ret);
 
-    mocker((stub_fn_t)calloc, 3, 0);
+    mocker((stub_fn_t)calloc, 3, NULL);
     ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, (void **)&qpHandle, qp);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
