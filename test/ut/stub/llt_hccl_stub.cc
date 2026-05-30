@@ -5525,12 +5525,16 @@ HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType opt
     return HCCL_SUCCESS;
 }
 
-#ifdef STUB_TEST
+
 HcclResult GetCustomKernelFilePath(std::string &binaryPath)
 {	 
     binaryPath = "./";	 
     return HCCL_SUCCESS; 
 }
-#endif  // STUB_TEST
 
+}
+
+aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
+{
+    return ACL_SUCCESS;
 }
