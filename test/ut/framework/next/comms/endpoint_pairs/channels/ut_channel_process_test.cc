@@ -10,6 +10,8 @@
 
 #include "../../../ut_hcomm_base.h"
 #include "channel_process.h"
+#include "next/comms/endpoint_pairs/channels/aiv/aiv_urma_channel.h"
+#include "next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_roce_channel_v2.h"
 
 class TestChannelProcess : public TestHcommCAdptBase {
 public:
@@ -238,4 +240,83 @@ TEST_F(TestChannelProcess, Ut_LaunchChannelKernel_When_ChannelKindIsUBOE_CallsCh
 
     auto ret = hcomm::ChannelProcess::LaunchChannelKernel(deviceHandles, hostHandles, hcommDescs, 1, nullptr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+HcclResult StubAivBuildChannelEntityToDevice(hcomm::AivUrmaChannel *channel, void **devPtr)
+{
+    (void)channel;
+    if (devPtr == nullptr) {
+        return HCCL_E_PTR;
+    }
+    *devPtr = reinterpret_cast<void *>(0x5678);
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubRoceBuildAndGetDevChannelEntity(hcomm::AicpuTsRoceChannelV2 *channel, uint64_t* devChannelEntityPtr)
+{
+    (void)channel;
+    if (devChannelEntityPtr == nullptr) {
+        return HCCL_E_PTR;
+    }
+    *devChannelEntityPtr = 0x1234;
+    return HCCL_SUCCESS;
+}
+
+// SaveAivChannels UBC_CTP 协议测试
+TEST_F(TestChannelProcess, Ut_SaveAivChannels_When_UbcCtp_Expect_BuildDevEntity)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    HcommChannelDesc channelDesc{};
+    (void)HcommChannelDescInit(&channelDesc, 1);
+    channelDesc.remoteEndpoint.protocol = COMM_PROTOCOL_UBC_CTP;
+    hcomm::AivUrmaChannel aivUrmaChannel(endpointHandle, channelDesc);
+
+    ChannelHandle targetChannels[1] = {reinterpret_cast<ChannelHandle>(&aivUrmaChannel)};
+    ChannelHandle userChannels[1] = {0};
+    HcommChannelDesc channelDescs[1] = {channelDesc};
+
+    MOCKER_CPP(&hcomm::AivUrmaChannel::BuildChannelEntityToDevice, HcclResult(hcomm::AivUrmaChannel::*)(void **))
+        .stubs()
+        .will(invoke(StubAivBuildChannelEntityToDevice));
+
+    HcclResult ret = hcomm::ChannelProcess::SaveAivChannels(targetChannels, userChannels, channelDescs, 1);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(userChannels[0], static_cast<ChannelHandle>(0x5678));
+}
+
+// SaveAivChannels ROCE 协议测试
+TEST_F(TestChannelProcess, Ut_SaveAivChannels_When_Roce_Expect_BuildDevEntity)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    HcommChannelDesc channelDesc{};
+    (void)HcommChannelDescInit(&channelDesc, 1);
+    channelDesc.remoteEndpoint.protocol = COMM_PROTOCOL_ROCE;
+    hcomm::AicpuTsRoceChannelV2 roceChannel(endpointHandle, channelDesc, COMM_ENGINE_AIV);
+
+    ChannelHandle targetChannels[1] = {reinterpret_cast<ChannelHandle>(&roceChannel)};
+    ChannelHandle userChannels[1] = {0};
+    HcommChannelDesc channelDescs[1] = {channelDesc};
+
+    MOCKER_CPP(&hcomm::AicpuTsRoceChannelV2::BuildAndGetDevChannelEntity, HcclResult(hcomm::AicpuTsRoceChannelV2::*)(uint64_t*))
+        .stubs()
+        .will(invoke(StubRoceBuildAndGetDevChannelEntity));
+
+    HcclResult ret = hcomm::ChannelProcess::SaveAivChannels(targetChannels, userChannels, channelDescs, 1);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(userChannels[0], static_cast<ChannelHandle>(0x1234));
+}
+
+// SaveAivChannels 不支持的协议测试
+TEST_F(TestChannelProcess, Ut_SaveAivChannels_When_ProtocolUnsupported_Expect_E_PARA)
+{
+    HcommChannelDesc channelDesc{};
+    (void)HcommChannelDescInit(&channelDesc, 1);
+    channelDesc.remoteEndpoint.protocol = COMM_PROTOCOL_RESERVED;
+
+    ChannelHandle targetChannels[1] = {0};
+    ChannelHandle userChannels[1] = {0};
+    HcommChannelDesc channelDescs[1] = {channelDesc};
+
+    HcclResult ret = hcomm::ChannelProcess::SaveAivChannels(targetChannels, userChannels, channelDescs, 1);
+    EXPECT_EQ(ret, HCCL_E_PARA);
 }
