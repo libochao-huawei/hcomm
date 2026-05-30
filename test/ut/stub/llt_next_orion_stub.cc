@@ -1020,12 +1020,6 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
 {
 }
 
-HcclResult UbMemTransport::FillTagVec(
-    std::vector<LocalRmaBuffer *> &bufferVec, std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
-{
-    return HCCL_SUCCESS;
-}
-
 std::string UbMemTransport::Describe() const
 {
     return "msg";
@@ -1131,8 +1125,7 @@ bool UbMemTransport::RecvDataProcess()
     return ConnVecUnpackProc(binaryStream);
 }
 
-void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
+void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec)
 {
 }
 

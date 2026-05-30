@@ -25,9 +25,9 @@ public:
 
     explicit Buffer(uintptr_t addr, std::size_t size, HcclMemType memType);
 
-    explicit Buffer(uintptr_t addr, std::size_t size, HcclMemType memType, const char *memTag);
+    explicit Buffer(uintptr_t addr, std::size_t size, HcclMemType memType, const char *memInfo);
 
-    explicit Buffer(uintptr_t addr, std::size_t size, const char *memTag);
+    explicit Buffer(uintptr_t addr, std::size_t size, const char *memInfo);
 
     virtual ~Buffer() = default;
 
@@ -37,7 +37,7 @@ public:
 
     HcclMemType GetMemType() const;
 
-    const std::string GetMemTag() const;
+    const std::string GetMemInfo() const;
 
     virtual std::string Describe() const;
 

@@ -324,12 +324,12 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetChannelKind_Returns_AICPU_TS_UBOE) {
 // 辅助 FakeRemoteUbRmaBuffer，用于模拟远端内存区域
 class FakeRemoteUbRmaBuffer : public Hccl::RemoteUbRmaBuffer {
 public:
-    FakeRemoteUbRmaBuffer(void* rdmaHandle, uint64_t addr, size_t size, HcclMemType type, const std::string& tag)
+    FakeRemoteUbRmaBuffer(void* rdmaHandle, uint64_t addr, size_t size, HcclMemType type, const std::string& memInfo)
         : Hccl::RemoteUbRmaBuffer(rdmaHandle) {
         this->addr = addr;
         this->size = size;
         this->memType = type;
-        this->memTag = tag;
+        this->memInfo = memInfo;
     }
 };
 
@@ -362,13 +362,6 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithBuffers_ReturnsCorrectData) 
     auto buf2 = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x2000, 8192, HCCL_MEM_TYPE_HOST, "user_buffer");
     ch.rmtBufferVec_.push_back(std::move(buf1));
     ch.rmtBufferVec_.push_back(std::move(buf2));
-
-    std::array<char, HCCL_RES_TAG_MAX_LEN> tag1 = {};
-    std::array<char, HCCL_RES_TAG_MAX_LEN> tag2 = {};
-    strcpy_s(tag1.data(), tag1.size(), "ccl_buffer");
-    strcpy_s(tag2.data(), tag2.size(), "user_buffer");
-    ch.remoteUserMemTag_.push_back(tag1);
-    ch.remoteUserMemTag_.push_back(tag2);
 
     CommMem* remoteMem = nullptr;
     uint32_t memNum = 0;
@@ -419,9 +412,6 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_OnlyCclBuffer_ReturnsSuccess) {
     void* fakeRdma = reinterpret_cast<void*>(0x1234);
     auto cclBuf = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x1000, 4096, HCCL_MEM_TYPE_DEVICE, "ccl_buffer");
     ch.rmtBufferVec_.push_back(std::move(cclBuf));
-    std::array<char, HCCL_RES_TAG_MAX_LEN> tag1 = {};
-    strcpy_s(tag1.data(), tag1.size(), "ccl_buffer");
-    ch.remoteUserMemTag_.push_back(tag1);
 
     // 确保内部 cache 标志初始为 false，以便重新构建
     ch.cacheValid_ = false;
@@ -452,16 +442,6 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithUserBuffers_ReturnsCorrectDa
     ch.rmtBufferVec_.push_back(std::move(cclBuf));
     ch.rmtBufferVec_.push_back(std::move(userBuf1));
     ch.rmtBufferVec_.push_back(std::move(userBuf2));
-    ch.remoteUserMemTag_.clear();
-    std::array<char, HCCL_RES_TAG_MAX_LEN> tag0 = {};
-    std::array<char, HCCL_RES_TAG_MAX_LEN> tag1 = {};
-    std::array<char, HCCL_RES_TAG_MAX_LEN> tag2 = {};
-    strcpy_s(tag0.data(), tag0.size(), "ccl");
-    strcpy_s(tag1.data(), tag1.size(), "user1");
-    strcpy_s(tag2.data(), tag2.size(), "user2");
-    ch.remoteUserMemTag_.push_back(tag0);
-    ch.remoteUserMemTag_.push_back(tag1);
-    ch.remoteUserMemTag_.push_back(tag2);
 
     ch.cacheValid_ = false; // 强制重新构建缓存
 

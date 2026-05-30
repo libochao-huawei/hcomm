@@ -39,7 +39,7 @@ private:
     HcommChannelDesc channelDesc_;
     uint32_t exchangeDataSize_{0};
     std::vector<CommMem> remoteUserMems_; // 储存内存位置、地址和大小信息
-    std::vector<std::string> memInfoCopies_; // 储存memTag字符串副本
+    std::vector<std::string> memInfoCopies_; // 储存memInfo字符串副本
     std::vector<char*> memInfoPointers_; // 储存指针
     bool cacheValid_ = false; // 当前缓存是否有效
     
