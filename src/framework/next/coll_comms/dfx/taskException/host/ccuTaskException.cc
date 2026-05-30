@@ -1179,7 +1179,7 @@ HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo, std::pa
 
     // CcuChannelCtxPool -> CcuJetty
     auto channelIdKey = std::make_pair(errorInfo.dieId, channelId);
-    CHK_RET(ccuChannelCtxPool->GetCcuChannelCtxById(channelIdKey, ctx));
+    CHK_RET(ccuChannelCtxPool->GetChannelCtx(channelIdKey, ctx));
     return HCCL_SUCCESS;
 }
 

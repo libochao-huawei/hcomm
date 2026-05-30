@@ -27,23 +27,28 @@ public:
     // 当前仅支持交换hccl buffer
     CcuUrmaChannel(const EndpointHandle locEndpointHandle,
         const HcommChannelDesc &channelDesc);
-    ~CcuUrmaChannel() = default;
+    ~CcuUrmaChannel() override;
 
     HcclResult Init() override;
     ChannelStatus GetStatus() override;
 
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
-    HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum) override;
-    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
+    HcclResult GetRemoteMem(HcclMem **remoteMem,
+        uint32_t *memNum, char **memTags) override;
+    HcclResult UpdateMemInfo(HcommMemHandle *memHandles,
+        uint32_t memHandleNum) override;
+    HcclResult GetUserRemoteMem(CommMem **remoteMem,
+        char ***memTag, uint32_t *memNum) override;
 
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
 
     HcclResult ChannelFence() override;
     HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;
-    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override;
-    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override;
+    HcclResult NotifyWait(const uint32_t localNotifyIdx,
+        const uint32_t timeout) override;
+    HcclResult WriteWithNotify(void *dst, const void *src,
+        const uint64_t len, uint32_t remoteNotifyIdx) override;
     HcclResult Write(void *dst, const void *src, uint64_t len) override;
     HcclResult Read(void *dst, const void *src, uint64_t len) override;
 
@@ -59,19 +64,32 @@ public:
 
     HcclResult GetRmtBuffer(uint64_t &addr, uint32_t &size,
         uint32_t &tokenId, uint32_t &tokenValue) const;
-    
-    EndpointHandle GetlocEndPointHandle() { return locEndpointHandle_; }
-    HcommChannelDesc GetChannelDesc() { return channelDesc_; }
+
+    EndpointHandle GetlocEndPointHandle()
+    {
+        return locEndpointHandle_;
+    }
+    HcommChannelDesc GetChannelDesc()
+    {
+        return channelDesc_;
+    }
 
 private:
-    std::atomic<bool> isFirstPrintChannelInfo_{true}; // 是否第一次打印通道建链信息，避免重复打印日志刷屏
     std::unique_ptr<CcuTransport> impl_{nullptr};
     EndpointHandle locEndpointHandle_{nullptr};
     HcommChannelDesc channelDesc_{};
+    
     // 当前CCU不支持自定义内存交换，仅包含 hccl buffer
     std::unique_ptr<HcclMem> hcclBufferInfoPtr_{};
     std::string memTag_{"HcclBuffer"};
+
+    CcuChannelCtxPool *channelCtxPool_{nullptr};
+    CcuChannelCtxPool::ChannelCtxHandle channelKey_{};
+    bool isChannelCtxReleased_{false};
+
+    // 是否第一次打印通道建链信息，避免重复打印日志刷屏
+    std::atomic<bool> isFirstPrintChannelInfo_{true};
 };
 
-}  // namespace hcomm
-#endif  // CCU_URMA_CHANNEL_H
+} // namespace hcomm
+#endif // CCU_URMA_CHANNEL_H
