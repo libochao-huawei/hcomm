@@ -39,6 +39,8 @@
 #include "hcclCommTaskException.h"
 #include "ccu_rep_assign_v1.h"
 #include "comms/ccu/ccu_device/ccu_res_specs.h"
+#include "hcomm_adapter_rts.h"
+#include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 
 namespace hcomm {
 
@@ -1168,6 +1170,52 @@ TEST_F(CcuComponentTest, CleanDiId) {
         .will(returnValue(HCCL_SUCCESS));
     CcuComponent::GetInstance(0).dieEnableFlags_[0] = true;
     auto ret = CcuComponent::GetInstance(0).CleanDieCkes(IODIE);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(CcuComponentTest, InstantiationTranslator_GetTokenInfoNewFail) {
+    auto &mgr = CcuKernelMgr::GetInstance(0);
+    mgr.Deinit();
+    mgr.devLogicId_ = 0;
+
+    uint32_t channelId = 100;
+    MOCKER_CPP(&Hccl::CcuComponent::GetLoopChannelId)
+        .stubs()
+        .with(any(), any(), outBound(channelId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    
+    uint64_t tokenId = 0;
+    uint64_t tokenValue = 0;
+    MOCKER_CPP(&Hccl::CcuComponent::GetCcuResourceSpaceTokenInfo)
+        .stubs()
+        .with(any(), outBound(tokenId), outBound(tokenValue))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    MOCKER_CPP(RtsUbDevQueryInfo)
+        .stubs()
+        .will(returnValue(HcclResult::HCCL_E_RUNTIME));
+    
+    HcclResult ret = mgr.InstantiationTranslator(0);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(CcuComponentTest, InstantiationTranslator_GetLoopChannelIdFail) {
+    auto &mgr = CcuKernelMgr::GetInstance(0);
+    mgr.Deinit();
+    mgr.devLogicId_ = 0;
+
+    HcclResult ret = mgr.InstantiationTranslator(0);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(CcuComponentTest, InstantiationTranslator_AlreadInstantiated) {
+    auto &mgr = CcuKernelMgr::GetInstance(0);
+    mgr.Deinit();
+    mgr.devLogicId_ = 0;
+
+    mgr.translators[0] = std::unordered_map<uint16_t, std::shared_ptr<CcuRepTranslator>>();
+    
+    HcclResult ret = mgr.InstantiationTranslator(0);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 

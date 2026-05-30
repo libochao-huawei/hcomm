@@ -11,6 +11,7 @@
 #include "ccu_assist_v1.h"
 #include "ccu_microcode_v1.h"
 #include "ccu_api_exception.h"
+#include "hcomm_adapter_rts.h"
 #include <gtest/gtest.h>
 #include <mockcpp/mockcpp.hpp>
 
@@ -164,6 +165,24 @@ TEST_F(CcuAssistTest, GetUBDataType_INT32)
 TEST_F(CcuAssistTest, GetUBDataType_Unsupported)
 {
     EXPECT_THROW(GetUBDataType(Hccl::DataType::HIF8), Hccl::CcuApiException);
+}
+
+TEST_F(CcuAssistTest, GetTokenInfoNew_Success)
+{
+    uint64_t token = 0;
+    MOCKER(RtsUbDevQueryInfo),stubs().will(returnvalue(HcclResult::HCCL_SUCCESS));
+    HcclResult ret = GetTokenInfoNew(0, 1, token);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_GT(token, 0);
+}
+
+TEST_F(CcuAssistTest, GetTokenInfoNew_Fail)
+{
+    uint64_t token = 0;
+    MOCKER(hcomm::RtsUbDevQueryInfo),stubs().will(returnvalue(HcclResult::HCCL_E_RUNTIME));
+    HcclResult ret = GetTokenInfoNew(0, 1, token);
+    EXPECT_EQ(ret, HcclResult::HCCL_E_INTERNAL);
+    EXPECT_EQ(token, 0);
 }
 
 }
