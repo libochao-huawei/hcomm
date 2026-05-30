@@ -108,6 +108,7 @@ set(UT_COMMON_INCLUDE_LIST
     # hccp (moved to base_comm/resources)
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/private/network
     ${RDMA_CORE_INCLUDE_DIR}
 
     # hccl/algorithm 目录下头文件 (legacy/ascend910)
@@ -267,6 +268,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/base_comm/common/
     ${HCCL_CODE_ROOT}/src/base_comm/common/device
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/dfx    
     ${HCCL_CODE_ROOT}/src/base_comm/resources/reged_mems/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/server_socket/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/

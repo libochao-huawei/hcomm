@@ -163,6 +163,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/new
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/private/network
     ${RDMA_CORE_INCLUDE_DIR}
     ${HCCL_CODE_ROOT}/src/pkg_inc
     ${HCCL_CODE_ROOT}/external_depends
@@ -392,6 +393,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/dfx
     ${HCCL_CODE_ROOT}/src/base_comm/resources/reged_mems
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/api_c_adpt/
