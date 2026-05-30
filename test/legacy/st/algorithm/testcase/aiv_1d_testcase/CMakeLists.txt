@@ -15,6 +15,7 @@ target_include_directories(orion_alg_aiv_1d_testcase PRIVATE
 )
  
 target_compile_definitions(orion_alg_aiv_1d_testcase PRIVATE
+    google=ascend_private
     -DOPEN_HCCL_TEST
     _GLIBCXX_USE_CXX11_ABI=0
     -DCCL_KERNEL_AICPU
@@ -39,7 +40,7 @@ target_link_libraries(orion_alg_aiv_1d_testcase PRIVATE
     hccl_alg_adaption_v2
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    protobuf
+    ascend_protobuf
     -lrt
     -ldl
 )

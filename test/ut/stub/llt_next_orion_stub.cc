@@ -1432,6 +1432,15 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
 }
 
+void SocketManager::ServerListen(const SocketConfig &socketConfig)
+{
+}
+
+void SocketManager::ConnectSockets(const SocketConfig &socketConfig)
+{
+}
+
+
 void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
 {
 }
@@ -1751,7 +1760,7 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
 {
 }
 
-void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const
+void ProfilingHandler::CallAdditionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const
 {
 }
 
@@ -1788,21 +1797,19 @@ void ProfilingHandler::ReportAclApi(
 {
 }
 
-void ProfilingHandler::ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId)
+void ProfilingHandler::ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId, bool cachedReq)
 {
+    (void)cachedReq;
 }
 
-void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId)
+void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId, bool cachedReq)
 {
+    (void)cachedReq;
 }
 
-void ProfilingHandler::ReportHcclOpApi(
-    uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId) const
+void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId, bool cachedReq)
 {
-}
-
-void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId)
-{
+    (void)cachedReq;
 }
 
 void ProfilingHandler::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void *data, uint32_t len) const
@@ -1830,7 +1837,7 @@ void ProfilingHandler::ReportStoragedCompactInfo()
 {
 }
 
-void ProfilingHandler::ReportMc2AddtionInfo()
+void ProfilingHandler::ReportMc2AdditionInfo()
 {
 }
 
@@ -1854,7 +1861,7 @@ void ProfilingHandler::CallProfRegHcclOpApi() const
 {
 }
 
-void ProfilingHandler::StartAddtionInfoSubscribe()
+void ProfilingHandler::StartAdditionInfoSubscribe()
 {
 }
 
@@ -1862,7 +1869,7 @@ void ProfilingHandler::ReportStoragedAdditionInfo()
 {
 }
 
-void ProfilingHandler::StartL2Subscribe()
+void ProfilingHandler::StartCcuSubscribe()
 {
 }
 
@@ -1888,11 +1895,6 @@ bool ProfilingHandler::GetHcclL1State() const
     return false;
 }
 
-bool ProfilingHandler::GetHcclL2State() const
-{
-    return false;
-}
-
 uint64_t ProfilingHandler::GetProfHashId(const char *name, uint32_t len) const
 {
     return 0;
@@ -1908,7 +1910,7 @@ void ProfilingHandler::ReportHcclMC2CommInfo(const u32 kfcStreamId, const std::v
     const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm)
 {
 }
-void ProfilingHandler::ReportMc2AddtionInfo(uint64_t timeStamp, const void *data, int len)
+void ProfilingHandler::ReportMc2AdditionInfo(uint64_t timeStamp, const void *data, int len)
 {
 }
 ProfilingHandlerLite ProfilingHandlerLite::instance_;

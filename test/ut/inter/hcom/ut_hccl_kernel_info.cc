@@ -360,7 +360,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -464,7 +464,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -529,7 +529,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -599,7 +599,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -681,7 +681,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -745,7 +745,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -836,7 +836,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
  
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -902,7 +902,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -956,7 +956,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -1014,7 +1014,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -1206,7 +1206,7 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask_comm)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -2541,7 +2541,7 @@ TEST_F(HcomKernelInfoTest, ut_hcom_loadtask_checkTaskID)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -2714,7 +2714,7 @@ TEST_F(HcomKernelInfoTest, ut_unloadtask)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -2902,7 +2902,7 @@ TEST_F(HcomKernelInfoTest, ut_task_overflow)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -3242,7 +3242,7 @@ TEST_F(HcomKernelInfoTest, ut_hcom_loadtask_int64)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
+    MOCKER_CPP(&TbeReduce::TbeCrackCleared::ExecuteKernelLaunch)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));

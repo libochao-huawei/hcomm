@@ -42,7 +42,7 @@ struct LocalJettyCtxData {
     uint16_t pfeIdx            : 4; // jetty relegation use PFE num.
     uint16_t ioDieId           : 1; // 0: locall jetty use IODIE0, 1: locall jetty use IODIE1.
     uint16_t doorbellAddrType  : 1; // doorbell addr type: 0:PA, 1:VA.
-    uint16_t tokenValueIsValid : 1; // doorbell addr releate token value valid type: invalid(0), vailid(1).
+    uint16_t tokenValueIsValid : 1; // doorbell addr relate token value valid type: invalid(0), valid(1).
     uint16_t cqeErrValue       : 1; // v1 not used
     uint16_t tokenIdLow        : 8;
     /********10 Bytes**********/

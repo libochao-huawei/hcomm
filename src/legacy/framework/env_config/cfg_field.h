@@ -28,17 +28,17 @@ public:
     CfgField(std::string name, const T &defaultValue, const std::function<T(const std::string &)> cast,
              const std::function<void(const T &)> validate = {}, const std::function<void(T &)> postProc = {})
         : name(std::move(name)), value(defaultValue), defaultBackup(defaultValue), cast(cast), validate(validate), postProc(postProc),
-          isParsed(false){};
+          isParsed(false), isSetByEnvironment_(false){};
 
     void Parse()
     {
         std::string str = SalGetEnv(name.c_str());
         if (str.empty() || str == "EmptyString") {
-            HCCL_INFO("[Init][EnvVarParam]Env config \"%s\" is not set. Default value is used.", name.c_str());
             isParsed = true;
             value = defaultBackup;
             return;
         }
+        isSetByEnvironment_ = true;
         // 类型转换
         if (cast) {
             try {
@@ -71,7 +71,6 @@ public:
         if (postProc) {
             postProc(value);
         }
-        HCCL_INFO("[Init][EnvVarParam]Env config \"%s\" is parsed.", name.c_str());
         isParsed = true;
     }
 
@@ -89,6 +88,16 @@ public:
         return value;
     }
 
+    bool IsSetByEnvironment() const
+    {
+        return isSetByEnvironment_;
+    }
+
+    const char* GetSource() const
+    {
+        return isSetByEnvironment_ ? "environment" : "default";
+    }
+
 private:
     std::string                           name;
     T                                     value;
@@ -97,6 +106,7 @@ private:
     std::function<void(const T &)>        validate;
     std::function<void(T &)>              postProc;
     bool isParsed;
+    bool isSetByEnvironment_;
 };
 
 } // namespace Hccl

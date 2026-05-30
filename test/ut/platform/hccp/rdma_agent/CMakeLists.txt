@@ -103,11 +103,6 @@ target_include_directories(rdma_agent_utest PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
     ${SRC_DIR}/src/platform/hccp/external_depends/nda
     ${RDMA_CORE_INCLUDE_DIR}
-    ${CANN_3RD_LIB_PATH}/json/include/
-    ${CANN_3RD_LIB_PATH}/gtest/include/
-    ${CANN_3RD_LIB_PATH}/mockcpp/include/
-    ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
-    ${CANN_3RD_LIB_PATH}/boost/
 )
 
 target_compile_options(rdma_agent_utest PRIVATE

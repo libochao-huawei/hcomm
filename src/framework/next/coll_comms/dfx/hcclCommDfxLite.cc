@@ -12,9 +12,6 @@
 #include "hccl_common.h"
 
 namespace hccl {
-ReadWriteLockBase HcclCommDfxLite::baseLockLite_; // 基类锁成员
-ReadWriteLock HcclCommDfxLite::rwLockLite_(HcclCommDfxLite::baseLockLite_); // 读写锁
-std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfxLite::channelRemoteRankIdLite_;
 // HcclCommDfxLite构造函数实现
 HcclCommDfxLite::HcclCommDfxLite() {
 }
@@ -44,7 +41,7 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
     CHK_SMART_PTR_NULL(mirrorTaskManagerLite_);
     u32 remoteRankId = INVALID_UINT;
     if (handle != INVALID_U64) {
-        CHK_RET(GetChannelRemoteRankId(commTag_, handle, remoteRankId));
+        CHK_RET(GetChannelRemoteRankId(handle, remoteRankId));
     }
     std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
     EXECEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
@@ -67,28 +64,18 @@ HcclResult HcclCommDfxLite::UpdateProfStat() {
     return HCCL_SUCCESS;
 }
 
-void HcclCommDfxLite::AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId) {
-    rwLockLite_.writeLock();
-    HCCL_INFO("[HcclCommDfxLite][AddChannelRemoteRankId] commTag:[%s], handle:[%lu], remoteRankId:[%u]",
-        commTag.c_str(), handle, remoteRankId);
-    channelRemoteRankIdLite_[commTag][handle] = remoteRankId;
-    rwLockLite_.writeUnlock();
+void HcclCommDfxLite::AddChannelRemoteRankId(u64 handle, u32 remoteRankId) {
+    HCCL_INFO("[%s] commTag[%s], handle[%lu], remoteRankId[%u]", __func__, commTag_.c_str(), handle, remoteRankId);
+    channelRemoteRankIdLite_[handle] = remoteRankId;
 }
-// 在channelRemoteRankIdLite_表中对remoteRankId进行查找
-HcclResult HcclCommDfxLite::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
-    rwLockLite_.readLock();
-    if (channelRemoteRankIdLite_.find(commTag) == channelRemoteRankIdLite_.end()) {
-        rwLockLite_.readUnlock();
-        HCCL_ERROR("[HcclCommDfxLite]commTag:[%s] not found", commTag.c_str());
+
+HcclResult HcclCommDfxLite::GetChannelRemoteRankId(u64 handle, u32& remoteRankId) {
+    auto it = channelRemoteRankIdLite_.find(handle);
+    if (UNLIKELY(it == channelRemoteRankIdLite_.end())) {
+        HCCL_ERROR("[%s]handle[%lu] not found, commTag[%s]", __func__, handle, commTag_.c_str());
         return HCCL_E_PARA;
     }
-    if (channelRemoteRankIdLite_[commTag].find(handle) == channelRemoteRankIdLite_[commTag].end()) {
-        HCCL_ERROR("[HcclCommDfxLite]handle not found,commTag:[%s], handle:[%lu]", commTag.c_str(), handle);
-        rwLockLite_.readUnlock();
-        return HCCL_E_PARA;
-    }
-    remoteRankId = channelRemoteRankIdLite_[commTag][handle];
-    rwLockLite_.readUnlock();
+    remoteRankId = it->second;
     return HCCL_SUCCESS;
 }
 
