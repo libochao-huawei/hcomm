@@ -53,6 +53,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/aclgraph
     ${HCCL_CODE_ROOT}/src/framework/common/src
+    ${HCOMM_DIR}/src/common/launch_aicpu
     ${HCCL_CODE_ROOT}/src/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/framework/common/src/task
     ${HCCL_CODE_ROOT}/src/framework/common/src/topo
@@ -84,6 +85,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/common/unique/
     ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
     ${HCOMM_DIR}/src/common
+    ${HCOMM_DIR}src/common/launch_aicpu
     ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
     ${HCCL_CODE_ROOT}/src/platform/ping_mesh/
     ${HCCL_CODE_ROOT}/src/platform/inc/
@@ -233,25 +235,25 @@ set(UT_COMMON_INCLUDE_LIST
 
     ${HCCL_CODE_ROOT}/test/ut/stub
     ${HCCL_CODE_ROOT}/test/ut/stub/legacy/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/common/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/runtime/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/profiling/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/base/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/base/context_builder
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/dump/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/trace/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/asc/include/adv_api/hccl/internal
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/aicpu/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/aicpu/common/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/runtime/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/profiling/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/base/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/base/context_builder
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/dump/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/trace/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/asc/include/adv_api/hccl/internal
 
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/
-    ${HCCL_CODE_ROOT}/test/ut/depends/runtime/include/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/mmpa/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/driver/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/urma/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/
+    ${HCCL_CODE_ROOT}/test/stub/depends/runtime/include/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/mmpa/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/driver/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/acl/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/ascendc/highlevel_api/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/hcomm-legacy/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/urma/
 
     # ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/

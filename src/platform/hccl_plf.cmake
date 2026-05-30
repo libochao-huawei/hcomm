@@ -52,6 +52,8 @@ target_include_directories(hccl_plf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common/
     ${CMAKE_CURRENT_SOURCE_DIR}/common/buffer_manager
     ${HCOMM_DIR}/src/common
+    ${HCOMM_DIR}/src/common/launch_aicpu
+    ${HCOMM_DIR}/src/algorithm/pub_inc
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unfold_cache
     ${CMAKE_CURRENT_SOURCE_DIR}/common/p2p_mgmt
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unique
