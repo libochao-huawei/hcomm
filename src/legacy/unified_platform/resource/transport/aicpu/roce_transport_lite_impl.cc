@@ -194,9 +194,23 @@ RmaBufSliceLite RoceTransportLiteImpl::GetRmaBufSlicelite(const RmaBufferLite &l
     return RmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetLkey(), 0);
 }
 
-RmtRmaBufSliceLite RoceTransportLiteImpl::GetRmtRmaBufSliceLite(const RmtRmaBufferLite &lite) const
+RmaBufSliceLite RoceTransportLiteImpl::GetNotifySlicelite(u32 index) const
 {
-    return RmtRmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetRkey(), 0, 0);
+    return RmaBufSliceLite(
+        notifyValueBuffer_->GetAddr(), 
+        notifyValueBuffer_->GetSize(), 
+        notifyValueBuffer_->GetLkey(), 0);
+}
+
+RmtRmaBufSliceLite RoceTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtBuf) const
+{
+    for (auto &it : rmtBufferVec_) {
+        Buffer buf(it.GetAddr(), it.GetSize());
+        if (buf.Contains(rmtBuf.GetAddr(), rmtBuf.GetSize())) {
+            return RmtRmaBufSliceLite(rmtBuf.GetAddr(), rmtBuf.GetSize(), it.GetRkey(), 0, 0);
+        }
+    }
+    MACRO_THROW(InternalException, StringFormat("%s is not in current transport", rmtBuf.Describe().c_str()));
 }
 
 RmtRmaBufSliceLite RoceTransportLiteImpl::GetRmtNotifySliceLite(u32 index) const
@@ -246,6 +260,95 @@ std::string RoceTransportLiteImpl::Describe() const
 
     desc += "]]";
     return desc;
+}
+
+HcclResult RoceTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite)
+{
+    HCCL_INFO("[RoceTransportLiteImpl::%s] start to find addr[0x%llx], size[0x%llx] in locBufferVec, whose size is %zu. ",
+        __func__, addr, size, locBufferVec_.size());
+    
+    if (locBufferVec_.empty()) {
+        HCCL_ERROR("[RoceTransportLiteImpl::%s] locBufferVec is empty.", __func__);
+        return HCCL_E_INTERNAL;
+    }
+
+    bool isAddrInRange = false;
+    for (auto &it : locBufferVec_) {
+        Buffer iterBuf(it.GetAddr(), it.GetSize());
+        if (iterBuf.Contains(addr, size)) {
+            rmaBufferLite = RmaBufferLite(addr, size, it.GetLkey());
+            isAddrInRange = true;
+            break;
+        }
+    }
+
+    if (!isAddrInRange) {
+        HCCL_WARNING("[RoceTransportLiteImpl::%s] addr[0x%llx], size[0x%llx] not in any range of locBufferVec. The token of the first locBuffer is used.",
+            __func__, addr, size);
+        rmaBufferLite = RmaBufferLite(addr, size, locBufferVec_[0].GetLkey());
+        return HCCL_SUCCESS;
+    }
+
+    return HCCL_SUCCESS;
+}
+
+void RoceTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
+{
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    // Post Wqe && return dbValue
+    connVec_[0]->Write(
+        GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), dbAddr, dbValue);
+
+    // Ring Doorbell
+    BuildRdmaDbSendTask(stream, dbAddr, dbValue);
+}
+
+void RoceTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify, const StreamLite &stream)
+{
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+    u32 notifyIdx = withNotify.index_;
+
+    // Post Wqe && return dbValue
+    connVec_[0]->WriteWithNotify(
+        GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt),
+        GetNotifySlicelite(notifyIdx), GetRmtNotifySliceLite(notifyIdx), dbAddr, dbValue);
+
+    // Ring Doorbell
+    BuildRdmaDbSendTask(stream, dbAddr, dbValue);
+}
+
+void RoceTransportLiteImpl::Post(u32 index, const StreamLite &stream)
+{
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    // Post Wqe && return dbValue
+    connVec_[0]->Write(
+        GetNotifySlicelite(index), GetRmtNotifySliceLite(index), dbAddr, dbValue);
+
+    // Ring Doorbell
+    BuildRdmaDbSendTask(stream, dbAddr, dbValue);
+}
+
+void RoceTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
+{
+    auto notifyId = localNotifies_[index]->GetId();
+    BuildNotifyWaitTask(notifyId, stream, timeout);
+}
+
+// 下发Rtsq sqe, 敲DB
+void RoceTransportLiteImpl::BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue)
+{
+    stream.GetRtsq()->RdmaDbSend(remoteAddr, dbValue);
+}
+
+// 下发Rtsq sqe, NotifyWait
+void RoceTransportLiteImpl::BuildNotifyWaitTask(u32 notifyId, const StreamLite &stream, u32 timeout)
+{
+    stream.GetRtsq()->NotifyWait(notifyId, timeout);
 }
 
 } // namespace Hccl
