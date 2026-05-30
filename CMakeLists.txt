@@ -53,6 +53,7 @@ project(hcomm)
 
 # 初始化 CANN 项目配置
 init_cann_project(PREPEND_MODULE_PATH)
+add_cann_target_options()
 
 # 采用 C++17 标准
 set(CMAKE_CXX_STANDARD 17)
