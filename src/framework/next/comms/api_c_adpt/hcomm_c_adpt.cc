@@ -45,6 +45,7 @@
 #include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
 #include "aiv_urma_channel.h"
 
+
 namespace hcomm {
 constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
 static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
@@ -713,4 +714,12 @@ HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_
     HCCL_RUN_INFO("[%s] success, listNum[%u]", __func__, listNum);
 
     return HCOMM_SUCCESS;
+}
+
+HcommResult HcommEndpointCheckFeature(HcommEndpointFeatureType featureType, const EndpointDesc *endpointDesc, bool *value)
+{
+    CHK_PTR_NULL(endpointDesc);
+    CHK_PTR_NULL(value);
+
+    return static_cast<HcommResult>(Endpoint::CheckFeature(*endpointDesc, featureType, *value));
 }
