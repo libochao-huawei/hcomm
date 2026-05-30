@@ -19,7 +19,7 @@
 #include "adapter_rts_common.h"
 #include "endpoint.h"
 #define private public
-#include "dfx/endpoint_monitor.h"
+#include "endpoint_monitor.h"
 #undef private
 
 using namespace hcomm;
@@ -140,27 +140,27 @@ TEST_F(EndpointMonitorTest, Ut_ProcessUbAsyncEvents_CoverAllBranches)
     EXPECT_EQ(g_monitor.RegisterToEndpointMonitor(0, nullptr), HCCL_E_PTR);
 
     MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_NOT_SUPPORT));
+    MOCKER(&Endpoint::GetAsyncEvents).stubs().will(returnValue(HCCL_E_NOT_SUPPORT));
     EXPECT_EQ(g_monitor.RegisterToEndpointMonitor(0, reinterpret_cast<EndpointHandle>(&myUtEndpoint)), HCCL_SUCCESS);
     EXPECT_EQ(g_monitor.UnRegisterToEndpointMonitor(), HCCL_SUCCESS);
     GlobalMockObject::verify();
 
     g_monitor.epHandleSet_.emplace(reinterpret_cast<u64>(&myUtEndpoint));
     MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(&Endpoint::GetAsyncEvents).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(&EndpointMonitor::PrintUbAsyncEventsContext).stubs();
     g_monitor.ProcessUbAsyncEvents();
     EXPECT_EQ(g_monitor.epHandleSet_.size(), 1);
     GlobalMockObject::verify();
 
     MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_NOT_SUPPORT));
+    MOCKER(&Endpoint::GetAsyncEvents).stubs().will(returnValue(HCCL_E_NOT_SUPPORT));
     g_monitor.ProcessUbAsyncEvents();
     EXPECT_EQ(g_monitor.epHandleSet_.size(), 0);
     GlobalMockObject::verify();
 
     MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(&Endpoint::GetAsyncEventsContext).stubs().will(returnValue(HCCL_E_INTERNAL));
+    MOCKER(&Endpoint::GetAsyncEvents).stubs().will(returnValue(HCCL_E_INTERNAL));
     g_monitor.ProcessUbAsyncEvents();
     EXPECT_EQ(g_monitor.epHandleSet_.size(), 0);
     GlobalMockObject::verify();
