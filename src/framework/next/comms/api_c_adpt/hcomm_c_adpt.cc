@@ -60,6 +60,7 @@ HcommResult CheckUbAttr(HcommChannelDesc &channelDesc)
 {
     if (channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBC_TP
         && channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBOE
+        && channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBG
         && channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBC_CTP) {
         return HCCL_SUCCESS;
     }

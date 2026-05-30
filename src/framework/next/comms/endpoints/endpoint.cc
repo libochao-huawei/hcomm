@@ -32,6 +32,7 @@ static bool IsSupported(const EndpointDesc &endpointDesc)
         case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_UBOE:
+        case COMM_PROTOCOL_UBG:
         case COMM_PROTOCOL_HCCS:
             protocolSupported = true;
             break;
@@ -82,6 +83,8 @@ if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == E
     } else if (endpointDesc.protocol == COMM_PROTOCOL_PCIE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UbMemEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBOE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<UboeEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_UBG && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UboeEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsRoceEndpoint>(endpointDesc), return HCCL_E_PTR);

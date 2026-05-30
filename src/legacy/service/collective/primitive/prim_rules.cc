@@ -58,7 +58,8 @@ inline void CheckLinkIsValid(const LinkData &link, const string &desc)
         if (linkProtocol == LinkProtocol::ROCE ||
             linkProtocol == LinkProtocol::UB_CTP || 
             linkProtocol == LinkProtocol::UB_TP ||
-            linkProtocol == LinkProtocol::UBOE
+            linkProtocol == LinkProtocol::UBOE ||
+            linkProtocol == LinkProtocol::UBG
         ) {
             return;
         }

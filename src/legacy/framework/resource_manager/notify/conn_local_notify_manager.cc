@@ -59,7 +59,7 @@ void ConnLocalNotifyManager::ApplyFor(RankId remoteRankId, const LinkData &linkD
                 notifyPool[remoteRankId][linkData][i] = make_unique<RdmaLocalNotify>(rdmaHandle, comm->GetOpAiCpuTSFeatureFlag()); // 算子粒度
                 continue;
             } else if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP ||
-                       linkProtocol == LinkProtocol::UBOE) {
+                       linkProtocol == LinkProtocol::UBOE || linkProtocol == LinkProtocol::UBG) {
                 RdmaHandle rdmaHandle = 
                     RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort(), linkProtocol);
                 notifyPool[remoteRankId][linkData][i] = make_unique<UbLocalNotify>(rdmaHandle, comm->GetOpAiCpuTSFeatureFlag()); // 算子粒度
