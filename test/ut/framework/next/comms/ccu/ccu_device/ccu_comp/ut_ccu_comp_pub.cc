@@ -7,6 +7,11 @@
 
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 
+#include "ccu_pfe_cfg_mgr.h"
+
+
+#define private public
+#define protected public
 using namespace hcomm;
 
 class CcuCompPubTest : public testing::Test {

@@ -12,5 +12,6 @@ typedef enum {
     COMM_ADDR_TYPE_IP_V4 = 0,     /* IPv4地址类型 */
     COMM_ADDR_TYPE_IP_V6 = 1,     /* IPv6地址类型 */
     COMM_ADDR_TYPE_ID = 2,        /* ID地址类型 */
+    COMM_ADDR_TYPE_EID = 3,       /* EID地址类型 */
 } CommAddrType;
 ```

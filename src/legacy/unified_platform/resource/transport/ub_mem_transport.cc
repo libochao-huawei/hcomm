@@ -786,6 +786,7 @@ std::vector<char> UbMemTransport::GetUniqueId()
     binaryStream << type;
     binaryStream << notifyNum;
     binaryStream << bufferNum;
+    binaryStream << static_cast<u32>(rmtBufferVec.size());
     binaryStream << connNum;
 
     // [header...][notifyUniqueId...][rmtNotifyUniqueId...][rmtBufferUniqueIds...]
@@ -817,6 +818,7 @@ std::vector<char> UbMemTransport::GetUniqueIdV2()
     binaryStream << type;
     binaryStream << notifyNum;
     binaryStream << bufferNum;
+    binaryStream << static_cast<u32>(rmtBufferVec.size());
     binaryStream << connNum;
  
     auto notifyUniqueIds = GetNotifyUniqueIds();
