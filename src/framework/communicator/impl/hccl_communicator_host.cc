@@ -148,10 +148,6 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = CommConfig();
-        commName_ = identifier_;
-        if (commConfig_.GetConfigGroupName() != "") {
-            commName_ = commConfig_.GetConfigGroupName();
-        }
         dpuManager_.reset(new (std::nothrow) DpuManager());
         if (dpuManager_ == nullptr) {
             HCCL_ERROR("new DpuManager failed!");
@@ -189,10 +185,6 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = commConfig;
-        commName_ = identifier_;
-        if (commConfig_.GetConfigGroupName() != "") {
-            commName_ = commConfig_.GetConfigGroupName();
-        } 
         dpuManager_.reset(new (std::nothrow) DpuManager());
         if (dpuManager_ == nullptr) {
             HCCL_ERROR("new DpuManager failed!");
@@ -845,6 +837,10 @@ namespace hccl
         commPortConfig_ = params.commPortConfig;
         cclBuffName_ = params.cclBuffName;
         isShareComm_ = !cclBuffName_.empty();
+        commName_ = identifier_;
+        if (!commConfig_.GetConfigUdi().empty()) {    // 如果配置了udi，更新commName_
+            commName_ = commConfig_.GetConfigGroupName();
+        }
 
         HCCL_DEBUG(
             " userRank_: %u realUserRank_: %u userRankSize_: %u deviceLogicId_: %u deviceType_: %u commWorkMode_: %u.",
@@ -6379,7 +6375,7 @@ namespace hccl
         // 记录主流相关信息, 给profiling和task exception使用
         HCCL_PROFILER_ADD_STREAM_BY_STREAMID(param.stream.id(), param.tag, 0, algType);
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-             hccl::ProfilingManagerPub::GetAddtionInfoState() &&
+             hccl::ProfilingManagerPub::GetAdditionInfoState() &&
              hccl::ProfilingManagerPub::GetTaskApiState()) &&
              !param.isCapture) {
             return HCCL_SUCCESS;
@@ -7963,7 +7959,7 @@ namespace hccl
             timeOut = opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC;
         }
         HcclResult ret = AicpuAclKernelLaunchV2(stm, reinterpret_cast<void *>(&context), sizeof(context),
-            binHandle, kernelName, false, timeOut, tilingDataPtr, tilingDataSize);
+            binHandle, kernelName, false, timeOut, tilingDataPtr, tilingDataSize, identifier_);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[HcclCommunicator][AicpuUnfoldKernelLaunchV2]isCustom[%d] binHandle[%p]",
                 isCustom, binHandle), ret);

@@ -27,14 +27,11 @@ target_include_directories(open_hccl_test PRIVATE
     ${HCOMM_FRAMEWORK_INCLUDE_LIST}
     ${HCOMM_LEGACY_INCLUDE_LIST}
 
-    ${THIRD_PARTY_PATH}/json/include
-    ${THIRD_PARTY_PATH}/gtest/include
-    ${THIRD_PARTY_PATH}/mockcpp/include
-
     ${ASCEND_CANN_INCLUDE_LIST}
 )
 
 target_compile_definitions(open_hccl_test PRIVATE
+    google=ascend_private
     _GLIBCXX_USE_CXX11_ABI=0
     -DOPEN_HCCL_TEST
 )
@@ -55,7 +52,7 @@ target_link_libraries(open_hccl_test PRIVATE
     hccl_alg_test
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    protobuf
+    ascend_protobuf
     -lrt
     -ldl
 )

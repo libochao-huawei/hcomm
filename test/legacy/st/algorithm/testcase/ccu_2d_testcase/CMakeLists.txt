@@ -37,7 +37,7 @@ target_link_libraries(legacy_alg_ccu_2d_testcase PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    ${THIRD_PARTY_PATH}/protobuf/lib64/libprotobuf.so
+    ascend_protobuf
     -lrt
     -ldl
 )

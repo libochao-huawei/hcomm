@@ -3012,7 +3012,7 @@ HcclResult HcclCommAicpu::StreamTaskMonitor(void)
 {
     // 通信域资源已经释放
     CHK_PRT_RET(!commOpenStatus,
-        HCCL_RUN_INFO("[PrintTaskExceptionAllStreams]group[%s] has been destroyed", identifier_.c_str()), HCCL_SUCCESS);
+        HCCL_DEBUG("[StreamTaskMonitor]group[%s] has been destroyed", identifier_.c_str()), HCCL_SUCCESS);
     if (IsNoNeedMonitor()) return HCCL_SUCCESS;
     HCCL_DEBUG("StreamTaskMonitor print");
     std::vector<Stream> totalStream = {mainStream_};
