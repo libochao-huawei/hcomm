@@ -41,7 +41,7 @@ target_compile_options(hccl_utest_framework_symmetric_memory PRIVATE
 )
 
 target_link_libraries(hccl_utest_framework_symmetric_memory PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt

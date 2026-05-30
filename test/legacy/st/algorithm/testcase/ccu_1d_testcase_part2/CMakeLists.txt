@@ -33,7 +33,7 @@ target_compile_options(legacy_alg_ccu_1d_testcase_part2 PRIVATE
 add_dependencies(legacy_alg_ccu_1d_testcase_part2 hccl_alg_analyzer_legacy hccl_orion_alg_test hccl_alg_adaption_v2)
 
 target_link_libraries(legacy_alg_ccu_1d_testcase_part2 PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_alg_analyzer_legacy
     hccl_orion_alg_test
     hccl_alg_adaption_v2

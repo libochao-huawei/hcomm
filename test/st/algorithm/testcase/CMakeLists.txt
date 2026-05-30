@@ -173,7 +173,7 @@ target_compile_definitions(hccl_alg_test PRIVATE
 )
 
 target_link_libraries(hccl_alg_test PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     -Wl,--no-as-needed
     -Wl,--no-as-needed
     pthread

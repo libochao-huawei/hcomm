@@ -104,7 +104,7 @@ target_compile_options(hccl_utest_test_next_resource PRIVATE
 )
 
 target_link_libraries(hccl_utest_test_next_resource PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt
@@ -151,7 +151,7 @@ target_compile_options(hccl_utest_test_next_resource_a3 PRIVATE
 )
 
 target_link_libraries(hccl_utest_test_next_resource_a3 PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt

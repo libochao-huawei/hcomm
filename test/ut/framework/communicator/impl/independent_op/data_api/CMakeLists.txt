@@ -54,7 +54,7 @@ target_compile_options(hcomm_utest_api_data_aicpu_ts PRIVATE
 )
 
 target_link_libraries(hcomm_utest_api_data_aicpu_ts PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt

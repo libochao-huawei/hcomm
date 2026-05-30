@@ -35,7 +35,7 @@ add_dependencies(legacy_alg_aicpu_2d_testcase
 )
 
 target_link_libraries(legacy_alg_aicpu_2d_testcase PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_alg_analyzer_legacy
     hccl_orion_alg_test
     hccl_alg_adaption_v2

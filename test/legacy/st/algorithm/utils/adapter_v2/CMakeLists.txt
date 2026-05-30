@@ -137,7 +137,7 @@ target_compile_options(hccl_alg_adaption_v2 PRIVATE
 )
 
 target_link_libraries(hccl_alg_adaption_v2 PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_orion_alg_test
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>

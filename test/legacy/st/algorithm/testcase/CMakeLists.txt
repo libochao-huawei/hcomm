@@ -71,7 +71,7 @@ target_compile_options(hccl_orion_alg_test PRIVATE
 )
 
 target_link_libraries(hccl_orion_alg_test PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     ascend_protobuf

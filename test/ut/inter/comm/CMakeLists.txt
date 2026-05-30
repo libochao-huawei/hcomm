@@ -62,7 +62,7 @@ target_compile_options(hccl_utest_inter_comm PRIVATE
 )
 
 target_link_libraries(hccl_utest_inter_comm PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt
