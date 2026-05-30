@@ -463,7 +463,7 @@ target_compile_options(hccl_llt   PRIVATE
 )
 
 target_link_libraries(hccl_llt  PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     -Wl,--allow-multiple-definition
     -lrt

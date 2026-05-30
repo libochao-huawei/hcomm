@@ -111,7 +111,7 @@ target_link_options(rs_ut_normal PRIVATE
 )
 
 target_link_libraries(rs_ut_normal PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     -lrt
     -pthread
