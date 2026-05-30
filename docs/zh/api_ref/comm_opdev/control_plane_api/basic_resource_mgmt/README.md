@@ -2,6 +2,7 @@
 
 - [HcommEndpointCreate](HcommEndpointCreate.md)  
 - [HcommEndpointDestroy](HcommEndpointDestroy.md)  
+- [HcommEndpointCheckFeature](HcommEndpointCheckFeature.md)  
 - [HcommEndpointGetListenPort](HcommEndpointGetListenPort.md)  
 - [HcommMemReg](HcommMemReg.md)  
 - [HcommMemUnreg](HcommMemUnreg.md)  
@@ -11,6 +12,7 @@
 - [HcommChannelDescInit](HcommChannelDescInit.md)  
 - [HcommChannelCreate](HcommChannelCreate.md)  
 - [HcommChannelGetStatus](HcommChannelGetStatus.md)  
+- [HcommChannelGetPtrByHandle](HcommChannelGetPtrByHandle.md)  
 - [HcommChannelGetNotifyNum](HcommChannelGetNotifyNum.md)  
 - [HcommChannelDestroy](HcommChannelDestroy.md)  
 - [HcommThreadAlloc](HcommThreadAlloc.md)  
