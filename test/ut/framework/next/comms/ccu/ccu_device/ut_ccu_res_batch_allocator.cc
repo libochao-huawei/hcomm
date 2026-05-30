@@ -3,7 +3,6 @@
 
 
 #include "../../../../../src/framework/next/comms/ccu/ccu_device/ccu_res_batch_allocator.h"
-#include "ccu_dev_mgr_pub.h"
 #include "ccu_comp.h"
 #include "hccl_common.h"
 
