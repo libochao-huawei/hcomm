@@ -81,6 +81,7 @@ typedef enum {
     COMM_PROTOCOL_UB_MEM = 6,     ///< UB_MEM
     COMM_PROTOCOL_UBOE = 7,       ///< UBoE
     COMM_PROTOCOL_HCCS_ONLY = 8,  ///< 一卡双DIE使用HCCS
+    COMM_PROTOCOL_UBG = 9,        ///< UBG
 } CommProtocol;
 
 /**
@@ -287,14 +288,6 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
 
     return 0;
 }
-
-/**
- * @brief 底层特性枚举定义
- */
-typedef enum {
-    HCOMM_ENDPOINT_FEATURE_INVALID = -1,
-    HCOMM_ENDPOINT_FEATURE_NDA = 0,  // NPU Direct RDMA Async 特性
-} HcommEndpointFeatureType;
 
 #ifdef __cplusplus
 }

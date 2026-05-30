@@ -133,7 +133,7 @@ BaseMemTransport *MemTransportManager::CreateOpbasedMemTransport(const LinkData 
     } else if (linkData.GetType() == PortDeploymentType::DEV_NET) {
         auto linkProtocol = linkData.GetLinkProtocol();
         if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP ||
-            linkProtocol == LinkProtocol::UBOE) {
+            linkProtocol == LinkProtocol::UBOE || linkProtocol == LinkProtocol::UBG) {
             CreateOpbasedUbMemTransport(locRes, attr, linkData, *socket);
         } else {
             THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
@@ -190,7 +190,7 @@ BaseMemTransport *MemTransportManager::CreateOffloadMemTransport(const std::stri
     } else if (linkData.GetType() == PortDeploymentType::DEV_NET) {
         auto linkProtocol = linkData.GetLinkProtocol();
         if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP ||
-            linkProtocol == LinkProtocol::UBOE) {
+            linkProtocol == LinkProtocol::UBOE || linkProtocol == LinkProtocol::UBG) {
             CreateOffloadUbMemTransport(opTag, locRes, attr, linkData, *socket);
         } else {
             THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));

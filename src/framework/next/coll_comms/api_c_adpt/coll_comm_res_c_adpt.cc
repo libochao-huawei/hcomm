@@ -22,7 +22,6 @@
 #include "hccl_ccu_res.h"
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
-
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -132,6 +131,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_UBC_TP:
         case COMM_PROTOCOL_UBOE:
+        case COMM_PROTOCOL_UBG:
             break;
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
@@ -146,6 +146,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
                     case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
                     case COMM_PROTOCOL_UBC_TP:  return "COMM_PROTOCOL_UBC_TP";
                     case COMM_PROTOCOL_UBOE:    return "COMM_PROTOCOL_UBOE";
+                    case COMM_PROTOCOL_UBG:     return "COMM_PROTOCOL_UBG";
                     case COMM_PROTOCOL_HCCS_ONLY:   return "COMM_PROTOCOL_HCCS_ONLY";
                     default:                    return "UNKNOWN_PROTOCOL";
                 }
@@ -307,8 +308,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
             std::string kernelName = "RunAicpuIndOpChannelInitV2";
-            // 还是kernel的当前无法判断
-            ret = hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid(), false);
+            ret = hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid());
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to report kernel for kernelName[%s], tid[%d], ret[%d]", commTag.c_str(), kernelName.c_str(), SalGetTid(), ret), ret);
         }

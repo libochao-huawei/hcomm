@@ -79,11 +79,13 @@ DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddr
 
 DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                          const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr,
+                                         const bool isUbg)
     : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {
     tpProtocol = TpProtocol::UBOE;
-    jettyTimeOut = 16; // UBoE场景的默认TA配置为16
+    isUbg_     = isUbg;
+    jettyTimeOut = 16;
 }
 
 std::vector<char> DevUbConnection::GetUniqueId() const
@@ -312,9 +314,6 @@ void DevUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
 
 void DevUbConnection::ImportRmtDto()
 {
-    struct TpAttr tpAttr = {0};
-    uint32_t attrBitmap = 0;
-
     if (ubConnStatus == UbConnStatus::READY) {
         HCCL_WARNING("[DevUbConnection][%s] import jetty already, %s.",
                      __func__, Describe().c_str());
@@ -327,15 +326,14 @@ void DevUbConnection::ImportRmtDto()
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    // 获取tp attr，检查是否已经填过相同的tp attr
-    if ((tpProtocol == TpProtocol::UBOE) && GetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
-        HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
+    // 设置tp attr(sip dip等)
+    if ((tpProtocol == TpProtocol::UBOE) && SetTpAttrAsync() != HCCL_SUCCESS) {
+        HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
-
-    // 设置tp attr(sip dip等)
-    if ((tpProtocol == TpProtocol::UBOE) && SetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
-        HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
+    // 获取tp attr(smac dmac等) — UBG走UBLink，不需要配置MAC地址
+    if ((tpProtocol == TpProtocol::UBOE) && !isUbg_ && GetTpAttrAsync() != HCCL_SUCCESS) {
+        HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
 
@@ -1050,17 +1048,7 @@ HcclResult DevUbConnection::Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U
     return HCCL_SUCCESS;
 }
 
-bool DevUbConnection::IpArrayCompare(uint8_t ipArrLeft[16U], uint8_t ipArrRight[16U])
-{
-    for (unsigned int i = 0; i < 16U; i++) {
-        if (ipArrLeft[i] != ipArrRight[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-HcclResult DevUbConnection::SetTpAttrAsync(uint32_t attrBitmapCurrent, struct TpAttr& tpAttrCurrent)
+HcclResult DevUbConnection::SetTpAttrAsync()
 {
     TpHandle tpHandle = tpInfo.tpHandle;
     /*  bitmap 至少配置为1FC，转2进制: 0011 1111 1000(前两位retry_times_init+at不用配置、后三位at_times+sl+ttl不用配置)，转10进制:508 
@@ -1085,18 +1073,15 @@ HcclResult DevUbConnection::SetTpAttrAsync(uint32_t attrBitmapCurrent, struct Tp
     HCCL_INFO("[DevUbConnection::%s] rmtIpv4Str[%s], dip[%u:%u:%u:%u]",
         __func__, rmtIp, tpAttr.dip[12], tpAttr.dip[13], tpAttr.dip[14], tpAttr.dip[15]);
 
-    if (attrBitmapCurrent == attrBitmap &&
-        IpArrayCompare(tpAttrCurrent.sip, tpAttr.sip) && IpArrayCompare(tpAttrCurrent.dip, tpAttr.dip)) {
-        return HCCL_SUCCESS;
-    }
-
     CHK_RET(HrtRaSetTpAttrAsync(rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
     return HCCL_SUCCESS;
 }
 
-HcclResult DevUbConnection::GetTpAttrAsync(uint32_t& attrBitmap, struct TpAttr& tpAttr)
+HcclResult DevUbConnection::GetTpAttrAsync()
 {
     TpHandle tpHandle = tpInfo.tpHandle;
+    uint32_t attrBitmap = 0;
+    struct TpAttr tpAttr = {0};
 
     u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
     CHK_RET(HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));

@@ -89,6 +89,7 @@ public:
 
 protected:
     TpProtocol     tpProtocol{TpProtocol::INVALID};
+    bool           isUbg_{false};
     void           GetTimeOut();
     u8             jettyTimeOut{8};
 
@@ -174,10 +175,9 @@ private:
     
     std::unique_ptr<BaseTask> ConstructTaskUbSend(const HrtRaUbSendWrRespParam &sendWrResp, const SqeConfig &config);
     void                      UpdateCiVal(u32 ci);
-    HcclResult                SetTpAttrAsync(uint32_t attrBitmapCurrent, struct TpAttr& tpAttrCurrent);
-    HcclResult                GetTpAttrAsync(uint32_t& attrBitmap, struct TpAttr& tpAttr);
+    HcclResult                SetTpAttrAsync();
+    HcclResult                GetTpAttrAsync();
     HcclResult                Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U]);
-    bool                      IpArrayCompare(uint8_t ipArrLeft[16U], uint8_t ipArrRight[16U]);
     HcclResult                CalcTotalTimeout(uint32_t &outTotalTimeoutMs);
 };
 
@@ -199,7 +199,8 @@ class DevUbUboeConnection : public DevUbConnection {
 public:
     DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                         const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
-                        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
+                        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
+                        const bool isUbg = false);
 };
 
 std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);
