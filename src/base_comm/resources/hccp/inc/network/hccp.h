@@ -262,6 +262,7 @@ HCCP_ATTRI_VISI_DEF int RaLoopbackQpCreate(void *rdevHandle, struct LoopbackQpPa
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaQpDestroy(void *qpHandle);
+HCCP_ATTRI_VISI_DEF int RaQpDestroyWithoutCQ(void *qpHandle);
 
 /**
  * @ingroup librdma

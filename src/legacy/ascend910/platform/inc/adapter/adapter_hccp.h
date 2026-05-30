@@ -188,6 +188,7 @@ HcclResult HrtRaGetQpDepth(RdmaHandle rdmaHandle, unsigned int *tempDepth, unsig
 HcclResult HrtRaSetQpDepth(RdmaHandle rdmaHandle, unsigned int tempDepth, unsigned int *qpNum);
 HcclResult HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle &qpHandle);
 HcclResult HrtRaQpDestroy(QpHandle handle);
+HcclResult HrtRaQpDestroyWithoutCQ(QpHandle handle);
 HcclResult HrtRaQpNonBlockConnectAsync(QpHandle handle, const SocketHandle sockHandle);
 HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle,
     std::function<bool()> needStop = []() { return false; }, u32 timeout = 0);
@@ -349,6 +350,7 @@ using QpConfigWithCQInfo = struct QpConfigWithCQInfoDef {
 HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo);
 HcclResult CreateQpWithCQConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigWithCQInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo);
 HcclResult CreateTypicalCq(RdmaHandle rdmaHandle, u32 cqDepth, u32 &cqn, void **cqHandle);
+HcclResult DestroyTypicalCq(RdmaHandle rdmaHandle, u32 cqn, void *cqHandle);
 HcclResult IsSupportRaSocketAbort(bool& isSupportRaSocketAbort);
 HcclResult hrtRaGetSecRandom(struct RaInfo *info, unsigned int* token);
 HcclResult hrtRaGetDevEidInfoNum(RaInfo info, unsigned int* num);

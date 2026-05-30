@@ -663,6 +663,26 @@ void RaHdcLiteQpDestroy(struct RaQpHandle *qpHdc)
     }
 }
 
+void RaHdcLiteQpDestroyWithoutCQ(struct RaQpHandle *qpHdc)
+{
+    if ((qpHdc->supportLite != LITE_NOT_SUPPORT) &&
+        (qpHdc->qpMode == RA_RS_OP_QP_MODE || qpHdc->qpMode == RA_RS_OP_QP_MODE_EXT)) {
+        RA_PTHREAD_MUTEX_LOCK(&qpHdc->rdmaHandle->rdevMutex);
+        RaListDel(&qpHdc->list);
+        RA_PTHREAD_MUTEX_UNLOCK(&qpHdc->rdmaHandle->rdevMutex);
+
+        free(qpHdc->liteWc);
+        qpHdc->liteWc = NULL;
+        (void)pthread_mutex_destroy(&qpHdc->qpMutex);
+        (void)pthread_mutex_destroy(&qpHdc->cqeErrInfo.mutex);
+        (void)RaRdmaLiteDestroyQp(qpHdc->liteQp);
+        qpHdc->liteQp = NULL;
+        if (qpHdc->supportLite == LITE_ALIGN_2MB) {
+            (void)RaRdmaLiteDeinitMemPool(qpHdc->rdmaHandle->liteCtx, qpHdc->memIdx);
+        }
+    }
+}
+
 int RaHdcLiteQpCreateWithCQ(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
     struct rdma_lite_qp_cap *cap, struct rdma_lite_cq *sendLiteCq, struct rdma_lite_cq *recvLiteCq)
 {

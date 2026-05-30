@@ -66,6 +66,7 @@ struct OpcodeInterfaceInfo gRaInterfaceInfoList[] = {
     {RA_RS_AI_QP_CREATE_WITH_ATTRS, 0},
     {RA_RS_TYPICAL_QP_CREATE, 0},
     {RA_RS_QP_DESTROY, 0},
+    {RA_RS_QP_DESTROY_WITHOUT_CQ, 0},
     {RA_RS_QP_CONNECT, 0},
     {RA_RS_TYPICAL_QP_MODIFY, 0},
     {RA_RS_QP_STATUS, 0},
@@ -168,6 +169,7 @@ struct OpcodeInterfaceInfo gRaInterfaceInfoList[] = {
     {RA_RS_TYPICAL_CQ_CREATE, 0},
     {RA_RS_GET_LITE_CQ_ATTR, 0},
     {RA_RS_QP_CREATE_WITH_CQ_WITH_ATTRS, 0},
+    {RA_RS_TYPICAL_CQ_DESTROY, 0},
 
     // inner opcode version
     {RA_RS_HDC_SESSION_CLOSE, 0},

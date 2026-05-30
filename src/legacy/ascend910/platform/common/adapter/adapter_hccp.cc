@@ -189,6 +189,24 @@ HcclResult CreateTypicalCq(RdmaHandle rdmaHandle, u32 cqDepth, u32 &cqn, void **
     return HCCL_SUCCESS;
 }
 
+HcclResult DestroyTypicalCq(RdmaHandle rdmaHandle, u32 cqn, void *cqHandle)
+{
+    HCCL_DEBUG("DestroyTypicalCq cqn[%u]", cqn);
+
+    s32 ret = DlRaFunction::GetInstance().dlRaTypicalCqDestroy(rdmaHandle, cqn, cqHandle);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[DestroyTypicalCq]destroy typical cq failed. ret[%d]", ret), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaQpDestroyWithoutCQ(QpHandle handle)
+{
+    s32 ret = DlRaFunction::GetInstance().dlRaQpDestroyWithoutCQ(handle);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[HrtRaQpDestroyWithoutCQ]destroy qp without cq failed. ret[%d]", ret), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
 HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct TypicalQp* localQpInfo, struct TypicalQp* remoteQpInfo)
 {
     std::string qpInfo = std::string("qpHandle:") + std::to_string(reinterpret_cast<intptr_t>(qpHandle)) + \

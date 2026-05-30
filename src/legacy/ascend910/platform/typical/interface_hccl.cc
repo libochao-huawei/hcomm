@@ -111,6 +111,16 @@ HcclResult hcclCreateAscendCQWithAttr(AscendCQInfo* ascendCQInfo)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclDestroyAscendCQ(AscendCQInfo* ascendCQInfo)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(ascendCQInfo);
+    CHK_RET(TypicalQpManager::GetInstance().DestroyCq(ascendCQInfo->cqn));
+    HCCL_INFO("hcclDestroyAscendCQ success! cqn[%u]", ascendCQInfo->cqn);
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclCreateAscendQPWithCQWithAttr(AscendCQInfo* ascendSendCQInfo, AscendCQInfo* ascendRecvCQInfo,
     AscendVerbsQPInfo* ascendQPInfo)
 {
@@ -161,6 +171,22 @@ HcclResult hcclCreateAscendQPWithCQWithAttr(AscendCQInfo* ascendSendCQInfo, Asce
     HCCL_INFO("hcclCreateAscendQPWithCQWithAttr success! qpn[%u], gid index[%u], psn[%u], sendCqn[%u], recvCqn[%u]",
         ascendQPInfo->qpn, ascendQPInfo->gidIdx, ascendQPInfo->psn, ascendSendCQInfo->cqn, ascendRecvCQInfo->cqn);
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclDestroyAscendVerbsQP(AscendVerbsQPInfo* ascendQPInfo)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(ascendQPInfo);
+    struct TypicalQp qpInfo;
+    qpInfo.qpn = ascendQPInfo->qpn;
+    qpInfo.gidIdx = ascendQPInfo->gidIdx;
+    for (uint32_t i = 0; i < GID_LENGTH; i++) {
+        qpInfo.gid[i] = ascendQPInfo->gid[i];
+    }
+    qpInfo.psn = ascendQPInfo->psn;
+    CHK_RET(TypicalQpManager::GetInstance().DestroyQpWithoutCQ(qpInfo));
     return HCCL_SUCCESS;
 }
 
