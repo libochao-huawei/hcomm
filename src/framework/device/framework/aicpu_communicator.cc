@@ -143,7 +143,6 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     SetCommInfoStreamStatus(true);
 
     initialized_ = true;
-
     HCCL_RUN_INFO("[HcclCommAicpu][Init] group[%s] success!", identifier_.c_str());
     return HCCL_SUCCESS;
 }
