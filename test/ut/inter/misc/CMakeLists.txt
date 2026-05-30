@@ -55,7 +55,7 @@ if(BUILD_OPEN_PROJECT) # 蓝区构建
         ${common_include_list}
         ${platform_include_list}
         ${other_include_list}
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        ${JSON_INCLUDE_DIR}
         ${mockcpp_INCLUDE_DIRS}
         ${HCCL_STUB_CODE_ROOT}/framework_stub
     )
@@ -75,6 +75,7 @@ else()
     )
     
     target_compile_definitions(hccl_utest_inter_misc    PRIVATE
+        google=ascend_private
         HALF_T=float
         google=ascend_private
         CCL_KERNEL
@@ -93,7 +94,6 @@ if(BUILD_OPEN_PROJECT) # 蓝区构建
         framework_stub
         mmpa
         $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-        ${LIBRARY_GTEST}
         ${LIBRARY_MOCKCPP}
     )
     add_dependencies(hccl_utest_inter_misc hccl hccl_alg hccl_plf framework_stub)

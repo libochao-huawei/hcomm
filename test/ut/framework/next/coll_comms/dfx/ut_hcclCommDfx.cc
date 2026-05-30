@@ -18,7 +18,7 @@
 #include "hcclCommProfiling.h"
 #include "task_param.h"
 #include "mirror_task_manager.h"
-
+#include "hcclCommDfxLite.h"
 using namespace hccl;
 
 class HcclCommDfxTest : public testing::Test {
@@ -38,6 +38,9 @@ protected:
         std::cout << "A Test case in HcclCommDfxTest SetUp" << std::endl;
         dfx_ = std::make_unique<HcclCommDfx>();
         EXPECT_EQ(dfx_->Init(0, "test_comm", 0), HCCL_SUCCESS);
+
+        dfxLite_ = std::make_unique<HcclCommDfxLite>();
+        EXPECT_EQ(dfxLite_->Init(0, "test_comm"), HCCL_SUCCESS);
     }
 
     virtual void TearDown()
@@ -47,6 +50,7 @@ protected:
     }
 
     std::unique_ptr<HcclCommDfx> dfx_;
+    std::unique_ptr<HcclCommDfxLite> dfxLite_;
 };
 
 // 测试 AddDpuTaskInfoCallback - 正常情况
@@ -187,4 +191,33 @@ TEST_F(HcclCommDfxTest, Ut_GetTaskId_When_DifferentStreamId_Expect_Independent)
     
     taskId2 = HcclCommDfx::GetTaskId(streamId2);
     EXPECT_EQ(taskId2, 2u);
+}
+
+TEST_F(HcclCommDfxTest, Ut_Add_Get_ChannelRemoteRankId)
+{
+    u64 channelHandle = 0x9527;
+    u32 remoteRankId = 3;
+    dfxLite_->AddChannelRemoteRankId(channelHandle, remoteRankId);
+
+    u32 value = 0;
+    EXPECT_EQ(dfxLite_->GetChannelRemoteRankId(channelHandle, value), HCCL_SUCCESS);
+    EXPECT_EQ(value, remoteRankId);
+
+    EXPECT_NE(dfxLite_->GetChannelRemoteRankId(0x123, value), HCCL_SUCCESS);
+}
+
+// 测试 IsOpBase - OFFLOAD 模式返回 false
+TEST_F(HcclCommDfxTest, Ut_IsOpBase_When_OpModeIsOffload_Expect_ReturnFalse)
+{
+    auto opInfo = std::make_shared<Hccl::DfxOpInfo>();
+    opInfo->op_.opMode = Hccl::OpMode::OFFLOAD;
+    MOCKER_CPP(&Hccl::MirrorTaskManager::GetCurrDfxOpInfo,
+        std::shared_ptr<Hccl::DfxOpInfo>(Hccl::MirrorTaskManager::*)() const)
+        .stubs()
+        .will(returnValue(opInfo));
+
+    bool isOpBase = true;
+    HcclResult ret = dfx_->IsOpBase(isOpBase);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_FALSE(isOpBase);
 }

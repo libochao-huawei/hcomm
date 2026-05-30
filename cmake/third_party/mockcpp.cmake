@@ -24,7 +24,7 @@ set(MOCKCPP_PATCH_URL "https://gitcode.com/cann-src-third-party/mockcpp/releases
 set(MOCKCPP_PATCH_PATH ${CANN_3RD_LIB_PATH}/${MOCKCPP_PATCH_FILE})
 
 # mockcpp 需要使用 boost 库
-include(${CMAKE_CURRENT_LIST_DIR}/boost.cmake)
+add_cann_third_party(boost)
 
 # 查找目录下是否已经安装，避免重复编译安装
 message(STATUS "[ThirdParty] MOCKCPP_INSTALL_PATH=${MOCKCPP_INSTALL_PATH}")

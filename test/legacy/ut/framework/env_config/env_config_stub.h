@@ -31,6 +31,8 @@ const std::map<std::string, std::string> defaultEnvCfgMap = {
         {"HCCL_RDMA_SL", "3"},
         {"HCCL_RDMA_TIMEOUT", "6"},
         {"HCCL_RDMA_RETRY_CNT", "5"},
+        {"HCCL_RDMA_QPS_PER_CONNECTION", "1"},
+        {"HCCL_MULTI_QP_THRESHOLD", "512"},
         {"HCCL_INTRA_PCIE_ENABLE", "1"},
         {"HCCL_INTRA_ROCE_ENABLE", "0"},
         {"HCCL_INTER_HCCS_DISABLE", "FALSE"},

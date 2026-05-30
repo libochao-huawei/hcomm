@@ -49,6 +49,8 @@ public:
     u32 GetDeviceListenPort(const u32 &rankId, const IpAddress &ipAddress);
 
     void BatchCreateSockets(const vector<LinkData> &links);
+    void ServerListen(const SocketConfig &socketConfig);
+    void ConnectSockets(const SocketConfig &socketConfig);
 
     void BatchCreateSockets(const SocketConfig &socketConfig);
 
@@ -77,6 +79,7 @@ public:
     SocketManager &operator=(const SocketManager &socketManager) = delete;
 
 private:
+    void PrepareLinkAndServerInit(const SocketConfig &socketConfig);
     void BatchServerInit(const vector<LinkData> &links);
     void BatchAddWhiteList(const vector<LinkData> &links);
     void BatchCreateConnectedSockets(const vector<LinkData> &links);

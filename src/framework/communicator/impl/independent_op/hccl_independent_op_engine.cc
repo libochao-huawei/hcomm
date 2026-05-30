@@ -97,7 +97,8 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
             hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
             HCCL_INFO("[HcclThreadAciqure] ReportThreadAciqureKernel begin");
             const std::string KernelName = "RunAicpuIndOpThreadInit";
-            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid()));
+            // 这个地方获取不到当前是单算子还是图模式，所以全部都不保存
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid(), false));
             HCCL_INFO("[HcclThreadAciqure] ReportThreadAciqureKernel success");
         } else {
             auto hcclCommDfxCallBack = collComm->GetDfxCallback();
@@ -307,7 +308,7 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
             const std::string KernelName = "RunAicpuIndOpThreadInit";
-            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid()));
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid(), false));
         }
     } else {
         auto &engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
