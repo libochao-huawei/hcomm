@@ -278,6 +278,8 @@ else()
         ${TOP_DIR}/metadef/inc/common
         ${TOP_DIR}/metadef/inc/external
         ${TOP_DIR}/open_source/json/include
+        ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
+        ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal/hcomm
     )
     target_include_directories(ccl_kernel_plf PRIVATE
         ${CCL_KERNEL_PLF_NON_OPEN_INCLUDE_LIST}
