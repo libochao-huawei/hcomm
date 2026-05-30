@@ -1217,7 +1217,7 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
     }
 
     CHK_RET(AicpuAclKernelLaunchV2(stream, reinterpret_cast<void *>(&commContext),
-        sizeof(commContext), binHandle_, kernelName, false, timeOut, tilingDataPtr, tilingDataSize));
+        sizeof(commContext), binHandle_, kernelName, false, timeOut, tilingDataPtr, tilingDataSize, identifier_));
     HCCL_DEBUG("[HcclOneSidedService][AicpuUnfoldKernelLaunchV2] exec succ.");
     return HCCL_SUCCESS;
 }

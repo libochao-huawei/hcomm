@@ -218,7 +218,7 @@ typedef struct HcclCommConfigDef {
     hcclAlgo = "allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R"
     ```
 
-- **hcclRetryEnable**：用于配置是否开启HCCL算子的重执行特性。重执行是指当通信算子执行报 SDMA 或者RDMA CQE类型的错误时，HCCL会尝试重新执行此通信算子。**仅支持在Atlas A3 训练系列产品/Atlas A3 推理系列产品上使用。**
+- **hcclRetryEnable**：用于配置是否开启HCCL算子的重执行特性。重执行是指当通信算子执行报SDMA或者RDMA CQE类型的错误时，HCCL会尝试重新执行此通信算子。**仅支持在Atlas A3 训练系列产品/Atlas A3 推理系列产品上使用。**
 
   通过此参数，开发者可以在Server间、超节点间两个物理层级的通信域中配置是否开启重执行特性，每个层级支持配置两种状态：开启或关闭，使用约束请参见环境变量[HCCL_OP_RETRY_ENABLE](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_OP_RETRY_ENABLE.md)，配置方式为：`hcclRetryEnable = "L1:1, L2:0"`，参数取值如下。
 
@@ -243,7 +243,7 @@ typedef struct HcclCommConfigDef {
 
 - 通信域级别（HcclCommConfig）高于环境变量。
 
-  若在 HcclCommConfig中配置了某参数，则以该配置值为准。
+  若在HcclCommConfig中配置了某参数，则以该配置值为准。
 
 - 环境变量优先级次之。
 

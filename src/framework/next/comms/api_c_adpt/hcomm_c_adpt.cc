@@ -45,6 +45,7 @@
 #include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
 #include "aiv_urma_channel.h"
 
+
 namespace hcomm {
 constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
 static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
@@ -87,6 +88,20 @@ HcommResult CheckUbAttr(HcommChannelDesc &channelDesc)
     };
 
     channelDesc.ubAttr.sqDepth = GetNextPowerOfTwo(channelDesc.ubAttr.sqDepth);
+
+    return HCCL_SUCCESS;
+}
+
+HcommResult CheckRoceAttr(HcommChannelDesc &channelDesc)
+{
+    if (channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_ROCE) {
+        return HCCL_SUCCESS;
+    }
+
+    if (channelDesc.roceAttr.queueNum == INVALID_UINT) {
+        channelDesc.roceAttr.queueNum = 1;
+        HCCL_INFO("[%s] set roceAttr.queueNum to 1.", __func__);
+    }
 
     return HCCL_SUCCESS;
 }
@@ -152,8 +167,15 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
         }
         ret = CheckUbAttr(channelDescFinal);
         if (ret != HCOMM_SUCCESS) {
+            HCCL_ERROR("[%s] CheckUbAttr failed, ret[%d].", __func__, ret);
             return ret;
         }
+        ret = CheckRoceAttr(channelDescFinal);
+        if (ret != HCOMM_SUCCESS) {
+            HCCL_ERROR("[%s] CheckRoceAttr failed, ret[%d].", __func__, ret);
+            return ret;
+        }
+
         channelDescFinals.push_back(channelDescFinal);
     }
     return HCOMM_SUCCESS;
@@ -292,8 +314,7 @@ HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
-    CHK_RET(endpoint->ServerSocketGetListenPort(port));
-    return HCCL_SUCCESS;
+    return endpoint->ServerSocketGetListenPort(port);
 }
 
 HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const CommMem *mem,
@@ -714,4 +735,12 @@ HcommResult HcommChannelGetPtrByHandle(const ChannelHandle *channelList, uint32_
     HCCL_RUN_INFO("[%s] success, listNum[%u]", __func__, listNum);
 
     return HCOMM_SUCCESS;
+}
+
+HcommResult HcommEndpointCheckFeature(HcommEndpointFeatureType featureType, const EndpointDesc *endpointDesc, bool *value)
+{
+    CHK_PTR_NULL(endpointDesc);
+    CHK_PTR_NULL(value);
+
+    return static_cast<HcommResult>(Endpoint::CheckFeature(*endpointDesc, featureType, *value));
 }

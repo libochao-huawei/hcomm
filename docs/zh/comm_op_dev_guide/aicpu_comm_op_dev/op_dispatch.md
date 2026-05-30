@@ -16,7 +16,7 @@
 }
 ```
 
-定义AI CPU Kernel函数，格式如下。其中<aicpu\_kernel\_func\_name\>为AI CPU Kernel函数名字，函数名必须与算子信息库文件（json文件）中的functionName字段保持一致。
+定义AI CPU Kernel函数，格式如下。其中<aicpu_kernel_func_name\>为AI CPU Kernel函数名字，函数名必须与算子信息库文件（json文件）中的functionName字段保持一致。
 
 ```c
 extern "C" unsigned int <aicpu_kernel_func_name>(void *param)

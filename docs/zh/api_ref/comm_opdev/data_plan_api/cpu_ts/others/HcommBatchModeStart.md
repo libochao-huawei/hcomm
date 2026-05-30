@@ -6,9 +6,6 @@
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
 
-> [!NOTE]说明
-> 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
-
 ## 功能说明
 
 该接口用于开启批量模式，在HcommBatchModeStart和HcommBatchModeEnd之间的所有数据面接口调用（如 HcommLocalCopy、HcommWrite 等）将被缓存，不会立即执行。所有操作将在调用HcommBatchModeEnd时统一提交并执行。

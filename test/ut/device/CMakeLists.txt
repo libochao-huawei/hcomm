@@ -18,6 +18,7 @@ set(hccl_utest_device_src_list
     ut_aicpu_one_side_service.cc
     ut_hccl_aicpu_utils.cc
     ut_ranktable_concise_device.cc
+    ut_launch_aicpu.cc
 
     ${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc
     ${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc
