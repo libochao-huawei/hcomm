@@ -368,7 +368,7 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
 
     ReuseSocketIdxMap reuseSocketIdxMap{};
-    // socket服务器首先异步监听
+    // socket服务器首先监听
     CHK_RET(BatchServerInitForChannels(channelDescs, channelNum, socketTag, reuseSocketIdxMap));
     // socket添加白名单以及进行连接，获取最后的socket
     CHK_RET(BatchGetSocketsForChannels(channelDescs, channelNum, socketTag, hcommDescs, reuseSocketIdxMap));
