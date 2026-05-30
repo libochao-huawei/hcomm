@@ -43,6 +43,7 @@ union OpAsyncHdcCloseData {
 
 int RaHdcInitAsync(struct RaInitConfig *cfg);
 int RaHdcDeinitAsync(unsigned int phyId);
+void RaHdcUninitAsync(void);
 int RaHdcSendMsgAsync(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize,
     struct RaRequestHandle *reqHandle);
 void HdcAsyncDelResponse(struct RaRequestHandle *reqHandle);
