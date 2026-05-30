@@ -220,7 +220,7 @@ void TcHdcDeinitFail()
     mocker((stub_fn_t)drvHdcSessionClose, 10, -10);
     mocker((stub_fn_t)drvHdcClientDestroy, 10, -10);
     mocker((stub_fn_t)pthread_mutex_destroy, 10, -10);
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     config.phyId = gDevid;
     ret = RaHdcDeinit(&config);
     EXPECT_INT_EQ(ret, -ESYSFUNC);
@@ -240,7 +240,7 @@ void TcHdcSocketBatchConnect()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcSocketBatchConnect(gDevid, conn, 1);
     EXPECT_INT_EQ(ret, -ENOMEM);
 
@@ -274,7 +274,7 @@ void TcHdcSocketBatchClose()
     ((struct SocketHdcInfo *)conn[0].fdHandle)->fd = 0;
     ((struct SocketHdcInfo *)conn[0].fdHandle)->phyId = 0;
     mocker_clean();
-    mocker((stub_fn_t)calloc, 10, 0);
+    mocker((stub_fn_t)calloc, 10, NULL);
     ret = RaHdcSocketBatchClose(gDevid, conn, 1);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
@@ -343,7 +343,7 @@ void TcHdcSocketBatchAbort()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcSocketBatchAbort(gDevid, conn, 1);
     EXPECT_INT_EQ(ret, -ENOMEM);
 
@@ -397,7 +397,7 @@ void TcHdcGetSockets()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcGetSockets(gDevid, 0, conn, 1);
     EXPECT_INT_EQ(ret, -ENOMEM);
 
@@ -452,7 +452,7 @@ void TcHdcSocketSend()
 
     char maxSendBuf[SOCKET_SEND_MAXLEN + 1] = {0};
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcSocketSend(gDevid, &socketInfo, maxSendBuf, sizeof(maxSendBuf));
     EXPECT_INT_EQ(ret, -ENOMEM);
 
@@ -476,7 +476,7 @@ void TcHdcSocketRecv()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcSocketRecv(gDevid, &socketInfo, sendBuf, sizeof(sendBuf));
     EXPECT_INT_EQ(ret, -ENOMEM);
 
@@ -499,13 +499,13 @@ void TcHdcQpCreateDestroy()
     void* qpHandle = NULL;
     rdmaHandle.supportLite = 1;
 	int ret = RaHdcQpCreate(&rdmaHandle, 0, 0, &qpHandle);
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
     ret = RaHdcQpDestroy(qpHandle);
     EXPECT_INT_EQ(ret, 0);
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
 	ret = RaHdcQpCreate(&rdmaHandle, 0, 0, &qpHandle);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
@@ -523,7 +523,7 @@ void TcHdcGetQpStatus()
     void* qpHandle = NULL;
     rdmaHandle.supportLite = 1;
 	int ret = RaHdcQpCreate(&rdmaHandle, 0, 0, &qpHandle);
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
     int status = 0;
     ret = RaHdcGetQpStatus(qpHandle, &status);
     EXPECT_INT_EQ(ret, 0);
@@ -534,7 +534,7 @@ void TcHdcGetQpStatus()
     mocker_clean();
     struct RaQpHandle testQpHandle;
     testQpHandle.phyId = gDevid;
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcGetQpStatus(&testQpHandle, &status);
     EXPECT_INT_NE(ret, 0);
 }
@@ -547,7 +547,7 @@ void TcHdcQpConnectAsync()
     void* qpHandle = NULL;
 	int ret = RaHdcQpCreate(&rdmaHandle, 0, 0, &qpHandle);
     struct SocketHdcInfo socketHandle = {0};
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
 
     ret = RaHdcQpConnectAsync(qpHandle, &socketHandle);
     EXPECT_INT_EQ(ret, 0);
@@ -556,7 +556,7 @@ void TcHdcQpConnectAsync()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     struct RaQpHandle testQpHandle;
     ret = RaHdcQpConnectAsync(&testQpHandle, &socketHandle);
     EXPECT_INT_NE(ret, 0);
@@ -570,7 +570,7 @@ void TcHdcMrDereg()
     void* qpHandle = NULL;
 	int ret = RaHdcQpCreate(&rdmaHandle, 0, 0, &qpHandle);
     char qpReg[16] = {0};
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
 
     ret = RaHdcMrDereg(qpHandle, (struct MrInfoT *)qpReg);
     EXPECT_INT_EQ(ret, 0);
@@ -579,7 +579,7 @@ void TcHdcMrDereg()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     struct RaQpHandle testQpHandle;
     ret = RaHdcMrDereg(&testQpHandle, (struct MrInfoT *)qpReg);
     EXPECT_INT_NE(ret, 0);
@@ -666,7 +666,7 @@ void TcHdcSendWrlistV2()
     EXPECT_INT_EQ(ret, -ESAFEFUNC);
     mocker_clean();
 
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     gInterfaceVersion = RA_RS_SEND_WRLIST_V2_VERSION;
     mocker_invoke((stub_fn_t)RaGetInterfaceVersion, (stub_fn_t)StubRaGetInterfaceVersion, 1);
     ret = RaHdcSendWrlist(&handle, wrlist, opRsp, wrlistNum);
@@ -713,7 +713,7 @@ void TcHdcSendWrlist()
     EXPECT_INT_EQ(ret, -ESAFEFUNC);
     mocker_clean();
 
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcSendWrlist(&handle, wrlist, opRsp, wrlistNum);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
@@ -771,7 +771,7 @@ void TcHdcSendWr()
     struct SendWr wr = {0};
     struct SendWrRsp rsp = {0};
 
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
 
     ret = RaHdcSendWr(qpHandle, &wr, &rsp);
     EXPECT_INT_EQ(ret, 0);
@@ -806,7 +806,7 @@ void TcHdcSendWr()
     EXPECT_INT_EQ(ret, -ESAFEFUNC);
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcSendWr(&testQpHandle, &wr, &rsp);
     EXPECT_INT_NE(ret, 0);
 }
@@ -820,7 +820,7 @@ void TcHdcGetNotifyBaseAddr()
 	int ret = RaHdcQpCreate(&rdmaHandle, 0, 0, &qpHandle);
     unsigned long long va;
     unsigned long long size;
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
 
     ret = RaHdcGetNotifyBaseAddr(qpHandle, &va, &size);
     EXPECT_INT_EQ(ret, 0);
@@ -831,7 +831,7 @@ void TcHdcGetNotifyBaseAddr()
 
     struct RaQpHandle testQpHandle;
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcGetNotifyBaseAddr((struct RaRdmaHandle *)&testQpHandle, &va, &size);
     EXPECT_INT_NE(ret, 0);
 }
@@ -1093,7 +1093,7 @@ void TcHdcSocketWhiteListDelV2()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     gInterfaceVersion = RA_RS_WLIST_DEL_V2_VERSION;
     mocker_invoke((stub_fn_t)RaGetInterfaceVersion, (stub_fn_t)StubRaGetInterfaceVersion, 1);
     ret = RaHdcSocketWhiteListDel(rdevInfo, whiteList, 1);
@@ -1129,7 +1129,7 @@ void TcHdcSocketWhiteListDel()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcSocketWhiteListDel(rdevInfo, whiteList, 1);
     EXPECT_INT_EQ(ret, -ENOMEM);
 
@@ -1210,7 +1210,7 @@ void TcHdcMessageProcessFail()
     struct IfaddrInfo infos[1] = {{0}};
     unsigned int num = 1;
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcGetIfaddrs(0, infos, &num);
     EXPECT_INT_EQ(ret, -ENOMEM);
 
@@ -1411,7 +1411,7 @@ void TcRaHdcSetQpAttrQos()
     void* qpHandle = NULL;
 	int ret = RaHdcQpCreate(&rdmaHandle, 0, 0, &qpHandle);
     char qpReg[16] = {0};
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
 
     ret = RaHdcSetQpAttrQos(qpHandle, &attr);
     EXPECT_INT_EQ(ret, 0);
@@ -1420,7 +1420,7 @@ void TcRaHdcSetQpAttrQos()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     struct RaQpHandle testQpHandle;
     ret = RaHdcSetQpAttrQos(&testQpHandle, &attr);
     EXPECT_INT_NE(ret, 0);
@@ -1437,7 +1437,7 @@ void TcRaHdcSetQpAttrTimeout()
     void* qpHandle = NULL;
 	int ret = RaHdcQpCreate(&rdmaHandle, 0, 0, &qpHandle);
     char qpReg[16] = {0};
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
 
     ret = RaHdcSetQpAttrTimeout(qpHandle, &timeout);
     EXPECT_INT_EQ(ret, 0);
@@ -1446,7 +1446,7 @@ void TcRaHdcSetQpAttrTimeout()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     struct RaQpHandle testQpHandle;
     ret = RaHdcSetQpAttrTimeout(&testQpHandle, &timeout);
     EXPECT_INT_NE(ret, 0);
@@ -1463,7 +1463,7 @@ void TcRaHdcSetQpAttrRetryCnt()
     void* qpHandle = NULL;
 	int ret = RaHdcQpCreate(&rdmaHandle, 0, 0, &qpHandle);
     char qpReg[16] = {0};
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
 
     ret = RaHdcSetQpAttrRetryCnt(qpHandle, &retryCnt);
     EXPECT_INT_EQ(ret, 0);
@@ -1472,7 +1472,7 @@ void TcRaHdcSetQpAttrRetryCnt()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     struct RaQpHandle testQpHandle;
     ret = RaHdcSetQpAttrRetryCnt(&testQpHandle, &retryCnt);
     EXPECT_INT_NE(ret, 0);
@@ -1627,7 +1627,7 @@ void TcRaHdcQpCreateOp()
     RA_INIT_LIST_HEAD(&rdmaHandle.qpList);
 	int ret = RaHdcQpCreate(&rdmaHandle, 0, 2, (void **)&qpHandle);
     EXPECT_INT_EQ(ret, 0);
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
     struct rdma_lite_qp_cap cap;
 
     ret = RaHdcQpDestroy(qpHandle);
@@ -1680,7 +1680,7 @@ void TcRaHdcGetQpStatusOp()
     RA_INIT_LIST_HEAD(&rdmaHandle.qpList);
 	int ret = RaHdcQpCreate(&rdmaHandle, 0, 2, (void **)&qpHandle);
     EXPECT_INT_EQ(ret, 0);
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
 
     status = 0;
     mocker((stub_fn_t)RaHdcGetInterfaceVersion, 10, -22);
@@ -1746,7 +1746,7 @@ void TcHdcSendWrOp()
     struct SendWrRsp rsp = {0};
     int i = 0;
 
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
 
     void *addr = malloc(10);
     struct SgList mem;
@@ -1851,7 +1851,7 @@ void TcHdcLiteSendWrOp()
     struct SendWrRsp rsp = {0};
     int i = 0;
 
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
 
     void *addr = malloc(10);
     struct SgList mem;
@@ -1974,7 +1974,7 @@ void TcHdcRecvWrlist()
     EXPECT_INT_EQ(ret, 0);
     ret = RaHdcQpCreate(&rdmaHandle, 0, 2, (void **)&qpHandle);
     EXPECT_INT_EQ(ret, 0);
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
     qpHandle->supportLite = 1;
 
     ret = RaHdcRecvWrlist(qpHandle, &revWr, recvNum, &revCompleteNum);
@@ -2011,7 +2011,7 @@ void TcHdcPollCq()
     EXPECT_INT_EQ(ret, 0);
     ret = RaHdcQpCreate(&rdmaHandle, 0, 2, (void **)&qpHandle);
     EXPECT_INT_EQ(ret, 0);
-    ASSERT_ADDR_NE(qpHandle, 0);
+    ASSERT_ADDR_NE(qpHandle, NULL);
     qpHandle->supportLite = 1;
     qpHandle->recvWrNum = 1;
 
@@ -2143,7 +2143,7 @@ void TcRaHdcLiteCtxInit()
     mocker(DlDrvDeviceGetIndexByPhyId, 10, 0);
     mocker(RaSensorNodeRegister, 10, 0);
     mocker(RaHdcProcessMsg, 10, 0);
-    mocker(RaRdmaLiteAllocCtx, 1, 0);
+    mocker(RaRdmaLiteAllocCtx, 1, NULL);
     ret = RaHdcLiteCtxInit(&rdmaHandle, phyId, rdevIndex);
     EXPECT_INT_EQ(ret, -14);
 
@@ -2154,7 +2154,7 @@ void TcRaHdcLiteCtxInit()
     mocker(DlDrvDeviceGetIndexByPhyId, 10, 0);
     mocker(RaSensorNodeRegister, 10, 0);
     mocker(RaHdcProcessMsg, 10, 0);
-    mocker(RaRdmaLiteAllocCtx, 10, (intptr_t)&rdmaLiteContext);
+    mocker(RaRdmaLiteAllocCtx, 10, &rdmaLiteContext);
     mocker(RaHdcLiteMutexInit, 10, 0);
     rdmaHandle.disabledLiteThread = true;
     ret = RaHdcLiteCtxInit(&rdmaHandle, phyId, rdevIndex);
@@ -2172,7 +2172,7 @@ void TcRaHdcLiteCtxInit()
     mocker(DlDrvDeviceGetIndexByPhyId, 10, 0);
     mocker(RaSensorNodeRegister, 10, 0);
     mocker(RaHdcProcessMsg, 10, 0);
-    mocker(RaRdmaLiteAllocCtx, 10, (intptr_t)&rdmaLiteContext);
+    mocker(RaRdmaLiteAllocCtx, 10, &rdmaLiteContext);
     mocker(RaHdcLiteMutexInit, 10, 0);
     mocker(pthread_create, 10, 0);
     ret = RaHdcLiteCtxInit(&rdmaHandle, phyId, rdevIndex);
@@ -2236,7 +2236,7 @@ void RcRaHdcLiteQpCreate()
     mocker(RaHdcLiteInitMemPool, 10, 0);
     mocker(RaRdmaLiteDestroyCq, 10, 0);
     mocker(RaHdcLiteDeinitMemPool, 10, 0);
-    mocker(RaRdmaLiteCreateCq, 1, 0);
+    mocker(RaRdmaLiteCreateCq, 1, NULL);
     ret = RaHdcLiteQpCreate(&rdmaHandle, &qpHdc, &cap);
     EXPECT_INT_EQ(ret, -14);
 
@@ -2254,8 +2254,8 @@ void RcRaHdcLiteQpCreate()
     mocker(RaHdcLiteInitMemPool, 10, 0);
     mocker(RaRdmaLiteDestroyCq, 10, 0);
     mocker(RaHdcLiteDeinitMemPool, 10, 0);
-    mocker(RaRdmaLiteCreateCq, 2, (intptr_t)&liteCq);
-    mocker(RaRdmaLiteCreateQp, 1, 0);
+    mocker(RaRdmaLiteCreateCq, 2, &liteCq);
+    mocker(RaRdmaLiteCreateQp, 1, NULL);
     ret = RaHdcLiteQpCreate(&rdmaHandle, &qpHdc, &cap);
     EXPECT_INT_EQ(ret, -14);
 
@@ -2265,12 +2265,12 @@ void RcRaHdcLiteQpCreate()
     mocker(RaRdmaLiteDestroyQp, 10, 0);
     mocker(RaRdmaLiteDestroyCq, 10, 0);
     mocker(RaHdcLiteDeinitMemPool, 10, 0);
-    mocker(RaRdmaLiteCreateCq, 10, (intptr_t)&liteCq);
-    mocker(RaRdmaLiteCreateQp, 10, (intptr_t)&liteQp);
+    mocker(RaRdmaLiteCreateCq, 10, &liteCq);
+    mocker(RaRdmaLiteCreateQp, 10, &liteQp);
     mocker(pthread_mutex_init, 10, 0);
     mocker(pthread_mutex_lock, 10, 0);
     mocker(pthread_mutex_unlock, 10, 0);
-    mocker(calloc, 10, 0);
+    mocker(calloc, 10, NULL);
     ret = RaHdcLiteQpCreate(&rdmaHandle, &qpHdc, &cap);
     EXPECT_INT_EQ(ret, -12);
 
@@ -2279,12 +2279,12 @@ void RcRaHdcLiteQpCreate()
     mocker(RaHdcLiteInitMemPool, 10, 0);
     mocker(RaRdmaLiteDestroyCq, 10, 0);
     mocker(RaHdcLiteDeinitMemPool, 10, 0);
-    mocker(RaRdmaLiteCreateCq, 10, (intptr_t)&liteCq);
-    mocker(RaRdmaLiteCreateQp, 10, (intptr_t)&liteQp);
+    mocker(RaRdmaLiteCreateCq, 10, &liteCq);
+    mocker(RaRdmaLiteCreateQp, 10, &liteQp);
     mocker(pthread_mutex_init, 10, 0);
     mocker(pthread_mutex_lock, 10, 0);
     mocker(pthread_mutex_unlock, 10, 0);
-    mocker(calloc, 10, (intptr_t)&liteWc);
+    mocker(calloc, 10, &liteWc);
     ret = RaHdcLiteQpCreate(&rdmaHandle, &qpHdc, &cap);
     EXPECT_INT_EQ(ret, 0);
 

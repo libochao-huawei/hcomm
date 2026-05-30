@@ -744,7 +744,7 @@ void TcHdcAsyncRecvPkt()
     mocker(pthread_mutex_unlock, 10, 0);
     mocker(memcpy_s, 10, 0);
     mocker(DlDrvHdcFreeMsg, 10, 0);
-    mocker(HdcAsyncSetReqDone, 10, 0);
+    mocker(HdcAsyncSetReqDone, 10, (void*)0);
     ret = HdcAsyncRecvPkt(&asyncInfo, 0, recvBuf, &recvLen);
     EXPECT_INT_EQ(ret, 25);
     HdcAsyncHandleRecvBroken(&asyncInfo);
@@ -1275,7 +1275,7 @@ void TcRaHdcCtxQpDestroyBatchAsync()
     EXPECT_INT_EQ(-EINVAL, ret);
     mocker_clean();
 
-    mocker(calloc, 1, 0);
+    mocker(calloc, 1, NULL);
     ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
@@ -1711,7 +1711,7 @@ void TcRaHdcGetTpAttrAsync()
     int ret;
 
     mocker_clean();
-    mocker(calloc, 2, 0);
+    mocker(calloc, 2, NULL);
     ret = RaHdcGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
@@ -1812,7 +1812,7 @@ void TcRaHdcSetTpAttrAsync()
     struct TpAttr attr = {0};
 
     mocker_clean();
-    mocker(calloc, 2, 0);
+    mocker(calloc, 2, NULL);
     int ret = RaHdcSetTpAttrAsync(&ctx, tpHandle, attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();

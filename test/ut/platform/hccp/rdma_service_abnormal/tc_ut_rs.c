@@ -299,7 +299,7 @@ void TcRsInit2()
 
 	cfg.chipId = 3;
 	cfg.hccpMode = NETWORK_ONLINE;
-	mocker((stub_fn_t)calloc, 10, 0);
+	mocker((stub_fn_t)calloc, 10, NULL);
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, -12);
 	mocker_clean();
@@ -368,7 +368,7 @@ void TcRsRdevInit()
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	mocker((stub_fn_t)calloc, 20, 0);
+	mocker((stub_fn_t)calloc, 20, NULL);
 	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
@@ -468,7 +468,7 @@ void TcRsSocketListenStart2()
 	listenNode[0].phyId = 0;
 	listenNode[0].family = AF_INET;
     listenNode[0].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	mocker((stub_fn_t)calloc, 10, 0);
+	mocker((stub_fn_t)calloc, 10, NULL);
 	listenNode[0].port = 16666;
 	ret = RsSocketListenStart(listenNode, 1);
 	mocker_clean();
@@ -617,7 +617,7 @@ void TcRsSocketBatchConnect2()
 
 	connNode[0].phyId = 0;
 
-	mocker((stub_fn_t)calloc, 10, 0);
+	mocker((stub_fn_t)calloc, 10, NULL);
 	connNode[0].port = 16666;
 	ret = RsSocketBatchConnect(connNode, 1);
 	mocker_clean();
@@ -789,12 +789,12 @@ void TcRsQpCreate2()
 	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	mocker((stub_fn_t)calloc, 10, 0);
+	mocker((stub_fn_t)calloc, 10, NULL);
 	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	mocker((stub_fn_t)ibv_create_comp_channel, 10, 0);
+	mocker((stub_fn_t)ibv_create_comp_channel, 10, NULL);
 	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
@@ -836,7 +836,7 @@ void TcRsQpCreate2()
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	mocker((stub_fn_t)ibv_exp_create_qp, 10, 0);
+	mocker((stub_fn_t)ibv_exp_create_qp, 10, NULL);
 	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
@@ -1066,7 +1066,7 @@ void TcRsEpollOps2()
 	RsEpollEventInHandle(rsCbT, &events);
 	mocker_clean();
 
-	mocker((stub_fn_t)calloc, 10, 0);
+	mocker((stub_fn_t)calloc, 10, NULL);
 	struct RsConnInfo *conCbNode = NULL;
 	ret = RsAllocConnNode(&conCbNode, 16666);
 	EXPECT_INT_EQ(ret, -12);
@@ -2289,7 +2289,7 @@ void TcRsAbnormal2()
 	ret = RsQpn2qpcb(devId, rdevIndex, resp.qpn, &qpCb);
 	EXPECT_INT_EQ(ret, 0);
 
-	mocker((stub_fn_t)calloc, 10, 0);
+	mocker((stub_fn_t)calloc, 10, NULL);
 	ret = RsNotifyMrListAdd(qpCb, buf);
 	mocker_clean();
 
@@ -2308,7 +2308,7 @@ void TcRsAbnormal2()
 	mocker_clean();
 
 	*cmd = RS_CMD_MR_INFO;
-	mocker((stub_fn_t)calloc, 10, 0);
+	mocker((stub_fn_t)calloc, 10, NULL);
 	RsEpollRecvHandle(qpCb, buf, 64);
 	mocker_clean();
 
@@ -2323,7 +2323,7 @@ void TcRsAbnormal2()
 	mocker((stub_fn_t)memcpy_s, 10, 1);
 	RsEpollRecvHandleRemain(qpCb, totalSize, curSize, flag, bufTmp);
 	mocker_clean();
-	mocker((stub_fn_t)ibv_create_cq, 10, 0);
+	mocker((stub_fn_t)ibv_create_cq, 10, NULL);
 	ibSendCqT = qpCb->ibSendCq;
 	ibRecvCqT = qpCb->ibRecvCq;
 	ret = RsDrvCreateCq(qpCb, 0);
