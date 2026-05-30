@@ -2195,6 +2195,36 @@ RS_ATTRI_VISI_DEF int RsQpDestroy(unsigned int phyId, unsigned int rdevIndex, un
     return ret;
 }
 
+RS_ATTRI_VISI_DEF int RsQpDestroyWithoutCQ(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn)
+{
+    struct RsQpCb *qpCb = NULL;
+    int ret;
+
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret != 0 || qpCb == NULL, hccp_err("get qp cb failed! qpn %u, ret %d", qpn, ret), ret);
+
+    RsQpRelease(qpCb);
+
+    // destroy qp
+    RsDrvQpDestroy(qpCb);
+    RsDeinitMemPool(qpCb);
+
+    qpCb->rdevCb->qpCnt--;
+    ret = RsQpcbDeinit(qpCb->rdevCb, qpCb);
+    if (ret) {
+        hccp_err("rs_qpcb_deinit failed! ret[%d]", ret);
+    }
+
+    pthread_mutex_destroy(&qpCb->cqeErrInfo.mutex);
+    pthread_mutex_destroy(&qpCb->qpMutex);
+    hccp_info("qp %d destroy qp without cq, send wr[%u].", qpn, qpCb->sendWrNum);
+
+    free(qpCb);
+    qpCb = NULL;
+    return ret;
+}
+
 static void RsQpConnectAsyncMr(const struct RsQpCb *qpCb)
 {
     int ret;
@@ -2834,6 +2864,52 @@ RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevInd
 
     hccp_info("RsTypicalCqCreate success: phyId[%u] rdevIndex[%u] cqn[%u] cqDepth[%u]",
         phyId, rdevIndex, *cqn, cqDepth);
+
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsTypicalCqDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn)
+{
+    int ret;
+    int i;
+    struct ibv_cq *ibCq = NULL;
+    bool found = false;
+
+    for (i = 0; i < gRsTypicalCqCnt; i++) {
+        if (gRsTypicalCqTable[i].phyId == phyId &&
+            gRsTypicalCqTable[i].rdevIndex == rdevIndex &&
+            gRsTypicalCqTable[i].cqn == cqn) {
+            ibCq = gRsTypicalCqTable[i].ibCq;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        hccp_err("rs_typical_cq_destroy: cqn[%u] not found phyId[%u] rdevIndex[%u]", cqn, phyId, rdevIndex);
+        return -EINVAL;
+    }
+
+    if (ibCq != NULL) {
+        ret = RsIbvDestroyCq(ibCq);
+        if (ret) {
+            hccp_err("rs_ibv_destroy_cq failed cqn[%u] ret[%d]", cqn, ret);
+            return ret;
+        }
+    }
+
+    /* Remove entry by shifting remaining entries */
+    if (i < gRsTypicalCqCnt - 1) {
+        if (memmove_s(&gRsTypicalCqTable[i], (gRsTypicalCqCnt - i - 1) * sizeof(struct RsTypicalCqEntry),
+            &gRsTypicalCqTable[i + 1], (gRsTypicalCqCnt - i - 1) * sizeof(struct RsTypicalCqEntry)) != 0) {
+            hccp_err("memmove_s failed in rs_typical_cq_destroy");
+            return -EFAULT;
+        }
+    }
+    gRsTypicalCqCnt--;
+
+    hccp_info("RsTypicalCqDestroy success: phyId[%u] rdevIndex[%u] cqn[%u]",
+        phyId, rdevIndex, cqn);
 
     return 0;
 }

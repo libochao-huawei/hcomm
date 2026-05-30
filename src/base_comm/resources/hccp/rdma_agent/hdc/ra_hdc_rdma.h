@@ -227,6 +227,18 @@ union OpQpDestroyData {
     } rxData;
 };
 
+union OpTypicalCqDestroyData {
+    struct {
+        unsigned int phyId;
+        unsigned int rdevIndex;
+        unsigned int cqn;
+    } txData;
+
+    struct {
+        unsigned int rsvd;
+    } rxData;
+};
+
 union OpQpStatusData {
     struct {
         unsigned int phyId;
@@ -541,10 +553,12 @@ int RaHdcTypicalQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, 
     void **qpHandle);
 int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn,
     void **cqHandle);
+int RaHdcTypicalCqDestroy(struct RaRdmaHandle *rdmaHandle, unsigned int cqn, void *cqHandle);
 int RaHdcQpCreateWithCQWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs *extAttrs,
     unsigned int sendCqn, unsigned int recvCqn, void **qpHandle);
 int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries, void *wc);
 int RaHdcQpDestroy(struct RaQpHandle *qpHdc);
+int RaHdcQpDestroyWithoutCQ(struct RaQpHandle *qpHdc);
 int RaHdcTypicalQpModify(struct RaQpHandle *qpHdc, struct TypicalQp *localQpInfo,
     struct TypicalQp *remoteQpInfo);
 int RaHdcQpConnectAsync(struct RaQpHandle *qpHdc, const void *sockHandle);

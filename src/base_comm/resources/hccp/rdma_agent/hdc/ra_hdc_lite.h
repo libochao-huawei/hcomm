@@ -118,6 +118,7 @@ union OpLiteConnectedInfoData {
 int RaHdcLiteQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
     struct rdma_lite_qp_cap *cap);
 void RaHdcLiteQpDestroy(struct RaQpHandle *qpHdc);
+void RaHdcLiteQpDestroyWithoutCQ(struct RaQpHandle *qpHdc);
 int RaHdcLiteInit(struct RaRdmaHandle *rdmaHandle, unsigned int phyId, unsigned int rdevIndex);
 void RaHdcLiteDeinit(struct RaRdmaHandle *rdmaHandle);
 int RaHdcLiteSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct SendWrRsp *opRsp,
