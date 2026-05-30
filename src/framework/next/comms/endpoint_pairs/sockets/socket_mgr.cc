@@ -189,27 +189,26 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
 
     for (; it != socketMap_.end(); ++it) {
         if (std::equal_to<Hccl::SocketConfig>{}(socketConfig, it->first)) {
+            socket = it->second.get();
             break;
         }
     }
     if (it != socketMap_.end()) {
         if (socketConfig.hostNic2DeviceNicMode_) {
-            socket = it->second.get();
             socket->Destroy();
             socketMap_.erase(it);
+            socketInUseMap_.erase(socket);
         } else {
             HCCL_INFO("[SocketMgr][%s] find a correct socket in map", __func__);
             auto timeoutPoint = std::chrono::steady_clock::now() + 
-                                std::chrono::seconds(EnvLinkTimeoutGet());
-            lock.unlock();
+                                std::chrono::seconds(EnvLinkTimeoutGet()) - std::chrono::seconds(10);
             while(socketInUseMap_[socket] == true) {
-                if (socketAvailableCv_.wait_until(lock, timeoutPoint) == std::cv_status::timeout) {
+                auto currentTime = std::chrono::steady_clock::now();
+                if (currentTime >= timeoutPoint) {
                     HCCL_ERROR("[SocketMgr][%s] Get Socket Time Out", __func__);
                     return HCCL_E_TIMEOUT;
                 }
             }
-            lock.lock();
-            socket = it->second.get();
             CHK_RET(MakeSocketInUse(socket));
             return HCCL_SUCCESS;
         }
@@ -234,7 +233,6 @@ HcclResult SocketMgr::PutSocket(const Hccl::SocketConfig*& socketConfig, Hccl::S
 {
     HCCL_INFO("[SocketMgr][%s] start to put a socket", __func__);
     CHK_PTR_NULL(socket);
-    std::lock_guard<std::mutex> lock(mutex_);
     CHK_RET(UpdateSocketConfig(socketConfig, socket));
     for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
         if (it->second.get() == socket) {
@@ -264,6 +262,18 @@ HcclResult SocketMgr::UpdateSocketConfig(const Hccl::SocketConfig*& socketConfig
 HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
 {
     CHK_PTR_NULL(socket);
+    bool socketExist = false;
+    for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
+        if (it->second.get() == socket) {
+            socketExist = true;
+            break;
+        }
+    }
+    if (!socketExist) {
+        HCCL_WARNING("[DeleteWhiteList] socket not found in socketMap_, nothing to delete.",
+            socket);
+        return HCCL_SUCCESS;
+    }
     auto iter = handle2WhiteListMap_.find(socket->GetFdHandle());
     if (iter == handle2WhiteListMap_.end()) {
         HCCL_WARNING("[DeleteWhiteList] socketHandle[%p] not found in handle2WhiteListMap_, nothing to delete.",
@@ -289,8 +299,10 @@ HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
         HCCL_WARNING("[DestroySocket] socket is nullptr, nothing to destroy.");
         return HCCL_SUCCESS;
     }
+    bool socketExist = false;
     for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
         if (it->second.get() == socket) {
+            socketExist = true;
             HCCL_INFO("[DestroySocket] Erasing socket inuse info with tag[%s] from socketInUseMap.", it->first.GetHccpTag().c_str());
             socketInUseMap_.erase(socket);
             HCCL_INFO("[DestroySocket] Erasing socket with tag[%s] from socketMap.", it->first.GetHccpTag().c_str());
@@ -298,9 +310,10 @@ HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
             break;
         }
     }
-
-    EXECEPTION_CATCH(socket->Destroy(),
-        HCCL_ERROR("[DestroySocket] Destroy failed for socket with tag[%s].", socket->Describe().c_str()));
+    if (!socketExist) {
+        HCCL_WARNING("[DestroySocket] socket is not exist in socketMap_, nothing to destroy.");
+        return HCCL_SUCCESS;
+    }
     return HCCL_SUCCESS;
 }
 
