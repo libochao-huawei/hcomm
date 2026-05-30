@@ -243,5 +243,5 @@ HCCP_ATTRI_VISI_DEF int RaDeinit(struct RaInitConfig *config)
 
 STATIC void __attribute__ ((destructor)) RaUninitAsync(void)
 {
-    RaHdcUninitAsync();
+    RaHdcDeinitAsyncAll();
 }
