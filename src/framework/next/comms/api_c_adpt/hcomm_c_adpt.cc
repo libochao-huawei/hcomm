@@ -42,7 +42,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-#include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
+#include "endpoint_monitor.h"
 #include "aiv_urma_channel.h"
 
 

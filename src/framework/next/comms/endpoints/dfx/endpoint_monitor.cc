@@ -64,7 +64,7 @@ HcclResult EndpointMonitor::RunMonitorThread()
 {
     HCCL_INFO("[EndpointMonitor][%s] Start Thread.", __func__);
     endpointMonitorThreadFlag_ = true;
-    endpointMonitorThread_.reset(new (std::nothrow) std::thread(&EndpointMonitor::MonitorThread, this));
+    endpointMonitorThread_ = std::make_unique<std::thread>(&EndpointMonitor::MonitorThread, this);
     CHK_SMART_PTR_NULL(endpointMonitorThread_);
     initialized_ = true;
     return HCCL_SUCCESS;
@@ -159,7 +159,7 @@ void EndpointMonitor::ProcessUbAsyncEvents()
     for (auto it = epHandleSet_.begin(); it != epHandleSet_.end();) {
         u32 num = ASYNC_EVENT_MAX_NUM;
         Endpoint *localEpPtr = reinterpret_cast<Endpoint *>(*it);
-        HcclResult ret = localEpPtr->GetAsyncEventsContext(devPhyId_, events_, num);
+        HcclResult ret = localEpPtr->GetDfxInfo(devPhyId_, events_, num);
         if (ret != HCCL_SUCCESS) {
             it = epHandleSet_.erase(it);
             HCCL_ERROR("[EndpointMonitor][%s] devPhyId[%u] HcommGetAsyncEvents failed ret[%d], "
