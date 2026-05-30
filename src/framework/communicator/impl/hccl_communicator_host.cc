@@ -7489,7 +7489,7 @@ namespace hccl
                 sizeof(payload), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
 
             HcclResult ret = AicpuAclKernelLaunchV2(opStream_.ptr(), reinterpret_cast<void *>(&initTask),
-                sizeof(initTask), binHandle_, "RunAicpuKfcClearOpRes", true, timeOut, nullptr, 0);
+                sizeof(initTask), binHandle_, "RunAicpuKfcClearOpRes", true, timeOut, nullptr, 0, identifier_);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[AicpuKfcClearOpResLaunch] launch fail, group[%s] batch[%zu] tagCount[%u] ret[%d]",
                     identifier_.c_str(), totalBatches, idx, ret);
