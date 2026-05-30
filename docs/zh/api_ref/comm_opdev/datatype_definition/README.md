@@ -22,6 +22,7 @@
 - [EndpointAttrLocation](EndpointAttrLocation.md)  
 - [EndpointHandle](EndpointHandle.md)  
 - [HcclChannelDesc](HcclChannelDesc.md)  
+- [HcommEndpointFeatureType](HcommEndpointFeatureType.md)  
 - [HcommReduceOp](HcommReduceOp.md)
 - [HcommDataType](HcommDataType.md)
 - [HcommTransferType](HcommTransferType.md)

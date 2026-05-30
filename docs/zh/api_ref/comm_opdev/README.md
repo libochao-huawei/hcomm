@@ -47,7 +47,6 @@
     - [HcommChannelDescInit](./control_plane_api/basic_resource_mgmt/HcommChannelDescInit.md)
     - [HcommChannelCreate](./control_plane_api/basic_resource_mgmt/HcommChannelCreate.md)
     - [HcommChannelGetStatus](./control_plane_api/basic_resource_mgmt/HcommChannelGetStatus.md)
-    - [HcommChannelGetPtrByHandle](./control_plane_api/basic_resource_mgmt/HcommChannelGetPtrByHandle.md)
     - [HcommChannelGetNotifyNum](./control_plane_api/basic_resource_mgmt/HcommChannelGetNotifyNum.md)
     - [HcommChannelDestroy](./control_plane_api/basic_resource_mgmt/HcommChannelDestroy.md)
     - [HcommThreadAlloc](./control_plane_api/basic_resource_mgmt/HcommThreadAlloc.md)
