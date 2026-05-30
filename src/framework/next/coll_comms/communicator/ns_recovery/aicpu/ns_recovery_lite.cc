@@ -39,14 +39,11 @@ void NsRecoveryLite::BackGroundSetStatus(Hccl::KfcStatus status, Hccl::KfcErrTyp
     hdcHandler_->SetKfcExecStatus(status, errorCode);
 }
 
-void NsRecoveryLite::ResetErrorReported() 
-{
-    isErrorReported_ = false;
-}
 void NsRecoveryLite::SetNeedClean(bool flag)
 {
     needClean_ = flag;
 }
+
 bool NsRecoveryLite::IsNeedClean() const
 {
     return needClean_;

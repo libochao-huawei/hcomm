@@ -27,13 +27,11 @@ public:
 
     Hccl::KfcCommand BackGroundGetCmd();
     void BackGroundSetStatus(Hccl::KfcStatus status, Hccl::KfcErrType errorCode = Hccl::KfcErrType::NONE);
-    void ResetErrorReported();
     void SetNeedClean(bool flag);
     bool IsNeedClean() const;
 
 private:
     bool needClean_{false};
-    bool isErrorReported_{false};
 
     std::unique_ptr<HcclAicpuHdcHandler> hdcHandler_{nullptr};
     std::mutex hdcShmLock_;
