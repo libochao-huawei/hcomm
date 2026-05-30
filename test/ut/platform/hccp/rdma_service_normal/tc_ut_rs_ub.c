@@ -278,13 +278,13 @@ void TcRsUbGetDevEidInfoNum()
     ret = RsUbGetDevEidInfoNum(phyId, &num);
     EXPECT_INT_EQ(0, ret);
 
-    mocker(RsUrmaGetDeviceList, 10, 0);
+    mocker(RsUrmaGetDeviceList, 10, NULL);
     ret = RsUbGetDevEidInfoNum(phyId, &num);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker_invoke(RsUrmaGetDeviceList, TcRsUrmaGetDeviceListStub, 10);
-    mocker(RsUrmaGetEidList, 10, 0);
+    mocker(RsUrmaGetEidList, 10, NULL);
     mocker(RsUrmaFreeDeviceList, 10, 0);
     mocker(RsUrmaFreeEidList, 10, 0);
     ret = RsUbGetDevEidInfoNum(phyId, &num);
@@ -333,14 +333,14 @@ void TcRsUbGetDevEidInfoList()
     EXPECT_INT_EQ(0, ret);
 
     mocker_invoke(RsUbGetDevEidInfoNum, RsUbGetDevEidInfoNumStub, 10);
-    mocker(RsUrmaGetDeviceList, 10, 0);
+    mocker(RsUrmaGetDeviceList, 10, NULL);
     ret = RsUbGetDevEidInfoList(phyId, infoList, startIndex, count);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker_invoke(RsUbGetDevEidInfoNum, RsUbGetDevEidInfoNumStub, 10);
     mocker_invoke(RsUrmaGetDeviceList, TcRsUrmaGetDeviceListStub, 10);
-    mocker(RsUrmaGetEidList, 10, 0);
+    mocker(RsUrmaGetEidList, 10, NULL);
     mocker(RsUrmaFreeDeviceList, 10, 0);
     ret = RsUbGetDevEidInfoList(phyId, infoList, startIndex, count);
     EXPECT_INT_EQ(0, ret);
@@ -477,7 +477,7 @@ void TcRsUbCtxTokenIdAlloc2()
     ret = RsUbGetDevCb(tcRsCb, devIndex, &devCb);
     EXPECT_INT_EQ(0, ret);
 
-    mocker(RsUrmaAllocTokenId, 10, 0);
+    mocker(RsUrmaAllocTokenId, 10, NULL);
     ret = RsUbCtxTokenIdAlloc(devCb, &addr, &tokenId);
     EXPECT_INT_NE(0, ret);
 
@@ -607,7 +607,7 @@ void TcRsUbCtxJfcCreateNormal()
     mocker_clean();
 
     mocker_invoke(RsUbGetJfceCb, RsUbGetJfceCbStub, 1);
-    mocker(RsUrmaCreateJfc, 1, 0);
+    mocker(RsUrmaCreateJfc, 1, NULL);
     ret = RsUbCtxJfcCreateNormal(&devCb, &jfcCfg, &outJfc);
     EXPECT_INT_EQ(-EOPENSRC, ret);
     mocker_clean();
@@ -1099,7 +1099,7 @@ void TcRsUbCtxInit()
     int devIndex = 0;
     int ret = 0;
 
-    mocker(RsUrmaGetDeviceByEid, 1, 0);
+    mocker(RsUrmaGetDeviceByEid, 1, NULL);
     ret = RsUbCtxInit(&rsCb, &attr, &devIndex, &baseAttr);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
@@ -1141,7 +1141,7 @@ void TcRsUbCtxChanCreate()
 
     devCb.rscb = &rsCb;
     dataPlaneFlag.bs.pollCqCstm = 1;
-    mocker(RsUrmaCreateJfce, 1, 0);
+    mocker(RsUrmaCreateJfce, 1, NULL);
     ret = RsUbCtxChanCreate(&devCb, dataPlaneFlag, &addr, &fd);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
@@ -1179,7 +1179,7 @@ void TcRsUbInitSegCb()
     int ret = 0;
 
     mocker(RsUbGetTokenIdCb, 1, 0);
-    mocker(RsUrmaRegisterSeg, 1, 0);
+    mocker(RsUrmaRegisterSeg, 1, NULL);
     ret = RsUbInitSegCb(&memAttr, &devCb, &segCb);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
@@ -1198,7 +1198,7 @@ void TcRsUbCtxLmemReg()
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
-    mocker(RsUrmaImportSeg, 1, 0);
+    mocker(RsUrmaImportSeg, 1, NULL);
     ret = RsUbCtxRmemImport(&devCb, (struct MemImportAttrT *)&memAttr, (struct MemImportInfoT *)&memInfo);
     EXPECT_INT_NE(0, ret);
     mocker_clean();

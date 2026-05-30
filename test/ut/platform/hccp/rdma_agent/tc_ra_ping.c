@@ -71,7 +71,7 @@ void TcRaPingInitAbnormal()
     ret = RaPingInit(NULL, NULL, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
 
-    mocker((stub_fn_t)calloc, 1, 0);
+    mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaPingInit(NULL, NULL, &pingHandle);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();

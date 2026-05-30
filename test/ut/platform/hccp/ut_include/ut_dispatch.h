@@ -12,6 +12,7 @@
 #define __UT_DISPATCH_H
 
 #include <stdio.h>
+#include <stdint.h>
 typedef	int (*stub_fn_t)(long unsigned int data0, long unsigned int data1, long unsigned int data2, long unsigned int data3, long unsigned int data4, long unsigned int data5);
 
 typedef long unsigned int (*stub_u64_fn_t)(long unsigned int data0, long unsigned int data1, long unsigned int data2, long unsigned int data3, long unsigned int data4, long unsigned int data5);
@@ -37,8 +38,8 @@ void ut_assert_int_true(int orig, const char *file, int line);
 
 #define ASSERT_INT_EQ(orig, value)		ut_assert_int_eq(orig, value, __FILE__, __LINE__)
 #define ASSERT_INT_NE(orig, value)		ut_assert_int_ne(orig, value, __FILE__, __LINE__)
-#define ASSERT_ADDR_EQ(orig, value)		ut_assert_addr_eq(orig, value, __FILE__, __LINE__)
-#define ASSERT_ADDR_NE(orig, value)		ut_assert_addr_ne(orig, value, __FILE__, __LINE__)
+#define ASSERT_ADDR_EQ(orig, value)		ut_assert_addr_eq((void *)(orig), (void *)(value), __FILE__, __LINE__)
+#define ASSERT_ADDR_NE(orig, value)		ut_assert_addr_ne((void *)(orig), (void *)(value), __FILE__, __LINE__)
 #define ASSERT_TRUE(orig)			ut_assert_int_true(orig, __FILE__, __LINE__)
 
 #define EXPECT_INT_EQ(orig, value)		ut_expect_int_eq(orig, value, __FILE__, __LINE__)
@@ -58,8 +59,8 @@ void ut_assert_int_true(int orig, const char *file, int line);
 
 #define ASSERT_INT_EQ(orig, value)		ut_assert_int_eq(orig, value, __FILE__, __LINE__)
 #define ASSERT_INT_NE(orig, value)		ut_assert_int_ne(orig, value, __FILE__, __LINE__)
-#define ASSERT_ADDR_EQ(orig, value)		ut_assert_addr_eq(orig, value, __FILE__, __LINE__)
-#define ASSERT_ADDR_NE(orig, value)		ut_assert_addr_ne(orig, value, __FILE__, __LINE__)
+#define ASSERT_ADDR_EQ(orig, value)		ut_assert_addr_eq((void *)(orig), (void *)(value), __FILE__, __LINE__)
+#define ASSERT_ADDR_NE(orig, value)		ut_assert_addr_ne((void *)(orig), (void *)(value), __FILE__, __LINE__)
 #define ASSERT_TRUE(orig)			ut_assert_int_true(orig, __FILE__, __LINE__)
 
 #define MOCKER_APIs_DECLARE(n) \
@@ -82,9 +83,9 @@ MOCKER_APIs_DECLARE(11);
 MOCKER_APIs_DECLARE(12);
 
 /* mocker default interface */
-#define mocker(fn, most_cnt, ret_val)	 mocker_p4(#fn, fn, most_cnt, ret_val)
-#define mocker_ret(fn, ret0, ret1, ret2) mocker_ret_p4(#fn, fn, ret0, ret1, ret2)
-#define mocker_invoke(fn, stub, most)	 mocker_invoke_p4(#fn, #stub, fn, stub, most)
+#define mocker(fn, most_cnt, ret_val)	 mocker_p4(#fn, (void*)(stub_fn_t)(fn), most_cnt, (int)(intptr_t)(ret_val))
+#define mocker_ret(fn, ret0, ret1, ret2) mocker_ret_p4(#fn, (void*)(stub_fn_t)(fn), ret0, ret1, ret2)
+#define mocker_invoke(fn, stub, most)	 mocker_invoke_p4(#fn, #stub, (void*)(stub_fn_t)(fn), (void*)(stub_fn_t)(stub), most)
 
 void mocker_clean();
 
