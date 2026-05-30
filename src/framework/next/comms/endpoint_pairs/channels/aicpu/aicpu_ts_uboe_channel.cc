@@ -83,10 +83,10 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
             std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
             HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memInfo[%s].",
                 __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+                localUbRmaBuffer->GetBuf()->GetMemInfo().c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
                 localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
+                localUbRmaBuffer->GetBuf()->GetMemInfo().c_str())
             ));
         }
     } else {

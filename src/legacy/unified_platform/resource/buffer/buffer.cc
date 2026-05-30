@@ -59,7 +59,7 @@ HcclMemType Buffer::GetMemType() const
     return memType_;
 }
 
-const std::string Buffer::GetMemTag() const
+const std::string Buffer::GetMemInfo() const
 {
     return memInfo_;
 }

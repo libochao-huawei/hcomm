@@ -47,7 +47,7 @@ public:
         return memType;
     }
 
-    inline const std::string GetMemTag() const
+    inline const std::string GetMemInfo() const
     {
         return memInfo;
     }

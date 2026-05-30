@@ -94,7 +94,7 @@ HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
             mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
             mem.size = rmtBuffer->GetSize();
             remoteMemCtx.remoteUserMems.push_back(mem);
-            std::string tagCopy = rmtBuffer->GetMemTag();
+            std::string tagCopy = rmtBuffer->GetMemInfo();
             remoteMemCtx.tagCopies.push_back(std::move(tagCopy));
             remoteMemCtx.tagPointers.push_back(const_cast<char*>(remoteMemCtx.tagCopies.back().c_str()));
             HCCL_INFO("[%s] Found buffer[addr:%p, size:%llu, memInfo:%s]", mem.addr, mem.size,

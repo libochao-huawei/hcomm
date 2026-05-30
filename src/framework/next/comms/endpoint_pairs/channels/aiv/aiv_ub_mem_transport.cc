@@ -26,7 +26,6 @@ HcclResult AivUbMemTransport::FillBufferVec(HcommMemHandle *memHandles, uint32_t
     std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec)
 {
     uint32_t totalBufferNum = localRmaBufferVec_.size() + bufferNum;
-    localUserMemTag_.reserve(totalBufferNum);
     if (UNLIKELY(totalBufferNum > MAX_BUFFER_NUM)) {
         HCCL_ERROR("[AivUbMemTransport][FillBufferVec] totalBufferNum[%u] exceeds limit[%u]", totalBufferNum, MAX_BUFFER_NUM);
         return HCCL_E_PARA;
@@ -152,7 +151,7 @@ HcclResult AivUbMemTransport::SendDataSize()
     HCCL_INFO("[%s] start", __func__);
 
     Hccl::BinaryStream binaryStream;
-    BufferPack(binaryStream, localRmaBufferVec_, localUserMemTag_);
+    BufferPack(binaryStream, localRmaBufferVec_);
     
     binaryStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
@@ -224,7 +223,7 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     u32 vecSize{0};
     binaryStream >> vecSize;
     HCCL_RUN_INFO("vecSize=%u", vecSize);
-    uint32_t totalBufferNum = remoteUserMemTag_.size() + vecSize;
+    uint32_t totalBufferNum = rmtBufferVec_.size() + vecSize;
     if (UNLIKELY(totalBufferNum > MAX_BUFFER_NUM)) {
         EXCEPTION_THROW_IF_ERR(HCCL_E_PARA, "[AivUbMemTransport][RmtBufferUnpackProc] vecSize exceeds limit.");
     }
@@ -328,7 +327,6 @@ HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
     RmtBufferUnpackProc(recvStream);
     EXCEPTION_HANDLE_END
     localRmaBufferVec_.insert(localRmaBufferVec_.end(), locMemTemp_.begin(), locMemTemp_.end());
-    localUserMemTag_.insert(localUserMemTag_.end(), locTagTemp_.begin(), locTagTemp_.end());
     // 流程中已有新增内存数量判断，故执行到此位置一定存在新增内存，需要将标识置位false，使得再次调用GetUserRemoteMem时重新构造缓存
     cacheValid_ = false;
     return HCCL_SUCCESS;

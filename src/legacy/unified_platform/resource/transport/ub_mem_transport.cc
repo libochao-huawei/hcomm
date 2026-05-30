@@ -490,7 +490,7 @@ void UbMemTransport::SendDataSize()
     BinaryStream binaryStream;
     HandshakeMsgPack(binaryStream);
     NotifyVecPack(binaryStream);
-    BufferVecPack(binaryStream, commonLocRes.bufferVec, localUserMemTag_);
+    BufferVecPack(binaryStream, commonLocRes.bufferVec);
     CntNotifyVecPack(binaryStream);
     CntNotifyDescPack(binaryStream);
     ConnVecPack(binaryStream);
@@ -927,7 +927,6 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVe
         HCCL_WARNING("[UbMemTransport][UpdateMemInfo] bufferNum is 0.");
         return HCCL_SUCCESS;
     }
-    locMemTagTemp_.clear();
     HCCL_INFO("[UbMemTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
     sendData.clear();
     BinaryStream sendStream;
@@ -965,7 +964,6 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVe
     rmtBufferVec.insert(rmtBufferVec.end(), std::make_move_iterator(rmtBufferTemp.begin()),
         std::make_move_iterator(rmtBufferTemp.end()));
     commonLocRes.bufferVec.insert(commonLocRes.bufferVec.end(), bufferVecTemp.begin(), bufferVecTemp.end());
-    localUserMemTag_.insert(localUserMemTag_.end(), locMemTagTemp_.begin(), locMemTagTemp_.end());
     cacheValid_ = false;
     return HCCL_SUCCESS;
 }

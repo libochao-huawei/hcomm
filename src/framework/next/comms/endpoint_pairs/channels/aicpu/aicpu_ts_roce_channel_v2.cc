@@ -157,7 +157,7 @@ HcclResult AicpuTsRoceChannelV2::BuildBuffer()
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localRdmaBuffer = memHandles[i];
             HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memInfo[%s].",
-                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemTag().c_str());
+                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemInfo().c_str());
             localRmaBuffers_.emplace_back(localRdmaBuffer.get());
         }
     } else {
@@ -168,7 +168,7 @@ HcclResult AicpuTsRoceChannelV2::BuildBuffer()
             CHK_PTR_NULL(channelDesc_.memHandles[i]);
             auto *localRdmaBuffer = reinterpret_cast<Hccl::LocalRdmaRmaBuffer *>(channelDesc_.memHandles[i]);
             HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memInfo[%s].",
-                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemTag().c_str());
+                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemInfo().c_str());
             localRmaBuffers_.emplace_back(localRdmaBuffer);
         }
     }
