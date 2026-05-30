@@ -46,6 +46,7 @@ public:
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
+    HcclResult GetAsyncEvents(uint32_t devPhyId, struct AsyncEvent events[], uint32_t &num) override;
 
 private:
     std::mutex portMutex_;
