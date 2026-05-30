@@ -708,6 +708,8 @@ int RaRsLmemBatchReg(char *inBuf, char *outBuf, int *outLen, int *opResult, int 
 
     RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
     num = opData->txData.num;
+    HCCP_CHECK_PARAM_LEN_RET_HOST(num, 0, LMEM_BATCH_MAX, opResult);
+
     for (i = 0; i < num; i++) {
         ret = gRaRsCtxOps.ctxLmemReg(&devInfo, &opData->txData.memAttrList[i], &opDataOut->rxData.memInfoList[i]);
         if (ret != 0) {
@@ -716,16 +718,18 @@ int RaRsLmemBatchReg(char *inBuf, char *outBuf, int *outLen, int *opResult, int 
             break;
         }
     }
-    opDataOut->rxData.num = i;
-    *opResult = ret;
 
-    if (*opResult != 0) {
+    if (ret != 0) {
         for (i = 0; i < opDataOut->rxData.num; i++) {
             (void)gRaRsCtxOps.ctxLmemUnreg(&devInfo, opDataOut->rxData.memInfoList[i].ub.targetSegHandle);
             opDataOut->rxData.memInfoList[i].ub.tokenId = 0;
             opDataOut->rxData.memInfoList[i].ub.targetSegHandle = 0;
         }
+        i = 0;
     }
+
+    opDataOut->rxData.num = i;
+    *opResult = ret;
     return 0;
 }
 
@@ -742,6 +746,8 @@ int RaRsLmemBatchUnreg(char *inBuf, char *outBuf, int *outLen, int *opResult, in
     RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
     num = opData->txData.num;
     opData->rxData.num = num;
+    HCCP_CHECK_PARAM_LEN_RET_HOST(num, 0, LMEM_BATCH_MAX, opResult);
+
     *opResult = 0;
     for (i = 0; i < num; i++) {
         ret = gRaRsCtxOps.ctxLmemUnreg(&devInfo, opData->txData.addrList[i]);
@@ -769,6 +775,7 @@ int RaRsRmemBatchImport(char *inBuf, char *outBuf, int *outLen, int *opResult, i
 
     RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
     num = opData->txData.num;
+    HCCP_CHECK_PARAM_LEN_RET_HOST(num, 0, RMEM_BATCH_MAX, opResult);
 
     for (i = 0; i < num; i++) {
         ret = gRaRsCtxOps.ctxRmemImport(&devInfo, &opData->txData.memAttrList[i], &opDataOut->rxData.memInfoList[i]);
@@ -778,15 +785,17 @@ int RaRsRmemBatchImport(char *inBuf, char *outBuf, int *outLen, int *opResult, i
             break;
         }
     }
-    opDataOut->rxData.num = i;
-    *opResult = ret;
 
-    if (*opResult != 0) {
+    if (ret != 0) {
         for (i = 0; i < opDataOut->rxData.num; i++) {
             (void)gRaRsCtxOps.ctxRmemUnimport(&devInfo, opDataOut->rxData.memInfoList[i].ub.targetSegHandle);
             opDataOut->rxData.memInfoList[i].ub.targetSegHandle = 0;
         }
+        i = 0;
     }
+
+    opDataOut->rxData.num = i;
+    *opResult = ret;
     return 0;
 }
 
@@ -803,6 +812,8 @@ int RaRsRmemBatchUnimport(char *inBuf, char *outBuf, int *outLen, int *opResult,
     RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
     num = opData->txData.num;
     opData->rxData.num = num;
+    HCCP_CHECK_PARAM_LEN_RET_HOST(num, 0, RMEM_BATCH_MAX, opResult);
+
     *opResult = 0;
     for (i = 0; i < num; i++) {
         ret = gRaRsCtxOps.ctxRmemUnimport(&devInfo, opData->txData.addrList[i]);

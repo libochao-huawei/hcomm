@@ -50,7 +50,6 @@ UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed, bool batchRegi
         reqReg = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
         SetMemInfo(reqReg);
     }
-    
 }
 
 HcclResult UbLocalNotify::SetMemInfo(const HrtRaUbLocalMemRegOutParam &reqReg)
