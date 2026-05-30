@@ -80,7 +80,13 @@ public:
     static HcclResult CheckFeature(const EndpointDesc &endpointDesc, HcommEndpointFeatureType featureType, bool &value);
 
     // 获取UB异步事件
-    HcclResult GetAsyncEventsContext(uint32_t devPhyId, struct AsyncEvent events[], uint32_t &num);
+    virtual HcclResult GetAsyncEvents(uint32_t devPhyId, struct AsyncEvent events[], uint32_t &num)
+    {
+        (void) devPhyId;
+        (void) events;
+        num = 0;
+        return HCCL_SUCCESS;
+    }
 
 protected:
     static HcclResult CreateEndpointBase(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr);
