@@ -34,39 +34,39 @@ public:
     {
         std::string str = SalGetEnv(name.c_str());
         if (str.empty() || str == "EmptyString") {
-            isParsed = true;
             value = defaultBackup;
-            return;
-        }
-        isSetByEnvironment_ = true;
-        // 类型转换
-        if (cast) {
-            try {
-                value = cast(str);
-            } catch (const InvalidParamsException &e) {
-                // 有异常上报故障码EI0001
-                RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
-                            std::vector<std::string>({str, name, e.what()}));
-                THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]Env config \"%s\" value is invalid.%s", name.c_str(), e.what()));
-            } catch (const NotSupportException &e) { // 临时修改方案 HCCL_SOCKET_IFNAME等当前不支持配置 且需要报错
-                THROW<NotSupportException>(
-                    StringFormat("[Init][EnvVarParam]Env config \"%s\" or its value is currently unsupported.%s", name.c_str(), e.what()));
-            }
         } else {
-            THROW<InvalidParamsException>(
-                StringFormat("[Init][EnvVarParam]Env config \"%s\" No cast function is assigned.", name.c_str()));
-        }
-        // 校验，环境变量取值范围异常时抛异获取到范围值
-        if (validate) {
-            try {
-                validate(value);
-            } catch (const InvalidParamsException &e) {
-                // 有异常上报故障码EI0001
-                RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
-                            std::vector<std::string>({str, name, e.what()}));
-                THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]Env config \"%s\" value is invalid.%s", name.c_str(), e.what()));
+            isSetByEnvironment_ = true;
+            // 类型转换
+            if (cast) {
+                try {
+                    value = cast(str);
+                } catch (const InvalidParamsException &e) {
+                    // 有异常上报故障码EI0001
+                    RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+                                std::vector<std::string>({str, name, e.what()}));
+                    THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]Env config \"%s\" value is invalid.%s", name.c_str(), e.what()));
+                } catch (const NotSupportException &e) { // 临时修改方案 HCCL_SOCKET_IFNAME等当前不支持配置 且需要报错
+                    THROW<NotSupportException>(
+                        StringFormat("[Init][EnvVarParam]Env config \"%s\" or its value is currently unsupported.%s", name.c_str(), e.what()));
+                }
+            } else {
+                THROW<InvalidParamsException>(
+                    StringFormat("[Init][EnvVarParam]Env config \"%s\" No cast function is assigned.", name.c_str()));
+            }
+            // 校验，环境变量取值范围异常时抛异获取到范围值
+            if (validate) {
+                try {
+                    validate(value);
+                } catch (const InvalidParamsException &e) {
+                    // 有异常上报故障码EI0001
+                    RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+                                std::vector<std::string>({str, name, e.what()}));
+                    THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]Env config \"%s\" value is invalid.%s", name.c_str(), e.what()));
+                }
             }
         }
+
         // 后处理
         if (postProc) {
             postProc(value);
