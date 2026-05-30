@@ -39,7 +39,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-#include "dfx/endpoint_monitor.h" // cmakelist加include
+#include "endpoint_monitor.h"
 
 
 namespace hcomm {
