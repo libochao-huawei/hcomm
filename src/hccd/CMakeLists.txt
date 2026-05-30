@@ -96,6 +96,7 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/framework
     ${HCOMM_DIR}/src/framework/inc
     ${HCOMM_DIR}/src/framework/common/src
+    ${HCOMM_DIR}/src/common/launch_aicpu
     ${HCOMM_DIR}/src/framework/common/src/config
     ${HCOMM_DIR}/src/framework/common/src/topo
     ${HCOMM_DIR}/src/framework/common/src/aicpu
@@ -120,6 +121,7 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/platform/inc
     ${HCOMM_DIR}/src/platform/inc/adapter
     ${HCOMM_DIR}/src/platform/common
+    ${HCOMM_DIR}src/common/launch_aicpu
     ${HCOMM_DIR}/src/platform/task
     ${HCOMM_DIR}/src/platform/hccp/inc
     ${HCOMM_DIR}/src/platform/hccp/inc/network

@@ -8,13 +8,13 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <cstdint>
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <cstdint>
 #include "launch_aicpu.h"
 #include "log.h"
-#include "env_config.h"
+// #include "../../framework/common/src/config/env_config.h"
 #include "mmpa_api.h"
 #include "mem_host_pub.h"
 
