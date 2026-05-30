@@ -1234,7 +1234,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemTransport::CheckSocketStatus()
+HcclResult UbMemTransport::CheckSocketStatus(std::string socketOpreator)
 {
     return HCCL_SUCCESS;
 }
