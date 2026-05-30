@@ -137,8 +137,12 @@ int RaHdcLitePollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEnt
     struct rdma_lite_wc_v2 *liteWc);
 int RaHdcLiteCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth,
     union OpTypicalCqCreateData *cqData, struct rdma_lite_cq **liteCq);
+void RaHdcLiteStoreTypicalCq(unsigned int phyId, unsigned int cqn, struct rdma_lite_cq *liteCq);
+struct rdma_lite_cq *RaHdcLiteFindTypicalCq(unsigned int phyId, unsigned int cqn);
 int RaHdcLiteGetCqAttr(struct RaRdmaHandle *rdmaHandle, unsigned int cqn,
     struct rdma_lite_device_cq_attr *deviceCqAttr);
+int RaHdcLiteQpCreateWithCQ(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
+    struct rdma_lite_qp_cap *cap, struct rdma_lite_cq *sendLiteCq, struct rdma_lite_cq *recvLiteCq);
 int RaHdcLiteInitCqeErrInfo(unsigned int phyId);
 void RaHdcLiteDeinitCqeErrInfo(unsigned int phyId);
 void RaHdcLiteGetCqeErrInfo(unsigned int phyId, struct CqeErrInfo *info);
