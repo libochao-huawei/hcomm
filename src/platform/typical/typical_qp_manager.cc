@@ -87,6 +87,22 @@ HcclResult TypicalQpManager::CreateCq(AscendCQInfo& cqInfo)
     return HCCL_SUCCESS;
 }
 
+HcclResult TypicalQpManager::DestroyCq(uint32_t cqn)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    CHK_RET(RdmaResourceManager::GetInstance().GetRdmaHandle(rdmaHandle_));
+    CHK_PTR_NULL(rdmaHandle_);
+    std::unique_lock<std::mutex> lock(cqMutex_);
+    auto it = cqMap_.find(cqn);
+    CHK_PRT_RET((it == cqMap_.end()),
+        HCCL_ERROR("[TypicalQpManager][DestroyCq] cqn[%u] not found.", cqn), HCCL_E_PARA);
+    ret = DestroyTypicalCq(rdmaHandle_, cqn, it->second.second);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[TypicalQpManager][DestroyCq] Destroy cq failed."), HCCL_E_INTERNAL);
+    cqMap_.erase(it);
+    return HCCL_SUCCESS;
+}
+
 HcclResult TypicalQpManager::ValidateCq(uint32_t cqn)
 {
     auto it = cqMap_.find(cqn);
@@ -143,6 +159,21 @@ HcclResult TypicalQpManager::DestroyQp(struct TypicalQp& qpInfo)
     std::unique_lock<std::mutex> lock(qpMutex_);
     HcclResult ret = HrtRaQpDestroy(qpHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TypicalQpManager][DestroyQp] Destroy qp failed."), HCCL_E_INTERNAL);
+    qpMap_.erase(qpInfo.qpn);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TypicalQpManager::DestroyQpWithoutCQ(struct TypicalQp& qpInfo)
+{
+    CHK_PRT_RET((qpInfo.qpn == 0), HCCL_ERROR("[TypicalQpManager][DestroyQpWithoutCQ] The qpinfo is wrong, qpn is 0."),
+        HCCL_E_PARA);
+    QpHandle qpHandle;
+    CHK_RET(GetQpHandleByQpn(qpInfo.qpn, qpHandle));
+    CHK_PTR_NULL(qpHandle);
+    std::unique_lock<std::mutex> lock(qpMutex_);
+    HcclResult ret = HrtRaQpDestroyWithoutCQ(qpHandle);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[TypicalQpManager][DestroyQpWithoutCQ] Destroy qp without cq failed."), HCCL_E_INTERNAL);
     qpMap_.erase(qpInfo.qpn);
     return HCCL_SUCCESS;
 }

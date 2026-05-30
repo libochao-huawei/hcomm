@@ -34,6 +34,7 @@ public:
     std::function<int(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle *qpHandle)> dlRaQpCreate;
     std::function<int(void* qpHandle, void** qp, void** sendCq, void** recvCq)> dlRaGetQpContext;
     std::function<int(QpHandle handle)> dlRaQpDestroy;
+    std::function<int(QpHandle handle)> dlRaQpDestroyWithoutCQ;
     std::function<int(QpHandle handle, const SocketHandle sockHandle)> dlRaQpConnectAsync;
     std::function<int(QpHandle handle, int *status)> dlRaGetQpStatus;
     std::function<int(QpHandle handle, struct MrInfoT *info)> dlRaMrReg;
@@ -131,6 +132,7 @@ public:
     std::function<int(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp)> dlRaTypicalSendWr;
     std::function<int(RdmaHandle rdmaHandle, unsigned int cqDepth,
         unsigned int *cqn, void **cqHandle)> dlRaTypicalCqCreate;
+    std::function<int(RdmaHandle rdmaHandle, unsigned int cqn, void *cqHandle)> dlRaTypicalCqDestroy;
     std::function<int(RdmaHandle rdmaHandle, struct QpExtAttrs *ext_attrs,
         unsigned int sendCqn, unsigned int recvCqn,
         QpHandle *qpHandle)> dlRaQpCreateWithCQWithAttrs;

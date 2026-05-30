@@ -92,6 +92,23 @@ STATIC int RaHdcCmdQpDestroy(struct RaQpHandle *qpHdc)
     return ret;
 }
 
+STATIC int RaHdcCmdQpDestroyWithoutCQ(struct RaQpHandle *qpHdc)
+{
+    int ret;
+    union OpQpDestroyData qpDestroyData = {0};
+
+    qpDestroyData.txData.qpn = qpHdc->qpn;
+    qpDestroyData.txData.phyId = qpHdc->phyId;
+    qpDestroyData.txData.rdevIndex = qpHdc->rdevIndex;
+    ret = RaHdcProcessMsg(RA_RS_QP_DESTROY_WITHOUT_CQ, qpHdc->phyId, (char *)&qpDestroyData,
+        sizeof(union OpQpDestroyData));
+    if (ret) {
+        hccp_err("[destroy][ra_hdc_qp]hdc_send_recv_pkt failed ret(%d) phyId(%u)", ret, qpHdc->phyId);
+    }
+
+    return ret;
+}
+
 int RaHdcQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, void **qpHandle)
 {
     unsigned int phyId = rdmaHandle->rdevInfo.phyId;
@@ -474,6 +491,36 @@ int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, 
     return 0;
 }
 
+int RaHdcTypicalCqDestroy(struct RaRdmaHandle *rdmaHandle, unsigned int cqn, void *cqHandle)
+{
+    struct RaTypicalCqHandle *cqHdc = (struct RaTypicalCqHandle *)cqHandle;
+    union OpTypicalCqDestroyData destroyData = {0};
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    int ret;
+
+    if (cqHdc == NULL) {
+        hccp_err("[destroy][ra_hdc_typical_cq]cq handle is NULL phyId(%u)", phyId);
+        return -EINVAL;
+    }
+
+    if (cqHdc->liteCq != NULL) {
+        (void)RaRdmaLiteDestroyCq(cqHdc->liteCq);
+        cqHdc->liteCq = NULL;
+    }
+
+    destroyData.txData.phyId = phyId;
+    destroyData.txData.rdevIndex = rdmaHandle->rdevIndex;
+    destroyData.txData.cqn = cqn;
+    ret = RaHdcProcessMsg(RA_RS_TYPICAL_CQ_DESTROY, phyId, (char *)&destroyData,
+        sizeof(union OpTypicalCqDestroyData));
+    if (ret) {
+        hccp_err("[destroy][ra_hdc_typical_cq]ra hdc message process failed ret(%d) phyId(%u)", ret, phyId);
+    }
+
+    free(cqHdc);
+    return ret;
+}
+
 int RaHdcQpDestroy(struct RaQpHandle *qpHdc)
 {
     int ret;
@@ -482,6 +529,22 @@ int RaHdcQpDestroy(struct RaQpHandle *qpHdc)
     ret = RaHdcCmdQpDestroy(qpHdc);
     if (ret) {
         hccp_err("[destroy][ra_hdc_qp]ra_hdc_cmd_qp_destroy failed ret(%d) phyId(%u)", ret, qpHdc->phyId);
+    }
+
+    free(qpHdc);
+    qpHdc = NULL;
+    return ret;
+}
+
+int RaHdcQpDestroyWithoutCQ(struct RaQpHandle *qpHdc)
+{
+    int ret;
+
+    RaHdcLiteQpDestroyWithoutCQ(qpHdc);
+    ret = RaHdcCmdQpDestroyWithoutCQ(qpHdc);
+    if (ret) {
+        hccp_err("[destroy][ra_hdc_qp]ra_hdc_cmd_qp_destroy_without_cq failed ret(%d) phyId(%u)",
+            ret, qpHdc->phyId);
     }
 
     free(qpHdc);

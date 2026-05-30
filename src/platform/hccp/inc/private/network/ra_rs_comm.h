@@ -135,6 +135,8 @@ enum OpType {
     RA_RS_TYPICAL_CQ_CREATE = 112,
     RA_RS_GET_LITE_CQ_ATTR = 113,
     RA_RS_QP_CREATE_WITH_CQ_WITH_ATTRS = 114,
+    RA_RS_TYPICAL_CQ_DESTROY = 115,
+    RA_RS_QP_DESTROY_WITHOUT_CQ = 116,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode

@@ -28,8 +28,10 @@ public:
     HcclResult GetCqDepth(uint32_t cqn, uint32_t &cqDepth);
     HcclResult ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo);
     HcclResult DestroyQp(struct TypicalQp& qpInfo);
+    HcclResult DestroyQpWithoutCQ(struct TypicalQp& qpInfo);
     HcclResult GetQpHandleByQpn(u32 qpn, QpHandle& qpHandle);
     HcclResult CreateCq(AscendCQInfo& cqInfo);
+    HcclResult DestroyCq(uint32_t cqn);
 private:
     TypicalQpManager();
     ~TypicalQpManager();
