@@ -214,6 +214,21 @@ HCCP_ATTRI_VISI_DEF int RaQpCreateWithAttrs(void *rdevHandle, struct QpExtAttrs 
 
 /**
  * @ingroup librdma
+ * @brief Create qp with pre-existing CQs
+ * @param rdev_handle [IN] rdev_handle
+ * @param ext_attrs [IN] qp ext attrs
+ * @param send_cqn [IN] send cq number
+ * @param recv_cqn [IN] recv cq number
+ * @param qp_handle [OUT] qp handle
+ * @see ra_qp_destroy
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaQpCreateWithCQWithAttrs(void *rdevHandle, struct QpExtAttrs *extAttrs,
+    unsigned int sendCqn, unsigned int recvCqn, void **qpHandle);
+
+/**
+ * @ingroup librdma
  * @brief Create qp handle(only one qp handle)
  * @param rdev_handle [IN] rdev_handle
  * @param attrs [IN] ai qp attrs

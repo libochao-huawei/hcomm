@@ -23,6 +23,9 @@ public:
     static TypicalQpManager& GetInstance();
     HcclResult CreateQp(struct TypicalQp& qpInfo);
     HcclResult CreateQp(struct TypicalQp& qpInfo, const QpConfigInfo& qpConfig);
+    HcclResult CreateQpWithCQ(struct TypicalQp& qpInfo, const QpConfigWithCQInfo& qpConfig);
+    HcclResult ValidateCq(uint32_t cqn);
+    HcclResult GetCqDepth(uint32_t cqn, uint32_t &cqDepth);
     HcclResult ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo);
     HcclResult DestroyQp(struct TypicalQp& qpInfo);
     HcclResult GetQpHandleByQpn(u32 qpn, QpHandle& qpHandle);

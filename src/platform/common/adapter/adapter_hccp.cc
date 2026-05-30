@@ -2601,6 +2601,25 @@ HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attr
     return HCCL_SUCCESS;
 }
 
+HcclResult hrtRaQpCreateWithCQWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attrs,
+    unsigned int sendCqn, unsigned int recvCqn, QpHandle &qpHandle)
+{
+    s32 ret = DlRaFunction::GetInstance().dlRaQpCreateWithCQWithAttrs(rdmaHandle, attrs, sendCqn, recvCqn, &qpHandle);
+    if (ret != 0 || qpHandle == nullptr) {
+        HCCL_ERROR("[Create][RaQpWithCQ] ra qp create with cq with attrs fail. ret[%d]", ret);
+        return HCCL_E_NETWORK;
+    }
+
+    struct QpAttr attr{};
+    CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
+    s32 deviceId = 0;
+    if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
+        deviceId = -1;
+    }
+    PLF_CONFIG_DEBUG(PLF_RES, "Create QpWithCQ para: deviceId[%d] qpn[%u]", deviceId, attr.qpn);
+    return HCCL_SUCCESS;
+}
+
 HcclResult hrtRaAiQpCreate(u32 phyId, RdmaHandle rdmaHandle, struct QpExtAttrs *attrs,
     struct AiQpInfo *info, QpHandle &qpHandle)
 {
@@ -3010,6 +3029,46 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
     }
     qpInfo.psn = attr.psn;
     HCCL_DEBUG("CreateQpWithDepthConfig qpn[%u], gidIdx[%u], psn[%u]", qpInfo.qpn, qpInfo.gidIdx, qpInfo.psn);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CreateQpWithCQConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigWithCQInfo& qpConfig,
+    QpHandle &qpHandle, struct TypicalQp& qpInfo)
+{
+    HCCL_DEBUG("CreateQpWithCQ qpMode[%d], sq_depth[%u], rq_depth[%u], scq_depth[%u], rcq_depth[%u], sendCqn[%u], recvCqn[%u]",
+        qpMode, qpConfig.sq_depth, qpConfig.rq_depth, qpConfig.scq_depth, qpConfig.rcq_depth, qpConfig.sendCqn, qpConfig.recvCqn);
+
+    struct QpExtAttrs ext_attrs{};
+    ext_attrs.qpMode = qpMode;
+    ext_attrs.cqAttr.sendCqDepth = qpConfig.scq_depth;
+    ext_attrs.cqAttr.recvCqDepth = qpConfig.rcq_depth;
+    ext_attrs.qpAttr.cap.max_send_wr = qpConfig.sq_depth;
+    ext_attrs.qpAttr.cap.max_recv_wr = qpConfig.rq_depth;
+    ext_attrs.version = QP_CREATE_WITH_ATTR_VERSION;
+    ext_attrs.qpAttr.cap.max_inline_data = DEFAULT_MAX_INLINE_DATA;
+    ext_attrs.qpAttr.cap.max_send_sge = DEFAULT_MAX_SEND_SGE;
+    ext_attrs.qpAttr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
+    ext_attrs.qpAttr.qp_type = IBV_QPT_RC;
+    ext_attrs.udpSport = 0x0;
+    ext_attrs.cstmFlag.bs.useResvMem = qpConfig.use_resv_mem;
+    ext_attrs.resvMemPoolId = qpConfig.resv_mem_pool_id;
+
+    CHK_RET(hrtRaQpCreateWithCQWithAttrs(rdmaHandle, &ext_attrs, qpConfig.sendCqn, qpConfig.recvCqn, qpHandle));
+
+    struct QpAttr attr{};
+    HcclResult ret = hrtRaGetQpAttr(qpHandle, &attr);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateQpWithCQConfig] hrtRaGetQpAttr failed, ret[%d].", ret);
+        HrtRaQpDestroy(qpHandle);
+        return ret;
+    }
+    qpInfo.qpn = attr.qpn;
+    qpInfo.gidIdx = attr.gidIdx;
+    for (uint32_t i = 0; i < HCCP_GID_RAW_LEN; i++) {
+        qpInfo.gid[i] = attr.gid[i];
+    }
+    qpInfo.psn = attr.psn;
+    HCCL_DEBUG("CreateQpWithCQConfig qpn[%u], gidIdx[%u], psn[%u]", qpInfo.qpn, qpInfo.gidIdx, qpInfo.psn);
     return HCCL_SUCCESS;
 }
 

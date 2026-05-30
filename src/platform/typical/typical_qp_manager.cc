@@ -87,6 +87,37 @@ HcclResult TypicalQpManager::CreateCq(AscendCQInfo& cqInfo)
     return HCCL_SUCCESS;
 }
 
+HcclResult TypicalQpManager::ValidateCq(uint32_t cqn)
+{
+    auto it = cqMap_.find(cqn);
+    CHK_PRT_RET((it == cqMap_.end()),
+        HCCL_ERROR("[TypicalQpManager][ValidateCq] cqn[%u] not found.", cqn), HCCL_E_PARA);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TypicalQpManager::GetCqDepth(uint32_t cqn, uint32_t &cqDepth)
+{
+    auto it = cqMap_.find(cqn);
+    CHK_PRT_RET((it == cqMap_.end()),
+        HCCL_ERROR("[TypicalQpManager][GetCqDepth] cqn[%u] not found.", cqn), HCCL_E_PARA);
+    cqDepth = it->second.first.cqDepth;
+    return HCCL_SUCCESS;
+}
+
+HcclResult TypicalQpManager::CreateQpWithCQ(struct TypicalQp& qpInfo, const QpConfigWithCQInfo& qpConfig)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    QpHandle qpHandle = nullptr;
+    CHK_RET(RdmaResourceManager::GetInstance().GetRdmaHandle(rdmaHandle_));
+    CHK_PTR_NULL(rdmaHandle_);
+    std::unique_lock<std::mutex> lock(qpMutex_);
+    ret = CreateQpWithCQConfig(rdmaHandle_, OPBASE_QP_MODE, qpConfig, qpHandle, qpInfo);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[TypicalQpManager][CreateQpWithCQ] Create qp with cq failed."), HCCL_E_INTERNAL);
+    qpMap_.insert(std::make_pair(qpInfo.qpn, std::make_pair(qpInfo, qpHandle)));
+    return HCCL_SUCCESS;
+}
+
 HcclResult TypicalQpManager::ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo)
 {
     CHK_PRT_RET((localQpInfo.qpn == 0 || remoteQpInfo.qpn == 0),

@@ -184,6 +184,23 @@ union OpTypicalQpCreateData {
     } rxData;
 };
 
+union OpQpCreateWithCQWithAttrsData {
+    struct {
+        unsigned int phyId;
+        unsigned int rdevIndex;
+        unsigned int sendCqn;
+        unsigned int recvCqn;
+        struct QpExtAttrs extAttrs;
+    } txData;
+
+    struct {
+        unsigned int qpn;
+        unsigned int psn;
+        unsigned int gidIdx;
+        unsigned int rsvd;
+    } rxData;
+};
+
 union OpTypicalCqCreateData {
     struct {
         unsigned int phyId;
@@ -524,6 +541,8 @@ int RaHdcTypicalQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, 
     void **qpHandle);
 int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn,
     void **cqHandle);
+int RaHdcQpCreateWithCQWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs *extAttrs,
+    unsigned int sendCqn, unsigned int recvCqn, void **qpHandle);
 int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries, void *wc);
 int RaHdcQpDestroy(struct RaQpHandle *qpHdc);
 int RaHdcTypicalQpModify(struct RaQpHandle *qpHdc, struct TypicalQp *localQpInfo,

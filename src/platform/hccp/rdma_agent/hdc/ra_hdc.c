@@ -167,6 +167,7 @@ struct OpcodeInterfaceInfo gRaInterfaceInfoList[] = {
     {RA_RS_CTX_GET_UB_CONTEXT, 0},
     {RA_RS_TYPICAL_CQ_CREATE, 0},
     {RA_RS_GET_LITE_CQ_ATTR, 0},
+    {RA_RS_QP_CREATE_WITH_CQ_WITH_ATTRS, 0},
 
     // inner opcode version
     {RA_RS_HDC_SESSION_CLOSE, 0},
