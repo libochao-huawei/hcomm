@@ -38,7 +38,7 @@ target_compile_options(hccl_utest_comms_ccu_microcode PRIVATE
 )
 
 target_link_libraries(hccl_utest_comms_ccu_microcode PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
