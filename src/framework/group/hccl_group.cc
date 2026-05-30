@@ -429,31 +429,27 @@ constexpr u32 KERNEL_TIMEOUT_OFFSET = 300;
 static HcclResult AicpuKernelLaunchDirect(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
     void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream)
 {
-    HCCL_INFO("[AicpuKernelLaunchDirect] kernelSo[%s], kernelFuncName[%s], argSize[%u]",
-        funcInfo.kernelSo, funcInfo.kernelFuncName, argSize);
-
-    std::string kernelName = funcInfo.kernelFuncName;
+    std::string kernelName = "HcclLaunchAicpuKernel";
     aclrtFuncHandle funcHandle;
-    aclError ret = aclrtBinaryGetFunction(nullptr, kernelName.c_str(), &funcHandle);
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[AicpuKernelLaunchDirect][aclrtBinaryGetFunction]"
-        "errNo[0x%016llx] get func handle failed, kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
-
     aclrtArgsHandle argsHandle;
+    // 注意，目前开源HCCL加载AICPU kernel使用的是从json文件加载
+    // 详见load_kernel.cc中的LoadAICPUKernel函数，且只实现了scatter的，先共用scatter的
+    aclError ret = aclrtBinaryGetFunction(g_binKernelHandle, kernelName.c_str(), &funcHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, "
+        "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
     ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[AicpuKernelLaunchDirect][aclrtKernelArgsInit]"
-        "errNo[0x%016llx] args init failed, kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
-
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, "
+        "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
     aclrtParamHandle paraHandle;
-    ret = aclrtKernelArgsAppend(argsHandle, args, argSize, &paraHandle);
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[AicpuKernelLaunchDirect][aclrtKernelArgsAppend]"
-        "errNo[0x%016llx] args append failed, argSize %u, kernelName:%s", ret, argSize, kernelName.c_str()),
-        HCCL_E_RUNTIME);
-
+    size_t paramSize = sizeof(OpParam) + param.varMemSize;
+    ret = aclrtKernelArgsAppend(argsHandle, &param, paramSize, &paraHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append "
+        "size %u, kernelName:%s", ret, paramSize, kernelName.c_str()), HCCL_E_RUNTIME);
     ret = aclrtKernelArgsFinalize(argsHandle);
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[AicpuKernelLaunchDirect][aclrtKernelArgsFinalize]"
-        "errNo[0x%016llx] args finalize failed, kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, "
+        "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
 
-    u32 kernelTimeoutTmp = UINT16_MAX;
+    u32 kernelTimeoutTmp = param.execTimeout + KERNEL_TIMEOUT_OFFSET;
     u16 kernelLaunchTimeout = (kernelTimeoutTmp > UINT16_MAX) ? UINT16_MAX : static_cast<u16>(kernelTimeoutTmp);
     aclrtLaunchKernelCfg cfg;
     aclrtLaunchKernelAttr attr;
@@ -462,26 +458,12 @@ static HcclResult AicpuKernelLaunchDirect(HcclComm comm, HcclOpDesc opInfo, Hccl
     cfg.numAttrs = 1;
     cfg.attrs = &attr;
     constexpr u32 numBlocks = 1;
-
-    HCCL_INFO("[AicpuKernelLaunchDirect] aicpuThreadHandle [%lu]", aicpuThreadHandle);
+    HCCL_INFO("[AicpuKernelLaunch] unfoldThread [%lu]", unfoldThread);  // 通过Thread获取展开流stream
     void* unfoldStream = nullptr;
-    if (aicpuThreadHandle != 0) {
-        HcclResult ret1 = HcclThreadResGetInfo(comm, aicpuThreadHandle,
-            THREAD_RES_TYPE_STREAM, sizeof(void*), reinterpret_cast<void**>(&unfoldStream));
-        if (ret1 == HCCL_E_NOT_SUPPORT) {
-            ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, userStream, &cfg, argsHandle, nullptr);
-        } else if (ret1 != HCCL_SUCCESS) {
-            return ret1;
-        } else {
-            ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, static_cast<aclrtStream>(unfoldStream),
-                &cfg, argsHandle, nullptr);
-        }
-    } else {
-        ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, userStream, &cfg, argsHandle, nullptr);
-    }
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[AicpuKernelLaunchDirect][aclrtLaunchKernelWithConfig]"
-        "errNo[0x%016llx] launch kernel failed", ret), HCCL_E_INTERNAL);
-
+    auto& HcclThreadResGetInfoFunc = ops_hccl::DlHcommFunction::GetInstance();
+    ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, unfoldStream, &cfg, argsHandle, nullptr);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[LoadCustomKernel][aclrtLaunchKernelWithConfig]"
+        "errNo[0x%016llx] launch kernel failed", ret), HCCL_E_OPEN_FILE_FAILURE);
     return HCCL_SUCCESS;
 }
 
