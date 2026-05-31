@@ -120,6 +120,12 @@ private:
     HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult ReportWcStatusError(enum ibv_wc_status status);
+    HcclResult NotifyWaitIbvPollCq(struct ibv_cq *ibvRecvCq, const uint32_t notifyIdx,
+                                    const std::chrono::steady_clock::time_point &startTime,
+                                    const std::chrono::nanoseconds waitTime);
+    HcclResult WaitForFenceIbvPollCq(struct ibv_cq *ibvRecvCq, uint32_t qpIdx,
+                                      std::chrono::steady_clock::time_point &startTime,
+                                      const std::chrono::nanoseconds waitTime);
 
     // Wrapper for stub
     int IbvPollCq(ibv_cq *sendCq, uint32_t numEntries, ibv_wc *wc) const

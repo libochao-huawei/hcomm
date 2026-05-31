@@ -52,21 +52,21 @@ HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChann
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
 HostCpuRoceChannel::~HostCpuRoceChannel() {
-    HcclResult ret;
+    HcclResult ret = HCCL_SUCCESS;
     
     if (isHybridMode_ && connections_.size() != 0) {
         auto qpInfo = connections_[0]->GetQpInfo();
-        struct MrInfoT mrInfo = {nullptr};
 
         for (uint32_t i = 0; i < hccl::MEM_TYPE_RESERVED; i++) {
             if (localMemMsg_[i].addr == nullptr) {
                 continue;
             }
 
+            struct MrInfoT mrInfo = {nullptr};
             mrInfo.addr = localMemMsg_[i].addr;
             ret = HrtRaMrDereg(qpInfo.qpHandle, &mrInfo);
             if (ret != HCCL_SUCCESS) {
-                HCCL_INFO("[~HostCpuRoceChannel] Dereg mem, ret=%d, type=%d, addr:%p, lkey:%d, size:%llu, access:%d",
+                HCCL_ERROR("[~HostCpuRoceChannel] Dereg mem failed, ret=%d, type=%d, addr:%p, lkey:%d, size:%llu, access:%d",
                     ret, i, mrInfo.addr, mrInfo.lkey, mrInfo.size, mrInfo.access);
             }
 
@@ -82,7 +82,7 @@ HostCpuRoceChannel::~HostCpuRoceChannel() {
     
     ret = DpuNotifyManager::GetInstance().FreeNotifyIds(notifyNum_, localDpuNotifyIds_);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HostCpuRoceChannel::~HostCpuRoceChannel] exception occurred, HcclResult=[%d]", ret);
+        HCCL_ERROR("[HostCpuRoceChannel::~HostCpuRoceChannel] FreeNotifyIds failed, HcclResult=[%d]", ret);
     }
 
     if (socket_ != nullptr) {
@@ -898,13 +898,15 @@ HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::NotifyWaitIbvPollCq(const struct ibv_cq* ibvRecvCq, const uint32_t notifyIdx, const uint32_t startTime, const uint32_t waitTime)
+HcclResult HostCpuRoceChannel::NotifyWaitIbvPollCq(struct ibv_cq *ibvRecvCq, const uint32_t notifyIdx,
+                                                     const std::chrono::steady_clock::time_point &startTime,
+                                                     const std::chrono::nanoseconds waitTime)
 {
     CHK_PRT_RET(ibvRecvCq == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] recvCq is null", __func__), HCCL_E_INTERNAL);
     CHK_PRT_RET(ibvRecvCq->context == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] recvCq->context is null", __func__), HCCL_E_INTERNAL);
     struct ibv_wc wc{};
     while (true) {
-        auto actualNum = ibv_poll_cq(ibvRecvCq, 1, &wc);
+        auto actualNum = IbvPollCq(ibvRecvCq, 1, &wc);
         CHK_PRT_RET(actualNum < 0, HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq err. actualNum=%d", __func__, actualNum),
                     HCCL_E_NETWORK);
 
@@ -953,7 +955,8 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
     auto startTime = std::chrono::steady_clock::now();
     auto waitTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(timeout));
     for (uint32_t i = 0; i < qpInfo.size(); i++) {
-        CHK_PRT_RET(qpInfo[i].qp == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfo[%u] is null", i, __func__), HCCL_E_INTERNAL);
+        CHK_PRT_RET(qpInfo[i].recvCq == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfo[%u] recvCq is null", __func__, i), HCCL_E_INTERNAL);
+        CHK_PRT_RET(qpInfo[i].qp == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfo[%u] is null", __func__, i), HCCL_E_INTERNAL);
         CHK_RET(NotifyWaitIbvPollCq(qpInfo[i].recvCq, dpuNotifyId, startTime, waitTime));
     }
 
@@ -1318,7 +1321,9 @@ HcclResult HostCpuRoceChannel::FindRemoteBuffer(const uint64_t addr, const uint6
     return HCCL_E_NOT_FOUND;
 }
 
-HcclResult HostCpuRoceChannel::WaitForFenceIbvPollCq(const struct ibv_cq* ibvRecvCq, uint32_t qpIdx, const uint32_t startTime, const uint32_t waitTime)
+HcclResult HostCpuRoceChannel::WaitForFenceIbvPollCq(struct ibv_cq *ibvRecvCq, uint32_t qpIdx,
+                                                       std::chrono::steady_clock::time_point &startTime,
+                                                       const std::chrono::nanoseconds waitTime)
 {
     std::vector<struct ibv_wc> wc(wqeNums_[qpIdx]);
     while (true) {
@@ -1328,9 +1333,9 @@ HcclResult HostCpuRoceChannel::WaitForFenceIbvPollCq(const struct ibv_cq* ibvRec
             return HCCL_E_NETWORK;
         }
 
-        if (actualNum > wqeNums_[i]) {
+        if (actualNum > wqeNums_[qpIdx]) {
             HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfo[%u] ibv_poll_cq polled more completions (%d) than expected (%d).",
-                __func__, i, actualNum, wqeNums_[qpIdx]);
+                __func__, qpIdx, actualNum, wqeNums_[qpIdx]);
             return HCCL_E_INTERNAL;
         } else if (actualNum > 0) {
             for (int j = 0; j < actualNum; j++) {
@@ -1339,15 +1344,16 @@ HcclResult HostCpuRoceChannel::WaitForFenceIbvPollCq(const struct ibv_cq* ibvRec
                     return HCCL_E_NETWORK;
                 }
             }
-            wqeNums_[qpIdx] -= actualNum; // 减去已经完成的数量，继续等待剩余的完成
+            wqeNums_[qpIdx] -= actualNum;
             if (wqeNums_[qpIdx] == 0) {
-                break; // 所有的wqe都已经完成，退出循环
+                break;
             }
-            startTime = std::chrono::steady_clock::now(); // 有进展，重置超时计时
+            startTime = std::chrono::steady_clock::now();
         }
 
         if ((std::chrono::steady_clock::now() - startTime) >= waitTime) {
-            HCCL_ERROR("[HostCpuRoceChannel][%s] qpInfo[%u] call ibv_poll_cq timeout, remaining wqeNum[%d].", __func__, qpIdx, wqeNums_[qpIdx]);
+            HCCL_ERROR("[HostCpuRoceChannel][%s] qpInfo[%u] call ibv_poll_cq timeout, remaining wqeNum[%d].",
+                __func__, qpIdx, wqeNums_[qpIdx]);
             return HCCL_E_TIMEOUT;
         }
     }
@@ -1357,8 +1363,6 @@ HcclResult HostCpuRoceChannel::WaitForFenceIbvPollCq(const struct ibv_cq* ibvRec
 
 HcclResult HostCpuRoceChannel::WaitForFenceCompletion()
 {
-    auto timeout = std::chrono::milliseconds(FENCE_TIMEOUT_MS);
-    auto startTime = std::chrono::steady_clock::now();
     const std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
     CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
     uint32_t fenceCount = 0;
@@ -1373,16 +1377,14 @@ HcclResult HostCpuRoceChannel::WaitForFenceCompletion()
         HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. elements in wqeNums_ are 0.", __func__);
         return HCCL_SUCCESS;
     }
-    
-    auto timeout = std::chrono::milliseconds(FENCE_TIMEOUT_MS);
+
+    auto startTime = std::chrono::steady_clock::now();
+    auto waitTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(FENCE_TIMEOUT_MS));
     for (uint32_t i = 0; i < qpInfo.size(); i++) {
-        std::vector<struct ibv_wc> wc(wqeNums_[i]);
         CHK_PRT_RET(qpInfo[i].sendCq == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfo[%u] sendCq is null", __func__, i), HCCL_E_INTERNAL);
         CHK_PRT_RET(qpInfo[i].qp == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfo[%u] is null", __func__, i), HCCL_E_INTERNAL);
         CHK_PRT_RET(qpInfo[i].sendCq->context == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfo[%u] sendCq->context is null", __func__, i), HCCL_E_INTERNAL);
-        WaitForFenceIbvPollCq(qpInfo[i].recvCq, i, startTime, timeout);
-
-        wqeNums_[i] = 0; // 所有的wqe都已经完成，重置计数器
+        CHK_RET(WaitForFenceIbvPollCq(qpInfo[i].recvCq, i, startTime, waitTime));
         HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. wqeNums_[%u]=%d.", __func__, i, wqeNums_[i]);
     }
     fenceFlag_ = true;
