@@ -754,7 +754,8 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
                 HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, *buffer, *size);
                 return HCCL_SUCCESS;
             }
-            HCCL_INFO("[%s] Found %s : addr=%p, size=%llu", __func__, memTags[i], *buffer, *size);
+            HCCL_INFO("[%s] Found %s : addr=%p, size=%llu", __func__, memTags[i],
+                remoteMem[i].addr, remoteMem[i].size);
         }
     }
     HCCL_ERROR("[%s] HcclBuffer not found.", __func__);

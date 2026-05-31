@@ -47,10 +47,10 @@ HcclResult AicpuTsUboeChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
         auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        HCCL_INFO("[AicpuTsUboeChannel][%s] tag[%s]", __func__, locMemInfo->memInfo);
+        HCCL_INFO("[AicpuTsUboeChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
             reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memInfo)
+            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
         ));
     }
     return HCCL_SUCCESS;
@@ -462,19 +462,6 @@ void AicpuTsUboeChannel::RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &
             HCCL_INFO("unpack buffer pos=%u, rmtRmaBuffer=%s", pos, bufferVec.back()->Describe().c_str());
         }
     }
-
-    rmtMemTagTemp_.clear();
-    if (type == UboeRmtBufType::BUFFER) {
-        rmtMemTagTemp_.resize(rmtNum);
-        for (auto& tag : rmtMemTagTemp_) {
-            for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
-                u8 byte;
-                binaryStream >> byte;
-                tag[i] = static_cast<char>(byte);
-            }
-        }
-    }
-    remoteUserMemTag_.insert(remoteUserMemTag_.end(), rmtMemTagTemp_.begin(), rmtMemTagTemp_.end());
 }
 
 bool AicpuTsUboeChannel::ConnVecUnpackProc(Hccl::BinaryStream &binaryStream)

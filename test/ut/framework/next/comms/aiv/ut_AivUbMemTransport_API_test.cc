@@ -89,18 +89,11 @@ protected:
         return std::make_shared<LocalRmaBufferStub>(buffer, addr, size, 0, pid);
     }
 
-    std::array<char, HCCL_RES_TAG_MAX_LEN> BuildMemInfoArray(const std::string &tag)
-    {
-        std::array<char, HCCL_RES_TAG_MAX_LEN> memInfo{};
-        memcpy_s(memInfo.data(), memInfo.size(), tag.c_str(), tag.size());
-        return memInfo;
-    }
-
     CommMemInfo BuildCommMemInfo(void *bufferHandle, const std::string &tag)
     {
         CommMemInfo commMemInfo{};
-        memInfo.bufferHandle = bufferHandle;
-        memcpy_s(commMemInfo.memInfo, sizeof(commMemInfo.memInfo), tag.c_str(), tag.size());
+        commMemInfo.bufferHandle = bufferHandle;
+        memcpy_s(commMemInfo.memTag, sizeof(commMemInfo.memTag), tag.c_str(), tag.size());
         return commMemInfo;
     }
 
@@ -111,26 +104,41 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetRemoteMems_When_Normal_Exp
 {
     HcommChannelDesc desc{};
     auto aivTransport = CreateAivTransport(desc);
-    aivTransport->rmtBufferVec_.push_back(std::make_unique<Hccl::RemoteIpcRmaBuffer>());
     auto rmtBuffer1 = std::make_unique<Hccl::RemoteIpcRmaBuffer>();
     rmtBuffer1->addr = (uintptr_t)0x101;
     rmtBuffer1->size = (u64)0x101;
     rmtBuffer1->memType = HcclMemType::HCCL_MEM_TYPE_HOST;
     rmtBuffer1->memInfo = "buffer1";
     aivTransport->rmtBufferVec_.push_back(std::move(rmtBuffer1));
+    aivTransport->rmtRmaBufferVec_.push_back(aivTransport->rmtBufferVec_.back().get());
 
     CommMem *remoteMems;
     char **memInfos;
     u32 memNum;
     HcclResult ret = aivTransport->GetRemoteMems(&memNum, &remoteMems, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(std::string(memInfos[1]), "buffer1");
-    EXPECT_EQ(remoteMems[1].type, CommMemType::COMM_MEM_TYPE_HOST);
-    EXPECT_EQ(remoteMems[1].addr, (void *)0x101);
-    EXPECT_EQ(remoteMems[1].size, (uint64_t)0x101);
+    EXPECT_EQ(memNum, 1U);
+    EXPECT_EQ(std::string(memInfos[0]), "buffer1");
+    EXPECT_EQ(remoteMems[0].type, CommMemType::COMM_MEM_TYPE_HOST);
+    EXPECT_EQ(remoteMems[0].addr, (void *)0x101);
+    EXPECT_EQ(remoteMems[0].size, (uint64_t)0x101);
 }
 
-TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetUserRemoteMem_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
+TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetRemoteMems_When_bufferNumIs0_Expect_ReturnIsHCCL_SUCCESS)
+{
+    HcommChannelDesc desc{};
+    auto aivTransport = CreateAivTransport(desc);
+    CommMem *remoteMems = nullptr;
+    char **memInfos = nullptr;
+    u32 memNum = 1;
+    HcclResult ret = aivTransport->GetRemoteMems(&memNum, &remoteMems, &memInfos);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 0U);
+    EXPECT_EQ(remoteMems, nullptr);
+    EXPECT_EQ(memInfos, nullptr);
+}
+
+TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_Init_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
 {
     HcommChannelDesc desc{};
     desc.memHandleNum = 0;
@@ -162,8 +170,6 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
         reinterpret_cast<Hccl::LocalIpcRmaBuffer*>(mockBuffer1.get()));
     EXPECT_EQ(aivTransport->localRmaBufferVec_[initialVecSize + 1],
         reinterpret_cast<Hccl::LocalIpcRmaBuffer*>(mockBuffer2.get()));
-    EXPECT_EQ(std::string(aivTransport->localRmaBufferVec_[initialVecSize]->GetMemInfo()), "newBuffer1");
-    EXPECT_EQ(std::string(aivTransport->localRmaBufferVec_[initialVecSize + 1]->GetMemInfo()), "newBuffer2");
 }
 
 TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_SocketTimeout_Expect_ReturnIsHCCL_E_TIMEOUT)

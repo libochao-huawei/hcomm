@@ -84,7 +84,7 @@ protected:
         commMemInfo.mem.size = (uint64_t)size;
         commMemInfo.bufferHandle = static_cast<void*>(locBuffer.get());
         if (!tag.empty()) {
-            strncpy_s(commMemInfo.memInfo, sizeof(commMemInfo.memInfo), tag.c_str(), tag.size());
+            strncpy_s(commMemInfo.memTag, sizeof(commMemInfo.memTag), tag.c_str(), tag.size());
         }
         commMemInfo.mem.type = type;
         return commMemInfo;
@@ -224,5 +224,5 @@ TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_Normal_Expect_Ret
 
     HcclResult ret = ccuTransport->BufferInfoUnpack(binaryStream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(ccuTransport->rmtBufferInfos_.size(), rmtBufferNum);
+    EXPECT_EQ(ccuTransport->rmtbufferVec_.size(), rmtBufferNum);
 }

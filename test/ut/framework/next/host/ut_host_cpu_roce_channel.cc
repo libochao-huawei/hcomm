@@ -548,12 +548,13 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_RemoteMemExists_Expect_Succ
     auto rmtBuf2 = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle, rmtBufDto2);
     impl_->rmtRmaBuffers_.emplace_back(std::move(rmtBuf2));
     // GetRemoteMems
-    uint32_t memNum = 0;  // 接收内存块数量
-    std::vector<CommMem *> remoteMemList(5);
+    uint32_t memNum = 0;
+    CommMem *remoteMem = nullptr;
     char **memInfos = nullptr;
-    HcclResult ret = impl_->GetRemoteMems(&memNum, remoteMemList.data(), &memInfos);
+    HcclResult ret = impl_->GetRemoteMems(&memNum, &remoteMem, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 2);
+    ASSERT_NE(remoteMem, nullptr);
 }
 
 TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)

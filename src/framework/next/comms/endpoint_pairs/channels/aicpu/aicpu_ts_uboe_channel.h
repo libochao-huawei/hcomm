@@ -72,8 +72,6 @@ private:
     std::vector<char> GetUniqueIdV2();
     HcclResult PackOpData(std::vector<char> &data);
 
-    HcclResult FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
     bool IsSocketReady();
     bool IsResReady();
     bool IsConnsReady();
