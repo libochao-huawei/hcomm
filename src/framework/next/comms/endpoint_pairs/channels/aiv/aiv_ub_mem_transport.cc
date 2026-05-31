@@ -232,15 +232,13 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
         Hccl::ExchangeIpcBufferDto dto;
         dto.Deserialize(binaryStream);
         HCCL_INFO("[%s] dto[%s]", __func__, dto.Describe().c_str());
-        const char* src = rmtTagTemp_[pos].data();
-        std::string bufTag(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
         if (dto.size == 0) { // size为0，则为 remote 空buffer
             HCCL_INFO("unpack nullptr, pos=%u", pos);
             rmtBufferVec_.push_back(nullptr);
             rmtRmaBufferVec_.push_back(nullptr);
         } else { // size非0，则构造一个remote buffer
-            HCCL_INFO("[AivUbMemTransport][RmtBufferUnpackProc] unpack buffer tag[%s]", bufTag.c_str());
-            rmtBufferVec_.push_back(std::make_unique<Hccl::RemoteIpcRmaBuffer>(dto, bufTag));
+            HCCL_INFO("[AivUbMemTransport][RmtBufferUnpackProc] unpack buffer memInfo[%s]", dto.memInfo.c_str());
+            rmtBufferVec_.push_back(std::make_unique<Hccl::RemoteIpcRmaBuffer>(dto));
             rmtRmaBufferVec_.push_back(rmtBufferVec_.back().get());
         }
     }
@@ -252,18 +250,6 @@ HcclResult AivUbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMe
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> remoteMemCtx{cacheValid_, rmtRmaBufferVec_,
     remoteUserMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
-    return HCCL_SUCCESS;
-}
-
-HcclResult AivUbMemTransport::GetMemTag(char **memTag, uint32_t memNum)
-{
-    for (uint32_t i = 0; i < memNum; i++) {
-        memTag[i] = const_cast<char*>(remoteUserMemTag_[i].data());
-        if (strlen(memTag[i]) >= HCCL_RES_TAG_MAX_LEN) {
-            memTag[i][HCCL_RES_TAG_MAX_LEN - 1] = '\0';
-        }
-        HCCL_INFO("[%s] memTag[%s]", __func__, memTag[i]);
-    }
     return HCCL_SUCCESS;
 }
 
@@ -304,7 +290,6 @@ HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
         return HCCL_SUCCESS;
     }
     locMemTemp_.clear();
-    locTagTemp_.clear();
     CHK_RET(FillBufferVec(memHandles, memHandleNum, locMemTemp_));
     HCCL_INFO("[AivUbMemTransport][UpdateMemInfo] bufferNum[%zu]", locMemTemp_.size());
     sendData_.clear();
@@ -327,7 +312,7 @@ HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
     RmtBufferUnpackProc(recvStream);
     EXCEPTION_HANDLE_END
     localRmaBufferVec_.insert(localRmaBufferVec_.end(), locMemTemp_.begin(), locMemTemp_.end());
-    // 流程中已有新增内存数量判断，故执行到此位置一定存在新增内存，需要将标识置位false，使得再次调用GetUserRemoteMem时重新构造缓存
+    // 流程中已有新增内存数量判断，故执行到此位置一定存在新增内存，需要将标识置位false，使得再次调用GetRemoteMems时重新构造缓存
     cacheValid_ = false;
     return HCCL_SUCCESS;
 }

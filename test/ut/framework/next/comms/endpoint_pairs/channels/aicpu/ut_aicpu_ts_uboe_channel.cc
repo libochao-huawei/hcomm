@@ -372,13 +372,13 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithBuffers_ReturnsCorrectData) 
     ASSERT_NE(remoteMem, nullptr);
 
     // 验证第一个内存区域
-    EXPECT_EQ(remoteMem[0].type, HCCL_MEM_TYPE_DEVICE);
+    EXPECT_EQ(remoteMem[0].type, COMM_MEM_TYPE_DEVICE);
     EXPECT_EQ(remoteMem[0].addr, reinterpret_cast<void*>(0x1000));
     EXPECT_EQ(remoteMem[0].size, 4096U);
     EXPECT_STREQ(memInfos[0], "ccl_buffer");
 
     // 验证第二个内存区域
-    EXPECT_EQ(remoteMem[1].type, HCCL_MEM_TYPE_HOST);
+    EXPECT_EQ(remoteMem[1].type, COMM_MEM_TYPE_HOST);
     EXPECT_EQ(remoteMem[1].addr, reinterpret_cast<void*>(0x2000));
     EXPECT_EQ(remoteMem[1].size, 8192U);
     EXPECT_STREQ(memInfos[1], "user_buffer");
@@ -433,7 +433,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetRemoteMems_WithUserBuffers_ReturnsCorrectDa
     AicpuTsUboeChannel ch(ep, desc);
 
     void* fakeRdma = reinterpret_cast<void*>(0x1234);
-    // 第一个 buffer 视为 CCL buffer（会被跳过）
+    // 第一个 buffer 为 ccl buffer，与后续用户 buffer 一并返回
     auto cclBuf = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x1000, 4096, HCCL_MEM_TYPE_DEVICE, "ccl");
     // 用户 buffer 1
     auto userBuf1 = std::make_unique<FakeRemoteUbRmaBuffer>(fakeRdma, 0x2000, 8192, HCCL_MEM_TYPE_DEVICE, "user1");
