@@ -24,7 +24,8 @@ extern "C" {
 static const uint32_t COMM_ADDR_EID_LEN = 16U;
 static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x0fcf0f0fU;
 static const uint32_t HCOMM_CHANNEL_VERSION_ONE = 1U;
-static const uint32_t HCOMM_CHANNEL_VERSION = HCOMM_CHANNEL_VERSION_ONE;
+static const uint32_t HCOMM_CHANNEL_VERSION_TWO = 2U;
+static const uint32_t HCOMM_CHANNEL_VERSION = HCOMM_CHANNEL_VERSION_TWO;
 
 typedef int32_t HcommResult;
 

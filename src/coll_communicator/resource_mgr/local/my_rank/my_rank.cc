@@ -35,7 +35,8 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const Rd
     (void)memcpy_s(hcommDesc.raws, sizeof(hcommDesc.raws), hcclDesc.raws, sizeof(hcclDesc.raws));
     
     if (hcclDesc.protocol == COMM_PROTOCOL_ROCE) {
-        hcommDescs.roceAttr.multiQpThreshold = rdmaConfig.GetRdmaMultiQpThreshold();
+        hcommDesc.roceAttr.multiQpThreshold = (hcclDesc.roceAttr.multiQpThreshold == INVALID_UINT) ?
+            rdmaConfig.GetRdmaMultiQpThreshold() : hcclDesc.roceAttr.multiQpThreshold;
     }
 
     return hcommDesc;
