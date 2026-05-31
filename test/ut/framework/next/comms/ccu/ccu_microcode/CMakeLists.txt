@@ -33,7 +33,7 @@ target_compile_options(hccl_utest_comms_ccu_microcode PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+     --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
@@ -43,7 +43,7 @@ target_link_libraries(hccl_utest_comms_ccu_microcode PRIVATE
     -pthread
     hccl_llt
     -Wl,--whole-archive
-    -Wl,--no-whole-archi
+    -Wl,--no-whole-archive
     -lgcov
     -lrt
     -ldl

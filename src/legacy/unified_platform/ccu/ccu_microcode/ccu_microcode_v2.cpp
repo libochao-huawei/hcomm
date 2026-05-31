@@ -335,7 +335,7 @@ void TransMem(CcuInstr *instr, uint16_t dst, uint16_t dstToken, uint16_t src, ui
 }
 
 // 将本端Xn的值写入远端8B地址
-inline void SyncWtX(CcuInstr *instr, uint16_t dst, uint16_t dstToken, uint16_t xn, uint16_t channelId, uint16_t setCKEId,
+void SyncWtX(CcuInstr *instr, uint16_t dst, uint16_t dstToken, uint16_t xn, uint16_t channelId, uint16_t setCKEId,
              uint16_t setCKEMask)
 {
     instr->header           = InstrHeader(TRANS_TYPE, SYNCWTX_CODE);

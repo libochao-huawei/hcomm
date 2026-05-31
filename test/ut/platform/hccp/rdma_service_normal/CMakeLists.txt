@@ -99,7 +99,7 @@ target_include_directories(rs_ut_normal PRIVATE
 )
 
 target_compile_options(rs_ut_normal PRIVATE
-    -U_FORTIFY_SOURCE -O0 -g
+    -U_FORTIFY_SOURCE 
     $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fno-omit-frame-pointer -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 

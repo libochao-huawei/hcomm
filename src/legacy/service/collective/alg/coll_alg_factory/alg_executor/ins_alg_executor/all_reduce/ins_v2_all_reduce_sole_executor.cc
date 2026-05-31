@@ -306,6 +306,8 @@ INS_REGISTER_IMPL_BY_TEMP(OpType::ALLREDUCE, CcuAllReduceMeshMem2Mem1D, InsV2All
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLREDUCE, InsAllReduceAicpuReduce, InsV2AllReduceSoleExecutor, TopoMatchMesh,
                           InsTempAllReduceAicpuReduce);
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLREDUCE, InsAllReduceAicpuReduceMesh2D, InsV2AllReduceSoleExecutor, TopoMatchConcurrMesh,
-                          InsTempAllReduceAicpuReduceMesh2D);                          
+                           InsTempAllReduceAicpuReduceMesh2D);
+
+template class InsV2AllReduceSoleExecutor<TopoMatchMesh, CcuTempAllReduceMeshMem2Mem1D>;
 
 }  // namespace Hccl

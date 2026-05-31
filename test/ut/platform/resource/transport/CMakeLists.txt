@@ -28,7 +28,7 @@ target_compile_definitions(hccl_utest_platform_transport    PRIVATE
 
 target_compile_options(hccl_utest_platform_transport   PRIVATE 
     -U_FORTIFY_SOURCE
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+     --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
 )
 
@@ -38,7 +38,7 @@ target_link_libraries(hccl_utest_platform_transport  PRIVATE
     -pthread
     hccl_llt
     -Wl,--whole-archive
-    -Wl,--no-whole-archi
+    -Wl,--no-whole-archive
     -lgcov
     -lrt
     -pthread

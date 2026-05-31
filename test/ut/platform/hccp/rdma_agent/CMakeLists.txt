@@ -106,7 +106,7 @@ target_include_directories(rdma_agent_utest PRIVATE
 )
 
 target_compile_options(rdma_agent_utest PRIVATE
-    -U_FORTIFY_SOURCE -O0 -g
+    -U_FORTIFY_SOURCE 
     $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fno-omit-frame-pointer -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 

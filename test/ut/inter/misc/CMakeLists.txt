@@ -85,7 +85,6 @@ endif()
 
 target_compile_options(hccl_utest_inter_misc   PRIVATE
     -Os
-    -g
     -U_FORTIFY_SOURCE
 )
 

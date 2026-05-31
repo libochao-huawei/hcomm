@@ -24,7 +24,7 @@ target_compile_options(hccl_ut_binary_package PRIVATE
 
 target_compile_options(hccl_ut_binary_package PRIVATE 
     -U_FORTIFY_SOURCE
-    -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+    --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
 )
 

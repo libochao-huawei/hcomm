@@ -301,7 +301,9 @@ INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALLV, CcuAlltoAllVMesh2D, InsAlltoAllSole
 INS_REGISTER_IMPL_BY_TEMP(OpType::HALFALLTOALLV, CcuHalfAll2AllVMesh1D, InsAlltoAllSoleExecutor, TopoMatchMesh,
                         CcuTempHalfAllToAllVMesh1D);
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALLV, CcuAlltoAllVMesh2Die, InsAlltoAllSoleExecutor, TopoMatchMesh,
-                        CcuTempAlltoAllVMesh2Die);
+                         CcuTempAlltoAllVMesh2Die);
 #endif
+
+template class InsAlltoAllSoleExecutor<TopoMatchConcurrMesh, CcuTempAlltoAllMesh2D>;
 
 } // namespace Hccl

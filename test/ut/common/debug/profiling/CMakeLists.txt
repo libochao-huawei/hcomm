@@ -32,7 +32,7 @@ target_compile_options(hccl_ut_task_exception PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+     --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 

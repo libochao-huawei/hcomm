@@ -52,7 +52,7 @@ target_include_directories(hccp_utest PRIVATE
 
 target_compile_options(hccp_utest PRIVATE
     -U_FORTIFY_SOURCE
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+     --coverage -fprofile-arcs -ftest-coverage -fno-access-control
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
     -Wall
     -Wextra
