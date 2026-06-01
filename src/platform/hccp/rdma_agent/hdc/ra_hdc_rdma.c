@@ -260,7 +260,8 @@ int RaHdcQpCreateWithCQWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAt
     cap.max_send_wr = extAttrs->qpAttr.cap.max_send_wr;
     cap.max_recv_wr = extAttrs->qpAttr.cap.max_recv_wr;
     ret = RaHdcLiteQpCreateWithCQ(rdmaHandle, qpHdc, &cap,
-        RaHdcLiteFindTypicalCq(phyId, sendCqn), RaHdcLiteFindTypicalCq(phyId, recvCqn));
+        RaHdcLiteFindTypicalCq(phyId, sendCqn), RaHdcLiteFindTypicalCq(phyId, recvCqn),
+        sendCqn, recvCqn);
     if (ret) {
         (void)RaHdcCmdQpDestroy(qpHdc);
         hccp_err("[create][ra_hdc_qp_with_cq_attrs]ra_hdc_lite_qp_create failed ret(%d) phyId(%u)", ret, phyId);
@@ -776,6 +777,14 @@ int RaHdcLiteTypicalSendWrVerbs(struct RaQpHandle *qpHdc, struct LiteSendWr *wr,
         attr.reduce_type = wr->aux.dataType;
     }
     liteWr.imm_data = htobe32(wr->ext.immData);
+
+    hccp_info("[send][ra_hdc_wr] liteWr: wr_id=0x%llx num_sge=%d opcode=%u send_flags=0x%x remote_addr=0x%llx rkey=0x%x imm_data=0x%x",
+        (unsigned long long)liteWr.wr_id, liteWr.num_sge, liteWr.opcode, liteWr.send_flags,
+        (unsigned long long)liteWr.remote_addr, liteWr.rkey, liteWr.imm_data);
+    for (i = 0; i < liteWr.num_sge; i++) {
+        hccp_info("[send][ra_hdc_wr] liteWr.sg_list[%d]: addr=0x%llx length=%u lkey=0x%x",
+            i, (unsigned long long)liteWr.sg_list[i].addr, liteWr.sg_list[i].length, liteWr.sg_list[i].lkey);
+    }
 
     ret = RaRdmaLitePostSend(qpHdc->liteQp, &liteWr, &badWr, &attr, &resp);
     if (ret) {
@@ -1456,11 +1465,12 @@ int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries
 int RaHdcPollTypicalCq(struct RaTypicalCqHandle *cqHdc, unsigned int numEntries, void *wc)
 {
     struct rdma_lite_wc_v2 *liteWc = (struct rdma_lite_wc_v2 *)wc;
-    if (cqHdc->liteCq == NULL) {
-        hccp_warn("cqn:%u liteCq is NULL, not support to poll_cq", cqHdc->cqn);
+    struct rdma_lite_cq *liteCq = RaHdcLiteFindTypicalCq(cqHdc->phyId, cqHdc->cqn);
+    if (liteCq == NULL) {
+        hccp_warn("cqn:%u liteCq not found in table", cqHdc->cqn);
         return -ENOTSUPP;
     }
-    int ret = RaRdmaLitePollCqV2(cqHdc->liteCq, (int)numEntries, liteWc);
+    int ret = RaRdmaLitePollCqV2(liteCq, (int)numEntries, liteWc);
     if (ret < 0) {
         hccp_err("ra_rdma_lite_poll_cq_v2 failed, ret %d", ret);
         return ret;
