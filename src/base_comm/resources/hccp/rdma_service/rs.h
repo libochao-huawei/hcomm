@@ -321,6 +321,8 @@ RS_ATTRI_VISI_DEF int RsGetLiteRdevCap(
     unsigned int phyId, unsigned int rdevIndex, struct LiteRdevCapResp *resp);
 RS_ATTRI_VISI_DEF int RsGetLiteQpCqAttr(
     unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteQpCqAttrResp *resp);
+RS_ATTRI_VISI_DEF int RsGetLiteQpAttr(
+    unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteQpAttrResp *resp);
 RS_ATTRI_VISI_DEF int RsGetLiteCqAttr(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
     struct rdma_lite_device_cq_attr *deviceCqAttr);
 RS_ATTRI_VISI_DEF int RsQpCreateWithCQWithAttrs(unsigned int phyId, unsigned int rdevIndex,

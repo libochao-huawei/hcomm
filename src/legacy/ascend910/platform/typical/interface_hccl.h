@@ -386,15 +386,24 @@ struct AscendWc {
     enum AscendWcOpcode opcode; // operation type
     uint32_t vendorErr; // vendor error syndrome
     uint32_t byteLen; // number of bytes transferred
-    uint32_t immData; // immediate data (network byte order)
     uint32_t qpNum; // QP number
-    uint32_t srcQp; // remote QP number
-    enum AscendWcFlags wcFlags; // completion flags
+    unsigned int wcFlags; // completion flags (see AscendWcFlags)
+    union {
+        uint32_t immData; // immediate data (network byte order)
+        uint32_t invalidated_rkey;
+    };
+    uint32_t srcQp; // remote QP number (not available from driver, always 0)
     uint16_t pkeyIndex; // P_Key index (for GSI QPs)
     uint16_t slid; // source local identifier
     uint8_t sl; // service level
     uint8_t dlidPathBits; // destination LID path bits
+    u32 version;
 };
+
+/**
+* @brief 异构场景RDMA设备初始化接口，禁止起PollCq线程轮询Send CQ，调用者需调用hcclPollAscendCQ来Poll Cq
+*/
+HcclResult hcclAscendRdmaInitV2();
 
 /**
 * @brief 异构场景内存（数据内存和同步内存）注册
