@@ -13,13 +13,15 @@
 
 #include "hccl_group.h"
 
+#include "param_check_basic_v2.h"
+
 using namespace hccl;
 
 thread_local s32 hcclGroupDepth = 0;
 thread_local std::deque<std::shared_ptr<struct hcclAsyncJob>> hcclInitJobs;
 thread_local std::vector<HcclComm> hcclGroupCommList;
 
-HcclResult HcclGroupStart()
+HcclResult HcclLegacyGroupStart()
 {
     hcclGroupDepth++;
     HCCL_INFO("[HcclGroupStart] hcclGroupDepth=[%d]", hcclGroupDepth);
@@ -259,7 +261,7 @@ inline void groupLocalResetJobState()
     return;
 }
 
-HcclResult HcclGroupEnd()
+HcclResult HcclLegacyGroupEnd()
 {
     if (hcclGroupDepth == 0) {
         HCCL_ERROR("HcclGroupEnd: not in a group call. Didn't call HcclGroupStart before.");
