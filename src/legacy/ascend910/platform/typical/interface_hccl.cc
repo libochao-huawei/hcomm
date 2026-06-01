@@ -33,6 +33,26 @@ constexpr u32 MAX_WQE_PER_DOORBELL = 300;
 constexpr u32 QP_QUEUE_DEPTH_MAX = 32768;
 constexpr u32 QP_QUEUE_DEPTH_MIN = 128;
 #define HCCN_RESV_MEM_TYPE_PDCCL (0)
+
+// Verify AscendWc has the same size as the driver's rdma_lite_wc_v2 struct.
+// rdma_lite_wc_v2 = rdma_lite_wc (32 bytes) + rdma_lite_wc_ext (20 bytes)
+// = 52 bytes content + 4 bytes tail padding (8-byte alignment) = 56 bytes.
+static_assert(sizeof(struct AscendWc) == 56, "AscendWc size must be 56 bytes to match rdma_lite_wc_v2");
+
+// Verify field offsets match the driver's rdma_lite_wc / rdma_lite_wc_v2 layout.
+// If these fail, the C++ compiler may be using a different enum size than the C driver.
+#include <cstddef>
+static_assert(offsetof(struct AscendWc, wrId) == 0, "wrId offset must be 0");
+static_assert(offsetof(struct AscendWc, status) == 8, "status offset must be 8");
+static_assert(offsetof(struct AscendWc, opcode) == 12, "opcode offset must be 12 (enum must be 4 bytes)");
+static_assert(offsetof(struct AscendWc, vendorErr) == 16, "vendorErr offset must be 16");
+static_assert(offsetof(struct AscendWc, byteLen) == 20, "byteLen offset must be 20");
+static_assert(offsetof(struct AscendWc, qpNum) == 24, "qpNum offset must be 24");
+static_assert(offsetof(struct AscendWc, wcFlags) == 28, "wcFlags offset must be 28");
+static_assert(offsetof(struct AscendWc, immData) == 32, "immData offset must be 32");
+static_assert(offsetof(struct AscendWc, version) == 48, "version offset must be 48");
+static_assert(sizeof(enum AscendWcStatus) == 4, "AscendWcStatus must be 4 bytes (match C enum)");
+static_assert(sizeof(enum AscendWcOpcode) == 4, "AscendWcOpcode must be 4 bytes (match C enum)");
 struct MrInfoT AscendMrInfo2MrInfo(AscendMrInfo* ascendMrInfo)
 {
     struct MrInfoT innerMrInfo = {};
@@ -177,6 +197,24 @@ HcclResult hcclCreateAscendQPWithCQWithAttr(AscendCQInfo* ascendSendCQInfo, Asce
         ascendQPInfo->qp_type = ASCEND_QPT_RC;
     }
 
+    qpConfigInfo.sq_sig_all = ascendQPInfo->sqSigAll;
+
+    if (ascendQPInfo->cap.maxSendSge == 0) {
+        qpConfigInfo.max_send_sge = DEFAULT_MAX_SEND_SGE;
+    } else {
+        qpConfigInfo.max_send_sge = ascendQPInfo->cap.maxSendSge;
+    }
+    if (ascendQPInfo->cap.maxRecvSge == 0) {
+        qpConfigInfo.max_recv_sge = DEFAULT_MAX_RECV_SGE;
+    } else {
+        qpConfigInfo.max_recv_sge = ascendQPInfo->cap.maxRecvSge;
+    }
+    if (ascendQPInfo->cap.maxInlineData == 0) {
+        qpConfigInfo.max_inline_data = DEFAULT_MAX_INLINE_DATA;
+    } else {
+        qpConfigInfo.max_inline_data = ascendQPInfo->cap.maxInlineData;
+    }
+
     u32 poolId;
     if (HCCL_SUCCESS == RdmaResourceManager::GetInstance().GetResvMemPoolIdByType(HCCN_RESV_MEM_TYPE_PDCCL, poolId)) {
         qpConfigInfo.use_resv_mem = 1;
@@ -208,6 +246,7 @@ HcclResult hcclDestroyAscendVerbsQP(AscendVerbsQPInfo* ascendQPInfo)
     }
     qpInfo.psn = ascendQPInfo->psn;
     CHK_RET(TypicalQpManager::GetInstance().DestroyQpWithoutCQ(qpInfo));
+    HCCL_INFO("hcclDestroyAscendVerbsQP success! qpn[%u]", ascendQPInfo->qpn);
     return HCCL_SUCCESS;
 }
 

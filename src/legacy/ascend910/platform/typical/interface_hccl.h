@@ -386,14 +386,18 @@ struct AscendWc {
     enum AscendWcOpcode opcode; // operation type
     uint32_t vendorErr; // vendor error syndrome
     uint32_t byteLen; // number of bytes transferred
-    uint32_t immData; // immediate data (network byte order)
     uint32_t qpNum; // QP number
-    uint32_t srcQp; // remote QP number
-    enum AscendWcFlags wcFlags; // completion flags
+    uint32_t wcFlags; // completion flags (see AscendWcFlags)
+    union {
+        uint32_t immData; // immediate data (network byte order)
+        uint32_t invalidated_rkey;
+    };
+    uint32_t srcQp; // remote QP number (not available from driver, always 0)
     uint16_t pkeyIndex; // P_Key index (for GSI QPs)
     uint16_t slid; // source local identifier
     uint8_t sl; // service level
     uint8_t dlidPathBits; // destination LID path bits
+    u32 version;
 };
 
 /**

@@ -130,6 +130,22 @@ using QpConfigInfo = struct QpConfigInfoDef {
     uint32_t resv_mem_pool_id;
 };
 
+using QpConfigWithCQInfo = struct QpConfigWithCQInfoDef {
+    uint32_t sq_depth;
+    uint32_t rq_depth;
+    uint32_t scq_depth;
+    uint32_t rcq_depth;
+    uint32_t sendCqn;
+    uint32_t recvCqn;
+    uint32_t use_resv_mem;
+    uint32_t resv_mem_pool_id;
+    int sq_sig_all;
+    uint32_t max_send_sge;
+    uint32_t max_recv_sge;
+    uint32_t max_inline_data;
+};
+
+
 using CqInfo = struct CqInfoDef {
     struct ibv_cq* sq;
     struct ibv_cq* rq;
@@ -339,16 +355,6 @@ HcclResult HrtRaRemapMr(RdmaHandle rdmaHandle, struct MemRemapInfo info[], unsig
 HcclResult HrtRaGetTlsEnable(struct RaInfo *info, bool *tlsEnable);
 // 目前该接口只支持peer模式，且只适用于终止未建链成功的链路，即未get_socket成功的链路
 HcclResult hrtRaSocketNonBlockBatchAbort(SocketConnectInfoT conn[], u32 num);
-using QpConfigWithCQInfo = struct QpConfigWithCQInfoDef {
-    uint32_t sq_depth;
-    uint32_t rq_depth;
-    uint32_t scq_depth;
-    uint32_t rcq_depth;
-    uint32_t sendCqn;
-    uint32_t recvCqn;
-    uint32_t use_resv_mem;
-    uint32_t resv_mem_pool_id;
-};
 
 HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo);
 HcclResult CreateQpWithCQConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigWithCQInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo);
