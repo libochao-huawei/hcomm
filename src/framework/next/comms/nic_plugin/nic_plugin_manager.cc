@@ -230,7 +230,10 @@ const NicPluginEntry *FindHostNicPlugin(CommProtocol protocol)
     LoadAllNicPlugins();
     const auto &protocolPlugins = ProtocolPlugins();
     auto iter = protocolPlugins.find(protocol);
-    return iter == protocolPlugins.end() ? nullptr : iter->second;
+    const NicPluginEntry *entry = iter == protocolPlugins.end() ? nullptr : iter->second;
+    HCCL_RUN_WARNING("[NicPluginDebug][FindHostNicPlugin] protocol[%d], entry[%p], mapSize[%zu].",
+        protocol, entry, protocolPlugins.size());
+    return entry;
 }
 
 HcommResult CreatePluginEndpoint(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
@@ -238,6 +241,8 @@ HcommResult CreatePluginEndpoint(const EndpointDesc *endpoint, EndpointHandle *e
     CHK_PTR_NULL(endpoint);
     CHK_PTR_NULL(endpointHandle);
     const NicPluginEntry *entry = FindHostNicPlugin(endpoint->protocol);
+    HCCL_RUN_WARNING("[NicPluginDebug][CreatePluginEndpoint] protocol[%d], entry[%p].",
+        endpoint->protocol, entry);
     if (entry == nullptr) {
         return HCCL_E_NOT_FOUND;
     }
