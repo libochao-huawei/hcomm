@@ -11,17 +11,16 @@
 #include "dlprof_function.h"
 #include "communicator_impl.h"
 namespace Hccl {
+
 std::array<ProfilingReporter::lastPosesMap, MAX_MODULE_DEVICE_NUM> ProfilingReporter::allLastPoses_{};
 ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler* profilingHandler) 
 {
-    HCCL_INFO("[ProfilingReporter]ProfilingReporter Construct start.");
     if (mirrorTaskMgr == nullptr || profilingHandler == nullptr) {
         THROW<InternalException>("[ProfilingReporter] mirrorTaskMgr or profilingHandler is nullptr.");
     }
     profilingHandler_ = profilingHandler;
     mirrorTaskMgr_ = mirrorTaskMgr;
     mirrorTaskMgr_->RegFullyCallBack([this]() { ReportCallBackAllTasks(); });
-    HCCL_INFO("[ProfilingReporter]ProfilingReporter Construct end.");
 }
 
 ProfilingReporter::~ProfilingReporter()
@@ -34,7 +33,6 @@ void ProfilingReporter::Init() const
 
 void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const
 {
-    HCCL_INFO("[ProfilingReporter]ProfilingReporter reportOp start.");
     std::shared_ptr<DfxOpInfo> opInfo = mirrorTaskMgr_->GetCurrDfxOpInfo();
     if (opInfo == nullptr) {
         THROW<InternalException>("[ProfilingReporter]ProfilingReporter reportOp failed, opInfo is nullptr.");
@@ -62,19 +60,59 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
     if (opbased) {
         profilingHandler_->ReportHostApi(opType, beginTime, endTime, !opbased, isAiCpu);
     }
-    HCCL_INFO("[ProfilingReporter]ProfilingReporter reportOp end.");
+}
+
+void ProfilingReporter::LogAllTasks() const
+{
+    if (HcclCheckLogLevel(HCCL_LOG_INFO) == 0) {
+        return;
+    }
+    s32 deviceLogicId = HrtGetDevice();
+    if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
+        return;
+    }
+    auto& curLastPoses = allLastPoses_[deviceLogicId];
+    for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
+        u32 streamId = it->first;
+        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
+        if (currQueue == nullptr || currQueue->Begin() == nullptr || currQueue->Tail() == nullptr) {
+            continue;
+        }
+        if (*(*(currQueue->Begin())) == nullptr) {
+            continue;
+        }
+        if (curLastPoses.find(streamId) == curLastPoses.end() && currQueue->Begin() != nullptr) {
+            TaskInfo task = (*(*(*currQueue->Begin())));
+            HCCL_INFO("[ProfilingReporter] LogAllTasks, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
+        }
+        if (curLastPoses.find(streamId) == curLastPoses.end()) {
+            continue;
+        }
+        bool pastLastPos = false;
+        auto logIter = currQueue->Begin();
+        for (; (*(logIter)) != (*(currQueue->End())); ++(*(logIter))) {
+            if (!pastLastPos && (*(logIter)) == (*(curLastPoses[streamId]))) {
+                pastLastPos = true;
+                continue;
+            }
+            if (pastLastPos) {
+                TaskInfo task = (*(*(*logIter)));
+                HCCL_INFO("[ProfilingReporter] LogAllTasks, streamId = %u, taskId = %u",
+                          task.streamId_, task.taskId_);
+            }
+        }
+    }
 }
 
 void ProfilingReporter::ReportCallBackAllTasks(bool cachedReq)
 {
-    HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportCallBackAllTasks start.");
     ReportAllTasks(cachedReq);
 }
 
 void ProfilingReporter::ReportAllTasks(bool cachedReq)
-{
-    HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks start.");
+{   
     std::lock_guard<std::mutex> lock(mirrorTaskMgr_->GetTaskMutex());
+    LogAllTasks();
     s32 deviceLogicId = HrtGetDevice();
     if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
         HCCL_ERROR("[ProfilingReporter][ReportAllTasks] deviceLogicId[%d] out of range", deviceLogicId);
@@ -117,8 +155,6 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         }
         curLastPoses[streamId] = endPos;
     }
-
-    HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks end.");
 }
 
 /* 中途打开profiling开关 */
@@ -127,7 +163,6 @@ void ProfilingReporter::UpdateProfStat(void)
     if (enableHcclL1_ == true) {
         return;
     }
-    HCCL_INFO("[ProfilingReporter]ProfilingReporter UpdateProfStat start.");
     // 读取L1开关状态，更新reporter中的开关；
     bool newEnableHcclL1 = profilingHandler_->GetHcclL1State();
     if (mirrorTaskMgr_ == nullptr) {
@@ -149,7 +184,6 @@ void ProfilingReporter::UpdateProfStat(void)
             curLastPoses[streamId] = it->second->Tail();
         }
     }
-    HCCL_INFO("[ProfilingReporter]ProfilingReporter UpdateProfStat end.");
 }
 
 void ProfilingReporter::CallReportMc2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,

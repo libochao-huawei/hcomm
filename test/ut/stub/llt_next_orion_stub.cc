@@ -1883,7 +1883,7 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     (void)cachedReq;
 }
 
-void ProfilingHandler::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void *data, uint32_t len) const
+void ProfilingHandler::ReportAdditionInfo(const MsprofAdditionalInfo& reporterData) const
 {
 }
 
@@ -2000,7 +2000,7 @@ ProfilingHandlerLite &ProfilingHandlerLite::GetInstance()
     return instance;
 }
 
-void ProfilingHandlerLite::Init() const
+void ProfilingHandlerLite::Init()
 {
 }
 
@@ -2025,7 +2025,7 @@ void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo
 {
 }
 
-void ProfilingHandlerLite::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, const void *data, int len) const
+void ProfilingHandlerLite::ReportAdditionInfo(const MsprofAdditionalInfo& reporterData) const
 {
 }
 
