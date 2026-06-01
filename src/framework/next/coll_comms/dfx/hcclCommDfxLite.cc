@@ -51,15 +51,13 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
 }
 
 // HcclCommDfxLite接口实现 - 修改为返回HcclResult类型
-void HcclCommDfxLite::SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo)
+HcclResult HcclCommDfxLite::SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo)
 {
-    if (mirrorTaskManagerLite_) {
-        mirrorTaskManagerLite_->SetCurrDfxOpInfo(dfxOpInfo);
-    }
-    if (dfxOpInfo != nullptr) {
-        Hccl::ProfilingHandlerLite::GetInstance().SetCachedCclTag(dfxOpInfo->tag_);
-        Hccl::ProfilingHandlerLite::GetInstance().SetCachedGroupName(*dfxOpInfo);
-    }
+    CHK_PTR_NULL(dfxOpInfo);
+    CHK_RET(mirrorTaskManagerLite_->SetCurrDfxOpInfo(dfxOpInfo));
+    Hccl::ProfilingHandlerLite::GetInstance().SetCachedCclTag(dfxOpInfo->tag_);
+    Hccl::ProfilingHandlerLite::GetInstance().SetCachedGroupName(*dfxOpInfo);
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommDfxLite::ReportAllTasks() {
