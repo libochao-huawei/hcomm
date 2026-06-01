@@ -41,7 +41,7 @@ public:
 private:
     bool                           isStaticGraphMode_{false};
     OpMode                         opMode_;
-    TaskInfoQueueMap               queueMap_;
+    std::unordered_map<u32, std::unique_ptr<TaskInfoQueue>> queueMap_;
     std::unordered_map<u32, u32>   queueTaskNum;
     std::shared_ptr<DfxOpInfo>     currDfxOpInfo_;
     std::function<void()>          fullyCallBack_;
