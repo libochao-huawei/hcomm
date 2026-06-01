@@ -83,6 +83,8 @@ struct RaRdmaOps {
     int (*raDeregisterMr)(struct RaRdmaHandle *handle, void *mrHandle);
     int (*raSendWr)(struct RaQpHandle *handle, struct SendWr *wr, struct SendWrRsp *wrRsp);
     int (*raSendWrV2)(struct RaQpHandle *handle, struct SendWrV2 *wr, struct SendWrRsp *wrRsp);
+    int (*raSendWrVerbs)(struct RaQpHandle *handle, struct SendWrVerbs *wr, struct SendWrRsp *wrRsp);
+    int (*raRecvWrVerbs)(struct RaQpHandle *handle, struct RecvWrVerbs *wr);
     int (*raTypicalSendWr)(struct RaQpHandle *handle, struct SendWr *wr, struct SendWrRsp *wrRsp);
     int (*raSendWrlist)(struct RaQpHandle *handle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
         struct WrlistSendCompleteNum wrlistNum);

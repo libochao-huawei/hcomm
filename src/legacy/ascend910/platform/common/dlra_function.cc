@@ -90,6 +90,10 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
     CHK_SMART_PTR_NULL(dlRaSendWr);
     dlRaSendWrV2 = (int(*)(QpHandle, struct SendWrV2*, struct SendWrRsp*))HcclDlsym(handle_, "RaSendWrV2");
     CHK_SMART_PTR_NULL(dlRaSendWrV2);
+    dlRaSendWrVerbs = (int(*)(QpHandle, struct SendWrVerbs*, struct SendWrRsp*))HcclDlsym(handle_, "RaSendWrVerbs");
+    CHK_SMART_PTR_NULL(dlRaSendWrVerbs);
+    dlRaRecvWrVerbs = (int(*)(QpHandle, struct RecvWrVerbs*))HcclDlsym(handle_, "RaRecvWrVerbs");
+    CHK_SMART_PTR_NULL(dlRaRecvWrVerbs);
     dlRaPollCq = (int(*)(QpHandle, bool, unsigned int, void *))HcclDlsym(handle_, "RaPollCq");
     CHK_SMART_PTR_NULL(dlRaPollCq);
     dlRaSendWrlist = (int(*)(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp op_rsp[],
