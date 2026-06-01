@@ -248,12 +248,24 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
         return HCCL_E_PARA;
     }
 
-    if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST && FindHostNicPlugin(endpoint->protocol) != nullptr) {
-            CHK_RET(static_cast<HcclResult>(CreatePluginEndpoint(endpoint, endpointHandle)));
-            HCCL_INFO("[%s] nic plugin endpoint created, protocol[%d], handle[%p].",
-                __func__, endpoint->protocol, *endpointHandle);
-            return HCCL_SUCCESS;
+    const NicPluginEntry *pluginEntry = nullptr;
+    if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        pluginEntry = FindHostNicPlugin(endpoint->protocol);
     }
+    HCCL_ERROR("[NicPluginDebug][%s] locType[%d], protocol[%d], pluginEntry[%p].",
+        __func__, endpoint->loc.locType, endpoint->protocol, pluginEntry);
+
+    if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST && pluginEntry != nullptr) {
+        HCCL_ERROR("[NicPluginDebug][%s] enter plugin endpoint branch, protocol[%d].",
+            __func__, endpoint->protocol);
+        CHK_RET(static_cast<HcclResult>(CreatePluginEndpoint(endpoint, endpointHandle)));
+        HCCL_ERROR("[NicPluginDebug][%s] plugin endpoint created, protocol[%d], handle[%p], isPlugin[%d].",
+            __func__, endpoint->protocol, *endpointHandle, IS_PLUGIN_HANDLE(*endpointHandle));
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_ERROR("[NicPluginDebug][%s] fallback to builtin Endpoint::CreateEndpoint, locType[%d], protocol[%d], "
+        "pluginEntry[%p].", __func__, endpoint->loc.locType, endpoint->protocol, pluginEntry);
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
