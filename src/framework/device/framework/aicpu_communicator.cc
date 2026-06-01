@@ -5531,7 +5531,6 @@ HcclResult HcclCommAicpu::SetChannelP2pNotify(TransportDeviceP2pData &transDevP2
     transDevP2pData.userRemoteNotify.resize(p2pNotifyNum, nullptr);
 
     for (u32 idx = 0; idx < p2pNotifyNum; idx++) {
-        CHK_RET(CheckNotifyOrQPMaxNum(actualNotifyNum, LINK_P2P_MAX_NUM, true));
         std::shared_ptr<LocalNotify> ipcWaitNotify = std::make_shared<LocalNotify>();
         CHK_RET(InitAndVerifySingleSignal(channelP2p.localIpcSignal[actualNotifyNum], ipcWaitNotify));
         transDevP2pData.userLocalNotify[idx] = ipcWaitNotify;

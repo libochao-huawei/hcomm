@@ -16,13 +16,14 @@
 #include "hccl/hccl_res.h"
 #include "aicpu_operator_pub.h"
 
+constexpr u64 P2P_NOTIFY_MAX_NUM = 66;
 // 独立算子同步资源
 struct HcclChannelP2p {
     HcclMem* remoteUserMem = nullptr;                   // 远端用户内存
     HcclMem remoteHcclbuffer;                           // 远端用户cclbuffer
     u32 remoteUserMemCount = 0;                         // 远端用户内存数量
-    HcclSignalInfo localIpcSignal[LINK_P2P_MAX_NUM];    // localnotify
-    HcclSignalInfo remoteIpcSignal[LINK_P2P_MAX_NUM];
+    HcclSignalInfo localIpcSignal[P2P_NOTIFY_MAX_NUM];    // localnotify
+    HcclSignalInfo remoteIpcSignal[P2P_NOTIFY_MAX_NUM];
     hccl::TransportAttr transportAttr;
     u32 qos;
 };
