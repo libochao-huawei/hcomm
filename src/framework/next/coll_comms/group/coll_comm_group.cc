@@ -246,114 +246,111 @@ HcclResult HcclGroupAddP2pTaskV2(HcclComm comm, const HcclP2pTask& task, const H
 
 constexpr u32 KERNEL_TIMEOUT_OFFSET = 300;
 
-// static HcclResult HcclGetUnfoldStream(HcclComm comm, ThreadHandle unfoldThread,
-//     bool isOffloadMode, aclrtStream fallbackStream, aclrtStream &resolvedStream)
-// {
-//     resolvedStream = fallbackStream;
-//     if (isOffloadMode) {
-//         HCCL_INFO("[HcclGetUnfoldStream] offload mode, use fallback stream");
-//         return HCCL_SUCCESS;
-//     }
-//     if (unfoldThread == 0) {
-//         HCCL_INFO("[HcclGetUnfoldStream] unfoldThread is 0, use fallback stream");
-//         return HCCL_SUCCESS;
-//     }
+static HcclResult HcclGetUnfoldStream(HcclComm comm, ThreadHandle unfoldThread,
+    bool isOffloadMode, aclrtStream fallbackStream, aclrtStream &resolvedStream)
+{
+    resolvedStream = fallbackStream;
+    if (isOffloadMode) {
+        HCCL_INFO("[HcclGetUnfoldStream] offload mode, use fallback stream");
+        return HCCL_SUCCESS;
+    }
+    if (unfoldThread == 0) {
+        HCCL_INFO("[HcclGetUnfoldStream] unfoldThread is 0, use fallback stream");
+        return HCCL_SUCCESS;
+    }
 
-//     void* threadStreamInfo = nullptr;
-//     HcclResult ret = HcclThreadResGetInfo(comm, unfoldThread,
-//         THREAD_RES_TYPE_STREAM, sizeof(aclrtStream), &threadStreamInfo);
-//     if (ret == HCCL_E_NOT_SUPPORT) {
-//         HCCL_INFO("[HcclGetUnfoldStream] HcclThreadResGetInfo not supported, use fallback stream");
-//         resolvedStream = fallbackStream;
-//         return HCCL_SUCCESS;
-//     }
-//     CHK_PRT_RET(ret != HCCL_SUCCESS,
-//         HCCL_ERROR("[HcclGetUnfoldStream] HcclThreadResGetInfo failed, unfoldThread[0x%llx], ret[%d]",
-//             unfoldThread, ret), ret);
+    void* threadStreamInfo = nullptr;
+    HcclResult ret = HcclThreadResGetInfo(comm, unfoldThread,
+        THREAD_RES_TYPE_STREAM, sizeof(aclrtStream), &threadStreamInfo);
+    if (ret == HCCL_E_NOT_SUPPORT) {
+        HCCL_INFO("[HcclGetUnfoldStream] HcclThreadResGetInfo not supported, use fallback stream");
+        resolvedStream = fallbackStream;
+        return HCCL_SUCCESS;
+    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[HcclGetUnfoldStream] HcclThreadResGetInfo failed, unfoldThread[0x%llx], ret[%d]",
+            unfoldThread, ret), ret);
 
-//     if (threadStreamInfo != nullptr) {
-//         resolvedStream = *static_cast<aclrtStream*>(threadStreamInfo);
-//         HCCL_INFO("[HcclGetUnfoldStream] use unfold stream, resolvedStream[%p]", resolvedStream);
-//     }
-//     return HCCL_SUCCESS;
-// }
+    if (threadStreamInfo != nullptr) {
+        resolvedStream = *static_cast<aclrtStream*>(threadStreamInfo);
+        HCCL_INFO("[HcclGetUnfoldStream] use unfold stream, resolvedStream[%p]", resolvedStream);
+    }
+    return HCCL_SUCCESS;
+}
 
-// static HcclResult AicpuKernelLaunchDirect(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
-//     void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream)
-// {
-//     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
-//     std::string kernelName = "HcclLaunchAicpuKernel";
-//     aclrtFuncHandle funcHandle;
-//     aclrtArgsHandle argsHandle;
-//     aclError ret = aclrtBinaryGetFunction(hcclComm->GetBinHandle(), kernelName.c_str(), &funcHandle);
-//     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, "
-//         "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
-//     ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
-//     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, "
-//         "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
-//     aclrtParamHandle paraHandle;
-//     size_t paramSize = argSize;
-//     ret = aclrtKernelArgsAppend(argsHandle, args, paramSize, &paraHandle);
-//     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append "
-//         "size %u, kernelName:%s", ret, paramSize, kernelName.c_str()), HCCL_E_RUNTIME);
-//     ret = aclrtKernelArgsFinalize(argsHandle);
-//     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, "
-//         "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
+static HcclResult AicpuKernelLaunchDirect(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
+    void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream)
+{
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    std::string kernelName = "HcclLaunchAicpuKernel";
+    aclrtFuncHandle funcHandle;
+    aclrtArgsHandle argsHandle;
+    aclError ret = aclrtBinaryGetFunction(hcclComm->GetBinHandle(), kernelName.c_str(), &funcHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, "
+        "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
+    ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, "
+        "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
+    aclrtParamHandle paraHandle;
+    size_t paramSize = argSize;
+    ret = aclrtKernelArgsAppend(argsHandle, args, paramSize, &paraHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append "
+        "size %u, kernelName:%s", ret, paramSize, kernelName.c_str()), HCCL_E_RUNTIME);
+    ret = aclrtKernelArgsFinalize(argsHandle);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, "
+        "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
 
-//     aclrtLaunchKernelCfg cfg;
-//     aclrtLaunchKernelAttr attr;
-//     attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-//     attr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
-//     cfg.numAttrs = 1;
-//     cfg.attrs = &attr;
-//     constexpr u32 numBlocks = 1;
+    aclrtLaunchKernelCfg cfg;
+    aclrtLaunchKernelAttr attr;
+    attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+    attr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    cfg.numAttrs = 1;
+    cfg.attrs = &attr;
+    constexpr u32 numBlocks = 1;
 
-//     aclrtStream launchStream = nullptr;
-//     CHK_RET(HcclGetUnfoldStream(comm, aicpuThreadHandle, false, userStream, launchStream));
+    aclrtStream launchStream = nullptr;
+    CHK_RET(HcclGetUnfoldStream(comm, aicpuThreadHandle, false, userStream, launchStream));
 
-//     ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, launchStream, &cfg, argsHandle, nullptr);
-//     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[LoadCustomKernel][aclrtLaunchKernelWithConfig]"
-//         "errNo[0x%016llx] launch kernel failed, launchStream[%p]", ret, launchStream), HCCL_E_OPEN_FILE_FAILURE);
-//     return HCCL_SUCCESS;
-// }
+    ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, launchStream, &cfg, argsHandle, nullptr);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[LoadCustomKernel][aclrtLaunchKernelWithConfig]"
+        "errNo[0x%016llx] launch kernel failed, launchStream[%p]", ret, launchStream), HCCL_E_OPEN_FILE_FAILURE);
+    return HCCL_SUCCESS;
+}
 
 HcclResult HcclAicpuKernelLaunch(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
-    void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream) { return HCCL_SUCCESS; }
+    void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(userStream);
 
-// HcclResult HcclAicpuKernelLaunch(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
-//     void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream)
-// {
-//     CHK_PTR_NULL(comm);
-//     CHK_PTR_NULL(userStream);
+    HcclOpDesc &opInfoInternal = reinterpret_cast<HcclOpDesc&>(opInfo);
+    HcclKernelFuncInfo &funcInfoInternal = reinterpret_cast<HcclKernelFuncInfo&>(funcInfo);
 
-//     HcclOpDesc &opInfoInternal = reinterpret_cast<HcclOpDesc&>(opInfo);
-//     HcclKernelFuncInfo &funcInfoInternal = reinterpret_cast<HcclKernelFuncInfo&>(funcInfo);
+    HCCL_INFO("[HcclAicpuKernelLaunch] opDescType[%u], kernelSo[%s], kernelFuncName[%s], argSize[%u], "
+        "aicpuThreadHandle[%lu], hcclGroupDepth[%d]",
+        opInfoInternal.opDescType, funcInfoInternal.kernelSo, funcInfoInternal.kernelFuncName,
+        argSize, aicpuThreadHandle, hcclGroupDepthV2);
 
-//     HCCL_INFO("[HcclAicpuKernelLaunch] opDescType[%u], kernelSo[%s], kernelFuncName[%s], argSize[%u], "
-//         "aicpuThreadHandle[%lu], hcclGroupDepth[%d]",
-//         opInfoInternal.opDescType, funcInfoInternal.kernelSo, funcInfoInternal.kernelFuncName,
-//         argSize, aicpuThreadHandle, hcclGroupDepthV2);
+    aclrtStream resolvedStream = nullptr;
+    bool isOffloadMode = (aicpuThreadHandle == 0);
+    CHK_RET(HcclGetUnfoldStream(comm, aicpuThreadHandle, isOffloadMode, userStream, resolvedStream));
 
-//     aclrtStream resolvedStream = nullptr;
-//     bool isOffloadMode = (aicpuThreadHandle == 0);
-//     CHK_RET(HcclGetUnfoldStream(comm, aicpuThreadHandle, isOffloadMode, userStream, resolvedStream));
+    if (hcclGroupDepthV2 > 0) {
+        HCCL_INFO("[HcclAicpuKernelLaunch] group mode, add p2p task");
+        HcclP2pTask task;
+        task.desc = opInfoInternal.p2p;
+        task.stream = resolvedStream;
+        task.funcInfo = funcInfoInternal;
+        task.args = args;
+        task.argSize = argSize;
+        CHK_RET(HcclGroupAddP2pTaskV2(comm, task, opInfoInternal.p2p));
+        hcclP2pTaskNums++;
+        return HCCL_SUCCESS;
+    }
 
-//     if (hcclGroupDepthV2 > 0) {
-//         HCCL_INFO("[HcclAicpuKernelLaunch] group mode, add p2p task");
-//         HcclP2pTask task;
-//         task.desc = opInfoInternal.p2p;
-//         task.stream = resolvedStream;
-//         task.funcInfo = funcInfoInternal;
-//         task.args = args;
-//         task.argSize = argSize;
-//         CHK_RET(HcclGroupAddP2pTaskV2(comm, task, opInfoInternal.p2p));
-//         hcclP2pTaskNums++;
-//         return HCCL_SUCCESS;
-//     }
-
-//     HCCL_INFO("[HcclAicpuKernelLaunch] non-group mode, direct launch");
-//     return AicpuKernelLaunchDirect(comm, opInfoInternal, funcInfoInternal, args, argSize, aicpuThreadHandle, resolvedStream);
-// }
+    HCCL_INFO("[HcclAicpuKernelLaunch] non-group mode, direct launch");
+    return AicpuKernelLaunchDirect(comm, opInfoInternal, funcInfoInternal, args, argSize, aicpuThreadHandle, resolvedStream);
+}
 
 static HcclResult LaunchNotifyRecordToThread(HcclComm comm, aclrtStream unfoldStream, ThreadHandle srcThread,
     ThreadHandle dstThread, uint32_t dstNotifyIdx, std::string kernelName)
