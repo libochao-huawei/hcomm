@@ -2907,3 +2907,76 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_FinalizeStatusError)
     MOCKER(HcclGetTaskStatus).stubs().with(any()).will(invoke(HcclGetTaskStatusInvalidStub));
     EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_INTERNAL);
 }
+
+/**
+ * @brief AicpuRpcClearOpRes: nullptr 输入
+ * 验证：tilingData=nullptr 时返回 HCCL_E_PARA
+ */
+TEST_F(AicpuUnfold_UT, Ut_AicpuRpcClearOpRes_NullTilingData)
+{
+    u32 ret = AicpuHcclProcess::AicpuRpcClearOpRes(nullptr);
+    EXPECT_EQ(ret, static_cast<u32>(HCCL_E_PARA));
+}
+
+/**
+ * @brief AicpuRpcClearOpRes: magic 不匹配
+ * 验证：magic 不等于 HCCL_KFC_CLEAR_OP_RES_MAGIC 时返回 HCCL_E_PARA
+ */
+TEST_F(AicpuUnfold_UT, Ut_AicpuRpcClearOpRes_MagicMismatch)
+{
+    auto tilingData = std::make_unique<HcclKfcClearOpResTilingData>();
+    memset_s(tilingData.get(), sizeof(*tilingData), 0, sizeof(*tilingData));
+    tilingData->magic = 0xDEADBEEF; // 错误的 magic
+    tilingData->tagCount = 1;
+
+    u32 ret = AicpuHcclProcess::AicpuRpcClearOpRes(tilingData.get());
+    EXPECT_EQ(ret, static_cast<u32>(HCCL_E_PARA));
+}
+
+/**
+ * @brief AicpuRpcClearOpRes: tagCount=0
+ * 验证：tagCount=0 时返回 HCCL_E_PARA
+ */
+TEST_F(AicpuUnfold_UT, Ut_AicpuRpcClearOpRes_TagCountZero)
+{
+    auto tilingData = std::make_unique<HcclKfcClearOpResTilingData>();
+    memset_s(tilingData.get(), sizeof(*tilingData), 0, sizeof(*tilingData));
+    tilingData->magic = HCCL_KFC_CLEAR_OP_RES_MAGIC;
+    tilingData->tagCount = 0;
+
+    u32 ret = AicpuHcclProcess::AicpuRpcClearOpRes(tilingData.get());
+    EXPECT_EQ(ret, static_cast<u32>(HCCL_E_PARA));
+}
+
+/**
+ * @brief AicpuRpcClearOpRes: tagCount 超过 MAX_BATCH
+ * 验证：tagCount > MAX_BATCH 时返回 HCCL_E_PARA
+ */
+TEST_F(AicpuUnfold_UT, Ut_AicpuRpcClearOpRes_TagCountExceedsMax)
+{
+    auto tilingData = std::make_unique<HcclKfcClearOpResTilingData>();
+    memset_s(tilingData.get(), sizeof(*tilingData), 0, sizeof(*tilingData));
+    tilingData->magic = HCCL_KFC_CLEAR_OP_RES_MAGIC;
+    tilingData->tagCount = HCCL_KFC_CLEAR_OP_RES_MAX_BATCH + 1;
+
+    u32 ret = AicpuHcclProcess::AicpuRpcClearOpRes(tilingData.get());
+    EXPECT_EQ(ret, static_cast<u32>(HCCL_E_PARA));
+}
+
+/**
+ * @brief AicpuRpcClearOpRes: group 不存在（graceful 退化路径）
+ * 验证：AicpuGetCommbyGroup 返回 nullptr 时返回 HCCL_SUCCESS
+ */
+TEST_F(AicpuUnfold_UT, Ut_AicpuRpcClearOpRes_GroupNotFound)
+{
+    auto tilingData = std::make_unique<HcclKfcClearOpResTilingData>();
+    memset_s(tilingData.get(), sizeof(*tilingData), 0, sizeof(*tilingData));
+    tilingData->magic = HCCL_KFC_CLEAR_OP_RES_MAGIC;
+    tilingData->tagCount = 1;
+    memcpy_s(tilingData->group, sizeof(tilingData->group), "nonexistent_group", 18);
+    memcpy_s(tilingData->tags[0], TAG_MAX_LENGTH, "test_tag", 9);
+
+    u32 ret = AicpuHcclProcess::AicpuRpcClearOpRes(tilingData.get());
+    // group 不存在时 AicpuGetCommbyGroup 返回 nullptr，函数返回 SUCCESS
+    EXPECT_EQ(ret, static_cast<u32>(HCCL_SUCCESS));
+}

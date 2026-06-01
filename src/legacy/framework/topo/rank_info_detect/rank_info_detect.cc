@@ -108,6 +108,10 @@ shared_ptr<Socket> RankInfoDetect::ServerInit()
         hccpHostSocketHandle, hostIp_, hostPort_, hostIp_, "server", SocketRole::SERVER, NicType::HOST_NIC_TYPE);
     if (hostPort_ == HCCL_INVALID_PORT) {
         auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
+        if (portRange.empty()) {
+            SocketPortRange defaultRange = {HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + 15};
+            portRange.push_back(defaultRange);
+        }
         PreemptPortManager::GetInstance(devLogicId_).ListenPreempt(serverSocket, portRange, hostPort_);
     } else {
         serverSocket->Listen();
@@ -171,6 +175,10 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
     hostPort_ = GetHostListenPort();
     if (hostPort_ == HCCL_INVALID_PORT) {
         auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
+        if (portRange.empty()) {
+            SocketPortRange defaultRange = {HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + 15};
+            portRange.push_back(defaultRange);
+        }
         SocketHandle hostSocketHandle = HostSocketHandleManager::GetInstance().Create(devPhyId_, hostIp_);
         hostPortSocket_ = std::make_shared<Socket>(
             hostSocketHandle, hostIp_, HCCL_INVALID_PORT, hostIp_,
@@ -258,8 +266,9 @@ u32 RankInfoDetect::GetHostListenPort()
         return listenPort;
     }
 
-    listenPort = HOST_CONTROL_BASE_PORT + devPhyId_;
-    HCCL_INFO("[RankInfoDetect::%s] default port, listenPort[%u]", __func__, listenPort);
+    // 无环境变量设置，返回HCCL_INVALID_PORT触发PreemptPortManager轮询查找端口[60000, 60015]
+    listenPort = HCCL_INVALID_PORT;
+    HCCL_INFO("[RankInfoDetect::%s] No port configuration, using default port range[%u, %u]", __func__, HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + 15);
     return listenPort;
 }
 
@@ -340,4 +349,11 @@ void RankInfoDetect::WaitComplete(u32 listenPort, u32 listenStatus) const
     };
 }
 
+RankInfoDetect::~RankInfoDetect()
+{
+    if (hostPortSocket_ != nullptr) {
+        hostPortSocket_->StopListen();
+        HostSocketHandleManager::GetInstance().Destroy(devPhyId_, hostIp_);
+    }
+}
 }  // namespace Hccl

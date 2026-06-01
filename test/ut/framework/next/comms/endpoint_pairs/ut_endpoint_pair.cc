@@ -51,6 +51,34 @@ TEST_F(TestEndpointPair, Ut_EndpointPair_Construct_Expect_HCCL_SUCCESS)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+TEST_F(TestEndpointPair, Ut_EndpointPair_Create_Host_Socket_Expect_HCCL_SUCCESS)
+{
+    EndpointDesc localEndpointDesc{};
+    localEndpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    localEndpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    Hccl::IpAddress localIp("192.168.100.100");
+    localEndpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+    localEndpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    EndpointDesc remoteEndpointDesc{};
+    remoteEndpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    remoteEndpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    Hccl::IpAddress remoteIp("192.168.100.101");
+    remoteEndpointDesc.commAddr.addr = remoteIp.GetBinaryAddress().addr;
+    remoteEndpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+
+    MOCKER_CPP(&SocketMgr::GetSocket).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+
+    EndpointPair endpointPair(localEndpointDesc, remoteEndpointDesc, rankIpPortMap);
+    HcclResult ret = endpointPair.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    Hccl::Socket* socket = nullptr;
+    ret = endpointPair.ServerInit(0, 1, "Hccl_Test_Group", 0, 0, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = endpointPair.GetConnectedSocket(0, 1, "Hccl_Test_Group", 60001, 0, socket, 0, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
 // 测试销毁不存在的channel，返回HCCL_SUCCESS
 TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Not_Exist_Expect_SUCCESS)
 {

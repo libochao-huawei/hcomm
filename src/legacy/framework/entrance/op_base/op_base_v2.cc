@@ -2509,7 +2509,7 @@ HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTa
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclGetCcuTaskInfo V950, commId[%s], tilingData[%p], ccuTaskGroup[%p]",
-             communicator->GetId(), tilingData, ccuTaskGroup);
+             communicator->GetId().c_str(), tilingData, ccuTaskGroup);
     }
     auto ret = communicator->GetCcuTaskInfo(tilingData, ccuTaskGroup);
     if (ret != HCCL_SUCCESS) {

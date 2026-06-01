@@ -342,6 +342,8 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs, const AivTopoArgs &topoA
     const AivResourceArgs &resourceArgs, const AivAlgArgs &algArgs, const ExtraArgsV2 &extraArgs, 
     AivProfilingInfo& aivProfilingInfo);
 
+HcclResult CacheTaskOpInfo(rtStream_t stream, const std::string &identify);
+
 HcclResult ReadBinFile(const std::string& fileName, std::string& buffer);
 
 HcclResult GetKernelFunc(aclrtFuncHandle& funcHandle, s8* stubFunc);

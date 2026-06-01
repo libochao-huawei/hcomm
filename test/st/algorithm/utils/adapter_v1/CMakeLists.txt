@@ -90,6 +90,7 @@ target_include_directories(hccl_alg_adaption PRIVATE
     ${RDMA_CORE_INCLUDE_DIR}
 
     ${ASCEND_CANN_INCLUDE_LIST}
+    ${CMAKE_SOURCE_DIR}/test/legacy/depends/toolchain/
 )
 
 target_compile_definitions(hccl_alg_adaption PRIVATE
