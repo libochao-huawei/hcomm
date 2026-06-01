@@ -74,6 +74,7 @@ target_link_options(ra_hdc PRIVATE
 )
 
 target_link_libraries(ra_hdc PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:msprof_headers>
     $<BUILD_INTERFACE:slog_headers>

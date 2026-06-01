@@ -15,5 +15,6 @@ set(stub_tsd_list
 add_library(tsd_eventclient SHARED ${stub_tsd_list})
 
 target_link_libraries(tsd_eventclient PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:runtime_headers>
 )
