@@ -97,7 +97,8 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
             hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
             HCCL_INFO("[HcclThreadAciqure] ReportThreadAciqureKernel begin");
             const std::string KernelName = "RunAicpuIndOpThreadInit";
-            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid()));
+            // 这个地方获取不到当前是单算子还是图模式，所以全部都不保存
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid(), false));
             HCCL_INFO("[HcclThreadAciqure] ReportThreadAciqureKernel success");
         } else {
             auto hcclCommDfxCallBack = collComm->GetDfxCallback();
@@ -189,6 +190,46 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
 
     HCCL_INFO("[HcclThreadAcquireWithStream] Allocated thread for engine[%d], stream[%p], notifyNum[%u]",
               engine, stream, notifyNum);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclDedicatedThreadAcquire(HcclComm comm, uint8_t useType,
+    uint32_t notifyNumPerThread, ThreadHandle *thread)
+{
+    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(thread == nullptr, HCCL_ERROR("[%s] thread is null", __func__), HCCL_E_PTR);
+
+    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    std::string commId = hcclComm->GetIdentifier();
+    HCCL_RUN_INFO("Entry-%s:comm[%s] useType[%u] notifyNumPerThread[%u]",
+        __func__, commId.c_str(), useType, notifyNumPerThread);
+
+    {
+        std::lock_guard<std::mutex> lock(hcclComm->GetDedicatedThreadMutex());
+        if (hcclComm->HasDedicatedThread(useType)) {
+            *thread = hcclComm->GetDedicatedThread(useType);
+            HCCL_RUN_INFO("[%s] reuse dedicated thread, useType[%u], thread[0x%llx]",
+                __func__, useType, *thread);
+            return HCCL_SUCCESS;
+        }
+    }
+
+    CommEngine engine = CommEngine::COMM_ENGINE_AICPU_TS;
+    HcclResult ret = HcclThreadAcquire(comm, engine, 1, notifyNumPerThread, thread);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] Failed to acquire thread for useType[%u], engine[%d], ret[%d]",
+            __func__, useType, static_cast<int32_t>(engine), ret), ret);
+
+    {
+        std::lock_guard<std::mutex> lock(hcclComm->GetDedicatedThreadMutex());
+        ret = hcclComm->SetDedicatedThread(useType, *thread);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] Failed to cache dedicated thread, useType[%u], ret[%d]",
+                __func__, useType, ret), ret);
+    }
+
+    HCCL_RUN_INFO("[%s] success, useType[%u], thread[0x%llx], notifyNumPerThread[%u], group[%s]",
+        __func__, useType, *thread, notifyNumPerThread, commId.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -307,7 +348,7 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
             const std::string KernelName = "RunAicpuIndOpThreadInit";
-            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid()));
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid(), false));
         }
     } else {
         auto &engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();

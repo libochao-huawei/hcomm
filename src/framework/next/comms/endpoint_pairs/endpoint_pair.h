@@ -87,6 +87,12 @@ public:
     HcclResult GetSocketWithRank(const uint32_t myRank, const uint32_t rmtRank, const std::string &socketTag,
         const uint32_t listenPort, u32 reuseIdx, Hccl::Socket*& socket);
 
+    HcclResult ServerInit(const uint32_t myRank, const uint32_t rmtRank,
+        const std::string &socketTag, u32 reuseIdx, uint32_t devicePhyId, uint32_t remoteDevicePhyId);
+    HcclResult GetConnectedSocket(const uint32_t myRank, const uint32_t rmtRank,
+        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort,
+        Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId);
+
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
 
@@ -97,6 +103,15 @@ public:
     const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& GetChannelHandles();
 
 private:
+    HcclResult EnsureSocketMgrCompat(const uint32_t myRank, const std::string &socketTag);
+    Hccl::SocketConfig BuildSocketConfig(const Hccl::LinkData &linkData, const std::string &socketTag);
+    HcclResult HandleHostSocketOrBuildLinkData(const uint32_t myRank, const uint32_t rmtRank,
+        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket,
+        uint32_t devicePhyId, uint32_t remoteDevicePhyId, Hccl::LinkData &linkData, bool &isHost);
+    HcclResult GetSocketInternal(const uint32_t myRank, const uint32_t rmtRank,
+        const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort,
+        Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId, bool connectMode);
+
     EndpointDesc localEndpointDesc_{};
     EndpointDesc remoteEndpointDesc_{};
     std::unique_ptr<Hccl::SocketManager> socketMgrCompat_;

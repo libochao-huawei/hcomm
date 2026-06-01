@@ -359,12 +359,14 @@ namespace hccl
         commAicpuParam_.userRankSize = collComm_->GetRankSize();
         commAicpuParam_.commConfig.taskExceptionEnable =
             Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().taskExceptionEnable;
+        commAicpuParam_.commConfig.notifyWaitTimeout =
+            Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
         const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
         HCCL_RUN_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], "
-            "userRank[%u], userRankSize[%u], opExpansionMode[%u], taskExceptionEnable[%d].",
+            "userRank[%u], userRankSize[%u], opExpansionMode[%u], taskExceptionEnable[%d], notifyWaitTimeout[%u].",
             __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
             commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize, opExpansionMode,
-            commAicpuParam_.commConfig.taskExceptionEnable);
+            commAicpuParam_.commConfig.taskExceptionEnable, commAicpuParam_.commConfig.notifyWaitTimeout);
 
         const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
         if (opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) {
@@ -388,6 +390,16 @@ namespace hccl
             HCCL_ERROR("[InitCollComm]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
                        "cpuKernelMode[%u].", retCode, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0),
             retCode);
+        // scatter_aicpu_kernel.so
+        std::string jsonPath0;
+        CHK_RET(GetKernelFilePath(jsonPath0));
+        jsonPath += "scatter_aicpu_kernel.json";
+   
+        retCode = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHcclHandle_);
+        CHK_PRT_RET(retCode != HCCL_SUCCESS,
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
+                       "cpuKernelMode[%u].", retCode, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0),
+            retCode);
         return HCCL_SUCCESS;
     }
 
@@ -400,6 +412,15 @@ namespace hccl
                 HCCL_RUN_WARNING("[BinaryUnLoad]aclrtBinaryUnLoad binHandle faild");
             }
             binHandle_ = nullptr;
+        }
+
+        if (binHcclHandle_ != nullptr){
+            HCCL_INFO("[BinaryUnLoad]aclrtBinaryUnLoad binHcclHandle");
+            aclError ret = aclrtBinaryUnLoad(binHcclHandle_);
+            if (ret != 0) {
+                HCCL_RUN_WARNING("[BinaryUnLoad]aclrtBinaryUnLoad binHcclHandle faild");
+            }
+            binHcclHandle_ = nullptr;
         }
     }
 
@@ -435,7 +456,8 @@ namespace hccl
         CHK_PTR_NULL(collComm_);
         HcclCommDfx* hcclComDfx = collComm_->GetHcclCommDfx();
         CHK_PTR_NULL(hcclComDfx);
-        CHK_RET(hcclComDfx->ReportKernel(beginTime, identifier_, kernelName, SalGetTid()));
+        // 通信域初始化在op注册之前，这个地方一定是false，因为还不知道是不是图模式
+        CHK_RET(hcclComDfx->ReportKernel(beginTime, identifier_, kernelName, SalGetTid(), false));
         HCCL_INFO("[KernelLaunchAicpuCommInit] ReportAicpuCommKernel end");
         // 打印增加初始化对应的参数
         HCCL_RUN_INFO("[%s] KernelLaunchAicpuCommInit Success", __func__);

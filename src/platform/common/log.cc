@@ -11,30 +11,11 @@
 #include "externalinput.h"
 #include "log.h"
 
-#include <unordered_map>
-
 thread_local bool g_hcclErrToWarn = false;
 int32_t CheckLogLevel(int32_t moduleId, int32_t logLevel) __attribute((weak));
-int32_t dlog_getlevel(int32_t moduleId, int32_t *enableEvent) __attribute((weak));
-
-static thread_local std::unordered_map<int32_t, int32_t> g_logLevelCache;
-
-static int32_t GetLogLevel(int32_t moduleId)
-{
-    auto iter = g_logLevelCache.find(moduleId);
-    if (iter != g_logLevelCache.end()) {
-        return iter->second;
-    }
-
-    int32_t enableEvent = -1;
-    int32_t logLevel = dlog_getlevel(moduleId, &enableEvent);
-    g_logLevelCache.emplace(moduleId, logLevel);
-    return logLevel;
-}
-
 bool HcclCheckLogLevel(int logType, int moduleId)
 {
-    return (logType >= GetLogLevel(moduleId));
+    return (CheckLogLevel(moduleId, logType) == 1);
 }
 
 void SetErrToWarnSwitch(bool flag)

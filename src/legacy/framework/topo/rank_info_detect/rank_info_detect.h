@@ -31,6 +31,7 @@ const u32 RANKINFO_DETECT_SERVER_STATUS_ERROR = 2;
 class RankInfoDetect {
 public:
     RankInfoDetect();
+    ~RankInfoDetect();
 
     void SetupServer(HcclRootHandleV2 &rootHandle);
     void SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle);
@@ -46,6 +47,7 @@ private:
     vector<RaSocketWhitelist> wlistInfo_{};
     std::string               identifier_{};
     std::shared_ptr<RankInfoDetectClient> rankInfoDetectClient;
+    std::shared_ptr<Socket>   hostPortSocket_{nullptr};
 
     void                    SetupRankInfoDetectService(shared_ptr<Socket> serverSocket, s32 devLogicId, u32 devPhyId,
                                                        std::string identifier, vector<RaSocketWhitelist> wlistInfo);

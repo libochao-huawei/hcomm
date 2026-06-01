@@ -215,6 +215,7 @@ private:
     static std::array<std::map<const std::string, std::string>, MAX_MODULE_DEVICE_NUM> groupUdiMap;
     static std::array<std::mutex, MAX_MODULE_DEVICE_NUM> groupUdiMapMutex;
     static std::atomic<int> communicatorCount_;
+    static std::atomic<bool> errMsgFlag_; // errorMsg只上报一次, 控制上报频次
 };
 
 using GetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogicID, const std::string& group);

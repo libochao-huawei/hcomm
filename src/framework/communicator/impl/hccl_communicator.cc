@@ -643,7 +643,7 @@ bool HcclCommunicator::IsEnableRoce()
         return streamNum;
     }
 
-    void HcclCommunicator::DestroyOpTransportResponse(OpCommTransport &opTransportResponse)
+    void HcclCommunicator::DestroyOpTransportResponse(OpCommTransport &opTransportResponse, bool aclGraphDestroyCbk)
     {
         std::unique_lock<std::mutex> commLock(linkResMapMutex_);
         for (auto &levelNSubCommTransport : opTransportResponse)
@@ -652,14 +652,16 @@ bool HcclCommunicator::IsEnableRoce()
             {
                 for (u32 i = 0; i < singleSubCommTransport.virtualLinks.size(); i++)
                 {
-                    if (singleSubCommTransport.virtualLinks[i] != nullptr)
+                    if (singleSubCommTransport.virtualLinks[i] != nullptr &&
+                        (!aclGraphDestroyCbk || singleSubCommTransport.transportRequests[i].isUsedRdma))
                     {
                         linkResMap_.erase(singleSubCommTransport.virtualLinks[i].get());
                     }
                 }
                 for (u32 i = 0; i < singleSubCommTransport.links.size(); i++)
                 {
-                    if (singleSubCommTransport.transportRequests[i].isValid && singleSubCommTransport.links[i] != nullptr)
+                    if (singleSubCommTransport.transportRequests[i].isValid && singleSubCommTransport.links[i] != nullptr &&
+                        (!aclGraphDestroyCbk || singleSubCommTransport.transportRequests[i].isUsedRdma))
                     {
                         linkResMap_.erase(singleSubCommTransport.links[i].get());
                     }
@@ -673,30 +675,36 @@ bool HcclCommunicator::IsEnableRoce()
             {
                 for (u32 i = 0; i < singleSubCommTransport.virtualLinks.size(); i++)
                 {
-                    if (singleSubCommTransport.virtualLinks[i] != nullptr)
+                    if (singleSubCommTransport.virtualLinks[i] != nullptr &&
+                        (!aclGraphDestroyCbk || singleSubCommTransport.transportRequests[i].isUsedRdma))
                     {
                         singleSubCommTransport.virtualLinks[i]->DeInit();
+                        singleSubCommTransport.virtualLinks[i] = nullptr;
                     }
                 }
                 for (u32 i = 0; i < singleSubCommTransport.links.size(); i++)
                 {
-                    if (singleSubCommTransport.transportRequests[i].isValid && singleSubCommTransport.links[i] != nullptr)
+                    if (singleSubCommTransport.transportRequests[i].isValid && singleSubCommTransport.links[i] != nullptr &&
+                        (!aclGraphDestroyCbk || singleSubCommTransport.transportRequests[i].isUsedRdma))
                     {
                         singleSubCommTransport.links[i]->DeInit();
+                        singleSubCommTransport.links[i] = nullptr;
                     }
                 }
-                singleSubCommTransport.virtualLinks.clear();
-                singleSubCommTransport.links.clear();
+                if (!aclGraphDestroyCbk) {
+                    singleSubCommTransport.virtualLinks.clear();
+                    singleSubCommTransport.links.clear();
+                }
             }
         }
     }
 
-    void HcclCommunicator::DestroyAlgResource(AlgResourceResponse &res)
+    void HcclCommunicator::DestroyAlgResource(AlgResourceResponse &res, bool aclGraphDestroyCb)
     {
-        DestroyOpTransportResponse(res.opTransportResponse);
+        DestroyOpTransportResponse(res.opTransportResponse, aclGraphDestroyCb);
         if (IsEnableBackupLink())
         {
-            DestroyOpTransportResponse(res.opTransportResponseBackUp);
+            DestroyOpTransportResponse(res.opTransportResponseBackUp, aclGraphDestroyCb);
             HCCL_INFO("[%s]finish DestroyOpTransportResponse", __func__);
         }
     }
@@ -1450,7 +1458,7 @@ bool HcclCommunicator::IsEnableRoce()
         HCCL_PROFILER_DEL_STREAM_BY_STREAMID(param.stream.id());
         HCCL_PROFILER_DEL_OPDATA(param.tag);
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-             hccl::ProfilingManagerPub::GetAddtionInfoState() &&
+             hccl::ProfilingManagerPub::GetAdditionInfoState() &&
              hccl::ProfilingManagerPub::GetTaskApiState()) &&
              !param.isCapture)
         {

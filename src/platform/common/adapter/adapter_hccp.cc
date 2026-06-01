@@ -33,13 +33,13 @@
 using namespace hccl;
 using namespace std;
 
-/* 检查函数返回值是否为ROCE_ENOMEM_RET, 记录指定日志, 并返回HCCL_E_OOM */
+/* 检查函数返回值是否为ROCE_ENOMEM_RET, 记录指定日志, 并返回HCCL_E_OOM, 内存大小取决于qp深度配置 */
 #define CHK_OOM_RET(ret, qpInfo)                                                                                    \
     do {                                                                                                            \
         if ((ret) == ROCE_ENOMEM_RET) {                                                                                     \
             RPT_ENV_ERR(true, "EI0011",                                                                             \
                 std::vector<std::string>({"memory_size"}),                                                          \
-                std::vector<std::string>({"size: [0.25MB, 3MB], Affected by QP depth configuration."}));            \
+                std::vector<std::string>({"262144~3145728"}));            \
             HCCL_ERROR("[%s] ra qp create fail, reason: out of memory. qpInfo:[%s], return: ret[%d]",               \
                 __func__, (qpInfo), (ret));                                                                         \
             return HCCL_E_OOM;                                                                                      \
@@ -717,7 +717,7 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
         vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()),
-        "[IP]", string(deviceIp[0].GetReadableIP()) })
+        "IP", string(deviceIp[0].GetReadableIP()) })
     );
 #endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
@@ -755,7 +755,7 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
         RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
             "EI0014",
             vector<string>({ "value", "variable" ,"expect" }),
-            vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "[IP]", string(deviceIp[0].GetReadableIP()) })
+            vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "IP", string(deviceIp[0].GetReadableIP()) })
         );
     }
 #endif
@@ -800,7 +800,7 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "[IP]", string(deviceIp[0].GetReadableIP()) })
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "IP", string(deviceIp[0].GetReadableIP()) })
     );
 #endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 

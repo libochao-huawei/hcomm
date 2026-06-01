@@ -71,6 +71,14 @@ public:
     HcclResult Resume();
 
 private:
+    using ReuseSocketIdxMap = std::unordered_map<RankPair*, std::unordered_map<hcomm::EndpointPair*, u32>>;
+    HcclResult GetEndpointPairFromChannel(const HcclChannelDesc &channelDesc, uint32_t channelIndex, uint32_t channelNum,
+        uint32_t &remoteRank, hcomm::EndpointPair* &endpointPair, RankPair* &rankPair);
+    HcclResult BatchServerInitForChannels(const HcclChannelDesc* channelDescs, uint32_t channelNum,
+        const std::string &socketTag, ReuseSocketIdxMap &reuseSocketIdxMap);
+    HcclResult BatchGetSocketsForChannels(const HcclChannelDesc* channelDescs, uint32_t channelNum,
+        const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs,
+        ReuseSocketIdxMap &reuseSocketIdxMap);
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &socketTag, std::vector<HcommChannelDesc> &hcommDescs);
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
@@ -84,6 +92,8 @@ private:
     HcclResult TryInitCcuInstance();
     HcclResult ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc);
     HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
+    // 获取port
+    HcclResult GetListenPortInternal(uint32_t rank, uint32_t *devPort, EndpointLocType locType);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
@@ -111,7 +121,7 @@ private:
     // Ns recovery
     std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
     // 内部获取 port 的方法，根据 mode_ 区分 v1/v2
-    HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
+    HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort, EndpointLocType locType);
 
     Hccl::RankIpPortMapPtr rankIpPortMap_;
 

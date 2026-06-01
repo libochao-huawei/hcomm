@@ -79,6 +79,7 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/framework/next/coll_comms/rank
     ${HCOMM_DIR}/src/framework/next/coll_comms/rank_pairs
     ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/profiling/aicpu
+    ${HCOMM_DIR}/src/framework/device
 
     # src/platform 头文件
     ${HCOMM_DIR}/src/platform/inc
@@ -113,7 +114,7 @@ target_include_directories(ccl_kernel PRIVATE
 
     # 三方件头文件
     ${RDMA_CORE_INCLUDE_DIR}
-    ${THIRD_PARTY_NLOHMANN_PATH}
+    ${JSON_INCLUDE_DIR}
 )
 
 if(BUILD_OPEN_PROJECT)

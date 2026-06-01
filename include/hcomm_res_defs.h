@@ -288,6 +288,14 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
     return 0;
 }
 
+/**
+ * @brief 底层特性枚举定义
+ */
+typedef enum {
+    HCOMM_ENDPOINT_FEATURE_INVALID = -1,
+    HCOMM_ENDPOINT_FEATURE_NDA = 0,  // NPU Direct RDMA Async 特性
+} HcommEndpointFeatureType;
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

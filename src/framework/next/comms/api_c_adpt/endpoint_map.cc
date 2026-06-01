@@ -68,5 +68,4 @@ Endpoint* HcommEndpointMap::GetEndpoint(EndpointHandle handle)
     }
     return nullptr;
 }
-
 } // namespace hcomm
