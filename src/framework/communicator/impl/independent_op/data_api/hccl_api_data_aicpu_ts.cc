@@ -707,6 +707,9 @@ int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
         hccl::Transport *transport = reinterpret_cast<hccl::Transport *>(channel);
         CHK_PTR_NULL(transport);
         ret = transport->BatchTransferAsync(transferDescs, transferDescNum, *stream);
+        if (ret == HCCL_E_NOT_SUPPORT) {
+            return HCCL_E_NOT_SUPPORT;
+        }
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] BatchTransferAsync failed.", __func__), ret);
