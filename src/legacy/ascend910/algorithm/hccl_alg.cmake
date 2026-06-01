@@ -116,6 +116,7 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_link_libraries(hccl_alg PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:acl_rt_headers>
         $<BUILD_INTERFACE:ascend_hal_headers>
         $<BUILD_INTERFACE:atrace_headers>
@@ -142,6 +143,7 @@ else()
     )
 
     target_link_libraries(hccl_alg PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         -Wl,--no-as-needed
         c_sec
         unified_dlog

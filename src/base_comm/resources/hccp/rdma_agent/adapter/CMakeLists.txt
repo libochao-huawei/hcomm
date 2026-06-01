@@ -77,6 +77,7 @@ target_link_options(ra_adp PRIVATE
 
 #链接动态库
 target_link_libraries(ra_adp PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:rdma_core_headers>
     -Wl,--no-as-needed
