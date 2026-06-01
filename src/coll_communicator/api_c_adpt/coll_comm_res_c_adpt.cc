@@ -23,6 +23,7 @@
 #include "hccl_ccu_res.h"
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
+#include "hccl_group.h"
 
 using namespace hccl;
 /**
@@ -586,4 +587,16 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
                                         comm, taskParam, rtsThread->GetMaster()));
     EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult HcclGroupStart()
+{
+    HCCLV2_FUNC_RUN(HcclGroupStartV2());
+    HcclLegacyGroupStart();
+}
+
+HcclResult HcclGroupEnd()
+{
+    HCCLV2_FUNC_RUN(HcclGroupEndV2());
+    HcclLegacyGroupEnd()
 }
