@@ -226,6 +226,35 @@ typedef enum {
     HCCL_COMM_STATUS_RESERVED = 255
 } HcclCommStatus;
 
+typedef struct HcclOpP2pDescDef {
+    void *buffer;
+    uint8_t reserved[8];
+    HcclCMDType cmdType;
+    HcclDataType dataType;
+    uint64_t count;
+    uint32_t remoteRank;
+} HcclOpP2pDesc;
+
+const uint32_t HCCL_OP_DESC_OP_NAME_MAX_LEN = 256;
+const uint32_t HCCL_OP_DESC_RESERVED_LEN = 64;
+
+typedef struct HcclOpDescDef {
+    uint32_t opDescType;
+    char opName[HCCL_OP_DESC_OP_NAME_MAX_LEN];
+    uint8_t reserved[HCCL_OP_DESC_RESERVED_LEN];
+    union {
+        HcclOpP2pDesc p2p;
+    };
+} HcclOpDesc;
+
+const uint32_t HCCL_KERNEL_SO_NAME_MAX_LEN = 256;
+const uint32_t HCCL_KERNEL_FUNC_NAME_MAX_LEN = 256;
+
+typedef struct HcclKernelFuncInfoDef {
+    char kernelSo[HCCL_KERNEL_SO_NAME_MAX_LEN];
+    char kernelFuncName[HCCL_KERNEL_FUNC_NAME_MAX_LEN];
+} HcclKernelFuncInfo;
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
