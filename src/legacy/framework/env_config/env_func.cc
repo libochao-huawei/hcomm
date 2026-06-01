@@ -260,13 +260,6 @@ void CheckRDMATrafficClass(const u32 &rdmaTrafficClass)
     }
 }
 
-void ConvertUnitQpThreshold(u32 &multiQpThreshold)
-{
-    HCCL_RUN_INFO("[Init][TransferUnitQpThreshold]Env config HCCL_MULTI_QP_THRESHOLD is %u[KB], converted to %u[B] for "
-               "subsequant use.", multiQpThreshold, multiQpThreshold * 1024);
-    multiQpThreshold *= 1024;
-}
-
 static void ParseAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlgoType &algoType)
 {
     std::size_t found = algoLevel.find(':');
@@ -852,6 +845,8 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
     }
     DfsConfig config{taskExceptionEnable, clusterHeartBeatEnable, rankConsistentState};
 
+    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d], cluster_heartbeat [%d] rankConsistentState[%d]",
+        config.taskExceptionEnable, config.clusterHeartBeatEnable, config.rankConsistentState);
     return config;
 }
 

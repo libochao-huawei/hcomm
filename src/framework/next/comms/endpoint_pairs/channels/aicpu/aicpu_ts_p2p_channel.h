@@ -28,7 +28,6 @@ namespace hcomm {
 class AicpuTsP2pChannel : public Channel {
 public:
     AicpuTsP2pChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
-    ~AicpuTsP2pChannel();
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
@@ -83,8 +82,7 @@ private:
     std::vector<std::unique_ptr<Hccl::LocalIpcRmaBuffer>>       localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::IpcLocalNotify>>          localNotifies_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_;
-    const Hccl::SocketConfig*                                   socketConfig_{nullptr};
-    uint32_t                                                    devicePhyId_{};
+    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
 };
 
 } // namespace hcomm

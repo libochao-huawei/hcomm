@@ -23,9 +23,9 @@ HcclResult ProfilingManagerPub::CallMsprofReportMultiThreadInfo(const std::vecto
     return ProfilingManager::Instance().CallMsprofReportMultiThreadInfo(tidInfo);
 }
 
-HcclResult ProfilingManagerPub::GetAdditionInfoState()
+HcclResult ProfilingManagerPub::GetAddtionInfoState()
 {
-    return ProfilingManager::Instance().GetAdditionInfoState();
+    return ProfilingManager::Instance().GetAddtionInfoState();
 }
 
 HcclResult ProfilingManagerPub::GetTaskApiState()

@@ -1536,11 +1536,12 @@ void CommunicatorImpl::InitCcuSuperFastLoad()
     bool nodeState = ProfilingHandler::GetInstance().GetHcclNodeState();
     bool l0State = ProfilingHandler::GetInstance().GetHcclL0State();
     bool l1State = ProfilingHandler::GetInstance().GetHcclL1State();
+    bool l2State = ProfilingHandler::GetInstance().GetHcclL2State();
 
-    enableProfilingEnv = hostApiState || nodeState || l0State || l1State;
+    enableProfilingEnv = hostApiState || nodeState || l0State || l1State || l2State;
 
-    HCCL_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d]",
-    taskExceptionEnv, hostApiState, nodeState, l0State, l1State);
+    HCCL_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d] l2State[%d]",
+    taskExceptionEnv, hostApiState, nodeState, l0State, l1State, l2State);
 }
 
 void CommunicatorImpl::InitPreResource()

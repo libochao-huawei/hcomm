@@ -786,7 +786,6 @@ std::vector<char> UbMemTransport::GetUniqueId()
     binaryStream << type;
     binaryStream << notifyNum;
     binaryStream << bufferNum;
-    binaryStream << static_cast<u32>(rmtBufferVec.size());
     binaryStream << connNum;
 
     // [header...][notifyUniqueId...][rmtNotifyUniqueId...][rmtBufferUniqueIds...]
@@ -818,7 +817,6 @@ std::vector<char> UbMemTransport::GetUniqueIdV2()
     binaryStream << type;
     binaryStream << notifyNum;
     binaryStream << bufferNum;
-    binaryStream << static_cast<u32>(rmtBufferVec.size());
     binaryStream << connNum;
  
     auto notifyUniqueIds = GetNotifyUniqueIds();
@@ -1014,7 +1012,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemTransport::CheckSocketStatus(std::string socketOpreator)
+HcclResult UbMemTransport::CheckSocketStatus()
 {
     CHK_PTR_NULL(socket);
     auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
@@ -1025,16 +1023,16 @@ HcclResult UbMemTransport::CheckSocketStatus(std::string socketOpreator)
         if (socketStatus == SocketStatus::OK) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_INFO("[UbMemTransport][%s] socket transport operation[%s] success, elapsed[%lld]ms, retryCount[%u]",
-                __func__, socketOpreator.c_str(), elapsed, retryCount);
+            HCCL_INFO("[UbMemTransport][%s] success, elapsed[%lld]ms, retryCount[%u]",
+                __func__, elapsed, retryCount);
             break;
         }
         if ((std::chrono::steady_clock::now() - startTime) >= timeout ||
             socketStatus == Hccl::SocketStatus::TIMEOUT) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_ERROR("[UbMemTransport][%s] socket transport operation[%s] timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
-                __func__, socketOpreator.c_str(), timeout, elapsed, retryCount);
+            HCCL_ERROR("[UbMemTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
+                __func__, timeout, elapsed, retryCount);
             return HCCL_E_TIMEOUT;
         }
         retryCount++;
@@ -1062,22 +1060,22 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVe
             socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
             HCCL_INFO("[UbMemTransport][UpdateMemInfo] Send size[%u] of data success. [%zu] bytes sent.",
                 __func__, sendSize, sizeof(sendSize));
-            HcclResult result = CheckSocketStatus("SendDataSize");
+            HcclResult result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
                 StringFormat("[UbMemTransport][UpdateMemInfo] failed to send dataSize."),
                 result);
             RecvDataSize();
-            result = CheckSocketStatus("RecvDataSize");
+            result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
                 StringFormat("[UbMemTransport][UpdateMemInfo] failed to receive dataSize."),
                 result);
             SendExchangeData();
-            result = CheckSocketStatus("SendExchangeData");
+            result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
                 StringFormat("[UbMemTransport][UpdateMemInfo] failed to send data."),
                 result);
             RecvExchangeData();
-            result = CheckSocketStatus("RecvExchangeData");
+            result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
                 StringFormat("[UbMemTransport][UpdateMemInfo] failed to receive data."),
                 result);

@@ -88,6 +88,7 @@ extern HcommResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint3
  */
 extern HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port);
 
+
 extern HcommResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
 
 extern HcommResult HcommChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems, char ***memTags);
@@ -120,7 +121,6 @@ HcommResult HcommChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHa
 
 HcommResult CheckUbAttr(HcommChannelDesc &channelDesc);
 
-HcommResult CheckRoceAttr(HcommChannelDesc &channelDesc);
 #ifdef __cplusplus
 }
 

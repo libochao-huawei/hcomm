@@ -89,8 +89,7 @@ private:
     void CreateSubNetInstances(const std::vector<RankId> rankIds, Level2Id2NetInst &subNetInsts, 
                              RankId2PeerMap &peers, RankGraph *subRankGraph) const;
     void AddSubPeers(const std::vector<RankId> &rankIds, RankGraph *subRankGraph, RankId2PeerMap &peers) const;
-    void AddSubLinks(const std::vector<RankId> &rankIds, RankId2PeerMap &peers, Level2Id2NetInst &subNetInsts,
-                     RankId parentMyRank) const;
+    void AddSubLinks(const std::vector<RankId> &rankIds, RankId2PeerMap &peers, Level2Id2NetInst &subNetInsts) const;
 };
 
 CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol);
@@ -99,17 +98,15 @@ std::shared_ptr<NetInstance> GetOrCreateNetInstance(u32 netLayer, const string &
                                          Level2Id2NetInst &netInsts, RankGraph *rankGraph);
 RankId GetSubRankId(const vector<RankId> &rankIds, RankId rank);
 
-void GetNewNodeInfo(u32 layer, RankId newRankId, const NetInstance::Link &oldLink,
-                    shared_ptr<NetInstance> &newNetInstance, RankId2PeerMap &tmpPeers,
-                    shared_ptr<NetInstance::Node> &newNode, shared_ptr<NetInstance::ConnInterface> &newIface,
-                    bool isSource);
+void GetNewNodeInfo(RankId newRankId, const NetInstance::Link &oldLink, shared_ptr<NetInstance> &newNetInstance,
+                    RankId2PeerMap &tmpPeers, shared_ptr<NetInstance::Node> &newNode,
+                    shared_ptr<NetInstance::ConnInterface> &newIface, bool isSource);
 
-void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId, RankId dstNewRankId,
-                shared_ptr<NetInstance> &newNetInstance, RankId2PeerMap &tmpPeers,
-                const NetInstance *oldNetInstance, RankId parentMyRank);
+void AddNewLink(const NetInstance::Link &oldLink, RankId srcNewRankId, RankId dstNewRankId,
+                shared_ptr<NetInstance> &newNetInstance, RankId2PeerMap &tmpPeers);
 
 void AddGroupLinks(const vector<RankId> &rankIds, const NetInstance *oldNetInstance, shared_ptr<NetInstance> &newNetInstance,
-                   RankId2PeerMap &tmpPeers, RankId parentMyRank);
+                   RankId2PeerMap &tmpPeers);
 
 HcclResult GetCommAddr(CommAddr &commAddr, const IpAddress &ipAddr);
 

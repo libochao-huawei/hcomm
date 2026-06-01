@@ -349,7 +349,7 @@ HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memT
     return HCCL_SUCCESS;
 }
 
-HcclResult AivUbMemTransport::CheckSocketStatus(std::string socketOpreator)
+HcclResult AivUbMemTransport::CheckSocketStatus()
 {
     CHK_PTR_NULL(socket_);
     auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
@@ -361,16 +361,16 @@ HcclResult AivUbMemTransport::CheckSocketStatus(std::string socketOpreator)
         if (socketStatus == Hccl::SocketStatus::OK) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_INFO("[AivUbMemTransport][%s] socket transport operation[%s] success, elapsed[%lld]ms, retryCount[%u]",
-                __func__, socketOpreator.c_str(), elapsed, retryCount);
+            HCCL_INFO("[AivUbMemTransport][%s] success, elapsed[%lld]ms, retryCount[%u]",
+                __func__, elapsed, retryCount);
             break;
         }
         if ((std::chrono::steady_clock::now() - startTime) >= timeout ||
             socketStatus == Hccl::SocketStatus::TIMEOUT) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_ERROR("[AivUbMemTransport][%s] socket transport operation[%s] timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
-                __func__, socketOpreator.c_str(), timeout, elapsed, retryCount);
+            HCCL_ERROR("[AivUbMemTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
+                __func__, timeout, elapsed, retryCount);
             return HCCL_E_TIMEOUT;
         }
         EXCEPTION_HANDLE_END
@@ -397,13 +397,13 @@ HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
     EXCEPTION_HANDLE_BEGIN
     socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
     EXCEPTION_HANDLE_END
-    CHK_RET(CheckSocketStatus("SendDataSize"));
+    CHK_RET(CheckSocketStatus());
     CHK_RET(RecvDataSize());
-    CHK_RET(CheckSocketStatus("RecvDataSize"));
+    CHK_RET(CheckSocketStatus());
     CHK_RET(SendMemInfo());
-    CHK_RET(CheckSocketStatus("SendMemInfo"));
+    CHK_RET(CheckSocketStatus());
     CHK_RET(RecvMemInfo());
-    CHK_RET(CheckSocketStatus("RecvMemInfo"));
+    CHK_RET(CheckSocketStatus());
     Hccl::BinaryStream recvStream(recvData_);
     EXCEPTION_HANDLE_BEGIN
     RmtBufferUnpackProc(recvStream);

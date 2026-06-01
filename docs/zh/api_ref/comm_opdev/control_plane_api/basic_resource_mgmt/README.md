@@ -2,7 +2,6 @@
 
 - [HcommEndpointCreate](HcommEndpointCreate.md)  
 - [HcommEndpointDestroy](HcommEndpointDestroy.md)  
-- [HcommEndpointGetListenPort](HcommEndpointGetListenPort.md)  
 - [HcommMemReg](HcommMemReg.md)  
 - [HcommMemUnreg](HcommMemUnreg.md)  
 - [HcommMemExport](HcommMemExport.md)  

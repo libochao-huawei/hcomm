@@ -29,14 +29,6 @@ constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 HostCpuUrmaChannel::HostCpuUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
-HostCpuUrmaChannel::~HostCpuUrmaChannel()
-{
-    if (socket_ != nullptr) {
-        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
-        socket_ = nullptr;
-    }
-}
-
 HcclResult HostCpuUrmaChannel::ParseInputParam()
 {
     // 1. 从 endpointHandle_，获得 localEp_ 和 rdmaHandle_
@@ -72,6 +64,8 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
         HCCL_WARNING("[HostCpuUrmaChannel][%s] exchangeAllMems is false.", __func__);
     }
 
+    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
+
     return HCCL_SUCCESS;
 }
 
@@ -103,13 +97,10 @@ HcclResult HostCpuUrmaChannel::BuildSocket()
         port = DEFAULT_LISTENING_PORT;
         HCCL_INFO("[HostCpuUrmaChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
     }
-    
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
-    Hccl::SocketConfig socketConfig = (channelDesc_.role != HCOMM_SOCKET_ROLE_RESERVED)
-        ? Hccl::SocketConfig(linkData, port, socketTag, channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER)
-        : Hccl::SocketConfig(linkData, socketTag, true);
-    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
-
+    bool noRankId = true;
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
+    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
     HCCL_INFO("[HostCpuUrmaChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
 }
@@ -194,13 +185,8 @@ HcclResult HostCpuUrmaChannel::BuildUbMemTransport()
 
 HcclResult HostCpuUrmaChannel::Init()
 {
-    s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
     CHK_RET(ParseInputParam());
-    if (channelDesc_.role != HCOMM_SOCKET_ROLE_CLIENT) {
-        CHK_RET(StartListen());
-    }
+    CHK_RET(StartListen());
     CHK_RET(BuildSocket());
     CHK_RET(BuildConnection());
     CHK_RET(BuildBuffer());
@@ -209,7 +195,6 @@ HcclResult HostCpuUrmaChannel::Init()
     CHK_RET(DlUrmaFunction::GetInstance().DlUrmaFunctionInit());
     // 获取urma read/write 单个wr的最大传输数据大小
     CHK_RET(HccpRaGetDevBaseAttr(rdmaHandle_, &devBaseAttr_));
-
     return HCCL_SUCCESS;
 }
 
@@ -227,11 +212,7 @@ HcclResult HostCpuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 ChannelStatus HostCpuUrmaChannel::GetStatus()
 {
     memTransport_->SetIsHost();
-    ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
-    if (out == ChannelStatus::READY && socket_ != nullptr) {
-        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
-    }
-    return out;
+    return Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
 }
 
 HcclResult hcomm::HostCpuUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)

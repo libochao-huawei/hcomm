@@ -350,7 +350,7 @@ TEST_F(ProfilingHandlerTest, ReportNodeApi_test){
     uint64_t cmdItemId = 0;
     uint32_t threadId = 0;
     handler.enableHostApi_ = true;
-    handler.ReportNodeApi(beginTime, endTime, cmdItemId, threadId, false);
+    handler.ReportNodeApi(beginTime, endTime, cmdItemId, threadId);
 }
 
 TEST_F(ProfilingHandlerTest, ReportNodeBasicInfo_test){
@@ -359,7 +359,7 @@ TEST_F(ProfilingHandlerTest, ReportNodeBasicInfo_test){
     uint64_t cmdItemId = 0;
     uint32_t threadId = 0;
     handler.enableHcclL1_ = true;
-    handler.ReportNodeBasicInfo(timeStamp, cmdItemId, threadId, false);
+    handler.ReportNodeBasicInfo(timeStamp, cmdItemId, threadId);
 }
 
 TEST_F(ProfilingHandlerTest, ReportHcclOpInfo_test){
@@ -378,7 +378,7 @@ TEST_F(ProfilingHandlerTest, ReportHcclOpInfo_test){
     dfxOpInfo->op_ = op;
     handler.enableHcclL0_ = true;
     u32 ranksize = comm->GetRankSize();
-    handler.ReportHcclOpInfo(timeStamp, *dfxOpInfo, threadId, false);
+    handler.ReportHcclOpInfo(timeStamp, *dfxOpInfo, threadId);
     delete comm;
 }
 
@@ -396,8 +396,8 @@ TEST_F(ProfilingHandlerTest, GetInitCacheData_test){
     handler.StartHostApiSubscribe();
     handler.StartHostHcclOpSubscribe();
     handler.StartTaskApiSubscribe();
-    handler.StartAdditionInfoSubscribe();
-    handler.StartCcuSubscribe();
+    handler.StartAddtionInfoSubscribe();
+    handler.StartL2Subscribe();
     handler.StopSubscribe();
 }
 
@@ -408,5 +408,6 @@ TEST_F(ProfilingHandlerTest, GetProfState_test)
     EXPECT_EQ(false, handler.GetHcclNodeState());
     EXPECT_EQ(false, handler.GetHcclL0State());
     EXPECT_EQ(false, handler.GetHcclL1State());
+    EXPECT_EQ(false, handler.GetHcclL2State());
 }
 

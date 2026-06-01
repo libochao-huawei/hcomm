@@ -86,20 +86,6 @@ HcommResult CheckUbAttr(HcommChannelDesc &channelDesc)
     return HCCL_SUCCESS;
 }
 
-HcommResult CheckRoceAttr(HcommChannelDesc &channelDesc)
-{
-    if (channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_ROCE) {
-        return HCCL_SUCCESS;
-    }
-
-    if (channelDesc.roceAttr.queueNum == INVALID_UINT) {
-        channelDesc.roceAttr.queueNum = 1;
-        HCCL_INFO("[%s] set roceAttr.queueNum to 1.", __func__);
-    }
-
-    return HCCL_SUCCESS;
-}
-
 namespace {
 HcommResult ProcessHcommChannelDescs(const HcommChannelDesc &channelDesc, HcommChannelDesc &channelDescFinal)
 {
@@ -161,15 +147,8 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
         }
         ret = CheckUbAttr(channelDescFinal);
         if (ret != HCOMM_SUCCESS) {
-            HCCL_ERROR("[%s] CheckUbAttr failed, ret[%d].", __func__, ret);
             return ret;
         }
-        ret = CheckRoceAttr(channelDescFinal);
-        if (ret != HCOMM_SUCCESS) {
-            HCCL_ERROR("[%s] CheckRoceAttr failed, ret[%d].", __func__, ret);
-            return ret;
-        }
-
         channelDescFinals.push_back(channelDescFinal);
     }
     return HCOMM_SUCCESS;
@@ -303,15 +282,6 @@ HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
     CHK_RET(endpoint->ServerSocketStopListen(port));
     return HCCL_SUCCESS;
-}
-
-HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port)
-{
-    CHK_PTR_NULL(port);
-    auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
-    CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
-        __func__, endpointHandle), HCCL_E_NOT_FOUND);
-    return endpoint->ServerSocketGetListenPort(port);
 }
 
 HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const CommMem *mem,

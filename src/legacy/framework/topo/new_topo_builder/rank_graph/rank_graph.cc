@@ -237,7 +237,7 @@ u32 RankGraph::GetLayerRanks(const u32 netLayer) const
 {
     u32 layerRankSize = 0;
     if(netInsts_.at(netLayer).size() == 0){
-        HCCL_WARNING("[RankGraph][GetLayerRanks] RankGraph has no netInstance on netLayer %u", netLayer);
+        HCCL_WARNING("[RankGraph][GetLayerRanks] Rankgraph has no net instance on layer %u");
         return 0;
     }
     for (const auto& netInst : netInsts_.at(netLayer)) {
@@ -283,7 +283,7 @@ HcclResult RankGraph::GetNetInstanceList(const u32 netLayer, vector<u32> &instSi
     instSizeList.clear();
     listSize = 0;
     if(netInsts_.at(netLayer).size() == 0){
-        HCCL_WARNING("[RankGraph][GetNetInstanceList] RankGraph has no net instance on layer %u", netLayer);
+        HCCL_WARNING("[RankGraph][GetLayerRanks] Rankgraph has no net instance on layer %u", netLayer);
         return HCCL_E_PARA;
     }
     for (const auto& netInst : netInsts_.at(netLayer)) {
@@ -302,17 +302,12 @@ void RankGraph::GetTopoInstsByLayer(const u32 netLayer, std::vector<u32>& topoIn
 HcclResult RankGraph::GetTopoType(const u32 netLayer, const u32 topoInstId, TopoType &topoType) const
 {
     auto *netInstance = GetNetInstanceByRankId(netLayer, myRank_);
-    CHK_PRT_RET(netInstance == nullptr,
-                HCCL_ERROR("[RankGraph::GetTopoType] netInstance is nullptr, myRank[%u], netLayer[%u], "
-                           "topoInstId[%u]", myRank_, netLayer, topoInstId),
-                HCCL_E_PTR);
 
     auto ret = netInstance->GetTopoType(topoInstId, topoType);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] Failed to GetTopoType, myRank[%u], netLayer[%u], netInstId[%s], topoInstId[%u], "
-                           "ret[%d]", __func__, myRank_, netLayer, netInstance->GetNetInstId().c_str(), topoInstId,
-                           ret),
-                ret);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed to GetTopoType ret[%d]", __func__, ret);
+        return ret;
+    }
     return HCCL_SUCCESS;
 }
 
@@ -320,17 +315,12 @@ HcclResult RankGraph::GetRanksByTopoInst(
     const u32 netLayer, const u32 topoInstId, std::vector<u32> &ranks, u32 &rankNum) const
 {
     auto *netInstance = GetNetInstanceByRankId(netLayer, myRank_);
-    CHK_PRT_RET(netInstance == nullptr,
-                HCCL_ERROR("[RankGraph::GetRanksByTopoInst] netInstance is nullptr, myRank[%u], netLayer[%u], "
-                           "topoInstId[%u]", myRank_, netLayer, topoInstId),
-                HCCL_E_PTR);
 
     auto ret = netInstance->GetRanksByTopoInst(topoInstId, ranks, rankNum);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[%s] Failed to GetRanksByTopoInst, myRank[%u], netLayer[%u], netInstId[%s], "
-                           "topoInstId[%u], ret[%d]", __func__, myRank_, netLayer,
-                           netInstance->GetNetInstId().c_str(), topoInstId, ret),
-                ret);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed to GetRanksByTopoInst ret[%d]", __func__, ret);
+        return ret;
+    }
     return HCCL_SUCCESS;
 }
 
@@ -571,25 +561,8 @@ void GetNewNodeInfo(u32 layer, RankId newRankId, const NetInstance::Link &oldLin
     }
 }
 
-bool NeedUpdateTopoInstForSubGraph(const NetInstance *oldNetInstance, u32 topoInstId, RankId parentMyRank)
-{
-    auto topoInstIter = oldNetInstance->topoInsts_.find(topoInstId);
-    if (topoInstIter == oldNetInstance->topoInsts_.end()) {
-        HCCL_DEBUG("[SubRankGraph][NeedUpdateTopoInstForSubGraph] skip topoInstId[%u], parentMyRank[%u], "
-                   "not found in parent netInstId[%s]",
-                   topoInstId, parentMyRank, oldNetInstance->GetNetInstId().c_str());
-        return false;
-    }
-    if (topoInstIter->second == nullptr) {
-        THROW<NullPtrException>(StringFormat("[SubRankGraph][NeedUpdateTopoInstForSubGraph] topoInstId %u has no TopoInst", topoInstId));
-        return false;
-    }
-    return topoInstIter->second->ranks.count(parentMyRank) > 0;
-}
-
 void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId, RankId dstNewRankId,
-                shared_ptr<NetInstance> &newNetInstance, RankId2PeerMap &tmpPeers,
-                const NetInstance *oldNetInstance, RankId parentMyRank)
+                shared_ptr<NetInstance> &newNetInstance, RankId2PeerMap &tmpPeers)
 {
     // 不添加绕路link
     if (oldLink.GetHop() > 1 && oldLink.GetType() != LinkType::PEER2NET) {
@@ -612,18 +585,10 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
 
     newNetInstance->AddLink(link);
     if (newSourceIface != nullptr) {
-        u32 sourceTopoInstId = newSourceIface->GetTopoInstId();
-        TopoType sourceTopoType = newSourceIface->GetTopoType();
-        if (NeedUpdateTopoInstForSubGraph(oldNetInstance, sourceTopoInstId, parentMyRank)) {
-            newNetInstance->UpdateTopoInst(sourceTopoInstId, sourceTopoType, srcNewRankId);
-        }
+        newNetInstance->UpdateTopoInst(newSourceIface->GetTopoInstId(), newSourceIface->GetTopoType(), srcNewRankId);
     }
     if (newTargetIface != nullptr) {
-        u32 targetTopoInstId = newTargetIface->GetTopoInstId();
-        TopoType targetTopoType = newTargetIface->GetTopoType();
-        if (NeedUpdateTopoInstForSubGraph(oldNetInstance, targetTopoInstId, parentMyRank)) {
-            newNetInstance->UpdateTopoInst(targetTopoInstId, targetTopoType, dstNewRankId);
-        }
+        newNetInstance->UpdateTopoInst(newTargetIface->GetTopoInstId(), newTargetIface->GetTopoType(), dstNewRankId);
     }
     
     for (const auto&pair: newNetInstance->topoInsts_){
@@ -641,7 +606,7 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
 }
 
 void AddGroupLinks(const vector<RankId> &rankIds, const NetInstance *oldNetInstance, shared_ptr<NetInstance> &newNetInstance,
-                   RankId2PeerMap &tmpPeers, RankId parentMyRank)
+                   RankId2PeerMap &tmpPeers)
 {
     set<RankId> newRankIds = newNetInstance->GetRankIds();
     u32 layer = newNetInstance->GetNetLayer();
@@ -663,8 +628,7 @@ void AddGroupLinks(const vector<RankId> &rankIds, const NetInstance *oldNetInsta
             vector<NetInstance::Path> oldPaths = oldNetInstance->GetPaths(rankIds[srcRankId], rankIds[dstRankId]);
             for (auto &oldPath : oldPaths) {
                 for (auto &oldLink : oldPath.links) {
-                    AddNewLink(layer, oldLink, srcRankId, dstRankId, newNetInstance, tmpPeers, oldNetInstance,
-                               parentMyRank);
+                    AddNewLink(layer, oldLink, srcRankId, dstRankId, newNetInstance, tmpPeers);
                 }
             }
         }
@@ -750,14 +714,13 @@ void RankGraph::CreateSubNetInstances(const std::vector<RankId> rankIds, Level2I
     }
 }
 
-void RankGraph::AddSubLinks(const std::vector<RankId> &rankIds, RankId2PeerMap &peers, Level2Id2NetInst &subNetInsts,
-                            RankId parentMyRank) const
+void RankGraph::AddSubLinks(const std::vector<RankId> &rankIds, RankId2PeerMap &peers, Level2Id2NetInst &subNetInsts) const
 {
     // 遍历subNetInstances，对每一个NetInstance插入Links
     for (u32 netLayer = 0; netLayer < subNetInsts.size(); ++netLayer) {
         for (auto &curNetInstance : subNetInsts[netLayer]) {
             const NetInstance *oldNetInstance = GetNetInstanceByNetInstId(netLayer, curNetInstance.first);
-            AddGroupLinks(rankIds, oldNetInstance, curNetInstance.second, peers, parentMyRank);
+            AddGroupLinks(rankIds, oldNetInstance, curNetInstance.second, peers);
         }
     }
 }
@@ -791,7 +754,7 @@ unique_ptr<RankGraph> RankGraph::CreateSubRankGraph(const std::vector<u32> &rank
     CreateSubNetInstances(subRankIds, subNetInstances, peers, subRankGraph.get());
 
     // step4: subNetInstances添加Links, Peer添加ConnIfaces
-    AddSubLinks(subRankIds, peers, subNetInstances, myRank_);
+    AddSubLinks(subRankIds, peers, subNetInstances);
 
     // step5: 设置innerRanks
     subRankGraph->InitInnerRanks();

@@ -807,10 +807,8 @@ HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
     HCCL_INFO("[%s] Report All Tasks Info, comm[%p], hcclCommDfx[%p] GetMirrorTaskManager[%p].",
         __func__, comm, hcclCommDfx, hcclCommDfx->GetMirrorTaskManager());
     //单算子模式暂时默认true
-    bool isBaseOpMode = false;
-    CHK_RET(hcclCommDfx->IsOpBase(isBaseOpMode));
-    CHK_RET(hcclCommDfx->ReportAllTasks(!isBaseOpMode));
-    CHK_RET(hcclCommDfx->ReportOp(beginTime, !isBaseOpMode, isBaseOpMode));
+    CHK_RET(hcclCommDfx->ReportAllTasks(true));
+    CHK_RET(hcclCommDfx->ReportOp(beginTime, true, true));
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -833,9 +831,7 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
 
     std::string kernelNameStr(kernelName);
     uint32_t threadId = SalGetTid();
-    bool isBaseOpMode = false;
-    CHK_RET(hcclCommDfx->IsOpBase(isBaseOpMode));
-    CHK_RET(hcclCommDfx->ReportKernel(beginTime, collComm->GetCommId(), kernelNameStr, threadId, !isBaseOpMode));
+    CHK_RET(hcclCommDfx->ReportKernel(beginTime, collComm->GetCommId(), kernelNameStr, threadId));
 
     Hccl::TaskParam taskParam{};
     taskParam.beginTime = beginTime;

@@ -304,15 +304,3 @@ TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_CalledTwice_Expect_SameResul
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(caps1.maxMsgSize, caps2.maxMsgSize);
 }
-TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGetListenPort_When_PortIsNull_Expect_ReturnHCCL_E_PTR)
-{
-    HcommResult ret = HcommEndpointGetListenPort(reinterpret_cast<EndpointHandle>(0x12345678), nullptr);
-    EXPECT_EQ(ret, HCCL_E_PTR);
-}
-
-TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGetListenPort_When_EndpointIsNull_Expect_ReturnHCCL_E_NOT_FOUND)
-{
-    uint32_t port = 0;
-    HcommResult ret = HcommEndpointGetListenPort(nullptr, &port);
-    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
-}

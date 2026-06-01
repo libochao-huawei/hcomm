@@ -42,7 +42,6 @@ public:
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
-    HcclResult ProcessStatus();
 
     std::string Describe() const;
 
@@ -134,7 +133,6 @@ private:
     EndpointDesc remoteEp_;
     uint32_t notifyNum_{0};
     Hccl::Socket *socket_{nullptr};
-    const Hccl::SocketConfig* socketConfig_{nullptr};
     RdmaHandle rdmaHandle_{nullptr};
 
     std::vector<std::unique_ptr<HostRdmaConnection>> connections_{};
@@ -150,6 +148,7 @@ private:
     std::vector<ExchangeRdmaConnDto> rmtConnDtos_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
     std::vector<int> wqeNums_;
+    std::unique_ptr<SocketMgr> socketMgr_{nullptr};
     bool fenceFlag_{false};
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
     std::unique_ptr<HcclMem[]> remoteMemsPtr_;
@@ -175,8 +174,6 @@ private:
     uint64_t exchangeDataTotalSize_;
     std::vector<uint8_t> exchangeDataForSend_;
     std::vector<uint8_t> exchangeDataForRecv_;
-
-    uint32_t devicePhyId_{};
 };
 
 } // namespace hcomm

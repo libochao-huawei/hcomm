@@ -16,8 +16,6 @@
 #include "endpoint.h"
 #include "ccu_channel_ctx_pool.h"
 #include "socket/socket.h"
-#include "externalinput_pub.h"
-#include <mutex>
 
 namespace hcomm {
 /**
@@ -26,13 +24,12 @@ namespace hcomm {
 class UrmaEndpoint : public Endpoint {
 public:
     explicit UrmaEndpoint(const EndpointDesc &endpointDesc);
-    ~UrmaEndpoint() noexcept override;
+    ~UrmaEndpoint() = default;
 
     HcclResult Init() override;
 
     HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult ServerSocketStopListen(const uint32_t port) override;
-    HcclResult ServerSocketGetListenPort(uint32_t *port) override;
 
     std::shared_ptr<RegedMemMgr> GetRegedMemMgr() override {
         return regedMemMgr_;
@@ -48,8 +45,6 @@ public:
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
 
 private:
-    std::mutex portMutex_;
-    u32 dynamicPort_{HCCL_INVALID_PORT};
     std::unique_ptr<CcuChannelCtxPool> ccuChannelCtxPool_{nullptr};
 };
 }

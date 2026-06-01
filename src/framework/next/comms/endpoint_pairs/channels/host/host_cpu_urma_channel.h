@@ -30,7 +30,6 @@ namespace hcomm {
 class HostCpuUrmaChannel : public Channel {
 public:
     HostCpuUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
-    ~HostCpuUrmaChannel();
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
@@ -72,7 +71,7 @@ private:
 
     // --------------------- 具体成员 ---------------------
     Hccl::Socket*                                               socket_{nullptr};
-    const Hccl::SocketConfig*                                   socketConfig_{nullptr};
+    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
     RdmaHandle                                                  rdmaHandle_{nullptr};
     std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::Attribution                         attr_{};
@@ -91,7 +90,6 @@ private:
     std::mutex fenceMutex_;
     bool Onetime_{false};
     DevBaseAttr devBaseAttr_{};
-    uint32_t devicePhyId_{};
 };
 
 } // namespace hcomm

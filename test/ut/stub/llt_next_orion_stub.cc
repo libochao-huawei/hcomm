@@ -230,15 +230,6 @@ void Socket::Listen()
     std::cout << "Socket Server, listen." << std::endl;
 }
 
-bool Socket::Listen(u32 &port)
-{
-    if (port == 0) {
-        port = 43210;
-    }
-    std::cout << "Socket Server, listen on port" << port << std::endl;
-    return true;
-}
-
 void Socket::Connect()
 {
 }
@@ -1197,7 +1188,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemTransport::CheckSocketStatus(std::string socketOpreator)
+HcclResult UbMemTransport::CheckSocketStatus()
 {
     return HCCL_SUCCESS;
 }
@@ -1785,7 +1776,7 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
 {
 }
 
-void ProfilingHandler::CallAdditionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const
+void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const
 {
 }
 
@@ -1822,19 +1813,21 @@ void ProfilingHandler::ReportAclApi(
 {
 }
 
-void ProfilingHandler::ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId, bool cachedReq)
+void ProfilingHandler::ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId)
 {
-    (void)cachedReq;
 }
 
-void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId, bool cachedReq)
+void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId)
 {
-    (void)cachedReq;
 }
 
-void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId, bool cachedReq)
+void ProfilingHandler::ReportHcclOpApi(
+    uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId) const
 {
-    (void)cachedReq;
+}
+
+void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId)
+{
 }
 
 void ProfilingHandler::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void *data, uint32_t len) const
@@ -1862,7 +1855,7 @@ void ProfilingHandler::ReportStoragedCompactInfo()
 {
 }
 
-void ProfilingHandler::ReportMc2AdditionInfo()
+void ProfilingHandler::ReportMc2AddtionInfo()
 {
 }
 
@@ -1886,7 +1879,7 @@ void ProfilingHandler::CallProfRegHcclOpApi() const
 {
 }
 
-void ProfilingHandler::StartAdditionInfoSubscribe()
+void ProfilingHandler::StartAddtionInfoSubscribe()
 {
 }
 
@@ -1894,7 +1887,7 @@ void ProfilingHandler::ReportStoragedAdditionInfo()
 {
 }
 
-void ProfilingHandler::StartCcuSubscribe()
+void ProfilingHandler::StartL2Subscribe()
 {
 }
 
@@ -1920,6 +1913,11 @@ bool ProfilingHandler::GetHcclL1State() const
     return false;
 }
 
+bool ProfilingHandler::GetHcclL2State() const
+{
+    return false;
+}
+
 uint64_t ProfilingHandler::GetProfHashId(const char *name, uint32_t len) const
 {
     return 0;
@@ -1935,7 +1933,7 @@ void ProfilingHandler::ReportHcclMC2CommInfo(const u32 kfcStreamId, const std::v
     const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm)
 {
 }
-void ProfilingHandler::ReportMc2AdditionInfo(uint64_t timeStamp, const void *data, int len)
+void ProfilingHandler::ReportMc2AddtionInfo(uint64_t timeStamp, const void *data, int len)
 {
 }
 ProfilingHandlerLite ProfilingHandlerLite::instance_;

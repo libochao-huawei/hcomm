@@ -32,11 +32,6 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_Resume_MockedBuilds_Returns_SUCCESS) {
     AicpuTsUrmaChannel ch(ep, desc);
 
     // Mock private helper methods BuildConnection and BuildUbMemTransport
-    MOCKER_CPP(&AicpuTsUrmaChannel::BuildSocket, HcclResult(AicpuTsUrmaChannel::*)())
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-
     MOCKER_CPP(&AicpuTsUrmaChannel::BuildConnection, HcclResult(AicpuTsUrmaChannel::*)())
         .stubs()
         .with(any())
@@ -110,15 +105,4 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
 
     GlobalMockObject::verify();
     GlobalMockObject::reset();
-}
-
-TEST_F(AicpuTsUrmaChannelTest, Ut_StartListen_When_RoleNotServer_Expect_SUCCESS)
-{
-    HcommChannelDesc desc{};
-    desc.role = HCOMM_SOCKET_ROLE_CLIENT;
-    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
-    AicpuTsUrmaChannel ch(ep, desc);
-
-    auto ret = ch.StartListen();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
 }

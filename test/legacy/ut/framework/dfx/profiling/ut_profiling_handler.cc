@@ -517,7 +517,7 @@ TEST_F(ProfilingHandlerTest, ReportNodeApi_test){
     uint64_t cmdItemId = 0;
     uint32_t threadId = 0;
     handler.enableHostApi_ = true;
-    handler.ReportNodeApi(beginTime, endTime, cmdItemId, threadId, false);
+    handler.ReportNodeApi(beginTime, endTime, cmdItemId, threadId);
 }
 
 TEST_F(ProfilingHandlerTest, ReportNodeBasicInfo_test){
@@ -526,7 +526,7 @@ TEST_F(ProfilingHandlerTest, ReportNodeBasicInfo_test){
     uint64_t cmdItemId = 0;
     uint32_t threadId = 0;
     handler.enableHcclL1_ = true;
-    handler.ReportNodeBasicInfo(timeStamp, cmdItemId, threadId, false);
+    handler.ReportNodeBasicInfo(timeStamp, cmdItemId, threadId);
 }
 
 TEST_F(ProfilingHandlerTest, ReportHcclOpInfo_test){
@@ -545,7 +545,7 @@ TEST_F(ProfilingHandlerTest, ReportHcclOpInfo_test){
     dfxOpInfo->op_ = op;
     handler.enableHcclL0_ = true;
     u32 ranksize = comm->GetRankSize();
-    handler.ReportHcclOpInfo(timeStamp, *dfxOpInfo, threadId, false);
+    handler.ReportHcclOpInfo(timeStamp, *dfxOpInfo, threadId);
     delete comm;
 }
 
@@ -565,19 +565,13 @@ TEST_F(ProfilingHandlerTest, ReportHcclOpInfo_alltoallv_test){
     dfxOpInfo->op_ = op;
     handler.enableHcclL0_ = true;
     u32 ranksize = comm->GetRankSize();
-    handler.ReportHcclOpInfo(timeStamp, *dfxOpInfo, threadId, false);
+    handler.ReportHcclOpInfo(timeStamp, *dfxOpInfo, threadId);
     delete comm;
 }
 
 TEST_F(ProfilingHandlerTest, StartSubscribe_test){
     ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
     uint64_t profconfig = 0;
-    handler.StartSubscribe(profconfig);
-    profconfig = PROF_ACL_API_MASK;
-    handler.StartSubscribe(profconfig);
-    profconfig = PROF_TASK_TIME_MASK;
-    handler.StartSubscribe(profconfig);
-    profconfig = PROF_TASK_TIME_L1_MASK;
     handler.StartSubscribe(profconfig);
 }
 
@@ -589,8 +583,8 @@ TEST_F(ProfilingHandlerTest, GetInitCacheData_test){
     handler.StartHostApiSubscribe();
     handler.StartHostHcclOpSubscribe();
     handler.StartTaskApiSubscribe();
-    handler.StartAdditionInfoSubscribe();
-    handler.StartCcuSubscribe();
+    handler.StartAddtionInfoSubscribe();
+    handler.StartL2Subscribe();
     handler.StopSubscribe();
 }
 
@@ -601,27 +595,6 @@ TEST_F(ProfilingHandlerTest, GetProfState_test)
     EXPECT_EQ(false, handler.GetHcclNodeState());
     EXPECT_EQ(false, handler.GetHcclL0State());
     EXPECT_EQ(false, handler.GetHcclL1State());
+    EXPECT_EQ(false, handler.GetHcclL2State());
 }
 
-TEST_F(ProfilingHandlerTest, Ut_ReportCcuInfo_When_ReportAllType)
-{
-    MOCKER_CPP(&Hccl::ProfilingHandler::GetCcuTaskInfo).stubs().will(ignoreReturnValue());
-    MOCKER_CPP(&Hccl::ProfilingHandler::GetCcuWaitSignalInfo).stubs().will(ignoreReturnValue());
-    MOCKER_CPP(&Hccl::ProfilingHandler::GetCcuGroupInfo).stubs().will(ignoreReturnValue());
-    ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
-    handler.enableHcclL1_ = true;
-    std::shared_ptr<std::vector<CcuProfilingInfo>> ccuDetailInfo = std::make_shared<std::vector<CcuProfilingInfo>>();
-    CcuProfilingInfo info0{};
-    CcuProfilingInfo info1{};
-    CcuProfilingInfo infoCcu{};
-    info0.type = 0;
-    info1.type = 1;
-    infoCcu.type = 2;
-    ccuDetailInfo->push_back(info0);
-    ccuDetailInfo->push_back(info1);
-    ccuDetailInfo->push_back(infoCcu);
-    TaskParam fakeTaskParam{};
-    TaskInfo fakeTaskInfo(0, 0, 0, fakeTaskParam, nullptr, true);
-    fakeTaskInfo.taskParam_.ccuDetailInfo = ccuDetailInfo;
-    handler.ReportCcuInfo(fakeTaskInfo);
-}
