@@ -717,7 +717,7 @@ HcclResult HostCpuRoceChannel::SetDfxCallback(std::function<HcclResult(const Hcc
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::PreparePostRecvWrResource(uint32_t qpIdx, struct ibv_recv_wr &recvWr)
+HcclResult HostCpuRoceChannel::PreparePostRecvWrResource(uint32_t qpIdx, struct ibv_recv_wr &recvWr) const
 {
     CHK_PRT_RET(localRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] localRmaBuffer is Empty", __func__),
                 HCCL_E_ROCE_CONNECT);
@@ -1049,7 +1049,7 @@ HcclResult HostCpuRoceChannel::CalcQpTile(const uint64_t len, const uint32_t qpC
 {
     if (qpCount == 0) {
         HCCL_ERROR("[HostCpuRoceChannel::%s] qpCount is 0, len=%llu", __func__, len);
-        return HCCL_E_INVALID_PARAM;
+        return HCCL_E_PARA;
     }
 
     actualQpNum = qpCount;
