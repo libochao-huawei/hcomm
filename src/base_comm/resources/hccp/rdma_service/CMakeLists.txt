@@ -76,6 +76,7 @@ target_compile_definitions(rs PRIVATE
 
 # 链接库
 target_link_libraries(rs PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:msprof_headers>
     $<BUILD_INTERFACE:slog_headers>

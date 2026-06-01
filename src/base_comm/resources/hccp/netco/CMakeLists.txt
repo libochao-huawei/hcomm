@@ -110,6 +110,7 @@ target_link_options(net_co PRIVATE
 
 #链接动态库
 target_link_libraries(net_co PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:msprof_headers>
     $<BUILD_INTERFACE:slog_headers>
