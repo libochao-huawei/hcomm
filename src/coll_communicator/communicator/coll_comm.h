@@ -103,6 +103,7 @@ public:
     HcclResult Suspend();
     HcclResult Clean();
     HcclResult Resume();
+    std::shared_ptr<struct hcclKernelPlannerV2> plannerV2 {nullptr}; //for group
 
 private:
     HcclResult ValidateConfig(const HcclCommConfig *config);
