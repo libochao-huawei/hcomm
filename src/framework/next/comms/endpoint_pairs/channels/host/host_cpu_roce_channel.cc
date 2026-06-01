@@ -1175,7 +1175,7 @@ HcclResult HostCpuRoceChannel::PostAndCheckSend(struct ibv_qp *qp, uint32_t qpId
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_post_send failed. ret:%d, qpInfo[%u], qpInfo.qp->qp_num[%u], "
         "badWr->wr_id[%llu], badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
-        caller, ret, qpIdx, i, qp->qp_num, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr,
+        caller, ret, qpIdx, qp->qp_num, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr,
         badWr->wr.ud.remote_qpn),
         HCCL_E_NETWORK);
 
