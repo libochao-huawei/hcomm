@@ -815,7 +815,7 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_UpdateMemInfo_When_SocketTimeout_Ex
     UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     std::shared_ptr<DevBuffer> buffer1 = DevBuffer::Create(0x101, 0x101);
-    strcpy(buffer1->mem_Tag_, "buffer1");
+    strcpy(buffer1->memInfo_, "buffer1");
     buffer1->memType_ = HcclMemType::HCCL_MEM_TYPE_HOST;
     LocalUbRmaBuffer     ubLocalRmaBuffer1(buffer1, rdmaHandle);
     LocalRmaBuffer      *validLocalRmaBuffer1 = &ubLocalRmaBuffer1;

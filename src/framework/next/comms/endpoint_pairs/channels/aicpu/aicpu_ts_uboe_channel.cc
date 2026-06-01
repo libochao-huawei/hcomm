@@ -307,8 +307,7 @@ void AicpuTsUboeChannel::NotifyVecPack(Hccl::BinaryStream &binaryStream)
     }
 }
 
-void AicpuTsUboeChannel::BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
+void AicpuTsUboeChannel::BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec)
 {
     binaryStream << static_cast<u32>(bufferVec.size());
     u32 pos = 0;
@@ -327,13 +326,6 @@ void AicpuTsUboeChannel::BufferVecPack(Hccl::BinaryStream &binaryStream, std::ve
                 __func__, pos, exchangeDto.Describe().c_str());
         }
         pos++;
-    }
-
-    for (const auto& tag : tagVec) {
-        // 逐个字节传输
-        for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
-            binaryStream << static_cast<u8>(tag[i]);
-        }
     }
 }
 
@@ -362,7 +354,7 @@ void AicpuTsUboeChannel::SendDataSize()
 
     Hccl::BinaryStream binaryStream;
     NotifyVecPack(binaryStream);
-    BufferVecPack(binaryStream, commonRes_.bufferVec, localUserMemTag_);
+    BufferVecPack(binaryStream, commonRes_.bufferVec);
     ConnVecPack(binaryStream);
 
     binaryStream.Dump(sendData_);

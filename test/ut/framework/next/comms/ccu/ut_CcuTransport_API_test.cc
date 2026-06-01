@@ -97,10 +97,10 @@ protected:
 
 TEST_F(CcuTransportTest, ut_CcuTransport_GetRemoteMems_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    auto memInfo0 = BuildCommMemInfo(0x100, 0x100);
-    auto memInfo1 = BuildCommMemInfo(0x101, 0x101, "buffer1", CommMemType::COMM_MEM_TYPE_DEVICE);
-    std::vector<CommMemInfo*> memInfos{&memInfo0, &memInfo1};
-    void **memHandles = reinterpret_cast<void**>(memInfos.data());
+    auto commMemInfo0 = BuildCommMemInfo(0x100, 0x100);
+    auto commMemInfo1 = BuildCommMemInfo(0x101, 0x101, "buffer1", CommMemType::COMM_MEM_TYPE_DEVICE);
+    std::vector<CommMemInfo*> commMemInfos{&commMemInfo0, &commMemInfo1};
+    void **memHandles = reinterpret_cast<void**>(commMemInfos.data());
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{};
     HcclResult ret = hcomm::BuildBufferInfos(memHandles, 2, bufferInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
