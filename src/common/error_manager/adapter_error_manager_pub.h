@@ -29,14 +29,14 @@ void hrtErrMSetErrorContextPub(ErrContextPub errorContextPub);
 __attribute__((weak)) void RptInputErr(std::string error_code, std::vector<std::string> key,
     std::vector<std::string> value);
 
-__attribute__((weak)) void RptEnvErr(std::string error_code, std::vector<std::string> key,
-    std::vector<std::string> value);
+// __attribute__((weak)) void RptInnerErrPrt(std::string error_code, std::vector<std::string> key,
+//     std::vector<std::string> value);
 
 __attribute__((weak)) void RptInnerErrPrt(const char *fmt, ...);
 
-__attribute__((weak)) void RptCallErr(const char *fmt, ...);
+// __attribute__((weak)) void RptInnerErrPrt(const char *fmt, ...);
 
-__attribute__((weak)) void RptCallErrPrt(const char *fmt, ...);
+// __attribute__((weak)) void RptInnerErrPrt(const char *fmt, ...);
 
 #define RPT_INPUT_ERR(result, error_code, key, value) do { \
     if (UNLIKELY(result) && RptInputErr != nullptr) {     \
@@ -45,8 +45,8 @@ __attribute__((weak)) void RptCallErrPrt(const char *fmt, ...);
 } while (0)
 
 #define RPT_ENV_ERR(result, error_code, key, value) do { \
-    if (UNLIKELY(result) && RptEnvErr != nullptr) {                               \
-        RptEnvErr(error_code, key, value);        \
+    if (UNLIKELY(result) && RptInnerErrPrt != nullptr) {                               \
+        RptInnerErrPrt(error_code, key, value);        \
     }                                                    \
 } while (0)
 
@@ -57,14 +57,14 @@ __attribute__((weak)) void RptCallErrPrt(const char *fmt, ...);
 } while (0)
 
 #define RPT_CALL_ERR(result, fmt, ...) do { \
-    if (UNLIKELY(result) && RptCallErr != nullptr) {                               \
-        RptCallErr(fmt, ##__VA_ARGS__);         \
+    if (UNLIKELY(result) && RptInnerErrPrt != nullptr) {                               \
+        RptInnerErrPrt(fmt, ##__VA_ARGS__);         \
     }                                                    \
 } while (0)
 
 #define RPT_CALL_ERR_PRT(fmt, ...) do { \
-    if (RptCallErrPrt != nullptr) {                               \
-        RptCallErrPrt(fmt, ##__VA_ARGS__);         \
+    if (RptInnerErrPrt != nullptr) {                               \
+        RptInnerErrPrt(fmt, ##__VA_ARGS__);         \
     }                                                    \
 } while (0)
 
