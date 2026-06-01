@@ -304,7 +304,7 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collComm->GetHcclCommDfxLite();
     CHK_PTR_NULL(hcclCommDfxLite);
-    hcclCommDfxLite->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    CHK_RET(hcclCommDfxLite->SetCurrDfxOpInfo(dfxOpInfoOnce));
     return HCCL_SUCCESS;
 }
 
