@@ -118,6 +118,7 @@ if(BUILD_OPEN_PROJECT)
 
     target_link_libraries(hccl_plf
     PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:ascend_hal_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:mmpa_headers>
@@ -154,7 +155,7 @@ else()
 
     target_link_libraries(hccl_plf
     PRIVATE
-        $<BUILD_INTERFACE:intf_pub_cxx14>
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:hccl_headers>
         -Wl,--no-as-needed
         c_sec

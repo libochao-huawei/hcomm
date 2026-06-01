@@ -232,9 +232,11 @@ if(BUILD_OPEN_PROJECT)
         -lpthread
     )
     target_link_libraries(ccl_kernel_plf
+        $<BUILD_INTERFACE:intf_pub>
         ${CCL_KERNEL_PLF_LINK_LIBS}
     )
     target_link_libraries(ccl_kernel_plf_a PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         ${CCL_KERNEL_PLF_LINK_LIBS}
     )
 else()
@@ -277,7 +279,6 @@ else()
 
     # 链接库
     set(CCL_KERNEL_PLF_LINK_LIBS
-        $<BUILD_INTERFACE:intf_pub_cxx14>
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>
@@ -296,9 +297,11 @@ else()
         ofed_headers
     )
     target_link_libraries(ccl_kernel_plf
+        $<BUILD_INTERFACE:intf_pub>
         ${CCL_KERNEL_PLF_LINK_LIBS}
     )
     target_link_libraries(ccl_kernel_plf_a
+        $<BUILD_INTERFACE:intf_pub>
         ${CCL_KERNEL_PLF_LINK_LIBS}
     )
 

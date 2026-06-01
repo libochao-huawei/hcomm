@@ -20,6 +20,7 @@ clone_cann_target(
 
 # 链接库
 target_link_libraries(aicpu_custom PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:acl_rt_headers>
     $<BUILD_INTERFACE:asc_host_headers>
     $<BUILD_INTERFACE:asc_kernel_headers>

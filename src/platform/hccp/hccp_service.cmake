@@ -53,6 +53,7 @@ target_link_options(hccp_service.bin PRIVATE
 )
 
 target_link_libraries(hccp_service.bin PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:runtime_headers>
     c_sec
