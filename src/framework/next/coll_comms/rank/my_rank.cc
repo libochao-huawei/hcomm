@@ -23,7 +23,7 @@ using namespace hcomm;
 
 namespace MyRankUtils {
 
-HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const RdmaConfig &rdmaConfig)
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const Hccl::EnvRdmaConfig &rdmaConfig)
 {
     HcommChannelDesc hcommDesc{};
     (void)HcommChannelDescInit(&hcommDesc, 1);
@@ -33,9 +33,8 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const Rd
     hcommDesc.memHandleNum = hcclDesc.memHandleNum;
     (void)memcpy_s(hcommDesc.raws, sizeof(hcommDesc.raws), hcclDesc.raws, sizeof(hcclDesc.raws));
     
-    if (hcclDesc.protocol == COMM_PROTOCOL_ROCE) {
-        hcommDesc.roceAttr.multiQpThreshold = (hcclDesc.roceAttr.multiQpThreshold == INVALID_UINT) ?
-            rdmaConfig.GetRdmaMultiQpThreshold() : hcclDesc.roceAttr.multiQpThreshold;
+    if (hcclDesc.channelProtocol == COMM_PROTOCOL_ROCE) {
+        hcommDesc.roceAttr.multiQpThreshold = rdmaConfig.GetRdmaMultiQpThreshold();
     }
 
     return hcommDesc;
