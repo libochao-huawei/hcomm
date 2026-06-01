@@ -260,7 +260,8 @@ int RaHdcQpCreateWithCQWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAt
     cap.max_send_wr = extAttrs->qpAttr.cap.max_send_wr;
     cap.max_recv_wr = extAttrs->qpAttr.cap.max_recv_wr;
     ret = RaHdcLiteQpCreateWithCQ(rdmaHandle, qpHdc, &cap,
-        RaHdcLiteFindTypicalCq(phyId, sendCqn), RaHdcLiteFindTypicalCq(phyId, recvCqn));
+        RaHdcLiteFindTypicalCq(phyId, sendCqn), RaHdcLiteFindTypicalCq(phyId, recvCqn),
+        sendCqn, recvCqn);
     if (ret) {
         (void)RaHdcCmdQpDestroy(qpHdc);
         hccp_err("[create][ra_hdc_qp_with_cq_attrs]ra_hdc_lite_qp_create failed ret(%d) phyId(%u)", ret, phyId);
@@ -504,6 +505,7 @@ int RaHdcTypicalCqDestroy(struct RaRdmaHandle *rdmaHandle, unsigned int cqn, voi
     }
 
     if (cqHdc->liteCq != NULL) {
+        RaHdcLiteRemoveTypicalCq(cqHdc->phyId, cqHdc->cqn);
         (void)RaRdmaLiteDestroyCq(cqHdc->liteCq);
         cqHdc->liteCq = NULL;
     }
@@ -723,79 +725,20 @@ int RaHdcSendWrVerbs(struct RaQpHandle *qpHdc, struct SendWrVerbs *wr, struct Se
         qpHdc->qpMode == RA_RS_OP_QP_MODE_EXT) {
         if (qpHdc->supportLite != LITE_NOT_SUPPORT) {
             liteWr.wr.bufList = wr->sgList;
-            liteWr.wr.bufNum = (uint16_t)wr->numSge;
+            liteWr.wr.bufNum = wr->numSge;
             liteWr.wr.dstAddr = wr->remoteAddr;
             liteWr.wr.op = wr->opcode;
             liteWr.wr.rkey = wr->rkey;
             liteWr.wr.sendFlag = wr->sendFlags;
             liteWr.ext.immData = wr->immData;
-            return RaHdcLiteTypicalSendWrVerbs(qpHdc, &liteWr, opRsp, wr->wrId);
+            return RaHdcLiteTypicalSendWr(qpHdc, &liteWr, opRsp, wr->wrId);
         }
     }
 
-    hccp_warn("qpn:%u qp_mode:%d support_lite:%d not support to send_wr_verbs",
+    hccp_warn("qpn:%u qp_mode:%d support_lite:%d not support to send_wr",
         qpHdc->qpn, qpHdc->qpMode, qpHdc->supportLite);
 
     return -ENOTSUPP;
-}
-
-int RaHdcLiteTypicalSendWrVerbs(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct SendWrRsp *opRsp,
-    unsigned long long wrId)
-{
-    struct rdma_lite_post_send_resp resp = { 0 };
-    struct rdma_lite_post_send_attr attr = { 0 };
-    struct rdma_lite_sge list[RA_SGLIST_MAX];
-    struct rdma_lite_send_wr liteWr = {
-        .sg_list    = list,
-        .opcode     = wr->wr.op,
-        .send_flags = wr->wr.sendFlag,
-    };
-    struct rdma_lite_send_wr *badWr = NULL;
-    int ret;
-    int i;
-
-    CHK_PRT_RETURN(qpHdc->liteQpState == LITE_QP_STATE_ERR, hccp_err("invalid liteQpState:%u qpn:%u phyId:%u",
-        qpHdc->liteQpState, qpHdc->qpn, qpHdc->phyId), -EINVAL);
-
-    for (i = 0; i < wr->wr.bufNum && i < RA_SGLIST_MAX; i++) {
-        list[i].addr = (uintptr_t)wr->wr.bufList[i].addr;
-        list[i].length = wr->wr.bufList[i].len;
-        list[i].lkey = wr->wr.bufList[i].lkey;
-    }
-
-    liteWr.num_sge = i;
-    liteWr.wr_id = wrId;
-    liteWr.rkey = wr->wr.rkey;
-    liteWr.remote_addr = wr->wr.dstAddr;
-    if (liteWr.opcode == RDMA_LITE_WR_WRITE_WITH_NOTIFY ||
-        liteWr.opcode == RDMA_LITE_WR_REDUCE_WRITE ||
-        liteWr.opcode == RDMA_LITE_WR_REDUCE_WRITE_NOTIFY) {
-        liteWr.imm_data = htobe32((wr->aux.notifyOffset & WRITE_NOTIFY_OFFSET_MASK) |
-            WRITE_NOTIFY_VALUE_RECORD);
-        attr.reduce_op = wr->aux.reduceType;
-        attr.reduce_type = wr->aux.dataType;
-    }
-    liteWr.imm_data = htobe32(wr->ext.immData);
-
-    ret = RaRdmaLitePostSend(qpHdc->liteQp, &liteWr, &badWr, &attr, &resp);
-    if (ret) {
-        if (ret == -ENOMEM) {
-            hccp_warn("[send][ra_hdc_wr]ra hdc post send unsuccessful, ret(%d) phyId(%u)", ret, qpHdc->phyId);
-        } else {
-            hccp_err("[send][ra_hdc_wr]ra hdc post send failed ret(%d) phyId(%u)", ret, qpHdc->phyId);
-        }
-
-        return ret;
-    }
-
-    opRsp->db.dbIndex = (unsigned int)qpHdc->dbIndex;
-    opRsp->db.dbInfo = resp.db.lite_db_info;
-
-    if ((((uint32_t)wr->wr.sendFlag & RA_SEND_SIGNALED) != 0) || (qpHdc->sqSigAll != 0)) {
-        qpHdc->sendWrNum++;
-    }
-
-    return 0;
 }
 
 int RaHdcRecvWrVerbs(struct RaQpHandle *qpHdc, struct RecvWrVerbs *wr)
@@ -1456,11 +1399,12 @@ int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries
 int RaHdcPollTypicalCq(struct RaTypicalCqHandle *cqHdc, unsigned int numEntries, void *wc)
 {
     struct rdma_lite_wc_v2 *liteWc = (struct rdma_lite_wc_v2 *)wc;
-    if (cqHdc->liteCq == NULL) {
-        hccp_warn("cqn:%u liteCq is NULL, not support to poll_cq", cqHdc->cqn);
+    struct rdma_lite_cq *liteCq = RaHdcLiteFindTypicalCq(cqHdc->phyId, cqHdc->cqn);
+    if (liteCq == NULL) {
+        hccp_warn("cqn:%u liteCq not found in table", cqHdc->cqn);
         return -ENOTSUPP;
     }
-    int ret = RaRdmaLitePollCqV2(cqHdc->liteCq, (int)numEntries, liteWc);
+    int ret = RaRdmaLitePollCqV2(liteCq, (int)numEntries, liteWc);
     if (ret < 0) {
         hccp_err("ra_rdma_lite_poll_cq_v2 failed, ret %d", ret);
         return ret;

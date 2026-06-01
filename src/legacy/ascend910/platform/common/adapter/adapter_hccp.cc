@@ -184,7 +184,7 @@ HcclResult CreateTypicalCq(RdmaHandle rdmaHandle, u32 cqDepth, u32 &cqn, void **
     HCCL_DEBUG("CreateTypicalCq cqDepth[%u]", cqDepth);
 
     s32 ret = DlRaFunction::GetInstance().dlRaTypicalCqCreate(rdmaHandle, cqDepth, &cqn, cqHandle);
-    CHK_PRT_RET(ret != 0 || (cqHandle == NULL),
+    CHK_PRT_RET(ret != 0 || (*cqHandle == NULL),
         HCCL_ERROR("[CreateTypicalCq]create typical cq failed. ret[%d]", ret), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
@@ -3118,8 +3118,12 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
 HcclResult CreateQpWithCQConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigWithCQInfo& qpConfig,
     QpHandle &qpHandle, struct TypicalQp& qpInfo)
 {
-    HCCL_DEBUG("CreateQpWithCQ qpMode[%d], sq_depth[%u], rq_depth[%u], scq_depth[%u], rcq_depth[%u], sendCqn[%u], recvCqn[%u]",
-        qpMode, qpConfig.sq_depth, qpConfig.rq_depth, qpConfig.scq_depth, qpConfig.rcq_depth, qpConfig.sendCqn, qpConfig.recvCqn);
+    HCCL_INFO("CreateQpWithCQ qpMode[%d], sq_depth[%u], rq_depth[%u], scq_depth[%u], rcq_depth[%u], "
+        "sendCqn[%u], recvCqn[%u], use_resv_mem[%u], resv_mem_pool_id[%u], "
+        "sq_sig_all[%d], max_send_sge[%u], max_recv_sge[%u], max_inline_data[%u]",
+        qpMode, qpConfig.sq_depth, qpConfig.rq_depth, qpConfig.scq_depth, qpConfig.rcq_depth,
+        qpConfig.sendCqn, qpConfig.recvCqn, qpConfig.use_resv_mem, qpConfig.resv_mem_pool_id,
+        qpConfig.sq_sig_all, qpConfig.max_send_sge, qpConfig.max_recv_sge, qpConfig.max_inline_data);
 
     struct QpExtAttrs ext_attrs{};
     ext_attrs.qpMode = qpMode;
@@ -3128,10 +3132,11 @@ HcclResult CreateQpWithCQConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfi
     ext_attrs.qpAttr.cap.max_send_wr = qpConfig.sq_depth;
     ext_attrs.qpAttr.cap.max_recv_wr = qpConfig.rq_depth;
     ext_attrs.version = QP_CREATE_WITH_ATTR_VERSION;
-    ext_attrs.qpAttr.cap.max_inline_data = DEFAULT_MAX_INLINE_DATA;
-    ext_attrs.qpAttr.cap.max_send_sge = DEFAULT_MAX_SEND_SGE;
-    ext_attrs.qpAttr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
+    ext_attrs.qpAttr.cap.max_inline_data = qpConfig.max_inline_data;
+    ext_attrs.qpAttr.cap.max_send_sge = qpConfig.max_send_sge;
+    ext_attrs.qpAttr.cap.max_recv_sge = qpConfig.max_recv_sge;
     ext_attrs.qpAttr.qp_type = IBV_QPT_RC;
+    ext_attrs.qpAttr.sq_sig_all = qpConfig.sq_sig_all;
     ext_attrs.udpSport = 0x0;
     ext_attrs.cstmFlag.bs.useResvMem = qpConfig.use_resv_mem;
     ext_attrs.resvMemPoolId = qpConfig.resv_mem_pool_id;

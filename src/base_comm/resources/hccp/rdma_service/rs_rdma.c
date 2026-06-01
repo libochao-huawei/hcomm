@@ -35,6 +35,9 @@
 
 unsigned int gRsSendWrNum = 0;
 
+STATIC struct RsListHead gRsTypicalCqList;
+STATIC pthread_mutex_t gRsTypicalCqMutex = PTHREAD_MUTEX_INITIALIZER;
+
 STATIC void RsBufPrint(char *addr, int len)
 {
     int i;
@@ -2820,22 +2823,11 @@ rs_cq_create_err:
     return ret;
 }
 
-#define RS_MAX_TYPICAL_CQ_NUM 128
-
-struct RsTypicalCqEntry {
-    unsigned int phyId;
-    unsigned int rdevIndex;
-    unsigned int cqn;
-    struct ibv_cq *ibCq;
-    struct rdma_lite_device_cq_attr deviceCqAttr;
-};
-
-STATIC struct RsTypicalCqEntry gRsTypicalCqTable[RS_MAX_TYPICAL_CQ_NUM];
-STATIC int gRsTypicalCqCnt = 0;
-
 RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth,
     unsigned int *cqn)
 {
+    struct RsTypicalCqEntry *entry;
+    struct RsTypicalCqEntry *tmp;
     int ret;
     struct RsRdevCb *rdevCb = NULL;
     struct ibv_cq *ibCq = NULL;
@@ -2853,14 +2845,37 @@ RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevInd
         return ret;
     }
 
-    if (gRsTypicalCqCnt < RS_MAX_TYPICAL_CQ_NUM) {
-        gRsTypicalCqTable[gRsTypicalCqCnt].phyId = phyId;
-        gRsTypicalCqTable[gRsTypicalCqCnt].rdevIndex = rdevIndex;
-        gRsTypicalCqTable[gRsTypicalCqCnt].cqn = *cqn;
-        gRsTypicalCqTable[gRsTypicalCqCnt].ibCq = ibCq;
-        gRsTypicalCqTable[gRsTypicalCqCnt].deviceCqAttr = deviceCqAttr;
-        gRsTypicalCqCnt++;
+    pthread_mutex_lock(&gRsTypicalCqMutex);
+    if (gRsTypicalCqList.next == NULL) {
+        RS_INIT_LIST_HEAD(&gRsTypicalCqList);
     }
+
+    RS_LIST_GET_HEAD_ENTRY(tmp, entry, &gRsTypicalCqList, list, struct RsTypicalCqEntry);
+    for (; &tmp->list != &gRsTypicalCqList;
+           tmp = entry, entry = list_entry(entry->list.next, struct RsTypicalCqEntry, list)) {
+        if (tmp->phyId == phyId && tmp->rdevIndex == rdevIndex && tmp->cqn == *cqn) {
+            tmp->ibCq = ibCq;
+            tmp->deviceCqAttr = deviceCqAttr;
+            pthread_mutex_unlock(&gRsTypicalCqMutex);
+            hccp_info("RsTypicalCqCreate updated: phyId[%u] rdevIndex[%u] cqn[%u] cqDepth[%u]",
+                phyId, rdevIndex, *cqn, cqDepth);
+            return 0;
+        }
+    }
+
+    entry = malloc(sizeof(struct RsTypicalCqEntry));
+    if (entry == NULL) {
+        pthread_mutex_unlock(&gRsTypicalCqMutex);
+        hccp_err("RsTypicalCqCreate malloc failed, cqn[%u]", *cqn);
+        return -ENOMEM;
+    }
+    entry->phyId = phyId;
+    entry->rdevIndex = rdevIndex;
+    entry->cqn = *cqn;
+    entry->ibCq = ibCq;
+    entry->deviceCqAttr = deviceCqAttr;
+    RsListAddTail(&entry->list, &gRsTypicalCqList);
+    pthread_mutex_unlock(&gRsTypicalCqMutex);
 
     hccp_info("RsTypicalCqCreate success: phyId[%u] rdevIndex[%u] cqn[%u] cqDepth[%u]",
         phyId, rdevIndex, *cqn, cqDepth);
@@ -2870,64 +2885,67 @@ RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevInd
 
 RS_ATTRI_VISI_DEF int RsTypicalCqDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn)
 {
+    struct RsTypicalCqEntry *entry;
+    struct RsTypicalCqEntry *tmp;
     int ret;
-    int i;
-    struct ibv_cq *ibCq = NULL;
-    bool found = false;
 
-    for (i = 0; i < gRsTypicalCqCnt; i++) {
-        if (gRsTypicalCqTable[i].phyId == phyId &&
-            gRsTypicalCqTable[i].rdevIndex == rdevIndex &&
-            gRsTypicalCqTable[i].cqn == cqn) {
-            ibCq = gRsTypicalCqTable[i].ibCq;
-            found = true;
-            break;
-        }
-    }
-
-    if (!found) {
+    pthread_mutex_lock(&gRsTypicalCqMutex);
+    if (gRsTypicalCqList.next == NULL) {
+        pthread_mutex_unlock(&gRsTypicalCqMutex);
         hccp_err("rs_typical_cq_destroy: cqn[%u] not found phyId[%u] rdevIndex[%u]", cqn, phyId, rdevIndex);
         return -EINVAL;
     }
 
-    if (ibCq != NULL) {
-        ret = RsIbvDestroyCq(ibCq);
-        if (ret) {
-            hccp_err("rs_ibv_destroy_cq failed cqn[%u] ret[%d]", cqn, ret);
-            return ret;
+    RS_LIST_GET_HEAD_ENTRY(tmp, entry, &gRsTypicalCqList, list, struct RsTypicalCqEntry);
+    for (; &tmp->list != &gRsTypicalCqList;
+           tmp = entry, entry = list_entry(entry->list.next, struct RsTypicalCqEntry, list)) {
+        if (tmp->phyId == phyId && tmp->rdevIndex == rdevIndex && tmp->cqn == cqn) {
+            RsListDel(&tmp->list);
+            pthread_mutex_unlock(&gRsTypicalCqMutex);
+
+            if (tmp->ibCq != NULL) {
+                ret = RsIbvDestroyCq(tmp->ibCq);
+                if (ret) {
+                    hccp_err("rs_ibv_destroy_cq failed cqn[%u] ret[%d]", cqn, ret);
+                    free(tmp);
+                    return ret;
+                }
+            }
+            free(tmp);
+            hccp_info("RsTypicalCqDestroy success: phyId[%u] rdevIndex[%u] cqn[%u]",
+                phyId, rdevIndex, cqn);
+            return 0;
         }
     }
+    pthread_mutex_unlock(&gRsTypicalCqMutex);
 
-    /* Remove entry by shifting remaining entries */
-    if (i < gRsTypicalCqCnt - 1) {
-        if (memmove_s(&gRsTypicalCqTable[i], (gRsTypicalCqCnt - i - 1) * sizeof(struct RsTypicalCqEntry),
-            &gRsTypicalCqTable[i + 1], (gRsTypicalCqCnt - i - 1) * sizeof(struct RsTypicalCqEntry)) != 0) {
-            hccp_err("memmove_s failed in rs_typical_cq_destroy");
-            return -EFAULT;
-        }
-    }
-    gRsTypicalCqCnt--;
-
-    hccp_info("RsTypicalCqDestroy success: phyId[%u] rdevIndex[%u] cqn[%u]",
-        phyId, rdevIndex, cqn);
-
-    return 0;
+    hccp_err("rs_typical_cq_destroy: cqn[%u] not found phyId[%u] rdevIndex[%u]", cqn, phyId, rdevIndex);
+    return -EINVAL;
 }
 
 RS_ATTRI_VISI_DEF int RsGetLiteCqAttr(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
     struct rdma_lite_device_cq_attr *deviceCqAttr)
 {
+    struct RsTypicalCqEntry *entry;
+    struct RsTypicalCqEntry *tmp;
     int ret;
-    int i;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(deviceCqAttr);
 
-    for (i = 0; i < gRsTypicalCqCnt; i++) {
-        if (gRsTypicalCqTable[i].phyId == phyId &&
-            gRsTypicalCqTable[i].rdevIndex == rdevIndex &&
-            gRsTypicalCqTable[i].cqn == cqn) {
+    pthread_mutex_lock(&gRsTypicalCqMutex);
+    if (gRsTypicalCqList.next == NULL) {
+        pthread_mutex_unlock(&gRsTypicalCqMutex);
+        hccp_err("rs_get_lite_cq_attr: cqn[%u] not found phyId[%u] rdevIndex[%u]", cqn, phyId, rdevIndex);
+        return -EINVAL;
+    }
+
+    RS_LIST_GET_HEAD_ENTRY(tmp, entry, &gRsTypicalCqList, list, struct RsTypicalCqEntry);
+    for (; &tmp->list != &gRsTypicalCqList;
+           tmp = entry, entry = list_entry(entry->list.next, struct RsTypicalCqEntry, list)) {
+        if (tmp->phyId == phyId && tmp->rdevIndex == rdevIndex && tmp->cqn == cqn) {
             ret = memcpy_s(deviceCqAttr, sizeof(*deviceCqAttr),
-                &gRsTypicalCqTable[i].deviceCqAttr, sizeof(gRsTypicalCqTable[i].deviceCqAttr));
+                &tmp->deviceCqAttr, sizeof(tmp->deviceCqAttr));
+            pthread_mutex_unlock(&gRsTypicalCqMutex);
             if (ret) {
                 hccp_err("memcpy_s failed, ret:%d", ret);
                 return ret;
@@ -2936,6 +2954,7 @@ RS_ATTRI_VISI_DEF int RsGetLiteCqAttr(unsigned int phyId, unsigned int rdevIndex
             return 0;
         }
     }
+    pthread_mutex_unlock(&gRsTypicalCqMutex);
 
     hccp_err("rs_get_lite_cq_attr: cqn[%u] not found phyId[%u] rdevIndex[%u]", cqn, phyId, rdevIndex);
     return -EINVAL;
@@ -2945,6 +2964,8 @@ RS_ATTRI_VISI_DEF int RsQpCreateWithCQWithAttrs(unsigned int phyId, unsigned int
     unsigned int sendCqn, unsigned int recvCqn,
     struct RsQpNormWithAttrs *qpNorm, struct RsQpRespWithAttrs *qpResp)
 {
+    struct RsTypicalCqEntry *entry;
+    struct RsTypicalCqEntry *tmp;
     struct RsRdevCb *rdevCb = NULL;
     struct RsQpCb *qpCb = NULL;
     struct ibv_cq *sendIbCq = NULL;
@@ -2953,7 +2974,6 @@ RS_ATTRI_VISI_DEF int RsQpCreateWithCQWithAttrs(unsigned int phyId, unsigned int
     struct rdma_lite_device_cq_attr recvDeviceCqAttr;
     int qpMode;
     int ret;
-    int i;
     bool sendFound = false;
     bool recvFound = false;
 
@@ -2966,30 +2986,38 @@ RS_ATTRI_VISI_DEF int RsQpCreateWithCQWithAttrs(unsigned int phyId, unsigned int
     ret = RsQpQueryInfo(phyId, rdevIndex, &rdevCb, qpMode);
     CHK_PRT_RETURN(ret, hccp_err("query qp info failed:%d", ret), ret);
 
-    for (i = 0; i < gRsTypicalCqCnt; i++) {
-        if (gRsTypicalCqTable[i].phyId == phyId &&
-            gRsTypicalCqTable[i].rdevIndex == rdevIndex &&
-            gRsTypicalCqTable[i].cqn == sendCqn) {
-            sendIbCq = gRsTypicalCqTable[i].ibCq;
-            sendDeviceCqAttr = gRsTypicalCqTable[i].deviceCqAttr;
-            sendFound = true;
-            break;
+    pthread_mutex_lock(&gRsTypicalCqMutex);
+    if (gRsTypicalCqList.next != NULL) {
+        RS_LIST_GET_HEAD_ENTRY(tmp, entry, &gRsTypicalCqList, list, struct RsTypicalCqEntry);
+        for (; &tmp->list != &gRsTypicalCqList;
+               tmp = entry, entry = list_entry(entry->list.next, struct RsTypicalCqEntry, list)) {
+            if (tmp->phyId == phyId && tmp->rdevIndex == rdevIndex && tmp->cqn == sendCqn) {
+                sendIbCq = tmp->ibCq;
+                sendDeviceCqAttr = tmp->deviceCqAttr;
+                sendFound = true;
+                break;
+            }
         }
     }
+    pthread_mutex_unlock(&gRsTypicalCqMutex);
     CHK_PRT_RETURN(!sendFound,
         hccp_err("send cq not found: sendCqn[%u] phyId[%u] rdevIndex[%u]", sendCqn, phyId, rdevIndex),
         -EINVAL);
 
-    for (i = 0; i < gRsTypicalCqCnt; i++) {
-        if (gRsTypicalCqTable[i].phyId == phyId &&
-            gRsTypicalCqTable[i].rdevIndex == rdevIndex &&
-            gRsTypicalCqTable[i].cqn == recvCqn) {
-            recvIbCq = gRsTypicalCqTable[i].ibCq;
-            recvDeviceCqAttr = gRsTypicalCqTable[i].deviceCqAttr;
-            recvFound = true;
-            break;
+    pthread_mutex_lock(&gRsTypicalCqMutex);
+    if (gRsTypicalCqList.next != NULL) {
+        RS_LIST_GET_HEAD_ENTRY(tmp, entry, &gRsTypicalCqList, list, struct RsTypicalCqEntry);
+        for (; &tmp->list != &gRsTypicalCqList;
+               tmp = entry, entry = list_entry(entry->list.next, struct RsTypicalCqEntry, list)) {
+            if (tmp->phyId == phyId && tmp->rdevIndex == rdevIndex && tmp->cqn == recvCqn) {
+                recvIbCq = tmp->ibCq;
+                recvDeviceCqAttr = tmp->deviceCqAttr;
+                recvFound = true;
+                break;
+            }
         }
     }
+    pthread_mutex_unlock(&gRsTypicalCqMutex);
     CHK_PRT_RETURN(!recvFound,
         hccp_err("recv cq not found: recvCqn[%u] phyId[%u] rdevIndex[%u]", recvCqn, phyId, rdevIndex),
         -EINVAL);
@@ -3383,6 +3411,30 @@ RS_ATTRI_VISI_DEF int RsGetLiteQpCqAttr(
             ret,
             (unsigned int)sizeof(qpCb->qpResp),
             (unsigned int)sizeof(struct LiteQpCqAttrResp));
+        return ret;
+    }
+
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsGetLiteQpAttr(
+    unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteQpAttrResp *resp)
+{
+    int ret;
+    struct RsQpCb *qpCb = NULL;
+
+    RS_CHECK_POINTER_NULL_RETURN_INT(resp);
+
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret != 0 || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
+
+    ret = memcpy_s(resp, sizeof(struct LiteQpAttrResp), (void *)&qpCb->qpResp.qpData, sizeof(qpCb->qpResp.qpData));
+    if (ret) {
+        hccp_err("memcpy_s failed, ret:%d, src_len:%u, dst_len:%u",
+            ret,
+            (unsigned int)sizeof(qpCb->qpResp.qpData),
+            (unsigned int)sizeof(struct LiteQpAttrResp));
         return ret;
     }
 
