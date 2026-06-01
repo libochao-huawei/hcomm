@@ -14,7 +14,7 @@
 #include "hccp.h"
 #include "sal.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 constexpr u32 WAIT_US_COUNT = 1000;
 constexpr uint32_t TC_TEMP = 132;
 constexpr uint32_t SL_TEMP = 4;

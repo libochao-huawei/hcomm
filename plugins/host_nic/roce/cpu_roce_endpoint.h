@@ -16,7 +16,7 @@
 #include <string>
 #include "endpoint.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 /**
  * @note 职责：Host CPU通信引擎+RoCE协议的通信设备Endpoint，管理通信设备上下文，以及设备上的注册内存。
  */

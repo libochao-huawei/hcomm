@@ -30,7 +30,7 @@
 #include "hccp_common.h"
 #include "dlprof_function.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
 constexpr u32 MEM_BLOCK_SIZE = 128;
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
@@ -87,7 +87,7 @@ HostCpuRoceChannel::~HostCpuRoceChannel() {
     }
 
     if (socket_ != nullptr) {
-        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        hcomm::SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
         socket_ = nullptr;
     }
 }
@@ -173,8 +173,8 @@ HcclResult HostCpuRoceChannel::BuildSocket()
     }
     HCCL_INFO("[HostCpuRoceChannel::%s] socket ptr is NULL, rebuild Socket", __func__);
 
-    Hccl::LinkData linkData = BuildDefaultLinkData();
-    CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
+    Hccl::LinkData linkData = hcomm::BuildDefaultLinkData();
+    CHK_RET(hcomm::EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
     HCCL_INFO("[HostCpuRoceChannel::%s] built linkData: %s", __func__, linkData.Describe().c_str());
     uint16_t port = channelDesc_.port;
     if (port == 0) {
@@ -183,7 +183,7 @@ HcclResult HostCpuRoceChannel::BuildSocket()
     }
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
-    CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
+    CHK_RET(hcomm::SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
 }
@@ -271,7 +271,7 @@ HcclResult HostCpuRoceChannel::ProcessStatus()
     switch (channelStatus_) {
         case ChannelStatus::READY:
             if (socket_ != nullptr) {
-                SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+                hcomm::SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
             }
             return HCCL_SUCCESS;
         case ChannelStatus::SOCKET_TIMEOUT:
@@ -791,12 +791,12 @@ HcclResult HostCpuRoceChannel::PrepareNotifyWrResource(
     taskParam.taskPara.DMA.linkType    = Hccl::DfxLinkType::ROCE;
     taskParam.taskPara.DMA.dmaOp       = Hccl::DmaOp::HCCL_DMA_WRITE;
     Hccl::IpAddress locIpAddr{};
-    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locIpAddr));
+    CHK_RET(hcomm::CommAddrToIpAddress(localEp_.commAddr, locIpAddr));
     std::string locAddrStr = locIpAddr.GetIpStr();
     CHK_SAFETY_FUNC_RET(memcpy_s(taskParam.taskPara.DMA.locAddr, sizeof(taskParam.taskPara.DMA.locAddr),
         locAddrStr.c_str(), locAddrStr.size()));
     Hccl::IpAddress rmtIpAddr{};
-    CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtIpAddr));
+    CHK_RET(hcomm::CommAddrToIpAddress(remoteEp_.commAddr, rmtIpAddr));
     std::string rmtAddrStr = rmtIpAddr.GetIpStr();
     CHK_SAFETY_FUNC_RET(memcpy_s(taskParam.taskPara.DMA.rmtAddr, sizeof(taskParam.taskPara.DMA.rmtAddr),
         rmtAddrStr.c_str(), rmtAddrStr.size()));
@@ -952,8 +952,8 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
 HcclResult HostCpuRoceChannel::ReportWcStatusError(enum ibv_wc_status status)
 {
     Hccl::IpAddress localIp, remoteIp;
-    (void)CommAddrToIpAddress(localEp_.commAddr, localIp);
-    (void)CommAddrToIpAddress(remoteEp_.commAddr, remoteIp);
+    (void)hcomm::CommAddrToIpAddress(localEp_.commAddr, localIp);
+    (void)hcomm::CommAddrToIpAddress(remoteEp_.commAddr, remoteIp);
     RPT_INPUT_ERR(true, "EI0013", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
         "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
         std::vector<std::string>({std::to_string(localEp_.loc.device.serverIdx), std::to_string(localEp_.loc.device.devPhyId),
@@ -1009,12 +1009,12 @@ HcclResult HostCpuRoceChannel::PrepareWriteWrResource(const void *dst, const voi
     taskParam.taskPara.DMA.linkType = Hccl::DfxLinkType::ROCE;
     taskParam.taskPara.DMA.dmaOp    = Hccl::DmaOp::HCCL_DMA_WRITE;
     Hccl::IpAddress locIpAddr{};
-    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locIpAddr));
+    CHK_RET(hcomm::CommAddrToIpAddress(localEp_.commAddr, locIpAddr));
     std::string locAddrStr = locIpAddr.GetIpStr();
     CHK_SAFETY_FUNC_RET(memcpy_s(taskParam.taskPara.DMA.locAddr, sizeof(taskParam.taskPara.DMA.locAddr),
         locAddrStr.c_str(), locAddrStr.size()));
     Hccl::IpAddress rmtIpAddr{};
-    CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtIpAddr));
+    CHK_RET(hcomm::CommAddrToIpAddress(remoteEp_.commAddr, rmtIpAddr));
     std::string rmtAddrStr = rmtIpAddr.GetIpStr();
     CHK_SAFETY_FUNC_RET(memcpy_s(taskParam.taskPara.DMA.rmtAddr, sizeof(taskParam.taskPara.DMA.rmtAddr),
         rmtAddrStr.c_str(), rmtAddrStr.size()));
@@ -1635,7 +1635,7 @@ HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needS
     auto qpInfo = connections_[0]->GetQpInfo();
     bool hasSocket = (socket_ != nullptr);
     if (!hasSocket) {
-        CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(*socketConfig_, socket_));
+        CHK_RET(hcomm::SocketMgr::GetInstance(devicePhyId_).GetSocket(*socketConfig_, socket_));
     }
     CHK_RET(HrtRaQpConnectAsync(qpInfo.qpHandle, socket_->GetFdHandle(), needStop));
     
@@ -1652,7 +1652,7 @@ HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needS
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             HCCL_ERROR("[Connect][Qp]get qp status timeout_=%lld, qp_status=%d", timeout, qpStatus);
             if (!hasSocket) {
-                SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+                hcomm::SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
             }
             return HCCL_E_TIMEOUT;
         }
@@ -1665,7 +1665,7 @@ HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needS
         }
     }
     if (!hasSocket) {
-        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        hcomm::SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
     }
     return HCCL_SUCCESS;
 }
@@ -1802,4 +1802,4 @@ HcclResult HostCpuRoceChannel::NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_
     }
 }
 
-} // namespace hcomm
+} // namespace hcomm_host_nic

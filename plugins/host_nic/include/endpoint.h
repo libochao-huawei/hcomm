@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef ENDPOINT_H
-#define ENDPOINT_H
+#ifndef HCOMM_HOST_NIC_ENDPOINT_H
+#define HCOMM_HOST_NIC_ENDPOINT_H
 
 #include <memory>
 #include <vector>
@@ -21,7 +21,7 @@
 #include "orion_adpt_utils.h"
 #include "hccp_hdc_manager.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 /**
  * @note 职责：通信设备Endpoint的C++抽象接口类，管理通信设备上下文，以及设备上的注册内存。
  */
@@ -87,4 +87,4 @@ protected:
 };
 
 }
-#endif // ENDPOINT_H
+#endif // HCOMM_HOST_NIC_ENDPOINT_H

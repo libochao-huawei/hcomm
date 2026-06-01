@@ -23,7 +23,7 @@ using Hccl::HcclException;
 using std::string;
 using std::exception;
  
-namespace hcomm {
+namespace hcomm_host_nic {
 namespace {
 constexpr uint32_t kHostResourceId = 0U;
 }
@@ -42,7 +42,7 @@ HcclResult CpuRoceEndpoint::Init()
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::IpAddress ipAddr{};
-    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+    CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     TRY_CATCH_RETURN(ctxHandle_ = static_cast<void *>(
         rdmaHandleMgr.GetByAddr(kHostResourceId, Hccl::LinkProtoType::RDMA, ipAddr,
@@ -62,7 +62,7 @@ HcclResult CpuRoceEndpoint::Init()
 HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
 {
     Hccl::IpAddress ipAddr{};
-    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+    CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
     Hccl::PortData localPort = Hccl::PortData(kHostResourceId, type, 0, ipAddr);
@@ -71,7 +71,7 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
         __func__, kHostResourceId, ipAddr.Describe().c_str());
 
     uint32_t requestPort = port;
-    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE,
+    CHK_RET(hcomm::ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE,
         kHostResourceId, &requestPort));
 
     return HCCL_SUCCESS;
@@ -80,11 +80,11 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
 HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
 {
     Hccl::IpAddress ipAddr{};
-    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+    CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
     Hccl::PortData localPort = Hccl::PortData(kHostResourceId, type, 0, ipAddr);
-    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
+    CHK_RET(hcomm::ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
 
     return HCCL_SUCCESS;
 }

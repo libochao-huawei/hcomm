@@ -16,7 +16,7 @@
 #include <mutex>
 #include "hccl_types.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 
 class DpuNotifyManager {
 public:
@@ -41,6 +41,6 @@ private:
     std::mutex mtxAlloc_;
     std::mutex mtxFree_;
 };
-}  // namespace Hccl
+}  // namespace hcomm_host_nic
 
 #endif  // HCCL_DPU_NOTIFY_MANAGER_H
