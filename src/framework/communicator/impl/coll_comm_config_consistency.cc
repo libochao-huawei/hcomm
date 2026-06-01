@@ -32,7 +32,7 @@ HcclResult CollCommConfigConsistency::AddExchangeInfo(const void* data, uint32_t
             HCCL_ERROR("[AddExchangeInfo] memcpy_s failed, ret[%d]", sRet), HCCL_E_MEMORY);
         HCCL_INFO("[AddExchangeInfo] success, length[%u].", length);
     }else {
-        HCCL_ERROR("[AddExchangeInfo] length[%u] is illegal", length);
+        HCCL_ERROR("[AddExchangeInfo] length[%u] is illegal, maxLen[%u]", length, HCCL_EXCHANGE_INFO_LEN);
         return HCCL_E_PARA;
     }
     
