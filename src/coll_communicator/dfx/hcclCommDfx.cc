@@ -43,7 +43,6 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag, u32 myRank
     setAddDpuTaskCallback_ = [this](const Hccl::TaskParam &taskParam, u64 handle) {
         return this->AddDpuTaskInfoCallback(taskParam, handle);
     };
-    HCCL_INFO("[HcclCommDfx][Init] Init success");
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 

@@ -30,7 +30,6 @@ void MirrorTaskManagerLite::RegFullyCallBack(std::function<void()> callBack)
 
 void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
 {
-    HCCL_INFO("[MirrorTaskManagerLite][AddTaskInfo]AddTaskInfo begin");
     if (UNLIKELY(taskInfo == nullptr)) {
         THROW<InternalException>(
             StringFormat("MirrorTaskManagerLite::AddTaskInfo taskInfo is nullptr"));

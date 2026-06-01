@@ -45,7 +45,6 @@ QueueType MirrorTaskManager::GetQueueType() const
 
 void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
 {
-    HCCL_INFO("[MirrorTaskManager][AddTaskInfo]AddTaskInfo begin");
     if (UNLIKELY(taskInfo == nullptr)) {
         THROW<InternalException>(
             StringFormat("MirrorTaskManager::AddTaskInfo taskInfo is nullptr"));
@@ -67,12 +66,14 @@ void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
             needCallback = true;
             queueTaskNum[taskInfo->streamId_] = 0;
         }
-
-        queueMap_[taskInfo->streamId_]->Append(taskInfo);
-        queueTaskNum[taskInfo->streamId_]++;
     }
     if (needCallback && fullyCallBack_ != nullptr) {
         fullyCallBack_();
+    }
+    {
+        std::lock_guard<std::mutex> lock(profMutex);
+        queueMap_[taskInfo->streamId_]->Append(taskInfo);
+        queueTaskNum[taskInfo->streamId_]++;
     }
 
     HCCL_INFO("[MirrorTaskManager][AddTaskInfo]add devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u] queueMapsize[%u]",
