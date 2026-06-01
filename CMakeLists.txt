@@ -103,7 +103,7 @@ elseif(BUILD_OPEN_PROJECT)
     include(version.cmake)
     # 三方件
     include(cmake/hcomm_utils.cmake)
-    include(cmake/third_party/openssl.cmake)
+    add_cann_third_party(openssl)
     include(cmake/third_party/ubengine.cmake)
     add_cann_third_party(rdma-core)
     add_cann_third_party(json)
