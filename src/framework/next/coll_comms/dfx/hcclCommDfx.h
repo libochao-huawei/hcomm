@@ -62,7 +62,6 @@ public:
         return setAddDpuTaskCallback_;
     }
     HcclResult ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId);
-    HcclResult IsOpBase(bool &isOpBase);
 
     void SetDpuStreamId(u32 dpuStreamId);
     void SetAicpuTaskIdAndStreamId(u32 taskId, u32 streamId) {
