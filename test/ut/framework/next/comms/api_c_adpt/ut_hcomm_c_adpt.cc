@@ -18,6 +18,12 @@
 
 using namespace hcomm;
 
+HcclResult StubServerSocketGetListenPort(Endpoint* /*endpoint*/, uint32_t* port)
+{
+    *port = 12345;
+    return HCCL_SUCCESS;
+}
+
 class HcommCAdptTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -334,4 +340,71 @@ TEST_F(HcommCAdptTest, ut_HcommResMgrInit_MultiDevice_Expect_Success)
     HcommResult ret2 = HcommResMgrInit(1);
     EXPECT_EQ(ret1, HCCL_SUCCESS);
     EXPECT_EQ(ret2, HCCL_SUCCESS);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_PortNull_Expect_E_PTR)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    HcommResult ret = HcommEndpointGetListenPort(endpointHandle, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_HandleInvalid_Expect_E_NOT_FOUND)
+{
+    uint32_t port = 0;
+    HcommResult ret = HcommEndpointGetListenPort(nullptr, &port);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+}
+
+class StubEndpoint final : public Endpoint {
+public:
+    explicit StubEndpoint() : Endpoint(EndpointDesc{})
+    {
+    }
+    HcclResult Init() override
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult ServerSocketListen(const uint32_t port) override
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult UnregisterMemory(void *memHandle) override
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override
+    {
+        return HCCL_SUCCESS;
+    }
+};
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_ServerSocketNotSupport_Expect_E_NOT_SUPPORT)
+{
+    uint32_t port = 0;
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    StubEndpoint stubEndpoint;
+
+    MOCKER_CPP(&HcommEndpointMap::GetEndpoint, Endpoint * (HcommEndpointMap::*)(EndpointHandle))
+        .stubs()
+        .will(returnValue(static_cast<Endpoint *>(&stubEndpoint)));
+
+    HcommResult ret = HcommEndpointGetListenPort(endpointHandle, &port);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 }

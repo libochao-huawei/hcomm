@@ -11,7 +11,9 @@
 #ifndef SOCKET_MGR_H
 #define SOCKET_MGR_H
 
+#include <atomic>
 #include <mutex>
+#include <condition_variable>
 
 #include "hccl/hccl_res.h"
 #include "../../../../../legacy/unified_platform/resource/socket/socket.h"
@@ -23,12 +25,14 @@ namespace hcomm {
 
 class SocketMgr {
 public:
-    SocketMgr() {};
-    ~SocketMgr() {};
-
     HcclResult GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket);
+    HcclResult CreateSocketWithSocketHandle(const Hccl::SocketConfig &socketConfig);
+    HcclResult MakeSocketInUse(Hccl::Socket*& socket);
+    HcclResult PutSocket(const Hccl::SocketConfig*& socketConfig, Hccl::Socket*& socket);
+    HcclResult UpdateSocketConfig(const Hccl::SocketConfig*& socketConfig, Hccl::Socket*& socket);
     HcclResult DeleteWhiteList(Hccl::Socket* socket);
     HcclResult DestroySocket(Hccl::Socket* socket);
+    static SocketMgr& GetInstance(s32 phyId);
 
 private:
     HcclResult Init();
@@ -37,12 +41,19 @@ private:
     HcclResult CreateSocket(const Hccl::SocketConfig &socketConfig, const Hccl::SocketHandle &socketHandle);
 
 private:
+    SocketMgr() {};
+    ~SocketMgr() {};
+    SocketMgr(const SocketMgr&) = delete;
+    SocketMgr& operator=(const SocketMgr&) = delete;
+
     bool isLoaded_{false};
     uint32_t devicePhyId_{};
     uint32_t serverListenPort_{};
     std::unordered_map<Hccl::SocketConfig, std::unique_ptr<Hccl::Socket>> socketMap_{};
     std::unordered_map<Hccl::SocketHandle, std::vector<Hccl::RaSocketWhitelist>> handle2WhiteListMap_{};
+    std::unordered_map<Hccl::Socket*, std::atomic<bool>> socketInUseMap_{};
     std::mutex mutex_{};
+    std::condition_variable socketAvailableCv_;
 };
 
 } // namespace hcomm

@@ -64,7 +64,7 @@ bool IsSupportDirectFullmeshForAlltoallv(const OpParam& param, DevType deviceTyp
     bool isSatisfyBuffer = true;
     if (deviceType == DevType::DEV_TYPE_910_93) {
         isHCCS = (serverNum > 1) ?
-            (!GetExternalInputInterHccsDisable() && useSuperPodMode) : (!GetExternalInputInterHccsDisable());
+             (!GetExternalInputInterHccsDisable() && useSuperPodMode) : true;
     } else if (deviceType == DevType::DEV_TYPE_910B) {
         if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
             // alltoallv算子单机和多机(小于8机64卡)acl graph场景都走directfullmesh算法，且不支持卡数不一致场景

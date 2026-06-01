@@ -30,6 +30,7 @@ constexpr char_t FINISH_MSG[FINISH_MSG_SIZE] = "Uboe Comm Pipe ready!";
 class AicpuTsUboeChannel : public Channel {
 public:
     AicpuTsUboeChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
+    ~AicpuTsUboeChannel();
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
@@ -129,7 +130,6 @@ private:
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_;
-    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
 
     ChannelStatus                                               channelStatus{ChannelStatus::INIT};
     MAKE_ENUM(UboeStatus, INIT, SEND_EID, RECV_EID, PROCESS_EID_DATA, BUILD_CONN, SEND_SIZE, RECV_SIZE, SEND_DATA, 
@@ -163,7 +163,8 @@ private:
     std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>           tagPointers_;        // Tag 缓存
-
+    const Hccl::SocketConfig*    socketConfig_{nullptr};
+    uint32_t    devicePhyId_{};
 };
 
 } // namespace hcomm

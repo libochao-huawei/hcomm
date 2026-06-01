@@ -306,7 +306,8 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
             std::string kernelName = "RunAicpuIndOpChannelInitV2";
-            ret = hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid());
+            // 还是kernel的当前无法判断
+            ret = hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid(), false);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to report kernel for kernelName[%s], tid[%d], ret[%d]", commTag.c_str(), kernelName.c_str(), SalGetTid(), ret), ret);
         }
