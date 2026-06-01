@@ -34,7 +34,7 @@ public:
     HcclResult ReportAllTasks();
     HcclResult ReportHcclOpInfo(const Hccl::DfxOpInfo& hcclOpInfo);
     HcclResult UpdateProfStat();
-    void SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo);
+    HcclResult SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo);
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {
         return addTaskCallback_;
     }
