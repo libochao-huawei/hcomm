@@ -490,6 +490,8 @@ HCCP_ATTRI_VISI_DEF int RaSendWr(void *qpHandle, struct SendWr *wr, struct SendW
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
 */
 HCCP_ATTRI_VISI_DEF int RaSendWrV2(void *qpHandle, struct SendWrV2 *wr, struct SendWrRsp *opRsp);
+HCCP_ATTRI_VISI_DEF int RaSendWrVerbs(void *qpHandle, struct SendWrVerbs *wr, struct SendWrRsp *opRsp);
+HCCP_ATTRI_VISI_DEF int RaRecvWrVerbs(void *qpHandle, struct RecvWrVerbs *wr);
 
 /**
  * @ingroup librdma
