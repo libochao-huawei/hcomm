@@ -227,9 +227,11 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
         __func__, exceptionInfo->taskid, exceptionInfo->streamid, exceptionInfo->tid, exceptionInfo->deviceid,
         exceptionInfo->retcode, exceptionInfo->expandInfo.type);
 
-    TaskExceptionHost *handler = TaskExceptionHostManager::GetHandler(static_cast<size_t>(exceptionInfo->deviceid));
-    if (handler != nullptr) {
-        handler->CallTaskExceptionCallbacks(exceptionInfo);
+    if (exceptionInfo->expandInfo.type == RT_EXCEPTION_AICORE) {
+        TaskExceptionHost *handler = TaskExceptionHostManager::GetHandler(static_cast<size_t>(exceptionInfo->deviceid));
+        if (handler != nullptr) {
+            handler->CallTaskExceptionCallbacks(exceptionInfo);
+        }
     }
 
     if (IsMC2Exception(exceptionInfo)) { // MC2 taskException 新流程暂未支持，回退到老流程
