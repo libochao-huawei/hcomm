@@ -59,6 +59,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
     ${HCOMM_DIR}/src/framework/communicator/impl/one_sided_service
     ${HCOMM_DIR}/src/framework/op_base/src
+    ${HCOMM_DIR}/src/framework/device
 
     # src/framework/next 头文件
     ${HCOMM_DIR}/src/framework/next/common
