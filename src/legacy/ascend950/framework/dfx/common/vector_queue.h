@@ -15,6 +15,7 @@
 #include <algorithm>
 
 namespace Hccl {
+constexpr uint32_t VECTOR_QUEUE_SIZE = 2048;
 
 template <typename T> class VectorQueue : public Queue<T> {
 private:
@@ -22,7 +23,7 @@ private:
 
 public:
     VectorQueue() {
-        elems_.reserve(2048);
+        elems_.reserve(VECTOR_QUEUE_SIZE);
     }
     class Iterator : public Queue<T>::Iterator {
     private:
@@ -101,6 +102,9 @@ public:
 
     void Append(const T &value) override
     {
+        if (UNLIKELY(elems_.size() >= VECTOR_QUEUE_SIZE)) {
+            THROW<InternalException>(StringFormat("VectorQueue<T>::Append size[%u] is full", elems_.size()));
+        }
         elems_.push_back(value);
     }
 
