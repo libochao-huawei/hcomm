@@ -197,6 +197,113 @@ std::shared_ptr<RankGraph> create4pRankGraph(RankId myRank) {
     return std::make_shared<RankGraph>(rankGraph);
 }
 
+std::shared_ptr<RankGraph> create4pclosRankGraph(RankId myRank) {
+    RankGraph rankGraph(myRank);
+    constexpr u32 layer = 0;
+    constexpr u32 mesh01TopoInstId = 0;
+    constexpr u32 mesh23TopoInstId = 1;
+    constexpr u32 closTopoInstId = 2;
+
+    auto netInstMixPcie = std::make_shared<InnerNetInstance>(layer, "mixpcie");
+    auto peer0 = createPeer(myRank, 0, 0);
+    auto peer1 = createPeer(1, 1, 1);
+    auto peer2 = createPeer(2, 2, 2);
+    auto peer3 = createPeer(3, 3, 3);
+    auto fabric = std::make_shared<NetInstance::Fabric>(0, "plane0");
+
+    netInstMixPcie->AddRankId(peer0->GetRankId());
+    netInstMixPcie->AddRankId(peer1->GetRankId());
+    netInstMixPcie->AddRankId(peer2->GetRankId());
+    netInstMixPcie->AddRankId(peer3->GetRankId());
+
+    netInstMixPcie->AddNode(peer0);
+    netInstMixPcie->AddNode(peer1);
+    netInstMixPcie->AddNode(peer2);
+    netInstMixPcie->AddNode(peer3);
+    netInstMixPcie->AddNode(fabric);
+
+    peer0->AddNetInstance(netInstMixPcie);
+    peer1->AddNetInstance(netInstMixPcie);
+    peer2->AddNetInstance(netInstMixPcie);
+    peer3->AddNetInstance(netInstMixPcie);
+
+    rankGraph.AddPeer(peer0);
+    rankGraph.AddPeer(peer1);
+    rankGraph.AddPeer(peer2);
+    rankGraph.AddPeer(peer3);
+    rankGraph.AddNetInstance(netInstMixPcie);
+
+    std::set<std::string> meshPorts = {"0/0"};
+    std::set<LinkProtocol> meshProtocols = {LinkProtocol::UB_TP};
+    auto makeMeshIface = [&](u32 topoInstId) {
+        return std::make_shared<NetInstance::ConnInterface>(IpAddress(0), meshPorts, AddrPosition::DEVICE,
+            LinkType::PEER2PEER, meshProtocols, TopoType::MESH_1D, topoInstId);
+    };
+    auto addMeshLink = [&](NetInstance *netInstance, const std::shared_ptr<NetInstance::Peer> &srcPeer,
+        const std::shared_ptr<NetInstance::Peer> &dstPeer, u32 topoInstId) {
+        auto srcIface = makeMeshIface(topoInstId);
+        auto dstIface = makeMeshIface(topoInstId);
+        srcPeer->AddConnInterface(layer, srcIface);
+        dstPeer->AddConnInterface(layer, dstIface);
+        netInstance->AddLink(std::make_shared<NetInstance::Link>(
+            srcPeer, dstPeer, srcIface, dstIface, LinkType::PEER2PEER, meshProtocols));
+    };
+    addMeshLink(netInstMixPcie.get(), peer0, peer1, mesh01TopoInstId);
+    addMeshLink(netInstMixPcie.get(), peer1, peer0, mesh01TopoInstId);
+    addMeshLink(netInstMixPcie.get(), peer2, peer3, mesh23TopoInstId);
+    addMeshLink(netInstMixPcie.get(), peer3, peer2, mesh23TopoInstId);
+
+    std::set<std::string> ports = {"1/0"};
+    std::set<LinkProtocol> protocols = {LinkProtocol::PCIE};
+    auto makeIface = [&](u32 topoInstId) {
+        return std::make_shared<NetInstance::ConnInterface>(IpAddress(0), ports, AddrPosition::DEVICE,
+            LinkType::PEER2NET, protocols, TopoType::CLOS, topoInstId);
+    };
+
+    auto rank0ToFabricIface = makeIface(closTopoInstId);
+    auto fabricToRank0Iface = makeIface(closTopoInstId);
+    auto rank1ToFabricIface = makeIface(closTopoInstId);
+    auto fabricToRank1Iface = makeIface(closTopoInstId);
+    auto rank2ToFabricIface = makeIface(closTopoInstId);
+    auto fabricToRank2Iface = makeIface(closTopoInstId);
+    auto rank3ToFabricIface = makeIface(closTopoInstId);
+    auto fabricToRank3Iface = makeIface(closTopoInstId);
+    peer0->AddConnInterface(layer, rank0ToFabricIface);
+    peer0->AddConnInterface(layer, fabricToRank0Iface);
+    peer1->AddConnInterface(layer, rank1ToFabricIface);
+    peer1->AddConnInterface(layer, fabricToRank1Iface);
+    peer2->AddConnInterface(layer, rank2ToFabricIface);
+    peer2->AddConnInterface(layer, fabricToRank2Iface);
+    peer3->AddConnInterface(layer, rank3ToFabricIface);
+    peer3->AddConnInterface(layer, fabricToRank3Iface);
+
+    netInstMixPcie->UpdateTopoInst(mesh01TopoInstId, TopoType::MESH_1D, peer0->GetRankId());
+    netInstMixPcie->UpdateTopoInst(mesh01TopoInstId, TopoType::MESH_1D, peer1->GetRankId());
+    netInstMixPcie->UpdateTopoInst(mesh23TopoInstId, TopoType::MESH_1D, peer2->GetRankId());
+    netInstMixPcie->UpdateTopoInst(mesh23TopoInstId, TopoType::MESH_1D, peer3->GetRankId());
+    netInstMixPcie->UpdateTopoInst(closTopoInstId, TopoType::CLOS, peer0->GetRankId());
+    netInstMixPcie->UpdateTopoInst(closTopoInstId, TopoType::CLOS, peer1->GetRankId());
+    netInstMixPcie->UpdateTopoInst(closTopoInstId, TopoType::CLOS, peer2->GetRankId());
+    netInstMixPcie->UpdateTopoInst(closTopoInstId, TopoType::CLOS, peer3->GetRankId());
+    netInstMixPcie->AddLink(std::make_shared<NetInstance::Link>(
+        peer0, fabric, rank0ToFabricIface, nullptr, LinkType::PEER2NET, protocols));
+    netInstMixPcie->AddLink(std::make_shared<NetInstance::Link>(
+        fabric, peer0, nullptr, fabricToRank0Iface, LinkType::PEER2NET, protocols));
+    netInstMixPcie->AddLink(std::make_shared<NetInstance::Link>(
+        peer1, fabric, rank1ToFabricIface, nullptr, LinkType::PEER2NET, protocols));
+    netInstMixPcie->AddLink(std::make_shared<NetInstance::Link>(
+        fabric, peer1, nullptr, fabricToRank1Iface, LinkType::PEER2NET, protocols));
+    netInstMixPcie->AddLink(std::make_shared<NetInstance::Link>(
+        peer2, fabric, rank2ToFabricIface, nullptr, LinkType::PEER2NET, protocols));
+    netInstMixPcie->AddLink(std::make_shared<NetInstance::Link>(
+        fabric, peer2, nullptr, fabricToRank2Iface, LinkType::PEER2NET, protocols));
+    netInstMixPcie->AddLink(std::make_shared<NetInstance::Link>(
+        peer3, fabric, rank3ToFabricIface, nullptr, LinkType::PEER2NET, protocols));
+    netInstMixPcie->AddLink(std::make_shared<NetInstance::Link>(
+        fabric, peer3, nullptr, fabricToRank3Iface, LinkType::PEER2NET, protocols));
+    return std::make_shared<RankGraph>(rankGraph);
+}
+
 TEST_F(RankGraphTest, ut_GetLayerRanks_When_Normal_Expect_SUCCESS) {
     auto rankGraph = create4pRankGraph(myRank);
     EXPECT_EQ(4, rankGraph->GetLayerRanks(0));
@@ -291,13 +398,16 @@ TEST_F(RankGraphTest, ut_IsSymmetric_When_Normal_Expect_SUCCESS) {
 }
 
 TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
-    auto rankGraph = create4pRankGraph(myRank);
-    vector<u32> subRankIds = {0, 2};
+    auto rankGraph = create4pclosRankGraph(myRank);
+    constexpr u32 layer = 0;
+    constexpr u32 missingTopoInstId = 0;
+    constexpr u32 nullTopoInstId = 1;
+    constexpr u32 noParentTopoInstId = 2;
+    constexpr u32 parentTopoInstId = 3;
+
+    vector<u32> subRankIds = {0, 1, 2, 3};
     std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(subRankIds);
-    subRankGraph->Dump();
-    EXPECT_EQ(1, subRankGraph->GetLocalInstSize(0));
-    EXPECT_EQ(2, subRankGraph->GetLocalInstSize(1));
-    EXPECT_EQ(2, subRankGraph->GetLocalInstSize(2));
+    EXPECT_EQ(4, subRankGraph->GetLocalInstSize(layer));
 }
 
 TEST_F(RankGraphTest, ut_GetEndpointNum_When_Normal_Expect_SUCCESS)

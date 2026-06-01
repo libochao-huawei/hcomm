@@ -224,6 +224,8 @@ extern void ProcExecTimeOut(u32 &timeOut);
 
 extern void CheckRDMATrafficClass(const u32 &rdmaTrafficClass);
 
+extern void ConvertUnitQpThreshold(u32 &multiQpThreshold);
+
 } // namespace Hccl
 
 #endif // HCCLV2_ENV_FUNC_H

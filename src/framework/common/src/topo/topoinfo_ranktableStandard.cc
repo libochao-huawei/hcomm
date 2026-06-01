@@ -100,7 +100,7 @@ HcclResult TopoinfoRanktableStandard::ParserClusterInfo(hccl::HcclCommParams &pa
             CHK_RET(CheckRankId(identify_.c_str()));
             if (SalStrToULong(identify_, HCCL_BASE_DECIMAL, rankId) != HCCL_SUCCESS) {
                 RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-                    std::vector<std::string>({ "[" + identify_ + "]", "[rank_id]", "is a valid integer." }));
+                    std::vector<std::string>({ identify_, "rank_id", "a valid integer." }));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] identify[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), identify_.c_str());
                 return HCCL_E_PARA;
@@ -118,7 +118,7 @@ HcclResult TopoinfoRanktableStandard::ParserClusterInfo(hccl::HcclCommParams &pa
             RPT_INPUT_ERR(true,
                 "EI0014",
                 std::vector<std::string>({ "value", "variable" ,"expect" }),
-                std::vector<std::string>({"[" + identify_ + "]", "[rank_id]", "is a valid integer"}));
+                std::vector<std::string>({identify_, "rank_id", "a valid integer"}));
             HCCL_ERROR("[%s][%s]rankid[%u] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), rankId);
             return HCCL_E_PARA;
@@ -618,7 +618,7 @@ HcclResult TopoinfoRanktableStandard::GetDevList(nlohmann::json &instanceList, u
         rankinfo.deviceInfo.devicePhyId = devicePhyId;
         if (SalStrToULong(rankId, HCCL_BASE_DECIMAL, rankinfo.rankId) != HCCL_SUCCESS) {
             RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-                std::vector<std::string>({ "[" + rankId + "]", "[rank_id]", "is a valid integer" }));
+                std::vector<std::string>({ rankId, "rank_id", "a valid integer" }));
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankid[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankId.c_str());
             return HCCL_E_PARA;

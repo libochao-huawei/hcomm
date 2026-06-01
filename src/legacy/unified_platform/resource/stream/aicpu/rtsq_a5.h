@@ -10,6 +10,7 @@
 #ifndef HCCLV2_RTSQ_A5_H
 #define HCCLV2_RTSQ_A5_H
 #include "rtsq_base.h"
+#include <chrono>
 namespace Hccl {
 
 class RtsqA5 : public RtsqBase {
@@ -45,6 +46,8 @@ public:
     void P2PWriteValue(u64 remoteAddr, u32 writeValue) override;
 
     void UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue) override;
+
+    void RdmaDbSend(const uint64_t &dbAddr, const uint64_t &dbValue) override;
 
     void UbDirectSend(const UbJettyLiteId &jettyLiteId, u32 dwqeSize, const u8 *wqe) override
     {
@@ -83,6 +86,9 @@ private:
     static constexpr u32 perLaunchSqeCnt = 128; // 最大launch 128个SQE
 
     u8 locBuf[rtsqSqeSize * perLaunchSqeCnt]{0};
+
+    u32 rtsqFullTimeoutValue_{1836};
+    std::chrono::duration<u64> rtsqFullTimeout_;
 
     u8 *GetCurrSqeBuffer();
 

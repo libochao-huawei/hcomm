@@ -129,3 +129,43 @@ TEST_F(AicpuCommunicatorTest, Ut_ExecOp_When_SymMemEnabled_Expect_ReturnIsHCCL_S
     hcclCommAicpu->isSymmetricMemory_ = true;
     hcclCommAicpu->ExecOp(newTag, algName, opParam, &commParam);
 }
+
+TEST_F(AicpuCommunicatorTest, Ut_ClearOpResource_AllContainers)
+{
+    HcclCommAicpu *hcclCommAicpu = new HcclCommAicpu;
+    const std::string tag = "test_tag";
+    const u32 rankId = 0;
+
+    // 预置数据到 8 个容器
+    hcclCommAicpu->resMap_[tag] = AlgResourceResponse();
+    hcclCommAicpu->linkRes_[rankId][tag] = nullptr;
+    hcclCommAicpu->linkResSio_[rankId][tag] = nullptr;
+    hcclCommAicpu->linkRdmaRes_[rankId][tag].push_back(nullptr);
+    hcclCommAicpu->linkRdmaResBackUp_[rankId][tag].push_back(nullptr);
+    hcclCommAicpu->tagScratchMem_[tag] = nullptr;
+    hcclCommAicpu->localTagResToObj_[tag].insert(0);
+    hcclCommAicpu->rankTagRemoteRes_[rankId][tag] = HccltagRemoteResV3{};
+
+    HcclResult ret = hcclCommAicpu->ClearOpResource(tag);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 验证所有容器已清除
+    EXPECT_EQ(hcclCommAicpu->resMap_.count(tag), 0);
+    EXPECT_EQ(hcclCommAicpu->linkRes_[rankId].count(tag), 0);
+    EXPECT_EQ(hcclCommAicpu->linkResSio_[rankId].count(tag), 0);
+    EXPECT_EQ(hcclCommAicpu->linkRdmaRes_[rankId].count(tag), 0);
+    EXPECT_EQ(hcclCommAicpu->linkRdmaResBackUp_[rankId].count(tag), 0);
+    EXPECT_EQ(hcclCommAicpu->tagScratchMem_.count(tag), 0);
+    EXPECT_EQ(hcclCommAicpu->localTagResToObj_.count(tag), 0);
+    EXPECT_EQ(hcclCommAicpu->rankTagRemoteRes_[rankId].count(tag), 0);
+
+    delete hcclCommAicpu;
+}
+
+TEST_F(AicpuCommunicatorTest, Ut_ClearOpResource_TagNotFound)
+{
+    HcclCommAicpu *hcclCommAicpu = new HcclCommAicpu;
+    HcclResult ret = hcclCommAicpu->ClearOpResource("nonexistent_tag");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    delete hcclCommAicpu;
+}

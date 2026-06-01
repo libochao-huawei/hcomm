@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <thread>
 #include "rank_info_detect_client.h"
 #include "root_handle_v2.h"
 #include "env_config.h"
@@ -23,7 +24,7 @@
 
 namespace Hccl {
 
-void RankInfoDetectClient::Setup(RankTableInfo &rankTable)
+void RankInfoDetectClient::Setup(RankTableInfo &rankTable, u32 hostPort)
 {
     // 1. 构造localRankTable
     RankTableInfo localRankTable{};
@@ -31,6 +32,7 @@ void RankInfoDetectClient::Setup(RankTableInfo &rankTable)
 
     // 若启用单卡多进程抢占端口则执行
     SocketManager::ServerInitAll(localRankTable.ranks[0]);
+    localRankTable.ranks[0].hostPort = hostPort;
 
     // 2. 连接root节点
     Connect();
@@ -472,9 +474,12 @@ void RankInfoDetectClient::TearDown()
     // deinit handle
     HostSocketHandleManager::GetInstance().Destroy(devPhyId_, clientSocket_->GetLocalIp());
 
-    // deinit ra
+    // deinit ra in detach thread to avoid block main thread
     s32 deviceLogicId = HrtGetDevice();
-    HccpPeerManager::GetInstance().DeInit(deviceLogicId);
+    std::thread{[deviceLogicId](){
+        EXECEPTION_CATCH(HccpPeerManager::GetInstance().DeInit(deviceLogicId),
+            HCCL_ERROR("[RankInfoDetectClient::TearDown] DeInit exception"));
+    }}.detach();
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
 }

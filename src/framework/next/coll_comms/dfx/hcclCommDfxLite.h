@@ -38,18 +38,16 @@ public:
         return addTaskCallback_;
     }
     // 将remoteRankId添加到channelRemoteRankId_表中
-    static void AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId);
+    void AddChannelRemoteRankId(u64 handle, u32 remoteRankId);
     // 在channelRemoteRankId_表中对remoteRankId进行查找
-    static HcclResult GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId);
+    HcclResult GetChannelRemoteRankId(u64 handle, u32& remoteRankId);
 private:
     std::unique_ptr<Hccl::MirrorTaskManagerLite> mirrorTaskManagerLite_;
     std::unique_ptr<HcclCommProfilingLite> profilingImpl_;
-    static std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankIdLite_;
+    std::unordered_map<u64, u32> channelRemoteRankIdLite_;
     std::string commTag_;
     u32 deviceId_;
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> addTaskCallback_;
-    static ReadWriteLockBase baseLockLite_; // 基类锁成员
-    static ReadWriteLock rwLockLite_; // 读写锁
 };
 
 }
