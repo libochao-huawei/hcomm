@@ -371,6 +371,9 @@ public:
     bool GetAicpuCommState();
     HcclResult KernelLaunchAicpuCommInit();
     bool IsCommunicatorV2();
+    ThreadHandle GetDedicatedThread(uint8_t useType);
+    HcclResult SetDedicatedThread(uint8_t useType, ThreadHandle thread);
+    bool HasDedicatedThread(uint8_t useType);
 #ifndef HCCD
     HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
         HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config,
@@ -424,6 +427,8 @@ public:
     HcclResult DeregisterWindow(HcclCommSymWindow winHandle);
     HcclResult GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
     aclrtBinHandle GetBinHandle();
+    aclrtBinHandle GetBinHcclHandle();
+    std::mutex &GetDedicatedThreadMutex();
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;
@@ -456,8 +461,11 @@ private:
     bool isAicpuCommInit_ = false;
     CommAicpuParam commAicpuParam_;
     aclrtBinHandle binHandle_ = nullptr;
+    aclrtBinHandle binHcclHandle_ = nullptr;
     DevType devType_ = DevType::DEV_TYPE_COUNT;
     u32 hcclQos_;
+    std::mutex dedicatedThreadMutex_;
+    std::unordered_map<uint8_t, ThreadHandle> dedicatedThreadMap_;
 #ifndef CCL_KERNEL_AICPU
     // 独立算子专用成员变量
     IndependentOp independentOp_;

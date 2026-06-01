@@ -162,6 +162,20 @@ extern HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t t
 extern HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine, aclrtStream stream,
     uint32_t notifyNum, ThreadHandle *thread);
 
+/**
+ * @brief 申请专用thread（AICPU展开流）
+ *
+ * @param[in] comm 通信域句柄
+ * @param[in] useType 专用线程使用类型（AICPU_KERNEL等）
+ * @param[in] notifyNumPerThread 每个通信线程中的同步资源（Notify）数量
+ * @param[out] thread 返回的线程句柄
+ * @return HcclResult 执行结果状态码
+ * @note 内部逻辑：先判断通信域中是否已存在该useType对应的专用线程，
+ *       若存在则直接返回，不存在则调用HcclThreadAcquire创建并缓存
+ */
+extern HcclResult HcclDedicatedThreadAcquire(HcclComm comm, uint8_t useType,
+    uint32_t notifyNumPerThread, ThreadHandle *thread);
+
 /** @} */  // 通信引擎资源管理
 
 /**

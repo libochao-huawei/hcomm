@@ -1,16 +1,17 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "hccl_aicpu_interface.h"
 
 #include <sstream>
+#include <dlfcn.h>
 #include "common/aicpu_hccl_common.h"
 #include "common/aicpu_hccl_def.h"
 #include "common/aicpu_sqe_context.h"
@@ -19,6 +20,8 @@
 #include "utils/hccl_aicpu_utils.h"
 #include "framework/aicpu_communicator.h"
 #include "utils/aicpu_hdc_utils.h"
+#include "hccl_group_utils.h"
+#include "hccl_dl.h"
 
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuKfcResInitV2(void *args)
@@ -116,5 +119,129 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *arg
     }
     HCCL_INFO("end RunAicpuRpcSrvLaunchV2");
     return 0;
+}
+
+__attribute__((visibility("default"))) uint32_t RunAicpuNotifyRecord(void *args)
+{
+    if (args == nullptr) {
+        HCCL_ERROR("RunAicpuNotifyRecord args is null.");
+        return HCCL_E_PARA;
+    }
+    ThreadNotifyRecordParam *param = reinterpret_cast<ThreadNotifyRecordParam *>(args);
+    HCCL_INFO("[RunAicpuNotifyRecord] thread[0x%llx], dstThread[0x%llx], dstNotifyIdx[%u]",
+        param->thread, param->dstThread, param->dstNotifyIdx);
+    int32_t ret = HcommThreadNotifyRecordOnThread(param->thread, param->dstThread, param->dstNotifyIdx);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("RunAicpuNotifyRecord failed. ret[%d]", ret);
+        return ret;
+    }
+    HCCL_INFO("RunAicpuNotifyRecord success.");
+    return HCCL_SUCCESS;
+}
+
+__attribute__((visibility("default"))) uint32_t RunAicpuNotifyWait(void *args)
+{
+    if (args == nullptr) {
+        HCCL_ERROR("RunAicpuNotifyWait args is null.");
+        return HCCL_E_PARA;
+    }
+    ThreadNotifyWaitParam *param = reinterpret_cast<ThreadNotifyWaitParam *>(args);
+    HCCL_INFO("[RunAicpuNotifyWait] thread[0x%llx], notifyIdx[%u], timeOut[%u]",
+        param->thread, param->notifyIdx, param->timeOut);
+    int32_t ret = HcommThreadNotifyWaitOnThread(param->thread, param->notifyIdx, param->timeOut);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("RunAicpuNotifyWait failed. ret[%d]", ret);
+        return ret;
+    }
+    HCCL_INFO("RunAicpuNotifyWait success.");
+    return HCCL_SUCCESS;
+}
+
+__attribute__((visibility("default"))) uint32_t HcclP2pLaunchNonGroupSynAicpuKernel(void *args)
+{
+    if (args == nullptr) {
+        HCCL_ERROR("HcclP2pLaunchNonGroupSynAicpuKernel args is null.");
+        return HCCL_E_PARA;
+    }
+
+    P2pAicpuKernelParam *param = reinterpret_cast<P2pAicpuKernelParam *>(args);
+    HCCL_INFO("[HcclP2pLaunchNonGroupSynAicpuKernel] waitThread[0x%llx], notifyIdx[%u], timeOut[%u]",
+        param->waitParam.thread, param->waitParam.notifyIdx, param->waitParam.timeOut);
+
+    int32_t ret = HcommThreadNotifyWaitOnThread(param->waitParam.thread, param->waitParam.notifyIdx,
+        param->waitParam.timeOut);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HcclP2pLaunchNonGroupSynAicpuKernel NotifyWait failed. ret[%d]", ret);
+        return ret;
+    }
+    HCCL_INFO("HcclP2pLaunchNonGroupSynAicpuKernel NotifyWait success.");
+
+    void *handle = HcclDlopen(param->funcInfo.kernelSo, RTLD_NOW);
+    if (handle == nullptr) {
+        HCCL_ERROR("HcclP2pLaunchNonGroupSynAicpuKernel dlopen %s failed.", param->funcInfo.kernelSo);
+        return HCCL_E_INTERNAL;
+    }
+
+    typedef unsigned int (*P2pKernelFunc)(void*, ThreadHandle);
+    P2pKernelFunc func = reinterpret_cast<P2pKernelFunc>(HcclDlsym(handle, param->funcInfo.kernelFuncName));
+    if (func == nullptr) {
+        HCCL_ERROR("HcclP2pLaunchNonGroupSynAicpuKernel dlsym %s failed.", param->funcInfo.kernelFuncName);
+        HcclDlclose(handle);
+        return HCCL_E_INTERNAL;
+    }
+
+    unsigned int funcRet = func(param->funcArgs, param->sendRecvStream);
+    HcclDlclose(handle);
+
+    if (funcRet != 0) {
+        HCCL_ERROR("HcclP2pLaunchNonGroupSynAicpuKernel func execute failed. ret[%u]", funcRet);
+        return HCCL_E_INTERNAL;
+    }
+    HCCL_INFO("HcclP2pLaunchNonGroupSynAicpuKernel func execute success.");
+
+    ret = HcommThreadNotifyRecordOnThread(param->recordParam.thread, param->recordParam.dstThread,
+        param->recordParam.dstNotifyIdx);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("HcclP2pLaunchNonGroupSynAicpuKernel NotifyRecord failed. ret[%d]", ret);
+        return ret;
+    }
+    HCCL_INFO("HcclP2pLaunchNonGroupSynAicpuKernel NotifyRecord success.");
+
+    return HCCL_SUCCESS;
+}
+
+__attribute__((visibility("default"))) uint32_t HcclP2pLaunchGroupAicpuKernel(void *args)
+{
+    if (args == nullptr) {
+        HCCL_ERROR("HcclP2pLaunchNonGroupSynAicpuKernel args is null.");
+        return HCCL_E_PARA;
+    }
+
+    P2pGroupAicpuKernelParam *param = reinterpret_cast<P2pGroupAicpuKernelParam *>(args);
+    HCCL_INFO("[HcclP2pLaunchGroupAicpuKernel] kernelSo[%s], kernelFuncName[%s]",
+        param->funcInfo.kernelSo, param->funcInfo.kernelFuncName);
+    void *handle = HcclDlopen(param->funcInfo.kernelSo, RTLD_NOW);
+    if (handle == nullptr) {
+        HCCL_ERROR("HcclP2pLaunchGroupAicpuKernel dlopen %s failed.", param->funcInfo.kernelSo);
+        return HCCL_E_INTERNAL;
+    }
+
+    typedef unsigned int (*P2pKernelFunc)(void*, ThreadHandle);
+    P2pKernelFunc func = reinterpret_cast<P2pKernelFunc>(HcclDlsym(handle, param->funcInfo.kernelFuncName));
+    if (func == nullptr) {
+        HCCL_ERROR("HcclP2pLaunchGroupAicpuKernel dlsym %s failed.", param->funcInfo.kernelFuncName);
+        HcclDlclose(handle);
+        return HCCL_E_INTERNAL;
+    }
+
+    unsigned int funcRet = func(param->funcArgs, param->sendRecvStream);
+    HcclDlclose(handle);
+
+    if (funcRet != 0) {
+        HCCL_ERROR("HcclP2pLaunchNonGroupSynAicpuKernel func execute failed. ret[%u]", funcRet);
+        return HCCL_E_INTERNAL;
+    }
+    HCCL_INFO("HcclP2pLaunchNonGroupSynAicpuKernel func execute success.");
+    return HCCL_SUCCESS;
 }
 }  // extern "C"
