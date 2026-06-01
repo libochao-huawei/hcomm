@@ -177,11 +177,29 @@ HcclResult hcclCreateAscendQPWithCQWithAttr(AscendCQInfo* ascendSendCQInfo, Asce
         ascendQPInfo->qp_type = ASCEND_QPT_RC;
     }
 
-    u32 poolId;
-    if (HCCL_SUCCESS == RdmaResourceManager::GetInstance().GetResvMemPoolIdByType(HCCN_RESV_MEM_TYPE_PDCCL, poolId)) {
-        qpConfigInfo.use_resv_mem = 1;
-        qpConfigInfo.resv_mem_pool_id = poolId;
+    qpConfigInfo.sq_sig_all = ascendQPInfo->sqSigAll;
+
+    if (ascendQPInfo->cap.maxSendSge == 0) {
+        qpConfigInfo.max_send_sge = DEFAULT_MAX_SEND_SGE;
+    } else {
+        qpConfigInfo.max_send_sge = ascendQPInfo->cap.maxSendSge;
     }
+    if (ascendQPInfo->cap.maxRecvSge == 0) {
+        qpConfigInfo.max_recv_sge = DEFAULT_MAX_RECV_SGE;
+    } else {
+        qpConfigInfo.max_recv_sge = ascendQPInfo->cap.maxRecvSge;
+    }
+    if (ascendQPInfo->cap.maxInlineData == 0) {
+        qpConfigInfo.max_inline_data = DEFAULT_MAX_INLINE_DATA;
+    } else {
+        qpConfigInfo.max_inline_data = ascendQPInfo->cap.maxInlineData;
+    }
+
+    // u32 poolId;
+    // if (HCCL_SUCCESS == RdmaResourceManager::GetInstance().GetResvMemPoolIdByType(HCCN_RESV_MEM_TYPE_PDCCL, poolId)) {
+    //     qpConfigInfo.use_resv_mem = 1;
+    //     qpConfigInfo.resv_mem_pool_id = poolId;
+    // }
     CHK_RET(TypicalQpManager::GetInstance().CreateQpWithCQ(qpInfo, qpConfigInfo));
     ascendQPInfo->qpn = qpInfo.qpn;
     ascendQPInfo->gidIdx = qpInfo.gidIdx;
@@ -208,6 +226,7 @@ HcclResult hcclDestroyAscendVerbsQP(AscendVerbsQPInfo* ascendQPInfo)
     }
     qpInfo.psn = ascendQPInfo->psn;
     CHK_RET(TypicalQpManager::GetInstance().DestroyQpWithoutCQ(qpInfo));
+    HCCL_INFO("hcclDestroyAscendVerbsQP success! qpn[%u]", ascendQPInfo->qpn);
     return HCCL_SUCCESS;
 }
 

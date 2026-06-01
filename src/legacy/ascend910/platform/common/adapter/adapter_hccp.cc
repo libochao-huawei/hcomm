@@ -3128,13 +3128,14 @@ HcclResult CreateQpWithCQConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfi
     ext_attrs.qpAttr.cap.max_send_wr = qpConfig.sq_depth;
     ext_attrs.qpAttr.cap.max_recv_wr = qpConfig.rq_depth;
     ext_attrs.version = QP_CREATE_WITH_ATTR_VERSION;
-    ext_attrs.qpAttr.cap.max_inline_data = DEFAULT_MAX_INLINE_DATA;
-    ext_attrs.qpAttr.cap.max_send_sge = DEFAULT_MAX_SEND_SGE;
-    ext_attrs.qpAttr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
+    ext_attrs.qpAttr.cap.max_inline_data = qpConfig.max_inline_data;
+    ext_attrs.qpAttr.cap.max_send_sge = qpConfig.max_send_sge;
+    ext_attrs.qpAttr.cap.max_recv_sge = qpConfig.max_recv_sge;
     ext_attrs.qpAttr.qp_type = IBV_QPT_RC;
+    ext_attrs.qpAttr.sq_sig_all = qpConfig.sq_sig_all;
     ext_attrs.udpSport = 0x0;
-    ext_attrs.cstmFlag.bs.useResvMem = qpConfig.use_resv_mem;
-    ext_attrs.resvMemPoolId = qpConfig.resv_mem_pool_id;
+    // ext_attrs.cstmFlag.bs.useResvMem = qpConfig.use_resv_mem;
+    // ext_attrs.resvMemPoolId = qpConfig.resv_mem_pool_id;
 
     CHK_RET(hrtRaQpCreateWithCQWithAttrs(rdmaHandle, &ext_attrs, qpConfig.sendCqn, qpConfig.recvCqn, qpHandle));
 
