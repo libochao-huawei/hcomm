@@ -13,6 +13,9 @@
 
 #include "hccl_group.h"
 
+#include "param_check_basic_v2.h"
+#include "coll_comm_group.h"
+
 using namespace hccl;
 
 thread_local s32 hcclGroupDepth = 0;
@@ -21,6 +24,7 @@ thread_local std::vector<HcclComm> hcclGroupCommList;
 
 HcclResult HcclGroupStart()
 {
+    HCCLV2_FUNC_RUN(HcclGroupStartV2());
     hcclGroupDepth++;
     HCCL_INFO("[HcclGroupStart] hcclGroupDepth=[%d]", hcclGroupDepth);
     return HCCL_SUCCESS;
@@ -261,6 +265,8 @@ inline void groupLocalResetJobState()
 
 HcclResult HcclGroupEnd()
 {
+    HCCLV2_FUNC_RUN(HcclGroupEndV2());
+
     if (hcclGroupDepth == 0) {
         HCCL_ERROR("HcclGroupEnd: not in a group call. Didn't call HcclGroupStart before.");
         return HCCL_E_NOT_SUPPORT;
