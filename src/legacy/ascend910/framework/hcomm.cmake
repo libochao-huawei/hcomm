@@ -126,6 +126,7 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_link_libraries(hcomm
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:error_manager_headers>
         $<BUILD_INTERFACE:acl_rt_headers>
         $<BUILD_INTERFACE:asc_host_headers>
@@ -160,6 +161,7 @@ else()
         ${TOP_DIR}/inc/aicpu
     )
     target_link_libraries(hcomm
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:kernel_tiling_headers>
         -Wl,--no-as-needed
         c_sec

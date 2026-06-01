@@ -45,6 +45,7 @@ target_link_options(ccl_dpu PRIVATE
 
 # 链接库
 target_link_libraries(ccl_dpu
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:atrace_headers>
     $<BUILD_INTERFACE:runtime_headers>
     $<BUILD_INTERFACE:slog_headers>
