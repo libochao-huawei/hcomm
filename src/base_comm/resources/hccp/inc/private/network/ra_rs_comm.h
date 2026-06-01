@@ -137,6 +137,7 @@ enum OpType {
     RA_RS_QP_CREATE_WITH_CQ_WITH_ATTRS = 114,
     RA_RS_TYPICAL_CQ_DESTROY = 115,
     RA_RS_QP_DESTROY_WITHOUT_CQ = 116,
+    RA_RS_GET_LITE_QP_ATTR = 117,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode
@@ -246,6 +247,11 @@ struct LiteQpCqAttrResp {
     struct rdma_lite_device_qp_attr qpData;
     struct rdma_lite_device_cq_attr sendCqData;
     struct rdma_lite_device_cq_attr recvCqData;
+    unsigned char reserved[HOST_LITE_RESERVED];
+};
+
+struct LiteQpAttrResp {
+    struct rdma_lite_device_qp_attr qpData;
     unsigned char reserved[HOST_LITE_RESERVED];
 };
 

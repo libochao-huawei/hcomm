@@ -208,6 +208,7 @@ HcclResult hcclDestroyAscendVerbsQP(AscendVerbsQPInfo* ascendQPInfo)
     }
     qpInfo.psn = ascendQPInfo->psn;
     CHK_RET(TypicalQpManager::GetInstance().DestroyQpWithoutCQ(qpInfo));
+    HCCL_INFO("hcclDestroyAscendVerbsQP success! qpn[%u]", ascendQPInfo->qpn);
     return HCCL_SUCCESS;
 }
 
