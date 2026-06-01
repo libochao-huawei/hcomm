@@ -342,6 +342,62 @@ void AicpuHcclProcess::AicpuReleaseCommbyGroup(const std::string &group)
     rwlock.readUnlock();
 }
 
+u32 AicpuHcclProcess::AicpuRpcClearOpRes(const struct HcclKfcClearOpResTilingData *tilingData)
+{
+    if (tilingData == nullptr) {
+        HCCL_ERROR("[AicpuRpcClearOpRes] tilingData is null");
+        return HCCL_E_PARA;
+    }
+    if (tilingData->magic != HCCL_KFC_CLEAR_OP_RES_MAGIC) {
+        HCCL_ERROR("[AicpuRpcClearOpRes] magic mismatch: expect[0x%x] actual[0x%x], reject as misroute",
+            HCCL_KFC_CLEAR_OP_RES_MAGIC, tilingData->magic);
+        return HCCL_E_PARA;
+    }
+    if (tilingData->tagCount == 0 || tilingData->tagCount > HCCL_KFC_CLEAR_OP_RES_MAX_BATCH) {
+        HCCL_ERROR("[AicpuRpcClearOpRes] invalid tagCount[%u], must be in [1, %u]",
+            tilingData->tagCount, HCCL_KFC_CLEAR_OP_RES_MAX_BATCH);
+        return HCCL_E_PARA;
+    }
+
+    // group 来自 host 端共享 HBM；按 C 字符串语义截断，确保不越界
+    char group[HCOMID_MAX_LENGTH + 1] = {0};
+    if (memcpy_s(group, sizeof(group) - 1, tilingData->group, HCOMID_MAX_LENGTH) != EOK) {
+        HCCL_ERROR("[AicpuRpcClearOpRes] memcpy_s group failed");
+        return HCCL_E_MEMORY;
+    }
+    const std::string groupStr(group);
+
+    // GetCommbyGroup 独占占用槽位（与 ExecOp 互斥），一次覆盖整批 tag 避免循环内反复抢占；超时 10ms 返回 nullptr
+    hccl::HcclCommAicpu *commAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(groupStr);
+    if (commAicpu == nullptr) {
+        HCCL_WARNING("[AicpuRpcClearOpRes] group[%s] not found or busy, skip batch; tagCount[%u]",
+            groupStr.c_str(), tilingData->tagCount);
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult lastErr = HCCL_SUCCESS;
+    for (u32 i = 0; i < tilingData->tagCount; ++i) {
+        char tag[TAG_MAX_LENGTH + 1] = {0};
+        if (memcpy_s(tag, sizeof(tag) - 1, tilingData->tags[i], TAG_MAX_LENGTH) != EOK) {
+            HCCL_ERROR("[AicpuRpcClearOpRes] memcpy_s tag failed, group[%s] idx[%u]", groupStr.c_str(), i);
+            lastErr = HCCL_E_MEMORY;
+            continue;
+        }
+        const std::string tagStr(tag);
+        HcclResult ret = commAicpu->ClearOpResource(tagStr);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[AicpuRpcClearOpRes] ClearOpResource fail, group[%s] tag[%s] ret[%d]",
+                groupStr.c_str(), tagStr.c_str(), ret);
+            lastErr = ret;
+            // 单 tag 失败不影响后续 tag, 尽量清干净
+        }
+    }
+    AicpuHcclProcess::AicpuReleaseCommbyGroup(groupStr);
+    HCCL_INFO("[AicpuRpcClearOpRes] group[%s] processed batch tagCount[%u] lastErr[%d]",
+        groupStr.c_str(), tilingData->tagCount, lastErr);
+    return static_cast<u32>(lastErr);
+}
+
 HcclResult AicpuHcclProcess::AicpuGetCommAll(std::vector<std::pair<std::string, HcclCommAicpu *>> &aicpuCommInfo)
 {
     for (auto &kv : g_commAicpuInfo.commMap) {
