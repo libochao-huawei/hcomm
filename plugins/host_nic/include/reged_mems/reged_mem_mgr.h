@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef REGED_MEM_MGR_H
-#define REGED_MEM_MGR_H
+#ifndef HCOMM_HOST_NIC_REGED_MEM_MGR_H
+#define HCOMM_HOST_NIC_REGED_MEM_MGR_H
 
 #include <memory>
 #include "hcomm_c_adpt.h"
@@ -16,7 +16,7 @@
 
 using RdmaHandle = void *;
 
-namespace hcomm {
+namespace hcomm_host_nic {
 /**
  * @note 职责：用于通信设备EndPoint的注册内存信息管理，支持基于RmaBufferMgr类的重叠内存的检测报错等。
  */
@@ -52,4 +52,4 @@ public:
 };
 }
 
-#endif // REGED_MEM_MGR_H
+#endif // HCOMM_HOST_NIC_REGED_MEM_MGR_H

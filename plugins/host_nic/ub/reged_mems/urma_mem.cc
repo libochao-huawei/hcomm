@@ -19,7 +19,7 @@
 #include "remote_rma_buffer.h"
 #include "local_ub_rma_buffer.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 
 UbRegedMemMgr::UbRegedMemMgr()
 {

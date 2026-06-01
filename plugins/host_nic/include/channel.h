@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef CHANNEL_H
-#define CHANNEL_H
+#ifndef HCOMM_HOST_NIC_CHANNEL_H
+#define HCOMM_HOST_NIC_CHANNEL_H
 
 #include <memory>
 #include <vector>
@@ -30,7 +30,7 @@
 #include "topo_common_types.h"
 #include "virtual_topo.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 
 MAKE_ENUM(ChannelStatus, INIT, SOCKET_OK, SOCKET_TIMEOUT, READY, FAILED)
 
@@ -104,5 +104,5 @@ protected:
     std::vector<std::shared_ptr<hccl::DeviceMem>> ptrArrayDevMems_{};
 };
 
-} // namespace hcomm
-#endif // CHANNEL_H
+} // namespace hcomm_host_nic
+#endif // HCOMM_HOST_NIC_CHANNEL_H

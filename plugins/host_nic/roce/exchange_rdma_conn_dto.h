@@ -15,7 +15,7 @@
 #include "binary_stream.h"
 #include "serializable.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 class ExchangeRdmaConnDto : public Hccl::Serializable {
 public:
     ExchangeRdmaConnDto(){};
@@ -45,6 +45,6 @@ public:
     uint8_t gid_[HCCP_GID_RAW_LEN];
 };
 
-} // namespace Hccl
+} // namespace hcomm_host_nic
 
 #endif // HCCLV2_EXCHANGE_RDMA_CONN_DTO_H

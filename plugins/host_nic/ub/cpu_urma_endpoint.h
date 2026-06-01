@@ -17,7 +17,7 @@
 #include "ccu_channel_ctx_pool.h"
 #include "socket/socket.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 class CpuUrmaEndpoint : public Endpoint {
 public:
     explicit CpuUrmaEndpoint(const EndpointDesc &endpointDesc);

@@ -28,7 +28,7 @@
 #include "exchange_data_format.h"
 #include "private_types.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 
 class HostCpuRoceChannel final : public Channel {
 public:
@@ -186,6 +186,6 @@ private:
     uint32_t devicePhyId_{};
 };
 
-} // namespace hcomm
+} // namespace hcomm_host_nic
 
 #endif // HOST_CPU_ROCE_CHANNEL_H

@@ -25,7 +25,7 @@
 #include "aicpu_res_package_helper.h"
 #include "hcomm_adapter_hccp.h"
 
-namespace hcomm {
+namespace hcomm_host_nic {
 
 class HostCpuUrmaChannel : public Channel {
 public:
@@ -94,6 +94,6 @@ private:
     uint32_t devicePhyId_{};
 };
 
-} // namespace hcomm
+} // namespace hcomm_host_nic
 
 #endif // HOST_CPU_URMA_CHANNEL_H
