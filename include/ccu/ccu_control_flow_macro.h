@@ -14,16 +14,15 @@
 #include "ccu_variable.hpp"
 #include "ccu_primitives_impl.h"
 
-
-
 #define CCU_CONCAT_INNER(a, b) a##b
+
 #define CCU_CONCAT(a, b)       CCU_CONCAT_INNER(a, b)
+
 #define CCU_STRINGIFY_INNER(x) #x
+
 #define CCU_STRINGIFY(x)       CCU_STRINGIFY_INNER(x)
 
-
 #define CCU_LABEL(uid) (__FILE__ ":" CCU_STRINGIFY(__LINE__) ":" CCU_STRINGIFY(uid))
-
 
 #define CCU_WHILE(expr)                                                     \
     CCU_WHILE_EXPAND(expr, CCU_CONCAT(__ccu_wh_, __COUNTER__))
@@ -89,8 +88,6 @@
          uid##_done = 1,                                                    \
              uid##_rc = (int)CcuIfEnd(uid##_lbl))
 
-
-
 #define CCU_DO                                                              \
     CCU_DO_EXPAND(CCU_CONCAT(__ccu_dw_, __COUNTER__))
 
@@ -103,6 +100,5 @@
          uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
          uid##_done = 1,                                                    \
              _CcuDoWhileStackPush(CCU_LABEL(uid)))
-
 
 #endif // CCU_CONTROL_FLOW_MACRO_H
