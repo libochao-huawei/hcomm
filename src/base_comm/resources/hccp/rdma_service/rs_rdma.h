@@ -37,6 +37,15 @@ struct RsQpLenInfo {
     uint32_t len;
 };
 
+struct RsTypicalCqEntry {
+    unsigned int phyId;
+    unsigned int rdevIndex;
+    unsigned int cqn;
+    struct ibv_cq *ibCq;
+    struct rdma_lite_device_cq_attr deviceCqAttr;
+    struct RsListHead list;
+};
+
 int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
 void RsMrRelease(struct RsQpCb *qpCb);
 
