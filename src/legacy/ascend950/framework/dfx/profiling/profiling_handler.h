@@ -162,7 +162,7 @@ private:
                             uint32_t threadId) const;
 
     void ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId, bool cachedReq);
-    void ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void* data, uint32_t len) const;
+    void ReportAdditionInfo(const MsprofAdditionalInfo& reporterData) const;
 
     void StartSubscribe(uint64_t profconfig);
     void StartTaskApiSubscribe();

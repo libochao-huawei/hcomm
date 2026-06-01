@@ -32,7 +32,6 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     addTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
         return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
     };
-    HCCL_INFO("[HcclCommDfxLite][Init] Init success");
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
@@ -52,6 +51,17 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
 }
 
 // HcclCommDfxLite接口实现 - 修改为返回HcclResult类型
+void HcclCommDfxLite::SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo)
+{
+    if (mirrorTaskManagerLite_) {
+        mirrorTaskManagerLite_->SetCurrDfxOpInfo(dfxOpInfo);
+    }
+    if (dfxOpInfo != nullptr) {
+        Hccl::ProfilingHandlerLite::GetInstance().SetCachedCclTag(dfxOpInfo->tag_);
+        Hccl::ProfilingHandlerLite::GetInstance().SetCachedGroupName(*dfxOpInfo);
+    }
+}
+
 HcclResult HcclCommDfxLite::ReportAllTasks() {
     CHK_SMART_PTR_NULL(profilingImpl_);
     profilingImpl_->ReportAllTasks();
