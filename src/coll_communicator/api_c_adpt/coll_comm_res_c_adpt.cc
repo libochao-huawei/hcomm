@@ -25,6 +25,10 @@
 #include "hcclCommOp.h"
 #include "rank_consistency_checker_v2.h"
 #include "rank_table_crc_bridge.h"
+#include "hccl_group.h"
+#include "../resource_mgr/local/my_rank/group/coll_comm_group.h"
+#include "param_check_basic_v2.h"
+
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -622,4 +626,25 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
                                         comm, taskParam, rtsThread->GetMaster()));
     EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult HcclGroupStart()
+{
+    return HcclLegacyGroupStart();
+}
+
+HcclResult HcclGroupEnd()
+{
+    if (hcclGroupDepth == 0) {
+        HCCL_ERROR("HcclGroupEnd: not in a group call. Didn't call HcclGroupStart before.");
+        return HCCL_E_NOT_SUPPORT;
+    }
+    if (--hcclGroupDepth > 0) {
+        return HCCL_SUCCESS;
+    }
+    HCCL_INFO("[HcclGroupEnd] hcclGroupDepth=[%d]", hcclGroupDepth);
+    /*遇到最后一个HcclGroupEnd才处理group内的所有任务*/
+    CHK_RET(asyncJobLaunch());
+    HCCLV2_FUNC_RUN(HcclGroupEndV2());
+    return HcclLegacyGroupEnd();
 }
