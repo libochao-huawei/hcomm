@@ -237,7 +237,6 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
         for (std::size_t i = 0; i < taskInfo.argSize; i++) { // args 大小为 13
             constexpr std::size_t TOKEN_VALUE_INDEX = 2; // 与算法约束token index为 2
             if (i == TOKEN_VALUE_INDEX) { continue; }
-            HCCL_INFO("[%s] arg[%lu] = %lu", __func__, i, taskInfo.args[i]);
             taskParam.taskPara.Ccu.costumArgs[i] = taskInfo.args[i];
         }
 
