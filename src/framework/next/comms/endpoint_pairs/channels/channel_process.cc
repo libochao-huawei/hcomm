@@ -584,16 +584,19 @@ HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHa
 HcclResult ChannelProcess::SaveAivChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels,
     HcommChannelDesc *channelDescs, uint32_t channelNum)
 {
+    bool needD2HMap = false;
     for (uint32_t i = 0; i < channelNum; i++) {
         CommProtocol protocol = channelDescs[i].remoteEndpoint.protocol;
 
         if (protocol == COMM_PROTOCOL_ROCE) {
+            needD2HMap = true;
             auto *channel = reinterpret_cast<AicpuTsRoceChannelV2 *>(targetChannels[i]);
             CHK_PTR_NULL(channel);
             CHK_RET(channel->BuildAndGetDevChannelEntity(&userChannels[i]));
             HCCL_INFO("[%s] channel[%u] build dev entity success, devEntityPtr[%p]",
                 __func__, i, reinterpret_cast<void *>(static_cast<uintptr_t>(userChannels[i])));
         } else if (protocol == COMM_PROTOCOL_UBC_CTP || protocol == COMM_PROTOCOL_UBC_TP) {
+            needD2HMap = true;
             auto *channel = reinterpret_cast<AivUrmaChannel *>(targetChannels[i]);
             CHK_PTR_NULL(channel);
 
@@ -611,6 +614,10 @@ HcclResult ChannelProcess::SaveAivChannels(ChannelHandle* targetChannels, Channe
                 "Return host channel handle.",
                 __func__, i, static_cast<int>(protocol));
         }
+    }
+
+    if (needD2HMap) {
+        CHK_RET(FillChannelD2HMap(userChannels, targetChannels, channelNum));
     }
     return HCCL_SUCCESS;
 }
