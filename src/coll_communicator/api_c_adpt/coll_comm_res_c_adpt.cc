@@ -23,6 +23,9 @@
 #include "hccl_ccu_res.h"
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
+#include "hccl_group.h"
+#include "../resource_mgr/local/my_rank/group/coll_comm_group.h"
+#include "param_check_basic_v2.h"
 
 using namespace hccl;
 /**
@@ -593,4 +596,16 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
                                         comm, taskParam, rtsThread->GetMaster()));
     EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult HcclGroupStart()
+{
+    HCCLV2_FUNC_RUN(HcclGroupStartV2());
+    return HcclLegacyGroupStart();
+}
+
+HcclResult HcclGroupEnd()
+{
+    HCCLV2_FUNC_RUN(HcclGroupEndV2());
+    return HcclLegacyGroupEnd();
 }
