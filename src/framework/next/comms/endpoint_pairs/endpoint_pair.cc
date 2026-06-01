@@ -150,14 +150,18 @@ HcclResult EndpointPair::GetSocketInternal(const uint32_t myRank, const uint32_t
 HcclResult EndpointPair::ServerInit(const uint32_t myRank, const uint32_t rmtRank,
     const std::string &socketTag, u32 reuseIdx, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
-    // server异步监听
+    if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
+        // host网卡不走device的socket监听
+        return HCCL_SUCCESS;
+    }
+    // server监听
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank, localEndpointDesc_,
         remoteEndpointDesc_, linkData, devicePhyId, remoteDevicePhyId, reuseIdx));
     EXCEPTION_HANDLE_BEGIN
     CHK_RET(EnsureSocketMgrCompat(myRank, socketTag));
     Hccl::SocketConfig socketConfig = BuildSocketConfig(linkData, socketTag);
-    // 调用sock的server异步监听接口
+    // 调用sock的server监听接口
     socketMgrCompat_->ServerListen(socketConfig); 
     EXCEPTION_HANDLE_END
 

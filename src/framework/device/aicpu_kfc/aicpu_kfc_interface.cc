@@ -395,6 +395,22 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcResInit(void *args) {
     return AicpuKfcProcess::AicpuRpcResInit(reinterpret_cast<HccCommResParamTask *>(ctxArgs->context));
 }
 
+// aclgraph 销毁触发的 tag 清理入口。host 端走 KFCResInitTask{context, isCustom} 模式投递，这里从 context 反解 payload 交给 AicpuHcclProcess
+__attribute__((visibility("default"))) uint32_t RunAicpuKfcClearOpRes(void *args) {
+    if (args == nullptr) {
+        HCCL_ERROR("[RunAicpuKfcClearOpRes] args is null.");
+        return HCCL_E_PARA;
+    }
+    KFCResInitTask *ctxArgs = static_cast<KFCResInitTask *>(args);
+    if (ctxArgs->context == 0) {
+        HCCL_ERROR("[RunAicpuKfcClearOpRes] ctxArgs->context is null.");
+        return HCCL_E_PARA;
+    }
+    const HcclKfcClearOpResTilingData *tilingData =
+        reinterpret_cast<const HcclKfcClearOpResTilingData *>(ctxArgs->context);
+    return AicpuHcclProcess::AicpuRpcClearOpRes(tilingData);
+}
+
 __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunch(void *args)
 {
     KfcState state;

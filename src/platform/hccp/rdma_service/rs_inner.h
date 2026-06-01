@@ -32,7 +32,6 @@
 #ifndef HNS_ROCE_LLT
 #include "dlog_pub.h"
 #endif
-#include "tls.h"
 #include "hccp_common.h"
 #include "hccp_ping.h"
 #include "hccp_nda.h"
@@ -73,6 +72,7 @@
 #define RS_DSCP_OFF        2
 
 #define RS_MAX_FD_NUM 65536
+#define TLS_CA_SSL_MAX_NEW_CERT_NUM 8
 
 #define RS_CONN_EXIT_FLAG 2
 #define RS_TRY_TIME 200
@@ -147,7 +147,6 @@ struct CertFile {
     const char *caFile;
 };
 
-#define TLS_MAGIC_WORDS_LEN 8
 #define TLS_SALT_MAX_LEN 48
 #define TLS_ENC_DEC_DIV_LEN 16
 #define TLS_MAGIC_WORDS "1234567"
@@ -566,6 +565,7 @@ struct rs_cb {
 
     void *ndaCb;
     int ndaCbRefCnt;
+    void *custom_ssl;
 };
 
 extern __thread struct rs_cb *gRsCb;

@@ -37,6 +37,7 @@ UbTransportLiteImpl::UbTransportLiteImpl(
     binaryStream >> theType;
     binaryStream >> notifyNum;
     binaryStream >> bufferNum;
+    binaryStream >> rmtbufferNum;
     binaryStream >> connNum;
 
     std::vector<char> notifyUniqueIds;
@@ -67,6 +68,7 @@ void UbTransportLiteImpl::Init(std::vector<char> &uniqueId)
     binaryStream >> theType;
     binaryStream >> notifyNum;
     binaryStream >> bufferNum;
+    binaryStream >> rmtbufferNum;
     binaryStream >> connNum;
  
     std::vector<char> notifyUniqueIds;
@@ -156,7 +158,7 @@ void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmtUbBufLit
     if (rmtType == RmaUbBufType::NOTIFY) {
         num = notifyNum;
     } else {
-        num = bufferNum;
+        num = rmtbufferNum;
     }
 
     if (num == 0) {
