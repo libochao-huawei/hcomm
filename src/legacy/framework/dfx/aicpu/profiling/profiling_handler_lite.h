@@ -11,6 +11,7 @@
 #define HCCL_PROFILING_HANDLER_LITE_H
 
 #include <vector>
+#include <map>
 #include "hccl/hccl_types.h"
 #include "prof_common.h"
 #include "aprof_pub.h"
@@ -49,10 +50,12 @@ public:
     ProfilingHandlerLite(const ProfilingHandlerLite &that)                   = delete;
     ProfilingHandlerLite        &operator=(const ProfilingHandlerLite &that) = delete;
     static ProfilingHandlerLite &GetInstance();
-    void                         Init() const;
+    void                         Init();
     void                         ReportHcclOpInfo(const DfxOpInfo &opInfo) const;
     void                         ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const;
     void                         ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo) const;
+    void                         SetCachedCclTag(const std::string &tag);
+    void                         SetCachedGroupName(const DfxOpInfo &opInfo);
     void                         UpdateProfSwitch();
     void                         SetProL0On(bool val);
     void                         SetProL1On(bool val);
@@ -61,7 +64,7 @@ public:
 
 private:
     explicit ProfilingHandlerLite();
-    void ReportAdditionInfo(uint32_t type, uint64_t timeStamp, const void *data, int len) const;
+    void ReportAdditionInfo(const MsprofAdditionalInfo& reporterData) const;
 
     bool IsProfOn(uint64_t feature) const;
     bool IsProfSwitchOn(ProfilingLevel level);
@@ -70,11 +73,17 @@ private:
     uint64_t GetProfHashId(const char *name, uint32_t len) const;
     void DumpTaskDetails(const MsprofAicpuHcclTaskInfo& taskDetailsInfos, const TaskInfo &taskInfo) const;
     void GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const;
+    void LogTaskDetails(const std::vector<TaskInfo> &taskInfo) const;
 
 private:
     static ProfilingHandlerLite instance_;
     bool                        enableHcclL0_{false};
     bool                        enableHcclL1_{false};
+    uint64_t                    cachedCclTag_{INVALID_U64};
+    uint64_t                    cachedGroupName_{INVALID_U64};
+    u32                         cachedRankSize_{0};
+    uint32_t                    cachedTid_{0};
+    std::map<uint32_t, uint64_t> taskTypeHashCache_;
 };
 } // namespace Hccl
 

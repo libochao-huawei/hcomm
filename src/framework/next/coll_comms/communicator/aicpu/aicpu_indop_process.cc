@@ -304,9 +304,7 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collComm->GetHcclCommDfxLite();
     CHK_PTR_NULL(hcclCommDfxLite);
-    Hccl::MirrorTaskManagerLite* mirrorTaskMgrLite = hcclCommDfxLite->GetMirrorTaskManagerLite();
-    CHK_PTR_NULL(mirrorTaskMgrLite);
-    mirrorTaskMgrLite->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    hcclCommDfxLite->SetCurrDfxOpInfo(dfxOpInfoOnce);
     return HCCL_SUCCESS;
 }
 

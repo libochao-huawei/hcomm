@@ -42,7 +42,6 @@ ProfilingHandler &ProfilingHandler::GetInstance()
 
 void ProfilingHandler::Init()
 {
-    HCCL_INFO("[ProfilingHandler]Init start.");
     if (initializedFlag_) {
         return;
     }
@@ -67,13 +66,11 @@ void ProfilingHandler::Init()
     }
     // 保存关键信息
     initializedFlag_ = true;
-    HCCL_INFO("[ProfilingHandler]Init end.");
 }
 
 // 回调注册
 int32_t ProfilingHandler::CommandHandleWrapper(uint32_t rtType, void *data, uint32_t len)
 {
-    HCCL_INFO("[ProfilingHandler]CommandHandleWrapper start.");
     return instance_.CommandHandle(rtType, data, len);
 }
 
@@ -86,7 +83,6 @@ void ProfilingHandler::ReportKernel() const
 // 只有单算子走这
 void ProfilingHandler::ReportHostApi(OpType opType, uint64_t beginTime, uint64_t endTime, bool cachedReq, bool isAiCpu)
 {
-    HCCL_INFO("[ProfilingHandler]ReportHostApi start.");
     uint32_t threadId = SalGetTid();
     std::string profName(GetProfOpName(opType));
     if (isAiCpu) {
@@ -98,15 +94,12 @@ void ProfilingHandler::ReportHostApi(OpType opType, uint64_t beginTime, uint64_t
     }
     ReportNodeApi(beginTime, endTime, cmdItemId, threadId, cachedReq);
     ReportNodeBasicInfo(endTime, cmdItemId, threadId, cachedReq);
-    HCCL_INFO("[ProfilingHandler]ReportHostApi end.");
 }
 
 void ProfilingHandler::ReportHcclOp(const DfxOpInfo &opInfo, bool cachedReq)
 {
-    HCCL_INFO("[ProfilingHandler]ReportHcclOp start.");
     uint32_t threadId = SalGetTid();
     ReportHcclOpInfo(opInfo.endTime_, opInfo, threadId, cachedReq);
-    HCCL_INFO("[ProfilingHandler]ReportHcclOp end.");
 }
 
 void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginTime, uint64_t endTime, bool isMasterStream, bool cachedReq, bool ignoreLevel)
@@ -129,7 +122,6 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
         return;
     }
     if (cachedReq) {
-        HCCL_INFO("[ProfilingHandler] Cache ReportData");
         std::lock_guard<std::mutex> lock(cachedTaskApiInfoMutex_);
         cachedTaskApiInfo_.push(reporterData);
     }
@@ -144,7 +136,6 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
     if (ret != 0) {
         THROW<InternalException>("Call MsprofReportApi fail, return[%d]", ret);
     }
-    HCCL_INFO("[ProfilingHandler]ReportHcclTaskApi end.");
 }
 
 void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cachedReq)
@@ -158,13 +149,10 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
     if (cachedReq) {
         std::lock_guard<std::mutex> lock(cacheTaskInfosMutex_);
         cacheTaskInfos_.push_back(taskInfo);
-        HCCL_INFO("[ProfilingHandler] cache taskInfo.");
     }
     if (enableHcclL1_ == false) {
             return;
     }
-    // 数据组装
-    HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails start.");
     HCCLReportData hcclReportData{};
     GetHCCLReportData(taskInfo, hcclReportData);
 
@@ -181,12 +169,10 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
         HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails Report HCCL info .");
         CallAdditionInfo(hcclReportData, &hcclReportData.profInfo, sizeof(hcclReportData.profInfo), ProfTaskType::TASK_HCCL_INFO);
     }
-    HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails end.");
 }
 
 void ProfilingHandler::CallAdditionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType type) const
 {
-    HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails start.");
     MsprofAdditionalInfo reporterData{};
     reporterData.level     = MSPROF_REPORT_HCCL_NODE_LEVEL;
     reporterData.type      = static_cast<uint32_t>(type);
@@ -207,7 +193,6 @@ void ProfilingHandler::CallAdditionInfo(HCCLReportData &hcclReportData, void *da
               "timeStamp[%llu]",
               reporterData.level, reporterData.type, reporterData.threadId, reporterData.dataLen,
               reporterData.timeStamp);
-    HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails end.");
 }
 
 void ProfilingHandler::GetProfCommonInfo(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const
@@ -331,7 +316,6 @@ void ProfilingHandler::GetDpuProfInfo(const TaskInfo &taskInfo, HCCLReportData &
 
 void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const
 {
-    HCCL_INFO("[ProfilingHandler]GetHCCLReportData start.");
     GetProfCommonInfo(taskInfo, hcclReportData);
     const auto &taskType = taskInfo.taskParam_.taskType;
     if (taskType == TaskParamType::TASK_DPU_INLINE_WRITE
@@ -343,7 +327,6 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
         GetProfTaskSpecificInfo(taskInfo, hcclReportData);
     }
     DumpHCCLReportData(taskInfo, hcclReportData);
-    HCCL_INFO("[ProfilingHandler]GetHCCLReportData end.");
 }
 
 void ProfilingHandler::DumpHCCLReportData(const TaskInfo &taskInfo, const HCCLReportData &hcclReportData) const
@@ -388,7 +371,6 @@ void ProfilingHandler::DumpHCCLReportData(const TaskInfo &taskInfo, const HCCLRe
 
 void ProfilingHandler::ReportCcuInfo(const TaskInfo &taskInfo) const
 {
-    HCCL_INFO("[ProfilingHandler]ReportCcuInfo start.");
     if (taskInfo.taskParam_.ccuDetailInfo == nullptr) {
         HCCL_ERROR("[ProfilingHandler]ReportCcuInfo ccuDetailInfo is nullptr.");
         return;
@@ -407,12 +389,10 @@ void ProfilingHandler::ReportCcuInfo(const TaskInfo &taskInfo) const
             GetCcuGroupInfo(taskInfo, info);
         }
     }
-    HCCL_INFO("[ProfilingHandler]ReportCcuInfo end.");
 }
 
 void ProfilingHandler::GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const
 {
-    HCCL_INFO("[ProfilingHandler]GetCcuTaskInfo start.");
     MsprofCcuTaskInfo ccuTaskInfo{};
     ccuTaskInfo.version       = 0;
     ccuTaskInfo.workFlowMode  = static_cast<u32>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
@@ -442,13 +422,21 @@ void ProfilingHandler::GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfili
               ccuTaskInfo.version, ccuTaskInfo.workFlowMode, ccuTaskInfo.itemId, ccuTaskInfo.groupName,
               ccuTaskInfo.rankId, ccuTaskInfo.ranksize, ccuTaskInfo.streamId, ccuTaskInfo.taskId, ccuTaskInfo.dieId,
               ccuTaskInfo.missionId, ccuTaskInfo.instrId);
-    ReportAdditionInfo(MSPROF_REPORT_CCU_TASK_INFO, timestamp, &ccuTaskInfo, sizeof(ccuTaskInfo));
-    HCCL_INFO("[ProfilingHandler]GetCcuTaskInfo end.");
+    MsprofAdditionalInfo reporterData{};
+    reporterData.level     = MSPROF_REPORT_HCCL_NODE_LEVEL;
+    reporterData.type      = MSPROF_REPORT_CCU_TASK_INFO;
+    reporterData.threadId  = SalGetTid();
+    reporterData.dataLen   = sizeof(ccuTaskInfo);
+    reporterData.timeStamp = timestamp;
+    s32 sret               = memcpy_s(reporterData.data, sizeof(reporterData.data), &ccuTaskInfo, sizeof(ccuTaskInfo));
+    if (sret != EOK) {
+        THROW<InternalException>("Call memcpy_s failed, errorno[%d]", sret);
+    }
+    ReportAdditionInfo(reporterData);
 }
 
 void ProfilingHandler::GetCcuGroupInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const
 {
-    HCCL_INFO("[ProfilingHandler]GetCcuGroupInfo start.");
     MsprofCcuGroupInfo ccuGroupInfo{};
     ccuGroupInfo.version = 0;
     ccuGroupInfo.itemId  = GetProfHashId(info.name.c_str(), info.name.length());
@@ -477,8 +465,17 @@ void ProfilingHandler::GetCcuGroupInfo(const TaskInfo &taskInfo, const CcuProfil
     // 上报数据
     DumpCcuGroupInfo(ccuGroupInfo);
     uint64_t timestamp = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    ReportAdditionInfo(MSPROF_REPORT_CCU_GROUP_INFO, timestamp, &ccuGroupInfo, sizeof(ccuGroupInfo));
-    HCCL_INFO("[ProfilingHandler]GetCcuGroupInfo end.");
+    MsprofAdditionalInfo reporterData{};
+    reporterData.level     = MSPROF_REPORT_HCCL_NODE_LEVEL;
+    reporterData.type      = MSPROF_REPORT_CCU_GROUP_INFO;
+    reporterData.threadId  = SalGetTid();
+    reporterData.dataLen   = sizeof(ccuGroupInfo);
+    reporterData.timeStamp = timestamp;
+    s32 sret               = memcpy_s(reporterData.data, sizeof(reporterData.data), &ccuGroupInfo, sizeof(ccuGroupInfo));
+    if (sret != EOK) {
+        THROW<InternalException>("Call memcpy_s failed, errorno[%d]", sret);
+    }
+    ReportAdditionInfo(reporterData);
 }
 
 void ProfilingHandler::DumpCcuGroupInfo(const MsprofCcuGroupInfo &ccuGroupInfo) const
@@ -511,7 +508,6 @@ void ProfilingHandler::DumpCcuGroupInfo(const MsprofCcuGroupInfo &ccuGroupInfo) 
 
 void ProfilingHandler::GetCcuWaitSignalInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const
 {
-    HCCL_INFO("[ProfilingHandler]GetCcuWaitSignalInfo start.");
     MsprofCcuWaitSignalInfo waitSignalInfo{};
     waitSignalInfo.version      = 0;
     waitSignalInfo.itemId       = GetProfHashId(info.name.c_str(), info.name.length());
@@ -551,13 +547,21 @@ void ProfilingHandler::GetCcuWaitSignalInfo(const TaskInfo &taskInfo, const CcuP
                 i, waitSignalInfo.channelId[i], i, waitSignalInfo.remoteRankId[i]);
         }
     }
-    ReportAdditionInfo(MSPROF_REPORT_CCU_WAIT_SIGNAL_INFO, timestamp, &waitSignalInfo, sizeof(waitSignalInfo));
-    HCCL_INFO("[ProfilingHandler]GetCcuWaitSignalInfo end.");
+    MsprofAdditionalInfo reporterData{};
+    reporterData.level     = MSPROF_REPORT_HCCL_NODE_LEVEL;
+    reporterData.type      = MSPROF_REPORT_CCU_WAIT_SIGNAL_INFO;
+    reporterData.threadId  = SalGetTid();
+    reporterData.dataLen   = sizeof(waitSignalInfo);
+    reporterData.timeStamp = timestamp;
+    s32 sret               = memcpy_s(reporterData.data, sizeof(reporterData.data), &waitSignalInfo, sizeof(waitSignalInfo));
+    if (sret != EOK) {
+        THROW<InternalException>("Call memcpy_s failed, errorno[%d]", sret);
+    }
+    ReportAdditionInfo(reporterData);
 }
 
 void ProfilingHandler::ReportAclApi(uint32_t cmdType, uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId) const
 {
-    HCCL_INFO("[ProfilingHandler]ReportAclApi start.");
     MsprofApi reporterData{};
     reporterData.level = MSPROF_REPORT_ACL_LEVEL;
     reporterData.type = static_cast<int32_t>(cmdType) + MSPROF_REPORT_ACL_HOST_HCCL_BASE_TYPE;
@@ -575,13 +579,11 @@ void ProfilingHandler::ReportAclApi(uint32_t cmdType, uint64_t beginTime, uint64
     if (ret != 0) {
         THROW<InternalException>("Call dlMsprofReportApi failed, return[%d]", ret);
     }
-    HCCL_INFO("[ProfilingHandler]ReportAclApi end.");
 }
 
 void ProfilingHandler::ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId,
                                      bool cachedReq)
 {
-    HCCL_INFO("[ProfilingHandler]ReportNodeApi start.");
     // 获取数据
     MsprofApi reporterData{};
     reporterData.level = MSPROF_REPORT_NODE_LEVEL;
@@ -610,7 +612,6 @@ void ProfilingHandler::ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint6
     if (ret != 0) {
         THROW<InternalException>("Call MsprofReportApi failed, return[%d]", ret);
     }
-    HCCL_INFO("[ProfilingHandler]ReportNodeApi end.");
 }
 
 void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId, bool cachedReq)
@@ -643,7 +644,6 @@ void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemI
     if (ret != 0) {
         THROW<InternalException>("Call MsprofReportCompactInfo failed, return[%d]", ret);
     }
-    HCCL_INFO("[ProfilingHandler]ReportNodeBasicInfo end.");
 }
 
 void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId, bool cachedReq)
@@ -701,29 +701,17 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     }
 }
 
-void ProfilingHandler::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void *data, uint32_t len) const
+void ProfilingHandler::ReportAdditionInfo(const MsprofAdditionalInfo& reporterData) const
 {
-    HCCL_INFO("[ProfilingHandler]ReportAdditionInfo start.");
-    MsprofAdditionalInfo reporterData{};
-    reporterData.level     = MSPROF_REPORT_HCCL_NODE_LEVEL;
-    reporterData.type      = type;
-    reporterData.threadId  = SalGetTid();
-    reporterData.dataLen   = len;
-    reporterData.timeStamp = timeStamp;
-    s32 sret               = memcpy_s(reporterData.data, sizeof(reporterData.data), data, len);
-    if (sret != EOK) {
-        THROW<InternalException>("Call memcpy_s failed, errorno[%d]", sret);
-    }
     HCCL_INFO(
         "[ProfilingHandler][ReportAdditionInfo], level [%u], type[%u], threadId[%u], dataLen[%u], timeStamp[%llu]",
         reporterData.level, reporterData.type, reporterData.threadId, reporterData.dataLen, reporterData.timeStamp);
     s32 ret
-        = DlProfFunction::GetInstance().dlMsprofReportAdditionalInfo(0, &reporterData, sizeof(MsprofAdditionalInfo));
+        = DlProfFunction::GetInstance().dlMsprofReportAdditionalInfo(0, const_cast<MsprofAdditionalInfo*>(&reporterData), sizeof(MsprofAdditionalInfo));
     HCCL_INFO("Call MsprofReportAdditionalInfo, return value[%d]", ret);
     if (ret != 0) {
         THROW<InternalException>("Call MsprofReportAdditionalInfo failed, return[%d]", ret);
     }
-    HCCL_INFO("[ProfilingHandler]ReportAdditionInfo end.");
 }
 
 int32_t ProfilingHandler::CommandHandle(uint32_t rtType, void *data, uint32_t len) const
@@ -1120,7 +1108,6 @@ void ProfilingHandler::ReportMc2AdditionInfo(uint64_t timeStamp, const void *dat
     if (ret != 0) {
         THROW<InternalException>("Call MsprofReportAdditionalInfo failed, return[%d]", ret);
     }
-    HCCL_INFO("[ProfilingHandler]ReportMc2CommInfo end.");
 }
- 
+
 } // namespace Hccl

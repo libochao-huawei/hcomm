@@ -31,6 +31,7 @@ public:
         RankId myRank, u32 rankSize, RankId rankInParentComm) const;
 private:
     void ReportCallBackAllTasks(bool cachedReq = false);
+    void LogAllTasks() const;
  
 private:
     MirrorTaskManager                              *mirrorTaskMgr_{nullptr};
