@@ -314,9 +314,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
         fakeTaskArgs, fakeArgSize), CcuResult::CCU_SUCCESS);
 
     // 清理各种资源，析构有时序要求
-    // 主线功能有bug，暂时不能主动释放stream
-    // constexpr uint32_t fakeThreadNum = 1;
-    // EXPECT_EQ(HcommThreadFree(&fakeThreadHandle, fakeThreadNum), HcclResult::HCCL_SUCCESS);
     MockChannelDestory(handlePair);
     ccuRet = HcommCcuInsDestroy(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
@@ -560,15 +557,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhileUnified_When_AllFine_Expe
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 }
 
-// =================================================================================
-// 以下为针对 PR #2120 增量覆盖率（ccu_kernel.cc / ccu_primitives_impl.cc）补充的用例
-// 模板与上方 Ut_HcommCcuKernelDoWhile_* 完全一致：mock 资源 → 建实例 → 建链 →
-// RegisterStart → InjectXn → Register → RegisterEnd → 销毁。
-// 每条用例采用唯一的 fakeDevId（MAX_MODULE_DEVICE_NUM - N）以避免 CCU 资源串扰。
-// =================================================================================
-
-// ----- P0: CcuLoopAddDemoKernel：覆盖 ccu_kernel.cc 中 Loop / LoopGroup / Executor
-//        全部接口（L1456-L1736），单条用例预计可拉升整体覆盖率 ~15%
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelLoopAdd_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
     HcommResult hcclRet = 0;
@@ -628,7 +616,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelLoopAdd_When_AllFine_Expect_Retu
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 }
 
-// ----- P0: CcuRemoteReadKernel：覆盖 ReadMemToMem / ReadMemToBuffer / ReadMemToMemReduce
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteRead_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
     HcommResult hcclRet = 0;
@@ -687,7 +674,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteRead_When_AllFine_Expect_R
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 }
 
-// ----- P0: CcuRemoteWriteKernel：覆盖 WriteMemToMem / WriteBufferToMem / WriteMemToMemReduce
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteWrite_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
     HcommResult hcclRet = 0;
@@ -746,8 +732,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteWrite_When_AllFine_Expect_
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 }
 
-// ----- P0: CcuAllocDemoKernel：覆盖 VariableAlloc / AddressAlloc / EventAlloc /
-//        BlockEventAlloc / VariableCreateByChannel + 地址加法 + 事件 record/wait
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAlloc_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
     HcommResult hcclRet = 0;
@@ -878,7 +862,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine
     auto fakeThreadHandle = MockThreadAllocWithStream(commEngine);
 
     // kernel下发
-    // 需要与样例需要的load args对应（CcuReduceScatterMesh1dKernel::LoadArgs 共 15 个）
     std::vector<uint64_t> taskArgs(15, 0);
     void *fakeTaskArgs = static_cast<void *>(taskArgs.data());
     uint32_t fakeArgSize = taskArgs.size();
@@ -886,9 +869,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine
         fakeTaskArgs, fakeArgSize), CcuResult::CCU_SUCCESS);
 
     // 清理各种资源，析构有时序要求
-    // 主线功能有bug，暂时不能主动释放stream
-    // constexpr uint32_t fakeThreadNum = 1;
-    // EXPECT_EQ(HcommThreadFree(&fakeThreadHandle, fakeThreadNum), HcclResult::HCCL_SUCCESS);
     MockChannelDestory(handlePair);
     ccuRet = HcommCcuInsDestroy(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
@@ -957,12 +937,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedInIfIf_When_AllFine_Expect
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 }
 
-// =================================================================================
-// CcuAllGatherMesh1dMem2MemKernel：复现 hccl 仓
-//   src/ops/all_gather/template/ccu/kernel/ccu_kernel_all_gather_mesh1d_mem2mem.cc
-// 验证 demo 在 mock 环境下完整跑通 Create → RegisterStart → Register → RegisterEnd
-// → Launch（LoadArgs 共 15 个）→ Destroy 全流程。
-// =================================================================================
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAllGatherMesh1dMem2Mem_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
     HcommResult hcclRet = 0;
@@ -1023,11 +997,6 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAllGatherMesh1dMem2Mem_When_AllF
 
     auto fakeThreadHandle = MockThreadAllocWithStream(commEngine);
 
-    // LoadArgs 共 15 个：input, output[rankId], token[rankId],
-    //   currentRankSliceInputOffset, currentRankSliceOutputOffset,
-    //   tmpRepeatNum, inputRepeatStride, outputRepeatStride,
-    //   normalSliceSize, lastSliceSize, isInputOutputEqual,
-    //   goSize.addrOffset / loopParam / parallelParam / residual
     std::vector<uint64_t> taskArgs(15, 0);
     void *fakeTaskArgs = static_cast<void *>(taskArgs.data());
     uint32_t fakeArgSize = taskArgs.size();
