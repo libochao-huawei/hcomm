@@ -20,6 +20,7 @@ if(TARGET hcomm)
     )
     target_include_directories(hcomm PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../next/coll_comms/group
     )
 endif()
 
@@ -27,6 +28,9 @@ if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${src_list}
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_comm_device.cc
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../next/coll_comms/group
+    )
     )
 endif()
 
