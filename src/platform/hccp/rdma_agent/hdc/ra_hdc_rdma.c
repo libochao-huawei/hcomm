@@ -260,7 +260,8 @@ int RaHdcQpCreateWithCQWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAt
     cap.max_send_wr = extAttrs->qpAttr.cap.max_send_wr;
     cap.max_recv_wr = extAttrs->qpAttr.cap.max_recv_wr;
     ret = RaHdcLiteQpCreateWithCQ(rdmaHandle, qpHdc, &cap,
-        RaHdcLiteFindTypicalCq(phyId, sendCqn), RaHdcLiteFindTypicalCq(phyId, recvCqn));
+        RaHdcLiteFindTypicalCq(phyId, sendCqn), RaHdcLiteFindTypicalCq(phyId, recvCqn),
+        sendCqn, recvCqn);
     if (ret) {
         (void)RaHdcCmdQpDestroy(qpHdc);
         hccp_err("[create][ra_hdc_qp_with_cq_attrs]ra_hdc_lite_qp_create failed ret(%d) phyId(%u)", ret, phyId);
@@ -1456,11 +1457,12 @@ int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries
 int RaHdcPollTypicalCq(struct RaTypicalCqHandle *cqHdc, unsigned int numEntries, void *wc)
 {
     struct rdma_lite_wc_v2 *liteWc = (struct rdma_lite_wc_v2 *)wc;
-    if (cqHdc->liteCq == NULL) {
-        hccp_warn("cqn:%u liteCq is NULL, not support to poll_cq", cqHdc->cqn);
+    struct rdma_lite_cq *liteCq = RaHdcLiteFindTypicalCq(cqHdc->phyId, cqHdc->cqn);
+    if (liteCq == NULL) {
+        hccp_warn("cqn:%u liteCq not found in table", cqHdc->cqn);
         return -ENOTSUPP;
     }
-    int ret = RaRdmaLitePollCqV2(cqHdc->liteCq, (int)numEntries, liteWc);
+    int ret = RaRdmaLitePollCqV2(liteCq, (int)numEntries, liteWc);
     if (ret < 0) {
         hccp_err("ra_rdma_lite_poll_cq_v2 failed, ret %d", ret);
         return ret;
