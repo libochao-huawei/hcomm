@@ -25,7 +25,7 @@ public:
     virtual HcclResult GetExchangeDto(std::unique_ptr<Hccl::Serializable> &serial) = 0;
     
 protected:
-    static HcclResult BuildExchangeDto(RdmaHandle rdmaHandle, QpHandle qpHandle,
+    static HcclResult BuildExchangeDto(Hccl::RdmaHandle rdmaHandle, Hccl::QpHandle qpHandle,
         std::unique_ptr<Hccl::Serializable> &serial);
 };
 
