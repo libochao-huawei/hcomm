@@ -66,7 +66,7 @@ const std::string Buffer::GetMemInfo() const
 
 std::string Buffer::Describe() const
 {
-    return StringFormat("Buffer[addr=0x%llx, size=0x%llx, memInfo=%s]", addr_, size_, memInfo_.c_str());
+    return StringFormat("Buffer[addr=0x%llx, size=0x%llx, memInfo=%s]", addr_, size_, memInfo_);
 }
 
 bool Buffer::Contains(Buffer *buf) const

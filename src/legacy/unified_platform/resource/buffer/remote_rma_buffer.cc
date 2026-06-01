@@ -125,10 +125,12 @@ RemoteUbRmaBuffer::~RemoteUbRmaBuffer()
     }
 }
 
-RemoteUbRmaBuffer(uintptr_t addr, u64 size, u32 tokenId, u32 tokenValue, HcclMemType memType, std::string &memInfo) :
-    RemoteRmaBuffer(RmaType::UB), addr(addr), size(size), tokenId(tokenId), tokenValue(tokenValue), memType(memType),
-    memInfo(memInfo)
-{}
+RemoteUbRmaBuffer::RemoteUbRmaBuffer(uintptr_t addr, u64 size, u32 tokenId, u32 tokenValue, HcclMemType memType,
+    std::string &memInfo) : RemoteRmaBuffer(RmaType::UB), addr(addr), size(size), tokenId(tokenId),
+    tokenValue(tokenValue), memType(memType), memInfo(memInfo)
+{
+    HCCL_INFO("[RemoteRdmaRmaBuffer]addr = 0x%llx; size = 0x%llx; memInfo = %s", addr, size, memInfo.c_str());
+}
 
 RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto) :
       RemoteRmaBuffer(RmaType::UB), rdmaHandle(rdmaHandle1)

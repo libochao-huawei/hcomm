@@ -13,7 +13,6 @@
 #include "orion_adpt_utils.h"
 #include "comm_mems.h"
 #include "exception_handler.h"
-#include "user_remote_mem_getter.h"
 
 // Orion
 #include "coll_alg_param.h"
