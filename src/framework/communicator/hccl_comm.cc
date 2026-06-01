@@ -40,6 +40,7 @@ hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identi
     barrierInMemory_ = DeviceMem();
     barrierOutMemory_ = DeviceMem();
     planner = std::make_shared<hcclKernelPlanner>();
+    plannerV2 = std::make_shared<hcclKernelPlannerV2>();
 }
 
 hcclComm::~hcclComm()
@@ -1477,6 +1478,26 @@ bool hcclComm::IsCommunicatorV2()
     return false;
 }
 
+ThreadHandle hcclComm::GetDedicatedThread(uint8_t useType)
+{
+    auto it = dedicatedThreadMap_.find(useType);
+    if (it != dedicatedThreadMap_.end()) {
+        return it->second;
+    }
+    return 0;
+}
+
+HcclResult hcclComm::SetDedicatedThread(uint8_t useType, ThreadHandle thread)
+{
+    dedicatedThreadMap_[useType] = thread;
+    return HCCL_SUCCESS;
+}
+
+bool hcclComm::HasDedicatedThread(uint8_t useType)
+{
+    return dedicatedThreadMap_.find(useType) != dedicatedThreadMap_.end();
+}
+
 HcclResult hcclComm::SetHcclQos(u32 hcclQos)
 {
     // 校验config中QoS的合法性
@@ -1536,4 +1557,13 @@ aclrtBinHandle hcclComm::GetBinHandle()
     return binHandle_;
 }
 
+aclrtBinHandle hcclComm::GetBinHcclHandle()
+{
+    return binHcclHandle_;
+}
+
+std::mutex &hcclComm::GetDedicatedThreadMutex()
+{
+    return dedicatedThreadMutex_;
+}
 }  // namespace hccl
