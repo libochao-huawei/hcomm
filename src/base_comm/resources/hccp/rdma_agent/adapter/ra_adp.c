@@ -98,6 +98,8 @@ struct RsOps {
     int (*getLiteRdevCap)(unsigned int phyId, unsigned int rdevIndex, struct LiteRdevCapResp *resp);
     int (*getLiteQpCqAttr)(
         unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteQpCqAttrResp *resp);
+    int (*getLiteQpAttr)(
+        unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteQpAttrResp *resp);
     int (*getLiteMemAttr)(
         unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteMemAttrResp *resp);
     int (*getLiteConnectedInfo)(
@@ -147,6 +149,7 @@ struct RsOps gRaRsOps = {
     .getCqeErrInfo = RsGetCqeErrInfo,
     .getLiteRdevCap = RsGetLiteRdevCap,
     .getLiteQpCqAttr = RsGetLiteQpCqAttr,
+    .getLiteQpAttr = RsGetLiteQpAttr,
     .getLiteCqAttr = RsGetLiteCqAttr,
     .getLiteConnectedInfo = RsGetLiteConnectedInfo,
     .getLiteMemAttr = RsGetLiteMemAttr,
@@ -1439,6 +1442,27 @@ STATIC int RaRsGetLiteQpCqAttr(char *inBuf, char *outBuf, int *outLen, int *opRe
     return 0;
 }
 
+STATIC int RaRsGetLiteQpAttr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpLiteQpAttrData *liteQpAttrData =
+        (union OpLiteQpAttrData *)(inBuf + sizeof(struct MsgHead));
+    union OpLiteQpAttrData *liteQpAttrOut =
+        (union OpLiteQpAttrData *)(outBuf + sizeof(struct MsgHead));
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(
+        sizeof(union OpLiteQpAttrData), sizeof(struct MsgHead), rcvBufLen, opResult);
+
+    *opResult = gRaRsOps.getLiteQpAttr(liteQpAttrData->txData.phyId,
+        liteQpAttrData->txData.rdevIndex,
+        liteQpAttrData->txData.qpn,
+        (void *)&liteQpAttrOut->rxData.resp);
+    if (*opResult != 0) {
+        hccp_err("get_lite_qp_attr failed ret[%d].", *opResult);
+    }
+
+    return 0;
+}
+
 STATIC int RaRsGetLiteConnectedInfo(
     char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
@@ -1718,6 +1742,7 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_GET_LITE_SUPPORT, RaRsGetLiteSupport, sizeof(union OpLiteSupportData)},
     {RA_RS_GET_LITE_RDEV_CAP, RaRsGetLiteRdevCap, sizeof(union OpLiteRdevCapData)},
     {RA_RS_GET_LITE_QP_CQ_ATTR, RaRsGetLiteQpCqAttr, sizeof(union OpLiteQpCqAttrData)},
+    {RA_RS_GET_LITE_QP_ATTR, RaRsGetLiteQpAttr, sizeof(union OpLiteQpAttrData)},
     {RA_RS_GET_LITE_CQ_ATTR, RaRsGetLiteCqAttr, sizeof(union OpGetLiteCqAttrData)},
     {RA_RS_GET_LITE_CONNECTED_INFO, RaRsGetLiteConnectedInfo, sizeof(union OpLiteConnectedInfoData)},
     {RA_RS_GET_LITE_MEM_ATTR, RaRsGetLiteMemAttr, sizeof(union OpLiteMemAttrData)},
