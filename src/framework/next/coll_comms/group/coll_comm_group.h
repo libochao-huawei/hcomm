@@ -17,9 +17,6 @@ namespace hccl {
 HcclResult HcclGroupAddP2pTaskV2(HcclComm comm, const HcclP2pTask& task, const HcclOpP2pDesc& p2pDesc);
 } // namespace hccl
 
-// HcclResult HcclAicpuKernelLaunch(HcclComm comm, HcclOpDesc opInfo, HcclKernelFuncInfo funcInfo,
-//     void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream);
-
 HcclResult HcclGroupStartV2();
 HcclResult HcclGroupEndV2();
 
