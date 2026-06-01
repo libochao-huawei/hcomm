@@ -115,7 +115,7 @@ std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId
     return *(*task);
 }
 
-std::map<u32, std::unique_ptr<TaskInfoQueue>>::iterator GlobalMirrorTasks::Begin(u32 devId)
+TaskInfoQueueMap::iterator GlobalMirrorTasks::Begin(u32 devId)
 {
     if (devId >= DEVICE_MAX_NUM) {
         THROW<InternalException>(StringFormat("GlobalMirrorTasks::Begin devId[%u] out of range", devId));
@@ -124,7 +124,7 @@ std::map<u32, std::unique_ptr<TaskInfoQueue>>::iterator GlobalMirrorTasks::Begin
     return devMap.begin();
 }
 
-std::map<u32, std::unique_ptr<TaskInfoQueue>>::iterator GlobalMirrorTasks::End(u32 devId)
+TaskInfoQueueMap::iterator GlobalMirrorTasks::End(u32 devId)
 {
     if (devId >= DEVICE_MAX_NUM) {
         THROW<InternalException>(StringFormat("GlobalMirrorTasks::End devId[%u] out of range", devId));
