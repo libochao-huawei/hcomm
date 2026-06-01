@@ -58,15 +58,28 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/resource/socket
     ${HCOMM_DIR}/src/legacy/ascend950/framework/env_config
 
-    # src/framework 头文件 (legacy/ascend910)
-    ${HCOMM_DIR}/src/legacy/ascend910/framework
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/inc
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/op_base/src
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/cluster_maintenance/health/heartbeat
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/cluster_maintenance/recovery/operator_retry
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/exception
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/resource_manager
+    # src/framework 头文件
+    ${HCOMM_DIR}/src/framework
+    ${HCOMM_DIR}/src/framework/inc
+    ${HCOMM_DIR}/src/framework/op_base/src
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/health/heartbeat
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/recovery/operator_retry
+    ${HCOMM_DIR}/src/framework/common/src/exception
+    ${HCOMM_DIR}/src/framework/communicator/impl
+    ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
+    ${HCOMM_DIR}/src/framework/next/comms/api_c_adpt
+    ${HCOMM_DIR}/src/framework/next/comms/endpoints
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/sockets
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels
+    ${HCOMM_DIR}/src/framework/next/comms/common/device
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device
+    ${HCOMM_DIR}/src/framework/next/coll_comms
+    ${HCOMM_DIR}/src/framework/next/coll_comms/communicator
+    ${HCOMM_DIR}/src/framework/next/coll_comms/rank
+    ${HCOMM_DIR}/src/framework/next/coll_comms/rank_pairs
+    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/profiling/aicpu
+    ${HCOMM_DIR}/src/framework/device
 
     # framework/next 头文件 (拆分到 base_comm 和 coll_communicator)
     ${HCOMM_DIR}/src/base_comm/resources/endpoints
