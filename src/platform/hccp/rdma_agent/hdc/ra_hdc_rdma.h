@@ -559,6 +559,7 @@ int RaHdcTypicalCqDestroy(struct RaRdmaHandle *rdmaHandle, unsigned int cqn, voi
 int RaHdcQpCreateWithCQWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs *extAttrs,
     unsigned int sendCqn, unsigned int recvCqn, void **qpHandle);
 int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries, void *wc);
+int RaHdcPollTypicalCq(struct RaTypicalCqHandle *cqHdc, unsigned int numEntries, void *wc);
 int RaHdcQpDestroy(struct RaQpHandle *qpHdc);
 int RaHdcQpDestroyWithoutCQ(struct RaQpHandle *qpHdc);
 int RaHdcTypicalQpModify(struct RaQpHandle *qpHdc, struct TypicalQp *localQpInfo,

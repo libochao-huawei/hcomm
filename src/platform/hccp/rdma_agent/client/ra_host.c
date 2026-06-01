@@ -114,6 +114,7 @@ struct RaRdmaOps gRaHdcRdmaOps = {
     .raGetNotifyMrInfo = RaHdcGetNotifyMrInfo,
     .raRecvWrlist = RaHdcRecvWrlist,
     .raPollCq = RaHdcPollCq,
+    .raPollTypicalCq = RaHdcPollTypicalCq,
     .raGetQpContext = NULL,
     .raNormalQpCreate = NULL,
     .raNormalQpDestroy = NULL,
@@ -170,6 +171,7 @@ struct RaRdmaOps gRaPeerRdmaOps = {
     .raGetNotifyMrInfo = NULL,
     .raRecvWrlist = RaPeerRecvWrlist,
     .raPollCq = NULL,
+    .raPollTypicalCq = NULL,
     .raGetQpContext = RaPeerGetQpContext,
     .raNormalQpCreate = RaPeerNormalQpCreate,
     .raNormalQpDestroy = RaPeerNormalQpDestroy,
@@ -2494,6 +2496,24 @@ HCCP_ATTRI_VISI_DEF int RaPollCq(void *qpHandle, bool isSendCq, unsigned int num
     }
 
     ret = raQpHandle->rdmaOps->raPollCq(raQpHandle, isSendCq, numEntries, wc);
+    if (ret < 0) {
+        return ConverReturnCode(RDMA_OP, ret);
+    }
+    return ret;
+}
+
+HCCP_ATTRI_VISI_DEF int RaPollTypicalCq(void *cqHandle, unsigned int numEntries, void *wc)
+{
+    struct RaTypicalCqHandle *cqHdc = (struct RaTypicalCqHandle *)cqHandle;
+    if (cqHandle == NULL || wc == NULL) {
+        hccp_err("[ra_poll]cq_handle is NULL or wc is NULL, para error!");
+        return ConverReturnCode(RDMA_OP, -EINVAL);
+    }
+    if (cqHdc->rdmaOps == NULL || cqHdc->rdmaOps->raPollTypicalCq == NULL) {
+        hccp_err("[ra_poll]rdma_ops is NULL or ra_poll_typical_cq is NULL, invalid");
+        return ConverReturnCode(RDMA_OP, -EINVAL);
+    }
+    int ret = cqHdc->rdmaOps->raPollTypicalCq(cqHdc, numEntries, wc);
     if (ret < 0) {
         return ConverReturnCode(RDMA_OP, ret);
     }

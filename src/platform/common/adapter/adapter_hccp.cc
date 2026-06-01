@@ -524,6 +524,15 @@ s32 hrtRaPollCq(QpHandle handle, bool is_send_cq, unsigned int num, void *wc)
     return ret;
 }
 
+s32 HrtRaPollTypicalCq(void* cqHandle, u32 num, void *wc)
+{
+    CHK_PTR_NULL(cqHandle);
+    CHK_PTR_NULL(wc);
+    u32 ret = DlRaFunction::GetInstance().dlRaPollTypicalCq(cqHandle, num, wc);
+    CHK_PRT_RET(static_cast<u32>(ret) > num, HCCL_ERROR("[HrtRaPollTypicalCq] PollCq fail. return[%d]", ret), ret);
+    return ret;
+}
+
 HcclResult hrtRaQpBatchModify(RdmaHandle rdmaHandle, QpHandle qpHandle[], unsigned int num, int expectStatus)
 {
     if (DlRaFunction::GetInstance().dlRaQpBatchModify == nullptr) {

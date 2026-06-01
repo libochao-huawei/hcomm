@@ -120,6 +120,16 @@ HcclResult TypicalQpManager::GetCqDepth(uint32_t cqn, uint32_t &cqDepth)
     return HCCL_SUCCESS;
 }
 
+HcclResult TypicalQpManager::GetCqHandle(uint32_t cqn, void*& cqHandle)
+{
+    std::unique_lock<std::mutex> lock(cqMutex_);
+    auto it = cqMap_.find(cqn);
+    CHK_PRT_RET((it == cqMap_.end()),
+        HCCL_ERROR("[TypicalQpManager][GetCqHandle] cqn[%u] not found.", cqn), HCCL_E_PARA);
+    cqHandle = it->second.second;
+    return HCCL_SUCCESS;
+}
+
 HcclResult TypicalQpManager::CreateQpWithCQ(struct TypicalQp& qpInfo, const QpConfigWithCQInfo& qpConfig)
 {
     HcclResult ret = HCCL_SUCCESS;
