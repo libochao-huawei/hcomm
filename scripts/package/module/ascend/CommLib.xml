@@ -5,7 +5,7 @@
         <path value="$(TARGET_ENV)/include" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/hccl" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/hcomm" install_type="devel"/>
-        <path value="$(TARGET_ENV)/include/ccu" install_type="devel"/>
+        <path value="$(TARGET_ENV)/include/hcomm/ccu" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/version" install_type="devel"/>
         <path value="$(TARGET_ENV)/pkg_inc" install_type="devel"/>
         <path value="$(TARGET_ENV)/pkg_inc/hccl" install_type="devel"/>
