@@ -34,11 +34,13 @@ struct TypicalLiteCqEntry {
     unsigned int phyId;
     unsigned int cqn;
     struct rdma_lite_cq *liteCq;
+    struct rdma_lite_device_cq_attr deviceCqAttr;
 };
 static struct TypicalLiteCqEntry g_typical_lite_cq_table[MAX_TYPICAL_LITE_CQ_NUM];
 static int g_typical_lite_cq_cnt = 0;
 
-void RaHdcLiteStoreTypicalCq(unsigned int phyId, unsigned int cqn, struct rdma_lite_cq *liteCq)
+void RaHdcLiteStoreTypicalCq(unsigned int phyId, unsigned int cqn, struct rdma_lite_cq *liteCq,
+    struct rdma_lite_device_cq_attr *deviceCqAttr)
 {
     if (g_typical_lite_cq_cnt >= MAX_TYPICAL_LITE_CQ_NUM) {
         hccp_err("[store][ra_hdc_lite]typical lite cq table full, cqn[%u]", cqn);
@@ -47,6 +49,7 @@ void RaHdcLiteStoreTypicalCq(unsigned int phyId, unsigned int cqn, struct rdma_l
     g_typical_lite_cq_table[g_typical_lite_cq_cnt].phyId = phyId;
     g_typical_lite_cq_table[g_typical_lite_cq_cnt].cqn = cqn;
     g_typical_lite_cq_table[g_typical_lite_cq_cnt].liteCq = liteCq;
+    g_typical_lite_cq_table[g_typical_lite_cq_cnt].deviceCqAttr = *deviceCqAttr;
     g_typical_lite_cq_cnt++;
     hccp_info("[store][ra_hdc_lite]stored typical lite cq, phyId[%u] cqn[%u]", phyId, cqn);
 }
@@ -62,6 +65,20 @@ struct rdma_lite_cq *RaHdcLiteFindTypicalCq(unsigned int phyId, unsigned int cqn
     }
     hccp_err("[find][ra_hdc_lite]typical lite cq not found, phyId[%u] cqn[%u]", phyId, cqn);
     return NULL;
+}
+
+int RaHdcLiteFindTypicalCqAttr(unsigned int phyId, unsigned int cqn,
+    struct rdma_lite_device_cq_attr **deviceCqAttr)
+{
+    int i;
+    for (i = 0; i < g_typical_lite_cq_cnt; i++) {
+        if (g_typical_lite_cq_table[i].phyId == phyId && g_typical_lite_cq_table[i].cqn == cqn) {
+            *deviceCqAttr = &g_typical_lite_cq_table[i].deviceCqAttr;
+            return 0;
+        }
+    }
+    hccp_err("[find][ra_hdc_lite]typical lite cq attr not found, phyId[%u] cqn[%u]", phyId, cqn);
+    return -EINVAL;
 }
 
 STATIC void *RaHdcLitePthread(void *arg);
@@ -459,9 +476,9 @@ int RaHdcLiteCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth,
         return -EFAULT;
     }
 
-    RaHdcLiteStoreTypicalCq(rdmaHandle->rdevInfo.phyId, cqData->rxData.cqn, *liteCq);
+    RaHdcLiteStoreTypicalCq(rdmaHandle->rdevInfo.phyId, cqData->rxData.cqn, *liteCq, &deviceCqAttr);
 
-    hccp_info("[create][ra_hdc_lite_cq]lite cq created successfully, cqDepth(%u)", cqDepth);
+    hccp_info("[create][ra_hdc_lite_cq]lite cq created successfully, cqDepth(%u), liteCq[%p]", cqDepth, *liteCq);
 
     return 0;
 }
@@ -548,6 +565,29 @@ STATIC int RaHdcLiteGetCqQpAttr(struct RaQpHandle *qpHdc, struct rdma_lite_cq_at
     liteRecvCqAttr->device_cq_attr = liteQpCqAttrData.rxData.resp.recvCqData;
     ret = memcpy_s((void *)&(liteQpAttr->device_qp_attr), sizeof(liteQpAttr->device_qp_attr),
         (void *)&liteQpCqAttrData.rxData.resp.qpData, sizeof(liteQpCqAttrData.rxData.resp.qpData));
+    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]memcpy_s failed ret(%d) phyId(%u)",
+        ret, phyId), ret);
+
+    return 0;
+}
+
+int RaHdcLiteGetQpAttr(struct RaQpHandle *qpHdc, struct rdma_lite_qp_attr *liteQpAttr)
+{
+    union OpLiteQpAttrData liteQpAttrData = { 0 };
+    unsigned int phyId = qpHdc->phyId;
+    int ret;
+
+    liteQpAttrData.txData.phyId = phyId;
+    liteQpAttrData.txData.rdevIndex = qpHdc->rdevIndex;
+    liteQpAttrData.txData.qpn = qpHdc->qpn;
+    ret = RaHdcProcessMsg(RA_RS_GET_LITE_QP_ATTR, phyId, (char *)&liteQpAttrData,
+        sizeof(union OpLiteQpAttrData));
+    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]ra hdc message process failed ret(%d) phyId(%u)",
+        ret, phyId), ret);
+
+    qpHdc->dbIndex = liteQpAttrData.rxData.resp.qpData.qp_info;
+    ret = memcpy_s((void *)&(liteQpAttr->device_qp_attr), sizeof(liteQpAttr->device_qp_attr),
+        (void *)&liteQpAttrData.rxData.resp.qpData, sizeof(liteQpAttrData.rxData.resp.qpData));
     CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]memcpy_s failed ret(%d) phyId(%u)",
         ret, phyId), ret);
 
@@ -684,11 +724,14 @@ void RaHdcLiteQpDestroyWithoutCQ(struct RaQpHandle *qpHdc)
 }
 
 int RaHdcLiteQpCreateWithCQ(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
-    struct rdma_lite_qp_cap *cap, struct rdma_lite_cq *sendLiteCq, struct rdma_lite_cq *recvLiteCq)
+    struct rdma_lite_qp_cap *cap, struct rdma_lite_cq *sendLiteCq, struct rdma_lite_cq *recvLiteCq,
+    unsigned int sendCqn, unsigned int recvCqn)
 {
-    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct rdma_lite_device_cq_attr *storedSendCqAttr = NULL;
+    struct rdma_lite_device_cq_attr *storedRecvCqAttr = NULL;
     struct rdma_lite_cq_attr liteSendCqAttr = { 0 };
     struct rdma_lite_cq_attr liteRecvCqAttr = { 0 };
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
     struct rdma_lite_qp_attr liteQpAttr = { 0 };
     int ret;
 
@@ -696,9 +739,21 @@ int RaHdcLiteQpCreateWithCQ(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *
         return 0;
     }
 
-    ret = RaHdcLiteGetCqQpAttr(qpHdc, &liteSendCqAttr, &liteRecvCqAttr, &liteQpAttr);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]ra_hdc_lite_get_cq_qp_attr failed ret(%d) phyId(%u)",
+    hccp_info("[QP_PATH][ra_hdc_lite_qp]RaHdcLiteQpCreateWithCQ NEW path, phyId[%u] sendCqn[%u] recvCqn[%u]",
+        phyId, sendCqn, recvCqn);
+
+    ret = RaHdcLiteGetQpAttr(qpHdc, &liteQpAttr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]get qp attr failed ret(%d) phyId(%u)",
         ret, phyId), ret);
+
+    ret = RaHdcLiteFindTypicalCqAttr(phyId, sendCqn, &storedSendCqAttr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]find send cq attr failed phyId(%u) cqn(%u)",
+        phyId, sendCqn), ret);
+    ret = RaHdcLiteFindTypicalCqAttr(phyId, recvCqn, &storedRecvCqAttr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]find recv cq attr failed phyId(%u) cqn(%u)",
+        phyId, recvCqn), ret);
+    liteSendCqAttr.device_cq_attr = *storedSendCqAttr;
+    liteRecvCqAttr.device_cq_attr = *storedRecvCqAttr;
 
     ret = RaHdcLiteInitMemPool(rdmaHandle, qpHdc, &liteSendCqAttr, &liteRecvCqAttr, &liteQpAttr);
     CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]ra_hdc_lite_init_mem_pool failed ret(%d) phyId(%u)",

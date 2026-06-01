@@ -100,6 +100,13 @@ HcclResult RdmaResourceManager::Init()
     return HCCL_SUCCESS;
 }
 
+void RdmaResourceManager::SetDisableLiteThread(bool disable)
+{
+    s32 deviceLogicId = INVALID_INT;
+    hrtGetDevice(&deviceLogicId);
+    NetworkManager::GetInstance(deviceLogicId).SetDisableLiteThread(disable);
+}
+
 HcclResult RdmaResourceManager::GetRdmaHandle(RdmaHandle& rdmaHandle)
 {
     CHK_PTR_NULL(rdmaHandle_);
