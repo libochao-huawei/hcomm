@@ -105,6 +105,7 @@ HcclResult TypicalQpManager::DestroyCq(uint32_t cqn)
 
 HcclResult TypicalQpManager::ValidateCq(uint32_t cqn)
 {
+    std::unique_lock<std::mutex> lock(cqMutex_);
     auto it = cqMap_.find(cqn);
     CHK_PRT_RET((it == cqMap_.end()),
         HCCL_ERROR("[TypicalQpManager][ValidateCq] cqn[%u] not found.", cqn), HCCL_E_PARA);
@@ -113,6 +114,7 @@ HcclResult TypicalQpManager::ValidateCq(uint32_t cqn)
 
 HcclResult TypicalQpManager::GetCqDepth(uint32_t cqn, uint32_t &cqDepth)
 {
+    std::unique_lock<std::mutex> lock(cqMutex_);
     auto it = cqMap_.find(cqn);
     CHK_PRT_RET((it == cqMap_.end()),
         HCCL_ERROR("[TypicalQpManager][GetCqDepth] cqn[%u] not found.", cqn), HCCL_E_PARA);

@@ -33,6 +33,7 @@ constexpr u32 MAX_WQE_PER_DOORBELL = 300;
 constexpr u32 QP_QUEUE_DEPTH_MAX = 32768;
 constexpr u32 QP_QUEUE_DEPTH_MIN = 128;
 #define HCCN_RESV_MEM_TYPE_PDCCL (0)
+
 struct MrInfoT AscendMrInfo2MrInfo(AscendMrInfo* ascendMrInfo)
 {
     struct MrInfoT innerMrInfo = {};
@@ -102,10 +103,11 @@ HcclResult hcclCreateAscendQPWithAttr(AscendQPInfo* ascendQPInfo)
 
 HcclResult hcclCreateAscendCQWithAttr(AscendCQInfo* ascendCQInfo)
 {
-    s32 deviceLogicId = 0;
-    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(ascendCQInfo);
     CHK_RET(CheckDepth(ascendCQInfo->cqDepth));
+    
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_RET(TypicalQpManager::GetInstance().CreateCq(*ascendCQInfo));
     HCCL_INFO("hcclCreateAscendCQWithAttr success! cqn[%u], cqDepth[%u]",
         ascendCQInfo->cqn, ascendCQInfo->cqDepth);
@@ -114,9 +116,9 @@ HcclResult hcclCreateAscendCQWithAttr(AscendCQInfo* ascendCQInfo)
 
 HcclResult hcclDestroyAscendCQ(AscendCQInfo* ascendCQInfo)
 {
+    CHK_PTR_NULL(ascendCQInfo);
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
-    CHK_PTR_NULL(ascendCQInfo);
     CHK_RET(TypicalQpManager::GetInstance().DestroyCq(ascendCQInfo->cqn));
     HCCL_INFO("hcclDestroyAscendCQ success! cqn[%u]", ascendCQInfo->cqn);
     return HCCL_SUCCESS;
@@ -124,12 +126,12 @@ HcclResult hcclDestroyAscendCQ(AscendCQInfo* ascendCQInfo)
 
 HcclResult hcclPollAscendCQ(AscendCQInfo* cqInfo, uint32_t num, uint32_t *polledNum, struct AscendWc *wc)
 {
-    s32 deviceLogicId = 0;
-    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(cqInfo);
     CHK_PTR_NULL(polledNum);
     CHK_PTR_NULL(wc);
-
+    
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     void* cqHandle = nullptr;
     CHK_RET(TypicalQpManager::GetInstance().GetCqHandle(cqInfo->cqn, cqHandle));
 
@@ -177,6 +179,24 @@ HcclResult hcclCreateAscendQPWithCQWithAttr(AscendCQInfo* ascendSendCQInfo, Asce
         ascendQPInfo->qp_type = ASCEND_QPT_RC;
     }
 
+    qpConfigInfo.sq_sig_all = ascendQPInfo->sqSigAll;
+
+    if (ascendQPInfo->cap.maxSendSge == 0) {
+        qpConfigInfo.max_send_sge = DEFAULT_MAX_SEND_SGE;
+    } else {
+        qpConfigInfo.max_send_sge = ascendQPInfo->cap.maxSendSge;
+    }
+    if (ascendQPInfo->cap.maxRecvSge == 0) {
+        qpConfigInfo.max_recv_sge = DEFAULT_MAX_RECV_SGE;
+    } else {
+        qpConfigInfo.max_recv_sge = ascendQPInfo->cap.maxRecvSge;
+    }
+    if (ascendQPInfo->cap.maxInlineData == 0) {
+        qpConfigInfo.max_inline_data = DEFAULT_MAX_INLINE_DATA;
+    } else {
+        qpConfigInfo.max_inline_data = ascendQPInfo->cap.maxInlineData;
+    }
+
     u32 poolId;
     if (HCCL_SUCCESS == RdmaResourceManager::GetInstance().GetResvMemPoolIdByType(HCCN_RESV_MEM_TYPE_PDCCL, poolId)) {
         qpConfigInfo.use_resv_mem = 1;
@@ -208,6 +228,7 @@ HcclResult hcclDestroyAscendVerbsQP(AscendVerbsQPInfo* ascendQPInfo)
     }
     qpInfo.psn = ascendQPInfo->psn;
     CHK_RET(TypicalQpManager::GetInstance().DestroyQpWithoutCQ(qpInfo));
+    HCCL_INFO("hcclDestroyAscendVerbsQP success! qpn[%u]", ascendQPInfo->qpn);
     return HCCL_SUCCESS;
 }
 
@@ -562,6 +583,14 @@ HcclResult hcclAscendRdmaInit()
 {
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_RET(RdmaResourceManager::GetInstance().Init());
+    return HCCL_SUCCESS;
+}
+HcclResult hcclAscendRdmaInitV2()
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    RdmaResourceManager::GetInstance().SetDisableLiteThread(true);
     CHK_RET(RdmaResourceManager::GetInstance().Init());
     return HCCL_SUCCESS;
 }

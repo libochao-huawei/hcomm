@@ -1353,7 +1353,7 @@ HCCP_ATTRI_VISI_DEF int RaTypicalCqCreate(void *rdevHandle, unsigned int cqDepth
 
     phyId = rdmaHandleTmp->rdevInfo.phyId;
     CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
-        hccp_err("[create][ra_typical_cq]phyId(%u) exceeds max", phyId),
+        hccp_err("[create][ra_typical_cq]phyId(%u) exceeds max(%u)", phyId, RA_MAX_PHY_ID_NUM),
         ConverReturnCode(RDMA_OP, -EINVAL));
 
     hccp_run_info("RaTypicalCqCreate: phyId[%u], cqDepth[%u]", phyId, cqDepth);
@@ -1383,7 +1383,7 @@ HCCP_ATTRI_VISI_DEF int RaTypicalCqDestroy(void *rdevHandle, unsigned int cqn, v
 
     phyId = rdmaHandleTmp->rdevInfo.phyId;
     CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
-        hccp_err("[destroy][ra_typical_cq]phyId(%u) exceeds max", phyId),
+        hccp_err("[destroy][ra_typical_cq]phyId(%u) exceeds max(%u)", phyId, RA_MAX_PHY_ID_NUM),
         ConverReturnCode(RDMA_OP, -EINVAL));
 
     hccp_run_info("RaTypicalCqDestroy: phyId[%u], cqn[%u]", phyId, cqn);
