@@ -15,6 +15,7 @@ target_include_directories(legacy_alg_testcase PRIVATE
 )
 
 target_compile_definitions(legacy_alg_testcase PRIVATE
+    google=ascend_private
     -DOPEN_HCCL_TEST
     _GLIBCXX_USE_CXX11_ABI=0
     -DCCL_KERNEL_AICPU
@@ -40,7 +41,7 @@ target_link_libraries(legacy_alg_testcase PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    ${THIRD_PARTY_PATH}/protobuf/lib64/libprotobuf.so
+    ascend_protobuf
     -lrt
     -ldl
 )

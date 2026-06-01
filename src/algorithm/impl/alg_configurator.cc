@@ -69,8 +69,8 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
 
     bool isConfigNULL = algoConfigLevel0 == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
 
-    HCCL_INFO("[Set][AlgType] isConfigAHC[%u] isConfigNULL[%u] multiModuleDiffDeviceNumMode[%u]"\
-        "multiSuperPodDiffServerNumMode[%u]  multiSuperPodDiffDeviceNumMode[%u]",isConfigAHC, isConfigNULL,
+    HCCL_INFO("[AlgConfigurator][SelectCurrOpAlgType] isConfigAHC[%u] isConfigNULL[%u] multiModuleDiffDeviceNumMode[%u] "\
+        "multiSuperPodDiffServerNumMode[%u] multiSuperPodDiffDeviceNumMode[%u]",isConfigAHC, isConfigNULL,
         topoAttr_.multiModuleDiffDeviceNumMode, topoAttr_.multiSuperPodDiffServerNumMode, topoAttr_.multiSuperPodDiffDeviceNumMode);
  
     bool isSupportCmdARS = (opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER ||

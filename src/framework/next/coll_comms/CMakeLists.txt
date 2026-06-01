@@ -14,6 +14,7 @@ add_subdirectory(rank_pairs)
 add_subdirectory(api_c_adpt)
 add_subdirectory(dfx)
 add_subdirectory(communicator)
+add_subdirectory(group)
 
 if(TARGET hcomm)
     target_include_directories(hcomm PRIVATE

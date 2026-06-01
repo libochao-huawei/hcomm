@@ -1356,6 +1356,7 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     RankGraphBuilder rankGraphBuilder;
     rankGraph = rankGraphBuilder.Build(ranktable, topoPath, myRank);
     ranktableInfo = rankGraphBuilder.GetRankTableInfo(); // 获取ranktable信息
+    HCCL_RUN_INFO("[CommunicatorImpl::%s] rankTableInfo: %s", __func__, ranktableInfo->Describe().c_str());
     topoInfo = rankGraphBuilder.GetTopoInfo(); // 获取topo信息
     HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] topoInfo[%s]", topoInfo->Describe().c_str());
     rankSize = rankGraph->GetRankSize();
@@ -1536,12 +1537,11 @@ void CommunicatorImpl::InitCcuSuperFastLoad()
     bool nodeState = ProfilingHandler::GetInstance().GetHcclNodeState();
     bool l0State = ProfilingHandler::GetInstance().GetHcclL0State();
     bool l1State = ProfilingHandler::GetInstance().GetHcclL1State();
-    bool l2State = ProfilingHandler::GetInstance().GetHcclL2State();
 
-    enableProfilingEnv = hostApiState || nodeState || l0State || l1State || l2State;
+    enableProfilingEnv = hostApiState || nodeState || l0State || l1State;
 
-    HCCL_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d] l2State[%d]",
-    taskExceptionEnv, hostApiState, nodeState, l0State, l1State, l2State);
+    HCCL_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d]",
+    taskExceptionEnv, hostApiState, nodeState, l0State, l1State);
 }
 
 void CommunicatorImpl::InitPreResource()

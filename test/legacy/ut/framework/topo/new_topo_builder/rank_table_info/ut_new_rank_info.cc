@@ -46,15 +46,16 @@ TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_Normal_Expect_Success) {
     std::string rankListString = R"(
       {
         "rank_id": 0,
-        "device_id": 0,  
-        "local_id": 0,   
-        "replaced_loacl_id": 0,    
-        "device_port": 6666,     
+        "device_id": 0,
+        "local_id": 0,
+        "replaced_loacl_id": 0,
+        "device_port": 6666,
+        "host_port": 7777,
         "level_list": [
           {
             "net_layer": 0,
             "net_instance_id": "superPod0-rack3",
-            "net_type": "TOPO_FILE_DESC",  
+            "net_type": "TOPO_FILE_DESC",
             "net_attr": "",
             "rank_addr_list": [
               {
@@ -72,14 +73,14 @@ TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_Normal_Expect_Success) {
             ]
           }
         ],
-        "controle_plane":{  
+        "controle_plane":{
                "addr_type": "IPV4",
                 "addr": "192.168.100.100",
                 "listen_port": 8000
            }
       }
     )";
-    
+
     JsonParser rankListParser;
     NewRankInfo newRankInfo;
     rankListParser.ParseString(rankListString, newRankInfo);
@@ -90,6 +91,7 @@ TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_Normal_Expect_Success) {
     newRankInfo0.deviceId=0;
     newRankInfo0.localId = 0;
     newRankInfo0.devicePort=6666;
+    newRankInfo0.hostPort=7777;
 
     RankLevelInfo rankLevelInfo0;
     rankLevelInfo0.netLayer = 0;
@@ -122,6 +124,7 @@ TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_Normal_Expect_Success) {
     EXPECT_EQ(newRankInfo0.localId, newRankInfo0.localId);
     EXPECT_EQ(newRankInfo0.deviceId, newRankInfo0.deviceId);
     EXPECT_EQ(newRankInfo0.devicePort, newRankInfo0.devicePort);
+    EXPECT_EQ(newRankInfo0.hostPort, newRankInfo.hostPort);
 
     ASSERT_EQ(newRankInfo0.rankLevelInfos.size(), newRankInfo.rankLevelInfos.size());
     for(auto j = 0 ; j < newRankInfo.rankLevelInfos.size(); j++) {
@@ -231,7 +234,8 @@ TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_OptionalFieldsMissing_Expect_S
     EXPECT_EQ(newRankInfo1.rankId, newRankInfo.rankId);
     EXPECT_EQ(newRankInfo1.localId, newRankInfo.localId);
     EXPECT_EQ(newRankInfo1.deviceId, newRankInfo.deviceId);
-    
+    EXPECT_EQ(newRankInfo1.hostPort, newRankInfo.hostPort);
+
 }
 
 TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_InvalidLoaclId_Expect_Exception){
@@ -639,6 +643,99 @@ TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_InvalidLevelListLength_Expect_
           }
         ],
         "controle_plane":{  
+               "addr_type": "IPV4",
+                "addr": "192.168.100.100",
+                "listen_port": 8000
+           }
+      }
+    )";
+
+    JsonParser rankListParser;
+    NewRankInfo newRankInfo;
+
+    EXPECT_THROW(rankListParser.ParseString(rankListString, newRankInfo), InvalidParamsException);
+}
+TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_InvalidHostPort_Expect_Exception){
+    DevType devType = DevType::DEV_TYPE_910A;
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
+
+    std::string rankListString = R"(
+      {
+        "rank_id": 0,
+        "device_id": 0,
+        "local_id": 0,
+        "replaced_loacl_id": 0,
+        "host_port": 66666,
+        "level_list": [
+          {
+            "net_layer": 0,
+            "net_instance_id": "superPod0-rack3",
+            "net_type": "TOPO_FILE_DESC",
+            "net_attr": "",
+            "rank_addr_list": [
+              {
+               "addr_type": "IPV4",
+                "addr": "192.168.100.100",
+                "ports": [ "0/1", "0/2" ],
+                "plane_id": "planeA"
+              },
+              {
+               "addr_type": "IPV4",
+                "addr": "192.168.100.100",
+                "ports": [ "1/1", "1/2" ],
+                "plane_id": "planeB"
+              }
+            ]
+          }
+        ],
+        "controle_plane":{
+               "addr_type": "IPV4",
+                "addr": "192.168.100.100",
+                "listen_port": 8000
+           }
+      }
+    )";
+
+    JsonParser rankListParser;
+    NewRankInfo newRankInfo;
+
+    EXPECT_THROW(rankListParser.ParseString(rankListString, newRankInfo), InvalidParamsException);
+}
+
+TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_InvalidHostPortMin_Expect_Exception){
+    DevType devType = DevType::DEV_TYPE_910A;
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
+
+    std::string rankListString = R"(
+      {
+        "rank_id": 0,
+        "device_id": 0,
+        "local_id": 0,
+        "replaced_loacl_id": 0,
+        "host_port": 0,
+        "level_list": [
+          {
+            "net_layer": 0,
+            "net_instance_id": "superPod0-rack3",
+            "net_type": "TOPO_FILE_DESC",
+            "net_attr": "",
+            "rank_addr_list": [
+              {
+               "addr_type": "IPV4",
+                "addr": "192.168.100.100",
+                "ports": [ "0/1", "0/2" ],
+                "plane_id": "planeA"
+              },
+              {
+               "addr_type": "IPV4",
+                "addr": "192.168.100.100",
+                "ports": [ "1/1", "1/2" ],
+                "plane_id": "planeB"
+              }
+            ]
+          }
+        ],
+        "controle_plane":{
                "addr_type": "IPV4",
                 "addr": "192.168.100.100",
                 "listen_port": 8000

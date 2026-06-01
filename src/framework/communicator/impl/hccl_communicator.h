@@ -315,8 +315,8 @@ public:
     HcclResult AivResume();
     void AtomicInitClear();
     bool GetNicInitialized();
-    void DestroyAlgResource(AlgResourceResponse &res);
-    void DestroyOpTransportResponse(OpCommTransport &opTransportResponse);
+    void DestroyAlgResource(AlgResourceResponse &res, bool aclGraphDestroyCbk = false);
+    void DestroyOpTransportResponse(OpCommTransport &opTransportResponse, bool aclGraphDestroyCbk = false);
     HcclResult ReleasePreemptSocket();
     HcclResult DestroyNetworkResources();
     HcclResult DisablePreResource();
@@ -338,8 +338,8 @@ public:
     HcclResult InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbufferSize);
 
     // 目前支持按tag对资源释放、解绑定
-    HcclResult  ClearResMap(const std::string &tag, bool &findTag);
-    virtual HcclResult ClearOpResource(const std::string &tag);
+    HcclResult  ClearResMap(const std::string &tag, bool &findTag, bool aclGraphDestroyCbk = false);
+    virtual HcclResult ClearOpResource(const std::string &tag, bool aclGraphDestroyCbk = false);
     HcclResult SetClearAivSyncBuf(bool aivClearEnable);
 
     HcclResult SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr);
@@ -386,7 +386,9 @@ public:
         void* tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
         const std::string &tag, bool isCustom);
     HcclResult InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode);
-
+    // aclgraph 销毁时批量清理 aicpu 端 tags；走 RunAicpuKfcClearOpRes kernel，超 MAX_BATCH 分批
+    HcclResult AicpuKfcClearOpResLaunch(const std::unordered_set<std::string> &tags);
+    HcclResult ClearAclgraphHostLinks(const std::unordered_set<std::string> &tags);
     virtual HcclResult Mc2AiCpuStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
     HcclResult Mc2AiCpuInitStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
     HcclResult GetTopoDesc(HcclTopoDescs *topoDescs, uint32_t topoSize);
@@ -786,6 +788,7 @@ private:
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool selectAivAlg = false);
     HcclResult IncreAllocLink(const std::string &newTag, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
+    bool HasRoceTransportLinks(OpCommTransport &opTransportReq);
     HcclResult CleanTransportLinks(OpCommTransport &opTransportReq, OpCommTransport &opTransportResponse);
     DeviceMem GetWorkspaceScracthMem(const std::string &tag, u64 allocMemSize);
     std::vector<Stream> GetWorkspaceSubStreams(const std::string &tag, u32 num);
@@ -963,6 +966,12 @@ private:
     DeviceMem workSpace_;
     DeviceMem mc2DeviceMem_;
     std::vector<DeviceMem> extraMem_;
+#ifndef CCL_KERNEL_AICPU
+    // aclgraph 销毁时投递 HcclKfcClearOpResTilingData 的 HBM buffer，lazy alloc，RAII 析构
+    DeviceMem aicpuCleanupBuf_;
+    // host 侧 payload buffer（heap 持有），避免 ~2.5MB 结构体在栈上 value-init 爆栈
+    std::unique_ptr<HcclKfcClearOpResTilingData> aicpuCleanupHostBuf_;
+#endif
     std::vector<HcclRtEvent> aiCpuNoIpcEvnet_;
     bool isDiffDeviceModule_;
     bool isDiffDeviceType_;
@@ -1062,6 +1071,8 @@ private:
     void *zeroCopyIpcPtrs_[AICPU_ZERO_COPY_MAX_DEVICE_NUM_A3] {};
     std::atomic<HcclCommState> state_{HcclCommState::IDLE};
     std::unordered_map<std::string, std::string> newTagToTagMap_;
+    // zerocopy hex prefix tag + cnt 副本 _CaptureN tag，跨 iter 累积新 entry
+    std::unordered_set<std::string> tagsRequiringHostCleanup_;
     static std::mutex linkResMapMutex_;
     static std::unordered_map<Transport*, LinkInfo> linkResMap_;
     std::shared_ptr<HostMem> transDevIbverbsDataMem_ = nullptr;

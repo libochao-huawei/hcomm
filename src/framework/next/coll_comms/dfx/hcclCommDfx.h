@@ -61,8 +61,8 @@ public:
     std::function<HcclResult(const Hccl::TaskParam&, u64)> GetDpuCallback() {
         return setAddDpuTaskCallback_;
     }
-    HcclResult ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId);
-
+    HcclResult ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId, bool cachedReq);
+    HcclResult IsOpBase(bool &isOpBase);
 
     void SetDpuStreamId(u32 dpuStreamId);
     void SetAicpuTaskIdAndStreamId(u32 taskId, u32 streamId) {
@@ -86,6 +86,6 @@ private:
     std::function<HcclResult(const Hccl::TaskParam&, u64)> setAddDpuTaskCallback_; //dputask无法从外部获取taskid和streamid
 };
 
-} // namesapce hccl
+} // namespace hccl
 
 #endif

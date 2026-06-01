@@ -341,6 +341,7 @@ public:
     u32 GetHcclQos();
 
     std::shared_ptr<struct hcclKernelPlanner> planner {nullptr}; //for group
+    std::shared_ptr<struct hcclKernelPlannerV2> plannerV2 {nullptr}; //for group
     void* barrierSendBuf;
     void* barrierRecvBuf;
     std::mutex operatorlock_;

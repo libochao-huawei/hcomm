@@ -19,7 +19,6 @@ add_executable(hccp_service.bin
 target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/log
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/inc/network

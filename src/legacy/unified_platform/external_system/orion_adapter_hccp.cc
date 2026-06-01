@@ -1012,8 +1012,8 @@ QpHandle HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode)
 
     s32 ret = RaQpCreate(rdmaHandle, flag, qpMode, &connHandle);
     if (ret != 0 || connHandle == nullptr) {
-        RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3是当ROCE_ENOMEM_RET才上报EI0011
-                            std::vector<std::string>({"size: [0.25MB, 3MB], Affected by QP depth configuration"}));
+        RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3是当ROCE_ENOMEM_RET才上报EI0011,内存大小取决于qp深度配置
+                            std::vector<std::string>({"262144~3145728"}));
         MACRO_THROW(NetworkApiException, StringFormat("[Create][RaQp]errNo[0x%016llx] ra qp create fail. call RaGetNotifyBaseAddr, params: rdmaHandle[%p], flag[%d], qpMode[%d], connHandle[%p]. return: ret[%d]",
             HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), rdmaHandle, flag, qpMode, connHandle, ret));
     }
@@ -1986,19 +1986,21 @@ RequestHandle RaSocketCloseOneAsync(RaSocketCloseParam &in)
     return reinterpret_cast<RequestHandle>(raReqHandle);
 }
 
-RequestHandle RaSocketListenOneStartAsync(RaSocketListenParam &in)
+RequestHandle RaSocketListenOneStartAsync(SocketListenInfoT* listenInfo)
 {
-    HCCL_INFO("[RaSocketListenOneStartAsync] Input params: socketHandle=%p, port=%u", in.socketHandle, in.port);
-    struct SocketListenInfoT listenInfo {};
-    listenInfo.socketHandle = in.socketHandle;
-    listenInfo.port = in.port;
+    if (listenInfo == nullptr) {
+        MACRO_THROW(NetworkApiException, StringFormat(
+            "errNo[0x%016llx] listenInfo is nullptr.",
+        HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT)));
+    }
+    HCCL_INFO("[RaSocketListenOneStartAsync] Input params: listenInfo=%p, port=%u", listenInfo, listenInfo->port);
 
     void *raReqHandle = nullptr;
-    int ret = RaSocketListenStartAsync(&listenInfo, SOCKET_NUM_ONE, &raReqHandle);
+    int ret = RaSocketListenStartAsync(listenInfo, SOCKET_NUM_ONE, &raReqHandle);
     if (ret != 0) {
         MACRO_THROW(NetworkApiException, StringFormat(
             "errNo[0x%016llx] ra socket listen start fail. return[%d]",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret));
+        HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret));
     }
 
     return reinterpret_cast<RequestHandle>(raReqHandle);
@@ -2493,8 +2495,8 @@ HcclResult HrtRaNormalQpCreate(RdmaHandle rdmaHandle, QpInfo& qp)
     ibQpAttr.cap.max_recv_wr = (qp.srq == nullptr ? qp.attr.maxWr : 0);
     ibQpAttr.cap.max_recv_sge = (qp.srq == nullptr ? qp.attr.maxRecvSge : 0);
     s32 ret = RaNormalQpCreate(rdmaHandle, &ibQpAttr, &(qp.qpHandle), reinterpret_cast<void **>(&(qp.qp)));
-    RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3是当ROCE_ENOMEM_RET才上报EI0011
-                            std::vector<std::string>({"size: [0.25MB, 3MB], Affected by QP depth configuration"}));
+    RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3是当ROCE_ENOMEM_RET才上报EI0011,内存大小取决于qp深度配置
+                            std::vector<std::string>({"262144~3145728"}));
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Create][NormalQp]errNo[0x%016llx] RaNormalQpCreate fail. return[%d], params: rdmaHandle[%p], context[%p]",\
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, qp.context), HCCL_E_NETWORK);
     return HCCL_SUCCESS;

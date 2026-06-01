@@ -30,6 +30,19 @@ public:
 
     std::string Describe() const override;
 
+    // ========== Buffer 构造接口 ==========
+    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
+
+    // ========== RMA 数据传输接口 ==========
+    void Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override;
+
+    void WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify,
+                         const StreamLite &stream) override;
+
+    // ========== 同步 / Notify 接口 ==========
+    void Post(u32 index, const StreamLite &stream) override;
+    void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
+
 private:
     u32 notifyNum_{0};
     u32 bufferNum_{0};
@@ -44,7 +57,8 @@ private:
     std::unique_ptr<RmaBufferLite> notifyValueBuffer_{};
 
     RmaBufSliceLite GetRmaBufSlicelite(const RmaBufferLite &lite) const;
-    RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const RmtRmaBufferLite &lite) const;
+    RmaBufSliceLite GetNotifySlicelite(u32 index) const;
+    RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const Buffer &rmtBuf) const;
     RmtRmaBufSliceLite GetRmtNotifySliceLite(u32 index) const;
 
     void ParseLocNotifyVec(std::vector<char> &data);
@@ -53,6 +67,10 @@ private:
     void ParseLocBufferVec(std::vector<char> &data);
     void ParseRmtBufferVec(std::vector<char> &data);
     void ParseConnVec(std::vector<char> &data);
+
+    // ========== 底层 Task 构造接口(rtsq) ==========
+    void BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue);
+    void BuildNotifyWaitTask(u32 notifyId, const StreamLite &stream, u32 timeout);
 };
 
 } // namespace Hccl

@@ -1075,7 +1075,7 @@ HcclResult CcuComponent::CcuCleanTaskKillState(const int32_t deviceLogicId)
 HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
 {
     CHK_PRT_RET(dieId >= MAX_CCU_IODIE_NUM,
-        HCCL_WARNING("[%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
+        HCCL_WARNING("[%s] failed, dieId[%u] is invalid, should be in [0-%u), devLogicId[%d].",
         __func__, dieId, MAX_CCU_IODIE_NUM, devLogicId_), HcclResult::HCCL_E_PARA);
 
     if (!dieEnableFlags_[dieId]) {

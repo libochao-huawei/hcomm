@@ -148,10 +148,6 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = CommConfig();
-        commName_ = identifier_;
-        if (commConfig_.GetConfigGroupName() != "") {
-            commName_ = commConfig_.GetConfigGroupName();
-        }
         dpuManager_.reset(new (std::nothrow) DpuManager());
         if (dpuManager_ == nullptr) {
             HCCL_ERROR("new DpuManager failed!");
@@ -189,10 +185,6 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = commConfig;
-        commName_ = identifier_;
-        if (commConfig_.GetConfigGroupName() != "") {
-            commName_ = commConfig_.GetConfigGroupName();
-        } 
         dpuManager_.reset(new (std::nothrow) DpuManager());
         if (dpuManager_ == nullptr) {
             HCCL_ERROR("new DpuManager failed!");
@@ -682,6 +674,8 @@ namespace hccl
                     HCCL_INFO("[%s] workflowMode:%d not support symmetric memory", __func__, GetWorkflowMode()), false);
         CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93,
                     HCCL_INFO("[%s] deviceType:%d not support symmetric memory", __func__, deviceType_), false);
+        CHK_PRT_RET(superPodNum_ == 1 && serverNum_ > 1 && GetExternalInputInterHccsDisable(),
+                    HCCL_INFO("[%s] mutilSever use roce not support symmetric memory", __func__), false);
 
         // 判断拓扑逻辑是否支持symmetric memory
         // 每个节点只有一张卡或节点间非对称场景不支持对称内存
@@ -843,6 +837,10 @@ namespace hccl
         commPortConfig_ = params.commPortConfig;
         cclBuffName_ = params.cclBuffName;
         isShareComm_ = !cclBuffName_.empty();
+        commName_ = identifier_;
+        if (!commConfig_.GetConfigUdi().empty()) {    // 如果配置了udi，更新commName_
+            commName_ = commConfig_.GetConfigGroupName();
+        }
 
         HCCL_DEBUG(
             " userRank_: %u realUserRank_: %u userRankSize_: %u deviceLogicId_: %u deviceType_: %u commWorkMode_: %u.",
@@ -1013,12 +1011,13 @@ namespace hccl
         return commConfig_.GetConfigAclGraphZeroCopyEnable();
     }
 
-    HcclResult HcclCommunicator::ClearResMap(const std::string &tag, bool &findTag)
+    HcclResult HcclCommunicator::ClearResMap(const std::string &tag, bool &findTag, bool aclGraphDestroyCbk)
     {
+        findTag = false;
         auto resIter = resMap_.find(tag);
         if (resIter != resMap_.end()) {
             findTag = true;
-            DestroyAlgResource(resIter->second);
+            DestroyAlgResource(resIter->second, aclGraphDestroyCbk);
             CHK_RET(StreamActiveManager::GetInstance(deviceLogicId_).StreamsUnactive(resIter->second.slaveStreams));
             resMap_.erase(resIter);
             HCCL_INFO("[%s] clear resMap[%s]", __func__, tag.c_str());
@@ -1026,12 +1025,47 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::ClearOpResource(const std::string &tag)
+    HcclResult HcclCommunicator::ClearAclgraphHostLinks(const std::unordered_set<std::string> &tags)
+    {
+        for (const auto &tag : tags) {
+            auto it = tagsRequiringHostCleanup_.find(tag);
+            if (it == tagsRequiringHostCleanup_.end()) {
+                continue;
+            }
+            for (auto &rankIt : rankTagRemoteRes_) {
+                auto tagIt = rankIt.second.find(tag);
+                if (tagIt == rankIt.second.end()) {
+                    continue;
+                }
+                HccltagRemoteResV2 *hostPtr = tagIt->second.tagRemoteResPtr;
+                if (hostPtr != nullptr) {
+                    // 顺序敏感: ListCommonRemove 必须先于 erase shared_ptr,
+                    // 否则 hostPtr 成野指针, ListCommonRemove 访问 segfault。
+                    ListCommonRemove(&hostPtr->nextTagRes);
+                    for (auto vIt = hostMemVec_.begin(); vIt != hostMemVec_.end(); ++vIt) {
+                        if (*vIt && (*vIt)->ptr() == hostPtr) {
+                            size_t idx = static_cast<size_t>(vIt - hostMemVec_.begin());
+                            if (idx < deviceMemVec_.size()) {
+                                deviceMemVec_.erase(deviceMemVec_.begin() + idx);
+                            }
+                            hostMemVec_.erase(vIt);
+                            break;
+                        }
+                    }
+                }
+                rankIt.second.erase(tagIt);
+            }
+            tagsRequiringHostCleanup_.erase(it);
+        }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::ClearOpResource(const std::string &tag, bool aclGraphDestroyCbk)
     {
         bool findTag = false;
-        CHK_RET(ClearResMap(tag, findTag));
-        CHK_RET(ClearResMap(tag + "_host", findTag));
-        CHK_RET(ClearResMap(tag + "_device", findTag));
+        CHK_RET(ClearResMap(tag, findTag, aclGraphDestroyCbk));
+        CHK_RET(ClearResMap(tag + "_host", findTag, aclGraphDestroyCbk));
+        CHK_RET(ClearResMap(tag + "_device", findTag, aclGraphDestroyCbk));
         if (!findTag) {
             HCCL_WARNING("[%s] not find tag[%s] in resMap", __func__, tag.c_str());
         }
@@ -1823,6 +1857,9 @@ namespace hccl
 
     void HcclCommunicator::DestroyWorkspaceResource(const std::string &tag)
     {
+        if (workSpaceRes_ == nullptr) {
+            return;
+        }
         workSpaceRes_->DestroyWorkspaceResource(tag);
     }
 
@@ -4542,6 +4579,7 @@ namespace hccl
             // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
             if (isInGraphCaptureZeroCopy) {
                 CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                tagsRequiringHostCleanup_.insert(newTag);
             }
         }
 
@@ -4554,22 +4592,27 @@ namespace hccl
 
         // 资源创建
         if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture) {
-            auto resTmp = resMap_[newTag];
-            ++captureCnt_;
-            newTag += std::to_string(captureCnt_);
-            resMap_[newTag] = resTmp;
             AlgResourceRequest resRequest;
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
-            if (IsEnableBackupLink()) {
-                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
+            if (HasRoceTransportLinks(resRequest.opTransport)) {
+                auto resTmp = resMap_[newTag];
+                ++captureCnt_;
+                newTag += std::to_string(captureCnt_);
+                resMap_[newTag] = resTmp;
+                resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
+                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
+                if (IsEnableBackupLink()) {
+                    CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
+                }
+                // 记录指令信息用于一致性校验
+                CHK_RET(RecordOpPara(opType, opParam));
+                CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
+                // 移除tag对应的指令信息
+                CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+                // aclgraph零拷贝场景下，除第一个capture外，需要记录，在graph销毁时清理相关资源
+                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                tagsRequiringHostCleanup_.insert(newTag);
             }
-            // 记录指令信息用于一致性校验
-            CHK_RET(RecordOpPara(opType, opParam));
-            CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
-            // 移除tag对应的指令信息
-            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool needIncreLink = false;
@@ -4881,6 +4924,7 @@ namespace hccl
             // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
             if (isInGraphCaptureZeroCopy) {
                 CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                tagsRequiringHostCleanup_.insert(newTag);
             }
         }
 
@@ -4895,22 +4939,27 @@ namespace hccl
         // 资源创建
         bool selectAivAlg = algDesc.isAivMode;
         if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture) {
-            auto resTmp = resMap_[newTag];
-            ++captureCnt_;
-            newTag += std::to_string(captureCnt_);
-            resMap_[newTag] = resTmp;
             AlgResourceRequest resRequest;
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
-            if (IsEnableBackupLink()) {
-                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
+            if (HasRoceTransportLinks(resRequest.opTransport)) {
+                auto resTmp = resMap_[newTag];
+                ++captureCnt_;
+                newTag += std::to_string(captureCnt_);
+                resMap_[newTag] = resTmp;
+                resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
+                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
+                if (IsEnableBackupLink()) {
+                    CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
+                }
+                // 记录指令信息用于一致性校验
+                CHK_RET(RecordOpPara(opType, opParam));
+                CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
+                // 移除tag对应的指令信息
+                CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+                // aclgraph零拷贝场景下，除第一个capture外，需要记录，在graph销毁时清理相关资源
+                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+                tagsRequiringHostCleanup_.insert(newTag);
             }
-            // 记录指令信息用于一致性校验
-            CHK_RET(RecordOpPara(opType, opParam));
-            CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
-            // 移除tag对应的指令信息
-            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool aicpuUnfoldModeFor910B =
@@ -6326,7 +6375,7 @@ namespace hccl
         // 记录主流相关信息, 给profiling和task exception使用
         HCCL_PROFILER_ADD_STREAM_BY_STREAMID(param.stream.id(), param.tag, 0, algType);
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-             hccl::ProfilingManagerPub::GetAddtionInfoState() &&
+             hccl::ProfilingManagerPub::GetAdditionInfoState() &&
              hccl::ProfilingManagerPub::GetTaskApiState()) &&
              !param.isCapture) {
             return HCCL_SUCCESS;
@@ -6474,6 +6523,22 @@ namespace hccl
                   algResResponse.paramInputMem.size(), algResResponse.paramOutputMem.ptr(),
                   algResResponse.paramOutputMem.size());
         return HCCL_SUCCESS;
+    }
+
+    bool HcclCommunicator::HasRoceTransportLinks(OpCommTransport &opTransportReq)
+    {
+        for (u32 levelIndex = 0; levelIndex < opTransportReq.size(); levelIndex++) {
+            for (u32 ringIndex = 0; ringIndex < opTransportReq[levelIndex].size(); ringIndex++) {
+                SingleSubCommTransport &reqSingleSubComm = opTransportReq[levelIndex][ringIndex];
+                for (u32 rankIndex = 0; rankIndex < reqSingleSubComm.transportRequests.size(); rankIndex++) {
+                    TransportRequest &transportRequest = reqSingleSubComm.transportRequests[rankIndex];
+                    if (transportRequest.isUsedRdma) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     HcclResult HcclCommunicator::CleanTransportLinks(OpCommTransport &opTransportReq, OpCommTransport &opTransportResponse)
@@ -7370,6 +7435,75 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::AicpuKfcClearOpResLaunch(const std::unordered_set<std::string> &tags)
+    {
+        if (tags.empty()) {
+            return HCCL_SUCCESS;
+        }
+        // 仅 aicpu unfold 模式有 aicpu 端 resMap_/linkRes_ 需要清理；host 模式下没有 binHandle_
+        if (binHandle_ == nullptr) {
+            HCCL_DEBUG("[AicpuKfcClearOpResLaunch] binHandle_ null (host-mode communicator), skip; tagCount[%zu]",
+                tags.size());
+            return HCCL_SUCCESS;
+        }
+        if (opStream_.ptr() == nullptr) {
+            HCCL_WARNING("[AicpuKfcClearOpResLaunch] opStream_ null, skip aicpu cleanup; tagCount[%zu]", tags.size());
+            return HCCL_SUCCESS;
+        }
+        // host args 通道有 size 上限，大 payload 走 args/tiling 会被拒绝。沿用 RunAicpuKfcResInit 模式：HBM buffer 持载 payload
+        if (!aicpuCleanupBuf_) {
+            CHK_RET(DeviceMem::alloc(aicpuCleanupBuf_, sizeof(HcclKfcClearOpResTilingData)));
+        }
+        if (!aicpuCleanupHostBuf_) {
+            aicpuCleanupHostBuf_.reset(new (std::nothrow) HcclKfcClearOpResTilingData());
+            CHK_SMART_PTR_NULL(aicpuCleanupHostBuf_);
+        }
+        HcclKfcClearOpResTilingData &payload = *aicpuCleanupHostBuf_;
+
+        // 必须与 aicpu_kfc_def.h 中 KFCResInitTask 布局一致，aicpu 端按此解包
+        struct KFCResInitTask { u64 context; bool isCustom; };
+        KFCResInitTask initTask = { reinterpret_cast<u64>(aicpuCleanupBuf_.ptr()), false };
+        const u16 timeOut = MAX_VALUE_U16;
+        const size_t groupCopyLen = std::min(identifier_.length() + 1, sizeof(payload.group));
+        size_t totalBatches = 0;
+
+        // 分批 launch：同 buffer 复用，每批最多 MAX_BATCH 个 tag；launch 后 sync 保证 aicpu 完成才覆盖 buffer 下一批
+        auto it = tags.begin();
+        while (it != tags.end()) {
+            payload.magic = HCCL_KFC_CLEAR_OP_RES_MAGIC;
+            CHK_SAFETY_FUNC_RET(memcpy_s(payload.group, sizeof(payload.group), identifier_.c_str(), groupCopyLen));
+            payload.group[sizeof(payload.group) - 1] = '\0';
+
+            u32 idx = 0;
+            while (it != tags.end() && idx < HCCL_KFC_CLEAR_OP_RES_MAX_BATCH) {
+                const std::string &t = *it;
+                const size_t tagCopyLen = std::min(t.length() + 1, sizeof(payload.tags[idx]));
+                CHK_SAFETY_FUNC_RET(memcpy_s(payload.tags[idx], sizeof(payload.tags[idx]), t.c_str(), tagCopyLen));
+                payload.tags[idx][sizeof(payload.tags[idx]) - 1] = '\0';
+                ++idx;
+                ++it;
+            }
+            payload.tagCount = idx;
+
+            CHK_RET(hrtMemSyncCopy(aicpuCleanupBuf_.ptr(), sizeof(payload), reinterpret_cast<void *>(&payload),
+                sizeof(payload), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+            HcclResult ret = AicpuAclKernelLaunchV2(opStream_.ptr(), reinterpret_cast<void *>(&initTask),
+                sizeof(initTask), binHandle_, "RunAicpuKfcClearOpRes", true, timeOut, nullptr, 0, identifier_);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[AicpuKfcClearOpResLaunch] launch fail, group[%s] batch[%zu] tagCount[%u] ret[%d]",
+                    identifier_.c_str(), totalBatches, idx, ret);
+                return ret;
+            }
+            CHK_RET(hcclStreamSynchronize(opStream_.ptr(), commConfig_.GetConfigExecTimeOut()));
+            ++totalBatches;
+        }
+
+        HCCL_INFO("[AicpuKfcClearOpResLaunch] dispatched aicpu cleanup, group[%s] totalTags[%zu] batches[%zu]",
+            identifier_.c_str(), tags.size(), totalBatches);
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::AicpuInitOpTilingDataAicpuCache(const OpParam &opParam, const HcclCMDType &opType, struct OpTilingData *opTilingData)
     {
         opTilingData->aicpuCacheEnable = opParam.aicpuCacheEnable;
@@ -7825,7 +7959,7 @@ namespace hccl
             timeOut = opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC;
         }
         HcclResult ret = AicpuAclKernelLaunchV2(stm, reinterpret_cast<void *>(&context), sizeof(context),
-            binHandle, kernelName, false, timeOut, tilingDataPtr, tilingDataSize);
+            binHandle, kernelName, false, timeOut, tilingDataPtr, tilingDataSize, identifier_);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[HcclCommunicator][AicpuUnfoldKernelLaunchV2]isCustom[%d] binHandle[%p]",
                 isCustom, binHandle), ret);

@@ -170,8 +170,8 @@ HcclResult ScatterRing::RunAsync(const u32 rank, const u32 rankSize,
     interRank_ = rank;
     interRankSize_ = rankSize;
 
-    HCCL_INFO("ScatterRing run: rank[%u] totalrank[%u]  count[%llu] input[%p] output[%p]",
-              interRank_, interRankSize_,  count_, inputMem_.ptr(), outputMem_.ptr());
+    HCCL_INFO("ScatterRing run: rank[%u] totalrank[%u] count[%llu] input[%p] output[%p]",
+              interRank_, interRankSize_, count_, inputMem_.ptr(), outputMem_.ptr());
 
     // ranksize为1时，只有当input!=output 时候进行拷贝
     if (interRankSize_ == 1) {

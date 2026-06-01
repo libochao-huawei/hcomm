@@ -26,6 +26,8 @@
 #include "hccl_group_utils.h"
 #include "hccl_dispatcher_ctx.h"
 
+#include "coll_comm_group_utils.h"
+
 namespace hccl {
 RankTable_t g_hcclDefaultRankTable;
 
@@ -40,6 +42,7 @@ hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identi
     barrierInMemory_ = DeviceMem();
     barrierOutMemory_ = DeviceMem();
     planner = std::make_shared<hcclKernelPlanner>();
+    plannerV2 = std::make_shared<hcclKernelPlannerV2>();
 }
 
 hcclComm::~hcclComm()
