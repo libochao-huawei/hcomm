@@ -37,6 +37,7 @@
   - [基础资源管理](./control_plane_api/basic_resource_mgmt/README.md)
     - [HcommEndpointCreate](./control_plane_api/basic_resource_mgmt/HcommEndpointCreate.md)
     - [HcommEndpointDestroy](./control_plane_api/basic_resource_mgmt/HcommEndpointDestroy.md)
+    - [HcommEndpointCheckFeature](./control_plane_api/basic_resource_mgmt/HcommEndpointCheckFeature.md)
     - [HcommEndpointGetListenPort](./control_plane_api/basic_resource_mgmt/HcommEndpointGetListenPort.md)
     - [HcommMemReg](./control_plane_api/basic_resource_mgmt/HcommMemReg.md)
     - [HcommMemUnreg](./control_plane_api/basic_resource_mgmt/HcommMemUnreg.md)
