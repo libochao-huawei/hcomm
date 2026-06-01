@@ -34,11 +34,13 @@ struct TypicalLiteCqEntry {
     unsigned int phyId;
     unsigned int cqn;
     struct rdma_lite_cq *liteCq;
+    struct rdma_lite_device_cq_attr deviceCqAttr;
 };
 static struct TypicalLiteCqEntry g_typical_lite_cq_table[MAX_TYPICAL_LITE_CQ_NUM];
 static int g_typical_lite_cq_cnt = 0;
 
-void RaHdcLiteStoreTypicalCq(unsigned int phyId, unsigned int cqn, struct rdma_lite_cq *liteCq)
+void RaHdcLiteStoreTypicalCq(unsigned int phyId, unsigned int cqn, struct rdma_lite_cq *liteCq,
+    struct rdma_lite_device_cq_attr *deviceCqAttr)
 {
     if (g_typical_lite_cq_cnt >= MAX_TYPICAL_LITE_CQ_NUM) {
         hccp_err("[store][ra_hdc_lite]typical lite cq table full, cqn[%u]", cqn);
@@ -47,6 +49,7 @@ void RaHdcLiteStoreTypicalCq(unsigned int phyId, unsigned int cqn, struct rdma_l
     g_typical_lite_cq_table[g_typical_lite_cq_cnt].phyId = phyId;
     g_typical_lite_cq_table[g_typical_lite_cq_cnt].cqn = cqn;
     g_typical_lite_cq_table[g_typical_lite_cq_cnt].liteCq = liteCq;
+    g_typical_lite_cq_table[g_typical_lite_cq_cnt].deviceCqAttr = *deviceCqAttr;
     g_typical_lite_cq_cnt++;
     hccp_info("[store][ra_hdc_lite]stored typical lite cq, phyId[%u] cqn[%u]", phyId, cqn);
 }
@@ -62,6 +65,33 @@ struct rdma_lite_cq *RaHdcLiteFindTypicalCq(unsigned int phyId, unsigned int cqn
     }
     hccp_err("[find][ra_hdc_lite]typical lite cq not found, phyId[%u] cqn[%u]", phyId, cqn);
     return NULL;
+}
+
+int RaHdcLiteFindTypicalCqAttr(unsigned int phyId, unsigned int cqn,
+    struct rdma_lite_device_cq_attr **deviceCqAttr)
+{
+    int i;
+    for (i = 0; i < g_typical_lite_cq_cnt; i++) {
+        if (g_typical_lite_cq_table[i].phyId == phyId && g_typical_lite_cq_table[i].cqn == cqn) {
+            *deviceCqAttr = &g_typical_lite_cq_table[i].deviceCqAttr;
+            return 0;
+        }
+    }
+    hccp_err("[find][ra_hdc_lite]typical lite cq attr not found, phyId[%u] cqn[%u]", phyId, cqn);
+    return -EINVAL;
+}
+
+void RaHdcLiteUpdateTypicalCqLiteCq(unsigned int phyId, unsigned int cqn, struct rdma_lite_cq *liteCq)
+{
+    int i;
+    for (i = 0; i < g_typical_lite_cq_cnt; i++) {
+        if (g_typical_lite_cq_table[i].phyId == phyId && g_typical_lite_cq_table[i].cqn == cqn) {
+            g_typical_lite_cq_table[i].liteCq = liteCq;
+            hccp_info("[update][ra_hdc_lite]updated typical lite cq, phyId[%u] cqn[%u]", phyId, cqn);
+            return;
+        }
+    }
+    hccp_err("[update][ra_hdc_lite]typical lite cq not found, phyId[%u] cqn[%u]", phyId, cqn);
 }
 
 STATIC void *RaHdcLitePthread(void *arg);
@@ -459,9 +489,9 @@ int RaHdcLiteCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth,
         return -EFAULT;
     }
 
-    RaHdcLiteStoreTypicalCq(rdmaHandle->rdevInfo.phyId, cqData->rxData.cqn, *liteCq);
+    RaHdcLiteStoreTypicalCq(rdmaHandle->rdevInfo.phyId, cqData->rxData.cqn, *liteCq, &deviceCqAttr);
 
-    hccp_info("[create][ra_hdc_lite_cq]lite cq created successfully, cqDepth(%u)", cqDepth);
+    hccp_info("[create][ra_hdc_lite_cq]lite cq created successfully, cqDepth(%u), liteCq[%p]", cqDepth, *liteCq);
 
     return 0;
 }
@@ -554,6 +584,29 @@ STATIC int RaHdcLiteGetCqQpAttr(struct RaQpHandle *qpHdc, struct rdma_lite_cq_at
     return 0;
 }
 
+int RaHdcLiteGetQpAttr(struct RaQpHandle *qpHdc, struct rdma_lite_qp_attr *liteQpAttr)
+{
+    union OpLiteQpAttrData liteQpAttrData = { 0 };
+    unsigned int phyId = qpHdc->phyId;
+    int ret;
+
+    liteQpAttrData.txData.phyId = phyId;
+    liteQpAttrData.txData.rdevIndex = qpHdc->rdevIndex;
+    liteQpAttrData.txData.qpn = qpHdc->qpn;
+    ret = RaHdcProcessMsg(RA_RS_GET_LITE_QP_ATTR, phyId, (char *)&liteQpAttrData,
+        sizeof(union OpLiteQpAttrData));
+    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]ra hdc message process failed ret(%d) phyId(%u)",
+        ret, phyId), ret);
+
+    qpHdc->dbIndex = liteQpAttrData.rxData.resp.qpData.qp_info;
+    ret = memcpy_s((void *)&(liteQpAttr->device_qp_attr), sizeof(liteQpAttr->device_qp_attr),
+        (void *)&liteQpAttrData.rxData.resp.qpData, sizeof(liteQpAttrData.rxData.resp.qpData));
+    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]memcpy_s failed ret(%d) phyId(%u)",
+        ret, phyId), ret);
+
+    return 0;
+}
+
 int RaHdcLiteQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
     struct rdma_lite_qp_cap *cap)
 {
@@ -567,6 +620,8 @@ int RaHdcLiteQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
     if (rdmaHandle->supportLite == 0 || (qpHdc->qpMode != RA_RS_OP_QP_MODE && qpHdc->qpMode != RA_RS_OP_QP_MODE_EXT)) {
         return 0;
     }
+
+    hccp_info("[QP_PATH][ra_hdc_lite_qp]RaHdcLiteQpCreate OLD path, phyId[%u] qpn[%u]", phyId, qpHdc->qpn);
 
     ret = RaHdcLiteGetCqQpAttr(qpHdc, &liteSendCqAttr, &liteRecvCqAttr, &liteQpAttr);
     CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]ra_hdc_lite_get_cq_qp_attr failed ret(%d) phyId(%u)",
@@ -684,11 +739,14 @@ void RaHdcLiteQpDestroyWithoutCQ(struct RaQpHandle *qpHdc)
 }
 
 int RaHdcLiteQpCreateWithCQ(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
-    struct rdma_lite_qp_cap *cap, struct rdma_lite_cq *sendLiteCq, struct rdma_lite_cq *recvLiteCq)
+    struct rdma_lite_qp_cap *cap, struct rdma_lite_cq *sendLiteCq, struct rdma_lite_cq *recvLiteCq,
+    unsigned int sendCqn, unsigned int recvCqn)
 {
-    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct rdma_lite_device_cq_attr *storedSendCqAttr = NULL;
+    struct rdma_lite_device_cq_attr *storedRecvCqAttr = NULL;
     struct rdma_lite_cq_attr liteSendCqAttr = { 0 };
     struct rdma_lite_cq_attr liteRecvCqAttr = { 0 };
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
     struct rdma_lite_qp_attr liteQpAttr = { 0 };
     int ret;
 
@@ -696,9 +754,21 @@ int RaHdcLiteQpCreateWithCQ(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *
         return 0;
     }
 
-    ret = RaHdcLiteGetCqQpAttr(qpHdc, &liteSendCqAttr, &liteRecvCqAttr, &liteQpAttr);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]ra_hdc_lite_get_cq_qp_attr failed ret(%d) phyId(%u)",
+    hccp_info("[QP_PATH][ra_hdc_lite_qp]RaHdcLiteQpCreateWithCQ NEW path, phyId[%u] sendCqn[%u] recvCqn[%u]",
+        phyId, sendCqn, recvCqn);
+
+    ret = RaHdcLiteGetQpAttr(qpHdc, &liteQpAttr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]get qp attr failed ret(%d) phyId(%u)",
         ret, phyId), ret);
+
+    ret = RaHdcLiteFindTypicalCqAttr(phyId, sendCqn, &storedSendCqAttr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]find send cq attr failed phyId(%u) cqn(%u)",
+        phyId, sendCqn), ret);
+    ret = RaHdcLiteFindTypicalCqAttr(phyId, recvCqn, &storedRecvCqAttr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]find recv cq attr failed phyId(%u) cqn(%u)",
+        phyId, recvCqn), ret);
+    liteSendCqAttr.device_cq_attr = *storedSendCqAttr;
+    liteRecvCqAttr.device_cq_attr = *storedRecvCqAttr;
 
     ret = RaHdcLiteInitMemPool(rdmaHandle, qpHdc, &liteSendCqAttr, &liteRecvCqAttr, &liteQpAttr);
     CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]ra_hdc_lite_init_mem_pool failed ret(%d) phyId(%u)",
@@ -714,6 +784,11 @@ int RaHdcLiteQpCreateWithCQ(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *
         ret = -EFAULT;
         goto free_mem_pool;
     }
+
+    RaHdcLiteUpdateTypicalCqLiteCq(phyId, sendCqn, qpHdc->liteQp->send_cq);
+    RaHdcLiteUpdateTypicalCqLiteCq(phyId, recvCqn, qpHdc->liteQp->recv_cq);
+    hccp_info("[QP_PATH][ra_hdc_lite_qp]updated table, sendCqn[%u]->liteCq[%p] recvCqn[%u]->liteCq[%p]",
+        sendCqn, (void *)qpHdc->liteQp->send_cq, recvCqn, (void *)qpHdc->liteQp->recv_cq);
 
     ret = pthread_mutex_init(&qpHdc->qpMutex, NULL);
     if (ret != 0) {
@@ -1104,6 +1179,8 @@ STATIC int RaHdcLitePostSend(struct RaQpHandle *qpHdc, struct LiteMrInfo *localM
     if (ret) {
         return ret;
     }
+    hccp_info("[SEND_PATH]post_send success, qp[%p] send_cq[%p] dbIndex[%u]",
+        (void *)qpHdc->liteQp, (void *)qpHdc->liteQp->send_cq, (unsigned int)qpHdc->dbIndex);
 
     wrRsp->db.dbIndex = (unsigned int)qpHdc->dbIndex;
     wrRsp->db.dbInfo = resp.db.lite_db_info;
