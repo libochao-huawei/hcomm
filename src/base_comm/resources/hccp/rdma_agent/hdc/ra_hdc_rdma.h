@@ -16,8 +16,6 @@
 #include "ra_hdc.h"
 #include "ra_rs_comm.h"
 
-struct LiteSendWr;
-
 #define RA_MAX_BATCH_QP_MODIFY_NUM  768
 
 union OpRdevInitData {
@@ -576,8 +574,6 @@ int RaHdcTypicalSendWr(struct RaQpHandle *qpHdc, struct SendWr *wr, struct SendW
 int RaHdcSendWrV2(struct RaQpHandle *qpHdc, struct SendWrV2 *wr, struct SendWrRsp *opRsp);
 int RaHdcSendWrVerbs(struct RaQpHandle *qpHdc, struct SendWrVerbs *wr, struct SendWrRsp *opRsp);
 int RaHdcRecvWrVerbs(struct RaQpHandle *qpHdc, struct RecvWrVerbs *wr);
-int RaHdcLiteTypicalSendWrVerbs(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct SendWrRsp *opRsp,
-    unsigned long long wrId);
 int RaHdcSendWrlist(struct RaQpHandle *qpHdc, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     struct WrlistSendCompleteNum wrlistNum);
 int RaHdcSendWrlistExt(struct RaQpHandle *qpHdc, struct SendWrlistDataExt wr[], struct SendWrRsp opRsp[],
