@@ -14,11 +14,11 @@
 #include <string>
 #include "log.h"
 #include "adapter_error_manager_pub.h"
-#include "base/err_msg.h"
-#include "base/err_mgr.h"
 
-
-using ErrContext = error_message::ErrorManagerContext;
+using ErrContext =  struct Context {
+        uint64_t work_stream_id;
+        uint64_t reserved[7] = {0};
+    };
 
 ErrContext __attribute__((weak)) hrtErrMGetErrorContext(void);
 void __attribute__((weak)) hrtErrMSetErrorContext(ErrContext error_context);
