@@ -16,6 +16,24 @@ using namespace hccl;
 std::mutex AicpuThreadProcess::mutex_;
 std::vector<std::shared_ptr<hccl::Thread>> AicpuThreadProcess::threads_;
 
+HcclResult hccl::CreateAicpuTsThread(const ThreadMgrAicpuParam* param, u32 index,
+    std::shared_ptr<AicpuTsThread>& thread)
+{
+    CHK_PTR_NULL(param);
+    std::string thdUniqueId(param->threadParam[index], THREAD_UNIQUE_ID_MAX_SIZE);
+    if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) {
+        std::ostringstream oss;
+        oss << "threadParam[" << index << "] raw bytes: ";
+        for (u32 j = 0; j < THREAD_UNIQUE_ID_MAX_SIZE; ++j) {
+            oss << std::hex << std::setw(2) << std::setfill('0')
+                << static_cast<unsigned int>(static_cast<unsigned char>(param->threadParam[index][j])) << " ";
+        }
+        HCCL_INFO("[HcclCommAicpu][%s] %s", __func__, oss.str().c_str());
+    }
+    EXCEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
+    return HCCL_SUCCESS;
+}
+
 HcclResult AicpuThreadProcess::InitThreads(ThreadMgrAicpuParam *param)
 {
     CHK_PTR_NULL(param);
@@ -86,18 +104,8 @@ HcclResult AicpuThreadProcess::ResumeThread(ThreadMgrAicpuParam *param,
     std::string hcomId(param->hcomId);
     ThreadHandle *threadArray = static_cast<ThreadHandle*>(param->deviceHandle);
     for (u32 i = 0; i < threadNum; ++i) {
-        std::string thdUniqueId(param->threadParam[i], THREAD_UNIQUE_ID_MAX_SIZE);
-        if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) {
-            std::ostringstream oss;
-            oss << "threadParam[" << i << "] raw bytes: ";
-            for (u32 j = 0; j < THREAD_UNIQUE_ID_MAX_SIZE; ++j) {
-                oss << std::hex << std::setw(2) << std::setfill('0')
-                    << static_cast<unsigned int>(static_cast<unsigned char>(param->threadParam[i][j])) << " ";
-            }
-            HCCL_INFO("[HcclCommAicpu][%s] %s", __func__, oss.str().c_str());
-        }
         std::shared_ptr<AicpuTsThread> thread;
-        EXCEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
+        CHK_RET(CreateAicpuTsThread(param, i, thread));
         u32 notifyNum = 0;
         std::string notifyDesc;
         CHK_RET(thread->GetNotifyByUniqueId(notifyNum, notifyDesc));

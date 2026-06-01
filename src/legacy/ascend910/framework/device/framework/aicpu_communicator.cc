@@ -37,6 +37,7 @@
 #include "dispatcher_ctx.h"
 #include "aicpu_res_package_helper.h"
 #include "aicpu_symmetric_memory.h"
+#include "aicpu_thread_process.h"
 
 namespace hccl {
 constexpr u32 IPC_SIGNAL_MODULUS = 2;
@@ -5335,18 +5336,8 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     outThreads.reserve(threadNum);
     std::string hcomId(param->hcomId);
     for (u32 i = 0; i < threadNum; ++i) {
-        std::string thdUniqueId(param->threadParam[i], THREAD_UNIQUE_ID_MAX_SIZE);
-        if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) {
-            std::ostringstream oss;
-            oss << "threadParam[" << i << "] raw bytes: ";
-            for (u32 j = 0; j < THREAD_UNIQUE_ID_MAX_SIZE; ++j) {
-                oss << std::hex << std::setw(2) << std::setfill('0')
-                    << static_cast<unsigned int>(static_cast<unsigned char>(param->threadParam[i][j])) << " ";
-            }
-            HCCL_INFO("[HcclCommAicpu][%s] %s", __func__, oss.str().c_str());
-        }
         std::shared_ptr<AicpuTsThread> thread;
-        EXCEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
+        CHK_RET(CreateAicpuTsThread(param, i, thread));
         HcclResult ret = thread->Init();
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] failed at index %u",

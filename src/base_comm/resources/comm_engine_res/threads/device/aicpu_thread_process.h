@@ -16,6 +16,11 @@
 #include "aicpu_launch_manager.h"
 #include "aicpu_ts_thread.h"
 
+namespace hccl {
+HcclResult CreateAicpuTsThread(const ThreadMgrAicpuParam* param, u32 index,
+    std::shared_ptr<AicpuTsThread>& thread);
+}
+
 class AicpuThreadProcess {
 public:
     ~AicpuThreadProcess() = default;
