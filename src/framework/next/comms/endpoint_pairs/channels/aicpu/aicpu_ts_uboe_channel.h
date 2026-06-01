@@ -30,7 +30,7 @@ constexpr char_t FINISH_MSG[FINISH_MSG_SIZE] = "Uboe Comm Pipe ready!";
 class AicpuTsUboeChannel : public Channel {
 public:
     AicpuTsUboeChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
-    ~AicpuTsUboeChannel();
+    ~AicpuTsUboeChannel() override;
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
@@ -40,8 +40,8 @@ public:
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
-    virtual HcclResult Clean() override;
-    virtual HcclResult Resume() override;
+    HcclResult Clean() override;
+    HcclResult Resume() override;
     
     HcommChannelKind GetChannelKind() const override
     {

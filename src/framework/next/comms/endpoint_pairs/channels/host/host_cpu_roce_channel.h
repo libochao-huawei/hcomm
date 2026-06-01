@@ -60,8 +60,8 @@ public:
 private:
     HcclResult WaitForFenceCompletion();
 
-    virtual HcclResult Clean() override;
-    virtual HcclResult Resume() override;
+    HcclResult Clean() override;
+    HcclResult Resume() override;
     HcclResult ExchangeCapability();
     HcclResult ExchangeDataHybird();
     HcclResult GetRemoteAddrHybird(hccl::MemType memType, u8 *&data, u64 &size);
