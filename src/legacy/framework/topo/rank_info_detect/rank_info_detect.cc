@@ -352,6 +352,7 @@ void RankInfoDetect::WaitComplete(u32 listenPort, u32 listenStatus) const
 RankInfoDetect::~RankInfoDetect()
 {
     if (hostPortSocket_ != nullptr) {
+        PreemptPortManager::GetInstance(devLogicId_).Release(hostPortSocket_);
         hostPortSocket_->StopListen();
         HostSocketHandleManager::GetInstance().Destroy(devPhyId_, hostIp_);
     }
