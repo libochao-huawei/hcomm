@@ -32,9 +32,19 @@
 #define RS_MAX_TEMPTH_DEPTH 4096
 #define RS_MR_STATE_SYNCED  1
 
+#define RS_MAX_TYPICAL_CQ_NUM 128
+
 struct RsQpLenInfo {
     uint32_t cmd;
     uint32_t len;
+};
+
+struct RsTypicalCqEntry {
+    unsigned int phyId;
+    unsigned int rdevIndex;
+    unsigned int cqn;
+    struct ibv_cq *ibCq;
+    struct rdma_lite_device_cq_attr deviceCqAttr;
 };
 
 int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
