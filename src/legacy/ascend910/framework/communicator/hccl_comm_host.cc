@@ -390,6 +390,16 @@ namespace hccl
             HCCL_ERROR("[InitCollComm]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
                        "cpuKernelMode[%u].", retCode, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0),
             retCode);
+        // scatter_aicpu_kernel.so
+        std::string jsonPath0;
+        CHK_RET(GetKernelFilePath(jsonPath0));
+        jsonPath0 += "scatter_aicpu_kernel.json";
+   
+        retCode = LoadBinaryFromFile(jsonPath0.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHcclHandle_);
+        CHK_PRT_RET(retCode != HCCL_SUCCESS,
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
+                       "cpuKernelMode[%u].", retCode, jsonPath0.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0),
+            retCode);
         return HCCL_SUCCESS;
     }
 
@@ -402,6 +412,15 @@ namespace hccl
                 HCCL_RUN_WARNING("[BinaryUnLoad]aclrtBinaryUnLoad binHandle faild");
             }
             binHandle_ = nullptr;
+        }
+
+        if (binHcclHandle_ != nullptr){
+            HCCL_INFO("[BinaryUnLoad]aclrtBinaryUnLoad binHcclHandle");
+            aclError ret = aclrtBinaryUnLoad(binHcclHandle_);
+            if (ret != 0) {
+                HCCL_RUN_WARNING("[BinaryUnLoad]aclrtBinaryUnLoad binHcclHandle faild");
+            }
+            binHcclHandle_ = nullptr;
         }
     }
 
