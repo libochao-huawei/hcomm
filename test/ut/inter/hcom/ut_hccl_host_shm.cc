@@ -2693,7 +2693,7 @@ TEST_F(HcclImplCommonTest, ut_hccl_host_shm_test)
     s32 mem_size = 256;
     DeviceMem mem = DeviceMem::alloc(mem_size);
     std::shared_ptr<ProfilerManager> profilerManager;
-    profilerManager.reset(new (std::nothrow) ProfilerManager(0, 0, 2));
+    profilerManager.reset(new (std::nothrow) ProfilerManager(0, 0, 2, 2));
     profilerManager->InitProfiler();
     std::unique_ptr<Dispatcher> dispatcherPtr;
     dispatcherPtr.reset(static_cast<Dispatcher*>(new(std::nothrow) Dispatcher(DispatcherType::DISPATCHER_NORMAL, 0, profilerManager)));
@@ -2768,7 +2768,7 @@ TEST_F(HcclImplCommonTest, ut_hccl_get_shm_name_test)
     s32 mem_size = 256;
     DeviceMem mem = DeviceMem::alloc(mem_size);
     std::shared_ptr<ProfilerManager> profilerManager;
-    profilerManager.reset(new (std::nothrow) ProfilerManager(0, 0, 2));
+    profilerManager.reset(new (std::nothrow) ProfilerManager(0, 0, 2, 2));
     profilerManager->InitProfiler();
     std::unique_ptr<Dispatcher> dispatcherPtr;
     dispatcherPtr.reset(static_cast<Dispatcher*>(new(std::nothrow) Dispatcher(DispatcherType::DISPATCHER_NORMAL, 0, profilerManager)));

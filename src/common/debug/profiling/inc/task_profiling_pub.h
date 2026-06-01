@@ -273,7 +273,7 @@ public:
     static std::mutex mutex_;
 
 public:
-    explicit TaskProfiling(u32 deviceLogicId_, u32 localRank_, bool profilingOn = true);
+    explicit TaskProfiling(u32 deviceLogicId_, u32 localRank_, u32 rankSize_, bool profilingOn = true);
     ~TaskProfiling() override;
 
 public:
@@ -314,7 +314,9 @@ private:
 
 private:
     const u32 localRank_;
+    const u32 rankSize_;
     bool profilingOn_;  // 当前无条件启动profiling
+    
 };
 }  // namespace hccl
 
