@@ -50,6 +50,7 @@ target_include_directories(topoaddrinfo PRIVATE
 )
 
 target_link_libraries(topoaddrinfo PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:runtime_headers>
     dl

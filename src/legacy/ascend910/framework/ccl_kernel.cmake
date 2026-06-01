@@ -125,6 +125,7 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_link_libraries(ccl_kernel PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:acl_rt_headers>
         $<BUILD_INTERFACE:asc_host_headers>
         $<BUILD_INTERFACE:asc_kernel_headers>
@@ -172,7 +173,7 @@ else()
     )
 
     target_link_libraries(ccl_kernel PRIVATE
-        $<BUILD_INTERFACE:intf_pub_cxx14>
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>

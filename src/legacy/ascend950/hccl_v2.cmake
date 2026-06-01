@@ -41,6 +41,7 @@ target_link_options(hccl_v2 PRIVATE
 
 # 链接库
 target_link_libraries(hccl_v2 PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:acl_rt_headers>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:atrace_headers>
