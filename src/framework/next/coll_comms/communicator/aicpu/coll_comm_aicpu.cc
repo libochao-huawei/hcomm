@@ -70,16 +70,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 
 HcclResult CollCommAicpu::InitHDCommunicate(CommAicpuParam *commAicpuParam)
 {
-    if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
-        EXCEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
-        CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
-        CHK_RET(kfcControlTransferH2D_->InitDevice(commAicpuParam->kfcControlTransferH2DParams));
-    }
-    if (commAicpuParam->kfcStatusTransferD2HParams.buffLen != 0 && kfcStatusTransferD2H_ == nullptr) {
-        EXCEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
-        CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
-        CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
-    }
+    CHK_RET(hccl::InitHDCommunicate(kfcControlTransferH2D_, kfcStatusTransferD2H_, commAicpuParam));
     return HCCL_SUCCESS;
 }
 

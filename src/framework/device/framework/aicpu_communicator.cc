@@ -5247,16 +5247,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     hccl::DispatcherCtx *Ctx_temp = static_cast<DispatcherCtx *>(dispatcherCtx_);
     HCCL_INFO("[%s] Ctx_temp[%p]", __func__, (void*)Ctx_temp);
     (void)RegisterLoadTaskCallBack(Ctx_temp->GetDispatcher(), nullptr, dfx::TaskProfilingCallBack); //注册dispatcher
-    if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
-        EXCEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
-        CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
-        CHK_RET(kfcControlTransferH2D_->InitDevice(commAicpuParam->kfcControlTransferH2DParams));
-    }
-    if (commAicpuParam->kfcStatusTransferD2HParams.buffLen != 0 && kfcStatusTransferD2H_ == nullptr) {
-        EXCEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
-        CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
-        CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
-    }
+    CHK_RET(hccl::InitHDCommunicate(kfcControlTransferH2D_, kfcStatusTransferD2H_, commAicpuParam));
 
     indOpCommInitialized_ = true;
 
