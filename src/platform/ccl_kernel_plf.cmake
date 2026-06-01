@@ -71,7 +71,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/pub_inc/aicpu/
     ${HCOMM_DIR}/src/pub_inc/inner
     ${HCOMM_DIR}/src/pub_inc/new
-
+    
     ${HCOMM_DIR}/src/algorithm/base/inc
     ${HCOMM_DIR}/src/algorithm/pub_inc
     ${HCOMM_DIR}/src/algorithm/base/alg_aiv_template
@@ -187,6 +187,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/unified_platform/common/
 
     ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+    ${HCOMM_DIR}/test/stub/depends/include/base
 )
 target_include_directories(ccl_kernel_plf PRIVATE
     ${CCL_KERNEL_PLF_INCLUDE_LIST}
