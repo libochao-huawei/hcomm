@@ -11,9 +11,9 @@
 #define UB_CHANNEL_BASE_H
 
 #include "channel.h"
-#include "ub_local_notify.h"
-#include "ub_mem_transport.h"
-#include "dev_ub_connection.h"
+#include "../../../../../../legacy/unified_platform/resource/notify/ub_local_notify.h"
+#include "../../../../../../legacy/unified_platform/resource/transport/ub_mem_transport.h"
+#include "../../../../../../legacy/unified_platform/resource/connection/dev_ub_connection.h"
 
 namespace hcomm {
 

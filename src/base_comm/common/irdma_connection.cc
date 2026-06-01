@@ -10,10 +10,11 @@
 
 #include "irdma_connection.h"
 #include "log.h"
+#include "../endpoint_pairs/channels/host/exchange_rdma_conn_dto.h"
 
 namespace hcomm {
 
-HcclResult IRdmaConnection::BuildExchangeDto(RdmaHandle rdmaHandle, QpHandle qpHandle,
+HcclResult IRdmaConnection::BuildExchangeDto(Hccl::RdmaHandle rdmaHandle, Hccl::QpHandle qpHandle,
     std::unique_ptr<Hccl::Serializable> &serial)
 {
     struct QpAttr localQpAttr;
@@ -22,9 +23,9 @@ HcclResult IRdmaConnection::BuildExchangeDto(RdmaHandle rdmaHandle, QpHandle qpH
         HCCL_ERROR("[IRdmaConnection::BuildExchangeDto]RaGetQpAttr failed, ret[%d]", ret);
         return HCCL_E_ROCE_CONNECT;
     }
-    std::unique_ptr<ExchangeRdmaConnDto> dto = nullptr;
+    std::unique_ptr<hcomm::ExchangeRdmaConnDto> dto = nullptr;
     EXCEPTION_CATCH(
-        dto = std::make_unique<ExchangeRdmaConnDto>(localQpAttr.qpn, localQpAttr.psn, localQpAttr.gidIdx),
+        dto = std::make_unique<hcomm::ExchangeRdmaConnDto>(localQpAttr.qpn, localQpAttr.psn, localQpAttr.gidIdx),
         return HCCL_E_PTR
     );
     CHK_SAFETY_FUNC_RET(memcpy_s(dto->gid_, HCCP_GID_RAW_LEN, localQpAttr.gid, HCCP_GID_RAW_LEN));
