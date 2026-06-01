@@ -901,6 +901,8 @@ HCCP_ATTRI_VISI_DEF int RaRecvWrlist(void *qpHandle, struct RecvWrlistData *wr, 
 */
 HCCP_ATTRI_VISI_DEF int RaPollCq(void *qpHandle, bool isSendCq, unsigned int numEntries, void *wc);
 
+HCCP_ATTRI_VISI_DEF int RaPollTypicalCq(void *cqHandle, unsigned int numEntries, void *wc);
+
 /**
  * @ingroup librdma
  * @brief get rdma qp context

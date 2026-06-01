@@ -98,6 +98,7 @@ struct RaRdmaOps {
     int (*raRecvWrlist)(struct RaQpHandle *handle, struct RecvWrlistData *wr, unsigned int recvNum,
         unsigned int *completeNum);
     int (*raPollCq)(struct RaQpHandle *handle, bool isSendCq, unsigned int numEntries, void *wc);
+    int (*raPollTypicalCq)(struct RaTypicalCqHandle *cqHandle, unsigned int numEntries, void *wc);
     int (*raGetQpContext)(struct RaQpHandle *handle, void** qp, void** sendCq, void** recvCq);
     int (*raNormalQpCreate)(struct RaRdmaHandle *rdmaHandle, struct ibv_qp_init_attr *qpInitAttr,
         void **qpHandle, void **qp);

@@ -96,6 +96,8 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
     CHK_SMART_PTR_NULL(dlRaRecvWrVerbs);
     dlRaPollCq = (int(*)(QpHandle, bool, unsigned int, void *))HcclDlsym(handle_, "RaPollCq");
     CHK_SMART_PTR_NULL(dlRaPollCq);
+    dlRaPollTypicalCq = (int(*)(void*, unsigned int, void*))HcclDlsym(handle_, "RaPollTypicalCq");
+    CHK_SMART_PTR_NULL(dlRaPollTypicalCq);
     dlRaSendWrlist = (int(*)(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp op_rsp[],
         unsigned int sendNum, unsigned int *completeNum))HcclDlsym(handle_, "RaSendWrlist");
     if (dlRaSendWrlist == nullptr) {

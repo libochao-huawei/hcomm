@@ -122,6 +122,26 @@ HcclResult hcclDestroyAscendCQ(AscendCQInfo* ascendCQInfo)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclPollAscendCQ(AscendCQInfo* cqInfo, uint32_t num, uint32_t *polledNum, struct AscendWc *wc)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(cqInfo);
+    CHK_PTR_NULL(polledNum);
+    CHK_PTR_NULL(wc);
+
+    void* cqHandle = nullptr;
+    CHK_RET(TypicalQpManager::GetInstance().GetCqHandle(cqInfo->cqn, cqHandle));
+
+    s32 ret = HrtRaPollTypicalCq(cqHandle, num, (void*)wc);
+    if (ret < 0) {
+        HCCL_ERROR("[hcclPollAscendCQ] Poll typical cq failed, cqn[%u], ret[%d]", cqInfo->cqn, ret);
+        return HCCL_E_INTERNAL;
+    }
+    *polledNum = (uint32_t)ret;
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclCreateAscendQPWithCQWithAttr(AscendCQInfo* ascendSendCQInfo, AscendCQInfo* ascendRecvCQInfo,
     AscendVerbsQPInfo* ascendQPInfo)
 {
