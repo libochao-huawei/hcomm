@@ -1453,6 +1453,21 @@ int RaHdcPollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries
     return -ENOTSUPP;
 }
 
+int RaHdcPollTypicalCq(struct RaTypicalCqHandle *cqHdc, unsigned int numEntries, void *wc)
+{
+    struct rdma_lite_wc_v2 *liteWc = (struct rdma_lite_wc_v2 *)wc;
+    if (cqHdc->liteCq == NULL) {
+        hccp_warn("cqn:%u liteCq is NULL, not support to poll_cq", cqHdc->cqn);
+        return -ENOTSUPP;
+    }
+    int ret = RaRdmaLitePollCqV2(cqHdc->liteCq, (int)numEntries, liteWc);
+    if (ret < 0) {
+        hccp_err("ra_rdma_lite_poll_cq_v2 failed, ret %d", ret);
+        return ret;
+    }
+    return ret;
+}
+
 int RaHdcNotifyCfgSet(unsigned int phyId, unsigned long long va, unsigned long long size)
 {
     union OpNotifyCfgSetData setNotifyBaData = {0};

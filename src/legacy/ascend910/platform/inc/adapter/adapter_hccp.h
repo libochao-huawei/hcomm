@@ -202,6 +202,7 @@ HcclResult HrtRaSendWrV2(QpHandle handle, struct SendWrV2 *wr, struct SendWrRsp 
 HcclResult HrtRaSendWrVerbs(QpHandle handle, struct SendWrVerbs *wr, struct SendWrRsp *opRsp);
 HcclResult HrtRaRecvWrVerbs(QpHandle handle, struct RecvWrVerbs *wr);
 s32 hrtRaPollCq(QpHandle handle, bool is_send_cq, unsigned int num, void *wc);
+s32 HrtRaPollTypicalCq(void* cqHandle, u32 num, void *wc);
 HcclResult HrtRaSendWrlist(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     unsigned int sendNum, unsigned int *completeNum);
 HcclResult HrtRaSendWrlistExt(QpHandle handle, struct SendWrlistDataExt wr[], struct SendWrRsp opRsp[],

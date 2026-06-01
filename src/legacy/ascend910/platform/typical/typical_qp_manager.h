@@ -26,6 +26,7 @@ public:
     HcclResult CreateQpWithCQ(struct TypicalQp& qpInfo, const QpConfigWithCQInfo& qpConfig);
     HcclResult ValidateCq(uint32_t cqn);
     HcclResult GetCqDepth(uint32_t cqn, uint32_t &cqDepth);
+    HcclResult GetCqHandle(uint32_t cqn, void*& cqHandle);
     HcclResult ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo);
     HcclResult DestroyQp(struct TypicalQp& qpInfo);
     HcclResult DestroyQpWithoutCQ(struct TypicalQp& qpInfo);
