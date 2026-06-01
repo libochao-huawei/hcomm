@@ -35,10 +35,6 @@ void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
             StringFormat("MirrorTaskManagerLite::AddTaskInfo taskInfo is nullptr"));
     }
 
-    if (taskInfo->dfxOpInfo_ == nullptr) {
-        taskInfo->dfxOpInfo_ = currDfxOpInfo_;
-    }
-
     if (queueMap_.find(taskInfo->streamId_) == queueMap_.end()) {
         queueMap_[taskInfo->streamId_] = std::make_unique<CircularQueue<std::shared_ptr<TaskInfo>>>(MAX_CIRCULAR_QUEUE_LENGTH);
         queueTaskNum[taskInfo->streamId_] = 0;
@@ -77,7 +73,6 @@ void MirrorTaskManagerLite::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInf
 
 std::shared_ptr<DfxOpInfo> MirrorTaskManagerLite::GetCurrDfxOpInfo() const
 {
-    HCCL_INFO("[MirrorTaskManagerLite][GetCurrDfxOpInfo] Succeed, currDfxOpInfo_[%p], this[%p] !", currDfxOpInfo_.get(), this);
     return currDfxOpInfo_;
 }
 
