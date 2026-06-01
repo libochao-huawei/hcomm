@@ -224,7 +224,7 @@ HcclResult AicpuTsUboeChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteM
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{cacheValid_, rmtBufferVec_,
-    remoteUserMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
+        remoteUserMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }

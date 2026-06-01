@@ -887,7 +887,7 @@ HcclResult UbMemTransport::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, 
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     Hccl::RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{cacheValid_, rmtBufferVec,
-    remoteUserMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
+        remoteUserMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }

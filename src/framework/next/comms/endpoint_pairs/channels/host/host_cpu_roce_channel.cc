@@ -577,9 +577,8 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
 HcclResult HostCpuRoceChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    uint32_t userMemCount = rmtRmaBuffers_.size();
     Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> remoteMemCtx{cacheValid_, rmtRmaBuffers_,
-    userRemoteMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
+        userRemoteMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }
