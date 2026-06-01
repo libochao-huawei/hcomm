@@ -42,6 +42,8 @@ public:
     std::function<int(QpHandle handle, struct MrInfoT *info)> dlRaMrDereg;
     std::function<int(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp)> dlRaSendWr;
     std::function<int(QpHandle handle, struct SendWrV2 *wr, struct SendWrRsp *opRsp)> dlRaSendWrV2;
+    std::function<int(QpHandle handle, struct SendWrVerbs *wr, struct SendWrRsp *opRsp)> dlRaSendWrVerbs;
+    std::function<int(QpHandle handle, struct RecvWrVerbs *wr)> dlRaRecvWrVerbs;
     std::function<int(QpHandle handle, bool is_send_cq, unsigned int num, void *wc)> dlRaPollCq;
     std::function<int(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp op_rsp[],
         unsigned int sendNum, unsigned int *completeNum)> dlRaSendWrlist;

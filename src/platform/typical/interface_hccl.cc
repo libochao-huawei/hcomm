@@ -25,6 +25,7 @@
 #include "typical_window_mem.h"
 #include "typical_qp_manager.h"
 #include "send_recv_executor.h"
+#include "adapter_rts.h"
 
 using namespace hccl;
 constexpr u32 DEVISOR_VALUE_FOUR = 4;
@@ -395,6 +396,98 @@ HcclResult hcclRdmaMemDeRegister(AscendMrAttr* memInfo)
     CHK_RET(TypicalMrManager::GetInstance().DeRegisterMem(mrInfo));
     HCCL_RUN_INFO("[hcclRdmaMemDeRegister] DeRegister MR addr[%p], size[%llu], lkey[%u].",
         mrInfo.addr, mrInfo.size, mrInfo.lkey);
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclAscendPostSend(AscendVerbsQPInfo* qpInfo, struct AscendSendWr *sendWr, aclrtStream stream, struct AscendSendWr **badWr)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(qpInfo);
+    CHK_PTR_NULL(sendWr);
+    CHK_PTR_NULL(badWr);
+    CHK_PTR_NULL(stream);
+
+    QpHandle qpHandle;
+    CHK_RET(TypicalQpManager::GetInstance().GetQpHandleByQpn(qpInfo->qpn, qpHandle));
+
+    constexpr u32 MAX_SGLIST_VERBS = 16;
+    struct AscendSendWr *curWr = sendWr;
+    while (curWr != nullptr) {
+        CHK_PRT_RET(static_cast<u32>(curWr->numSge) > MAX_SGLIST_VERBS,
+            HCCL_ERROR("[hcclAscendPostSend] numSge[%d] exceeds MAX_SGLIST_VERBS[%u]", curWr->numSge, MAX_SGLIST_VERBS),
+            HCCL_E_PARA);
+        CHK_PTR_NULL(curWr->sgList);
+
+        struct SgList sgeList[MAX_SGLIST_VERBS];
+        for (int i = 0; i < curWr->numSge; i++) {
+            sgeList[i].addr = curWr->sgList[i].addr;
+            sgeList[i].len = curWr->sgList[i].len;
+            sgeList[i].lkey = curWr->sgList[i].lkey;
+        }
+
+        struct SendWrVerbs wr = {};
+        struct SendWrRsp opRsp = {};
+        wr.wrId = curWr->wrId;
+        wr.sgList = sgeList;
+        wr.numSge = curWr->numSge;
+        wr.remoteAddr = curWr->wr.rdma.remoteAddr;
+        wr.rkey = curWr->wr.rdma.rkey;
+        wr.opcode = static_cast<uint32_t>(curWr->opcode);
+        wr.sendFlags = static_cast<int>(curWr->sendFlags);
+        wr.immData = curWr->immData;
+
+        CHK_RET(HrtRaSendWrVerbs(qpHandle, &wr, &opRsp));
+
+        if (curWr->next == nullptr) {
+            CHK_RET(hrtRDMADBSend(opRsp.db.dbIndex, opRsp.db.dbInfo, stream));
+        }
+
+        curWr = curWr->next;
+    }
+
+    *badWr = nullptr;
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclAscendPostRecv(AscendVerbsQPInfo* qpInfo, struct AscendRecvWr *recvWr, aclrtStream stream, struct AscendRecvWr **badWr)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(qpInfo);
+    CHK_PTR_NULL(recvWr);
+    CHK_PTR_NULL(badWr);
+    CHK_PTR_NULL(stream);
+
+    QpHandle qpHandle;
+    CHK_RET(TypicalQpManager::GetInstance().GetQpHandleByQpn(qpInfo->qpn, qpHandle));
+
+    constexpr u32 MAX_SGLIST_RECV = 16;
+    struct AscendRecvWr *curWr = recvWr;
+    while (curWr != nullptr) {
+        CHK_PRT_RET(static_cast<u32>(curWr->numSge) > MAX_SGLIST_RECV,
+            HCCL_ERROR("[hcclAscendPostRecv] numSge[%d] exceeds MAX_SGLIST_RECV[%u]", curWr->numSge, MAX_SGLIST_RECV),
+            HCCL_E_PARA);
+        CHK_PTR_NULL(curWr->sgList);
+
+        struct SgList sgeList[MAX_SGLIST_RECV];
+        for (int i = 0; i < curWr->numSge; i++) {
+            sgeList[i].addr = curWr->sgList[i].addr;
+            sgeList[i].len = curWr->sgList[i].len;
+            sgeList[i].lkey = curWr->sgList[i].lkey;
+        }
+
+        struct RecvWrVerbs wr = {};
+        wr.wrId = curWr->wrId;
+        wr.sgList = sgeList;
+        wr.numSge = curWr->numSge;
+
+        CHK_RET(HrtRaRecvWrVerbs(qpHandle, &wr));
+
+        curWr = curWr->next;
+    }
+
+    *badWr = nullptr;
     return HCCL_SUCCESS;
 }
 
