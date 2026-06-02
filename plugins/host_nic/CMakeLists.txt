@@ -219,6 +219,6 @@ if(TARGET json)
 endif()
 
 install(TARGETS hcomm_host_roce_plugin hcomm_host_ub_plugin
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}/hcomm_plugin ${INSTALL_OPTIONAL}
+    LIBRARY DESTINATION hcomm_plugin ${INSTALL_OPTIONAL}
     COMPONENT hcomm
 )
