@@ -89,23 +89,15 @@ target_include_directories(net_co PRIVATE
 )
 
 target_compile_options(net_co PRIVATE
-	-Werror
-	-Wfloat-equal
-	-Wall
-	-fno-common
+	# -Werror
 	-fno-strict-aliasing
-	-pipe
-	-O3
-	-fstack-protector-strong
-	$<$<CONFIG:Debug>:-g>
+    $<$<CONFIG:Debug>:-g -O0>
+    $<$<CONFIG:Release>:-O3>
 )
 
 target_link_options(net_co PRIVATE
     -Wl,-Bsymbolic
     -rdynamic
-    -s
-    -Wl,-z,relro,-z,now
-    -Wl,-z,noexecstack
 )
 
 #链接动态库
