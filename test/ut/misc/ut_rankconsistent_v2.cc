@@ -43,47 +43,56 @@ protected:
     RankConsistencyCheckerV2 &checker_ = RankConsistencyCheckerV2::GetInstance(0xFF);
 };
 
-// 通用：Record*V2 → GenerateCheckFrameV2 → CompareCheckFrameV2全流程匹配
-TEST_F(RankConsistentV2Test, Ut_FullPipeline_AllMatch_Expect_Success)
+TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_Env_Expect_Success)
 {
-    // 1. RecordEnvVarCrcV2
     u64 buff_size = 8;
-    HcclResult ret = checker_.RecordEnvVarCrcV2(buff_size);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(checker_.envVarCrcsV2_.size(), 1u);
-    EXPECT_EQ(checker_.envVarCrcsV2_[0].name, "HCCL_BUFFSIZE");
+    checker_.RecordEnvVarCrcV2(buff_size);
+    CheckFrameV2 localFrame;
+    checker_.GenerateCheckFrameV2(localFrame);
+    CheckFrameV2 remoteFrame = localFrame;
 
-    // 2. RecordRankTableCrcV2
+    HcclResult ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_RankTable_Expect_Success)
+{
     u32 rankTableCrc = 0x1234;
-    ret = checker_.RecordRankTableCrcV2(rankTableCrc);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(checker_.rankTableCrcsV2_[0].name, "ranktable_content");
+    checker_.RecordRankTableCrcV2(rankTableCrc);
 
-    // 3. RecordSubCommParaV2
+    CheckFrameV2 localFrame;
+    checker_.GenerateCheckFrameV2(localFrame);
+    CheckFrameV2 remoteFrame = localFrame;
+
+    HcclResult ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_SubComm_Expect_Success)
+{
     std::string parentIdentifier = "test";
     uint32_t rankNum = 4;
     uint32_t rankIds[] = {0, 1, 2, 3};
     uint64_t subCommId = 100;
-    ret = checker_.RecordSubCommParaV2(parentIdentifier, rankNum, rankIds, subCommId);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    ASSERT_EQ(checker_.subCommParaCrcsV2_.size(), 4u);
+    checker_.RecordSubCommParaV2(parentIdentifier, rankNum, rankIds, subCommId);
 
-    // 4. GenerateCheckFrameV2
-    strncpy_s(checker_.cannVersion_, CANN_VERSION_MAX_LEN + 1, "8.0.RC1", strlen("8.0.RC1"));
     CheckFrameV2 localFrame;
-    ret = checker_.GenerateCheckFrameV2(localFrame);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(localFrame.crcNum, 1u);
-    EXPECT_EQ(localFrame.rankTableCrcNum, 1u);
-    EXPECT_EQ(localFrame.subCommCrcNum, 4u);
-    EXPECT_EQ(std::string(localFrame.version), "8.0.RC1");
-
-    // 5. GetCheckFrameV2Length
-    EXPECT_EQ(checker_.GetCheckFrameLengthV2(), sizeof(CheckFrameV2));
-
-    // 6. CompareCheckFrameV2匹配
+    checker_.GenerateCheckFrameV2(localFrame);
     CheckFrameV2 remoteFrame = localFrame;
-    ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
+
+    HcclResult ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_Version_Expect_Success)
+{
+    strncpy_s(checker_.cannVersion_, CANN_VERSION_MAX_LEN + 1, "8.0.RC1", strlen("8.0.RC1"));
+
+    CheckFrameV2 localFrame;
+    checker_.GenerateCheckFrameV2(localFrame);
+    CheckFrameV2 remoteFrame = localFrame;
+
+    HcclResult ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 

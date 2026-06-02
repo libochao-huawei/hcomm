@@ -40,27 +40,29 @@ struct CheckFrameV2 {
 class RankConsistencyCheckerV2 {
 public:
     ~RankConsistencyCheckerV2();
-    static RankConsistencyCheckerV2& GetInstance(s32 deviceLogicId = 0xFF);
+    static RankConsistencyCheckerV2& GetInstance(const s32 &deviceLogicId);
     
     HcclResult RecordEnvVarCrcV2(u64 buffSize);
     HcclResult RecordRankTableCrcV2(u32 crc);
     HcclResult RecordSubCommParaV2(const std::string &parentIdentifier, uint32_t rankNum,
         const uint32_t *rankIds, uint64_t subCommId);
     HcclResult RecordCannVersionV2(const std::string &version);
-    HcclResult GenerateCheckFrameV2(CheckFrameV2 &frame);
+    HcclResult GenerateCheckFrameV2(CheckFrameV2 &localFrame);
     HcclResult CompareCheckFrameV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
     u64 GetCheckFrameLengthV2();
 
-    void SetInconsistentCheckFirstDone(bool inconsistentCheckFirstDone);
+    void SetInconsistentCheckFirstDone(bool inconsistentCheckFirstDone); // 用于标识env_config中InconsistentCheckModel::FIRST时是否已校验
     bool GetInconsistentCheckFirstDone();
 private:
     HcclResult CalcRawDataCrc(const void *ptr, u64 length, u32 &crc);
-    HcclResult CompareEnvV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
-    HcclResult CompareRankTableV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
-    HcclResult CompareSubCommV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
+    bool CompareCrcArrayV2(
+        u32 localNum, const u32 *localArray,
+        u32 remoteNum, const u32 *remoteArray,
+        const std::vector<CrcEntryV2> &nameSource,
+        const std::string &categoryLabel,
+        const std::string &countLabel);
     HcclResult CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
     
-    std::mutex mutex_;
     // cann 版本号
     char cannVersion_[CANN_VERSION_MAX_LEN + 1] = {0};
     std::vector<CrcEntryV2> envVarCrcsV2_;        // A5环境变量CRC（带名称，用于精确报错）
