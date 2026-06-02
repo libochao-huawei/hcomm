@@ -44,7 +44,7 @@ bool Socket::Listen(u32 &port)
     HrtNetworkMode netMode = nicType == NicType::HOST_NIC_TYPE ? HrtNetworkMode::PEER : HrtNetworkMode::HDC;
     RaSocketListenParam param(socketHandle, port, localIp);
     bool ret = HrtRaSocketTryListenOneStart(param, netMode);
-    CHK_PRT_RET(!ret, HCCL_INFO("[Socket::%s] socket[%s] listen failed, port[%u] is in use",
+    CHK_PRT_RET(!ret, HCCL_WARNING("[Socket::%s] socket[%s] listen unsuccessful, port[%u] is in use",
                                  __func__, Describe().c_str(), port), ret);
 
     port = port == AUTO_LISTEN_PORT ? param.port : port;
