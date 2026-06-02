@@ -10,7 +10,9 @@
 
 #include "rank_table_crc_bridge.h"
 #include "checkcrc.h"
-#include "exception_util.h"
+#include "log.h"
+
+using namespace Hccl;
 
 RankTableCrcBridge::~RankTableCrcBridge() = default;
 
@@ -26,11 +28,11 @@ void RankTableCrcBridge::RecordRankTableJsonCrc(s32 deviceLogicId, const std::st
     u32 crc = 0;
     HcclResult ret = checkCrc.CalcStringCrc(rankTableJson.c_str(), &crc);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HcomRecordRankTableJsonCrc] CalcStringCrc failed, ret[%d]", ret);
+        HCCL_ERROR("[RecordRankTableJsonCrc] CalcStringCrc failed, ret[%d]", ret);
         return;
     }
     g_rankTableJsonCrcMap[deviceLogicId] = crc;
-    HCCL_INFO("[HcomRecordRankTableJsonCrc] deviceLogicId[%d], crc[0x%08x] recorded.", deviceLogicId, crc);
+    HCCL_INFO("[RecordRankTableJsonCrc] deviceLogicId[%d], crc[0x%08x] recorded.", deviceLogicId, crc);
 }
 
 u32 RankTableCrcBridge::ConsumeRankTableJsonCrc(s32 deviceLogicId)
