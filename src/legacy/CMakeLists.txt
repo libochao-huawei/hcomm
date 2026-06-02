@@ -16,6 +16,7 @@ if(PRODUCT_SIDE STREQUAL "host")
 endif()
 
 # 添加子目录
+add_subdirectory(common)
 add_subdirectory(framework)
 add_subdirectory(service)
 add_subdirectory(unified_platform)

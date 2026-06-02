@@ -38,8 +38,8 @@ __attribute__((weak)) void RptInnerErrPrt(const char *fmt, ...);
 } while (0)
 
 #define RPT_ENV_ERR(result, error_code, key, value) do { \
-    if (UNLIKELY(result) && RptInnerErrPrt != nullptr) {                               \
-        RptInnerErrPrt(error_code, key, value);        \
+    if (UNLIKELY(result) && RptInputErr != nullptr) {                               \
+        RptInputErr(error_code, key, value);        \
     }                                                    \
 } while (0)
 
