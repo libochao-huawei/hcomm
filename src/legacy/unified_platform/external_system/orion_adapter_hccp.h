@@ -505,6 +505,7 @@ MAKE_ENUM(HrtUbSendWrOpCode, WRITE, WRITE_WITH_NOTIFY, READ, NOP)
 using HrtRaUbSendWrReqParam = struct HrtRaUbSendWrParamDef {
     HrtUbSendWrOpCode opcode;
     bool              cqeEn{true};
+    u8                placeOdr{0x01};
 
     bool inlineFlag{false};
     u8  *inlineData;

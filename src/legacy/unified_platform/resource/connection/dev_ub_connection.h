@@ -165,12 +165,12 @@ private:
     void         ReleaseResource();
 
     void ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer &rmt,
-                       std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
+                       std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32, u8)> processOneSlice,
                        DataType dataType = DataType::INVALID) const;
 
     void ProcessSlicesWithNotify(const MemoryBuffer &loc, const MemoryBuffer &rmt,
-                                 std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
-                                 std::function<void(const MemoryBuffer &, const MemoryBuffer &)> processOneSliceWithNotify,
+                                 std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32, u8)> processOneSlice,
+                                 std::function<void(const MemoryBuffer &, const MemoryBuffer &, u8)> processOneSliceWithNotify,
                                  DataType dataType = DataType::INVALID) const;
     
     std::unique_ptr<BaseTask> ConstructTaskUbSend(const HrtRaUbSendWrRespParam &sendWrResp, const SqeConfig &config);
