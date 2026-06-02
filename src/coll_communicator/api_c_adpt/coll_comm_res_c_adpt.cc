@@ -505,8 +505,7 @@ Hccl::TaskParam ConstructCcuTaskParam(const hcomm::CcuTaskParam &ccuParam, const
     
     bool isProfilingEnabledL1 = Hccl::ProfilingHandler::GetInstance().GetHcclL1State();
     bool isProfilingEnabledL0 = Hccl::ProfilingHandler::GetInstance().GetHcclL0State();
-    if (isProfilingEnabledL1 == false || isProfilingEnabledL0 == false) {
-        HCCL_INFO("[%s] Profiling is enabled, but failed to get profiling info for ccu task L1[%d], L0[%d].", __func__, isProfilingEnabledL1, isProfilingEnabledL0);
+    if (isProfilingEnabledL1 == false && isProfilingEnabledL0 == false) {
         return taskParam;
     }
     std::vector<Hccl::CcuProfilingInfo> converted(allCcuProfilingInfo.size());
@@ -540,8 +539,7 @@ HcclResult ConstructProfilingInfo(const hcomm::CcuTaskArg &arg, hcomm::CcuKernel
 {
     bool isProfilingEnabledL1 = Hccl::ProfilingHandler::GetInstance().GetHcclL1State();
     bool isProfilingEnabledL0 = Hccl::ProfilingHandler::GetInstance().GetHcclL0State();
-    if(isProfilingEnabledL1 == false || isProfilingEnabledL0 == false) {
-        HCCL_INFO("[%s] Profiling is enabled, start to construct profiling info for ccu task L1[%d], L0[%d].", __func__, isProfilingEnabledL1, isProfilingEnabledL0);
+    if(isProfilingEnabledL1 == false && isProfilingEnabledL0 == false) {
         return HCCL_SUCCESS;
     }
     CHK_RET(kernel->GetCcuProfilingInfo(arg, allCcuProfilingInfo));

@@ -125,7 +125,7 @@ public:
             head_ = (head_ + 1) % capacity_;
             size_--;
         }
-        elems_[tail_] = value;
+        elems_[tail_] = std::move(value);
         tail_         = (tail_ + 1) % capacity_;
         size_++;
         HCCL_INFO("[CircularQueue][Append] head_[%u] tail_[%u] size_[%u] capacity_[%u]", head_, tail_, size_,

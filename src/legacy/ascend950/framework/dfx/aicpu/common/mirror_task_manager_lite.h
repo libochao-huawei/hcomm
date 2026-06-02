@@ -25,7 +25,7 @@ public:
 
     void RegFullyCallBack(std::function<void()> callBack);
     void RegFullyCallBack(std::function<void(const std::string&, u32)> callBack);
-    void AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo);
+    void AddTaskInfo(std::unique_ptr<TaskInfo> &taskInfo);
     HcclResult SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo);
 
     std::shared_ptr<DfxOpInfo> GetCurrDfxOpInfo() const;

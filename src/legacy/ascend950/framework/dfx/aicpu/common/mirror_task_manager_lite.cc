@@ -28,7 +28,7 @@ void MirrorTaskManagerLite::RegFullyCallBack(std::function<void()> callBack)
     return;
 }
 
-void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
+void MirrorTaskManagerLite::AddTaskInfo(std::unique_ptr<TaskInfo> &taskInfo)
 {
     if (UNLIKELY(taskInfo == nullptr)) {
         THROW<InternalException>(
@@ -37,7 +37,7 @@ void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
 
     auto queueIt = queueMap_.find(taskInfo->streamId_);
     if (UNLIKELY(queueIt == queueMap_.end())) {
-        queueMap_[taskInfo->streamId_] = std::make_unique<CircularQueue<std::shared_ptr<TaskInfo>>>(MAX_CIRCULAR_QUEUE_LENGTH);
+        queueMap_[taskInfo->streamId_] = std::make_unique<CircularQueue<std::unique_ptr<TaskInfo>>>(MAX_CIRCULAR_QUEUE_LENGTH);
         queueIt = queueMap_.find(taskInfo->streamId_);
         queueTaskNum[taskInfo->streamId_] = 0;
     }
