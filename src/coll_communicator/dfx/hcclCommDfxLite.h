@@ -41,7 +41,7 @@ public:
     // 将remoteRankId添加到channelRemoteRankId_表中
     void AddChannelRemoteRankId(u64 handle, u32 remoteRankId);
     // 在channelRemoteRankId_表中对remoteRankId进行查找
-    HcclResult GetChannelRemoteRankId(u64 handle, u32& remoteRankId);
+    u32 GetChannelRemoteRankId(u64 handle);
 private:
     std::unique_ptr<Hccl::MirrorTaskManagerLite> mirrorTaskManagerLite_;
     std::unique_ptr<HcclCommProfilingLite> profilingImpl_;
@@ -49,6 +49,7 @@ private:
     std::string commTag_;
     u32 deviceId_;
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> addTaskCallback_;
+    std::function<u32(u64)> getChannelRemoteRankId_;
 };
 
 }

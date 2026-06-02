@@ -26,7 +26,7 @@ std::string TaskInfo::Describe() const
 {
     std::string dfxInfo = (dfxOpInfo_ != nullptr) ? dfxOpInfo_->Describe() : "nullptr";
     return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], taskParam:[%s], dfxOpInfo:[%s], isMaster[%d]]",
-                        streamId_, taskId_, remoteRank_, taskParam_.Describe().c_str(), dfxInfo.c_str(), isMaster_);
+                        streamId_, taskId_, GetRemoteRankId(), taskParam_.Describe().c_str(), dfxInfo.c_str(), isMaster_);
 }
 
 string TaskInfo::GetAlgTypeName() const
@@ -138,7 +138,7 @@ string TaskInfo::GetOpInfo() const
 string TaskInfo::GetRemoteRankInfo(bool needConcise) const
 {
     string invRank = needConcise ? "/" : "local";
-    return (this->remoteRank_ == UINT32_MAX) ? invRank : to_string(this->remoteRank_);
+    return (this->GetRemoteRankId() == UINT32_MAX) ? invRank : to_string(this->GetRemoteRankId());
 }
 
 string TaskInfo::GetTaskConciseName() const
@@ -252,6 +252,11 @@ string TaskInfo::GetParaAiv() const
                         taskPara.Aiv.rank, taskPara.Aiv.sendRecvRemoteRank,
                         static_cast<int>(taskPara.Aiv.dataType),
                         this->GetRemoteRankInfo().c_str());
+}
+
+u32 TaskInfo::GetRemoteRankId() const
+{
+    return getChannelRemoteRankId_ ? getChannelRemoteRankId_(channelHandle_) : remoteRank_;
 }
 
 } // namespace Hccl

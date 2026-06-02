@@ -201,7 +201,7 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
     const Hccl::TaskInfo& taskInfo, const rtLogicCqReport_t &exceptionInfo, Hccl::ErrorMessageReport &errMsgInfo)
 {
     // 获取需要上报的关键信息
-    errMsgInfo.remoteUserRank = taskInfo.remoteRank_;
+    errMsgInfo.remoteUserRank = taskInfo.GetRemoteRankId();
     errMsgInfo.streamId = taskInfo.streamId_;
     errMsgInfo.taskId = taskInfo.taskId_;
     errMsgInfo.rankId = aicpuComm->GetTopoInfo().userRank;
