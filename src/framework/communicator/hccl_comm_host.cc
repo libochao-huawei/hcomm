@@ -282,6 +282,12 @@ namespace hccl
         return communicator_->GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
     }
 
+    HcclResult hcclComm::GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
+                                         uint32_t infoLen, void *info)
+    {
+        return communicator_->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
+    }
+
     HcclResult hcclComm::GetRankGraph(GraphType type, void **graph, uint32_t *len)
     {
         return communicator_->GetRankGraph(type, graph, len);
@@ -290,11 +296,6 @@ namespace hccl
     uint32_t hcclComm::GetConnectMode()
     {
         return communicator_->GetConnectMode();
-    }
-
-    void *hcclComm::GetMyRank()
-    {
-        return (void *)communicator_->GetMyRank();
     }
     HcclResult hcclComm::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
     {
@@ -319,7 +320,7 @@ namespace hccl
     }
 
     HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
-        HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config) {
+        HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config, CollCommInitMode initMode) {
         // 不校验config，为空时配置默认加速模式
 
         // aicpu侧初始化状态的回调函数
@@ -347,12 +348,15 @@ namespace hccl
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
         CHK_RET(InitBinHandle());
-        CHK_PTR_NULL(commV2);
 
-        EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
+        EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks, initMode),
             return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
+        if (initMode == CollCommInitMode::simpleMode) { /* hccl::CommunicatorV1支持CollComm简易流程 */
+            return HCCL_SUCCESS;
+        }
+
         CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
             commAicpuParam_.kfcStatusTransferD2HParams));
         commAicpuParam_.userRank = collComm_->GetMyRankId();
@@ -376,6 +380,55 @@ namespace hccl
             CHK_RET(commImplV2->SetAccelerator(static_cast<int32_t>(opExpansionMode), isCcuMsAvailable));
         }
 
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult hcclComm::InitCollCommInner(uint32_t userRank)
+    {
+        if (!GetConnectMode()) {
+            return HCCL_SUCCESS;
+        }
+
+        CHK_PRT_RET(userRank == INVALID_VALUE_RANKID,
+            HCCL_ERROR("[%s] invalid userRank[%u]", __func__, userRank), HCCL_E_PARA);
+
+        std::string commName = GetIdentifier();
+        HCCL_INFO("[%s]Init CollComm start, comm[%s], userRank[%u]", __func__, commName.c_str(), userRank);
+        HcclCommunicator* hcclComm = GetHcclCommunicator();
+        if (hcclComm == nullptr) {
+            HCCL_WARNING("[%s] HcclCommunicator NULL, skip CollComm init", __func__);
+            return HCCL_SUCCESS;
+        }
+
+        void* rankGraphV1 = hcclComm->GetRankGraphV1();
+        if (rankGraphV1 == nullptr) {
+            HCCL_WARNING("[%s] rankGraphV1 is nullptr, skip CollComm init, comm[%s]", __func__, commName.c_str());
+            return HCCL_SUCCESS;
+        }
+
+        void* cclBufferAddr = nullptr;
+        u64 cclBufferSize = 0;
+        CHK_RET(CreateCommCCLbuffer());
+        HcclResult ret = hcclComm->GetInCCLbuffer(cclBufferAddr, cclBufferSize);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] GetInCCLbuffer failed, comm[%s], ret=%d", __func__, commName.c_str(), ret);
+            return ret;
+        }
+
+        HcclMem cclBuffer{};
+        cclBuffer.size = static_cast<uint64_t>(cclBufferSize);
+        cclBuffer.addr = cclBufferAddr;
+        cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_DEVICE;
+        constexpr HcclCommConfig* config = nullptr;
+
+        ret = InitCollComm(nullptr, rankGraphV1, userRank, cclBuffer, commName, const_cast<HcclCommConfig*>(config),
+                           CollCommInitMode::simpleMode);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] InitCollComm failed, comm[%s], ret=%d", __func__, commName.c_str(), ret);
+            return ret;
+        }
+
+        HCCL_INFO("[%s] CollComm init success for V1, comm[%s]", __func__, commName.c_str());
         return HCCL_SUCCESS;
     }
 
@@ -450,6 +503,11 @@ namespace hccl
             return nullptr;
         }
         return collComm_->GetCommunicatorV2();
+    }
+
+    HcclCommunicator* hcclComm::GetHcclCommunicator()
+    {
+        return communicator_.get();
     }
 
     CollComm* hcclComm::GetCollComm() 
