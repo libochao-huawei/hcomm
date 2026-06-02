@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef CCU_API_HPP
-#define CCU_API_HPP
+#ifndef CCU_PRIMITIVES_HPP
+#define CCU_PRIMITIVES_HPP
 
 #include "ccu_primitives_impl.h"
 #include "ccu_control_flow_macro.h"
