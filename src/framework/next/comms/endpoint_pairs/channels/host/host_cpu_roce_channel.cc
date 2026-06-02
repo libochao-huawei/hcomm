@@ -1573,7 +1573,7 @@ HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needS
         CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(*socketConfig_, socket_));
     }
     CHK_RET(HrtRaQpConnectAsync(qpInfo.qpHandle, socket_->GetFdHandle(), needStop));
-    
+
     // 查询QP建链是否成功
     s32 qpStatus = 0;
     s32 raRet = 0;
