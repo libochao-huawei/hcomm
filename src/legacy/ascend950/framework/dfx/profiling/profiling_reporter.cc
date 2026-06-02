@@ -78,11 +78,11 @@ void ProfilingReporter::LogAllTasks() const
         if (currQueue == nullptr) {
             continue;
         }
-        if (*(currQueue->Begin()) == nullptr) {
+        if (**(currQueue->Begin()) == nullptr) {
             continue;
         }
         if (curLastPoses.find(streamId) == curLastPoses.end()) {
-            TaskInfo task = *(*(currQueue->Begin()));
+            TaskInfo task = ***(currQueue->Begin());
             HCCL_INFO("[ProfilingReporter] LogAllTasks, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
         }
         if (curLastPoses.find(streamId) == curLastPoses.end()) {
@@ -90,13 +90,13 @@ void ProfilingReporter::LogAllTasks() const
         }
         bool pastLastPos = false;
         auto logIter = currQueue->Begin();
-        for (; logIter != currQueue->End(); ++logIter) {
-            if (!pastLastPos && logIter == curLastPoses[streamId]) {
+        for (; *logIter != *currQueue->End(); ++(*logIter)) {
+            if (!pastLastPos && *logIter == *curLastPoses[streamId]) {
                 pastLastPos = true;
                 continue;
             }
             if (pastLastPos) {
-                TaskInfo task = *(*(logIter));
+                TaskInfo task = ***logIter;
                 HCCL_INFO("[ProfilingReporter] LogAllTasks, streamId = %u, taskId = %u",
                           task.streamId_, task.taskId_);
             }
@@ -130,12 +130,12 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
             HCCL_WARNING("[ProfilingReporter][ReportAllTasks] currQueue is nullptr, continue to next task.");
             continue;
         }
-        if (*(currQueue->Begin()) == nullptr) {
-            HCCL_WARNING("[ProfilingReporter][ReportAllTasks] (*(*(currQueue->Begin())) is nullptr, continue to next task.");
+        if (**(currQueue->Begin()) == nullptr) {
+            HCCL_WARNING("[ProfilingReporter][ReportAllTasks] **(currQueue->Begin()) is nullptr, continue to next task.");
             continue;
         }
         if (curLastPoses.find(streamId) == curLastPoses.end()) {
-            TaskInfo task = *(*(currQueue->Begin()));
+            TaskInfo task = ***(currQueue->Begin());
             HCCL_INFO("[ProfilingReporter] ReportTask, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, task.isMaster_, cachedReq, true);
@@ -145,9 +145,9 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         
         auto endPos = currQueue->Tail();
         auto iter = curLastPoses[streamId];
-        ++iter;
-        for (; iter != currQueue->End(); ++iter) {
-            TaskInfo task = *(*(iter));
+        ++(*iter);
+        for (; *iter != *currQueue->End(); ++(*iter)) {
+            TaskInfo task = ***iter;
             HCCL_INFO("[ProfilingReporter] ReportTask, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, task.isMaster_, cachedReq, true);
