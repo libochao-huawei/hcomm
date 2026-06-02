@@ -122,6 +122,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_func.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/entrance/rank_table_crc_bridge.cc
     ${HCCL_CODE_ROOT}/src/legacy/common/checkcrc.cc
+    ${HCCL_CODE_ROOT}/src/legacy/common/log.cc
 )
 
 set(hccl_list
