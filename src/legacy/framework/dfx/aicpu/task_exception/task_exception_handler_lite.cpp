@@ -375,7 +375,7 @@ void TaskExceptionHandlerLite::PrintTaskContextInfo(CommunicatorImplLite *aicpuC
 
     auto func = [taskId] (const shared_ptr<TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskItorPtr = queue->Find(func);
-    if (*taskItorPtr == *queue->End()) {
+    if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. streamId(sqId)[%u], taskId(sqeId)[%u].", sqId, taskId);
         return;

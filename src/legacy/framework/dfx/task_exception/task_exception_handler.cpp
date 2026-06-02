@@ -290,7 +290,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
         return task->taskId_ == taskId;
     };
     auto taskItorPtr = queue->Find(func);
-    if (*taskItorPtr == *queue->End()) {
+    if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].", exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
         return;
@@ -383,7 +383,7 @@ void TaskExceptionHandler::PrintTaskContextInfo(uint32_t deviceId, uint32_t stre
 
     auto func = [taskId] (const shared_ptr<TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskItorPtr = queue->Find(func);
-    if (*taskItorPtr == *queue->End()) {
+    if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].", deviceId, streamId, taskId);
         return;

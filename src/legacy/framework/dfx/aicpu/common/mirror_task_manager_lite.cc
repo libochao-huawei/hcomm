@@ -91,25 +91,24 @@ std::shared_ptr<TaskInfo> MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 t
         return taskInfo->taskId_ == taskId;
     };
 
-    auto task = queue->Find(FindTask);
-    if (*task == *queue->End()) {
+    auto task = *queue->Find(FindTask);
+    if (task == *queue->End()) {
         return nullptr;
     };
 
     HCCL_INFO("[MirrorTaskManagerLite][GetTaskInfo]find streamdId(sqId)[%u] taskId(sqeId)[%u]", streamId, taskId);
 
-    return **task;
+    return *task;
 }
 
 TaskInfoQueueMap::iterator MirrorTaskManagerLite::Begin() 
-{ 
-    return queueMap_.begin(); 
-} 
+{
+    return queueMap_.begin();
+}
 
-
-TaskInfoQueueMap::iterator MirrorTaskManagerLite::End() 
-{ 
-    return queueMap_.end(); 
+TaskInfoQueueMap::iterator MirrorTaskManagerLite::End()
+{
+    return queueMap_.end();
 }
 
 MirrorTaskManagerLite::~MirrorTaskManagerLite()
