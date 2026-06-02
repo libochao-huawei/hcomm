@@ -9,7 +9,9 @@
  */
 #include <mutex>
 #include <cstring>
+#include <chrono>
 #include <memory>
+#include <vector>
 
 #include "hccl/hccl_res.h"
 #include "hcomm_res.h"
@@ -27,6 +29,7 @@
 #include "channel_param.h"
 #include "launch_aicpu.h"
 #include "comm_configer.h"
+#include "env_config/env_config.h"
 #include "endpoint_map.h"
 #include "nic_plugin_manager.h"
 
@@ -175,6 +178,56 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
         channelDescFinals.push_back(channelDescFinal);
     }
     return HCOMM_SUCCESS;
+}
+
+void DestroyCreatedPluginChannels(ChannelHandle *channels, uint32_t channelNum)
+{
+    if (channels == nullptr) {
+        return;
+    }
+    for (uint32_t idx = 0; idx < channelNum; ++idx) {
+        if (channels[idx] == 0) {
+            continue;
+        }
+        (void)DestroyPluginChannel(channels[idx]);
+        channels[idx] = 0;
+    }
+}
+
+HcommResult ConnectPluginChannels(ChannelHandle *channels, uint32_t channelNum)
+{
+    CHK_PTR_NULL(channels);
+    CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]",
+        __func__, channelNum), HCCL_E_PARA);
+
+    const auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    const auto startTime = std::chrono::steady_clock::now();
+    std::vector<int32_t> statusVec(channelNum, 1);
+
+    while (true) {
+        HcommResult ret = HcommChannelGetStatus(channels, channelNum, statusVec.data());
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] HcommChannelGetStatus failed, ret[%d].", __func__, ret);
+            return ret;
+        }
+
+        bool allReady = true;
+        for (uint32_t idx = 0; idx < channelNum; ++idx) {
+            if (statusVec[idx] != 0) {
+                allReady = false;
+                break;
+            }
+        }
+        if (allReady) {
+            HCCL_INFO("[%s] SUCCESS.", __func__);
+            return HCCL_SUCCESS;
+        }
+
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_ERROR("[%s] plugin channel connect timeout.", __func__);
+            return HCCL_E_TIMEOUT;
+        }
+    }
 }
 } // namespace
 
@@ -596,12 +649,19 @@ HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
         for (uint32_t idx = 0; idx < channelNum; ++idx) {
             HcommResult ret = CreatePluginChannel(endpointHandle, &channelDescFinals[idx], &channels[idx]);
             if (ret != HCCL_SUCCESS) {
-                for (uint32_t clearIdx = 0; clearIdx < idx; ++clearIdx) {
-                    (void)DestroyPluginChannel(channels[clearIdx]);
-                    channels[clearIdx] = 0;
-                }
+                DestroyCreatedPluginChannels(channels, idx);
                 return ret;
             }
+        }
+        HcommResult ret = ConnectPluginChannels(channels, channelNum);
+        if (ret != HCCL_SUCCESS) {
+            DestroyCreatedPluginChannels(channels, channelNum);
+            return ret;
+        }
+        ret = static_cast<HcommResult>(EnsureKernelBinLoaded(engine));
+        if (ret != HCCL_SUCCESS) {
+            DestroyCreatedPluginChannels(channels, channelNum);
+            return ret;
         }
         return HCCL_SUCCESS;
     }
