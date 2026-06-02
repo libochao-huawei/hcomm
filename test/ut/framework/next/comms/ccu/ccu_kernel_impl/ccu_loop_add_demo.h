@@ -23,9 +23,6 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     using namespace ccu;
     auto *args = static_cast<CcuLoopAddKernelArg *>(arg);
 
-    // 各 LoopGroup 通过 ctor 第二个参数 maxLoopNum 自报本组所需的 LoopEngine
-    // 数量；kernel 内按 max(各 LoopGroup maxLoopNum) 被动扩容池子，跨组复用低位
-    // executorId（0、1...）。本 demo 三个 LoopGroup 各填 2。
     Variable r1{}, r2{}, r3{}, r4{}, r5{}, r6{}, r7{}, numA{}, numB{};
 
     numA = args->numA;

@@ -23,22 +23,6 @@
 
 namespace ccu = ::AscendC::ccu;
 
-// =============================================================================
-// 本 demo 用 C-API 复现 hccl 仓中的算子 CcuAllGatherMesh1DMem2MemKernel。
-//
-// 为了复现"两个 .cc 各自 include 此头时 __COUNTER__ 跨 TU 冲突导致
-// CCU_IF label 撞车"的 bug，这里把头里只保留：
-//   - 常量 / POD 数据结构 / 纯 host 的位运算 helper
-//   - 跨 TU 调用入口的 extern 声明
-// 而把所有 *会展开 CCU_IF / CCU_WHILE 的函数定义* 都拆到两个 .cc：
-//   - ccu_groupcopy_alg.cc    : AgCreateMultiOpCopy / AgGroupCopy（带 2 个 CCU_IF）
-//   - ccu_groupcopy_kernel.cc : kernel 入口 / AgDoAllGather（外层带 1 个 CCU_IF）等
-// =============================================================================
-
-// =============================================================================
-// 常量定义（与 hccl 原版命名空间 ops_hccl 内的常量同义）
-// =============================================================================
-
 constexpr uint32_t AG_MAX_RANK_SIZE = 16;
 
 constexpr int AG_OUTPUT_XN_ID  = 1;
@@ -207,12 +191,6 @@ static inline CcuResult AgAllocGoResource(GroupCopyLoopGroupConfig &config,
     allocated = true;
     return CCU_SUCCESS;
 }
-
-// =============================================================================
-// 跨 TU 入口声明
-//   - alg.cc:    AgGroupCopy（含 2 个 CCU_IF）
-//   - kernel.cc: CcuAllGatherMesh1dMem2MemKernel（含 1 个外层 CCU_IF 调 AgGroupCopy）
-// =============================================================================
 
 CcuResult AgGroupCopy(AllGatherContext &ctx, ccu::LocalAddr dst, ccu::LocalAddr src,
     GroupCopyGoSizeVars &goSize);
