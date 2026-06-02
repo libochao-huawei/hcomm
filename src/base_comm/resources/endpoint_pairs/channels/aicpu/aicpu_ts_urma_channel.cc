@@ -42,11 +42,17 @@ HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
 {
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
+        auto localRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
+        CHK_PTR_NULL(localRmaBuffer);
+        auto buf = localRmaBuffer->GetBuf();
+        CHK_PTR_NULL(buf);
+        HCCL_INFO("[AicpuTsUrmaChannel][%s] addr[0x%llx], size[0x%llx], memType[%d], memTag[%s]",
+            __func__, static_cast<unsigned long long>(localRmaBuffer->GetAddr()),
+            static_cast<unsigned long long>(localRmaBuffer->GetSize()),
+            static_cast<int>(buf->GetMemType()), buf->GetMemTag().c_str());
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
+            localRmaBuffer->GetAddr(), localRmaBuffer->GetSize(),
+            buf->GetMemType(), buf->GetMemTag().c_str())
         ));
     }
     return HCCL_SUCCESS;
@@ -81,7 +87,9 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
             HCCL_INFO("[AicpuTsUrmaChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
                 __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
+                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
+                localUbRmaBuffer->GetBuf()->GetMemType(),
+                localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
             ));
         }
     } else {
