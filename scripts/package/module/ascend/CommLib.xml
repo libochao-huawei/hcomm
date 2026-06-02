@@ -89,6 +89,7 @@
     </file_info>
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="opp/built-in/op_impl/aicpu/kernel" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="440" optional="true">
         <file value="aicpu_hcomm.tar.gz"/>
+        <file value="mc2_server.tar.gz"/>
     </file_info>
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="compat" install_path="compat" install_type="all" install_mod="440" optional="true">
         <file value="cann-hcomm-compat.tar.gz"/>
@@ -97,6 +98,7 @@
     </file_info>
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="opp/built-in/op_impl/aicpu/config" install_path="opp/built-in/op_impl/aicpu/config" install_type="all" install_mod="440">
         <file value="ccl_kernel.json"/>
+        <file value="libmc2_server.json"/>
     </file_info>
     <file_info value="aicpu_custom" copy_type="delivery" src_path="build" dst_path="opp/built-in/op_impl/aicpu/kernel" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="550">
         <file value="libaicpu_custom.so" file_type="shared"/>
@@ -114,6 +116,8 @@
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="$(TARGET_ENV)/lib64" install_path="$(TARGET_ENV)/lib64" install_type="all" install_mod="440">
         <!-- hccl -->
         <file value="libhcomm.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libhccl_fwk.so"/>
+        <file value="libmc2_client.so" file_type="shared"/>
+        <file value="libmc2_compat.so" file_type="shared"/>
         <file value="hccl_aiv_op_910_95.o"/>
         <file value="libhccl_v2.so" file_type="shared" release_type="debug"/>
         <file value="libhccl_alg.so" file_type="shared"/>

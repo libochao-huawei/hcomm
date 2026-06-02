@@ -99,6 +99,34 @@ if [ ! -d "$common_parse_dir/share/info/hcomm" ]; then
     exit 1
 fi
 
+cleanup_mc2_residue() {
+    local root_dir="$1"
+    if [ ! -d "$root_dir" ]; then
+        return 0
+    fi
+
+    local residue_file
+    for residue_file in \
+        "$root_dir"/*-linux/lib64/libmc2_client.so \
+        "$root_dir"/*-linux/lib64/libmc2_compat.so \
+        "$root_dir"/opp/built-in/op_impl/aicpu/kernel/mc2_server.tar.gz \
+        "$root_dir"/opp/built-in/op_impl/aicpu/config/libmc2_server.json; do
+        if [ -e "$residue_file" ] || [ -L "$residue_file" ]; then
+            rm -f "$residue_file" 2> /dev/null
+        fi
+    done
+}
+
+cleanup_empty_install_dirs() {
+    local root_dir="$1"
+    if [ ! -d "$root_dir" ]; then
+        return 0
+    fi
+
+    chmod u+w -R "$root_dir" 2> /dev/null
+    find "$root_dir" -depth -type d -empty -exec rmdir {} \; 2> /dev/null
+}
+
 new_uninstall() {
     if [ -f "${common_parse_dir}/share/info/hcomm/data/version.info" ]; then
         log "INFO" "need to uninstall costmodel files."
@@ -145,6 +173,9 @@ new_uninstall() {
     if [ -n "$latest_path" ] && [ -d "$latest_path" ] && [ "x$(ls -A $latest_path 2>&1)" = "x" ]; then
         rm -rf "$latest_path"
     fi
+
+    cleanup_mc2_residue "$common_parse_dir"
+    cleanup_empty_install_dirs "$common_parse_dir"
 
     return 0
 }
