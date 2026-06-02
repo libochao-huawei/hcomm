@@ -807,7 +807,7 @@ void TcHost()
     mocker_clean();
 
     rdevInfo.phyId = 0;
-    rdevInfo.family = AF_INET;
+    rdevInfo.family = 0;
     rdevInfo.localIp.addr.s_addr = 0;
     char localIp[1];
     mocker(RaGetIfaddrs, 10, 0);
@@ -815,6 +815,7 @@ void TcHost()
     RaRdevInitCheckIp(NETWORK_OFFLINE, rdevInfo, localIp);
     mocker_clean();
 
+    rdevInfo.family = AF_INET;
     mocker(RaRdevInitCheck, 2 , 0);
     mocker(RaHdcNotifyBaseAddrInit, 5 , 0);
     ret = RaRdevInit(10, NOTIFY, rdevInfo, &rdmaHandle);
