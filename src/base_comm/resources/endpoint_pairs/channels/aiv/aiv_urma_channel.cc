@@ -11,7 +11,6 @@
 #include "aiv_urma_channel.h"
 #include "endpoint.h"
 #include "orion_adpt_utils.h"
-#include "comm_mems.h"
 
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
@@ -358,10 +357,15 @@ HcclResult AivUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHand
 {
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        HCCL_INFO("[AivUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
-        bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(locMemInfo->mem.addr),
-            locMemInfo->mem.size, hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)));
+        auto localRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
+        CHK_PTR_NULL(localRmaBuffer);
+        auto buf = localRmaBuffer->GetBuf();
+        CHK_PTR_NULL(buf);
+        HCCL_INFO("[AivUrmaChannel][%s] tag[%s]", __func__, buf->GetMemTag().c_str());
+        bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
+            localRmaBuffer->GetAddr(), localRmaBuffer->GetSize(),
+            buf->GetMemType(), buf->GetMemTag().c_str())
+        ));
     }
     return HCCL_SUCCESS;
 }
