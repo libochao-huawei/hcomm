@@ -97,7 +97,7 @@ public:
 
     virtual ~Queue() = default;
 
-    virtual void                      Append(const T &value)                          = 0;
+    virtual void                      Append(T &value)                          = 0;
     virtual void                      Traverse(std::function<void(const T &)> action) = 0;
     virtual size_t                    Size() const                                    = 0;
     virtual bool                      IsEmpty() const                                 = 0;

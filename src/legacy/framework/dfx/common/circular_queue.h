@@ -119,7 +119,7 @@ public:
         HCCL_INFO("[CircularQueue]Destroy");
     }
 
-    void Append(const T &value) override
+    void Append(T &value) override
     {
         if (IsFull()) {
             head_ = (head_ + 1) % capacity_;
