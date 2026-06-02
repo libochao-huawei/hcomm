@@ -450,11 +450,6 @@ HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam
 
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
-    CHK_PTR_NULL(hcclComm);
-    if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
-        return HCCL_E_NOT_SUPPORT;
-    }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
     hccl::HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
