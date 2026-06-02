@@ -26,38 +26,31 @@ target_compile_definitions(ccl_kernel_plf PRIVATE ${CCL_KERNEL_PLF_COMPILE_DEFIN
 target_compile_definitions(ccl_kernel_plf_a PRIVATE ${CCL_KERNEL_PLF_COMPILE_DEFINITIONS})
 
 # 编译选项
-set(CCL_KERNEL_PLF_COMPILE_OPTIONS
-    -Werror
-    -Wall
-    -fno-common
-    -fno-strict-aliasing
-    -pipe
-    -std=c++17
-    -D_FORTIFY_SOURCE=2 -O2
-    -fstack-protector-all
-)
 target_compile_options(ccl_kernel_plf PRIVATE
-    ${CCL_KERNEL_PLF_COMPILE_OPTIONS}
+    # -Werror
+    -fno-strict-aliasing
+    -D_FORTIFY_SOURCE=2
+    $<$<CONFIG:Debug>:-g -O0>
+    $<$<CONFIG:Release>:-O2>
 )
 # ccl_kernel_plf_a 额外编译选项
 target_compile_options(ccl_kernel_plf_a PRIVATE
-    ${CCL_KERNEL_PLF_COMPILE_OPTIONS}
+    # -Werror
+    -fno-strict-aliasing
+    -D_FORTIFY_SOURCE=2
     -ftrapv
-    -fPIC
+    $<$<CONFIG:Debug>:-g -O0>
+    $<$<CONFIG:Release>:-O2>
 )
 
 # 链接选项
-set(CCL_KERNEL_PLF_LINK_OPTIONS
-    -Wl,-z,relro,-z,now,-z,noexecstack
+target_link_options(ccl_kernel_plf PRIVATE
     -Wl,-Bsymbolic
     -Wl,--exclude-libs,ALL
 )
-target_link_options(ccl_kernel_plf PRIVATE
-    ${CCL_KERNEL_PLF_LINK_OPTIONS}
-    -s
-)
 target_link_options(ccl_kernel_plf_a PRIVATE
-    ${CCL_KERNEL_PLF_LINK_OPTIONS}
+    -Wl,-Bsymbolic
+    -Wl,--exclude-libs,ALL
 )
 
 # 头文件搜索路径
