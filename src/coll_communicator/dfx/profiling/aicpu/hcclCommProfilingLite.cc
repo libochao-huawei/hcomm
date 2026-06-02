@@ -21,20 +21,14 @@ HcclCommProfilingLite::HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorT
 
 // HcclCommProfilingLite任务上报
 void HcclCommProfilingLite::ReportAllTasks() {
-    if (profilingReporterLite_) {
-        profilingReporterLite_->ReportAllTasks();
-    }
+    profilingReporterLite_->ReportAllTasks();
 }
 
-// HcclCommProfilingLite::UpdateProfStat实现
 void HcclCommProfilingLite::UpdateProfStat() {
-    if (profilingReporterLite_) {
-        profilingReporterLite_->UpdateProfStat();
-    }
+    profilingReporterLite_->UpdateProfStat();
 }
-    
- Hccl::MirrorTaskManagerLite* HcclCommProfilingLite::GetMirrorTaskManagerLite() const{
-    return mirrorTaskManagerLite_;
- }
 
+Hccl::MirrorTaskManagerLite* HcclCommProfilingLite::GetMirrorTaskManagerLite() const {
+    return mirrorTaskManagerLite_;
+}
 }

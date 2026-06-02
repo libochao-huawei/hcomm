@@ -20,14 +20,20 @@ ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, Profiling
     profilingHandler_ = profilingHandler;
     mirrorTaskMgr_ = mirrorTaskMgr;
     mirrorTaskMgr_->RegFullyCallBack([this]() { ReportCallBackAllTasks(); });
+    Init();
 }
 
 ProfilingReporter::~ProfilingReporter()
 {
 }
 
-void ProfilingReporter::Init() const
+void ProfilingReporter::Init()
 {
+    deviceLogicId = HrtGetDevice();
+    if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
+        HCCL_ERROR("[ProfilingReporter][Init] deviceLogicId[%d] out of range", deviceLogicId);
+        return;
+    }
 }
 
 void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const
@@ -61,13 +67,9 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
     }
 }
 
-void ProfilingReporter::LogAllTasks() const
+void ProfilingReporter::ReportAllTasksLog() const
 {
     if (HcclCheckLogLevel(HCCL_LOG_INFO) == 0) {
-        return;
-    }
-    s32 deviceLogicId = HrtGetDevice();
-    if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
         return;
     }
     auto& curLastPoses = allLastPoses_[deviceLogicId];
@@ -80,9 +82,9 @@ void ProfilingReporter::LogAllTasks() const
         if (**(currQueue->Begin()) == nullptr) {
             continue;
         }
-        if (curLastPoses.find(streamId) == curLastPoses.end()) {
-            TaskInfo task = ***(currQueue->Begin());
-            HCCL_INFO("[ProfilingReporter] LogAllTasks, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
+        if (curLastPoses.find(streamId) == curLastPoses.end() && currQueue->Begin() != nullptr) {
+            TaskInfo task = (*(*(*currQueue->Begin())));
+            HCCL_INFO("[ProfilingReporter] ReportAllTasksLog, %s", task.Describe().c_str());
         }
         if (curLastPoses.find(streamId) == curLastPoses.end()) {
             continue;
@@ -95,9 +97,8 @@ void ProfilingReporter::LogAllTasks() const
                 continue;
             }
             if (pastLastPos) {
-                TaskInfo task = ***logIter;
-                HCCL_INFO("[ProfilingReporter] LogAllTasks, streamId = %u, taskId = %u",
-                          task.streamId_, task.taskId_);
+                TaskInfo task = (*(*(*logIter)));
+                HCCL_INFO("[ProfilingReporter] ReportAllTasksLog, %s", task.Describe().c_str());
             }
         }
     }
@@ -111,12 +112,7 @@ void ProfilingReporter::ReportCallBackAllTasks(bool cachedReq)
 void ProfilingReporter::ReportAllTasks(bool cachedReq)
 {
     std::lock_guard<std::mutex> lock(mirrorTaskMgr_->GetTaskMutex());
-    LogAllTasks();
-    s32 deviceLogicId = HrtGetDevice();
-    if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
-        HCCL_ERROR("[ProfilingReporter][ReportAllTasks] deviceLogicId[%d] out of range", deviceLogicId);
-        return;
-    }
+    ReportAllTasksLog();
     auto& curLastPoses = allLastPoses_[deviceLogicId];
     if (mirrorTaskMgr_ == nullptr || profilingHandler_ == nullptr) {
         HCCL_ERROR("[ProfilingReporter][ReportAllTasks] mirrorTaskMgr_[%p] or profilingHandler_[%p] is nullptr", mirrorTaskMgr_, profilingHandler_);
@@ -135,7 +131,6 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         }
         if (curLastPoses.find(streamId) == curLastPoses.end() && currQueue->Begin() != nullptr) { // 是首个任务	 
             TaskInfo task = (*(*(*currQueue->Begin())));
-            HCCL_INFO("[ProfilingReporter] ReportTask, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, task.isMaster_, cachedReq, true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
@@ -147,7 +142,6 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         ++(*(iter));	 
         for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {	 
             TaskInfo task = (*(*(*iter)));
-            HCCL_INFO("[ProfilingReporter] ReportTask, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, task.isMaster_, cachedReq, true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
@@ -169,11 +163,6 @@ void ProfilingReporter::UpdateProfStat(void)
     }
     if (enableHcclL1_ != newEnableHcclL1) {
         enableHcclL1_ = newEnableHcclL1;
-        s32 deviceLogicId = HrtGetDevice();
-        if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
-            HCCL_ERROR("[ProfilingReporter][ReportAllTasks] deviceLogicId[%d] out of range", deviceLogicId);
-            return;
-        }
         auto& curLastPoses = allLastPoses_[deviceLogicId];
         for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
             u32 streamId = it->first;
