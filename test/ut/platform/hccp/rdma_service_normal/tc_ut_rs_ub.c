@@ -132,8 +132,8 @@ void TcRsUbGetRdevCb()
     struct rs_cb rsCb;
     int ret;
 
-    RS_INIT_LIST_HEAD(&rsCb.rdevList);
-    RsListAddTail(&rdevCb.list, &rsCb.rdevList);
+    RS_INIT_LIST_HEAD(&rsCb.udevList);
+    RsListAddTail(&rdevCb.list, &rsCb.udevList);
 
     ret = RsUbGetDevCb(&rsCb, rdevIndex, &rdevCbOut);
     EXPECT_INT_EQ(ret, 0);
@@ -217,7 +217,7 @@ void TcRsUbV2()
     ret = RsInit(&cfg);
     EXPECT_INT_EQ(ret, 0);
 
-    RS_INIT_LIST_HEAD(&rscb.rdevList);
+    RS_INIT_LIST_HEAD(&rscb.udevList);
     ret = RsUbCtxInit(&rscb, &info, &devIndex, &attr);
     EXPECT_INT_EQ(0, ret);
 
@@ -402,7 +402,7 @@ struct rs_cb *TcRsUbV2Init(int mode, unsigned int *devIndex)
     EXPECT_INT_EQ(ret, 0);
     ret = RsGetRsCb(0, &rsCb);
     EXPECT_INT_EQ(ret, 0);
-    RS_INIT_LIST_HEAD(&rsCb->rdevList);
+    RS_INIT_LIST_HEAD(&rsCb->udevList);
 
     ret = RsUbCtxInit(rsCb, &info, devIndex, &attr);
     EXPECT_INT_EQ(0, ret);
@@ -1557,12 +1557,12 @@ void TcRsEpollEventJfcInHandle()
     urma_jfce_t jfce2 = {0};
     int ret = 0;
 
-    RS_INIT_LIST_HEAD(&rsCb.rdevList);
+    RS_INIT_LIST_HEAD(&rsCb.udevList);
     ret = RsEpollEventJfcInHandle(&rsCb, -ENODEV);
     EXPECT_INT_EQ(-ENODEV, ret);
 
-    RsListAddTail(&devCb1.list, &rsCb.rdevList);
-    RsListAddTail(&devCb2.list, &rsCb.rdevList);
+    RsListAddTail(&devCb1.list, &rsCb.udevList);
+    RsListAddTail(&devCb2.list, &rsCb.udevList);
     RS_INIT_LIST_HEAD(&devCb1.jfceList);
     RS_INIT_LIST_HEAD(&devCb2.jfceList);
     RsListAddTail(&jfceCb1.list, &devCb2.jfceList);

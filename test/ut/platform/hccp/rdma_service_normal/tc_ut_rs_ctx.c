@@ -432,8 +432,8 @@ void TcRsCtxEsched()
     struct TagTsHccpMsg  *hccpMsg = (struct TagTsHccpMsg *)event.priv.msg;
     ccuTaskInfo.num = 1;
     ubTaskInfo.num = 1;
-    RS_INIT_LIST_HEAD(&rscb.rdevList);
-    RsListAddTail(&rdevCb.list, &rscb.rdevList);
+    RS_INIT_LIST_HEAD(&rscb.udevList);
+    RsListAddTail(&rdevCb.list, &rscb.udevList);
     jettyCb.jetty = &jetty;
     jettyCb.state = RS_JETTY_STATE_BIND;
     RS_INIT_LIST_HEAD(&rdevCb.jettyList);
