@@ -4,9 +4,15 @@
 
 #define private public
 #include "ccu_urma_channel.h"
+#include "local_ub_rma_buffer.h"
 #undef private
 
 using namespace hcomm;
+
+namespace hcomm {
+HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
+    std::vector<CcuTransport::CclBufferInfo> &bufferInfos);
+}
 
 class CcuUrmaChannelTest : public testing::Test {
 protected:
@@ -71,6 +77,23 @@ TEST_F(CcuUrmaChannelTest, Ut_Resume_When_Called_Expect_HCCL_SUCCESS) {
 
     auto ret = ch.Resume();
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(CcuUrmaChannelTest, Ut_BuildBufferInfos_When_LocalUbHandle_Expect_BufferInfoFieldsFromRmaBuffer)
+{
+    auto rawBuffer = std::make_shared<Hccl::Buffer>(0x34560, 0x200, HCCL_MEM_TYPE_HOST, "ccu_user");
+    auto localRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(rawBuffer);
+    HcommMemHandle memHandles[1] = { reinterpret_cast<HcommMemHandle>(localRmaBuffer.get()) };
+
+    std::vector<CcuTransport::CclBufferInfo> bufferInfos;
+    ASSERT_EQ(BuildBufferInfos(memHandles, 1, bufferInfos), HCCL_SUCCESS);
+    ASSERT_EQ(bufferInfos.size(), 1U);
+    EXPECT_EQ(bufferInfos[0].addr, localRmaBuffer->GetAddr());
+    EXPECT_EQ(bufferInfos[0].size, static_cast<uint32_t>(localRmaBuffer->GetSize()));
+    EXPECT_EQ(bufferInfos[0].tokenId, localRmaBuffer->GetTokenId());
+    EXPECT_EQ(bufferInfos[0].tokenValue, localRmaBuffer->GetTokenValue());
+    EXPECT_EQ(bufferInfos[0].type, COMM_MEM_TYPE_HOST);
+    EXPECT_EQ(std::string(bufferInfos[0].memTag.data()), rawBuffer->GetMemTag());
 }
 
 TEST_F(CcuUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
