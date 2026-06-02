@@ -52,7 +52,7 @@ public:
     HcclResult ChannelFence() override;
 
 private:
-    HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
+    HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs) const;
     HcclResult ParseInputParam();
     HcclResult BuildAttr();
     HcclResult BuildConnection();

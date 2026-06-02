@@ -37,7 +37,7 @@ AicpuTsUrmaChannel::~AicpuTsUrmaChannel()
 }
 
 HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
-    std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
+    std::vector<std::shared_ptr<Hccl::Buffer>> &bufs) const
 {
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {

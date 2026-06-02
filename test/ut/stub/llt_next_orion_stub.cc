@@ -2037,7 +2037,7 @@ void ProfilingReporter::ReportCallBackAllTasks(bool cachedReq)
 {
 }
 
-void ProfilingReporter::ReportAllTasks(bool cachedReq)
+void ProfilingReporter::ReportAllTasks(bool cachedReq) const
 {
 }
 

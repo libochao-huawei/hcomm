@@ -749,7 +749,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CommunicatorImpl::CheckCommStatus()
+HcclResult CommunicatorImpl::CheckCommStatus() const
 {
     if (GetCommStatus() == CommStatus::COMM_ERROR) {
         HCCL_ERROR("Comm has been error, can not load opbased operator now!");
@@ -2499,7 +2499,7 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
     return HCCL_SUCCESS;
 }
 
-HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
+HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate() const
 {
     if (!isDpuKernelLaunched) {
         return HCCL_SUCCESS;
@@ -2812,7 +2812,7 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     return HCCL_SUCCESS;
 }
 
-bool CommunicatorImpl::IsCommWithPCIEProtocol()
+bool CommunicatorImpl::IsCommWithPCIEProtocol() const
 {
     auto links = GetFullMeshLinks();
     for (auto link : links) {
@@ -4052,7 +4052,7 @@ ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
 }
 
 
-u32 CommunicatorImpl::GetRankInParentComm() {
+u32 CommunicatorImpl::GetRankInParentComm() const {
     return static_cast<u32>(rankInParentComm);
 }
 void CommunicatorImpl::RegisterAicpuKernel()
