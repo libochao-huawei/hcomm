@@ -23,11 +23,23 @@ LocalRdmaRmaBufferImpl::LocalRdmaRmaBufferImpl(
 {
 }
 
+LocalRdmaRmaBufferImpl::LocalRdmaRmaBufferImpl(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
+    const RmaMemType memType, const LocalRdmaRmaBufferImpl& parent)
+    : RmaBuffer(netDevCtx, addr, size, memType, RmaType::RDMA_RMA, true),
+      deviceLogicId(parent.deviceLogicId), rdmaHandle(parent.rdmaHandle),
+      mrHandle(parent.mrHandle), lkey(parent.lkey), devAddrID(parent.devAddrID),
+      initialized_(true)
+{
+    HCCL_INFO("[LocalRdmaRmaBufferImpl] alias constructor, lkey[%u] mrHandle[%p]", lkey, mrHandle);
+}
+
 LocalRdmaRmaBufferImpl::~LocalRdmaRmaBufferImpl()
 {
-    HcclResult res = Destroy();
-    if (res != HCCL_SUCCESS) {
-        HCCL_ERROR("[LocalRdmaRmaBufferImpl][~LocalRdmaRmaBufferImpl]failed, ret[%d]", res);
+    if (!isAlias_) {
+        HcclResult res = Destroy();
+        if (res != HCCL_SUCCESS) {
+            HCCL_ERROR("[LocalRdmaRmaBufferImpl][~LocalRdmaRmaBufferImpl]failed, ret[%d]", res);
+        }
     }
 }
 

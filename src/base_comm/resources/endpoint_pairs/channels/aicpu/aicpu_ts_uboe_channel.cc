@@ -13,7 +13,6 @@
 #include "orion_adpt_utils.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
-#include "comm_mems.h"
 #include "user_remote_mem_getter.h"
 
 // Orion
@@ -47,11 +46,17 @@ HcclResult AicpuTsUboeChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
 {
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        HCCL_INFO("[AicpuTsUboeChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
+        auto localRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
+        CHK_PTR_NULL(localRmaBuffer);
+        auto buf = localRmaBuffer->GetBuf();
+        CHK_PTR_NULL(buf);
+        HCCL_INFO("[AicpuTsUboeChannel][%s] addr[0x%llx], size[0x%llx], memType[%d], memTag[%s]",
+            __func__, static_cast<unsigned long long>(localRmaBuffer->GetAddr()),
+            static_cast<unsigned long long>(localRmaBuffer->GetSize()), static_cast<int>(buf->GetMemType()),
+            buf->GetMemTag().c_str());
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
+            localRmaBuffer->GetAddr(), localRmaBuffer->GetSize(),
+            buf->GetMemType(), buf->GetMemTag().c_str())
         ));
     }
     return HCCL_SUCCESS;
@@ -82,12 +87,17 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
         HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
-            HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+            CHK_SMART_PTR_NULL(localUbRmaBuffer);
+            auto buf = localUbRmaBuffer->GetBuf();
+            CHK_PTR_NULL(buf);
+            HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], "
+                "memType[%d], memTag[%s].",
+                __func__, i, static_cast<unsigned long long>(localUbRmaBuffer->GetAddr()),
+                static_cast<unsigned long long>(localUbRmaBuffer->GetSize()), static_cast<int>(buf->GetMemType()),
+                buf->GetMemTag().c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
                 localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
+                buf->GetMemType(), buf->GetMemTag().c_str())
             ));
         }
     } else {
