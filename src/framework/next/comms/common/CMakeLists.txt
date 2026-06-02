@@ -13,6 +13,7 @@ set(src_list
     hccp_tlv_hdc_mgr.cc
     eid_info_mgr.cc
     tp_mgr.cc
+    irdma_connection.cc
 )
 
 if(TARGET hcomm)
