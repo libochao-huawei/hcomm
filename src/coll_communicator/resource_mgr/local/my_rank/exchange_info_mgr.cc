@@ -63,7 +63,7 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
 HcclResult ExchangeInfoMgr::CheckHcommInfo(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
-    const std::vector<HcommSocketRole> &roles.
+    const std::vector<HcommSocketRole> &roles,
     const std::vector<std::pair<u32, u32>> &newChannels)
 {
     s32 deviceLogicId = 0;
