@@ -42,8 +42,13 @@ public:
     std::string Describe() const
     {
         return StringFormat(
-                "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%s], commIndex:[%u], commId[%s], beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounterAddr[%llx], tailOpCounterAddr[%llx]",
- 	            CollOpToString(op_).c_str(), tag_.c_str(), algType_.c_str(), commIndex_, commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounterAddr_, tailOpCounterAddr_);
+                "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%s], commIndex:[%u], commId[%s], "
+                "beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounterAddr[%llx], "
+                "tailOpCounterAddr[%llx], groupName[%s], rankSize[%u], myRank[%d], dataType[%s]]",
+                CollOpToString(op_).c_str(), tag_.c_str(), algType_.c_str(), commIndex_,
+                commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounterAddr_,
+                tailOpCounterAddr_, groupName_.c_str(), rankSize_, op_.myRank,
+                DataTypeToSerialString(static_cast<uint32_t>(op_.dataType)).c_str());
     }
 };
 
@@ -75,6 +80,7 @@ private:
     std::string GetParaDMA() const;
     std::string GetParaReduce() const;
     std::string GetParaNotify() const;
+    std::string GetParaAiv() const;
     std::string GetRemoteRankInfo(bool needConcise = false) const;
     std::string GetTaskConciseName() const;
     std::string GetNotifyInfo() const;

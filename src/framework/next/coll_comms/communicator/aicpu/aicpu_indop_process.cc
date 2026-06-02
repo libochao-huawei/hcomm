@@ -308,9 +308,8 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
+HcclResult AicpuIndopProcess::ProfilingReportDeviceOp()
 {
-    HCCL_INFO("ProfilingReportDeviceOp group:%s", group.c_str());
     // 获取device侧的通信域
     CHK_PTR_NULL(g_hcclComm);
     CollCommAicpu* collCommAicpu = g_hcclComm->GetCollCommAicpu();
@@ -320,22 +319,9 @@ HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
     CHK_PTR_NULL(hcclCommDfxLite);
     Hccl::MirrorTaskManagerLite* mirrorTaskMgrLite = hcclCommDfxLite->GetMirrorTaskManagerLite();
     CHK_PTR_NULL(mirrorTaskMgrLite);
-    CHK_RET(AicpuIndopProcess::ReportAllTasks(group));
+    CHK_RET(hcclCommDfxLite->ReportAllTasks());
     EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgrLite->GetCurrDfxOpInfo()),
         return HCCL_E_INTERNAL);
-    return HCCL_SUCCESS;
-}
-
-HcclResult AicpuIndopProcess::ReportAllTasks(const std::string &group)
-{
-    CHK_PTR_NULL(g_hcclComm);
-    CollCommAicpu* collCommAicpu = g_hcclComm->GetCollCommAicpu();
-    CHK_PTR_NULL(collCommAicpu);
-    // 注册
-    HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
-    CHK_PTR_NULL(hcclCommDfxLite);
-
-    CHK_RET(hcclCommDfxLite->ReportAllTasks());
     return HCCL_SUCCESS;
 }
 
