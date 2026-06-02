@@ -140,7 +140,7 @@ public:
         return std::make_shared<Iterator>(this, static_cast<u32>(it - elems_.begin()));
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> Begin() const override
+    std::shared_ptr<typename Queue<T>::Iterator> Begin() override
     {
         return std::make_shared<Iterator>(this, 0);
     }
