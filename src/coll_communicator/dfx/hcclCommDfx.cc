@@ -62,8 +62,8 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
     if (handle != INVALID_U64) {
         CHK_RET(GetChannelRemoteRankId(commTag_, handle, remoteRankId));
     }
-    std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
-    EXCEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
+    std::unique_ptr<Hccl::TaskInfo> taskInfo{nullptr};
+    EXCEPTION_CATCH(taskInfo = std::make_unique<Hccl::TaskInfo>(streamId, taskId,
         remoteRankId, taskParam, mirrorTaskManager_->GetCurrDfxOpInfo(), taskParam.isMaster), return HCCL_E_PTR);
     EXCEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
     return HCCL_SUCCESS;
