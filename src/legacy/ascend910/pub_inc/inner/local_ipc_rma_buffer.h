@@ -25,6 +25,10 @@ public:
     LocalIpcRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
         const RmaMemType memType = RmaMemType::DEVICE);
 
+    // 别名构造函数：共享父buffer的IPC资源
+    LocalIpcRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
+        const RmaMemType memType, const LocalIpcRmaBuffer& parent);
+
     HcclResult Init();
     HcclResult Destroy();
     ~LocalIpcRmaBuffer() override;
