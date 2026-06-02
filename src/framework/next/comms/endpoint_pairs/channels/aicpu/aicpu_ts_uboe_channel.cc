@@ -789,6 +789,7 @@ std::vector<char> AicpuTsUboeChannel::GetUniqueIdV2()
     binaryStream << type;
     binaryStream << notifyNum_;
     binaryStream << bufferNum_;
+    binaryStream << static_cast<u32>(rmtBufferVec_.size());
     binaryStream << connNum_;
  
     auto notifyUniqueIds = GetNotifyUniqueIds();
