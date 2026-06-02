@@ -141,7 +141,7 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
     auto cacheIt = taskTypeHashCache_.find(static_cast<uint32_t>(it.taskParam_.taskType));
     taskDetailsInfos.itemId = (cacheIt != taskTypeHashCache_.end()) ? cacheIt->second : INVALID_U64;
     taskDetailsInfos.cclTag       = cachedCclTag_;
-    taskDetailsInfos.remoteRank   = it.remoteRank_;
+    taskDetailsInfos.remoteRank   = it.GetRemoteRankId();
     taskDetailsInfos.groupName = cachedGroupName_;
     taskDetailsInfos.rankSize  = cachedRankSize_;
     taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank;

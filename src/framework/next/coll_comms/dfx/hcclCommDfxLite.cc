@@ -32,18 +32,17 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     addTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
         return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
     };
+    getChannelRemoteRankId_ = [this](u64 handle) { return this->GetChannelRemoteRankId(handle); };
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
 HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
 {
-    u32 remoteRankId = INVALID_UINT;
-    if (handle != INVALID_U64) {
-        CHK_RET(GetChannelRemoteRankId(handle, remoteRankId));
-    }
-    std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
-    EXECEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
-        remoteRankId, taskParam, mirrorTaskManagerLite_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
+    std::unique_ptr<Hccl::TaskInfo> taskInfo{nullptr};
+    EXECEPTION_CATCH(taskInfo = std::make_unique<Hccl::TaskInfo>(streamId, taskId,
+        INVALID_UINT, taskParam, mirrorTaskManagerLite_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
+    taskInfo->channelHandle_ = handle;
+    taskInfo->getChannelRemoteRankId_ = getChannelRemoteRankId_;
     EXECEPTION_CATCH(mirrorTaskManagerLite_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
@@ -73,14 +72,13 @@ void HcclCommDfxLite::AddChannelRemoteRankId(u64 handle, u32 remoteRankId) {
     channelRemoteRankIdLite_[handle] = remoteRankId;
 }
 
-HcclResult HcclCommDfxLite::GetChannelRemoteRankId(u64 handle, u32& remoteRankId) {
+u32 HcclCommDfxLite::GetChannelRemoteRankId(u64 handle) {
     auto it = channelRemoteRankIdLite_.find(handle);
     if (UNLIKELY(it == channelRemoteRankIdLite_.end())) {
         HCCL_ERROR("[%s]handle[%lu] not found, commTag[%s]", __func__, handle, commTag_.c_str());
-        return HCCL_E_PARA;
+        return INVALID_UINT;
     }
-    remoteRankId = it->second;
-    return HCCL_SUCCESS;
+    return it->second;
 }
 
 Hccl::MirrorTaskManagerLite* HcclCommDfxLite::GetMirrorTaskManagerLite() const {
