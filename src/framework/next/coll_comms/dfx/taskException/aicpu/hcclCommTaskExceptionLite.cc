@@ -364,7 +364,7 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
 
     auto func = [taskId] (const std::shared_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskIterPtr = queue->Find(func);
-    CHK_PRT_RET(*taskIterPtr == *queue->End(),
+    CHK_PRT_RET(taskIterPtr == nullptr || *taskIterPtr == *queue->End(),
         HCCL_ERROR("[%s]exception task not found, devId[%u], sqId[%u], taskId[%u]", __func__, devId_, sqId, taskId),
         HCCL_E_PARA);
 
