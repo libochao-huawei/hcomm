@@ -8,12 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-// 该 TU 对应"suanzi.cc"。它独立地从 ccu_control_flow_macro.h 拿宏，
-// 所以 __COUNTER__ 在本 TU 里也从 0 开始：
-//   - AgDoAllGather 里外层 CCU_IF(ctx.isInputOutputEqual == 0) -> __ccu_if_0
-// 然后在该外层 if 的 body 里调用 AgGroupCopy()，进入 alg.cc 那个 TU 的代码，
-// 其展开后的两个 if label 也是 __ccu_if_0 / __ccu_if_1 —— 与外层 __ccu_if_0 相撞。
-
 #include "ccu_groupcopy_demo.h"
 
 static CcuResult AgInitResource(AllGatherContext &ctx)
@@ -112,10 +106,6 @@ static CcuResult AgDoAllGather(AllGatherContext &ctx, const ccu::LocalAddr &src,
         }
     }
 
-    // 外层 CCU_IF —— 本 TU 里第 1 个 __COUNTER__，label 拼成 __ccu_if_0。
-    // 注意 AgGroupCopy 是在另一个 TU（ccu_groupcopy_alg.cc）里定义的，
-    // 那个 TU 的两个 CCU_IF 的 label 也叫 __ccu_if_0 / __ccu_if_1，
-    // 进入 body 后 push 进 if 栈时和这里的 __ccu_if_0 撞名，bug 在这里触发。
     CCU_IF(ctx.isInputOutputEqual == 0) {
         CCU_CHK_RET(AgGroupCopy(ctx, ctx.localDst, ctx.srcLocCopy, ctx.goSize));
     }

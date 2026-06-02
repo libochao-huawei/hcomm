@@ -8,13 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-// 该 TU 对应"alg.cc"。它 include 了 ccu_control_flow_macro.h（间接，通过 demo 头），
-// 因此 __COUNTER__ 在本 TU 里从 0 开始计数：
-//   - AgGroupCopy 里第 1 个 CCU_IF -> __ccu_if_0
-//   - AgGroupCopy 里第 2 个 CCU_IF -> __ccu_if_1
-// 与 ccu_groupcopy_kernel.cc 里的外层 CCU_IF -> __ccu_if_0 撞车，
-// 导致 if 栈匹配错乱、运行时报错。
-
 #include "ccu_groupcopy_demo.h"
 
 CcuResult AgCreateMultiOpCopy(AllGatherContext &ctx)
