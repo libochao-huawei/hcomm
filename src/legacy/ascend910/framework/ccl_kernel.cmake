@@ -19,23 +19,10 @@ target_compile_definitions(ccl_kernel PRIVATE
 
 # 编译选项
 target_compile_options(ccl_kernel PRIVATE
-    -Werror
-    -Wfloat-equal
-    -Wall
-    -fno-common
-    -fstack-protector-strong
+    # -Werror
     -fno-strict-aliasing
-    -pipe
-    -O3
-    -std=c++17
-)
-
-# 链接选项
-target_link_options(ccl_kernel PRIVATE
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-    -s
+    $<$<CONFIG:Debug>:-g -O0>
+    $<$<CONFIG:Release>:-O3>
 )
 
 # 头文件搜索路径
@@ -124,7 +111,6 @@ target_include_directories(ccl_kernel PRIVATE
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ccl_kernel PRIVATE
         OPEN_BUILD_PROJECT
-        -D_GLIBCXX_USE_CXX11_ABI=1
     )
 
     target_link_libraries(ccl_kernel PRIVATE
