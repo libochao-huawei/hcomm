@@ -59,7 +59,6 @@ HcclResult UbLocalNotify::SetMemInfo(const HrtRaUbLocalMemRegOutParam &reqReg)
     if (memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg.key, HRT_UB_MEM_KEY_MAX_LEN) != 0) {
         return HCCL_E_MEMORY;
     }
-
     return HCCL_SUCCESS;
 }
 
