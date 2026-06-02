@@ -379,7 +379,7 @@ void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamI
 
     auto func = [taskId] (const shared_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskIterPtr = queue->Find(func);
-    if (*taskIterPtr == *queue->End()) {
+    if (taskIterPtr == nullptr || *taskIterPtr == *queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].", deviceId, streamId, taskId);
         return;
