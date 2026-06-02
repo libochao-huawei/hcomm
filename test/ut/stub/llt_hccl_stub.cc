@@ -5538,8 +5538,3 @@ aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
     return ACL_SUCCESS;
 }
 
-u32 ConsumeRankTableJsonCrc(s32 deviceLogicId)
-{
-    return 0;
-}
-
