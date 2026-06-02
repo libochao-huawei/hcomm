@@ -34,10 +34,10 @@ void ProfilingReporterLite::Init() const
 
 /*
 *  (*currQueue) == Queue<std::shared_ptr<TaskInfo>> = QUEUE
-*  QUEUE.Begin() = Iterator
-*  *QUEUE.Begin() = shared_ptr<taskInfo>&
-*  *(*QUEUE.Begin()) = taskInfo;
-*  taskInfo.push_back(*((*currQueue).Begin()));
+*  QUEUE.Begin() = shared_ptr<Iterator>
+*  *QUEUE.Begin() = Iterator
+*  **QUEUE.Begin() = shared_ptr<taskInfo>&
+*  ***QUEUE.Begin() = taskInfo;
 */
 
 void ProfilingReporterLite::ReportAllTasks()
@@ -52,13 +52,12 @@ void ProfilingReporterLite::ReportAllTasks()
     for (auto it = mirrorTaskMgrLite_->Begin(); it != mirrorTaskMgrLite_->End(); ++it) {
         u32                               streamId  = it->first;
         Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second.get();
-        if (currQueue == nullptr || *(currQueue->Begin()) == nullptr || *(currQueue->Tail()) == nullptr) {
+        if (currQueue == nullptr || **(currQueue->Begin()) == nullptr || **(currQueue->Tail()) == nullptr) {
             HCCL_WARNING("[ProfilingReporterLite][ReportAllTasks] currQueue is nullptr, continue to next task.");
             continue;
         }
-        // 不论首次是否打印，都手动将首个task打印一遍
         if (lastPoses_.find(streamId) == lastPoses_.end()) {
-            TaskInfo task = *(*(currQueue->Begin()));
+            TaskInfo task = ***(currQueue->Begin());
             HCCL_INFO("[ProfilingReporterLite][ReportAllTasks] streamId = %u, taskId = %u", task.streamId_, task.taskId_);
             HCCL_INFO("taskParam_task.type %s", task.taskParam_.Describe().c_str());
             taskInfo.push_back(task);
@@ -66,9 +65,9 @@ void ProfilingReporterLite::ReportAllTasks()
         }
         auto endPos = currQueue->Tail();
         auto iter = lastPoses_[streamId];
-        ++iter;
-        for (; iter != currQueue->End(); ++iter) {
-            TaskInfo task = *(*iter);
+        ++(*iter);
+        for (; *iter != *currQueue->End(); ++(*iter)) {
+            TaskInfo task = ***iter;
             HCCL_INFO("[ProfilingReporterLite][ReportAllTasks] streamId = %u, taskId = %u", task.streamId_, task.taskId_);
             HCCL_INFO("taskParam_task.type %s", task.taskParam_.Describe().c_str());
             taskInfo.push_back(task);
