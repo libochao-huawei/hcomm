@@ -706,7 +706,7 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
         }
     }
     CHK_RET_THROW(InternalException, StringFormat("[RmtBufferVecUnpackProc] BatchMemImport failed"),
-        Hccl::RemoteUbRmaBuffer::BatchMemImport(rdmaHandle, rmtUbRmaBuffer, importParams));
+    Hccl::RemoteUbRmaBuffer::BatchMemImport(rdmaHandle, rmtUbRmaBuffer, importParams));
     rmtMemTagTemp_.clear();
     if (type == UbRmtBufType::BUFFER) {
         rmtMemTagTemp_.resize(rmtNum);
