@@ -11,31 +11,12 @@
 # 定义 hcomm 动态链接库，在 host 侧使用
 add_library(hcomm SHARED)
 
-# 定义预处理宏
-target_compile_definitions(hcomm PRIVATE
-    $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
-)
-
 # 编译选项
 target_compile_options(hcomm PRIVATE
-    -Werror
-    -Wfloat-equal
-    -Wall
-    -fno-common
+    # -Werror
     -fno-strict-aliasing
-    -pipe
-    -O3
-    -std=c++17
-    -fstack-protector-all
-    $<$<CONFIG:Debug>:-g>
-)
-
-# 链接选项
-target_link_options(hcomm PRIVATE
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-    -s
+    $<$<CONFIG:Debug>:-g -O0>
+    $<$<CONFIG:Release>:-O3>
 )
 
 target_include_directories(hcomm PRIVATE
