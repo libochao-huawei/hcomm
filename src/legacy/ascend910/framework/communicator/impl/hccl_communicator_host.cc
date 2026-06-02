@@ -6066,7 +6066,9 @@ namespace hccl
     {
         ListCommon *nextHostList = reinterpret_cast<ListCommon *>(headHostList->nextHost);
         ListCommon *nextDeviceList = reinterpret_cast<ListCommon *>(headHostList->nextDevice);
+        // 该tag已分配过资源，只需刷新单节点（精确匹配）；否则为首次分配，批量拷贝前N个节点
         bool isRefreshSingleNode = (newTagResAlloced_.find(newTag) != newTagResAlloced_.end());
+        // ListCommonAddHead把新节点头插，原头节点的preHost/preDevice被改写，两节点都需要刷新到device
         constexpr uint32_t UPDATE_NODE_NUM = 2;
         uint32_t updateNodeCnt = 0;
 
@@ -6076,6 +6078,7 @@ namespace hccl
                 "Host List[%p],next Device List[%p]",
                 newTag.c_str(), headHostList, nextHostList, nextDeviceList);
             if (isRefreshSingleNode) {
+                // 刷新已有资源：遍历链表找到匹配的tag，只拷贝该节点，避免全量刷新
                 std::string curTag = (size == sizeof(HccltagLocalResV2)) ? reinterpret_cast<HccltagLocalResV2 *>(nextHostList)->tag :
                     reinterpret_cast<HccltagRemoteResV2 *>(nextHostList)->tag;
                 if (curTag == newTag) {
@@ -6084,6 +6087,7 @@ namespace hccl
                     break;
                 }
             } else {
+                // 首分配置：拷贝前UPDATE_NODE_NUM个节点到device，减少H2D次数
                 CHK_RET(hrtMemSyncCopy(reinterpret_cast<void *>(nextDeviceList), size, reinterpret_cast<void *>(nextHostList),
                                     size, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
                 updateNodeCnt++;
