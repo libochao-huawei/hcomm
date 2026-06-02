@@ -25,6 +25,7 @@ public:
         const HcclChannelDesc* channelDescs,
         const std::vector<HcommChannelDesc> &hcommDescs,
         uint32_t channelNum,
+        const std::vector<std::pair<u32, u32>> &newChannels,
         CollCommConfigConsistency &collCommConfigConsistency,
         const std::string &commTag);
     HcclResult ExchangeUserInfo(

@@ -25,6 +25,7 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
     const HcclChannelDesc* channelDescs,
     const std::vector<HcommChannelDesc> &hcommDescs,
     uint32_t channelNum,
+    const std::vector<std::pair<u32, u32>> &newChannels,
     CollCommConfigConsistency &collCommConfigConsistency,
     const std::string &commTag)
 {
@@ -35,6 +36,9 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
     std::vector<Hccl::Socket*> sockets;
     std::vector<u32> remoteRanks;
     std::vector<HcommSocketRole> roles;
+    std::vector<Hccl::Socket*> newSockets; //新建链的
+    std::vector<u32> newRemoteRanks;
+    std::vector<HcommSocketRole> newRoles;
 
     if (channelNum == 0) {
         HCCL_INFO("[BatchExchangeAndCheckConsistency] channelNum is 0.");
@@ -54,6 +58,19 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
         roles.push_back(hcommDescs[i].role);
     }
 
+    for (const auto &newCh : newChannels) {
+        u32 idx = newCh.first;
+        u32 remoteRank = channelDescs[idx].remoteRank;
+        HcommSocket rawSocket = hcommDescs[idx].socket;
+        Hccl::Socket *socket = static_cast<Hccl::Socket *>(rawSocket);
+        newSockets.push_back(socket);
+        newRemoteRanks.push_back(remoteRank);
+        newRoles.push_back(hcommDescs[idx].role);
+    }
+    if (newChannels.size() > 0) {
+        checker.SetInconsistentCheckFirstDone(false);
+    }
+
     // 只有rankConsistentState是first或者on时才进行hcomm信息校验
     int32_t mode = Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState;
     bool isFirst = (mode == 0 && !checker.GetInconsistentCheckFirstDone());
@@ -64,10 +81,19 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
 
        // ====== 交换CheckFrameV2（定长，批量并发交换）======
        std::vector<CheckFrameV2> remoteFrames(sockets.size());
-       CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles,
-            reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
-            reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
+       if (isFirst)
+       {
+            CHK_RET(BatchExchangeFixedData(newSockets, newRemoteRanks, newRoles,
+                reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
+                reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
+   
+       } else {
+            CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles,
+                reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
+                reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
 
+       }
+       
         // ====== 逐个比对CheckFrameV2（精确报错：环境变量名/子通信域参数名等）======
         for (u32 i = 0; i < sockets.size(); i++) {
             HcclResult cmpRet = checker.CompareCheckFrameV2(localFrame, remoteFrames[i]);
