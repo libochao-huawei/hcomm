@@ -11,10 +11,11 @@
 #include "rank_table_crc_bridge.h"
 #include "checkcrc.h"
 #include "sal_pub.h"
+#include "log.h"
 
 RankTableCrcBridge::~RankTableCrcBridge() = default;
 
-RankTableCrcBridge RankTableCrcBridge::GetInstance()
+RankTableCrcBridge& RankTableCrcBridge::GetInstance()
 {
     static RankTableCrcBridge instance;
     return instance;
