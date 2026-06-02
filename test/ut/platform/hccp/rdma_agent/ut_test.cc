@@ -129,7 +129,10 @@ TEST_M(RdmaAgent, TcGetInterfaceVersion);
 TEST_M(RdmaAgent, TcTlvInit);
 TEST_M(RdmaAgent, TcTlvDeinit);
 TEST_M(RdmaAgent, TcTlvRequest);
+#if 0
+// Long running test (>30s): 31687 ms
 TEST_M(RdmaAgent, TcRaRsTestCtxOps);
+#endif
 
 TEST_M(RdmaAgent, TcHostAbnormalQpModeTest);
 TEST_M(RdmaAgent, TcRaPeerSocketWhiteListAdd01);

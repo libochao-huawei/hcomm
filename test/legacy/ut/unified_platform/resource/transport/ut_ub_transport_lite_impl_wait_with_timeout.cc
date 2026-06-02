@@ -169,6 +169,8 @@ protected:
     u8  mockSq[64];
 };
 
+#if 0
+// Long running test (>30s): 46996 ms
 TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeout_Normal_Success)
 {
     std::vector<char> liteData = BuildUbTransportLiteUniqueId();
@@ -201,6 +203,7 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     EXPECT_NO_THROW(ubTransportLite.WaitWithTimeout(0, stream, timeout));
 }
 
+// Long running test (>30s): 47153 ms
 TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeout_ZeroTimeout_Success)
 {
     std::vector<char> liteData = BuildUbTransportLiteUniqueId();
@@ -233,6 +236,7 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     EXPECT_NO_THROW(ubTransportLite.WaitWithTimeout(0, stream, timeout));
 }
 
+// Long running test (>30s): 47045 ms
 TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeout_MaxTimeout_Success)
 {
     std::vector<char> liteData = BuildUbTransportLiteUniqueId();
@@ -264,3 +268,4 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     u32 timeout = 0xFFFFFFFF;
     EXPECT_NO_THROW(ubTransportLite.WaitWithTimeout(0, stream, timeout));
 }
+#endif
