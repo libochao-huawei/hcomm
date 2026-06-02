@@ -876,20 +876,18 @@ int32_t HcommAcquireComm(const char* commId)
 }
 
 int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
-    HCCL_INFO("[HcommChannelRegisterDfx] Init begin");
     auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
     CHK_PTR_NULL(transportLitePtr);
     CHK_RET(transportLitePtr->SetAddTaskInfoCallback(callback));
-    HCCL_INFO("[HcommChannelRegisterDfx] Init success");
+    HCCL_INFO("[HcommChannelRegisterDfx] ChannelHandle[0x%llx] Init success", channel);
     return HCCL_SUCCESS;
 }
 
 int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
-    HCCL_INFO("[HcommThreadRegisterDfx] Init begin");
     Thread *threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     CHK_RET(threadPtr->SetAddTaskInfoCallback(callback));
-    HCCL_INFO("[HcommThreadRegisterDfx] Init success");
+    HCCL_INFO("[HcommThreadRegisterDfx] ThreadHandle[0x%llx] Init success", thread);
     return HCCL_SUCCESS;
 }
 
@@ -996,7 +994,6 @@ HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
     if (!GetProfilingEnable()) {
         return HCCL_SUCCESS;
     }
-    HCCL_INFO("[%s] START.", __func__);
     CHK_PTR_NULL(groupname);
 
     DevType deviceType;
@@ -1005,7 +1002,7 @@ HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
         return HCCL_SUCCESS;
     }
 
-    CHK_RET(AicpuIndopProcess::ProfilingReportDeviceOp(groupname));
+    CHK_RET(AicpuIndopProcess::ProfilingReportDeviceOp());
     return HCCL_SUCCESS;
 }
 
@@ -1026,7 +1023,6 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
-    CHK_PTR_NULL(streamLitePtr);
     Hccl::FlagTaskInfo flagTaskInfo;
     flagTaskInfo.streamId = streamLitePtr->GetSqId();
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
@@ -1061,6 +1057,5 @@ HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupn
     flagTaskInfo.type = Hccl::MainStreamTaskType::TAIL;
     
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }

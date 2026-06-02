@@ -37,7 +37,6 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
 
 HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
 {
-    CHK_SMART_PTR_NULL(mirrorTaskManagerLite_);
     u32 remoteRankId = INVALID_UINT;
     if (handle != INVALID_U64) {
         CHK_RET(GetChannelRemoteRankId(handle, remoteRankId));
@@ -46,7 +45,6 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
     EXCEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
         remoteRankId, taskParam, mirrorTaskManagerLite_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
     EXCEPTION_CATCH(mirrorTaskManagerLite_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
-    HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -61,13 +59,11 @@ HcclResult HcclCommDfxLite::SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> df
 }
 
 HcclResult HcclCommDfxLite::ReportAllTasks() {
-    CHK_SMART_PTR_NULL(profilingImpl_);
     profilingImpl_->ReportAllTasks();
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommDfxLite::UpdateProfStat() {
-    CHK_SMART_PTR_NULL(profilingImpl_);
     profilingImpl_->UpdateProfStat();
     return HCCL_SUCCESS;
 }

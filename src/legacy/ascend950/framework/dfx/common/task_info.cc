@@ -24,8 +24,9 @@ TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam
 
 std::string TaskInfo::Describe() const
 {
-    return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], taskParam:[%s], dftOpInfo:[%s], isMaster[%d]]",
-                        streamId_, taskId_, remoteRank_, taskParam_.Describe().c_str(), dfxOpInfo_->Describe().c_str(), isMaster_);
+    std::string dfxInfo = (dfxOpInfo_ != nullptr) ? dfxOpInfo_->Describe() : "nullptr";
+    return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], taskParam:[%s], dfxOpInfo:[%s], isMaster[%d]]",
+                        streamId_, taskId_, remoteRank_, taskParam_.Describe().c_str(), dfxInfo.c_str(), isMaster_);
 }
 
 string TaskInfo::GetAlgTypeName() const
@@ -59,6 +60,10 @@ string TaskInfo::GetParaInfo() const
         case TaskParamType::TASK_SEND_PAYLOAD:
         case TaskParamType::TASK_UB_INLINE_WRITE:
         case TaskParamType::TASK_UB:
+        case TaskParamType::TASK_WRITE_WITH_NOTIFY:
+        case TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY:
+        case TaskParamType::TASK_DPU_INLINE_WRITE:
+        case TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY:
             return GetParaDMA();
         case TaskParamType::TASK_REDUCE_INLINE:
         case TaskParamType::TASK_UB_REDUCE_INLINE:
@@ -67,9 +72,11 @@ string TaskInfo::GetParaInfo() const
         case TaskParamType::TASK_NOTIFY_RECORD:
         case TaskParamType::TASK_NOTIFY_WAIT:
         case TaskParamType::TASK_SEND_NOTIFY:
-        case TaskParamType::TASK_WRITE_WITH_NOTIFY:
-        case TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY:
+        case TaskParamType::TASK_DPU_NOTIFY_WAIT:
+        case TaskParamType::TASK_DPU_CHANNEL_FENCE:
             return GetParaNotify();
+        case TaskParamType::TASK_AIV:
+            return GetParaAiv();
         default:
             return this->taskParam_.taskType.Describe();
     }
@@ -168,13 +175,15 @@ string TaskInfo::GetNotifyInfo() const
     switch (this->taskParam_.taskType) {
         case TaskParamType::TASK_RDMA:
         case TaskParamType::TASK_UB_INLINE_WRITE:
+        case TaskParamType::TASK_WRITE_WITH_NOTIFY:
+        case TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY:
             notifyInfo = taskPara.DMA.notifyID;
             break;
         case TaskParamType::TASK_NOTIFY_RECORD:
         case TaskParamType::TASK_NOTIFY_WAIT:
         case TaskParamType::TASK_SEND_NOTIFY:
-        case TaskParamType::TASK_WRITE_WITH_NOTIFY:
-        case TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY:
+        case TaskParamType::TASK_DPU_NOTIFY_WAIT:
+        case TaskParamType::TASK_DPU_CHANNEL_FENCE:
             notifyInfo = taskPara.Notify.notifyID;
             break;
         default:
@@ -231,6 +240,18 @@ string TaskInfo::GetIndopDataInfo() const
         opInfo->op_.inputMem == nullptr ? 0 : opInfo->op_.inputMem->GetSize(),
         opInfo->op_.outputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.outputMem->GetAddr()),
         opInfo->op_.outputMem == nullptr ? 0 : opInfo->op_.outputMem->GetSize());
+}
+
+string TaskInfo::GetParaAiv() const
+{
+    const auto &taskPara = this->taskParam_.taskPara;
+    return StringFormat("cmdType:[%d], tag:[%u], count:[%llu], numBlocks:[%u], rankSize:[%u], "
+                        "rank:[%u], sendRecvRemoteRank:[%u], dataType:[%d], remote rank:[%s]",
+                        static_cast<int>(taskPara.Aiv.cmdType), taskPara.Aiv.tag,
+                        taskPara.Aiv.count, taskPara.Aiv.numBlocks, taskPara.Aiv.rankSize,
+                        taskPara.Aiv.rank, taskPara.Aiv.sendRecvRemoteRank,
+                        static_cast<int>(taskPara.Aiv.dataType),
+                        this->GetRemoteRankInfo().c_str());
 }
 
 } // namespace Hccl
