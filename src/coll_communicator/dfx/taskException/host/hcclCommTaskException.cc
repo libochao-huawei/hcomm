@@ -379,7 +379,7 @@ void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamI
 
     auto func = [taskId] (const shared_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskIterPtr = queue->Find(func);
-    if (taskIterPtr == nullptr || *taskIterPtr == *queue->End()) {
+    if (taskIterPtr == queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].", deviceId, streamId, taskId);
         return;
@@ -387,13 +387,13 @@ void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamI
 
     // 找到当前异常task的前50个task(至多)
     vector<shared_ptr<Hccl::TaskInfo>> taskContext {};
-    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskIterPtr != *queue->Begin(); ++i, --(*taskIterPtr)) {
-        if ((**taskIterPtr)->taskId_ > taskId) {
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && taskIterPtr != queue->Begin(); ++i, --taskIterPtr) {
+        if ((*taskIterPtr)->taskId_ > taskId) {
             HCCL_ERROR("[%s]prev taskId[%u]is bigger than err taskId[%u], traversal end.",
-                __func__, (**taskIterPtr)->taskId_, taskId);
+                __func__, (*taskIterPtr)->taskId_, taskId);
             break;
         }
-        taskContext.emplace_back(**taskIterPtr);
+        taskContext.emplace_back(*taskIterPtr);
     }
 
     HCCL_ERROR("[TaskExceptionHost]Task run failed, context sequence before error task is "
