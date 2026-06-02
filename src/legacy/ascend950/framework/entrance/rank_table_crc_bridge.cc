@@ -11,7 +11,6 @@
 #include "rank_table_crc_bridge.h"
 #include "checkcrc.h"
 #include "log.h"
-
 using namespace Hccl;
 
 RankTableCrcBridge::~RankTableCrcBridge() = default;

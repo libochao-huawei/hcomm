@@ -56,8 +56,8 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
 
     // 只有rankConsistentState是first或者on时才进行hcomm信息校验
     InconsistentCheckMode mode = Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState;
-    bool isFirst = (mode == InconsistentCheckMode::FIRST && !checker.GetInconsistentCheckFirstDone());
-    if(mode == InconsistentCheckMode::ON || isFirst) {
+    bool isFirst = (mode == 0 && !checker.GetInconsistentCheckFirstDone());
+    if(mode == 1 || isFirst) {
         // ====== 生成本端CheckFrameV2 ======
        CheckFrameV2 localFrame;
        CHK_RET(checker.GenerateCheckFrameV2(localFrame));
