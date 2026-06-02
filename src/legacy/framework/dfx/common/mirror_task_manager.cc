@@ -43,7 +43,7 @@ QueueType MirrorTaskManager::GetQueueType() const
     return queueType;
 }
 
-void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
+void MirrorTaskManager::AddTaskInfo(std::unique_ptr<TaskInfo> &taskInfo)
 {
     if (UNLIKELY(taskInfo == nullptr)) {
         THROW<InternalException>(
