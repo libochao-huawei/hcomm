@@ -897,7 +897,7 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle) : RemoteRmaBuffer(Rm
 }
 
 RemoteUbRmaBuffer::RemoteUbRmaBuffer(uintptr_t addr, u64 size, u32 tokenId, u32 tokenValue, HcclMemType memType,
- 	     std::string &memInfo) : RemoteRmaBuffer(RmaType::UB)
+ 	    const std::string &memInfo) : RemoteRmaBuffer(RmaType::UB)
 {
 }
 
