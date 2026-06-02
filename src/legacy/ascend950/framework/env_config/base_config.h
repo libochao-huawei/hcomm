@@ -146,6 +146,14 @@ private:
     static constexpr u32 HCCL_UB_TIMEOUT_MIN         = 0;   // UB TIMEOUT最小值为0
     static constexpr u32 HCCL_UB_TIMEOUT_MAX         = 31;  // UB TIMEOUT最大值为31
 
+    static constexpr u32 HCCL_RDMA_QPS_PER_CONNECTION_DEFAULT   = 1;    // rdma QP数量的默认值
+    static constexpr u32 HCCL_RDMA_QPS_PER_CONNECTION_MIN       = 1;    // rdma QP数量的最小值
+    static constexpr u32 HCCL_RDMA_QPS_PER_CONNECTION_MAX       = 32;   // rdma QP数量的最大值
+    static constexpr u32 HCCL_RDMA_MULTI_QP_THRESHOLD_DEFAULT   = 512;  // rdma 多QP，每个QP分配数据量阈值的默认值（单位KB）
+    static constexpr u32 HCCL_RDMA_MULTI_QP_THRESHOLD_MIN       = 1;    // rdma 多QP，每个QP分配数据量阈值的最小值（单位KB）
+    static constexpr u32 HCCL_RDMA_MULTI_QP_THRESHOLD_MAX       = 8192; // rdma 多QP，每个QP分配数据量阈值的最大值（单位KB）
+    static constexpr u32 HCCL_RDMA_MULTI_QP_THRESHOLD_KB_TO_B   = 1024; // KB 换算 B
+
     CfgField<u32> rdmaTrafficClass{"HCCL_RDMA_TC", u32(HCCL_RDMA_TC_DEFAULT), Str2T<u32>,
                                    CHK_RANGE_CLOSED<u32>(HCCL_RDMA_TC_MIN, HCCL_RDMA_TC_MAX), CheckRDMATrafficClass};
     CfgField<u32> rdmaServerLevel{"HCCL_RDMA_SL", u32(HCCL_RDMA_SL_DEFAULT), Str2T<u32>,
@@ -158,10 +166,13 @@ private:
                               CHK_RANGE_CLOSED<u32>(HCCL_UBOE_TIMEOUT_MIN, HCCL_UBOE_TIMEOUT_MAX)};
     CfgField<u32> ubTimeOut{"HCCL_UB_TIMEOUT", u32(HCCL_UB_TIMEOUT_DEFAULT), Str2T<u32>,
                             CHK_RANGE_CLOSED<u32>(HCCL_UB_TIMEOUT_MIN, HCCL_UB_TIMEOUT_MAX)};
-    CfgField<u32> queueNum{"HCCL_RDMA_QPS_PER_CONNECTION", u32(1), Str2T<u32>,
-                               CHK_RANGE_CLOSED<u32>(1, 32)};
-    CfgField<u32> multiQpThreshold{"HCCL_MULTI_QP_THRESHOLD", u32(512), Str2T<u32>,
-                               CHK_RANGE_CLOSED<u32>(1, 8192), ConvertUnitQpThreshold};
+    CfgField<u32> queueNum{"HCCL_RDMA_QPS_PER_CONNECTION", u32(HCCL_RDMA_QPS_PER_CONNECTION_DEFAULT), Str2T<u32>,
+                            CHK_RANGE_CLOSED<u32>(HCCL_RDMA_QPS_PER_CONNECTION_MIN, HCCL_RDMA_QPS_PER_CONNECTION_MAX)};
+    CfgField<u32> multiQpThreshold{"HCCL_MULTI_QP_THRESHOLD",
+                            u32(HCCL_RDMA_MULTI_QP_THRESHOLD_DEFAULT * HCCL_RDMA_MULTI_QP_THRESHOLD_KB_TO_B),
+                            Str2T<u32>,
+                            CHK_RANGE_CLOSED<u32>(HCCL_RDMA_MULTI_QP_THRESHOLD_MIN, HCCL_RDMA_MULTI_QP_THRESHOLD_MAX),
+                            ConvertUnitQpThreshold};
 };
 
 // 算法配置
