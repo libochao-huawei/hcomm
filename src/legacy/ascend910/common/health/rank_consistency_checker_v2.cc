@@ -98,37 +98,37 @@ HcclResult RankConsistencyCheckerV2::RecordCannVersionV2(const std::string &vers
 
 HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &localFrame)
 {
-    s32 sRet = memset_s(&frame, sizeof(CheckFrameV2), 0, sizeof(CheckFrameV2));
+    s32 sRet = memset_s(&localFrame, sizeof(CheckFrameV2), 0, sizeof(CheckFrameV2));
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[RankConsistencyCheckerV2::GenerateCheckFrameV2] memset failed."), HCCL_E_INTERNAL);
 
     // 填充环境变量CRC
-    frame.crcNum = std::min(static_cast<u32>(envVarCrcsV2_.size()), MAX_CRC_LEN_V2);
-    for (u32 i = 0; i < frame.crcNum; i++) {
-        frame.crcArray[i] = envVarCrcsV2_[i].crc;
+    localFrame.crcNum = std::min(static_cast<u32>(envVarCrcsV2_.size()), MAX_CRC_LEN_V2);
+    for (u32 i = 0; i < localFrame.crcNum; i++) {
+        localFrame.crcArray[i] = envVarCrcsV2_[i].crc;
     }
 
     // 填充ranktable CRC
-    frame.rankTableCrcNum = std::min(static_cast<u32>(rankTableCrcsV2_.size()), MAX_CRC_LEN_V2);
-    for (u32 i = 0; i < frame.rankTableCrcNum; i++) {
-        frame.rankTableCrcArray[i] = rankTableCrcsV2_[i].crc;
+    localFrame.rankTableCrcNum = std::min(static_cast<u32>(rankTableCrcsV2_.size()), MAX_CRC_LEN_V2);
+    for (u32 i = 0; i < localFrame.rankTableCrcNum; i++) {
+        localFrame.rankTableCrcArray[i] = rankTableCrcsV2_[i].crc;
     }
 
     // 填充子通信域参数CRC
-    frame.subCommCrcNum = std::min(static_cast<u32>(subCommParaCrcsV2_.size()), MAX_CRC_LEN_V2);
-    for (u32 i = 0; i < frame.subCommCrcNum; i++) {
-        frame.subCommCrcArray[i] = subCommParaCrcsV2_[i].crc;
+    localFrame.subCommCrcNum = std::min(static_cast<u32>(subCommParaCrcsV2_.size()), MAX_CRC_LEN_V2);
+    for (u32 i = 0; i < localFrame.subCommCrcNum; i++) {
+        localFrame.subCommCrcArray[i] = subCommParaCrcsV2_[i].crc;
     }
 
     // 填充CANN版本
-    sRet = memcpy_s(frame.version, CANN_VERSION_MAX_LEN + 1,
+    sRet = memcpy_s(localFrame.version, CANN_VERSION_MAX_LEN + 1,
         cannVersion_, CANN_VERSION_MAX_LEN + 1);
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[RankConsistencyCheckerV2::GenerateCheckFrameV2] memcpy version failed."), HCCL_E_INTERNAL);
 
     HCCL_INFO("[RankConsistencyCheckerV2::GenerateCheckFrameV2] success, envCrcNum[%u], rankTableCrcNum[%u], "
         "subCommCrcNum[%u], version[%s].",
-        frame.crcNum, frame.rankTableCrcNum, frame.subCommCrcNum, frame.version);
+        localFrame.crcNum, localFrame.rankTableCrcNum, localFrame.subCommCrcNum, localFrame.version);
     return HCCL_SUCCESS;
 }
 
@@ -211,19 +211,6 @@ bool RankConsistentcyChecker::CompareCrcArrayV2(
     return isDiff;
 }
 
-
-HcclResult RankConsistencyCheckerV2::CalcRawDataCrc(const void *ptr, u64 length, u32 &crc)
-{
-    // 计算内存数据块CRC
-    HcclResult ret = CalcCrc::HcclCalcCrc(static_cast<const char*>(ptr), length, crc);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[RankConsistencyCheckerV2::CalcRawDataCrc] errNo[0x%016llx] calc string crc error",
-        HCCL_ERROR_CODE(HCCL_E_INTERNAL)), HCCL_E_INTERNAL);
-
-    HCCL_DEBUG("[RankConsistencyCheckerV2::CalcRawDataCrc] result crc[%u].", crc);
-    return HCCL_SUCCESS;
-}
-
 HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
 {
     std::string localVer(local.version);
@@ -240,6 +227,18 @@ HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local,
             localVer.c_str(), remoteVer.c_str());
         isDiff = true;
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult RankConsistencyCheckerV2::CalcRawDataCrc(const void *ptr, u64 length, u32 &crc)
+{
+    // 计算内存数据块CRC
+    HcclResult ret = CalcCrc::HcclCalcCrc(static_cast<const char*>(ptr), length, crc);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[RankConsistencyCheckerV2::CalcRawDataCrc] errNo[0x%016llx] calc string crc error",
+        HCCL_ERROR_CODE(HCCL_E_INTERNAL)), HCCL_E_INTERNAL);
+
+    HCCL_DEBUG("[RankConsistencyCheckerV2::CalcRawDataCrc] result crc[%u].", crc);
     return HCCL_SUCCESS;
 }
 }
