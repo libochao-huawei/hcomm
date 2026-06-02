@@ -16,6 +16,7 @@ set(src_list
     aicpu_ts_hccs_channel.cc
     aicpu_ts_roce_channel_v2.cc
     dev_rdma_connection_v2.cc
+    ub_channel_base.cc
 )
 
 if(TARGET hcomm)

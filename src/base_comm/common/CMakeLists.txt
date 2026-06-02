@@ -15,6 +15,7 @@ set(src_list
     tp_mgr.cc
     dlurma_function.cc
     hccl_next_dl.cc
+    irdma_connection.cc
 )
 
 if(TARGET hcomm)
