@@ -40,8 +40,6 @@ struct RdmaCqContextLite {
     int8_t dbMode;
 };
 
-#include "rdma_vendor_1825_ops.h"
-
 namespace Hccl {
 class RdmaConnLiteV2 : public RmaConnLite {
 public:
@@ -50,40 +48,13 @@ public:
 
     std::string Describe() override;
 
-    // 把基类的同名重载暴露到派生类作用域，避免被隐藏
-    using RmaConnLite::Write;
-    using RmaConnLite::WriteWithNotify;
-
-    // ========== 厂商初始化接口 ==========
-    void GetVendorOps();
-    void CheckVendorOp();
-
-    // ========== 数据面：RMA 数据传输 ==========
-    void Write(const RmaBufSliceLite    &loc,
-               const RmtRmaBufSliceLite &rmt,
-               u64                      &dbAddr,
-               u64                      &dbValue);
-
-    void WriteWithNotify(const RmaBufSliceLite      &loc,
-                         const RmtRmaBufSliceLite   &rmt,
-                         const RmaBufSliceLite      &locNotify,
-                         const RmtRmaBufSliceLite   &notify,
-                         u64                        &dbAddr,
-                         u64                        &dbValue);
-
 private:
     void ParseSqContext(std::vector<char>& data);
     void ParseCqContext(std::vector<char>& data);
 
     uint32_t            dmaMode_{0};
-    RdmaSqContextLite   sqContext{};
-    RdmaCqContextLite   cqContext{};
-
-    // ========== 厂商 Ops（工厂模式，负责具体厂商 ops 创建）==========
-    std::unique_ptr<RdmaBaseOps> rdmaOps_ = nullptr;
-
-    // ========== 辅助分片写入函数 ==========
-    void DoSliceWrite(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt);
+    RdmaSqContextLite sqContext{};
+    RdmaCqContextLite cqContext{};
 };
 
 } // namespace Hccl
