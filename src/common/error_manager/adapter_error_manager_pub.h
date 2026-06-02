@@ -29,14 +29,7 @@ void hrtErrMSetErrorContextPub(ErrContextPub errorContextPub);
 __attribute__((weak)) void RptInputErr(std::string error_code, std::vector<std::string> key,
     std::vector<std::string> value);
 
-// __attribute__((weak)) void RptInnerErrPrt(std::string error_code, std::vector<std::string> key,
-//     std::vector<std::string> value);
-
 __attribute__((weak)) void RptInnerErrPrt(const char *fmt, ...);
-
-// __attribute__((weak)) void RptInnerErrPrt(const char *fmt, ...);
-
-// __attribute__((weak)) void RptInnerErrPrt(const char *fmt, ...);
 
 #define RPT_INPUT_ERR(result, error_code, key, value) do { \
     if (UNLIKELY(result) && RptInputErr != nullptr) {     \
