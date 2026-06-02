@@ -27,7 +27,9 @@ public:
     void DefineOutArg(const Variable &var);
     void DefineInArg(const std::vector<Variable> &varList);
     void DefineOutArg(const std::vector<Variable> &varList);
- 
+
+    std::vector<Variable> GetInArgVars() const;
+
     void     SetCallLayer(uint16_t callLayer);
     uint16_t GetCallLayer() const;
  
