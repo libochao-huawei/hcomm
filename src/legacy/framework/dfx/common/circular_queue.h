@@ -174,41 +174,41 @@ public:
         return capacity_ - 1;
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> Find(std::function<bool(const T &)> cond) override
+    typename Queue<T>::Iterator Find(std::function<bool(const T &)> cond) override
     {
         size_t i     = head_;
         size_t count = 0;
         while (count < size_) {
             if (cond(elems_[i])) {
-                return std::make_shared<Iterator>(elems_.begin() + i, this);
+                return Iterator(elems_.begin() + i, this);
             }
             i = (i + 1) % capacity_;
             count++;
         }
-        return std::make_shared<Iterator>(elems_.begin() + tail_, this);
+        return Iterator(elems_.begin() + tail_, this);
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> Begin() override
+    typename Queue<T>::Iterator Begin() override
     {
         if (IsEmpty()) {
             HCCL_WARNING("[CircularQueue][Begin] Queue is empty!");
-            return std::make_shared<Iterator>(elems_.begin() + tail_, this);
+            return Iterator(elems_.begin() + tail_, this);
         }
-        return std::make_shared<Iterator>(elems_.begin() + head_, this);
+        return Iterator(elems_.begin() + head_, this);
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> Tail() override
+    typename Queue<T>::Iterator Tail() override
     {
         if (IsEmpty()) {
             HCCL_WARNING("[CircularQueue][Tail] Queue is empty!");
-            return std::make_shared<Iterator>(elems_.begin() + tail_, this);
+            return Iterator(elems_.begin() + tail_, this);
         }
-        return std::make_shared<Iterator>(elems_.begin() + (tail_ - 1 + capacity_) % capacity_, this);
+        return Iterator(elems_.begin() + (tail_ - 1 + capacity_) % capacity_, this);
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> End() override
+    typename Queue<T>::Iterator End() override
     {
-        return std::make_shared<Iterator>(elems_.begin() + tail_, this);
+        return Iterator(elems_.begin() + tail_, this);
     }
 };
 
