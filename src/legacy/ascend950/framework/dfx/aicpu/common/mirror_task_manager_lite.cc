@@ -91,8 +91,8 @@ std::shared_ptr<TaskInfo> MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 t
         return taskInfo->taskId_ == taskId;
     };
 
-    auto task = *queue->Find(FindTask);
-    if (task == *queue->End()) {
+    auto task = queue->Find(FindTask);
+    if (task == queue->End()) {
         return nullptr;
     };
 
