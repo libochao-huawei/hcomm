@@ -10,7 +10,6 @@
 
 #include "rank_table_crc_bridge.h"
 #include "checkcrc.h"
-#include "hccl_common.h"
 #include "sal_pub.h"
 
 RankTableCrcBridge::~RankTableCrcBridge() = default;
