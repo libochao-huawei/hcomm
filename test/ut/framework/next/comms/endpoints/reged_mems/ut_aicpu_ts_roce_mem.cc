@@ -161,3 +161,52 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_RegisterMemory_WithNetDev_MockLocalRdmaIni
     void *h2 = nullptr;
     EXPECT_EQ(mgr.RegisterMemory(mem, "t", &h2), HCCL_SUCCESS);
 }
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_RegisterMemory_When_LocalRdmaInitFails_Returns_Error)
+{
+    MOCKER_CPP(&hccl::LocalRdmaRmaBuffer::Init).stubs().will(returnValue(HCCL_E_INTERNAL));
+
+    hccl::HcclIpAddress localIp;
+    ASSERT_EQ(localIp.SetReadableAddress("127.0.0.1"), HCCL_SUCCESS);
+    hccl::NetDevContext netCtx;
+    ASSERT_EQ(netCtx.Init(NicType::DEVICE_NIC_TYPE, 0, 0, localIp), HCCL_SUCCESS);
+
+    AicpuTsRoceRegedMemMgr mgr(reinterpret_cast<HcclNetDev>(&netCtx), nullptr);
+    HcommMem mem{};
+    mem.addr = reinterpret_cast<void *>(0xA000ULL);
+    mem.size = 4096U;
+    mem.type = COMM_MEM_TYPE_DEVICE;
+    void *handle = nullptr;
+    EXPECT_EQ(mgr.RegisterMemory(mem, "init_fail", &handle), HCCL_E_INTERNAL);
+    EXPECT_EQ(handle, nullptr);
+}
+
+TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_RegisterMemory_When_AliasRegistered_Expect_UnregisterChildFirstSuccess)
+{
+    MOCKER_CPP(&hccl::LocalRdmaRmaBuffer::Init).stubs().will(returnValue(HCCL_SUCCESS));
+
+    hccl::HcclIpAddress localIp;
+    ASSERT_EQ(localIp.SetReadableAddress("127.0.0.1"), HCCL_SUCCESS);
+    hccl::NetDevContext netCtx;
+    ASSERT_EQ(netCtx.Init(NicType::DEVICE_NIC_TYPE, 0, 0, localIp), HCCL_SUCCESS);
+
+    AicpuTsRoceRegedMemMgr mgr(reinterpret_cast<HcclNetDev>(&netCtx), nullptr);
+    HcommMem mem{};
+    mem.addr = reinterpret_cast<void *>(0xB000ULL);
+    mem.size = 4096U;
+    mem.type = COMM_MEM_TYPE_DEVICE;
+
+    void *parentHandle = nullptr;
+    ASSERT_EQ(mgr.RegisterMemory(mem, "parent", &parentHandle), HCCL_SUCCESS);
+    ASSERT_NE(parentHandle, nullptr);
+
+    void *childHandle = nullptr;
+    ASSERT_EQ(mgr.RegisterMemory(mem, "child", &childHandle), HCCL_SUCCESS);
+    ASSERT_NE(childHandle, nullptr);
+    EXPECT_NE(childHandle, parentHandle);
+    auto *childBuffer = static_cast<hccl::LocalRdmaRmaBuffer *>(childHandle);
+    EXPECT_TRUE(childBuffer->IsAlias());
+
+    EXPECT_EQ(mgr.UnregisterMemory(childHandle), HCCL_SUCCESS);
+    EXPECT_EQ(mgr.UnregisterMemory(parentHandle), HCCL_SUCCESS);
+}
