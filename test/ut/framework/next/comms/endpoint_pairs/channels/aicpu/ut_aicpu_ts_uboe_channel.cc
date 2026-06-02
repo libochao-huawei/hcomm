@@ -162,6 +162,24 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetNotifyNum_Returns_Value) {
     EXPECT_EQ(n, 42u);
 }
 
+TEST_F(AicpuTsUboeChannelTest, Ut_Makebufs_When_LocalUbHandle_Expect_BufferFieldsFromRmaBuffer) {
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    auto rawBuffer = std::make_shared<Hccl::Buffer>(0x12340, 0x80, HCCL_MEM_TYPE_HOST, "uboe_user");
+    auto localRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(rawBuffer);
+    HcommMemHandle memHandles[1] = { reinterpret_cast<HcommMemHandle>(localRmaBuffer.get()) };
+
+    std::vector<std::shared_ptr<Hccl::Buffer>> bufs;
+    ASSERT_EQ(ch.Makebufs(memHandles, 1, bufs), HCCL_SUCCESS);
+    ASSERT_EQ(bufs.size(), 1U);
+    EXPECT_EQ(bufs[0]->GetAddr(), localRmaBuffer->GetAddr());
+    EXPECT_EQ(bufs[0]->GetSize(), localRmaBuffer->GetSize());
+    EXPECT_EQ(bufs[0]->GetMemType(), rawBuffer->GetMemType());
+    EXPECT_EQ(bufs[0]->GetMemTag(), rawBuffer->GetMemTag());
+}
+
 // Test-local stubs for Socket async APIs. These will be used with MOCKER_CPP to intercept
 // calls to Socket::SendAsync and Socket::RecvAsync inside the state-machine test.
 static void stub_Socket_SendAsync(Hccl::Socket *self, const u8 *sendBuf, u32 size)
