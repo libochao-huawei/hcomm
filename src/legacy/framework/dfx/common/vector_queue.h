@@ -135,28 +135,28 @@ public:
         return elems_.capacity();
     }
 
-    typename Queue<T>::Iterator Find(std::function<bool(const T &)> cond) override
+    std::shared_ptr<typename Queue<T>::Iterator> Find(std::function<bool(const T &)> cond) override
     {
         auto it = std::find_if(elems_.begin(), elems_.end(), cond);
         if (it != elems_.end()) {
-            return Iterator(this, static_cast<u32>(it - elems_.begin()));
+            return std::make_shared<Iterator>(this, static_cast<u32>(it - elems_.begin()));
         }
-        return Iterator(this, static_cast<u32>(it - elems_.begin()));
+        return std::make_shared<Iterator>(this, static_cast<u32>(it - elems_.begin()));
     }
 
-    typename Queue<T>::Iterator Begin() override
+    std::shared_ptr<typename Queue<T>::Iterator> Begin() override
     {
-        return Iterator(this, 0);
+        return std::make_shared<Iterator>(this, 0);
     }
 
-    typename Queue<T>::Iterator Tail() override
+    std::shared_ptr<typename Queue<T>::Iterator> Tail() override
     {
-        return Iterator(this, static_cast<u32>(elems_.size() - 1));
+        return std::make_shared<Iterator>(this, static_cast<u32>(elems_.size() - 1));
     }
 
-    typename Queue<T>::Iterator End() override
+    std::shared_ptr<typename Queue<T>::Iterator> End() override
     {
-        return Iterator(this, static_cast<u32>(elems_.size()));
+        return std::make_shared<Iterator>(this, static_cast<u32>(elems_.size()));
     }
 };
 
