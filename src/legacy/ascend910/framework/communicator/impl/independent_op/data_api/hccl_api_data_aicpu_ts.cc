@@ -35,17 +35,9 @@ bool IsBatchLaunchMode() {
     return g_threadLaunchCtx.IsBatchLaunchMode();
 }
 
-static bool ShouldSkipAicpuDfx()
-{
-    const bool l0State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State();
-    const bool l1State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
-    const bool taskExceptionEnable = hcomm::GetTaskExceptionEnable();
-    if (!(l0State || l1State || taskExceptionEnable)) {
-        HCCL_INFO("[%s] l0State[%d], l1State[%d], taskExceptionEnable[%d], skip aicpu dfx",
-            __func__, l0State, l1State, taskExceptionEnable);
-        return true;
-    }
-    return false;
+inline bool GetProfilingEnable() {
+    return Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State() ||
+           Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
 }
 
 void AddThread(ThreadHandle thread) {
@@ -79,7 +71,7 @@ HcclResult HcommThreadGetNotifyId(ThreadHandle thread, uint32_t notifyIdx, uint3
 
 HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 {
-    if (ShouldSkipAicpuDfx()) {
+    if (!GetProfilingEnable() && !hcomm::GetTaskExceptionEnable()) {
         return HCCL_SUCCESS;
     }
     CHK_PTR_NULL(commId);
@@ -1001,7 +993,7 @@ int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
 #endif  // __cplusplus
 
 HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
-    if (ShouldSkipAicpuDfx()) {
+    if (!GetProfilingEnable()) {
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[%s] START.", __func__);
@@ -1019,7 +1011,7 @@ HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
 
 HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* groupname)
 {
-    if (ShouldSkipAicpuDfx()) {
+    if (!GetProfilingEnable()) {
         return HCCL_SUCCESS;
     }
 
@@ -1046,7 +1038,7 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
 
 HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname)
 {
-    if (ShouldSkipAicpuDfx()) {
+    if (!GetProfilingEnable()) {
         return HCCL_SUCCESS;
     }
     CHK_PTR_NULL(groupname);
