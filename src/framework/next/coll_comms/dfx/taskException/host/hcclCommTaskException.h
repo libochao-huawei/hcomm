@@ -12,7 +12,6 @@
 
 #include <array>
 #include <map>
-#include <vector>
 #include <mutex>
 #include "types.h"
 #include "hccl_types.h"

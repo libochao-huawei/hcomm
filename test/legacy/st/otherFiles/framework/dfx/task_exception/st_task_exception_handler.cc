@@ -892,14 +892,20 @@ TEST_F(TaskExceptionHandlerTest, test_process_with_different_device_id)
     handler0->SetTaskExceptionCallback(nullptr);
 }
 
-TEST_F(TaskExceptionHandlerTest, test_task_exception_host_manager_get_handler_boundary)
+TEST_F(TaskExceptionHandlerTest, St_GetHandlerWhenDevIdIsZeroExpectReturnValidHandler)
 {
     TaskExceptionHost* handler = TaskExceptionHostManager::GetHandler(0);
     EXPECT_NE(handler, nullptr);
+}
 
-    handler = TaskExceptionHostManager::GetHandler(127);
+TEST_F(TaskExceptionHandlerTest, St_GetHandlerWhenDevIdIsMaxValidExpectReturnValidHandler)
+{
+    TaskExceptionHost* handler = TaskExceptionHostManager::GetHandler(127);
     EXPECT_NE(handler, nullptr);
+}
 
-    handler = TaskExceptionHostManager::GetHandler(128);
+TEST_F(TaskExceptionHandlerTest, St_GetHandlerWhenDevIdIsOutOfRangeExpectReturnNullptr)
+{
+    TaskExceptionHost* handler = TaskExceptionHostManager::GetHandler(128);
     EXPECT_EQ(handler, nullptr);
 }

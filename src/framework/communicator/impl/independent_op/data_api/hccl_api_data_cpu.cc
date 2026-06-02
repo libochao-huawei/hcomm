@@ -878,6 +878,11 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
 
 extern HcclResult HcclTaskExceptionRegCallBack(HcclTaskExceptionCallback callback)
 {
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType != DevType::DEV_TYPE_950) {
+        return HCCL_E_NOT_SUPPORT;
+    }
     HCCL_INFO("[%s] START, callback[%p].", __func__, callback);
     s32 devLogicId;
     CHK_RET(hrtGetDevice(&devLogicId));
