@@ -189,7 +189,7 @@ static void SaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskP
     u32 streamId;
     HrtGetTaskIdAndStreamID(taskId, streamId);
 
-    shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam, 
+    std::unique_ptr<TaskInfo> taskInfo = std::make_unique<TaskInfo>(streamId, taskId, remoteRankId, taskParam, 
         comm.GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
  
     HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);

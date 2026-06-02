@@ -70,10 +70,10 @@ TaskInfoQueue &GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType
 
     std::unique_ptr<TaskInfoQueue> newQueue;
     if (type == QueueType::Circular_Queue) {
-        newQueue = std::make_unique<CircularQueue<std::shared_ptr<TaskInfo>>>(MAX_CIRCULAR_QUEUE_LENGTH);
+        newQueue = std::make_unique<CircularQueue<std::unique_ptr<TaskInfo>>>(MAX_CIRCULAR_QUEUE_LENGTH);
         HCCL_INFO("[GlobalMirrorTasks][CreateQueue]Create circular queue, devId[%u] streamId(sqId)[%u]", devId, streamId);
     } else {
-        newQueue = std::make_unique<VectorQueue<std::shared_ptr<TaskInfo>>>();
+        newQueue = std::make_unique<VectorQueue<std::unique_ptr<TaskInfo>>>();
         HCCL_INFO("[GlobalMirrorTasks][CreateQueue]Create vector queue, devId[%u] streamId(sqId)[%u]", devId, streamId);
     }
 
