@@ -27,7 +27,7 @@ output
 
 openssl-device-src/
 openssl-host-src/
-third_party/
+/third_party/
 __pycache__/
 
 # Agent
