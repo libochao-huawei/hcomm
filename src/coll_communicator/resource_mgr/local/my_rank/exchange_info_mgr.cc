@@ -114,7 +114,7 @@ HcclResult ExchangeInfoMgr::CheckHcommInfo(
         }
        
         // ====== 逐个比对CheckFrameV2（精确报错：环境变量名/子通信域参数名等）======
-        for (u32 i = 0; i < checkSocketSize.size(); i++) {
+        for (u32 i = 0; i < checkSocketSize; i++) {
             HcclResult cmpRet = checker.CompareCheckFrameV2(localFrame, remoteFrames[i]);
             if (cmpRet != HCCL_SUCCESS) {
                 HCCL_ERROR("[BatchExchangeAndCheckConsistency] CheckFrameV2 mismatch for remoteRank[%u].",
