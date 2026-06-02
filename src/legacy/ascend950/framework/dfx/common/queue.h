@@ -103,10 +103,10 @@ public:
     virtual bool                      IsEmpty() const                                 = 0;
     virtual bool                      IsFull() const                                  = 0;
     virtual size_t                    Capacity() const                                = 0;
-    virtual Iterator Find(std::function<bool(const T &)> cond)       = 0;
-    virtual Iterator Begin()                                         = 0;
-    virtual Iterator Tail()                                          = 0;
-    virtual Iterator End()                                           = 0;
+    virtual std::shared_ptr<Iterator> Find(std::function<bool(const T &)> cond)       = 0;
+    virtual std::shared_ptr<Iterator> Begin()                                         = 0;
+    virtual std::shared_ptr<Iterator> Tail()                                          = 0;
+    virtual std::shared_ptr<Iterator> End()                                           = 0;
     virtual void                      PopFront()
     {
         THROW<InternalException>(StringFormat("Queue<T>::PopFront () is not supported"));

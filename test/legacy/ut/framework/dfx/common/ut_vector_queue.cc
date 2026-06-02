@@ -96,8 +96,8 @@ TEST_F(VectorQueueTest, Ut_Find_When_ValueInVector_ReturnIsNeEnd)
     fakeQueue.Append(10);
     // Then
     auto it = fakeQueue.Find([](const int &value){return value == 10;});
-    EXPECT_NE(it, fakeQueue.End());
-    EXPECT_EQ(*it, 10);
+    EXPECT_NE(*it, *fakeQueue.End());
+    EXPECT_EQ(**it, 10);
 }
 
 TEST_F(VectorQueueTest, Ut_Find_When_ValueNotInVector_ReturnIsEqEnd)
@@ -106,7 +106,7 @@ TEST_F(VectorQueueTest, Ut_Find_When_ValueNotInVector_ReturnIsEqEnd)
     fakeQueue.Append(10);
     // Then
     auto it = fakeQueue.Find([](const int &value){return value == 100;});
-    EXPECT_EQ(it, fakeQueue.End());
+    EXPECT_EQ(*it, *fakeQueue.End());
 }
 
 TEST_F(VectorQueueTest, Ut_Begin_When_NotEmpty_ReturnIsBegin)
@@ -117,14 +117,14 @@ TEST_F(VectorQueueTest, Ut_Begin_When_NotEmpty_ReturnIsBegin)
     fakeQueue.Append(30);
     // Then
     auto it = fakeQueue.Begin();
-    EXPECT_EQ(*it, 10);
+    EXPECT_EQ(**it, 10);
 }
 
 TEST_F(VectorQueueTest, Ut_Begin_When_IsEmpty_ReturnIsEnd)
 {
     // Then
     auto it = fakeQueue.Begin();
-    EXPECT_EQ(it, fakeQueue.End());
+    EXPECT_EQ(*it, *fakeQueue.End());
 }
 
 TEST_F(VectorQueueTest, Ut_Tail_When_NotEmpty_ReturnIsBegin)
@@ -135,7 +135,7 @@ TEST_F(VectorQueueTest, Ut_Tail_When_NotEmpty_ReturnIsBegin)
     fakeQueue.Append(30);
     // Then
     auto it = fakeQueue.Tail();
-    EXPECT_EQ(*it, 30);
+    EXPECT_EQ(**it, 30);
 }
 
 TEST_F(VectorQueueTest, Ut_Tail_When_IsEmpty_ReturnIsEnd)
@@ -153,29 +153,29 @@ TEST_F(VectorQueueTest, Ut_Iterator_When_PlusAndMinus_ReturnIsOk)
 
     // Then ++it
     auto it = fakeQueue.Begin();
-    EXPECT_EQ(*it, 10);
-    ++it;
-    EXPECT_EQ(*it, 20);
-    ++it;
-    EXPECT_EQ(*it, 30);
+    EXPECT_EQ(**it, 10);
+    ++(*it);
+    EXPECT_EQ(**it, 20);
+    ++(*it);
+    EXPECT_EQ(**it, 30);
 
     // Then --it
-    --it;
-    EXPECT_EQ(*it, 20);
-    --it;
-    EXPECT_EQ(*it, 10);
+    --(*it);
+    EXPECT_EQ(**it, 20);
+    --(*it);
+    EXPECT_EQ(**it, 10);
 
     // Then it++
-    it++;
-    EXPECT_EQ(*it, 20);
-    it++;
-    EXPECT_EQ(*it, 30);
+    (*it)++;
+    EXPECT_EQ(**it, 20);
+    (*it)++;
+    EXPECT_EQ(**it, 30);
 
     // Then it--
-    it--;
-    EXPECT_EQ(*it, 20);
-    it--;
-    EXPECT_EQ(*it, 10);
+    (*it)--;
+    EXPECT_EQ(**it, 20);
+    (*it)--;
+    EXPECT_EQ(**it, 10);
 
 }
 
@@ -187,5 +187,5 @@ TEST_F(VectorQueueTest, Ut_Iterator_When_ScaleUp_ReturnIsOk)
     auto it = fakeQueue.Begin();       // 取迭代器
     // Then 
     fakeQueue.Append(20);             // 触发扩容
-    EXPECT_EQ(*it, 10);            // 校验
+    EXPECT_EQ(**it, 10);            // 校验
 }

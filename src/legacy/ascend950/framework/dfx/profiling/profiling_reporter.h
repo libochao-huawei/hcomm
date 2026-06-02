@@ -38,7 +38,7 @@ private:
     bool                                            enableHcclL1_{false};
     /* lastposes是更新单前轮次profiling上报的最后位置记录 */
     /* lastposes按设备粒度进行维护 */
-    using lastPosesMap = std::unordered_map<u32,  Queue<std::shared_ptr<TaskInfo>>::Iterator>;
+    using lastPosesMap = std::unordered_map<u32, std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>>;
     static std::array<lastPosesMap, REPORTER_MAX_MODULE_DEVICE_NUM> allLastPoses_;
     ProfilingHandler*                               profilingHandler_{nullptr};
 };
