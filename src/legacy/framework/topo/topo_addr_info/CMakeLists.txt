@@ -25,22 +25,10 @@ add_library(topoaddrinfo SHARED
 )
 
 target_compile_options(topoaddrinfo PRIVATE
-     -Werror
-     -Wfloat-equal
-     -Wall
-     -fno-common
-     -fno-strict-aliasing
-     -pipe
-     -O3
-     -fstack-protector-all
-     $<$<CONFIG:Debug>:-g>
-)
- 
-target_link_options(topoaddrinfo PRIVATE
-     -Wl,-z,relro
-     -Wl,-z,now
-     -Wl,-z,noexecstack
-     -s
+    # -Werror
+    -fno-strict-aliasing
+    $<$<CONFIG:Debug>:-g -O0>
+    $<$<CONFIG:Release>:-O3>
 )
 
 target_include_directories(topoaddrinfo PRIVATE

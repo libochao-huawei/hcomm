@@ -50,14 +50,9 @@ if(NOT BUILD_OPEN_PROJECT)
 endif()
 
 target_compile_options(ra_peer PRIVATE
-    -Werror -std=gnu11 -fno-common -Wfloat-equal -Wextra
-    -fstack-protector-strong
+    # -Werror
+    -std=gnu11
     $<$<CONFIG:Debug>:-g>
-)
-
-target_link_options(ra_peer PRIVATE
-    -Wl,-z,now
-    $<$<CONFIG:Release>:-s>
 )
 
 target_link_libraries(ra_peer PRIVATE

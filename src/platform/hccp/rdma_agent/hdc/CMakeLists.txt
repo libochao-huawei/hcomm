@@ -64,14 +64,11 @@ if(NOT BUILD_OPEN_PROJECT)
 endif()
 
 target_compile_options(ra_hdc PRIVATE
-    -Werror -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11 -Wextra
-    -fstack-protector-strong
+    -Werror
+    -fsigned-char
+    -fno-strict-aliasing
+    -std=gnu11
     $<$<CONFIG:Debug>:-g>
-)
-
-target_link_options(ra_hdc PRIVATE
-    -Wl,-z,now
-    $<$<CONFIG:Release>:-s>
 )
 
 target_link_libraries(ra_hdc PRIVATE
