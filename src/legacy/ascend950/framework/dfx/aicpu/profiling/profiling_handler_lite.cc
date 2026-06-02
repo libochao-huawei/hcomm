@@ -59,6 +59,23 @@ void ProfilingHandlerLite::Init()
         std::string nameInfo = GetProfTaskOpNameV2(type);
         taskTypeHashCache_[static_cast<uint32_t>(i)] = GetProfHashId(nameInfo.c_str(), nameInfo.length());
     }
+    if (MsprofReportBatchAdditionalInfo == nullptr) {
+        if (AdprofReportAdditionalInfo != nullptr) {
+            reportAdditionalInfo_ = AdprofReportAdditionalInfo;
+        }
+        if (AdprofGetHashId != nullptr) {
+            getProfHashId_ = AdprofGetHashId;
+        }
+    } else {
+        if (MsprofReportAdditionalInfo != nullptr) {
+            reportAdditionalInfo_ = [](uint32_t flag, const void* data, uint32_t len) -> int32_t {
+                return MsprofReportAdditionalInfo(flag, const_cast<void*>(data), len);
+            };
+        }
+        if (MsprofStr2Id != nullptr) {
+            getProfHashId_ = MsprofStr2Id;
+        }
+    }
 }
 
 void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
@@ -235,22 +252,12 @@ void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo
 
 void ProfilingHandlerLite::ReportAdditionInfo(const MsprofAdditionalInfo& reporterData) const
 {
-    if (MsprofReportBatchAdditionalInfo == nullptr) {
-        if (AdprofReportAdditionalInfo == nullptr) {
-            HCCL_WARNING("[ProfilingHandlerLite][ReportAdditionInfo] AdprofReportAdditionalInfo is nullptr.");
-            return;
-        }
-        if (AdprofReportAdditionalInfo(aging, &reporterData, sizeof(MsprofAdditionalInfo)) != 0) {
-            THROW<InternalException>("[ProfilingHandler] AdprofReportAdditionalInfo failed.");
-        }
-    } else {
-        if (MsprofReportAdditionalInfo == nullptr) {
-            HCCL_WARNING("[ProfilingHandlerLite][ReportAdditionInfo] MsprofReportAdditionalInfo is nullptr.");
-            return;
-        }
-        if (MsprofReportAdditionalInfo(aging, const_cast<MsprofAdditionalInfo*>(&reporterData), sizeof(MsprofAdditionalInfo)) != 0) {
-            THROW<InternalException>("[ProfilingHandler] MsprofReportAdditionalInfo failed.");
-        }
+    if (reportAdditionalInfo_ == nullptr) {
+        HCCL_WARNING("[ProfilingHandlerLite][ReportAdditionInfo] reportAdditionalInfo_ is nullptr.");
+        return;
+    }
+    if (reportAdditionalInfo_(aging, &reporterData, sizeof(MsprofAdditionalInfo)) != 0) {
+        THROW<InternalException>("[ProfilingHandler] ReportAdditionalInfo failed.");
     }
 }
 
@@ -319,17 +326,10 @@ uint64_t ProfilingHandlerLite::GetProfHashId(const char *name, uint32_t len) con
         HCCL_WARNING("HashData is empty.  name:%s, len:%u", name, len);
         return INVALID_U64;
     }
-    if (MsprofReportBatchAdditionalInfo == nullptr) {
-        if (AdprofGetHashId == nullptr) {
-            return INVALID_U64;
-        }
-        return AdprofGetHashId(name, len);
-    } else {
-        if (MsprofStr2Id == nullptr) {
-            return INVALID_U64;
-        }
-        return MsprofStr2Id(name, len);
+    if (getProfHashId_ == nullptr) {
+        return INVALID_U64;
     }
+    return getProfHashId_(name, len);
 }
 
 } // namespace Hccl

@@ -534,6 +534,23 @@ Hccl::TaskParam ConstructCcuTaskParam(const hcomm::CcuTaskParam &ccuParam, const
     return taskParam;
 }
 
+static void ConstructProfilingInfoLog(
+    const std::vector<hcomm::CcuProfilingInfo> &allCcuProfilingInfo)
+{
+    if (HcclCheckLogLevel(HCCL_LOG_INFO) == 0) {
+        return;
+    }
+    for (const hcomm::CcuProfilingInfo& profInfo : allCcuProfilingInfo) {
+        for (int idx = 0; idx < hcomm::CCU_MAX_CHANNEL_NUM; idx++) {
+            if (profInfo.channelId[idx] == hcomm::INVALID_VALUE_CHANNELID) {
+                break;
+            }
+            HCCL_INFO("[%s]idx[%u]: channelId[%u], channelHandle[0x%llx]",
+                __func__, idx, profInfo.channelId[idx], profInfo.channelHandle[idx]);
+        }
+    }
+}
+
 HcclResult ConstructProfilingInfo(const hcomm::CcuTaskArg &arg, hcomm::CcuKernel *kernel, const HcclComm comm,
     std::vector<hcomm::CcuProfilingInfo> &allCcuProfilingInfo)
 {
@@ -545,6 +562,7 @@ HcclResult ConstructProfilingInfo(const hcomm::CcuTaskArg &arg, hcomm::CcuKernel
     CHK_RET(kernel->GetCcuProfilingInfo(arg, allCcuProfilingInfo));
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
+    ConstructProfilingInfoLog(allCcuProfilingInfo);
 
     // 处理每个性能信息条目
     for (hcomm::CcuProfilingInfo& profInfo : allCcuProfilingInfo) {
@@ -562,8 +580,6 @@ HcclResult ConstructProfilingInfo(const hcomm::CcuTaskArg &arg, hcomm::CcuKernel
                 return HCCL_E_PARA;
             }
             profInfo.remoteRankId[idx] = remoteRankId;
-            HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[0x%llx]",
-                __func__, idx, profInfo.channelId[idx], profInfo.remoteRankId[idx], profInfo.channelHandle[idx]);
         }
     }
     return HCCL_SUCCESS;

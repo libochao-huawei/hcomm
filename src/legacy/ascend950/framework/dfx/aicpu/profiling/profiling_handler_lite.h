@@ -84,6 +84,10 @@ private:
     u32                         cachedRankSize_{0};
     uint32_t                    cachedTid_{0};
     std::map<uint32_t, uint64_t> taskTypeHashCache_;
+    using ReportAdditionalInfoHandle = int32_t (*)(uint32_t, const void*, uint32_t);
+    ReportAdditionalInfoHandle reportAdditionalInfo_{nullptr};
+    using GetProfHashIdHandle = uint64_t (*)(const char *, size_t);
+    GetProfHashIdHandle getProfHashId_{nullptr};
 };
 } // namespace Hccl
 
