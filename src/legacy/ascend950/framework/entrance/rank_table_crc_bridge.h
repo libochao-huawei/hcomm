@@ -22,7 +22,7 @@ public:
     void RecordRankTableJsonCrc(s32 deviceLogicId, const std::string &rankTableJson);
     u32 ConsumeRankTableJsonCrc(s32 deviceLogicId);
 private:
-    static std::unordered_map<s32, u32> g_rankTableJsonCrcMap;
+    std::unordered_map<s32, u32> g_rankTableJsonCrcMap;
 };
 
 #endif // RANK_TABLE_CRC_BRIDGE_H
