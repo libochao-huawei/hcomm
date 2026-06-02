@@ -270,11 +270,11 @@ private:
     // Host
     HcclResult PrepareResForTemplate(
         const RankGraph* rankGraph, InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg) const;
+        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg);
     // Aicpu
     HcclResult PrepareResForTemplate(
         ConnectedLinkMgr* linkMgr, InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg) const;
+        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg);
 
     void GenDataParamsStage(
         const u32 part, const u32 stage, DataParameters& dataParameters, TemplateDataParams& dataParams) const

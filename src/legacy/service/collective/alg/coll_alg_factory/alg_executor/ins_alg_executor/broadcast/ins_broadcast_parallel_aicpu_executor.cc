@@ -275,7 +275,7 @@ template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTempla
 HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
     InsAlgTemplate3>::PrepareResForTemplate(const RankGraph *rankGraph, InsAlgTemplate0 &intraScatterTempAlg,
     InsAlgTemplate1 &interScatterTempAlg, InsAlgTemplate2 &intraAllGatherTempAlg,
-    InsAlgTemplate3 &interAllGatherTempAlg) const
+    InsAlgTemplate3 &interAllGatherTempAlg)
 {
     AlgTempResReq resReqIntraScatter;
     AlgTempResReq resReqInterScatter;
@@ -294,7 +294,7 @@ template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTempla
 HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
     InsAlgTemplate3>::PrepareResForTemplate(ConnectedLinkMgr *linkMgr, InsAlgTemplate0 &intraScatterTempAlg,
     InsAlgTemplate1 &interScatterTempAlg, InsAlgTemplate2 &intraAllGatherTempAlg,
-    InsAlgTemplate3 &interAllGatherTempAlg) const
+    InsAlgTemplate3 &interAllGatherTempAlg)
 {
     AlgTempResReq resReqIntraScatter;
     AlgTempResReq resReqInterScatter;
