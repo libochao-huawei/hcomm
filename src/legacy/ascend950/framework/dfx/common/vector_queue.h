@@ -100,7 +100,7 @@ public:
         }
     };
 
-    void Append(const T &value) override
+    void Append(T &value) override
     {
         if (UNLIKELY(elems_.size() >= VECTOR_QUEUE_SIZE)) {
             THROW<InternalException>(StringFormat("VectorQueue<T>::Append size[%u] is full", elems_.size()));
