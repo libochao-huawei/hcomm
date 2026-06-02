@@ -29,16 +29,9 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
     CollCommConfigConsistency &collCommConfigConsistency,
     const std::string &commTag)
 {
-    s32 deviceLogicId = 0;
-    (void)hrtGetDeviceRefresh(&deviceLogicId);
-    auto &checker = RankConsistencyCheckerV2::GetInstance(deviceLogicId);
-    u64 frameLenV2 = checker.GetCheckFrameLengthV2();
     std::vector<Hccl::Socket*> sockets;
     std::vector<u32> remoteRanks;
     std::vector<HcommSocketRole> roles;
-    std::vector<Hccl::Socket*> newSockets; //新建链的
-    std::vector<u32> newRemoteRanks;
-    std::vector<HcommSocketRole> newRoles;
 
     if (channelNum == 0) {
         HCCL_INFO("[BatchExchangeAndCheckConsistency] channelNum is 0.");
@@ -58,6 +51,29 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
         roles.push_back(hcommDescs[i].role);
     }
 
+    // 校验HComm信息
+    CHK_RET(CheckHcommInfo(sockets, remoteRanks, roles, newChannels));
+    // 交换HCCL算子信息 ======
+    CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, collCommConfigConsistency));
+    CHK_RET(collCommConfigConsistency.ResetExchangeInfo());
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult ExchangeInfoMgr::CheckHcommInfo(
+    const std::vector<Hccl::Socket*> &sockets,
+    const std::vector<u32> &remoteRanks,
+    const std::vector<HcommSocketRole> &roles.
+    const std::vector<std::pair<u32, u32>> &newChannels)
+{
+    s32 deviceLogicId = 0;
+    (void)hrtGetDeviceRefresh(&deviceLogicId);
+    auto &checker = RankConsistencyCheckerV2::GetInstance(deviceLogicId);
+    u64 frameLenV2 = checker.GetCheckFrameLengthV2();
+    std::vector<Hccl::Socket*> newSockets; //新建链的
+    std::vector<u32> newRemoteRanks;
+    std::vector<HcommSocketRole> newRoles;
+
     for (const auto &newCh : newChannels) {
         u32 idx = newCh.first;
         u32 remoteRank = channelDescs[idx].remoteRank;
@@ -70,32 +86,33 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
     if (newChannels.size() > 0) {
         checker.SetInconsistentCheckFirstDone(false);
     }
-
     // 只有rankConsistentState是first或者on时才进行hcomm信息校验
     int32_t mode = Hccl::EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().rankConsistentState;
-    bool isFirst = (mode == 0 && !checker.GetInconsistentCheckFirstDone());
+    bool isFirst = (mode == 0 && !checker.GetInconsistentCheckFirstDone());  //0:first 1:on
     if(mode == 1 || isFirst) {
         // ====== 生成本端CheckFrameV2 ======
-       CheckFrameV2 localFrame;
-       CHK_RET(checker.GenerateCheckFrameV2(localFrame));
+        CheckFrameV2 localFrame;
+        CHK_RET(checker.GenerateCheckFrameV2(localFrame));
 
-       // ====== 交换CheckFrameV2（定长，批量并发交换）======
-       std::vector<CheckFrameV2> remoteFrames(sockets.size());
-       if (isFirst)
-       {
+        // ====== 交换CheckFrameV2（定长，批量并发交换）======
+        std::vector<CheckFrameV2> remoteFrames;
+        u32 checkSocketSize = newSockets.size();
+        if (isFirst)
+        {
+            remoteFrames.resize(newSockets.size());
             CHK_RET(BatchExchangeFixedData(newSockets, newRemoteRanks, newRoles,
                 reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
                 reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
-   
-       } else {
+        } else {
+            checkSocketSize = sockets.size();
+            remoteFrames.resize(sockets.size());
             CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles,
                 reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
                 reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
-
-       }
+        }
        
         // ====== 逐个比对CheckFrameV2（精确报错：环境变量名/子通信域参数名等）======
-        for (u32 i = 0; i < sockets.size(); i++) {
+        for (u32 i = 0; i < checkSocketSize.size(); i++) {
             HcclResult cmpRet = checker.CompareCheckFrameV2(localFrame, remoteFrames[i]);
             if (cmpRet != HCCL_SUCCESS) {
                 HCCL_ERROR("[BatchExchangeAndCheckConsistency] CheckFrameV2 mismatch for remoteRank[%u].",
@@ -106,11 +123,6 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
         HCCL_INFO("[BatchExchangeAndCheckConsistency] hcomm compare check suc.");
         checker.SetInconsistentCheckFirstDone(true);
     }
-
-    // 交换HCCL算子信息 ======
-    CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, collCommConfigConsistency));
-    CHK_RET(collCommConfigConsistency.ResetExchangeInfo());
-
     return HCCL_SUCCESS;
 }
 
