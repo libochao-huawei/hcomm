@@ -62,8 +62,6 @@ public:
     }
     void Check() const
     {
-        // 默认通用模板：未特化的 (lhsT, rhsT) 组合属于编译期允许、运行期非法。
-        // 抛 CcuException 而非字符串字面量，可被 `catch (const std::exception&)` 捕获。
         throw ::AscendC::ccu::detail::CcuException(CcuResult::CCU_E_PARA,
             "CcuArithmeticOperator: invalid operand types");
     }

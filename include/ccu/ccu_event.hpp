@@ -23,9 +23,6 @@ namespace ccu {
 
 template <typename U> class Array;
 
-// Event 退化为纯 handle 持有者：mask 已与 Event 解耦，
-// 由调用方在每个 EventRecord/Wait/LocalCopy/Read/Write/... API 上独立传入。
-// 旧的 EventMask 代理类、Event::mask 字段、Event::setMask 接口已废弃删除。
 class Event final {
 public:
     Event() {
