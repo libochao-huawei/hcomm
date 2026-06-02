@@ -1098,6 +1098,7 @@ HcclResult UbMemTransport::Init()
     return HCCL_SUCCESS;
 }
  
+
 HcclResult UbMemTransport::DeInit() const
 {
     socket->Destroy();
