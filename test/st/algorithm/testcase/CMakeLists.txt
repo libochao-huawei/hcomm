@@ -158,7 +158,7 @@ target_compile_options(hccl_alg_test PRIVATE
     -fno-common
     -fno-strict-aliasing
     -pipe
-    -std=c++14
+    -std=c++17
     -Os
     -O2
     -x c++
