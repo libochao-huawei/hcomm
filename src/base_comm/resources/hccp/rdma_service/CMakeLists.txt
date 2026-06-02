@@ -52,17 +52,19 @@ add_library(rs SHARED ${RS_SOURCE_LIST})
 
 # 编译选项
 target_compile_options(rs PRIVATE
-    -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal
-    -Wextra -Wno-unused-parameter -std=gnu11
-    -fstack-protector-strong
+    # -Werror
+    -fvisibility=hidden
+    -fno-strict-aliasing
+    -fsigned-char
+    -Wno-unused-parameter
+    -std=gnu11
     $<$<CONFIG:Debug>:-g>
 )
 
 # 链接选项
 target_link_options(rs PRIVATE
-    -Wl,-Bsymbolic -Wl,--exclude-libs,ALL
-    -Wl,-z,now
-    $<$<CONFIG:Release>:-s>
+    -Wl,-Bsymbolic
+    -Wl,--exclude-libs,ALL
 )
 
 # 宏定义
