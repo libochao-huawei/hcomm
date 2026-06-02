@@ -126,7 +126,7 @@ TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Succe
     hcommDescVec.push_back(hcommDesc);
     ExchangeInfoMgr exchangeInfoMgr;
     std::vector<std::pair<u32, u32>> newChannels;
-    newChannels.emplace_back(std::make_pair(i, reuseIdx));
+    newChannels.emplace_back(std::make_pair(1, reuseIdx));
     ret = exchangeInfoMgr.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, newChannels, collCommConfigConsistency, "test_tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
