@@ -255,5 +255,44 @@ int32_t CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t chan
     return HCCL_SUCCESS;
 }
 
+int32_t CcuRepContext::SetDependencyInfo(uint32_t id, uint32_t mask, std::shared_ptr<CcuRepBase> rep)
+{
+    if (mask == 0 || (mask & (mask - 1)) != 0) {
+        HCCL_ERROR("Invalid Mask[%u]", mask);
+        return HCCL_E_INTERNAL;
+    }
+    // 查找 id 是否已存在于外层 map 中
+    auto idIt = depInfo.find(id);
+    if (idIt == depInfo.end()) {
+        // 如果不存在，插入一个新的内层 unordered_map
+        idIt = depInfo.emplace(id, std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>>()).first;
+    }
+
+    // 现在查找 mask 是否存在于内层 map 中
+    auto maskIt = idIt->second.find(mask);
+    if (maskIt == idIt->second.end()) {
+        // 如果不存在，插入一个新的 vector
+        maskIt = idIt->second.emplace(mask, std::vector<std::shared_ptr<CcuRepBase>>()).first;
+    }
+
+    // 将 rep 添加到 vector 中
+    maskIt->second.push_back(rep);
+}
+
+std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>> CcuRepContext::GetDependencyInfo(uint32_t id) {
+    // 查找给定 id 是否存在于 depInfo 中
+    auto it = depInfo.find(id);
+    // 如果找到 id，返回与之关联的内层 unordered_map
+    if (it != depInfo.end()) {
+        return it->second;
+    }
+    // 如果未找到 id，返回一个空的 unordered_map
+    return std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>>();
+}
+
+void CcuRepContext::ClearDependencyInfo() {
+    depInfo.clear();
+}
+
 }; // namespace CcuRep
 }; // namespace hcomm
