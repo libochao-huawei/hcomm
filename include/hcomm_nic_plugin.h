@@ -65,6 +65,7 @@ typedef struct HcommNicEndpointOps {
     void (*destroy)(void *ctx);
     int32_t (*startListen)(void *ctx, uint32_t port, HcommEndpointListenConfig *config);
     int32_t (*stopListen)(void *ctx, uint32_t port);
+    int32_t (*getListenPort)(void *ctx, uint32_t *port);
     int32_t (*getAllMemoryHandles)(void *ctx, void **memHandles, uint32_t *memHandleNum);
     int32_t (*grantMemory)(void *ctx, const HcommMemGrantInfo *remoteGrantInfo);
 } HcommNicEndpointOps;

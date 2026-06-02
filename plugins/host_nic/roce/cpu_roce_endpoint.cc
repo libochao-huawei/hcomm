@@ -55,6 +55,15 @@ CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
 {
 }
 
+CpuRoceEndpoint::~CpuRoceEndpoint() noexcept
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    if (dynamicPort_ != HCCL_INVALID_PORT) {
+        ServerSocketStopListen(dynamicPort_);
+    }
+    dynamicPort_ = HCCL_INVALID_PORT;
+}
+
 HcclResult CpuRoceEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
@@ -109,6 +118,36 @@ HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
     Hccl::PortData localPort = Hccl::PortData(kHostResourceId, type, 0, ipAddr);
     CHK_RET(hcomm::ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult CpuRoceEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    CHK_PTR_NULL(port);
+    Hccl::IpAddress ipAddr{};
+    CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
+    Hccl::PortData localPort = Hccl::PortData(kHostResourceId, type, 0, ipAddr);
+
+    HCCL_INFO("[CpuRoceEndpoint::%s] hostResourceId[%u] ipAddress[%s]",
+        __func__, kHostResourceId, ipAddr.Describe().c_str());
+
+    if (dynamicPort_ != HCCL_INVALID_PORT) {
+        *port = dynamicPort_;
+        HCCL_INFO("[CpuRoceEndpoint::%s] already listening, return existing port[%u]", __func__, dynamicPort_);
+        return HCCL_SUCCESS;
+    }
+    uint32_t requestPort = 0;
+    CHK_RET(hcomm::ServerSocketManager::GetInstance().ServerSocketStartListen(
+        localPort, Hccl::NicType::HOST_NIC_TYPE, kHostResourceId, &requestPort));
+    if (requestPort == 0 || requestPort == HCCL_INVALID_PORT) {
+        HCCL_ERROR("[CpuRoceEndpoint::%s] get listen port failed, port is invalid", __func__);
+        return HCCL_E_NETWORK;
+    }
+    dynamicPort_ = requestPort;
+    *port = dynamicPort_;
     return HCCL_SUCCESS;
 }
 

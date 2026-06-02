@@ -57,6 +57,12 @@ HcommResult StopListen(void *endpointCtx, uint32_t port)
     return static_cast<CpuRoceEndpoint *>(endpointCtx)->ServerSocketStopListen(port);
 }
 
+HcommResult GetListenPort(void *endpointCtx, uint32_t *port)
+{
+    CHK_PTR_NULL(endpointCtx);
+    return static_cast<CpuRoceEndpoint *>(endpointCtx)->ServerSocketGetListenPort(port);
+}
+
 HcommResult MemReg(void *endpointCtx, const CommMem *mem, const char *memTag, void **memHandle)
 {
     CHK_PTR_NULL(endpointCtx);
@@ -280,6 +286,7 @@ HcommNicEndpointOps kEndpointOps = {
     DestroyEndpoint,
     StartListen,
     StopListen,
+    GetListenPort,
     MemGetAllHandles,
     MemGrant
 };

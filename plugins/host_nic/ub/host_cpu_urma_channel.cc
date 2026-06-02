@@ -106,8 +106,9 @@ HcclResult HostCpuUrmaChannel::BuildSocket()
         HCCL_INFO("[HostCpuUrmaChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
     }
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
-    bool noRankId = true;
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
+    Hccl::SocketConfig socketConfig = (channelDesc_.role != HCOMM_SOCKET_ROLE_RESERVED)
+        ? Hccl::SocketConfig(linkData, port, socketTag, channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER)
+        : Hccl::SocketConfig(linkData, socketTag, true);
     CHK_RET(hcomm::SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
     HCCL_INFO("[HostCpuUrmaChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
@@ -123,6 +124,10 @@ HcclResult HostCpuUrmaChannel::BuildConnection()
     Hccl::IpAddress     rmtAddr;
     CHK_RET(hcomm::CommAddrToIpAddress(localEp_.commAddr, locAddr));
     CHK_RET(hcomm::CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr));
+
+    HCCL_INFO("[HostCpuUrmaChannel::%s] init TpManager with hostResourceId[%u].",
+        __func__, kHostResourceId);
+    Hccl::TpManager::GetInstance(kHostResourceId).Init();
 
     std::unique_ptr<Hccl::HostUbConnection> ubConn = nullptr;
     switch (protocol) {
@@ -191,7 +196,9 @@ HcclResult HostCpuUrmaChannel::Init()
 {
     devicePhyId_ = kHostResourceId;
     CHK_RET(ParseInputParam());
-    CHK_RET(StartListen());
+    if (channelDesc_.role != HCOMM_SOCKET_ROLE_CLIENT) {
+        CHK_RET(StartListen());
+    }
     CHK_RET(BuildSocket());
     CHK_RET(BuildConnection());
     CHK_RET(BuildBuffer());

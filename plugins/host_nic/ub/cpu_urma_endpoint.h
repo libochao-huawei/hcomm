@@ -11,22 +11,25 @@
 #define CPU_URMA_ENDPOINT_H
 
 #include <memory>
+#include <mutex>
 #include <vector>
 #include <string>
 #include "endpoint.h"
 #include "ccu_channel_ctx_pool.h"
+#include "externalinput_pub.h"
 #include "socket/socket.h"
 
 namespace hcomm_host_nic {
 class CpuUrmaEndpoint : public Endpoint {
 public:
     explicit CpuUrmaEndpoint(const EndpointDesc &endpointDesc);
-    ~CpuUrmaEndpoint() = default;
+    ~CpuUrmaEndpoint() noexcept override;
 
     HcclResult Init() override;
 
     HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult ServerSocketStopListen(const uint32_t port) override;
+    HcclResult ServerSocketGetListenPort(uint32_t *port) override;
 
     static std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> &GetServerSocketMap();
 
@@ -40,6 +43,10 @@ public:
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
+
+private:
+    std::mutex portMutex_;
+    u32 dynamicPort_{HCCL_INVALID_PORT};
 };
 }
 

@@ -48,6 +48,15 @@ CpuUrmaEndpoint::CpuUrmaEndpoint(const EndpointDesc &endpointDesc)
 {
 }
 
+CpuUrmaEndpoint::~CpuUrmaEndpoint() noexcept
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    if (dynamicPort_ != HCCL_INVALID_PORT) {
+        ServerSocketStopListen(dynamicPort_);
+    }
+    dynamicPort_ = HCCL_INVALID_PORT;
+}
+
 HcclResult CpuUrmaEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
@@ -98,6 +107,38 @@ HcclResult CpuUrmaEndpoint::ServerSocketStopListen(const uint32_t port)
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(kHostResourceId, type, 0, ipAddr);
     CHK_RET(hcomm::ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult CpuUrmaEndpoint::ServerSocketGetListenPort(uint32_t *port)
+{
+    std::lock_guard<std::mutex> lock(portMutex_);
+    CHK_PTR_NULL(port);
+    Hccl::IpAddress localIpAddr{};
+    CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc_.commAddr, localIpAddr));
+
+    Hccl::DevNetPortType portType = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
+    Hccl::PortData portData = Hccl::PortData(kHostResourceId, portType, 0, localIpAddr);
+
+    HCCL_INFO("[CpuUrmaEndpoint::%s] hostResourceId[%u] ipAddress[%s]",
+        __func__, kHostResourceId, localIpAddr.Describe().c_str());
+
+    if (dynamicPort_ != HCCL_INVALID_PORT) {
+        *port = dynamicPort_;
+        HCCL_INFO("[CpuUrmaEndpoint::%s] already listening, return existing port[%u]", __func__, dynamicPort_);
+        return HCCL_SUCCESS;
+    }
+
+    uint32_t requestPort = 0;
+    CHK_RET(hcomm::ServerSocketManager::GetInstance().ServerSocketStartListen(
+        portData, Hccl::NicType::HOST_NIC_TYPE, kHostResourceId, &requestPort));
+    if (requestPort == 0 || requestPort == HCCL_INVALID_PORT) {
+        HCCL_ERROR("[CpuUrmaEndpoint::%s] get listen port failed, port is invalid.", __func__);
+        return HCCL_E_NETWORK;
+    }
+    dynamicPort_ = requestPort;
+    *port = dynamicPort_;
 
     return HCCL_SUCCESS;
 }
