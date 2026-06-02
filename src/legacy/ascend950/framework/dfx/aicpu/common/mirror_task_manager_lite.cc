@@ -77,7 +77,7 @@ TaskInfoQueue *MirrorTaskManagerLite::GetQueue(u32 streamId) const
     return it->second.get();
 }
 
-std::shared_ptr<TaskInfo> MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
+TaskInfo* MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
 {
     TaskInfoQueue *queue = nullptr;
     try {
@@ -87,7 +87,7 @@ std::shared_ptr<TaskInfo> MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 t
         return nullptr;
     }
 
-    auto FindTask = [taskId](const std::shared_ptr<TaskInfo> &taskInfo) {
+    auto FindTask = [taskId](const std::unique_ptr<TaskInfo> &taskInfo) {
         return taskInfo->taskId_ == taskId;
     };
 
@@ -98,7 +98,7 @@ std::shared_ptr<TaskInfo> MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 t
 
     HCCL_INFO("[MirrorTaskManagerLite][GetTaskInfo]find streamdId(sqId)[%u] taskId(sqeId)[%u]", streamId, taskId);
 
-    return *task;
+    return (*task).get();
 }
 
 TaskInfoQueueMap::iterator MirrorTaskManagerLite::Begin() 
