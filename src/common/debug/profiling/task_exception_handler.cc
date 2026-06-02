@@ -24,6 +24,7 @@
 using namespace hccl;
 using namespace std;
 std::atomic<int> TaskExceptionHandler::communicatorCount_{0};
+std::atomic<bool> TaskExceptionHandler::errMsgFlag_{false};
 GetErrStatusVecCallBack g_GetErrStatusVecCallBack = nullptr;
 std::mutex g_communicatorCallbackMapMutex;
 array<map<s32, GetAicpuTaskExceptionCallBack>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMap;
@@ -112,6 +113,20 @@ constexpr u32 NOTIFY_GROUPS_1V1 = 2;
 
 u32 maxStrCount = 0;
 u32 maxTaskCount = 0;
+
+std::string GetReduceOpString(HcclReduceOp op)
+{
+    u32 opVal = static_cast<u32>(op);
+    return opVal < ProfilerBase::opString.size() ? std::to_string(ProfilerBase::opString[opVal])
+                                                 : "Unknown(" + std::to_string(op) + ")";
+}
+
+std::string GetDataTypeString(HcclDataType dataType)
+{
+    u32 dtVal = static_cast<u32>(dataType);
+    return dtVal < ProfilerBase::dataTypeString.size() ? std::to_string(ProfilerBase::dataTypeString[dtVal])
+                                                       : "Unknown(" + std::to_string(dataType) + ")";
+}
 }
 array<map<int, shared_ptr<deque<TaskInfo>>>, MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::taskMap;
 array<std::mutex, MAX_MODULE_DEVICE_NUM> TaskExceptionHandler::taskMapMutex;
@@ -326,8 +341,8 @@ string TaskInfo::GetParaReduce()
             << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskPara.Reduce.dst)) << "], size:"
             << "[0x"
             << std::hex << static_cast<u64>(taskPara.Reduce.size * ProfilerBase::sizeOf[taskPara.Reduce.dataType])
-            << "], op:[" << std::to_string(ProfilerBase::opString[taskPara.Reduce.op]) << "], data type:["
-            << std::to_string(ProfilerBase::dataTypeString[taskPara.Reduce.dataType]) << "], link type:["
+            << "], op:[" << GetReduceOpString(taskPara.Reduce.op) << "], data type:["
+            << GetDataTypeString(taskPara.Reduce.dataType) << "], link type:["
             << GetLinkTypeName(taskPara.Reduce.linkType) << "], remote rank:["
             << ((taskPara.Reduce.remoteUserRank == INVALID_VALUE_RANKID) ? "local" :
                 to_string(taskPara.Reduce.remoteUserRank)) << "]";
@@ -472,8 +487,8 @@ string CtxInfo::GetCtxParaReduce()
             << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(ctxPara.Reduce.dst)) << "], size:"
             << "[0x"
             << std::hex << static_cast<u64>(ctxPara.Reduce.size * ProfilerBase::sizeOf[ctxPara.Reduce.dataType])
-            << "], op:[" << std::to_string(ProfilerBase::opString[ctxPara.Reduce.op]) << "], data type:["
-            << std::to_string(ProfilerBase::dataTypeString[ctxPara.Reduce.dataType]) << "], link type:["
+            << "], op:[" << GetReduceOpString(ctxPara.Reduce.op) << "], data type:["
+            << GetDataTypeString(ctxPara.Reduce.dataType) << "], link type:["
             << GetLinkTypeName(ctxPara.Reduce.linkType) << "], remote rank:["
             << ((ctxPara.Reduce.remoteUserRank == INVALID_VALUE_RANKID) ? "local" :
                 to_string(ctxPara.Reduce.remoteUserRank)) << "]";
@@ -794,16 +809,12 @@ bool TaskExceptionHandler::DealExceptionCtx(rtExceptionInfo *exceptionInfo)
     if (!FindAndValidateContext(exceptionInfo)) {
         return false;
     }
-	
-	auto mapIt = opCtxInfo[exceptionInfo->deviceid].find(exceptionInfo->streamid);
-	auto &queIt = mapIt->second;
-	auto fftsOpInfo = *(queIt->front().first);
-    auto exceptionCtxInfo = (*(queIt->front().second))[0];
 
-    auto logKeywordL2 = exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
-    auto stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_HOST + "]";
+    FFTSOpInfo fftsOpInfo;
+    CtxInfo exceptionCtxInfo;
+    std::string stageErrInfo = "";
 
-    if (!ProcessContext(exceptionInfo, stageErrInfo)) {
+    if (!ProcessContext(exceptionInfo, stageErrInfo, fftsOpInfo, exceptionCtxInfo)) {
         return false;
     }
 
@@ -814,26 +825,28 @@ bool TaskExceptionHandler::DealExceptionCtx(rtExceptionInfo *exceptionInfo)
 	DealExceptionGroupRank(exceptionInfo, tag, true, groupRankContentInfo, stageErrInfo);
 	DealExceptionOpData(exceptionInfo, tag, true, index, stageErrInfo);
 	std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, tag);
-	if (exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT) {
-		RPT_INPUT_ERR(true,
-			"EI0002",
-			std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
-			std::vector<std::string>({
-				std::to_string(exceptionCtxInfo.GetCtxRemoteUserRank()),
-				exceptionCtxInfo.GetCtxBaseInfoStr().c_str(), (exceptionCtxInfo.GetCtxParaInfoStr() + errMsg).c_str(),
-				groupRankContentInfo.c_str()
-			})
-		);
-	} else if (exceptionCtxInfo.taskType == TaskType::TASK_SDMA || exceptionCtxInfo.taskType == TaskType::TASK_REDUCE_INLINE) {
-		RPT_INPUT_ERR(true,
-			"EI0012",
-			std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
-			std::vector<std::string>({
-				std::to_string(exceptionCtxInfo.GetCtxRemoteUserRank()),
-				exceptionCtxInfo.GetCtxBaseInfoStr().c_str(), (exceptionCtxInfo.GetCtxParaInfoStr() + errMsg).c_str(),
-				groupRankContentInfo.c_str()
-			})
-		);
+    if (!errMsgFlag_.exchange(true)) {
+        if (exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT) {
+            RPT_INPUT_ERR(true,
+                "EI0002",
+                std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+                std::vector<std::string>({
+                    std::to_string(exceptionCtxInfo.GetCtxRemoteUserRank()),
+                    exceptionCtxInfo.GetCtxBaseInfoStr().c_str(), (exceptionCtxInfo.GetCtxParaInfoStr()).c_str(),
+                    groupRankContentInfo.c_str()
+                })
+            );
+        } else if (exceptionCtxInfo.taskType == TaskType::TASK_SDMA || exceptionCtxInfo.taskType == TaskType::TASK_REDUCE_INLINE) {
+            RPT_INPUT_ERR(true,
+                "EI0012",
+                std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+                std::vector<std::string>({
+                    std::to_string(exceptionCtxInfo.GetCtxRemoteUserRank()),
+                    exceptionCtxInfo.GetCtxBaseInfoStr().c_str(), (exceptionCtxInfo.GetCtxParaInfoStr()).c_str(),
+                    groupRankContentInfo.c_str()
+                })
+            );
+        }
     }
     return true;
 }
@@ -860,12 +873,35 @@ bool TaskExceptionHandler::FindAndValidateContext(rtExceptionInfo *exceptionInfo
     return true;
 }
 
-bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::string &stageErrInfo)
+void TaskExceptionHandler::PrintFftsCtxInfo(FFTSOpInfo &fftsOpInfo)
+{
+    // 按照每个task占用128字节打印ffts的子图信息
+    if (fftsOpInfo.descBuf != nullptr && fftsOpInfo.descBufLen > 0) {
+        HCCL_ERROR("==========FftsPlusTask-begin-context, ctx_addr=%p, descBuflen=%u, ctx_num=%lu==========",
+            fftsOpInfo.descBuf.get(), fftsOpInfo.descBufLen, fftsOpInfo.descBufLen / 128UL);
+        for (uint32_t i = 0U; i < (fftsOpInfo.descBufLen / 128UL); i++) {
+            HCCL_ERROR("stream_id=%u, task_id=%u, FftsPlusTask context_id=%u:",
+                fftsOpInfo.streamID, fftsOpInfo.taskID, i);
+            uint32_t *buf = reinterpret_cast<uint32_t *>(fftsOpInfo.descBuf.get()) + (i * 32U);
+            for (uint32_t j = 0U; j < 32U; j += 8) {
+                HCCL_ERROR("context_id=%u, buf[%02u-%02u]=%08x %08x %08x %08x %08x %08x %08x %08x.",
+                    i, j, (j + 7U),
+                    buf[j], buf[j + 1U], buf[j + 2U], buf[j + 3U],
+                    buf[j + 4U], buf[j + 5U], buf[j + 6U], buf[j + 7U]);
+            }
+        }
+        HCCL_ERROR("==========FftsPlusTask-end-context==========");
+    }
+    return;
+}
+
+bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::string &stageErrInfo,
+    FFTSOpInfo &fftsOpInfo, CtxInfo &exceptionCtxInfo)
 {
     auto mapIt = opCtxInfo[exceptionInfo->deviceid].find(exceptionInfo->streamid);
 	auto &queIt = mapIt->second;
-    auto fftsOpInfo = *(queIt->front().first);
-    auto exceptionCtxInfo = (*(queIt->front().second))[0];
+    fftsOpInfo = *(queIt->front().first);
+    exceptionCtxInfo = (*(queIt->front().second))[0];
     uint16_t invalidCtxid = 65535;
     bool ctxFound = false;
 
@@ -890,6 +926,11 @@ bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::s
             queIt->pop_back();
         }
     }
+
+    auto logKeywordL2 = exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
+    stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_HOST + "]";
+
+    PrintFftsCtxInfo(fftsOpInfo);
 
     if (!ctxFound) {
         return false;
@@ -941,13 +982,15 @@ bool TaskExceptionHandler::DealExceptionOp(rtExceptionInfo *exceptionInfo)
     DealExceptionGroupRank(exceptionInfo, tag, true, groupRankContentInfo, stageErrInfo);
     DealExceptionOpData(exceptionInfo, tag, true, index, stageErrInfo);
     std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, tag);
-    if (exceptionInfo->retcode == ACL_ERROR_RT_FFTS_PLUS_TIMEOUT) {
-        RPT_INPUT_ERR(true,
-            "EI0002",
-            std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
-            std::vector<std::string>({
-                "unknown", exceptionOpInfo.GetBaseInfoStr().c_str(), errMsg.c_str(), groupRankContentInfo.c_str()})
-        );
+    if (!errMsgFlag_.exchange(true)) {
+        if (exceptionInfo->retcode == ACL_ERROR_RT_FFTS_PLUS_TIMEOUT) {
+            RPT_INPUT_ERR(true,
+                "EI0002",
+                std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+                std::vector<std::string>({
+                    "unknown", exceptionOpInfo.GetBaseInfoStr().c_str(), errMsg.c_str(), groupRankContentInfo.c_str()})
+            );
+        }
     }
     return true;
 }
@@ -1226,25 +1269,27 @@ bool TaskExceptionHandler::DealExceptionTask(rtExceptionInfo *exceptionInfo)
     }
     DealExceptionOpData(exceptionInfo, exceptionTaskInfo.tag, false, index, stageErrInfo);
     std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, exceptionTaskInfo.tag);
-    if (logKeywordL2 == LOG_KEYWORDS_TIMEOUT) {
-        RPT_INPUT_ERR(true,
-            "EI0002",
-            std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
-            std::vector<std::string>({
-                std::to_string(exceptionTaskInfo.GetRemoteUserRank()),
-                exceptionTaskInfo.GetBaseInfoStr().c_str(), (exceptionTaskInfo.GetParaInfoStr() + errMsg).c_str(),
-                groupRankContentInfo.c_str()})
-        );
-    } else {
-		RPT_INPUT_ERR(true,
-			"EI0012",
-			std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
-			std::vector<std::string>({
-				std::to_string(exceptionTaskInfo.GetRemoteUserRank()),
-				exceptionTaskInfo.GetBaseInfoStr().c_str(), (exceptionTaskInfo.GetParaInfoStr() + errMsg).c_str(),
-				groupRankContentInfo.c_str()
-			})
-		);
+    if (!errMsgFlag_.exchange(true)) {
+        if (logKeywordL2 == LOG_KEYWORDS_TIMEOUT) {
+            RPT_INPUT_ERR(true,
+                "EI0002",
+                std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+                std::vector<std::string>({
+                    std::to_string(exceptionTaskInfo.GetRemoteUserRank()),
+                    exceptionTaskInfo.GetBaseInfoStr().c_str(), (exceptionTaskInfo.GetParaInfoStr()).c_str(),
+                    groupRankContentInfo.c_str()})
+            );
+        } else {
+            RPT_INPUT_ERR(true,
+                "EI0012",
+                std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+                std::vector<std::string>({
+                    std::to_string(exceptionTaskInfo.GetRemoteUserRank()),
+                    exceptionTaskInfo.GetBaseInfoStr().c_str(), (exceptionTaskInfo.GetParaInfoStr()).c_str(),
+                    groupRankContentInfo.c_str()
+                })
+            );
+        }
     }
     return true;
 }
@@ -1281,25 +1326,26 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo *exceptionInfo
             PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
             PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
             std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, tag);
-            if (exceptionTaskInfo.taskType == TaskType::TASK_NOTIFY_WAIT) {
-                RPT_INPUT_ERR(true,
-                    "EI0002",
-                    std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
-                    std::vector<std::string>({
-                        std::to_string(exceptionTaskInfo.GetRemoteUserRank()),
-                        exceptionTaskInfo.GetBaseInfoStr().c_str(), (exceptionTaskInfo.GetParaInfoStr() + errMsg).c_str(),
-                        ""})
-                );
-            } else if (exceptionTaskInfo.taskType == TaskType::TASK_SDMA || exceptionTaskInfo.taskType == TaskType::TASK_REDUCE_INLINE) {
-                RPT_INPUT_ERR(true,
-                    "EI0012",
-                    std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
-                    std::vector<std::string>({
-                        std::to_string(exceptionTaskInfo.GetRemoteUserRank()), exceptionTaskInfo.GetBaseInfoStr().c_str(),
-                        (exceptionTaskInfo.GetParaInfoStr() + errMsg).c_str(), groupRankContent.c_str()})
+            if (!errMsgFlag_.exchange(true)) {
+                if (exceptionTaskInfo.taskType == TaskType::TASK_NOTIFY_WAIT) {
+                    RPT_INPUT_ERR(true,
+                        "EI0002",
+                        std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+                        std::vector<std::string>({
+                            std::to_string(exceptionTaskInfo.GetRemoteUserRank()),
+                            exceptionTaskInfo.GetBaseInfoStr().c_str(), (exceptionTaskInfo.GetParaInfoStr()).c_str(),
+                            "none"})
                     );
+                } else if (exceptionTaskInfo.taskType == TaskType::TASK_SDMA || exceptionTaskInfo.taskType == TaskType::TASK_REDUCE_INLINE) {
+                    RPT_INPUT_ERR(true,
+                        "EI0012",
+                        std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+                        std::vector<std::string>({
+                            std::to_string(exceptionTaskInfo.GetRemoteUserRank()), exceptionTaskInfo.GetBaseInfoStr().c_str(),
+                            (exceptionTaskInfo.GetParaInfoStr() + errMsg).c_str(), groupRankContent.c_str()})
+                        );
+                }
             }
-
             lock.lock();
             g_commHadCallbackArray[exceptionInfo->deviceid] = true;
         }
@@ -1589,7 +1635,7 @@ HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, TaskType &task
     return Save(streamID, streamID, taskID, taskType, para);
 }
 
-HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 taskID)
+HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 taskID, const void *descBuf, size_t descBufLen)
 {
     u32 maxDeviceNum;
     CHK_RET(GetMaxDevNum(maxDeviceNum));
@@ -1605,7 +1651,7 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     ProfilerBase::GetSubmittedOpCnt(index);
 
     if (GetExternalInputTaskExceptionSwitch() == 1) {
-        CHK_RET(InsertOpCtxInfo(streamID, taskID, tag, algType, index));
+        CHK_RET(InsertOpCtxInfo(streamID, taskID, tag, algType, index, descBuf, descBufLen));
     } else {
         CHK_RET(InsertOpMap(streamID, taskID, tag, algType, index));
     }
@@ -1614,9 +1660,9 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID)
+HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, const void *descBuf, size_t descBufLen)
 {
-    return Save(streamID, streamID, taskID);
+    return Save(streamID, streamID, taskID, descBuf, descBufLen);
 }
 
 HcclResult TaskExceptionHandler::SaveToLog(const TaskParaHost &paraHost)
@@ -1676,7 +1722,7 @@ HcclResult TaskExceptionHandler::InsertOpMap(u32 &streamID, u32 &taskID, string 
     return HCCL_SUCCESS;
 }
 HcclResult TaskExceptionHandler::InsertOpCtxInfo(u32 &streamID, u32 &taskID, string &tag,
-    AlgType &algType, u32 &index) const
+    AlgType &algType, u32 &index, const void *descBuf, size_t descBufLen) const
 {
     FFTSOpInfo tmpOpInfo;
     char *tmpAddr = new (std::nothrow) char[tag.size() + 1]();
@@ -1687,6 +1733,13 @@ HcclResult TaskExceptionHandler::InsertOpCtxInfo(u32 &streamID, u32 &taskID, str
     tmpOpInfo.taskID = taskID;
     tmpOpInfo.algType = algType;
     tmpOpInfo.index = index;
+    if (descBuf != nullptr && descBufLen > 0) {
+        char *tmpDescBuf = new (std::nothrow) char[descBufLen + 1]();
+        CHK_PTR_NULL(tmpDescBuf);
+        tmpOpInfo.descBuf.reset(tmpDescBuf, default_delete<char[]>());
+        CHK_SAFETY_FUNC_RET(memcpy_sp(tmpOpInfo.descBuf.get(), descBufLen + 1, descBuf, descBufLen));
+        tmpOpInfo.descBufLen = descBufLen;
+    }
     std::shared_ptr<FFTSOpInfo> tmpOpInfoPtr = nullptr;
     EXECEPTION_CATCH((tmpOpInfoPtr = std::make_shared<FFTSOpInfo>()), return HCCL_E_PTR);
     *tmpOpInfoPtr = tmpOpInfo;

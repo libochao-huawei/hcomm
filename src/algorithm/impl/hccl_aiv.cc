@@ -775,6 +775,32 @@ void TaskAivProfilerWrap(const AivOpArgs& opArgs, const AivTopoArgs& topoArgs,
     AlgWrap::GetInstance().TaskAivProfiler(topoArgs.identify, taskParaGeneral);
 }
 
+HcclResult CacheTaskOpInfo(rtStream_t stream, const std::string &identify)
+{
+    aclmdlRI rtModel = nullptr;
+    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
+    aclError aclRet = aclmdlRICaptureGetInfo(stream, &captureStatus, &rtModel);
+    if (aclRet == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
+        HCCL_WARNING("[%s]Stream capture does not support!", __func__);
+        return HCCL_SUCCESS;
+    }
+    CHK_PRT_RET(aclRet != ACL_SUCCESS,
+                HCCL_ERROR("[%s]rtGet stream get capture status fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+
+    aclrtStreamAttrValue value;
+    aclRet = aclrtGetStreamAttribute(stream, ACL_STREAM_ATTR_CACHE_OP_INFO, &value);
+    CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s]stream get attribute fail. return[%d]", __func__, aclRet),
+                HCCL_E_RUNTIME);
+
+    HCCL_INFO("[CacheTaskOpInfo] cacheOpInfoSwitch[%u] captureStatus[%d] identify[%s]", value.cacheOpInfoSwitch, captureStatus, identify.c_str());
+    if (value.cacheOpInfoSwitch == 1 && captureStatus == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE) {
+        aclRet = aclrtCacheLastTaskExtendInfo(identify.c_str(), strlen(identify.c_str()));
+        CHK_PRT_RET(aclRet != ACL_SUCCESS,
+                    HCCL_ERROR("[%s]stream cache task op info fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+    }
+    return HCCL_SUCCESS;
+}
+
 // KernelLaunch内部接口
 HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &topoArgs,
     const AivResourceArgs &resourceArgs, const AivAlgArgs &algArgs, void* args, u32 argsSize, 
@@ -828,6 +854,8 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &
     }
     CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
+
+    CHK_RET(CacheTaskOpInfo(resourceArgs.stream, topoArgs.identify));
 
     TaskAivProfilerWrap(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo,
         (algArgs.argsType != KernelArgsType::ARGS_TYPE_SERVER) ? resourceArgs.buffersOut[0]: resourceArgs.buffersOut[topoArgs.rank]);

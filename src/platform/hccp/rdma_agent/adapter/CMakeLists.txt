@@ -34,7 +34,6 @@ target_compile_definitions(ra_adp PRIVATE
 )
 
 target_include_directories(ra_adp PRIVATE
-    ${BASIC_PATH}/external_depends/inc/log
     ${RDMA_CORE_INCLUDE_DIR}
     ${BASIC_PATH}/inc/network
     ${BASIC_PATH}/inc/private/network
@@ -48,9 +47,6 @@ target_include_directories(ra_adp PRIVATE
     ${BASIC_PATH}/common
     ${TLV_DIR}
     ${BASIC_PATH}/rdma_service/tlv
-    # cann头文件
-    ${ASCEND_CANN_PACKAGE_PATH}/include/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     # rdma头文件
     ${BASIC_PATH}/external_depends/host_lite
 
@@ -82,6 +78,7 @@ target_link_options(ra_adp PRIVATE
 
 #链接动态库
 target_link_libraries(ra_adp PRIVATE
+    $<BUILD_INTERFACE:ascend_hal_headers>
     -Wl,--no-as-needed
     rs_device
     c_sec

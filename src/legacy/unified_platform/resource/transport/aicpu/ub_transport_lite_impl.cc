@@ -37,6 +37,7 @@ UbTransportLiteImpl::UbTransportLiteImpl(
     binaryStream >> theType;
     binaryStream >> notifyNum;
     binaryStream >> bufferNum;
+    binaryStream >> rmtbufferNum;
     binaryStream >> connNum;
 
     std::vector<char> notifyUniqueIds;
@@ -45,11 +46,11 @@ UbTransportLiteImpl::UbTransportLiteImpl(
 
     std::vector<char> rmtNotifyUniqueIds;
     binaryStream >> rmtNotifyUniqueIds;
-    ParseRmtBufferVec(rmtNotifyUniqueIds, rmtNotifyVec, RmaUbBufType::NOTIFY);
+    ParseRmtBufferVec(rmtNotifyUniqueIds, RmaUbBufType::NOTIFY);
 
     std::vector<char> rmtBufferUniqueIds;
     binaryStream >> rmtBufferUniqueIds;
-    ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec, RmaUbBufType::BUFFER);
+    ParseRmtBufferVec(rmtBufferUniqueIds, RmaUbBufType::BUFFER);
 
     std::vector<char> connUniqueIds;
     binaryStream >> connUniqueIds;
@@ -67,6 +68,7 @@ void UbTransportLiteImpl::Init(std::vector<char> &uniqueId)
     binaryStream >> theType;
     binaryStream >> notifyNum;
     binaryStream >> bufferNum;
+    binaryStream >> rmtbufferNum;
     binaryStream >> connNum;
  
     std::vector<char> notifyUniqueIds;
@@ -75,15 +77,15 @@ void UbTransportLiteImpl::Init(std::vector<char> &uniqueId)
  
     std::vector<char> rmtNotifyUniqueIds;
     binaryStream >> rmtNotifyUniqueIds;
-    ParseRmtBufferVec(rmtNotifyUniqueIds, rmtNotifyVec, RmaUbBufType::NOTIFY);
+    ParseRmtBufferVec(rmtNotifyUniqueIds, RmaUbBufType::NOTIFY);
  
     std::vector<char> locBufferUniqueIds;
     binaryStream >> locBufferUniqueIds;
-    ParseLocBufferVec(locBufferUniqueIds, locBufferVec, RmaUbBufType::BUFFER);
+    ParseLocBufferMap(locBufferUniqueIds);
 
     std::vector<char> rmtBufferUniqueIds;
     binaryStream >> rmtBufferUniqueIds;
-    ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec, RmaUbBufType::BUFFER);
+    ParseRmtBufferVec(rmtBufferUniqueIds, RmaUbBufType::BUFFER);
 
     std::vector<char> connUniqueIds;
     binaryStream >> connUniqueIds;
@@ -150,13 +152,13 @@ void UbTransportLiteImpl::ParseLocNotifyVec(std::vector<char> &data)
     }
 }
 
-void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmtUbBufLiteVec &vec, RmaUbBufType rmtType) const
+void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmaUbBufType rmtType)
 {
     u32 num = 0;
     if (rmtType == RmaUbBufType::NOTIFY) {
         num = notifyNum;
     } else {
-        num = bufferNum;
+        num = rmtbufferNum;
     }
 
     if (num == 0) {
@@ -175,26 +177,26 @@ void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmtUbBufLit
         binaryStream >> ubBufLite.tokenId;
         binaryStream >> ubBufLite.tokenValue;
         HCCL_INFO("idx=%u, %s %s", idx, rmtType.Describe().c_str(), ubBufLite.Describe().c_str());
-        vec.push_back(ubBufLite);
+        if (rmtType == RmaUbBufType::NOTIFY) {
+            rmtNotifyVec.push_back(ubBufLite);
+        } else {
+            rmtBufferMap[static_cast<uintptr_t>(ubBufLite.addr)] = ubBufLite;
+            rmtBufferVec.push_back(ubBufLite);
+        }
     }
 }
 
-void UbTransportLiteImpl::ParseLocBufferVec(std::vector<char> &data, LocUbBufLiteVec &vec, RmaUbBufType rmtType) const
+void UbTransportLiteImpl::ParseLocBufferMap(std::vector<char> &data)
 {
-    u32 num = 0;
-    if (rmtType == RmaUbBufType::NOTIFY) {
-        num = notifyNum;
-    } else {
-        num = bufferNum;
-    }
+    u32 num = bufferNum;
  
     if (num == 0) {
-        HCCL_WARNING("UbTransportLiteImpl::ParseLocBufferVec %s num is 0", rmtType.Describe().c_str());
+        HCCL_WARNING("UbTransportLiteImpl::ParseLocBufferMap num is 0");
         return;
     }
  
     u32 rmtBufferSizePerDto = data.size() / num;
-    HCCL_INFO("Parse %s num=%u, sizePerDto=%u", rmtType.Describe().c_str(), num, rmtBufferSizePerDto);
+    HCCL_INFO("ParseLocBufferMap num=%u, sizePerDto=%u", num, rmtBufferSizePerDto);
     BinaryStream binaryStream(data);
  
     for (u32 idx = 0; idx < num; idx++) {
@@ -203,8 +205,8 @@ void UbTransportLiteImpl::ParseLocBufferVec(std::vector<char> &data, LocUbBufLit
         binaryStream >> ubBufLite.size;
         binaryStream >> ubBufLite.tokenId;
         binaryStream >> ubBufLite.tokenValue;
-        HCCL_INFO("idx=%u, %s %s", idx, rmtType.Describe().c_str(), ubBufLite.Describe().c_str());
-        vec.push_back(ubBufLite);
+        HCCL_INFO("idx=%u, LocBuffer %s", idx, ubBufLite.Describe().c_str());
+        locBufferMap[static_cast<uintptr_t>(ubBufLite.addr)] = ubBufLite;
     }
 }
 
@@ -257,11 +259,13 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtNotifySliceLite(u32 index)
 
 RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtBuf)
 {
-    for (auto &it : rmtBufferVec) {
-        Buffer buf(it.addr, it.size);
-        if (buf.Contains(rmtBuf.GetAddr(), rmtBuf.GetSize())) {
-            // ub conn lite 不关心rkey , rkey 设定为0
-            return RmtRmaBufSliceLite(rmtBuf.GetAddr(), rmtBuf.GetSize(), 0, it.tokenId, it.tokenValue);
+    auto it  = rmtBufferMap.upper_bound(rmtBuf.GetAddr());
+
+    while(it != rmtBufferMap.begin()) {
+        --it;
+        Buffer iterBuf(it->second.addr, it->second.size);
+        if (iterBuf.Contains(rmtBuf.GetAddr(), rmtBuf.GetSize())) {
+            return RmtRmaBufSliceLite(rmtBuf.GetAddr(), rmtBuf.GetSize(), 0, it->second.tokenId, it->second.tokenValue);
         }
     }
     MACRO_THROW(InternalException, StringFormat("%s is not in current transport", rmtBuf.Describe().c_str()));
@@ -274,28 +278,30 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const RmaBufferLit
 
 HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite)
 {
-    HCCL_INFO("[UbTransportLiteImpl::%s] start to find addr[0x%llx], size[0x%llx] in locBufferVec, whose size is %zu. ",
-        __func__, addr, size, locBufferVec.size());
-    if (locBufferVec.empty()) {
-        HCCL_ERROR("[UbTransportLiteImpl::%s] locBufferVec is empty.", __func__);
+    HCCL_INFO("[UbTransportLiteImpl::%s] start to find addr[0x%llx], size[0x%llx] in locBufferMap, whose size is %zu. ",
+        __func__, addr, size, locBufferMap.size());
+    if (locBufferMap.empty()) {
+        HCCL_ERROR("[UbTransportLiteImpl::%s] locBufferMap is empty.", __func__);
         return HCCL_E_INTERNAL;
     }
 
     bool isAddrInRange = false;
-    for (auto &it : locBufferVec) {
-        Buffer iterBuf(it.addr, it.size);
+    auto it  = locBufferMap.upper_bound(addr);
+
+    while(it != locBufferMap.begin()) {
+        --it;
+        Buffer iterBuf(it->second.addr, it->second.size);
         if (iterBuf.Contains(addr, size)) {
-            rmaBufferLite = RmaBufferLite(addr, size, it.tokenId, it.tokenValue);
+            rmaBufferLite = RmaBufferLite(addr, size, it->second.tokenId, it->second.tokenValue);
             isAddrInRange = true;
             break;
         }
     }
 
     if (!isAddrInRange) {
-        HCCL_WARNING("[UbTransportLiteImpl::%s] addr[0x%llx], size[0x%llx] not in any range of locBufferVec. The token of the first locBuffer is used.",
-            __func__, addr, size);
-        rmaBufferLite = RmaBufferLite(addr, size, locBufferVec[0].tokenId, locBufferVec[0].tokenValue);
-        return HCCL_SUCCESS;
+        HCCL_WARNING("[UbTransportLiteImpl::%s] addr[0x%llx], size[0x%llx] not in any range of locBufferMap, use the first in map addr[0x%llx] size[0x%llx]",
+            __func__, addr, size, it->second.addr, it->second.size);
+        rmaBufferLite = RmaBufferLite(addr, size, it->second.tokenId, it->second.tokenValue);
     }
 
     return HCCL_SUCCESS;
@@ -536,6 +542,149 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
                             locRmaBufSlicelite.GetSize(), reduceIn, stream, taskId);
 }
 
+// Convert hccl::HcommDataType => Hccl::DataType, hccl::HcommReduceOp => Hccl::ReduceOp
+static const std::unordered_map<HcommReduceOp, Hccl::ReduceOp> mapHcommReduceOpA5 = {
+    {HcommReduceOp::HCOMM_REDUCE_SUM,  Hccl::ReduceOp::SUM},
+    {HcommReduceOp::HCOMM_REDUCE_PROD, Hccl::ReduceOp::PROD},
+    {HcommReduceOp::HCOMM_REDUCE_MAX,  Hccl::ReduceOp::MAX},
+    {HcommReduceOp::HCOMM_REDUCE_MIN,  Hccl::ReduceOp::MIN},
+    {HcommReduceOp::HCOMM_REDUCE_RESERVED, Hccl::ReduceOp::INVALID}
+};
+
+static const std::unordered_map<HcommDataType, Hccl::DataType> mapHcommDataTypeA5 = {
+#ifndef OPEN_BUILD_PROJECT
+    {HcommDataType::HCOMM_DATA_TYPE_HIF8,     Hccl::DataType::HIF8},
+    {HcommDataType::HCOMM_DATA_TYPE_FP8E4M3,  Hccl::DataType::FP8E4M3},
+    {HcommDataType::HCOMM_DATA_TYPE_FP8E5M2,  Hccl::DataType::FP8E5M2},
+    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0,  Hccl::DataType::FP8E8M0},
+#endif
+    {HcommDataType::HCOMM_DATA_TYPE_INT8,     Hccl::DataType::INT8},
+    {HcommDataType::HCOMM_DATA_TYPE_INT16,    Hccl::DataType::INT16},
+    {HcommDataType::HCOMM_DATA_TYPE_INT32,    Hccl::DataType::INT32},
+    {HcommDataType::HCOMM_DATA_TYPE_INT64,    Hccl::DataType::INT64},
+    {HcommDataType::HCOMM_DATA_TYPE_INT128,   Hccl::DataType::INT128},
+    {HcommDataType::HCOMM_DATA_TYPE_UINT8,    Hccl::DataType::UINT8},
+    {HcommDataType::HCOMM_DATA_TYPE_UINT16,   Hccl::DataType::UINT16},
+    {HcommDataType::HCOMM_DATA_TYPE_UINT32,   Hccl::DataType::UINT32},
+    {HcommDataType::HCOMM_DATA_TYPE_UINT64,   Hccl::DataType::UINT64},
+    {HcommDataType::HCOMM_DATA_TYPE_FP16,     Hccl::DataType::FP16},
+    {HcommDataType::HCOMM_DATA_TYPE_FP32,     Hccl::DataType::FP32},
+    {HcommDataType::HCOMM_DATA_TYPE_FP64,     Hccl::DataType::FP64},
+    {HcommDataType::HCOMM_DATA_TYPE_BFP16,    Hccl::DataType::BFP16},
+    {HcommDataType::HCOMM_DATA_TYPE_RESERVED, Hccl::DataType::INVALID}
+};
+
+static HcclResult CheckReduceHcommDataTypeAndHcommReduceOp(HcommDataType dataType, HcommReduceOp reduceOp)
+{
+    auto dataTypeIt = mapHcommDataTypeA5.find(dataType); // reduce类型，dataType不能是RESERVED
+    if (dataTypeIt == mapHcommDataTypeA5.end() || dataTypeIt->first == HcommDataType::HCOMM_DATA_TYPE_RESERVED) {
+        HCCL_ERROR("[%s] type[%u] is not supported.", __func__, dataType);
+        return HCCL_E_PARA;
+    }
+
+    auto reduceOpIt = mapHcommReduceOpA5.find(reduceOp); // reduce类型，reduceOp不能是RESERVED
+    if (reduceOpIt == mapHcommReduceOpA5.end() || reduceOpIt->first == HcommReduceOp::HCOMM_REDUCE_RESERVED) {
+        HCCL_ERROR("[%s] op[%u] is not supported.", __func__, reduceOp);
+        return HCCL_E_PARA;
+    }
+
+    return HCCL_SUCCESS;
+}
+
+constexpr u32 SIZE_TABLE[HCCL_DATA_TYPE_RESERVED] = {sizeof(s8), sizeof(s16), sizeof(s32),
+    2, sizeof(float), sizeof(s64), sizeof(u64), sizeof(u8), sizeof(u16), sizeof(u32),
+    8, 2, 16, 2, 1, 1, 1, 1};
+
+static HcclResult ParasReduceData(const HcommBatchTransferDesc &transferDesc, uint64_t &len, 
+                                    HcommDataType &dataType, HcommReduceOp &reduceOp)
+{
+    len = transferDesc.transferInfo.reduce.count;
+    dataType = transferDesc.transferInfo.reduce.dataType;
+    reduceOp = transferDesc.transferInfo.reduce.reduceOp;
+    auto ret = CheckReduceHcommDataTypeAndHcommReduceOp(dataType, reduceOp);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("FAIL at CheckReduceHcommDataTypeAndHcommReduceOp dataType[%d], reduceOp[%d].", dataType, reduceOp), ret);
+    return HCCL_SUCCESS;
+}
+
+static HcclResult ParseData(const HcommBatchTransferDesc &transferDesc, void* &rmt, void* &loc,
+                        uint64_t &len, Hccl::TransferType &tfType, HcommDataType &dataType, HcommReduceOp &reduceOp)
+{
+    if (transferDesc.transType == HCOMM_TRANSFER_TYPE_WRITE) {
+        rmt = transferDesc.transferInfo.write.dst; // write操作，dst是远端地址
+        loc = transferDesc.transferInfo.write.src; // src是本端地址
+        len = transferDesc.transferInfo.write.len;
+        tfType = Hccl::TransferType::WRITE;
+    } else if (transferDesc.transType == HCOMM_TRANSFER_TYPE_READ) {
+        rmt = transferDesc.transferInfo.read.src; // read操作，src是远端地址
+        loc = transferDesc.transferInfo.read.dst; // dst是本端地址
+        len = transferDesc.transferInfo.read.len;
+        tfType = Hccl::TransferType::READ;
+    } else if (transferDesc.transType == HCOMM_TRANSFER_TYPE_WRITE_REDUCE) {
+        rmt = transferDesc.transferInfo.reduce.dst;
+        loc = transferDesc.transferInfo.reduce.src;
+        tfType = Hccl::TransferType::WRITE_REDUCE;
+        CHK_RET(ParasReduceData(transferDesc, len, dataType, reduceOp));
+    } else if (transferDesc.transType == HCOMM_TRANSFER_TYPE_READ_REDUCE) {
+        rmt = transferDesc.transferInfo.reduce.src;
+        loc = transferDesc.transferInfo.reduce.dst;
+        tfType = Hccl::TransferType::READ_REDUCE;
+        CHK_RET(ParasReduceData(transferDesc, len, dataType, reduceOp));
+    } else {
+        HCCL_ERROR("[%s] unsupported transType[%d]", __func__, transferDesc.transType);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    if (reduceOp != HcommReduceOp::HCOMM_REDUCE_RESERVED) { // 对于规约类型, size = count * sizeof(datatype)
+        len = len * SIZE_TABLE[dataType];
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbTransportLiteImpl::ExecuteBatchTransfer(StreamLite *streamLitePtr,
+    const HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum)
+{
+    std::vector<Hccl::RmaBufferLite> locSlices;
+    std::vector<Hccl::Buffer> rmtSlices;
+    std::vector<Hccl::BaseTransportLiteImpl::TransferOp> transferOps;
+
+    locSlices.reserve(transferDescNum);
+    rmtSlices.reserve(transferDescNum);
+    transferOps.reserve(transferDescNum);
+
+    for (uint32_t i = 0; i < transferDescNum; i++) {
+        Hccl::RmaBufferLite locRmaBuf;
+        void *rmt = nullptr;
+        void *loc = nullptr;
+        uint64_t len = 0;
+        Hccl::TransferType tfType;
+        HcommDataType dataType{HcommDataType::HCOMM_DATA_TYPE_RESERVED};
+        HcommReduceOp reduceOp{HcommReduceOp::HCOMM_REDUCE_RESERVED};
+        HcclResult ret = ParseData(transferDescs[i], rmt, loc, len, tfType, dataType, reduceOp);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] FAIL at ParseData for index %u.",  __func__, i), ret);
+        CHK_PTR_NULL(rmt);
+        CHK_PTR_NULL(loc);
+
+        ret = BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(loc), len, locRmaBuf);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite for index %u. rmt[0x%llx], loc[0x%llx], len[0x%llx], tfType[%u], dataType[%d], reduceOp[%d].",
+            __func__, i, rmt, loc, len, tfType, dataType, reduceOp), ret);
+        locSlices.push_back(locRmaBuf);
+
+        const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(rmt), len};
+        rmtSlices.push_back(rmtBuf);
+
+        Hccl::ReduceIn reduceIn{mapHcommDataTypeA5.at(dataType), mapHcommReduceOpA5.at(reduceOp)};
+        transferOps.push_back(Hccl::BaseTransportLiteImpl::TransferOp{tfType, reduceIn});
+
+        HCCL_DEBUG("[%s] Prepared transfer op for index %u. rmt[0x%llx], loc[0x%llx], len[0x%llx], tfType[%u], dataType[%d], reduceOp[%d].",
+            __func__, i, rmt, loc, len, tfType, dataType, reduceOp);
+    }
+    EXECEPTION_CATCH(BatchTransfer(locSlices, rmtSlices, transferOps, *streamLitePtr), return HCCL_E_INTERNAL);
+    return HCCL_SUCCESS;
+}
+
+constexpr int wqeDepth = 8192; // WQE队列深度
 void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
     const std::vector<BaseTransportLiteImpl::TransferOp> &transferOp, const StreamLite &stream)
 {
@@ -545,32 +694,29 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     SqeConfigLite cfg;
     SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
-
     u32 insNum = loc.size();
     for (u32 i = 0; i < insNum; i++) {
-        cfg.cqeEn     = (i == insNum - 1) ? true : false; // 返回最后一个sqe的cqe
-        cfg.placeOdr  = UB_RELAX_ORDER;
-        cfg.compOrder = UB_NO_COMPLETION;
+        cfg.cqeEn     = (i == insNum - 1) ? true : false;                         // 返回最后一个sqe的cqe
+        cfg.placeOdr  = (i == insNum - 1) ? UB_STRONG_ORDER : UB_RELAX_ORDER;     // 最后一个要求保序
+        cfg.compOrder = (i == insNum - 1) ? UB_COMPLETION : UB_NO_COMPLETION;     // 最后一个要求保序
 
         auto localBuffer  = GetRmaBufSlicelite(loc[i]);
         auto remoteBuffer = GetRmtRmaBufSliceLite(rmt[i]);
-
         if (transferOp[i].transType == TransferType::WRITE) {
-            if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
-                connVec[0]->Write(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
-            } else {
-                connVec[0]->WriteReduce(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
-                    stream, remoteBuffer, cfg, connOut);
-            }
+            connVec[0]->Write(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty 
+        } else if (transferOp[i].transType == TransferType::WRITE_REDUCE) { // write reduce
+            connVec[0]->WriteReduce(transferOp[i].reduceIn.dataType, transferOp[i].reduceIn.reduceOp, localBuffer,
+                        stream, remoteBuffer, cfg, connOut);
         } else if (transferOp[i].transType == TransferType::READ) {
-            if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
-                connVec[0]->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
-            } else {
-                connVec[0]->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
-            }
+            connVec[0]->Read(localBuffer, remoteBuffer, cfg, stream, connOut); // 当前只有一个connection，对应一个jetty
+        } else if (transferOp[i].transType == TransferType::READ_REDUCE) { // read reduce
+            connVec[0]->ReadReduce(transferOp[i].reduceIn, localBuffer, remoteBuffer, stream, cfg, connOut);
+        }
+
+        if ( (i + 1) % wqeDepth == 0 || (i == insNum - 1)) { // 最后一个wqe或者达到队列深度，敲doorbell
+            BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
         }
     }
-    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
     u64 totalSize = 0;
     for (u32 i = 0; i < insNum; i++) {
@@ -713,8 +859,9 @@ HcclResult UbTransportLiteImpl::Clean()
 {
     locNotifyVec.clear();
     rmtNotifyVec.clear();
-    locBufferVec.clear();
+    locBufferMap.clear();
     rmtBufferVec.clear();
+    rmtBufferMap.clear();
 
     // 清理connVec，connLite由UbConnLiteMgr管理
     for (auto &it : connUniqueIdVec) {

@@ -40,8 +40,10 @@ public:
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) override;
+    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
+    HcclResult ProcessStatus();
 
     std::string Describe() const;
 
@@ -105,7 +107,7 @@ private:
     std::vector<Hccl::QpInfo> GetQpInfos() const; // in Connection
 
     HcclResult IbvPostRecv() const;
-    HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr,
+    HcclResult PrepareNotifyWrResource(uint32_t qpIdx, const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr,
                                        Hccl::TaskParam &taskParam) const;
     HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
                                       struct ibv_send_wr &writeWithNotifyWr, Hccl::TaskParam &taskParam) const;
@@ -113,7 +115,7 @@ private:
     HcclResult PostRdmaOp(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len);
     void BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len,
                      size_t localIdx, size_t rmtIdx, struct ibv_send_wr &wr, struct ibv_sge &sg) const;
-    HcclResult PostAndCheckSend(const char *caller, struct ibv_send_wr &wr);
+    HcclResult PostAndCheckSend(struct ibv_qp *qp, const uint32_t qpIdx, const char *caller, struct ibv_send_wr &wr);
     HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult ReportWcStatusError(enum ibv_wc_status status);
@@ -133,6 +135,7 @@ private:
     EndpointDesc remoteEp_;
     uint32_t notifyNum_{0};
     Hccl::Socket *socket_{nullptr};
+    const Hccl::SocketConfig* socketConfig_{nullptr};
     RdmaHandle rdmaHandle_{nullptr};
 
     std::vector<std::unique_ptr<HostRdmaConnection>> connections_{};
@@ -145,15 +148,21 @@ private:
     RdmaStatus rdmaStatus_{RdmaStatus::INIT};
     std::vector<uint32_t> remoteDpuNotifyIds_;
     std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
-    ExchangeRdmaConnDto rmtConnDto_;
+    std::vector<ExchangeRdmaConnDto> rmtConnDtos_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
-    uint32_t wqeNum_{0};
-    std::unique_ptr<SocketMgr> socketMgr_{nullptr};
+    std::vector<int> wqeNums_;
     bool fenceFlag_{false};
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
     std::unique_ptr<HcclMem[]> remoteMemsPtr_;
 
+    // GetUserRemoteMem 缓存
+    bool userRemoteMemCacheValid_{false};
+    std::vector<CommMem> userRemoteMems_;
+    std::vector<std::string> tagCopies_;
+    std::vector<char*> tagPointers_;
+
     uint64_t maxMsgSize_{0};
+    uint32_t lbMax_{0};             // 多QP负载均衡
 
     std::function<HcclResult(const Hccl::TaskParam&, u64)> dfxCallback_;
 
@@ -173,6 +182,8 @@ private:
     uint64_t exchangeDataTotalSize_;
     std::vector<uint8_t> exchangeDataForSend_;
     std::vector<uint8_t> exchangeDataForRecv_;
+
+    uint32_t devicePhyId_{};
 };
 
 } // namespace hcomm

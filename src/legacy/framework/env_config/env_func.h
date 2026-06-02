@@ -62,9 +62,10 @@ struct SocketIfName {
 struct DfsConfig {
     bool taskExceptionEnable{true};
     bool clusterHeartBeatEnable{true};
+    int32_t rankConsistentState{0}; // -1:off 0:first 1:on
     DfsConfig() = default;
-    DfsConfig(bool taskException, bool clusterHeartBeatEnable)
-        : taskExceptionEnable(taskException), clusterHeartBeatEnable(clusterHeartBeatEnable){};
+    DfsConfig(bool taskException, bool clusterHeartBeatEnable, int32_t consistentState)
+        : taskExceptionEnable(taskException), clusterHeartBeatEnable(clusterHeartBeatEnable), rankConsistentState(consistentState){};
 };
 
 enum class NpuProtoType {
@@ -222,6 +223,8 @@ extern void SetRealPath(string &filePath);
 extern void ProcExecTimeOut(u32 &timeOut);
 
 extern void CheckRDMATrafficClass(const u32 &rdmaTrafficClass);
+
+extern void ConvertUnitQpThreshold(u32 &multiQpThreshold);
 
 } // namespace Hccl
 

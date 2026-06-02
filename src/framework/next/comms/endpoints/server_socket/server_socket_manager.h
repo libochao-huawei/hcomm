@@ -37,18 +37,18 @@ public:
     
     ~ServerSocketManager() {};
 
-    HcclResult ServerSocketStartListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t devPhyId, const uint32_t port);
+    HcclResult ServerSocketStartListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t devPhyId, uint32_t *port);
     HcclResult ServerSocketStopListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t port);
 
 private:
     ServerSocketManager()
     {
-        // Ensure that (Host)SocketHandleManager desctruct after the destructionon of device/host ServerSocketMap_.
+        // Ensure that (Host)SocketHandleManager destruct after the destructionon of device/host ServerSocketMap_.
         (void)Hccl::SocketHandleManager::GetInstance();
         (void)Hccl::HostSocketHandleManager::GetInstance();
     };
-    HcclResult DeviceSocketListen(const Hccl::PortData& localPort, const uint32_t devPhyId, const uint32_t port);
-    HcclResult HostSocketListen(const Hccl::PortData& localPort, const uint32_t devPhyId, const uint32_t port);
+    HcclResult DeviceSocketListen(const Hccl::PortData& localPort, const uint32_t devPhyId, uint32_t *port);
+    HcclResult HostSocketListen(const Hccl::PortData& localPort, const uint32_t devPhyId, uint32_t *port);
     HcclResult DeviceSocketStopListen(const Hccl::PortData& localPort, const uint32_t port);
     HcclResult HostSocketStopListen(const Hccl::PortData& localPort, const uint32_t port);
 

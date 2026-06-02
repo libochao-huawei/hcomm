@@ -117,6 +117,7 @@ constexpr uint32_t HCCL_QOS_LEVEL_1_LIMIT = 2;
 constexpr uint32_t HCCL_QOS_LEVEL_2_LIMIT = 4;
 constexpr uint32_t HCCL_QOS_LEVEL_3_LIMIT = 7;
 
+constexpr uint32_t HCCL_EXCHANGE_INFO_LEN = 4096;  // HCCL一致性校验交换信息最大长度
 /* error message相关 */
     /* EI0004 */
     const std::string RANKTABLE_PARSE_ERROR_REASON =
@@ -140,7 +141,7 @@ constexpr uint32_t HCCL_QOS_LEVEL_3_LIMIT = 7;
         "You can check the peer dependency relationship of link establishment and the operator information in the plog logs "\
         "to locate and analyze the fault. (You need to enable log recording using HCCL_ENTRY_LOG_ENABLE.) "\
         "For details about the troubleshooting method, search for the keyword \"EI0006\" on "\
-        "https://www.hiascend.com/en/dovument/.";
+        "https://www.hiascend.com/en/document/.";
 
 /* 对关键报错日志提供多级检索关键字 */
 /* 一级检索关键字 */

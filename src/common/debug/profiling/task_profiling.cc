@@ -223,7 +223,7 @@ HcclResult TaskProfiling::Run(const TaskData &taskData, bool isCapture)
 {
     HCCLReportData hcclReportData{};
     auto &profilingManager = hccl::ProfilingManager::Instance();
-    HcclResult is_subscribe = profilingManager.GetAddtionInfoState();
+    HcclResult is_subscribe = profilingManager.GetAdditionInfoState();
     if (is_subscribe && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
     !isCapture) {
         return HCCL_SUCCESS;
@@ -316,7 +316,7 @@ HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID, TaskType &taskType, c
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID)
+HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID, const void *descBuf, size_t descBufLen)
 {
     return HCCL_SUCCESS;
 }
@@ -325,7 +325,7 @@ HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID, co
 {   
     HCCLReportData hcclReportData{};
     auto &profilingManager = hccl::ProfilingManager::Instance();
-    HcclResult is_subscribe = profilingManager.GetAddtionInfoState();
+    HcclResult is_subscribe = profilingManager.GetAdditionInfoState();
     bool isCapture = (captureStreamID != streamID);
     if (is_subscribe && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         !isCapture) {
@@ -379,7 +379,7 @@ HcclResult TaskProfiling::Save(u32 streamID, u32 taskID, const TaskParaAiv &para
     return Save(streamID, streamID, taskID, paraAiv);
 }
 
-HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID)
+HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID, const void *descBuf, size_t descBufLen)
 {
     return HCCL_SUCCESS;
 }
@@ -387,7 +387,7 @@ HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID)
 HcclResult TaskProfiling::SaveToLog(const TaskParaHost &paraHost)
 {
     auto &profilingManager = hccl::ProfilingManager::Instance();
-    HcclResult is_subscribe = profilingManager.GetAddtionInfoState();
+    HcclResult is_subscribe = profilingManager.GetAdditionInfoState();
     if (is_subscribe) {
         return HCCL_SUCCESS;
     }

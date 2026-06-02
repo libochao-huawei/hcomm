@@ -152,7 +152,7 @@ namespace hccl
 
         void SetHDCModeInfo(
             std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &rankDevicePhyIdNicInfoMap,
-            std::vector<u32> &ranksPort, bool isSetHDCModeInfo, bool isUseRankPort);
+            std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort, bool isSetHDCModeInfo, bool isUseRankPort);
 
     private:
         void SetAlgoAttr(HcclAlgoAttr &algoAttr);
@@ -265,6 +265,7 @@ namespace hccl
         std::vector<u32> ranksPort_;
         bool isSetHDCModeInfo_{false};
         bool isUseRankPort_{false};
+        std::vector<u32> vnicRanksPort_;
         bool isSupportRdmaLite_{false};    // 是否支持rdma lite
         bool isSupportHccsAndSio_{false};  // 是否支持hccs sio并发
 

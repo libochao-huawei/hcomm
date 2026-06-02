@@ -124,4 +124,10 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions *op
 aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBlocks, aclrtStream stream, aclrtLaunchKernelCfg *cfg,
     void *hostArgs, size_t argsSize, aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum);
 
+aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus *captureStatus, aclmdlRI *rtModel);
+
+aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType, aclrtStreamAttrValue *value);
+
+aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen);
+
 #endif

@@ -52,7 +52,6 @@ set(EXCLUDE_FREAMEWORK_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/framework/communicator/hccl_comm_device.cc"
     "${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt/dev/dev_coll_comm_c_adpt.cc"
     "${HCCL_CODE_ROOT}/src/framework/device/framework/zero_copy_address_mgr.cc"
-    "${HCCL_CODE_ROOT}/src/framework/common/src/launch_aicpu.cc"
     "${HCCL_CODE_ROOT}/src/framework/op_base/src/op_base_device.cc"
     "${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/diag/aicpu/hcomm_diag_adapt_aicpu.cc"
     )
@@ -99,6 +98,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/roce_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
@@ -106,6 +106,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/ipc_remote_notify.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buffer_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/rma_conn_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/rdma_conn_lite_v2.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rmt_rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
@@ -192,6 +193,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/
     ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/
+
     ${HCCL_CODE_ROOT}/src/platform/
     ${HCCL_CODE_ROOT}/src/platform/common/
     ${HCCL_CODE_ROOT}/src/platform/common/unique
@@ -312,9 +315,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/urma/
 
-    ${THIRD_PARTY_NLOHMANN_PATH}
-    ${CANN_3RD_LIB_PATH}/json/include/
-    ${CANN_3RD_LIB_PATH}/gtest/include/
+    ${JSON_INCLUDE_DIR}
 
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu
@@ -322,6 +323,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/dpu_notify
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints
@@ -358,7 +360,10 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/service/collective
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator
     ${HCCL_CODE_ROOT}/src/legacy/interface
+
+    # ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
     #next
@@ -449,6 +454,7 @@ target_compile_options(hccl_llt   PRIVATE
 
 target_link_libraries(hccl_llt  PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    -Wl,--allow-multiple-definition
     -lrt
     -ldl
 )

@@ -48,17 +48,12 @@ target_include_directories(hccp_utest PRIVATE
     ${RDMA_CORE_INCLUDE_DIR}
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/providers/hns
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
-    ${CANN_3RD_LIB_PATH}/json/include/
-    ${CANN_3RD_LIB_PATH}/gtest/include/
-    ${CANN_3RD_LIB_PATH}/mockcpp/include/
-    ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
-    ${CANN_3RD_LIB_PATH}/boost/
 )
 
 target_compile_options(hccp_utest PRIVATE
     -U_FORTIFY_SOURCE
     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
     -Wall
     -Wextra
     -Werror

@@ -19,6 +19,7 @@
 #include "stream.h"
 #include "task.h"
 #include "mc2_type.h"
+#include "hcomm/hcomm_res_entity_defs.h"
 
 namespace Hccl {
 
@@ -40,6 +41,9 @@ public:
     void SetCqInfo(HcclAiRMACQ &cq);
  	 
  	void SetWqInfo(HcclAiRMAWQ &wq);
+    
+    void SetCqContextInfo(CqContext &cq);
+    void SetSqContextInfo(SqContext &sq);
 
     unique_ptr<BaseTask> PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
                                      const SqeConfig &config) override;
@@ -85,10 +89,12 @@ public:
 
 protected:
     TpProtocol     tpProtocol{TpProtocol::INVALID};
+    void           GetTimeOut();
+    u8             jettyTimeOut{8};
 
 private:
     MAKE_ENUM(UbConnStatus,
-        INIT, TP_INFO_GETTING, JETTY_CREATED,
+        INIT, TP_INFO_GETTING, JETTY_CREATING, JETTY_CREATED,
         JETTY_IMPORTING,
         READY,
         CONN_INVALID);
@@ -140,6 +146,8 @@ private:
 
     CqCreateInfo cqInfo_{0};
 
+    bool isdevUsed{false};
+
     bool CheckRequestResult();
     void ThrowAbnormalStatus(std::string funcName);
 
@@ -166,9 +174,11 @@ private:
     
     std::unique_ptr<BaseTask> ConstructTaskUbSend(const HrtRaUbSendWrRespParam &sendWrResp, const SqeConfig &config);
     void                      UpdateCiVal(u32 ci);
-    HcclResult                SetTpAttrAsync();
-    HcclResult                GetTpAttrAsync();
+    HcclResult                SetTpAttrAsync(uint32_t attrBitmapCurrent, struct TpAttr& tpAttrCurrent);
+    HcclResult                GetTpAttrAsync(uint32_t& attrBitmap, struct TpAttr& tpAttr);
     HcclResult                Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U]);
+    bool                      IpArrayCompare(uint8_t ipArrLeft[16U], uint8_t ipArrRight[16U]);
+    HcclResult                CalcTotalTimeout(uint32_t &outTotalTimeoutMs);
 };
 
 class DevUbTpConnection : public DevUbConnection {

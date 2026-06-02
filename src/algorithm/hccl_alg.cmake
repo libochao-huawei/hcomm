@@ -23,7 +23,7 @@ target_compile_options(hccl_alg PRIVATE
     -fno-strict-aliasing
     -pipe
     -O3
-    -std=c++14
+    -std=c++17
     -fstack-protector-all
     $<$<CONFIG:Debug>:-g>
 )
@@ -107,32 +107,12 @@ if(BUILD_OPEN_PROJECT)
         LOG_CPP
     )
 
-    target_include_directories(hccl_alg PRIVATE
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/external/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/platform/
-        # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
-        # acl头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
-        # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-        # 包间接口
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-
-        ${THIRD_PARTY_NLOHMANN_PATH}
-    )
-
     target_link_libraries(hccl_alg PRIVATE
+        $<BUILD_INTERFACE:acl_rt_headers>
+        $<BUILD_INTERFACE:ascend_hal_headers>
+        $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:mmpa_headers>
+        $<BUILD_INTERFACE:runtime_headers>
         -Wl,--no-as-needed
         c_sec
         unified_dlog
@@ -146,7 +126,7 @@ else()
         ${TOP_DIR}/ace/npuruntime/inc
         ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/metadef/inc/external/
-	      ${TOP_DIR}/metadef/pkg_inc
+	    ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/ace/npuruntime/inc/runtime
         ${TOP_DIR}/open_source/json/include
         ${TOP_DIR}/runtime/include/external

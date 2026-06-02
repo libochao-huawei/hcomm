@@ -140,7 +140,7 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     auto myRankId = collComm->GetMyRankId();
     CHK_PTR_NULL(rankGraph);
     CHK_RET(rankGraph->GetDevicePort(remoteRank, &rmtPort));
-    if (rmtPort > Hccl::MAX_VALUE_DEVICEPORT) {
+    if (rmtPort > Hccl::MAX_VALUE_TCPPORT) {
         HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, rmtPort, remoteRank);
         return HCCL_E_PARA;
     }
@@ -160,7 +160,7 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
         // 查询localRankId对应的devPort
         CHK_RET(rankGraph->GetDevicePort(myRankId, &listenPort));
         socketDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER;
-        if (listenPort > Hccl::MAX_VALUE_DEVICEPORT) {
+        if (listenPort > Hccl::MAX_VALUE_TCPPORT) {
             HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, myRankId);
             return HCCL_E_PARA;
         }
@@ -261,7 +261,7 @@ void ClusterMonitor::CreateHBLinksAsync()
     if (clusterLinkContext_.empty()) {
         return;
     }
-    linkRunningStatus_ = true;
+    linkThreadRunning_ = true;
     std::queue<std::tuple<std::string, ClusterUIDType, ClusterMonitorSocketCtx>> connInfoQueue;
     for (auto &pair : clusterLinkContext_) {
         const std::string &commId = pair.first;
@@ -326,7 +326,7 @@ void ClusterMonitor::CreateLinkWithRemotePonit(
 
     auto createLinkTimeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
-    while (linkRunningStatus_.load()) {
+    while (linkThreadRunning_.load()) {
         if ((std::chrono::steady_clock::now() - startTime) >= createLinkTimeout) {
             HCCL_RUN_WARNING("establish rank[%s] to rank[%s] connection failed. Reason: link timeout,"
                             "timeout[%llds], the HCCL_CONNECT_TIMEOUT may be insufficient. commId[%s].",
@@ -823,9 +823,9 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t 
     CHK_PRT_CONT( stringRet < 0, HCCL_ERROR("[ClusterMonitor][GetCqeErrInfoFromTaskException]snprintf error when log cqe error info") );  
     
     if (now == nullptr) {
-        HCCL_ERROR("[%s][%s][%s]localtime fail, cqe error status[%u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), cqeErrInfo_.cqeStatus, errorLinkLogBuffer);
+        HCCL_ERROR("[%s][%s][%s]localtime fail, cqe error status[%u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), cqeErrInfo_.cqeStatus, errorLinkLogBuffer);
     } else {
-        HCCL_ERROR("[%s][%s][%s]cqe error status[%u], time:[%04u-%02d-%02d %02d:%0d:%02d.%06u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), 
+        HCCL_ERROR("[%s][%s][%s]cqe error status[%u], time:[%04u-%02d-%02d %02d:%0d:%02d.%06u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), 
         cqeErrInfo_.cqeStatus, now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour,
         now->tm_min, now->tm_sec, microseconds, errorLinkLogBuffer);
     }   

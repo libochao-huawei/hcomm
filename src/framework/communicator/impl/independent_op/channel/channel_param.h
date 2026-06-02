@@ -16,13 +16,14 @@
 #include "hccl/hccl_res.h"
 #include "aicpu_operator_pub.h"
 
+constexpr u64 P2P_NOTIFY_MAX_NUM = 66;
 // 独立算子同步资源
 struct HcclChannelP2p {
     HcclMem* remoteUserMem = nullptr;                   // 远端用户内存
     HcclMem remoteHcclbuffer;                           // 远端用户cclbuffer
     u32 remoteUserMemCount = 0;                         // 远端用户内存数量
-    HcclSignalInfo localIpcSignal[LINK_P2P_MAX_NUM];    // localnotify
-    HcclSignalInfo remoteIpcSignal[LINK_P2P_MAX_NUM];
+    HcclSignalInfo localIpcSignal[P2P_NOTIFY_MAX_NUM];    // localnotify
+    HcclSignalInfo remoteIpcSignal[P2P_NOTIFY_MAX_NUM];
     hccl::TransportAttr transportAttr;
     u32 qos;
 };
@@ -68,6 +69,10 @@ struct HcclIndOpChannelRemoteResV3 {
     HcclIndOpChannelRemoteResV2* remoteResV2 = nullptr; // 不同remoteRank建链的资源
 };
 
+struct DevAicpuChannelConfig {
+    // 如要新增配置类字段，在此处添加
+};
+
 struct HcclChannelUrmaRes {
     char  hcomId[HCOMID_MAX_LENGTH]; // 通信域ID 最大长度待修改
     void* channelList;               // 反序列后返回给host侧的device侧handle地址
@@ -79,6 +84,7 @@ struct HcclChannelUrmaRes {
     u32*  remoteRankId;              // 记录每个channel的对端rank
     s32   deviceLogicId{0};          // 基础通信使用
     u32   deviceType{0};             // 基础通信使用
+    DevAicpuChannelConfig channelConfig; // 收编channel配置类变量
 };
 
 struct HcommRoceChannelRes {

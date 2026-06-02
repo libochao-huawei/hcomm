@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16.0)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(HCOMM_ALG_TC_ROOT    ${CMAKE_CURRENT_SOURCE_DIR}/testcase)
@@ -22,8 +22,7 @@ set(HCOMM_CODE_ALGORITHM ${HCOMM_CODE_ROOT}/src/algorithm)
 set(HCOMM_CODE_FRAMEWORK ${HCOMM_CODE_ROOT}/src/framework)
 set(HCOMM_CODE_LEGACY    ${HCOMM_CODE_ROOT}/src/legacy)
 
-set(THIRD_PARTY_PATH   ${CANN_3RD_LIB_PATH})
-set(PROTOC_PROGRAM     ${THIRD_PARTY_PATH}/protobuf/bin/protoc)
+set(PROTOC_PROGRAM     ${HOST_PROTOC_PATH}/protoc)
 
 # Include List
 set(ASCEND_CANN_INCLUDE_LIST
@@ -63,6 +62,7 @@ set(HCOMM_PUBLIC_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/pub_inc/inner
     ${HCOMM_CODE_ROOT}/pub_inc
     ${HCOMM_CODE_ROOT}/pub_inc/hccl
+    ${HCOMM_CODE_ROOT}/pkg_inc
     ${HCOMM_CODE_ROOT}/pkg_inc/hccl
 )
 

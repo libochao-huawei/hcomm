@@ -14,17 +14,20 @@
 #include <vector>
 #include "exception_handler.h"
 #include "channel_param.h"
+#include "channel.h"
 #include "aicpu_ts_urma_channel.h"
 #include "aicpu_ts_uboe_channel.h"
+#include "aicpu_ts_roce_channel_v2.h"
 #include "launch_aicpu.h"
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
 #include "aicpu_ts_p2p_channel.h"
+#include "aiv_urma_channel.h"
 #include "mem_device_pub.h"
 
 namespace hcomm {
 
-std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> ChannelProcess::g_ChannelMap;
+std::unordered_map<ChannelHandle, std::shared_ptr<Channel>> ChannelProcess::g_ChannelMap;
 std::unordered_map<DeviceChannelKey, ChannelHandle, DeviceChannelKeyHash> ChannelProcess::g_ChannelD2HMap;
 std::mutex ChannelProcess::g_ChannelMapMtx;
 
@@ -34,38 +37,41 @@ HcclResult ChannelProcess::WithChannelByHandleLocked(ChannelHandle inHandle, Fun
     int32_t deviceId = 0;
     CHK_RET(hrtGetDevice(&deviceId));
 
-    // 单锁：该锁同时保护 g_ChannelD2HMap 和 g_ChannelMap
-    std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
+    std::shared_ptr<Channel> channelPtr = nullptr;
+    {
+        // 单锁：该锁同时保护 g_ChannelD2HMap 和 g_ChannelMap
+        std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
 
-    // 1) D2H 映射
-    DeviceChannelKey key{deviceId, inHandle};
-    auto itH = g_ChannelD2HMap.find(key);
-    if (itH == g_ChannelD2HMap.end()) {
-        HCCL_ERROR("[%s] handle not found in g_ChannelD2HMap, deviceId[%d], inHandle[0x%llx].", __func__, deviceId, inHandle);
-        return HcclResult::HCCL_E_NOT_FOUND;
+        // 1) D2H 映射
+        DeviceChannelKey key{deviceId, inHandle};
+        auto itH = g_ChannelD2HMap.find(key);
+        if (itH == g_ChannelD2HMap.end()) {
+            HCCL_ERROR("[%s] handle not found in g_ChannelD2HMap, deviceId[%d], inHandle[0x%llx].", __func__, deviceId, inHandle);
+            return HcclResult::HCCL_E_NOT_FOUND;
+        }
+        const ChannelHandle mappedHandle = itH->second;
+
+        // 2) ChannelMap 查找
+        auto itC = g_ChannelMap.find(mappedHandle);
+        if (itC == g_ChannelMap.end() || !itC->second) {
+            HCCL_ERROR("[%s] channel not found in g_ChannelMap, deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx].",
+                __func__,
+                deviceId,
+                inHandle,
+                mappedHandle);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+
+        channelPtr = itC->second;
+        if (channelPtr == nullptr) {
+            HCCL_ERROR(
+                "[%s] null channel pointer, deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx].", __func__, deviceId, inHandle, mappedHandle);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
     }
-    const ChannelHandle mappedHandle = itH->second;
 
-    // 2) ChannelMap 查找
-    auto itC = g_ChannelMap.find(mappedHandle);
-    if (itC == g_ChannelMap.end() || !itC->second) {
-        HCCL_ERROR("[%s] channel not found in g_ChannelMap, deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx].",
-            __func__,
-            deviceId,
-            inHandle,
-            mappedHandle);
-        return HcclResult::HCCL_E_INTERNAL;
-    }
-
-    Channel *ch = itC->second.get();
-    if (ch == nullptr) {
-        HCCL_ERROR(
-            "[%s] null channel pointer, deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx].", __func__, deviceId, inHandle, mappedHandle);
-        return HcclResult::HCCL_E_INTERNAL;
-    }
-
-    // 3) 锁内执行用户逻辑（注意：func 内不要做长耗时/阻塞操作）
-    return std::forward<Func>(func)(*ch);
+    // 3) 执行用户逻辑
+    return std::forward<Func>(func)(*channelPtr);
 }
 
 HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, CommEngine engine,
@@ -77,7 +83,7 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
     CHK_RET(hrtGetDevice(&deviceId));
 
     for (uint32_t i = 0; i < channelNum; ++i) {
-        std::unique_ptr<Channel> tmpPtr = nullptr;
+        std::shared_ptr<Channel> tmpPtr = nullptr;
         CHK_RET_UNAVAIL(Channel::CreateChannel(endpointHandle, engine, channelDescs[i], tmpPtr));
         CHK_SMART_PTR_NULL(tmpPtr);
 
@@ -359,6 +365,9 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
         } else if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_UBOE) {
             auto aicpuTsUboeChannel = reinterpret_cast<AicpuTsUboeChannel *>(hostChannelHandles[index]);
             CHK_PRT(aicpuTsUboeChannel->H2DResPack(hostPackBuffers[index]));
+        } else if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_ROCE) {
+            auto aicpuTsRoceChannelV2 = reinterpret_cast<AicpuTsRoceChannelV2 *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsRoceChannelV2->H2DResPack(hostPackBuffers[index]));
         } else {
             auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
             CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
@@ -561,11 +570,54 @@ HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHa
             return HCCL_SUCCESS;
         }
         CHK_RET(LaunchChannelKernel(userChannels, targetChannels, channelDescs, channelNum, binHandle));
+    } else if (engine == COMM_ENGINE_AIV) {
+        CHK_RET(SaveAivChannels(targetChannels, userChannels, channelDescs, channelNum));
     } else {
         HCCL_INFO("[%s] engine[%d] no need to KernelLaunch.", __func__, engine);
         for (uint32_t i = 0; i < channelNum; i++) {
             userChannels[i] = targetChannels[i];
         }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult ChannelProcess::SaveAivChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels,
+    HcommChannelDesc *channelDescs, uint32_t channelNum)
+{
+    bool needD2HMap = false;
+    for (uint32_t i = 0; i < channelNum; i++) {
+        CommProtocol protocol = channelDescs[i].remoteEndpoint.protocol;
+
+        if (protocol == COMM_PROTOCOL_ROCE) {
+            needD2HMap = true;
+            auto *channel = reinterpret_cast<AicpuTsRoceChannelV2 *>(targetChannels[i]);
+            CHK_PTR_NULL(channel);
+            CHK_RET(channel->BuildAndGetDevChannelEntity(&userChannels[i]));
+            HCCL_INFO("[%s] channel[%u] build dev entity success, devEntityPtr[%p]",
+                __func__, i, reinterpret_cast<void *>(static_cast<uintptr_t>(userChannels[i])));
+        } else if (protocol == COMM_PROTOCOL_UBC_CTP || protocol == COMM_PROTOCOL_UBC_TP) {
+            needD2HMap = true;
+            auto *channel = reinterpret_cast<AivUrmaChannel *>(targetChannels[i]);
+            CHK_PTR_NULL(channel);
+
+            void *devChannelEntity = nullptr;
+            HcclResult ret = channel->BuildChannelEntityToDevice(&devChannelEntity);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] channel[%u] BuildChannelEntityToDevice failed, ret[%d]", __func__, i, ret), ret);
+            CHK_PTR_NULL(devChannelEntity);
+            userChannels[i] = static_cast<ChannelHandle>(reinterpret_cast<uintptr_t>(devChannelEntity));
+            HCCL_INFO("[%s] channel[%u] build dev entity success, devEntityPtr[%p]",
+                __func__, i, reinterpret_cast<void *>(static_cast<uintptr_t>(userChannels[i])));
+        } else {
+            userChannels[i] = targetChannels[i];
+            HCCL_INFO("[%s] AIV engine channel protocol not supported build dev channel entity, idx[%u], protocol[%d]. "
+                "Return host channel handle.",
+                __func__, i, static_cast<int>(protocol));
+        }
+    }
+
+    if (needD2HMap) {
+        CHK_RET(FillChannelD2HMap(userChannels, targetChannels, channelNum));
     }
     return HCCL_SUCCESS;
 }

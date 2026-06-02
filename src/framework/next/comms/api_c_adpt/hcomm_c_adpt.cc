@@ -9,6 +9,7 @@
  */
 #include <mutex>
 #include <cstring>
+#include <memory>
 
 #include "hccl/hccl_res.h"
 #include "hcomm_res.h"
@@ -16,8 +17,8 @@
 #include "hcomm_result_defs.h"
 #include "log.h"
 #include "hcomm_c_adpt.h"
+#include "hcom_common.h"
 #include "../endpoints/endpoint.h"
-#include "../endpoint_pairs/channels/channel.h"
 #include "thread.h"
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
@@ -38,6 +39,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
+#include "../../endpoints/dfx/endpoint_monitor.h" // cmakelist加include
 
 
 namespace hcomm {
@@ -81,6 +83,20 @@ HcommResult CheckUbAttr(HcommChannelDesc &channelDesc)
     };
 
     channelDesc.ubAttr.sqDepth = GetNextPowerOfTwo(channelDesc.ubAttr.sqDepth);
+
+    return HCCL_SUCCESS;
+}
+
+HcommResult CheckRoceAttr(HcommChannelDesc &channelDesc)
+{
+    if (channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_ROCE) {
+        return HCCL_SUCCESS;
+    }
+
+    if (channelDesc.roceAttr.queueNum == INVALID_UINT) {
+        channelDesc.roceAttr.queueNum = 1;
+        HCCL_INFO("[%s] set roceAttr.queueNum to 1.", __func__);
+    }
 
     return HCCL_SUCCESS;
 }
@@ -146,8 +162,15 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
         }
         ret = CheckUbAttr(channelDescFinal);
         if (ret != HCOMM_SUCCESS) {
+            HCCL_ERROR("[%s] CheckUbAttr failed, ret[%d].", __func__, ret);
             return ret;
         }
+        ret = CheckRoceAttr(channelDescFinal);
+        if (ret != HCOMM_SUCCESS) {
+            HCCL_ERROR("[%s] CheckRoceAttr failed, ret[%d].", __func__, ret);
+            return ret;
+        }
+
         channelDescFinals.push_back(channelDescFinal);
     }
     return HCOMM_SUCCESS;
@@ -231,6 +254,14 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
 
+    if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
+        && ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP))) {
+        s32 devLogicIdSigned = HcclGetThreadDeviceId();
+        CHK_PRT_RET(devLogicIdSigned < 0,
+            HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
+        EndpointMonitor::GetInstance(devLogicIdSigned).RegisterToEndpointMonitor(devLogicIdSigned, handle);
+    }
+
     HCCL_INFO("[%s] endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] create endpointHandle [%p] done.", 
             __func__, endpoint->protocol, endpoint->loc.locType, handle);
     EXCEPTION_HANDLE_END
@@ -240,6 +271,10 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
 HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 {
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
+    s32 devLogicIdSigned = HcclGetThreadDeviceId();
+    CHK_PRT_RET(devLogicIdSigned < 0,
+        HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
+    EndpointMonitor::GetInstance(devLogicIdSigned).RemoveEpHandleFromEndpointMonitor(endpointHandle);
     auto ret = g_EndpointMap.RemoveEndpoint(endpointHandle);
     CHK_PRT_RET(ret == false, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
@@ -266,6 +301,15 @@ HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
     CHK_RET(endpoint->ServerSocketStopListen(port));
     return HCCL_SUCCESS;
+}
+
+HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port)
+{
+    CHK_PTR_NULL(port);
+    auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
+        __func__, endpointHandle), HCCL_E_NOT_FOUND);
+    return endpoint->ServerSocketGetListenPort(port);
 }
 
 HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const CommMem *mem,
@@ -637,4 +681,12 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
 
     return HCCL_SUCCESS;
+}
+
+HcommResult HcommEndpointCheckFeature(HcommEndpointFeatureType featureType, const EndpointDesc *endpointDesc, bool *value)
+{
+    CHK_PTR_NULL(endpointDesc);
+    CHK_PTR_NULL(value);
+
+    return static_cast<HcommResult>(Endpoint::CheckFeature(*endpointDesc, featureType, *value));
 }

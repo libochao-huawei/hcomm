@@ -4524,6 +4524,8 @@ ACL_FUNC_VISIBILITY aclError aclrtSnapShotCallbackUnregister(aclrtSnapShotStage 
  */
 ACL_FUNC_VISIBILITY aclError aclrtCacheLastTaskOpInfo(const void * const infoPtr, const size_t infoSize);
 
+ACL_FUNC_VISIBILITY aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen);
+
 /**
  * @ingroup AscendCL
  * @brief Used for inter-card memory mapping within the same process

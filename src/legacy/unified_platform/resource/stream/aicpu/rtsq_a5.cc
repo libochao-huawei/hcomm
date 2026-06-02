@@ -21,21 +21,30 @@
 #include "communicator_impl_lite_manager.h"
 #ifdef CCL_KERNEL_AICPU
 #include "hccl_api_data_aicpu_ts.h"
+#include "aicpu_indop_env.h"
 #endif
 
 namespace Hccl {
 using namespace std;
 constexpr u32 RTSQ_A5_PART_ID   = 0;
 constexpr u32 PRINT_INTERVAL  = 30;
+const std::chrono::seconds RTSQ_FULL_PRINT_INTERVAL(PRINT_INTERVAL); // 打印间隔30s
+
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId) : RtsqBase(devPhyId, streamId, sqId)
 {
     SetTaskIdBySqeId();
+    rtsqFullTimeoutValue_ = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout + 20; // rtsq full超时时间: X+20s
+    rtsqFullTimeout_ = std::chrono::seconds(rtsqFullTimeoutValue_);
 }
 
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase(devPhyId, streamId, sqId)
 {
     SetTaskIdBySqeId();
     launchFlag_ = launchFlag;
+#ifdef CCL_KERNEL_AICPU
+    rtsqFullTimeoutValue_ = hcomm::GetNotifyWaitTimeout() + 20; // rtsq full超时时间: X+20s
+#endif
+    rtsqFullTimeout_ = std::chrono::seconds(rtsqFullTimeoutValue_);
 }
 
 void RtsqA5::Reset()
@@ -62,24 +71,27 @@ u32 RtsqA5::GetTailToHeadDist() const
 void RtsqA5::MakeSureAvailableSpace()
 {
     u32  availableSpace = GetTailToHeadDist();
-    auto startTime      = std::chrono::steady_clock::now();
-    auto timeoutValue
-        = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout + 20; // rtsq full超时时间: X+20s
-    auto                       timeout = std::chrono::seconds(timeoutValue);
-    const std::chrono::seconds printInterval(PRINT_INTERVAL); // 打印间隔30s
-    auto                       lastPrintTime = std::chrono::steady_clock::now() - printInterval;
-    HCCL_INFO("RtsqA5::%s timeout: %u s, cur head: %u, tail: %u, sqId: %u", __func__, timeoutValue, sqHead_, sqTail_,
-              sqId_);
+    auto startTime = std::chrono::steady_clock::now();
+    auto lastPrintTime = startTime - RTSQ_FULL_PRINT_INTERVAL;
+    HCCL_INFO("[%s]sqId:%u, rtsqFullTimeoutValue: %u s, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
+        __func__, sqId_, rtsqFullTimeoutValue_, sqHead_, sqTail_, pendingSqeCnt);
 
-    HCCL_INFO("RtsqA5::%s start", __func__);
     while (availableSpace <= pendingSqeCnt) {
-        if (UNLIKELY(std::chrono::steady_clock::now() - lastPrintTime >= printInterval)) {
-            HCCL_INFO("RtsqA5::%s while loop availableSpace %u <= pendingSqeCnt %u", __func__, availableSpace,
-                      pendingSqeCnt);
-            lastPrintTime = std::chrono::steady_clock::now();
+        sqHead_        = QuerySqHead();
+        availableSpace = GetTailToHeadDist();
+        if (availableSpace > pendingSqeCnt) {
+            break; // 避免head没更新导致假反压
         }
-        if (UNLIKELY((std::chrono::steady_clock::now() - startTime) >= timeout)) { // timeout内还是不能向RTSQ中写入值，报错
-            auto msg = StringFormat("Rtsq full, timeout %u. cur head: %u, sqId: %u", timeoutValue, sqHead_, sqId_);
+
+        auto curTime = std::chrono::steady_clock::now();
+        if (UNLIKELY(curTime - lastPrintTime >= RTSQ_FULL_PRINT_INTERVAL)) {
+            HCCL_RUN_INFO("[%s]while loop, sqId:%u, sqHead:%u, sqTail:%u, availableSpace:%u, pendingSqeCnt:%u, "
+                "rtsqFullTimeoutValue:%u s", __func__, sqId_, sqHead_, sqTail_, availableSpace, pendingSqeCnt, rtsqFullTimeoutValue_);
+            lastPrintTime = curTime;
+        }
+        if (UNLIKELY((curTime - startTime) >= rtsqFullTimeout_)) { // timeout内还是不能向RTSQ中写入值，报错
+            auto msg = StringFormat("Rtsq full, rtsqFullTimeoutValue %u. sqId:%u, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
+                rtsqFullTimeoutValue_, sqId_, sqHead_, sqTail_, pendingSqeCnt);
             HCCL_ERROR("%s", msg.c_str());
             THROW<InternalException>(msg);
         }
@@ -87,15 +99,11 @@ void RtsqA5::MakeSureAvailableSpace()
 #ifdef CCL_KERNEL_AICPU
         HcclResult ret = HandleDispatchAllStreams();
         if (UNLIKELY(ret != HCCL_SUCCESS)) {
-            auto msg = StringFormat("RtsqA5::%s HandleDispatchAllStreams failed, ret = %d", __func__, ret);
+            auto msg = StringFormat("RtsqA5::%s HandleDispatchAllStreams failed, ret = %d, sqId:%u, ", __func__, ret, sqId_);
             HCCL_ERROR("%s", msg.c_str());
             THROW<InternalException>(msg);
         }
 #endif
-
-        sqHead_        = QuerySqHead();
-        availableSpace = GetTailToHeadDist();
-
         if (checkOpExecStatusCallback_ != nullptr) {
             checkOpExecStatusCallback_();
         }
@@ -104,7 +112,6 @@ void RtsqA5::MakeSureAvailableSpace()
 
 void RtsqA5::CopyLocBufToSq()
 {
-    sqHead_        = QuerySqHead();
     u8 *sqCurrAddr = reinterpret_cast<u8 *>(sqBaseAddr_) + sqTail_ * rtsqSqeSize;
     if (sqTail_ >= sqHead_) {
         u32 depthLeft = sqDepth_ - sqTail_;
@@ -166,9 +173,9 @@ void RtsqA5::LaunchTask()
     sqTail_ = newTail;
 
     // 清空本地的locBuffer和sqeCnt数目
+    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
     pendingSqeCnt = 0;
     (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt); // locBuffer清零
-    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
 }
 
 void RtsqA5::TryLaunchTask()
@@ -350,6 +357,14 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
     // piValue需要使用u16数据类型，保证自然增长，用于判断是否翻转
     BuildA5SqeUbDbSend(streamId_, taskId_, jettyLiteId, piValue, GetCurrSqeBuffer());
     HCCL_INFO("[RtsqA5][UbDbSend] piValue(UbPi):%u, SqTail(Rtsq Pi):%u", piValue, sqTail_);
+    RefreshInfo();
+}
+
+void RtsqA5::RdmaDbSend(const uint64_t &dbAddr, const uint64_t &dbValue)
+{
+    BuildA5SqeRdmaDbSend(streamId_, taskId_, dbAddr, dbValue, GetCurrSqeBuffer());
+    HCCL_INFO("RtsqA5::RdmaDbSend: RdmaDbSend Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
+    HCCL_INFO("[RtsqA5][RdmaDbSend] dbValue(dbValue):%llx, SqTail(Rtsq Pi):%u", dbAddr, sqTail_);
     RefreshInfo();
 }
 

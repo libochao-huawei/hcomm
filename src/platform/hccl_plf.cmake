@@ -28,7 +28,7 @@ target_compile_options(hccl_plf PRIVATE
     -fno-strict-aliasing
     -pipe
     -O3
-    -std=c++14
+    -std=c++17
     -fstack-protector-all
     $<$<CONFIG:Debug>:-g>
 )
@@ -110,34 +110,18 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_include_directories(hccl_plf PRIVATE
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/external/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/platform/
-
-        # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
-
-        # 包间接口
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-
         # 三方件头文件
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        ${JSON_INCLUDE_DIR}
         ${RDMA_CORE_INCLUDE_DIR}
         ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy/
     )
 
     target_link_libraries(hccl_plf
     PRIVATE
+        $<BUILD_INTERFACE:ascend_hal_headers>
+        $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:mmpa_headers>
+        $<BUILD_INTERFACE:runtime_headers>
         -Wl,--no-as-needed
         c_sec
         unified_dlog
@@ -177,7 +161,7 @@ else()
         unified_dlog
         mmpa
         runtime
-        ascendcl
+        acl_rt
         error_manager
         hccl_legacy
         -Wl,--as-needed

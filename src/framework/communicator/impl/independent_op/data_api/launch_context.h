@@ -15,14 +15,34 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <algorithm>
 #include "hccl_api_data.h"
+#include "log.h"
 
 class LaunchContext {
 public:
-    LaunchContext() = default;
+    LaunchContext();
 
     HcclResult SetLaunchMode(const char* launchTag, HcommLaunchMode mode);
-    void AddThread(ThreadHandle thread);
+    inline void AddThreadWithTag(ThreadHandle thread) // ffts场景使用，支持储存存多个子图对应的thread信息
+    {
+        if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
+            return;
+        }
+        auto& threadSet = launchModeMap_[launchTag_];
+        threadSet.insert(thread);
+    }
+
+    inline void AddThread(ThreadHandle thread) // 储存当前线程使用的thread
+    {
+        if (UNLIKELY(mode_ != HCOMM_LAUNCH_MODE_BATCH)) {
+            return;
+        }
+        if (std::find(threadVec_.begin(), threadVec_.end(), thread) == threadVec_.end()) {
+            threadVec_.push_back(thread);
+        }
+    }
+
     inline bool IsBatchLaunchMode() const
     {
         return mode_ == HCOMM_LAUNCH_MODE_BATCH;
@@ -35,7 +55,8 @@ private:
     HcclResult HandleClear();
 
     std::string launchTag_; // 当前tag
-    std::unordered_map<std::string, std::unordered_set<ThreadHandle>> launchModeMap_;
+    std::unordered_map<std::string, std::unordered_set<ThreadHandle>> launchModeMap_; // 按tag粒度记录当前线程使用的thread
+    std::vector<ThreadHandle> threadVec_; // 不区分tag，记录当前线程使用的thread
     HcommLaunchMode mode_ = HCOMM_LAUNCH_MODE_EAGER;
 };
 

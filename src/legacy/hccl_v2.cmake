@@ -25,7 +25,7 @@ target_compile_options(hccl_v2 PRIVATE
     -fno-strict-aliasing
     -pipe
     -O3
-    -std=c++14
+    -std=c++17
     -fstack-protector-all
     $<$<CONFIG:Debug>:-g>
 )
@@ -41,12 +41,18 @@ target_link_options(hccl_v2 PRIVATE
 
 # 链接库
 target_link_libraries(hccl_v2 PRIVATE
+    $<BUILD_INTERFACE:acl_rt_headers>
+    $<BUILD_INTERFACE:ascend_hal_headers>
+    $<BUILD_INTERFACE:atrace_headers>
+    $<BUILD_INTERFACE:mmpa_headers>
+    $<BUILD_INTERFACE:runtime_headers>
+    $<BUILD_INTERFACE:slog_headers>
     -Wl,--no-as-needed
     c_sec
     unified_dlog
     mmpa
     runtime
-    ascendcl
+    acl_rt
     error_manager
     ccl_dpu
     tsdclient
@@ -76,29 +82,9 @@ target_include_directories(hccl_v2 PRIVATE
     # 外部依赖
     ${HCOMM_DIR}/externel_depends/tsch
     # 三方件头文件
-    ${THIRD_PARTY_NLOHMANN_PATH}
+    ${JSON_INCLUDE_DIR}
     ${RDMA_CORE_INCLUDE_DIR}
 )
-
-if(BUILD_OPEN_PROJECT)
-    target_include_directories(hccl_v2 PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
-
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
-    )
-endif()
 
 # 将hccl编译出的动态库加入CANN的安装包
 install(TARGETS hccl_v2

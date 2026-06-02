@@ -250,14 +250,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/urma/
 
-    ${CANN_3RD_LIB_PATH}/json/include/
-    ${CANN_3RD_LIB_PATH}/gtest/include/
-    ${CANN_3RD_LIB_PATH}/mockcpp/include/
-    ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
-    ${CANN_3RD_LIB_PATH}/boost/
-
-    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
+    # ascendc
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
     # next
     ${HCCL_CODE_ROOT}/src/framework/next/
@@ -341,6 +337,7 @@ add_subdirectory(framework/next/coll_comms/dfx)
 add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
+add_subdirectory(common/debug/profiling)
 add_subdirectory(misc)
 add_subdirectory(impl)
 add_subdirectory(device)

@@ -131,7 +131,7 @@ void RankGraphBuilder::AddPeer2NetLink(const u32 netLayer,  const string &netIns
         // 将rank插入到当前netInstance对应的topoInstance中
         tempNetInsts_[netLayer][netInstId]->UpdateTopoInst(topoInstId, topoType, rankId);
 
-        HCCL_RUN_INFO("[RankGraphBuilder][AddPeer2NetLink] Add Peer2NetLink Net2PeerLink success. level[%u] "
+        HCCL_INFO("[RankGraphBuilder][AddPeer2NetLink] Add Peer2NetLink Net2PeerLink success. level[%u] "
                    "netInstId[%s] rankId[%u] planeId[%s] AddrStr[%s],topoInstId[%u],topoType[%u]",
             netLayer,  netInstId.c_str(), rankId, fabNode->GetPlaneId().c_str(), addrInfo.addr.Describe().c_str(),
             topoInstId, topoType);
@@ -201,7 +201,7 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
     // 1. 获取物理拓扑图
     auto phyTopoGraph = PhyTopo::GetInstance()->GetTopoGraph(0);
     if (phyTopoGraph == nullptr) {
-        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildFromPhytopo] phyTopoGraph is nullptr"));
+        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][AddTopoDescFabricInfo] phyTopoGraph is nullptr"));
     }
     HCCL_INFO("[RankGraphBuilder][AddTopoDescFabricInfo] Successfully retrieved phyTopoGraph");
 
@@ -308,7 +308,7 @@ void RankGraphBuilder::BuildFromRankTable()
     for (const auto &rankInfo : rankTable_->ranks) {
         updaterFor64Plus1_.SaveReplaceInfo(rankInfo);   // 暂存备份替换信息
         RankId rankId = rankInfo.rankId;
-        shared_ptr<NetInstance::Peer> peer = make_shared<NetInstance::Peer>(rankId, rankInfo.localId, rankInfo.replacedLocalId, rankInfo.deviceId, rankInfo.devicePort);
+        shared_ptr<NetInstance::Peer> peer = make_shared<NetInstance::Peer>(rankId, rankInfo.localId, rankInfo.replacedLocalId, rankInfo.deviceId, rankInfo.devicePort, rankInfo.hostPort);
         rankGraph_->AddPeer(peer);
         peers_.emplace(rankId, peer);  // rankid2peer
 
@@ -414,12 +414,12 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
 {
     auto phyTopoGraph = PhyTopo::GetInstance()->GetTopoGraph(0);
     if (phyTopoGraph == nullptr) {
-        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildFromPhytopo] phyTopoGraph is nullptr"));
+        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildPeer2PeerLinks] phyTopoGraph is nullptr"));
     }
     // 遍历innerNetInstance中的每两个rankId之间是否存在边，存在则添加peer2peerlink
     NetInstance *innerNetInstance = rankGraph_->GetNetInstanceByRankId(0, myRank_);
     if (innerNetInstance == nullptr) {
-        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildFromPhytopo] innerNetInstance is nullptr"));
+        THROW<NullPtrException>(StringFormat("[RankGraphBuilder][BuildPeer2PeerLinks] innerNetInstance is nullptr"));
     }
     set<RankId> rankIds = innerNetInstance->GetRankIds();
 
@@ -451,9 +451,8 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
                     phyLink->GetTargetIFace(), dstPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId(), localDeviceId);
                 if (sourceIfaces.empty() || targetIfaces.empty()) {
                     // 没有可用的接口。
-                    HCCL_WARNING("[RankGraphBuilder][BuildFromPhytopo] srcRankId[%d] dstRankId[%d] edge not .",
-                        srcRankId,
-                        dstRankId);
+                    HCCL_WARNING("[RankGraphBuilder][BuildPeer2PeerLinks] no available interface, "
+                        "srcRankId[%u] dstRankId[%u].", srcRankId, dstRankId);
                     continue;
                 }
                 srcPeer->AddConnInterfaces(0, sourceIfaces);

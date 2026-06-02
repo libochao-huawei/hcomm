@@ -111,6 +111,7 @@ private:
     bool              isConnected{false};
     bool              isListening{false};
     bool              isDestroyed{false};
+    std::unique_ptr<SocketListenInfoT> listenInfo_{nullptr};
 
     std::chrono::steady_clock::time_point lastLogTime{}; // 抑制日志刷屏时间戳，刷新时可置空
 

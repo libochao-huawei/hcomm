@@ -1373,7 +1373,7 @@ HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2
 
     HcclResult ret = communicator->AllocCommResource(mc2Tiling, commContext);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclAllocComResourceByTilingV2]AllocCommResource fail, errNo[%d]", ret), HCCL_E_INTERNAL);
+        HCCL_ERROR("[HcclAllocComResourceByTilingV2]AllocCommResource fail, errNo[%d]", ret), ret);
 
     u32 totalServerNum = 0;
     for (auto hcclGroupMap : opbasedCommInfoV2.hcclGroupMap) {
@@ -1383,7 +1383,7 @@ HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2
     CHK_PRT_RET(totalServerNum > MAX_CCU_MC2_SERVER_NUM,
         HCCL_ERROR("[%s] the number of operators is %u, "
             "which exceeds the maximum operator specification of %u supported by CCU MC2.",
-            __func__, totalServerNum, MAX_CCU_MC2_SERVER_NUM), HCCL_E_INTERNAL);
+            __func__, totalServerNum, MAX_CCU_MC2_SERVER_NUM), HCCL_E_NOT_SUPPORT);
     
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
@@ -2509,7 +2509,7 @@ HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTa
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclGetCcuTaskInfo V950, commId[%s], tilingData[%p], ccuTaskGroup[%p]",
-             communicator->GetId(), tilingData, ccuTaskGroup);
+             communicator->GetId().c_str(), tilingData, ccuTaskGroup);
     }
     auto ret = communicator->GetCcuTaskInfo(tilingData, ccuTaskGroup);
     if (ret != HCCL_SUCCESS) {

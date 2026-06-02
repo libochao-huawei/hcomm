@@ -28,6 +28,7 @@ namespace hcomm {
 class AicpuTsUrmaChannel : public Channel {
 public:
     AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
+    ~AicpuTsUrmaChannel();
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
@@ -61,6 +62,7 @@ private:
     HcclResult BuildSocket();
 
     HcclResult PackOpData(std::vector<char> &data);
+    HcclResult StartListen();
 
 private:
     std::atomic<bool> isFirstPrintChannelInfo_{true}; // 是否第一次打印通道建链信息，避免重复打印日志刷屏
@@ -87,7 +89,8 @@ private:
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_;
-    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
+    const Hccl::SocketConfig*                                   socketConfig_{nullptr};
+    uint32_t                                                    devicePhyId_{};
 };
 
 } // namespace hcomm

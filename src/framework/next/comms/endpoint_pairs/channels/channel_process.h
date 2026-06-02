@@ -76,12 +76,13 @@ private:
         HcommChannelDesc* hcommDesc, uint32_t listNum, aclrtBinHandle binHandle);
     static HcclResult LaunchCommonChannelKernel(ChannelHandle *channelHandles,
         ChannelHandle *hostChannelHandles, uint32_t listNum, HcommChannelKind channelKind, aclrtBinHandle binHandle);
-
+    static HcclResult SaveAivChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels,
+        HcommChannelDesc *channelDescs, uint32_t channelNum);
     static HcclResult ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum);
     static HcclResult RemoveSingleChannel(int32_t deviceId, ChannelHandle inHandle,
         std::vector<ChannelHandle> &deviceHandles);
 
-    static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
+    static std::unordered_map<ChannelHandle, std::shared_ptr<Channel>> g_ChannelMap;
     static std::unordered_map<DeviceChannelKey, ChannelHandle, DeviceChannelKeyHash> g_ChannelD2HMap;
     static std::mutex g_ChannelMapMtx;
 };

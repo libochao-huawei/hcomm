@@ -30,6 +30,7 @@ target_include_directories(hccl_alg_analyzer PRIVATE
 )
 
 target_compile_definitions(hccl_alg_analyzer PRIVATE
+    google=ascend_private
     -DOPEN_HCCL_TEST
     _GLIBCXX_USE_CXX11_ABI=0
 )
@@ -45,7 +46,7 @@ target_link_libraries(hccl_alg_analyzer PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_alg_adaption
     -pthread
-    protobuf
+    ascend_protobuf
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     -lrt
     -ldl

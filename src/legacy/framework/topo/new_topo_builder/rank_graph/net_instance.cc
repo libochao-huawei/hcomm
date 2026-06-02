@@ -94,7 +94,7 @@ void NetInstance::AddPeer(const shared_ptr<Peer> &peer)
 {
     if (netLayer == 0 && localIdsMap.find(peer->GetLocalId()) != localIdsMap.end()) {
         THROW<InvalidParamsException>(StringFormat("[NetInstance][%s] when netLayer is 0, local id[%u] is repeat. "
-            "rank id [%d]", __func__, peer->GetLocalId(), peer->GetRankId()));
+            "rank id [%u], netInstId[%s]", __func__, peer->GetLocalId(), peer->GetRankId(), netInstId.c_str()));
     }
     localIdsMap.insert({peer->GetLocalId(), peer->GetRankId()});
 
@@ -231,7 +231,8 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
 {
     vector<NetInstance::Path> paths;
     if (peers.count(srcRankId) == 0 || peers.count(dstRankId) == 0) {
-        HCCL_WARNING("[InnerNetInstance::GetPaths] srcRankId or dstRankId not exist in netInstance");
+        HCCL_WARNING("[InnerNetInstance::GetPaths] srcRankId[%u] or dstRankId[%u] not exist in netInstance, "
+                     "netLayer[%u], netInstId[%s]", srcRankId, dstRankId, netLayer, netInstId.c_str());
         return paths;
     }
     NodeId srcPeerId = peers.at(srcRankId)->GetNodeId();
@@ -242,9 +243,10 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         path.links = {*edge};
         path.direction = edge->GetLinkDirection();
         paths.emplace_back(path);
-        HCCL_DEBUG("[InnerNetInstance::GetPaths] from src[%s] to dst[%s] get path.", peers.at(srcRankId)->Describe().c_str(),
-                   peers.at(dstRankId)->Describe().c_str());
-        HCCL_DEBUG("path[%s]", path.links[0].Describe().c_str());
+        HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], from src[%s] to dst[%s] get path.",
+                   netLayer, peers.at(srcRankId)->Describe().c_str(), peers.at(dstRankId)->Describe().c_str());
+        HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], srcRankId[%u], dstRankId[%u], path[%s]", netLayer,
+                   srcRankId, dstRankId, path.links[0].Describe().c_str());
     });
 
     // 2. 通过 fabric 的路径
@@ -275,10 +277,10 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
                 }
             }
         } else {
-            HCCL_WARNING("[NetInstance::GetPaths] from src[%s] to dst[%s] link via fabric[%s] not found.",
-                       peers.at(srcRankId)->Describe().c_str(),
-                       peers.at(dstRankId)->Describe().c_str(),
-                       fabric->Describe().c_str());
+            HCCL_WARNING("[NetInstance::GetPaths] netLayer[%u], srcRankId[%u], dstRankId[%u], netInstId[%s], "
+                         "from src[%s] to dst[%s] link via fabric[%s] not found.", netLayer, srcRankId, dstRankId,
+                         netInstId.c_str(), peers.at(srcRankId)->Describe().c_str(),
+                         peers.at(dstRankId)->Describe().c_str(), fabric->Describe().c_str());
         }
     }
 
@@ -294,7 +296,8 @@ vector<NetInstance::Path> ClosNetInstance::GetPaths(const RankId srcRankId, cons
 {
     vector<NetInstance::Path> paths;
     if (peers.count(srcRankId) == 0 || peers.count(dstRankId) == 0) {
-        HCCL_WARNING("[InnerNetInstance::GetPaths] srcRankId or dstRankId not exist in netInstance, netInstId[%s].", netInstId.c_str());
+        HCCL_WARNING("[ClosNetInstance::GetPaths] srcRankId[%u] or dstRankId[%u] not exist in netInstance, "
+                     "netLayer[%u], netInstId[%s].", srcRankId, dstRankId, netLayer, netInstId.c_str());
         return paths;
     }
     NodeId srcPeerId = peers.at(srcRankId)->GetNodeId();
@@ -320,7 +323,7 @@ vector<NetInstance::Path> ClosNetInstance::GetPaths(const RankId srcRankId, cons
             path.links = {srcToFabricLink, fabricToDstLink};
             paths.emplace_back(path);
         } else {
-            HCCL_DEBUG("[NetInstance::GetPaths] from src[%s] to dst[%s] link by fabric[%s] not found.",
+            HCCL_WARNING("[ClosNetInstance::GetPaths] from src[%s] to dst[%s] link by fabric[%s] not found.",
                        peers.at(srcRankId)->Describe().c_str(), peers.at(dstRankId)->Describe().c_str(),
                        fabric->Describe().c_str());
         }
@@ -415,6 +418,11 @@ DeviceId NetInstance::Peer::GetDeviceId() const
 u32 NetInstance::Peer::GetDevicePort() const
 {
     return devicePort_;
+}
+
+u32 NetInstance::Peer::GetHostPort() const
+{
+    return hostPort_;
 }
 
 RankId NetInstance::Peer::GetRankId() const

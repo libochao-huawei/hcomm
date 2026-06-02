@@ -266,6 +266,10 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAicpuKernel_Normal)
     MOCKER_CPP(&HcclCommDfx::ReportKernel)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));  
+    MOCKER_CPP(&HcclCommDfx::IsOpBase)
+        .stubs()
+        .with(outBound(false))
+        .will(returnValue(HCCL_SUCCESS));
     
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;

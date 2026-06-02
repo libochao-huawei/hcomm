@@ -39,11 +39,11 @@ void UbTransportLiteImpl::ParseLocNotifyVec(std::vector<char> &data)
 {
 }
 
-void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmtUbBufLiteVec &vec, RmaUbBufType rmtType) const
+void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmaUbBufType rmtType)
 {
 }
 
-void UbTransportLiteImpl::ParseLocBufferVec(std::vector<char> &data, LocUbBufLiteVec &vec, RmaUbBufType rmtType) const
+void UbTransportLiteImpl::ParseLocBufferMap(std::vector<char> &data)
 {
 }
 

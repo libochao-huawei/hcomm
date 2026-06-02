@@ -22,6 +22,7 @@
 #include "rdma_handle_manager.h"
 #include "tp_manager.h"
 #include "hccp_async.h"
+#include "env_config/env_config.h"
 #undef protected
 #undef private
 #include "hccp_async_ctx.h"
@@ -63,6 +64,7 @@ protected:
 
 TEST_F(DevUbConnectionTest, rma_ub_connection_get_status_return_exchanging_and_ok)
 {
+    MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
     // Given
     RdmaHandle rdmaHandle = (void *)0x1000000;
 
@@ -99,6 +101,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_get_status_return_exchanging_and_o
 
     string msg = devUbConnection.Describe();
     EXPECT_NE(0, msg.length());
+    GlobalMockObject::verify();
 }
 
 TEST_F(DevUbConnectionTest, rma_ub_connection_get_rma_conn_lite)
@@ -136,6 +139,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_get_rma_conn_lite)
 
 TEST_F(DevUbConnectionTest, rma_ub_connection_getstatus_change_status_ready)
 {
+    MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
     // construct DevUbConnection
     RdmaHandle rdmaHandle = (void *)0x1000000;
 
@@ -170,6 +174,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_getstatus_change_status_ready)
 
     string msg = devUbConnection.Describe();
     EXPECT_NE(0, msg.length());
+    GlobalMockObject::verify();
 }
 
 TEST_F(DevUbConnectionTest, rma_ub_connection_getstatus_change_status_invalid)
@@ -855,6 +860,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_ready_import_jetty)
 TEST_F(DevUbConnectionTest, tp_import_test)
 {
     MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
+    MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
     // construct DevUbConnection
     RdmaHandle rdmaHandle = (void *)0x1000000;
 
@@ -877,10 +883,12 @@ TEST_F(DevUbConnectionTest, tp_import_test)
 
     EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::READY);
     EXPECT_EQ(DevUbConnection::UbConnStatus::READY, devUbConnection.ubConnStatus);
+    GlobalMockObject::verify();
 }
 
 TEST_F(DevUbConnectionTest, ctp_import_test)
 {
+    MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
     // construct DevUbConnection
     RdmaHandle rdmaHandle = (void *)0x1000000;
 
@@ -906,15 +914,23 @@ TEST_F(DevUbConnectionTest, ctp_import_test)
 
     devUbConnection.tpInfo.tpHandle = 1; // 控制非0
     EXPECT_NO_THROW(devUbConnection.ReleaseResource()); // 释放tp报错但是不影响流程
+    GlobalMockObject::verify();
 }
 
 constexpr uint64_t expectSqBuffVa = 10;
-int RaCtxQpCreateAsync_stub(void *ctxHandle, struct QpCreateAttr *attr,
-    struct QpCreateInfo *info, void **qpHandle, void **reqHandle)
+RequestHandle RaUbCreateJettyAsync_stub(const RdmaHandle handle, const HrtRaUbCreateJettyParam &in,
+    vector<char_t> &out, void *&jettyHandle)
 {
-    *reqHandle = reinterpret_cast<void *>(0x12345678);
-    info->ub.sqBuffVa = expectSqBuffVa;
-    return 0;
+    struct QpCreateInfo info;
+    info.ub.sqBuffVa = expectSqBuffVa;
+    info.ub.id = 1;
+    info.key.size = 0;
+    info.key.value[0] = 0;
+    info.ub.dbAddr = 0;
+    out.resize(sizeof(info));
+    memcpy(out.data(), &info, sizeof(info));
+    jettyHandle = reinterpret_cast<void *>(0x12345678ULL);
+    return static_cast<RequestHandle>(0x12345678ULL);
 }
 TEST_F(DevUbConnectionTest, Ut_CreateJetty_When_CorrectParams_ReturnIsOk)
 {
@@ -927,10 +943,11 @@ TEST_F(DevUbConnectionTest, Ut_CreateJetty_When_CorrectParams_ReturnIsOk)
     std::string tag = "test";
 
     // When
-    MOCKER(RaCtxQpCreateAsync).stubs().will(invoke(RaCtxQpCreateAsync_stub));
+    MOCKER(RaUbCreateJettyAsync).stubs().will(invoke(RaUbCreateJettyAsync_stub));
     DevUbCtpConnection devUbCtpConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
 
     // Then
+    devUbCtpConn.CreateJetty(false);
     devUbCtpConn.SetJettyInfo();
     EXPECT_EQ(devUbCtpConn.sqBuffVa, expectSqBuffVa);
 }
@@ -947,19 +964,36 @@ TEST_F(DevUbConnectionTest, Ut_Describe_Tp_Mode)
     linkData.linkProtocol_ = LinkProtocol::UB_TP;
     std::string tag = "test";
 
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
-    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     DevUbTpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+
+    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
     std::string testDfx = "";
     HcclResult ret = devUbConnection.Describe(testDfx);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 
     GlobalMockObject::verify();
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
-    MOCKER(HrtRaGetTpAttrAsync).stubs().will(returnValue(HcclResult::HCCL_E_NOT_SUPPORT)).then(returnValue(HcclResult::HCCL_E_INTERNAL));
-    ret = devUbConnection.Describe(testDfx);
-    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
-    ret = devUbConnection.Describe(testDfx);
-    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(DevUbConnectionTest, Ut_ImportRmtDto)
+{
+    MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_E_NOT_FOUND));
+    MOCKER_CPP(&DevUbConnection::ThrowAbnormalStatus).stubs();
+    // Given
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 0, 1, 0, 1);
+    std::string tag = "test";
+
+    // construct DevUbConnection
+    DevUbConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+    devUbConnection.ubConnStatus = DevUbConnection::UbConnStatus::JETTY_CREATED;
+    devUbConnection.tpProtocol = TpProtocol::UBOE;
+    devUbConnection.ImportRmtDto();
+    GlobalMockObject::verify();
+    MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DevUbConnection::ThrowAbnormalStatus).stubs();
+    devUbConnection.ImportRmtDto();
+    GlobalMockObject::verify();
 }

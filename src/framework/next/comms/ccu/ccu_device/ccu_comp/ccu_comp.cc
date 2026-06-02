@@ -25,6 +25,9 @@
 #include "adapter_rts_common.h"
 #include "ccu_error_info_v1.h"
 #include "orion_adapter_hccp.h"
+#include "env_config/env_config.h"
+#include "exception_util.h"
+#include "hcomm_adapter_hccp.h"
 
 namespace hcomm {
 
@@ -432,19 +435,26 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     auto &createdVec = createdOutParamMap_[dieId];
     auto &importedVec = importedOutParamMap_[dieId];
     for (const auto &jettyInfo : jettyInfos) {
-        const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-        const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
-            tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
-            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+        // 创建TpInfo
+        TpInfo tpInfo{};
+        CHK_RET(GetLoopTpInfo(dieId, commAddr, tpInfo));
         
+        TpAttrInfo tpAttrInfo{};
+        CHK_RET(GetLoopTpAttr(dieId, commAddr, tpAttrInfo));
+
+        const auto psn = GetNewPsn();
+        const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
+
+        uint8_t errTimeout = TpMgr::CalcTaTimeout(tpAttrInfo);
+
+        const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
+        const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue, tokenIdHandle, jettyMode,
+            jettyInfo.taJettyId, jettyInfo.sqBufVa, jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth,
+            errTimeout};
+
         HrtRaUbJettyCreatedOutParam createdOutParam{};
         CHK_RET(HccpUbCreateJetty(ctxHandle, req, createdOutParam));
         createdVec.emplace_back(createdOutParam);
-
-        TpInfo tpInfo{};
-        CHK_RET(GetLoopTpInfo(dieId, commAddr, tpInfo));
-        const auto psn = GetNewPsn();
-        const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
 
         HrtRaUbJettyImportedOutParam importedOutParam{};
         CHK_RET(HccpUbTpImportJetty(ctxHandle, createdOutParam.key,
@@ -490,6 +500,55 @@ HcclResult CcuComponent::GetLoopTpInfo(const uint8_t dieId,
     }
 
     tpInfo = tpInfoMap_[dieId];
+    return HcclResult::HCCL_SUCCESS;
+}
+
+static HcclResult RequestNewLoopTpAttr(const uint32_t devPhyId, CtxHandle ctxHandle,
+    const TpHandle tpHandle, TpAttrInfo &tpAttrInfo)
+{
+    constexpr auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
+    const auto startTime = std::chrono::steady_clock::now();
+
+    auto &tpMgr = TpMgr::GetInstance(devPhyId);
+    constexpr uint32_t TP_ATTR_BITMAP = 0;
+    const GetTpAttrParam tpAttrParam = {tpHandle, TP_ATTR_BITMAP};
+    HcclResult ret = HcclResult::HCCL_SUCCESS;
+    do {
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_ERROR("[CcuComponent][%s] failed, get tp attr "
+                "timeout[%d ms], devPhyId[%d].", __func__, timeout, devPhyId);
+            return HcclResult::HCCL_E_TIMEOUT;
+        }
+
+        ret = tpMgr.GetTpAttr(tpAttrParam, tpAttrInfo, ctxHandle);
+    } while (ret == HcclResult::HCCL_E_AGAIN);
+
+    CHK_RET(ret);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::GetLoopTpAttr(const uint8_t dieId,
+    const CommAddr &commAddr, TpAttrInfo &tpAttrInfo)
+{
+    const auto &srcIter = tpAttrInfoMap_.find(dieId);
+    if (srcIter == tpAttrInfoMap_.end()) {
+        const auto &tpInfoIter = tpInfoMap_.find(dieId);
+        CHK_PRT_RET(tpInfoIter == tpInfoMap_.end(),
+            HCCL_ERROR("[CcuComponent][%s] failed, tpInfo not found for dieId[%u], "
+                "devLogicId[%d].", __func__, dieId, devLogicId_),
+            HcclResult::HCCL_E_NOT_FOUND);
+
+        Hccl::IpAddress ipAddr{};
+        CHK_RET(CommAddrToIpAddress(commAddr, ipAddr));
+        auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
+        const CtxHandle ctxHandle = static_cast<CtxHandle>(rdmaHandleMgr.GetByIp(devPhyId_, ipAddr));
+
+        TpAttrInfo newTpAttrInfo{};
+        CHK_RET(RequestNewLoopTpAttr(devPhyId_, ctxHandle, tpInfoIter->second.tpHandle, newTpAttrInfo));
+        tpAttrInfoMap_[dieId] = std::move(newTpAttrInfo);
+    }
+
+    tpAttrInfo = tpAttrInfoMap_[dieId];
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -863,6 +922,16 @@ HcclResult CcuComponent::UnimportAllJettys()
 
 HcclResult CcuComponent::ReleaseAllTpInfos()
 {
+    for (auto &item : tpAttrInfoMap_) {
+        const auto &dieId = item.first;
+        const auto &tpAttrInfo = item.second;
+        const auto &tpInfoIter = tpInfoMap_.find(dieId);
+        if (tpInfoIter != tpInfoMap_.end() && tpInfoIter->second.tpHandle != 0) {
+            (void)TpMgr::GetInstance(devPhyId_).ReleaseTpAttr(tpInfoIter->second.tpHandle, tpAttrInfo);
+        }
+    }
+    tpAttrInfoMap_.clear();
+
     for (auto &item : tpInfoMap_) {
         const auto &dieId = item.first;
         const auto &tpInfo = item.second;
@@ -1006,7 +1075,7 @@ HcclResult CcuComponent::CcuCleanTaskKillState(const int32_t deviceLogicId)
 HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
 {
     CHK_PRT_RET(dieId >= MAX_CCU_IODIE_NUM,
-        HCCL_WARNING("[%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
+        HCCL_WARNING("[%s] failed, dieId[%u] is invalid, should be in [0-%u), devLogicId[%d].",
         __func__, dieId, MAX_CCU_IODIE_NUM, devLogicId_), HcclResult::HCCL_E_PARA);
 
     if (!dieEnableFlags_[dieId]) {

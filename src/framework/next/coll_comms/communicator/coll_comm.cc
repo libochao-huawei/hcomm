@@ -34,7 +34,8 @@ CollComm::~CollComm()
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     // dpu的兜底上报 - 异常退出时捕获异常避免二次崩溃
     if (hcclCommDfx_ != nullptr) {
-        DECTOR_TRY_CATCH("CollComm", hcclCommDfx_->ReportAllTasks(true));
+        // 析构属于最终阶段，不再存储数据，直接上报
+        DECTOR_TRY_CATCH("CollComm", hcclCommDfx_->ReportAllTasks(false));
     }
     for (auto streamId : aicpuStreamIds_) {
         hcomm::TaskExceptionHostManager::UnregisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_);
@@ -189,6 +190,9 @@ HcclResult CollComm::Suspend()
         HCCL_WARNING("[CollComm][Suspend] The current communication has been suspended, no need to suspend again.");
         return HcclResult::HCCL_SUCCESS;
     }
+
+    CHK_SMART_PTR_NULL(myRank_);
+
     commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
 
     return myRank_->StopLaunch();
@@ -206,6 +210,9 @@ HcclResult CollComm::Clean()
         HCCL_WARNING("[CollComm][Clean] The current communication has been cleaned, no need to clean again.");
         return HcclResult::HCCL_SUCCESS;
     }
+
+    CHK_SMART_PTR_NULL(myRank_);
+
     isCleaned_ = true;
 
     // 先清理Host
@@ -234,7 +241,7 @@ HcclResult CollComm::Resume()
 
     commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
     isCleaned_ = false;
-    HCCL_INFO("[CollComm][Resume] Resume success.");
+    HCCL_INFO("[CollComm][Resume] commId[%s] resume success.", commId_.c_str());
     return HcclResult::HCCL_SUCCESS;
 }
 

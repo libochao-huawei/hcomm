@@ -85,8 +85,10 @@ HcclResult CollCommAicpu::InitHDCommunicate(CommAicpuParam *commAicpuParam)
 
 void CollCommAicpu::InitIndopEnv(CommAicpuParam *commAicpuParam)
 {
-    hcomm::SetTaskExceptionEnable(commAicpuParam->envConfig.taskExceptionEnable);
-    HCCL_RUN_INFO("[%s]Env: taskExceptionEnable[%d]", __func__, commAicpuParam->envConfig.taskExceptionEnable);
+    hcomm::SetTaskExceptionEnable(commAicpuParam->commConfig.taskExceptionEnable);
+    hcomm::SetNotifyWaitTimeout(commAicpuParam->commConfig.notifyWaitTimeout);
+    HCCL_RUN_INFO("[%s]Env: taskExceptionEnable[%d], notifyWaitTimeout[%u]",
+        __func__, commAicpuParam->commConfig.taskExceptionEnable, commAicpuParam->commConfig.notifyWaitTimeout);
 }
 
 void CollCommAicpu::SetCommmStatus(HcclCommStatus status)
@@ -195,7 +197,7 @@ HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isI
             // 恢复出的channelHandle回填到commParam中
             channelList[index] = channelHandle;
             CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
-            HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankList[index]);
+            dfx_.AddChannelRemoteRankId(channelHandle, commParam->remoteRankList[index]);
         } else {
             channelHandle = channelList[index];
             if (!ubTransportMap_.count(channelHandle)) {
@@ -247,6 +249,14 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
         handle = reinterpret_cast<uint64_t>(p2pTransportLiteImpl.get());
         p2pTransportMap_.insert({handle, std::move(p2pTransportLiteImpl)});
         // TODO 是否需要缓存用于NsRecovery
+    } else if (transType == Hccl::TransportType::ROCE) {
+        std::unique_ptr<Hccl::RoceTransportLiteImpl> roceTransportLiteImpl;
+        EXECEPTION_CATCH((roceTransportLiteImpl = std::make_unique<Hccl::RoceTransportLiteImpl>(transpUniqueId)),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(roceTransportLiteImpl);
+
+        handle = reinterpret_cast<uint64_t>(roceTransportLiteImpl.get());
+        roceTransportMap_.insert({handle, std::move(roceTransportLiteImpl)});
     } else {
         HCCL_ERROR("[CollCommAicpu][ParsePackData] unsupported transportType[%u]", transType);
         return HCCL_E_INTERNAL;
@@ -357,8 +367,8 @@ HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
     CHK_PTR_NULL(commParam);
     CHK_RET(ProcessUrmaRes(commParam, false));
     nsRecoveryLitePtr_->SetNeedClean(false);
-    nsRecoveryLitePtr_->ResetErrorReported();
 
+    SetErrorReported(false);
     commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
     
     return HCCL_SUCCESS;

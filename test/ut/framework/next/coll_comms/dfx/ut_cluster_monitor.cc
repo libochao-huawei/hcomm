@@ -153,7 +153,7 @@ TEST_F(ClusterMonitorTest, Ut_CreateMonitorLinksAsync_When_NormalInput_Expect_Cr
         }
     }
 
-    g_monitor.linkRunningStatus_ = false;
+    g_monitor.linkThreadRunning_ = false;
     // 在心跳进程结束之前join所有的建链线程
     for (auto &pair : g_monitor.linkThreadMap_) {
         if (pair.second != nullptr && pair.second->joinable()) {
