@@ -43,8 +43,8 @@ void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
     }
 
     auto taskNumIt = queueTaskNum.find(taskInfo->streamId_);
-    std::unique_ptr<TaskInfoQueue> &queue = queueIt->second;
-    u32 &taskNum = taskNumIt->second;
+    auto &queue = queueIt->second;
+    auto &taskNum = taskNumIt->second;
     if (UNLIKELY(taskNum == queue->Capacity())) {
         fullyCallBack_();
         taskNum = 0;
