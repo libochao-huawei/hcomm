@@ -52,7 +52,7 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
     }
 
     // 校验HComm信息
-    CHK_RET(CheckHcommInfo(channelDescs, sockets, remoteRanks, roles, newChannels));
+    CHK_RET(CheckHcommInfo(channelDescs, hcommDescs, sockets, remoteRanks, roles, newChannels));
     // 交换HCCL算子信息 ======
     CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, collCommConfigConsistency));
     CHK_RET(collCommConfigConsistency.ResetExchangeInfo());
@@ -62,6 +62,7 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
 
 HcclResult ExchangeInfoMgr::CheckHcommInfo(
     const HcclChannelDesc* channelDescs,
+    const std::vector<HcommChannelDesc> &hcommDescs,
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
