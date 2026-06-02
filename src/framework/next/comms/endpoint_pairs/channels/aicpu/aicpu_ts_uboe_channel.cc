@@ -679,7 +679,7 @@ void AicpuTsUboeChannel::ProcessUboeState()
 
 ChannelStatus AicpuTsUboeChannel::GetStatus()
 {
-    if (channelStatus == ChannelStatus::READY ) {
+    if (channelStatus == ChannelStatus::READY) {
         return channelStatus;
     }
     if (channelStatus == ChannelStatus::INIT) uboeStatus = UboeStatus::INIT;
