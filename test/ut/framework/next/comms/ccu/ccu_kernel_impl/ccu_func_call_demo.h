@@ -44,6 +44,7 @@ inline CcuResult CcuFuncCallReuseDemoKernel(CcuKernelArg arg)
     ccu::Variable x{};
     x = 2;
     CCU_CHK_RET(ccu::CallFunc<CcuFuncCallBasicFunc>(x));
+    CCU_CHK_RET(ccu::CallFunc<CcuFuncCallNestedInnerFunc>(x));
     return ccu::CallFunc<CcuFuncCallBasicFunc>(x);
 }
 
@@ -68,6 +69,26 @@ inline CcuResult CcuFuncCallNestedInvalidDemoKernel(CcuKernelArg arg)
     ccu::Variable x{};
     x = 4;
     return ccu::CallFunc<CcuFuncCallNestedOuterFunc>(x);
+}
+
+// 多入参（个数 > FUNC_ARG_MAX）：旧逻辑会在第 2 个 DefineInArg/SetInArg 抛错；
+// 直写 formal 后入参个数不再受限，应成功。
+ccu::Func CcuFuncCallMultiArgFunc([](ccu::Variable a, ccu::Variable b, ccu::Variable c) {
+    ccu::Variable tmp{};
+    tmp = a + b;
+    tmp = tmp + c;
+});
+
+inline CcuResult CcuFuncCallMultiArgDemoKernel(CcuKernelArg arg)
+{
+    (void)arg;
+    ccu::Variable x{};
+    ccu::Variable y{};
+    ccu::Variable z{};
+    x = 1;
+    y = 2;
+    z = 3;
+    return ccu::CallFunc<CcuFuncCallMultiArgFunc>(x, y, z);
 }
 
 #endif // CCU_FUNC_CALL_DEMO_H
