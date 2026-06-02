@@ -48,11 +48,8 @@ inline Variable GetResByChannel<Variable>(ChannelHandle channel, uint32_t varInd
 }
 
 // ==================== 事件 ====================
-// mask 由调用方独立传入（与 Event 句柄解耦），ccu::SetMask 已废弃删除。
-// 默认 mask = 1，对原有"未显式设 mask"的调用保持二进制兼容语义。
 inline CcuResult EventRecord(Event e, uint16_t mask = 1)  { return CcuEventRecord(e.handle, mask); }
 inline CcuResult EventWait(Event e, uint16_t mask = 1)    { return CcuEventWait(e.handle, mask); }
-// 同卡内跨 core 通知：直接以 notifyTag 字符串作为生产者/消费者配对标识
 inline CcuResult EventRecord(const char *notifyTag, uint16_t mask = 1) { return CcuLocalNotifyRecord(notifyTag, mask); }
 inline CcuResult EventWait(const char *notifyTag, uint16_t mask = 1) { return CcuLocalNotifyWait(notifyTag, mask); }
 inline CcuResult NotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint16_t mask=1){ return CcuNotifyRecord(channel, remoteNotifyIdx, mask); }
@@ -69,9 +66,8 @@ inline CcuResult Store(uint64_t addr, Array<Variable>& vArr, uint32_t num) { ret
 inline CcuResult Store(uint64_t addr, Variable v) { return CcuStoreVar(addr, v.handle, 1); }
 inline CcuResult Store(Variable addrVar, Array<Variable>& vArr, uint32_t num) { return CcuStoreVarToVarAddr(addrVar.handle, vArr[0].handle,num); }
 inline CcuResult Store(Variable addrVar, Variable v) { return CcuStoreVarToVarAddr(addrVar.handle, v.handle, 1); }
-// ==================== 本地拷贝（3 种重载） ====================
-// 各数据 API 末尾统一新增 uint16_t mask = 1，与 Event 句柄解耦。
 
+// ==================== 本地拷贝（3 种重载） ====================
 // LocalAddr → LocalAddr,LocalAddr → CcuBuffer,CcuBuffer → LocalAddr
 inline CcuResult LocalCopy(LocalAddr dst, LocalAddr src,Variable len, Event event, uint16_t mask = 1) { return CcuLocalCopyMemToMem(dst.handle, src.handle, len.handle, event.handle, mask); }
 inline CcuResult LocalCopy(CcuBuffer dst, LocalAddr src, Variable len, Event event, uint16_t mask = 1) { return CcuLocalCopyMemToBuffer(dst.handle, src.handle, len.handle, event.handle, mask); }

@@ -11,7 +11,7 @@
 #include "adapter_hccp.h"
 #include "ccu_primitives.hpp"
 #include "ccu_types.h"
-#include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
+#include "ccu_log.h" 
 #include <vector>
 
 namespace ccu = ::AscendC::ccu;
@@ -131,21 +131,15 @@ CcuResult CcuNotifyDemoKernel(CcuKernelArg arg)
     ccu::NotifyWait(args->channelHandle, 0, 0x12);
     return CcuResult::CCU_SUCCESS;
 }
-// 演示同 device 内跨 core 通知同步：用字符串 notifyTag 作为生产者/消费者的配对标识，
-// 同一 tag 必须先 Record 后 Wait；mask 与 tag 一同决定语义，默认 mask=1。
-// 与 NotifyRecord/Wait（用 ChannelHandle 标识跨 rank 通道）形成层次对偶。
+
 CcuResult CcuLocalNotifyDemoKernel(CcuKernelArg arg)
 {
     (void)arg;
-    // 1) 默认 mask = 1：C++ wrapper EventRecord/EventWait(const char*) 重载
     ccu::EventRecord("local_notify_tag_default");
     ccu::EventWait("local_notify_tag_default");
 
-    // 2) 显式 mask：演示同一 tag 上多组掩码的同步配对
     ccu::EventRecord("local_notify_tag_a", 0x12);
     ccu::EventWait("local_notify_tag_a", 0x12);
-
-    // 3) 直接调用 C API CcuLocalNotifyRecord/Wait（C 风格调用点）
     CcuLocalNotifyRecord("local_notify_tag_b", 0x34);
     CcuLocalNotifyWait("local_notify_tag_b", 0x34);
     return CcuResult::CCU_SUCCESS;
