@@ -21,7 +21,7 @@
 
 namespace Hccl {
 
-using TaskInfoQueue = Queue<std::shared_ptr<TaskInfo>>;
+using TaskInfoQueue = Queue<std::unique_ptr<TaskInfo>>;
 
 class MirrorTaskManager {
 public:
@@ -29,7 +29,7 @@ public:
 
     void RegFullyCallBack(std::function<void()> callBack);
     void RegFullyCallBack(std::function<void(const std::string&, u32)> callBack);
-    void AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo);
+    void AddTaskInfo(std::unique_ptr<TaskInfo> &taskInfo);
     void SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo);
 
     std::shared_ptr<DfxOpInfo> GetCurrDfxOpInfo() const;
