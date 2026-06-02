@@ -566,6 +566,8 @@ struct rs_cb {
     void *ndaCb;
     int ndaCbRefCnt;
     void *custom_ssl;
+
+    struct RsListHead udevList;
 };
 
 extern __thread struct rs_cb *gRsCb;
