@@ -51,34 +51,37 @@ void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
     }
     bool needCallback = false;
     {
-        std::lock_guard<std::mutex> lock(profMutex);
+        std::unique_lock<std::mutex> lock(profMutex);
         if (taskInfo->dfxOpInfo_ == nullptr) {
             taskInfo->dfxOpInfo_ = currDfxOpInfo_;
         }
 
-        if (queueMap_.find(taskInfo->streamId_) == queueMap_.end()) {
-            QueueType queueType            = GetQueueType();
+        auto queueIt = queueMap_.find(taskInfo->streamId_);
+        if (UNLIKELY(queueIt == queueMap_.end())) {
+            QueueType queueType = GetQueueType();
             queueMap_[taskInfo->streamId_] = &(globalMirrorTasks_->CreateQueue(devId_, taskInfo->streamId_, queueType));
             queueTaskNum[taskInfo->streamId_] = 0;
+            queueIt = queueMap_.find(taskInfo->streamId_);
         }
 
-        if (queueTaskNum[taskInfo->streamId_] == static_cast<u32>(queueMap_[taskInfo->streamId_]->Capacity())) {
+        auto taskNumIt = queueTaskNum.find(taskInfo->streamId_);
+        if (UNLIKELY(taskNumIt->second == queueIt->second->Capacity())) {
             needCallback = true;
-            queueTaskNum[taskInfo->streamId_] = 0;
+            taskNumIt->second = 0;
         }
-    }
-    if (needCallback && fullyCallBack_ != nullptr) {
-        fullyCallBack_();
-    }
-    {
-        std::lock_guard<std::mutex> lock(profMutex);
-        queueMap_[taskInfo->streamId_]->Append(taskInfo);
-        queueTaskNum[taskInfo->streamId_]++;
-    }
 
+        if (needCallback && fullyCallBack_ != nullptr) {
+            lock.unlock();
+            fullyCallBack_();
+            lock.lock();
+            queueIt = queueMap_.find(taskInfo->streamId_);
+            taskNumIt = queueTaskNum.find(taskInfo->streamId_);
+        }
+        queueIt->second->Append(taskInfo);
+        taskNumIt->second++;
+    }
     HCCL_INFO("[MirrorTaskManager][AddTaskInfo]add devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u] queueMapsize[%u]",
-              devId_, taskInfo->streamId_, taskInfo->taskId_, queueMap_.size());
-
+        devId_, taskInfo->streamId_, taskInfo->taskId_, queueMap_.size());
     return;
 }
 
