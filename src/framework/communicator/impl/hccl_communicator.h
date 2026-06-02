@@ -58,7 +58,6 @@
 #include "new/hccl_dispatcher_ctx.h"
 #include "rank_graph.h"
 #include "symmetric_memory/symmetric_memory.h"
-#include "my_rank.h"
 #include "hccl_dpu_manager.h"
 #include "../../../legacy/unified_platform/resource/buffer/dev_buffer.h"
 
@@ -147,11 +146,8 @@ public:
 
     u32 GetRealUserRank();
 
-    HcclResult InitMyRank();
-    HcclResult CreateMyRank(HcclCommParams &params, const RankTable_t &rankTable, HcclTopoAttr &topoAttr);
     HcclResult InitMyRankConnectMode(HcclCommParams &params, const RankTable_t &rankTable);
     uint32_t GetConnectMode();
-    void *GetMyRank();
     HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
 
     HcclResult GetCommParams(HcclCommParams &params); // 逆向解析获取HcclCommParams参数
@@ -308,6 +304,7 @@ public:
     u32 GetUserRank();
     u32 GetGroupRank();
     u32 GetRankSize();
+    u32 GetRankInParentComm();  // 获取父通信域中的rank ID (MC2场景使用)
     /* * 以下两函数用于防止重复初始化 */
     HcclResult AtomicInitSet();
     HcclResult HostMC2EnvResume();
@@ -473,8 +470,11 @@ public:
     HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
     HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
     HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
+    HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
+                               uint32_t infoLen, void *info);
 
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
+    void* GetRankGraphV1();  // 获取V1 RankGraph指针，用于CollComm初始化
 
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize);
@@ -1134,9 +1134,8 @@ private:
 #ifndef CCL_KERNEL_AICPU
     RankGraphV1 rankGraph_;
     std::unique_ptr<DpuManager> dpuManager_;
-    std::unique_ptr<MyRank> myRank_{nullptr};
 #endif
-    uint32_t myRankConnectMode_{0};
+    uint32_t myRankConnectMode_{0}; // 0: normal mode 1: host nic对接device nic异构模式
 
     // for group
     bool isGroupMode_ {false};
@@ -1149,6 +1148,7 @@ private:
     std::function<HcclResult()> releaseChannel_ = nullptr;
     
     u32 hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
+    u32 rankInParentComm_{0};  // 父通信域中的rank ID (MC2场景使用)
     std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent_;
     std::unique_ptr<SymmetricMemory> symmetricMemory_;
 };
