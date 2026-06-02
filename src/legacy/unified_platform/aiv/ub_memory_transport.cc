@@ -226,8 +226,8 @@ std::string UbMemoryTransport::Describe() const
 {
     std::string description = "";
 
-    description = StringFormat("deviceLogicId: %d", deviceLogicId);
-    description += StringFormat(" , UBTransportStatus:  %u", static_cast<u32>(ubStatus));
+    description = StringFormat("deviceLogicId:%d,", deviceLogicId);
+    description += StringFormat("UBTransportStatus:%u", static_cast<u32>(ubStatus));
     return description;
 }
 
