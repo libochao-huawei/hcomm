@@ -13,12 +13,12 @@
 #include "orion_adpt_utils.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
-#include "comm_mems.h"
 
 #include "coll_alg_param.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
 #include "p2p_connection.h"
+#include "makebufs_helper.h"
 
 namespace hcomm {
 
@@ -36,16 +36,7 @@ AicpuTsP2pChannel::~AicpuTsP2pChannel()
 HcclResult AicpuTsP2pChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
 {
-    bufs.clear();
-    for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        HCCL_INFO("[AicpuTsP2pChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
-        bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
-        ));
-    }
-    return HCCL_SUCCESS;
+    return MakebufsFromLocalRmaBuffer(memHandles, memHandleNum, bufs, "AicpuTsP2pChannel");
 }
 
 HcclResult AicpuTsP2pChannel::ParseInputParam()
@@ -69,14 +60,16 @@ HcclResult AicpuTsP2pChannel::ParseInputParam()
         HCCL_INFO("[AicpuTsP2pChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalIpcRmaBuffer> &localIpcRmaBuffer = memHandles[i];
-            HCCL_INFO("[AicpuTsP2pChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localIpcRmaBuffer->GetBufferInfo().first,
-                localIpcRmaBuffer->GetBufferInfo().second,
-                localIpcRmaBuffer->GetBuf()->GetMemTag().c_str());
+            CHK_SMART_PTR_NULL(localIpcRmaBuffer);
+            auto buf = localIpcRmaBuffer->GetBuf();
+            CHK_PTR_NULL(buf);
+            HCCL_INFO("[AicpuTsP2pChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], "
+                "memType[%d], memTag[%s].",
+                __func__, i, static_cast<unsigned long long>(buf->GetAddr()),
+                static_cast<unsigned long long>(buf->GetSize()), static_cast<int>(buf->GetMemType()),
+                buf->GetMemTag().c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localIpcRmaBuffer->GetBufferInfo().first,
-                localIpcRmaBuffer->GetBufferInfo().second,
-                localIpcRmaBuffer->GetBuf()->GetMemTag().c_str())
+                buf->GetAddr(), buf->GetSize(), buf->GetMemType(), buf->GetMemTag().c_str())
             ));
         }
     } else {
