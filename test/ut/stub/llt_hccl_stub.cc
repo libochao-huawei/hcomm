@@ -5537,4 +5537,3 @@ aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
 {
     return ACL_SUCCESS;
 }
-
