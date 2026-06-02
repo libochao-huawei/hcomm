@@ -25,6 +25,10 @@ public:
     LocalRdmaRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
         const RmaMemType memType = RmaMemType::DEVICE);
 
+    // 别名构造函数：共享父buffer的RDMA注册资源
+    LocalRdmaRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
+        const RmaMemType memType, const LocalRdmaRmaBuffer& parent);
+
     HcclResult Init();
     HcclResult Destroy();
     ~LocalRdmaRmaBuffer() override;
@@ -39,6 +43,7 @@ public:
     HcclResult Remap(void* addr, u64 length);
 
 private:
+    const LocalRdmaRmaBufferImpl& GetImpl() const { return *pimpl_; }
     std::unique_ptr<LocalRdmaRmaBufferImpl> pimpl_;
 };
 }

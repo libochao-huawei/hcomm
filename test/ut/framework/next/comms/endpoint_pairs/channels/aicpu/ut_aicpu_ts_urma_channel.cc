@@ -26,6 +26,25 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_Clean_WithoutInit_Returns_SUCCESS) {
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+TEST_F(AicpuTsUrmaChannelTest, Ut_Makebufs_When_LocalUbHandle_Expect_BufferFieldsFromRmaBuffer)
+{
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUrmaChannel ch(ep, desc);
+
+    auto rawBuffer = std::make_shared<Hccl::Buffer>(0x22340, 0x180, HCCL_MEM_TYPE_DEVICE, "urma_user");
+    auto localRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(rawBuffer);
+    HcommMemHandle memHandles[1] = { reinterpret_cast<HcommMemHandle>(localRmaBuffer.get()) };
+
+    std::vector<std::shared_ptr<Hccl::Buffer>> bufs;
+    ASSERT_EQ(ch.Makebufs(memHandles, 1, bufs), HCCL_SUCCESS);
+    ASSERT_EQ(bufs.size(), 1U);
+    EXPECT_EQ(bufs[0]->GetAddr(), localRmaBuffer->GetAddr());
+    EXPECT_EQ(bufs[0]->GetSize(), localRmaBuffer->GetSize());
+    EXPECT_EQ(bufs[0]->GetMemType(), rawBuffer->GetMemType());
+    EXPECT_EQ(bufs[0]->GetMemTag(), rawBuffer->GetMemTag());
+}
+
 TEST_F(AicpuTsUrmaChannelTest, Ut_Resume_MockedBuilds_Returns_SUCCESS) {
     HcommChannelDesc desc{};
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
