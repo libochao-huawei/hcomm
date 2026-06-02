@@ -30,6 +30,7 @@ public:
         const std::string &commTag);
     HcclResult CheckHcommInfo(
         const HcclChannelDesc* channelDescs,
+        const std::vector<HcommChannelDesc> &hcommDescs,
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
         const std::vector<HcommSocketRole> &roles,
