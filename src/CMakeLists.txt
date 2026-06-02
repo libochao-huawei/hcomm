@@ -50,7 +50,6 @@ foreach(dir ${LEGACY_DIRS})
     endif()
 endforeach()
 
-
 # 将子目录添加到构建过程
 add_subdirectory(hccd)
 add_subdirectory(platform)
