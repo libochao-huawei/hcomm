@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2026 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -8,34 +8,16 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-# IDE
-.vscode/
-.idea/
-.cache/
-.DS_Store
-*~
-*.swp
-*.swo
+if(NOT INPUT)
+    message(FATAL_ERROR "INPUT is required")
+endif()
+if(NOT OUTPUT)
+    message(FATAL_ERROR "OUTPUT is required")
+endif()
+if(NOT EXISTS "${INPUT}")
+    message(FATAL_ERROR "Input file does not exist: ${INPUT}")
+endif()
 
-# Build
-build/
-build_ut/
-build_st/
-build_out/
-build_device
-output
-
-openssl-device-src/
-openssl-host-src/
-/third_party/
-__pycache__/
-
-# Agent
-.claude/
-.opencode/
-CLAUDE.md
-AGENTS.md
-
-# Logs
-logs/
-*.log
+get_filename_component(OUTPUT_DIR "${OUTPUT}" DIRECTORY)
+file(MAKE_DIRECTORY "${OUTPUT_DIR}")
+configure_file("${INPUT}" "${OUTPUT}" COPYONLY)
