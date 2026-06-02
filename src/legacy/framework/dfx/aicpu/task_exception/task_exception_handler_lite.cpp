@@ -375,7 +375,7 @@ void TaskExceptionHandlerLite::PrintTaskContextInfo(CommunicatorImplLite *aicpuC
 
     auto func = [taskId] (const shared_ptr<TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskItorPtr = queue->Find(func);
-    if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
+    if (taskItorPtr == queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. streamId(sqId)[%u], taskId(sqeId)[%u].", sqId, taskId);
         return;
@@ -383,12 +383,12 @@ void TaskExceptionHandlerLite::PrintTaskContextInfo(CommunicatorImplLite *aicpuC
 
     // 找到当前异常task的前50个task(至多)
     vector<shared_ptr<TaskInfo>> taskContext {};
-    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
-        if ((**taskItorPtr)->taskId_ > taskId) {
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && taskItorPtr != queue->Begin(); ++i, --taskItorPtr) {
+        if ((*taskItorPtr)->taskId_ > taskId) {
             break;
         }
-        if ((**taskItorPtr)->taskId_ != taskId) {
-            taskContext.emplace_back(**taskItorPtr);
+        if ((*taskItorPtr)->taskId_ != taskId) {
+            taskContext.emplace_back(*taskItorPtr);
         }
     }
 
