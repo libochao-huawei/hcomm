@@ -364,19 +364,19 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
 
     auto func = [taskId] (const std::shared_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskIterPtr = queue->Find(func);
-    CHK_PRT_RET(taskIterPtr == nullptr || *taskIterPtr == *queue->End(),
+    CHK_PRT_RET(taskIterPtr == queue->End(),
         HCCL_ERROR("[%s]exception task not found, devId[%u], sqId[%u], taskId[%u]", __func__, devId_, sqId, taskId),
         HCCL_E_PARA);
 
     // 找到当前异常task的前50个task(至多)
     std::vector<std::shared_ptr<Hccl::TaskInfo>> taskContext {};
-    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskIterPtr != *queue->Begin(); ++i, --(*taskIterPtr)) {
-        if ((**taskIterPtr)->taskId_ > taskId) {
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && taskIterPtr != queue->Begin(); ++i, --taskIterPtr) {
+        if ((*taskIterPtr)->taskId_ > taskId) {
             HCCL_ERROR("[%s]prev taskId[%u] is bigger than err taskId[%u], stop traversal",
-                __func__, (**taskIterPtr)->taskId_, taskId);
+                __func__, (*taskIterPtr)->taskId_, taskId);
             break;
         }
-        taskContext.emplace_back(**taskIterPtr);
+        taskContext.emplace_back(*taskIterPtr);
     }
 
     HCCL_ERROR("[TaskException][AICPU]context sequence before error task is "

@@ -290,7 +290,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
         return task->taskId_ == taskId;
     };
     auto taskItorPtr = queue->Find(func);
-    if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
+    if (taskItorPtr == queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].", exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
         return;
@@ -300,26 +300,26 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
                "deviceId[%u] streamId[%u], TaskId[%u].",
                exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
 
-    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); --(*taskItorPtr)) {
-        if ((**taskItorPtr)->taskId_ > taskId) {
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && taskItorPtr != queue->Begin(); --taskItorPtr) {
+        if ((*taskItorPtr)->taskId_ > taskId) {
             break;
         }
-        if ((**taskItorPtr)->taskId_ != taskId && (**taskItorPtr)->taskParam_.taskType == TaskParamType::TASK_AIV) {
+        if ((*taskItorPtr)->taskId_ != taskId && (*taskItorPtr)->taskParam_.taskType == TaskParamType::TASK_AIV) {
                 HCCL_ERROR("[TaskExceptionHandler][AIV] "
                 "previous TaskId[%u],streamId[%u], cmdType[%u], "
                 "tag[%u],rank[%u],rankSize[%u], dataCount[%u], numBlocks[%u],"
                 "dataType:[%u], beginTime:[%llu], flagMem[%p]",
-                (**taskItorPtr)->taskId_, 
-                (**taskItorPtr)->streamId_,
-                (**taskItorPtr)->taskParam_.taskPara.Aiv.cmdType, 
-                (**taskItorPtr)->taskParam_.taskPara.Aiv.tag, 
-                (**taskItorPtr)->taskParam_.taskPara.Aiv.rank, 
-                (**taskItorPtr)->taskParam_.taskPara.Aiv.rankSize, 
-                (**taskItorPtr)->taskParam_.taskPara.Aiv.count, 
-                (**taskItorPtr)->taskParam_.taskPara.Aiv.numBlocks,
-                (**taskItorPtr)->taskParam_.taskPara.Aiv.dataType, 
-                (**taskItorPtr)->taskParam_.beginTime,
-                (**taskItorPtr)->taskParam_.taskPara.Aiv.flagMem);
+                (*taskItorPtr)->taskId_, 
+                (*taskItorPtr)->streamId_,
+                (*taskItorPtr)->taskParam_.taskPara.Aiv.cmdType, 
+                (*taskItorPtr)->taskParam_.taskPara.Aiv.tag, 
+                (*taskItorPtr)->taskParam_.taskPara.Aiv.rank, 
+                (*taskItorPtr)->taskParam_.taskPara.Aiv.rankSize, 
+                (*taskItorPtr)->taskParam_.taskPara.Aiv.count, 
+                (*taskItorPtr)->taskParam_.taskPara.Aiv.numBlocks,
+                (*taskItorPtr)->taskParam_.taskPara.Aiv.dataType, 
+                (*taskItorPtr)->taskParam_.beginTime,
+                (*taskItorPtr)->taskParam_.taskPara.Aiv.flagMem);
         }
         i++;
     }
@@ -383,7 +383,7 @@ void TaskExceptionHandler::PrintTaskContextInfo(uint32_t deviceId, uint32_t stre
 
     auto func = [taskId] (const shared_ptr<TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskItorPtr = queue->Find(func);
-    if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
+    if (taskItorPtr == queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].", deviceId, streamId, taskId);
         return;
@@ -391,12 +391,12 @@ void TaskExceptionHandler::PrintTaskContextInfo(uint32_t deviceId, uint32_t stre
 
     // 找到当前异常task的前50个task(至多)
     vector<shared_ptr<TaskInfo>> taskContext {};
-    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
-        if ((**taskItorPtr)->taskId_ > taskId) {
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && taskItorPtr != queue->Begin(); ++i, --taskItorPtr) {
+        if ((*taskItorPtr)->taskId_ > taskId) {
             break;
         }
-        if ((**taskItorPtr)->taskId_ != taskId) {
-            taskContext.emplace_back(**taskItorPtr);
+        if ((*taskItorPtr)->taskId_ != taskId) {
+            taskContext.emplace_back(*taskItorPtr);
         }
     }
 
