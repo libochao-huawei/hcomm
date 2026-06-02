@@ -26,7 +26,7 @@ private:
     void UpdateAllLastPos();
     MirrorTaskManagerLite                                                         *mirrorTaskMgrLite_{nullptr};
     ProfilingHandlerLite                                                      *profilingHandlerLite_{nullptr};
-    std::map<u32, std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>> lastPoses_{};
+    std::map<u32, Queue<std::shared_ptr<TaskInfo>>::Iterator> lastPoses_{};
 };
 } // namespace Hccl
  
