@@ -252,19 +252,19 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST) {
         pluginEntry = FindHostNicPlugin(endpoint->protocol);
     }
-    HCCL_ERROR("[NicPluginDebug][%s] locType[%d], protocol[%d], pluginEntry[%p].",
+    HCCL_INFO("[NicPluginDebug][%s] locType[%d], protocol[%d], pluginEntry[%p].",
         __func__, endpoint->loc.locType, endpoint->protocol, pluginEntry);
 
     if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST && pluginEntry != nullptr) {
-        HCCL_ERROR("[NicPluginDebug][%s] enter plugin endpoint branch, protocol[%d].",
+        HCCL_INFO("[NicPluginDebug][%s] enter plugin endpoint branch, protocol[%d].",
             __func__, endpoint->protocol);
         CHK_RET(static_cast<HcclResult>(CreatePluginEndpoint(endpoint, endpointHandle)));
-        HCCL_ERROR("[NicPluginDebug][%s] plugin endpoint created, protocol[%d], handle[%p], isPlugin[%d].",
+        HCCL_INFO("[NicPluginDebug][%s] plugin endpoint created, protocol[%d], handle[%p], isPlugin[%d].",
             __func__, endpoint->protocol, *endpointHandle, IS_PLUGIN_HANDLE(*endpointHandle));
         return HCCL_SUCCESS;
     }
 
-    HCCL_ERROR("[NicPluginDebug][%s] fallback to builtin Endpoint::CreateEndpoint, locType[%d], protocol[%d], "
+    HCCL_RUN_WARNING("[NicPluginDebug][%s] fallback to builtin Endpoint::CreateEndpoint, locType[%d], protocol[%d], "
         "pluginEntry[%p].", __func__, endpoint->loc.locType, endpoint->protocol, pluginEntry);
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
@@ -362,6 +362,16 @@ HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port
 HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port)
 {
     CHK_PTR_NULL(port);
+    if (IS_PLUGIN_HANDLE(endpointHandle)) {
+        PluginEndpointCtx *pluginEndpoint = PLUGIN_EP_CTX(endpointHandle);
+        CHK_PTR_NULL(pluginEndpoint);
+        CHK_PTR_NULL(pluginEndpoint->ops);
+        if (pluginEndpoint->ops->getListenPort == nullptr) {
+            return UnsupportedPluginOp(__func__);
+        }
+        return pluginEndpoint->ops->getListenPort(pluginEndpoint->ctx, port);
+    }
+
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);

@@ -21,6 +21,15 @@ constexpr uint32_t SL_TEMP = 4;
 constexpr uint32_t RETRY_CNT_TEMP = 7;
 constexpr uint32_t RETRY_TIME_TEMP = 20;
 
+namespace {
+HcclResult GetHostQpMode(int &qpMode)
+{
+    qpMode = Hccl::OPBASE_QP_MODE;
+    HCCL_INFO("[HostRdmaConnection][%s] host-only default qpMode[%d].", __func__, qpMode);
+    return HCCL_SUCCESS;
+}
+}
+
 HostRdmaConnection::HostRdmaConnection(Hccl::Socket *socket, RdmaHandle rdmaHandle):
     socket_(socket), rdmaHandle_(rdmaHandle) {}
 
@@ -32,7 +41,9 @@ HcclResult HostRdmaConnection::Init()
         return HCCL_SUCCESS;
     }
 
-    qpInfo_.qpMode = Hccl::OPBASE_QP_MODE;
+    int qpMode = 0;
+    CHK_RET(GetHostQpMode(qpMode));
+    qpInfo_.qpMode = qpMode;
     qpInfo_.rdmaHandle = rdmaHandle_;
     rdmaConnStatus_ = RdmaConnStatus::INIT;
     return HCCL_SUCCESS;
