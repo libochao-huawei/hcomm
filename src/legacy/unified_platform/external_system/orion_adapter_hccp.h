@@ -389,7 +389,6 @@ HcclResult HrtRaUbLocalMemBatchRegister(RdmaHandle handle, const std::vector<Hrt
 
 HcclResult HrtRaUbRemoteMemBatchImport(RdmaHandle handle, const std::vector<HrtRaUbRemMemImportParam> &importParams,
     std::vector<HrtRaUbRemMemImportedOutParam> &outParams);
-    
 
 HrtRaUbRemMemImportedOutParam HrtRaUbRemoteMemImport(RdmaHandle handle, u8 *key, u32 keyLen, u32 tokenValue);
 
