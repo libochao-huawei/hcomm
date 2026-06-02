@@ -169,9 +169,9 @@ TEST_F(GlobalMirrorTasksTest, GlobalMirrorTasks_GetAllTaskInfo)
             auto streamId = iter->first;
             auto &taskInfoQueue = iter->second;
             // 枚举所有任务信息
-            for (auto taskInfoIter = taskInfoQueue->Begin(); (*taskInfoIter) != *taskInfoQueue->End();
-                 (*taskInfoIter)++) {
-                std::cout << (*(*taskInfoIter))->Describe().c_str() << std::endl;
+            for (auto taskInfoIter = taskInfoQueue->Begin(); taskInfoIter != taskInfoQueue->End();
+                 taskInfoIter++) {
+                std::cout << (*taskInfoIter)->Describe().c_str() << std::endl;
             }
         }
     }

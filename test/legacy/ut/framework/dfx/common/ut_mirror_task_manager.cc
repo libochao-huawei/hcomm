@@ -132,8 +132,8 @@ TEST_F(MirrorTaskManagerTest, MirrorTaskManager_Iterator_1)
         Queue<std::shared_ptr<TaskInfo>> *taskInfoQueue = queueIter->second;
 
         // 枚举所有任务信息
-        for (auto taskInfoIter = taskInfoQueue->Begin(); (*taskInfoIter) != *taskInfoQueue->End(); (*taskInfoIter)++) {
-            std::cout << (*(*taskInfoIter))->Describe().c_str() << std::endl;
+        for (auto taskInfoIter = taskInfoQueue->Begin(); taskInfoIter != taskInfoQueue->End(); taskInfoIter++) {
+            std::cout << (*taskInfoIter)->Describe().c_str() << std::endl;
         }
     }
 }
@@ -187,7 +187,7 @@ TEST_F(MirrorTaskManagerTest, MirrorTaskManager_Iterator_2)
 
         // 枚举所有任务信息
         int32_t cnt = 0;
-        for (auto taskInfoIter = taskInfoQueue->Begin(); (*taskInfoIter) != *taskInfoQueue->End(); (*taskInfoIter)++) {
+        for (auto taskInfoIter = taskInfoQueue->Begin(); taskInfoIter != taskInfoQueue->End(); taskInfoIter++) {
             cnt++;
         }
         if (streamId == 0) {
@@ -200,9 +200,9 @@ TEST_F(MirrorTaskManagerTest, MirrorTaskManager_Iterator_2)
         if (taskInfoQueue->Size() != 0) {
             auto taskInfoIterBack = taskInfoQueue->End();
             do {
-                (*taskInfoIterBack)--;
+                taskInfoIterBack--;
                 cnt--;
-            } while ((*taskInfoIterBack) != *taskInfoQueue->Begin());
+            } while (taskInfoIterBack != taskInfoQueue->Begin());
         }
         EXPECT_EQ(cnt, 0);
     }
