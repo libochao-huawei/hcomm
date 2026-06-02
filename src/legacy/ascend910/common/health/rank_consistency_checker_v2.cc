@@ -155,9 +155,7 @@ HcclResult RankConsistencyCheckerV2::CompareCheckFrameV2(
         local.subCommCrcNum, local.subCommCrcArray,
         remote.subCommCrcNum, remote.subCommCrcArray,
         subCommParaCrcsV2_, "sub comm param", "sub_comm_param_count");
-    // CompareEnvV2(local, remote, isDiff);
-    // CompareRankTableV2(local, remote, isDiff);
-    // CompareSubCommV2(local, remote, isDiff);
+        
     CompareVersionV2(local, remote, isDiff);
     return isDiff ? HCCL_E_INTERNAL : HCCL_SUCCESS;
 }
@@ -178,7 +176,7 @@ bool RankConsistencyCheckerV2::GetInconsistentCheckFirstDone()
 }
 
 // private
-bool RankConsistentcyChecker::CompareCrcArrayV2(
+bool RankConsistencyCheckerV2::CompareCrcArrayV2(
     u32 localNum, const u32 *localArray,
     u32 remoteNum, const u32 *remoteArray,
     const std::vector<CrcEntryV2> &nameSource,
@@ -187,7 +185,7 @@ bool RankConsistentcyChecker::CompareCrcArrayV2(
 {
     bool isDiff = false;
     if (localNum != remoteNum) {
-        HCCL_ERROR("[CompareCheckFrameV2] %s crcNum mismatch: local[%u], remote[%u].",
+        HCCL_ERROR("[RankConsistencyCheckerV2::CompareCheckFrameV2] %s crcNum mismatch: local[%u], remote[%u].",
             categoryLabel.c_str(), localNum, remoteNum);
         RPT_INPUT_ERR(true, "EI0005",
             std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
@@ -195,11 +193,10 @@ bool RankConsistentcyChecker::CompareCrcArrayV2(
                 std::to_string(localNum), std::to_string(remoteNum)}));
         isDiff = true;
     } else {
-        std::lock_guard<std::mutex> lock(mutex_);
         for (u32 i = 0; i < localNum && i < nameSource.size(); i++) {
             if (localArray[i] != remoteArray[i]) {
                 const std::string &name = nameSource[i].name;
-                HCCL_ERROR("[CompareCheckFrameV2] %s mismatch: [%s], local[0x%08x], remote[0x%08x].",
+                HCCL_ERROR("[RankConsistencyCheckerV2::CompareCheckFrameV2] %s mismatch: [%s], local[0x%08x], remote[0x%08x].",
                       categoryLabel.c_str(), name.c_str(), localArray[i], remoteArray[i]);
                 RPT_INPUT_ERR(true, "EI0005",
                     std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
