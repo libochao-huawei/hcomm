@@ -88,8 +88,8 @@ STATIC void RsEschedCleanAllResource(struct rs_cb *rscb)
 
     RS_PTHREAD_MUTEX_LOCK(&rscb->mutex);
 
-    RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rscb->rdevList, list, struct RsUbDevCb);
-    for (; (&devCbCurr->list) != &rscb->rdevList;
+    RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rscb->udevList, list, struct RsUbDevCb);
+    for (; (&devCbCurr->list) != &rscb->udevList;
          devCbCurr = devCbNext,
          devCbNext = list_entry(devCbNext->list.next, struct RsUbDevCb, list)) {
         hccp_info("logicId[%u] devIndex[%u] start clean", rscb->logicId, devCbCurr->index);
