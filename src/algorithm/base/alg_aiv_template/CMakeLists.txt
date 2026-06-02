@@ -19,6 +19,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_aiv_op_ascend910B ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_ascend910B.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_ascend910B.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_ascend910B_tmp.o 
             -DASCNEDC_DUMP --cce-aicore-arch=dav-c220-vec
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
@@ -45,6 +46,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ag_superkernel_int8 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int8.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int8.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int8.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT8 -Dsk_allgather=sk_allgather_int8
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -70,6 +72,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ag_superkernel_int16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT16 -Dsk_allgather=sk_allgather_int16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -96,6 +99,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ag_superkernel_int32 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int32.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int32.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int32.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT32 -Dsk_allgather=sk_allgather_int32
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -122,6 +126,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ag_superkernel_float16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_float16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_float16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_float16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_FP16 -Dsk_allgather=sk_allgather_float16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -148,6 +153,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ag_superkernel_float32 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_float32.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_float32.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_float32.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_FP32 -Dsk_allgather=sk_allgather_float32
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -174,6 +180,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ag_superkernel_bfloat16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_bfloat16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_bfloat16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_bfloat16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_BFP16 -Dsk_allgather=sk_allgather_bfloat16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -200,6 +207,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ag_superkernel_uint8 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint8.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint8.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint8.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_UINT8 -Dsk_allgather=sk_allgather_uint8
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -226,6 +234,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ag_superkernel_uint16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_UINT16 -Dsk_allgather=sk_allgather_uint16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -252,6 +261,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ag_superkernel_uint32 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint32.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint32.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ag_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint32.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_UINT32 -Dsk_allgather=sk_allgather_uint32
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -279,6 +289,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_rs_superkernel_int8 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_int8.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_int8.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_int8.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT8 -Dsk_reducescatter=sk_reducescatter_int8
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -305,6 +316,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_rs_superkernel_int16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_int16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_int16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_int16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT16 -Dsk_reducescatter=sk_reducescatter_int16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -331,6 +343,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_rs_superkernel_int32 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_int32.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_int32.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_int32.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT32 -Dsk_reducescatter=sk_reducescatter_int32
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -357,6 +370,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_rs_superkernel_float16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_float16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_float16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_float16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_FP16 -Dsk_reducescatter=sk_reducescatter_float16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -383,6 +397,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_rs_superkernel_float32 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_float32.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_float32.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_float32.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_FP32 -Dsk_reducescatter=sk_reducescatter_float32
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -410,6 +425,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_rs_superkernel_bfloat16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_bfloat16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_bfloat16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_rs_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_rs_superkernel_bfloat16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_BFP16 -Dsk_reducescatter=sk_reducescatter_bfloat16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -436,6 +452,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ar_superkernel_int8 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int8.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int8.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int8.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT8 -Dsk_allreduce=sk_allreduce_int8
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -462,6 +479,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ar_superkernel_int16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT16 -Dsk_allreduce=sk_allreduce_int16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -488,6 +506,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ar_superkernel_int32 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int32.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int32.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_int32.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT32 -Dsk_allreduce=sk_allreduce_int32
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -514,6 +533,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ar_superkernel_float16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_float16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_float16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_float16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_FP16 -Dsk_allreduce=sk_allreduce_float16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -540,6 +560,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ar_superkernel_float32 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_float32.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_float32.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_float32.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_FP32 -Dsk_allreduce=sk_allreduce_float32
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -566,6 +587,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_ar_superkernel_bfloat16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_bfloat16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_bfloat16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_ar_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_bfloat16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_BFP16 -Dsk_allreduce=sk_allreduce_bfloat16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -592,6 +614,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_a2a_superkernel_int8 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int8.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int8.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int8.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT8 -Dsk_alltoall=sk_alltoall_int8
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -618,6 +641,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_a2a_superkernel_int16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT16 -Dsk_alltoall=sk_alltoall_int16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -644,6 +668,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_a2a_superkernel_int32 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int32.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int32.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_int32.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_INT32 -Dsk_alltoall=sk_alltoall_int32
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -670,6 +695,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_a2a_superkernel_float16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_float16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_float16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_float16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_FP16 -Dsk_alltoall=sk_alltoall_float16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -696,6 +722,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_a2a_superkernel_float32 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_float32.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_float32.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_float32.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_FP32 -Dsk_alltoall=sk_alltoall_float32
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -723,6 +750,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_a2a_superkernel_bfloat16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_bfloat16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_bfloat16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_bfloat16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_BFP16 -Dsk_alltoall=sk_alltoall_bfloat16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -749,6 +777,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_a2a_superkernel_uint8 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint8.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint8.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint8.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_UINT8 -Dsk_alltoall=sk_alltoall_uint8
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -775,6 +804,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_a2a_superkernel_uint16 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint16.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint16.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint16.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_UINT16 -Dsk_alltoall=sk_alltoall_uint16
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -801,6 +831,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_a2a_superkernel_uint32 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint32.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint32.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_a2a_superkernel.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_a2a_superkernel_uint32.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0 -DHCCL_DTYPE_UINT32 -Dsk_alltoall=sk_alltoall_uint32
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -827,6 +858,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_sk_rs_deter ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_rs_deter.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_rs_deter.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_rs_deter.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_rs_deter.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_rs_deter.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -853,6 +885,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_sk_ar_deter ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ar_deter.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ar_deter.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_ar_deter.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_ar_deter.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ar_deter.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -879,6 +912,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_sk_ar_crossnode ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ar_crossnode.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ar_crossnode.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_ar_crossnode.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_ar_crossnode.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ar_crossnode.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -904,6 +938,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_sk_rs_crossnode ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_rs_crossnode.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_rs_crossnode.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_rs_crossnode.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_rs_crossnode.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_rs_crossnode.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -930,6 +965,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_sk_ag_crossnode ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ag_crossnode.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ag_crossnode.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_ag_crossnode.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_ag_crossnode.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ag_crossnode.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
@@ -956,6 +992,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_sk_a2a_crossnode ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_a2a_crossnode.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_a2a_crossnode.o
+            IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_a2a_crossnode.h
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sk_a2a_crossnode.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_a2a_crossnode.o --cce-aicore-arch=dav-c220-vec
             -DTILING_KEY_VAR=0UL -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DASCENDC_DUMP=0 -DL2_CACHE_HINT -DCONST_TILING -DDETERMINISTIC_MODE=0
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
