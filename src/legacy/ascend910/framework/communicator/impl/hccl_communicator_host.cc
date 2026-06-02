@@ -6066,14 +6066,28 @@ namespace hccl
     {
         ListCommon *nextHostList = reinterpret_cast<ListCommon *>(headHostList->nextHost);
         ListCommon *nextDeviceList = reinterpret_cast<ListCommon *>(headHostList->nextDevice);
+        bool isRefreshSingleNode = (newTagResAlloced_.find(newTag) != newTagResAlloced_.end());
+        constexpr uint32_t UPDATE_NODE_NUM = 2;
+        uint32_t updateNodeCnt = 0;
 
-        while (nextHostList != headHostList) {
+        while (nextHostList != headHostList && updateNodeCnt < UPDATE_NODE_NUM) {
             HCCL_INFO(
                 "[HcclCommunicator][CopyHostListResToDeviceParam] remote resource, tag[%s], head Host List[%p], next "
                 "Host List[%p],next Device List[%p]",
                 newTag.c_str(), headHostList, nextHostList, nextDeviceList);
-            CHK_RET(hrtMemSyncCopy(reinterpret_cast<void *>(nextDeviceList), size, reinterpret_cast<void *>(nextHostList),
-                                   size, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+            if (isRefreshSingleNode) {
+                std::string curTag = (size == sizeof(HccltagLocalResV2)) ? reinterpret_cast<HccltagLocalResV2 *>(nextHostList)->tag :
+                    reinterpret_cast<HccltagRemoteResV2 *>(nextHostList)->tag;
+                if (curTag == newTag) {
+                    CHK_RET(hrtMemSyncCopy(reinterpret_cast<void *>(nextDeviceList), size, reinterpret_cast<void *>(nextHostList),
+                        size, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+                    break;
+                }
+            } else {
+                CHK_RET(hrtMemSyncCopy(reinterpret_cast<void *>(nextDeviceList), size, reinterpret_cast<void *>(nextHostList),
+                                    size, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+                updateNodeCnt++;
+            }
             nextDeviceList = reinterpret_cast<ListCommon *>(nextHostList->nextDevice);
             nextHostList = reinterpret_cast<ListCommon *>(nextHostList->nextHost);
         }
