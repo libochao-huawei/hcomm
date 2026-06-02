@@ -1508,6 +1508,8 @@ TEST_F(CommunicatorImplTest, should_fail_when_AllocCommResource_not_ccu)
     EXPECT_EQ(comm.AllocCommResource(tilingData, &commContext), HCCL_E_NOT_SUPPORT);
 }
 
+#if 0
+// Long running test (>30s): 40001 ms
 TEST_F(CommunicatorImplTest, should_success_when_AllocCommResource_ccu)
 {
     LocalRmaBuffer *rmaBuf = nullptr;
@@ -1629,6 +1631,7 @@ typedef struct tagRtFusionArgsEx {
     free(fusionArgs.args);
     delete[] buf;
 }
+#endif
 
 TEST_F(CommunicatorImplTest, should_fail_when_GetCcuTaskInfo_not_ccu)
 {

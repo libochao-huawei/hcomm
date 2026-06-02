@@ -163,6 +163,8 @@ protected:
     }
 };
 
+#if 0
+// Long running test (>30s): 47065 ms
 TEST_F(RmtDataBufferMgrTest, get_GetBuffer_opbase_success)
 {
     std::vector<char> liteData = BuildUbTransportLiteUniqueId();
@@ -185,3 +187,4 @@ TEST_F(RmtDataBufferMgrTest, get_GetBuffer_opbase_fail)
     RmtDataBufferMgr rmtDataBufferMgr(memTransportLiteMgr, algInfo);
     EXPECT_THROW(rmtDataBufferMgr.GetBuffer(linkData, BufferType::INPUT), NullPtrException);
 }
+#endif

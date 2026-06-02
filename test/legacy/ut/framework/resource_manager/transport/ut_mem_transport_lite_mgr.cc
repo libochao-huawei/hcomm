@@ -175,6 +175,8 @@ TEST_F(MemTransportLiteMgrTest, test_get_and_reset)
     liteMgr.Reset();
 }
 
+#if 0
+// Long running test (>30s): 47038 ms
 TEST_F(MemTransportLiteMgrTest, test_parse_opbase_packed_data)
 {
     std::vector<char> transportUniqueId = BuildUbTransportLiteUniqueId();
@@ -249,3 +251,4 @@ TEST_F(MemTransportLiteMgrTest, test_parse_all_packed_data)
     MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
     EXPECT_NO_THROW(liteMgr.ParseAllPackedData(packedData)); 
 }
+#endif

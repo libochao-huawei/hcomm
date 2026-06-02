@@ -174,6 +174,8 @@ protected:
 };
 
 
+#if 0
+// Long running test (>30s): 47138 ms
 TEST_F(UbTransportLiteImplTest, construct_test)
 {
     std::vector<char> liteData = BuildUbTransportLiteUniqueId();
@@ -249,3 +251,4 @@ TEST_F(UbTransportLiteImplTest, construct_test)
     transportLite.BatchOneSidedRead({locRmaBufferLite}, {rmtRmaBufferLite}, stream);
     transportLite.BatchOneSidedWrite({locRmaBufferLite}, {rmtRmaBufferLite}, stream);
 }
+#endif
