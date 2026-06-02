@@ -9,7 +9,7 @@
  */
 
 #include "rank_table_crc_bridge.h"
-#include "calc_crc.h"
+#include "checkcrc.h"
 #include "log.h"
 using namespace Hccl;
 
@@ -23,8 +23,9 @@ RankTableCrcBridge& RankTableCrcBridge::GetInstance()
 
 void RankTableCrcBridge::RecordRankTableJsonCrc(s32 deviceLogicId, const std::string &rankTableJson)
 {
+    Hccl::CheckCrc checkCrc;
     u32 crc = 0;
-    HcclResult ret = hccl::CalcCrc::HcclCalcCrc(rankTableJson.c_str(), static_cast<u64>(rankTableJson.size()), crc);
+    HcclResult ret = checkCrc.CalcStringCrc(rankTableJson.c_str(), &crc);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[RecordRankTableJsonCrc] CalcStringCrc failed, ret[%d]", ret);
         return;
