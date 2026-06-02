@@ -22,23 +22,10 @@ target_compile_definitions(hccd PRIVATE
 
 # 编译选项
 target_compile_options(hccd PRIVATE
-    -Werror
-    -Wall
-    -fno-common
-    -fstack-protector-strong
+    # -Werror
     -fno-strict-aliasing
-    -pipe
-    -O3
-    -std=c++17
-    $<$<CONFIG:Debug>:-g>
-)
-
-# 链接选项
-target_link_options(hccd PRIVATE
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-    $<$<CONFIG:Release>:-s>
+    $<$<CONFIG:Debug>:-g -O0>
+    $<$<CONFIG:Release>:-O3>
 )
 
 # 源文件列表
