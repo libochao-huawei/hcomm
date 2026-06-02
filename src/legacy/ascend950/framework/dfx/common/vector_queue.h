@@ -105,7 +105,7 @@ public:
         if (UNLIKELY(elems_.size() >= VECTOR_QUEUE_SIZE)) {
             THROW<InternalException>(StringFormat("VectorQueue<T>::Append size[%u] is full", elems_.size()));
         }
-        elems_.push_back(value);
+        elems_.push_back(std::move(value));
     }
 
     void Traverse(std::function<void(const T &)> action) override
