@@ -153,9 +153,6 @@ HcclResult EndpointMonitor::DeInit(s32 deviceLogicId)
 void EndpointMonitor::ProcessUbAsyncEvents()
 {
     std::lock_guard<std::mutex> lock(threadLock_);
-
-    HCCL_INFO("[EndpointMonitor][%s] devPhyId[%u] handles[%zu]", __func__, devPhyId_, epHandleSet_.size());
-
     for (auto it = epHandleSet_.begin(); it != epHandleSet_.end();) {
         u32 num = ASYNC_EVENT_MAX_NUM;
         Endpoint *localEpPtr = reinterpret_cast<Endpoint *>(*it);
@@ -168,7 +165,6 @@ void EndpointMonitor::ProcessUbAsyncEvents()
             continue;
         }
 
-        HCCL_INFO("[EndpointMonitor][%s] devPhyId[%u] fetched %u events", __func__, devPhyId_, num);
         for (u32 i = 0; i < num; ++i) {
             PrintUbAsyncEventsContext(devPhyId_, events_[i]);
         }
