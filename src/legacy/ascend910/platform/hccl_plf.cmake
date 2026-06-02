@@ -17,29 +17,14 @@ target_compile_definitions(hccl_plf PRIVATE
     USE_AICORE_REDUCESUM
     USE_AICORE_GATHERV2
     USE_AICORE_GATHERV2_INFER
-    $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
 )
 
 # 编译选项
 target_compile_options(hccl_plf PRIVATE
-    -Werror
-    -Wall
-    -fno-common
+    # -Werror
     -fno-strict-aliasing
-    -pipe
-    -O3
-    -std=c++17
-    -fstack-protector-all
-    $<$<CONFIG:Debug>:-g>
-)
-
-# 链接选项
-target_link_options(hccl_plf PRIVATE
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-    -Wl,--build-id=none
-    $<$<CONFIG:Release>:-s>
+    $<$<CONFIG:Debug>:-g -O0>
+    $<$<CONFIG:Release>:-O3>
 )
 
 # 头文件搜索路径

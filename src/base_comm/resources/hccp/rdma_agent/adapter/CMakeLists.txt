@@ -62,17 +62,18 @@ endif()
 
 #编译选项
 target_compile_options(ra_adp PRIVATE
-    -Werror -fvisibility=hidden -fsigned-char -fno-common -fno-strict-aliasing -std=gnu11
-    -fstack-protector-strong
+    # -Werror
+    -fvisibility=hidden
+    -fsigned-char
+    -fno-strict-aliasing
+    -std=gnu11
     $<$<CONFIG:Debug>:-g>
 )
 
 target_link_options(ra_adp PRIVATE
     -Wl,-Bsymbolic
-    -rdynamic
     -Wl,--no-undefined
-    -Wl,-z,now
-    $<$<CONFIG:Release>:-s>
+    -rdynamic
 )
 
 #链接动态库
