@@ -202,6 +202,11 @@ HcclResult HcclBarrierInner(HcclComm comm, aclrtStream stream)
     s32 threadID = SalGetTid();
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(HcclBarrierV2(hcclComm->GetCommunicatorV2(), stream));
+        return HCCL_SUCCESS;
+    }());
 
     // Allreduce入参定义
     HcclDataType dataType = HCCL_DATA_TYPE_FP32;
