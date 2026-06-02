@@ -20,6 +20,11 @@ namespace hccl {
 class LocalIpcRmaBufferImpl : public RmaBuffer {
 public:
     LocalIpcRmaBufferImpl(const HcclNetDevCtx netDevCtx, void* addr, u64 size, const RmaMemType memType);
+
+    // 别名构造函数：共享父buffer的IPC资源，不创建新的IPC内存名
+    LocalIpcRmaBufferImpl(const HcclNetDevCtx netDevCtx, void* addr, u64 size, const RmaMemType memType,
+        const LocalIpcRmaBufferImpl& parent);
+
     ~LocalIpcRmaBufferImpl() override;
 
     LocalIpcRmaBufferImpl(const LocalIpcRmaBufferImpl &that) = delete;

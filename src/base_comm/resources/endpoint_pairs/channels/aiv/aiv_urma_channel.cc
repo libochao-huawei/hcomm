@@ -11,7 +11,6 @@
 #include "aiv_urma_channel.h"
 #include "endpoint.h"
 #include "orion_adpt_utils.h"
-#include "comm_mems.h"
 
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
@@ -22,6 +21,7 @@
 #include "virtual_topo.h"
 #include "aicpu_res_package_helper.h"
 #include "tp_manager.h"
+#include "makebufs_helper.h"
 #include "orion_adapter_hccp.h"
 
 #include <cstdint>
@@ -356,14 +356,7 @@ void AivUrmaChannel::ReleaseDeviceChannelEntity()
 HcclResult AivUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
 {
-    bufs.clear();
-    for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        HCCL_INFO("[AivUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
-        bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(locMemInfo->mem.addr),
-            locMemInfo->mem.size, hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)));
-    }
-    return HCCL_SUCCESS;
+    return MakebufsFromLocalRmaBuffer(memHandles, memHandleNum, bufs, "AivUrmaChannel");
 }
 
 HcclResult AivUrmaChannel::ParseInputParam() 
