@@ -21,9 +21,23 @@ LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuff
     HrtIpcSetMemoryName(ipcPtr, name, ipcSize, RTS_IPC_MEM_NAME_LEN);
 }
 
+LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf, const LocalIpcRmaBuffer& parent)
+    : LocalRmaBuffer(buf, RmaType::IPC, true)
+{
+    (void)memcpy_s(name, RTS_IPC_MEM_NAME_LEN, parent.name, RTS_IPC_MEM_NAME_LEN);
+    ipcPtr   = parent.ipcPtr;
+    ipcOffset = parent.ipcOffset;
+    ipcSize   = parent.ipcSize;
+    HCCL_INFO("[LocalIpcRmaBuffer] alias constructor, parent name[%s] ipcPtr[%p] ipcOffset[%llu] ipcSize[%llu] buf=%s",
+        name, ipcPtr, static_cast<unsigned long long>(ipcOffset), static_cast<unsigned long long>(ipcSize),
+        buf->Describe().c_str());
+}
+
 LocalIpcRmaBuffer::~LocalIpcRmaBuffer()
 {
-    DECTOR_TRY_CATCH("LocalIpcRmaBuffer", HrtIpcDestroyMemoryName(name));
+    if (!isAlias_) {
+        DECTOR_TRY_CATCH("LocalIpcRmaBuffer", HrtIpcDestroyMemoryName(name));
+    }
 }
 
 string LocalIpcRmaBuffer::Describe() const
