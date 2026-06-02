@@ -483,6 +483,55 @@ unchattr_files() {
         fi
     fi
 }
+
+remove_hcomm_standalone_residue() {
+    local install_root="$1"
+    if [ ! -d "$install_root" ]; then
+        return 0
+    fi
+
+    local db_file="$install_root/var/ascend_package_db.info"
+    if [ -f "$db_file" ]; then
+        if awk -F'|' '
+            {
+                split($2, pkgs, ",")
+                for (idx in pkgs) {
+                    if (pkgs[idx] != "" && pkgs[idx] != "hcomm") {
+                        found = 1
+                    }
+                }
+            }
+            END { exit found ? 0 : 1 }
+        ' "$db_file"; then
+            return 0
+        fi
+    fi
+
+    local share_info="$install_root/share/info"
+    if [ -d "$share_info" ]; then
+        local other_info
+        other_info=$(find "$share_info" -mindepth 1 -maxdepth 1 ! -name hcomm -print -quit 2> /dev/null)
+        if [ -n "$other_info" ]; then
+            return 0
+        fi
+    fi
+
+    chmod u+w -R "$install_root" 2> /dev/null
+    local residue_file
+    for residue_file in \
+        "$install_root"/*-linux/lib64/libmc2_client.so \
+        "$install_root"/*-linux/lib64/libmc2_compat.so \
+        "$install_root"/opp/built-in/op_impl/aicpu/kernel/mc2_server.tar.gz \
+        "$install_root"/opp/built-in/op_impl/aicpu/config/libmc2_server.json; do
+        if [ -e "$residue_file" ] || [ -L "$residue_file" ]; then
+            rm -f "$residue_file" 2> /dev/null
+        fi
+    done
+    rm -f "$install_root/cann_uninstall.sh" "$db_file" 2> /dev/null
+    rm -rf "$install_root/var/manager" 2> /dev/null
+    rm -rf "$install_root/share/info/hcomm" 2> /dev/null
+    find "$install_root" -depth -type d -empty -exec rmdir {} \; 2> /dev/null
+}
  
 # 创建普通用户的默认安装目录
 create_default_install_dir_for_common_user() {
@@ -1364,6 +1413,7 @@ if [ "x$version_installed" != "x" -a "$version_installed" != "none" ] || [ -f "$
         save_user_files_to_log "$default_dir"
         save_user_files_to_log "$(dirname $default_dir)/atc"
         save_user_files_to_log "$(dirname $default_dir)/fwkacllib"
+        remove_hcomm_standalone_residue "$pkg_install_path/$pkg_version_dir"
         exit_uninstall_log 0
     # 升级场景
     elif [ "$upgrade" = "y" ]; then
