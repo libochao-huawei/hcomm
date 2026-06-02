@@ -33,10 +33,14 @@ public:
     TaskInfoQueue             *GetQueue(u32 streamId) const;
 
 public:
+    TaskInfoQueueMap::iterator Begin();
+    TaskInfoQueueMap::iterator End();
+
     ~MirrorTaskManagerLite();
 
 private:
-    std::unordered_map<u32, std::pair<std::unique_ptr<TaskInfoQueue>, u32>> taskQueueMap_;
+    TaskInfoQueueMap               queueMap_; 
+    std::unordered_map<u32, u32>   queueTaskNum;
     std::shared_ptr<DfxOpInfo>     currDfxOpInfo_;
     std::function<void()>          fullyCallBack_;
     std::function<void(const std::string&, u32)>          fullyNewCallBack_;

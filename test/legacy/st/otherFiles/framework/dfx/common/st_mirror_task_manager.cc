@@ -132,8 +132,8 @@ TEST_F(MirrorTaskManagerTest, MirrorTaskManager_Iterator_1)
         Queue<std::shared_ptr<TaskInfo>> *taskInfoQueue = queueIter->second;
 
         // 枚举所有任务信息
-        for (auto taskInfoIter = taskInfoQueue->Begin(); (*taskInfoIter) != *taskInfoQueue->End(); (*taskInfoIter)++) {
-            std::cout << (*(*taskInfoIter))->Describe().c_str() << std::endl;
+        for (auto taskInfoIter = taskInfoQueue->Begin(); taskInfoIter != taskInfoQueue->End(); taskInfoIter++) {
+            std::cout << (*taskInfoIter)->Describe().c_str() << std::endl;
         }
     }
 }
