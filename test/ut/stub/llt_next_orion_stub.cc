@@ -1704,7 +1704,7 @@ void MirrorTaskManager::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
 
 std::shared_ptr<DfxOpInfo> MirrorTaskManager::GetCurrDfxOpInfo() const
 {
-    return nullptr;
+    return std::make_shared<DfxOpInfo>();
 }
 
 TaskInfoQueue *MirrorTaskManager::GetQueue(u32 streamId) const

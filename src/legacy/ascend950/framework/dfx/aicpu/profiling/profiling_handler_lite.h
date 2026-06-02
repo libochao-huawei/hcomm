@@ -73,7 +73,7 @@ private:
     uint64_t GetProfHashId(const char *name, uint32_t len) const;
     void DumpTaskDetails(const MsprofAicpuHcclTaskInfo& taskDetailsInfos, const TaskInfo &taskInfo) const;
     void GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const;
-    void LogTaskDetails(const std::vector<TaskInfo> &taskInfo) const;
+    void ReportHcclTaskDetailsLog(const std::vector<TaskInfo> &taskInfo) const;
 
 private:
     static ProfilingHandlerLite instance_;

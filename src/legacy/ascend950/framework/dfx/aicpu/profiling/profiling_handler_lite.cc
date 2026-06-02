@@ -103,7 +103,7 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
     ReportAdditionInfo(reporterData);
 }
 
-void ProfilingHandlerLite::LogTaskDetails(const std::vector<TaskInfo> &taskInfo) const
+void ProfilingHandlerLite::ReportHcclTaskDetailsLog(const std::vector<TaskInfo> &taskInfo) const
 {
     if (HcclCheckLogLevel(HCCL_LOG_INFO) == 0) {
         return;
@@ -115,32 +115,23 @@ void ProfilingHandlerLite::LogTaskDetails(const std::vector<TaskInfo> &taskInfo)
 
 void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const
 {
-    LogTaskDetails(taskInfo);
-    if (!GetProfL1State()) {
-        HCCL_INFO("[ProfilingHandlerLite][ReportHcclTaskDetails] l1 is false.");
-        return;
-    }
-    uint32_t                batchId = 0;
-    MsprofAicpuHcclTaskInfo taskDetailsInfos[HCCLINFO_REPORT_BATCH_NUM] {};
+    ReportHcclTaskDetailsLog(taskInfo);
+    MsprofAdditionalInfo reporterData{};
+    reporterData.level     = MSPROF_REPORT_AICPU_LEVEL;
+    reporterData.type      = MSPROF_REPORT_AICPU_MC2_BATCH_HCCL_INFO;
+    reporterData.threadId  = cachedTid_;
+    reporterData.timeStamp = 0;
+    auto *taskDetailsInfos = reinterpret_cast<MsprofAicpuHcclTaskInfo *>(reporterData.data);
+    uint32_t batchId = 0;
     for (std::vector<Hccl::TaskInfo>::size_type i = 0; i < taskInfo.size(); i++) {
-        auto &taskDetailInfo = taskDetailsInfos[batchId++];
-        GetTaskDetailInfos(taskInfo[i], taskDetailInfo);
-        // 信息批量上报
+        GetTaskDetailInfos(taskInfo[i], taskDetailsInfos[batchId++]);
         if (batchId == HCCLINFO_REPORT_BATCH_NUM || i == taskInfo.size() - 1) {
-            MsprofAdditionalInfo reporterData{};
-            reporterData.level     = MSPROF_REPORT_AICPU_LEVEL;
-            reporterData.type      = MSPROF_REPORT_AICPU_MC2_BATCH_HCCL_INFO;
-            reporterData.threadId  = cachedTid_;
-            reporterData.dataLen   = sizeof(MsprofAicpuHcclTaskInfo) * batchId;
-            reporterData.timeStamp = 0;
-            s32 sret = memcpy_s(reporterData.data, sizeof(reporterData.data), taskDetailsInfos,
-                                sizeof(MsprofAicpuHcclTaskInfo) * batchId);
-            if (sret != EOK) {
-                THROW<InternalException>("Call memcpy_s failed, errorno[%d]", sret);
-            }
+            reporterData.dataLen = sizeof(MsprofAicpuHcclTaskInfo) * batchId;
             ReportAdditionInfo(reporterData);
             batchId = 0;
-            memset_s(taskDetailsInfos, sizeof(taskDetailsInfos), 0, sizeof(taskDetailsInfos));
+            if (i == taskInfo.size() - 1) {  // 再多一次判断会更好吗？
+                memset_s(reporterData.data, sizeof(reporterData.data), 0, sizeof(reporterData.data));
+            }
         }
     }
 }
@@ -185,29 +176,16 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
     taskDetailsInfos.streamId          = it.streamId_;
     taskDetailsInfos.planeID           = 0;
     taskDetailsInfos.transportType     = static_cast<int32_t>(SimpleTaskType::UB);
+    if (taskDetailsInfos.remoteRank == INVALID_VALUE_RANKID) {
+        taskDetailsInfos.transportType     = static_cast<int32_t>(SimpleTaskType::LOCAL);
+    }
     taskDetailsInfos.role              = static_cast<uint32_t>(TaskRole::DST);
     taskDetailsInfos.workFlowMode      = static_cast<uint32_t>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
 }
 
 void ProfilingHandlerLite::DumpTaskDetails(const MsprofAicpuHcclTaskInfo &taskDetailsInfos, const TaskInfo &taskInfo) const
 {
-    HCCL_INFO("ProfilingHandlerLite::DumpTaskDetails %s", taskInfo.taskParam_.Describe().c_str());
-    if (taskInfo.dfxOpInfo_ != nullptr) {
-        HCCL_INFO("[ProfilingHandlerLite] DumpTaskDetails original groupName[%s]", taskInfo.dfxOpInfo_->groupName_.c_str());
-    }
-    HCCL_INFO("[ProfilingHandlerLite] DumpTaskDetails level[%u] type[%u] threadId[%u] dataLen[%u]",
-              MSPROF_REPORT_AICPU_LEVEL, MSPROF_REPORT_AICPU_MC2_BATCH_HCCL_INFO, cachedTid_,
-              sizeof(MsprofAicpuHcclTaskInfo));
-    HCCL_INFO("[ProfilingHandlerLite]DumpTaskDetails data is: itemId[%llu], cclTag[%llu], groupName[%llu], "
-              " remoteRank[%u], rankSize[%u], stage[%u], taskType[%s], srcAddr[%llu], dstAddr[%llu], "
-              " dataSize[%llu], notifyID[%llu], dataType[%s],linkType[%u], timeStamp[%llu], durationEstimated[%f], "
-              " taskId[%u], streamId[%u], planeID[%u], opType[%s], transportType[%d], role[%u], workFlowMode[%u] ",
-              taskDetailsInfos.itemId, taskDetailsInfos.cclTag, taskDetailsInfos.groupName, taskDetailsInfos.remoteRank,
-              taskDetailsInfos.rankSize, taskDetailsInfos.stage, taskInfo.taskParam_.taskType.Describe().c_str(), taskDetailsInfos.srcAddr,
-              taskDetailsInfos.dstAddr, taskDetailsInfos.dataSize, taskDetailsInfos.notifyID, DataTypeToSerialString( taskDetailsInfos.dataType).c_str(),
-              taskDetailsInfos.linkType, taskDetailsInfos.timeStamp, taskDetailsInfos.durationEstimated,
-              taskDetailsInfos.taskId, taskDetailsInfos.streamId, taskDetailsInfos.planeID, OpTypeToSerialString(taskDetailsInfos.opType).c_str(),
-              static_cast<int>(taskDetailsInfos.transportType), taskDetailsInfos.role, taskDetailsInfos.workFlowMode);
+    HCCL_INFO("[ProfilingHandlerLite] DumpTaskDetails %s", taskInfo.Describe().c_str());
 }
 
 void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo) const

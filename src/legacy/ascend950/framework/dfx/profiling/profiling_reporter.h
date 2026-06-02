@@ -20,7 +20,7 @@ class ProfilingReporter {
 public:
     ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler *profilingHandler);
     virtual ~ProfilingReporter();
-    void Init() const;
+    void Init();
     void ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const;
     void ReportAllTasks(bool cachedReq);
     void UpdateProfStat();
@@ -31,7 +31,7 @@ public:
         RankId myRank, u32 rankSize, RankId rankInParentComm) const;
 private:
     void ReportCallBackAllTasks(bool cachedReq = false);
-    void LogAllTasks() const;
+    void ReportAllTasksLog() const;
  
 private:
     MirrorTaskManager                              *mirrorTaskMgr_{nullptr};
@@ -41,6 +41,7 @@ private:
     using lastPosesMap = std::unordered_map<u32, std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>>;
     static std::array<lastPosesMap, REPORTER_MAX_MODULE_DEVICE_NUM> allLastPoses_;
     ProfilingHandler*                               profilingHandler_{nullptr};
+    s32 deviceLogicId;
 };
 } // namespace Hccl
  
