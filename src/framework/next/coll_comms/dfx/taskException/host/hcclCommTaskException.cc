@@ -214,32 +214,32 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
         return;
     }
 
-    std::shared_ptr<Hccl::TaskInfo> curTask = nullptr;
+    Hccl::TaskInfo curTask;
     HcclResult ret = Hccl::GlobalMirrorTasks::Instance().FindTaskInfo(exceptionInfo->deviceid, exceptionInfo->streamid,
         exceptionInfo->taskid, curTask);
     CHK_PRT_RET(ret == HCCL_E_NOT_FOUND, HCCL_RUN_WARNING("[%s]FindTaskInfo not found, deviceid[%u] streamid[%u] taskid[%u].",
         __func__, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
 
-    CHK_PRT_RET(curTask == nullptr || ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]FindTaskInfo fail, curTask[%p], ret[%d], deviceid[%u], streamid[%u], taskid[%u].",
-            __func__, curTask.get(), ret, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]FindTaskInfo fail, ret[%d], deviceid[%u], streamid[%u], taskid[%u].",
+            __func__, ret, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
 
-    if (curTask->dfxOpInfo_ == nullptr) {
+    if (curTask.dfxOpInfo_ == nullptr) {
         HCCL_ERROR("[%s]fail, dfxOpInfo is nullptr", __func__);
         return;
     }
 
-    bool isIndop_ = curTask->dfxOpInfo_->isIndop_;
-    HCCL_INFO("[%s]isIndop_[%d], taskType[%s]", __func__, isIndop_, curTask->taskParam_.taskType.Describe().c_str());
+    bool isIndop_ = curTask.dfxOpInfo_->isIndop_;
+    HCCL_INFO("[%s]isIndop_[%d], taskType[%s]", __func__, isIndop_, curTask.taskParam_.taskType.Describe().c_str());
     if (!isIndop_) {
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
         return;
     }
 
-    if (curTask->taskParam_.taskType == Hccl::TaskParamType::TASK_CCU) {
-        CcuTaskException::ProcessCcuException(exceptionInfo, *curTask); 
+    if (curTask.taskParam_.taskType == Hccl::TaskParamType::TASK_CCU) {
+        CcuTaskException::ProcessCcuException(exceptionInfo, curTask); 
     } else {
-        ProcessException(exceptionInfo, *curTask);
+        ProcessException(exceptionInfo, curTask);
     }
 }
 
