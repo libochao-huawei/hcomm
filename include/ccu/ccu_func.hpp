@@ -28,7 +28,6 @@ namespace ccu {
 
 namespace internal {
 
-// ---- LambdaTraits：只支持非泛型 lambda / 普通成员函数指针 operator() ----
 template <typename T>
 struct FunctorTraits : FunctorTraits<decltype(&T::operator())> {};
 

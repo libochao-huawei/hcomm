@@ -24,8 +24,6 @@ namespace ccu {
 
 class Loop {
 public:
-    // var-based：loopCfg 必须是 lvalue（持引用，加入 LoopGroup 时取地址）；
-    //            func 在 ctor 内即时翻译，之后不再访问，可接 rvalue (const &)。
     Loop(Variable &loopCfg, const Func &func)
     {
         ComposeLoopBody(func);
@@ -33,8 +31,6 @@ public:
         loopParamVar_ = &loopCfg;
     }
 
-    // config-based：loopCfg 拷贝进 config_，func 同上仅在 ctor 内使用，
-    //               两者均接 const &，支持完整 inline 写法
     Loop(const CcuLoopConfig &loopCfg, const Func &func)
     {
         ComposeLoopBody(func);
@@ -88,10 +84,7 @@ private:
 
 class LoopGroup {
 public:
-    // var-based。maxLoopNum：本 group 实际要 AddLoop 的次数（含展开复用），
-    // 用于驱动 kernel 在 CcuLoopGroupCreateFromVar 时按需扩容 LoopEngine 池。
-    // 形参顺序：parallelCfg、offsetCfg、maxLoopNum、loops——maxLoopNum 紧跟两个
-    // var 配置（第三位），与 config-based 重载里"cfg → maxLoopNum"的相对位置一致。
+
     LoopGroup(Variable &parallelCfg, Variable &offsetCfg, uint32_t maxLoopNum,
               const std::vector<Loop> &loops)
     {
@@ -102,11 +95,9 @@ public:
         AddLoops(loops);
     }
 
-    // config-based。maxLoopNum 同上语义；放在 cfg 之后作为 group 元参数。
     LoopGroup(const CcuLoopGroupConfig &loopGroupCfg, uint32_t maxLoopNum,
               const std::vector<Loop> &loops)
     {
-        // 拷贝到 lvalue 以便取地址传给 C 接口；本身不修改原 cfg。
         CcuLoopGroupConfig localCfg = loopGroupCfg;
         CCU_THROW_IF_FAILED(
             ::CcuLoopGroupCreate(&handle_, maxLoopNum, &localCfg),
