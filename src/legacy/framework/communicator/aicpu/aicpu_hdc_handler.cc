@@ -40,7 +40,7 @@ void AicpuHdcHandler::SetKfcExecStatus(KfcStatus state, KfcErrType errorCode) co
     KfcExecStatus status;
     status.kfcStatus = state;
     status.kfcError  = errorCode;
-    HCCL_INFO("[AicpuHdcHandler] SetKfcExecStatus: state[%u], errorCode[%u]", state, errorCode);
+    HCCL_INFO("[AicpuHdcHandler] SetKfcExecStatus: state[%u], code[%u]", state, errorCode);
     auto ret = d2hTransfer_->Put(0, sizeof(KfcExecStatus), reinterpret_cast<uint8_t *>(&status));
     if (ret != HcclResult::HCCL_SUCCESS) {
         THROW<InternalException>(StringFormat("[AicpuHdcHandler] d2hTransfer Put fail, ret[%d]", ret));
