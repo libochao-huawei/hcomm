@@ -62,7 +62,7 @@ private:
     using LocalBufferVec = std::vector<Hccl::LocalUbRmaBuffer *>;
 
     HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
-        std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
+        std::vector<std::shared_ptr<Hccl::Buffer>> &bufs) const;
     HcclResult ParseInputParam();
     HcclResult BuildConnection();
     HcclResult BuildNotify();
@@ -74,7 +74,7 @@ private:
     HcclResult PackOpData(std::vector<char> &data);
 
     HcclResult FillTagVec(std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag);
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag) const;
     bool IsSocketReady();
     bool IsResReady();
     bool IsConnsReady();
@@ -95,7 +95,7 @@ private:
     void EidPack();
     void NotifyVecPack(Hccl::BinaryStream &binaryStream);
     void BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec) const;
     void ConnVecPack(Hccl::BinaryStream &binaryStream);
     void RmtEidUnpackProc(Hccl::IpAddress& rmtAddr);
     void RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &binaryStream,
@@ -113,7 +113,6 @@ private:
     EndpointHandle                                              endpointHandle_;
     HcommChannelDesc                                            channelDesc_;
 
-    // TODO: 成员变量全部初始化
     // --------------------- 转换参数 ---------------------
     EndpointDesc                                                localEp_{};
     EndpointDesc                                                remoteEp_{};

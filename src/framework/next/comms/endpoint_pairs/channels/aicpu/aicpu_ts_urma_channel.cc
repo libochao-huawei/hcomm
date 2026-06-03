@@ -37,7 +37,7 @@ AicpuTsUrmaChannel::~AicpuTsUrmaChannel()
 }
 
 HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
-    std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
+    std::vector<std::shared_ptr<Hccl::Buffer>> &bufs) const
 {
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
@@ -279,7 +279,6 @@ HcclResult AicpuTsUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 ChannelStatus AicpuTsUrmaChannel::GetStatus()
 {
     ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
-
     if (isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
         std::string channelInfo = "create channel info:channel handle[";
         channelInfo.append(std::to_string(reinterpret_cast<uint64_t>(this)));

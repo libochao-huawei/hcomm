@@ -232,7 +232,6 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     u32 transType;
     binaryStreamForType >> transType;
     HCCL_INFO("[CollCommAicpu][ParsePackData] transType[%u]", transType);
-    // TODO TransportType
     if (transType == Hccl::TransportType::UB) {
         std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
         EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),

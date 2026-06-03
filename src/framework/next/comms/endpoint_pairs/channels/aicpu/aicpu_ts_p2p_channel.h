@@ -52,8 +52,8 @@ public:
 
 private:
     HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
-        std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
-    HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name);
+        std::vector<std::shared_ptr<Hccl::Buffer>> &bufs) const;
+    HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name) const;
     HcclResult ParseInputParam();
     HcclResult BuildAttr();
     HcclResult BuildConnection();
