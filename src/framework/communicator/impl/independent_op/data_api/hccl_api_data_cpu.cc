@@ -29,7 +29,7 @@
 #include "exception_handler.h"
 #include "task_info.h"
 #include "task_param.h"
-#include "hcclCommTaskException.h"
+
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -876,21 +876,5 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     return HCCL_SUCCESS;
 }
 
-extern HcclResult HcclTaskExceptionRegCallBack(HcclTaskExceptionCallback callback)
-{
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType != DevType::DEV_TYPE_950) {
-        return HCCL_E_NOT_SUPPORT;
-    }
-    HCCL_INFO("[%s] START, callback[%p].", __func__, callback);
-    s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(
-        static_cast<size_t>(devLogicId));
-    CHK_PTR_NULL(handler);
-    handler->SetTaskExceptionCallback(callback);
-    HCCL_INFO("[%s] SUCCESS, deviceLogicId[%d].", __func__, devLogicId);
-    return HCCL_SUCCESS;
-}
+
 
