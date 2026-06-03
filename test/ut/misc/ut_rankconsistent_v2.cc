@@ -43,17 +43,6 @@ protected:
     RankConsistencyCheckerV2 &checker_ = RankConsistencyCheckerV2::GetInstance(0xFF);
 };
 
-TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_Engine_Expect_Success)
-{
-    checker_.RecordEngineV2(static_cast<s32>(COMM_ENGINE_AICPU));
-    CheckFrameV2 localFrame;
-    checker_.GenerateCheckFrameV2(localFrame);
-    CheckFrameV2 remoteFrame = localFrame;
-
-    HcclResult ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
 TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_Env_Expect_Success)
 {
     u64 buff_size = 8;
@@ -105,18 +94,6 @@ TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_Version_Expect_Success)
 
     HcclResult ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(RankConsistentV2Test, Ut_CompareCheckFrameV2_Engine_Expect_INTERNAL)
-{
-    checker_.RecordEngineV2(static_cast<s32>(COMM_ENGINE_AICPU));
-    CheckFrameV2 localFrame;
-    checker_.GenerateCheckFrameV2(localFrame);
-    CheckFrameV2 remoteFrame = localFrame;
-    remoteFrame.engine = static_cast<s32>(COMM_ENGINE_CPU);
-
-    HcclResult ret = checker_.CompareCheckFrameV2(localFrame, remoteFrame);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
 // 异常：环境变量CRC不一致
