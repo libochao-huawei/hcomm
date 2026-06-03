@@ -655,8 +655,7 @@ HrtRaUbJettyImportedOutParam StubRaUbTpImportJetty(RdmaHandle, u8 *, u32, u32, c
 
 void MockLoopJettyBufferDeps()
 {
-    const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo =
-        std::make_pair(reinterpret_cast<TokenIdHandle>(0x88888888), 1U);
+    const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo = std::make_pair(0x88888888ULL, 1U);
     MOCKER_CPP(&RdmaHandleManager::GetTokenIdInfo).stubs().will(returnValue(fakeTokenInfo));
     MOCKER(HrtRaUbLocalMemReg).stubs().will(returnValue(HrtRaUbLocalMemRegOutParam()));
 }
