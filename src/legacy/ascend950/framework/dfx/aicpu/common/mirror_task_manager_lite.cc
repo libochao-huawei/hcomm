@@ -52,12 +52,18 @@ HcclResult MirrorTaskManagerLite::AddTaskInfo(u32 streamId, u32 taskId, const Hc
     }
 
     auto& taskInfo = queue->GetAndUpdate();
-    taskInfo->streamId_ = streamId;
-    taskInfo->taskId_ = taskId;
-    taskInfo->taskParam_ = taskParam;
+    if (taskInfo == nullptr) {
+        taskInfo = std::make_unique<Hccl::TaskInfo>(
+            streamId, taskId, INVALID_U32, taskParam, currDfxOpInfo_, taskParam.isMaster);
+    } else {
+        taskInfo->streamId_ = streamId;
+        taskInfo->taskId_ = taskId;
+        taskInfo->taskParam_ = taskParam;
+        taskInfo->dfxOpInfo_ = currDfxOpInfo_;
+    }
+
     taskInfo->channelHandle_ = handle;
     taskInfo->getRemoteRankByHandle_ = getRemoteRankCallback_;
-    taskInfo->dfxOpInfo_ = currDfxOpInfo_;
     taskNum++;
     HCCL_INFO("[%s]taskInfo:%s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
