@@ -54,8 +54,8 @@ project(hcomm)
 # 初始化 CANN 项目配置
 init_cann_project(PREPEND_MODULE_PATH)
 
-# 采用 C++14 标准
-set(CMAKE_CXX_STANDARD 14)
+# 采用 C++17 标准
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
@@ -103,7 +103,7 @@ elseif(BUILD_OPEN_PROJECT)
     include(version.cmake)
     # 三方件
     include(cmake/hcomm_utils.cmake)
-    include(cmake/third_party/openssl.cmake)
+    add_cann_third_party(openssl)
     include(cmake/third_party/ubengine.cmake)
     add_cann_third_party(rdma-core)
     add_cann_third_party(json)
@@ -168,7 +168,7 @@ elseif(BUILD_OPEN_PROJECT)
     set(HCCL_HEAD
         include/hccl/hccl_comm.h
         include/hccl/hccl_types.h
-        src/pub_inc/hccn_rping.h
+        src/legacy/ascend910/pub_inc/hccn_rping.h
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_ccu_res.h
         include/hccl/hccl_res.h

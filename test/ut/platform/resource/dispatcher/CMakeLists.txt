@@ -28,7 +28,7 @@ target_compile_definitions(hccl_utest_platform_dispatcher    PRIVATE
 target_compile_options(hccl_utest_platform_dispatcher   PRIVATE 
     -U_FORTIFY_SOURCE
     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
 )
 
 

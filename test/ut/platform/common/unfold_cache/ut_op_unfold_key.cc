@@ -98,15 +98,19 @@ TEST_F(OpUnfoldKeyTest, ut_GetKeyString_Expect_ValidStringFormat)
              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
     std::string keyStr = key.GetKeyString();
-    // 验证字符串包含必要的字段信息
+    // 验证字符串格式："opType{N}-dataType{N}-...-isCapture{N}"
+    // 先验证所有字段名存在
     EXPECT_NE(keyStr.find("opType"), std::string::npos);
-    EXPECT_NE(keyStr.find("dataType"), std::string::npos);
-    EXPECT_NE(keyStr.find("reduceType"), std::string::npos);
-    EXPECT_NE(keyStr.find("isZeroCopy"), std::string::npos);
-    EXPECT_NE(keyStr.find("inputSize"), std::string::npos);
-    EXPECT_NE(keyStr.find("isInplacePreSync"), std::string::npos);
-    EXPECT_NE(keyStr.find("workflowMode"), std::string::npos);
-    EXPECT_NE(keyStr.find("isCapture"), std::string::npos);
+    EXPECT_NE(keyStr.find("-dataType"), std::string::npos);
+    EXPECT_NE(keyStr.find("-reduceType"), std::string::npos);
+    EXPECT_NE(keyStr.find("-isZeroCopy"), std::string::npos);
+    EXPECT_NE(keyStr.find("-inputSize"), std::string::npos);
+    EXPECT_NE(keyStr.find("-isInplacePreSync"), std::string::npos);
+    EXPECT_NE(keyStr.find("-workflowMode"), std::string::npos);
+    EXPECT_NE(keyStr.find("-isCapture"), std::string::npos);
+    // 验证以 opType 开头，以 isCapture 结尾
+    EXPECT_EQ(keyStr.substr(0, 6), "opType");
+    EXPECT_NE(keyStr.rfind("-isCapture"), std::string::npos);
 }
 
 // 测试 operator== - 相同的 key
@@ -144,4 +148,37 @@ TEST_F(OpUnfoldKeyTest, OperatorAssign_Expect_CopiedValues)
     EXPECT_EQ(key2.isInplacePreSync, false);
     EXPECT_EQ(key2.workflowMode, HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     EXPECT_EQ(key2.isCapture, true);
+}
+
+// 测试 operator== - isCapture 不同时返回 false
+TEST_F(OpUnfoldKeyTest, OperatorEqual_DifferentCapture_Expect_False)
+{
+    OpUnfoldKey key1;
+    key1.Init(HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32,
+              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
+              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
+
+    OpUnfoldKey key2;
+    key2.Init(HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32,
+              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
+              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, false);
+
+    EXPECT_FALSE(key1 == key2);
+}
+
+// 测试 hash - isCapture 不同时 hash 值不同
+TEST_F(OpUnfoldKeyTest, Hash_DifferentCapture_Expect_DifferentHash)
+{
+    OpUnfoldKey key1;
+    key1.Init(HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32,
+              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
+              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, true);
+
+    OpUnfoldKey key2;
+    key2.Init(HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32,
+              HcclReduceOp::HCCL_REDUCE_SUM, true, 1024, false,
+              HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE, false);
+
+    std::hash<OpUnfoldKey> hasher;
+    EXPECT_NE(hasher(key1), hasher(key2));
 }
