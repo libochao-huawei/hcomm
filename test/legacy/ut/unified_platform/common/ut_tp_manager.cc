@@ -32,6 +32,36 @@ void MockDeviceTpAttrAsyncSupport()
     MOCKER(HrtRaSetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
 }
 
+RequestHandle StubRaUbGetTpInfoAsyncEight(const RdmaHandle, const RaUbGetTpInfoParam &, vector<char_t> &out,
+    uint32_t &num)
+{
+    num = 8U;
+    out.resize(static_cast<size_t>(num) * sizeof(HccpTpInfo));
+    auto *list = reinterpret_cast<HccpTpInfo *>(out.data());
+    for (uint32_t i = 0; i < num; ++i) {
+        list[i].tpHandle = 0x300ULL + static_cast<uint64_t>(i);
+    }
+    return static_cast<RequestHandle>(0x12345678ULL);
+}
+
+int StubRaGetTpAttrAsyncUboeSl789Legacy(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr,
+    void **reqHandle)
+{
+    static char kLegacyUboeAttrReq{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    if (attr != nullptr) {
+        (void)memset(attr, 0, sizeof(struct TpAttr));
+        attr->slBitmap = (1U << 7U) | (1U << 8U) | (1U << 9U);
+        attr->dscpConfigMode = 0U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kLegacyUboeAttrReq;
+    }
+    return 0;
+}
+
 } // namespace
 
 class TpManagerTest : public testing::Test {
@@ -354,4 +384,50 @@ TEST_F(TpManagerTest, tp_manager_qos_cache_by_key_success)
     EXPECT_EQ(result, HCCL_E_AGAIN);
     result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos7, tpInfo7);
     EXPECT_EQ(result, HCCL_SUCCESS);
+}
+
+TEST_F(TpManagerTest, tp_manager_device_uboe_eight_tp_qos7_success)
+{
+    MockDeviceTpAttrAsyncSupport();
+    MOCKER(RaUbGetTpInfoAsync).stubs().will(invoke(StubRaUbGetTpInfoAsyncEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboeSl789Legacy));
+
+    HcclResult result;
+    const int32_t devLogicId = 0;
+    IpAddress locAddr("9.0.0.1");
+    IpAddress rmtAddr("9.0.0.2");
+    RaUbGetTpInfoParam param{locAddr, rmtAddr, TpProtocol::UBOE};
+    param.qos = 7U;
+    TpInfo tpInfo{};
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+    EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+    EXPECT_EQ(tpInfo.tpHandle, 0x300ULL);
+    EXPECT_EQ(tpInfo.mappedJettyPriority, 7U);
+}
+
+TEST_F(TpManagerTest, tp_manager_release_tpinfo_qos_key_mismatch)
+{
+    HcclResult result;
+    const int32_t devLogicId = 0;
+    IpAddress locAddr("9.0.0.3");
+    IpAddress rmtAddr("9.0.0.4");
+    RaUbGetTpInfoParam paramQos0{locAddr, rmtAddr, TpProtocol::TP};
+    paramQos0.qos = 0U;
+    TpInfo tpInfo{};
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos0, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos0, tpInfo);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    RaUbGetTpInfoParam paramQos1{locAddr, rmtAddr, TpProtocol::TP};
+    paramQos1.qos = 1U;
+    result = TpManager::GetInstance(devLogicId).ReleaseTpInfo(paramQos1, tpInfo);
+    EXPECT_EQ(result, HCCL_E_NOT_FOUND);
 }

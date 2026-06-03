@@ -106,6 +106,97 @@ int StubRaGetTpAttrAsyncUboeSl789(void *ctxHandle, uint64_t tpHandle, uint32_t *
     return 0;
 }
 
+int StubRaGetTpInfoListAsyncThree(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num, void **reqHandle)
+{
+    static int kThreeTpListReq = 33445;
+    (void)ctxHandle;
+    (void)cfg;
+    if (infoList != nullptr) {
+        for (unsigned int i = 0; i < 3U; ++i) {
+            infoList[i].tpHandle = 0x200ULL + static_cast<uint64_t>(i);
+        }
+    }
+    if (num != nullptr) {
+        *num = 3U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kThreeTpListReq;
+    }
+    return 0;
+}
+
+int StubRaGetTpAttrAsyncSl123(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr,
+    void **reqHandle)
+{
+    static char kSl123Req{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+        attr->slBitmap = (1U << 1U) | (1U << 2U) | (1U << 3U);
+        attr->dscpConfigMode = 1U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kSl123Req;
+    }
+    return 0;
+}
+
+int StubRaGetTpAttrAsyncSingleSlBit(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr,
+    void **reqHandle)
+{
+    static char kSingleSlReq{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+        attr->slBitmap = (1U << 5U);
+        attr->dscpConfigMode = 1U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kSingleSlReq;
+    }
+    return 0;
+}
+
+int StubRaGetTpAttrAsyncTwoSlBits(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr,
+    void **reqHandle)
+{
+    static char kTwoSlReq{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+        attr->slBitmap = (1U << 3U) | (1U << 7U);
+        attr->dscpConfigMode = 1U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kTwoSlReq;
+    }
+    return 0;
+}
+
+int StubRaGetHccnCfgDscp(void *info, int cfgType, char *value, unsigned int *valueLen)
+{
+    (void)info;
+    (void)cfgType;
+    if (value == nullptr || valueLen == nullptr) {
+        return -1;
+    }
+    const char *cfg = "0,10,1,20,2,30";
+    const unsigned int len = static_cast<unsigned int>(std::strlen(cfg));
+    if (*valueLen < len) {
+        return -1;
+    }
+    (void)std::memcpy(value, cfg, len);
+    *valueLen = len;
+    return 0;
+}
+
 } // namespace
 
 class TpMgrTest : public testing::Test {
@@ -274,4 +365,78 @@ TEST_F(TpMgrTest, GetTpTotalTimeout_InvalidAtGear_UsesDefault)
     uint32_t tpTimeOutMs = 0;
     EXPECT_EQ(TpMgr::GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs), HCCL_SUCCESS);
     EXPECT_EQ(tpTimeOutMs, 1000U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Rtp_ThreeTp_Qos4_Expect_GroupedMapping)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncThree));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncSl123));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.12.1", "10.10.12.2", TpProtocol::RTP, 4U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_EQ(tpInfo.tpHandle, 0x201ULL);
+    EXPECT_EQ(tpInfo.mappedJettyPriority, 2U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_EightTp_SingleSlBit_Qos0_Expect_Sl5)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncSingleSlBit));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.13.1", "10.10.13.2", TpProtocol::UBOE, 0U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_EQ(tpInfo.tpHandle, 0x107ULL);
+    EXPECT_EQ(tpInfo.mappedJettyPriority, 5U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_EightTp_TwoSlBits_Qos3_Expect_MappedSl7)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncTwoSlBits));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.14.1", "10.10.14.2", TpProtocol::UBOE, 3U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_EQ(tpInfo.tpHandle, 0x104ULL);
+    EXPECT_EQ(tpInfo.mappedJettyPriority, 7U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Rtp_SlLevelCountCapsMapping_Expect_Success)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncThree));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncSl123));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    GetTpInfoParam param = MakeParam("10.10.15.1", "10.10.15.2", TpProtocol::RTP, 0U);
+    param.slLevelCount = 2U;
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_NE(tpInfo.tpHandle, 0U);
+    EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_DscpFromHccnCfg_Expect_Success)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboe));
+    MOCKER(RaGetHccnCfg).stubs().will(invoke(StubRaGetHccnCfgDscp));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.16.1", "10.10.16.2", TpProtocol::UBOE, 2U);
+    TpInfo tpInfo{};
+    EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Ctp_WithQos_Expect_SuccessWithoutSlCommit)
+{
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.17.1", "10.10.17.2", TpProtocol::CTP, 6U);
+    TpInfo tpInfo{};
+    EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_NE(tpInfo.tpHandle, 0U);
 }
