@@ -190,7 +190,12 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
     comp.devLogicId_ = 0;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo = std::make_pair(0x88888888ULL, 1U);
+=======
+    const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo =
+        std::make_pair(reinterpret_cast<TokenIdHandle>(0x88888888), 1U);
+>>>>>>> e3d1a974 (ut执行问题)
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo).stubs().will(returnValue(fakeTokenInfo));
     MOCKER(HrtRaUbLocalMemReg).stubs().will(returnValue(HrtRaUbLocalMemRegOutParam()));
 
