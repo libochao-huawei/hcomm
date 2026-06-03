@@ -190,7 +190,8 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
     comp.devLogicId_ = 0;
 
     auto buffer = std::make_shared<Hccl::Buffer>(0x1000ULL, 4096ULL);
-    comp.ccuRmaBufferMap_[dieId] = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
+    comp.ccuRmaBufferMap_[dieId] =
+        std::make_unique<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0xABCDULL;

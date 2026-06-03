@@ -666,7 +666,8 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_
     const uint8_t dieId = 0U;
     const IpAddress ipAddr("192.168.10.1");
     auto buffer = std::make_shared<Buffer>(0x1000ULL, 4096ULL);
-    ccuComponent.localCcuRmaBufferMap[dieId] = std::make_shared<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x111));
+    ccuComponent.localCcuRmaBufferMap[dieId] =
+        std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x111));
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0x555ULL;
@@ -705,7 +706,8 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpHandleZero_Expect_D
     const uint8_t dieId = 1U;
     const IpAddress ipAddr("192.168.10.2");
     auto buffer = std::make_shared<Buffer>(0x2000ULL, 4096ULL);
-    ccuComponent.localCcuRmaBufferMap[dieId] = std::make_shared<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x444));
+    ccuComponent.localCcuRmaBufferMap[dieId] =
+        std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x444));
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0ULL;
