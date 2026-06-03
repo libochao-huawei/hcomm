@@ -11,7 +11,7 @@
 #include "adapter_error_manager_pub.h"
 #include "base/err_msg.h"
 #include "base/err_mgr.h"
-
+曾
 void RptInputErr(std::string error_code, std::vector<std::string> key,
     std::vector<std::string> value)
 {
