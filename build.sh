@@ -223,8 +223,8 @@ function make_ut_gov() {
          -d ${BUILD_UT_DIR}/test/legacy/ut/ \
          -o cov/coverage.info \
          ${LCOV_RUNTIME_CONFIGURATION_FLAGS}
-    lcov ${LCOV_FILTER_IGNORE_FLAGS} -r cov/coverage.info */src/platform/hccp/external_depends/* -o cov/coverage.info
-    lcov ${LCOV_FILTER_IGNORE_FLAGS} -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
+    lcov ${LCOV_FILTER_IGNORE_FLAGS} -r cov/coverage.info */src/base_comm/resources/hccp/external_depends/* -o cov/coverage.info
+    lcov ${LCOV_FILTER_IGNORE_FLAGS} -e cov/coverage.info */src/legacy/ascend910/algorithm/* */src/legacy/ascend910/common/* */src/legacy/ascend910/hccd/* */src/legacy/ascend950* */src/legacy/ascend910/framework/* */src/legacy/ascend910/platform/* */src/legacy/ascend910/pub_inc/* */src/base_comm/* */src/coll_communicator/* -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
     genhtml coverage.info
