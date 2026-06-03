@@ -79,22 +79,22 @@ HcclResult HcommThreadGetNotifyId(ThreadHandle thread, uint32_t notifyIdx, uint3
 
 HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 {
-    if (ShouldSkipAicpuDfx()) {
-        return HCCL_SUCCESS;
-    }
-    CHK_PTR_NULL(commId);
-    CHK_PTR_NULL(hcclDfxOpInfo);
+    // if (ShouldSkipAicpuDfx()) {
+    //     return HCCL_SUCCESS;
+    // }
+    // CHK_PTR_NULL(commId);
+    // CHK_PTR_NULL(hcclDfxOpInfo);
 
-    DevType deviceType;
-    CHK_RET(hrtGetDeviceType(deviceType));
-    if (deviceType == DevType::DEV_TYPE_910B) {
-        HCCL_INFO("[%s]not support, comId[%s], devType[%d]", __func__, commId, deviceType);
-        return HCCL_SUCCESS;
-    }
+    // DevType deviceType;
+    // CHK_RET(hrtGetDeviceType(deviceType));
+    // if (deviceType == DevType::DEV_TYPE_910B) {
+    //     HCCL_INFO("[%s]not support, comId[%s], devType[%d]", __func__, commId, deviceType);
+    //     return HCCL_SUCCESS;
+    // }
 
-    HcclDfxOpInfo *aicpuDfxInfo = reinterpret_cast<HcclDfxOpInfo *>(hcclDfxOpInfo);
-    CHK_RET(HcommThreadGetNotifyId(aicpuDfxInfo->cpuTsThread, aicpuDfxInfo->cpuWaitAicpuNotifyIdx, &aicpuDfxInfo->cpuWaitAicpuNotifyId));
-    CHK_RET(AicpuIndopProcess::AicpuDfxOpInfoInit(aicpuDfxInfo, commId));
+    // HcclDfxOpInfo *aicpuDfxInfo = reinterpret_cast<HcclDfxOpInfo *>(hcclDfxOpInfo);
+    // CHK_RET(HcommThreadGetNotifyId(aicpuDfxInfo->cpuTsThread, aicpuDfxInfo->cpuWaitAicpuNotifyIdx, &aicpuDfxInfo->cpuWaitAicpuNotifyId));
+    // CHK_RET(AicpuIndopProcess::AicpuDfxOpInfoInit(aicpuDfxInfo, commId));
 
     return HCCL_SUCCESS;
 }
