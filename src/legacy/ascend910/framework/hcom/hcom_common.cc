@@ -207,7 +207,7 @@ HcclResult HcomInitCollComm(uint32_t rank, void **commV2, HcclCommPtr &comm)
     cclBuffer.size = static_cast<uint64_t>(cclBufferSize);
     cclBuffer.type = cclBufferMemType;
     cclBuffer.addr = reinterpret_cast<void*>(cclBufferAddr);
-    EXECEPTION_CATCH(comm = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName), return HCCL_E_PTR);
+    EXCEPTION_CATCH(comm = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName), return HCCL_E_PTR);
     void *rankGraph = nullptr;
     CHK_RET(HcclGetRankGraphV2(commV2, &rankGraph));
     constexpr HcclCommConfig *config = nullptr;

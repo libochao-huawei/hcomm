@@ -432,7 +432,7 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
                  baseVaSize,  baseVaSize, granularity_, stride_);
             return HCCL_E_MEMORY;
         }
-        EXECEPTION_CATCH((paMapInfo = std::make_shared<PaMappingInfo>()), return HCCL_E_PTR);
+        EXCEPTION_CATCH((paMapInfo = std::make_shared<PaMappingInfo>()), return HCCL_E_PTR);
         paMapInfo->paHandle = paHandle;
         paMapInfo->origAllocBaseVa = baseUserVa;
         paMapInfo->origAllocSize = baseVaSize;
@@ -441,7 +441,7 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
         paMappingMap_.emplace(paHandle, paMapInfo);
     }
     std::shared_ptr<SymmetricWindow> pWin = nullptr;
-    EXECEPTION_CATCH((pWin = std::make_shared<SymmetricWindow>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((pWin = std::make_shared<SymmetricWindow>()), return HCCL_E_PTR);
     pWin->userVa = baseUserVa;
     pWin->userSize = baseVaSize;
     pWin->baseVa = static_cast<uint8_t*>(heapBase_) + paMapInfo->heapBaseOffset;
