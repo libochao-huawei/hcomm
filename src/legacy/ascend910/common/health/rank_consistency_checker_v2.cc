@@ -157,7 +157,6 @@ HcclResult RankConsistencyCheckerV2::CompareCheckFrameV2(
         subCommParaCrcsV2_, "sub comm param", "sub_comm_param_count");
         
     CompareVersionV2(local, remote, isDiff);
-    CompareEngineV2(local, remote, isDiff);
     return isDiff ? HCCL_E_INTERNAL : HCCL_SUCCESS;
 }
 
@@ -223,19 +222,6 @@ HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local,
             std::vector<std::string>({localVer, remoteVer}));
         HCCL_ERROR("[RankConsistencyCheckerV2::CompareVersionV2] CANN version mismatch: local[%s], remote[%s].",
             localVer.c_str(), remoteVer.c_str());
-        isDiff = true;
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult RankConsistencyCheckerV2::CompareEngineV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
-{
-    if (local.engine != remote.engine) {
-        RPT_INPUT_ERR(true, "EI0005",
-            std::vector<std::string>({"local_engine", "remote_engine"}),
-            std::vector<std::string>({std::to_string(local.engine), std::to_string(remote.engine)}));
-        HCCL_ERROR("[RankConsistencyCheckerV2::CompareEngineV2] engine mismatch: local[%d], remote[%d].",
-            local.engine, remote.engine);
         isDiff = true;
     }
     return HCCL_SUCCESS;
