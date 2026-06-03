@@ -2806,6 +2806,8 @@ RankTableCrcBridge& RankTableCrcBridge::GetInstance()
     return instance;
 }
 
+RankTableCrcBridge::~RankTableCrcBridge() = default;
+
 u32 RankTableCrcBridge::ConsumeRankTableJsonCrc(s32 deviceLogicId)
 {
     return 0;
