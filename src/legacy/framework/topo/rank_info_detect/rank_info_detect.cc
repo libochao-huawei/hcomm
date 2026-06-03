@@ -176,8 +176,7 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
     if (hostPort_ == HCCL_INVALID_PORT) {
         auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
         if (portRange.empty()) {
-            SocketPortRange defaultRange = {HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + 15};
-            portRange.push_back(defaultRange);
+            return;
         }
         SocketHandle hostSocketHandle = HostSocketHandleManager::GetInstance().Create(devPhyId_, hostIp_);
         hostPortSocket_ = std::make_shared<Socket>(
