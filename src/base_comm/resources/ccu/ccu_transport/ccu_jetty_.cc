@@ -68,21 +68,26 @@ HcclResult CcuJetty::Init()
 HcclResult CcuJetty::SetMappedJettyPriority(uint32_t priority)
 {
     const uint8_t mapped = static_cast<uint8_t>(priority & 0xFU);
-    if (isCreated_) {
-        HCCL_ERROR("[CcuJetty][%s] jetty already created, cannot set mappedJettyPriority[%u] jettyId[%u].",
-            __func__, static_cast<unsigned>(mapped), jettyInfo_.taJettyId);
-        return HcclResult::HCCL_E_INTERNAL;
-    }
-    if (mappedJettyPrioritySet_) {
-        if (mappedJettyPriority_ == mapped) {
-            return HcclResult::HCCL_SUCCESS;
-        }
+
+    if (mappedJettyPrioritySet_ && mappedJettyPriority_ != mapped) {
         HCCL_ERROR("[CcuJetty][%s] mappedJettyPriority conflict on shared jetty: existing[%u] new[%u] "
-                   "jettyId[%u].",
+                   "jettyId[%u] isCreated[%d].",
             __func__, static_cast<unsigned>(mappedJettyPriority_), static_cast<unsigned>(mapped),
-            jettyInfo_.taJettyId);
+            jettyInfo_.taJettyId, static_cast<int>(isCreated_));
         return HcclResult::HCCL_E_INTERNAL;
     }
+
+    // 多 channel 复用：jetty 已 create，qos 已写入 URMA，不可再改 inParam_
+    if (isCreated_) {
+        HCCL_INFO("[CcuJetty][%s] jetty[%u] already created, skip mappedJettyPriority[%u].",
+            __func__, jettyInfo_.taJettyId, static_cast<unsigned>(mapped));
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    if (mappedJettyPrioritySet_) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
     mappedJettyPriority_ = mapped;
     mappedJettyPrioritySet_ = true;
     inParam_.qos = mapped;
