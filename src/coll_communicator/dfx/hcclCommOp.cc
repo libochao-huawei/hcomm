@@ -40,25 +40,22 @@ namespace hccl {
 std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpInfo) {
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
     dfxOpInfoOnce->op_.opMode = static_cast<Hccl::OpMode::Value>(dfxOpInfo.opMode);
-    auto it = CMD_OP_TYPE_INFO_MAP.find(static_cast<HcclCMDType>(dfxOpInfo.opType));
-    if (it == CMD_OP_TYPE_INFO_MAP.end()) {
-        HCCL_WARNING("%s dfxOpInfo.opType[%u] is not supported.", __func__, dfxOpInfo.opType);
-    } else {
-        dfxOpInfoOnce->op_.opType = it->second.first;
-        dfxOpInfoOnce->tag_ = it->second.second;
-    }
-    dfxOpInfoOnce->op_.reduceOp = Hccl::HcclReduceOpToReduceOp(static_cast<HcclReduceOp>(dfxOpInfo.reduceOp));
-    dfxOpInfoOnce->op_.dataType = Hccl::HcclDataTypeToDataType(static_cast<HcclDataType>(dfxOpInfo.dataType));
+    dfxOpInfoOnce->op_.oldOpType = dfxOpInfo.opType; // 存A3的类型
+    //  dfxOpInfoOnce->tag_  没有填  延后到后面填
+    // dfxOpInfoOnce->op_.reduceOp = Hccl::HcclReduceOpToReduceOp(static_cast<HcclReduceOp>(dfxOpInfo.reduceOp));
+    // dfxOpInfoOnce->op_.dataType = Hccl::HcclDataTypeToDataType(static_cast<HcclDataType>(dfxOpInfo.dataType));
+    dfxOpInfoOnce->op_.oldReduceOp = dfxOpInfo.reduceOp; // 存A3的类型
+    dfxOpInfoOnce->op_.oldDataType = dfxOpInfo.dataType; // 存A3的类型
+
     dfxOpInfoOnce->op_.dataCount = dfxOpInfo.dataCount;
     dfxOpInfoOnce->op_.root = dfxOpInfo.root;
-    dfxOpInfoOnce->op_.staticAddr = false;
-    dfxOpInfoOnce->op_.staticShape = false;
-    dfxOpInfoOnce->op_.inputMem = std::make_shared<Hccl::Buffer>(dfxOpInfo.inputMemAddr, dfxOpInfo.inputMemSize);
-    dfxOpInfoOnce->op_.outputMem = std::make_shared<Hccl::Buffer>(dfxOpInfo.outputMemAddr, dfxOpInfo.outputMemSize);
-    dfxOpInfoOnce->op_.scratchMem = std::make_shared<Hccl::Buffer>(0, 0);
+
+    dfxOpInfoOnce->op_.newInputMem =  dfxOpInfo.inputMemAddr;
+    dfxOpInfoOnce->op_.newOutputMem = dfxOpInfo.outputMemAddr;
+    dfxOpInfoOnce->op_.newScratchMem = 0;
 
     dfxOpInfoOnce->algTag_ = dfxOpInfo.algTag;
-    dfxOpInfoOnce->algType_ = Hccl::AlgType{Hccl::AlgType::MESH}.Describe();
+    // dfxOpInfoOnce->algType_ = Hccl::AlgType{Hccl::AlgType::MESH}.Describe();
     dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime;
     dfxOpInfoOnce->cpuWaitAicpuNotifyId_ = dfxOpInfo.cpuWaitAicpuNotifyId;
 

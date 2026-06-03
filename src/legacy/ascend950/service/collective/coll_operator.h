@@ -23,14 +23,20 @@
 namespace Hccl {
 using BaseCollOperator = struct BaseCollOperatorDef {
     OpMode   opMode{OpMode::INVALID};
-    OpType   opType{OpType::DEBUGCASE};
+    OpType   opType{OpType::DEBUGCASE};  //A5的类型
+    u32      oldOpType{0}; // A3的类型
     ReduceOp reduceOp{ReduceOp::INVALID};
+    u32 oldReduceOp{0}; // A3的类型
     DataType dataType{DataType::INVALID};
+    u32     oldDataType{0}; // 仅用于A3的场景
     DataType outputDataType{DataType::INVALID}; // 低精度场景，存在指定输出数据类型
     u64      dataCount{0};
     u32      root{0};
     u32      numBlocksLimit{0};
     RankId   sendRecvRemoteRank{0};
+    u64 newInputMem{0};
+    u64 newOutputMem{0};
+    u64 newScratchMem{0};
     std::shared_ptr<Buffer> inputMem{nullptr};
     std::shared_ptr<Buffer> outputMem{nullptr};
     std::shared_ptr<Buffer> scratchMem{nullptr};

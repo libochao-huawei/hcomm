@@ -2075,6 +2075,10 @@ void ProfilingReporter::Init() const
 {
 }
 
+void ProfilingReporter::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
+{
+}
+
 void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const
 {
 }

@@ -41,6 +41,9 @@ public:
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
 
+    // 设置当前DFX算子信息
+    HcclResult SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo);
+
     // Profiling相关接口（直接暴露，不通过GetProfilingImpl）
     HcclResult ReportAllTasks(bool cachedReq);
     HcclResult ReportOp(u64 beginTime, bool cachedReq, bool opbased);

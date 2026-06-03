@@ -23,6 +23,7 @@ public:
     void Init();
     void ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const;
     void ReportAllTasks(bool cachedReq);
+    void SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo);
     void UpdateProfStat();
     void CallReportMc2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
                                 const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm) const;

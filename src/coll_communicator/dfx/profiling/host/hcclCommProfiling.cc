@@ -49,6 +49,13 @@ void HcclCommProfiling::ReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
     }
 }
 
+void HcclCommProfiling::SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo)
+{
+    if (profilingReporter_) {
+        profilingReporter_->SetCurrDfxOpInfo(dfxOpInfo);
+    }
+}
+
 // HcclCommProfiling::UpdateProfStat实现
 void HcclCommProfiling::UpdateProfStat() {
     if (profilingReporter_) {

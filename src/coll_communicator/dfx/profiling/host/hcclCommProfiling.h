@@ -39,6 +39,9 @@ public:
     // 上报MC2通信信息
     void ReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo);
     
+    // 设置当前DFX算子信息
+    void SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo);
+
     // 更新Profiling统计
     void UpdateProfStat();
     
