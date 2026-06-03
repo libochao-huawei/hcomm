@@ -30,9 +30,10 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
 
     // 3. 注册回调到单例
     addTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
-        return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
+        return this->mirrorTaskManagerLite_->AddTaskInfo(streamId, taskId, taskParam, handle);
     };
-    getChannelRemoteRankId_ = [this](u64 handle) { return this->GetChannelRemoteRankId(handle); };
+    auto getChannelRemoteRankId = [this](u64 handle) { return this->GetChannelRemoteRankId(handle); };
+    mirrorTaskManagerLite_->RegGetRemoteRankCallBack(getChannelRemoteRankId);
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 

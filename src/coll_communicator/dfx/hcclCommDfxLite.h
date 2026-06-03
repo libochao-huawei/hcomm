@@ -25,8 +25,6 @@ public:
 
     // 初始化DFX系统 - 修改为返回HcclResult类型
     HcclResult Init(u32 deviceId, const std::string& comTag);
-    // 注册回调到单例
-    HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManagerLite* GetMirrorTaskManagerLite() const;
 
@@ -49,7 +47,6 @@ private:
     std::string commTag_;
     u32 deviceId_;
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> addTaskCallback_;
-    std::function<u32(u64)> getChannelRemoteRankId_;
 };
 
 }
