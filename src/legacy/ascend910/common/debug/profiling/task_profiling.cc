@@ -18,8 +18,8 @@
 namespace hccl {
 std::mutex TaskProfiling::mutex_;
 
-TaskProfiling::TaskProfiling(u32 deviceLogicId_, u32 localRank_, bool profilingOn)
-    : ProfilerBase(deviceLogicId_), localRank_(localRank_), profilingOn_(profilingOn)
+TaskProfiling::TaskProfiling(u32 deviceLogicId_, u32 localRank_, u32 rankSize_, bool profilingOn)
+    : ProfilerBase(deviceLogicId_), localRank_(localRank_), rankSize_(rankSize_), profilingOn_(profilingOn)
 {}
 
 TaskProfiling::~TaskProfiling()
@@ -253,7 +253,7 @@ HcclResult TaskProfiling::Run(const TaskData &taskData, bool isCapture)
     std::string nameInfo = GetProfTaskOpName(type);
     hcclReportData.profInfo.itemId = hrtMsprofGetHashId(nameInfo.c_str(), nameInfo.length());
     hcclReportData.profInfo.localRank = localRank_;
-    hcclReportData.profInfo.rankSize = PARSE_RANK_SIZE(hcclReportData.profInfo.planeID);
+    hcclReportData.profInfo.rankSize = rankSize_;
     GetTaskData(taskData.taskType, taskData, hcclReportData.profInfo);
 
     hcclReportData.profInfo.cclTag = hrtMsprofGetHashId(hcclReportData.tag.c_str(), hcclReportData.tag.length());
@@ -357,7 +357,7 @@ HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID, co
     std::string nameInfo = GetCMDTypeEnumStr(paraAiv.cmdType) + "AivKernel";
     hcclReportData.profInfo.itemId = hrtMsprofGetHashId(nameInfo.c_str(), nameInfo.length());
     hcclReportData.profInfo.localRank = localRank_;
-    hcclReportData.profInfo.rankSize = PARSE_RANK_SIZE(hcclReportData.profInfo.planeID);
+    hcclReportData.profInfo.rankSize = rankSize_;
 
     hcclReportData.profInfo.dataSize = paraAiv.size;
 

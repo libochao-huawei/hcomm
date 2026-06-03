@@ -18,8 +18,8 @@
 #include "stream_utils.h"
 
 namespace hccl {
-ProfilerManagerImpl::ProfilerManagerImpl(s32 devicePhyId, s32 deviceLogicId, u32 realUserRank)
-    : devicePhyId_(devicePhyId), deviceLogicId_(deviceLogicId), realUserRank_(realUserRank),
+ProfilerManagerImpl::ProfilerManagerImpl(s32 devicePhyId, s32 deviceLogicId, u32 realUserRank, u32 rankSize)
+    : devicePhyId_(devicePhyId), deviceLogicId_(deviceLogicId), realUserRank_(realUserRank), rankSize_(rankSize),
     profiler_(nullptr), taskExceptionHandler_(nullptr), taskOverflowHandler_(nullptr)
 {
 }
@@ -47,7 +47,7 @@ HcclResult ProfilerManagerImpl::InitProfiler()
     }
     CHK_RET(DlProfFunction::GetInstance().DlProfFunctionInit());
     CHK_RET(DlRtFunction::GetInstance().DlRtFunctionInit());
-    profiler_.reset(new (std::nothrow) TaskProfiling(deviceLogicId_, realUserRank_, true));
+    profiler_.reset(new (std::nothrow) TaskProfiling(deviceLogicId_, realUserRank_, rankSize_, true));
     CHK_SMART_PTR_NULL(profiler_);
     PluginRunner profrunner(profiler_.get());
     RegisterCallBack(ProfilerType::TASK_PROFILING, profrunner);

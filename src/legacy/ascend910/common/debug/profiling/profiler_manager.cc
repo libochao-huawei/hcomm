@@ -16,9 +16,9 @@
 #include "profiler_manager.h"
 
 namespace hccl {
-ProfilerManager::ProfilerManager(s32 devicePhyId, s32 deviceLogicId, u32 realUserRank)
+ProfilerManager::ProfilerManager(s32 devicePhyId, s32 deviceLogicId, u32 realUserRank, u32 rankSize)
 {
-    pimpl_.reset(new (std::nothrow) ProfilerManagerImpl(devicePhyId, deviceLogicId, realUserRank));
+    pimpl_.reset(new (std::nothrow) ProfilerManagerImpl(devicePhyId, deviceLogicId, realUserRank, rankSize));
 }
 
 ProfilerManager::~ProfilerManager()
