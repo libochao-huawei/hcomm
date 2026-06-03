@@ -380,6 +380,8 @@ TEST_F(CcuConnectionTest, Ut_Serialize_DtoJettyKeyContainsLocEid)
     auto resPair = MockMakeCcuConnection(TpProtocol::CTP);
     auto connection = resPair.first.get();
 
+    EXPECT_EQ(connection->GetStatus(), CcuConnStatus::INIT);
+    EXPECT_EQ(connection->GetStatus(), CcuConnStatus::INIT);
     EXPECT_EQ(connection->GetStatus(), CcuConnStatus::EXCHANGEABLE);
 
     std::vector<char> dtoData;
@@ -399,6 +401,8 @@ TEST_F(CcuConnectionTest, Ut_StartImportJettyRequest_PatchesRmtEidIntoKey)
     auto resPair = MockMakeCcuConnection(TpProtocol::CTP);
     auto connection = resPair.first.get();
 
+    EXPECT_EQ(connection->GetStatus(), CcuConnStatus::INIT);
+    EXPECT_EQ(connection->GetStatus(), CcuConnStatus::INIT);
     EXPECT_EQ(connection->GetStatus(), CcuConnStatus::EXCHANGEABLE);
     connection->importJettyCtxs.resize(connection->jettyNum);
     for (uint32_t i = 0; i < connection->jettyNum; ++i) {
