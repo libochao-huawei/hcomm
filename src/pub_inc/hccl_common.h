@@ -169,7 +169,7 @@ const std::string LOG_KEYWORDS_HOST = "HOST";
 const std::string LOG_KEYWORDS_HOST_TS = "HOST_TS";
 const std::string LOG_KEYWORDS_AIV = "AIV";
 const std::string LOG_KEYWORDS_AICPU = "AICPU";
-const std::string LOG_KEYWORDS_CQE_ERROR = "ROCE CQE ERROR";
+const std::string LOG_KEYWORDS_CQE_ERROR = "CQE ERROR";
  
 /* 通信域及本卡信息关键字 */
 const std::string LOG_KEYWORDS_COMMUNICATOR = "Communicator Key Info";

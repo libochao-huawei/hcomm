@@ -20,8 +20,6 @@
 #include "heartbeat.h"
 #include "comm_addr_logger.h"
 
-const std::string LOG_KEYWORDS_CQE_ERROR = "CQE ERROR";
-
 namespace hcomm {
 
 ClusterUIDType ClusterMonitor::FormatUID(ClusterUIDCxt cxt)
