@@ -19,6 +19,7 @@
 #include "op_mode.h"
 #include "binary_stream.h"
 #include "ccu_conn.h"
+#include "remote_rma_buffer.h"
 
 namespace hcomm {
 

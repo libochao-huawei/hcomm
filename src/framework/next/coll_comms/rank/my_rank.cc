@@ -738,6 +738,7 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     char** memTags = nullptr;
     CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &memNum, &remoteMem, &memTags)));
     if (memNum > 0) {
+        CHK_PTR_NULL(remoteMem);
         // AicpuTsHccsChannel不使用memTag，返回为空，默认索引0为cclBuffer
         if (memTags == nullptr) {
             *buffer = remoteMem[0].addr;
@@ -745,7 +746,6 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
             HCCL_INFO("[%s] Found HcclBuffer : addr=%p, size=%llu", __func__, *buffer, *size);
             return HCCL_SUCCESS;
         }
-        CHK_PTR_NULL(remoteMem);
         for (u32 i = 0; i < memNum; ++i) {
             std::string tag = memTags[i];
             if (tag == "HcclBuffer") {

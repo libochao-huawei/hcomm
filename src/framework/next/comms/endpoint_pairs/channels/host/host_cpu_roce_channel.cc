@@ -12,7 +12,7 @@
 #include "../../../endpoints/endpoint.h"
 #include "dpu_notify/dpu_notify_manager.h"
 #include "hcomm_res.h"
-#include "comm_mems.h"
+#include "hcomm_c_adpt.h"
 #include "exception_handler.h"
 #include "cpu_roce_endpoint.h"
 #include "adapter_error_manager_pub.h"
@@ -29,6 +29,7 @@
 #include "../../../../../platform/resource/notify/notify_pool_impl.h"
 #include "../../../../../platform/hccp/inc/network/hccp_common.h"
 #include "dlprof_function.h"
+#include "user_remote_mem_getter.h"
 
 namespace hcomm {
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
@@ -576,9 +577,8 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
 HcclResult HostCpuRoceChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
-    uint32_t userMemCount = rmtRmaBuffers_.size();
-    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> remoteMemCtx{cacheValid_, rmtRmaBuffers_,
-    userRemoteMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
+    Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> remoteMemCtx{cacheValid_, rmtRmaBuffers_,
+        userRemoteMems_, memInfoCopies_, memInfoPointers_, remoteMem, memInfos, memNum};
     CHK_RET(GetRemoteUserMems(remoteMemCtx));
     return HCCL_SUCCESS;
 }

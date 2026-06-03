@@ -89,6 +89,9 @@ HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
         remoteMemCtx.tagPointers.reserve(userMemCount);
         for (uint32_t i = 0; i < userMemCount; ++i) {
             auto &rmtBuffer = remoteMemCtx.rmtBufferVec[i];
+            if (rmtBuffer == nullptr) {
+                return HCCL_E_PTR;
+            }
             CommMem mem{};
             mem.type = HcclMemTypeToCommMemType(rmtBuffer->GetMemType());
             mem.addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());

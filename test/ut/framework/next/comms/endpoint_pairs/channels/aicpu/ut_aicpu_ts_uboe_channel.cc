@@ -251,7 +251,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_PackingHelpers_NoCrash) {
     ch.NotifyVecPack(bs);
     std::vector<Hccl::LocalRmaBuffer*> emptyBuf;
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> tags;
-    ch.BufferVecPack(bs, emptyBuf, tags);
+    ch.BufferVecPack(bs, emptyBuf);
     ch.ConnVecPack(bs);
 
     SUCCEED();

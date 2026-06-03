@@ -458,8 +458,8 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
         if (memInfo == "HcclBuffer") {
             rmtHcclBufferInfo_ = rmtBufferInfo;
         }
-        rmtbufferVec_.push_back(make_unique<Hccl::RemoteUbRmaBuffer>(reinterpret_cast<uintptr_t>(rmtBufferInfo.addr),
-            rmtBufferInfo.size, rmtBufferInfo.tokenId, rmtBufferInfo.tokenValue,
+        rmtbufferVec_.push_back(std::make_unique<Hccl::RemoteUbRmaBuffer>(reinterpret_cast<uintptr_t>(rmtBufferInfo.addr),
+            rmtBufferInfo.size, rmtBufferInfo.tokenValue, rmtBufferInfo.tokenId,
             Hccl::HcclMemTypeToCommMemType(rmtBufferInfo.type), memInfo));
     }
     return HcclResult::HCCL_SUCCESS;

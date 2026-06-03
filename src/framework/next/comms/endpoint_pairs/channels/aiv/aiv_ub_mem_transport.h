@@ -45,6 +45,7 @@ private:
     
     std::vector<Hccl::LocalIpcRmaBuffer *>  localRmaBufferVec_{};
     std::vector<Hccl::LocalIpcRmaBuffer *>  locMemTemp_{};
+    std::vector<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> rmtBufferVec_{};
     std::vector<Hccl::RemoteRmaBuffer *> rmtRmaBufferVec_{};
     AivUbMemTransportStatus aivUbStatus_{AivUbMemTransportStatus::INVALID};
     Hccl::TransportStatus baseStatus_{Hccl::TransportStatus::INVALID};

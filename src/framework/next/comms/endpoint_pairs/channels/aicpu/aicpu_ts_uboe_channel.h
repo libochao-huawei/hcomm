@@ -91,8 +91,7 @@ private:
 
     void EidPack();
     void NotifyVecPack(Hccl::BinaryStream &binaryStream);
-    void BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
+    void BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec);
     void ConnVecPack(Hccl::BinaryStream &binaryStream);
     void RmtEidUnpackProc(Hccl::IpAddress& rmtAddr);
     void RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &binaryStream,

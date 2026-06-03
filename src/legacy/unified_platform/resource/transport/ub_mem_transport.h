@@ -124,8 +124,7 @@ private:
     void SendFinish();
     void RecvFinish();
 
-    void BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
+    void BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec);
     void CntNotifyVecPack(BinaryStream &binaryStream);
 
     void CntNotifyDescPack(BinaryStream &binaryStream);
