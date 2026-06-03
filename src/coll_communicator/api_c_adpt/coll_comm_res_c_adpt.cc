@@ -293,9 +293,9 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         hccl::MyRank* myRank = collComm->GetMyRank();
         CHK_PTR_NULL(myRank);
 
-        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordEngineV2(static_cast<s32>(engine)));
         s32 deviceLogicId = 0;
         (void)hrtGetDeviceRefresh(&deviceLogicId);
+        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordEngineV2(static_cast<s32>(engine)));
         u32 rankTableCrc = RankTableCrcBridge::GetInstance().ConsumeRankTableJsonCrc(deviceLogicId);
         CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordRankTableCrcV2(rankTableCrc));
         u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
