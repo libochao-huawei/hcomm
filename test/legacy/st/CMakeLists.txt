@@ -72,7 +72,7 @@ target_include_directories(hccl_v2_stest PUBLIC
 
 
 target_compile_options(hccl_v2_stest PRIVATE
-        -std=c++14
+        -std=c++17
         -Werror
         -fno-common
         -fno-strict-aliasing
