@@ -88,10 +88,15 @@ protected:
         delete rankInfoDetectClient_;
         rankInfoDetectClient_ = nullptr;
 <<<<<<< HEAD
+<<<<<<< HEAD
         // RankInfoDetectClient 析构会 detach 线程调 DeInit，需等其完成再 verify 清 mock
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 =======
 >>>>>>> ac1513a7 (ut 继续修改)
+=======
+        // RankInfoDetectClient 析构会 detach 线程调 DeInit，需等其完成再 verify 清 mock
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+>>>>>>> d2cefc07 (ut继续)
         delete static_cast<int *>(socketHandle);
         socketHandle = nullptr;
         GlobalMockObject::verify();
