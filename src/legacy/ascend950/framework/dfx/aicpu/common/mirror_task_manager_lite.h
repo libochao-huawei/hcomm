@@ -25,6 +25,8 @@ public:
 
     void RegFullyCallBack(std::function<void()> callBack);
     void RegFullyCallBack(std::function<void(const std::string&, u32)> callBack);
+    void RegGetRemoteRankCallBack(std::function<u32(u64)> callBack);
+    HcclResult AddTaskInfo(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);
     void AddTaskInfo(std::unique_ptr<TaskInfo> &taskInfo);
     HcclResult SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo);
 
@@ -44,6 +46,7 @@ private:
     std::shared_ptr<DfxOpInfo>     currDfxOpInfo_;
     std::function<void()>          fullyCallBack_;
     std::function<void(const std::string&, u32)>          fullyNewCallBack_;
+    std::function<u32(u64)> getRemoteRankCallback_;
 };
 
 } // namespace Hccl

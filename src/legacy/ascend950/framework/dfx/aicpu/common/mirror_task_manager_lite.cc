@@ -28,6 +28,41 @@ void MirrorTaskManagerLite::RegFullyCallBack(std::function<void()> callBack)
     return;
 }
 
+void MirrorTaskManagerLite::RegGetRemoteRankCallBack(std::function<u32(u64)> callBack)
+{
+    getRemoteRankCallback_ = callBack;
+    return;
+}
+
+HcclResult MirrorTaskManagerLite::AddTaskInfo(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
+{
+    auto queueIt = queueMap_.find(streamId);
+    if (UNLIKELY(queueIt == queueMap_.end())) {
+        queueMap_[streamId] = std::make_unique<CircularQueue<std::unique_ptr<TaskInfo>>>(MAX_CIRCULAR_QUEUE_LENGTH);
+        queueIt = queueMap_.find(streamId);
+        queueTaskNum[streamId] = 0;
+    }
+
+    auto taskNumIt = queueTaskNum.find(streamId);
+    auto &queue = queueIt->second;
+    auto &taskNum = taskNumIt->second;
+    if (UNLIKELY(taskNum == queue->Capacity())) {
+        fullyCallBack_();
+        taskNum = 0;
+    }
+
+    auto& taskInfo = queue->GetAndUpdate();
+    taskInfo->streamId_ = streamId;
+    taskInfo->taskId_ = taskId;
+    taskInfo->taskParam_ = taskParam;
+    taskInfo->channelHandle_ = handle;
+    taskInfo->getRemoteRankByHandle_ = getRemoteRankCallback_;
+    taskInfo->dfxOpInfo_ = currDfxOpInfo_;
+    taskNum++;
+    HCCL_INFO("[%s]taskInfo:%s", __func__, taskInfo->Describe().c_str());
+    return HCCL_SUCCESS;
+}
+
 void MirrorTaskManagerLite::AddTaskInfo(std::unique_ptr<TaskInfo> &taskInfo)
 {
     if (UNLIKELY(taskInfo == nullptr)) {

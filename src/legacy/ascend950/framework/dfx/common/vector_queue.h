@@ -102,10 +102,16 @@ public:
 
     void Append(T &value) override
     {
-        if (UNLIKELY(elems_.size() >= VECTOR_QUEUE_SIZE)) {
+        if (UNLIKELY(elems_.size() + 1 >= VECTOR_QUEUE_SIZE)) {
             THROW<InternalException>(StringFormat("VectorQueue<T>::Append size[%u] is full", elems_.size()));
         }
         elems_.push_back(std::move(value));
+    }
+
+    T& GetAndUpdate() override
+    {
+        THROW<InternalException>(StringFormat("VectorQueue<T>::GetUpdate not support"));
+        return elems_[0];
     }
 
     void Traverse(std::function<void(const T &)> action) override
