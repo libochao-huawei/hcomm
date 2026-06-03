@@ -64,7 +64,6 @@ public:
     std::function<u32(u64)> getChannelRemoteRankId_{nullptr};
 
 public:
-    TaskInfo() = default;
     TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam,
               std::shared_ptr<DfxOpInfo> dfxOpInfo = nullptr, bool isMaster = false);
 
