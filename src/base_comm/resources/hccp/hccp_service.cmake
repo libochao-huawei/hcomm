@@ -29,8 +29,6 @@ target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/hdc
     ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/common
-    # 三方件头文件
-    ${RDMA_CORE_INCLUDE_DIR}
 )
 
 target_compile_definitions(hccp_service.bin PRIVATE
@@ -55,6 +53,7 @@ target_link_options(hccp_service.bin PRIVATE
 target_link_libraries(hccp_service.bin PRIVATE
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:runtime_headers>
+    $<BUILD_INTERFACE:rdma_core>
     c_sec
     unified_dlog
     ra_adp

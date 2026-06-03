@@ -35,6 +35,7 @@ target_compile_options(hccl_utest_platform_transport   PRIVATE
 
 target_link_libraries(hccl_utest_platform_transport  PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core>
     -pthread
     hccl_llt
     -Wl,--whole-archive

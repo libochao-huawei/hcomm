@@ -44,6 +44,7 @@ target_compile_options(hcomm_utest_api_data_cpu PRIVATE
 
 target_link_libraries(hcomm_utest_api_data_cpu PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt
