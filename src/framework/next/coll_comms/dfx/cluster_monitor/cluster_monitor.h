@@ -186,6 +186,18 @@ public:
 private:
     HcclResult GetRemEndpointDescs(HcclComm comm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs,
         std::vector<uint32_t> &netLayersVector);
+
+    HcclResult ProcessNetLayerRanks(HcclComm comm, const std::vector<uint32_t> &netLayersVector, std::set<uint32_t> &rankIdsSet,
+        std::map<uint32_t, std::vector<UIDContext>> &uidCtxs);
+
+    HcclResult PrepareSocketDesc(HcclComm comm, const CommLink &link,
+        uint32_t rmtPort, const ClusterUIDType &remoteUID, SocketDesc &socketDesc);
+
+    void HandleSocketConnected(ClusterMonitorSocketCtx &needConnectRank,
+        const std::string &commId, const ClusterUIDType &rem);
+
+    HcclResult RegisterConnections(const std::string &commId,
+        std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
     
     HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info);
 

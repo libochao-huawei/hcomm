@@ -235,6 +235,57 @@ HcclResult RegisterToClusterMonitor(HcclComm comm)
     return HCCL_SUCCESS;
 }
 
+HcclResult HandleCommunicatorV2Channels(HcclComm comm, CommEngine engine,
+    const std::vector<HcclChannelDesc>& channelDescFinals, uint32_t channelNum, ChannelHandle* channels, uint64_t beginTime)
+{
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    const std::string &commTag = hcclComm->GetIdentifier();
+    hccl::MyRank* myRank = collComm->GetMyRank();
+    CHK_PTR_NULL(myRank);
+
+    const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
+    if (!CheckCommEngine(engine, opExpansionMode)) {
+        HCCL_ERROR("[%s] failed, coll comm[%p] group[%s] opExpansionMode[%d] is not supported by CCU engine[%d].",
+            __func__, hcclComm, hcclComm->GetIdentifier().c_str(), opExpansionMode, engine);
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    HcclResult ret = HCCL_SUCCESS;
+    if (engine != CommEngine::COMM_ENGINE_CPU) {
+        ret = RegisterToClusterMonitor(comm);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("RegisterToClusterMonitor failed. group[%s], engine[%d], channelNum[%llu], ret[%d]",
+            hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
+    }
+
+    ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
+    CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
+        HCCL_WARNING("CreateChannels group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("CreateChannels failed. group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
+    if (engine == COMM_ENGINE_CPU) {
+        HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+        CHK_PTR_NULL(hcclCommDfx);
+        auto callback = hcclCommDfx->GetDpuCallback();
+        for (uint32_t idx = 0; idx < channelNum; idx++) {
+            int32_t ret = HcommDpuChannelRegisterDfx(channels[idx], callback);
+            CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to register DFX callback for channel[%u], ret[%d]",
+                commTag.c_str(), idx, ret), static_cast<HcclResult>(ret));
+        }
+        HCCL_INFO("[HcclChannelAcquire] group[%s] channelNum[%u] Register DFX callback for CPU channels success", commTag.c_str(), channelNum);
+    }
+    if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+        HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
+        HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+        CHK_PTR_NULL(hcclCommDfx);
+        std::string kernelName = "RunAicpuIndOpChannelInitV2";
+        ret = hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid(), false);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to report kernel for kernelName[%s], tid[%d], ret[%d]",
+                commTag.c_str(), kernelName.c_str(), SalGetTid(), ret), ret);
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, 
     const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle* channels)
 {
@@ -265,53 +316,8 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         channelDescFinals.push_back(channelDescFinal);
     }
  
-    if (hcclComm->IsCommunicatorV2()) {  // A5
-        hccl::CollComm* collComm = hcclComm->GetCollComm();
-        CHK_PTR_NULL(collComm);
-        const std::string &commTag = hcclComm->GetIdentifier();
-        hccl::MyRank* myRank = collComm->GetMyRank();
-        CHK_PTR_NULL(myRank);
- 
-        const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
-        if (!CheckCommEngine(engine, opExpansionMode)) {
-            HCCL_ERROR("[%s] failed, coll comm[%p] group[%s] opExpansionMode[%d] is not supported by CCU engine[%d].", 
-                __func__, hcclComm, hcclComm->GetIdentifier().c_str(), opExpansionMode, engine);
-            return HcclResult::HCCL_E_PARA;
-        }
-
-        if (engine != CommEngine::COMM_ENGINE_CPU) { // host dpu场景暂不支持cluster monitor
-            ret = RegisterToClusterMonitor(comm);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("RegisterToClusterMonitor failed. group[%s], engine[%d], channelNum[%llu], ret[%d]", hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
-        }
-
-        ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
-        CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
-            HCCL_WARNING("CreateChannels group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("CreateChannels failed. group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);
-        if (engine == COMM_ENGINE_CPU) {
-            HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
-            CHK_PTR_NULL(hcclCommDfx);
-            auto callback = hcclCommDfx->GetDpuCallback();
-            for (uint32_t idx = 0; idx < channelNum; idx++) {
-                int32_t ret = HcommDpuChannelRegisterDfx(channels[idx], callback);
-                CHK_PRT_RET(ret != HCCL_SUCCESS,
-                    HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to register DFX callback for channel[%u], ret[%d]", commTag.c_str(), idx, ret),
-                    static_cast<HcclResult>(ret));
-            }
-            HCCL_INFO("[HcclChannelAcquire] group[%s] channelNum[%u] Register DFX callback for CPU channels success", commTag.c_str(), channelNum);
-        }
-        if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
-            HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
-            HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
-            CHK_PTR_NULL(hcclCommDfx);
-            std::string kernelName = "RunAicpuIndOpChannelInitV2";
-            // 还是kernel的当前无法判断
-            ret = hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid(), false);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to report kernel for kernelName[%s], tid[%d], ret[%d]", commTag.c_str(), kernelName.c_str(), SalGetTid(), ret), ret);
-        }
+    if (hcclComm->IsCommunicatorV2()) {
+        ret = HandleCommunicatorV2Channels(comm, engine, channelDescFinals, channelNum, channels, beginTime);
     } else {
         hccl::MyRank *myRank = (hccl::MyRank *)hcclComm->GetMyRank();
         if (hcclComm->GetConnectMode() && engine == COMM_ENGINE_CPU && myRank != nullptr) {
