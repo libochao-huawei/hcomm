@@ -21,7 +21,9 @@
 #include "dev_type.h"
 
 #include "socket.h"
+#include <chrono>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include "new_rank_info.h"
 #include "rank_table_info.h"
@@ -85,6 +87,8 @@ protected:
     virtual void TearDown() {
         delete rankInfoDetectClient_;
         rankInfoDetectClient_ = nullptr;
+        // RankInfoDetectClient 析构会 detach 线程调 DeInit，需等其完成再 verify 清 mock
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         delete static_cast<int *>(socketHandle);
         socketHandle = nullptr;
         GlobalMockObject::verify();
