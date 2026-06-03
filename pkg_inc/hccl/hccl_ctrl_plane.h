@@ -12,6 +12,7 @@
 #define HCCL_CTRL_PLANE_H_
  
 #include <hccl/hccl_types.h>
+#include "hcomm_res_defs.h"
  
 #ifdef __cplusplus
 extern "C" {

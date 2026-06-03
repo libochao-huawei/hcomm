@@ -12,6 +12,7 @@
 #define HCCL_CCU_RES_H
 
 #include "hccl_types.h"
+#include "hcomm_res_defs.h"
 #include "ccu_kernel.h"
 
 #ifdef __cplusplus
