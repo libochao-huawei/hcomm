@@ -1,4 +1,4 @@
-# HcommAclrtNotifyWaitOnThread
+# HcommAclrtNotifyRecordOnThread
 
 ## 产品支持情况
 
@@ -6,17 +6,14 @@
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
 
-> [!NOTE]说明
-> 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
-
 ## 功能说明
 
-基于acl接口创建的Notify等待同步信号，须与[HcommAclrtNotifyRecordOnThread](HcommAclrtNotifyRecordOnThread.md)配对使用。
+基于acl接口创建的Notify发送同步信号，需与HcommAclrtNotifyWaitOnThread配对使用。
 
 ## 函数原型
 
 ```c
-int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
+int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId)
 ```
 
 ## 参数说明
@@ -24,8 +21,7 @@ int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uin
 | 参数名 | 输入/输出 | 描述 |
 | --- | --- | --- |
 | thread | 输入 | 线程句柄，为通过[HcclThreadAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclThreadAcquire.md)接口获取到的threads。<br>ThreadHandle类型的定义请参见[ThreadHandle](../../../datatype_definition/ThreadHandle.md)。 |
-| notifyId | 输入 | 同步信号ID，为通过aclrtGetNotifyId接口获取到的notifyId。 |
-| timeOut | 输入 | 超时时间，单位：毫秒。<br>  - 0：表示永久等待。<br>  - >0：配置的具体超时时间。 |
+| dstNotifyId | 输入 | 同步信号ID，为通过aclrtGetNotifyId接口获取到的notifyId。 |
 
 ## 返回值
 

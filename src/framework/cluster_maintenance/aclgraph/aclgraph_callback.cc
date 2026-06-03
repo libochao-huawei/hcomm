@@ -54,14 +54,28 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
 
     bool isResourceReleaseFailed = false;
     for (auto &commIt : modelIt->second) {
+        // 1. 整批 RPC sync aicpu 端：一次 launch erase 所有 tag 的 7 map entry，内含 sync，返回后 aicpu 不再访问这些 tag
+        HcclResult aicpuRet = commIt.first->AicpuKfcClearOpResLaunch(commIt.second);
+        if (aicpuRet != HCCL_SUCCESS) {
+            HCCL_RUN_WARNING("[%s] modelID[%llu] aicpu batch sync fail, tagCount[%zu] ret[%d]; "
+                "skip host link surgery this batch, tagsRequiringHostCleanup_ entries retained",
+                __func__, modelId, commIt.second.size(), aicpuRet);
+            isResourceReleaseFailed = true;
+        }
+
+        // 2. host 端逐 tag 清自己 resMap_/tagStreamInfo_ 等 host 进程内状态，与 aicpu sync 独立；aicpu 失败也要清，否则 resMap_ 残留
         for (auto &newTag : commIt.second) {
-            ret = commIt.first->ClearOpResource(newTag);
+            ret = commIt.first->ClearOpResource(newTag, true);
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[%s] modelID[%llu] tag[%s] resource release fail, ret[%d]",
+                HCCL_ERROR("[%s] modelID[%llu] tag[%s] host resource release fail, ret[%d]",
                     __func__, modelId, newTag.c_str(), ret);
                 isResourceReleaseFailed = true;
             }
-            HCCL_DEBUG("[%s] modelID[%llu] tag[%s] resource release finish", __func__, modelId, newTag.c_str());
+            HCCL_DEBUG("[%s] modelID[%llu] tag[%s] host resource release finish", __func__, modelId, newTag.c_str());
+        }
+        // 3. aicpu 已 sync，host 端整批 ListCommonRemove + 三容器 erase race-free；aicpu 失败时跳过，tag 保留至析构
+        if (aicpuRet == HCCL_SUCCESS) {
+            (void)commIt.first->ClearAclgraphHostLinks(commIt.second);
         }
     }
 

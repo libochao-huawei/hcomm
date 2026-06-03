@@ -18,6 +18,7 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 #include "dlprof_function.h"
+#include "config_log.h"
 
 using namespace hcomm;
 
@@ -368,7 +369,7 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
 
     ReuseSocketIdxMap reuseSocketIdxMap{};
-    // socket服务器首先异步监听
+    // socket服务器首先监听
     CHK_RET(BatchServerInitForChannels(channelDescs, channelNum, socketTag, reuseSocketIdxMap));
     // socket添加白名单以及进行连接，获取最后的socket
     CHK_RET(BatchGetSocketsForChannels(channelDescs, channelNum, socketTag, hcommDescs, reuseSocketIdxMap));
@@ -691,12 +692,21 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         u32 remoteRank = channelDescs[i].remoteRank;
         HcclCommDfx::AddChannelRemoteRankId(commTag, hostChannelHandleList[i], remoteRank);
         // 打印UB通道建链信息
-        HCCL_RUN_INFO("create channel info:channel handle[%s] comm tag[%s] protocol[%s]"
-                      " local rank[%u] local dev phyid[%u] remote rank[%u] remote dev phyid[%u] engine[%s]",
-            std::to_string(reinterpret_cast<uint64_t>(hostChannelHandleList[i])).c_str(), commTag.c_str(),
-            MyRankUtils::GetCommProtocolEnumStr(channelDescs[i].localEndpoint.protocol).c_str(), rankId_,
-            channelDescs[i].localEndpoint.loc.device.devPhyId, remoteRank,
-            channelDescs[i].remoteEndpoint.loc.device.devPhyId, MyRankUtils::GetCommEngineEnumStr(engine).c_str());
+        if (channelDescs[i].localEndpoint.loc.locType == ENDPOINT_LOC_TYPE_DEVICE &&
+            channelDescs[i].remoteEndpoint.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+            HCCL_CONFIG_DEBUG(HCCL_RES, "create channel info:channel handle[%s] comm tag[%s] protocol[%s]"
+                " local rank[%u] local dev phyid[%u] remote rank[%u] remote dev phyid[%u] engine[%s]",
+                std::to_string(reinterpret_cast<uint64_t>(hostChannelHandleList[i])).c_str(), commTag.c_str(),
+                MyRankUtils::GetCommProtocolEnumStr(channelDescs[i].localEndpoint.protocol).c_str(), rankId_,
+                channelDescs[i].localEndpoint.loc.device.devPhyId, remoteRank,
+                channelDescs[i].remoteEndpoint.loc.device.devPhyId, MyRankUtils::GetCommEngineEnumStr(engine).c_str());
+        } else {
+            HCCL_CONFIG_DEBUG(HCCL_RES, "create channel info:channel handle[%s] comm tag[%s] protocol[%s]"
+                " local rank[%u]  remote rank[%u]  engine[%s]",
+                std::to_string(reinterpret_cast<uint64_t>(hostChannelHandleList[i])).c_str(), commTag.c_str(),
+                MyRankUtils::GetCommProtocolEnumStr(channelDescs[i].localEndpoint.protocol).c_str(), rankId_,
+                remoteRank, MyRankUtils::GetCommEngineEnumStr(engine).c_str());
+        }
     }
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {

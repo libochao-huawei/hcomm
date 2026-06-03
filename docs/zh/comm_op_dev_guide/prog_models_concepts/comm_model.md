@@ -22,7 +22,7 @@
 
 ## 网络语义通信模型
 
-在网络语义通信模型中，用户使用Channel读写远端通信对象内存或与远端通信对象进行同步，详见[通信操作](../../api_ref/comm_opdev/data_plan_api/cpu_ts/communication_operations/README.md)接口介绍。
+在网络语义通信模型中，用户使用Channel读写远端通信对象内存或与远端通信对象进行同步，详见[通信操作](../../api_ref/comm_opdev/data_plan_api/cpu-cpu_ts-aicpu_ts/communication_operations/README.md)接口介绍。
 
 **图 2**  网络语义通信模型  
 ![网络语义通信模型](figures/semantic_communication.png)
@@ -43,7 +43,7 @@
 
 ## 内存语义通信模型
 
-在内存语义通信模型中，远端对象的通信内存可以映射到本地进程地址空间中，通信算子开发者可以使用本地操作接口实现节点间的数据搬运或同步，详见[本地操作](../../api_ref/comm_opdev/data_plan_api/cpu_ts/local_operations/README.md)接口。
+在内存语义通信模型中，远端对象的通信内存可以映射到本地进程地址空间中，通信算子开发者可以使用本地操作接口实现节点间的数据搬运或同步，详见[本地操作](../../api_ref/comm_opdev/data_plan_api/cpu-cpu_ts-aicpu_ts/local_operations/README.md)接口。
 
 下图展示了HCCL的内存语义通信模型：
 
@@ -54,7 +54,7 @@
   - 内存语义通信模型下，一个通信对象只有一个Endpoint。
   - Endpoint包含地址与协议等属性，一个Endpoint可能包含多个物理口（比如Bonding场景）。
 
-- Channel：本端通信对象与远端通信对象建立的通信通道，在内存语义场景下Channel的建立表示两个通信对象之间的内存映射功能被使能，不用于通信对象间的通信。
+- Channel：本端通信对象与远端通信对象建立的通信通道，在内存语义场景下Channel的建立表示两个通信对象之间的内存映射功能被开启，不用于通信对象间的通信。
   - 一对通信对象之间只能创建一个Channel。
   - 创建Channel时，本端注册的内存信息会与远端注册的内存信息进行交换并做内存映射。
   - 控制面提供了基于Channel查询远端内存在本端映射后的地址与大小。

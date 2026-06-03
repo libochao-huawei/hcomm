@@ -1569,6 +1569,71 @@ HcclResult HcclCommAicpu::CleanAllRoceResource(){
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommAicpu::ClearOpResource(const std::string &tag)
+{
+    // 与 GetAlgResponseRes/AllocAlgResource/ReAllocTransportResource 互斥，避免读写竞争 resMap_/linkRes_
+    std::lock_guard<std::mutex> lock(preemptMutexForResMap_);
+
+    auto eraseTagFromAll = [this](const std::string &t) -> bool {
+        bool hit = false;
+        // 主资源map：vector<LINK>析构会让shared_ptr<Transport>引用-1，归零时触发driver资源释放
+        if (resMap_.erase(t) > 0) {
+            hit = true;
+        }
+        // SDMA HCCS链路缓存：报错日志中driver halResAddrMap ioctl失败的根本累积点
+        for (auto &rankIt : linkRes_) {
+            if (rankIt.second.erase(t) > 0) {
+                hit = true;
+            }
+        }
+        // SDMA SIO并发链路缓存
+        for (auto &rankIt : linkResSio_) {
+            if (rankIt.second.erase(t) > 0) {
+                hit = true;
+            }
+        }
+        // RDMA主备链路缓存（CleanAllRoceResource按通信域全清，本接口按tag细粒度清）
+        for (auto &rankIt : linkRdmaRes_) {
+            if (rankIt.second.erase(t) > 0) {
+                hit = true;
+            }
+        }
+        for (auto &rankIt : linkRdmaResBackUp_) {
+            if (rankIt.second.erase(t) > 0) {
+                hit = true;
+            }
+        }
+        // 本地scratchMem和localTagResToObj按tag索引
+        if (tagScratchMem_.erase(t) > 0) {
+            hit = true;
+        }
+        if (localTagResToObj_.erase(t) > 0) {
+            hit = true;
+        }
+        for (auto &rankIt : rankTagRemoteRes_) {
+            if (rankIt.second.erase(t) > 0) {
+                hit = true;
+            }
+        }
+        return hit;
+    };
+
+    // 与 host 端 ClearOpResource 对齐：尝试 base/_host/_device 三种后缀
+    bool found = false;
+    found = eraseTagFromAll(tag) || found;
+    found = eraseTagFromAll(tag + "_host") || found;
+    found = eraseTagFromAll(tag + "_device") || found;
+    if (!found) {
+        HCCL_WARNING("[HcclCommAicpu][ClearOpResource] no entries matched tag[%s] "
+                     "(also tried _host/_device variants), group[%s]",
+                     tag.c_str(), identifier_.c_str());
+    } else {
+        HCCL_INFO("[HcclCommAicpu][ClearOpResource] cleared resources for tag[%s], group[%s]",
+                  tag.c_str(), identifier_.c_str());
+    }
+    return HCCL_SUCCESS;
+}
+
 // 借轨重新刷新资源
 HcclResult HcclCommAicpu::ReAllocTransportResource(const std::string &newTag, AlgResourceResponse &algResResponse,
     std::map<u32, bool> &remoteRankPortMap, const HcclOpResParam *commParam, const OpParam &param)
@@ -2947,7 +3012,7 @@ HcclResult HcclCommAicpu::StreamTaskMonitor(void)
 {
     // 通信域资源已经释放
     CHK_PRT_RET(!commOpenStatus,
-        HCCL_RUN_INFO("[PrintTaskExceptionAllStreams]group[%s] has been destroyed", identifier_.c_str()), HCCL_SUCCESS);
+        HCCL_DEBUG("[StreamTaskMonitor]group[%s] has been destroyed", identifier_.c_str()), HCCL_SUCCESS);
     if (IsNoNeedMonitor()) return HCCL_SUCCESS;
     HCCL_DEBUG("StreamTaskMonitor print");
     std::vector<Stream> totalStream = {mainStream_};
@@ -5466,7 +5531,6 @@ HcclResult HcclCommAicpu::SetChannelP2pNotify(TransportDeviceP2pData &transDevP2
     transDevP2pData.userRemoteNotify.resize(p2pNotifyNum, nullptr);
 
     for (u32 idx = 0; idx < p2pNotifyNum; idx++) {
-        CHK_RET(CheckNotifyOrQPMaxNum(actualNotifyNum, LINK_P2P_MAX_NUM, true));
         std::shared_ptr<LocalNotify> ipcWaitNotify = std::make_shared<LocalNotify>();
         CHK_RET(InitAndVerifySingleSignal(channelP2p.localIpcSignal[actualNotifyNum], ipcWaitNotify));
         transDevP2pData.userLocalNotify[idx] = ipcWaitNotify;

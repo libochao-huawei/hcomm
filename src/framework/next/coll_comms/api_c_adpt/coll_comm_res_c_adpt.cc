@@ -11,6 +11,7 @@
 #include "../rank/my_rank.h"
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
+#include "config_log.h"
 #include "config/env_config.h"
 #include "env_config/env_config.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
@@ -22,6 +23,7 @@
 #include "hccl_ccu_res.h"
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
+
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -284,6 +286,9 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
                 HCCL_ERROR("RegisterToClusterMonitor failed. group[%s], engine[%d], channelNum[%llu], ret[%d]", hcclComm->GetIdentifier().c_str(), engine, channelNum, ret), ret);
         }
 
+        if (!GetDebugConfigInited()) {
+            InitDebugConfigByEnv();
+        }
         ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
         CHK_PRT_RET((ret == HCCL_E_AGAIN || ret == HCCL_E_UNAVAIL),
             HCCL_WARNING("CreateChannels group[%s], engine[%d] ret[%d]", commTag.c_str(), engine, ret), ret);

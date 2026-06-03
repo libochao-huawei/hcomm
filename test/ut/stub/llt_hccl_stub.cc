@@ -5518,17 +5518,6 @@ aclError aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, v
     return ACL_SUCCESS;
 }
 
-/**
- * @brief 获取HCCL算子的二进制文件路径
- *
- * @param[out] binaryPath 算子二进制文件路径
- *
- * @return HcclResult HCCL_SUCCESS表示成功，其他值表示失败
- * 
- * GetCustomKernelFilePath定义在 src/framework/common/src/launch_aicpu.cc 文件中
- * 在 test/ut/stub/CMakeLists.txt 中，该文件被显式排除在了 FRAMEWORK_HOST_SOURCES 之外，会导致生成的桩库 libhccl_llt.so 中缺少该符号
- * 所以需要在 UT 的桩代码文件 test/ut/stub/llt_hccl_stub.cc 中添加该函数的桩实现
- */
 namespace hccl {
 HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
     aclrtBinHandle &binHandle)
@@ -5537,8 +5526,14 @@ HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType opt
 }
 
 HcclResult GetCustomKernelFilePath(std::string &binaryPath)
-{
-    binaryPath = "./";
-    return HCCL_SUCCESS;
+{	 
+    binaryPath = "./";	 
+    return HCCL_SUCCESS; 
 }
+
+}
+
+aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
+{
+    return ACL_SUCCESS;
 }

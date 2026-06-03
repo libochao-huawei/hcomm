@@ -157,6 +157,13 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
+    virtual void RdmaDbSend(const uint64_t &dbAddr, const uint64_t &dbValue)
+    {
+        (void)dbAddr;
+        (void)dbValue;
+        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+    }
+
     virtual void UbDirectSend(const UbJettyLiteId &jettyLiteId, u32 dwqeSize, const u8 *wqe)
     {
         (void)jettyLiteId;

@@ -1,4 +1,4 @@
-# HcommLocalCopyOnThread
+# HcommLocalReduceOnThread
 
 ## 产品支持情况
 
@@ -6,27 +6,26 @@
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
 
-> [!NOTE]说明
-> 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
-
 ## 功能说明
 
-提供本地内存拷贝功能，将src指向的长度为len的内存数据，拷贝到dst所指向的相同长度的内存中。
+提供本地归约操作，将src指向的长度为count\*sizeof\(dataType\)的内存数据，与dst所指向的相同长度的内存数据进行reduceOp操作，并将结果输出到dst中。
 
 ## 函数原型
 
 ```c
-int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
+int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp)
 ```
 
 ## 参数说明
 
 | 参数名 | 输入/输出 | 描述 |
 | --- | --- | --- |
-| thread | 输入 | 通信线程句柄，为通过[HcclThreadAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclThreadAcquire.md)接口获取到的threads。<br>ThreadHandle的类型的定义请参见[ThreadHandle](../../../datatype_definition/ThreadHandle.md)。 |
-| dst | 输出 | 目的内存地址，Device内存。 |
-| src | 输入 | 源内存地址，Device内存。 |
-| len | 输入 | 数据长度（字节）。 |
+| thread | 输入 | 通信线程句柄，为通过[HcclThreadAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclThreadAcquire.md)接口获取到的threads。<br>ThreadHandle类型的定义请参见[ThreadHandle](../../../datatype_definition/ThreadHandle.md)。 |
+| dst | 输出 | 目的地址，Device内存。 |
+| src | 输入 | 源地址，Device内存。 |
+| count | 输入 | 元素个数。 |
+| dataType | 输入 | 数据类型，支持：int8、int16、int32、float16、float32、bfp16。<br>HcommDataType类型的定义请参见[HcommDataType](../../../datatype_definition/HcommDataType.md)。 |
+| reduceOp | 输入 | 归约操作类型，支持：sum、max、min。<br>HcommReduceOp类型的定义请参见[HcommReduceOp](../../../datatype_definition/HcommReduceOp.md)。 |
 
 ## 返回值
 
@@ -34,7 +33,7 @@ int32_t：接口成功返回0，其他失败。
 
 ## 约束说明
 
-dst、src内存是申请的device内存。
+dst、src内存需要为device内存。
 
 在 Ascend 950PR/Ascend 950DT 上，仅支持 AICPU_TS 模式下、在 Device 侧调用该接口。
 
@@ -60,8 +59,9 @@ void* inputMem;
 void* outputMem;
 aclrtMallocWithCfg(&inputMem, memSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
 aclrtMallocWithCfg(&outputMem, memSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
-// 执行 D2D 拷贝
-HcommLocalCopyOnThread(thread, outputMem, inputMem, memSize);
+// 执行Device侧的Reduce操作
+uint64_t count = memSize / SIZE_TABLE[HCCL_DATA_TYPE_FP32];
+HcommLocalReduceOnThread(thread, outputMem, inputMem, count, HCCL_DATA_TYPE_FP32, HCCL_REDUCE_SUM);
 ```
 
 在  Ascend 950PR/Ascend 950DT  上，该函数需要编译到 Device 侧使用：
@@ -83,6 +83,7 @@ HcclThreadAcquire(comm, engine, 1, 1, &thread);
 uint64_t len = 256;
 void *src = param.userIn;
 void *dst = param.cclBuf;
-// 执行 D2D 拷贝
-HcommLocalCopyOnThread(thread, dst, src, len);
+uint64_t sizeOfFP32 = 4;
+uint64_t count = len / sizeOfFP32;
+HcommLocalReduceOnThread(thread, dst, src, count, HCOMM_DATA_TYPE_FP32, HCOMM_REDUCE_SUM);
 ```

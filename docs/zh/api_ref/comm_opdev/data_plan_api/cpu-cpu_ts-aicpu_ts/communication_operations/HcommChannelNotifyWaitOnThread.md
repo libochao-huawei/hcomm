@@ -1,4 +1,4 @@
-# HcommChannelNotifyRecordOnThread
+# HcommChannelNotifyWaitOnThread
 
 ## 产品支持情况
 
@@ -6,17 +6,14 @@
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
 
-> [!NOTE]说明
-> 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
-
 ## 功能说明
 
-发送同步信号，在指定Channel上记录一个Notify。该接口为异步接口，主要用于Channel两端同步等待场景。
+等待同步信号，阻塞等待指定Channel上的Notify完成。
 
 ## 函数原型
 
 ```c
-int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx)
+int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 ```
 
 ## 参数说明
@@ -25,7 +22,8 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
 | --- | --- | --- |
 | thread | 输入 | 通信线程句柄。针对Ascend 950PR/Ascend 950DT的CPU引擎RoCE场景，该参数无作用，传入0即可；CPU_TS/AICPU_TS场景下，为通过[HcclThreadAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclThreadAcquire.md)接口获取到的threads。<br>ThreadHandle类型的定义可参见[ThreadHandle](../../../datatype_definition/ThreadHandle.md)。 |
 | channel | 输入 | 通信通道句柄，为通过[HcclChannelAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelAcquire.md)接口获取到的channels。关于channel的约束参见约束说明。<br>ChannelHandle类型的定义可参见[ChannelHandle](../../../datatype_definition/ChannelHandle.md)。 |
-| remoteNotifyIdx | 输入 | 通信通道另一端的Notify索引。<br>取值范围：[0, notifyNum)。<br>notifyNum为[HcommChannelCreate](../../../control_plane_api/basic_resource_mgmt/HcommChannelCreate.md)或[HcclChannelAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelAcquire.md)接口传入的channelDesc参数中的notifyNum。 |
+| localNotifyIdx | 输入 | 本地Notify索引。<br>取值范围：[0, notifyNum)。<br>notifyNum为[HcommChannelCreate](../../../control_plane_api/basic_resource_mgmt/HcommChannelCreate.md)或[HcclChannelAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelAcquire.md)接口传入的channelDesc参数中的notifyNum。 |
+| timeout | 输入 | 超时时间，单位：毫秒。<br>  - 0：表示永久等待。<br>  - >0：配置的具体超时时间。<br>说明：针对Ascend 950PR/Ascend 950DT的AICPU_TS场景，暂不支持自定义超时功能，固定为1080000毫秒；针对Ascend 950PR/Ascend 950DT的CPU引擎RoCE场景，需配置大于0的超时时间。 |
 
 ## 返回值
 
@@ -33,11 +31,11 @@ int32_t：接口成功返回0，其他失败。
 
 ## 约束说明
 
-- 该接口需要配合[HcommChannelNotifyWaitOnThread](HcommChannelNotifyWaitOnThread.md)使用。
+- 该接口需要配合[HcommChannelNotifyRecordOnThread](HcommChannelNotifyRecordOnThread.md)使用。
 - 针对Ascend 950PR/Ascend 950DT，支持AICPU_TS场景在Device侧调用，也支持CPU引擎RoCE场景在Host CPU侧调用。
 - 针对Ascend 950PR/Ascend 950DT的CPU引擎RoCE场景，调用[HcclChannelAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelAcquire.md)申请入参channel时，需传入`engine = COMM_ENGINE_CPU`，且`channelDesc.remoteEndpoint.protocol = COMM_PROTOCOL_ROCE`。URMA/UBC等协议通道当前不支持该接口。
 - Host CPU侧调用时，`thread`参数无作用，可传入0。
-- 针对Ascend 950PR/Ascend 950DT的CPU引擎RoCE场景，`remoteNotifyIdx`必须小于通信通道另一端的Notify数量，且通信通道创建时的`notifyNum`需大于0。
+- 针对Ascend 950PR/Ascend 950DT的CPU引擎RoCE场景，`localNotifyIdx`必须小于本端通信通道的Notify数量，且通信通道创建时的`notifyNum`需大于0；`timeout`需大于0。
 
 ## 调用示例
 
@@ -58,7 +56,7 @@ HcclComm comm;
 ChannelHandle channel;
 HcclChannelAcquire(comm, engine, &channelDesc, channelNum, &channel);
 
-// Ascend 950PR/Ascend 950DT时，需要在 Device 侧调用以下接口
+// 针对Ascend 950PR/Ascend 950DT，需要在 Device 侧调用以下接口
 
 // 通知对端
 HcommChannelNotifyRecordOnThread(thread, channel, 0);
