@@ -104,19 +104,8 @@ HcclResult CollAlltoAllExecutor::GetAdjInfo(AlgResourceResponse& algRes, AdjInfo
     return HCCL_SUCCESS;
 }
 
-// override----------------------资源计算接口----------------------
-HcclResult CollAlltoAllExecutor::CalcResRequest(const OpParam& param, AlgResourceRequest& resourceRequest)
+HcclResult CollAlltoAllExecutor::CalcScratchMemSizeWithForceCheck(const OpParam& param, u64& scratchMemSize)
 {
-    (void)ParseParam(param);
-
-    u64 scratchMemSize = 0U;
-    u32 streamNum = 0U;
-    u32 notifyNum = 0U;
-    u64 aivBufferRequest = 0U;
-    std::vector<LevelNSubCommTransport> opTransport {
-        std::vector<LevelNSubCommTransport>(static_cast<u32>(COMM_LEVEL_RESERVED))
-    };
-
     // AICPU aicpuUnfold展开模式下强制OP_BASE，Host侧CalcScratchMemSize需同步覆盖
     // 使scratch计算路径与AICPU侧一致，解决scratch mem size不匹配问题
     const bool needForceOpBase = param.aicpuUnfoldMode && !param.isZeroCopy;
@@ -139,6 +128,23 @@ HcclResult CollAlltoAllExecutor::CalcResRequest(const OpParam& param, AlgResourc
             "after CalcScratchMemSize, scratchMemSize[%llu]", scratchMemSize);
         workflowMode_ = savedWorkflowMode;
     }
+    return HCCL_SUCCESS;
+}
+
+// override----------------------资源计算接口----------------------
+HcclResult CollAlltoAllExecutor::CalcResRequest(const OpParam& param, AlgResourceRequest& resourceRequest)
+{
+    (void)ParseParam(param);
+
+    u64 scratchMemSize = 0U;
+    u32 streamNum = 0U;
+    u32 notifyNum = 0U;
+    u64 aivBufferRequest = 0U;
+    std::vector<LevelNSubCommTransport> opTransport {
+        std::vector<LevelNSubCommTransport>(static_cast<u32>(COMM_LEVEL_RESERVED))
+    };
+
+    CHK_RET(CalcScratchMemSizeWithForceCheck(param, scratchMemSize));
     CHK_RET(CalcStreamNum(streamNum));
     CHK_RET(CalcNotifyNum(streamNum, notifyNum));
     CHK_RET(CalcAivBufferRequest(aivBufferRequest));
