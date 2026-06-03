@@ -9,7 +9,9 @@
  */
 
 #include <arpa/inet.h>
+#include <cstdlib>
 #include <cstring>
+#include <string>
 
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
@@ -23,6 +25,38 @@
 using namespace hcomm;
 
 namespace {
+
+class UbTimeoutEnvGuard {
+public:
+    explicit UbTimeoutEnvGuard(const char *value)
+    {
+        const char *saved = std::getenv("HCCL_UB_TIMEOUT");
+        if (saved != nullptr) {
+            savedValue_ = saved;
+            hadValue_ = true;
+        }
+        if (value != nullptr) {
+            (void)setenv("HCCL_UB_TIMEOUT", value, 1);
+        } else {
+            (void)unsetenv("HCCL_UB_TIMEOUT");
+        }
+        Hccl::EnvConfig::GetInstance().Parse();
+    }
+
+    ~UbTimeoutEnvGuard()
+    {
+        if (hadValue_) {
+            (void)setenv("HCCL_UB_TIMEOUT", savedValue_.c_str(), 1);
+        } else {
+            (void)unsetenv("HCCL_UB_TIMEOUT");
+        }
+        Hccl::EnvConfig::GetInstance().Parse();
+    }
+
+private:
+    bool hadValue_{false};
+    std::string savedValue_;
+};
 
 void FillIpv4CommAddr(CommAddr &ca, const char *dotted)
 {
@@ -607,32 +641,22 @@ TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpInfo_TpHandleMismatch_Expect_EPara)
 
 TEST_F(TpMgrTest, Ut_TpMgr_CalcTaTimeout_When_EnvLessThanTp_Expect_Upgrade)
 {
-    auto &rdmaCfg = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
-    const auto savedUbTimeout = rdmaCfg.ubTimeOut;
-    rdmaCfg.ubTimeOut.value = 0U;
-    rdmaCfg.ubTimeOut.isParsed = true;
+    UbTimeoutEnvGuard envGuard("0");
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 3U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpMgr::CalcTaTimeout(tpAttrInfo), 16U);
-
-    rdmaCfg.ubTimeOut = savedUbTimeout;
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_CalcTaTimeout_When_EnvGreaterThanTp_Expect_EnvValue)
 {
-    auto &rdmaCfg = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
-    const auto savedUbTimeout = rdmaCfg.ubTimeOut;
-    rdmaCfg.ubTimeOut.value = 24U;
-    rdmaCfg.ubTimeOut.isParsed = true;
+    UbTimeoutEnvGuard envGuard("24");
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 0U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpMgr::CalcTaTimeout(tpAttrInfo), 24U);
-
-    rdmaCfg.ubTimeOut = savedUbTimeout;
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpAttr_UseCntDecrement_Expect_Success)
