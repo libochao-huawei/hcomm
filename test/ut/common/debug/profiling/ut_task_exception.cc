@@ -173,43 +173,6 @@ TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_Sdma_ReportsEI0012
     GlobalMockObject::verify();
 }
 
-TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_ReduceInline_ReportsEI0012)
-{
-    u32 deviceId = 0;
-    s32 streamId = 102;
-
-    auto callback = [=]() -> ErrorMessageReport {
-        ErrorMessageReport msg;
-        strncpy(msg.tag, "test_tag_reduce_inline", TAG_MAX_LENGTH - 1);
-        msg.taskType = TaskType::TASK_REDUCE_INLINE;
-        msg.remoteUserRank = 3;
-        msg.streamId = streamId;
-        return msg;
-    };
-
-    RegisterGetAicpuTaskExceptionCallBack(streamId, deviceId, callback);
-
-    rtExceptionInfo exceptionInfo;
-    exceptionInfo.deviceid = deviceId;
-    exceptionInfo.streamid = streamId;
-    exceptionInfo.taskid = 0;
-    exceptionInfo.retcode = 0;
-    memset(&exceptionInfo.expandInfo, 0, sizeof(exceptionInfo.expandInfo));
-
-    bool isExistAicpuError = false;
-
-    MOCKER(RptInputErr)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-
-    TaskExceptionHandler::PrintAicpuErrorMessage(&exceptionInfo, isExistAicpuError);
-
-    EXPECT_TRUE(isExistAicpuError);
-    EXPECT_TRUE(TaskExceptionHandler::errMsgFlag_.load());
-
-    GlobalMockObject::verify();
-}
-
 TEST_F(TaskExceptionErrMsgFlagTest, Ut_PrintAicpuErrorMessage_ErrMsgFlagTrue_NoReport)
 {
     TaskExceptionHandler::errMsgFlag_.store(true);

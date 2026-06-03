@@ -360,7 +360,7 @@ TEST_M(RdmaAgent, TcRaRsGetTlsEnable);
 TEST_M(RdmaAgent, TcRaGetHccnCfg);
 TEST_M(RdmaAgent, TcRaRsGetHccnCfg);
 TEST_M(RdmaAgent, TcHdcAsyncDelReqHandle);
-TEST_M(RdmaAgent, TcRaHdcUninitAsync);
+TEST_M(RdmaAgent, TcRaHdcDeinitAsyncAll);
 
 TEST_M(RdmaAgent, TcRaCtxQpDestroyBatchAsync);
 TEST_M(RdmaAgent, TcQpDestroyBatchParamCheck);

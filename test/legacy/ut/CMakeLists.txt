@@ -11,7 +11,7 @@ set(HCCL_LLT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../)
 set(HCCL_CODE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 get_filename_component(HCCL_CODE_ROOT "${HCCL_CODE_ROOT}" REALPATH)
 get_filename_component(HCCL_LLT_ROOT "${HCCL_LLT_ROOT}" REALPATH)
-set(HCCL_V2_CODE_ROOT ${HCCL_CODE_ROOT}/src/legacy/)
+set(HCCL_V2_CODE_ROOT ${HCCL_CODE_ROOT}/src/legacy/ascend950)
 
 file(GLOB_RECURSE HCCL_V2_UTEST_FILES RELATIVE ${CMAKE_CURRENT_LIST_DIR}
     main.cc
@@ -27,11 +27,11 @@ foreach (dir ${ut_sources_list})
     endif ()
 endforeach ()
 
-FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/legacy)
+FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/legacy/ascend950)
 
 message(STATUS "************************=====${sources_list}")
 foreach (dir ${sources_list})
-    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
+    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "src/legacy/ascend950") AND (NOT ${dir} MATCHES "src/legacy/ascend950/mdpi"))
         target_include_directories(hccl_v2_utest PUBLIC ${dir})
     endif ()
 endforeach ()
@@ -39,7 +39,7 @@ endforeach ()
 # 自动找到项目内所有头文件
 FILE(GLOB_RECURSE hccl_v2_dir_list LIST_DIRECTORIES TRUE ${HCCL_V2_CODE_ROOT})
 foreach (dir ${hccl_v2_dir_list})
-    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "hcomm/src/legacy"))
+    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "hcomm/src/legacy/ascend950"))
         target_include_directories(hccl_v2_utest PUBLIC ${dir})
     endif ()
 endforeach ()
@@ -62,9 +62,10 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${HCCL_CODE_ROOT}/test/legacy/depends/toolchain/
         ${HCCL_CODE_ROOT}/test/legacy/depends/pkg_inc/runtime/
 
-        ${HCCL_CODE_ROOT}/src/common/
-        ${HCCL_CODE_ROOT}/src/pub_inc/
-        ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network/
+        ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/
+        ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/
+        ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network/
+        ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/
         ${RDMA_CORE_INCLUDE_DIR}
 
         ${HCCL_LLT_ROOT}/common/virtual_topo_stub/
@@ -87,7 +88,7 @@ target_link_libraries(hccl_v2_utest PRIVATE
 
 # 编译选项
 target_compile_options(hccl_v2_utest PRIVATE
-        -std=c++14
+        -std=c++17
         -Werror
         -fno-common
         -fno-strict-aliasing
