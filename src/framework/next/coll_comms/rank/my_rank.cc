@@ -24,7 +24,6 @@ using namespace hcomm;
 
 namespace MyRankUtils {
 
-namespace {
 uint32_t ResolveUbCommDomainQos(const hccl::CommConfig &commConfig)
 {
     if (commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET) {
@@ -32,7 +31,6 @@ uint32_t ResolveUbCommDomainQos(const hccl::CommConfig &commConfig)
     }
     return commConfig.GetConfigHcclQos();
 }
-} // namespace
 
 HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const hccl::CommConfig &commConfig)
 {
@@ -48,9 +46,11 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const hc
         hcommDesc.roceAttr.retryInterval = hcclDesc.roceAttr.retryInterval;
         hcommDesc.roceAttr.sl = hcclDesc.roceAttr.sl;
         hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
-    } else if (hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_CTP ||
-               hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_TP ||
-               hcclDesc.channelProtocol == COMM_PROTOCOL_UBOE) {
+        return hcommDesc;
+    }
+    if (hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_CTP ||
+        hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_TP ||
+        hcclDesc.channelProtocol == COMM_PROTOCOL_UBOE) {
         hcommDesc.qos = ResolveUbCommDomainQos(commConfig);
     }
     return hcommDesc;
