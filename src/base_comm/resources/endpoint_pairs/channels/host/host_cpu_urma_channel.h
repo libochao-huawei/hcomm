@@ -15,7 +15,7 @@
 #include "urma_types.h"
 
 // Orion
-#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../../../src/legacy/ascend950/unified_platform/resource/socket/socket.h"
 #include "buffer_key.h"
 #include "../../sockets/socket_mgr.h"
 #include "rma_connection.h"
