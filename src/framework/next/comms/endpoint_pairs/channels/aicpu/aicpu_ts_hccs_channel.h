@@ -84,14 +84,14 @@ private:
     uint32_t                                                    notifyNum_{0};
     AicpuTsHccsEndpoint                                         *localEpPtr_{nullptr};
     uint32_t                                                    serverPort_{AICPU_CHANNEL_DEFAULT_PORT};
-    uint32_t                                                    socketTagIdx_;
+    uint32_t                                                    socketTagIdx_{0};
     bool                                                        serverInited_{false};
     // --------------------- 具体成员 ---------------------
     std::shared_ptr<hccl::HcclSocket>                           socket_{nullptr};
     std::string                                                 socketTag_{};
     bool                                                        isSocketServer_{false};
     // for create TransportMem
-    HcclDispatcher                                              dispatcher_; // dispatcher放到最后析构
+    HcclDispatcher                                              dispatcher_{nullptr}; // dispatcher放到最后析构
     DispatcherCtxPtr                                            dispatcherCtx_{nullptr};
     std::unique_ptr<hccl::NotifyPool>                           notifyPool_;
     std::shared_ptr<hccl::Transport>                            transport_{nullptr};

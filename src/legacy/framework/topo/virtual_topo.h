@@ -312,8 +312,8 @@ private:
     LinkDirection      direction;
     u32                localDieId_{};
     u8                 portGroupSize{1};
-    DeviceId localDeviceId_;
-    DeviceId remoteDeviceId_;
+    DeviceId localDeviceId_{0};
+    DeviceId remoteDeviceId_{0};
     bool               fullmesh{false};  // 标识是否为全互联单链路场景
     u32                reuseIdx_{0};     // socket复用idx，加在socket建链tag后面
 };

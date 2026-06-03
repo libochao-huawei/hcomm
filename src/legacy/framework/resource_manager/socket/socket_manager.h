@@ -10,15 +10,6 @@
 #ifndef HCCLV2_SOCKET_MANAGER_H
 #define HCCLV2_SOCKET_MANAGER_H
 
-#include <string>
-#include <vector>
-#include <set>
-#include <mutex>
-#include <unordered_map>
-#include <functional>
-#include <memory>
-
-#include "../../unified_platform/resource/socket/socket.h"
 #include "virtual_topo.h"
 #include "socket_config.h"
 #include "env_func.h"

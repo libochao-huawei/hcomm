@@ -13,8 +13,6 @@
  
 #include <functional>
 #include <mutex>
-#include <string>
-#include <map>
 #include <hccl/hccl_types.h>
 #include "hccl/base.h"
 #include "urma_api.h"
