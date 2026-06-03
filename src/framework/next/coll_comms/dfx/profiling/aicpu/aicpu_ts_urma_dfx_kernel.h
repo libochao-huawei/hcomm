@@ -12,9 +12,10 @@
 #define AICPU_TS_URMA_CAHNNEL_KERNEL_H
 
 #include <cstdint>
+#include "hccl/hccl_types.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuDfxOpInfoInitV2(void *args);
+HCCL_API uint32_t RunAicpuDfxOpInfoInitV2(void *args);
 }
 
 #endif // AICPU_TS_URMA_CAHNNEL_KERNEL_H

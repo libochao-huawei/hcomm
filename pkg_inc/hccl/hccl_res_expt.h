@@ -28,7 +28,7 @@ extern "C" {
  * @return HcclResult 执行结果状态码
  * @warning 重要约束：返回的addr内存由库内管理，调用者严禁释放
  */
-extern HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **addr, uint64_t *size);
+extern HCOMM_API HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **addr, uint64_t *size);
 
 /**
  * @brief 获取mc2场景下AICPU展开的workspace
@@ -41,7 +41,7 @@ extern HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, vo
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated);
+extern HCOMM_API HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated);
 
 /**
  * @brief 将Thread资源导出到指定通信引擎上
@@ -55,7 +55,7 @@ extern HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t 
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads,
+extern HCOMM_API HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads,
     CommEngine dstCommEngine, ThreadHandle *exportedThreads);
 
 /* 控制面host kfc server算子注册函数 */
@@ -75,7 +75,7 @@ typedef int32_t(Callback)(uint64_t, int32_t);
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb);
+extern HCOMM_API int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb);
 /**
  * @brief 从指定的通信域中注销一个已注册的任务。
  * @param comm 通信域对象，用于标识任务注销的目标通信域。
@@ -85,7 +85,7 @@ extern int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb);
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
+extern HCOMM_API int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
 
 /**
  * @brief 算子包向通信域注入建链时待交换的一致性校验信息
@@ -95,7 +95,7 @@ extern int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
  * @return HcclResult 执行结果状态码
  * @note 每次建链前只能调用一次，交换信息在HcclChannelAcquire执行后被自动清空
  */
-extern HcclResult HcclCommAddExchangeInfo(HcclComm comm, const void* data, uint32_t length);
+extern HCOMM_API HcclResult HcclCommAddExchangeInfo(HcclComm comm, const void* data, uint32_t length);
 
 /**
  * @brief 算子包获取通信域建链时从对端rank交换到的一致性校验信息
@@ -107,14 +107,14 @@ extern HcclResult HcclCommAddExchangeInfo(HcclComm comm, const void* data, uint3
  * @return HcclResult 执行结果状态码
  * @note 读取后自动清空该remoteRank的交换信息，不可重复读取，在HcclChannelAcquire成功返回后调用
  */
-extern HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength);
+extern HCOMM_API HcclResult HcclCommGetExchangeInfo(HcclComm comm, uint32_t remoteRank, uint32_t length, void* data, uint32_t* actualLength);
 
 /**
  * @brief 重置交换信息
  * @param[in] comm 通信域句柄
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult HcclCommResetExchangeInfo(HcclComm comm);
+extern HCOMM_API HcclResult HcclCommResetExchangeInfo(HcclComm comm);
 
 #ifdef __cplusplus
 }

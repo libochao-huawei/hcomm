@@ -18,12 +18,12 @@
 extern "C" {
 #endif // __cplusplus
 
-extern HcclResult HcclCcuKernelRegister(HcclComm comm,
+extern HCOMM_API HcclResult HcclCcuKernelRegister(HcclComm comm,
     CcuKernelHandle *kernelHandle, void *kernelCreator, void *kernelArg);
 
-extern HcclResult HcclCcuKernelRegisterFinish(HcclComm comm);
+extern HCOMM_API HcclResult HcclCcuKernelRegisterFinish(HcclComm comm);
 
-extern HcclResult HcclCcuKernelLaunch(HcclComm comm,
+extern HCOMM_API HcclResult HcclCcuKernelLaunch(HcclComm comm,
     const ThreadHandle threadHandle, const CcuKernelHandle kernelHandle,
     void *taskArgs);
 #ifdef __cplusplus

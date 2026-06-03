@@ -15,7 +15,7 @@
 #include "aicpu_thread_process.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *args)
+uint32_t RunAicpuIndOpThreadInit(void *args)
 {
     CHK_PTR_NULL(args);
     uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
@@ -30,7 +30,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *ar
     return AicpuHcclProcess::AicpuIndOpThreadInit(param);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
+uint32_t RunAicpuIndOpNotify(void *args)
 {
     CHK_PTR_NULL(args);
     uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
@@ -45,7 +45,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
     return AicpuHcclProcess::AicpuIndOpNotifyInit(param);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuThreadInit(void* args)
+uint32_t RunAicpuThreadInit(void* args)
 {
     CHK_PTR_NULL(args);
     uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
@@ -55,7 +55,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuThreadInit(void* args)
     return AicpuThreadProcess::AicpuThreadInit(param);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuThreadDestroy(void* args) 
+uint32_t RunAicpuThreadDestroy(void* args) 
 {
     CHK_PTR_NULL(args);
     uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
@@ -64,7 +64,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuThreadDestroy(void* args
     return AicpuThreadProcess::AicpuThreadDestroy(param);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuThreadSupplementNotify(void* args)
+uint32_t RunAicpuThreadSupplementNotify(void* args)
 {
     CHK_PTR_NULL(args);
     uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);

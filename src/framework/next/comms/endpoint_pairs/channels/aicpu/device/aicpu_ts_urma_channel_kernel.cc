@@ -16,7 +16,7 @@
 #include "aicpu_channel_process.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void *args)
+uint32_t RunAicpuIndOpChannelInitV2(void *args)
 {
     HCCL_RUN_INFO("RunAicpuIndOpChannelInitV2 start.");
     CHK_PTR_NULL(args);
@@ -26,7 +26,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void 
     return AicpuIndopProcess::AicpuIndOpChannelInit(commParam);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuChannelInitV2(void *args)
+uint32_t RunAicpuChannelInitV2(void *args)
 {
     HCCL_RUN_INFO("RunAicpuIndOpChannelInitV2Internal start.");
     CHK_PTR_NULL(args);
@@ -36,7 +36,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuChannelInitV2(void *args
     return AicpuChannelProcess::AicpuChannelInit(commParam);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuChannelInitV3(void *args)
+uint32_t RunAicpuChannelInitV3(void *args)
 {
     HCCL_RUN_INFO("RunAicpuChannelInitV3 start.");
     CHK_PTR_NULL(args);
@@ -45,7 +45,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuChannelInitV3(void *args
     return AicpuChannelProcess::InitHcommChannelRes(commParam);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuChannelDestroyV2(void *args)
+uint32_t RunAicpuChannelDestroyV2(void *args)
 {
     HCCL_RUN_INFO("RunAicpuIndOpChannelDestroyV2Internal start.");
     CHK_PTR_NULL(args);
@@ -55,7 +55,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuChannelDestroyV2(void *a
     return AicpuChannelProcess::AicpuChannelDestroy(commParam);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelUpdateV2(void *args)
+uint32_t RunAicpuIndOpChannelUpdateV2(void *args)
 {
     HCCL_RUN_INFO("RunAicpuIndOpChannelUpdateV2 start.");
     CHK_PTR_NULL(args);

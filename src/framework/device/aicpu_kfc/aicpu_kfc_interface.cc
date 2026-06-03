@@ -385,7 +385,7 @@ u32 RunKernelAicpuServerForTilingApi(void *args[], CommKfcParamDesc* desc)
 }
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuKfcResInit(void *args) {
+uint32_t RunAicpuKfcResInit(void *args) {
     if (args == nullptr) {
         HCCL_ERROR("args is null.");
         return HCCL_E_PARA;
@@ -395,7 +395,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcResInit(void *args) {
     return AicpuKfcProcess::AicpuRpcResInit(reinterpret_cast<HccCommResParamTask *>(ctxArgs->context));
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunch(void *args)
+uint32_t RunAicpuRpcSrvLaunch(void *args)
 {
     KfcState state;
     static uint32_t aicpuOpIdx = 0;
@@ -531,7 +531,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunch(void *args)
     return 0;
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvGroupLaunch(void *args)
+uint32_t RunAicpuRpcSrvGroupLaunch(void *args)
 {
     KfcState state;
     if (args == nullptr) {
@@ -569,7 +569,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvGroupLaunch(void *
 
 constexpr u32 GROUP_DYN_FLAG = 23U;
 constexpr u32 GROUP_TILING_MAGIC_NUM = 99U;
-__attribute__((visibility("default"))) uint32_t RunAicpuKfcSrvLaunch(void *args[])
+uint32_t RunAicpuKfcSrvLaunch(void *args[])
 {
     if (args == nullptr) {
         HCCL_ERROR("args is null.");

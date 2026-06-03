@@ -12,10 +12,11 @@
 #define __MC2_AICPU_INTERFACE_H__
 
 #include <cstdint>
+#include "hccl/hccl_types.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuKfcResInitV2(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *args);
+HCCL_API uint32_t RunAicpuKfcResInitV2(void *args);
+HCCL_API uint32_t RunAicpuRpcSrvLaunchV2(void *args);
 }
 
 #endif // __MC2_AICPU_INTERFACE_HPP__

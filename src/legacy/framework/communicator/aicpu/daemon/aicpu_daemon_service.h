@@ -21,7 +21,7 @@ namespace Hccl {
 
 using Funcs = void (*)(void *);
 extern "C" {
-int32_t __attribute__((weak)) StartMC2MaintenanceThread(Funcs f1, void *p1, Funcs f2, void *p2);
+int32_t __attribute__((weak, used, noinline)) StartMC2MaintenanceThread(Funcs f1, void *p1, Funcs f2, void *p2);
 };
 
 MAKE_ENUM(CommandToBackGroud, Default, Stop)

@@ -13,7 +13,7 @@
 #include "channel_param.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInit(void *args)
+uint32_t RunAicpuIndOpChannelInit(void *args)
 {
     CHK_PRT_RET(args == nullptr, HCCL_ERROR("[%s]args is null.", __func__), HCCL_E_PARA);
     struct InitTask {

@@ -13,16 +13,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-HcclResult __attribute__((weak)) HcomDestroyV2(void);
-HcclResult __attribute__((weak)) HcomCreateGroupImplV2(const std::string &group, u32 rankNum, const std::vector<u32> &rankIds);
-HcclResult __attribute__((weak)) HcomDestroyGroupImplV2(const std::string &group);
-HcclResult __attribute__((weak)) HcomGetWorldRankFromGroupRankV2(const char *group, u32 groupRank, u32 *worldRank);
-HcclResult __attribute__((weak)) HcomGetGroupRankFromWorldRankV2(u32 worldRank, const char *group, u32 *groupRank);
-HcclResult __attribute__((weak)) HcomGetRankSizeV2(const char *group, u32 *rankSize);
-HcclResult __attribute__((weak)) HcomGetCommV2(void **commV2);
-HcclResult __attribute__((weak)) HcomGetGroupParamsV2(const char *group, void* groupParams, void **commV2);
-HcclResult __attribute__((weak)) HcomInitByFileV2(const char *rankTablePath, const char *identify);
-HcclResult __attribute__((weak)) HcomInitByStringV2(const char *rankTableM, const char *identify);
+HcclResult __attribute__((weak, used, noinline)) HcomDestroyV2(void);
+HcclResult __attribute__((weak, used, noinline)) HcomCreateGroupImplV2(const std::string &group, u32 rankNum, const std::vector<u32> &rankIds);
+HcclResult __attribute__((weak, used, noinline)) HcomDestroyGroupImplV2(const std::string &group);
+HcclResult __attribute__((weak, used, noinline)) HcomGetWorldRankFromGroupRankV2(const char *group, u32 groupRank, u32 *worldRank);
+HcclResult __attribute__((weak, used, noinline)) HcomGetGroupRankFromWorldRankV2(u32 worldRank, const char *group, u32 *groupRank);
+HcclResult __attribute__((weak, used, noinline)) HcomGetRankSizeV2(const char *group, u32 *rankSize);
+HcclResult __attribute__((weak, used, noinline)) HcomGetCommV2(void **commV2);
+HcclResult __attribute__((weak, used, noinline)) HcomGetGroupParamsV2(const char *group, void* groupParams, void **commV2);
+HcclResult __attribute__((weak, used, noinline)) HcomInitByFileV2(const char *rankTablePath, const char *identify);
+HcclResult __attribute__((weak, used, noinline)) HcomInitByStringV2(const char *rankTableM, const char *identify);
 #ifdef __cplusplus
 }
 #endif

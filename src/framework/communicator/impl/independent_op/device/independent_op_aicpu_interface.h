@@ -12,9 +12,10 @@
 #define INDEPENDENT_OP_AICPU_INTERFACE
 
 #include <cstdint>
+#include "hccl/hccl_types.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpCommInit(void *args);
+HCCL_API uint32_t RunAicpuIndOpCommInit(void *args);
 }
 
 #endif // INDEPENDENT_OP_AICPU_INTERFACE

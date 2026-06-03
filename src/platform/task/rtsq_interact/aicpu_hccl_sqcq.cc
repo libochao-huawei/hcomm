@@ -17,11 +17,11 @@
 using char_t = char;
 
 extern "C" {
-drvError_t __attribute__((weak)) halCqReportRecv(uint32_t devId, struct halReportRecvInfo *info);
-drvError_t __attribute__((weak)) halSqCqQuery(uint32_t devId, struct halSqCqQueryInfo *info);
-drvError_t __attribute__((weak)) halSqCqConfig(uint32_t devId, struct halSqCqConfigInfo *info);
-drvError_t __attribute__((weak)) halTsdrvCtl(uint32_t devId, int cmd, void *param, size_t paramSize, void *out, size_t *outSize);
-drvError_t __attribute__((weak)) halEschedSubmitEvent(uint32_t devId, struct event_summary *event);
+drvError_t __attribute__((weak, used, noinline)) halCqReportRecv(uint32_t devId, struct halReportRecvInfo *info);
+drvError_t __attribute__((weak, used, noinline)) halSqCqQuery(uint32_t devId, struct halSqCqQueryInfo *info);
+drvError_t __attribute__((weak, used, noinline)) halSqCqConfig(uint32_t devId, struct halSqCqConfigInfo *info);
+drvError_t __attribute__((weak, used, noinline)) halTsdrvCtl(uint32_t devId, int cmd, void *param, size_t paramSize, void *out, size_t *outSize);
+drvError_t __attribute__((weak, used, noinline)) halEschedSubmitEvent(uint32_t devId, struct event_summary *event);
 };
 
 HcclResult QuerySqBaseAddr(uint32_t devId, uint32_t sqId, u64 &outVal)

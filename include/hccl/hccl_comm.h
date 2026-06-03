@@ -14,10 +14,6 @@
 #include <hccl/hccl_types.h>
 #include <acl/acl.h>
 
-#ifndef HCOMM_WEAK_SYMBOL
-#define HCOMM_WEAK_SYMBOL __attribute__((weak))
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -31,7 +27,7 @@ extern "C" {
  * @return HcclResult
  * @see HcclCommDestroy()
  */
-extern HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclComm *comm) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclComm *comm);
 
 /**
  * @brief Initialize HCCL with config params.
@@ -43,8 +39,8 @@ extern HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank
  * @return HcclResult
  * @see HcclCommDestroy()
  */
-extern HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
-    HcclCommConfig *config, HcclComm *comm) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
+    HcclCommConfig *config, HcclComm *comm);
 
 /**
  * @brief Initialize HCCL sub communication based on global communication with config params.
@@ -59,8 +55,8 @@ extern HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_
  * @return HcclResult
  * @see HcclCommDestroy()
  */
-extern HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *rankIds,
-    uint64_t subCommId, uint32_t subCommRankId, HcclCommConfig *config, HcclComm *subComm) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *rankIds,
+    uint64_t subCommId, uint32_t subCommRankId, HcclCommConfig *config, HcclComm *subComm);
 
 /**
  * @brief Get hccl root info.
@@ -68,7 +64,7 @@ extern HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint
  * @param rootInfo A pointer identifying the hccl root info.
  * @return HcclResult
  */
-extern HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo);
 
 /**
  * @brief Initialize HCCL with root info.
@@ -80,7 +76,7 @@ extern HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo) HCOMM_WEAK_SYMBOL;
  * @return HcclResult
  * @see HcclCommDestroy()
  */
-extern HcclResult HcclCommInitRootInfo(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank, HcclComm *comm) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommInitRootInfo(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank, HcclComm *comm);
 
 /**
  * @brief Initialize HCCL with root info and config params.
@@ -93,8 +89,8 @@ extern HcclResult HcclCommInitRootInfo(uint32_t nRanks, const HcclRootInfo *root
  * @return HcclResult
  * @see HcclCommDestroy()
  */
-extern HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank,
-    const HcclCommConfig *config, HcclComm *comm) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank,
+    const HcclCommConfig *config, HcclComm *comm);
 
 /**
  * @brief Set deterministic calculate
@@ -103,8 +99,8 @@ extern HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo
  * @param configValue An integer identifying the identify for the config.
  */
 
-extern HcclResult HcclSetConfig(HcclConfig config, HcclConfigValue configValue) HCOMM_WEAK_SYMBOL;
-extern HcclResult HcclGetConfig(HcclConfig config, HcclConfigValue *configValue) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclSetConfig(HcclConfig config, HcclConfigValue configValue);
+extern HCCL_WEAK_API HcclResult HcclGetConfig(HcclConfig config, HcclConfigValue *configValue);
 
 /**
 
@@ -115,7 +111,7 @@ extern HcclResult HcclGetConfig(HcclConfig config, HcclConfigValue *configValue)
  * @return HcclResult
  * @see HcclCommDestroy()
  */
-extern HcclResult HcclGetCommName(HcclComm comm, char* commName) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclGetCommName(HcclComm comm, char* commName);
 
 /**
  * @brief get commhandle with commName.
@@ -124,7 +120,7 @@ extern HcclResult HcclGetCommName(HcclComm comm, char* commName) HCOMM_WEAK_SYMB
  * @param comm A pointer identifying the initialized communication resource.
  * @return HcclResult
  */
-extern HcclResult HcclCommGetHandleWithName(const char* commName, HcclComm* comm);
+extern HCCL_API HcclResult HcclCommGetHandleWithName(const char* commName, HcclComm* comm);
 
 /**
  * @brief Get the rank size of this comm.
@@ -133,7 +129,7 @@ extern HcclResult HcclCommGetHandleWithName(const char* commName, HcclComm* comm
  * @param rankSize  A pointer identifying the rank size.
  * @return HcclResult
  */
-extern HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize);
 
 /**
  * @brief Get the rank id of this comm.
@@ -142,7 +138,7 @@ extern HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize) HCOMM_WEAK_
  * @param rankSize  A pointer identifying the rank id.
  * @return HcclResult
  */
-extern HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank);
 /**
  * @brief Barrier operator.
  *
@@ -150,7 +146,7 @@ extern HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank) HCOMM_WEAK_SYMBOL
  * @param stream A pointer identifying the stream information.
  * @return HcclResult
  */
-extern HcclResult HcclBarrier(HcclComm comm, aclrtStream stream) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclBarrier(HcclComm comm, aclrtStream stream);
 
 /**
  * @brief Destroy HCCL comm
@@ -159,7 +155,7 @@ extern HcclResult HcclBarrier(HcclComm comm, aclrtStream stream) HCOMM_WEAK_SYMB
  * @return HcclResult
  * @see HcclCommInitClusterInfo()
  */
-extern HcclResult HcclCommDestroy(HcclComm comm) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommDestroy(HcclComm comm);
 
 /**
  * @brief Create a single-process multi-npu communication domain. Cross-machine is not supported.
@@ -170,25 +166,25 @@ extern HcclResult HcclCommDestroy(HcclComm comm) HCOMM_WEAK_SYMBOL;
  * @param comms: Generated communication domain handle, size: ndev * sizeof(HcclComm)
  * @return HcclResult
  */
-extern HcclResult HcclCommInitAll(uint32_t ndev, int32_t* devices, HcclComm* comms) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommInitAll(uint32_t ndev, int32_t* devices, HcclComm* comms);
 
 /**
  * @brief Get hccl error.
  * @param comm A pointer identifying the communication resource based on.
  * @param asyncError A pointer identifying the communication error.
 */
-extern HcclResult HcclGetCommAsyncError(HcclComm comm, HcclResult *asyncError) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclGetCommAsyncError(HcclComm comm, HcclResult *asyncError);
 
 /**
  * @brief  convert a hccl errorCode to a string.
  * @param code enum HcclResult.
 */
-extern const char *HcclGetErrorString(HcclResult code) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API const char *HcclGetErrorString(HcclResult code);
 
 /**
  * @brief Get a number that represents the capability of comm configuration.
 */
-extern uint32_t HcclGetCommConfigCapability() HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API uint32_t HcclGetCommConfigCapability();
 
 /**
  * @brief Initialize the comm configuration.
@@ -237,13 +233,13 @@ static inline void HcclCommConfigInit(HcclCommConfig *config)
  * @brief Suspend communication.
  * @param comm A pointer identifying the communication resource based on.
 */
-extern HcclResult HcclCommSuspend(HcclComm comm) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommSuspend(HcclComm comm);
 
 /**
  * @brief Clear and recover communication.
  * @param comm A pointer identifying the communication resource based on.
 */
-extern HcclResult HcclCommResume(HcclComm comm) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommResume(HcclComm comm);
 
 /**
  * @brief Get the current status of the communication.
@@ -251,7 +247,7 @@ extern HcclResult HcclCommResume(HcclComm comm) HCOMM_WEAK_SYMBOL;
  * @param status A pointer to store the retrieved communication status.
  * @return HcclResult
 */
-extern HcclResult HcclCommGetStatus(const char * commId, HcclCommStatus *status);
+extern HCCL_API HcclResult HcclCommGetStatus(const char * commId, HcclCommStatus *status);
 
 /**
  * @brief Set the virtual memory range to HCCL communicator
@@ -261,14 +257,14 @@ extern HcclResult HcclCommGetStatus(const char * commId, HcclCommStatus *status)
  * @param alignment Memory range alignment, now only support 0
  * @param flags The flag of this memory range, now only support 0
  */
-extern HcclResult HcclCommSetMemoryRange(HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommSetMemoryRange(HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags);
 
 /**
  * @brief Unset the virtual memory range to HCCL communicator
  * @param comm A pointer identifying the communication resource based on.
  * @param baseVirPtr The base address of memory range set by @ref HcclCommSetMemoryRange().
  */
-extern HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr);
 
 /**
  * @brief Activate memory by physical memory handle.
@@ -279,14 +275,14 @@ extern HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr) HCOM
  * @param handle the physical memory handle
  * @param flags the flag of physical memory, now only support 0
  */
-extern HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, size_t offset, aclrtDrvMemHandle handle, uint64_t flags) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, size_t offset, aclrtDrvMemHandle handle, uint64_t flags);
 
 /**
  * @brief Deactivate memory.
  * @param comm A pointer identifying the communication resource based on.
  * @param virPtr The virtual address of activate memory by @ref HcclCommActivateCommMemory().
  */
-extern HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr);
 
 /**
  * @brief Set device working nic.
@@ -295,19 +291,19 @@ extern HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr) HCOM
  * @param useBackup An array identifying whether the target nic of the rank in ranks is backup nic.
  * @param nRanks A integer identifying the rank size of the ranks need switch.
  */
-extern HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks) HCOMM_WEAK_SYMBOL;
+extern HCCL_WEAK_API HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);
 
 /**
  * @brief Group Start
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern HcclResult HcclGroupStart();
+extern HCCL_API HcclResult HcclGroupStart();
 
 /**
  * @brief Group End
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern HcclResult HcclGroupEnd();
+extern HCCL_API HcclResult HcclGroupEnd();
 
 /**
  * @brief Register a memory window for HCCL communication.
@@ -319,7 +315,7 @@ extern HcclResult HcclGroupEnd();
  * @param flag The flag of this memory window, now only support 0
  * @return HcclResult
  */
-extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, HcclCommSymWindow *winHandle, uint32_t flag);
+extern HCCL_API HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, HcclCommSymWindow *winHandle, uint32_t flag);
 
 /**
  * @brief Deregister a memory window for HCCL communication.
@@ -327,7 +323,7 @@ extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t siz
  * @param winHandle A pointer identifying the registered memory window handle.
  * @return HcclResult
  */
-extern HcclResult HcclCommSymWinDeregister(HcclCommSymWindow winHandle);
+extern HCCL_API HcclResult HcclCommSymWinDeregister(HcclCommSymWindow winHandle);
 
 /**
  * @brief Get symmetric memory offset and window for HCCL communication.
@@ -339,7 +335,7 @@ extern HcclResult HcclCommSymWinDeregister(HcclCommSymWindow winHandle);
  * @param offset A size_t identifying the offset of symmetric memory heap.
  * @return HcclResult
  */
-extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
+extern HCCL_API HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
 
 typedef enum {
     HCCL_OP_EXPANSION_MODE_INVALID = -1,
@@ -359,7 +355,7 @@ typedef enum {
 
 typedef HcclOpExpansionMode HcclConfigTypeOpExpansionMode;
 
-extern HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
+extern HCCL_API HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
     uint32_t infoLen, void *info);
 
 #ifdef __cplusplus

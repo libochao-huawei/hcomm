@@ -11,6 +11,7 @@
 #ifndef HCOM_H
 #define HCOM_H
 
+#include "hcomm_res_defs.h"
 #include <hccl/base.h>
 #include <hccl/hccl_types.h>
 #include <functional>
@@ -150,7 +151,7 @@ using rtStream_t = void *;
  * @param rankSize A pointer identifying the rank number.
  * @return HcclResult
  */
-HcclResult HcomGetRankSize(const char *group, u32 *rankSize);
+HCOMM_API HcclResult HcomGetRankSize(const char *group, u32 *rankSize);
 
 /**
  * @brief Get the rank id of this rank.
@@ -159,7 +160,7 @@ HcclResult HcomGetRankSize(const char *group, u32 *rankSize);
  * @param rankId A pointer identifying the rank id.
  * @return HcclResult
  */
-HcclResult HcomGetRankId(const char *group, u32 *rankId);
+HCOMM_API HcclResult HcomGetRankId(const char *group, u32 *rankId);
 
 /**
  * @brief Create group.
@@ -169,7 +170,7 @@ HcclResult HcomGetRankId(const char *group, u32 *rankId);
  * @param rankIds A list identifying the ranks in the group.
  * @return HcclResult
  */
-HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds);
+HCOMM_API HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds);
 
 /**
  * @brief Destroy group
@@ -177,7 +178,7 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds);
  * @param group A string identifying the group name.
  * @return HcclResult
  */
-HcclResult HcomDestroyGroup(const char *group);
+HCOMM_API HcclResult HcomDestroyGroup(const char *group);
 
 /**
  * @brief optimizer offload CPU-side hcom init.
@@ -186,141 +187,141 @@ HcclResult HcomDestroyGroup(const char *group);
  * @param rankId An integer(u32) identifying the number of rank id.
  * @return HcclResult
  */
-extern HcclResult HcomInitByRankTable(const char *rankTable, uint32_t rankId);
+extern HCOMM_API HcclResult HcomInitByRankTable(const char *rankTable, uint32_t rankId);
 
 /**
  * @brief optimizer offload CPU-side hcom destroy.
  *
  * @return HcclResult
  */
-extern HcclResult HcomDestroy(void);
+extern HCOMM_API HcclResult HcomDestroy(void);
 
-extern HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle);
+extern HCOMM_API HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle);
 
-HcclResult HcomGetGroupNameByOpBase(s64 opBaseHcom, char **groupname);
-HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname);
+HCOMM_API HcclResult HcomGetGroupNameByOpBase(s64 opBaseHcom, char **groupname);
+HCOMM_API HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname);
 
-HcclResult HcomCreateComResourceByComm(HcclComm comm, u32 streamMode, bool isOpbaseMode,
+HCOMM_API HcclResult HcomCreateComResourceByComm(HcclComm comm, u32 streamMode, bool isOpbaseMode,
     void** commContext, bool isMC2 = false);
 
-void HcomTopoInfoRegCallback(HcclResult (*p1)(const char *, uint32_t), void (*p2)(const char *));
+HCOMM_API void HcomTopoInfoRegCallback(HcclResult (*p1)(const char *, uint32_t), void (*p2)(const char *));
 
-HcclWorkflowMode HcomGetWorkflowMode();
+HCOMM_API HcclWorkflowMode HcomGetWorkflowMode();
 
-HcclResult HcomSetWorkflowMode(HcclWorkflowMode mode);
+HCOMM_API HcclResult HcomSetWorkflowMode(HcclWorkflowMode mode);
 
-HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResResponse);
+HCOMM_API HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResResponse);
 
-HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResResponse);
+HCOMM_API HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResResponse);
 
-HcclResult HcomGetMemType(const char *group, const char *socVersion, bool isMalloc, u32 *memType, bool *isTsMem,
+HCOMM_API HcclResult HcomGetMemType(const char *group, const char *socVersion, bool isMalloc, u32 *memType, bool *isTsMem,
     bool withoutImplCompile = false, bool level2Address = false);
 
-HcclResult HcomGetBandWidthPerNPU(u32 level, float *bandWidth);
+HCOMM_API HcclResult HcomGetBandWidthPerNPU(u32 level, float *bandWidth);
 
-HcclResult HcomGetServerNumAndDeviceNumPerServer(u32 *serverNum, u32 *deviceNumPerServer, u32 *deviceNumPerAggregation);
+HCOMM_API HcclResult HcomGetServerNumAndDeviceNumPerServer(u32 *serverNum, u32 *deviceNumPerServer, u32 *deviceNumPerAggregation);
 
-bool HcomGetSecAddrCopyFlag(const char *socVersion);
+HCOMM_API bool HcomGetSecAddrCopyFlag(const char *socVersion);
 
-HcclResult HcomInitByString(const char *rankTableM, const char *identify,
+HCOMM_API HcclResult HcomInitByString(const char *rankTableM, const char *identify,
     WorkMode commWorkMode = WorkMode::HCCL_MODE_NORMAL, HcomInitConfig *initConfig = nullptr);
 
-HcclResult HcomInitByMasterInfo(const char *masterIp, const char *masterPort,
+HCOMM_API HcclResult HcomInitByMasterInfo(const char *masterIp, const char *masterPort,
     const char *masterDeviceId, const char *rankSize, const char *rankIp, HcomInitConfig *initConfig = nullptr);
 
-HcclResult HcomCreateCommCCLbuffer(const char *group);
+HCOMM_API HcclResult HcomCreateCommCCLbuffer(const char *group);
 
-HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size);
+HCOMM_API HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size);
 
-HcclResult HcomGetOutCCLbuffer(const char *group, void** buffer, u64 *size);
+HCOMM_API HcclResult HcomGetOutCCLbuffer(const char *group, void** buffer, u64 *size);
 
-void HcomSetLaunchKernelMode(bool state);
+HCOMM_API void HcomSetLaunchKernelMode(bool state);
 
-HcclResult HcomGetAicpuOpStreamNotify(const char *group, HcclRtStream *opStream, u8 aicpuNotifyNum, void** aicpuNotify);
+HCOMM_API HcclResult HcomGetAicpuOpStreamNotify(const char *group, HcclRtStream *opStream, u8 aicpuNotifyNum, void** aicpuNotify);
 
-HcclResult HcomMc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtStream_t *aiCpuStream);
+HCOMM_API HcclResult HcomMc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtStream_t *aiCpuStream);
 
-void HcomSetDumpDebugMode(const bool dumpDebug);
+HCOMM_API void HcomSetDumpDebugMode(const bool dumpDebug);
 
-HcclResult HcomGetAlgorithm(u32 level, char** algo);
+HCOMM_API HcclResult HcomGetAlgorithm(u32 level, char** algo);
 
-HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, void *inputPtr, void *outputPtr,
+HCOMM_API HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, void *inputPtr, void *outputPtr,
     HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
     void **commContext, u64 *len, u32 aivCoreLimit);
 
-void HcomSetAutoTuneMode(bool autoTuneMode);
+HCOMM_API void HcomSetAutoTuneMode(bool autoTuneMode);
 
-DevType HcomGetDeviceType();
+HCOMM_API DevType HcomGetDeviceType();
 
-HcclResult HcomSetProfilingMode(HcomProfilingMode profilingMode, const char *profilingOption);
+HCOMM_API HcclResult HcomSetProfilingMode(HcomProfilingMode profilingMode, const char *profilingOption);
 
-HcclResult HcomGetSplitStrategy(const char *group, const struct model_feature *feature,
+HCOMM_API HcclResult HcomGetSplitStrategy(const char *group, const struct model_feature *feature,
     u32 **segmentIdxPtr, u32 *len, bool *configured, GradSplitForceMode force = GradSplitForceMode::FORCE_NONE,
     OriginalGraphShapeType shapeType = OriginalGraphShapeType::KNOWN_SHAPE);
 
-bool HcomFindGroup(const char *group);
+HCOMM_API bool HcomFindGroup(const char *group);
 
 #define TEMP_WEAK_DEF 1
 
 #define HCOM_SELECT_ALG_POINTER_MODE
-HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts,
+HCOMM_API HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts,
     HcclDataType dataType, HcclReduceOp op, HcclCMDType opType, int32_t aivCoreLimit,
     bool *ifAiv, char *algName);
 
-HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
+HCOMM_API HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
     int32_t aivCoreLimit, char *algName, u32 *numBlocks);
 
-HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream_t *stream,
+HCOMM_API HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream_t *stream,
     s32 len, void *memPtr, u64 maxSize);
 
-HcclResult HcomSetGlobalWorkSpace(const char *group, void **globalWorkSpaceAddr, u32 len);
+HCOMM_API HcclResult HcomSetGlobalWorkSpace(const char *group, void **globalWorkSpaceAddr, u32 len);
 
-HcclResult HcomSetAivCoreLimit(const char *group, u32 aivCoreLimit);
+HCOMM_API HcclResult HcomSetAivCoreLimit(const char *group, u32 aivCoreLimit);
 
-HcclResult HcomReleaseSubComms();
+HCOMM_API HcclResult HcomReleaseSubComms();
 
-HcclResult HcomUnloadTask(const char *group, const char *tag);
+HCOMM_API HcclResult HcomUnloadTask(const char *group, const char *tag);
 
-HcclResult HcomClearAivSyncBuf(const char *group, bool aivClearEnable);
+HCOMM_API HcclResult HcomClearAivSyncBuf(const char *group, bool aivClearEnable);
 
-HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len);
+HCOMM_API HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len);
 
-HcclResult HcomSupportDeterministicOptim(const char *group, bool *isDeterministicOptim);
+HCOMM_API HcclResult HcomSupportDeterministicOptim(const char *group, bool *isDeterministicOptim);
 
-HcclResult HcomTbeMemClean(int64_t addrList[], int64_t sizeList[], uint32_t count,
+HCOMM_API HcclResult HcomTbeMemClean(int64_t addrList[], int64_t sizeList[], uint32_t count,
     rtStream_t stream, int32_t deviceLogicId);
 
-HcclResult HcomGetInitStatus(bool *initiated);
-HcclResult HcomAllGather(const char *tag, void *inputPtr, void *outputPtr, u64 inputCount,
+HCOMM_API HcclResult HcomGetInitStatus(bool *initiated);
+HCOMM_API HcclResult HcomAllGather(const char *tag, void *inputPtr, void *outputPtr, u64 inputCount,
     HcclDataType dataType, const char *group, rtStream_t stream);
-HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, const void *recvBuf,
+HCOMM_API HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, const void *recvBuf,
     const void *recvCounts, const void *rdispls, HcclDataType dataType, const char *group, rtStream_t stream);
-HcclResult HcomAllReduce(const char *tag, void *inputPtr, void *outputPtr, u64 count,
+HCOMM_API HcclResult HcomAllReduce(const char *tag, void *inputPtr, void *outputPtr, u64 count,
     HcclDataType dataType, HcclReduceOp op, const char *group, rtStream_t stream);
-HcclResult HcomReduce(const char *tag, void *inputPtr, void *outputPtr, u64 count, HcclDataType dataType,
+HCOMM_API HcclResult HcomReduce(const char *tag, void *inputPtr, void *outputPtr, u64 count, HcclDataType dataType,
     HcclReduceOp op, u32 root, const char *group, rtStream_t stream);
-HcclResult HcomBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dataType, u32 root,
+HCOMM_API HcclResult HcomBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dataType, u32 root,
     const char *group, rtStream_t stream);
-HcclResult HcomReduceScatter(const char *tag, void *inputPtr, void *outputPtr, u64 count,
+HCOMM_API HcclResult HcomReduceScatter(const char *tag, void *inputPtr, void *outputPtr, u64 count,
     HcclDataType dataType, HcclReduceOp op, const char *group, rtStream_t stream);
-HcclResult HcomReduceScatterV(const char *tag, void *sendBuf, const void *sendCounts, const void *sdispls,
+HCOMM_API HcclResult HcomReduceScatterV(const char *tag, void *sendBuf, const void *sendCounts, const void *sdispls,
     void *recvBuf, u64 recvCount, HcclDataType dataType, HcclReduceOp op, const char *group, rtStream_t stream);
-HcclResult HcomSend(const char *tag, void *inputPtr, u64 count, HcclDataType dataType,
+HCOMM_API HcclResult HcomSend(const char *tag, void *inputPtr, u64 count, HcclDataType dataType,
     u32 destRank, u32 srTag, const char *group, rtStream_t stream);
-HcclResult HcomReceive(const char *tag, void *outputPtr, u64 count, HcclDataType dataType,
+HCOMM_API HcclResult HcomReceive(const char *tag, void *outputPtr, u64 count, HcclDataType dataType,
     u32 srcRank, u32 srTag, const char *group, rtStream_t stream);
-HcclResult HcomAlltoAllV(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
+HCOMM_API HcclResult HcomAlltoAllV(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
     const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
     const char *group, rtStream_t stream, const char *tag);
-HcclResult HcomAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, HcclDataType sendType,
+HCOMM_API HcclResult HcomAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, HcclDataType sendType,
     const void *recvBuf, HcclDataType recvType, const char *group, rtStream_t stream, const char *tag);
-HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendType,
+HCOMM_API HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendType,
                         const void *recvBuf, u64 recvCount, HcclDataType recvType,
                         const char *group, rtStream_t stream, const char *tag);
-HcclResult HcomGenerateCclOpTag(const char *opType, s64 hcomComm, const char *group, char *sTag);
-HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size);
-HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t flag);
-HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t flag);
+HCOMM_API HcclResult HcomGenerateCclOpTag(const char *opType, s64 hcomComm, const char *group, char *sTag);
+HCOMM_API HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size);
+HCOMM_API HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t flag);
+HCOMM_API HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t flag);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

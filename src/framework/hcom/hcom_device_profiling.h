@@ -15,6 +15,7 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
+#include "hcomm_res_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,16 +45,15 @@ typedef struct HcomProInfo {
 
 typedef uint64_t ThreadHandle;
 
-extern HcclResult HcommProfilingReportMainStreamAndFirstTask(ThreadHandle thread);
+extern HCOMM_API HcclResult HcommProfilingReportMainStreamAndFirstTask(ThreadHandle thread);
 
-extern HcclResult HcommProfilingReportMainStreamAndLastTask(ThreadHandle thread);
+extern HCOMM_API HcclResult HcommProfilingReportMainStreamAndLastTask(ThreadHandle thread);
 
-//device侧的OP
-extern HcclResult HcommProfilingReportDeviceHcclOpInfo(HcomProInfo profInfo);
+extern HCOMM_API HcclResult HcommProfilingReportDeviceHcclOpInfo(HcomProInfo profInfo);
 
-extern HcclResult HcommProfilingInit(ThreadHandle *threads, u32 threadNum);
+extern HCOMM_API HcclResult HcommProfilingInit(ThreadHandle *threads, u32 threadNum);
 
-extern HcclResult HcommProfilingEnd(ThreadHandle *threads, u32 threadNum);
+extern HCOMM_API HcclResult HcommProfilingEnd(ThreadHandle *threads, u32 threadNum);
 
 #ifdef __cplusplus
 }

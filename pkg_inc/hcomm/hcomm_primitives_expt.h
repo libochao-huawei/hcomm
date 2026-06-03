@@ -29,7 +29,7 @@ extern "C" {
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout);
+extern HCOMM_API int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

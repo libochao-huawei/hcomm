@@ -85,7 +85,7 @@ typedef struct tagRtDevBinary {
 * aclrtMallocWithCfg —— rtsMalloc
 */
 using aclrtMemType_t = int;
-__attribute__((weak)) ACL_FUNC_VISIBILITY aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags);
+__attribute__((weak, used, noinline)) ACL_FUNC_VISIBILITY aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags);
 HcclResult HrtResetXpuDevice(uint32_t devType, const uint32_t devId);
 HcclResult HrtSetXpuDevice(uint32_t devType, const uint32_t devId);
 extern rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm);

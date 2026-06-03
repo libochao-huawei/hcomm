@@ -12,12 +12,13 @@
 #define HCCLV2_KERNEL_ENTRANCE_H
 
 #include <cstdint>
+#include "hccl/hccl_types.h"
 #include "log.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t HcclKernelEntrance(void *args);
+HCCL_API uint32_t HcclKernelEntrance(void *args);
 
-__attribute__((visibility("default"))) uint32_t HcclUpdateCommKernelEntrance(void *args);
+HCCL_API uint32_t HcclUpdateCommKernelEntrance(void *args);
 };
 
 #endif // HCCL_KERNEL_ENTRANCE_H

@@ -14,20 +14,20 @@
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-HcclResult __attribute__((weak)) HcclRegisterMemV2(HcclComm comm, u32 remoteRank, int type, void *addr, u64 size, HcclMemDesc *desc);
+HcclResult __attribute__((weak, used, noinline)) HcclRegisterMemV2(HcclComm comm, u32 remoteRank, int type, void *addr, u64 size, HcclMemDesc *desc);
 
-HcclResult __attribute__((weak)) HcclDeregisterMemV2(HcclComm comm, HcclMemDesc *desc);
+HcclResult __attribute__((weak, used, noinline)) HcclDeregisterMemV2(HcclComm comm, HcclMemDesc *desc);
 
-HcclResult __attribute__((weak)) HcclExchangeMemDescV2(
+HcclResult __attribute__((weak, used, noinline)) HcclExchangeMemDescV2(
     HcclComm comm, u32 remoteRank, HcclMemDescs *local, int timeout, HcclMemDescs *remote, u32 *actualNum);
 
-HcclResult __attribute__((weak)) HcclEnableMemAccessV2(HcclComm comm, HcclMemDesc *remoteMemDesc, HcclMem *remoteMem);
+HcclResult __attribute__((weak, used, noinline)) HcclEnableMemAccessV2(HcclComm comm, HcclMemDesc *remoteMemDesc, HcclMem *remoteMem);
 
-HcclResult __attribute__((weak)) HcclDisableMemAccessV2(HcclComm comm, HcclMemDesc *remoteMemDesc);
+HcclResult __attribute__((weak, used, noinline)) HcclDisableMemAccessV2(HcclComm comm, HcclMemDesc *remoteMemDesc);
 
-HcclResult __attribute__((weak)) HcclBatchPutV2(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc *desc, u32 descNum, rtStream_t stream);
+HcclResult __attribute__((weak, used, noinline)) HcclBatchPutV2(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc *desc, u32 descNum, rtStream_t stream);
 
-HcclResult __attribute__((weak)) HcclBatchGetV2(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc *desc, u32 descNum, rtStream_t stream);
+HcclResult __attribute__((weak, used, noinline)) HcclBatchGetV2(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc *desc, u32 descNum, rtStream_t stream);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

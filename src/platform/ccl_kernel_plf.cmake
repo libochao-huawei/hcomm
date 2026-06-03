@@ -30,11 +30,15 @@ set(CCL_KERNEL_PLF_COMPILE_OPTIONS
     -Werror
     -Wall
     -fno-common
+    -fvisibility=hidden
+    -fno-plt
     -fno-strict-aliasing
     -pipe
     -std=c++14
-    -D_FORTIFY_SOURCE=2 -O2
+    -D_FORTIFY_SOURCE=2 -O3
     -fstack-protector-all
+    -flto
+    $<$<CONFIG:Debug>:-g>
 )
 target_compile_options(ccl_kernel_plf PRIVATE
     ${CCL_KERNEL_PLF_COMPILE_OPTIONS}
@@ -49,12 +53,13 @@ target_compile_options(ccl_kernel_plf_a PRIVATE
 # 链接选项
 set(CCL_KERNEL_PLF_LINK_OPTIONS
     -Wl,-z,relro,-z,now,-z,noexecstack
-    -Wl,-Bsymbolic
+    -Wl,-Bsymbolic-functions
     -Wl,--exclude-libs,ALL
+    -flto
 )
 target_link_options(ccl_kernel_plf PRIVATE
     ${CCL_KERNEL_PLF_LINK_OPTIONS}
-    -s
+    $<$<NOT:$<CONFIG:Debug>>:-s>
 )
 target_link_options(ccl_kernel_plf_a PRIVATE
     ${CCL_KERNEL_PLF_LINK_OPTIONS}

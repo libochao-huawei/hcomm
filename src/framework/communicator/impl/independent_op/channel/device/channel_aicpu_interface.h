@@ -12,9 +12,10 @@
 #define CHANNEL_AICPU_INTERFACE_H
 
 #include <cstdint>
+#include "hccl/hccl_types.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInit(void *args);
+HCCL_API uint32_t RunAicpuIndOpChannelInit(void *args);
 }
 
 #endif // CHANNEL_AICPU_INTERFACE_H

@@ -15,7 +15,7 @@
 #include "aicpu_indop_process.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuDfxOpInfoInitV2(void *args)
+uint32_t RunAicpuDfxOpInfoInitV2(void *args)
 {
     HCCL_RUN_INFO("RunAicpuDfxOpInfoInitV2 start.");
     CHK_PRT_RET(args == nullptr, HCCL_ERROR("[%s]args is null.", __func__), HCCL_E_PARA);

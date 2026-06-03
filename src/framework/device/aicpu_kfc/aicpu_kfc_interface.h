@@ -12,12 +12,13 @@
 #define AICPU_KFC_INTERFACE_H
 
 #include <cstdint>
+#include "hccl/hccl_types.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuKfcResInit(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunch(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvGroupLaunch(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuKfcSrvLaunch(void *args[]);
+HCCL_API uint32_t RunAicpuKfcResInit(void *args);
+HCCL_API uint32_t RunAicpuRpcSrvLaunch(void *args);
+HCCL_API uint32_t RunAicpuRpcSrvGroupLaunch(void *args);
+HCCL_API uint32_t RunAicpuKfcSrvLaunch(void *args[]);
 }
 
 #endif // __MC2_AICPU_INTERFACE_HPP__

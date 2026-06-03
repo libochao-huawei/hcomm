@@ -13,6 +13,14 @@
 
 #include <stdint.h>
 
+#ifndef HCCL_API
+#define HCCL_API __attribute__((visibility("default")))
+#endif
+
+#ifndef HCCL_WEAK_API
+#define HCCL_WEAK_API __attribute__((weak, used, noinline, visibility("default")))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
