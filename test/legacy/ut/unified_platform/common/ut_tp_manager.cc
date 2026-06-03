@@ -17,10 +17,44 @@
 #include "orion_adapter_rts.h"
 #include "internal_exception.h"
 #include "env_config/env_config.h"
+#include <cstdlib>
+#include <string>
 
 using namespace Hccl;
 
 namespace {
+
+class UbTimeoutEnvGuard {
+public:
+    explicit UbTimeoutEnvGuard(const char *value)
+    {
+        const char *saved = std::getenv("HCCL_UB_TIMEOUT");
+        if (saved != nullptr) {
+            savedValue_ = saved;
+            hadValue_ = true;
+        }
+        if (value != nullptr) {
+            (void)setenv("HCCL_UB_TIMEOUT", value, 1);
+        } else {
+            (void)unsetenv("HCCL_UB_TIMEOUT");
+        }
+        EnvConfig::GetInstance().Parse();
+    }
+
+    ~UbTimeoutEnvGuard()
+    {
+        if (hadValue_) {
+            (void)setenv("HCCL_UB_TIMEOUT", savedValue_.c_str(), 1);
+        } else {
+            (void)unsetenv("HCCL_UB_TIMEOUT");
+        }
+        EnvConfig::GetInstance().Parse();
+    }
+
+private:
+    bool hadValue_{false};
+    std::string savedValue_;
+};
 
 void MockDeviceTpAttrAsyncSupport()
 {
@@ -613,32 +647,22 @@ TEST_F(TpManagerTest, tp_manager_release_tpinfo_handle_mismatch)
 
 TEST_F(TpManagerTest, Ut_CalcTaTimeout_When_EnvLessThanTp_Expect_Upgrade)
 {
-    auto &rdmaCfg = EnvConfig::GetInstance().GetRdmaConfig();
-    const auto savedUbTimeout = rdmaCfg.ubTimeOut;
-    rdmaCfg.ubTimeOut.value = 0U;
-    rdmaCfg.ubTimeOut.isParsed = true;
+    UbTimeoutEnvGuard envGuard("0");
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 3U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpManager::CalcTaTimeout(tpAttrInfo), 16U);
-
-    rdmaCfg.ubTimeOut = savedUbTimeout;
 }
 
 TEST_F(TpManagerTest, Ut_CalcTaTimeout_When_EnvGreaterThanTp_Expect_EnvValue)
 {
-    auto &rdmaCfg = EnvConfig::GetInstance().GetRdmaConfig();
-    const auto savedUbTimeout = rdmaCfg.ubTimeOut;
-    rdmaCfg.ubTimeOut.value = 24U;
-    rdmaCfg.ubTimeOut.isParsed = true;
+    UbTimeoutEnvGuard envGuard("24");
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 0U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpManager::CalcTaTimeout(tpAttrInfo), 24U);
-
-    rdmaCfg.ubTimeOut = savedUbTimeout;
 }
 
 TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_uboe_success)
