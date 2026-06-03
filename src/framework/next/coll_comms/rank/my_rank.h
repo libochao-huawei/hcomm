@@ -26,7 +26,7 @@
 #include "orion_adapter_hccp.h"
 #include "coll_comm_config_consistency.h"
 #include "exchange_info_mgr.h"
-
+#include "env_config/env_config.h"
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
 
@@ -133,7 +133,7 @@ private:
 
 namespace MyRankUtils {
 
-HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc);
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const Hccl::EnvRdmaConfig &rdmaConfig);
 
 } // namespace MyRankUtils  
 
