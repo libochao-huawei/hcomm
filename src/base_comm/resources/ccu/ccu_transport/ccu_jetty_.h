@@ -25,7 +25,7 @@ public:
 
     HcclResult Init();
 
-    void SetMappedJettyPriority(uint32_t priority);
+    HcclResult SetMappedJettyPriority(uint32_t priority);
 
     HcclResult CreateJetty(u8 errTimeout);
 
@@ -56,6 +56,8 @@ private:
 
     HrtRaUbCreateJettyParam inParam_{};
     HrtRaUbJettyCreatedOutParam outParam_{};
+    bool  mappedJettyPrioritySet_{false};
+    uint8_t mappedJettyPriority_{0};
 
     HcclResult HandleAsyncRequest();
     RdmaHandle rdmaHandle_{nullptr};
