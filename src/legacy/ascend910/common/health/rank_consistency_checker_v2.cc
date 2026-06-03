@@ -238,7 +238,7 @@ HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local,
     return HCCL_SUCCESS;
 }
 
-HcclResult CompareEngineV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
+HcclResult RankConsistencyCheckerV2::CompareEngineV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
 {
     if (local.engine != remote.engine) {
         RPT_INPUT_ERR(true, "EI0005",
