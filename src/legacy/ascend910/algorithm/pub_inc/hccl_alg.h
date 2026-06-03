@@ -82,7 +82,7 @@ public:
     HcclResult GetCommPlaneSubGroupVector(std::vector<std::vector<std::vector<std::vector<u32>>>> &commPlaneSubGroupVector);
     HcclResult GetAHCAlgOption(std::map<AHCConcOpType, TemplateType> &ahcAlgOption);
 
-    __attribute__((weak)) std::unique_ptr<CollAlgOperator> GetAlgOperator(const HcclCMDType &opType,
+    __attribute__((weak, used, noinline)) std::unique_ptr<CollAlgOperator> GetAlgOperator(const HcclCMDType &opType,
         HcclWorkflowMode workflowMode = HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED);//只在host侧使用的方法
 
     HcclResult GetTopoType(TopoType &topoType);

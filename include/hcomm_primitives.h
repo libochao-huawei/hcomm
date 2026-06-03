@@ -16,6 +16,7 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
+#include "hcomm_res_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,7 +145,7 @@ typedef struct {
  * @return int32_t 执行结果状态码
  * @note 源目内存地址要能执行引擎直接访问
  */
-extern int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len);
+extern HCOMM_API int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len);
 
 /**
  * @brief 本地归约操作
@@ -156,7 +157,7 @@ extern int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void
  * @param[in] reduceOp 归约操作类型
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommLocalReduceOnThread(
+extern HCOMM_API int32_t HcommLocalReduceOnThread(
     ThreadHandle thread, void *dst, const void *src, uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp);
 /** @} */  // 本地拷贝和规约
 
@@ -173,7 +174,7 @@ extern int32_t HcommLocalReduceOnThread(
  * @return int32_t 执行结果状态码
  * @note 配合HcommThreadNotifyWaitOnThread使用
  */
-extern int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx);
+extern HCOMM_API int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx);
 
 /**
  * @brief 本地等待通知
@@ -183,7 +184,7 @@ extern int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle
  * @return int32_t 执行结果状态码
  * @note 配合HcommThreadNotifyRecordOnThread使用
  */
-extern int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut);
+extern HCOMM_API int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut);
 /** @} */  // 本地线程间同步通知
 
 /**
@@ -197,7 +198,7 @@ extern int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notif
  * @param[in] dstNotifyId 通知id
  * @return 执行状态码 int32_t
  */
-extern int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId);
+extern HCOMM_API int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId);
 
 /**
  * @brief 等待通知事件（消费者）
@@ -206,7 +207,7 @@ extern int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstN
  * @param[in] timeOut 超时时间
  * @return 执行状态码 int32_t
  */
-extern int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut);
+extern HCOMM_API int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut);
 /** @} */  // 本地通知
 
 /**
@@ -223,7 +224,7 @@ extern int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notify
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommWriteOnThread(
+extern HCOMM_API int32_t HcommWriteOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
@@ -237,7 +238,7 @@ extern int32_t HcommWriteOnThread(
  * @param[in] reduceOp 归约操作类型
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+extern HCOMM_API int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp);
 
 /**
@@ -253,7 +254,7 @@ extern int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle chann
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+extern HCOMM_API int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
 
 /**
@@ -270,7 +271,7 @@ extern int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle c
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
+extern HCOMM_API int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
     const void *src, uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp, uint32_t remoteNotifyIdx);
 
 /**
@@ -282,7 +283,7 @@ extern int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHa
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommReadOnThread(
+extern HCOMM_API int32_t HcommReadOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
@@ -296,7 +297,7 @@ extern int32_t HcommReadOnThread(
  * @param[in] reduceOp 归约操作类型
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
+extern HCOMM_API int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
     HcommDataType dataType, HcommReduceOp reduceOp);
 
 /**
@@ -308,7 +309,7 @@ extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channe
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
+extern HCOMM_API int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
  * @brief 单边写操作
@@ -320,7 +321,7 @@ extern int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel,
  *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
+extern HCOMM_API int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
  * @brief 带通知的单边写操作
@@ -333,7 +334,7 @@ extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, 
  * @return int32_t 执行结果状态码
  * @note 当前在A5上主要支持
  */
-extern int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+extern HCOMM_API int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
 
 /**
@@ -348,7 +349,7 @@ extern int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandl
  *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
+extern HCOMM_API int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
 
 /**
@@ -360,7 +361,7 @@ extern int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const v
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
+extern HCOMM_API int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
  * @brief 单边读操作
@@ -372,7 +373,7 @@ extern int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, 
  *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
+extern HCOMM_API int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
  * @brief 批量传输操作
@@ -382,7 +383,7 @@ extern int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, u
  * @param[in] transferDescNum 批量传输描述符数量
  * @return int32_t 执行结果，0表示成功
  */
-extern int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
+extern HCOMM_API int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle channel,
     const HcommBatchTransferDesc *transferDescs, uint32_t transferDescNum);
 
 
@@ -400,7 +401,7 @@ extern int32_t HcommBatchTransferOnThread(ThreadHandle thread, ChannelHandle cha
  * @param[in] remoteNotifyIdx 远端通知索引
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx);
+extern HCOMM_API int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx);
 
 /**
  * @brief 记录通知事件
@@ -410,7 +411,7 @@ extern int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHand
  *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx);
+extern HCOMM_API int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx);
 
 /**
  * @brief 等待通知事件
@@ -420,7 +421,7 @@ extern int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNo
  * @param[in] timeOut 超时时间(毫秒)
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut);
+extern HCOMM_API int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut);
 
 /**
  * @brief 等待通知事件
@@ -431,7 +432,7 @@ extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle
  *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut);
+extern HCOMM_API int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut);
 
 /** @} */  // 通知
 
@@ -446,7 +447,7 @@ extern int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotif
  * @return int32_t 执行结果状态码
  * @note Start和End及中间的批量任务需要在同一个线程上执行
  */
-extern int32_t HcommBatchModeStart(const char *batchTag);
+extern HCOMM_API int32_t HcommBatchModeStart(const char *batchTag);
 
 /**
  * @brief 批量模式执行结束
@@ -454,7 +455,7 @@ extern int32_t HcommBatchModeStart(const char *batchTag);
  * @return int32_t 执行结果状态码
  * @note Start和End及中间的批量任务需要在同一个线程上执行
  */
-extern int32_t HcommBatchModeEnd(const char *batchTag);
+extern HCOMM_API int32_t HcommBatchModeEnd(const char *batchTag);
 
 /** @} */  // 批量下发设置接口
 
@@ -467,7 +468,7 @@ extern int32_t HcommBatchModeEnd(const char *batchTag);
  * @return int32_t 执行结果状态码
  * @note 当前仅支持AICPU模式
  */
-extern int32_t HcommAcquireComm(const char* commId);
+extern HCOMM_API int32_t HcommAcquireComm(const char* commId);
 
 /**
  * @brief 释放通信域
@@ -475,14 +476,14 @@ extern int32_t HcommAcquireComm(const char* commId);
  * @return int32_t 执行结果状态码
  * @note 当前仅支持AICPU模式
  */
-extern int32_t HcommReleaseComm(const char* commId);
+extern HCOMM_API int32_t HcommReleaseComm(const char* commId);
 
 /**
  * @brief DPU 数据面 Fence 接口
  * @param[in] thread 线程句柄
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommFenceOnThread(ThreadHandle thread);
+extern HCOMM_API int32_t HcommFenceOnThread(ThreadHandle thread);
 
 /**
  * @brief 通信通道级内存屏障操作
@@ -490,7 +491,7 @@ extern int32_t HcommFenceOnThread(ThreadHandle thread);
  * @param[in] channel 通道句柄
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel);
+extern HCOMM_API int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel);
 
 /**
  * @brief 通信通道级内存屏障操作
@@ -499,7 +500,7 @@ extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle chan
  *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcommChannelFence(ChannelHandle channel);
+extern HCOMM_API int32_t HcommChannelFence(ChannelHandle channel);
 
 /** @} */  // 算子编程接口
 #ifdef __cplusplus

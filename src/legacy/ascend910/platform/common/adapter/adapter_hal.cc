@@ -27,7 +27,7 @@ constexpr u32 MEMORY_PAGE_SIZE = 4096;
 constexpr u32 PRE_FETCH_THREADS_NUM = 24;
 constexpr u32 PRE_FETCH_MEMORY_THRESHOLD = 268435456; // 考虑到多线程预访问也有开销，只有在内存大于256MB时才启动预访问
 
-drvError_t __attribute__((weak)) halResourceIdRestore(struct drvResIdKey *info); // custom进程notify资源同步，在调用halResourceIdCheck前调用
+drvError_t __attribute__((weak, used, noinline)) halResourceIdRestore(struct drvResIdKey *info); // custom进程notify资源同步，在调用halResourceIdCheck前调用
 
 HcclResult HcclSetGrpIdCallback(int (*grpIdCallback)(int tag, int *grpId, int *devId))
 {
@@ -566,10 +566,10 @@ HcclResult CheckRunSideIsDevice()
     return HCCL_SUCCESS;
 }
 extern "C" {
-drvError_t __attribute__((weak)) drvGetLocalDevIDByHostDevID(uint32_t host_dev_id, uint32_t *local_dev_id);
-drvError_t __attribute__((weak)) drvMemSmmuQuery(DVdevice device, uint32_t *SSID);
-int32_t __attribute__((weak)) StartMC2MaintenanceThread(mc2Funcs f1, void *p1, mc2Funcs f2, void *p2);
-int32_t __attribute__((weak)) AicpuCreateCtrlThread(uint32_t type, mc2Funcs f1, void *p1, mc2Funcs f2, void *p2);
+drvError_t __attribute__((weak, used, noinline)) drvGetLocalDevIDByHostDevID(uint32_t host_dev_id, uint32_t *local_dev_id);
+drvError_t __attribute__((weak, used, noinline)) drvMemSmmuQuery(DVdevice device, uint32_t *SSID);
+int32_t __attribute__((weak, used, noinline)) StartMC2MaintenanceThread(mc2Funcs f1, void *p1, mc2Funcs f2, void *p2);
+int32_t __attribute__((weak, used, noinline)) AicpuCreateCtrlThread(uint32_t type, mc2Funcs f1, void *p1, mc2Funcs f2, void *p2);
 };
 
 HcclResult hrtDrvGetLocalDevIDByHostDevID(u32 hostUdevid, u32 *localDevid)

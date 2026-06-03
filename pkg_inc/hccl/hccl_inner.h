@@ -11,6 +11,7 @@
 #ifndef HCCL_INNER_H_
 #define HCCL_INNER_H_
 
+#include "hcomm_res_defs.h"
 #include <hccl/hccl_types.h>
 #include <hccl/hccl_comm.h>
 #include <acl/acl.h>
@@ -19,51 +20,51 @@
 extern "C" {
 #endif // __cplusplus
 
-extern HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
+extern HCOMM_API HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
     HcclReduceOp op, HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
+extern HCOMM_API HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
     aclrtStream stream);
 
-extern HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType,
+extern HCOMM_API HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType,
     HcclReduceOp op, HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const void *sendDispls,
+extern HCOMM_API HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const void *sendDispls,
     void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op, HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, uint32_t root,
+extern HCOMM_API HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, uint32_t root,
     HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
+extern HCOMM_API HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
     HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
+extern HCOMM_API HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     const void *recvCounts, const void *recvDispls, HcclDataType dataType, HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, uint32_t destRank,
-                           HcclComm comm, aclrtStream stream);
+extern HCOMM_API HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, uint32_t destRank,
+                            HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, uint32_t srcRank,
-                           HcclComm comm, aclrtStream stream);
+extern HCOMM_API HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, uint32_t srcRank,
+                            HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix, HcclDataType sendType,
-                                 const void *recvBuf, HcclDataType recvType, HcclComm comm, aclrtStream stream);
+extern HCOMM_API HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix, HcclDataType sendType,
+                                  const void *recvBuf, HcclDataType recvType, HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
-                         const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
-                         HcclComm comm, aclrtStream stream);
+extern HCOMM_API HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
+                          const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
+                          HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataType sendType,
-                               const void *recvBuf, uint64_t recvCount, HcclDataType recvType,
-                               HcclComm comm, aclrtStream stream);
+extern HCOMM_API HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataType sendType,
+                                const void *recvBuf, uint64_t recvCount, HcclDataType recvType,
+                                HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
-                             HcclReduceOp op, uint32_t root, HcclComm comm, aclrtStream stream);
+extern HCOMM_API HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
+                              HcclReduceOp op, uint32_t root, HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream);
+extern HCOMM_API HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream);
 
-extern HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType srcDataType, HcclDataType dstDataType,
-                                          HcclReduceOp reduceType, uint64_t count, char *algConfig, uint32_t commEngine, void **opResCtx);
+extern HCOMM_API HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType srcDataType, HcclDataType dstDataType,
+                                           HcclReduceOp reduceType, uint64_t count, char *algConfig, uint32_t commEngine, void **opResCtx);
 
 #ifdef __cplusplus
 }

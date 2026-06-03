@@ -17,34 +17,34 @@
 extern "C" {
 #endif  // __cplusplus
 
-extern HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
+extern HCOMM_API HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
-extern HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle);
+extern HCOMM_API HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle);
 
-extern HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const CommMem *mem, HcommMemHandle *memHandle);
+extern HCOMM_API HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const CommMem *mem, HcommMemHandle *memHandle);
 
-extern HcommResult HcommMemUnreg(EndpointHandle endpointHandle, HcommMemHandle memHandle);
+extern HCOMM_API HcommResult HcommMemUnreg(EndpointHandle endpointHandle, HcommMemHandle memHandle);
 
-extern HcommResult HcommMemExport(EndpointHandle endpointHandle, HcommMemHandle memHandle, void **memDesc, uint32_t *memDescLen);
+extern HCOMM_API HcommResult HcommMemExport(EndpointHandle endpointHandle, HcommMemHandle memHandle, void **memDesc, uint32_t *memDescLen);
 
-extern HcommResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, CommMem *outMem);
+extern HCOMM_API HcommResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, CommMem *outMem);
 
-extern HcommResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
+extern HCOMM_API HcommResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
 
-extern HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
+extern HCOMM_API HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels);
 
-extern HcommResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
+extern HCOMM_API HcommResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
 
-extern HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
+extern HCOMM_API HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
 
-extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32_t *notifyNumPerThread, ThreadHandle *threads);
+extern HCOMM_API HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32_t *notifyNumPerThread, ThreadHandle *threads);
 
-extern HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
+extern HCOMM_API HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
-extern HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port);
+extern HCOMM_API HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port);
 
-extern HcommResult HcommEndpointCheckFeature(HcommEndpointFeatureType featureType, const EndpointDesc *endpointDesc, bool *value);
+extern HCOMM_API HcommResult HcommEndpointCheckFeature(HcommEndpointFeatureType featureType, const EndpointDesc *endpointDesc, bool *value);
 
 #ifdef __cplusplus
 }

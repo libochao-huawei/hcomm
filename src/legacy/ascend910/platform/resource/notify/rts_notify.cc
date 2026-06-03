@@ -215,8 +215,8 @@ HcclResult RtsNotify::UpdateNotifyInfo()
 }
 
 extern "C" {
-drvError_t __attribute__((weak)) halResourceIdCheck(struct drvResIdKey *info);
-drvError_t __attribute__((weak)) halResourceIdInfoGet(struct drvResIdKey *key, drvResIdProcType type, uint64_t *value);
+drvError_t __attribute__((weak, used, noinline)) halResourceIdCheck(struct drvResIdKey *info);
+drvError_t __attribute__((weak, used, noinline)) halResourceIdInfoGet(struct drvResIdKey *key, drvResIdProcType type, uint64_t *value);
 };
 
 HcclResult RtsNotify::InitAndVerifySingleSignal()

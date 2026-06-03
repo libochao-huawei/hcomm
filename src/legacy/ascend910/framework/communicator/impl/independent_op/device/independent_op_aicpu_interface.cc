@@ -13,7 +13,7 @@
 #include "aicpu_indop_process.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpCommInit(void *args)
+uint32_t RunAicpuIndOpCommInit(void *args)
 {
     CHK_PRT_RET(args == nullptr, HCCL_ERROR("[%s]args is null.", __func__), HCCL_E_PARA);
 

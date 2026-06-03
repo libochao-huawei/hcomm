@@ -85,7 +85,7 @@ HcclResult TransportDeviceP2p::UpdateRemoteAddr(void *remoteIn, void *remoteOut)
 }
 
 extern "C" {
-drvError_t __attribute__((weak)) halResAddrMap(unsigned int devId, struct res_addr_info *res_info,
+drvError_t __attribute__((weak, used, noinline)) halResAddrMap(unsigned int devId, struct res_addr_info *res_info,
     unsigned long *va, unsigned int *len);
 };
 

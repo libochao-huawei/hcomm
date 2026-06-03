@@ -18,7 +18,7 @@
 #include "utils/hccl_aicpu_utils.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunTransportRoceTx(void *args)
+uint32_t RunTransportRoceTx(void *args)
 {
     CHK_PTR_NULL(args);
     PostSendTaskParam *SRInfo = reinterpret_cast<PostSendTaskParam *>(args);
@@ -108,7 +108,7 @@ __attribute__((visibility("default"))) uint32_t RunTransportRoceTx(void *args)
     return HCCL_SUCCESS;
 }
 
-__attribute__((visibility("default"))) uint32_t RunTransportRoceRx(void *args)
+uint32_t RunTransportRoceRx(void *args)
 {
     CHK_PTR_NULL(args);
     PostSendTaskParam *SRInfo = reinterpret_cast<PostSendTaskParam *>(args);

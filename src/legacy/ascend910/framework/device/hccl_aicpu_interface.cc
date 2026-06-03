@@ -21,7 +21,7 @@
 #include "utils/aicpu_hdc_utils.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuKfcResInitV2(void *args)
+uint32_t RunAicpuKfcResInitV2(void *args)
 {
     if (args == nullptr) {
         HCCL_ERROR("args is null.");
@@ -39,7 +39,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcResInitV2(void *args)
         ctxArgs->isCustom);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *args)
+uint32_t RunAicpuRpcSrvLaunchV2(void *args)
 {
     if (args == nullptr) {
         HCCL_ERROR("RunAicpuRpcSrvLaunchV2 args is null.");

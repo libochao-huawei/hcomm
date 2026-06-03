@@ -20,9 +20,9 @@
 constexpr u32 UB_BLOCK_SIZE = 32;
 constexpr u64 TBE_REDUCE_MAX_COUNT = INT32_MAX;
 
-__attribute__((weak)) HcclResult GraphAddRecordTaskWithSignalAddr(void *fftsPubInfo, void *ctx, uint32_t streamId,
+__attribute__((weak, used, noinline)) HcclResult GraphAddRecordTaskWithSignalAddr(void *fftsPubInfo, void *ctx, uint32_t streamId,
     void *signal, bool inchip, u64 signalAddr, uint32_t *ctxIdx);
-__attribute__((weak)) HcclResult LaunchGraphAndGetGraphInfo(void *fftsPubInfo, void *streamPtr, void *ctx,
+__attribute__((weak, used, noinline)) HcclResult LaunchGraphAndGetGraphInfo(void *fftsPubInfo, void *streamPtr, void *ctx,
     uint32_t timeout, uint32_t *ctxNum, void **descBuf, size_t *descBufLen);
 
 namespace hccl {

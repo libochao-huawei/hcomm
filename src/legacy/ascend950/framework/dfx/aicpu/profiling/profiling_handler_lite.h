@@ -18,18 +18,18 @@
 #include "profiling_common.h"
 
 extern "C" {
-__attribute__((weak)) int32_t MsprofReportBatchAdditionalInfo(uint32_t nonPersistantFlag, const VOID_PTR data, uint32_t length);
-__attribute__((weak)) int32_t AdprofReportAdditionalInfo(uint32_t agingFlag, const void *data, uint32_t length);
-__attribute__((weak)) int32_t MsprofReportAdditionalInfo(uint32_t nonPersistantFlag, const VOID_PTR data, uint32_t length);
-__attribute__((weak)) int32_t AdprofCheckFeatureIsOn(uint64_t feature);
-__attribute__((weak)) int32_t MsprofRegisterCallback(uint32_t moduleId, ProfCommandHandle handle);
-__attribute__((weak)) uint64_t AdprofGetHashId(const char *hashInfo, size_t length);
-__attribute__((weak)) uint64_t MsprofStr2Id(const char *hashInfo, size_t length);
+__attribute__((weak, used, noinline)) int32_t MsprofReportBatchAdditionalInfo(uint32_t nonPersistantFlag, const VOID_PTR data, uint32_t length);
+__attribute__((weak, used, noinline)) int32_t AdprofReportAdditionalInfo(uint32_t agingFlag, const void *data, uint32_t length);
+__attribute__((weak, used, noinline)) int32_t MsprofReportAdditionalInfo(uint32_t nonPersistantFlag, const VOID_PTR data, uint32_t length);
+__attribute__((weak, used, noinline)) int32_t AdprofCheckFeatureIsOn(uint64_t feature);
+__attribute__((weak, used, noinline)) int32_t MsprofRegisterCallback(uint32_t moduleId, ProfCommandHandle handle);
+__attribute__((weak, used, noinline)) uint64_t AdprofGetHashId(const char *hashInfo, size_t length);
+__attribute__((weak, used, noinline)) uint64_t MsprofStr2Id(const char *hashInfo, size_t length);
 };
 
 namespace aicpu {
 MAKE_ENUM (status_t, AICPU_ERROR_NONE = 0, AICPU_ERROR_FAILED = 1)
-status_t __attribute__((weak)) GetTaskAndStreamId(uint64_t &taskId, uint32_t &streamId);
+status_t __attribute__((weak, used, noinline)) GetTaskAndStreamId(uint64_t &taskId, uint32_t &streamId);
 }
  
 namespace Hccl {

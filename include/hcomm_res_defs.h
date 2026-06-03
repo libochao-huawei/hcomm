@@ -17,6 +17,10 @@
 #include <arpa/inet.h>
 #include "securec.h"
 
+#ifndef HCOMM_API
+#define HCOMM_API __attribute__((visibility("default")))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

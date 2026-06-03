@@ -26,17 +26,17 @@ ErrContextPub hrtErrMGetErrorContextPub(void);
 void hrtErrMSetErrorContextPub(ErrContextPub errorContextPub);
 
 //以下方法不直接使用只在宏定义中使用
-__attribute__((weak)) void RptInputErr(std::string error_code, std::vector<std::string> key,
+__attribute__((weak, used, noinline)) void RptInputErr(std::string error_code, std::vector<std::string> key,
     std::vector<std::string> value);
 
-__attribute__((weak)) void RptEnvErr(std::string error_code, std::vector<std::string> key,
+__attribute__((weak, used, noinline)) void RptEnvErr(std::string error_code, std::vector<std::string> key,
     std::vector<std::string> value);
 
-__attribute__((weak)) void RptInnerErrPrt(const char *fmt, ...);
+__attribute__((weak, used, noinline)) void RptInnerErrPrt(const char *fmt, ...);
 
-__attribute__((weak)) void RptCallErr(const char *fmt, ...);
+__attribute__((weak, used, noinline)) void RptCallErr(const char *fmt, ...);
 
-__attribute__((weak)) void RptCallErrPrt(const char *fmt, ...);
+__attribute__((weak, used, noinline)) void RptCallErrPrt(const char *fmt, ...);
 
 #define RPT_INPUT_ERR(result, error_code, key, value) do { \
     if (UNLIKELY(result) && RptInputErr != nullptr) {     \

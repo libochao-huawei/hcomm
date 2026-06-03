@@ -20,7 +20,7 @@ using ErrContext =  struct Context {
         uint64_t reserved[7] = {0};
     };
 
-ErrContext __attribute__((weak)) hrtErrMGetErrorContext(void);
-void __attribute__((weak)) hrtErrMSetErrorContext(ErrContext error_context);
+ErrContext __attribute__((weak, used, noinline)) hrtErrMGetErrorContext(void);
+void __attribute__((weak, used, noinline)) hrtErrMSetErrorContext(ErrContext error_context);
 
 #endif  // HCCL_INC_ADAPTER_ERROR_MANAGER_H

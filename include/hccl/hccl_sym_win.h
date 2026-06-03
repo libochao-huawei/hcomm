@@ -15,7 +15,7 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
-#include "hccl_types.h"
+#include "hccl/hccl_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,7 +30,7 @@ extern "C" {
  * @param ptr A pointer identifying the symmetric memory heap address.
  * @return HcclResult
  */
-extern HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, uint32_t peerRank, void** ptr);
+extern HCCL_API HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, uint32_t peerRank, void** ptr);
 
 #ifdef __cplusplus
 }

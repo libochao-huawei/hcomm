@@ -21,8 +21,8 @@
 
 namespace Hccl {
 extern "C" {
-drvError_t __attribute__((weak)) halCqReportRecv(uint32_t devId, struct halReportRecvInfo *info);
-drvError_t __attribute__((weak)) drvGetLocalDevIDByHostDevID(uint32_t host_dev_id, uint32_t *local_dev_id);
+drvError_t __attribute__((weak, used, noinline)) halCqReportRecv(uint32_t devId, struct halReportRecvInfo *info);
+drvError_t __attribute__((weak, used, noinline)) drvGetLocalDevIDByHostDevID(uint32_t host_dev_id, uint32_t *local_dev_id);
 };
 
 struct rtLogicCqReport_t {

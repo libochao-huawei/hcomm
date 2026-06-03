@@ -12,10 +12,11 @@
 #define __HCCL_AICPU_TRANSPORT_INTERFACE_H__
 
 #include <cstdint>
+#include "hccl/hccl_types.h"
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunTransportRoceTx(void *args);
+HCCL_API uint32_t RunTransportRoceTx(void *args);
 
-__attribute__((visibility("default"))) uint32_t RunTransportRoceRx(void *args);
+HCCL_API uint32_t RunTransportRoceRx(void *args);
 }
 #endif // __MC2_AICPU_INTERFACE_HPP__

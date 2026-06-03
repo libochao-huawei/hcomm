@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <hccl/hccl_types.h>
+#include <hcomm_res_defs.h>
 
 
 #ifdef __cplusplus
@@ -26,7 +27,7 @@ extern "C" {
  * @return HcclResult 执行结果状态码
  * @note 当前仅支持AICPU模式
  */
-extern HcclResult HcommRegOpInfo(const char* commId, void* opInfo, size_t size);
+extern HCOMM_API HcclResult HcommRegOpInfo(const char* commId, void* opInfo, size_t size);
 
 /**
  * @brief 注册taskException算子信息解析函数
@@ -38,7 +39,7 @@ extern HcclResult HcommRegOpInfo(const char* commId, void* opInfo, size_t size);
  * @note 当前仅支持AICPU模式
  */
 typedef void (*HcommGetOpInfoCallback)(const void *opInfo, char *outPut, size_t size);
-extern HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback);
+extern HCOMM_API HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback);
 
 /**
  * @brief 上报device算子执行事件
@@ -46,21 +47,21 @@ extern HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCall
  * @return HcclResult 执行结果状态码
  * @note Device侧
  */
-extern HcclResult HcommProfilingReportDeviceOp(const char* groupname);
+extern HCOMM_API HcclResult HcommProfilingReportDeviceOp(const char* groupname);
 /**
  * @brief 上报内核启动任务事件
  * @param[in] thread 线程上下文
  * @return HcclResult 执行结果状态码
  * @note Device侧
  */
-extern HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* groupname);
+extern HCOMM_API HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* groupname);
 /**
  * @brief 上报内核结束任务事件
  * @param[in] thread 线程上下文
  * @return HcclResult 执行结果状态码
  * @note Device侧
  */
-extern HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname);
+extern HCOMM_API HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname);
 
 
 #ifdef __cplusplus

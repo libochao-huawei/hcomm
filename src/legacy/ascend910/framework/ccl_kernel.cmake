@@ -23,19 +23,24 @@ target_compile_options(ccl_kernel PRIVATE
     -Wfloat-equal
     -Wall
     -fno-common
+    -fvisibility=hidden
+    -fno-plt
     -fstack-protector-strong
     -fno-strict-aliasing
     -pipe
     -O3
     -std=c++17
+    -flto
+    $<$<CONFIG:Debug>:-g>
 )
 
 # 链接选项
 target_link_options(ccl_kernel PRIVATE
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-    -s
+    -Wl,-z,relro,-z,now,-z,noexecstack
+    -Wl,-Bsymbolic-functions
+    -Wl,--exclude-libs,ALL
+    -flto
+    $<$<NOT:$<CONFIG:Debug>>:-s>
 )
 
 # 头文件搜索路径
@@ -153,7 +158,6 @@ else()
         ${TOP_DIR}/inc
         ${TOP_DIR}/inc/driver
         ${TOP_DIR}/metadef/inc/external
-        ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/open_source/json/include
         ${TOP_DIR}/inc/aicpu/

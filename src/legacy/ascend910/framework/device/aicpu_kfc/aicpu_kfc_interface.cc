@@ -385,7 +385,7 @@ u32 RunKernelAicpuServerForTilingApi(void *args[], CommKfcParamDesc* desc)
 }
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuKfcResInit(void *args) {
+uint32_t RunAicpuKfcResInit(void *args) {
     if (args == nullptr) {
         HCCL_ERROR("args is null.");
         return HCCL_E_PARA;
@@ -396,7 +396,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcResInit(void *args) {
 }
 
 // aclgraph 销毁触发的 tag 清理入口。host 端走 KFCResInitTask{context, isCustom} 模式投递，这里从 context 反解 payload 交给 AicpuHcclProcess
-__attribute__((visibility("default"))) uint32_t RunAicpuKfcClearOpRes(void *args) {
+uint32_t RunAicpuKfcClearOpRes(void *args) {
     if (args == nullptr) {
         HCCL_ERROR("[RunAicpuKfcClearOpRes] args is null.");
         return HCCL_E_PARA;
@@ -411,7 +411,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcClearOpRes(void *args
     return AicpuHcclProcess::AicpuRpcClearOpRes(tilingData);
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunch(void *args)
+uint32_t RunAicpuRpcSrvLaunch(void *args)
 {
     KfcState state;
     static uint32_t aicpuOpIdx = 0;
@@ -547,7 +547,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunch(void *args)
     return 0;
 }
 
-__attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvGroupLaunch(void *args)
+uint32_t RunAicpuRpcSrvGroupLaunch(void *args)
 {
     KfcState state;
     if (args == nullptr) {
@@ -585,7 +585,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvGroupLaunch(void *
 
 constexpr u32 GROUP_DYN_FLAG = 23U;
 constexpr u32 GROUP_TILING_MAGIC_NUM = 99U;
-__attribute__((visibility("default"))) uint32_t RunAicpuKfcSrvLaunch(void *args[])
+uint32_t RunAicpuKfcSrvLaunch(void *args[])
 {
     if (args == nullptr) {
         HCCL_ERROR("args is null.");
