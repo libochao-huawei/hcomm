@@ -275,9 +275,9 @@ HcclResult AicpuTsUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsUrmaChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
-    return memTransport_->GetRemoteMem(remoteMem, memNum, memTags);
+    return memTransport_->GetRemoteMems(memNum, remoteMem, memInfos);
 }
 
 ChannelStatus AicpuTsUrmaChannel::GetStatus()
@@ -358,11 +358,6 @@ HcclResult AicpuTsUrmaChannel::Resume()
     BuildConnection();
     BuildUbMemTransport();
     return HCCL_SUCCESS;
-}
-
-HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
-{
-    return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
 HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)

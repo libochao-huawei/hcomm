@@ -8,18 +8,19 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "endpoint.h"
+#include "../../../endpoints/endpoint.h"
 #include "aicpu_res_package_helper.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
 #include "mem_transport_common.h"
+#include "user_remote_mem_getter.h"
 
 // Orion
 #include "exchange_rdma_buffer_dto.h"
 #include "dev_capability.h"
 #include "aicpu_ts_roce_channel_v2.h"
-#include "../../../../common/orion_adpt_utils.h"
-#include "../../sockets/socket_mgr.h"
+#include "../../../common/orion_adpt_utils.h"
+#include "../../../sockets/socket_mgr.h"
 
 namespace hcomm {
 

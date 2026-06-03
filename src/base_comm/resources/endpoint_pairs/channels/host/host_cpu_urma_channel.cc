@@ -67,7 +67,7 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
                 static_cast<int>(localUbRmaBuffer->GetBuf()->GetMemType()),
                 localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
+                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemInfo().c_str())
             ));
         }
     } else {
@@ -222,9 +222,9 @@ HcclResult HostCpuUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult HostCpuUrmaChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
-    return memTransport_->GetRemoteMem(remoteMem, memNum, memTags);
+    return memTransport_->GetRemoteMems(memNum, remoteMem, memInfos);
 }
 
 ChannelStatus HostCpuUrmaChannel::GetStatus()
