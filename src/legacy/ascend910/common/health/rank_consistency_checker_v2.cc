@@ -25,13 +25,6 @@ RankConsistencyCheckerV2& RankConsistencyCheckerV2::GetInstance(const s32 &devic
     return instance[deviceLogicId];
 }
 
-HcclResult RankConsistencyCheckerV2::RecordEngineV2(s32 engine)
-{
-    engine_ = engine;
-    HCCL_DEBUG("[RankConsistencyCheckerV2::RecordEngineV2] engine_[%d] recorded.", engine_);
-    return HCCL_SUCCESS;
-}
-
 HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
 {
     std::string buffSizeStr = std::to_string(buffSize);
@@ -108,9 +101,6 @@ HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &localFra
     s32 sRet = memset_s(&localFrame, sizeof(CheckFrameV2), 0, sizeof(CheckFrameV2));
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[RankConsistencyCheckerV2::GenerateCheckFrameV2] memset failed."), HCCL_E_INTERNAL);
-
-    // 填充引擎类型
-    localFrame.engine = engine_;
 
     // 填充环境变量CRC
     localFrame.crcNum = std::min(static_cast<u32>(envVarCrcsV2_.size()), MAX_CRC_LEN_V2);
