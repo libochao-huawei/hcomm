@@ -22,6 +22,8 @@
 #include "rdma_handle_manager.h"
 #include "ccu_api_exception.h"
 #include "env_config/env_config.h"
+#include "buffer.h"
+#include "local_ub_rma_buffer.h"
 
 #undef private
 #undef protected
@@ -624,6 +626,107 @@ TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_NotCached_CallsRaGetTpAttrAsync)
 
     TpAttrInfo result = ccuComponent.GetLoopTpAttr(ipAddr, tpHandle);
     EXPECT_EQ(ccuComponent.tpAttrInfoMap.count(ipAddr), 1);
+
+    GlobalMockObject::verify();
+}
+
+namespace {
+
+uint8_t gLegacyLoopJettyQos = 0U;
+
+HcclResult StubHrtRaGetTpAttrAsyncLoopSl7(u32, RdmaHandle, uint64_t, uint32_t &, TpAttr &tpAttr, RequestHandle &)
+{
+    tpAttr.slBitmap = (1U << 7U);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HrtRaUbJettyCreatedOutParam StubHrtRaUbCreateJettyCaptureQos(RdmaHandle, const HrtRaUbCreateJettyParam &req)
+{
+    gLegacyLoopJettyQos = req.qos;
+    HrtRaUbJettyCreatedOutParam out{};
+    out.keySize = HRT_UB_QP_KEY_MAX_LEN;
+    return out;
+}
+
+HrtRaUbJettyImportedOutParam StubRaUbTpImportJetty(RdmaHandle, u8 *, u32, u32, const JettyImportCfg &)
+{
+    return HrtRaUbJettyImportedOutParam{};
+}
+
+} // namespace
+
+TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_QosMapped)
+{
+    gLegacyLoopJettyQos = 0U;
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    CcuComponent ccuComponent{};
+    ccuComponent.devLogicId = devLogicId;
+    ccuComponent.devPhyId = 0;
+
+    const uint8_t dieId = 0U;
+    const IpAddress ipAddr("192.168.10.1");
+    auto buffer = std::make_shared<Buffer>(0x1000ULL, 4096ULL);
+    ccuComponent.localCcuRmaBufferMap[dieId] = std::make_shared<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x111));
+
+    TpInfo tpInfo{};
+    tpInfo.tpHandle = 0x555ULL;
+    ccuComponent.tpInfoMap[ipAddr] = tpInfo;
+
+    TpAttrInfo tpAttrInfo{};
+    tpAttrInfo.tpAttr.at = 1U;
+    ccuComponent.tpAttrInfoMap[ipAddr] = tpAttrInfo;
+
+    MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x222)));
+    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x333)));
+    MOCKER(HrtRaGetTpAttrAsync).stubs().will(invoke(StubHrtRaGetTpAttrAsyncLoopSl7));
+    MOCKER(HrtRaUbCreateJetty).stubs().will(invoke(StubHrtRaUbCreateJettyCaptureQos));
+    MOCKER(RaUbTpImportJetty).stubs().will(invoke(StubRaUbTpImportJetty));
+
+    JettyInfo jettyInfo{};
+    jettyInfo.taJettyId = 200U;
+    jettyInfo.sqBufVa = 0x4000ULL;
+    jettyInfo.sqBufSize = 1024U;
+    jettyInfo.sqDepth = 4U;
+
+    EXPECT_EQ(ccuComponent.CreateAndImportLoopJettys(dieId, ipAddr, {jettyInfo}), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(gLegacyLoopJettyQos, 7U);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpHandleZero_Expect_DefaultQos)
+{
+    gLegacyLoopJettyQos = 0U;
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    CcuComponent ccuComponent{};
+    ccuComponent.devLogicId = devLogicId;
+    ccuComponent.devPhyId = 0;
+
+    const uint8_t dieId = 1U;
+    const IpAddress ipAddr("192.168.10.2");
+    auto buffer = std::make_shared<Buffer>(0x2000ULL, 4096ULL);
+    ccuComponent.localCcuRmaBufferMap[dieId] = std::make_shared<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x444));
+
+    TpInfo tpInfo{};
+    tpInfo.tpHandle = 0ULL;
+    ccuComponent.tpInfoMap[ipAddr] = tpInfo;
+
+    TpAttrInfo tpAttrInfo{};
+    ccuComponent.tpAttrInfoMap[ipAddr] = tpAttrInfo;
+
+    MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x555)));
+    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x666)));
+    MOCKER(HrtRaUbCreateJetty).stubs().will(invoke(StubHrtRaUbCreateJettyCaptureQos));
+    MOCKER(RaUbTpImportJetty).stubs().will(invoke(StubRaUbTpImportJetty));
+
+    JettyInfo jettyInfo{};
+    jettyInfo.taJettyId = 201U;
+    jettyInfo.sqBufVa = 0x5000ULL;
+    jettyInfo.sqBufSize = 512U;
+    jettyInfo.sqDepth = 4U;
+
+    EXPECT_EQ(ccuComponent.CreateAndImportLoopJettys(dieId, ipAddr, {jettyInfo}), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(gLegacyLoopJettyQos, static_cast<uint8_t>(UB_QOS_DEFAULT));
 
     GlobalMockObject::verify();
 }
