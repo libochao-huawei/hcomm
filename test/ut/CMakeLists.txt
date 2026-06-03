@@ -23,6 +23,7 @@ set(UT_COMMON_INCLUDE_LIST
     # src/pub_inc 目录下头文件 (legacy/ascend910)
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/inner
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/new
@@ -52,6 +53,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/cluster_maintenance/snapshot
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/cluster_maintenance/aclgraph
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src
+    ${HCOMM_DIR}/src/legacy/ascend910/common/launch_aicpu
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/task
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/topo
@@ -79,11 +81,13 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/unique/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/buffer_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/common
+    ${HCOMM_DIR}src/legacy/ascend910/common/launch_aicpu
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/unfold_cache
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/ping_mesh/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc/adapter
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc/adapter/host
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/error_manager
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/mem
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/resource/notify/
@@ -212,6 +216,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/connection/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/connection/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/pub_inc/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/common/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/task/
@@ -228,25 +233,25 @@ set(UT_COMMON_INCLUDE_LIST
 
     ${HCCL_CODE_ROOT}/test/ut/stub
     ${HCCL_CODE_ROOT}/test/ut/stub/legacy/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/common/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/runtime/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/profiling/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/base/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/base/context_builder
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/dump/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/trace/
-    ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/asc/include/adv_api/hccl/internal
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/aicpu/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/aicpu/common/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/runtime/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/profiling/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/base/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/base/context_builder
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/dump/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/trace/
+    ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/asc/include/adv_api/hccl/internal
 
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/
-    ${HCCL_CODE_ROOT}/test/ut/depends/runtime/include/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/mmpa/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/driver/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/urma/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/
+    ${HCCL_CODE_ROOT}/test/stub/depends/runtime/include/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/mmpa/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/driver/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/acl/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/ascendc/highlevel_api/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/hcomm-legacy/
+    ${HCCL_CODE_ROOT}/test/stub/depends/include/urma/
 
     # ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
@@ -314,6 +319,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_context/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/pub_inc/ccu/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common
 
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/base_comm/resources/adpt/

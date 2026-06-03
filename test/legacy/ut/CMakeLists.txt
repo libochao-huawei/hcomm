@@ -51,19 +51,21 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${HCCL_CODE_ROOT}/pkg_inc
         ${HCCL_CODE_ROOT}/pkg_inc/hccl
 
-        ${HCCL_CODE_ROOT}/test/ut/depends/include/
-        ${HCCL_CODE_ROOT}/test/ut/depends/include/driver/
-        ${HCCL_CODE_ROOT}/test/ut/depends/include/mmpa/
-        ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/
-        ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/base
-        # ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/runtime/
-        ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/profiling/
-        ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/trace/
-        ${HCCL_CODE_ROOT}/test/legacy/depends/toolchain/
-        ${HCCL_CODE_ROOT}/test/legacy/depends/pkg_inc/runtime/
+        ${HCCL_CODE_ROOT}/test/stub/depends/include/
+        ${HCCL_CODE_ROOT}/test/stub/depends/include/driver/
+        ${HCCL_CODE_ROOT}/test/stub/depends/include/mmpa/
+        ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/
+        ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/base
+        # ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/runtime/
+        ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/profiling/
+        ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/trace/
+        ${HCCL_CODE_ROOT}/test/stub/depends/toolchain/
+        ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/runtime/
 
         ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/
         ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/
+        ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
+        ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
         ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network/
         ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/
         ${RDMA_CORE_INCLUDE_DIR}

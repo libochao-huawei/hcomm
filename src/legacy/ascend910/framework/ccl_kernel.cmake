@@ -46,6 +46,7 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/aicpu
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
     ${HCOMM_DIR}/externel_depends/tsch
@@ -89,7 +90,9 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/platform/inc
     ${HCOMM_DIR}/src/legacy/ascend910/platform/inc/adapter
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common
+    ${HCOMM_DIR}/src/legacy/ascend910/common/launch_aicpu
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/buffer_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/common
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unique
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unfold_cache
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport
