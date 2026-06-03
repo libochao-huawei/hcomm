@@ -204,7 +204,8 @@ HcclResult AlltoallvContinuousPipeline::PartitionSubStreamsAndNotifies(const std
     const std::vector<std::shared_ptr<LocalNotify>> &signalMainToSub,
     const std::vector<std::shared_ptr<LocalNotify>> &signalSubToMain)
 {
-    const u32 sdmaConcurrentNum = intraRankSize_ - 1;
+    constexpr u32 DEVICE_EIGHT = 8;
+    const u32 sdmaConcurrentNum = std::min(intraRankSize_ - 1, DEVICE_EIGHT);
     const u32 totalSubstreamSize = rdmaConcurrentNum_ + sdmaConcurrentNum;
     CHK_PRT_RET(subStreams.size() < totalSubstreamSize || signalMainToSub.size() < totalSubstreamSize ||
         signalSubToMain.size() < totalSubstreamSize,
@@ -251,7 +252,7 @@ HcclResult AlltoallvContinuousPipeline::PartitionSubStreamsAndNotifies(const std
 
 inline u32 AlltoallvContinuousPipeline::GetSdmaSubStreamIdx(const u32 remoteRank) const
 {
-    return remoteRank > intraRankId_ ? remoteRank - 1 : remoteRank;
+    return (remoteRank > intraRankId_ ? remoteRank - 1 : remoteRank) % sdmaSubStreams_.size();
 }
 
 inline u64 AlltoallvContinuousPipeline::GetLocalSendCountOfRank(const u32 targetRank) const
