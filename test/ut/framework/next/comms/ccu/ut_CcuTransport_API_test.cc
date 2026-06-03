@@ -73,21 +73,21 @@ protected:
         }
     }
 
-    CommMemInfo BuildMemInfo(u64 addr, u64 size, const std::string &tag = "",
+    CommMemInfo BuildCommMemInfo(u64 addr, u64 size, const std::string &tag = "",
         CommMemType type = CommMemType{})
     {
         auto buffer = std::make_shared<Hccl::Buffer>(addr, size);
         auto locBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer, rdmaHandle_);
         locBuffers_.push_back(locBuffer);
-        CommMemInfo memInfo{};
-        memInfo.mem.addr = (void*)addr;
-        memInfo.mem.size = (uint64_t)size;
-        memInfo.bufferHandle = static_cast<void*>(locBuffer.get());
+        CommMemInfo commMemInfo{};
+        commMemInfo.mem.addr = (void*)addr;
+        commMemInfo.mem.size = (uint64_t)size;
+        commMemInfo.bufferHandle = static_cast<void*>(locBuffer.get());
         if (!tag.empty()) {
-            strncpy_s(memInfo.memTag, sizeof(memInfo.memTag), tag.c_str(), tag.size());
+            strncpy_s(commMemInfo.memTag, sizeof(commMemInfo.memTag), tag.c_str(), tag.size());
         }
-        memInfo.mem.type = type;
-        return memInfo;
+        commMemInfo.mem.type = type;
+        return commMemInfo;
     }
 
     Hccl::Socket *fakeSocket_;
@@ -95,12 +95,12 @@ protected:
     std::vector<std::shared_ptr<Hccl::LocalUbRmaBuffer>> locBuffers_;
 };
 
-TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(CcuTransportTest, ut_CcuTransport_GetRemoteMems_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    auto memInfo0 = BuildMemInfo(0x100, 0x100);
-    auto memInfo1 = BuildMemInfo(0x101, 0x101, "buffer1", CommMemType::COMM_MEM_TYPE_DEVICE);
-    std::vector<CommMemInfo*> memInfos{&memInfo0, &memInfo1};
-    void **memHandles = reinterpret_cast<void**>(memInfos.data());
+    auto commMemInfo0 = BuildCommMemInfo(0x100, 0x100);
+    auto commMemInfo1 = BuildCommMemInfo(0x101, 0x101, "buffer1", CommMemType::COMM_MEM_TYPE_DEVICE);
+    std::vector<CommMemInfo*> commMemInfos{&commMemInfo0, &commMemInfo1};
+    void **memHandles = reinterpret_cast<void**>(commMemInfos.data());
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{};
     HcclResult ret = hcomm::BuildBufferInfos(memHandles, 2, bufferInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -116,17 +116,17 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_Ret
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     CommMem *remoteMems;
-    char **memTags;
+    char **memInfos;
     u32 memNum;
-    ret = ccuTransport->GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+    ret = ccuTransport->GetRemoteMems(&memNum, &remoteMems, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(std::string(memTags[0]), "buffer1");
-    EXPECT_EQ(remoteMems[0].type, CommMemType::COMM_MEM_TYPE_DEVICE);
-    EXPECT_EQ(remoteMems[0].addr, (void *)0x101);
-    EXPECT_EQ(remoteMems[0].size, (uint64_t)0x101);
+    EXPECT_EQ(std::string(memInfos[1]), "buffer1");
+    EXPECT_EQ(remoteMems[1].type, CommMemType::COMM_MEM_TYPE_DEVICE);
+    EXPECT_EQ(remoteMems[1].addr, (void *)0x101);
+    EXPECT_EQ(remoteMems[1].size, (uint64_t)0x101);
 }
 
-TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
+TEST_F(CcuTransportTest, ut_CcuCreateTransport_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
 {
     std::unique_ptr<hcomm::CcuTransport> ccuTransport{};
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{};
@@ -136,7 +136,7 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_bufferNumIs0_Expe
 
 TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    auto memInfo0 = BuildMemInfo(0x100, 0x100);
+    auto memInfo0 = BuildCommMemInfo(0x100, 0x100);
     std::vector<CommMemInfo*> memInfos{&memInfo0};
     void **memHandles = reinterpret_cast<void**>(memInfos.data());
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{};
@@ -150,7 +150,7 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
     hcomm::CcuTransport::CclBufferInfo bufInfo1{};
     bufInfo1.addr = (uint64_t)0x101;
     bufInfo1.size = (uint32_t)0x101;
-    memcpy_s(bufInfo1.memTag.data(), bufInfo1.memTag.size(), "buffer1", strlen("buffer1"));
+    memcpy_s(bufInfo1.memInfo.data(), bufInfo1.memInfo.size(), "buffer1", strlen("buffer1"));
     bufInfo1.type = CommMemType::COMM_MEM_TYPE_DEVICE;
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{bufInfo1};
 
@@ -163,7 +163,7 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
     ret = ccuTransport->UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::CcuTransport::CclBufferInfo &bufInfo = ccuTransport->locBufferInfos_[1];
-    const char* src = bufInfo.memTag.data();
+    const char* src = bufInfo.memInfo.data();
     std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
     EXPECT_EQ(tagCopy, "buffer1");
     EXPECT_EQ(bufInfo.type, CommMemType::COMM_MEM_TYPE_DEVICE);
@@ -224,6 +224,5 @@ TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_Normal_Expect_Ret
 
     HcclResult ret = ccuTransport->BufferInfoUnpack(binaryStream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(ccuTransport->rmtBufferInfos_.size(), rmtBufferNum);
-    EXPECT_EQ(ccuTransport->remoteUserMemTag_.size(), rmtBufferNum);
+    EXPECT_EQ(ccuTransport->rmtbufferVec_.size(), rmtBufferNum);
 }
