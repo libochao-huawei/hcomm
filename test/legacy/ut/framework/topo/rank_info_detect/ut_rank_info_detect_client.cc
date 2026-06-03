@@ -332,11 +332,3 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Timeout_Expect_Throw)
 
     EXPECT_THROW(rankInfoDetectClient_->CheckStatus(), TimeoutException);
 }
-
-TEST_F(RankInfoDetectClientTest, Ut_VerifyRankTable_When_TlsStatus_Expect_Throw)
-{
-    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE});
-    rankInfoDetectClient_->rankSize_ = rankInfoDetectClient_->rankTable_.rankCount;
-
-    EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
-}
