@@ -250,26 +250,24 @@ TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)
     BinaryStream binaryStream;
     localRankTable.GetBinStream(true, binaryStream);
     binaryStream << rankInfoDetectClient_->currentStep_;
-    std:string temp = "";
+    std::string temp = "";
     binaryStream << temp;
 
     // 字节流转换为vector<char>格式
     vector<char> rankInfoMsg;
     binaryStream.Dump(rankInfoMsg);
 
-    // 取rankInfoMsg的size
-    u32 rankInfoSize = rankInfoMsg.size();
-    u64 expectLen = rankInfoSize;
-
-    // 取rankInfoMsg的data() （const char *）
     MOCKER(aclrtMallocHostWithCfg).stubs().will(returnValue(1));
-    MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue((void*)rankInfoMsg.data()));
+    std::vector<char> hostAlloc(MAX_BUFFER_LEN);
+    MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(hostAlloc.data())));
+    MOCKER(HrtFreeHost).stubs().with(any()).will(ignoreReturnValue());
     void *msg = rankInfoMsg.data();
     u64 msgLen = rankInfoMsg.size();
-    u64 &revMsgLen = msgLen;
+    u64 revMsgLenOut = msgLen;
+    u64 &revMsgLen = revMsgLenOut;
     MOCKER_CPP(&SocketAgent::RecvMsg)
             .stubs()
-            .with(outBound(msg), outBound(revMsgLen))
+            .with(outBoundP(msg, msgLen), outBound(revMsgLen))
             .will(returnValue(true));
 
     MOCKER_CPP(&RankInfoDetectClient::VerifyRankTable).stubs().will(ignoreReturnValue());
