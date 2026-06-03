@@ -97,7 +97,7 @@ int StubRaGetTpAttrAsyncUboeSl789Legacy(void *ctxHandle, uint64_t tpHandle, uint
     return 0;
 }
 
-int StubRaGetHccnCfgDscpLegacy(void *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
+int StubRaGetHccnCfgDscpLegacy(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
     (void)info;
     (void)key;
