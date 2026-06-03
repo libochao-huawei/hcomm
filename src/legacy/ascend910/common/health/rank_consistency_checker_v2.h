@@ -16,8 +16,6 @@
 #include <mutex>
 #include <vector>
 #include <hccl/hccl_types.h>
-#include "log.h"
-
 namespace hccl {
 constexpr u32 CANN_VERSION_MAX_LEN = 50;  // CANN版本最大长度
 static constexpr u32 MAX_CRC_LEN_V2 = 16; // A5最大CRC个数
@@ -35,6 +33,7 @@ struct CheckFrameV2 {
     u32 rankTableCrcNum = 0;                          // ranktable CRC个数
     u32 rankTableCrcArray[MAX_CRC_LEN_V2] = {0};      // ranktable CRC数组
     char version[CANN_VERSION_MAX_LEN + 1] = {0};
+    s32 engine = -1;                                  // 引擎类型
 };
 
 class RankConsistencyCheckerV2 {
@@ -42,6 +41,7 @@ public:
     ~RankConsistencyCheckerV2();
     static RankConsistencyCheckerV2& GetInstance(const s32 &deviceLogicId);
     
+    HcclResult RecordEngineV2(s32 engine);
     HcclResult RecordEnvVarCrcV2(u64 buffSize);
     HcclResult RecordRankTableCrcV2(u32 crc);
     HcclResult RecordSubCommParaV2(const std::string &parentIdentifier, uint32_t rankNum,
@@ -62,6 +62,7 @@ private:
         const std::string &categoryLabel,
         const std::string &countLabel);
     HcclResult CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
+    HcclResult CompareEngineV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
     
     // cann 版本号
     char cannVersion_[CANN_VERSION_MAX_LEN + 1] = {0};
@@ -69,6 +70,7 @@ private:
     std::vector<CrcEntryV2> rankTableCrcsV2_;     // A5 ranktable CRC（带名称，用于精确报错）
     std::vector<CrcEntryV2> subCommParaCrcsV2_;   // A5子通信域参数CRC（带名称，用于精确报错）
     bool inconsistentCheckFirstDone_ = false; // 是否完成首次校验
+    s32 engine_ = -1;
     
 };
 }
