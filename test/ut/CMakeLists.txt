@@ -42,6 +42,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/debug/profiling
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/debug/profiling/inc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/debug/profiling/inc/host
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/launch_aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common
 
     # src/framework 目录下头文件 (legacy/ascend910)
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/
@@ -53,7 +55,6 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/cluster_maintenance/snapshot
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/cluster_maintenance/aclgraph
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src
-    ${HCOMM_DIR}/src/legacy/ascend910/common/launch_aicpu
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/task
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/topo
@@ -81,8 +82,6 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/unique/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/buffer_manager
-    ${HCOMM_DIR}/src/legacy/ascend910/common
-    ${HCOMM_DIR}src/legacy/ascend910/common/launch_aicpu
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/unfold_cache
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/ping_mesh/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc/

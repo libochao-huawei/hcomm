@@ -51,9 +51,6 @@ target_include_directories(hccl_plf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/task
     ${CMAKE_CURRENT_SOURCE_DIR}/common/
     ${CMAKE_CURRENT_SOURCE_DIR}/common/buffer_manager
-    ${HCOMM_DIR}/src/common
-    ${HCOMM_DIR}/src/common/launch_aicpu
-    ${HCOMM_DIR}/src/algorithm/pub_inc
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unfold_cache
     ${CMAKE_CURRENT_SOURCE_DIR}/common/p2p_mgmt
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unique
@@ -85,7 +82,6 @@ target_include_directories(hccl_plf PRIVATE
     ${HCOMM_DIR}/pkg_inc/hccl
 
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
-    ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/aicpu/
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/inner
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
@@ -104,7 +100,6 @@ target_include_directories(hccl_plf PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/common
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/resource/buffer
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/pub_inc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/common
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/resource
     ${HCOMM_DIR}/src/legacy/ascend950/framework/topo
     ${HCOMM_DIR}/src/legacy/ascend950/framework/topo/new_topo_builder/common

@@ -7,27 +7,19 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-add_subdirectory(health)
-add_subdirectory(debug/profiling)
-add_subdirectory(debug/config)
-add_subdirectory(stream)
-add_subdirectory(launch_device)
-add_subdirectory(error_code)
 
-if(TARGET hcomm)
-    target_include_directories(hcomm PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/health
-        ${CMAKE_CURRENT_SOURCE_DIR}/stream
-        ${CMAKE_CURRENT_SOURCE_DIR}/launch_device
-        ${CMAKE_CURRENT_SOURCE_DIR}/error_manager
-        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu
+
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu/launch_aicpu.cc
     )
 endif()
 
-if(TARGET ccl_kernel)
-    target_include_directories(ccl_kernel PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/debug/
-        ${CMAKE_CURRENT_SOURCE_DIR}/launch_device
+if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu/launch_aicpu.cc
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu
     )
 endif()
