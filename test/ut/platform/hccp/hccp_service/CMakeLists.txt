@@ -45,7 +45,6 @@ target_include_directories(hccp_utest PRIVATE
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/inc
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/host_lite
-    ${RDMA_CORE_INCLUDE_DIR}
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/rdma-core/providers/hns
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/rdma-core/include
 )
@@ -75,6 +74,7 @@ target_link_options(hccp_utest PRIVATE
 
 target_link_libraries(hccp_utest PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core>
     -lrt
     -pthread
     -lgcov

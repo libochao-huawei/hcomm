@@ -108,7 +108,6 @@ set(UT_COMMON_INCLUDE_LIST
     # hccp (moved to base_comm/resources)
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
-    ${RDMA_CORE_INCLUDE_DIR}
 
     # hccl/algorithm 目录下头文件 (legacy/ascend910)
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/pub_inc

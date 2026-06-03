@@ -107,7 +107,6 @@ target_include_directories(hccl_alg PRIVATE
     # hccp (base_comm/resources)
     ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network/
     ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/
-    ${RDMA_CORE_INCLUDE_DIR}/
 )
 
 if(BUILD_OPEN_PROJECT)
