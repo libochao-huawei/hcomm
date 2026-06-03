@@ -47,7 +47,7 @@ public:
     {
         RestoreEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
         RestoreEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
-        Hccl::EnvConfig::GetInstance().Parse();
+        // Do not Parse() here: restoring invalid HCCL_DFS_CONFIG then Parse() throws and aborts the process.
     }
 
 private:
