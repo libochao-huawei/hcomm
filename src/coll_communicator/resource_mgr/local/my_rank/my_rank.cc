@@ -15,7 +15,6 @@
 #include "hccl_res.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
 #include "hcclCommDfx.h"
-#include "env_config/env_config.h"
 #include "channel_process.h"
 #include "dlprof_function.h"
 #include "config_log.h"
