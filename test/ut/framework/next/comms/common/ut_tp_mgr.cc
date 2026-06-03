@@ -813,6 +813,9 @@ TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpAttr_UseCntDecrement_Expect_Success)
     EXPECT_EQ(mgr.ReleaseTpAttr(tpInfo.tpHandle, tpAttrInfo), HCCL_SUCCESS);
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ece532e0 (ut覆盖率)
 
 TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpInfo_QosKeyMismatch_Expect_NotFound)
 {
@@ -847,7 +850,10 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_ThreeTp_Qos2_Expect_GroupedFirstQos)
     EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
     EXPECT_NE(tpInfo.tpHandle, 0U);
 }
+<<<<<<< HEAD
 =======
 >>>>>>> 84b3c665 (ut覆盖率不够)
 =======
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+>>>>>>> ece532e0 (ut覆盖率)

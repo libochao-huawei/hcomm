@@ -189,6 +189,7 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
     comp.devPhyId_ = 0U;
     comp.devLogicId_ = 0;
 
+<<<<<<< HEAD
     const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo = std::make_pair(0x88888888ULL, 1U);
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo).stubs().will(returnValue(fakeTokenInfo));
     MOCKER(HrtRaUbLocalMemReg).stubs().will(returnValue(HrtRaUbLocalMemRegOutParam()));
@@ -196,6 +197,10 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
     auto buffer = std::make_shared<Hccl::Buffer>(0x1000ULL, 4096ULL);
     comp.ccuRmaBufferMap_[dieId] =
         std::make_unique<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
+=======
+    auto buffer = std::make_shared<Hccl::Buffer>(0x1000ULL, 4096ULL);
+    comp.ccuRmaBufferMap_[dieId] = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
+>>>>>>> ece532e0 (ut覆盖率)
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0xABCDULL;
