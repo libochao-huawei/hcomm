@@ -189,6 +189,7 @@ HcclResult ExchangeInfoMgr::BatchExchangeFixedData(
     const u8 *sendData, u32 sendLen,
     u8 *recvData, u32 recvLen)
 {
+    CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
     // SERVER先Recv/CLIENT先Send
     for (u32 i = 0; i < sockets.size(); i++) {
         if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
