@@ -31,6 +31,7 @@ target_compile_options(legacy_alg_ccu_2d_testcase PRIVATE
 
 target_link_libraries(legacy_alg_ccu_2d_testcase PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core>
     hccl_alg_analyzer_legacy
     hccl_orion_alg_test
     hccl_alg_adaption_v2

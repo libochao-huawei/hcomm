@@ -39,6 +39,7 @@ target_compile_options(executor_pipeline_hccl_test PRIVATE
 
 target_link_libraries(executor_pipeline_hccl_test PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core>
     hccl_alg_analyzer
     hccl_alg_adaption
     hccl_alg_test

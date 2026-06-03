@@ -34,6 +34,7 @@ add_dependencies(legacy_alg_ccu_reduce hccl_alg_analyzer_legacy hccl_orion_alg_t
 
 target_link_libraries(legacy_alg_ccu_reduce PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core>
     hccl_alg_analyzer_legacy
     hccl_orion_alg_test
     hccl_alg_adaption_v2
