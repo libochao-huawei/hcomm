@@ -322,6 +322,10 @@ HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
     CHK_PTR_NULL(hcclCommDfxLite);
     Hccl::MirrorTaskManagerLite* mirrorTaskMgrLite = hcclCommDfxLite->GetMirrorTaskManagerLite();
     CHK_PTR_NULL(mirrorTaskMgrLite);
+    if (*mirrorTaskMgrLite->GetCurrDfxOpInfo() == nullptr) {
+        HCCL_WARNING("[AicpuIndopProcess::ProfilingReportDeviceOp] Get opInfo is nullptr!");
+        return HCCL_E_INTERNAL;
+    }
     CHK_RET(AicpuIndopProcess::ReportAllTasks(group));
     EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgrLite->GetCurrDfxOpInfo()),
         return HCCL_E_INTERNAL);
