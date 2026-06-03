@@ -324,6 +324,7 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentA
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
+<<<<<<< HEAD
 TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Timeout_Expect_Throw)
 {
     EnvSocketConfig fakeEnvSocketConfig;
@@ -334,3 +335,5 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Timeout_Expect_Throw)
 
     EXPECT_THROW(rankInfoDetectClient_->CheckStatus(), TimeoutException);
 }
+=======
+>>>>>>> bd9af7f1 (ut)
