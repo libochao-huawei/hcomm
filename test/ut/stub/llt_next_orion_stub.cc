@@ -21,6 +21,7 @@
 #include "topo_info.h"
 #include "rank_graph_builder.h"
 #include "orion_adapter_rts.h"
+#include "orion_adapter_hccp.h"
 #include "net_instance.h"
 #include "host_socket_handle_manager.h"
 #include "hccp_hdc_manager.h"
@@ -42,7 +43,9 @@
 #include "local_rdma_rma_buffer.h"
 #include "local_rma_buffer.h"
 #include "local_rdma_rma_buffer_manager.h"
-
+#include "rmt_rma_buffer_lite.h"
+#include "rts_notify.h"
+#include "rdma_local_notify.h"
 #include "rdma_handle_manager.h"
 #include "socket/socket.h"
 #include "sal.h"
@@ -61,9 +64,10 @@
 #include "host_socket_handle_manager.h"
 #include "base_config.h"
 
-#include "../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
+#include "../../../legacy/ascend950/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
+#include "../../../base_comm/resources/endpoint_pairs/channels/aicpu/device/aicpu_channel_process.h"
 
-#include "../../../legacy/framework/resource_manager/socket/socket_manager.h"
+#include "../../../legacy/ascend950/framework/resource_manager/socket/socket_manager.h"
 
 #include "tp_manager.h"
 #include "inner_net_dev_manager.h"
@@ -76,9 +80,9 @@
 #include "host_socket_handle_manager.h"
 
 #include "ccu_context_mgr_imp.h"
-#include "../../../legacy/unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
+#include "../../../legacy/ascend950/unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_component.h"
-#include "../../../legacy/unified_platform/ccu/ccu_device/ccu_res_specs.h"
+#include "../../../legacy/ascend950/unified_platform/ccu/ccu_device/ccu_res_specs.h"
 #include "task_info.h"
 
 #include <sstream>
@@ -94,21 +98,21 @@
 #include "acl/error_codes/rt_error_codes.h"
 
 #include "dispatcher_task_types.h"
-#include "../../../legacy/framework/dfx/common/task_info.h"
-#include "../../../legacy/framework/dfx/common/mirror_task_manager.h"
-#include "../../../legacy/framework/dfx/common/global_mirror_tasks.h"
-#include "../../../legacy/framework/dfx/common/circular_queue.h"
-#include "../../../legacy/framework/dfx/profiling/profiling_handler.h"
-#include "../../../legacy/framework/dfx/profiling/profiling_reporter.h"
-#include "../../../legacy/framework/dfx/aicpu/profiling/profiling_handler_lite.h"
-#include "../../../legacy/framework/dfx/aicpu/profiling/profiling_reporter_lite.h"
-#include "../../../legacy/unified_platform/common/dlhal_function_v2.h"
-#include "../../../legacy/framework/dfx/profiling/dlprof_function.h"
-#include "../../../legacy/framework/communicator/aicpu/daemon/aicpu_daemon_service.h"
-#include "../../../legacy/framework/dfx/task_exception/task_exception_handler.h"
-#include "../../../legacy/unified_platform/external_system/orion_adapter_hccp.h"
-#include "../../../legacy/include/hccl_communicator.h"
-#include "../../../legacy/unified_platform/ccu/ccu_microcode/ccu_assist.h"
+#include "../../../legacy/ascend950/framework/dfx/common/task_info.h"
+#include "../../../legacy/ascend950/framework/dfx/common/mirror_task_manager.h"
+#include "../../../legacy/ascend950/framework/dfx/common/global_mirror_tasks.h"
+#include "../../../legacy/ascend950/framework/dfx/common/circular_queue.h"
+#include "../../../legacy/ascend950/framework/dfx/profiling/profiling_handler.h"
+#include "../../../legacy/ascend950/framework/dfx/profiling/profiling_reporter.h"
+#include "../../../legacy/ascend950/framework/dfx/aicpu/profiling/profiling_handler_lite.h"
+#include "../../../legacy/ascend950/framework/dfx/aicpu/profiling/profiling_reporter_lite.h"
+#include "../../../legacy/ascend950/unified_platform/common/dlhal_function_v2.h"
+#include "../../../legacy/ascend950/framework/dfx/profiling/dlprof_function.h"
+#include "../../../legacy/ascend950/framework/communicator/aicpu/daemon/aicpu_daemon_service.h"
+#include "../../../legacy/ascend950/framework/dfx/task_exception/task_exception_handler.h"
+#include "../../../legacy/ascend950/unified_platform/external_system/orion_adapter_hccp.h"
+#include "../../../legacy/ascend950/include/hccl_communicator.h"
+#include "../../../legacy/ascend950/unified_platform/ccu/ccu_microcode/ccu_assist.h"
 #include "acl/acl_rt.h"
 
 #include "p2p_transport.h"
@@ -119,8 +123,12 @@
 #include "ipc_local_notify.h"
 #include "host_ub_connection.h"
 #include "urma_api.h"
+#include "coll_operator.h"
+#include "coll_operator_check.h"
 
 namespace Hccl {
+
+constexpr u32 LLT_UB_WQE_NUM_PER_SQE = 4;
 
 void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
@@ -131,6 +139,15 @@ void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
 {
     memset(dst, 0, count);
     return;
+}
+
+void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind)
+{
+    (void)kind;
+    if (dst == nullptr || src == nullptr || count > destMax) {
+        return;
+    }
+    (void)memcpy_s(dst, destMax, src, count);
 }
 
 RdmaHandleManager::RdmaHandleManager()
@@ -228,6 +245,15 @@ void Socket::RecvAsync(u8 *recvBuf, u32 size)
 void Socket::Listen()
 {
     std::cout << "Socket Server, listen." << std::endl;
+}
+
+bool Socket::Listen(u32 &port)
+{
+    if (port == 0) {
+        port = 43210;
+    }
+    std::cout << "Socket Server, listen on port" << port << std::endl;
+    return true;
 }
 
 void Socket::Connect()
@@ -545,6 +571,26 @@ std::vector<char> DevUbConnection::GetUniqueId() const
 
 void DevUbConnection::Connect()
 {
+}
+
+void DevUbConnection::SetSqContextInfo(SqContext &sq)
+{
+    sq.contextInfo.ubJfs.jfsID = jettyId;
+    sq.contextInfo.ubJfs.dbVa = dbAddr;
+    sq.contextInfo.ubJfs.sqVa = sqBuffVa;
+    sq.contextInfo.ubJfs.sqDepth = sqDepth * LLT_UB_WQE_NUM_PER_SQE;
+    sq.contextInfo.ubJfs.tpID = tpn;
+    (void)memcpy_s(sq.contextInfo.ubJfs.remoteEID, sizeof(sq.contextInfo.ubJfs.remoteEID),
+        rmtEid.raw, sizeof(sq.contextInfo.ubJfs.remoteEID));
+}
+
+void DevUbConnection::SetCqContextInfo(CqContext &cq)
+{
+    cq.contextInfo.ubJfc.jfcID = cqInfo_.id;
+    cq.contextInfo.ubJfc.scqVa = cqInfo_.va;
+    cq.contextInfo.ubJfc.cqeSize = cqInfo_.cqeSize;
+    cq.contextInfo.ubJfc.cqDepth = cqInfo_.cqDepth;
+    cq.contextInfo.ubJfc.dbVa = cqInfo_.swdbAddr;
 }
 
 inline uint32_t GetRandomNum()
@@ -1188,7 +1234,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemTransport::CheckSocketStatus()
+HcclResult UbMemTransport::CheckSocketStatus(std::string socketOpreator)
 {
     return HCCL_SUCCESS;
 }
@@ -1385,6 +1431,15 @@ SocketManager::SocketManager(u32 localRank, u32 devicePhyId, u32 deviceLogicId, 
 void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
 }
+
+void SocketManager::ServerListen(const SocketConfig &socketConfig)
+{
+}
+
+void SocketManager::ConnectSockets(const SocketConfig &socketConfig)
+{
+}
+
 
 void SocketManager::BatchCreateSockets(const SocketConfig &socketConfig)
 {
@@ -1776,7 +1831,7 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
 {
 }
 
-void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const
+void ProfilingHandler::CallAdditionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const
 {
 }
 
@@ -1813,21 +1868,19 @@ void ProfilingHandler::ReportAclApi(
 {
 }
 
-void ProfilingHandler::ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId)
+void ProfilingHandler::ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId, bool cachedReq)
 {
+    (void)cachedReq;
 }
 
-void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId)
+void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId, bool cachedReq)
 {
+    (void)cachedReq;
 }
 
-void ProfilingHandler::ReportHcclOpApi(
-    uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId) const
+void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId, bool cachedReq)
 {
-}
-
-void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId)
-{
+    (void)cachedReq;
 }
 
 void ProfilingHandler::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void *data, uint32_t len) const
@@ -1855,7 +1908,7 @@ void ProfilingHandler::ReportStoragedCompactInfo()
 {
 }
 
-void ProfilingHandler::ReportMc2AddtionInfo()
+void ProfilingHandler::ReportMc2AdditionInfo()
 {
 }
 
@@ -1879,7 +1932,7 @@ void ProfilingHandler::CallProfRegHcclOpApi() const
 {
 }
 
-void ProfilingHandler::StartAddtionInfoSubscribe()
+void ProfilingHandler::StartAdditionInfoSubscribe()
 {
 }
 
@@ -1887,7 +1940,7 @@ void ProfilingHandler::ReportStoragedAdditionInfo()
 {
 }
 
-void ProfilingHandler::StartL2Subscribe()
+void ProfilingHandler::StartCcuSubscribe()
 {
 }
 
@@ -1913,11 +1966,6 @@ bool ProfilingHandler::GetHcclL1State() const
     return false;
 }
 
-bool ProfilingHandler::GetHcclL2State() const
-{
-    return false;
-}
-
 uint64_t ProfilingHandler::GetProfHashId(const char *name, uint32_t len) const
 {
     return 0;
@@ -1933,7 +1981,7 @@ void ProfilingHandler::ReportHcclMC2CommInfo(const u32 kfcStreamId, const std::v
     const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm)
 {
 }
-void ProfilingHandler::ReportMc2AddtionInfo(uint64_t timeStamp, const void *data, int len)
+void ProfilingHandler::ReportMc2AdditionInfo(uint64_t timeStamp, const void *data, int len)
 {
 }
 ProfilingHandlerLite ProfilingHandlerLite::instance_;
@@ -2229,12 +2277,72 @@ HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
     return HCCL_SUCCESS;
 }
 
-std::string CollOpToString(const BaseCollOperator &collOp)
+DevCapability::DevCapability()
 {
-    return "collOp";
 }
 
-std::shared_ptr<TaskInfo> MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
+DevCapability &DevCapability::GetInstance()
+{
+    static DevCapability instance;
+    return instance;
+}
+
+void DevCapability::Init(DevType givenDevType)
+{
+}
+
+void DevCapability::Reset()
+{
+}
+
+RmtRmaBufferLite::RmtRmaBufferLite(u64 addr, u64 size)
+    : type_(RmaType::RDMA), addr_(addr), size_(size)
+{
+}
+
+RmtRmaBufferLite::RmtRmaBufferLite(u64 addr, u64 size, u32 rkey)
+    : type_(RmaType::RDMA), addr_(addr), size_(size), rkey_(rkey)
+{
+}
+
+RmtRmaBufferLite::RmtRmaBufferLite(u64 addr, u64 size, u32 tokenId, u32 tokenValue)
+    : type_(RmaType::UB), addr_(addr), size_(size), tokenId_(tokenId), tokenValue_(tokenValue)
+{
+}
+
+std::string RmtRmaBufferLite::Describe() const
+{
+    return "RmtRmaBufferLite";
+}
+
+RdmaLocalNotify::RdmaLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
+    : BaseLocalNotify(RmaType::RDMA, devUsed), rdmaHandle(rdmaHandle)
+{
+}
+
+RdmaLocalNotify::~RdmaLocalNotify()
+{
+}
+
+void RdmaLocalNotify::Wait(const Stream &stream, u32 timeout) const
+{
+}
+
+void RdmaLocalNotify::Post(const Stream &stream) const
+{
+}
+
+string RdmaLocalNotify::Describe() const
+{
+    return "RdmaLocalNotify";
+}
+
+std::unique_ptr<Serializable> RdmaLocalNotify::GetExchangeDto()
+{
+    return nullptr;
+}
+
+std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
 {
     return nullptr;
 }
@@ -2249,6 +2357,18 @@ HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAva
     return HCCL_SUCCESS;
 }
 
+CollOperatorDef CollOperatorDef::GetPackedData(std::vector<char> &byteVector)
+{
+    (void)byteVector;
+    return {};
+}
+
+void CheckCollOperator(const CollOperator &localOpData, const CollOperator &remoteOpData)
+{
+    (void)localOpData;
+    (void)remoteOpData;
+}
+
 HcclResult HcclCommunicator::GetRankGraphV2(void *&rankGraph)
 {
     return HCCL_SUCCESS;
@@ -2259,6 +2379,33 @@ HcclResult HcclCommunicator::GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap)
     static auto emptyMap = std::make_shared<std::unordered_map<u32, std::unordered_map<IpAddress, u32>>>();
     rankIpPortMap = emptyMap;
     return HCCL_SUCCESS;
+}
+
+void HrtFree(void *devPtr)
+{
+}
+
+void HrtMemsetV2(void *dst, size_t destMax, int32_t value, size_t count)
+{
+}
+
+HcclResult HrtRaNdaQpCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, NdaQpInfo *qpInfo, QpHandle *qpHandle)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaCqCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, CqHandle *cqHandle)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaNdaCqDestroy(RdmaHandle rdmaHandle, CqHandle cqHandle)
+{
+    return HCCL_SUCCESS;
+}
+
+void HrtRaQpDestroy(QpHandle qpHandle)
+{
 }
 } // namespace Hccl
 
@@ -2326,6 +2473,11 @@ CommunicatorImplLite *CommunicatorImplLiteMgr::Get(const u32 commIdIndex)
 std::vector<CommunicatorImplLite *> CommunicatorImplLiteMgr::GetAll()
 {
     return {};
+}
+
+std::string CollOpToString(const BaseCollOperator &collOp)
+{
+    return "collOp";
 }
 
 RtNotify_t HrtIpcOpenNotifyWithFlag(const char_t *name, uint32_t flags)
@@ -2487,15 +2639,6 @@ void P2PTransport::WriteReduce(
     const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn, const Stream &stream)
 {
     return;
-}
-
-DevCapability::DevCapability()
-{
-}
-DevCapability &DevCapability::GetInstance()
-{
-    static DevCapability devCapability;
-    return devCapability;
 }
 
 P2PConnection::P2PConnection(Socket *socket, const std::string &tag) : RmaConnection(socket, RmaConnType::P2P)

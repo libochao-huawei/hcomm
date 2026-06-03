@@ -75,7 +75,7 @@ typedef struct HcclCommConfigDef {
   - 0：使用默认算子展开模式，针对**Ascend 950PR/Ascend 950DT**，通信算子默认在CCU展开，使用调度模式。
   - 2：通信算子在AI CPU计算单元展开。
 
-    该配置项仅支持Broadcast、Reduce、AllReduce、Scatter、ReduceScatter、ReduceScatterV、AllGather、AllGatherV、AlltoAll、AlltoAllV、AlltoAllVC算子。
+    该配置项支持Broadcast、Reduce、AllReduce、Scatter、ReduceScatter、ReduceScatterV、AllGather、AllGatherV、AlltoAll、AlltoAllV、AlltoAllVC、Send、Recv、BatchSendRecv算子。
 
     图模式（Ascend IR）或者图捕获（aclgraph）场景，当通信算法采用AI CPU模式时，单卡上的并发图数量不能超过6个，否则可能会因AI CPU核被占满而导致通信阻塞。
 
@@ -88,8 +88,6 @@ typedef struct HcclCommConfigDef {
       - 针对Reduce、AllReduce、ReduceScatter算子，数据类型支持int8、int16、int32、float16、float32、bfp16。
 
     - 该配置项下，AllReduce、ReduceScatter、AllGather、AlltoAll算子支持控核能力，建议业务根据实际使用场景中计算算子与通信算子的并发情况进行Vector Core核数的配置。
-
-      若业务编译分配的Vector Core核数无法满足算法编排的要求，HCCL会报错并提示所需要的最低Vector Core核数。
 
   - 4：代表通信算子在Device侧的Vector Core计算单元展开，但不会随着数据量的变化进行模式切换，始终使用Vector Core计算，如果不满足Vector Core的运行条件，会报错退出。
     - Ascend 950PR不支持此配置。
@@ -125,7 +123,8 @@ typedef struct HcclCommConfigDef {
     - 该配置项下，集合通信支持控核能力，建议业务根据实际使用场景中计算算子与通信算子的并发情况进行Vector Core核数的配置。
 
       - 针对Broadcast算子，建议至少分配ranksize个vector核。
-      - 针对AllReduce、ReduceScatter、AllGather、AlltoAll、AlltoAllV、AlltoAllVC算子，建议最少分配max\(2, ranksize/20 + 1\)个vector核。
+      - 针对AllGather、非确定性ReduceScatter算子，建议最少分配max\(2, ceil\(ranksize/20\)\)个vector核。
+      - 针对AllReduce、确定性ReduceScatter、AlltoAll、AlltoAllV、AlltoAllVC算子，建议最少分配max\(2, ceil\(ranksize/20\)\)个vector核，且核数需为偶数（若计算结果为奇数则向上取整至下一个偶数）。
 
       若业务编译分配的Vector Core核数无法满足算法编排的要求，HCCL会报错并提示所需要的最低Vector Core核数。
 
@@ -219,7 +218,7 @@ typedef struct HcclCommConfigDef {
     hcclAlgo = "allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R"
     ```
 
-- **hcclRetryEnable**：用于配置是否开启HCCL算子的重执行特性。重执行是指当通信算子执行报 SDMA 或者RDMA CQE类型的错误时，HCCL会尝试重新执行此通信算子。**仅支持在Atlas A3 训练系列产品/Atlas A3 推理系列产品上使用。**
+- **hcclRetryEnable**：用于配置是否开启HCCL算子的重执行特性。重执行是指当通信算子执行报SDMA或者RDMA CQE类型的错误时，HCCL会尝试重新执行此通信算子。**仅支持在Atlas A3 训练系列产品/Atlas A3 推理系列产品上使用。**
 
   通过此参数，开发者可以在Server间、超节点间两个物理层级的通信域中配置是否开启重执行特性，每个层级支持配置两种状态：开启或关闭，使用约束请参见环境变量[HCCL_OP_RETRY_ENABLE](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_OP_RETRY_ENABLE.md)，配置方式为：`hcclRetryEnable = "L1:1, L2:0"`，参数取值如下。
 
@@ -244,7 +243,7 @@ typedef struct HcclCommConfigDef {
 
 - 通信域级别（HcclCommConfig）高于环境变量。
 
-  若在 HcclCommConfig中配置了某参数，则以该配置值为准。
+  若在HcclCommConfig中配置了某参数，则以该配置值为准。
 
 - 环境变量优先级次之。
 

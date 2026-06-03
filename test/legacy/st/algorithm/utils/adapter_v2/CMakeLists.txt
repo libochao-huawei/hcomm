@@ -12,15 +12,15 @@ set (include_list
 
     ${legacy_platform_include_list}
 
-    ${HCOMM_ROOT_PATH}/src/pub_inc
+    ${HCOMM_ROOT_PATH}/src/legacy/ascend910/pub_inc
     
     ${HCOMM_PLATFORM_INCLUDE_LIST}
 
     ${ASCEND_CANN_INCLUDE_LIST}
 
+    ${CMAKE_SOURCE_DIR}/test/legacy/depends/toolchain/
     // 第三方
     ${RDMA_CORE_INCLUDE_DIR}
-    ${THIRD_PARTY_PATH}/json/include
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 )
 
@@ -123,6 +123,7 @@ target_include_directories(hccl_alg_adaption_v2 PRIVATE
 )
 
 target_compile_definitions(hccl_alg_adaption_v2 PRIVATE
+    google=ascend_private
     -DOPEN_HCCL_TESTU
     -DHCCL_ALG_ANALYZER_DAVID
     _GLIBCXX_USE_CXX11_ABI=0
@@ -136,11 +137,12 @@ target_compile_options(hccl_alg_adaption_v2 PRIVATE
 )
 
 target_link_libraries(hccl_alg_adaption_v2 PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_orion_alg_test
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    ${THIRD_PARTY_PATH}/protobuf/lib64/libprotobuf.so
+    ascend_protobuf
     -lrt
     -ldl
 )

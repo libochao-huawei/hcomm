@@ -15,8 +15,19 @@
 #include "hcomm_res_defs.h"
 #include "channel_process.h"
 #include "endpoint_map.h"
+#include "orion_adpt_utils.h"
+#include "hccp_peer_manager.h"
+#include "rdma_handle_manager.h"
+#include "hccp_nda.h"
+#include "adapter_rts_common.h"
 
 using namespace hcomm;
+
+HcclResult StubServerSocketGetListenPort(Endpoint* /*endpoint*/, uint32_t* port)
+{
+    *port = 12345;
+    return HCCL_SUCCESS;
+}
 
 class HcommCAdptTest : public testing::Test {
 protected:
@@ -334,4 +345,76 @@ TEST_F(HcommCAdptTest, ut_HcommResMgrInit_MultiDevice_Expect_Success)
     HcommResult ret2 = HcommResMgrInit(1);
     EXPECT_EQ(ret1, HCCL_SUCCESS);
     EXPECT_EQ(ret2, HCCL_SUCCESS);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_PortNull_Expect_E_PTR)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    HcommResult ret = HcommEndpointGetListenPort(endpointHandle, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_HandleInvalid_Expect_E_NOT_FOUND)
+{
+    uint32_t port = 0;
+    HcommResult ret = HcommEndpointGetListenPort(nullptr, &port);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+}
+
+
+class StubEndpoint final : public Endpoint {
+public:
+    explicit StubEndpoint() : Endpoint(EndpointDesc{}) {}
+    HcclResult Init() override { return HCCL_SUCCESS; }
+    HcclResult ServerSocketListen(const uint32_t port) override { return HCCL_SUCCESS; }
+    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override { return HCCL_SUCCESS; }
+    HcclResult UnregisterMemory(void* memHandle) override { return HCCL_SUCCESS; }
+    HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override { return HCCL_SUCCESS; }
+    HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override { return HCCL_SUCCESS; }
+    HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override { return HCCL_SUCCESS; }
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override { return HCCL_SUCCESS; }
+};
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointGetListenPort_When_ServerSocketNotSupport_Expect_E_NOT_SUPPORT)
+{
+    uint32_t port = 0;
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    StubEndpoint stubEndpoint;
+
+    MOCKER_CPP(&HcommEndpointMap::GetEndpoint, Endpoint*(HcommEndpointMap::*)(EndpointHandle))
+        .stubs()
+        .will(returnValue(static_cast<Endpoint*>(&stubEndpoint)));
+
+    HcommResult ret = HcommEndpointGetListenPort(endpointHandle, &port);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(HcommCAdptTest, ut_HcommEndpointCheckFeature_When_SupportedFeature_Expect_True)
+{
+    EndpointDesc endpointDesc{};
+    (void)memset_s(&endpointDesc, sizeof(endpointDesc), 0, sizeof(endpointDesc));
+    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+
+    MOCKER(hcomm::CommAddrToIpAddress).stubs().will(returnValue(HCCL_SUCCESS));
+
+    s32 devId = 0;
+    MOCKER(hrtGetDevice).stubs().with(outBoundP(&devId)).will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&Hccl::HccpPeerManager::Init).stubs().with(any()).will(ignoreReturnValue());
+
+    u32 devPhyId = 0;
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(devPhyId)).will(returnValue(HCCL_SUCCESS));
+
+    void *fakeRdmaHandle = reinterpret_cast<void *>(0x12345678);
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(fakeRdmaHandle));
+
+    s32 directFlag = DIRECT_FLAG_PCIE;
+    MOCKER(RaNdaGetDirectFlag).stubs().with(any(), outBoundP(&directFlag)).will(returnValue(0));
+
+    bool value = false;
+    HcommResult ret = HcommEndpointCheckFeature(HCOMM_ENDPOINT_FEATURE_NDA, &endpointDesc, &value);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(value, true);
 }

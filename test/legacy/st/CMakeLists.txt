@@ -72,7 +72,7 @@ target_include_directories(hccl_v2_stest PUBLIC
 
 
 target_compile_options(hccl_v2_stest PRIVATE
-        -std=c++14
+        -std=c++17
         -Werror
         -fno-common
         -fno-strict-aliasing
@@ -100,10 +100,10 @@ IF (DEFINED ENV{HCCL_LOCAL_BUILD})
     )
 
     target_link_libraries(hccl_v2_stest PRIVATE
+            $<BUILD_INTERFACE:intf_pub>
             $<BUILD_INTERFACE:hccl_headers>
             hccl_st_fwk
             hccl_headers
-            -lgtest
             -lpthread
     )
 else ()

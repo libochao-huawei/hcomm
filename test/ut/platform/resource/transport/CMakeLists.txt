@@ -11,6 +11,7 @@ set(hccl_utest_platform_transport_list
     main.cc
     ut_aicpu_transport_device_p2p_utest.cc
     ut_transport_ibverbs_utest.cc
+    ut_ub_transport_lite_impl_rmtbuffer_utest.cc
 )
 add_executable(hccl_utest_platform_transport  ${hccl_utest_platform_transport_list})
 
@@ -28,7 +29,7 @@ target_compile_definitions(hccl_utest_platform_transport    PRIVATE
 target_compile_options(hccl_utest_platform_transport   PRIVATE 
     -U_FORTIFY_SOURCE
     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
 )
 
 

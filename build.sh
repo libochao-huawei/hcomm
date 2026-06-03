@@ -11,8 +11,10 @@ set -e
 
 CURRENT_DIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 BUILD_DIR=${CURRENT_DIR}/build
+BUILD_UT_DIR=${CURRENT_DIR}/build_ut
+BUILD_ST_DIR=${CURRENT_DIR}/build_st
 BUILD_OUTPUT_DIR=${CURRENT_DIR}/build_out
-OUTPUT_PATH="${CURRENT_DIR}/output"
+LOGS_PATH="${CURRENT_DIR}/logs"
 USER_ID=$(id -u)
 CPU_NUM=$(cat /proc/cpuinfo | grep "^processor" | wc -l)
 JOB_NUM="-j${CPU_NUM}"
@@ -21,9 +23,7 @@ COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
 ENABLE_BUILD_DEVICE="OFF"
 ENABLE_BUILD_AARCH="OFF"
-DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
-CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/community_sign_build.py"
 ENABLE_SIGN="false"
 VERSION_INFO="8.5.0"
@@ -66,15 +66,6 @@ function clean()
     if [ -n "${BUILD_OUTPUT_DIR}" ];then
         rm -rf ${BUILD_OUTPUT_DIR}
     fi
-
-    mkdir -p ${BUILD_DIR}
-}
-
-function rmdir()
-{
-    if [ "${DO_NOT_CLEAN}" = "false" ] && [ $# -gt 0 ]; then
-        rm -rf "$@"
-    fi
 }
 
 function cmake_config()
@@ -102,22 +93,21 @@ function run_ctest() {
     fi
 
     local suite_name="$1"   # "ut" or "st"
-    local log_dir="${OUTPUT_PATH}/logs/${suite_name}"
-    local ctest_log="${log_dir}/ctest_output.log"
-    local ctest_summary="${log_dir}/ctest_summary.log"
+    local log_dir="${LOGS_PATH}/${suite_name}"
+    local ctest_log="${log_dir}/run.log"
 
     # 创建日志目录
     mk_dir "${log_dir}"
 
     # CTest 执行用例
     ctest ${JOB_NUM} \
+          --verbose \
           --build-nocmake \
           --timeout 1000 \
           --output-on-failure \
           --stop-on-failure \
           --test-output-size-failed 10000000 \
-          -O "${ctest_log}" \
-          2>&1 | tee "${ctest_summary}"
+          2>&1 | tee "${ctest_log}"
 
     # 超时时间：200s
     local ctest_ret=${PIPESTATUS[0]}
@@ -131,8 +121,8 @@ function run_ctest() {
 
 function build_st() {
     log "Info: build_st"
-    mk_dir "${BUILD_DIR}"
-    cd "${BUILD_DIR}"
+    mk_dir "${BUILD_ST_DIR}"
+    cd "${BUILD_ST_DIR}"
 
     # 配置 ST 用例代码
     local st_tasks=$(printf '%s;' "${ST_TASKS[@]}" | sed 's/;$//')
@@ -173,8 +163,8 @@ function mk_dir() {
 
 function build_ut() {
     log "Info: build_ut"
-    mk_dir "${BUILD_DIR}"
-    cd "${BUILD_DIR}"
+    mk_dir "${BUILD_UT_DIR}"
+    cd "${BUILD_UT_DIR}"
 
     # 避免加载系统库
     unset LD_LIBRARY_PATH
@@ -229,12 +219,12 @@ function make_ut_gov() {
     mkdir -p ${CURRENT_DIR}/cov
 
     lcov -c ${LCOV_CAPTURE_IGNORE_FLAGS} \
-         -d ${BUILD_DIR}/test/ut/ \
-         -d ${BUILD_DIR}/test/legacy/ut/ \
+         -d ${BUILD_UT_DIR}/test/ut/ \
+         -d ${BUILD_UT_DIR}/test/legacy/ut/ \
          -o cov/coverage.info \
          ${LCOV_RUNTIME_CONFIGURATION_FLAGS}
-    lcov ${LCOV_FILTER_IGNORE_FLAGS} -r cov/coverage.info */src/platform/hccp/external_depends/* -o cov/coverage.info
-    lcov ${LCOV_FILTER_IGNORE_FLAGS} -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
+    lcov ${LCOV_FILTER_IGNORE_FLAGS} -r cov/coverage.info */src/base_comm/resources/hccp/external_depends/* -o cov/coverage.info
+    lcov ${LCOV_FILTER_IGNORE_FLAGS} -e cov/coverage.info */src/legacy/ascend910/algorithm/* */src/legacy/ascend910/common/* */src/legacy/ascend910/hccd/* */src/legacy/ascend950* */src/legacy/ascend910/framework/* */src/legacy/ascend910/platform/* */src/legacy/ascend910/pub_inc/* */src/base_comm/* */src/coll_communicator/* -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
     genhtml coverage.info
@@ -257,14 +247,14 @@ function build_hcomm() {
     fi
 
     # 编译
-    cmake --build . -j${CPU_NUM}
+    cmake --build . ${JOB_NUM}
     if [ $? -ne 0 ]; then
         log "Error: cmake build failed"
         return 1
     fi
 
     # 打包
-    make package -j${CPU_NUM}
+    make package ${JOB_NUM}
     if [ $? -ne 0 ]; then
         log "Error: make package failed"
         return 1
@@ -322,10 +312,6 @@ while [[ $# -gt 0 ]]; do
         ;;
     -p|--package-path)
         ascend_package_path="$2"
-        shift 2
-        ;;
-    --nlohmann_path)
-        third_party_nlohmann_path="$2"
         shift 2
         ;;
     --pkg)
@@ -452,7 +438,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     --noclean)
-        DO_NOT_CLEAN="true"
+        # 默认不清理构建目录
         shift
         ;;
     --cb_test_verify)
@@ -502,14 +488,9 @@ else
     exit 1
 fi
 
-if [ -n "${third_party_nlohmann_path}" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DTHIRD_PARTY_NLOHMANN_PATH=${third_party_nlohmann_path}"
-fi
-
 CUSTOM_OPTION="${CUSTOM_OPTION} -DASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}"
 CUSTOM_OPTION="${CUSTOM_OPTION} -DASCEND_INSTALL_PATH=${ASCEND_CANN_PACKAGE_PATH}"
 CUSTOM_OPTION="${CUSTOM_OPTION} -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}"
-CUSTOM_OPTION="${CUSTOM_OPTION} -DCANN_UTILS_LIB_PATH=${CANN_UTILS_LIB_PATH}"
 
 CUSTOM_OPTION="${CUSTOM_OPTION} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
 CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}"
@@ -522,12 +503,7 @@ CUSTOM_OPTION="${CUSTOM_OPTION} -DPRODUCT=ascend"
 
 set_env
 
-if [ "${DO_NOT_CLEAN}" = "false" ]; then
-    clean
-else
-    mkdir -p "${BUILD_DIR}"
-fi
-
+mkdir -p "${BUILD_DIR}"
 cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then

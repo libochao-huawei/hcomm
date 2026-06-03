@@ -10,7 +10,8 @@
 
 cmake_minimum_required(VERSION 3.16.0)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(HCCL_ALG_ANALYZER_DAVID 1 CACHE STRING "Define HCCL_ALG_ANALYZER_DAVID as a fixed value")
 
@@ -22,7 +23,6 @@ set(TESTCASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/testcase)
 
 set(ASCEND_HOME_PATH $ENV{ASCEND_HOME_PATH})
 set(HCOMM_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../../..)
-set(THIRD_PARTH_PATH ${HCOMM_ROOT_PATH}/output/third_party)
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
     set(ASCEND_HOME_PATH "${ASCEND_HOME_PATH}/x86_64-linux")
@@ -31,19 +31,18 @@ else()
 endif()
 message(STATUS "Final Ascend Path: ${ASCEND_HOME_PATH}")
 
-set(HCOMM_CODE_COMMON    ${HCOMM_ROOT_PATH}/src/common)
-set(HCOMM_CODE_PLATFORM  ${HCOMM_ROOT_PATH}/src/platform)
-set(HCOMM_CODE_ALGORITHM ${HCOMM_ROOT_PATH}/src/algorithm)
-set(HCOMM_CODE_FRAMEWORK ${HCOMM_ROOT_PATH}/src/framework)
+set(HCOMM_CODE_COMMON    ${HCOMM_ROOT_PATH}/src/legacy/ascend910/common)
+set(HCOMM_CODE_PLATFORM  ${HCOMM_ROOT_PATH}/src/legacy/ascend910/platform)
+set(HCOMM_CODE_ALGORITHM ${HCOMM_ROOT_PATH}/src/legacy/ascend910/algorithm)
+set(HCOMM_CODE_FRAMEWORK ${HCOMM_ROOT_PATH}/src/legacy/ascend910/framework)
 
-set(HCOMM_CODE_LEGACY      ${HCOMM_ROOT_PATH}/src/legacy)
+set(HCOMM_CODE_LEGACY      ${HCOMM_ROOT_PATH}/src/legacy/ascend950)
 set(HCOMM_LEGACY_FRAMEWORK ${HCOMM_CODE_LEGACY}/framework)
 set(HCOMM_LEGACY_PLATFORM  ${HCOMM_CODE_LEGACY}/unified_platform)
 set(HCOMM_LEGACY_SERVICE   ${HCOMM_CODE_LEGACY}/service/collective)
 
-set(THIRD_PARTY_PATH   ${CANN_3RD_LIB_PATH})
-set(PROTOC_PROGRAM     ${THIRD_PARTY_PATH}/protobuf/bin/protoc)
-include(${HCOMM_ROOT_PATH}/cmake/third_party/gtest.cmake)
+set(PROTOC_PROGRAM     ${HOST_PROTOC_PATH}/protoc)
+add_cann_third_party(gtest)
 
 # Include List
 set(ASCEND_CANN_INCLUDE_LIST
@@ -141,7 +140,7 @@ set(legacy_platform_include_list
     ${HCOMM_LEGACY_PLATFORM}/ccu/ccu_device/ccu_component/ccu_pfe
     ${HCOMM_LEGACY_PLATFORM}/ccu/dfx
     ${HCOMM_LEGACY_PLATFORM}/aiv
-    ${HCOMM_LEGACY_PLATFORM}/hccp/inc/network
+    ${HCOMM_ROOT_PATH}/src/base_comm/resources/hccp/inc/network
 
     ${HCOMM_LEGACY_PLATFORM}
     ${HCOMM_LEGACY_PLATFORM}/common
@@ -229,8 +228,7 @@ set(checker_include_list
 )
 
 set(HCOMM_PLATFORM_INCLUDE_LIST
-    ${HCOMM_CODE_PLATFORM}/hccp/inc/network
-    ${HCOMM_CODE_PLATFORM}/hccp/external_depends/inc/log
+    ${HCOMM_ROOT_PATH}/src/base_comm/resources/hccp/inc/network
 )
 
 # 设置全局包含路径，让所有子目录继承
@@ -238,6 +236,7 @@ include_directories(
     ${HCOMM_ROOT_PATH}/include
     ${HCOMM_ROOT_PATH}/include/hccl
     ${HCOMM_ROOT_PATH}/include/hcomm
+    ${HCOMM_ROOT_PATH}/pkg_inc
 )
 
 add_subdirectory(testcase)

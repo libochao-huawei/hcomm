@@ -100,5 +100,5 @@ void TcRaSaveSnapshotInput();
 void TcRaSaveSnapshotPre();
 void TcRaSaveSnapshotPost();
 void TcHdcAsyncDelReqHandle();
-void TcRaHdcUninitAsync();
+void TcRaHdcDeinitAsyncAll();
 #endif

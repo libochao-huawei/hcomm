@@ -32,7 +32,7 @@
         <file value="hcomm_res_defs.h" install_softlink="$(TARGET_ENV)/include/hccl/hcomm_res_defs.h"/>
         <file value="hcomm_res.h"/>
     </file_info>
-    <file_info value="include" copy_type="source" src_path="hcomm/src/pub_inc" dst_path="$(TARGET_ENV)/include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
+    <file_info value="include" copy_type="source" src_path="hcomm/src/legacy/ascend910/pub_inc" dst_path="$(TARGET_ENV)/include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccn_rping.h"/>
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/pkg/hccl" dst_path="$(TARGET_ENV)/pkg_inc/hccl" install_path="$(TARGET_ENV)/pkg_inc/hccl" install_type="devel" install_mod="440">
@@ -85,6 +85,7 @@
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/pkg_inc/hcomm" dst_path="$(TARGET_ENV)/pkg_inc/hcomm" install_path="$(TARGET_ENV)/pkg_inc/hcomm" install_type="devel" install_mod="440">
         <file value="hcomm_primitives_expt.h"/>
+        <file value="hcomm_res_entity_defs.h"/>
     </file_info>
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="opp/built-in/op_impl/aicpu/kernel" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="440" optional="true">
         <file value="aicpu_hcomm.tar.gz"/>
@@ -92,6 +93,7 @@
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="compat" install_path="compat" install_type="all" install_mod="440" optional="true">
         <file value="cann-hcomm-compat.tar.gz"/>
         <file value="cann-hccd-compat.tar.gz"/>
+        <file value="cann-hcomm-compat.ini"/>
     </file_info>
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="opp/built-in/op_impl/aicpu/config" install_path="opp/built-in/op_impl/aicpu/config" install_type="all" install_mod="440">
         <file value="ccl_kernel.json"/>

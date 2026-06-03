@@ -476,7 +476,7 @@ TEST_F(LinkIbvExpTest, ut_function_for_batchsendrecv_ibv)
 TEST_F(LinkIbvExpTest, ut_transport_ibv_multi_qp)
 {
     std::shared_ptr<ProfilerManager> profilerManager;
-    profilerManager.reset(new (std::nothrow) ProfilerManager(0, 0, 2));
+    profilerManager.reset(new (std::nothrow) ProfilerManager(0, 0, 2, 2));
     s32 ret = profilerManager->InitProfiler();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 

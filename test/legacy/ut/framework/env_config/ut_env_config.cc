@@ -162,6 +162,8 @@ TEST_F(EnvConfigTest, parse_env_config_should_success)
         EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaServerLevel(), 3);
         EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaTimeOut(), 6);
         EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaRetryCnt(), 5);
+        EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaQueueNum(), 1);
+        EXPECT_EQ(envCfg.GetRdmaConfig().GetRdmaMultiQpThreshold(), 524288);    // 512 KB 转 524288 B
         EXPECT_EQ(envCfg.GetAlgoConfig().GetPrimQueueGenName(), "AllReduceRing");
         std::map<OpType, std::vector<HcclAlgoType>> algoMap = {{OpType::ALLREDUCE,
             {HcclAlgoType::HCCL_ALGO_TYPE_NA,
@@ -477,6 +479,7 @@ TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_Invalid_Expect_Throw)
 TEST_F(EnvConfigTest, Ut_CastHcclAccelerator_When_ConfigVaild_ExpectSuccess)
 {
     EXPECT_EQ(CastHcclAccelerator("AI_CPU"), HcclAccelerator::AICPU_TS);
+    EXPECT_EQ(CastHcclAccelerator("AICPU_TS"), HcclAccelerator::AICPU_TS);
     EXPECT_EQ(CastHcclAccelerator("AIV"), HcclAccelerator::AIV);
     EXPECT_EQ(CastHcclAccelerator("CCU_MS"), HcclAccelerator::CCU_MS);
     EXPECT_EQ(CastHcclAccelerator("CCU_SCHED"), HcclAccelerator::CCU_SCHED);
@@ -485,6 +488,102 @@ TEST_F(EnvConfigTest, Ut_CastHcclAccelerator_When_ConfigVaild_ExpectSuccess)
 TEST_F(EnvConfigTest, Ut_CastHcclAccelerator_When_ConfigInvaild_ExpectThrow)
 {
     EXPECT_THROW(CastHcclAccelerator("Invalid"), InvalidParamsException);
+    EXPECT_THROW(CastHcclAccelerator("AIV_ONLY"), InvalidParamsException);
     EXPECT_THROW(CastHcclAccelerator("HOST"), InvalidParamsException);
     EXPECT_THROW(CastHcclAccelerator("HOST_TS"), InvalidParamsException);
+}
+
+TEST_F(EnvConfigTest, Ut_GetUbTimeOut_DefaultValue_ReturnsDefault)
+{
+    setenv("HCCL_UB_TIMEOUT", "", 1);
+    EnvRdmaConfig rdmaConfig;
+    rdmaConfig.Parse();
+    EXPECT_EQ(rdmaConfig.GetUbTimeOut(), 8);
+    unsetenv("HCCL_UB_TIMEOUT");
+}
+
+TEST_F(EnvConfigTest, Ut_GetUbTimeOut_ValidValue_ReturnsCorrectValue)
+{
+    setenv("HCCL_UB_TIMEOUT", "16", 1);
+    EnvRdmaConfig rdmaConfig;
+    rdmaConfig.Parse();
+    EXPECT_EQ(rdmaConfig.GetUbTimeOut(), 16);
+    unsetenv("HCCL_UB_TIMEOUT");
+}
+
+TEST_F(EnvConfigTest, Ut_GetUbTimeOut_MaxValue_ReturnsMax)
+{
+    setenv("HCCL_UB_TIMEOUT", "31", 1);
+    EnvRdmaConfig rdmaConfig;
+    rdmaConfig.Parse();
+    EXPECT_EQ(rdmaConfig.GetUbTimeOut(), 31);
+    unsetenv("HCCL_UB_TIMEOUT");
+}
+
+TEST_F(EnvConfigTest, Ut_GetUbTimeOut_OutOfRange_ReturnsDefault)
+{
+    setenv("HCCL_UB_TIMEOUT", "32", 1);
+    EnvRdmaConfig rdmaConfig;
+    EXPECT_THROW(rdmaConfig.Parse(), InvalidParamsException);
+    unsetenv("HCCL_UB_TIMEOUT");
+}
+
+TEST_F(EnvConfigTest, Ut_GetUboeTimeOut_DefaultValue_ReturnsDefault)
+{
+    setenv("HCCL_UBOE_TIMEOUT", "", 1);
+    EnvRdmaConfig rdmaConfig;
+    rdmaConfig.Parse();
+    EXPECT_EQ(rdmaConfig.GetUboeTimeOut(), 16);
+    unsetenv("HCCL_UBOE_TIMEOUT");
+}
+
+TEST_F(EnvConfigTest, Ut_GetUboeTimeOut_ValidValue_ReturnsCorrectValue)
+{
+    setenv("HCCL_UBOE_TIMEOUT", "24", 1);
+    EnvRdmaConfig rdmaConfig;
+    rdmaConfig.Parse();
+    EXPECT_EQ(rdmaConfig.GetUboeTimeOut(), 24);
+    unsetenv("HCCL_UBOE_TIMEOUT");
+}
+
+TEST_F(EnvConfigTest, Ut_GetUboeTimeOut_MaxValue_ReturnsMax)
+{
+    setenv("HCCL_UBOE_TIMEOUT", "31", 1);
+    EnvRdmaConfig rdmaConfig;
+    rdmaConfig.Parse();
+    EXPECT_EQ(rdmaConfig.GetUboeTimeOut(), 31);
+    unsetenv("HCCL_UBOE_TIMEOUT");
+}
+
+TEST_F(EnvConfigTest, Ut_GetUboeTimeOut_OutOfRange_ReturnsDefault)
+{
+    setenv("HCCL_UBOE_TIMEOUT", "32", 1);
+    EnvRdmaConfig rdmaConfig;
+    EXPECT_THROW(rdmaConfig.Parse(), InvalidParamsException);
+    unsetenv("HCCL_UBOE_TIMEOUT");
+}
+
+TEST_F(EnvConfigTest, Ut_GetRdmaQueueNum_OutOfRange_ReturnsException)
+{
+    setenv("HCCL_RDMA_QPS_PER_CONNECTION", "33", 1);
+    EnvRdmaConfig rdmaConfig;
+    EXPECT_THROW(rdmaConfig.Parse(), InvalidParamsException);
+    unsetenv("HCCL_RDMA_QPS_PER_CONNECTION");
+}
+
+TEST_F(EnvConfigTest, Ut_GetRdmaMultiQpThreshold_ValidValue_ReturnsCorrectValue)
+{
+    setenv("HCCL_MULTI_QP_THRESHOLD", "1123", 1);
+    EnvRdmaConfig rdmaConfig;
+    rdmaConfig.Parse();
+    EXPECT_EQ(rdmaConfig.GetRdmaMultiQpThreshold(), 1149952); // 1123 KB 转 1149952 B
+    unsetenv("HCCL_MULTI_QP_THRESHOLD");
+}
+
+TEST_F(EnvConfigTest, Ut_GetRdmaMultiQpThreshold_OutOfRange_ReturnsException)
+{
+    setenv("HCCL_MULTI_QP_THRESHOLD", "-5", 1);
+    EnvRdmaConfig rdmaConfig;
+    EXPECT_THROW(rdmaConfig.Parse(), InvalidParamsException);
+    unsetenv("HCCL_MULTI_QP_THRESHOLD");
 }

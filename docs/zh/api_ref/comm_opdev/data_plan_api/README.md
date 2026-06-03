@@ -1,3 +1,3 @@
 # 数据面接口
 
-- [CPU + TS](./cpu_ts/README.md) 
+- [CPU-CPU_TS-AICPU_TS](./cpu-cpu_ts-aicpu_ts/README.md) 

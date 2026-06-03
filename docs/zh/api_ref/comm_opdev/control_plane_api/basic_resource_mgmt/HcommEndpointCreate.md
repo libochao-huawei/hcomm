@@ -20,7 +20,7 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
 
 | 参数名 | 输入/输出 | 说明 |
 | --- | --- | --- |
-| endpoint | 输入 | Endpoint初始化配置信息。<br>EndpointDesc类型的定义请参见[EndPointDesc](../../datatype_definition/EndPointDesc.md)。 |
+| endpoint | 输入 | Endpoint初始化配置信息。<br>必填成员：protocol、commAddr、loc。<br>EndpointDesc类型的定义请参见[EndpointDesc](../../datatype_definition/EndpointDesc.md)。 |
 | endpointHandle | 输出 | 返回的Endpoint句柄。<br>EndpointHandle类型的定义请参见[EndpointHandle](../../datatype_definition/EndpointHandle.md)。 |
 
 ## 返回值
@@ -29,7 +29,8 @@ HcommResult：接口成功返回HCCL_SUCCESS，其他失败。
 
 ## 约束说明
 
-支持的通信协议包括：RoCE、UBC_TP、UBC_CTP、UBoE。
+ - 当Endpoint位于HOST侧时，支持的protocol为RoCE、UBC_TP、UBC_CTP。
+ - 当Endpoint位于DEVICE侧时，支持的protocol为RoCE、UBC_TP、UBC_CTP、UB_MEM、PCIe、UBoE、HCCS。
 
 ## 调用示例
 

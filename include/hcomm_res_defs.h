@@ -210,6 +210,7 @@ typedef struct {
             uint32_t retryInterval;  ///< 重传间隔（ms）
             uint8_t tc;              ///< 流量类别（QoS)
             uint8_t sl;              ///< 服务等级（QoS)
+            uint32_t qpThreshold;    ///< 多QP场景下，每个QP最小数据量(B)
         } roceAttr;
         struct {
             uint32_t qos;            ///< HCCS QoS
@@ -286,6 +287,14 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
 
     return 0;
 }
+
+/**
+ * @brief 底层特性枚举定义
+ */
+typedef enum {
+    HCOMM_ENDPOINT_FEATURE_INVALID = -1,
+    HCOMM_ENDPOINT_FEATURE_NDA = 0,  // NPU Direct RDMA Async 特性
+} HcommEndpointFeatureType;
 
 #ifdef __cplusplus
 }

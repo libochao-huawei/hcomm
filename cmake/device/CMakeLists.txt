@@ -25,21 +25,28 @@ message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
 # cmake 配置
 include(${HCOMM_DIR}/cmake/config.cmake)
 include(${HCOMM_DIR}/cmake/func.cmake)
+include(${HCOMM_DIR}/version.cmake)
 
 # 查找依赖包
+find_cann_package(acl_rt MODULE REQUIRED)
+find_cann_package(aicpu_sharder MODULE REQUIRED)
+find_cann_package(asc_devkit MODULE REQUIRED)
+find_cann_package(ascend_hal MODULE REQUIRED)
+find_cann_package(atrace MODULE REQUIRED)
+find_cann_package(error_manager MODULE REQUIRED)
+find_cann_package(metadef MODULE REQUIRED)
+find_cann_package(mmpa MODULE REQUIRED)
 find_cann_package(msprof MODULE REQUIRED)
+find_cann_package(runtime MODULE REQUIRED)
 find_cann_package(securec MODULE REQUIRED)
 find_cann_package(unified_dlog MODULE REQUIRED)
-find_cann_package(mmpa MODULE REQUIRED)
-find_cann_package(runtime MODULE REQUIRED)
-find_cann_package(error_manager MODULE REQUIRED)
 
 # third_party
 include(${HCOMM_DIR}/cmake/hcomm_utils.cmake)
-include(${HCOMM_DIR}/cmake/third_party/json.cmake)
-include(${HCOMM_DIR}/cmake/third_party/openssl.cmake)
+add_cann_third_party(json)
+add_cann_third_party(openssl)
 include(${HCOMM_DIR}/cmake/third_party/ubengine.cmake)
-include(${HCOMM_DIR}/cmake/third_party/rdma-core.cmake)
+add_cann_third_party(rdma-core)
 
 # 添加子目录
 add_cann_subdirectories_relative(${HCOMM_DIR}
@@ -47,7 +54,7 @@ add_cann_subdirectories_relative(${HCOMM_DIR}
 )
 
 # 打包并签名：cann-hcomm-compat.tar.gz
-pack_targets_and_files(
+cann_pack_targets_and_files(
     OUTPUT_TARGET "pack_cann_hcomm_compat"
     OUTPUT "cann-hcomm-compat.tar.gz"
     TARGETS rs_device ra_adp net_co hccp_service.bin tls_adp ascend_kms
@@ -98,6 +105,12 @@ install(FILES ${cann_hcomm_compat_signed_file}
     DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
     COMPONENT hcomm
     PERMISSIONS OWNER_READ GROUP_READ
+)
+# 安装 cann-hcomm-compat.ini
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/cann-hcomm-compat.ini
+    DESTINATION ${INSTALL_DEVICE_TAR_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )
 # 安装 cann-hccd-compat.tar.gz
 install(FILES ${cann_hccd_compat_signed_file}

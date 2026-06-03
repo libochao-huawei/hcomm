@@ -1,0 +1,16 @@
+# 通信操作
+
+- [HcommWriteOnThread](HcommWriteOnThread.md)  
+- [HcommWriteNbiOnThread](HcommWriteNbiOnThread.md)  
+- [HcommWriteReduceOnThread](HcommWriteReduceOnThread.md)  
+- [HcommReadOnThread](HcommReadOnThread.md)  
+- [HcommReadNbiOnThread](HcommReadNbiOnThread.md)  
+- [HcommReadReduceOnThread](HcommReadReduceOnThread.md)  
+- [HcommChannelNotifyRecordOnThread](HcommChannelNotifyRecordOnThread.md)  
+- [HcommChannelNotifyWaitOnThread](HcommChannelNotifyWaitOnThread.md)  
+- [HcommWriteWithNotifyOnThread](HcommWriteWithNotifyOnThread.md)  
+- [HcommWriteWithNotifyNbiOnThread](HcommWriteWithNotifyNbiOnThread.md)  
+- [HcommWriteReduceWithNotifyOnThread](HcommWriteReduceWithNotifyOnThread.md)  
+- [HcommChannelFenceOnThread](HcommChannelFenceOnThread.md)
+- [HcommFenceOnThread](HcommFenceOnThread.md)
+- [HcommBatchTransferOnThread](HcommBatchTransferOnThread.md)

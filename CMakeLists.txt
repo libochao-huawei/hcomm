@@ -54,8 +54,8 @@ project(hcomm)
 # 初始化 CANN 项目配置
 init_cann_project(PREPEND_MODULE_PATH)
 
-# 采用 C++14 标准
-set(CMAKE_CXX_STANDARD 14)
+# 采用 C++17 标准
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
@@ -90,10 +90,10 @@ if(ENABLE_TEST)
     include(cmake/config.cmake)
     include(cmake/function.cmake)
     include(cmake/intf_pub_gccnative.cmake)
-    include(cmake/third_party/json.cmake)
-    include(cmake/third_party/gtest.cmake)
+    add_cann_third_party(json)
+    add_cann_third_party(gtest)
     include(cmake/third_party/mockcpp.cmake)
-    include(cmake/third_party/rdma-core.cmake)
+    add_cann_third_party(rdma-core)
     add_subdirectory(test)
 
 elseif(BUILD_OPEN_PROJECT)
@@ -103,19 +103,24 @@ elseif(BUILD_OPEN_PROJECT)
     include(version.cmake)
     # 三方件
     include(cmake/hcomm_utils.cmake)
-    include(cmake/third_party/openssl.cmake)
+    add_cann_third_party(openssl)
     include(cmake/third_party/ubengine.cmake)
-    include(cmake/third_party/rdma-core.cmake)
-    include(cmake/third_party/json.cmake)
+    add_cann_third_party(rdma-core)
+    add_cann_third_party(json)
     # 查找依赖包
-    find_cann_package(msprof MODULE REQUIRED)
-    find_cann_package(securec MODULE REQUIRED)
-    find_cann_package(unified_dlog MODULE REQUIRED)
-    find_cann_package(mmpa MODULE REQUIRED)
-    find_cann_package(runtime MODULE REQUIRED)
+    find_cann_package(acl_rt MODULE REQUIRED)
+    find_cann_package(asc_devkit MODULE REQUIRED)
+    find_cann_package(ascend_hal MODULE REQUIRED)
+    find_cann_package(atrace MODULE REQUIRED)
     find_cann_package(error_manager MODULE REQUIRED)
+    find_cann_package(mmpa MODULE REQUIRED)
+    find_cann_package(msprof MODULE REQUIRED)
+    find_cann_package(runtime MODULE REQUIRED)
+    find_cann_package(securec MODULE REQUIRED)
+    find_cann_package(tsdclient MODULE REQUIRED)
+    find_cann_package(unified_dlog MODULE REQUIRED)
     # 检查构建依赖
-    check_pkg_build_deps("hcomm")
+    check_cann_pkg_build_deps("hcomm")
     add_version_info_targets()
     # 配置打包
     pack_built_in()
@@ -148,6 +153,9 @@ elseif(BUILD_OPEN_PROJECT)
             INSTALL_COMMAND ${CMAKE_CPACK_COMMAND}
             BUILD_ALWAYS TRUE
         )
+        if(TARGET hcomm_utils)
+            add_dependencies(hcomm_device hcomm_utils)
+        endif()
 
         # 安装 device 侧编译产物
         install(FILES
@@ -160,7 +168,7 @@ elseif(BUILD_OPEN_PROJECT)
     set(HCCL_HEAD
         include/hccl/hccl_comm.h
         include/hccl/hccl_types.h
-        src/pub_inc/hccn_rping.h
+        src/legacy/ascend910/pub_inc/hccn_rping.h
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_res.h
         include/hccl/hccl_sym_win.h
@@ -254,6 +262,7 @@ elseif(BUILD_OPEN_PROJECT)
     )
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h
+        pkg_inc/hcomm/hcomm_res_entity_defs.h
     )
     install(FILES
         ${HCOMM_PKG_HEAD}
