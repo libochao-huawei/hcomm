@@ -114,6 +114,7 @@
 #include "../../../legacy/ascend950/unified_platform/external_system/orion_adapter_hccp.h"
 #include "../../../legacy/ascend950/include/hccl_communicator.h"
 #include "../../../legacy/ascend950/unified_platform/ccu/ccu_microcode/ccu_assist.h"
+#include "../../../legacy/ascend950/framework/entrance/rank_table_crc_bridge.h"
 #include "acl/acl_rt.h"
 
 #include "p2p_transport.h"
