@@ -36,7 +36,7 @@ public:
     TaskInfoQueueMap::iterator Begin(u32 devId);
     TaskInfoQueueMap::iterator End(u32 devId);
 
-    HcclResult FindTaskInfo(u32 devId, u32 streamId, u32 taskId, TaskInfo &curTask) const;
+    HcclResult FindTaskInfo(u32 devId, u32 streamId, u32 taskId, TaskInfo*& curTask) const;
     
 private:
     static GlobalMirrorTasks                       ins_;

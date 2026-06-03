@@ -133,7 +133,7 @@ TaskInfoQueueMap::iterator GlobalMirrorTasks::End(u32 devId)
     return devMap.end();
 }
 
-HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, TaskInfo &curTask) const
+HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, TaskInfo*& curTask) const
 {
     HCCL_INFO("[%s]start, devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u].", __func__, devId, streamId, taskId);
     CHK_PRT_RET(devId >= DEVICE_MAX_NUM, HCCL_ERROR("[%s]fail, devId[%u] out of range.", __func__, devId), HCCL_E_PARA);
@@ -159,7 +159,7 @@ HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, 
         return HCCL_E_NOT_FOUND;
     };
 
-    curTask = *(*(*task));
+    curTask = (*(*task)).get();
     HCCL_INFO("[%s]success, devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u].", __func__, devId, streamId, taskId);
     return HCCL_SUCCESS;
 }

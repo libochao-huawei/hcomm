@@ -362,21 +362,21 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
     CHK_PRT_RET(queue == nullptr,
         HCCL_ERROR("[%s]GetQueue nullptr, devId[%u], sqId[%u].", __func__, devId_, sqId), HCCL_E_PARA);
 
-    auto func = [taskId] (const std::shared_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
+    auto func = [taskId] (const std::unique_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskIterPtr = queue->Find(func);
     CHK_PRT_RET(taskIterPtr == nullptr || *taskIterPtr == *queue->End(),
         HCCL_ERROR("[%s]exception task not found, devId[%u], sqId[%u], taskId[%u]", __func__, devId_, sqId, taskId),
         HCCL_E_PARA);
 
     // 找到当前异常task的前50个task(至多)
-    std::vector<std::shared_ptr<Hccl::TaskInfo>> taskContext {};
+    std::vector<Hccl::TaskInfo*> taskContext {};
     for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskIterPtr != *queue->Begin(); ++i, --(*taskIterPtr)) {
         if ((**taskIterPtr)->taskId_ > taskId) {
             HCCL_ERROR("[%s]prev taskId[%u] is bigger than err taskId[%u], stop traversal",
                 __func__, (**taskIterPtr)->taskId_, taskId);
             break;
         }
-        taskContext.emplace_back(**taskIterPtr);
+        taskContext.emplace_back((**taskIterPtr).get());
     }
 
     HCCL_ERROR("[TaskException][AICPU]context sequence before error task is "
@@ -385,7 +385,7 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
         "WriteWithNotify:WN(rank,id), WriteReduceWithNotify:WRN(rank,id)]:");
 
     std::string taskContextInfo = "";
-    Hccl::TaskInfo* lastTask = taskContext[0].get();
+    Hccl::TaskInfo* lastTask = taskContext[0];
     for (u32 i = 0; i < taskContext.size(); ++i) {
         if (taskContext[i] == nullptr || taskContext[i]->dfxOpInfo_ == nullptr) {
             HCCL_ERROR("[%s]taskContext nullptr, taskContext[%u]=%p", __func__, i, taskContext[i]);
@@ -400,7 +400,7 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
             HCCL_ERROR("[TaskException][AICPU]opData information is %s.", lastTask->GetIndopDataInfo().c_str());
             HCCL_ERROR("[TaskException][AICPU]task sequence is OP(%u): %s", lastTask->dfxOpInfo_->opIndex_, taskContextInfo.c_str());
             taskContextInfo = "";
-            lastTask = taskContext[i].get();
+            lastTask = taskContext[i];
         }
         taskContextInfo += conciseInfo;
     }

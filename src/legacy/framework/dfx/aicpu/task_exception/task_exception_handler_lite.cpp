@@ -49,7 +49,7 @@ void TaskExceptionHandlerLite::Register() const
     TaskExceptionFunc::GetInstance().RegisterCallback(Process);
 }
 
-void GetUbErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo) {
+void GetUbErrMsgInfo(TaskInfo* taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo) {
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB) {
@@ -74,7 +74,7 @@ void GetUbErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &err
     errMsgInfo.rtCqErrorCode = exceptionInfo->errorCode;
 }
 
-HcclResult GenerateErrorMessageReport(const CommunicatorImplLite *aicpuComm, std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo)
+HcclResult GenerateErrorMessageReport(const CommunicatorImplLite *aicpuComm, TaskInfo* taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo)
 {
     // 获取需要上报的关键信息
     errMsgInfo.remoteUserRank = taskInfo->remoteRank_;
@@ -283,7 +283,7 @@ string GetOpDataInfo(const TaskInfo& taskInfo)
     return StringFormat("deviceId[%u], %s", localDeviceId, taskInfo.GetOpInfo().c_str());
 }
 
-void PrintEid(std::shared_ptr<TaskInfo> taskInfo) {
+void PrintEid(TaskInfo* taskInfo) {
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         HCCL_ERROR("[PrintEid] Error UB link info: localEid[%s], remoteEid[%s]. ", taskInfo->taskParam_.taskPara.Reduce.locEid.Describe().c_str(),
             taskInfo->taskParam_.taskPara.Reduce.rmtEid.Describe().c_str());
@@ -373,7 +373,7 @@ void TaskExceptionHandlerLite::PrintTaskContextInfo(CommunicatorImplLite *aicpuC
         return;
     }
 
-    auto func = [taskId] (const shared_ptr<TaskInfo>& task) { return task->taskId_ == taskId; };
+    auto func = [taskId] (const unique_ptr<TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskItorPtr = queue->Find(func);
     if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
@@ -382,13 +382,13 @@ void TaskExceptionHandlerLite::PrintTaskContextInfo(CommunicatorImplLite *aicpuC
     }
 
     // 找到当前异常task的前50个task(至多)
-    vector<shared_ptr<TaskInfo>> taskContext {};
+    vector<TaskInfo*> taskContext {};
     for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
         if ((**taskItorPtr)->taskId_ > taskId) {
             break;
         }
         if ((**taskItorPtr)->taskId_ != taskId) {
-            taskContext.emplace_back(**taskItorPtr);
+            taskContext.emplace_back((**taskItorPtr).get());
         }
     }
 

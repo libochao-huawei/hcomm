@@ -286,7 +286,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
     }
 
     u32  taskId = exceptionInfo->taskid;
-    auto func   = [taskId](const shared_ptr<TaskInfo> &task) {
+    auto func   = [taskId](const unique_ptr<TaskInfo> &task) {
         return task->taskId_ == taskId;
     };
     auto taskItorPtr = queue->Find(func);
@@ -381,7 +381,7 @@ void TaskExceptionHandler::PrintTaskContextInfo(uint32_t deviceId, uint32_t stre
         return;
     }
 
-    auto func = [taskId] (const shared_ptr<TaskInfo>& task) { return task->taskId_ == taskId; };
+    auto func = [taskId] (const unique_ptr<TaskInfo>& task) { return task->taskId_ == taskId; };
     auto taskItorPtr = queue->Find(func);
     if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
@@ -390,13 +390,13 @@ void TaskExceptionHandler::PrintTaskContextInfo(uint32_t deviceId, uint32_t stre
     }
 
     // 找到当前异常task的前50个task(至多)
-    vector<shared_ptr<TaskInfo>> taskContext {};
+    vector<TaskInfo*> taskContext {};
     for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
         if ((**taskItorPtr)->taskId_ > taskId) {
             break;
         }
         if ((**taskItorPtr)->taskId_ != taskId) {
-            taskContext.emplace_back(**taskItorPtr);
+            taskContext.emplace_back((**taskItorPtr).get());
         }
     }
 
