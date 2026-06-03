@@ -342,6 +342,7 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Timeout_Expect_Throw)
     EXPECT_THROW(rankInfoDetectClient_->CheckStatus(), TimeoutException);
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> bd9af7f1 (ut)
 =======
@@ -354,3 +355,5 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyRankTable_When_TlsStatus_Expect_Throw)
     EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
 }
 >>>>>>> ac1513a7 (ut 继续修改)
+=======
+>>>>>>> 322e388b (ut 继续修改2)
