@@ -24,6 +24,8 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     /*1. 如果mirrorTaskManagerLite_为空，则创建新的MirrorTaskManager
     注意：实际实现中应该避免这种情况，CommunicatorImplLite应该传入已经存在的MirrorTaskManager*/
     EXCEPTION_CATCH(mirrorTaskManagerLite_ = std::make_unique<Hccl::MirrorTaskManagerLite>(), return HCCL_E_PTR);
+    auto getChannelRemoteRankId = [this](u64 handle) { return this->GetChannelRemoteRankId(handle); };
+    mirrorTaskManagerLite_->RegGetRemoteRankCallBack(getChannelRemoteRankId);
 
     // 2. 创建Profiling管理类
     EXCEPTION_CATCH(profilingImpl_ = std::make_unique<HcclCommProfilingLite>(deviceId_, mirrorTaskManagerLite_.get()), return HCCL_E_PTR);
@@ -32,8 +34,6 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     addTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
         return this->mirrorTaskManagerLite_->AddTaskInfo(streamId, taskId, taskParam, handle);
     };
-    auto getChannelRemoteRankId = [this](u64 handle) { return this->GetChannelRemoteRankId(handle); };
-    mirrorTaskManagerLite_->RegGetRemoteRankCallBack(getChannelRemoteRankId);
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
