@@ -206,9 +206,11 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
 )
 target_include_directories(ccl_kernel_plf PRIVATE
     ${CCL_KERNEL_PLF_INCLUDE_LIST}
+    ${HCOMM_DIR}/src/legacy/ascend910/common
 )
 target_include_directories(ccl_kernel_plf_a PRIVATE
     ${CCL_KERNEL_PLF_INCLUDE_LIST}
+    ${HCOMM_DIR}/src/legacy/ascend910/common
 )
 
 if(BUILD_OPEN_PROJECT)

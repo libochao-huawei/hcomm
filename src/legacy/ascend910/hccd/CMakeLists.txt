@@ -173,6 +173,8 @@ if(BUILD_OPEN_PROJECT)
         ${RDMA_CORE_INCLUDE_DIR}
         ${JSON_INCLUDE_DIR}
         ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+        ${HCOMM_DIR}/src/legacy/ascend910/common
+        ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new/
     )
 
     target_link_libraries(hccd

@@ -63,6 +63,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/framework/op_base/src
     ${HCOMM_DIR}/src/legacy/ascend910/common
     ${HCOMM_DIR}/src/legacy/ascend910/common/launch_aicpu
+    ${HCOMM_DIR}/src/
 
     # src/framework/next 头文件 (已拆分到 base_comm 和 coll_communicator)
     ${HCOMM_DIR}/src/base_comm/common
