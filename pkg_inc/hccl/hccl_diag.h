@@ -12,9 +12,9 @@
 #define HCCL_DIAG_H
 
 #include <cstddef>
-#include <acl/acl_rt.h>
 #include <hccl/base.h>
 #include <hccl/hccl_types.h>
+#include <hccl/hccl_res.h>
 #include <hcomm_res_defs.h>
 
 #ifdef __cplusplus
