@@ -13,7 +13,7 @@
 #include "../channel.h"
 
 // Orion
-#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../../../src/legacy/ascend950/unified_platform/resource/socket/socket.h"
 #include "buffer_key.h"
 #include "aiv_ub_mem_transport.h"
 
