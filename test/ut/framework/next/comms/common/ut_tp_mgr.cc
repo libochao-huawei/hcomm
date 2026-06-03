@@ -31,6 +31,7 @@ public:
     explicit UbTimeoutEnvGuard(const char *value)
     {
 <<<<<<< HEAD
+<<<<<<< HEAD
         SaveEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
         SaveEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
 
@@ -41,21 +42,32 @@ public:
             hadValue_ = true;
         }
 >>>>>>> 183ce91f ( ut覆盖率不够)
+=======
+        SaveEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
+        SaveEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
+
+>>>>>>> 437eb70e (ut  我希望是最后一次)
         if (value != nullptr) {
             (void)setenv("HCCL_UB_TIMEOUT", value, 1);
         } else {
             (void)unsetenv("HCCL_UB_TIMEOUT");
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
         // Parse() validates all env keys; CI may leave an invalid HCCL_DFS_CONFIG (typo detction).
         (void)setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
 =======
 >>>>>>> 183ce91f ( ut覆盖率不够)
+=======
+        // Parse() validates all env keys; CI may leave an invalid HCCL_DFS_CONFIG (typo detction).
+        (void)setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
+>>>>>>> 437eb70e (ut  我希望是最后一次)
         Hccl::EnvConfig::GetInstance().Parse();
     }
 
     ~UbTimeoutEnvGuard()
     {
+<<<<<<< HEAD
 <<<<<<< HEAD
         RestoreEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
         RestoreEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
@@ -93,13 +105,44 @@ private:
         } else {
             (void)unsetenv("HCCL_UB_TIMEOUT");
         }
+=======
+        RestoreEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
+        RestoreEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
+>>>>>>> 437eb70e (ut  我希望是最后一次)
         Hccl::EnvConfig::GetInstance().Parse();
     }
 
 private:
+<<<<<<< HEAD
     bool hadValue_{false};
     std::string savedValue_;
 >>>>>>> 183ce91f ( ut覆盖率不够)
+=======
+    static void SaveEnv(const char *name, std::string &saved, bool &had)
+    {
+        const char *value = std::getenv(name);
+        if (value != nullptr) {
+            saved = value;
+            had = true;
+        } else {
+            had = false;
+        }
+    }
+
+    static void RestoreEnv(const char *name, const std::string &saved, bool had)
+    {
+        if (had) {
+            (void)setenv(name, saved.c_str(), 1);
+        } else {
+            (void)unsetenv(name);
+        }
+    }
+
+    bool hadUbTimeout_{false};
+    std::string savedUbTimeout_;
+    bool hadDfsConfig_{false};
+    std::string savedDfsConfig_;
+>>>>>>> 437eb70e (ut  我希望是最后一次)
 };
 
 void FillIpv4CommAddr(CommAddr &ca, const char *dotted)

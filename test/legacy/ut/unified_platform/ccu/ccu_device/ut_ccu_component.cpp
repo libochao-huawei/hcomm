@@ -717,10 +717,14 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x222)));
 <<<<<<< HEAD
+<<<<<<< HEAD
     MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x333ULL)));
 =======
     MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x333)));
 >>>>>>> ece532e0 (ut覆盖率)
+=======
+    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x333ULL)));
+>>>>>>> 437eb70e (ut  我希望是最后一次)
     MOCKER(HrtRaGetTpAttrAsync).stubs().will(invoke(StubHrtRaGetTpAttrAsyncLoopSl7));
     MOCKER(HrtRaUbCreateJetty).stubs().will(invoke(StubHrtRaUbCreateJettyCaptureQos));
     MOCKER(RaUbTpImportJetty).stubs().will(invoke(StubRaUbTpImportJetty));
@@ -774,10 +778,14 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpHandleZero_Expect_D
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x555)));
 <<<<<<< HEAD
+<<<<<<< HEAD
     MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x666ULL)));
 =======
     MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x666)));
 >>>>>>> ece532e0 (ut覆盖率)
+=======
+    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x666ULL)));
+>>>>>>> 437eb70e (ut  我希望是最后一次)
     MOCKER(HrtRaUbCreateJetty).stubs().will(invoke(StubHrtRaUbCreateJettyCaptureQos));
     MOCKER(RaUbTpImportJetty).stubs().will(invoke(StubRaUbTpImportJetty));
 
