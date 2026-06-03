@@ -653,6 +653,14 @@ HrtRaUbJettyImportedOutParam StubRaUbTpImportJetty(RdmaHandle, u8 *, u32, u32, c
     return HrtRaUbJettyImportedOutParam{};
 }
 
+void MockLoopJettyBufferDeps()
+{
+    const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo =
+        std::make_pair(reinterpret_cast<TokenIdHandle>(0x88888888), 1U);
+    MOCKER_CPP(&RdmaHandleManager::GetTokenIdInfo).stubs().will(returnValue(fakeTokenInfo));
+    MOCKER(HrtRaUbLocalMemReg).stubs().will(returnValue(HrtRaUbLocalMemRegOutParam()));
+}
+
 } // namespace
 
 TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_QosMapped)
@@ -665,6 +673,7 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_
 
     const uint8_t dieId = 0U;
     const IpAddress ipAddr("192.168.10.1");
+    MockLoopJettyBufferDeps();
     auto buffer = std::make_shared<Buffer>(0x1000ULL, 4096ULL);
     ccuComponent.localCcuRmaBufferMap[dieId] =
         std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x111));
@@ -705,6 +714,7 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpHandleZero_Expect_D
 
     const uint8_t dieId = 1U;
     const IpAddress ipAddr("192.168.10.2");
+    MockLoopJettyBufferDeps();
     auto buffer = std::make_shared<Buffer>(0x2000ULL, 4096ULL);
     ccuComponent.localCcuRmaBufferMap[dieId] =
         std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x444));
