@@ -50,38 +50,36 @@ void MirrorTaskManager::AddTaskInfo(std::unique_ptr<TaskInfo> &taskInfo)
             StringFormat("MirrorTaskManager::AddTaskInfo taskInfo is nullptr"));
     }
     bool needCallback = false;
-    {
-        std::unique_lock<std::mutex> lock(profMutex);
-        if (taskInfo->dfxOpInfo_ == nullptr) {
-            taskInfo->dfxOpInfo_ = currDfxOpInfo_;
-        }
+    std::unique_lock<std::mutex> lock(profMutex);
+    if (taskInfo->dfxOpInfo_ == nullptr) {
+        taskInfo->dfxOpInfo_ = currDfxOpInfo_;
+    }
 
-        auto queueIt = queueMap_.find(taskInfo->streamId_);
-        if (UNLIKELY(queueIt == queueMap_.end())) {
-            QueueType queueType = GetQueueType();
-            queueMap_[taskInfo->streamId_] = &(globalMirrorTasks_->CreateQueue(devId_, taskInfo->streamId_, queueType));
-            queueTaskNum[taskInfo->streamId_] = 0;
-            queueIt = queueMap_.find(taskInfo->streamId_);
-        }
+    auto queueIt = queueMap_.find(taskInfo->streamId_);
+    if (UNLIKELY(queueIt == queueMap_.end())) {
+        QueueType queueType = GetQueueType();
+        queueMap_[taskInfo->streamId_] = &(globalMirrorTasks_->CreateQueue(devId_, taskInfo->streamId_, queueType));
+        queueTaskNum[taskInfo->streamId_] = 0;
+        queueIt = queueMap_.find(taskInfo->streamId_);
+    }
 
-        auto taskNumIt = queueTaskNum.find(taskInfo->streamId_);
-        if (UNLIKELY(taskNumIt->second == queueIt->second->Capacity())) {
-            needCallback = true;
-            taskNumIt->second = 0;
-        }
+    auto taskNumIt = queueTaskNum.find(taskInfo->streamId_);
+    if (UNLIKELY(taskNumIt->second == queueIt->second->Capacity())) {
+        needCallback = true;
+        taskNumIt->second = 0;
+    }
 
-        if (needCallback && fullyCallBack_ != nullptr) {
-            lock.unlock();
-            fullyCallBack_();
-            lock.lock();
-            queueIt = queueMap_.find(taskInfo->streamId_);
-            taskNumIt = queueTaskNum.find(taskInfo->streamId_);
-        }
-        queueIt->second->Append(taskInfo);
-        taskNumIt->second++;
+    if (needCallback && fullyCallBack_ != nullptr) {
+        lock.unlock();
+        fullyCallBack_();
+        lock.lock();
+        queueIt = queueMap_.find(taskInfo->streamId_);
+        taskNumIt = queueTaskNum.find(taskInfo->streamId_);
     }
     HCCL_INFO("[MirrorTaskManager][AddTaskInfo]add devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u] queueMapsize[%u]",
         devId_, taskInfo->streamId_, taskInfo->taskId_, queueMap_.size());
+    queueIt->second->Append(taskInfo); // Append后，taskInfo被move走，不可访问
+    taskNumIt->second++;
     return;
 }
 

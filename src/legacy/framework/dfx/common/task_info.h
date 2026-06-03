@@ -61,7 +61,7 @@ public:
     std::shared_ptr<DfxOpInfo> dfxOpInfo_;
     bool                       isMaster_;
     u64                        channelHandle_{0xffffffff};
-    std::function<u32(u64)> getChannelRemoteRankId_{nullptr};
+    std::function<u32(u64)> getRemoteRankByHandle_{nullptr};
 
 public:
     TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam,
