@@ -168,6 +168,9 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unique
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/buffer_manager
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unfold_cache
+    ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/common/launch_aicpu
+    ${HCOMM_DIR}/src/common
 
     # hccp (moved to base_comm/resources)
     ${HCOMM_DIR}/src/base_comm/resources/hccp
@@ -197,6 +200,9 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/common/
 
     ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+
+    ${HCOMM_DIR}/test/stub/depends/include
+    ${HCOMM_DIR}/test/stub/depends/include/base
 )
 target_include_directories(ccl_kernel_plf PRIVATE
     ${CCL_KERNEL_PLF_INCLUDE_LIST}
