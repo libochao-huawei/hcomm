@@ -31,8 +31,8 @@ void MirrorTaskManager::RegFullyCallBack(std::function<void()> callBack)
 QueueType MirrorTaskManager::GetQueueType() const
 {
     if (currDfxOpInfo_ == nullptr) {
-        THROW<InternalException>(
-            StringFormat("MirrorTaskManager::GetQueueType currDfxOpInfo_ is nullptr!"));
+        HCCL_WARNING("MirrorTaskManager::GetQueueType currDfxOpInfo_ is nullptr!");
+        return QueueType::Vector_Queue;
     }
     QueueType queueType = QueueType::Vector_Queue;
 
