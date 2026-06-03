@@ -209,19 +209,21 @@ target_compile_options(hccl_alg_adaption PRIVATE
 
 if(HOST_HCCL_LLT STREQUAL "1")
     target_link_libraries(hccl_alg_adaption PRIVATE
-        hccl_alg_test
         $<BUILD_INTERFACE:intf_llt_pub>
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:rdma_core_headers>
+        hccl_alg_test
         c_sec_static
         -lrt
         -ldl
     )
 else()
     target_link_libraries(hccl_alg_adaption PRIVATE
-        hccl_alg_test
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:atrace_headers>
+        $<BUILD_INTERFACE:rdma_core_headers>
+        hccl_alg_test
         c_sec_static
         -lrt
         -ldl
