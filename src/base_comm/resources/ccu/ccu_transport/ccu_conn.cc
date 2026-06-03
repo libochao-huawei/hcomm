@@ -152,7 +152,7 @@ HcclResult CcuConnection::UpdateInitStatus()
             HCCL_ERROR("[CcuConnection][%s] TpMgr did not provide mappedJettyPriority.", __func__),
             HcclResult::HCCL_E_INTERNAL);
         for (auto *jetty : ccuJettys_) {
-            jetty->SetMappedJettyPriority(tpInfo_.mappedJettyPriority);
+            CHK_RET(jetty->SetMappedJettyPriority(tpInfo_.mappedJettyPriority));
         }
         innerStatus_ = InnerStatus::TP_ATTR_GETTING;
         return HcclResult::HCCL_SUCCESS;
@@ -167,7 +167,7 @@ HcclResult CcuConnection::UpdateInitStatus()
 
         GetTaTimeOut();
         innerStatus_ = InnerStatus::JETTY_CREATING;
-        [[fallthrough]];
+        return HcclResult::HCCL_SUCCESS;
     }
     case InnerStatus::JETTY_CREATING: {
         auto ret = CreateJetty();
