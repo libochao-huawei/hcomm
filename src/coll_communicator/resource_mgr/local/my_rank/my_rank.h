@@ -25,8 +25,8 @@
 #include "orion_adapter_hccp.h"
 #include "coll_comm_config_consistency.h"
 #include "exchange_info_mgr.h"
-
 #include "../../../../base_comm/resources/comm_engine_res/ccu/ccu_res_container.h"
+
 
 namespace hccl {
 

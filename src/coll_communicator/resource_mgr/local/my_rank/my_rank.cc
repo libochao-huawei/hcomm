@@ -15,16 +15,16 @@
 #include "hccl_res.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
 #include "hcclCommDfx.h"
-#include "env_config/env_config.h"
 #include "channel_process.h"
 #include "dlprof_function.h"
 #include "config_log.h"
+#include "env_config/env_config.h"
 
 using namespace hcomm;
 
 namespace MyRankUtils {
 
-HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const Hccl::EnvRdmaConfig &rdmaConfig)
+HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
 {
     HcommChannelDesc hcommDesc{};
     (void)HcommChannelDescInit(&hcommDesc, 1);
@@ -35,6 +35,7 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc, const Hc
     (void)memcpy_s(hcommDesc.raws, sizeof(hcommDesc.raws), hcclDesc.raws, sizeof(hcclDesc.raws));
     
     if (hcclDesc.channelProtocol == COMM_PROTOCOL_ROCE) {
+        auto& rdmaConfig = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
         hcommDesc.roceAttr.multiQpThreshold = rdmaConfig.GetRdmaMultiQpThreshold();
     }
 
@@ -669,10 +670,9 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     std::vector<ChannelHandle> hostChannelHandles(channelNum);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
 
-    auto& rdmaConfig = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
     for (u32 i = 0; i < channelNum; ++i) {
-        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i], rdmaConfig);
+        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
         CHK_RET(ConfigSqDepthByExpansionMode(engine, hcommDescs[i]));
     }
 
