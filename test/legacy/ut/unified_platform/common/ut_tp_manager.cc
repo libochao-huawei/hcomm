@@ -669,6 +669,7 @@ TEST_F(TpManagerTest, tp_manager_release_tpinfo_handle_mismatch)
 TEST_F(TpManagerTest, Ut_CalcTaTimeout_When_EnvLessThanTp_Expect_Upgrade)
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
     UbTimeoutEnvGuard envGuard("0");
 =======
     auto &rdmaCfg = EnvConfig::GetInstance().GetRdmaConfig();
@@ -676,20 +677,27 @@ TEST_F(TpManagerTest, Ut_CalcTaTimeout_When_EnvLessThanTp_Expect_Upgrade)
     rdmaCfg.ubTimeOut.value = 0U;
     rdmaCfg.ubTimeOut.isParsed = true;
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+    UbTimeoutEnvGuard envGuard("0");
+>>>>>>> 183ce91f ( ut覆盖率不够)
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 3U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpManager::CalcTaTimeout(tpAttrInfo), 16U);
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
     rdmaCfg.ubTimeOut = savedUbTimeout;
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+>>>>>>> 183ce91f ( ut覆盖率不够)
 }
 
 TEST_F(TpManagerTest, Ut_CalcTaTimeout_When_EnvGreaterThanTp_Expect_EnvValue)
 {
+<<<<<<< HEAD
 <<<<<<< HEAD
     UbTimeoutEnvGuard envGuard("24");
 =======
@@ -698,16 +706,22 @@ TEST_F(TpManagerTest, Ut_CalcTaTimeout_When_EnvGreaterThanTp_Expect_EnvValue)
     rdmaCfg.ubTimeOut.value = 24U;
     rdmaCfg.ubTimeOut.isParsed = true;
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+    UbTimeoutEnvGuard envGuard("24");
+>>>>>>> 183ce91f ( ut覆盖率不够)
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 0U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpManager::CalcTaTimeout(tpAttrInfo), 24U);
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
     rdmaCfg.ubTimeOut = savedUbTimeout;
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+>>>>>>> 183ce91f ( ut覆盖率不够)
 }
 
 TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_uboe_success)

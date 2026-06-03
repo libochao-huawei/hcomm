@@ -30,21 +30,33 @@ class UbTimeoutEnvGuard {
 public:
     explicit UbTimeoutEnvGuard(const char *value)
     {
+<<<<<<< HEAD
         SaveEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
         SaveEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
 
+=======
+        const char *saved = std::getenv("HCCL_UB_TIMEOUT");
+        if (saved != nullptr) {
+            savedValue_ = saved;
+            hadValue_ = true;
+        }
+>>>>>>> 183ce91f ( ut覆盖率不够)
         if (value != nullptr) {
             (void)setenv("HCCL_UB_TIMEOUT", value, 1);
         } else {
             (void)unsetenv("HCCL_UB_TIMEOUT");
         }
+<<<<<<< HEAD
         // Parse() validates all env keys; CI may leave an invalid HCCL_DFS_CONFIG (typo detction).
         (void)setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
+=======
+>>>>>>> 183ce91f ( ut覆盖率不够)
         Hccl::EnvConfig::GetInstance().Parse();
     }
 
     ~UbTimeoutEnvGuard()
     {
+<<<<<<< HEAD
         RestoreEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
         RestoreEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
         // Do not Parse() here: restoring invalid HCCL_DFS_CONFIG then Parse() throws and aborts the process.
@@ -75,6 +87,19 @@ private:
     std::string savedUbTimeout_;
     bool hadDfsConfig_{false};
     std::string savedDfsConfig_;
+=======
+        if (hadValue_) {
+            (void)setenv("HCCL_UB_TIMEOUT", savedValue_.c_str(), 1);
+        } else {
+            (void)unsetenv("HCCL_UB_TIMEOUT");
+        }
+        Hccl::EnvConfig::GetInstance().Parse();
+    }
+
+private:
+    bool hadValue_{false};
+    std::string savedValue_;
+>>>>>>> 183ce91f ( ut覆盖率不够)
 };
 
 void FillIpv4CommAddr(CommAddr &ca, const char *dotted)
@@ -703,6 +728,7 @@ TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpInfo_TpHandleMismatch_Expect_EPara)
 TEST_F(TpMgrTest, Ut_TpMgr_CalcTaTimeout_When_EnvLessThanTp_Expect_Upgrade)
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
     UbTimeoutEnvGuard envGuard("0");
 =======
     auto &rdmaCfg = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
@@ -710,20 +736,27 @@ TEST_F(TpMgrTest, Ut_TpMgr_CalcTaTimeout_When_EnvLessThanTp_Expect_Upgrade)
     rdmaCfg.ubTimeOut.value = 0U;
     rdmaCfg.ubTimeOut.isParsed = true;
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+    UbTimeoutEnvGuard envGuard("0");
+>>>>>>> 183ce91f ( ut覆盖率不够)
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 3U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpMgr::CalcTaTimeout(tpAttrInfo), 16U);
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
     rdmaCfg.ubTimeOut = savedUbTimeout;
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+>>>>>>> 183ce91f ( ut覆盖率不够)
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_CalcTaTimeout_When_EnvGreaterThanTp_Expect_EnvValue)
 {
+<<<<<<< HEAD
 <<<<<<< HEAD
     UbTimeoutEnvGuard envGuard("24");
 =======
@@ -732,16 +765,22 @@ TEST_F(TpMgrTest, Ut_TpMgr_CalcTaTimeout_When_EnvGreaterThanTp_Expect_EnvValue)
     rdmaCfg.ubTimeOut.value = 24U;
     rdmaCfg.ubTimeOut.isParsed = true;
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+    UbTimeoutEnvGuard envGuard("24");
+>>>>>>> 183ce91f ( ut覆盖率不够)
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 0U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpMgr::CalcTaTimeout(tpAttrInfo), 24U);
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
     rdmaCfg.ubTimeOut = savedUbTimeout;
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+>>>>>>> 183ce91f ( ut覆盖率不够)
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpAttr_UseCntDecrement_Expect_Success)
