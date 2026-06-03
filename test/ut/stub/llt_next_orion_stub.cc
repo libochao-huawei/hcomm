@@ -2850,3 +2850,14 @@ int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(
 {
     return 0;
 }
+
+RankTableCrcBridge& RankTableCrcBridge::GetInstance()
+{
+    static RankTableCrcBridge instance;
+    return instance;
+}
+
+u32 RankTableCrcBridge::ConsumeRankTableJsonCrc(s32 deviceLogicId)
+{
+    return 0;
+}
