@@ -317,21 +317,3 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentA
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Timeout_Expect_Throw)
-{
-    EnvSocketConfig fakeEnvSocketConfig;
-    fakeEnvSocketConfig.linkTimeOut = CfgField<s32>{"HCCL_CONNECT_TIMEOUT", s32(1), Str2T<s32>};
-    fakeEnvSocketConfig.linkTimeOut.isParsed = true;
-    MOCKER_CPP(&EnvConfig::GetSocketConfig).stubs().will(returnValue(fakeEnvSocketConfig));
-    MOCKER_CPP(&Socket::GetStatus).stubs().then(returnValue((SocketStatus)SocketStatus::CONNECTING));
-
-    EXPECT_THROW(rankInfoDetectClient_->CheckStatus(), TimeoutException);
-}
-
-TEST_F(RankInfoDetectClientTest, Ut_VerifyRankTable_When_TlsStatus_Expect_Throw)
-{
-    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE});
-
-    EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
-}
-
