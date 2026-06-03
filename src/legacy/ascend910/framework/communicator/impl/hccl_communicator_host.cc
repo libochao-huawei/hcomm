@@ -5240,8 +5240,6 @@ namespace hccl
                 memcpy_s(tagLocalResHostPtr->tag, sizeof(tagLocalResHostPtr->tag), newTag.c_str(), newTag.length() + 1));
             tagLocalResHostPtr->ScratchmemSize = algResource.scratchMem.size();
             tagLocalResHostPtr->Scratchmem = reinterpret_cast<u64>(algResource.scratchMem.ptr());
-            HCCL_INFO("[BuildOpLocalScratchMemResParam] tag[%s] ScratchmemSize[%llu] Scratchmem[0x%llx]",
-                newTag.c_str(), tagLocalResHostPtr->ScratchmemSize, tagLocalResHostPtr->Scratchmem);
 
             // 3、将节点插入链表头
             ListCommonAddHead(&tagLocalResDevicePtr->nextTagRes,
