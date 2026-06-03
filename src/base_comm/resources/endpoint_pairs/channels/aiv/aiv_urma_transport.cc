@@ -14,7 +14,8 @@
 #include "local_ub_rma_buffer.h"
 #include "sal.h"
 #include "orion_adapter_hccp.h"
-#include "coll_operator_check.h"
+#include "../../../../../../legacy/service/collective/coll_operator_check.h"
+#include "user_remote_mem_getter.h"
 
 namespace Hccl {
 constexpr uint32_t FINISH_MSG_SIZE = 128;

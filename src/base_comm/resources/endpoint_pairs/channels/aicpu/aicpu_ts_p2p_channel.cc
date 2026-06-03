@@ -72,11 +72,11 @@ HcclResult AicpuTsP2pChannel::ParseInputParam()
             HCCL_INFO("[AicpuTsP2pChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
                 __func__, i, localIpcRmaBuffer->GetBufferInfo().first,
                 localIpcRmaBuffer->GetBufferInfo().second,
-                localIpcRmaBuffer->GetBuf()->GetMemTag().c_str());
+                localIpcRmaBuffer->GetBuf()->GetMemInfo().c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
                 localIpcRmaBuffer->GetBufferInfo().first,
                 localIpcRmaBuffer->GetBufferInfo().second,
-                localIpcRmaBuffer->GetBuf()->GetMemTag().c_str())
+                localIpcRmaBuffer->GetBuf()->GetMemInfo().c_str())
             ));
         }
     } else {
@@ -214,9 +214,9 @@ HcclResult AicpuTsP2pChannel::GetNotifyNum(uint32_t *notifyNum) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsP2pChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult AicpuTsP2pChannel::GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos)
 {
-    return memTransport_->GetRemoteMem(remoteMem, memNum, memTags);
+    return memTransport_->GetRemoteMems(memNum, remoteMem, memInfos);
 }
 
 ChannelStatus AicpuTsP2pChannel::GetStatus()
@@ -281,11 +281,6 @@ HcclResult AicpuTsP2pChannel::Resume()
     BuildConnection();
     BuildP2pMemTransport();
     return HCCL_SUCCESS;
-}
-
-HcclResult AicpuTsP2pChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
-{
-    return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
 HcclResult AicpuTsP2pChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
