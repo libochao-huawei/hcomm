@@ -19,6 +19,7 @@
 #undef private
 #undef protected
 #include "llt_hccl_stub_pub.h"
+#include "adapter_rts_common.h"
 
 using namespace std;
 using namespace hccl;
@@ -411,4 +412,168 @@ TEST_F(HcclCommunicatorHostTest, Ut_InitMyRank_Success_Expect_HCCL_SUCCESS)
 
     HcclResult ret = hcclCommunicator->InitMyRank();
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_CopyHostListResToDeviceParam_FirstTime_EmptyList_Expect_Success)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+
+    // 空链表：sentinel 指向自身，while 条件立即为 false
+    ListCommon sentinel;
+    sentinel.nextHost = reinterpret_cast<u64>(&sentinel);
+    sentinel.preHost = reinterpret_cast<u64>(&sentinel);
+    sentinel.nextDevice = reinterpret_cast<u64>(&sentinel);
+    sentinel.preDevice = reinterpret_cast<u64>(&sentinel);
+
+    MOCKER(hrtMemSyncCopy).stubs().will(returnValue(HCCL_SUCCESS));
+
+    std::string newTag = "test_tag";
+    HcclResult ret = hcclCommunicator->CopyHostListResToDeviceParam(newTag, &sentinel, sizeof(HccltagLocalResV2));
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_CopyHostListResToDeviceParam_FirstTime_MultiNode_Expect_CopyFirstTwoOnly)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+
+    // 构建4个节点的循环链表：sentinel → n1 → n2 → n3 → sentinel
+    ListCommon sentinel;
+    HccltagLocalResV2 n1, n2, n3;
+    memset(&n1, 0, sizeof(n1));
+    memset(&n2, 0, sizeof(n2));
+    memset(&n3, 0, sizeof(n3));
+
+    // host 链
+    sentinel.nextHost = reinterpret_cast<u64>(&n1.nextTagRes);
+    n1.nextTagRes.nextHost = reinterpret_cast<u64>(&n2.nextTagRes);
+    n2.nextTagRes.nextHost = reinterpret_cast<u64>(&n3.nextTagRes);
+    n3.nextTagRes.nextHost = reinterpret_cast<u64>(&sentinel);
+
+    // device 链（只填充 host 节点的 nextDevice，供 memcpy dst 用；device 节点本身不遍历）
+    ListCommon dev1, dev2, dev3;
+    sentinel.nextDevice = reinterpret_cast<u64>(&dev1);
+    n1.nextTagRes.nextDevice = reinterpret_cast<u64>(&dev2);
+    n2.nextTagRes.nextDevice = reinterpret_cast<u64>(&dev3);
+    n3.nextTagRes.nextDevice = reinterpret_cast<u64>(&sentinel);
+
+    // 首次分配（newTagResAlloced_ 为空），应只拷前2个节点
+    MOCKER(hrtMemSyncCopy).expects(atMost(2)).will(returnValue(HCCL_SUCCESS));
+
+    std::string newTag = "test_tag";
+    HcclResult ret = hcclCommunicator->CopyHostListResToDeviceParam(newTag, &sentinel, sizeof(HccltagLocalResV2));
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_CopyHostListResToDeviceParam_RefreshSingleNode_TagFound_Expect_CopyOneOnly)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+
+    // 预先插入 tag，使 isRefreshSingleNode = true
+    std::string targetTag = "refresh_tag";
+    hcclCommunicator->newTagResAlloced_.insert(targetTag);
+
+    // 构建3个节点的链表，第二个节点匹配 targetTag
+    ListCommon sentinel;
+    HccltagLocalResV2 n1, n2, n3;
+    memset(&n1, 0, sizeof(n1));
+    memset(&n2, 0, sizeof(n2));
+    memset(&n3, 0, sizeof(n3));
+    memcpy_s(n1.tag, TAG_MAX_LENGTH, "other_tag", sizeof("other_tag"));
+    memcpy_s(n2.tag, TAG_MAX_LENGTH, targetTag.c_str(), targetTag.length() + 1);
+    memcpy_s(n3.tag, TAG_MAX_LENGTH, "another_tag", sizeof("another_tag"));
+
+    sentinel.nextHost = reinterpret_cast<u64>(&n1.nextTagRes);
+    n1.nextTagRes.nextHost = reinterpret_cast<u64>(&n2.nextTagRes);
+    n2.nextTagRes.nextHost = reinterpret_cast<u64>(&n3.nextTagRes);
+    n3.nextTagRes.nextHost = reinterpret_cast<u64>(&sentinel);
+
+    ListCommon dev1, dev2, dev3;
+    sentinel.nextDevice = reinterpret_cast<u64>(&dev1);
+    n1.nextTagRes.nextDevice = reinterpret_cast<u64>(&dev2);
+    n2.nextTagRes.nextDevice = reinterpret_cast<u64>(&dev3);
+    n3.nextTagRes.nextDevice = reinterpret_cast<u64>(&sentinel);
+
+    // 匹配到第二个节点时 break，只拷1次
+    MOCKER(hrtMemSyncCopy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = hcclCommunicator->CopyHostListResToDeviceParam(targetTag, &sentinel, sizeof(HccltagLocalResV2));
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_CopyHostListResToDeviceParam_RefreshSingleNode_TagNotFound_Expect_NoCopy)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+
+    // 预先插入 tag，使 isRefreshSingleNode = true
+    std::string targetTag = "refresh_tag";
+    hcclCommunicator->newTagResAlloced_.insert(targetTag);
+
+    // 构建3个节点的链表，没有节点匹配 targetTag
+    ListCommon sentinel;
+    HccltagLocalResV2 n1, n2, n3;
+    memset(&n1, 0, sizeof(n1));
+    memset(&n2, 0, sizeof(n2));
+    memset(&n3, 0, sizeof(n3));
+    memcpy_s(n1.tag, TAG_MAX_LENGTH, "tag_a", sizeof("tag_a"));
+    memcpy_s(n2.tag, TAG_MAX_LENGTH, "tag_b", sizeof("tag_b"));
+    memcpy_s(n3.tag, TAG_MAX_LENGTH, "tag_c", sizeof("tag_c"));
+
+    sentinel.nextHost = reinterpret_cast<u64>(&n1.nextTagRes);
+    n1.nextTagRes.nextHost = reinterpret_cast<u64>(&n2.nextTagRes);
+    n2.nextTagRes.nextHost = reinterpret_cast<u64>(&n3.nextTagRes);
+    n3.nextTagRes.nextHost = reinterpret_cast<u64>(&sentinel);
+
+    ListCommon dev1, dev2, dev3;
+    sentinel.nextDevice = reinterpret_cast<u64>(&dev1);
+    n1.nextTagRes.nextDevice = reinterpret_cast<u64>(&dev2);
+    n2.nextTagRes.nextDevice = reinterpret_cast<u64>(&dev3);
+    n3.nextTagRes.nextDevice = reinterpret_cast<u64>(&sentinel);
+
+    // 没有匹配tag，不应触发拷贝
+    MOCKER(hrtMemSyncCopy).expects(atMost(0)).will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = hcclCommunicator->CopyHostListResToDeviceParam(targetTag, &sentinel, sizeof(HccltagLocalResV2));
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_CopyHostListResToDeviceParam_RefreshSingleNode_RemoteRes_TagFound_Expect_CopyOneOnly)
+{
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+
+    std::string targetTag = "refresh_tag";
+    hcclCommunicator->newTagResAlloced_.insert(targetTag);
+
+    // 使用 HccltagRemoteResV2 类型（size == sizeof(HccltagRemoteResV2) 分支）
+    ListCommon sentinel;
+    HccltagRemoteResV2 n1, n2;
+    memset(&n1, 0, sizeof(n1));
+    memset(&n2, 0, sizeof(n2));
+    memcpy_s(n1.tag, TAG_MAX_LENGTH, "other_tag", sizeof("other_tag"));
+    memcpy_s(n2.tag, TAG_MAX_LENGTH, targetTag.c_str(), targetTag.length() + 1);
+
+    sentinel.nextHost = reinterpret_cast<u64>(&n1.nextTagRes);
+    n1.nextTagRes.nextHost = reinterpret_cast<u64>(&n2.nextTagRes);
+    n2.nextTagRes.nextHost = reinterpret_cast<u64>(&sentinel);
+
+    ListCommon dev1, dev2;
+    sentinel.nextDevice = reinterpret_cast<u64>(&dev1);
+    n1.nextTagRes.nextDevice = reinterpret_cast<u64>(&dev2);
+    n2.nextTagRes.nextDevice = reinterpret_cast<u64>(&sentinel);
+
+    // HccltagRemoteResV2 路径，匹配到第二个节点后 break
+    MOCKER(hrtMemSyncCopy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = hcclCommunicator->CopyHostListResToDeviceParam(
+        targetTag, &sentinel, sizeof(HccltagRemoteResV2));
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
 }
