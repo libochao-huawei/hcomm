@@ -70,6 +70,7 @@ target_compile_options(hccl_utest_framework_communicator PRIVATE
 
 target_link_libraries(hccl_utest_framework_communicator PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt
