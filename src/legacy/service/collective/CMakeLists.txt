@@ -1,0 +1,21 @@
+# 此处不包含alg文件夹， 算法平台单独打包为独立so文件
+# 基础框架只引入部分头文件
+
+add_subdirectory(instruction)
+add_subdirectory(primitive)
+add_subdirectory(alg)
+
+if(TARGET hccl_v2)
+    target_sources(hccl_v2
+            PRIVATE
+            coll_operator.cc
+            coll_operator_check.cc
+    )
+endif()
+
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+            coll_operator.cc
+            coll_operator_check.cc
+    )
+endif()

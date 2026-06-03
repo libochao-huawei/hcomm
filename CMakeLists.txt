@@ -1,0 +1,272 @@
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+cmake_minimum_required(VERSION 3.16.0)
+option(BUILD_OPEN_PROJECT   "Build open hcomm project."     ON)
+option(ENABLE_BUILD_DEVICE  "Build hcomm device project."   OFF)
+option(ENABLE_BUILD_AARCH   "Build hcomm aarch project."    OFF)
+
+# 默认只编译 host 侧
+if(NOT DEFINED PRODUCT_SIDE)
+    set(PRODUCT_SIDE "host")
+endif()
+
+# 构建 Device 侧需设置 TOOLCHAIN_DIR 环境变量
+if(DEFINED ENV{TOOLCHAIN_DIR} AND ENABLE_BUILD_DEVICE)
+    set(ENABLE_DEVICE ON)
+else()
+    set(ENABLE_DEVICE OFF)
+endif()
+
+message(STATUS "ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
+message(STATUS "CANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}")
+message(STATUS "PRODUCT_SIDE=${PRODUCT_SIDE}")
+message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
+message(STATUS "ENABLE_BUILD_DEVICE=${ENABLE_BUILD_DEVICE}")
+message(STATUS "ENABLE_BUILD_AARCH=${ENABLE_BUILD_AARCH}")
+
+set(HCOMM_DIR         "${CMAKE_CURRENT_SOURCE_DIR}")
+set(HCC_TOOLCHAIN_DIR "${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc")
+set(HCC_CXX_COMPILER  "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++")
+set(HCC_C_COMPILER    "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc")
+set(HCC_C_AR          "${HCC_TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-ar")
+
+# 交叉编译场景（x86机器上编译arm包）
+if(ENABLE_BUILD_AARCH)
+    message(STATUS "TOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}")
+    set(CMAKE_SYSTEM_NAME Linux)
+    set(CMAKE_SYSTEM_PROCESSOR aarch64)
+    set(TOOLCHAIN_DIR      ${HCC_TOOLCHAIN_DIR})
+    set(CMAKE_CXX_COMPILER ${HCC_CXX_COMPILER})
+    set(CMAKE_C_COMPILER   ${HCC_C_COMPILER})
+endif()
+
+# 引入CANN/cmake库
+include(cmake/fetch_cann_cmake.cmake)
+project(hcomm)
+
+# 初始化 CANN 项目配置
+init_cann_project(PREPEND_MODULE_PATH)
+
+# 采用 C++17 标准
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_C_FLAGS_RELEASE "")
+set(CMAKE_CXX_FLAGS_RELEASE "")
+
+# 获取 CPU 核心数
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    execute_process(
+        COMMAND nproc
+        OUTPUT_VARIABLE CPU_CORES
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    ) 
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    execute_process(
+        COMMAND wmic cpu get NumberOfCores /value
+        OUTPUT_VARIABLE CPU_CORES
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    # 解析输出
+    string(REGEX REPLACE "NumberOfCores=([0-9]+)" "\\1" CPU_CORES "${CPU_CORES}")
+else()
+    # 默认设置为 1
+    set(CPU_CORES 1)
+endif()
+
+math(EXPR JOBS "${CPU_CORES} * 2")
+message(STATUS "Detected JOBS: ${JOBS}")
+set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
+set(CMAKE_JOB_POOL_LINK "${JOBS}")
+
+if(ENABLE_TEST)
+    enable_testing()
+    include(cmake/config.cmake)
+    include(cmake/function.cmake)
+    include(cmake/intf_pub_gccnative.cmake)
+    add_cann_third_party(json)
+    add_cann_third_party(gtest)
+    include(cmake/third_party/mockcpp.cmake)
+    add_cann_third_party(rdma-core)
+    add_subdirectory(test)
+
+elseif(BUILD_OPEN_PROJECT)
+    include(cmake/config.cmake)
+    include(cmake/package.cmake)
+    include(cmake/func.cmake)
+    include(version.cmake)
+    # 三方件
+    include(cmake/hcomm_utils.cmake)
+    include(cmake/third_party/openssl.cmake)
+    include(cmake/third_party/ubengine.cmake)
+    add_cann_third_party(rdma-core)
+    add_cann_third_party(json)
+    # 查找依赖包
+    find_cann_package(acl_rt MODULE REQUIRED)
+    find_cann_package(asc_devkit MODULE REQUIRED)
+    find_cann_package(ascend_hal MODULE REQUIRED)
+    find_cann_package(atrace MODULE REQUIRED)
+    find_cann_package(error_manager MODULE REQUIRED)
+    find_cann_package(mmpa MODULE REQUIRED)
+    find_cann_package(msprof MODULE REQUIRED)
+    find_cann_package(runtime MODULE REQUIRED)
+    find_cann_package(securec MODULE REQUIRED)
+    find_cann_package(tsdclient MODULE REQUIRED)
+    find_cann_package(unified_dlog MODULE REQUIRED)
+    # 检查构建依赖
+    check_cann_pkg_build_deps("hcomm")
+    add_version_info_targets()
+    # 配置打包
+    pack_built_in()
+    # 添加子目录
+    add_subdirectory(src)
+    add_subdirectory(python)
+
+    # Device 侧编译构建
+    if(ENABLE_DEVICE)
+        include(ExternalProject)
+        ExternalProject_Add(hcomm_device
+            SOURCE_DIR ${HCOMM_DIR}/cmake/device
+            BINARY_DIR ${HCOMM_DEVICE_BUILD_PATH}
+            CMAKE_ARGS
+                -DTOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}
+                -DCMAKE_TOOLCHAIN_FILE=${HCOMM_DIR}/cmake/aarch64-hcc-toolchain.cmake
+                -DCMAKE_C_COMPILER=${HCC_C_COMPILER}
+                -DCMAKE_CXX_COMPILER=${HCC_CXX_COMPILER}
+                -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
+                -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
+                -DCMAKE_C_AR=${HCC_C_AR}
+                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                -DCMAKE_INSTALL_PREFIX=${HCOMM_DEVICE_INSTALL_PATH}
+                -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH}
+                -DBUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}
+                -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH}
+                -DENABLE_SIGN=${ENABLE_SIGN}
+                -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}
+                -DVERSION_INFO=${VERSION_INFO}
+            INSTALL_COMMAND ${CMAKE_CPACK_COMMAND}
+            BUILD_ALWAYS TRUE
+        )
+        if(TARGET hcomm_utils)
+            add_dependencies(hcomm_device hcomm_utils)
+        endif()
+
+        # 安装 device 侧编译产物
+        install(FILES
+            ${HCOMM_DEVICE_BUILD_PATH}/device-hcomm.tar.gz
+            DESTINATION .
+            COMPONENT hcomm
+        )
+    endif()
+
+    set(HCCL_HEAD
+        include/hccl/hccl_comm.h
+        include/hccl/hccl_types.h
+        src/pub_inc/hccn_rping.h
+        include/hccl/hccl_rank_graph.h
+        include/hccl/hccl_res.h
+        include/hccl/hccl_sym_win.h
+    )
+
+    set(HCOMM_HEAD
+        include/hcomm_primitives.h
+    )
+
+    install(FILES
+        ${HCCL_HEAD}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+    if(NOT BUILD_OPEN_PROJECT)
+        install(FILES 
+            ${HCOMM_HEAD} 
+            DESTINATION ${INSTALL_INCLUDE_DIR}/ ${INSTALL_OPTIONAL}
+            COMPONENT hcomm 
+        )
+    endif()
+    install(FILES
+        include/hcomm_primitives.h
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+    install(FILES
+        include/hcomm_res.h
+        include/hcomm_res_defs.h
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+
+    set(HCCL_PKG_HEAD
+        pkg_inc/hccl/base.h
+        pkg_inc/hccl/hccl_ex.h
+        pkg_inc/hccl/hccl_one_sided_services.h
+        pkg_inc/hccl/hccl_res_expt.h
+        pkg_inc/hccl/hcom.h
+        pkg_inc/hccl/hccl_diag.h
+        pkg_inc/hccl/hcomm_diag.h
+        pkg_inc/hccl/dtype_common.h
+        pkg_inc/hccl/workflow.h
+        pkg_inc/hccl/hccl_inner.h
+        pkg_inc/hccl/hccl_ctrl_plane.h
+    )
+    install(FILES
+        ${HCCL_PKG_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+    set(HCCL_PKG_CCU_HEAD
+        pkg_inc/hcomm/ccu/ccu_assist_pub.h
+        pkg_inc/hcomm/ccu/ccu_common.h
+        pkg_inc/hcomm/ccu/ccu_condition_v1.h
+        pkg_inc/hcomm/ccu/ccu_kernel_resource.h
+        pkg_inc/hcomm/ccu/ccu_datatype_v1.h
+        pkg_inc/hcomm/ccu/ccu_funccall_v1.h
+        pkg_inc/hcomm/ccu/ccu_instr_info_v1.h
+        pkg_inc/hcomm/ccu/ccu_interface_assist_v1.h
+        pkg_inc/hcomm/ccu/ccu_kernel_arg.h
+        pkg_inc/hcomm/ccu/ccu_kernel_signature.h
+        pkg_inc/hcomm/ccu/ccu_kernel.h
+        pkg_inc/hcomm/ccu/ccu_loopblock_v1.h
+        pkg_inc/hcomm/ccu/ccu_loopcall_v1.h
+        pkg_inc/hcomm/ccu/ccu_loopgroupcall_v1.h
+        pkg_inc/hcomm/ccu/ccu_microcode_v1.h
+        pkg_inc/hcomm/ccu/ccu_operator_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_arg_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_base_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_block_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_context_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_funcblock_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_funccall_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_jump_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_jumplabel_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_loopblock_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_loopcall_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_reference_manager_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_type_v1.h
+        pkg_inc/hcomm/ccu/ccu_repeat_v1.h
+        pkg_inc/hcomm/ccu/ccu_res_repo.h
+        pkg_inc/hcomm/ccu/ccu_task_arg_v1.h
+        pkg_inc/hcomm/ccu/ccu_task_param_v1.h
+        pkg_inc/hcomm/ccu/hccl_ccu_res.h
+    )
+    install(FILES
+        ${HCCL_PKG_CCU_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+    set(HCOMM_PKG_HEAD
+        pkg_inc/hcomm/hcomm_primitives_expt.h
+        pkg_inc/hcomm/hcomm_res_entity_defs.h
+    )
+    install(FILES
+        ${HCOMM_PKG_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+endif()
