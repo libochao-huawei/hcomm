@@ -66,7 +66,6 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/
         ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network/
         ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/
-        ${RDMA_CORE_INCLUDE_DIR}
 
         ${HCCL_LLT_ROOT}/common/virtual_topo_stub/
         ${HCCL_LLT_ROOT}/ut/framework/topo/ranktable/
@@ -75,6 +74,7 @@ target_include_directories(hccl_v2_utest PRIVATE
 
 target_link_libraries(hccl_v2_utest PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core>
     -pthread
     # hccl_llt
     -Wl,--whole-archive

@@ -102,7 +102,6 @@ target_include_directories(rdma_agent_utest PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/host_lite
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/nda
-    ${RDMA_CORE_INCLUDE_DIR}
 )
 
 target_compile_options(rdma_agent_utest PRIVATE
@@ -122,6 +121,7 @@ target_link_options(rdma_agent_utest PRIVATE
 
 target_link_libraries(rdma_agent_utest PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core>
     -lrt
     -pthread
     -lgcov
