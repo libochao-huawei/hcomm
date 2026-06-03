@@ -30,32 +30,51 @@ class UbTimeoutEnvGuard {
 public:
     explicit UbTimeoutEnvGuard(const char *value)
     {
-        const char *saved = std::getenv("HCCL_UB_TIMEOUT");
-        if (saved != nullptr) {
-            savedValue_ = saved;
-            hadValue_ = true;
-        }
+        SaveEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
+        SaveEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
+
         if (value != nullptr) {
             (void)setenv("HCCL_UB_TIMEOUT", value, 1);
         } else {
             (void)unsetenv("HCCL_UB_TIMEOUT");
         }
+        // Parse() validates all env keys; CI may leave an invalid HCCL_DFS_CONFIG (typo detction).
+        (void)setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
         Hccl::EnvConfig::GetInstance().Parse();
     }
 
     ~UbTimeoutEnvGuard()
     {
-        if (hadValue_) {
-            (void)setenv("HCCL_UB_TIMEOUT", savedValue_.c_str(), 1);
-        } else {
-            (void)unsetenv("HCCL_UB_TIMEOUT");
-        }
+        RestoreEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
+        RestoreEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
         Hccl::EnvConfig::GetInstance().Parse();
     }
 
 private:
-    bool hadValue_{false};
-    std::string savedValue_;
+    static void SaveEnv(const char *name, std::string &saved, bool &had)
+    {
+        const char *value = std::getenv(name);
+        if (value != nullptr) {
+            saved = value;
+            had = true;
+        } else {
+            had = false;
+        }
+    }
+
+    static void RestoreEnv(const char *name, const std::string &saved, bool had)
+    {
+        if (had) {
+            (void)setenv(name, saved.c_str(), 1);
+        } else {
+            (void)unsetenv(name);
+        }
+    }
+
+    bool hadUbTimeout_{false};
+    std::string savedUbTimeout_;
+    bool hadDfsConfig_{false};
+    std::string savedDfsConfig_;
 };
 
 void FillIpv4CommAddr(CommAddr &ca, const char *dotted)
