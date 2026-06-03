@@ -133,7 +133,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/inc/host
     ${HCOMM_CODE_FRAMEWORK}/common/src
     ${HCOMM_CODE_FRAMEWORK}/common/src/mgr
-    ${HCOMM_DIR}/src/common
+    ${HCOMM_DIR}/src/legacy/ascend910/common
     ${HCOMM_CODE_FRAMEWORK}/common/src/task
     ${HCOMM_CODE_FRAMEWORK}/common/src/topo
     ${HCOMM_CODE_FRAMEWORK}/common/src/config

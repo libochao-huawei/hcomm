@@ -172,6 +172,9 @@ if(BUILD_OPEN_PROJECT)
         # 三方件头文件
         ${JSON_INCLUDE_DIR}
         ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+        ${HCOMM_DIR}/src/legacy/ascend910/common
+        ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new/
+        ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
     )
 
     target_link_libraries(hccd
