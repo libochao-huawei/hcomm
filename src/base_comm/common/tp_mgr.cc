@@ -357,8 +357,13 @@ static bool GetDscpByQosFromHccnCfg(const uint32_t devPhyId, uint8_t qos, uint8_
     std::vector<char> value(kCfgBufLen, 0);
     unsigned int valueLen = kCfgBufLen;
     const int ret = RaGetHccnCfg(&info, HCCN_CFG_QOS_DSCP, value.data(), &valueLen);
+    unsigned int logLen = valueLen;
+    if (logLen > kCfgBufLen) {
+        logLen = kCfgBufLen;
+    }
+    const std::string cfgLog(value.data(), logLen);
     HCCL_INFO("[TpMgr][%s] RaGetHccnCfg ret[%d] phyId[%u] valueLen[%u] qos_dscp[%s].", __func__, ret, devPhyId,
-        valueLen, value.data());
+        valueLen, cfgLog.c_str());
     if (ret != 0 || valueLen == 0U) {
         return false;
     }
@@ -888,6 +893,8 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
         return HcclResult::HCCL_E_INTERNAL;
     }
     if (tpListIndex >= tpInfoNum) {
+        HCCL_ERROR("[TpMgr][%s] tpListIndex out of range: tpListIndex[%u] tpInfoNum[%u] mappedSl[%u] param[%s].",
+            __func__, tpListIndex, tpInfoNum, static_cast<unsigned>(mappedSl & 0xFU), param.Describe().c_str());
         return HcclResult::HCCL_E_INTERNAL;
     }
 
