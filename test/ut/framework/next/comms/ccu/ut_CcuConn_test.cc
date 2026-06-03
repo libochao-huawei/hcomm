@@ -27,6 +27,7 @@
 #include "internal_exception.h"
 #include "hccl_types.h"
 #include "adapter_rts.h"
+#include "env_config/env_config.h"
 
 #undef private
 #undef protected
@@ -291,6 +292,34 @@ TEST_F(CcuConnTest, Ut_UpdateInitStatus_WithMappedPriority_SetsJettyQos)
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
     EXPECT_EQ(connection->innerStatus_, hcomm::CcuConnection::InnerStatus::TP_ATTR_GETTING);
     EXPECT_EQ(jetty.GetCreateJettyParam().qos, static_cast<uint8_t>(4U));
+
+    GlobalMockObject::verify();
+}
+
+GetTpInfoParam gCapturedConnTpParam{};
+
+HcclResult StubTpMgrGetTpInfoCaptureParam(hcomm::TpMgr *, const hcomm::GetTpInfoParam &param, hcomm::TpInfo &tpInfo)
+{
+    gCapturedConnTpParam = param;
+    tpInfo.tpHandle = 0x4321ULL;
+    tpInfo.hasMappedJettyPriority = true;
+    tpInfo.mappedJettyPriority = 3U;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+TEST_F(CcuConnTest, Ut_MakeGetTpInfoParam_When_QosAboveSeven_Expect_ClampsToDefault)
+{
+    gCapturedConnTpParam = hcomm::GetTpInfoParam{};
+    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::RTP);
+    auto connection = resPair.first.get();
+    connection->qos_ = 9U;
+    connection->innerStatus_ = hcomm::CcuConnection::InnerStatus::INIT;
+
+    MOCKER_CPP(&hcomm::TpMgr::GetTpInfo).stubs().will(invoke(StubTpMgrGetTpInfoCaptureParam));
+
+    HcclResult ret = connection->UpdateInitStatus();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(EnvConfig::UB_QOS_DEFAULT));
 
     GlobalMockObject::verify();
 }
