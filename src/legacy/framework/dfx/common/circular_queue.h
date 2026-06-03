@@ -132,6 +132,20 @@ public:
                    capacity_);
     }
 
+    T& GetAndUpdate() override
+    {
+        if (IsFull()) {
+            head_ = (head_ + 1) % capacity_;
+            size_--;
+        }
+        auto curTail = tail_;
+        tail_ = (tail_ + 1) % capacity_;
+        size_++;
+        HCCL_INFO("[CircularQueue][GetAndUpdate] head_[%u] tail_[%u] size_[%u] capacity_[%u]", head_, tail_, size_,
+                   capacity_);
+        return elems_[curTail];
+    }
+
     void PopFront() override
     {
         if (IsEmpty()) {

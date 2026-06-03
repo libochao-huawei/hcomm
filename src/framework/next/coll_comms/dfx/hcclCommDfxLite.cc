@@ -30,21 +30,11 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
 
     // 3. 注册回调到单例
     addTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
-        return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
+        return this->mirrorTaskManagerLite_->AddTaskInfo(streamId, taskId, taskParam, handle);
     };
-    getChannelRemoteRankId_ = [this](u64 handle) { return this->GetChannelRemoteRankId(handle); };
+    auto getChannelRemoteRankId = [this](u64 handle) { return this->GetChannelRemoteRankId(handle); };
+    mirrorTaskManagerLite_->RegGetRemoteRankCallBack(getChannelRemoteRankId);
     return HCCL_SUCCESS; // 初始化成功返回成功码
-}
-
-HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
-{
-    std::unique_ptr<Hccl::TaskInfo> taskInfo{nullptr};
-    EXECEPTION_CATCH(taskInfo = std::make_unique<Hccl::TaskInfo>(streamId, taskId,
-        INVALID_UINT, taskParam, mirrorTaskManagerLite_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
-    taskInfo->channelHandle_ = handle;
-    taskInfo->getChannelRemoteRankId_ = getChannelRemoteRankId_;
-    EXECEPTION_CATCH(mirrorTaskManagerLite_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
-    return HCCL_SUCCESS;
 }
 
 // HcclCommDfxLite接口实现 - 修改为返回HcclResult类型
