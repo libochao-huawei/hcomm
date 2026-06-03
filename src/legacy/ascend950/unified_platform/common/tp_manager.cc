@@ -852,6 +852,8 @@ HcclResult TpManager::MapTpInfoFromTpAttr(const RaUbGetTpInfoParam &param, const
         return HcclResult::HCCL_E_INTERNAL;
     }
     if (tpListIndex >= tpInfoNum) {
+        HCCL_ERROR("[TpManager][%s] tpListIndex out of range: tpListIndex[%u] tpInfoNum[%u] mappedSl[%u] param[%s].",
+            __func__, tpListIndex, tpInfoNum, static_cast<unsigned>(mappedSl & 0xFU), param.Describe().c_str());
         return HcclResult::HCCL_E_INTERNAL;
     }
 
