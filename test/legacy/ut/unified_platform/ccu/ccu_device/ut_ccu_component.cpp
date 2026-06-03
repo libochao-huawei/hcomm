@@ -686,7 +686,7 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_
     ccuComponent.tpAttrInfoMap[ipAddr] = tpAttrInfo;
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x222)));
-    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x333)));
+    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x333ULL)));
     MOCKER(HrtRaGetTpAttrAsync).stubs().will(invoke(StubHrtRaGetTpAttrAsyncLoopSl7));
     MOCKER(HrtRaUbCreateJetty).stubs().will(invoke(StubHrtRaUbCreateJettyCaptureQos));
     MOCKER(RaUbTpImportJetty).stubs().will(invoke(StubRaUbTpImportJetty));
@@ -726,7 +726,7 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpHandleZero_Expect_D
     ccuComponent.tpAttrInfoMap[ipAddr] = tpAttrInfo;
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x555)));
-    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x666)));
+    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x666ULL)));
     MOCKER(HrtRaUbCreateJetty).stubs().will(invoke(StubHrtRaUbCreateJettyCaptureQos));
     MOCKER(RaUbTpImportJetty).stubs().will(invoke(StubRaUbTpImportJetty));
 
