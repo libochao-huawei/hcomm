@@ -16,6 +16,7 @@
 #include <mutex>
 #include <vector>
 #include <hccl/hccl_types.h>
+#include "log.h"
 namespace hccl {
 constexpr u32 CANN_VERSION_MAX_LEN = 50;  // CANN版本最大长度
 static constexpr u32 MAX_CRC_LEN_V2 = 16; // A5最大CRC个数
