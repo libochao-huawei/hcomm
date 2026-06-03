@@ -356,10 +356,14 @@ add_subdirectory(framework/hcom)
 add_subdirectory(framework/communicator/impl)
 add_subdirectory(framework/resource)
 <<<<<<< HEAD
+<<<<<<< HEAD
 add_subdirectory(framework/next/comms/common)
 =======
 add_subdirectory(framework/next)
 >>>>>>> 08a09424 (解决覆盖率问题)
+=======
+add_subdirectory(framework/next/comms/common)
+>>>>>>> bc6cc459 (解决覆盖率问题,改cmake了)
 add_subdirectory(framework/communicator/impl/independent_op/data_api)
 add_subdirectory(framework/communicator/impl/independent_op/data_api_cpu)
 add_subdirectory(aicpu_kfc/aicpu)
