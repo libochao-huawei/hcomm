@@ -226,10 +226,10 @@ int StubRaGetTpAttrAsyncTwoSlBits(void *ctxHandle, uint64_t tpHandle, uint32_t *
     return 0;
 }
 
-int StubRaGetHccnCfgDscp(void *info, int cfgType, char *value, unsigned int *valueLen)
+int StubRaGetHccnCfgDscp(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
     (void)info;
-    (void)cfgType;
+    (void)key;
     if (value == nullptr || valueLen == nullptr) {
         return -1;
     }
@@ -243,10 +243,10 @@ int StubRaGetHccnCfgDscp(void *info, int cfgType, char *value, unsigned int *val
     return 0;
 }
 
-int StubRaGetHccnCfgDscpKeyValue(void *info, int cfgType, char *value, unsigned int *valueLen)
+int StubRaGetHccnCfgDscpKeyValue(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
     (void)info;
-    (void)cfgType;
+    (void)key;
     if (value == nullptr || valueLen == nullptr) {
         return -1;
     }
