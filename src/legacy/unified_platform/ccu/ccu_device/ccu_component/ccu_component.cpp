@@ -107,9 +107,7 @@ static RaUbGetTpInfoParam MakeCcuLoopRaUbGetTpInfoParam(const IpAddress &locAddr
     p.rmtAddr = rmtAddr;
     p.tpProtocol = LOOP_JETTY_PROTOCOL;
     p.qos = 0U;
-    p.slLevelCount = 0U;
     p.loopFirstTpLowestSl = true;
-    p.ccuLoopbackGetTpInfo = true;
     return p;
 }
 

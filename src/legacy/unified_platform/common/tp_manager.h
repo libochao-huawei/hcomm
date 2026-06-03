@@ -201,8 +201,8 @@ private:
         TpAttrInfo &tpAttrInfo);
 
     void StartGetTpAttrForFirstTpDevice(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx);
-    HcclResult HandleCompletedRequest(RequestCtx reqCtx, const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
-        bool withSlPolicy);
+    HcclResult HandleCompletedRequest(ReqQosMap &qosReqMap, ReqQosMap::iterator it, const RaUbGetTpInfoParam &param,
+        TpInfo &tpInfo, bool withSlPolicy);
     HcclResult MapTpInfoFromTpAttr(const RaUbGetTpInfoParam &param, const RequestCtx &reqCtx, TpInfo &outTpInfo);
 
     bool CheckRequestResult(RequestHandle &reqHandle) const;

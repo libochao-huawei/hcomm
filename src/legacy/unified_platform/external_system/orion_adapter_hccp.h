@@ -20,13 +20,13 @@
 #include <mutex>
 #include "hccp_async_ctx.h"
 #include "hccp_nda.h"
+#include <hccl/hccl_types.h>
 
 namespace Hccl {
 using namespace std;
 
-/// 与 `Hccl::UB_QOS_DEFAULT`（legacy/framework/env_config/env_config.h）及 Next `EnvConfig::UB_QOS_DEFAULT` 数值一致；
-/// 本头文件不 include env_config，避免经 base_config.h 拉入 dma_mode.h 导致 platform 等目标缺头编译失败。
-constexpr u32 kRaUbGetTpInfoParamDefaultQos = 4U;
+/// 引用 `HCCL_COMM_QOS_CONFIG_DEFAULT_UB`；不 include env_config，避免经 base_config.h 拉入 dma_mode.h。
+constexpr u32 kRaUbGetTpInfoParamDefaultQos = static_cast<u32>(HCCL_COMM_QOS_CONFIG_DEFAULT_UB);
 
 /// 单次向管控面查询 TP 列表条数上限（异步接口传入/返回 num；与 buffer 中 HccpTpInfo 条数一致）。
 constexpr uint32_t TP_HANDLE_REQUEST_NUM = 8U;
@@ -609,10 +609,8 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     TpProtocol tpProtocol{TpProtocol::CTP};
     /// 与 Next TpMgr 一致：参与 SL→jetty priority 映射（0–7）；默认见 kRaUbGetTpInfoParamDefaultQos
     uint32_t qos{kRaUbGetTpInfoParamDefaultQos};
-    uint32_t slLevelCount{0U};
+    /// 环回等场景（含 CCU 设备环回）：首 TPID + 掩码内最小 SL
     bool loopFirstTpLowestSl{false};
-    /// 与 Next `GetTpInfoParam::ccuLoopbackGetTpInfo` 对齐：标识 CCU 设备环回 GetTpInfo（便于日志/后续分支）
-    bool ccuLoopbackGetTpInfo{false};
 
     explicit RaUbGetTpInfoParamDef() = default;
     RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr, TpProtocol tpProtocol)
@@ -620,10 +618,9 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
 
     std::string Describe() const {
         return StringFormat(
-            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d, ccuLoop=%d]",
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d]",
             locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), tpProtocol.Describe().c_str(),
-            static_cast<unsigned>(qos & 0xFFU), static_cast<int>(loopFirstTpLowestSl),
-            static_cast<int>(ccuLoopbackGetTpInfo));
+            static_cast<unsigned>(qos & 0xFFU), static_cast<int>(loopFirstTpLowestSl));
     }
 };
 

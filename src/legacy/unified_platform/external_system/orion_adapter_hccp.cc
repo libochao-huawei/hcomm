@@ -1176,6 +1176,32 @@ string HrtRaGetKeyDescribe(const u8 *key, u32 len)
     return desc;
 }
 
+static u32 ResolveUbCtxEidIndex(const IpAddress &addr, HrtNetworkMode mode, u32 phyId)
+{
+    constexpr u32 kDefaultEidIndex = 0U;
+    const Eid linkEid = addr.GetEid();
+    try {
+        const vector<HrtDevEidInfo> eidInfoList = HrtRaGetDevEidInfoList(HRaInfo(mode, phyId));
+        for (const auto &eidInfo : eidInfoList) {
+            if (eidInfo.ipAddress.GetEid() == linkEid) {
+                HCCL_INFO("[ResolveUbCtxEidIndex] linkEid[%s] matched eidIndex[%u].",
+                    addr.Describe().c_str(), eidInfo.eidIndex);
+                return eidInfo.eidIndex;
+            }
+        }
+        HCCL_ERROR("[ResolveUbCtxEidIndex] linkEid[%s] not found in dev eid list(size[%zu]), "
+            "fallback eidIndex[%u].", addr.Describe().c_str(), eidInfoList.size(), kDefaultEidIndex);
+        for (size_t idx = 0; idx < eidInfoList.size(); ++idx) {
+            HCCL_ERROR("[ResolveUbCtxEidIndex] dev eid list[%zu]: eid[%s] eidIndex[%u].",
+                idx, eidInfoList[idx].ipAddress.Describe().c_str(), eidInfoList[idx].eidIndex);
+        }
+    } catch (const NetworkApiException &) {
+        HCCL_ERROR("[ResolveUbCtxEidIndex] HrtRaGetDevEidInfoList failed, fallback eidIndex[%u], addr[%s].",
+            kDefaultEidIndex, addr.Describe().c_str());
+    }
+    return kDefaultEidIndex;
+}
+
 RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
 {
     HCCL_INFO("[HrtRaUbCtxInit] Input params: mode=%d, phyId=%u, addr=%s", in.mode, in.phyId, in.addr.GetIpStr().c_str());
@@ -1185,28 +1211,7 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
     struct CtxInitAttr ctxInfo {};
     ctxInfo.phyId = in.phyId;
     // urma_create_context(eidIndex) 决定 ctx 的 local EID，须与 GetTpList/Import 使用的链路 EID 一致
-    ctxInfo.ub.eidIndex = 0U;
-    const Eid linkEid = in.addr.GetEid();
-    try {
-        const vector<HrtDevEidInfo> eidInfoList = HrtRaGetDevEidInfoList(HRaInfo(in.mode, in.phyId));
-        bool matched = false;
-        for (const auto &eidInfo : eidInfoList) {
-            if (eidInfo.ipAddress.GetEid() == linkEid) {
-                ctxInfo.ub.eidIndex = eidInfo.eidIndex;
-                matched = true;
-                HCCL_INFO("[HrtRaUbCtxInit] linkEid[%s] matched eidIndex[%u].",
-                    in.addr.Describe().c_str(), eidInfo.eidIndex);
-                break;
-            }
-        }
-        if (!matched) {
-            HCCL_WARNING("[HrtRaUbCtxInit] linkEid[%s] not found in dev eid list(size[%zu]), "
-                "fallback eidIndex[0].", in.addr.Describe().c_str(), eidInfoList.size());
-        }
-    } catch (const NetworkApiException &) {
-        HCCL_WARNING("[HrtRaUbCtxInit] HrtRaGetDevEidInfoList failed, fallback eidIndex[0], addr[%s].",
-            in.addr.Describe().c_str());
-    }
+    ctxInfo.ub.eidIndex = ResolveUbCtxEidIndex(in.addr, in.mode, in.phyId);
     HCCL_INFO("[HrtRaUbCtxInit] use eid[%s] eidIndex[%u]", in.addr.Describe().c_str(), ctxInfo.ub.eidIndex);
     s32 sRet = memcpy_s(ctxInfo.ub.eid.raw, sizeof(ctxInfo.ub.eid.raw), in.addr.GetEid().raw, sizeof(in.addr.GetEid().raw));
     if (sRet != EOK) {

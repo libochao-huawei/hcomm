@@ -40,10 +40,8 @@ static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr)
     param.locAddr = commAddr;
     param.rmtAddr = commAddr;
     param.tpProtocol = LOOP_JETTY_PROTOCOL;
-    param.qos = 0U; // CCU 环回与通信域 hcclQos 解耦；SL 仅由 RaGetTpAttr.slBitmap + loopFirstTpLowestSl 决定
-    param.slLevelCount = 0;
+    param.qos = 0U; // CCU 环回与通信域 hcclQos 解耦；SL 由 GetTpAttr.slBitmap + loopFirstTpLowestSl 决定
     param.loopFirstTpLowestSl = true;
-    param.ccuLoopbackGetTpInfo = true;
     return param;
 }
 

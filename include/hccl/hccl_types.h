@@ -138,6 +138,7 @@ const int32_t HCCL_COMM_EXECTIMEOUT_CONFIG_NOT_SET = 0xffffffff;
 // 0xffffffff表示用户未配置QoS
 const uint32_t HCCL_COMM_QOS_CONFIG_NOT_SET = 0xffffffff;
 const uint64_t HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE = 16ULL;
+/// UB 协议默认 QoS（0–7）；框架内部 `UB_QOS_DEFAULT` 等应引用此常量，勿另写魔法数。
 const uint32_t HCCL_COMM_QOS_CONFIG_DEFAULT_UB = 4;
 
 typedef struct HcclCommConfigDef {

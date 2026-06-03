@@ -145,12 +145,12 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_HCCS_ONLY:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_SIO:
+        case COMM_PROTOCOL_UB_MEM:
+            break;
         case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UBC_TP:
         case COMM_PROTOCOL_UBOE:
             return ProcessUbChannelDesc(channelDesc, channelDescFinal, hcclComm);
-        case COMM_PROTOCOL_UB_MEM:
-            break;
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
         default: {

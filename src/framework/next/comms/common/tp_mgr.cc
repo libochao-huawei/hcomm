@@ -85,16 +85,8 @@ static uint16_t ReadSlAvailableMask16(const struct TpAttr &attr)
 
 constexpr uint32_t kUboeEightTpPolicyCount = 8U;
 
-static uint32_t ResolveSlAvailableCntForPolicy(uint16_t slMask, uint32_t slLevelCount)
-{
-    uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
-    if (slLevelCount != 0U) {
-        slAvailableCnt = std::min(slLevelCount, slAvailableCnt);
-    }
-    return slAvailableCnt;
-}
-
-/// UBOE 8-TP：hcclQos 高→slBitmap 低档（高优先级），低→高档；3:2:3 对应 qos [7–5]/[4–3]/[2–0]。
+/// UBOE 8-TP：hcclQos 越大优先级越高，映射到 slBitmap 中 SL 数值越小（优先级越高）的档位。
+/// 8 档 QoS 按 3:2:3 分组（与 ApplyUbcQosTpSlPolicy k=3 一致）：[0–2] / [3–4] / [5–7]，边界 3、5 均落入中/高档。
 static uint32_t MapUboeEightTpSlFromMask(uint32_t qos, uint16_t slMask, uint32_t slAvailableCnt)
 {
     const uint32_t q = qos & 7U;
@@ -105,16 +97,17 @@ static uint32_t MapUboeEightTpSlFromMask(uint32_t qos, uint16_t slMask, uint32_t
         return SlValueAtRankInMask16(slMask, 0U);
     }
     if (slAvailableCnt == 2U) {
+        // 仅两档 SL：q>=4 映射高档，q<=3 映射低档
         const uint32_t slRank = (q >= 4U) ? 0U : 1U;
         return SlValueAtRankInMask16(slMask, slRank);
     }
     uint32_t slRank = 0U;
     if (q >= 5U) {
-        slRank = 0U;
+        slRank = 0U; // [5–7] 高档
     } else if (q >= 3U) {
-        slRank = (slAvailableCnt - 1U) / 2U;
+        slRank = (slAvailableCnt - 1U) / 2U; // [3–4] 中档
     } else {
-        slRank = slAvailableCnt - 1U;
+        slRank = slAvailableCnt - 1U; // [0–2] 低档
     }
     if (slRank >= slAvailableCnt) {
         slRank = slAvailableCnt - 1U;
@@ -122,17 +115,14 @@ static uint32_t MapUboeEightTpSlFromMask(uint32_t qos, uint16_t slMask, uint32_t
     return SlValueAtRankInMask16(slMask, slRank);
 }
 
-static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
-    uint32_t &tpListIndexOut, uint32_t &mappedSlOut);
-
-/// UBOE 专用：8 个 TP 与 hcclQos 一一对应；SL 由 GetTpAttr.slBitmap 可用档位按 3:2:3 动态选取。
+/// UBOE 专用：8 个 TP 与 hcclQos 一一对应；SL 由 slBitmap 可用档位数经 MapUboeEightTpSlFromMask 按 3:2:3 选取。
 static bool TryApplyUboeEightTpQosPolicy(const GetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
     uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
 {
     if (param.tpProtocol != TpProtocol::UBOE || param.loopFirstTpLowestSl) {
         return false;
     }
-    const uint32_t slAvailableCnt = ResolveSlAvailableCntForPolicy(slMask, param.slLevelCount);
+    const uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
     if (nTp != kUboeEightTpPolicyCount || slAvailableCnt == 0U) {
         return false;
     }
@@ -146,24 +136,12 @@ static bool TryApplyUboeEightTpQosPolicy(const GetTpInfoParam &param, uint32_t n
     return true;
 }
 
-static bool ApplyTpQosSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
-    uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
-{
-    if (TryApplyUboeEightTpQosPolicy(param, nTp, slMask, tpListIndexOut, mappedSlOut)) {
-        return true;
-    }
-    return ApplyUbcQosTpSlPolicy(param, nTp, slMask, tpListIndexOut, mappedSlOut);
-}
-
 static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
     uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
 {
     uint32_t slAvailableCnt = CalSlAvailableCnt(slMask); // slMask 里为 1 的 bit 个数 = 可用 SL 档位数
     if (slAvailableCnt == 0U) {
         return false;
-    }
-    if (param.slLevelCount != 0U) {
-        slAvailableCnt = std::min(param.slLevelCount, slAvailableCnt);
     }
     if (param.loopFirstTpLowestSl) {
         tpListIndexOut = 0;
@@ -194,6 +172,15 @@ static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uin
     tpListIndexOut = (k - 1U) - slotIdx;
     mappedSlOut = SlValueAtRankInMask16(slMask, slRank);
     return true;
+}
+
+static bool ApplyTpQosSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
+    uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
+{
+    if (TryApplyUboeEightTpQosPolicy(param, nTp, slMask, tpListIndexOut, mappedSlOut)) {
+        return true;
+    }
+    return ApplyUbcQosTpSlPolicy(param, nTp, slMask, tpListIndexOut, mappedSlOut);
 }
 
 /// 与 `ApplyUbcQosTpSlPolicy` 分组一致：取该组最小 hcclQos，供共 TP 时统一查 DSCP。
@@ -232,9 +219,6 @@ static uint8_t ResolveUboeDscpLookupQos(const GetTpInfoParam &param, uint32_t nT
         return 0U;
     }
     uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
-    if (param.slLevelCount != 0U) {
-        slAvailableCnt = std::min(param.slLevelCount, slAvailableCnt);
-    }
     return static_cast<uint8_t>(ResolveUbcGroupFirstHcclQos(param.qos, nTp, slAvailableCnt));
 }
 
@@ -357,15 +341,17 @@ static bool GetDscpByQosFromHccnCfg(const uint32_t devPhyId, uint8_t qos, uint8_
     std::vector<char> value(kCfgBufLen, 0);
     unsigned int valueLen = kCfgBufLen;
     const int ret = RaGetHccnCfg(&info, HCCN_CFG_QOS_DSCP, value.data(), &valueLen);
-    HCCL_INFO("[TpMgr][%s] RaGetHccnCfg ret[%d] phyId[%u] valueLen[%u] qos_dscp[%s].", __func__, ret, devPhyId,
-        valueLen, value.data());
-    if (ret != 0 || valueLen == 0U) {
-        return false;
-    }
     if (valueLen > kCfgBufLen) {
         valueLen = kCfgBufLen;
     }
-    std::string cfg(value.data(), valueLen);
+    const std::string cfg(value.data(), valueLen);
+    HCCL_INFO("[TpMgr][%s] RaGetHccnCfg ret[%d] phyId[%u] valueLen[%u] qos_dscp[%s].", __func__, ret, devPhyId,
+        valueLen, cfg.c_str());
+    if (ret != 0 || valueLen == 0U) {
+        HCCL_WARNING("[TpMgr][%s] RaGetHccnCfg failed or empty, ret[%d] phyId[%u] valueLen[%u] qos[%u].", __func__,
+            ret, devPhyId, valueLen, static_cast<unsigned>(qos));
+        return false;
+    }
     return ParseDscpFromCfgByQos(cfg, qos, dscpOut);
 }
 
@@ -511,10 +497,7 @@ HcclResult TpMgr::PollGetTpInfoReqCtx(std::unique_lock<std::mutex> &reqCtxLock, 
         return AdvanceGetTpInfoWaitList(param, reqCtx, qosMap, it, reqCtxLock);
     }
 
-    // 先 move 出槽位再 erase，避免 erase 析构槽内对象后再 move（UB / double free）
-    RequestCtx completedReqCtx = std::move(it->second);
-    qosMap.erase(it);
-    const HcclResult completeRet = HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
+    const HcclResult completeRet = HandleCompletedRequest(qosMap, it, param, tpInfo);
     reqCtxLock.unlock();
     return completeRet;
 }
@@ -858,8 +841,12 @@ HcclResult TpMgr::BuildTpInfoAndCommitQosAttr(const GetTpInfoParam &param, const
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam &param, TpInfo &tpInfo)
+HcclResult TpMgr::HandleCompletedRequest(ReqQosMap &qosMap, ReqQosMap::iterator it, const GetTpInfoParam &param,
+    TpInfo &tpInfo)
 {
+    RequestCtx reqCtx = std::move(it->second);
+    qosMap.erase(it);
+
     const uint32_t tpInfoNum = reqCtx.tpInfoNum;
     if (tpInfoNum == 0U) {
         HCCL_WARNING("[TpMgr][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__,
@@ -888,6 +875,8 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
         return HcclResult::HCCL_E_INTERNAL;
     }
     if (tpListIndex >= tpInfoNum) {
+        HCCL_ERROR("[TpMgr][%s] tpListIndex[%u] out of range, tpInfoNum[%u] param[%s].", __func__, tpListIndex,
+            tpInfoNum, param.Describe().c_str());
         return HcclResult::HCCL_E_INTERNAL;
     }
 

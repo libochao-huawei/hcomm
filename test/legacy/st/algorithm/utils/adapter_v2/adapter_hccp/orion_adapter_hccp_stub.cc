@@ -1,4 +1,5 @@
 #include "orion_adapter_hccp.h"
+#include <cstdlib>
 #include <cstring>
 #include "rt_external.h"
 #include "dev_type.h"
@@ -11,6 +12,56 @@
 namespace Hccl {
 constexpr uint32_t MOVE_TOW_BYTES   = 16;
 constexpr uint32_t MOVE_THREE_BYTES = 24;
+
+namespace {
+constexpr uint32_t kStubTpAttrSlAvailableBit = 17U;
+constexpr uint32_t kStubTpAttrBitmapSl = (1U << 10U);
+constexpr uint32_t kStubTpAttrBitmapDscp = (1U << 8U);
+constexpr uint32_t kStubTpAttrDscpConfigModeBit = 18U;
+
+static uint16_t ResolveStubSlBitmap()
+{
+    const char *env = std::getenv("HCCL_STUB_TP_SL_BITMAP");
+    if (env != nullptr && env[0] != '\0') {
+        return static_cast<uint16_t>(std::strtoul(env, nullptr, 0));
+    }
+    return 0x7U;
+}
+
+static uint32_t FillStubTpAttrFromBitmap(uint32_t requested, TpAttr &attr)
+{
+    uint32_t written = 0U;
+    if ((requested & (1U << 0U)) != 0U) {
+        attr.retryTimesInit = 3U;
+        written |= (1U << 0U);
+    }
+    if ((requested & (1U << 1U)) != 0U) {
+        attr.at = 4U;
+        written |= (1U << 1U);
+    }
+    if ((requested & kStubTpAttrBitmapDscp) != 0U) {
+        attr.dscp = 33U;
+        written |= kStubTpAttrBitmapDscp;
+    }
+    if ((requested & kStubTpAttrBitmapSl) != 0U) {
+        attr.sl = 0U;
+        written |= kStubTpAttrBitmapSl;
+    }
+    if ((requested & (1U << 13U)) != 0U) {
+        attr.dataUdpSrcport = 0x1234U;
+        written |= (1U << 13U);
+    }
+    if ((requested & (1U << kStubTpAttrSlAvailableBit)) != 0U) {
+        attr.slBitmap = ResolveStubSlBitmap();
+        written |= (1U << kStubTpAttrSlAvailableBit);
+    }
+    if ((requested & (1U << kStubTpAttrDscpConfigModeBit)) != 0U) {
+        attr.dscpConfigMode = 1U;
+        written |= (1U << kStubTpAttrDscpConfigModeBit);
+    }
+    return written;
+}
+} // namespace
 
 void HrtRaUbDestroyJetty(JettyHandle jettyHandle)
 {
@@ -167,10 +218,10 @@ HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, 
     (void)phyId;
     (void)handle;
     (void)tpHandle;
-    (void)attrBitmap;
+    const uint32_t requested = attrBitmap;
     (void)std::memset(&attr, 0, sizeof(attr));
-    attr.slBitmap = 1U;
-    attr.dscpConfigMode = 1U;
+    const uint32_t written = FillStubTpAttrFromBitmap(requested, attr);
+    attrBitmap = requested & written;
     reqHandle = 1U;
     return HCCL_SUCCESS;
 }

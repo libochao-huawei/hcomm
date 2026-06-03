@@ -11,6 +11,7 @@
 #include "gtest/gtest.h"
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
+#include <vector>
 #include "hcomm_c_adpt.h"
 #include "hcomm_res_defs.h"
 #include "channel_process.h"
@@ -359,6 +360,48 @@ TEST_F(HcommCAdptTest, ut_HcommChannelDescInit_When_Normal_Expect_Version2AndFul
     EXPECT_EQ(channelDesc.header.version, HCOMM_CHANNEL_VERSION);
     EXPECT_EQ(channelDesc.header.size, sizeof(HcommChannelDesc));
     EXPECT_GE(sizeof(HcommChannelDesc), HCOMM_CHANNEL_DESC_ABI_V1_SIZE + sizeof(uint32_t));
+}
+
+TEST_F(HcommCAdptTest, ut_NormalizeHcommChannelDescs_V1Abi_Expect_QosNotSet)
+{
+    HcommChannelDesc v1Desc{};
+    ASSERT_EQ(HcommChannelDescInit(&v1Desc, 1), HCCL_SUCCESS);
+    v1Desc.header.version = HCOMM_CHANNEL_VERSION_ONE;
+    v1Desc.header.size = HCOMM_CHANNEL_DESC_ABI_V1_SIZE;
+    v1Desc.qos = 5U;
+
+    std::vector<HcommChannelDesc> normalized{};
+    ASSERT_EQ(NormalizeHcommChannelDescs(&v1Desc, 1, normalized), HCCL_SUCCESS);
+    ASSERT_EQ(normalized.size(), 1U);
+    EXPECT_EQ(normalized[0].qos, 0xFFFFFFFFU);
+}
+
+TEST_F(HcommCAdptTest, ut_NormalizeHcommChannelDescs_V2Abi_Expect_QosPreserved)
+{
+    HcommChannelDesc v2Desc{};
+    ASSERT_EQ(HcommChannelDescInit(&v2Desc, 1), HCCL_SUCCESS);
+    v2Desc.header.version = HCOMM_CHANNEL_VERSION_TWO;
+    v2Desc.header.size = sizeof(HcommChannelDesc);
+    v2Desc.qos = 4U;
+
+    std::vector<HcommChannelDesc> normalized{};
+    ASSERT_EQ(NormalizeHcommChannelDescs(&v2Desc, 1, normalized), HCCL_SUCCESS);
+    ASSERT_EQ(normalized.size(), 1U);
+    EXPECT_EQ(normalized[0].qos, 4U);
+}
+
+TEST_F(HcommCAdptTest, ut_NormalizeHcommChannelDescs_V2VersionV1Size_Expect_QosNotSet)
+{
+    HcommChannelDesc desc{};
+    ASSERT_EQ(HcommChannelDescInit(&desc, 1), HCCL_SUCCESS);
+    desc.header.version = HCOMM_CHANNEL_VERSION_TWO;
+    desc.header.size = HCOMM_CHANNEL_DESC_ABI_V1_SIZE;
+    desc.qos = 6U;
+
+    std::vector<HcommChannelDesc> normalized{};
+    ASSERT_EQ(NormalizeHcommChannelDescs(&desc, 1, normalized), HCCL_SUCCESS);
+    ASSERT_EQ(normalized.size(), 1U);
+    EXPECT_EQ(normalized[0].qos, 0xFFFFFFFFU);
 }
 
 TEST_F(HcommCAdptTest, ut_HcommChannelCreate_AICPU_Expect_LoadKernel)

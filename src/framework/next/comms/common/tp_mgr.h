@@ -60,12 +60,8 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
     TpProtocol tpProtocol{TpProtocol::CTP};
     /// 参与 TP/SL 分组与缓存键（0–7），连接侧已归一化
     uint32_t qos{EnvConfig::UB_QOS_DEFAULT};
-    /// 非 0 时与 sl_available 推导的 M 取 min 作为可用档位数上限
-    uint32_t slLevelCount{0};
-    /// 环回等场景：首 TPID + 掩码内最小 SL
+    /// 环回等场景（含 CCU 设备环回）：首 TPID + 掩码内最小 SL；与通信域 hcclQos 解耦时配合 qos=0
     bool loopFirstTpLowestSl{false};
-    /// 仅 CCU 设备环回 GetTpInfo：与通信域 hcclQos 解耦，SL 来自 GetTpAttr.slBitmap；写回 SL 经 HrtRaSetTpAttrAsync（HDC）
-    bool ccuLoopbackGetTpInfo{false};
 
     explicit GetTpInfoParamDef() = default;
     GetTpInfoParamDef(const CommAddr &locAddr, const CommAddr &rmtAddr, TpProtocol tpProtocol)
@@ -76,9 +72,9 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
         (void)CommAddrToIpAddress(locAddr, locIpAddr);
         (void)CommAddrToIpAddress(rmtAddr, rmtIpAddr);
         return Hccl::StringFormat(
-            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d, ccuLoop=%d]",
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d]",
             locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(), tpProtocol.Describe().c_str(), qos,
-            static_cast<int>(loopFirstTpLowestSl), static_cast<int>(ccuLoopbackGetTpInfo));
+            static_cast<int>(loopFirstTpLowestSl));
     }
 };
 
@@ -203,7 +199,8 @@ private:
     HcclResult StartGetTpAttrRequest(const GetTpAttrParam &param, TpAttrRequestCtx &reqCtx, CtxHandle ctxHandle) const;
     HcclResult BuildTpInfoAndCommitQosAttr(const GetTpInfoParam &param, const RequestCtx &reqCtx,
         const struct HccpTpInfo *baseInfoPtr, uint32_t tpListIndex, uint32_t mappedSl, TpInfo &tmpTpInfo);
-    HcclResult HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult HandleCompletedRequest(ReqQosMap &qosMap, ReqQosMap::iterator it, const GetTpInfoParam &param,
+        TpInfo &tpInfo);
     HcclResult HandleCompletedTpAttrRequest(const TpAttrRequestCtx reqCtx, const TpHandle tpHandle,
         TpAttrInfo &tpAttrInfo);
 

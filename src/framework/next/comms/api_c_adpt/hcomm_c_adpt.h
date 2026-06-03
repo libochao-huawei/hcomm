@@ -14,6 +14,7 @@
 #include "hcomm_res.h"
 #include "mem_host_pub.h"
 #include "hccl_diag.h"
+#include <vector>
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,6 +122,9 @@ HcommResult CheckUbAttr(HcommChannelDesc &channelDesc);
 
 #ifdef __cplusplus
 }
+
+HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t channelNum,
+    std::vector<HcommChannelDesc> &channelDescFinals);
 
 HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread,
     ThreadHandle *threads);

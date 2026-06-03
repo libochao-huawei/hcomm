@@ -65,9 +65,22 @@ HcclResult CcuJetty::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
-void CcuJetty::SetMappedJettyPriority(uint32_t priority)
+HcclResult CcuJetty::SetMappedJettyPriority(uint32_t priority)
 {
-    inParam_.qos = priority & 0xFU;
+    const uint32_t normalizedPriority = priority & 0xFU;
+    if (hasMappedJettyPriority_) {
+        if (mappedJettyPriority_ == normalizedPriority) {
+            return HcclResult::HCCL_SUCCESS;
+        }
+        HCCL_ERROR("[CcuJetty][%s] jetty[%u] mappedJettyPriority conflict: existing[%u] new[%u].",
+            __func__, jettyInfo_.taJettyId, mappedJettyPriority_, normalizedPriority);
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    hasMappedJettyPriority_ = true;
+    mappedJettyPriority_ = normalizedPriority;
+    inParam_.qos = normalizedPriority;
+    return HcclResult::HCCL_SUCCESS;
 }
 
 CcuJetty::~CcuJetty()
