@@ -82,7 +82,7 @@ TEST_F(OpCounterTest, ut_op_counter)
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     std::shared_ptr<hccl::ProfilerManager> profilerManager;
-    profilerManager.reset(new (std::nothrow) ProfilerManager(0, 0, 2));
+    profilerManager.reset(new (std::nothrow) ProfilerManager(0, 0, 2, 2));
     profilerManager->InitProfiler();
     DevType chipType = DevType::DEV_TYPE_910;
     void *dispatcherPtr = nullptr;
