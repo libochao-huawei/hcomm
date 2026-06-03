@@ -1024,10 +1024,15 @@ RequestHandle CaptureQosRaUbCreateJettyAsync(const RdmaHandle handle, const HrtR
 TEST_F(DevUbConnectionTest, Ut_DevUsed_DeferJettyUntilTpReady_And_MapQos)
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
     GlobalMockObject::verify();
     gCapturedJettyCreateQos = 0U;
 =======
 >>>>>>> 84b3c665 (ut覆盖率不够)
+=======
+    GlobalMockObject::verify();
+    gCapturedJettyCreateQos = 0U;
+>>>>>>> 320af2ca (ut执行失败)
     MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(RaUbCreateJettyAsync).stubs().will(invoke(CaptureQosRaUbCreateJettyAsync));
     MOCKER_CPP(&TpManager::GetTpInfo)
@@ -1050,6 +1055,7 @@ TEST_F(DevUbConnectionTest, Ut_DevUsed_DeferJettyUntilTpReady_And_MapQos)
     EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::INIT);
     EXPECT_EQ(devUbConnection.ubConnStatus, DevUbConnection::UbConnStatus::TP_INFO_GETTING);
 <<<<<<< HEAD
+<<<<<<< HEAD
     EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::INIT);
     EXPECT_EQ(devUbConnection.ubConnStatus, DevUbConnection::UbConnStatus::JETTY_CREATING);
     EXPECT_EQ(devUbConnection.qos_, static_cast<u8>(6U));
@@ -1060,6 +1066,13 @@ TEST_F(DevUbConnectionTest, Ut_DevUsed_DeferJettyUntilTpReady_And_MapQos)
     EXPECT_EQ(devUbConnection.qos_, static_cast<u8>(6U));
     EXPECT_EQ(gCapturedJettyCreateQos, static_cast<u8>(6U));
 >>>>>>> 84b3c665 (ut覆盖率不够)
+=======
+    EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::INIT);
+    EXPECT_EQ(devUbConnection.ubConnStatus, DevUbConnection::UbConnStatus::JETTY_CREATING);
+    EXPECT_EQ(devUbConnection.qos_, static_cast<u8>(6U));
+    EXPECT_EQ(gCapturedJettyCreateQos, static_cast<u8>(6U));
+    EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::EXCHANGEABLE);
+>>>>>>> 320af2ca (ut执行失败)
     GlobalMockObject::verify();
 }
 
