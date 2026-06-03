@@ -25,6 +25,13 @@ RankConsistencyCheckerV2& RankConsistencyCheckerV2::GetInstance(const s32 &devic
     return instance[deviceLogicId];
 }
 
+HcclResult RankConsistencyCheckerV2::RecordEngineV2(s32 engine)
+{
+    engine_ = engine;
+    HCCL_DEBUG("[RankConsistencyCheckerV2::RecordEngineV2] engine_[%d] recorded.", engine_);
+    return HCCL_SUCCESS;
+}
+
 HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
 {
     std::string buffSizeStr = std::to_string(buffSize);
@@ -40,7 +47,7 @@ HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
 HcclResult RankConsistencyCheckerV2::RecordRankTableCrcV2(u32 crc)
 {
     rankTableCrcsV2_.emplace_back(std::string("ranktable_content"), crc);
-    HCCL_DEBUG("[RecordRankTableCrcV2] ranktable crc[0x%08x] recorded.",crc);
+    HCCL_DEBUG("[RankConsistencyCheckerV2::RecordRankTableCrcV2] ranktable crc[0x%08x] recorded.", crc);
     return HCCL_SUCCESS;
 }
 
@@ -102,6 +109,9 @@ HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &localFra
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[RankConsistencyCheckerV2::GenerateCheckFrameV2] memset failed."), HCCL_E_INTERNAL);
 
+    // 填充引擎类型
+    localFrame.engine = engine_;
+
     // 填充环境变量CRC
     localFrame.crcNum = std::min(static_cast<u32>(envVarCrcsV2_.size()), MAX_CRC_LEN_V2);
     for (u32 i = 0; i < localFrame.crcNum; i++) {
@@ -126,9 +136,9 @@ HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &localFra
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[RankConsistencyCheckerV2::GenerateCheckFrameV2] memcpy version failed."), HCCL_E_INTERNAL);
 
-    HCCL_INFO("[RankConsistencyCheckerV2::GenerateCheckFrameV2] success, envCrcNum[%u], rankTableCrcNum[%u], "
-        "subCommCrcNum[%u], version[%s].",
-        localFrame.crcNum, localFrame.rankTableCrcNum, localFrame.subCommCrcNum, localFrame.version);
+    HCCL_INFO("[RankConsistencyCheckerV2::GenerateCheckFrameV2] success, engine[%d], envCrcNum[%u], "
+        "rankTableCrcNum[%u], subCommCrcNum[%u], version[%s].",
+        localFrame.engine, localFrame.crcNum, localFrame.rankTableCrcNum, localFrame.subCommCrcNum, localFrame.version);
     return HCCL_SUCCESS;
 }
 
@@ -157,6 +167,7 @@ HcclResult RankConsistencyCheckerV2::CompareCheckFrameV2(
         subCommParaCrcsV2_, "sub comm param", "sub_comm_param_count");
         
     CompareVersionV2(local, remote, isDiff);
+    CompareEngineV2(local, remote, isDiff);
     return isDiff ? HCCL_E_INTERNAL : HCCL_SUCCESS;
 }
 
@@ -220,8 +231,21 @@ HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local,
         RPT_INPUT_ERR(true, "EI0008",
             std::vector<std::string>({"local_version", "remote_version"}),
             std::vector<std::string>({localVer, remoteVer}));
-        HCCL_ERROR("[CompareVersionV2] CANN version mismatch: local[%s], remote[%s].",
+        HCCL_ERROR("[RankConsistencyCheckerV2::CompareVersionV2] CANN version mismatch: local[%s], remote[%s].",
             localVer.c_str(), remoteVer.c_str());
+        isDiff = true;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CompareEngineV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
+{
+    if (local.engine != remote.engine) {
+        RPT_INPUT_ERR(true, "EI0008",
+            std::vector<std::string>({"local_engine", "remote_engine"}),
+            std::vector<std::string>({std::to_string(local.engine), std::to_string(remote.engine)}));
+        HCCL_ERROR("[RankConsistencyCheckerV2::CompareEngineV2] engine mismatch: local[%d], remote[%d].",
+            local.engine, remote.engine);
         isDiff = true;
     }
     return HCCL_SUCCESS;
