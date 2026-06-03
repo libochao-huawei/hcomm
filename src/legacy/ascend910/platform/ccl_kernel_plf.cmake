@@ -198,9 +198,6 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/ascend950/framework/resource_manager/socket/
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/external_system/
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/common/
-
-    ${HCOMM_DIR}/test/stub/depends/include
-    ${HCOMM_DIR}/test/stub/depends/include/base
 )
 target_include_directories(ccl_kernel_plf PRIVATE
     ${CCL_KERNEL_PLF_INCLUDE_LIST}

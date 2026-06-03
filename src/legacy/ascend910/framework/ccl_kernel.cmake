@@ -45,7 +45,6 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
-    ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/aicpu
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
     ${HCOMM_DIR}/externel_depends/tsch
@@ -53,6 +52,9 @@ target_include_directories(ccl_kernel PRIVATE
     # src/common 头文件 (legacy/ascend910)
     ${HCOMM_DIR}/src/legacy/ascend910/common/stream
     ${HCOMM_DIR}/src/legacy/ascend910/common/debug/profiling/inc
+    ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
+    ${HCOMM_DIR}/src/legacy/ascend910/common/launch_aicpu
+    ${HCOMM_DIR}/src/legacy/ascend910/common
 
     # src/legacy 头文件 (ascend950)
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/resource/socket
@@ -89,7 +91,6 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/platform/inc
     ${HCOMM_DIR}/src/legacy/ascend910/platform/inc/adapter
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common
-    ${HCOMM_DIR}/src/legacy/ascend910/common/launch_aicpu
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/buffer_manager
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unique
@@ -100,8 +101,6 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/dispatcher_ctx
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/socket
     ${HCOMM_DIR}/src/legacy/ascend910/platform/task
-    ${HCOMM_DIR}/src/legacy/ascend910/common
-
 
     # hccp (base_comm/resources)
     ${HCOMM_DIR}/src/base_comm/resources/hccp/inc
