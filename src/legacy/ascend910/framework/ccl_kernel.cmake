@@ -100,6 +100,8 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/dispatcher_ctx
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/socket
     ${HCOMM_DIR}/src/legacy/ascend910/platform/task
+    ${HCOMM_DIR}/src/legacy/ascend910/common
+
 
     # hccp (base_comm/resources)
     ${HCOMM_DIR}/src/base_comm/resources/hccp/inc

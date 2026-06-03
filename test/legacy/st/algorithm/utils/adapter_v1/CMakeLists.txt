@@ -94,7 +94,7 @@ set(include_list
     ${HCCL_CODE_ROOT}/hccl/platform/inc/adapter
     ${HCCL_CODE_ROOT}/hccl/platform/inc/adapter/host
     ${HCCL_CODE_ROOT}/hccl/platform/common
-    ${HCOMM_DIR}src/common/launch_aicpu
+    ${HCOMM_DIR}/src/legacy/ascend910/common/launch_aicpu
     
 
     # framework目录下的头文件

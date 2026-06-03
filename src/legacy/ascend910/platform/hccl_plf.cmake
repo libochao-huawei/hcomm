@@ -91,6 +91,7 @@ target_include_directories(hccl_plf PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
     ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
     ${HCOMM_DIR}/src/legacy/ascend910/common
+    ${HCOMM_DIR}/src/legacy/ascend910/common/launch_aicpu
 
     # legacy (ascend950)
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform
