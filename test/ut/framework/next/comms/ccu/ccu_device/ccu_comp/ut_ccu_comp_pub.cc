@@ -199,8 +199,13 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
         std::make_unique<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
 =======
     auto buffer = std::make_shared<Hccl::Buffer>(0x1000ULL, 4096ULL);
+<<<<<<< HEAD
     comp.ccuRmaBufferMap_[dieId] = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
 >>>>>>> ece532e0 (ut覆盖率)
+=======
+    comp.ccuRmaBufferMap_[dieId] =
+        std::make_unique<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
+>>>>>>> c6cde6e0 (ut编译问题)
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0xABCDULL;

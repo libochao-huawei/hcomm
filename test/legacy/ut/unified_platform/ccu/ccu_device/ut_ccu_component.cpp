@@ -682,8 +682,13 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_
         std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x111));
 =======
     auto buffer = std::make_shared<Buffer>(0x1000ULL, 4096ULL);
+<<<<<<< HEAD
     ccuComponent.localCcuRmaBufferMap[dieId] = std::make_shared<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x111));
 >>>>>>> ece532e0 (ut覆盖率)
+=======
+    ccuComponent.localCcuRmaBufferMap[dieId] =
+        std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x111));
+>>>>>>> c6cde6e0 (ut编译问题)
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0x555ULL;
@@ -732,8 +737,13 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpHandleZero_Expect_D
         std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x444));
 =======
     auto buffer = std::make_shared<Buffer>(0x2000ULL, 4096ULL);
+<<<<<<< HEAD
     ccuComponent.localCcuRmaBufferMap[dieId] = std::make_shared<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x444));
 >>>>>>> ece532e0 (ut覆盖率)
+=======
+    ccuComponent.localCcuRmaBufferMap[dieId] =
+        std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x444));
+>>>>>>> c6cde6e0 (ut编译问题)
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0ULL;
