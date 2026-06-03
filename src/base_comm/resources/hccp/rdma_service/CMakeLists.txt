@@ -79,6 +79,7 @@ target_link_libraries(rs PRIVATE
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:msprof_headers>
     $<BUILD_INTERFACE:slog_headers>
+    $<BUILD_INTERFACE:rdma_core>
     -Wl,--no-as-needed
     c_sec
     $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
@@ -103,7 +104,6 @@ target_include_directories(rs PRIVATE
     ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
     ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/kms
     # rdma头文件
-    ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/nda

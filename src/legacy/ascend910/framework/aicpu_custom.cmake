@@ -28,6 +28,7 @@ target_link_libraries(aicpu_custom PRIVATE
     $<BUILD_INTERFACE:kernel_tiling_headers>
     $<BUILD_INTERFACE:runtime_headers>
     $<BUILD_INTERFACE:slog_headers>
+    $<BUILD_INTERFACE:rdma_core>
     -Wl,--no-as-needed
     ascend_hal
     c_sec

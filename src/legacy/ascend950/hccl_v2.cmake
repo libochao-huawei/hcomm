@@ -47,6 +47,7 @@ target_link_libraries(hccl_v2 PRIVATE
     $<BUILD_INTERFACE:mmpa_headers>
     $<BUILD_INTERFACE:runtime_headers>
     $<BUILD_INTERFACE:slog_headers>
+    $<BUILD_INTERFACE:rdma_core>
     -Wl,--no-as-needed
     c_sec
     unified_dlog
@@ -85,7 +86,6 @@ target_include_directories(hccl_v2 PRIVATE
     ${HCOMM_DIR}/externel_depends/tsch
     # 三方件头文件
     ${JSON_INCLUDE_DIR}
-    ${RDMA_CORE_INCLUDE_DIR}
 )
 
 # 将hccl编译出的动态库加入CANN的安装包
