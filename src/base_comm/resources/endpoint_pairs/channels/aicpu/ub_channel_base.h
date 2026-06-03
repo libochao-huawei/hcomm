@@ -11,9 +11,9 @@
 #define UB_CHANNEL_BASE_H
 
 #include "channel.h"
-#include "../../../../../../legacy/unified_platform/resource/notify/ub_local_notify.h"
-#include "../../../../../../legacy/unified_platform/resource/transport/ub_mem_transport.h"
-#include "../../../../../../legacy/unified_platform/resource/connection/dev_ub_connection.h"
+#include "../../../../../legacy/ascend950/unified_platform/resource/notify/ub_local_notify.h"
+#include "../../../../../legacy/ascend950/unified_platform/resource/transport/ub_mem_transport.h"
+#include "../../../../../legacy/ascend950/unified_platform/resource/connection/dev_ub_connection.h"
 
 namespace hcomm {
 

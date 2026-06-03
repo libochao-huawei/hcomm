@@ -14,7 +14,7 @@
 #include "hccp.h"
 #include "orion_adapter_hccp.h"
 #include "../endpoint_pairs/channels/host/exchange_rdma_conn_dto.h"
-#include "../../../../legacy/unified_platform/serializable.h"
+#include "../../legacy/ascend950/unified_platform/serializable.h"
 
 namespace hcomm {
 
