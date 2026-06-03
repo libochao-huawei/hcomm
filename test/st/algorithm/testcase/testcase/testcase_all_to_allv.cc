@@ -820,6 +820,32 @@ TEST_F(AllToAllVTest, alltoallv_test_910B_opbase_RunAlltoAllVContinuousPipeline_
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
+TEST_F(AllToAllVTest, RunAlltoAllVPipelineFor91093)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 1, 16);
+    setenv("HCCL_BUFFSIZE", "1", 1);
+ 
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLTOALLV;
+    checkerOpParam.tag = "AllToAll";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+ 
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT8;
+ 
+    u32 rankNum = GetRankNumFormTopoMeta(topoMeta);
+    GenAllToAllVParams(rankNum, 10, checkerOpParam.All2AllDataDes.sendCounts,
+        checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts,
+        checkerOpParam.All2AllDataDes.rdispls);
+ 
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
 TEST_F(AllToAllVTest, alltoallv_test_910B_opbase_RunAlltoAllVContinuousPipeline_2srv_2nodes_large_count)
 {
     RankTable_For_LLT gen;

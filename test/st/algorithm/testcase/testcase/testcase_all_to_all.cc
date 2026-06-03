@@ -629,6 +629,34 @@ TEST_F(AllToAllTest, alltoall_test_a2_opbase_AlltoAllStagedAIVRdmaExecutor)
     ret = checker.Check(checkerOpParam, topoMeta);
 }
 
+TEST_F(AllToAllTest, RunAlltoAllVPipelineFor91093)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 1, 8);
+    setenv("HCCL_BUFFSIZE", "1", 1);
+ 
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLTOALL;
+    checkerOpParam.tag = "AllToAll";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+ 
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT8;
+ 
+    // 生成sendCountMatrix矩阵，alltoall的底层实现走alltoallvc
+    u32 rankNum = GetRankNumFormTopoMeta(topoMeta);
+    checkerOpParam.All2AllDataDes.sendCountMatrix = GenerateSendCountMatrix(100, rankNum);
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.sendCount = 100;
+ 
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
 TEST_F(AllToAllTest, alltoall_test_91093_graph_AlltoAllMeshAivExecutor)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));

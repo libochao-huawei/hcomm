@@ -265,6 +265,10 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         return HCCL_SUCCESS ;
     } else if (isCommon310P3DUO_) {
         algName = "RunAlltoAllVFor310PExecutor";
+    } else if(IsSatisfyA2AFor91093Condition(param)) {
+        algName = "RunAlltoAllVPipelineFor91093";
+        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
+        return HCCL_SUCCESS;
     } else if (IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
         isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize()) ||
         (deviceType_ == DevType::DEV_TYPE_910_93 && param.aicpuUnfoldMode) || deviceType_ == DevType::DEV_TYPE_310P3) {
@@ -640,6 +644,32 @@ bool AlltoAllOperator::IsBufferSatisfyAlltoAllAivCondition(const OpParam& param)
         return false;
     }
     return true;
+}
+
+bool AlltoAllOperator::IsSatisfyA2AFor91093Condition(const OpParam& param)
+{
+    constexpr u32 SERVERNUM = 2;
+    constexpr u32 RANKSPERSERVER = 1;
+    bool cclBigEnough = cclBufferManager_.GetInCCLbufferSize() >= ALLTOALL_PIPELINE_MIN_CCL_SIZE;
+    bool multiServer = (serverNum_ == SERVERNUM) && (superPodNum_ == SERVERNUM);
+    bool multiRankPerServer = meshAggregationRankSize_ > RANKSPERSERVER;
+    bool isOpbse = GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
+    bool isAlltoAll = param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV
+        || param.opType == HcclCMDType::HCCL_CMD_ALLTOALL
+        || param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC;
+    bool isDefaultAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING)
+        || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD)
+        || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR);
+    bool isPipelineAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE);
+    bool satisfyAlgType = isPipelineAlgo || isDefaultAlgo;
+ 
+    bool res = (deviceType_ == DevType::DEV_TYPE_910_93) && multiServer && multiRankPerServer
+        && !multiSuperPodDiffDeviceNumMode_ && isOpbse && isAlltoAll && cclBigEnough && satisfyAlgType;
+ 
+    HCCL_DEBUG("[AlltoAllOperator][IsSatisfyA2AFor91093Condition] isSatisfy[%d], serverNum[%d], superPodNum %u,"
+        "meshAggregationRankSize_ %u, isOpbse %u, isAlltoAll(vc|v) %u, multiSuperPodDiffDeviceNumMode_ %u, aicpuUnfoldMode[%u].",
+        res, serverNum_, superPodNum_, meshAggregationRankSize_, isOpbse, isAlltoAll, multiSuperPodDiffDeviceNumMode_, param.aicpuUnfoldMode); 
+    return res;
 }
 
 bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition(const OpParam& param)
