@@ -11,7 +11,11 @@
 
 GTEST_API_ int main(int argc, char **argv) {
     // testcase测试代码，只跑特定的用例
-    // testing::GTEST_FLAG(filter) = "AllReduceTest.allreduce_cyw_test";
+    // testing::GTEST_FLAG(filter) = "AllToAllVTest.tttt:AllToAllTest.tttt:AllToAllVCTest.tttt";
+    // testing::GTEST_FLAG(filter) = "AllToAllTest.tttt";
+    // testing::GTEST_FLAG(filter) = "AllToAllVCTest.tttt";
+    // testing::GTEST_FLAG(filter) = "AllToAllVTest.tttt";
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+

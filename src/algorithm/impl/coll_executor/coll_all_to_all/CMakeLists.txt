@@ -23,6 +23,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_direct_fullmesh_aiv_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_aiv_direct_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_symmetric_memory_executor.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_pipeline_for_910_93_executor.cc
 )
 
 if(TARGET hccl_alg)
@@ -42,6 +43,7 @@ if(TARGET ccl_kernel)
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_2level_pipeline_excecutor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_continuous_pipeline_executor.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_staged_executor.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_pipeline_for_910_93_executor.cc
     )
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
