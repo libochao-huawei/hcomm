@@ -8,7 +8,7 @@
 
 ## 功能说明
 
-向通信域注册已申请的内存，并获取对应的注册句柄。
+向通信域注册已申请的内存，并获取对应的注册内存句柄。
 
 ## 函数原型
 
@@ -23,7 +23,7 @@ HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem,
 | comm | 输入 | 通信域句柄。<br>HcclComm类型的定义如下：<br>typedef void *HcclComm; |
 | memTag | 输入 | 内存字符串标签，最大字符长度为HCCL_OP_TAG_LEN_MAX。<br>const uint32_t HCCL_OP_TAG_LEN_MAX = 255; |
 | mem | 输入 | 内存信息，CommMem类型的定义可参见[CommMem](../../datatype_definition/CommMem.md)。 |
-| memHandle | 输出 | 内存句柄。<br>HcclMemHandle类型的定义如下：<br>typedef void *HcclMemHandle; |
+| memHandle | 输出 | 注册内存句柄。该句柄为不透明句柄，仅可作为解注册、HcclChannelAcquire等接口的入参透传使用，不允许解析、修改或假定其内部数据结构。<br>HcclMemHandle类型的定义如下：<br>typedef void *HcclMemHandle; |
 
 ## 返回值
 
@@ -31,9 +31,10 @@ HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem,
 
 ## 约束说明
 
-- 一个通信域内，同一个memTag，只允许注册一块内存。
-- 一个通信域内，相同memTag和mem重复注册，会复用已有的注册内存句柄。
-- 一个通信域内，内存注册不允许有交集。
+- 一个通信域内，同一个memTag只允许绑定一块内存。
+- 一个通信域内，相同memTag、addr和size重复注册，会复用已有的注册内存句柄；相同memTag绑定不同addr或size的内存时，接口返回失败。
+- HcclCommMemReg返回的memHandle描述本次传入的CommMem信息。后续创建或更新Channel时，框架会根据该句柄记录的addr、size、type和memTag进行内存交换；调用者不应自行从句柄地址推导这些信息。
+- memHandle只保证在创建它的通信域及其相关资源生命周期内有效。解注册后，该句柄失效。
 
 ## 调用示例
 

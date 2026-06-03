@@ -8,7 +8,7 @@
 
 ## 功能说明
 
-注册内存到指定EndPoint。
+注册内存到指定EndPoint，并获取对应的注册内存句柄。
 
 ## 函数原型
 
@@ -23,7 +23,7 @@ HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const
 | endpointHandle | 输入 | Endpoint句柄。<br>EndpointHandle类型的定义请参见[EndpointHandle](../../datatype_definition/EndpointHandle.md)。 |
 | memTag | 输入 | 内存字符串标识。 |
 | mem | 输入 | 内存描述信息，包含内存物理位置类型、内存地址、内存区域字节数。<br>CommMem类型的定义请参见[CommMem](../../datatype_definition/CommMem.md)。 |
-| memHandle | 输出 | 注册内存句柄 |
+| memHandle | 输出 | 注册内存句柄。该句柄为不透明句柄，仅可作为解注册、导出、建链或更新内存信息等接口的入参透传使用，不允许解析、修改或假定其内部数据结构。 |
 
 ## 返回值
 
@@ -31,7 +31,9 @@ HcommResult：接口成功返回0，其他失败。
 
 ## 约束说明
 
-支持的通信协议包括：RoCE、UBC_TP、UBC_CTP、UBoE。
+- 支持的通信协议包括：RoCE、UBC_TP、UBC_CTP、UBoE。
+- 注册内存句柄与本次传入的CommMem对应。若本次注册的内存区域是同一Endpoint下已注册内存区域的子集，接口可能复用父内存区域的底层注册资源并返回新的注册内存句柄；调用者仍应按本次返回的句柄进行后续导出、建链、更新和解注册。
+- memHandle只保证在创建它的Endpoint及其相关资源生命周期内有效。调用HcommMemUnreg后，该句柄失效。
 
 ## 调用示例
 
