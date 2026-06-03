@@ -189,6 +189,11 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
     comp.devPhyId_ = 0U;
     comp.devLogicId_ = 0;
 
+    const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo =
+        std::make_pair(reinterpret_cast<TokenIdHandle>(0x88888888), 1U);
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo).stubs().will(returnValue(fakeTokenInfo));
+    MOCKER(HrtRaUbLocalMemReg).stubs().will(returnValue(HrtRaUbLocalMemRegOutParam()));
+
     auto buffer = std::make_shared<Hccl::Buffer>(0x1000ULL, 4096ULL);
     comp.ccuRmaBufferMap_[dieId] =
         std::make_unique<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
