@@ -106,10 +106,14 @@ int StubRaGetTpAttrAsyncUboeSl789Legacy(void *ctxHandle, uint64_t tpHandle, uint
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 int StubRaGetHccnCfgDscpLegacy(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 =======
 int StubRaGetHccnCfgDscpLegacy(void *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+int StubRaGetHccnCfgDscpLegacy(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
+>>>>>>> 4e5ae802 ( ut编译失败)
 {
     (void)info;
     (void)key;

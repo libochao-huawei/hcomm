@@ -271,6 +271,7 @@ int StubRaGetTpAttrAsyncTwoSlBits(void *ctxHandle, uint64_t tpHandle, uint32_t *
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 int StubRaGetHccnCfgDscp(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
     (void)info;
@@ -281,6 +282,12 @@ int StubRaGetHccnCfgDscp(void *info, int cfgType, char *value, unsigned int *val
     (void)info;
     (void)cfgType;
 >>>>>>> 84b3c665 (ut覆盖率不够)
+=======
+int StubRaGetHccnCfgDscp(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
+{
+    (void)info;
+    (void)key;
+>>>>>>> 4e5ae802 ( ut编译失败)
     if (value == nullptr || valueLen == nullptr) {
         return -1;
     }
@@ -296,6 +303,7 @@ int StubRaGetHccnCfgDscp(void *info, int cfgType, char *value, unsigned int *val
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 int StubRaGetHccnCfgDscpKeyValue(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
     (void)info;
@@ -306,6 +314,12 @@ int StubRaGetHccnCfgDscpKeyValue(void *info, int cfgType, char *value, unsigned 
     (void)info;
     (void)cfgType;
 >>>>>>> 466ec5dc ( ut覆盖率不够)
+=======
+int StubRaGetHccnCfgDscpKeyValue(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
+{
+    (void)info;
+    (void)key;
+>>>>>>> 4e5ae802 ( ut编译失败)
     if (value == nullptr || valueLen == nullptr) {
         return -1;
     }
