@@ -626,7 +626,6 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo,
             taskParam.taskType = errorMessage.taskType;
             GetTaskParam(taskParam, errorMessage);
             std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo = std::make_shared<Hccl::DfxOpInfo>();
-            dfxOpInfo->tag_ = tag;
             dfxOpInfo->algType_ = errorMessage.algType;
             Hccl::TaskInfo exceptionTaskInfo(streamId, errorMessage.taskId, errorMessage.remoteUserRank, taskParam, dfxOpInfo);
             auto logKeywordL2 = exceptionTaskInfo.taskParam_.taskType ==

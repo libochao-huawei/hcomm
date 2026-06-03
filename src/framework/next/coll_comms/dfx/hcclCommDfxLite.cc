@@ -52,8 +52,10 @@ HcclResult HcclCommDfxLite::SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> df
 {
     CHK_PTR_NULL(dfxOpInfo);
     CHK_RET(mirrorTaskManagerLite_->SetCurrDfxOpInfo(dfxOpInfo));
-    Hccl::ProfilingHandlerLite::GetInstance().SetCachedCclTag(dfxOpInfo->tag_);
-    Hccl::ProfilingHandlerLite::GetInstance().SetCachedGroupName(*dfxOpInfo);
+    if (Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State() 
+        || Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State()) {
+        Hccl::ProfilingHandlerLite::GetInstance().SetCachedGroupName(*dfxOpInfo);
+    }
     return HCCL_SUCCESS;
 }
 
