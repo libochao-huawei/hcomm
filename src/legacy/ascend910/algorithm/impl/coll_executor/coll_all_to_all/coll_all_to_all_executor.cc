@@ -120,6 +120,10 @@ HcclResult CollAlltoAllExecutor::CalcResRequest(const OpParam& param, AlgResourc
     // AICPU aicpuUnfold展开模式下强制OP_BASE，Host侧CalcScratchMemSize需同步覆盖
     // 使scratch计算路径与AICPU侧一致，解决scratch mem size不匹配问题
     const bool needForceOpBase = param.aicpuUnfoldMode && !param.isZeroCopy;
+    HCCL_INFO("[CollAlltoAllExecutor][CalcResRequest] aicpuUnfoldMode[%d] isZeroCopy[%d] "
+        "needForceOpBase[%d] workflowMode[%d] tag[%s]",
+        param.aicpuUnfoldMode, param.isZeroCopy, needForceOpBase,
+        workflowMode_, param.tag.c_str());
     const HcclWorkflowMode savedWorkflowMode = workflowMode_;
     if (needForceOpBase) {
         HCCL_INFO("[CollAlltoAllExecutor][CalcResRequest] aicpuUnfoldMode force OpBase, "
