@@ -95,6 +95,8 @@ target_include_directories(hccl_alg PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
 
     # framework (legacy/ascend910)
+    ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
+    ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
     ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/config
     ${HCOMM_DIR}/src/legacy/ascend910/framework/inc/
     ${HCOMM_DIR}/src/legacy/ascend910/framework/common/src/config
@@ -105,6 +107,7 @@ target_include_directories(hccl_alg PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/
 
     # hccp (base_comm/resources)
+    ${HCOMM_DIR}/src/legacy/ascend910/common/launch_aicpu
     ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network/
     ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/
     ${RDMA_CORE_INCLUDE_DIR}/
