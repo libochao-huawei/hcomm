@@ -316,7 +316,6 @@ private:
     const u32 localRank_;
     const u32 rankSize_;
     bool profilingOn_;  // 当前无条件启动profiling
-    
 };
 }  // namespace hccl
 
