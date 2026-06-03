@@ -60,8 +60,11 @@ protected:
         std::cout << "A Test case in RankInfoDetectClientTest SetUP" << std::endl;
         socketHandle = new int(0);
         MOCKER(HrtRaSocketInit).stubs().with(any(), any()).will(returnValue(socketHandle));
+        MOCKER(HrtRaSocketDeInit).stubs().with(any());
         MOCKER_CPP(&HccpPeerManager::Init).stubs().with(any());
         MOCKER_CPP(&HccpPeerManager::DeInit).stubs().with(any());
+        MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+        MOCKER_CPP(&HostSocketHandleManager::Destroy).stubs().with(any(), any());
         IpAddress serverIp = IpAddress("10.0.0.10");
         u32 hostPort = 60001;
         IpAddress hostIp_ = IpAddress("192.168.1.8");
@@ -80,13 +83,15 @@ protected:
     }
 
     virtual void TearDown() {
-        GlobalMockObject::verify();
-        delete socketHandle;
         delete rankInfoDetectClient_;
-        std::cout << "A Test case in RankInfoDetectServiceTest TearDown" << std::endl;
+        rankInfoDetectClient_ = nullptr;
+        delete static_cast<int *>(socketHandle);
+        socketHandle = nullptr;
+        GlobalMockObject::verify();
+        std::cout << "A Test case in RankInfoDetectClientTest TearDown" << std::endl;
     }
 
-    RankInfoDetectClient *rankInfoDetectClient_;
+    RankInfoDetectClient *rankInfoDetectClient_{nullptr};
     nlohmann::json presetParseJson_;       // 模拟ParseFileToJson的返回结果
     nlohmann::json presetLocalDevJson_;    // 模拟GetLocalDevInfoJson的返回结果
     nlohmann::json presetRankTableJson_;   // 模拟GetLocalRankTableJson的返回结果
@@ -317,3 +322,21 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentA
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
+TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Timeout_Expect_Throw)
+{
+    EnvSocketConfig fakeEnvSocketConfig;
+    fakeEnvSocketConfig.linkTimeOut = CfgField<s32>{"HCCL_CONNECT_TIMEOUT", s32(1), Str2T<s32>};
+    fakeEnvSocketConfig.linkTimeOut.isParsed = true;
+    MOCKER_CPP(&EnvConfig::GetSocketConfig).stubs().will(returnValue(fakeEnvSocketConfig));
+    MOCKER_CPP(&Socket::GetStatus).stubs().then(returnValue((SocketStatus)SocketStatus::CONNECTING));
+
+    EXPECT_THROW(rankInfoDetectClient_->CheckStatus(), TimeoutException);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyRankTable_When_TlsStatus_Expect_Throw)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE});
+    rankInfoDetectClient_->rankSize_ = rankInfoDetectClient_->rankTable_.rankCount;
+
+    EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
+}
