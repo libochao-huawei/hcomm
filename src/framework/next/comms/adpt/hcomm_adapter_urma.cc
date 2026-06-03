@@ -24,8 +24,10 @@ HcclResult HrtUrmaPostJettySendWr(urma_jetty_t *jetty, urma_jfs_wr_t *wr, urma_j
         CHK_RET(DlUrmaFunction::GetInstance().DlUrmaFunctionInit());
     }
     urma_status_t ret = DlUrmaFunction::GetInstance().dlUrmaPostJettySendWr(jetty, wr, bad_wr);
+    urma_status_t ret = DlUrmaFunction::GetInstance().dlUrmaPostJettySendWr(jetty, wr, bad_wr);
+    CHK_PRT_RET(ret == ENOMEM, HCCL_WARNING("urma post jetty send wr overflow.[%d]", ret), HCCL_E_AGAIN);
     if (ret != 0) {
-        HCCL_ERROR("HrtUrmaPostJettySendWr failed. ret:[%d]", ret);
+        HCCL_ERROR("HrtUrmaPostJettySendWr failed. ret:[%d] errno[%d][%s]", ret, errno, strerror(errno));
         return HCCL_E_NETWORK;
     }
     return HCCL_SUCCESS;
