@@ -4822,6 +4822,11 @@ namespace hccl
         AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
         CHK_PTR_NULL(alltoAllOperator);
 
+        if (alltoAllOperator->IsSatisfyA2AFor91093Condition(opParam)) {
+            opParam.aicpuUnfoldMode = true;
+            opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
+        }
+
         if (alltoAllOperator->IsSatisfyAlltoallContinuousPipelineCondition(opParam)) {
             opParam.aicpuUnfoldMode = true;
             opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
@@ -5013,7 +5018,8 @@ namespace hccl
                 "RunAlltoAllDirectFullmesh",
                 "RunAlltoAllVTwoLevelPipeline",
                 "RunAlltoAllFullMeshSymmetricMemory",
-                "RunAlltoAllVContinuousPipeline"
+                "RunAlltoAllVContinuousPipeline",
+                "RunAlltoAllVPipelineFor91093"
             };
             return aicpuAlgs.count(algName) > 0;
         };
