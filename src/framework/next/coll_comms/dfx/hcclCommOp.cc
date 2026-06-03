@@ -40,13 +40,8 @@ namespace hccl {
 std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpInfo) {
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
     dfxOpInfoOnce->op_.opMode = static_cast<Hccl::OpMode::Value>(dfxOpInfo.opMode);
-    auto it = CMD_OP_TYPE_INFO_MAP.find(static_cast<HcclCMDType>(dfxOpInfo.opType));
-    if (it == CMD_OP_TYPE_INFO_MAP.end()) {
-        HCCL_WARNING("%s dfxOpInfo.opType[%u] is not supported.", __func__, dfxOpInfo.opType);
-    } else {
-        dfxOpInfoOnce->op_.opType = it->second.first;
-        dfxOpInfoOnce->tag_ = it->second.second;
-    }
+    dfxOpInfoOnce->op_.oldOpType = dfxOpInfo.opType; // 存A3的类型
+    //  dfxOpInfoOnce->tag_  没有填
     dfxOpInfoOnce->op_.reduceOp = Hccl::HcclReduceOpToReduceOp(static_cast<HcclReduceOp>(dfxOpInfo.reduceOp));
     dfxOpInfoOnce->op_.dataType = Hccl::HcclDataTypeToDataType(static_cast<HcclDataType>(dfxOpInfo.dataType));
     dfxOpInfoOnce->op_.dataCount = dfxOpInfo.dataCount;

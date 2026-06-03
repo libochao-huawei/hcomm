@@ -54,7 +54,7 @@ public:
     void                         ReportHcclOpInfo(const DfxOpInfo &opInfo) const;
     void                         ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const;
     void                         ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo) const;
-    void                         SetCachedCclTag(const std::string &tag);
+    void                         SetCachedCclTag();
     void                         SetCachedGroupName(const DfxOpInfo &opInfo);
     void                         UpdateProfSwitch();
     void                         SetProL0On(bool val);
@@ -79,11 +79,11 @@ private:
     static ProfilingHandlerLite instance_;
     bool                        enableHcclL0_{false};
     bool                        enableHcclL1_{false};
-    uint64_t                    cachedCclTag_{INVALID_U64};
     uint64_t                    cachedGroupName_{INVALID_U64};
     u32                         cachedRankSize_{0};
     uint32_t                    cachedTid_{0};
     std::map<uint32_t, uint64_t> taskTypeHashCache_;
+    std::map<std::string, uint64_t> cachedCclTag_;
     using ReportAdditionalInfoHandle = int32_t (*)(uint32_t, const void*, uint32_t);
     ReportAdditionalInfoHandle reportAdditionalInfo_{nullptr};
     using GetProfHashIdHandle = uint64_t (*)(const char *, size_t);

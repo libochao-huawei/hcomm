@@ -34,6 +34,23 @@ void ProfilingReporter::Init()
         HCCL_ERROR("[ProfilingReporter][Init] deviceLogicId[%d] out of range", deviceLogicId);
         return;
     }
+
+}
+
+
+
+void ProfilingReporter::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
+{
+    if (!profilingHandler_->GetHcclL1State() && !profilingHandler_->GetHcclL0State()) {  //这两个值只有profiling使用 如果没开就不进行hash
+        auto it = CMD_OP_TYPE_INFO_MAP.find(static_cast<HcclCMDType>(dfxOpInfo->op_.oldOpType));
+            if (it == CMD_OP_TYPE_INFO_MAP.end()) {
+                HCCL_WARNING("%s dfxOpInfo.opType[%u] is not supported.", __func__, dfxOpInfo->op_.oldOpType);
+            } else {
+                dfxOpInfo->op_.opType = it->second.first; // A3转A5
+                dfxOpInfo->tag_ = it->second.second;      // A5转字符串    延后
+            }
+    }
+    mirrorTaskMgr_->SetCurrDfxOpInfo(dfxOpInfo);
 }
 
 void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const

@@ -23,7 +23,8 @@
 namespace Hccl {
 using BaseCollOperator = struct BaseCollOperatorDef {
     OpMode   opMode{OpMode::INVALID};
-    OpType   opType{OpType::DEBUGCASE};
+    OpType   opType{OpType::DEBUGCASE};  //A5的类型
+    u32      oldOpType{0}; // A3的类型
     ReduceOp reduceOp{ReduceOp::INVALID};
     DataType dataType{DataType::INVALID};
     DataType outputDataType{DataType::INVALID}; // 低精度场景，存在指定输出数据类型

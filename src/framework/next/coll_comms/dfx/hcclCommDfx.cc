@@ -79,6 +79,13 @@ HcclResult HcclCommDfx::AddDpuTaskInfoCallback(const Hccl::TaskParam &taskParam,
     return AddTaskInfoCallback(streamId, taskId, localTaskParam, handle);
 }
 
+HcclResult HcclCommDfx::SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo)
+{
+    CHK_PTR_NULL(profiling_);
+    profiling_->SetCurrDfxOpInfo(dfxOpInfo);
+    return HCCL_SUCCESS;
+}
+
 // HcclCommDfx接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfx::ReportAllTasks(bool cachedReq) {
     CHK_PTR_NULL(profiling_);
