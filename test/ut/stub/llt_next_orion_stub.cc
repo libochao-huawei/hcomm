@@ -113,7 +113,7 @@
 #include "../../../legacy/unified_platform/external_system/orion_adapter_hccp.h"
 #include "../../../legacy/include/hccl_communicator.h"
 #include "../../../legacy/unified_platform/ccu/ccu_microcode/ccu_assist.h"
-#include "../../../legacy/framework/entrance/rank_table_crc_bridge.h
+#include "../../../legacy/framework/entrance/rank_table_crc_bridge.h"
 #include "acl/acl_rt.h"
 
 #include "p2p_transport.h"
