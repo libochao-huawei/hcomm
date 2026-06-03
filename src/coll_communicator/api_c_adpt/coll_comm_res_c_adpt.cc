@@ -293,7 +293,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         hccl::MyRank* myRank = collComm->GetMyRank();
         CHK_PTR_NULL(myRank);
 
-        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordEngineV2(engine));
+        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordEngineV2(static_cast<s32>(engine)));
         s32 deviceLogicId = 0;
         (void)hrtGetDeviceRefresh(&deviceLogicId);
         u32 rankTableCrc = RankTableCrcBridge::GetInstance().ConsumeRankTableJsonCrc(deviceLogicId);
