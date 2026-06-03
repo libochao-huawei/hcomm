@@ -31,7 +31,9 @@ HcommResult：接口成功返回0，其他失败。
 
 ## 约束说明
 
-支持的通信协议包括：RoCE、UBC_TP、UBC_CTP、UBoE。
+- 支持的通信协议包括：RoCE、UBC_TP、UBC_CTP、UBoE。
+- 注册内存句柄与本次传入的CommMem对应。若本次注册的内存区域是同一Endpoint下已注册内存区域的子集，接口可能复用父内存区域的底层注册资源并返回新的注册内存句柄；调用者仍应按本次返回的句柄进行后续导出、建链、更新和解注册。
+- memHandle只保证在创建它的Endpoint及其相关资源生命周期内有效。调用HcommMemUnreg后，该句柄失效。
 
 ## 调用示例
 
