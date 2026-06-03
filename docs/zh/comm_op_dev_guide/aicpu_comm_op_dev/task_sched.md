@@ -7,7 +7,7 @@
 任务编排主要包含以下几个步骤：
 
 1. 获取本端通信内存，在HCCL中称其为HCCL Buffer。
-2. 拷贝算子输入数据到HCCL Buffer，常用的数据面接口为[HcommLocalCopyOnThread](../../api_ref/comm_opdev/data_plan_api/cpu_ts/local_operations/HcommLocalCopyOnThread.md)。
+2. 拷贝算子输入数据到HCCL Buffer，常用的数据面接口为[HcommLocalCopyOnThread](../../api_ref/comm_opdev/data_plan_api/cpu-cpu_ts-aicpu_ts/local_operations/HcommLocalCopyOnThread.md)。
 
    > [!NOTE]说明
    > HCCL Buffer是HCCL每个通信域所管理的一块Device上的锁页内存（Pinned Memory），由于通信任务是异步执行的，为确保用户输入的数据在通信任务实际执行时依然有效，因此需要首先将输入数据拷贝到拥有固定内存地址的HCCL Buffer中。
@@ -16,10 +16,10 @@
 
     HCCL Buffer默认大小是200MB，若输入数据大小超过该值，则需要切分成多个数据块，分别进行处理。
 
-4. 前同步，主Thread通知从Thread启动任务，从Thread等待主Thread通知。常用的数据面接口为[HcommThreadNotifyRecordOnThread](../../api_ref/comm_opdev/data_plan_api/cpu_ts/local_operations/HcommThreadNotifyRecordOnThread.md)和[HcommThreadNotifyWaitOnThread](../../api_ref/comm_opdev/data_plan_api/cpu_ts/local_operations/HcommThreadNotifyWaitOnThread.md)。
-5. 进行数据搬运，将远端数据拷贝至本端的HCCL Buffer中。常用的数据面接口为[HcommReadOnThread](../../api_ref/comm_opdev/data_plan_api/cpu_ts/communication_operations/HcommReadOnThread.md)、[HcommReadReduceOnThread](../../api_ref/comm_opdev/data_plan_api/cpu_ts/communication_operations/HcommReadReduceOnThread.md)等。
+4. 前同步，主Thread通知从Thread启动任务，从Thread等待主Thread通知。常用的数据面接口为[HcommThreadNotifyRecordOnThread](../../api_ref/comm_opdev/data_plan_api/cpu-cpu_ts-aicpu_ts/local_operations/HcommThreadNotifyRecordOnThread.md)和[HcommThreadNotifyWaitOnThread](../../api_ref/comm_opdev/data_plan_api/cpu-cpu_ts-aicpu_ts/local_operations/HcommThreadNotifyWaitOnThread.md)。
+5. 进行数据搬运，将远端数据拷贝至本端的HCCL Buffer中。常用的数据面接口为[HcommReadOnThread](../../api_ref/comm_opdev/data_plan_api/cpu-cpu_ts-aicpu_ts/communication_operations/HcommReadOnThread.md)、[HcommReadReduceOnThread](../../api_ref/comm_opdev/data_plan_api/cpu-cpu_ts-aicpu_ts/communication_operations/HcommReadReduceOnThread.md)等。
 6. 后同步，从流通知主流任务完成，主流等待从流通知。
-7. 拷贝HCCL Buffer中的结果数据到算子输出内存。常用的数据面接口为[HcommLocalCopyOnThread](../../api_ref/comm_opdev/data_plan_api/cpu_ts/local_operations/HcommLocalCopyOnThread.md)。
+7. 拷贝HCCL Buffer中的结果数据到算子输出内存。常用的数据面接口为[HcommLocalCopyOnThread](../../api_ref/comm_opdev/data_plan_api/cpu-cpu_ts-aicpu_ts/local_operations/HcommLocalCopyOnThread.md)。
 
 ## 代码示例
 
