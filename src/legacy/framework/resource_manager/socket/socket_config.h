@@ -23,7 +23,7 @@ public:
     LinkData          link;
     uint32_t          listeningPort{DEFAULT_LISTENING_PORT};
     const std::string tag;
-    uint32_t          hostNic2DeviceNicMode_; // 0 normal, 1: host(host cpu roce channel) - device(transport ibv)
+    uint32_t          hostNic2DeviceNicMode_{0}; // 0 normal, 1: host(host cpu roce channel) - device(transport ibv)
 
     SocketConfig(RankId remoteRank, const LinkData &link, const std::string &tag)
         : remoteRank(remoteRank), link(link), tag(tag),
@@ -79,9 +79,8 @@ public:
     }
 
     SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag)
-        : link(link), listeningPort(listenPort), tag(tag)
+        : link(link), listeningPort(listenPort), tag(tag), remoteRank(link.GetRemoteRankId())
     {
-        remoteRank = link.GetRemoteRankId();
         role = link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT;
  
         if (role == SocketRole::SERVER) { // server: tag_local_remote
@@ -94,9 +93,8 @@ public:
     }
 
     SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag, const bool isServer)
-        : link(link), listeningPort(listenPort), tag(tag)
+        : link(link), listeningPort(listenPort), tag(tag), remoteRank(link.GetRemoteRankId())
     {
-        remoteRank = link.GetRemoteRankId();
         role = isServer ? SocketRole::SERVER : SocketRole::CLIENT;
 
         if (role == SocketRole::SERVER) { // server: tag_local_remote
@@ -123,7 +121,7 @@ private:
     string     hccpTag;
 
 public:
-    bool       noRankId;
+    bool       noRankId{true};
 };
 } // namespace Hccl
 

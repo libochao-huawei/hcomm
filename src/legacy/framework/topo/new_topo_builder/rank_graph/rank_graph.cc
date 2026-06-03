@@ -17,7 +17,6 @@
 #include "null_ptr_exception.h"
 #include "internal_exception.h"
 #include "not_support_exception.h"
-#include "invalid_params_exception.h"
 #include "rank_gph.h"
 
 namespace Hccl {

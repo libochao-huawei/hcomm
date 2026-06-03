@@ -11,16 +11,6 @@
 #ifndef SOCKET_MGR_H
 #define SOCKET_MGR_H
 
-#include <atomic>
-#include <mutex>
-#include <condition_variable>
-
-#include "hccl/hccl_res.h"
-#include "../../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "virtual_topo.h"
-#include "socket_config.h"
-#include "orion_adapter_rts.h"
-
 namespace hcomm {
 
 class SocketMgr {

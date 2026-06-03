@@ -11,11 +11,9 @@
 #define UBOE_ENDPOINT_H
 
 #include <memory>
-#include <vector>
 #include <string>
 #include "endpoint.h"
 #include "ccu_channel_ctx_pool.h"
-#include "socket/socket.h"
 
 namespace hcomm {
 /**
