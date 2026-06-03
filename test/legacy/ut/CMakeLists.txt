@@ -56,7 +56,6 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${HCCL_CODE_ROOT}/test/stub/depends/include/mmpa/
         ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/
         ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/base
-        # ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/runtime/
         ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/profiling/
         ${HCCL_CODE_ROOT}/test/stub/depends/pkg_inc/trace/
         ${HCCL_CODE_ROOT}/test/stub/depends/toolchain/
