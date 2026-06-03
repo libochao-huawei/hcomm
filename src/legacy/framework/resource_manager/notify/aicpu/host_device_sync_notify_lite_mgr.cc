@@ -11,7 +11,6 @@
 #include "binary_stream.h"
 #include "connected_link_mgr.h"
 #include "log.h"
-#include "exception_util.h"
 #include "internal_exception.h"
 #include "stl_util.h"
 

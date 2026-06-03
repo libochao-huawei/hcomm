@@ -12,7 +12,6 @@
 
 #include "hccl/hccl_types.h"
 #include "hcomm_res_defs.h"
-#include "hccl_net_dev_defs.h"
 
 // Orion
 #include "ip_address.h"

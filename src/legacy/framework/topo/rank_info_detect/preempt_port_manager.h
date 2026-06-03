@@ -16,7 +16,6 @@
 #include <unordered_map>
 #include <vector>
 #include <hccl/hccl_types.h>
-#include "socket.h"
 #include "env_config.h"
 #include "referenced.h"
 

@@ -13,7 +13,6 @@
 #include "hcomm_res_defs.h"
 #include "common.h"
 #include "coll_comm_config_consistency.h"
-#include "socket/socket.h"
 
 namespace hccl {
 class ExchangeInfoMgr {

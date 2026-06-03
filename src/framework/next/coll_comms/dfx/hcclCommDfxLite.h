@@ -46,7 +46,7 @@ private:
     std::unique_ptr<HcclCommProfilingLite> profilingImpl_;
     std::unordered_map<u64, u32> channelRemoteRankIdLite_;
     std::string commTag_;
-    u32 deviceId_;
+    u32 deviceId_{0};
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> addTaskCallback_;
 };
 

@@ -12,11 +12,9 @@
 
 #include <atomic>
 #include "../channel.h"
-#include "../../sockets/socket_mgr.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "../../../../../../legacy/framework/resource_manager/socket/socket_manager.h"
 #include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
 #include "rma_connection.h"
 #include "ub_mem_transport.h"
