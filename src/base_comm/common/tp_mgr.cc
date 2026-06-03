@@ -85,6 +85,7 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
 
     auto &locReqCtxMap = reqCtxMap[locAddr];
     auto locReqCtxIter = locReqCtxMap.find(rmtAddr);
+    HCCL_INFO("[TpMgr]");
     if (locReqCtxIter == locReqCtxMap.end()) {
         HCCL_INFO("[TpMgr][%s] get new tpInfo, param[%s].", __func__,
             param.Describe().c_str());
