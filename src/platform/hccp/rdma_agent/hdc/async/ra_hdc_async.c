@@ -734,7 +734,7 @@ int RaHdcAsyncRestoreSnapshot(unsigned int phyId)
     return ret;
 }
 
-STATIC void __attribute__ ((destructor)) RaHdcUninitAsync(void)
+void RaHdcDeinitAsyncAll(void)
 {
     unsigned int phyId = 0;
 

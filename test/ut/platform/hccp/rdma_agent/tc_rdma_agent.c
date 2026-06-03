@@ -1566,7 +1566,7 @@ void TcHdcAsyncDelReqHandle()
     RaHwAsyncDelList(&list1, &reqMutex);
 }
 
-void TcRaHdcUninitAsync()
+void TcRaHdcDeinitAsyncAll()
 {
-    RaHdcUninitAsync();
+    RaHdcDeinitAsyncAll();
 }
