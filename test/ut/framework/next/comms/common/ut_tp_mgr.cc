@@ -674,3 +674,37 @@ TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpAttr_UseCntDecrement_Expect_Success)
     EXPECT_EQ(mgr.ReleaseTpAttr(tpInfo.tpHandle, tpAttrInfo), HCCL_SUCCESS);
     EXPECT_EQ(mgr.ReleaseTpAttr(tpInfo.tpHandle, tpAttrInfo), HCCL_SUCCESS);
 }
+
+TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpInfo_QosKeyMismatch_Expect_NotFound)
+{
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam paramQos0 = MakeParam("10.10.24.1", "10.10.24.2", TpProtocol::RTP, 0U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, paramQos0, tpInfo), HCCL_SUCCESS);
+
+    const GetTpInfoParam paramQos1 = MakeParam("10.10.24.1", "10.10.24.2", TpProtocol::RTP, 1U);
+    EXPECT_EQ(mgr.ReleaseTpInfo(paramQos1, tpInfo), HCCL_E_NOT_FOUND);
+    EXPECT_EQ(mgr.ReleaseTpInfo(paramQos0, tpInfo), HCCL_SUCCESS);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetInstance_When_PhyIdOverflow_Expect_BackupSlotUsable)
+{
+    TpMgr &mgr = TpMgr::GetInstance(MAX_MODULE_DEVICE_NUM + 16U);
+    const GetTpInfoParam param = MakeParam("10.10.25.1", "10.10.25.2", TpProtocol::CTP, 2U);
+    TpInfo tpInfo{};
+    EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_NE(tpInfo.tpHandle, 0U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_ThreeTp_Qos2_Expect_GroupedFirstQos)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncThree));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncSl123));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.26.1", "10.10.26.2", TpProtocol::UBOE, 2U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+    EXPECT_NE(tpInfo.tpHandle, 0U);
+}
