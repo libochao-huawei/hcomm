@@ -777,9 +777,7 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
     CHK_RET(hcclCommDfx->UpdateProfStat());
-    Hccl::MirrorTaskManager* mirrorTaskManage = hcclCommDfx->GetMirrorTaskManager();
-    CHK_PTR_NULL(mirrorTaskManage);
-    mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    CHK_RET(hcclCommDfx->SetCurrDfxOpInfo(dfxOpInfoOnce));
     HCCL_INFO("[%s]success, DfxOpInfo: %s", __func__, dfxOpInfoOnce->Describe().c_str());
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;

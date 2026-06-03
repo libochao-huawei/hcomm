@@ -66,6 +66,7 @@ void ProfilingHandler::Init()
     }
     // 保存关键信息
     initializedFlag_ = true;
+    SetCachedCclTag();
 }
 
 // 回调注册
@@ -133,6 +134,22 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
     }
 }
 
+
+void ProfilingHandler::SetCachedCclTag()
+{
+    for (const auto &item : CMD_OP_TYPE_INFO_MAP) {
+        uint32_t tag = static_cast<uint32_t>(item.first);
+        if (cachedNewCclTag_.find(tag) == cachedNewCclTag_.end()) {
+            std::string cclTag = item.second.second;
+            auto hashId = GetProfHashId(cclTag.c_str(), cclTag.length());
+            cachedOldCclTag_[tag] = hashId;//传入的是A3算法类型的，直接转hashid
+            cachedNewCclTag_[item.second.first] = hashId;//传入的是A5算法类型，直接转hashid
+        }
+    }
+}
+
+
+
 void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cachedReq)
 {
     CHECK_NULLPTR(taskInfo.dfxOpInfo_, "[ProfilingHandler::ReportHcclTaskDetails] taskInfo.dfxOpInfo_ is nullptr!");
@@ -193,8 +210,8 @@ void ProfilingHandler::GetProfCommonInfo(const TaskInfo &taskInfo, HCCLReportDat
     hcclReportData.ts = taskInfo.taskParam_.endTime;
     const auto &profName = GetProfTaskOpNameV2(taskInfo.taskParam_.taskType);
     hcclReportData.profInfo.itemId = GetProfHashId(profName.c_str(), profName.length());
-    const auto &cclTag = taskInfo.dfxOpInfo_->tag_;
-    hcclReportData.profInfo.cclTag = GetProfHashId(cclTag.c_str(), cclTag.length());
+    auto newCclTagIt = cachedNewCclTag_.find(taskInfo.dfxOpInfo_->op_.opType);
+    hcclReportData.profInfo.cclTag = (newCclTagIt != cachedNewCclTag_.end()) ? newCclTagIt->second : INVALID_U64;
     const auto &opTag = taskInfo.dfxOpInfo_->op_.opTag;
     uint64_t groupName = GetProfHashId(opTag.c_str(), opTag.length());
     if (taskInfo.dfxOpInfo_->comm_ == nullptr) {

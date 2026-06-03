@@ -34,9 +34,15 @@ ProfilingHandlerLite &ProfilingHandlerLite::GetInstance()
     return instance_;
 }
 
-void ProfilingHandlerLite::SetCachedCclTag(const std::string &tag)
+void ProfilingHandlerLite::SetCachedCclTag()
 {
-    cachedCclTag_ = GetProfHashId(tag.c_str(), tag.length());
+    for (const auto &item : CMD_OP_TYPE_INFO_MAP) {
+        string tag = item.second.second;
+        if (cachedCclTag_.find(tag) == cachedCclTag_.end()) {
+            std::string cclTag = item.second.second;
+            cachedCclTag_[tag] = GetProfHashId(cclTag.c_str(), cclTag.length());
+        }
+    }
 }
 
 void ProfilingHandlerLite::SetCachedGroupName(const DfxOpInfo &opInfo)
@@ -54,6 +60,7 @@ void ProfilingHandlerLite::SetCachedGroupName(const DfxOpInfo &opInfo)
 void ProfilingHandlerLite::Init()
 {
     cachedTid_ = SalGetTid();
+    SetCachedCclTag();
     for (auto i = 0; i < static_cast<int>(TaskParamType::__COUNT__); i++) {
         TaskParamType type(static_cast<TaskParamType::Value>(i));
         std::string nameInfo = GetProfTaskOpNameV2(type);
@@ -157,7 +164,8 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
 {
     auto cacheIt = taskTypeHashCache_.find(static_cast<uint32_t>(it.taskParam_.taskType));
     taskDetailsInfos.itemId = (cacheIt != taskTypeHashCache_.end()) ? cacheIt->second : INVALID_U64;
-    taskDetailsInfos.cclTag       = cachedCclTag_;
+    auto cclTagIt = cachedCclTag_.find(it.dfxOpInfo_->tag_);
+    taskDetailsInfos.cclTag = (cclTagIt != cachedCclTag_.end()) ? cclTagIt->second : INVALID_U64;
     taskDetailsInfos.remoteRank   = it.GetRemoteRankId();
     taskDetailsInfos.groupName = cachedGroupName_;
     taskDetailsInfos.rankSize  = cachedRankSize_;

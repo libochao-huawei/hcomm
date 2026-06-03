@@ -198,6 +198,7 @@ private:
     void DumpCcuGroupInfo(const MsprofCcuGroupInfo& ccuGroupInfo) const;
     uint64_t GetProfHashId(const char *name, uint32_t len) const;
     void ReportMc2AdditionInfo(uint64_t timeStamp, const void* data, int len);
+    void SetCachedCclTag();
 
 private:
     static ProfilingHandler instance_;
@@ -212,6 +213,8 @@ private:
     std::queue<MsprofCompactInfo>   cacheHcclOpInfo_{};
     std::queue<MsprofAdditionalInfo>  cacheHcclAdditionInfo_{};
     std::map<std::string, uint64_t> str2HashId_{};
+    std::map<uint32_t, uint64_t> cachedOldCclTag_{};
+    std::map<uint32_t, uint64_t> cachedNewCclTag_{};
     std::mutex cacheTaskInfosMutex_;
     std::mutex cachedTaskApiInfoMutex_;
     std::mutex cacheHcclOpInfoMutex_;
