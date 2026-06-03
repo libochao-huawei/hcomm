@@ -442,7 +442,7 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     // STADARD 类型Jetty，该参数代表SQ深度
     u32              sqDepth{0};
     /// UB Jetty priority（低 4bit）；GetQpCreateAttr 写入 attr.ub.priority
-    u8               qos{4};
+    u8               qos{2};
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
     u8 errTimeout{16};
