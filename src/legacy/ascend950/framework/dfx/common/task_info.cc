@@ -256,7 +256,7 @@ string TaskInfo::GetParaAiv() const
 
 u32 TaskInfo::GetRemoteRankId() const
 {
-    return getChannelRemoteRankId_ ? getChannelRemoteRankId_(channelHandle_) : remoteRank_;
+    return getRemoteRankByHandle_ ? getRemoteRankByHandle_(channelHandle_) : remoteRank_;
 }
 
 } // namespace Hccl
