@@ -2265,7 +2265,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitProfiler()
     {
-        profilerManager_.reset(new (std::nothrow) ProfilerManager(devicePhyId_, deviceLogicId_, realUserRank_));
+        profilerManager_.reset(new (std::nothrow) ProfilerManager(devicePhyId_, deviceLogicId_, realUserRank_, userRankSize_));
         CHK_SMART_PTR_NULL(profilerManager_);
         HcclResult ret = profilerManager_->InitProfiler();
         CHK_PRT_RET((ret != HCCL_SUCCESS), HCCL_ERROR("[BASE][InitProfiler]profilerManager_ InitProfiler failed."),

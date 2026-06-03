@@ -18,7 +18,7 @@ namespace hccl {
 class ProfilerManagerImpl;
 class ProfilerManager {
 public:
-    ProfilerManager(s32 devicePhyId, s32 deviceLogicId, u32 realUserRank);
+    ProfilerManager(s32 devicePhyId, s32 deviceLogicId, u32 realUserRank, u32 rankSize);
     ~ProfilerManager();
     HcclResult InitProfiler();
     HcclResult GetandClearOverFlowTasks(std::vector<HcclDumpInfo> &hcclDumpInfo);
