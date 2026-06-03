@@ -308,10 +308,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/interface/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/aicpu/profiling
 
-    # ccu 头文件（必须放在 legacy/ascend950/unified_platform/ccu 之前，
-    # 否则 ccu_res_pack.h / ccu_res_specs.h / ccu_res_batch_allocator.h
-    # 等同名头文件会被解析到 legacy 版（Hccl namespace），
-    # 而 next 代码在 hcomm namespace 下使用裸名，会编译报错）
+
     ${HCCL_CODE_ROOT}/src/base_comm/resources/adpt/
     ${HCCL_CODE_ROOT}/src/base_comm/common/
     ${HCCL_CODE_ROOT}/src/base_comm/common/device
@@ -347,8 +344,6 @@ set(UT_COMMON_INCLUDE_LIST
 )
 
 add_subdirectory(stub)
-add_subdirectory(framework/next)
-# add_subdirectory(framework/next/coll_comms/dfx) // ccu c风格接口整改，先取消用例
 add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
