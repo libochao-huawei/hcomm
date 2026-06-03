@@ -126,9 +126,9 @@ HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &localFra
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[RankConsistencyCheckerV2::GenerateCheckFrameV2] memcpy version failed."), HCCL_E_INTERNAL);
 
-    HCCL_INFO("[RankConsistencyCheckerV2::GenerateCheckFrameV2] success, engine[%d], envCrcNum[%u], "
+    HCCL_INFO("[RankConsistencyCheckerV2::GenerateCheckFrameV2] success, envCrcNum[%u], "
         "rankTableCrcNum[%u], subCommCrcNum[%u], version[%s].",
-        localFrame.engine, localFrame.crcNum, localFrame.rankTableCrcNum, localFrame.subCommCrcNum, localFrame.version);
+        localFrame.crcNum, localFrame.rankTableCrcNum, localFrame.subCommCrcNum, localFrame.version);
     return HCCL_SUCCESS;
 }
 
