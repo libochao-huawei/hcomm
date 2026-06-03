@@ -30,7 +30,6 @@
 #include "task_info.h"
 #include "task_param.h"
 
-
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
 
@@ -875,6 +874,3 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
     return HCCL_SUCCESS;
 }
-
-
-
