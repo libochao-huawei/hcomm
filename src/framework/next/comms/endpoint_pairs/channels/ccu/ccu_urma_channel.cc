@@ -18,6 +18,8 @@
 
 #include "exception_handler.h"
 
+#include "config_log.h"
+
 // 暂时引入orion
 #include "local_ub_rma_buffer.h"
 
@@ -210,7 +212,7 @@ ChannelStatus CcuUrmaChannel::GetStatus()
             out = ChannelStatus::FAILED;
         } else {
             channelInfo.append(" TA[RM]"); // 目前TA只支持RM
-            HCCL_RUN_INFO("%s", channelInfo.c_str());
+            HCCL_CONFIG_DEBUG(hccl::HCCL_RES, "%s", channelInfo.c_str());
         }
         isFirstPrintChannelInfo_ = false;
     }
