@@ -33,10 +33,10 @@ void ProfilingReporterLite::Init() const
 }
 
 /*
-*  (*currQueue) == Queue<std::shared_ptr<TaskInfo>> = QUEUE
-*  QUEUE.Begin() =std::shared_ptr<Iterator<shared_ptr<taskInfo>>
-*  *QUEUE.Begin() = Iterator<shared_ptr<taskInfo>
-*  *(*QUEUE.Begin()) = shared_ptr<taskInfo>
+*  (*currQueue) == Queue<std::unique_ptr<TaskInfo>> = QUEUE
+*  QUEUE.Begin() =std::shared_ptr<Iterator<unique_ptr<taskInfo>>
+*  *QUEUE.Begin() = Iterator<unique_ptr<taskInfo>
+*  *(*QUEUE.Begin()) = unique_ptr<taskInfo>
 *  *(*(*QUEUE.Begin())) = taskInfo;
 *  taskInfo.push_back((*(*((*currQueue).Begin())));
 */
@@ -48,7 +48,7 @@ void ProfilingReporterLite::ReportAllTasksLog()
     }
     for (auto it = mirrorTaskMgrLite_->Begin(); it != mirrorTaskMgrLite_->End(); ++it) {
         u32 streamId = it->first;
-        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second.get();
+        Queue<std::unique_ptr<TaskInfo>> *currQueue = it->second.get();
         if (currQueue == nullptr || currQueue->Begin() == nullptr || currQueue->Tail() == nullptr) {
             continue;
         }
@@ -83,7 +83,7 @@ void ProfilingReporterLite::ReportAllTasks()
     taskInfo.reserve(8192);
     for (auto it = mirrorTaskMgrLite_->Begin(); it != mirrorTaskMgrLite_->End(); ++it) {
         u32                               streamId  = it->first;
-        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second.get();
+        Queue<std::unique_ptr<TaskInfo>> *currQueue = it->second.get();
         if (currQueue == nullptr || (*(*(currQueue->Begin()))) == nullptr
             || (*(*(currQueue->Tail()))) == nullptr) {
             HCCL_WARNING("[ProfilingReporterLite][ReportAllTasks] currQueue is nullptr, continue to next task.");
@@ -116,7 +116,7 @@ void ProfilingReporterLite::UpdateAllLastPos()
 {
     for (auto it = mirrorTaskMgrLite_->Begin(); it != mirrorTaskMgrLite_->End(); ++it) {
         u32                               streamId  = it->first;
-        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second.get();// 一旦有streamid 必有queue 必不为空，只是元素可能会为0
+        Queue<std::unique_ptr<TaskInfo>> *currQueue = it->second.get();// 一旦有streamid 必有queue 必不为空，只是元素可能会为0
 
         auto endPos = currQueue->Tail();
         lastPoses_[streamId] = endPos;

@@ -75,7 +75,7 @@ void ProfilingReporter::ReportAllTasksLog() const
     auto& curLastPoses = allLastPoses_[deviceLogicId];
     for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
         u32 streamId = it->first;
-        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
+        Queue<std::unique_ptr<TaskInfo>> *currQueue = it->second;
         if (currQueue == nullptr) {
             continue;
         }
@@ -120,7 +120,7 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
     }
     for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
         u32  streamId     = it->first;
-        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
+        Queue<std::unique_ptr<TaskInfo>> *currQueue = it->second;
         if (currQueue == nullptr || currQueue->Begin() == nullptr || currQueue->Tail() == nullptr) {
             HCCL_WARNING("[ProfilingReporter][ReportAllTasks] currQueue is nullptr, continue to next task.");
             continue;
