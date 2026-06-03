@@ -89,7 +89,10 @@ int StubRaGetTpAttrAsyncUboeSl789Legacy(void *ctxHandle, uint64_t tpHandle, uint
         (void)memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = (1U << 7U) | (1U << 8U) | (1U << 9U);
         attr->dscpConfigMode = 0U;
+<<<<<<< HEAD
         attr->dscp = 12U;
+=======
+>>>>>>> 84b3c665 (ut覆盖率不够)
     }
     if (reqHandle != nullptr) {
         *reqHandle = &kLegacyUboeAttrReq;
@@ -97,6 +100,7 @@ int StubRaGetTpAttrAsyncUboeSl789Legacy(void *ctxHandle, uint64_t tpHandle, uint
     return 0;
 }
 
+<<<<<<< HEAD
 int StubRaGetHccnCfgDscpLegacy(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
     (void)info;
@@ -143,6 +147,8 @@ int StubRaGetTpAttrAsyncSl01Legacy(void *ctxHandle, uint64_t tpHandle, uint32_t 
     return 0;
 }
 
+=======
+>>>>>>> 84b3c665 (ut覆盖率不够)
 } // namespace
 
 class TpManagerTest : public testing::Test {
@@ -511,6 +517,7 @@ TEST_F(TpManagerTest, tp_manager_release_tpinfo_qos_key_mismatch)
     paramQos1.qos = 1U;
     result = TpManager::GetInstance(devLogicId).ReleaseTpInfo(paramQos1, tpInfo);
     EXPECT_EQ(result, HCCL_E_NOT_FOUND);
+<<<<<<< HEAD
 }
 
 TEST_F(TpManagerTest, tp_manager_device_uboe_dscp_from_hccn_success)
@@ -687,4 +694,6 @@ TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_uboe_success)
     EXPECT_EQ(result, HCCL_SUCCESS);
     EXPECT_EQ(tpInfo.tpHandle, 0x300ULL);
     EXPECT_EQ(tpInfo.mappedJettyPriority, 7U);
+=======
+>>>>>>> 84b3c665 (ut覆盖率不够)
 }

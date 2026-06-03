@@ -27,7 +27,10 @@
 #include "internal_exception.h"
 #include "hccl_types.h"
 #include "adapter_rts.h"
+<<<<<<< HEAD
 #include "env_config/env_config.h"
+=======
+>>>>>>> 84b3c665 (ut覆盖率不够)
 
 #undef private
 #undef protected
@@ -294,6 +297,7 @@ TEST_F(CcuConnTest, Ut_UpdateInitStatus_WithMappedPriority_SetsJettyQos)
     EXPECT_EQ(jetty.GetCreateJettyParam().qos, static_cast<uint8_t>(4U));
 
     GlobalMockObject::verify();
+<<<<<<< HEAD
 }
 
 GetTpInfoParam gCapturedConnTpParam{};
@@ -322,4 +326,6 @@ TEST_F(CcuConnTest, Ut_MakeGetTpInfoParam_When_QosAboveSeven_Expect_ClampsToDefa
     EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(EnvConfig::UB_QOS_DEFAULT));
 
     GlobalMockObject::verify();
+=======
+>>>>>>> 84b3c665 (ut覆盖率不够)
 }

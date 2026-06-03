@@ -245,10 +245,17 @@ int StubRaGetTpAttrAsyncTwoSlBits(void *ctxHandle, uint64_t tpHandle, uint32_t *
     return 0;
 }
 
+<<<<<<< HEAD
 int StubRaGetHccnCfgDscp(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
     (void)info;
     (void)key;
+=======
+int StubRaGetHccnCfgDscp(void *info, int cfgType, char *value, unsigned int *valueLen)
+{
+    (void)info;
+    (void)cfgType;
+>>>>>>> 84b3c665 (ut覆盖率不够)
     if (value == nullptr || valueLen == nullptr) {
         return -1;
     }
@@ -262,6 +269,7 @@ int StubRaGetHccnCfgDscp(struct RaInfo *info, enum HccnCfgKey key, char *value, 
     return 0;
 }
 
+<<<<<<< HEAD
 int StubRaGetHccnCfgDscpKeyValue(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
     (void)info;
@@ -335,6 +343,8 @@ int StubRaGetTpAttrAsyncSl01(void *ctxHandle, uint64_t tpHandle, uint32_t *attrB
     return 0;
 }
 
+=======
+>>>>>>> 84b3c665 (ut覆盖率不够)
 } // namespace
 
 class TpMgrTest : public testing::Test {
@@ -561,12 +571,17 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Rtp_SlLevelCountCapsMapping_Expect_Success)
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_DscpFromHccnCfg_Expect_Success)
 {
     MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+<<<<<<< HEAD
     MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboeDscpMode0));
+=======
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboe));
+>>>>>>> 84b3c665 (ut覆盖率不够)
     MOCKER(RaGetHccnCfg).stubs().will(invoke(StubRaGetHccnCfgDscp));
 
     TpMgr &mgr = TpMgr::GetInstance(0);
     const GetTpInfoParam param = MakeParam("10.10.16.1", "10.10.16.2", TpProtocol::UBOE, 2U);
     TpInfo tpInfo{};
+<<<<<<< HEAD
     ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
     EXPECT_EQ(tpInfo.tpHandle, 0x105ULL);
 }
@@ -582,6 +597,9 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_DscpKeyValueCfg_Expect_Success)
     TpInfo tpInfo{};
     EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
     EXPECT_EQ(tpInfo.tpHandle, 0x102ULL);
+=======
+    EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+>>>>>>> 84b3c665 (ut覆盖率不够)
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Ctp_WithQos_Expect_SuccessWithoutSlCommit)
@@ -592,6 +610,7 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Ctp_WithQos_Expect_SuccessWithoutSlCommit)
     EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
     EXPECT_NE(tpInfo.tpHandle, 0U);
 }
+<<<<<<< HEAD
 
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Rtp_TwoTp_Qos5_Expect_Mapped)
 {
@@ -727,3 +746,5 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_ThreeTp_Qos2_Expect_GroupedFirstQos)
     EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
     EXPECT_NE(tpInfo.tpHandle, 0U);
 }
+=======
+>>>>>>> 84b3c665 (ut覆盖率不够)
