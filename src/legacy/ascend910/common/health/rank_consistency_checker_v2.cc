@@ -241,7 +241,7 @@ HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local,
 HcclResult CompareEngineV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
 {
     if (local.engine != remote.engine) {
-        RPT_INPUT_ERR(true, "EI0008",
+        RPT_INPUT_ERR(true, "EI0005",
             std::vector<std::string>({"local_engine", "remote_engine"}),
             std::vector<std::string>({std::to_string(local.engine), std::to_string(remote.engine)}));
         HCCL_ERROR("[RankConsistencyCheckerV2::CompareEngineV2] engine mismatch: local[%d], remote[%d].",
