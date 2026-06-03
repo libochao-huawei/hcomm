@@ -90,9 +90,13 @@ int StubRaGetTpAttrAsyncUboeSl789Legacy(void *ctxHandle, uint64_t tpHandle, uint
         attr->slBitmap = (1U << 7U) | (1U << 8U) | (1U << 9U);
         attr->dscpConfigMode = 0U;
 <<<<<<< HEAD
+<<<<<<< HEAD
         attr->dscp = 12U;
 =======
 >>>>>>> 84b3c665 (ut覆盖率不够)
+=======
+        attr->dscp = 12U;
+>>>>>>> 466ec5dc ( ut覆盖率不够)
     }
     if (reqHandle != nullptr) {
         *reqHandle = &kLegacyUboeAttrReq;
@@ -101,7 +105,11 @@ int StubRaGetTpAttrAsyncUboeSl789Legacy(void *ctxHandle, uint64_t tpHandle, uint
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 int StubRaGetHccnCfgDscpLegacy(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
+=======
+int StubRaGetHccnCfgDscpLegacy(void *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
+>>>>>>> 466ec5dc ( ut覆盖率不够)
 {
     (void)info;
     (void)key;
@@ -147,8 +155,11 @@ int StubRaGetTpAttrAsyncSl01Legacy(void *ctxHandle, uint64_t tpHandle, uint32_t 
     return 0;
 }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 84b3c665 (ut覆盖率不够)
+=======
+>>>>>>> 466ec5dc ( ut覆盖率不够)
 } // namespace
 
 class TpManagerTest : public testing::Test {
@@ -518,6 +529,9 @@ TEST_F(TpManagerTest, tp_manager_release_tpinfo_qos_key_mismatch)
     result = TpManager::GetInstance(devLogicId).ReleaseTpInfo(paramQos1, tpInfo);
     EXPECT_EQ(result, HCCL_E_NOT_FOUND);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 466ec5dc ( ut覆盖率不够)
 }
 
 TEST_F(TpManagerTest, tp_manager_device_uboe_dscp_from_hccn_success)
@@ -654,22 +668,46 @@ TEST_F(TpManagerTest, tp_manager_release_tpinfo_handle_mismatch)
 
 TEST_F(TpManagerTest, Ut_CalcTaTimeout_When_EnvLessThanTp_Expect_Upgrade)
 {
+<<<<<<< HEAD
     UbTimeoutEnvGuard envGuard("0");
+=======
+    auto &rdmaCfg = EnvConfig::GetInstance().GetRdmaConfig();
+    const auto savedUbTimeout = rdmaCfg.ubTimeOut;
+    rdmaCfg.ubTimeOut.value = 0U;
+    rdmaCfg.ubTimeOut.isParsed = true;
+>>>>>>> 466ec5dc ( ut覆盖率不够)
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 3U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpManager::CalcTaTimeout(tpAttrInfo), 16U);
+<<<<<<< HEAD
+=======
+
+    rdmaCfg.ubTimeOut = savedUbTimeout;
+>>>>>>> 466ec5dc ( ut覆盖率不够)
 }
 
 TEST_F(TpManagerTest, Ut_CalcTaTimeout_When_EnvGreaterThanTp_Expect_EnvValue)
 {
+<<<<<<< HEAD
     UbTimeoutEnvGuard envGuard("24");
+=======
+    auto &rdmaCfg = EnvConfig::GetInstance().GetRdmaConfig();
+    const auto savedUbTimeout = rdmaCfg.ubTimeOut;
+    rdmaCfg.ubTimeOut.value = 24U;
+    rdmaCfg.ubTimeOut.isParsed = true;
+>>>>>>> 466ec5dc ( ut覆盖率不够)
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 0U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpManager::CalcTaTimeout(tpAttrInfo), 24U);
+<<<<<<< HEAD
+=======
+
+    rdmaCfg.ubTimeOut = savedUbTimeout;
+>>>>>>> 466ec5dc ( ut覆盖率不够)
 }
 
 TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_uboe_success)
@@ -694,6 +732,9 @@ TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_uboe_success)
     EXPECT_EQ(result, HCCL_SUCCESS);
     EXPECT_EQ(tpInfo.tpHandle, 0x300ULL);
     EXPECT_EQ(tpInfo.mappedJettyPriority, 7U);
+<<<<<<< HEAD
 =======
 >>>>>>> 84b3c665 (ut覆盖率不够)
+=======
+>>>>>>> 466ec5dc ( ut覆盖率不够)
 }
