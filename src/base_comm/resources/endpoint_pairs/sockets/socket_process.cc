@@ -253,7 +253,7 @@ HcclResult SocketProcess::BuildSocket(SocketDesc *socketDesc, const std::string 
 
     Hccl::IpAddress ipaddr{};
     CHK_RET(CommAddrToIpAddress(socketDesc->localEndpoint.commAddr, ipaddr));
-    if (serverSocketMap_.find(localListenPair) == serverSocketMap_.end()) {
+    if (socketDesc->role == HCOMM_SOCKET_ROLE_SERVER && serverSocketMap_.find(localListenPair) == serverSocketMap_.end()) {
         Hccl::SocketHandle serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Get(devicePhyId_, localListenPair.first);
         if (serverSocketHandle == nullptr) {
             serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Create(devicePhyId_, localListenPair.first);
