@@ -26,7 +26,7 @@ const u32 HCOMM_ALG_TAG_LENGTH = 288;
  * @return HcclResult 执行结果状态码
  * @note host侧
  */
-extern HCOMM_API HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime);
+extern HCCL_API HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime);
 
 /**
  * @brief kernel上报
@@ -36,8 +36,8 @@ extern HCOMM_API HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginT
  * @return HcclResult 执行结果状态码
  * @note host侧
  */
-extern HCOMM_API HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char *kernelName);
-extern HCOMM_API HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime);
+extern HCCL_API HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char *kernelName);
+extern HCCL_API HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime);
 
 extern HCOMM_API uint64_t HcommGetProfilingSysCycleTime();
 
@@ -48,7 +48,7 @@ extern HCOMM_API uint64_t HcommGetProfilingSysCycleTime();
  * @return HcclResult 执行结果状态码
  * @note host侧和device侧都支持
  */
-extern HCOMM_API HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo);
+extern HCCL_API HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo);
 
 struct HcclDfxOpInfo {
     CommAbiHeader       header;

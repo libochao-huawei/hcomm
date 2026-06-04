@@ -12,19 +12,18 @@
 #define HCCL_CCU_RES_H
 
 #include "hccl_types.h"
-#include "hcomm_res_defs.h"
 #include "ccu_kernel.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-extern HCOMM_API HcclResult HcclCcuKernelRegister(HcclComm comm,
+extern HCCL_API HcclResult HcclCcuKernelRegister(HcclComm comm,
     CcuKernelHandle *kernelHandle, void *kernelCreator, void *kernelArg);
 
-extern HCOMM_API HcclResult HcclCcuKernelRegisterFinish(HcclComm comm);
+extern HCCL_API HcclResult HcclCcuKernelRegisterFinish(HcclComm comm);
 
-extern HCOMM_API HcclResult HcclCcuKernelLaunch(HcclComm comm,
+extern HCCL_API HcclResult HcclCcuKernelLaunch(HcclComm comm,
     const ThreadHandle threadHandle, const CcuKernelHandle kernelHandle,
     void *taskArgs);
 #ifdef __cplusplus

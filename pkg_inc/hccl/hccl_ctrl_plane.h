@@ -12,16 +12,15 @@
 #define HCCL_CTRL_PLANE_H_
  
 #include <hccl/hccl_types.h>
-#include "hcomm_res_defs.h"
  
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
  
-extern HCOMM_API HcclResult CommGetLocalCCLBuf(HcclComm comm, void **addr, uint64_t *size);
-extern HCOMM_API HcclResult CommGetRemoteCCLBuf(HcclComm comm, uint32_t remoteRank, void **addr, uint64_t *size);
-extern HCOMM_API HcclResult CommGetKFCWorkSpace(HcclComm comm, void **addr, uint64_t *size);
-extern HCOMM_API HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize);
+extern HCCL_API HcclResult CommGetLocalCCLBuf(HcclComm comm, void **addr, uint64_t *size);
+extern HCCL_API HcclResult CommGetRemoteCCLBuf(HcclComm comm, uint32_t remoteRank, void **addr, uint64_t *size);
+extern HCCL_API HcclResult CommGetKFCWorkSpace(HcclComm comm, void **addr, uint64_t *size);
+extern HCCL_API HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

@@ -11,7 +11,6 @@
 #ifndef HCCL_EX_H
 #define HCCL_EX_H
 
-#include "hcomm_res_defs.h"
 #include <hccl/base.h>
 
 #ifdef __cplusplus
@@ -27,7 +26,7 @@ extern "C" {
  * @return HcclResult
  * @see HcclFinalizeComm()
  */
-extern HCOMM_API HcclResult HcclInitComm(const char* rankTableM, uint32_t rank, const CommAttr* attr, HcclComm* comm);
+extern HCCL_API HcclResult HcclInitComm(const char* rankTableM, uint32_t rank, const CommAttr* attr, HcclComm* comm);
 
 /**
  * @brief Destroy HCCL Heterog comm
@@ -36,7 +35,7 @@ extern HCOMM_API HcclResult HcclInitComm(const char* rankTableM, uint32_t rank, 
  * @return HcclResult
  * @see HcclInitComm()
  */
-extern HCOMM_API HcclResult HcclFinalizeComm(HcclComm comm);
+extern HCCL_API HcclResult HcclFinalizeComm(HcclComm comm);
 
 /**
  * @ingroup mem_manangement
@@ -46,7 +45,7 @@ extern HCOMM_API HcclResult HcclFinalizeComm(HcclComm comm);
  * @return HCCL_SUCCESS for ok
  * @return HCCL_E_PARA for error input
  */
-extern HCOMM_API HcclResult HcclRegisterGlobalMemory(void* addr, u64 size);
+extern HCCL_API HcclResult HcclRegisterGlobalMemory(void* addr, u64 size);
 
 /**
  * @ingroup mem_manangement
@@ -55,24 +54,24 @@ extern HCOMM_API HcclResult HcclRegisterGlobalMemory(void* addr, u64 size);
  * @return HCCL_SUCCESS for ok
  * @return HCCL_E_PARA for error input
  */
-extern HCOMM_API HcclResult HcclUnregisterGlobalMemory(void* addr);
+extern HCCL_API HcclResult HcclUnregisterGlobalMemory(void* addr);
 
-extern HCOMM_API HcclResult HcclRegisterMemory(HcclComm comm, void* buffer, uint64_t size);
+extern HCCL_API HcclResult HcclRegisterMemory(HcclComm comm, void* buffer, uint64_t size);
 
-extern HCOMM_API HcclResult HcclUnregisterMemory(HcclComm comm, void* buffer);
+extern HCCL_API HcclResult HcclUnregisterMemory(HcclComm comm, void* buffer);
 
-extern HCOMM_API int HcclIsend(void* buffer, int count, HcclDataType dataType, int dstRank, int tag,
+extern HCCL_API int HcclIsend(void* buffer, int count, HcclDataType dataType, int dstRank, int tag,
     HcclComm comm, HcclRequest* request);
 
-extern HCOMM_API int HcclImrecv(void* buffer, int count, HcclDataType dataType, HcclMessage *msg,
+extern HCCL_API int HcclImrecv(void* buffer, int count, HcclDataType dataType, HcclMessage *msg,
     HcclRequest* request);
 
-extern HCOMM_API int HcclImprobe(int srcRank, int tag, HcclComm comm, int* flag,
+extern HCCL_API int HcclImprobe(int srcRank, int tag, HcclComm comm, int* flag,
     HcclMessage* msg, HcclStatus* status);
 
-extern HCOMM_API int HcclGetCount(const HcclStatus* status, HcclDataType dataType, int* count);
+extern HCCL_API int HcclGetCount(const HcclStatus* status, HcclDataType dataType, int* count);
 
-extern HCOMM_API int HcclTestSome(int count, HcclRequest requestArray[], int* compCount,
+extern HCCL_API int HcclTestSome(int count, HcclRequest requestArray[], int* compCount,
     int compIndices[], HcclStatus compStatus[]);
 
 /**
@@ -82,7 +81,7 @@ extern HCOMM_API int HcclTestSome(int count, HcclRequest requestArray[], int* co
  * @return HCCL_SUCCESS for ok
  * @return HCCL_E_PARA for error input
  */
-extern HCOMM_API HcclResult HcclRawOpen(HcclConn* conn);
+extern HCCL_API HcclResult HcclRawOpen(HcclConn* conn);
 
 /**
  * @ingroup raw communication
@@ -91,7 +90,7 @@ extern HCOMM_API HcclResult HcclRawOpen(HcclConn* conn);
  * @return HCCL_SUCCESS for ok
  * @return HCCL_E_PARA for error input
  */
-extern HCOMM_API HcclResult HcclRawClose(HcclConn conn);
+extern HCCL_API HcclResult HcclRawClose(HcclConn conn);
 
 /**
  * @ingroup raw communication
@@ -100,7 +99,7 @@ extern HCOMM_API HcclResult HcclRawClose(HcclConn conn);
  * @return HCCL_SUCCESS for ok
  * @return HCCL_E_PARA for error input
  */
-extern HCOMM_API HcclResult HcclRawForceClose(HcclConn conn);
+extern HCCL_API HcclResult HcclRawForceClose(HcclConn conn);
 
 /**
  * @ingroup raw communication
@@ -111,7 +110,7 @@ extern HCOMM_API HcclResult HcclRawForceClose(HcclConn conn);
  * @return HCCL_E_AGAIN for need retry
  * @return HCCL_E_PARA for error input
  */
-extern HCOMM_API HcclResult HcclRawBind(HcclConn conn, HcclAddr* bindAddr);
+extern HCCL_API HcclResult HcclRawBind(HcclConn conn, HcclAddr* bindAddr);
 
 /**
  * @ingroup raw communication
@@ -122,7 +121,7 @@ extern HCOMM_API HcclResult HcclRawBind(HcclConn conn, HcclAddr* bindAddr);
  * @return HCCL_E_AGAIN for need retry
  * @return HCCL_E_PARA for error input
  */
-extern HCOMM_API HcclResult HcclRawConnect(HcclConn conn, HcclAddr* connectAddr);
+extern HCCL_API HcclResult HcclRawConnect(HcclConn conn, HcclAddr* connectAddr);
 
 /**
  * @ingroup raw communication
@@ -132,7 +131,7 @@ extern HCOMM_API HcclResult HcclRawConnect(HcclConn conn, HcclAddr* connectAddr)
  * @return HCCL_SUCCESS for listen OK
  * @return HCCL_E_PARA for error input
  */
-extern HCOMM_API HcclResult HcclRawListen(HcclConn conn, int backLog);
+extern HCCL_API HcclResult HcclRawListen(HcclConn conn, int backLog);
 
 /**
  * @ingroup raw communication
@@ -144,7 +143,7 @@ extern HCOMM_API HcclResult HcclRawListen(HcclConn conn, int backLog);
  * @return HCCL_E_AGAIN for need retry
  * @return HCCL_E_PARA for error input
  */
-extern HCOMM_API HcclResult HcclRawAccept(HcclConn listenConn, HcclAddr* acceptAddr, HcclConn* acceptConn);
+extern HCCL_API HcclResult HcclRawAccept(HcclConn listenConn, HcclAddr* acceptAddr, HcclConn* acceptConn);
 
 /**
  * @ingroup raw communication
@@ -153,7 +152,7 @@ extern HCOMM_API HcclResult HcclRawAccept(HcclConn listenConn, HcclAddr* acceptA
  * @param [in|out]  other params same as HcclIsend
  * @return same as HcclIsend
  */
-extern HCOMM_API HcclResult HcclRawIsend(const void* buf, int count, HcclDataType dataType, HcclConn conn, HcclRequest* request);
+extern HCCL_API HcclResult HcclRawIsend(const void* buf, int count, HcclDataType dataType, HcclConn conn, HcclRequest* request);
 
 /**
  * @ingroup raw communication
@@ -162,7 +161,7 @@ extern HCOMM_API HcclResult HcclRawIsend(const void* buf, int count, HcclDataTyp
  * @param [in|out]  other params same as HcclIsend
  * @return same as HcclImprobe
  */
-extern HCOMM_API HcclResult HcclRawImprobe(HcclConn conn, int* flag, HcclMessage* msg, HcclStatus* status);
+extern HCCL_API HcclResult HcclRawImprobe(HcclConn conn, int* flag, HcclMessage* msg, HcclStatus* status);
 
 /**
  * @ingroup raw communication
@@ -170,9 +169,9 @@ extern HCOMM_API HcclResult HcclRawImprobe(HcclConn conn, int* flag, HcclMessage
  * @param [in|out]  all params same as HcclIsend
  * @return same as HcclImrecv
  */
-extern HCOMM_API HcclResult HcclRawImrecv(void* buf, int count, HcclDataType datatype, HcclMessage* msg, HcclRequest* request);
+extern HCCL_API HcclResult HcclRawImrecv(void* buf, int count, HcclDataType datatype, HcclMessage* msg, HcclRequest* request);
 
-extern HCOMM_API HcclResult HcclRawImrecvScatter(void* buf[], int count[], int bufCount, HcclDataType datatype,
+extern HCCL_API HcclResult HcclRawImrecvScatter(void* buf[], int count[], int bufCount, HcclDataType datatype,
     HcclMessage* msg, HcclRequest* request);
 
 /**
@@ -181,7 +180,7 @@ extern HCOMM_API HcclResult HcclRawImrecvScatter(void* buf[], int count[], int b
  * @param [in|out]  all params same as HcclIsend
  * @return same as HcclGetCount
  */
-extern HCOMM_API HcclResult HcclRawGetCount(const HcclStatus* status, HcclDataType dataType, int* count);
+extern HCCL_API HcclResult HcclRawGetCount(const HcclStatus* status, HcclDataType dataType, int* count);
 
 /**
  * @ingroup raw communication
@@ -189,25 +188,25 @@ extern HCOMM_API HcclResult HcclRawGetCount(const HcclStatus* status, HcclDataTy
  * @param [in|out]  all params same as HcclIsend
  * @return same as HcclTestSome
  */
-extern HCOMM_API HcclResult HcclRawTestSome(int count, HcclRequest requestArray[], int* compCount,
+extern HCCL_API HcclResult HcclRawTestSome(int count, HcclRequest requestArray[], int* compCount,
     int compIndices[], HcclStatus compStatus[]);
 
 
-extern HCOMM_API HcclResult HcclSetGrpIdCallback(int (*grpIdCallback)(int tag, int *grpId, int *devId));
+extern HCCL_API HcclResult HcclSetGrpIdCallback(int (*grpIdCallback)(int tag, int *grpId, int *devId));
 
 // commContext
-extern HCOMM_API HcclResult HcclCreateComResource(const char* commName, u32 streamMode, void** commContext);
+extern HCCL_API HcclResult HcclCreateComResource(const char* commName, u32 streamMode, void** commContext);
 
-extern HCOMM_API HcclResult HcclGetAicpuOpStreamNotify(const char* commName, rtStream_t* Opstream, void** aicpuNotify);
+extern HCCL_API HcclResult HcclGetAicpuOpStreamNotify(const char* commName, rtStream_t* Opstream, void** aicpuNotify);
 
-extern HCOMM_API HcclResult HcclAllocComResource(HcclComm comm, u32 streamMode, void** commContext);
+extern HCCL_API HcclResult HcclAllocComResource(HcclComm comm, u32 streamMode, void** commContext);
 
-extern HCOMM_API HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Tiling, void** commContext);
+extern HCCL_API HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Tiling, void** commContext);
 
-extern HCOMM_API HcclResult HcclGetAicpuOpStreamAndNotify(HcclComm comm, rtStream_t* opstream, u8 aicpuNotifyNum,
+extern HCCL_API HcclResult HcclGetAicpuOpStreamAndNotify(HcclComm comm, rtStream_t* opstream, u8 aicpuNotifyNum,
     void** aicpuNotify);
 
-extern HCOMM_API HcclResult HcclGetTopoDesc(HcclComm comm, HcclTopoDescs *topoDescs, uint32_t topoSize);
+extern HCCL_API HcclResult HcclGetTopoDesc(HcclComm comm, HcclTopoDescs *topoDescs, uint32_t topoSize);
 
 /**
 * @brief Register memory for communicator
@@ -217,14 +216,14 @@ extern HCOMM_API HcclResult HcclGetTopoDesc(HcclComm comm, HcclTopoDescs *topoDe
 * @param handle Pointer to store the handle identifying the registered memory
 * @param flag Reserved parameters, default to 0
 */
-extern HCOMM_API HcclResult HcclCommRegister(HcclComm comm, void* addr, uint64_t size, void **handle, uint32_t flag);
+extern HCCL_API HcclResult HcclCommRegister(HcclComm comm, void* addr, uint64_t size, void **handle, uint32_t flag);
 
 /**
 * @brief Unregister memory for communicator
 * @param comm A pointer identifying the communication resource
 * @param handle The handle of memory registered by @ref HcclCommRegister()
 */
-extern HCOMM_API HcclResult HcclCommDeregister(HcclComm comm, void* handle);
+extern HCCL_API HcclResult HcclCommDeregister(HcclComm comm, void* handle);
 
 /**
 * @brief Exchange user memory with peer ranks
@@ -233,7 +232,7 @@ extern HCOMM_API HcclResult HcclCommDeregister(HcclComm comm, void* handle);
 * @param peerRanks Array of destination ranks to exchange with
 * @param peerRankNum Number of destination ranks in the peerRanks array
 */
-extern HCOMM_API HcclResult HcclCommExchangeMem(HcclComm comm, void* windowHandle, uint32_t* peerRanks, uint32_t peerRankNum);
+extern HCCL_API HcclResult HcclCommExchangeMem(HcclComm comm, void* windowHandle, uint32_t* peerRanks, uint32_t peerRankNum);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
