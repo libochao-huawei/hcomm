@@ -47,6 +47,7 @@ private:
     bool                                                          isOpModeReady_{false};
     u32                                                           registeredMemCnt_{0};
     std::unordered_map<RankId, std::shared_ptr<HcclOneSidedConn>> oneSidedConns_{};
+    mutable std::mutex oneSidedConnsMutex_;
 
     std::unordered_map<std::string, std::shared_ptr<LocalUbRmaBuffer>> desc2LocalRdmaRmaBufferMap_{};
     LocalUbRmaBufferMgr                                                localUbRmaBufferMgr_{};

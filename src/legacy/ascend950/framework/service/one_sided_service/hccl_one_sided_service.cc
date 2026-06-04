@@ -194,6 +194,7 @@ HcclResult HcclOneSidedService::ExchangeMemDesc(RankId remoteRankId, const HcclM
     HCCL_INFO("[HcclOneSidedService][ExchangeMemDesc] Find HcclOneSidedConn");
     shared_ptr<HcclOneSidedConn> tempConn;
     // 查找是否已存在对端连接，不存在则创建
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         // 检测对端是否符合建链要求
@@ -219,6 +220,7 @@ HcclResult HcclOneSidedService::EnableMemAccess(const HcclMemDesc &remoteMemDesc
     RankId            remoteRankId     = remoteRmaMemDesc->localRankId;
 
     HCCL_INFO("[HcclOneSidedService][EnableMemAccess] Get remoteRankId[%u]", remoteRankId);
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     if (oneSidedConns_.find(remoteRankId) == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclOneSidedService][EnableMemAccess]connection not found, remoteRank[%u].", remoteRankId);
         return HCCL_E_NOT_FOUND;
@@ -238,6 +240,7 @@ HcclResult HcclOneSidedService::DisableMemAccess(const HcclMemDesc &remoteMemDes
     // 获取Conn对象
     RankId remoteRankId = remoteRmaMemDesc->localRankId;
     HCCL_INFO("[HcclOneSidedService][DisableMemAccess] Get remoteRankId[%u]", remoteRankId);
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     if (oneSidedConns_.find(remoteRankId) == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclOneSidedService][DisableMemAccess]connection not found by remoteRankId[%u].", remoteRankId);
         return HCCL_E_NOT_FOUND;
@@ -467,6 +470,7 @@ HcclResult HcclOneSidedService::BatchOpKernelLaunch(OpType opType, RankId remote
     HCCL_INFO("[HcclOneSidedService][BatchOpKernelLaunch] SetOneSidedKernelLaunchParam start");
     // 构造单边通信公共参数
     SetOneSidedKernelLaunchParam(param, devMem);
+    std::unique_lock<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchGet] Can't find oneSidedConn by remoteRank %u", remoteRankId);
@@ -474,6 +478,7 @@ HcclResult HcclOneSidedService::BatchOpKernelLaunch(OpType opType, RankId remote
     }
     HCCL_INFO("[HcclOneSidedService][BatchOpKernelLaunch] BatchPutGetDevBufs start");
     CHK_RET(BatchPutGetDevBufs(desc, descNum, it->second));
+    oneSidedConnslock.unlock();
     param.kernel.op.batchPutGetDescNum    = descNum;
     param.kernel.op.batchPutGetLocalAddr  = reinterpret_cast<void *>(devBatchPutGetLocalBufs.get()->GetAddr());
     param.kernel.op.batchPutGetRemoteAddr = reinterpret_cast<void *>(devBatchPutGetRemoteBufs.get()->GetAddr());
@@ -493,11 +498,13 @@ HcclResult HcclOneSidedService::BatchPut(RankId remoteRankId, const HcclOneSideO
                                          const rtStream_t stream)
 {
     HCCL_INFO("[HcclOneSidedService][BatchPut] start");
+    std::unique_lock<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchPut] Can't find oneSidedConn by remoteRank %u", remoteRankId);
         throw out_of_range("Can't find oneSidedConn by remoteRank.");
     }
+    oneSidedConnslock.unlock();
 
     HCCL_INFO("[HcclOneSidedService][BatchPut] BatchOpKernelLaunch start");
     CHK_RET(BatchOpKernelLaunch(OpType::BATCHPUT, remoteRankId, desc, descNum, std::make_shared<Stream>(stream)));
@@ -509,11 +516,13 @@ HcclResult HcclOneSidedService::BatchPut(RankId remoteRankId, const HcclOneSideO
 HcclResult HcclOneSidedService::BatchGet(RankId remoteRankId, const HcclOneSideOpDesc *desc, u32 descNum,
                                          const rtStream_t stream)
 {
+    std::unique_lock<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchGet] Can't find oneSidedConn by remoteRank %u", remoteRankId);
         throw out_of_range("Can't find oneSidedConn by remoteRank.");
     }
+    oneSidedConnslock.unlock();
 
     HCCL_INFO("[HcclOneSidedService][BatchGet] BatchOpKernelLaunch start");
     CHK_RET(BatchOpKernelLaunch(OpType::BATCHGET, remoteRankId, desc, descNum, std::make_shared<Stream>(stream)));
