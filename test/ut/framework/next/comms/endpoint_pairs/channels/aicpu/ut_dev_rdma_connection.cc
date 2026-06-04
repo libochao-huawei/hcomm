@@ -12,7 +12,7 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
-#include "next/comms/endpoint_pairs/channels/aicpu/dev_rdma_connection_v2.h"
+#include "endpoint_pairs/channels/aicpu/dev_rdma_connection_v2.h"
 #include "socket.h"
 #include "orion_adapter_hccp.h"
 #include "hccp.h"

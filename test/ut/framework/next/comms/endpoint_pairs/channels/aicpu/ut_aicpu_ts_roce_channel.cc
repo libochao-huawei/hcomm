@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 
-#include "next/comms/endpoints/endpoint.h"
+#include "endpoints/endpoint.h"
 #include "adapter_rts_common.h"
 #include "channel_param.h"
 #include "hcomm_res_defs.h"
@@ -17,7 +17,7 @@
 #include "reged_mems/aicpu_ts_roce_mem.h"
 
 #define private public
-#include "next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_roce_channel.h"
+#include "endpoint_pairs/channels/aicpu/aicpu_ts_roce_channel.h"
 #undef private
 
 using namespace hcomm;

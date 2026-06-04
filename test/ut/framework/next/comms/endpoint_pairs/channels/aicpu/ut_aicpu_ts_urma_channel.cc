@@ -4,7 +4,7 @@
 
 #define private public
 #define protected public
-#include "next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_urma_channel.h"
+#include "endpoint_pairs/channels/aicpu/aicpu_ts_urma_channel.h"
 #undef private
 #undef protected
 using namespace hcomm;
