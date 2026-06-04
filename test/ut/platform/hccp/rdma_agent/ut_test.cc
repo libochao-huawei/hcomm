@@ -256,7 +256,12 @@ TEST_M(RdmaAgent, TcRaHdcCtxGetCrErrInfoList);
 TEST_M(RdmaAgent, TcRaRsCtxGetCrErrInfoList);
 TEST_M(RdmaAgent, TcRaHdcCtxGetJettyContext);
 TEST_M(RdmaAgent, TcRaPeerCtxGetJettyContext);
-
+TEST_M(RdmaAgent, TcRaRsLmemBatchReg);
+TEST_M(RdmaAgent, TcRaRsLmemBatchUnreg);
+TEST_M(RdmaAgent, TcRaRsRmemBatchImport);
+TEST_M(RdmaAgent, TcRaRsRmemBatchUnimport);
+TEST_M(RdmaAgent, TcRaLmemBatch);
+TEST_M(RdmaAgent, TcRaRmemBatch);
 /* pingMesh ut cases */
 TEST_M(RdmaAgent, TcRaPingInitGetHandleAbnormal);
 TEST_M(RdmaAgent, TcRaPingInitAbnormal);

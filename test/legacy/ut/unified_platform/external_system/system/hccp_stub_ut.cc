@@ -790,6 +790,8 @@ int RaGetQpAttr(void *qpHandle, struct QpAttr *attr)
         attr->gidIdx = 0;
     }
     return 0;
+}
+
 int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemInfoList[],
     void *rmemHandleList[], unsigned int num)
 {
