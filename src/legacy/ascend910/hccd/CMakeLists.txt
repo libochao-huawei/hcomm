@@ -170,7 +170,6 @@ if(BUILD_OPEN_PROJECT)
 
     target_include_directories(hccd PRIVATE
         # 三方件头文件
-        ${RDMA_CORE_INCLUDE_DIR}
         ${JSON_INCLUDE_DIR}
         ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
     )
@@ -181,6 +180,7 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:slog_headers>
+        $<BUILD_INTERFACE:rdma_core_headers>
         -Wl,--no-as-needed
         c_sec
         mmpa

@@ -359,7 +359,7 @@ void TaskExceptionHandler::ProcessException(rtExceptionInfo_t* exceptionInfo, co
             std::vector<std::string>({
                 std::to_string(taskInfo.remoteRank_),
                 taskInfo.GetBaseInfo(), taskInfo.GetParaInfo(),
-                ""})
+                "none"})
         );
     }
     HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, base information is deviceID:[%u], %s.", __func__,
@@ -730,7 +730,7 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
             std::vector<std::string>({
                 std::to_string(exceptionTaskInfo.remoteRank_),
                 exceptionTaskInfo.GetBaseInfo().c_str(), (exceptionTaskInfo.GetParaInfo()).c_str(),
-                ""})
+                "none"})
         );
     } else if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY 
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY

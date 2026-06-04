@@ -2,7 +2,7 @@
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 
-#include "next/coll_comms/rank_pairs/rank_pair.h"
+#include "rank_pair.h"
 #include "endpoint_pair_mgr.h"
 #include "endpoint_pair.h"
 

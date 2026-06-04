@@ -3,7 +3,7 @@
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 #define private public
-#include "next/comms/endpoint_pairs/channels/aiv/aiv_ub_mem_transport.h"
+#include "channels/aiv/aiv_ub_mem_transport.h"
 #include "runtime_api_exception.h"
 #include "socket_exception.h"
 

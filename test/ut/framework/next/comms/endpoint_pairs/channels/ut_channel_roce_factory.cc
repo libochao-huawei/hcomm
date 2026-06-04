@@ -16,11 +16,11 @@
 #include "aicpu/aicpu_ts_roce_channel.h"
 #include "aicpu/aicpu_ts_urma_channel.h"
 #include "aiv/aiv_ub_mem_channel.h"
-#include "ccu/ccu_urma_channel.h"
+#include "ccu_urma_channel.h"
 #include "channel.h"
 #include "host/host_cpu_roce_channel.h"
 #include "hcomm_res_defs.h"
-#include "next/comms/endpoints/endpoint.h"
+#include "endpoint.h"
 
 using namespace hcomm;
 

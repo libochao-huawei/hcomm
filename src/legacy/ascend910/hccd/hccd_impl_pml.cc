@@ -21,9 +21,7 @@
 #include "dlrt_function.h"
 #include "externalinput_pub.h"
 #include "transport_heterog_event_roce.h"
-#include "transport_heterog_event_tcp.h"
 #include "transport_heterog_roce.h"
-#include "transport_roce.h"
 #include "device_capacity.h"
 #include "rank_consistentcy_checker.h"
 #include "hccd_impl_pml.h"
@@ -49,10 +47,6 @@ HccdImplPml::HccdImplPml()
 
 HccdImplPml::~HccdImplPml()
 {
-    if (GetExternalInputHcclIsTcpMode()) {
-        TcpSendThreadPool::GetSendPoolInstance()->Deinit();
-    }
-
     // 销毁异构通信资源
     DestroyHeterogTransport();
     DestroySrq();
@@ -124,10 +118,6 @@ HcclResult HccdImplPml::Init(HcclCommParams &params, const RankTable_t &rankTabl
         CHK_RET(InitRecvMsgAndRequestBuffer());
         CHK_RET(InitMemBlocksAndRecvWrMem());
         CHK_RET(CreateSrq());
-    }
-
-    if (GetExternalInputHcclIsTcpMode()) {
-        TcpSendThreadPool::GetSendPoolInstance()->Init(devicePhyId_);
     }
 
     return HCCL_SUCCESS;
@@ -515,14 +505,9 @@ HcclResult HccdImplPml::BuildHeterogeneousTransport(u32 commId, u32 peerRank, s3
         }
         transTag += std::to_string(tag);
         std::unique_ptr<TransportHeterog> transportPtr;
-        if (GetExternalInputHcclIsTcpMode()) {
-            transportPtr.reset(new (std::nothrow) TransportHeterogEventTcp(transTag, rankInfoList_[userRank_].nicIp[0],
-            rankInfoList_[peerRank].nicIp[0], ranksPort_[peerRank], ranksPort_[userRank_], devicePhyId_,
-            transportResourceInfo_));
-        } else {
-            transportPtr.reset(new (std::nothrow) TransportHeterogEventRoce(transTag, rankInfoList_[userRank_].nicIp[0],
+        // 当前代码只保留TransportHeterogEventRoce
+        transportPtr.reset(new (std::nothrow) TransportHeterogEventRoce(transTag, rankInfoList_[userRank_].nicIp[0],
             rankInfoList_[peerRank].nicIp[0], ranksPort_[peerRank], ranksPort_[userRank_], transportResourceInfo_));
-        }
         CHK_SMART_PTR_NULL(transportPtr);
         CHK_RET(transportPtr->SetDeviceIndex(deviceLogicId_));
         CHK_RET(transportPtr->Init());

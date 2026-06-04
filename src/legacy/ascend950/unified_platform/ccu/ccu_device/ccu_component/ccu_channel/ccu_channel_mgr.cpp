@@ -16,13 +16,13 @@ namespace Hccl {
 
 static void DumpJettyCtxInfo(const JettyInfo &info)
 {
-    HCCL_INFO("[CcuChannelMgr][%s] local jetty context id[%u], ta jetty id[%u], "
+    HCCL_RUN_INFO("[CcuChannelMgr][%s] local jetty context id[%u], ta jetty id[%u], "
         "ta jetty type[%s], sq depth[%u], wqe basic block start id[%u].",
         __func__, info.jettyCtxId, info.taJettyId, info.jettyType.Describe().c_str(),
         info.sqDepth, info.wqeBBStartId);
 
     if (info.jettyType == CcuJettyType::CCUM_CACHED_JETTY) {
-        HCCL_INFO("[CcuChannelMgr][%s] sq buffer va[%llu], sq buffer size[%u].",
+        HCCL_RUN_INFO("[CcuChannelMgr][%s] sq buffer va[%llu], sq buffer size[%u].",
             __func__, info.sqBufVa, info.sqBufSize);
     }
 }
@@ -30,7 +30,7 @@ static void DumpJettyCtxInfo(const JettyInfo &info)
 void DumpChannelResInfo(const uint32_t feId, const ChannelInfo &info)
 {
     const auto &jettyInfos = info.jettyInfos;
-    HCCL_INFO("[CcuChannelMgr][%s]: fe id[%u], channel id[%u], die id[%u], "
+    HCCL_RUN_INFO("[CcuChannelMgr][%s]: fe id[%u], channel id[%u], die id[%u], "
         "used jetty num[%zu].", __func__, feId, info.channelId, info.dieId,
         jettyInfos.size());
 
