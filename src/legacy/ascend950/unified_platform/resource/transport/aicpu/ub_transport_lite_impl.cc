@@ -180,8 +180,18 @@ void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmaUbBufTyp
         if (rmtType == RmaUbBufType::NOTIFY) {
             rmtNotifyVec.push_back(ubBufLite);
         } else {
-            rmtBufferMap[static_cast<uintptr_t>(ubBufLite.addr)] = ubBufLite;
+            // rmtBufferVec中只保留最大的buffer
+            auto it = rmtBufferMap.find(static_cast<uintptr_t>(ubBufLite.addr));
+            if (it == rmtBufferMap.end() || it->second.size < ubBufLite.size) {
+                rmtBufferMap.emplace(static_cast<uintptr_t>(ubBufLite.addr), ubBufLite);
+            }
             rmtBufferVec.push_back(ubBufLite);
+        }
+    }
+
+    if (rmtType != RmaUbBufType::NOTIFY) {
+        for (auto &it : rmtBufferMap) {
+            HCCL_INFO("UbTransportLiteImpl::ParseRmtBufferMap %s", it.second.Describe().c_str());
         }
     }
 }
@@ -206,7 +216,11 @@ void UbTransportLiteImpl::ParseLocBufferMap(std::vector<char> &data)
         binaryStream >> ubBufLite.tokenId;
         binaryStream >> ubBufLite.tokenValue;
         HCCL_INFO("idx=%u, LocBuffer %s", idx, ubBufLite.Describe().c_str());
-        locBufferMap[static_cast<uintptr_t>(ubBufLite.addr)] = ubBufLite;
+        // locBufferVec中只保留最大的buffer
+        auto it = locBufferMap.find(static_cast<uintptr_t>(ubBufLite.addr));
+        if (it == locBufferMap.end() || it->second.size < ubBufLite.size) {
+            locBufferMap.emplace(static_cast<uintptr_t>(ubBufLite.addr), ubBufLite);
+        }
     }
 }
 
@@ -263,6 +277,8 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtB
 
     while(it != rmtBufferMap.begin()) {
         --it;
+        HCCL_INFO("UbTransportLiteImpl::GetRmtRmaBufSliceLite %s", it->second.Describe().c_str());
+        HCCL_INFO("UbTransportLiteImpl::GetRmtRmaBufSliceLite rmtBuf %s", rmtBuf.Describe().c_str());
         Buffer iterBuf(it->second.addr, it->second.size);
         if (iterBuf.Contains(rmtBuf.GetAddr(), rmtBuf.GetSize())) {
             return RmtRmaBufSliceLite(rmtBuf.GetAddr(), rmtBuf.GetSize(), 0, it->second.tokenId, it->second.tokenValue);
