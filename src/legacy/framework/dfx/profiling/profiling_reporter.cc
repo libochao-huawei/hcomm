@@ -37,7 +37,7 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
     HCCL_INFO("[ProfilingReporter]ProfilingReporter reportOp start.");
     std::shared_ptr<DfxOpInfo> opInfo = mirrorTaskMgr_->GetCurrDfxOpInfo();
     if (opInfo == nullptr) {
-        THROW<InternalException>("[ProfilingReporter]ProfilingReporter reportOp failed, opInfo is nullptr.");
+        HCCL_WARNING("[ProfilingReporter::ReportOp] opInfo is nullptr!");
         return;
     }
     uint64_t endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime();

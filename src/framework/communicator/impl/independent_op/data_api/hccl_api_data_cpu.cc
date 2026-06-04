@@ -716,72 +716,57 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo) // 兼容性接�
     return HCCL_SUCCESS;
 }
 
-static HcclResult RegAicpuTaskException(HcclDfxOpInfo* dfxOpInfo, hccl::CollComm* collComm)
-{
-    if (dfxOpInfo->engine != COMM_ENGINE_AICPU_TS) {
-        return HCCL_SUCCESS;
-    }
-    LocalNotify *notify = GetNotify(dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx);
-    CHK_PRT_RET(!notify, HCCL_ERROR("[%s]GetNotify null, thread[%llu], notifyIdx[%u]",
-        __func__, dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx), HCCL_E_PTR);
-    dfxOpInfo->cpuWaitAicpuNotifyId = notify->notifyId_;
-
-    Stream *cpuTsStream = GetStream(dfxOpInfo->cpuTsThread);
-    CHK_PTR_NULL(cpuTsStream);
-    collComm->RegisterAicpuTaskExceptionCallback(cpuTsStream->id());
-    return HCCL_SUCCESS;
-}
 
 HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 {
-    EXCEPTION_HANDLE_BEGIN
-    bool l0State = Hccl::ProfilingHandler::GetInstance().GetHcclL0State();
-    bool l1State = Hccl::ProfilingHandler::GetInstance().GetHcclL1State();
-    if (l0State == false || l1State == false) {
-        HCCL_INFO("[%s] profiling State is down l0State %d l1State %d", __func__, l0State, l1State);
-    }
-    HcclComm commHandle = nullptr;
-    CHK_RET(HcomGetCommHandleByGroup(commId, &commHandle));
-    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(commHandle);
-    CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
-    HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hcclDfxOpInfo);
-    CHK_PTR_NULL(dfxOpInfo);
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (!hcclComm->IsCommunicatorV2() && devType == DevType::DEV_TYPE_910B) {
-        return HCCL_SUCCESS;
-    }
-    if (!hcclComm->IsCommunicatorV2()) {
-         HCCL_ERROR("[%s]comm is NOT_SUPPORT", __func__);
-         return HCCL_E_NOT_SUPPORT;
-    }
-    hccl::CollComm* collComm = hcclComm->GetCollComm();
-    CHK_PTR_NULL(collComm);
+    // EXCEPTION_HANDLE_BEGIN
+    // bool l0State = Hccl::ProfilingHandler::GetInstance().GetHcclL0State();
+    // bool l1State = Hccl::ProfilingHandler::GetInstance().GetHcclL1State();
+    // if (l0State == false || l1State == false) {
+    //     HCCL_INFO("[%s] profiling State is down l0State %d l1State %d", __func__, l0State, l1State);
+    // }
+    // HcclComm commHandle = nullptr;
+    // CHK_RET(HcomGetCommHandleByGroup(commId, &commHandle));
+    // hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(commHandle);
+    // CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
+    // CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
+    // HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hcclDfxOpInfo);
+    // CHK_PTR_NULL(dfxOpInfo);
+    // DevType devType;
+    // CHK_RET(hrtGetDeviceType(devType));
+    // if (!hcclComm->IsCommunicatorV2() && devType == DevType::DEV_TYPE_910B) {
+    //     return HCCL_SUCCESS;
+    // }
+    // if (!hcclComm->IsCommunicatorV2()) {
+    //      HCCL_ERROR("[%s]comm is NOT_SUPPORT", __func__);
+    //      return HCCL_E_NOT_SUPPORT;
+    // }
+    // hccl::CollComm* collComm = hcclComm->GetCollComm();
+    // CHK_PTR_NULL(collComm);
 
-    dfxOpInfo->beginTime = hrtMsprofSysCycleTime();
-    CHK_RET(RegAicpuTaskException(dfxOpInfo, collComm));
+    // dfxOpInfo->beginTime = hrtMsprofSysCycleTime();
+    // CHK_RET(RegAicpuTaskException(dfxOpInfo, collComm));
 
-    //HcclDfxOpInfo转为DfxOpInfo
-    auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
-    CHK_SMART_PTR_NULL(dfxOpInfoOnce);
-    dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
-    dfxOpInfoOnce->isIndop_ = true;
-    dfxOpInfoOnce->groupName_ = collComm->GetCommId();
-    dfxOpInfoOnce->opIndex_ = collComm->UpdateIndex();
-    dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
-    //单算子模式，暂时覆盖opTag
-    dfxOpInfoOnce->op_.opTag = collComm->GetCommId();
-    dfxOpInfoOnce->op_.myRank = static_cast<Hccl::RankId>(collComm->GetMyRankId());
-    dfxOpInfoOnce->engine = dfxOpInfo->engine;
-    HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
-    CHK_PTR_NULL(hcclCommDfx);
-    CHK_RET(hcclCommDfx->UpdateProfStat());
-    Hccl::MirrorTaskManager* mirrorTaskManage = hcclCommDfx->GetMirrorTaskManager();
-    CHK_PTR_NULL(mirrorTaskManage);
-    mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
-    HCCL_INFO("[%s]success, DfxOpInfo: %s", __func__, dfxOpInfoOnce->Describe().c_str());
-    EXCEPTION_HANDLE_END
+    // //HcclDfxOpInfo转为DfxOpInfo
+    // auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
+    // CHK_SMART_PTR_NULL(dfxOpInfoOnce);
+    // dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
+    // dfxOpInfoOnce->isIndop_ = true;
+    // dfxOpInfoOnce->groupName_ = collComm->GetCommId();
+    // dfxOpInfoOnce->opIndex_ = collComm->UpdateIndex();
+    // dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
+    // //单算子模式，暂时覆盖opTag
+    // dfxOpInfoOnce->op_.opTag = collComm->GetCommId();
+    // dfxOpInfoOnce->op_.myRank = static_cast<Hccl::RankId>(collComm->GetMyRankId());
+    // dfxOpInfoOnce->engine = dfxOpInfo->engine;
+    // HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    // CHK_PTR_NULL(hcclCommDfx);
+    // CHK_RET(hcclCommDfx->UpdateProfStat());
+    // Hccl::MirrorTaskManager* mirrorTaskManage = hcclCommDfx->GetMirrorTaskManager();
+    // CHK_PTR_NULL(mirrorTaskManage);
+    // mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    // HCCL_INFO("[%s]success, DfxOpInfo: %s", __func__, dfxOpInfoOnce->Describe().c_str());
+    // EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
