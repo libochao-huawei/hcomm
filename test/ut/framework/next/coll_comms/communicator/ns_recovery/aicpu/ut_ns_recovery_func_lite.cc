@@ -2,7 +2,7 @@
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 
-#include "ns_recovery_func_lite.h"
+#include "ns_recovery/aicpu/ns_recovery_func_lite.h"
 
 using namespace hccl;
 

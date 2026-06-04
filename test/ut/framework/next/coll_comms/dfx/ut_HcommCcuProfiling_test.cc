@@ -38,7 +38,7 @@
 #include "ccuTaskException.h"
 #include "hcclCommTaskException.h"
 #include "ccu_rep_assign_v1.h"
-#include "comms/ccu/ccu_device/ccu_res_specs.h"
+#include "../../../../../src/base_comm/resources/ccu/ccu_device/ccu_res_batch_allocator.h"
 
 namespace hcomm {
 
