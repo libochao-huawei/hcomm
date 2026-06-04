@@ -582,14 +582,11 @@ STATIC int CheckCtxRmemBatchImport(void *ctxHandle, struct MrImportInfoT *rmemIn
     struct RaCtxHandle *ctxHandleTmp = NULL;
 
     CHK_PRT_RETURN(ctxHandle == NULL || rmemInfoList == NULL || rmemHandleList == NULL,
-        hccp_err("ctx_handle or rmem_info_list or rmem_handle_list is NULL"), -EINVAL);
-
-    CHK_PRT_RETURN(num == 0 || num > RMEM_BATCH_MAX,
-        hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX), -EINVAL);
+        hccp_err("ctxHandle or rmemInfoList or rmemHandleList is NULL"), -EINVAL);
 
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
     CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxRmemBatchImport == NULL,
-        hccp_err("ctx_ops or ra_ctx_rmem_batch_import is NULL"), -EINVAL);
+        hccp_err("ctxOps or raCtxRmemBatchImport is NULL"), -EINVAL);
 
     return 0;
 }
@@ -609,7 +606,7 @@ STATIC int PrepareCtxRmemBatchImport(struct RaRmemHandle *rmemHandleTmpList[], s
         rmemHandleTmpList[i] = calloc(1, sizeof(struct RaRmemHandle));
         if (rmemHandleTmpList[i] == NULL) {
             ret = -ENOMEM;
-            hccp_err("calloc rmem_handle_tmp_list[%u] failed, errno(%d)", i, errno);
+            hccp_err("calloc rmemHandleTmpList[%u] failed, errno(%d)", i, errno);
             goto err;
         }
     }
@@ -642,7 +639,7 @@ HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchImport(void *ctxHandle, struct MrImportInf
 
     rmemHandleTmpList = calloc(num, sizeof(struct RaRmemHandle *));
     CHK_PRT_RETURN(rmemHandleTmpList == NULL,
-        hccp_err("calloc rmem_handle_tmp_list failed, errno(%d) phyId(%u) devIndex(%u)",
+        hccp_err("calloc rmemHandleTmpList failed, errno(%d) phyId(%u) devIndex(%u)",
         errno, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex), ConverReturnCode(RDMA_OP, -ENOMEM));
 
     ret = PrepareCtxRmemBatchImport(rmemHandleTmpList, rmemInfoList, num);
