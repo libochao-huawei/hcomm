@@ -163,7 +163,7 @@ static HcclResult CopyVectorToDeviceMem(const u64 len, DeviceMem &dstDeviceMem, 
 
     std::shared_ptr<HostMem> srcHostMem;
     HostMem tmpBuffer = HostMem::alloc(len);
-    EXECEPTION_CATCH((srcHostMem = std::make_shared<HostMem>(std::move(tmpBuffer))), return HCCL_E_PTR);
+    EXCEPTION_CATCH((srcHostMem = std::make_shared<HostMem>(std::move(tmpBuffer))), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(srcHostMem);
     CHK_SAFETY_FUNC_RET(memset_s(srcHostMem.get()->ptr(), len, 0, len));
     std::copy(srcVec.begin(), srcVec.end(), static_cast<T *>(srcHostMem.get()->ptr()));

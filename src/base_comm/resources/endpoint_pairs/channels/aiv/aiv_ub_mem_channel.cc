@@ -29,7 +29,7 @@ HcclResult AivUbMemChannel::ParseInputParam()
 
 HcclResult AivUbMemChannel::BuildTransport()
 {
-    EXECEPTION_CATCH(transport_ = std::make_unique<AivUbMemTransport>(socket_, channelDesc_), return HCCL_E_PTR);
+    EXCEPTION_CATCH(transport_ = std::make_unique<AivUbMemTransport>(socket_, channelDesc_), return HCCL_E_PTR);
     CHK_PTR_NULL(transport_);
     CHK_RET(transport_->Init());
     return HCCL_SUCCESS;

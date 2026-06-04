@@ -42,12 +42,12 @@ bool SocketAgent::RecvMsg(void *msg, u64 &revMsgLen)
         NullPtrException, "RecvMsg fail");
 
     // 先接收长度
-    EXECEPTION_CATCH(socket_->Recv(&revMsgLen, sizeof(revMsgLen)), return false);
+    EXCEPTION_CATCH(socket_->Recv(&revMsgLen, sizeof(revMsgLen)), return false);
     CHK_PRT_RET(revMsgLen == 0 || revMsgLen > MAX_BUFFER_LEN,
         HCCL_ERROR("[SocketAgent::%s] Invalid length[%llu]", __func__, revMsgLen), false);
 
     // 再接收内容
-    EXECEPTION_CATCH(socket_->Recv(msg, revMsgLen), return false);
+    EXCEPTION_CATCH(socket_->Recv(msg, revMsgLen), return false);
 
     HCCL_INFO("[SocketAgent::%s] end, revMsgLen[%llu].", __func__, revMsgLen);
     return true;
