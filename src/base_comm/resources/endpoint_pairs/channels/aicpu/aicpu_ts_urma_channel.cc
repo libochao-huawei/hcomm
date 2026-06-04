@@ -152,10 +152,8 @@ HcclResult AicpuTsUrmaChannel::BuildNotify()
     bool devUsed = true;
     for (uint32_t i = 0; i < notifyNum_; ++i) {
         std::unique_ptr<Hccl::UbLocalNotify> notifyPtr = nullptr;
-        EXECEPTION_CATCH(
-            notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle_, devUsed, true),
-            return HCCL_E_PTR
-        );
+        EXECEPTION_CATCH(notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle_, devUsed, true),
+            return HCCL_E_PTR);
         notifyParams.push_back(notifyPtr->GetLmemRegParam());
         commonRes_.notifyVec.push_back(notifyPtr.get());
         localNotifies_.push_back(std::move(notifyPtr));

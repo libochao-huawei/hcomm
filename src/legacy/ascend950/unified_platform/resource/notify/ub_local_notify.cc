@@ -69,7 +69,7 @@ HcclResult UbLocalNotify::BatchMemReg(RdmaHandle rdmaHandle, std::vector<std::un
     std::vector<HrtRaUbLocalMemRegOutParam> reqRegs;
     CHK_RET(HrtRaUbLocalMemBatchRegister(rdmaHandle, params, reqRegs));
     for (u32 idx = 0; idx < notifies.size(); ++idx) {
-        notifies[idx]->SetMemInfo(reqRegs[idx]);
+        CHK_RET(notifies[idx]->SetMemInfo(reqRegs[idx]));
     }
     return HCCL_SUCCESS;
 }
