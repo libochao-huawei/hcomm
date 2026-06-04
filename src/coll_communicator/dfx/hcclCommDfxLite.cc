@@ -37,17 +37,6 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
-HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
-{
-    std::unique_ptr<Hccl::TaskInfo> taskInfo{nullptr};
-    EXCEPTION_CATCH(taskInfo = std::make_unique<Hccl::TaskInfo>(streamId, taskId,
-        INVALID_UINT, taskParam, mirrorTaskManagerLite_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
-    taskInfo->channelHandle_ = handle;
-    taskInfo->getChannelRemoteRankId_ = getChannelRemoteRankId_;
-    EXCEPTION_CATCH(mirrorTaskManagerLite_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
-    return HCCL_SUCCESS;
-}
-
 // HcclCommDfxLite接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo)
 {
