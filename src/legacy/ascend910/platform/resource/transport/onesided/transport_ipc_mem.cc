@@ -39,7 +39,7 @@ HcclResult TransportIpcMem::EnableMemAccess(const RmaMemDesc &remoteMemDesc, Rma
 
     // 创建远程缓冲区，并进行反序列化、打开
     std::shared_ptr<RemoteIpcRmaBuffer> tempRemoteBufferPtr = nullptr;
-    EXECEPTION_CATCH((tempRemoteBufferPtr = make_shared<RemoteIpcRmaBuffer>(netDevCtx_)), return HCCL_E_PARA);
+    EXCEPTION_CATCH((tempRemoteBufferPtr = make_shared<RemoteIpcRmaBuffer>(netDevCtx_)), return HCCL_E_PARA);
     HcclResult ret = tempRemoteBufferPtr->Deserialize(tempDesc);
     CHK_PRT_RET((ret != HCCL_SUCCESS),
         HCCL_ERROR("[TransportIpcMem][EnableMemAccess]RemoteBuffer Deserialize failed."), ret);

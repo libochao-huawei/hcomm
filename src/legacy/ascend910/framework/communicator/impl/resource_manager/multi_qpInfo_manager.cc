@@ -89,14 +89,14 @@ HcclResult MulQpInfo::Init(const InitParams &params)
     std::unique_ptr<DevNslbMulQpInfoCache> devNslbMulQpInfoCache;
     std::unique_ptr<EnvConfigPathCache> envConfigPathCache;
     std::unique_ptr<EnvPerConnectionQpInfoCache> envPerConnectionQpInfoCache;
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         (devCfgMulQpInfoCache = std::make_unique<DevCfgMulQpInfoCache>(params.GetNicDeployment(), params.GetPhyId())),
         return HCCL_E_INTERNAL);
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         (devNslbMulQpInfoCache = std::make_unique<DevNslbMulQpInfoCache>(params.GetNicDeployment(), params.GetPhyId())),
         return HCCL_E_INTERNAL);
-    EXECEPTION_CATCH((envConfigPathCache = std::make_unique<EnvConfigPathCache>()), return HCCL_E_INTERNAL);
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH((envConfigPathCache = std::make_unique<EnvConfigPathCache>()), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(
         (envPerConnectionQpInfoCache = std::make_unique<EnvPerConnectionQpInfoCache>()), return HCCL_E_INTERNAL);
     parseOrderQueue.emplace(std::move(devCfgMulQpInfoCache));
     parseOrderQueue.emplace(std::move(devNslbMulQpInfoCache));
