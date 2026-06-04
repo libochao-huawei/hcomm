@@ -25,10 +25,14 @@ public:
     void Call() override;
 
 private:
-    HcclCommTaskExceptionLite();
-    ~HcclCommTaskExceptionLite();
+    HcclCommTaskExceptionLite() = default;
+    ~HcclCommTaskExceptionLite() = default;
 
     HcclResult ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
+    HcclResult ReportErrMsg(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
+    HcclResult PrintTaskException(CollCommAicpu *aicpuComm, u32 sqId, uint16_t taskId, uint16_t streamId);
+    HcclResult PrintThreadTaskInfo(CollCommAicpu *aicpuComm, u32 sqId, uint16_t taskId, uint16_t streamId);
+
     HcclResult HandleExceptionCqe();
     HcclResult GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
     HcclResult GenerateErrorMessageReport(CollCommAicpu *aicpuComm, const Hccl::TaskInfo& taskInfo,
@@ -40,13 +44,15 @@ private:
     uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
     HcclResult PrintTaskContextInfo(CollCommAicpu *aicpuComm, u32 sqId, u32 taskId);
     std::string GetGroupInfo(const Hccl::TaskInfo& taskInfo);
+    u32 GetSqeId(uint16_t taskId, uint16_t streamId);
 
     void PrintEid(const Hccl::TaskInfo& taskInfo);
 
-    bool initFlag_{false};
     bool stopCall_{false};
     u32 devId_{INVALID_UINT};
     Hccl::MirrorTaskManager* mirrorTaskManager_{nullptr};  // 使用原始指针，不管理生命周期
+    bool printAllThreads_{false};
+    std::unordered_map<u32, u32> threadsPrinted_; // sqId -> sqeId, 记录已经打印过taskException的流信息
 };
 
 }
