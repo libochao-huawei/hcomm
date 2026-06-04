@@ -219,6 +219,10 @@ TEST_F(CcuConnTest, Ut_UpdateInitStatus_TP_ATTR_GETTING_State_Transitions)
 
     HcclResult ret = connection->UpdateInitStatus();
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(connection->innerStatus_, hcomm::CcuConnection::InnerStatus::JETTY_CREATING);
+
+    ret = connection->UpdateInitStatus();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
     EXPECT_EQ(connection->innerStatus_, hcomm::CcuConnection::InnerStatus::EXCHANGEABLE);
 
     GlobalMockObject::verify();
@@ -247,7 +251,9 @@ TEST_F(CcuConnTest, Ut_CcuJetty_SetMappedJettyPriority_When_NotCreated_SetsQos)
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
     void *rdmaHandle = reinterpret_cast<void *>(0x300);
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs().will(returnValue(rdmaHandle));
-    MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x400)));
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle)
+        .stubs()
+        .will(returnValue(static_cast<Hccl::JfcHandle>(0x400ULL)));
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo)
         .stubs()
         .will(returnValue(std::make_pair(reinterpret_cast<void *>(0x500), 0U)));
@@ -273,7 +279,9 @@ TEST_F(CcuConnTest, Ut_CcuJetty_SetMappedJettyPriority_When_Conflict_Expect_Inte
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
     void *rdmaHandle = reinterpret_cast<void *>(0x300);
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs().will(returnValue(rdmaHandle));
-    MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x400)));
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle)
+        .stubs()
+        .will(returnValue(static_cast<Hccl::JfcHandle>(0x400ULL)));
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo)
         .stubs()
         .will(returnValue(std::make_pair(reinterpret_cast<void *>(0x500), 0U)));
