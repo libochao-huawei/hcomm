@@ -168,7 +168,7 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
     }
  
     if (channelDesc.header.magicWord != channelDescFinal.header.magicWord) {
-        HCCL_ERROR("[%s]channelDescFinal.header.magicWord[%u] not equal to channelDesc.header.magicWord[%u]",
+        HCCL_ERROR("[%s]channelDescFinal.headerwl.magicWord[%u] not equal to channelDesc.header.magicWord[%u]",
             __func__, channelDescFinal.header.magicWord, channelDesc.header.magicWord);
         return HCCL_E_PARA;
     }
