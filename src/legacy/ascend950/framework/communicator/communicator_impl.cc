@@ -2060,12 +2060,12 @@ const NotifyTimeoutCfg &CommunicatorImpl::GetNotifyTimeoutCfg() const
 HcclResult CommunicatorImpl::CreateCommCclBuf()
 {
     HCCL_INFO("[%s] start.", __func__);
-    if (inCclBuffer == nullptr) { 
-        inCclBuffer = std::make_shared<DevBuffer>(cclBufferSize);
+    if (inCclBuffer == nullptr) {
+        inCclBuffer = std::make_shared<DevBuffer>(cclBuffer.GetAddr(), cclBufferSize / 2);
         HCCL_INFO("CommunicatorImpl::CreateCommCclBuf, inCclBuffer is %p", inCclBuffer.get());
     } 
     if (outCclBuffer == nullptr) {
-        outCclBuffer = std::make_shared<DevBuffer>(cclBufferSize);
+        outCclBuffer = std::make_shared<DevBuffer>(cclBuffer.GetAddr() + (cclBufferSize / 2), cclBufferSize / 2);
         HCCL_INFO("CommunicatorImpl::CreateCommCclBuf, outCclBuffer is %p", outCclBuffer.get());
     }
     if (indirectInCclBuffer == nullptr) {
