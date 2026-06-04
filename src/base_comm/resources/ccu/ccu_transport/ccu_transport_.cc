@@ -460,7 +460,7 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
         }
         rmtbufferVec_.push_back(std::make_unique<Hccl::RemoteUbRmaBuffer>(reinterpret_cast<uintptr_t>(rmtBufferInfo.addr),
             rmtBufferInfo.size, rmtBufferInfo.tokenValue, rmtBufferInfo.tokenId,
-            Hccl::HcclMemTypeToCommMemType(rmtBufferInfo.type), memInfo));
+            Hccl::CommMemTypeToHcclMemType(rmtBufferInfo.type), memInfo));
     }
     return HcclResult::HCCL_SUCCESS;
 }

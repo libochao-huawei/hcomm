@@ -11,7 +11,6 @@
 #include "aicpu_ts_uboe_channel.h"
 #include "endpoint.h"
 #include "orion_adpt_utils.h"
-#include "comm_mems.h"
 #include "exception_handler.h"
 
 // Orion

@@ -15,7 +15,7 @@
 #include <array>
 #include <string>
 #include <functional>
-#include "hccl/hccl_res.h"
+#include "hccl_mem_defs.h"
 #include "hccl/hccl_types.h"
 #include "log.h"
 
@@ -99,7 +99,7 @@ HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
             remoteMemCtx.remoteUserMems.push_back(mem);
             std::string tagCopy = rmtBuffer->GetMemInfo();
             remoteMemCtx.tagCopies.push_back(std::move(tagCopy));
-            remoteMemCtx.tagPointers.push_back(remoteMemCtx.tagCopies.back().c_str());
+            remoteMemCtx.tagPointers.push_back(const_cast<char*>(remoteMemCtx.tagCopies.back().c_str()));
             HCCL_INFO("[%s] Found buffer[addr:%p, size:%llu, memInfo:%s]", __func__, mem.addr, mem.size,
                 remoteMemCtx.tagCopies.back().c_str());
         }
