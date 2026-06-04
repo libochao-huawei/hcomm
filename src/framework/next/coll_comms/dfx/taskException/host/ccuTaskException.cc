@@ -250,11 +250,6 @@ HcclResult CcuTaskException::InitChannelMap(s32 deviceId, u64 ccuKernelHandle)
 
 std::string CcuTaskException::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 {
-    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
-        return "";
-    }
-
     hccl::CollComm *communicator = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     return Hccl::StringFormat("group:[%s], rankSize[%u], rankId[%d]",
         communicator->GetCommId().c_str(), communicator->GetRankSize(), communicator->GetMyRankId());
@@ -1490,10 +1485,6 @@ RankId CcuTaskException::GetRankIdByChannelId(uint16_t channelId, const Hccl::Ta
         HCCL_ERROR("[%s]taskType[%s] is not CCU.", __func__, taskInfo.taskParam_.taskType.Describe().c_str());
         return INVALID_UINT;
     }
-    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[%s]dfxOpInfo[%p] or comm is nullptr.", __func__, taskInfo.dfxOpInfo_);
-        return INVALID_UINT;
-    }
 
     u64 channelHandle = INVALID_U64;
     if (GetCcuChannelHandleById(channelId, channelHandle) != HCCL_SUCCESS) {
@@ -1522,10 +1513,6 @@ std::pair<Hccl::IpAddress, Hccl::IpAddress> CcuTaskException::GetAddrPairByChann
     if (taskInfo.taskParam_.taskType != Hccl::TaskParamType::TASK_CCU) {
         HCCL_ERROR("[TaskException][%s]Get AddrPair failed, task type error[%s]", __func__,
                    taskInfo.taskParam_.Describe().c_str());
-        return dummy;
-    }
-    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskException][%s]Get AddrPair failed, communicator is nullptr.", __func__);
         return dummy;
     }
 

@@ -240,11 +240,6 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 
 std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 {
-    if (taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
-        return "";
-    }
-
     hccl::CollComm *communicator = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     return Hccl::StringFormat("group:[%s], rankSize[%u], rankId[%d]",
         communicator->GetCommId().c_str(), communicator->GetRankSize(), communicator->GetMyRankId());
