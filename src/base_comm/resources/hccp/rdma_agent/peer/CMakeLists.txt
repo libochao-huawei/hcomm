@@ -33,7 +33,6 @@ target_include_directories(ra_peer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
 
     # rdma头文件
-    ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/nda
 
@@ -64,6 +63,7 @@ target_link_libraries(ra_peer PRIVATE
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:msprof_headers>
     $<BUILD_INTERFACE:slog_headers>
+    $<BUILD_INTERFACE:rdma_core_headers>
     -Wl,--no-as-needed
     rs
     c_sec

@@ -118,7 +118,6 @@ target_include_directories(ccl_kernel PRIVATE
     ${LEGACY_ASCEND950_INCLUDE_LIST}
 
     # 三方件头文件
-    ${RDMA_CORE_INCLUDE_DIR}
     ${JSON_INCLUDE_DIR}
 )
 
@@ -137,6 +136,7 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:rdma_core_headers>
         -Wl,--no-as-needed
         ascend_hal
         c_sec
