@@ -944,8 +944,6 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
                 errormessage.c_str());
             return HCCL_E_PARA;
         }
-
-
         auto iter = superPodSrvIdMap.find(rankInfo[i].superPodId);
         if (iter == superPodSrvIdMap.end()) {
             std::set<std::string> serverIdSet;
