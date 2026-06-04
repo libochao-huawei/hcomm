@@ -42,7 +42,7 @@ struct RemoteMemCtx{
     {};
 };
 
-inline HcclMemType HcclMemTypeToCommMemType(CommMemType type)
+inline HcclMemType CommMemTypeToHcclMemType(CommMemType type)
 {
     switch (type) {
         case COMM_MEM_TYPE_DEVICE:
@@ -99,7 +99,7 @@ HcclResult GetRemoteUserMems(RemoteMemCtx<T> &remoteMemCtx)
             remoteMemCtx.remoteUserMems.push_back(mem);
             std::string tagCopy = rmtBuffer->GetMemInfo();
             remoteMemCtx.tagCopies.push_back(std::move(tagCopy));
-            remoteMemCtx.tagPointers.push_back(const_cast<char*>(remoteMemCtx.tagCopies.back().c_str()));
+            remoteMemCtx.tagPointers.push_back(remoteMemCtx.tagCopies.back().c_str());
             HCCL_INFO("[%s] Found buffer[addr:%p, size:%llu, memInfo:%s]", __func__, mem.addr, mem.size,
                 remoteMemCtx.tagCopies.back().c_str());
         }
