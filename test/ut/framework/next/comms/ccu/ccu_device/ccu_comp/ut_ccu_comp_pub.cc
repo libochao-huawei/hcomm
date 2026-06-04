@@ -209,7 +209,9 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
     comp.tpAttrInfoMap_[dieId] = tpAttrInfo;
 
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x300)));
-    MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x400)));
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle)
+        .stubs()
+        .will(returnValue(static_cast<Hccl::JfcHandle>(0x400ULL)));
     MOCKER(HccpUbCreateJetty).stubs().will(invoke(StubHccpUbCreateJettyCaptureQos));
     MOCKER(HccpUbTpImportJetty).stubs().will(invoke(StubHccpUbTpImportJettyOk));
 }
