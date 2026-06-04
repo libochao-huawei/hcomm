@@ -34,8 +34,7 @@ public:
     explicit HcclAlg(CCLBufferManager &cclBufferManager, const HcclDispatcher dispatcher,
         const HcclDispatcher vDispatcher);
     virtual ~HcclAlg();
-    HcclResult Init(const void* transportResourceInfoAddr, size_t transportResourceInfoSize,
-        std::unique_ptr<WorkspaceResource> &workSpaceRes, const std::unique_ptr<NotifyPool> &notifyPool,
+    HcclResult Init(std::unique_ptr<WorkspaceResource> &workSpaceRes, const std::unique_ptr<NotifyPool> &notifyPool,
         std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxMap,
         const std::unique_ptr<QueueNotifyManager> &queueNotifyManager,
         HcclAlgoAttr &algoAttr, HcclTopoAttr &topoAttr, bool isHeterogComm = false);

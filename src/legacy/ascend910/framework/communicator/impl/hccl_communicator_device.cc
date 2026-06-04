@@ -57,12 +57,10 @@ namespace hccl
           isExecuteProfilingInit_(false), deviceType_(DevType::DEV_TYPE_COUNT),
           commHandle_(nullptr),
           commWorkMode_(WorkMode::HCCL_MODE_NORMAL), meshAggregationRankSize_(0), isHaveCpuRank_(false), ranktableCrc_(0),
-          pMsgInfosMem_(nullptr), pReqInfosMem_(nullptr), memBlocksManager_(nullptr), pRecvWrInfosMem_(nullptr),
-          transportResInfo_(mrManager_, pMsgInfosMem_, pReqInfosMem_, memBlocksManager_, pRecvWrInfosMem_),
           multiModuleDiffDeviceNumMode_(false), multiSuperPodDiffServerNumMode_(false),
           isStandardCard_(false), is310PDuoCard_(false), hccsPortNum_(-1),
           loopBackIp_(HcclIpAddress(COMM_LOOPBACK_IP)), profilingInitiated_(false), callbackThreadId_(INVALID_U64),
-          role_(SERVER_ROLE_SOCKET), mrManagerInit_(false),
+          role_(SERVER_ROLE_SOCKET),
           isHostUseDevNic_(false),
           isAllRankSamePlane_(false), serverNum_(0), moduleNum_(0)
     {
@@ -80,12 +78,10 @@ namespace hccl
           isExecuteProfilingInit_(false), deviceType_(DevType::DEV_TYPE_COUNT),
           commHandle_(nullptr),
           commWorkMode_(WorkMode::HCCL_MODE_NORMAL), meshAggregationRankSize_(0), isHaveCpuRank_(false), ranktableCrc_(0),
-          pMsgInfosMem_(nullptr), pReqInfosMem_(nullptr), memBlocksManager_(nullptr), pRecvWrInfosMem_(nullptr),
-          transportResInfo_(mrManager_, pMsgInfosMem_, pReqInfosMem_, memBlocksManager_, pRecvWrInfosMem_),
           multiModuleDiffDeviceNumMode_(false), multiSuperPodDiffServerNumMode_(false),
           isStandardCard_(false), is310PDuoCard_(false), hccsPortNum_(-1),
           loopBackIp_(HcclIpAddress(COMM_LOOPBACK_IP)), profilingInitiated_(false), callbackThreadId_(INVALID_U64),
-          role_(SERVER_ROLE_SOCKET), mrManagerInit_(false),
+          role_(SERVER_ROLE_SOCKET),
           isHostUseDevNic_(false),
           isAllRankSamePlane_(false), serverNum_(0), moduleNum_(0)
     {
@@ -586,16 +582,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::MrManagerInit()
-    {
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::MrManagerDeInit()
-    {
-        return HCCL_SUCCESS;
-    }
-
     HcclResult HcclCommunicator::SupportDeterministicOptim(bool &isDeterministicOptim)
     {
         return HCCL_SUCCESS;
@@ -1078,16 +1064,6 @@ namespace hccl
     {
         SaveLinkRes(algResResponse.opTransportResponse);
         SaveLinkRes(algResResponse.opTransportResponseBackUp);
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::InitRecvMsgAndRequestBuffer()
-    {
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::InitMemBlocksAndRecvWrMem()
-    {
         return HCCL_SUCCESS;
     }
 
@@ -1605,11 +1581,6 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::GetHeterogMode(HcclHeterogMode *mode)
-    {
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::DeInitTransportMem()
     {
         return HCCL_SUCCESS;
     }

@@ -26,7 +26,7 @@ CommBase::CommBase(const std::string &collectiveId, const u32 userRank, const u3
     const HcclDispatcher dispatcher, const std::unique_ptr<NotifyPool> &notifyPool,
     std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxMap,
     const IntraExchanger &exchanger, const DeviceMem &inputMem, const DeviceMem &outputMem,
-    const bool isUsedRdmaLevel0, const void* transportResourceInfoAddr, size_t transportResourceInfoSize,
+    const bool isUsedRdmaLevel0,
     const std::string &tag, const NICDeployment nicDeployInner,
     bool isAlltoAllCommMesh, const bool useOneDoorbell, const bool isAicpuModeEn, const u32 rankRoot,
     const bool isHaveCpuRank, const bool useSuperPodMode, DeviceMem expMem)
@@ -38,7 +38,6 @@ CommBase::CommBase(const std::string &collectiveId, const u32 userRank, const u3
       userRankMap_(rankSize, INVALID_VALUE_RANKID), dispatcher_(dispatcher), notifyPool_(notifyPool),
       netDevCtxMap_(netDevCtxMap), exchanger_(exchanger), inputMem_(inputMem), outputMem_(outputMem),
       isUsedRdmaLevel0_(isUsedRdmaLevel0),
-      transportResourceInfoAddr_(transportResourceInfoAddr), transportResourceInfoSize_(transportResourceInfoSize),
       dstInterServerMap_(), dstInterClientMap_(), dstIntraServerVec_(), dstIntraClientVec_(),
       linkThreads_(), threadsRapplyNum_(0),
       shmDev_(0), isAlltoAllCommMesh_(isAlltoAllCommMesh),
@@ -236,9 +235,7 @@ HcclResult CommBase::SetTransportType(const u32 dstRank)
             transportType_[dstRank] = TransportType::TRANS_TYPE_P2P;
         }
     } else { // server间
-        if (GetExternalInputHcclIsTcpMode()) {
-            transportType_[dstRank] = TransportType::TRANS_TYPE_HOST_TCP;
-        } else if (IsSupportInterHccs(dstRank)) {
+        if (IsSupportInterHccs(dstRank)) {
             // 超节点内节点间走HCCS通信
             transportType_[dstRank] = TransportType::TRANS_TYPE_P2P;
         } else {
@@ -658,8 +655,6 @@ void CommBase::SetTransportParam(TransportPara &para, MachinePara &machinePara)
         GetExternalInputHcclLinkTimeOut());
     para.isRootRank = subUserRankRoot_ == rank_ ? true : false;
     para.timeout = kdefaultTimeout;
-    para.transportResourceInfoAddr = transportResourceInfoAddr_;
-    para.transportResourceInfoSize = transportResourceInfoSize_;
     para.virtualFlag = false;
 }
 
@@ -676,9 +671,6 @@ HcclResult CommBase::TransportInit(const u32 dstRank, MachinePara &machinePara)
     if (type == TransportType::TRANS_TYPE_P2P) {
         transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else if (type == TransportType::TRANS_TYPE_IBV_EXP) {
-        transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_HOST_TCP) {
-        para.nicDeploy = nicDeployInner_;
         transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else {
         HCCL_ERROR("[Init][Transport]not supported transport type");
@@ -899,7 +891,7 @@ HcclResult CommBase::TransportBuildAsync(const MachineType machineType, const st
     TransportPara para {};
     para.timeout = kdefaultTimeout;
     para.virtualFlag = false;
-    transportInfo_[dstRank].reset(new (std::nothrow) Transport(TransportType::TRANS_TYPE_HETEROG_P2P, para,
+    transportInfo_[dstRank].reset(new (std::nothrow) Transport(TransportType::TRANS_TYPE_RESERVED, para,
         dispatcher_, notifyPool_, machinePara));
     CHK_PRT_RET(!transportInfo_[dstRank], HCCL_ERROR("[Init][Transport]In create link, new link failed"),
         HCCL_E_PTR);

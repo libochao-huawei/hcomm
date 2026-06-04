@@ -639,18 +639,18 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_AllGatherDoubleRingExecutor_Ring_SuperPod)
     tmpComm.commLevel1.resize(1);
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
     tmpComm.commLevel1[0].reset(new (std::nothrow) CommRing(tag, 0, 2, 0, 2, TopoType::TOPO_TYPE_NP_DOUBLE_RING,
-        implBase->dispatcher_, nullptr, netDevCtxMap, exchanger, paraVector, inputMem, outputMem, false, nullptr, 0));
+        implBase->dispatcher_, nullptr, netDevCtxMap, exchanger, paraVector, inputMem, outputMem, false));
     tmpComm.commLevel1[0]->rankMap_ = { 0, 1};
     tmpComm.commLevel0.resize(2);
     for (int i = 0; i < 2; i++) {
         tmpComm.commLevel0[i].reset(new (std::nothrow) CommRing(tag, i, 2, i, 2, TopoType::TOPO_TYPE_NP_DOUBLE_RING,
-            implBase->dispatcher_, nullptr, netDevCtxMap, exchanger, paraVector, inputMem, outputMem, false, nullptr, 0));
+            implBase->dispatcher_, nullptr, netDevCtxMap, exchanger, paraVector, inputMem, outputMem, false));
         tmpComm.commLevel0[i]->rankMap_ ={ 0, 1};
     }
     tmpComm.commLevel2.resize(2);
     for (int i = 0; i < 2; i++) {
         tmpComm.commLevel2[i].reset(new (std::nothrow) CommRing(tag, i, 2, i, 2, TopoType::TOPO_TYPE_NP_DOUBLE_RING,
-            implBase->dispatcher_, nullptr, netDevCtxMap, exchanger, paraVector, inputMem, outputMem, false, nullptr, 0));
+            implBase->dispatcher_, nullptr, netDevCtxMap, exchanger, paraVector, inputMem, outputMem, false));
         tmpComm.commLevel2[i]->rankMap_ ={ 0, 1};
     }
     impl->tagCommInfo_.insert(std::pair<std::string, CommInfo>(tag, std::move(tmpComm)));
