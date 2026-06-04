@@ -403,6 +403,7 @@ HcclResult HcclOneSidedService::ExchangeMemDesc(RankId remoteRankId, const HcclM
     HcclMemDescs &remoteMemDescs, u32 &actualNumOfRemote, const std::string &commIdentifier, s32 timeoutSec)
 {
     std::shared_ptr<HcclOneSidedConn> tempConn;
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HcclRankLinkInfo remoteRankInfo;
@@ -428,6 +429,7 @@ void HcclOneSidedService::EnableMemAccess(const HcclMemDesc &remoteMemDesc, Hccl
     HcclResult ret = HCCL_SUCCESS;
     const TransportMem::RmaMemDesc* ptr = reinterpret_cast<const TransportMem::RmaMemDesc*>(remoteMemDesc.desc);
     u32 remoteRank = ptr->localRankId;
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRank);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclOneSidedService][EnableMemAccess]connection not found, remoteRank[%u], "\
@@ -476,6 +478,7 @@ void HcclOneSidedService::DisableMemAccess(const HcclMemDesc &remoteMemDesc)
 {
     const TransportMem::RmaMemDesc* ptr = reinterpret_cast<const TransportMem::RmaMemDesc*>(remoteMemDesc.desc);
     u32 remoteRank = ptr->localRankId;
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     if (oneSidedConns_.find(remoteRank) == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclOneSidedService][DisableMemAccess]connection not found by remoteRankId[%u], "\
             "please exchange mem desc to create connection first.", remoteRank);
@@ -487,6 +490,7 @@ void HcclOneSidedService::DisableMemAccess(const HcclMemDesc &remoteMemDesc)
 void HcclOneSidedService::BatchPut(RankId remoteRankId, const HcclOneSideOpDesc* desc, u32 descNum,
     const rtStream_t &stream)
 {
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchPut] Can't find oneSidedConn by remoteRank %u", remoteRankId);
@@ -504,6 +508,7 @@ void HcclOneSidedService::BatchPut(RankId remoteRankId, const HcclOneSideOpDesc*
 void HcclOneSidedService::BatchGet(RankId remoteRankId, const HcclOneSideOpDesc* desc, u32 descNum,
     const rtStream_t &stream)
 {
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchGet] Can't find oneSidedConn by remoteRank %u", remoteRankId);
@@ -656,6 +661,7 @@ HcclResult HcclOneSidedService::Prepare(const std::string &commIdentifier, const
         auto ret = PrepareFullMesh(commIdentifier, timeoutSec);
         if (ret != HCCL_SUCCESS) {
             u32 rankSize = (rankTable_->rankList).size();
+            std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
             for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
                 if (remoteRankId >= oneSidedConns_.size()) {
                     // remoteRankId超出oneSidedConns_的范围，直接退出
@@ -727,6 +733,7 @@ HcclResult HcclOneSidedService::CreateLinkFullmesh(const std::string &commIdenti
 {
     u32 rankSize = (rankTable_->rankList).size();
 
+    std::unique_lock<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
         if (remoteRankId == localRankInfo_.userRank) {
             continue;
@@ -751,6 +758,7 @@ HcclResult HcclOneSidedService::CreateLinkFullmesh(const std::string &commIdenti
                     std::ref(oneSidedConns_[remoteRankId]), commIdentifier, timeoutSec, std::ref(linkResult[remoteRankId])));
         CHK_SMART_PTR_NULL(linkThreads[remoteRankId]);
     }
+    oneSidedConnslock.unlock();
 
     for (u32 remoteRankId = 0; remoteRankId < linkThreads.size(); remoteRankId++) {
         if (linkThreads[remoteRankId] == nullptr || !linkThreads[remoteRankId]->joinable()) {
@@ -845,6 +853,7 @@ HcclResult HcclOneSidedService::ExchangeMemDescFullMesh()
     
     hasErrorFlag_ = false;
     ThreadsGuard threadsGuard(exchangeThreads);
+    std::unique_lock<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
         if (remoteRankId == localRankInfo_.userRank) {
             continue;
@@ -854,6 +863,7 @@ HcclResult HcclOneSidedService::ExchangeMemDescFullMesh()
                     std::ref(oneSidedConns_[remoteRankId]), isUsedRdmaMap_[remoteRankId]));
         CHK_SMART_PTR_NULL(exchangeThreads[remoteRankId]);
     }
+    oneSidedConnslock.unlock();
 
     for (u32 remoteRankId = 0; remoteRankId < exchangeThreads.size(); remoteRankId++) {
         if (exchangeThreads[remoteRankId] == nullptr || !exchangeThreads[remoteRankId]->joinable()) {
@@ -907,6 +917,7 @@ HcclResult HcclOneSidedService::EnableMemAccessByThread()
 HcclResult HcclOneSidedService::EnableMemAccess()
 {
     u32 rankSize = (rankTable_->rankList).size();
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
         if (remoteRankId == localRankInfo_.userRank) {
             continue;
@@ -919,6 +930,7 @@ HcclResult HcclOneSidedService::EnableMemAccess()
 HcclResult HcclOneSidedService::DisableMemAccess()
 {
     u32 rankSize = (rankTable_->rankList).size();
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
         if (remoteRankId == localRankInfo_.userRank) {
             continue;
@@ -931,6 +943,7 @@ HcclResult HcclOneSidedService::DisableMemAccess()
 HcclResult HcclOneSidedService::Grant(HcclBuf& buf)
 {
     u32 rankSize = (rankTable_->rankList).size();
+    std::lock_guard<std::mutex> oneSidedConnslock(oneSidedConnsMutex_);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
         if (remoteRankId == localRankInfo_.userRank || isUsedRdmaMap_[remoteRankId] == true) {
             continue;
