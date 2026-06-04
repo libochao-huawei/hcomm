@@ -35,7 +35,7 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag, u32 myRank
     }
     
     // 2. 创建Profiling管理类
-    EXECEPTION_CATCH(profiling_ = std::make_unique<HcclCommProfiling>(deviceId_, mirrorTaskManager_.get()), return HCCL_E_PTR);
+    EXCEPTION_CATCH(profiling_ = std::make_unique<HcclCommProfiling>(deviceId_, mirrorTaskManager_.get()), return HCCL_E_PTR);
     
     // 3. 注册回调
     setAddTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
@@ -87,9 +87,9 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
         }
     }
     std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
-    EXECEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
+    EXCEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
         remoteRankId, taskParam, mirrorTaskManager_->GetCurrDfxOpInfo(), taskParam.isMaster), return HCCL_E_PTR);
-    EXECEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
+    EXCEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
     HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
 }
@@ -107,13 +107,13 @@ HcclResult HcclCommDfx::AddDpuTaskInfoCallback(const Hccl::TaskParam &taskParam,
 // HcclCommDfx接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfx::ReportAllTasks(bool cachedReq) {
     CHK_PTR_NULL(profiling_);
-    EXECEPTION_CATCH(profiling_->ReportAllTasks(cachedReq), return HCCL_E_PTR);
+    EXCEPTION_CATCH(profiling_->ReportAllTasks(cachedReq), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
     CHK_PTR_NULL(profiling_);
-    EXECEPTION_CATCH(profiling_->ReportOp(beginTime, cachedReq, opbased), return HCCL_E_PTR);
+    EXCEPTION_CATCH(profiling_->ReportOp(beginTime, cachedReq, opbased), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 

@@ -68,12 +68,12 @@ HcclResult UrmaEndpoint::Init()
     }
 
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, ipAddr)), return HCCL_E_PARA);
+    EXCEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, ipAddr)), return HCCL_E_PARA);
     CHK_PTR_NULL(ctxHandle_);
     HCCL_INFO("%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
         __func__, devPhyId, ipAddr.Describe().c_str(), ctxHandle_);
 
-    EXECEPTION_CATCH(this->regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(this->regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
     // ccu模式专用的资源分配器

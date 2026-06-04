@@ -97,7 +97,7 @@ HcclResult AicpuThreadProcess::ResumeThread(ThreadMgrAicpuParam *param,
             HCCL_INFO("[HcclCommAicpu][%s] %s", __func__, oss.str().c_str());
         }
         std::shared_ptr<AicpuTsThread> thread;
-        EXECEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
+        EXCEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
         u32 notifyNum = 0;
         std::string notifyDesc;
         CHK_RET(thread->GetNotifyByUniqueId(notifyNum, notifyDesc));
