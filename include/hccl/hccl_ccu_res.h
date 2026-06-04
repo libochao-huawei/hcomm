@@ -14,12 +14,16 @@
 #include "hccl_types.h"
 #include "ccu_types.h"
 
+#ifndef HCOMM_WEAK_SYMBOL
+#define HCOMM_WEAK_SYMBOL __attribute__((weak))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
 extern HcclResult HcclCommQueryCcuIns(HcclComm comm,
-    CcuInsHandle *insHandles, uint32_t *insNum);
+    CcuInsHandle *insHandles, uint32_t *insNum) HCOMM_WEAK_SYMBOL;
 
 #ifdef __cplusplus
 }
