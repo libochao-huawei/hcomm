@@ -2060,12 +2060,20 @@ const NotifyTimeoutCfg &CommunicatorImpl::GetNotifyTimeoutCfg() const
 HcclResult CommunicatorImpl::CreateCommCclBuf()
 {
     HCCL_INFO("[%s] start.", __func__);
-    if (inCclBuffer == nullptr) { 
-        inCclBuffer = std::make_shared<DevBuffer>(cclBufferSize);
+    CHK_SMART_PTR_NULL(cclBuffer);
+    if (cclBufferSize == 0) {
+        HCCL_ERROR("CommunicatorImpl::CreateCommCclBuf failed, cclBufferSize is 0");
+        return HcclResult::HCCL_E_PARA;
+    }
+    size_t IN_OUT_CCL_BUFFER_SIZE = cclBufferSize / 2;
+    if (inCclBuffer == nullptr) {
+        inCclBuffer = DevBuffer::Create(cclBuffer->GetAddr(), IN_OUT_CCL_BUFFER_SIZE);
+        CHK_SMART_PTR_NULL(inCclBuffer);
         HCCL_INFO("CommunicatorImpl::CreateCommCclBuf, inCclBuffer is %p", inCclBuffer.get());
     } 
     if (outCclBuffer == nullptr) {
-        outCclBuffer = std::make_shared<DevBuffer>(cclBufferSize);
+        outCclBuffer = DevBuffer::Create(cclBuffer->GetAddr() + (IN_OUT_CCL_BUFFER_SIZE), IN_OUT_CCL_BUFFER_SIZE);
+        CHK_SMART_PTR_NULL(outCclBuffer);
         HCCL_INFO("CommunicatorImpl::CreateCommCclBuf, outCclBuffer is %p", outCclBuffer.get());
     }
     if (indirectInCclBuffer == nullptr) {
