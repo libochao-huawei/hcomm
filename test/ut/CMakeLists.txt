@@ -108,6 +108,7 @@ set(UT_COMMON_INCLUDE_LIST
     # hccp (moved to base_comm/resources)
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
+    ${RDMA_CORE_INCLUDE_DIR}
 
     # hccl/algorithm 目录下头文件 (legacy/ascend910)
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/pub_inc
@@ -357,6 +358,7 @@ add_subdirectory(framework/communicator/impl)
 add_subdirectory(framework/resource)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 add_subdirectory(framework/next/comms/common)
 =======
 add_subdirectory(framework/next)
@@ -364,6 +366,8 @@ add_subdirectory(framework/next)
 =======
 add_subdirectory(framework/next/comms/common)
 >>>>>>> bc6cc459 (解决覆盖率问题,改cmake了)
+=======
+>>>>>>> 9f66d71b (合并主线代码ut不过了)
 add_subdirectory(framework/communicator/impl/independent_op/data_api)
 add_subdirectory(framework/communicator/impl/independent_op/data_api_cpu)
 add_subdirectory(aicpu_kfc/aicpu)
