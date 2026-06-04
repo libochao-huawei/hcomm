@@ -160,7 +160,6 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     if (localIpAddr < remoteIpAddr) { // local地址比remote地址小时，local作为server监听端
         // 查询localRankId对应的devPort
         listenPort = rankIpPortMap[myRankId][localIpAddr];
-        HCCL_INFO("TEST InsertClusterMonitorCxt server listenPort[%d]", listenPort);
         if (listenPort == 0) {
             CHK_RET(rankGraph->GetDevicePort(myRankId, &listenPort));
         }
@@ -172,7 +171,6 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
         socketDesc.listenPort = (uint16_t)listenPort; // socketDesc.port中填监听端口号
     } else {
         u32 remotePort = rankIpPortMap[remoteRank][remoteIpAddr];
-        HCCL_INFO("TEST InsertClusterMonitorCxt client remotePort[%d]", remotePort);
         socketDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_CLIENT;
         socketDesc.listenPort = remotePort == 0 ? (uint16_t)rmtPort : (uint16_t)remotePort; // socketDesc.port中填对端端口号(此场景下对端端口号也就是监听端口号)
     }
