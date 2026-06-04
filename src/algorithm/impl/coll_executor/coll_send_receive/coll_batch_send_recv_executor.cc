@@ -229,10 +229,12 @@ HcclResult CollBatchSendRecvExecutor::RunLoopInHostUnfoldMode(OpParam& param)
         SendRecvSlice& slice = sendDataSilces_[i];
         LINK targetLink;
         CHK_RET(GetSendTargetLink(slice.remoteRank, targetLink));
-        if (targetLink->GetTransportType() == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
-            CHK_RET(SetNormalMode(dispatcher_));
-            IsSetNormalMode = true;
-            HCCL_INFO("[CollBatchSendRecvExecutor][RunLoopInHostUnfoldMode]Send Set NormalMode dispatcher");
+        if (TransportType::TRANS_TYPE_DEVICE_DIRECT == targetLink->GetTransportType()) {
+            if (!IsSetNormalMode) {
+                CHK_RET(SetNormalMode(dispatcher_));
+                IsSetNormalMode = true;
+            }
+            HCCL_INFO("[CollBatchSendRecvExecutor][RunLoopInHostUnfoldMode]Send Set NormalMode true");
             break;
         }
     }
@@ -241,9 +243,9 @@ HcclResult CollBatchSendRecvExecutor::RunLoopInHostUnfoldMode(OpParam& param)
         SendRecvSlice& slice = recvDataSilces_[i];
         LINK targetLink;
         CHK_RET(GetRecvTargetLink(slice.remoteRank, targetLink));
-        if (targetLink->GetTransportType() == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
+        if (TransportType::TRANS_TYPE_DEVICE_DIRECT == targetLink->GetTransportType()) {
             CHK_RET(SetNormalMode(dispatcher_));
-            HCCL_INFO("[CollBatchSendRecvExecutor][RunLoopInHostUnfoldMode]Recv Set NormalMode dispatcher");
+            HCCL_INFO("[CollBatchSendRecvExecutor][RunLoopInHostUnfoldMode]Recv Set NormalMode true");
             break;
         }
     }
