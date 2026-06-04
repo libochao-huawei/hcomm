@@ -24,6 +24,7 @@ HcclResult InitDebugConfigByEnv();
 
 void InitDebugConfigByValue(u64 config);
 
+bool GetDebugConfigInited();
 }
 
 // config要求传入宏名字作为日志打印关键字，不可以传入其他变量或常量
