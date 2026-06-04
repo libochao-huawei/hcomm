@@ -91,7 +91,7 @@ public:
         return HCCL_SUCCESS;
     }
     uint32_t UpdateIndex();
-    HcclResult GetRankIpPortMap();
+    Hccl::RankIpPortMap GetRankIpPortInfo();
     
     // Todo:在这里做N秒快恢
     HcclCommStatus GetCommStatus() const;
@@ -104,6 +104,7 @@ private:
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
+    HcclResult GetRankIpPortMap();
 
     void* comm_{nullptr};
     uint32_t rankId_{};
