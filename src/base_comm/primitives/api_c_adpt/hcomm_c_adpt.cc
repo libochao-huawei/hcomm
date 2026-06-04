@@ -251,7 +251,7 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
 
     const EndpointHandle handle = reinterpret_cast<EndpointHandle>(endpointPtr.get());
     CHK_PTR_NULL(handle);
-    EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
 
     if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
@@ -564,7 +564,7 @@ HcommResult HcommThreadAllocWithStream(CommEngine engine,
     hccl::NotifyLoadType notifyLoadType;
     CHK_RET(CommHostEngineToNotifyLoadType(engine, notifyLoadType));
     std::shared_ptr<hccl::Thread> handle;
-    EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
+    EXCEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());
  
     // 返回第一个句柄

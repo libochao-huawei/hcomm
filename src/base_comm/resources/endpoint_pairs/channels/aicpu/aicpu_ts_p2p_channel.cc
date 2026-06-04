@@ -99,7 +99,7 @@ HcclResult AicpuTsP2pChannel::BuildConnection()
     std::unique_ptr<Hccl::P2PConnection> p2pConn = nullptr;
     std::string connTag = "P2P_CHANNEL_" + std::to_string(localEp_.loc.device.devPhyId);
    
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         p2pConn = std::make_unique<Hccl::P2PConnection>(socket_, connTag),
         return HCCL_E_PTR
     );
@@ -120,7 +120,7 @@ HcclResult AicpuTsP2pChannel::BuildNotify()
     bool devUsed = true;
     for (uint32_t i = 0; i < notifyNum_; ++i) {
         std::unique_ptr<Hccl::IpcLocalNotify> notifyPtr = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             notifyPtr = std::make_unique<Hccl::IpcLocalNotify>(devUsed),
             return HCCL_E_PTR
         );
@@ -135,7 +135,7 @@ HcclResult AicpuTsP2pChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buff
     bufferVecTemp_.clear();
     for (size_t i = 0; i < bufs.size(); i++) {
         std::unique_ptr<Hccl::LocalIpcRmaBuffer> bufferPtr = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             bufferPtr = std::make_unique<Hccl::LocalIpcRmaBuffer>(bufs[i]),
             return HCCL_E_PTR
         );
@@ -153,7 +153,7 @@ HcclResult AicpuTsP2pChannel::BuildP2pMemTransport()
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
 
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         memTransport_ = std::make_unique<Hccl::P2PTransport>(
             commonRes_, attr_, linkData, socket
         ),
@@ -174,10 +174,10 @@ HcclResult AicpuTsP2pChannel::BuildSocket()
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::PCIE); // TODO PROTOTYPE P2P?
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(localEp_.loc.device.devPhyId), type, 0, ipaddr);
     Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
-    EXECEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001,
+    EXCEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001,
         ipaddr, "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
     HCCL_INFO("[AicpuTsP2pChannel][%s] listen_socket_info[%s]", __func__, serverSocket_->Describe().c_str());
-    EXECEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
 
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));

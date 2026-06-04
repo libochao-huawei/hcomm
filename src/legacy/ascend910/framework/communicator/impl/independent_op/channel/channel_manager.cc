@@ -227,7 +227,7 @@ HcclResult ChannelManager::AllocAndClearHostMem(u64 size, std::shared_ptr<HostMe
                 HCCL_E_PARA);
 
     HostMem tmpBuffer = HostMem::alloc(size);
-    EXECEPTION_CATCH((bufferPtr = std::make_shared<HostMem>(std::move(tmpBuffer))), return HCCL_E_PTR);
+    EXCEPTION_CATCH((bufferPtr = std::make_shared<HostMem>(std::move(tmpBuffer))), return HCCL_E_PTR);
 
     CHK_PRT_RET(size > 0 && !bufferPtr.get()->ptr(),
                 HCCL_ERROR("[ChannelManager][AllocAndClearHostMem]host memory space size[%llu] fail,"
@@ -437,7 +437,7 @@ HcclResult ChannelManager::DeepCopyH2DchannelParam(const HcclIndOpChannelRemoteR
         // 为设备端的remoteResV2数组分配内存（注意：这个数组存放的是HcclIndOpChannelRemoteResV2结构体）
         size_t remoteResV2ArraySize = sizeof(HcclIndOpChannelRemoteResV2) * hostChannelParam.listNum;
         std::shared_ptr<DeviceMem> deviceRemoteResV2Array;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             (deviceRemoteResV2Array = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteResV2ArraySize))),
             return HCCL_E_PTR);
 
@@ -497,7 +497,7 @@ HcclResult ChannelManager::DeepCopyH2DChannelRoce(const HcclChannelRoce &hostCha
     if (hostChannelRoce.remoteUserHostMem != nullptr && hostChannelRoce.remoteUserHostMemCount > 0) {
         size_t remoteUserHostMemSize = hostChannelRoce.remoteUserHostMemCount * sizeof(MemDetails);
         std::shared_ptr<DeviceMem> deviceMem;
-        EXECEPTION_CATCH((deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserHostMemSize))),
+        EXCEPTION_CATCH((deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserHostMemSize))),
                          return HCCL_E_PTR);
         CHK_RET(hrtMemSyncCopy(deviceMem.get()->ptr(), remoteUserHostMemSize, hostChannelRoce.remoteUserHostMem,
             remoteUserHostMemSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
@@ -510,7 +510,7 @@ HcclResult ChannelManager::DeepCopyH2DChannelRoce(const HcclChannelRoce &hostCha
     if (hostChannelRoce.remoteUserDeviceMem != nullptr && hostChannelRoce.remoteUserDeviceMemCount > 0) {
         size_t remoteUserDeviceMemSize = hostChannelRoce.remoteUserDeviceMemCount * sizeof(MemDetails);
         std::shared_ptr<DeviceMem> deviceMem;
-        EXECEPTION_CATCH((deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserDeviceMemSize))),
+        EXCEPTION_CATCH((deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserDeviceMemSize))),
                          return HCCL_E_PTR);
         CHK_RET(hrtMemSyncCopy(deviceMem.get()->ptr(), remoteUserDeviceMemSize, hostChannelRoce.remoteUserDeviceMem,
             remoteUserDeviceMemSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
@@ -532,7 +532,7 @@ HcclResult ChannelManager::DeepCopyH2DChannelP2p(const HcclChannelP2p &hostChann
     if (hostChannelP2p.remoteUserMem != nullptr && hostChannelP2p.remoteUserMemCount > 0) {
         size_t remoteUserMemSize = hostChannelP2p.remoteUserMemCount * sizeof(HcclMem);
         std::shared_ptr<DeviceMem> deviceMem;
-        EXECEPTION_CATCH((deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserMemSize))),
+        EXCEPTION_CATCH((deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserMemSize))),
                          return HCCL_E_PTR);
         CHK_RET(hrtMemSyncCopy(deviceMem.get()->ptr(), remoteUserMemSize, hostChannelP2p.remoteUserMem,
             remoteUserMemSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));

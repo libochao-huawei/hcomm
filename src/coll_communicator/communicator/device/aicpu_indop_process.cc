@@ -62,7 +62,7 @@ HcclResult AicpuIndopProcess::AcquireAicpuCommMgr(const std::string &group, Coll
     
     // 未找到则创建新实例
     std::unique_ptr<CollCommAicpuMgr> aicpuCommMgr;
-    EXECEPTION_CATCH(aicpuCommMgr = std::make_unique<CollCommAicpuMgr>(), return HCCL_E_PTR);
+    EXCEPTION_CATCH(aicpuCommMgr = std::make_unique<CollCommAicpuMgr>(), return HCCL_E_PTR);
     // 创建aicpu通信域
     CHK_RET(aicpuCommMgr->AcquireCollCommAicpu());
 
@@ -323,7 +323,7 @@ HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
     Hccl::MirrorTaskManagerLite* mirrorTaskMgrLite = hcclCommDfxLite->GetMirrorTaskManagerLite();
     CHK_PTR_NULL(mirrorTaskMgrLite);
     CHK_RET(AicpuIndopProcess::ReportAllTasks(group));
-    EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgrLite->GetCurrDfxOpInfo()),
+    EXCEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgrLite->GetCurrDfxOpInfo()),
         return HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
