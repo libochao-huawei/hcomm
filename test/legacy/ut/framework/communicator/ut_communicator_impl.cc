@@ -1850,6 +1850,7 @@ TEST_F(CommunicatorImplTest, ut_CreateCommCclBuf_When_Normal_Expect_Return_HCCL_
     CommunicatorImpl comm;
     comm.CollAlgComponentInit();
     comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
+    comm.cclBufferSize = 256;
     comm.SetCommStatus(CommStatus::COMM_READY);
     comm.devLogicId = 0;
     comm.config.hcclBufferSize = 0;
