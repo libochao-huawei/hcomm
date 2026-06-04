@@ -149,9 +149,6 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
 
 void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cachedReq)
 {
-    CHECK_NULLPTR(taskInfo.dfxOpInfo_, "[ProfilingHandler::ReportHcclTaskDetails] taskInfo.dfxOpInfo_ is nullptr!");
-    CHECK_NULLPTR(taskInfo.dfxOpInfo_->comm_, 
-                  "[ProfilingHandler::ReportHcclTaskDetails] taskInfo.dfxOpInfo_->comm_ is nullptr!");
     if (enableHcclL1_ == false && !cachedReq) {
         return;
     }
@@ -413,6 +410,10 @@ void ProfilingHandler::ReportCcuInfo(const TaskInfo &taskInfo) const
 void ProfilingHandler::GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const
 {
     HCCL_INFO("[ProfilingHandler]GetCcuTaskInfo start.");
+    if (taskInfo.dfxOpInfo_ == nullptr) {
+        HCCL_WARNING("[ProfilingHandler::GetCcuTaskInfo] dfxOpInfo_ is nullptr!");
+        return;
+    }
     MsprofCcuTaskInfo ccuTaskInfo{};
     ccuTaskInfo.version       = 0;
     ccuTaskInfo.workFlowMode  = static_cast<u32>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
@@ -449,6 +450,10 @@ void ProfilingHandler::GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfili
 void ProfilingHandler::GetCcuGroupInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const
 {
     HCCL_INFO("[ProfilingHandler]GetCcuGroupInfo start.");
+    if (taskInfo.dfxOpInfo_ == nullptr) {
+        HCCL_WARNING("[ProfilingHandler::GetCcuGroupInfo] dfxOpInfo_ is nullptr!");
+        return;
+    }
     MsprofCcuGroupInfo ccuGroupInfo{};
     ccuGroupInfo.version = 0;
     ccuGroupInfo.itemId  = GetProfHashId(info.name.c_str(), info.name.length());
@@ -512,6 +517,10 @@ void ProfilingHandler::DumpCcuGroupInfo(const MsprofCcuGroupInfo &ccuGroupInfo) 
 void ProfilingHandler::GetCcuWaitSignalInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const
 {
     HCCL_INFO("[ProfilingHandler]GetCcuWaitSignalInfo start.");
+    if (taskInfo.dfxOpInfo_ == nullptr) {
+        HCCL_WARNING("[ProfilingHandler::GetCcuWaitSignalInfo] dfxOpInfo_ is nullptr!");
+        return;
+    }
     MsprofCcuWaitSignalInfo waitSignalInfo{};
     waitSignalInfo.version      = 0;
     waitSignalInfo.itemId       = GetProfHashId(info.name.c_str(), info.name.length());

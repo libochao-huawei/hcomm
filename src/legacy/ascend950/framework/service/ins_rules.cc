@@ -185,12 +185,17 @@ inline vector<RtsCntNotify *> LocalCntNotifyGet(ConnLocalCntNotifyManager &connL
 
 static void SaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, const RankId remoteRankId, bool isMaster = false)
 {
+    auto currDfxOpInfo = comm.GetMirrorTaskManager().GetCurrDfxOpInfo();
+    if (currDfxOpInfo == nullptr) {
+        HCCL_WARNING("[%s] GetCurrDfxOpInfo is nullptr, skip SaveDfxTaskInfo!", __func__);
+        return;
+    }
     u32 taskId;
     u32 streamId;
     HrtGetTaskIdAndStreamID(taskId, streamId);
 
     shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam, 
-        comm.GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
+        currDfxOpInfo, isMaster);
  
     HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
