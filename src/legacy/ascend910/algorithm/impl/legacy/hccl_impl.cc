@@ -34,12 +34,11 @@ hcclImpl::hcclImpl(const HcclDispatcher dispatcher,
     const std::unique_ptr<NotifyPool> &notifyPool, std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxMap,
     const std::unique_ptr<QueueNotifyManager> &queueNotifyManager,
     std::unique_ptr<WorkspaceResource> &workSpaceRes, CCLBufferManager &cclBufferManager,
-    const void *transportResourceInfoAddr, size_t transportResourceInfoSize, HcclAlgoAttr &algoAttr,
+    HcclAlgoAttr &algoAttr,
     HcclTopoAttr &topoAttr, std::shared_ptr<AlgConfigurator> algConfigurator,
     std::shared_ptr<TopoInfoExtractor> topoInfoEx)
     : dispatcher_(dispatcher), notifyPool_(notifyPool), netDevCtxMap_(netDevCtxMap),
       queueNotifyManager_(queueNotifyManager), workSpaceRes_(workSpaceRes), cclBufferManager_(cclBufferManager),
-      transportResourceInfoAddr_(transportResourceInfoAddr), transportResourceInfoSize_(transportResourceInfoSize),
       algConfigurator_(algConfigurator), topoInfoEx_(topoInfoEx), topoAttr_(topoAttr), algoAttr_(algoAttr)
 {
     SetAlgoAttr(algoAttr);
@@ -167,7 +166,6 @@ HcclResult hcclImpl::Init(bool isHeterogComm)
 
     commFactory_.reset(new (std::nothrow) CommFactory(identifier_, userRank_, userRankSize_, dispatcher_, notifyPool_,
         netDevCtxMap_, topoInfoEx_, isUsedRdmaLevel0_, topoType_, deviceType_, rankInfoList_, nicDeployment_, isHeterogComm,
-        transportResourceInfoAddr_, transportResourceInfoSize_,
         meshAggregationRankSize_, isHaveCpuRank_, isUsedInterHccsMode_, useSuperPodMode_));
     CHK_SMART_PTR_NULL(commFactory_);
     CHK_RET(commFactory_->Init());

@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 
-
 #include "ccu_res_batch_allocator.h"
 #include "ccu_comp.h"
 #include "hccl_common.h"

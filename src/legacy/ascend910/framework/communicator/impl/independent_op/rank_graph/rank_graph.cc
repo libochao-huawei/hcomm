@@ -723,6 +723,105 @@ HcclResult RankGraphV1::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, 
     return HCCL_SUCCESS;
 }
 
+const EndpointDesc* RankGraphV1::MatchEndpointByAddr(
+    const RankGraphInfo &rankGraphInfo, const EndpointDesc *endPointDesc) const
+{
+    for (const auto &endpoint : rankGraphInfo.endPoints) {
+        if (endpoint.commAddr.type != endPointDesc->commAddr.type ||
+            endpoint.protocol != endPointDesc->protocol) {
+            continue;
+        }
+        bool matched = false;
+        switch (endpoint.commAddr.type) {
+            case COMM_ADDR_TYPE_IP_V4:
+                matched = (memcmp(&endpoint.commAddr.addr, &endPointDesc->commAddr.addr,
+                    sizeof(endpoint.commAddr.addr)) == 0);
+                break;
+            case COMM_ADDR_TYPE_IP_V6:
+                matched = (memcmp(&endpoint.commAddr.addr6, &endPointDesc->commAddr.addr6,
+                    sizeof(endpoint.commAddr.addr6)) == 0);
+                break;
+            case COMM_ADDR_TYPE_ID:
+                matched = true;
+                break;
+            default:
+                break;
+        }
+        if (matched) {
+            return &endpoint;
+        }
+    }
+    return nullptr;
+}
+
+HcclResult RankGraphV1::FillAttr(EndpointAttr endpointAttr, const EndpointDesc *foundEndpoint, uint32_t infoLen, void *info) const
+{
+    switch (endpointAttr) {
+        case ENDPOINT_ATTR_BW_COEFF: {
+            CHK_PRT_RET(infoLen != sizeof(EndpointAttrBwCoeff),
+                HCCL_ERROR("[RankGraphV1::GetEndpointInfo] Size mismatch for ENDPOINT_ATTR_BW_COEFF: expected %zu, actual %u",
+                    sizeof(EndpointAttrBwCoeff), infoLen), HCCL_E_PARA);
+            *(static_cast<EndpointAttrBwCoeff*>(info)) = 1;
+            break;
+        }
+        case ENDPOINT_ATTR_DIE_ID: {
+            CHK_PRT_RET(infoLen != sizeof(EndpointAttrDieId),
+                HCCL_ERROR("[RankGraphV1::GetEndpointInfo] Size mismatch for ENDPOINT_ATTR_DIE_ID: expected %zu, actual %u",
+                    sizeof(EndpointAttrDieId), infoLen), HCCL_E_PARA);
+            *(static_cast<EndpointAttrDieId*>(info)) = foundEndpoint->loc.device.superDevId;
+            break;
+        }
+        case ENDPOINT_ATTR_LOCATION: {
+            CHK_PRT_RET(infoLen != sizeof(EndpointAttrLocation),
+                HCCL_ERROR("[RankGraphV1::GetEndpointInfo] Size mismatch for ENDPOINT_ATTR_LOCATION: expected %zu, actual %u",
+                    sizeof(EndpointAttrLocation), infoLen), HCCL_E_PARA);
+            *(static_cast<EndpointAttrLocation*>(info)) = foundEndpoint->loc.locType;
+            break;
+        }
+        default: {
+            HCCL_ERROR("[RankGraphV1::GetEndpointInfo] Invalid endpointAttr[%d]", endpointAttr);
+            return HCCL_E_PARA;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult RankGraphV1::GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
+                                          uint32_t infoLen, void *info)
+{
+    if (endPointDesc == nullptr || info == nullptr) {
+        HCCL_ERROR("[RankGraphV1::GetEndpointInfo] Invalid parameter, null pointer");
+        return HCCL_E_PTR;
+    }
+
+    if (rankIndex_.empty()) {
+        HCCL_ERROR("[RankGraphV1::GetEndpointInfo] rankIndex is empty");
+        return HCCL_E_INTERNAL;
+    }
+
+    auto rankIt = rankIndex_.find(rankId);
+    if (rankIt == rankIndex_.end()) {
+        HCCL_ERROR("[RankGraphV1::GetEndpointInfo] rankId[%u] not found in rankIndex", rankId);
+        return HCCL_E_NOT_FOUND;
+    }
+
+    const RankGraphInfo &rankGraphInfo = rankIt->second;
+    const EndpointDesc *foundEndpoint = MatchEndpointByAddr(rankGraphInfo, endPointDesc);
+    if (foundEndpoint == nullptr) {
+        HCCL_ERROR("[RankGraphV1::GetEndpointInfo] No matching endpoint found for rankId[%u]", rankId);
+        return HCCL_E_NOT_FOUND;
+    }
+
+    return FillAttr(endpointAttr, foundEndpoint, infoLen, info);
+}
+
+HcclResult RankGraphV1::GetRankSize(uint32_t *rankSize)
+{
+    CHK_PTR_NULL(rankSize);
+    *rankSize = rankGraph_.size();
+    return HCCL_SUCCESS;
+}
+
 HcclResult RankGraphV1::GetDevicePort(const uint32_t rank, uint32_t *devPort)
 {
     CHK_PTR_NULL(devPort);

@@ -344,7 +344,7 @@ void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuEr
             std::vector<std::string>({
                 std::to_string(baseInfo.deviceId),
                 baseInformation.c_str(), (taskInformation + clusterMonitorErrMsg).c_str(),
-                ""})
+                "none"})
         );
     }
     const string  statusMsg = StatusCode2Str(highPart, lowPart);

@@ -73,7 +73,6 @@ set(HCOMM_PLATFORM_INCLUDE_LIST
     ${HCOMM_CODE_PLATFORM}/inc/adapter/host
     ${HCOMM_CODE_PLATFORM}/common
     ${HCOMM_CODE_PLATFORM}/task/
-    ${RDMA_CORE_INCLUDE_DIR}
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/external_depends/inc/log
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc/network/
 )
@@ -177,7 +176,6 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/legacy/ascend910/common/stream
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
-    ${RDMA_CORE_INCLUDE_DIR}
 
     # ccu 头文件
     ${HCOMM_CODE_ROOT}/pkg_inc/hcomm/ccu/

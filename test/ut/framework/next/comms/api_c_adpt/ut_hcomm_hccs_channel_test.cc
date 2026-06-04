@@ -12,7 +12,7 @@
 #include "hccl_network.h"
 #include "hccl_socket.h"
 #include "network_manager_pub.h"
-#include "reged_mems/reged_mem_mgr.h"
+#include "reged_mem_mgr.h"
 #include "mem_name_repository_pub.h"
 #include "global_net_dev_manager.h"
 #include "transport_p2p_pub.h"
