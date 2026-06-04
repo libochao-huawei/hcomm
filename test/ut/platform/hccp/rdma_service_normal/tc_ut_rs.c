@@ -3551,7 +3551,7 @@ void TcRsGetHostRdevIndex()
 	int rdevIndex = 0;
 	int ret;
 
-	rdevCb.devList = ibv_get_device_list(NULL);
+	rdevCb.devList = ibv_get_device_list(&(rdevCb.devNum));
 	rdevCb.rsCb = &rsCb;
 	mocker((stub_fn_t)pthread_mutex_lock, 20, 0);
 	mocker((stub_fn_t)pthread_mutex_unlock, 20, 0);
@@ -3569,7 +3569,7 @@ void TcRsGetIbCtxAndRdevIndex()
 	struct RsRdevCb rdevCb = {0};
 	int ret;
 
-	rdevCb.devList = ibv_get_device_list(NULL);
+	rdevCb.devList = ibv_get_device_list(&(rdevCb.devNum));
 	mocker(ibv_open_device, 20, NULL);
 	ret = RsGetIbCtxAndRdevIndex(rdevInfo, &rdevCb, &rdevIndex);
     EXPECT_INT_EQ(ret, -ENODEV);

@@ -34,6 +34,7 @@
 #include "ascend_hal.h"
 #include <errno.h>
 #include "ra_comm.h"
+#include "ra_hdc_async.h"
 
 extern int HdcSendRecvPkt(void *session, void *pSendRcvBuf, unsigned int inBufLen, unsigned int outDataLen);
 
