@@ -358,6 +358,7 @@ add_subdirectory(framework/resource)
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 add_subdirectory(framework/next/comms/common)
 =======
 add_subdirectory(framework/next)
@@ -367,6 +368,8 @@ add_subdirectory(framework/next/comms/common)
 >>>>>>> bc6cc459 (解决覆盖率问题,改cmake了)
 =======
 >>>>>>> 9f66d71b (合并主线代码ut不过了)
+=======
+>>>>>>> e3055f00 (跟final分支对齐)
 add_subdirectory(framework/communicator/impl/independent_op/data_api)
 add_subdirectory(framework/communicator/impl/independent_op/data_api_cpu)
 add_subdirectory(aicpu_kfc/aicpu)
