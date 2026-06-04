@@ -105,7 +105,59 @@ TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Not_Exist_Expect_SUCCESS
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-// 测试销毁channel，返回HCCL_SUCCESS，预期channelHandles_[COMM_ENGINE_CCU]为空
+// 测试SocketConfig构造函数 connectMode=0 (hostNic2DeviceNicMode=0)
+// 场景：角色由IP比较决定(100<101为true->SERVER)，tag需要拼接port
+TEST_F(TestEndpointPair, Ut_SocketConfig_ConnectMode_0_Expect_Success)
+{
+    Hccl::IpAddress localIp("192.168.100.100");
+    Hccl::IpAddress remoteIp("192.168.100.101");
+
+    Hccl::LinkData link(Hccl::PortDeploymentType::P2P, Hccl::LinkProtocol::ROCE,
+        0, 1, localIp, remoteIp, 0, 0, 0);
+
+    uint32_t listenPort = 12345;
+    std::string tag = "test_tag";
+    uint32_t hostNic2DeviceNicMode = 0;
+    uint32_t myRank = 0;
+    uint32_t rmtRank = 1;
+
+    Hccl::SocketConfig socketConfig(link, listenPort, tag, hostNic2DeviceNicMode, myRank, rmtRank);
+
+    EXPECT_EQ(socketConfig.remoteRank, rmtRank);
+    EXPECT_EQ(socketConfig.listeningPort, listenPort);
+    EXPECT_EQ(socketConfig.GetRole(), Hccl::SocketRole::SERVER);
+
+    std::string expectedTag = tag + "_" + localIp.GetIpStr() + "_" + remoteIp.GetIpStr() + "_" + std::to_string(listenPort);
+    EXPECT_EQ(socketConfig.GetHccpTag(), expectedTag);
+}
+
+// 测试SocketConfig构造函数 connectMode=1 (hostNic2DeviceNicMode=1)
+// 场景：角色由rank比较决定(1<0为false->CLIENT)，tag不需要拼接port
+TEST_F(TestEndpointPair, Ut_SocketConfig_ConnectMode_1_Expect_Success)
+{
+    Hccl::IpAddress localIp("192.168.100.100");
+    Hccl::IpAddress remoteIp("192.168.100.101");
+
+    Hccl::LinkData link(Hccl::PortDeploymentType::P2P, Hccl::LinkProtocol::ROCE,
+        1, 0, localIp, remoteIp, 0, 0, 0);
+
+    uint32_t listenPort = 54321;
+    std::string tag = "hccp_test";
+    uint32_t hostNic2DeviceNicMode = 1;
+    uint32_t myRank = 1;
+    uint32_t rmtRank = 0;
+
+    Hccl::SocketConfig socketConfig(link, listenPort, tag, hostNic2DeviceNicMode, myRank, rmtRank);
+
+    EXPECT_EQ(socketConfig.remoteRank, rmtRank);
+    EXPECT_EQ(socketConfig.listeningPort, listenPort);
+    EXPECT_EQ(socketConfig.hostNic2DeviceNicMode_, hostNic2DeviceNicMode);
+    EXPECT_EQ(socketConfig.GetRole(), Hccl::SocketRole::CLIENT);
+
+    std::string expectedTag = tag + "_" + remoteIp.GetIpStr() + "_" + localIp.GetIpStr();
+    EXPECT_EQ(socketConfig.GetHccpTag(), expectedTag);
+}
+
 TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Exist_Expect_SUCCESS)
 {
     MOCKER(HcommChannelDestroy).stubs().will(returnValue(static_cast<int>(HCCL_SUCCESS)));

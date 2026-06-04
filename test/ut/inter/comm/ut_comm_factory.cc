@@ -695,7 +695,7 @@ TEST_F(CommFactoryTest, ut_create_comm_suppod)
 
     CommFactory* comm_factory = new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr,  netDevCtxMap, topoInfoExt, true,
         TopoType::TOPO_TYPE_NP_DOUBLE_RING, DevType::DEV_TYPE_910_93, rank_vector,
-        NICDeployment::NIC_DEPLOYMENT_DEVICE, false, nullptr, 0, 0, false, true);
+        NICDeployment::NIC_DEPLOYMENT_DEVICE, false, 0, false, true);
 
     ret = comm_factory->Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);

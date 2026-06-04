@@ -94,7 +94,7 @@ public:
             const DeviceMem& outputMem,
             const u64 comm_attribute,
             const std::string& tag)
-        : CommHalvingDoubling(collectiveId, userRank, user_rank_size, rank, rank_size, topoFlag, dispatcher, nullptr, netDevCtxMap, exchanger, para_vector, inputMem, outputMem, true, nullptr, 0, tag)
+        : CommHalvingDoubling(collectiveId, userRank, user_rank_size, rank, rank_size, topoFlag, dispatcher, nullptr, netDevCtxMap, exchanger, para_vector, inputMem, outputMem, true, tag)
     {
     }
 

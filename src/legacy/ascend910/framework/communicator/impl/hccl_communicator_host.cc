@@ -129,19 +129,13 @@ namespace hccl
           isExecuteProfilingInit_(false), deviceType_(DevType::DEV_TYPE_COUNT),
           commHandle_(nullptr),
           commWorkMode_(WorkMode::HCCL_MODE_NORMAL), meshAggregationRankSize_(0), isHaveCpuRank_(false), ranktableCrc_(0),
-          pMsgInfosMem_(nullptr), pReqInfosMem_(nullptr), memBlocksManager_(nullptr), pRecvWrInfosMem_(nullptr),
-          transportResInfo_(mrManager_, pMsgInfosMem_, pReqInfosMem_, memBlocksManager_, pRecvWrInfosMem_),
           multiModuleDiffDeviceNumMode_(false), multiSuperPodDiffServerNumMode_(false), multiSuperPodDiffDeviceNumMode_(false),
           isStandardCard_(false), is310PDuoCard_(false), hccsPortNum_(-1),
           loopBackIp_(HcclIpAddress(COMM_LOOPBACK_IP)), profilingInitiated_(false), callbackThreadId_(INVALID_U64),
-          role_(SERVER_ROLE_SOCKET), mrManagerInit_(false),
+          role_(SERVER_ROLE_SOCKET),
           isHostUseDevNic_(false),
           isAllRankSamePlane_(false), serverNum_(0), moduleNum_(0)
     {
-        mrManager_.reset(new (std::nothrow) MrManager());
-        if (mrManager_ == nullptr) {
-            HCCL_ERROR("new MrManager failed!");
-        }
         zeroCopyAclGraph_.reset(new (std::nothrow) ZeroCopyAclGraph());
         if (zeroCopyAclGraph_ == nullptr)
         {
@@ -166,19 +160,13 @@ namespace hccl
           isExecuteProfilingInit_(false), deviceType_(DevType::DEV_TYPE_COUNT),
           commHandle_(nullptr),
           commWorkMode_(WorkMode::HCCL_MODE_NORMAL), meshAggregationRankSize_(0), isHaveCpuRank_(false), ranktableCrc_(0),
-          pMsgInfosMem_(nullptr), pReqInfosMem_(nullptr), memBlocksManager_(nullptr), pRecvWrInfosMem_(nullptr),
-          transportResInfo_(mrManager_, pMsgInfosMem_, pReqInfosMem_, memBlocksManager_, pRecvWrInfosMem_),
           multiModuleDiffDeviceNumMode_(false), multiSuperPodDiffServerNumMode_(false),
           isStandardCard_(false), is310PDuoCard_(false), hccsPortNum_(-1),
           loopBackIp_(HcclIpAddress(COMM_LOOPBACK_IP)), profilingInitiated_(false), callbackThreadId_(INVALID_U64),
-          role_(SERVER_ROLE_SOCKET), mrManagerInit_(false),
+          role_(SERVER_ROLE_SOCKET),
           isHostUseDevNic_(false),
           isAllRankSamePlane_(false), serverNum_(0), moduleNum_(0)
     {
-        mrManager_.reset(new (std::nothrow) MrManager());
-        if (mrManager_ == nullptr) {
-            HCCL_ERROR("new MrManager failed!");
-        }
         zeroCopyAclGraph_.reset(new (std::nothrow) ZeroCopyAclGraph());
         if (zeroCopyAclGraph_ == nullptr)
         {
@@ -282,9 +270,6 @@ namespace hccl
             DeInitOneSidedServiceNetDevCtx();
         }
 
-        DeInitTransportMem();
-        MrManagerDeInit();
-
         /* 网络资源销毁 */
         DestroyNetworkResources();
         notifyPool_ = nullptr;
@@ -378,7 +363,6 @@ namespace hccl
         CHK_RET(InitProfiler());
         CHK_RET(InitDispatcher());
         CHK_RET(InitTransportManager());
-        CHK_RET(InitMemoryManager());
         CHK_RET(InitCombinOpara());
         CHK_RET(RegisterRanksToDca());
         /*--------------加锁区--------------*/
@@ -410,13 +394,15 @@ namespace hccl
         HcclTopoAttr topoAttr;
         attrCollector_.GetTopoAttr(topoAttr);
         CHK_RET(rankGraph_.Init(rankTable, topoAttr));
-        CHK_RET(CreateMyRank(params, rankTable, topoAttr));
         CHK_RET(SaveTopoDesc(params.identifier));
         CHK_RET(RegisterToSnapshot());
         CHK_RET(InitSymmetricMemory());
-        if (dpuManager_ != nullptr && myRankConnectMode_) { /* 当前只有hostnic--devicenic使用 */
+
+        CHK_RET(InitMyRankConnectMode(params, rankTable));
+        if (dpuManager_ != nullptr && myRankConnectMode_) { /* 当前只有host nic--device nic使用 */
             CHK_RET(dpuManager_->Init(identifier_, deviceLogicId_));
         }
+
         return HCCL_SUCCESS;
     }
 
@@ -432,7 +418,6 @@ namespace hccl
         CHK_RET(InitStreamManager());
         CHK_RET(InitRaResource());
         CHK_RET(InitTransportManager());
-        CHK_RET(InitMemoryManagerSubGroup());
         CHK_RET(InitHcclAlg());
         CHK_RET(LoadCustomKernel());
         CHK_RET(LoadAICPUKernel());
@@ -1259,17 +1244,7 @@ namespace hccl
                                 WorkspaceResource(devicePhyId_, deviceLogicId_, &cclBufferManager_));
         CHK_SMART_PTR_NULL(workSpaceRes_);
 
-        HcclTopoAttr topoAttr{};
-        attrCollector_.GetTopoAttr(topoAttr);
-
-        HcclAlgoAttr algoAttr{};
-        attrCollector_.GetAlgoAttr(algoAttr);
-
-        implAlg_.reset(new (std::nothrow) HcclAlg(cclBufferManager_, dispatcher_, vDispatcher_));
-        CHK_SMART_PTR_NULL(implAlg_);
-        CHK_RET(implAlg_->Init(static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
-                               workSpaceRes_, notifyPool_, netDevCtxMap_, queueNotifyManager_,
-                               algoAttr, topoAttr, false));
+        CHK_RET(InitAlgResource());
         return HCCL_SUCCESS;
     }
 
@@ -1439,6 +1414,10 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitMyRankConnectMode(HcclCommParams &params, const RankTable_t &rankTable)
     {
+        if (deviceType_ != DevType::DEV_TYPE_910B) {    /* 910B才支持host网卡特性 */
+            myRankConnectMode_ = 0;
+            return HCCL_SUCCESS;
+        }
         uint32_t localRank = params.rank;
         if (rankTable.nicDeploy != NICDeployment::NIC_DEPLOYMENT_HOST) {
             myRankConnectMode_ = 0;
@@ -1460,49 +1439,6 @@ namespace hccl
     uint32_t HcclCommunicator::GetConnectMode()
     {
         return myRankConnectMode_;
-    }
-
-    HcclResult HcclCommunicator::CreateMyRank(HcclCommParams &params, const RankTable_t &rankTable, HcclTopoAttr &topoAttr)
-    {
-        InitMyRankConnectMode(params, rankTable);
-
-        if (!myRankConnectMode_) {
-            return HCCL_SUCCESS;
-        }
-
-        CHK_PRT_RET(myRank_ != nullptr,
-            HCCL_ERROR("[HcclCommunicator][CreateMyRank]myRank already initialized"), HCCL_E_INTERNAL);
-
-        CommConfig commConfig = commConfig_;
-        aclrtBinHandle binHandle = binHandle_;
-        uint32_t rankId = params.rank;
-
-        ManagerCallbacks callbacks;
-        callbacks.getAicpuCommState = [this](){return 1;};
-        callbacks.setAicpuCommState = [this](bool state){};
-        callbacks.kernelLaunchAicpuCommInit = [this](){return HCCL_SUCCESS;};
-
-        // MyRank的rankIpPortMap为950使用，直接赋空
-        EXECEPTION_CATCH(
-            (myRank_ = std::make_unique<MyRank>(binHandle, rankId, commConfig, callbacks, &rankGraph_, nullptr)),
-            return HCCL_E_PTR);
-
-        HCCL_INFO("[HcclCommunicator][CreateMyRank]Create myRank successfully for rank[%u]", rankId);
-    
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::InitMyRank()
-    {
-        if (!myRankConnectMode_) {
-            return HCCL_SUCCESS;
-        }
-        CHK_RET(CreateCommCCLbuffer());
-        HcclMem cclBuffer = {HCCL_MEM_TYPE_DEVICE, cclBufferManager_.GetInCCLbuffer().ptr(),
-            cclBufferManager_.GetInCCLbuffer().size()};
-        CHK_RET(myRank_->Init(cclBuffer, 2, userRankSize_)); // 2: AICPU TS
-        HCCL_INFO("[HcclCommunicator][CreateMyRank]Init myRank successfully");
-        return HCCL_SUCCESS;
     }
 
     bool HcclCommunicator::IsEnableBackupLink()
@@ -1891,6 +1827,11 @@ namespace hccl
     u32 HcclCommunicator::GetRankSize()
     {
         return userRankSize_;
+    }
+
+    u32 HcclCommunicator::GetRankInParentComm()
+    {
+        return rankInParentComm_;
     }
 
     bool HcclCommunicator::GetNicInitialized()
@@ -2691,30 +2632,6 @@ namespace hccl
     HcclResult HcclCommunicator::GetOpInconsistentError(HcclResult &result)
     {
         CHK_RET(Heartbeat::GetInstance(deviceLogicId_).CheckOpInconsistentError(identifier_, result));
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::MrManagerInit()
-    {
-        // 拉远、下沉、推理场景(ps、worker)支持使用mrManager
-        if (!GetExternalInputHcclIsTcpMode() && (Is310PDevice())) {
-            mrManager_.reset(new (std::nothrow) MrManager(netDevCtxMap_[devIpAddr_[0]]));
-            CHK_SMART_PTR_NULL(mrManager_);
-
-            CHK_RET(mrManager_->Init());
-            mrManagerInit_ = true;
-        }
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::MrManagerDeInit()
-    {
-        if (mrManagerInit_) {
-            CHK_SMART_PTR_NULL(mrManager_);
-            CHK_RET(mrManager_->DeInit());
-            mrManager_ = nullptr;
-            mrManagerInit_ = false;
-        }
         return HCCL_SUCCESS;
     }
 
@@ -6878,53 +6795,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::InitRecvMsgAndRequestBuffer()
-    {
-        CHK_RET(CheckSuspendingStatus());
-        // 拉远、下沉、推理场景(ps、worker)支持使用msg/request内存池
-        if (pMsgInfosMem_ == nullptr) {
-            pMsgInfosMem_.reset(new (std::nothrow) LocklessRingMemoryAllocate<HcclMessageInfo>(MEMORY_CAPACITY));
-            CHK_SMART_PTR_NULL(pMsgInfosMem_);
-            CHK_RET(pMsgInfosMem_->Init());
-            HCCL_INFO("InitRecvMsgBuffer Success!");
-        }
-
-        if (pReqInfosMem_ == nullptr) {
-            pReqInfosMem_.reset(new (std::nothrow) LocklessRingMemoryAllocate<HcclRequestInfo>(MEMORY_CAPACITY));
-            CHK_SMART_PTR_NULL(pReqInfosMem_);
-            CHK_RET(pReqInfosMem_->Init());
-            HCCL_INFO("InitRequestBuffer Success!");
-        }
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::InitMemBlocksAndRecvWrMem()
-    {
-        u32 memBlockNum = MEM_BLOCK_NUM;
-        CHK_PRT(GetMemBlockNum(devicePhyId_, memBlockNum));
-
-        if (!GetExternalInputHcclIsTcpMode() && (Is310PDevice() || isHostUseDevNic_)) {
-            // 注册mr,hdc模式下在通信类内进行
-            if (!isHostUseDevNic_) {
-                // 初始化信封内存
-                memBlocksManager_.reset(new (std::nothrow) HeterogMemBlocksManager());
-                CHK_SMART_PTR_NULL(memBlocksManager_);
-                CHK_RET(memBlocksManager_->Init(memBlockNum));
-
-                // 信封内存注册
-                CHK_RET(mrManager_->GetKey(memBlocksManager_->GetMemAddr(), memBlocksManager_->GetMemSize(),
-                                           transportResInfo_.lkey));
-            }
-
-            // 初始化wr内存
-            pRecvWrInfosMem_.reset(new (std::nothrow) LocklessRingMemoryAllocate<RecvWrInfo>(MEMORY_CAPACITY));
-            CHK_SMART_PTR_NULL(pRecvWrInfosMem_);
-            CHK_RET(pRecvWrInfosMem_->Init());
-            HCCL_INFO("InitMemBlocksAndRecvWrMem Success!");
-        }
-        return HCCL_SUCCESS;
-    }
-
     HcclResult HcclCommunicator::SetDevicePid(s32 devicePid)
     {
         devicePid_ = devicePid;
@@ -9260,9 +9130,20 @@ namespace hccl
         return rankGraph_.GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
     }
 
+    HcclResult HcclCommunicator::GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
+                                 uint32_t infoLen, void *info)
+    {
+        return rankGraph_.GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
+    }
+
     HcclResult HcclCommunicator::GetRankGraph(GraphType type, void **graph, uint32_t *len)
     {
         return rankGraph_.GetRankGraphInfo(type, graph, len);
+    }
+
+    void* HcclCommunicator::GetRankGraphV1()
+    {
+        return static_cast<void*>(&rankGraph_);
     }
 
     HcclResult HcclCommunicator::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
@@ -9274,29 +9155,6 @@ namespace hccl
     HcclResult HcclCommunicator::GetHeterogMode(HcclHeterogMode *mode)
     {
         return rankGraph_.GetHeterogMode(mode);
-    }
-
-    HcclResult HcclCommunicator::DeInitTransportMem()
-    {
-        if (memBlocksManager_ != nullptr) {
-            CHK_RET(mrManager_->ReleaseKey(memBlocksManager_->GetMemAddr(), memBlocksManager_->GetMemSize()));
-            memBlocksManager_ = nullptr;
-        }
-
-        if (pMsgInfosMem_ != nullptr) {
-            pMsgInfosMem_ = nullptr;
-        }
-
-        if (pReqInfosMem_ != nullptr) {
-            pReqInfosMem_ = nullptr;
-        }
-
-        if (pRecvWrInfosMem_ != nullptr) {
-            pRecvWrInfosMem_ = nullptr;
-        }
-
-        HCCL_RUN_INFO("DeInitTransportMem Success!");
-        return HCCL_SUCCESS;
     }
 
     HcclResult HcclCommunicator::RegisterToSnapshot()
@@ -9522,13 +9380,6 @@ namespace hccl
             return nullptr;
         }
         return binHandle_;
-    }
-    void *HcclCommunicator::GetMyRank()
-    {
-        if (myRank_ == nullptr) {
-            return nullptr;
-        }
-        return static_cast<void *>(myRank_.get());
     }
     HcclResult HcclCommunicator::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr,
         bool *newCreated)

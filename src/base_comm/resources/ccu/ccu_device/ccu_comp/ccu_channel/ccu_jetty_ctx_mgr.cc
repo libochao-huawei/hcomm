@@ -77,18 +77,18 @@ LocalJettyCtxData BuildJettyCtxData(const uint8_t dieId, const uint32_t pfeId,
 
 void DumpJettyCtxData(const LocalJettyCtxData &tmp)
 {
-    HCCL_INFO("doorbellAddr: [3]0x%04x, [2]0x%04x, [1]0x%04x, [0]0x%04x",
+    HCCL_RUN_INFO("doorbellAddr: [3]0x%04x, [2]0x%04x, [1]0x%04x, [0]0x%04x",
         tmp.doorbellAddr[3], // 3: doorbell 地址访问
         tmp.doorbellAddr[2], // 2: doorbell 地址访问
         tmp.doorbellAddr[1],
         tmp.doorbellAddr[0]);
 
     // 安全问题：禁止打印token相关信息
-    HCCL_INFO("pfeIdx: 0x%04x, ioDieId: 0x%04x, doorbellAddrType: 0x%04x, "
+    HCCL_RUN_INFO("pfeIdx: 0x%04x, ioDieId: 0x%04x, doorbellAddrType: 0x%04x, "
         "tokenValueIsValid: 0x%04x", tmp.pfeIdx, tmp.ioDieId, tmp.doorbellAddrType,
         tmp.tokenValueIsValid);
 
-    HCCL_INFO("sqeBasicBlockLeftShifts: 0x%04x, pi: 0x%04x, ci: 0x%04x, "
+    HCCL_RUN_INFO("sqeBasicBlockLeftShifts: 0x%04x, pi: 0x%04x, ci: 0x%04x, "
         "maxCi: 0x%04x, oooCqeCnt: 0x%04x, startWqeBasicBlockIdxLow: 0x%04x, "
         "startWqeBasicBlockIdxHigh: 0x%04x, doorbellSendState: 0x%04x",
         tmp.sqeBasicBlockLeftShifts, tmp.pi, tmp.ci, tmp.maxCi, tmp.oooCqeCnt,

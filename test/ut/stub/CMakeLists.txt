@@ -163,7 +163,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/new
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
-    ${RDMA_CORE_INCLUDE_DIR}
     ${HCCL_CODE_ROOT}/src/pkg_inc
     ${HCCL_CODE_ROOT}/external_depends
 
@@ -465,6 +464,7 @@ target_compile_options(hccl_llt   PRIVATE
 
 target_link_libraries(hccl_llt  PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core_headers>
     -Wl,--allow-multiple-definition
     -lrt
     -ldl

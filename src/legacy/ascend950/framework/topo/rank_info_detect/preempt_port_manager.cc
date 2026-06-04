@@ -94,6 +94,7 @@ void PreemptPortManager::PreemptPortInRange(const std::shared_ptr<Socket> &liste
                       InvalidParamsException, "socket listen failed");
         portRef[ipAddr].second.Ref();
         HCCL_INFO("[PreemptPortManager::%s] socket has already been listened, ref count[%u].", __func__, portRef[ipAddr].second.Count());
+        return;
     }
     // 如果这个IP上没有抢占过的port，则轮询输入的端口范围，找到一个可用的端口
     for (auto &range: portRange) {

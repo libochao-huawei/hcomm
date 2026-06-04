@@ -94,7 +94,6 @@ target_include_directories(rs_ut_normal PRIVATE
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/net_adapt
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/ccu
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/nda
-    ${RDMA_CORE_INCLUDE_DIR}
     ${CANN_3RD_LIB_PATH}/hcomm_utils/host/include/tls_adp
 )
 
@@ -113,6 +112,7 @@ target_link_options(rs_ut_normal PRIVATE
 
 target_link_libraries(rs_ut_normal PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core_headers>
     -lrt
     -pthread
     -lgcov

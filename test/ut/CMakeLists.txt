@@ -108,7 +108,6 @@ set(UT_COMMON_INCLUDE_LIST
     # hccp (moved to base_comm/resources)
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
-    ${RDMA_CORE_INCLUDE_DIR}
 
     # hccl/algorithm 目录下头文件 (legacy/ascend910)
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/pub_inc
@@ -334,6 +333,9 @@ set(UT_COMMON_INCLUDE_LIST
 )
 
 add_subdirectory(stub)
+add_subdirectory(framework/next)
+add_subdirectory(framework/next/coll_comms/dfx)
+add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
 add_subdirectory(common/debug/profiling)
