@@ -105,6 +105,12 @@ void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &ta
 void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const 
 {
     HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos %s", it.taskParam_.Describe().c_str());
+    taskDetailsInfos.localRank = 0xffffffff;
+    if (it.dfxOpInfo_ == nullptr) {
+        HCCL_WARNING("[ProfilingHandlerLite::GetTaskDetailInfos] dfxOpInfo_ is nullptr!");
+        return;
+    }
+    taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank;
     std::string nameInfo = GetProfTaskOpNameV2(it.taskParam_.taskType);
     taskDetailsInfos.itemId = GetProfHashId(nameInfo.c_str(), nameInfo.length());
     taskDetailsInfos.cclTag       = GetProfHashId(it.dfxOpInfo_->tag_.c_str(), it.dfxOpInfo_->tag_.length());
@@ -121,7 +127,6 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
         HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos groupName_ %s, rankSize[%u]",
             it.dfxOpInfo_->groupName_.c_str(), taskDetailsInfos.rankSize);
     }
-    taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank == nullptr ? 0xffffffff : it.dfxOpInfo_->op_.myRank;
     taskDetailsInfos.stage        = 0;
     if (it.taskParam_.taskType == TaskParamType::TASK_SDMA || it.taskParam_.taskType == TaskParamType::TASK_RDMA
         || it.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
