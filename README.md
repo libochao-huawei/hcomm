@@ -28,17 +28,17 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
 本项目关键目录如下所示：
 
 ```text
-├── src                                  # HCCL源码目录
+├── src                                  # 源码目录
 │   ├── base_comm                        # 基础通信层
 │   │   ├── common                       # 基础通信层公共基础功能目录
-│   │   ├── primitives                   # 数据面接口
-│   │   └── resources                    # 资源管理
-│   ├── coll_communicator                # 集合通信管理层
+│   │   ├── primitives                   # 基础通信原语
+│   │   └── resources                    # 基础通信资源
+│   ├── coll_communicator                # 集合通信域管理
 │   │   ├── api_c_adpt                   # C接口适配
 │   │   ├── common                       # 集合通信层公共基础功能目录
-│   │   ├── communicator                 # 通信域管理
+│   │   ├── communicator                 # 通信域
 │   │   ├── dfx                          # 维测
-│   │   ├── rank_graphs                  # Rank图管理
+│   │   ├── rank_graphs                  # 拓扑管理
 │   │   └── resource_mgr                 # 资源管理
 │   └── legacy                           # 历史版本兼容目录
 │       ├── ascend910                    # A2&A3兼容代码
@@ -47,7 +47,7 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
 │       │   ├── framework                # 通信框架源码目录
 │       │   ├── hccd                     # 提供进程间点对点通信能力
 │       │   ├── platform                 # 通信平台源码目录
-│       │   └── pub_inc                  # 公共接口头文件目录
+│       │   └── pub_inc                  # 平台接口头文件
 │       └── ascend950                    # A5旧流程兼容代码
 │           ├── common                   # 公共基础组件
 │           ├── framework                # 框架核心实现
