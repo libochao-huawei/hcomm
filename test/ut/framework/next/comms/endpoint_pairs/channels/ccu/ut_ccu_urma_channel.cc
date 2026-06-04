@@ -3,7 +3,7 @@
 #include <mockcpp/mockcpp.hpp>
 
 #define private public
-#include "next/comms/endpoint_pairs/channels/ccu/ccu_urma_channel.h"
+#include "ccu_urma_channel.h"
 #undef private
 
 using namespace hcomm;

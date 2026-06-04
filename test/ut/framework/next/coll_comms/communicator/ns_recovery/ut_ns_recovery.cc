@@ -2,7 +2,7 @@
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 
-#include "ns_recovery.h"
+#include "ns_recovery/ns_recovery.h"
 #include "hccl_common.h"
 #include "channel_process.h"
 #include "acl/acl.h"
