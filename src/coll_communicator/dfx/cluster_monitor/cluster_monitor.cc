@@ -138,7 +138,7 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     hccl::CollComm* collComm = static_cast<hccl::hcclComm*>(comm)->GetCollComm();
     auto rankGraph = collComm->GetRankGraph();
     auto myRankId = collComm->GetMyRankId();
-    auto rankIpPortMap = collComm->GetRankIpPortMap();
+    auto rankIpPortMap = collComm->GetRankIpPortInfo();
     CHK_PTR_NULL(rankGraph);
     CHK_RET(rankGraph->GetDevicePort(remoteRank, &rmtPort));
     if (rmtPort > Hccl::MAX_VALUE_TCPPORT) {

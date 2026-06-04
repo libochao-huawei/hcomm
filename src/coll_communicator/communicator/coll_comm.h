@@ -91,7 +91,7 @@ public:
         return HCCL_SUCCESS;
     }
     uint32_t UpdateIndex();
-    HcclResult GetRankIpPortMap();
+    Hccl::RankIpPortMapPtr GetRankIpPortInfo();
     
     // Todo:在这里做N秒快恢
     HcclCommStatus GetCommStatus() const;
@@ -104,6 +104,7 @@ private:
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
+    HcclResult GetRankIpPortMap();
 
     void* comm_{nullptr};
     uint32_t rankId_{};
@@ -132,7 +133,7 @@ private:
 
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
-    Hccl::RankIpPortMapPtr rankIpPortMap_;
+    Hccl::RankIpPortMap rankIpPortMap_;
 };
 }  // namespace hccl
 
