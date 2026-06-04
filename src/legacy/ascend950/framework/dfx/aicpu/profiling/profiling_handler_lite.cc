@@ -14,6 +14,7 @@
 #include "task_info.h"
 #include "task_param.h"
 #include "communicator_impl_lite.h"
+#include "dlprof_function.h"
 namespace Hccl {
 
 static constexpr u32 aging = 1;
@@ -61,11 +62,6 @@ void ProfilingHandlerLite::Init()
 {
     cachedTid_ = SalGetTid();
     SetCachedCclTag();
-    for (auto i = 0; i < static_cast<int>(TaskParamType::__COUNT__); i++) {
-        TaskParamType type(static_cast<TaskParamType::Value>(i));
-        std::string nameInfo = GetProfTaskOpNameV2(type);
-        taskTypeHashCache_[static_cast<uint32_t>(i)] = GetProfHashId(nameInfo.c_str(), nameInfo.length());
-    }
     if (MsprofReportBatchAdditionalInfo == nullptr) {
         if (AdprofReportAdditionalInfo != nullptr) {
             reportAdditionalInfo_ = AdprofReportAdditionalInfo;
@@ -82,6 +78,11 @@ void ProfilingHandlerLite::Init()
         if (MsprofStr2Id != nullptr) {
             getProfHashId_ = MsprofStr2Id;
         }
+    }
+    for (auto i = 0; i < static_cast<int>(TaskParamType::__COUNT__); i++) {
+        TaskParamType type(static_cast<TaskParamType::Value>(i));
+        std::string nameInfo = GetProfTaskOpNameV2(type);
+        taskTypeHashCache_[static_cast<uint32_t>(i)] = GetProfHashId(nameInfo.c_str(), nameInfo.length());
     }
 }
 
