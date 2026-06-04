@@ -251,7 +251,7 @@ HcclResult CcuTaskException::InitChannelMap(s32 deviceId, u64 ccuKernelHandle)
 std::string CcuTaskException::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_WARNING("[%s]dfxOpInfo_ or comm_ is nullptr!", __func__);
+        HCCL_ERROR("[TaskInfo][%s]TaskInfo communictor is nullptr", __func__);
         return "";
     }
     hccl::CollComm *communicator = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
@@ -1494,6 +1494,10 @@ RankId CcuTaskException::GetRankIdByChannelId(uint16_t channelId, const Hccl::Ta
         HCCL_ERROR("[%s]taskType[%s] is not CCU.", __func__, taskInfo.taskParam_.taskType.Describe().c_str());
         return INVALID_UINT;
     }
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
+         HCCL_ERROR("[%s]dfxOpInfo[%p] or comm is nullptr.", __func__, taskInfo.dfxOpInfo_);
+         return INVALID_UINT;
+    }
 
     u64 channelHandle = INVALID_U64;
     if (GetCcuChannelHandleById(channelId, channelHandle) != HCCL_SUCCESS) {
@@ -1502,10 +1506,6 @@ RankId CcuTaskException::GetRankIdByChannelId(uint16_t channelId, const Hccl::Ta
         return INVALID_UINT;
     }
 
-    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_WARNING("[%s]dfxOpInfo_ or comm_ is nullptr!", __func__);
-        return INVALID_UINT;
-    }
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     u32 remoteRank = INVALID_UINT;
     if (hccl::HcclCommDfx::GetChannelRemoteRankId(collComm->GetCommId(), channelHandle, remoteRank) != HCCL_SUCCESS) {
@@ -1527,6 +1527,10 @@ std::pair<Hccl::IpAddress, Hccl::IpAddress> CcuTaskException::GetAddrPairByChann
         HCCL_ERROR("[TaskException][%s]Get AddrPair failed, task type error[%s]", __func__,
                    taskInfo.taskParam_.Describe().c_str());
         return dummy;
+    }
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
+         HCCL_ERROR("[TaskException][%s]Get AddrPair failed, communicator is nullptr.", __func__);
+         return dummy;
     }
 
     u64 channelHandle = INVALID_U64;
