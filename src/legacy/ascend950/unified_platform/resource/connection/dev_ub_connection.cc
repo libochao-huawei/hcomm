@@ -79,11 +79,13 @@ DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddr
 
 DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                          const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr,
+                                         const bool isUbg)
     : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {
     tpProtocol = TpProtocol::UBOE;
-    jettyTimeOut = 16; // UBoE场景的默认TA配置为16
+    isUbg_     = isUbg;
+    jettyTimeOut = 16;
 }
 
 std::vector<char> DevUbConnection::GetUniqueId() const
@@ -327,14 +329,13 @@ void DevUbConnection::ImportRmtDto()
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    // 获取tp attr，检查是否已经填过相同的tp attr
-    if ((tpProtocol == TpProtocol::UBOE) && GetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
-        HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
-    }
-
     // 设置tp attr(sip dip等)
     if ((tpProtocol == TpProtocol::UBOE) && SetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
+        HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
+        ThrowAbnormalStatus(std::string(__func__));
+    }
+    // 获取tp attr(smac dmac等) — UBG走UBLink，不需要配置MAC地址
+    if ((tpProtocol == TpProtocol::UBOE) && !isUbg_ && GetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
         HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }

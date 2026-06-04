@@ -15,6 +15,7 @@
 #include "./aicpu/aicpu_ts_urma_channel.h"
 #include "./aicpu/aicpu_ts_p2p_channel.h"
 #include "./aicpu/aicpu_ts_uboe_channel.h"
+#include "./aicpu/aicpu_ts_ubg_channel.h"
 #include "./aicpu/aicpu_ts_roce_channel.h"
 #include "./host/host_cpu_roce_channel.h"
 #include "./host/host_cpu_urma_channel.h"
@@ -57,6 +58,8 @@ HcclResult Channel::CreateChannel(
         case COMM_ENGINE_AICPU_TS:
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBOE) {
                 uniqueChannelPtr.reset(new (std::nothrow) AicpuTsUboeChannel(endpointHandle, channelDesc));
+            } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBG) {
+                uniqueChannelPtr.reset(new (std::nothrow) AicpuTsUbgChannel(endpointHandle, channelDesc));
             } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_PCIE) {
                 uniqueChannelPtr.reset(new (std::nothrow) AicpuTsP2pChannel(endpointHandle, channelDesc));
             } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
