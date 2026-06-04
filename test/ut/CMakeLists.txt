@@ -109,6 +109,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
     ${HCCL_CODE_ROOT}/src/base_comm/resources/hccp/inc/private/network
+    ${RDMA_CORE_INCLUDE_DIR}
 
     # hccl/algorithm 目录下头文件 (legacy/ascend910)
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/pub_inc
@@ -356,7 +357,6 @@ add_subdirectory(framework/op_base_api)
 add_subdirectory(framework/hcom)
 add_subdirectory(framework/communicator/impl)
 add_subdirectory(framework/resource)
-add_subdirectory(framework/next/comms/common)
 add_subdirectory(framework/communicator/impl/independent_op/data_api)
 add_subdirectory(framework/communicator/impl/independent_op/data_api_cpu)
 add_subdirectory(aicpu_kfc/aicpu)
