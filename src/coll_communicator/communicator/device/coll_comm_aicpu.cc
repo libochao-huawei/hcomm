@@ -374,6 +374,20 @@ HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
     return HCCL_SUCCESS;
 }
 
+HcclResult CollCommAicpu::CheckOpExecStatus(bool timeout)
+{
+    if (timeout) {
+        // 先打印本通信域的taskException，再打印其他通信域的taskException
+        hcomm::HcclCommTaskExceptionLite::GetInstance().PrintCommTaskException(this);
+        hcomm::HcclCommTaskExceptionLite::GetInstance().PrintAllCommTaskException();
+    }
+    HcclResult ret = (commStatus_ == HCCL_COMM_STATUS_READY) ? HCCL_SUCCESS : HCCL_E_INTERNAL;
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s]comm[%s] commStatus[%s] is not ready, stop launch", __func__, identifier_.c_str(), commStatus_);
+    }
+    return ret;
+}
+
 void CollCommAicpu::InitBackGroundThread()
 {
     static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;

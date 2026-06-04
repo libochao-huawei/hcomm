@@ -264,7 +264,7 @@ HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
     CHK_PTR_NULL(aicpuComm);
     aicpuComm->SetCommmStatus(HcclCommStatus::HCCL_COMM_STATUS_INVALID);
 
-    if (iter->second->IsUsed() == true) {
+    if (iter->second->IsUsed() == true) { // 如果销毁时device还有未完成的任务，为异常场景
         HCCL_RUN_WARNING("[AicpuIndopProcess][%s]comm group [%s] has been used, skip erase", __func__, group.c_str());
         return HCCL_SUCCESS;
     }

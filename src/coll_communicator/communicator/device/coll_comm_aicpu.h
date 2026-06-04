@@ -68,6 +68,8 @@ public:
     HcclResult Clean();
     HcclResult Resume(HcclChannelUrmaRes *commParam);
 
+    HcclResult CheckOpExecStatus(bool timeout);
+
 private:
     // 初始化
     void InitIndopEnv(CommAicpuParam *commAicpuParam);

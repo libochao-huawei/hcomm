@@ -25,6 +25,7 @@ public:
     void Init(u32 devId);
     void Call() override;
     HcclResult PrintAllCommTaskException(); // 打印所有通信域所有流的task信息
+    HcclResult PrintCommTaskException(CollCommAicpu *aicpuComm);
 
 private:
     HcclCommTaskExceptionLite() = default;
@@ -47,7 +48,6 @@ private:
     uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
 
     // 打印流上的task信息的方法函数
-    HcclResult PrintCommTaskException(CollCommAicpu *aicpuComm);
     HcclResult PrintTaskExceptionBySqeId(CollCommAicpu *aicpuComm, u32 sqId, u32 sqeId);
     HcclResult PrintTaskContextInfo(CollCommAicpu *aicpuComm, u32 sqId, u32 taskId);
     void PrintEid(const Hccl::TaskInfo& taskInfo);
