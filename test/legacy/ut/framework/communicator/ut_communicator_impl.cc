@@ -1849,13 +1849,14 @@ TEST_F(CommunicatorImplTest, ut_CreateCommCclBuf_When_Normal_Expect_Return_HCCL_
     MOCKER(getenv).stubs().with(any()).will(invoke(commGetenv_stub));
     CommunicatorImpl comm;
     comm.CollAlgComponentInit();
-    comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
     comm.SetCommStatus(CommStatus::COMM_READY);
     comm.devLogicId = 0;
-    comm.config.hcclBufferSize = 0;
+    comm.config.hcclBufferSize = 256;
     comm.InitMirrorTaskManager();
     comm.InitProfilingReporter();
     comm.InitDataBufferManager();
+    comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
+    comm.cclBufferSize = 256;
     MirrorTaskManager &mirrorTaskManager = comm.GetMirrorTaskManager();
 
     CollOpParams opParams;
