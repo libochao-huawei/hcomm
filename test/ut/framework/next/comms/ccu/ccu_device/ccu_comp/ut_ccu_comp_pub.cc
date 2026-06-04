@@ -192,6 +192,7 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo = std::make_pair(0x88888888ULL, 1U);
 =======
     const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo =
@@ -200,8 +201,12 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
 =======
     const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo = std::make_pair(0x88888888ULL, 1U);
 >>>>>>> 08a09424 (解决覆盖率问题)
+=======
+    const std::pair<Hccl::TokenIdHandle, uint32_t> fakeTokenInfo =
+        std::make_pair(reinterpret_cast<Hccl::TokenIdHandle>(0x88888888ULL), 1U);
+>>>>>>> 0f42a114 (ut编译失败)
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo).stubs().will(returnValue(fakeTokenInfo));
-    MOCKER(HrtRaUbLocalMemReg).stubs().will(returnValue(HrtRaUbLocalMemRegOutParam()));
+    MOCKER(Hccl::HrtRaUbLocalMemReg).stubs().will(returnValue(Hccl::HrtRaUbLocalMemRegOutParam()));
 
     auto buffer = std::make_shared<Hccl::Buffer>(0x1000ULL, 4096ULL);
     comp.ccuRmaBufferMap_[dieId] =
