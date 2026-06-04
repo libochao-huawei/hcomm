@@ -1228,6 +1228,8 @@ TEST_F(HcomTest, ut_hcom_create_comm_buffer_v2_When_Normal_Expect_ReturnlsHCCL_S
     CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
     hcclComm->GetCommImpl()->rankSize = 2;
     hcclComm->GetCommImpl()->InitDataBufferManager();
+    hcclComm->GetCommImpl()->cclBuffer = DevBuffer::Create(0x100, 0x100);
+    hcclComm->GetCommImpl()->cclBufferSize = 256;
     int ret = HcomCreateCommCclBufV2(NULL);
     EXPECT_EQ(ret, HCCL_SUCCESS);
  
