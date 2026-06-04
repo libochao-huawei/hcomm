@@ -180,7 +180,11 @@ void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmaUbBufTyp
         if (rmtType == RmaUbBufType::NOTIFY) {
             rmtNotifyVec.push_back(ubBufLite);
         } else {
-            rmtBufferMap[static_cast<uintptr_t>(ubBufLite.addr)] = ubBufLite;
+            // rmtBufferVec中只保留最大的buffer
+            auto it = rmtBufferMap.find(static_cast<uintptr_t>(ubBufLite.addr));
+            if (it == rmtBufferMap.end() || it->second.size < ubBufLite.size) {
+                rmtBufferMap.emplace(static_cast<uintptr_t>(ubBufLite.addr), ubBufLite);
+            }
             rmtBufferVec.push_back(ubBufLite);
         }
     }
@@ -206,7 +210,11 @@ void UbTransportLiteImpl::ParseLocBufferMap(std::vector<char> &data)
         binaryStream >> ubBufLite.tokenId;
         binaryStream >> ubBufLite.tokenValue;
         HCCL_INFO("idx=%u, LocBuffer %s", idx, ubBufLite.Describe().c_str());
-        locBufferMap[static_cast<uintptr_t>(ubBufLite.addr)] = ubBufLite;
+        // locBufferVec中只保留最大的buffer
+        auto it = locBufferMap.find(static_cast<uintptr_t>(ubBufLite.addr));
+        if (it == locBufferMap.end() || it->second.size < ubBufLite.size) {
+            locBufferMap.emplace(static_cast<uintptr_t>(ubBufLite.addr), ubBufLite);
+        }
     }
 }
 
@@ -259,13 +267,12 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtNotifySliceLite(u32 index)
 
 RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtBuf)
 {
-    auto it  = rmtBufferMap.upper_bound(rmtBuf.GetAddr());
+    // auto it  = rmtBufferMap.upper_bound(rmtBuf.GetAddr());
 
-    while(it != rmtBufferMap.begin()) {
-        --it;
-        Buffer iterBuf(it->second.addr, it->second.size);
+    for (auto &it : rmtBufferVec) {
+        Buffer iterBuf(it.addr, it.size);
         if (iterBuf.Contains(rmtBuf.GetAddr(), rmtBuf.GetSize())) {
-            return RmtRmaBufSliceLite(rmtBuf.GetAddr(), rmtBuf.GetSize(), 0, it->second.tokenId, it->second.tokenValue);
+            return RmtRmaBufSliceLite(rmtBuf.GetAddr(), rmtBuf.GetSize(), 0, it.tokenId, it.tokenValue);
         }
     }
     MACRO_THROW(InternalException, StringFormat("%s is not in current transport", rmtBuf.Describe().c_str()));
