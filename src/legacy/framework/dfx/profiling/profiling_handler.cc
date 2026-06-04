@@ -149,9 +149,6 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
 
 void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cachedReq)
 {
-    CHECK_NULLPTR(taskInfo.dfxOpInfo_, "[ProfilingHandler::ReportHcclTaskDetails] taskInfo.dfxOpInfo_ is nullptr!");
-    CHECK_NULLPTR(taskInfo.dfxOpInfo_->comm_, 
-                  "[ProfilingHandler::ReportHcclTaskDetails] taskInfo.dfxOpInfo_->comm_ is nullptr!");
     if (enableHcclL1_ == false && !cachedReq) {
         return;
     }

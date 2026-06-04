@@ -121,7 +121,7 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
         HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos groupName_ %s, rankSize[%u]",
             it.dfxOpInfo_->groupName_.c_str(), taskDetailsInfos.rankSize);
     }
-    taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank;
+    taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank == nullptr ? 0xffffffff : it.dfxOpInfo_->op_.myRank;
     taskDetailsInfos.stage        = 0;
     if (it.taskParam_.taskType == TaskParamType::TASK_SDMA || it.taskParam_.taskType == TaskParamType::TASK_RDMA
         || it.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
