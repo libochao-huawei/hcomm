@@ -256,7 +256,7 @@ TEST_F(CcuConnTest, Ut_CcuJetty_SetMappedJettyPriority_When_NotCreated_SetsQos)
         .will(returnValue(static_cast<Hccl::JfcHandle>(0x400ULL)));
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo)
         .stubs()
-        .will(returnValue(std::make_pair(reinterpret_cast<void *>(0x500), 0U)));
+        .will(returnValue(std::make_pair(static_cast<Hccl::TokenIdHandle>(0x500ULL), 0U)));
 
     hcomm::CcuJetty jetty(locAddrIp, jettyInfo);
     ASSERT_EQ(jetty.Init(), HcclResult::HCCL_SUCCESS);
@@ -284,7 +284,7 @@ TEST_F(CcuConnTest, Ut_CcuJetty_SetMappedJettyPriority_When_Conflict_Expect_Inte
         .will(returnValue(static_cast<Hccl::JfcHandle>(0x400ULL)));
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo)
         .stubs()
-        .will(returnValue(std::make_pair(reinterpret_cast<void *>(0x500), 0U)));
+        .will(returnValue(std::make_pair(static_cast<Hccl::TokenIdHandle>(0x500ULL), 0U)));
 
     hcomm::CcuJetty jetty(locAddrIp, jettyInfo);
     ASSERT_EQ(jetty.Init(), HcclResult::HCCL_SUCCESS);
