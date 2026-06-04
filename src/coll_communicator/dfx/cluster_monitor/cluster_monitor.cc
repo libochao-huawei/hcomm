@@ -138,6 +138,7 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     hccl::CollComm* collComm = static_cast<hccl::hcclComm*>(comm)->GetCollComm();
     auto rankGraph = collComm->GetRankGraph();
     auto myRankId = collComm->GetMyRankId();
+    auto rankIpPortMap = collComm->GetRankIpPortMap();
     CHK_PTR_NULL(rankGraph);
     CHK_RET(rankGraph->GetDevicePort(remoteRank, &rmtPort));
     if (rmtPort > Hccl::MAX_VALUE_TCPPORT) {
@@ -158,7 +159,11 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     CHK_RET(CommAddrToIpAddress(links[0].dstEndpointDesc.commAddr, remoteIpAddr));
     if (localIpAddr < remoteIpAddr) { // local地址比remote地址小时，local作为server监听端
         // 查询localRankId对应的devPort
-        CHK_RET(rankGraph->GetDevicePort(myRankId, &listenPort));
+        listenPort = rankIpPortMap[myRankId][localIpAddr];
+        HCCL_INFO("TEST InsertClusterMonitorCxt server listenPort[%d]", listenPort);
+        if (listenPort == 0) {
+            CHK_RET(rankGraph->GetDevicePort(myRankId, &listenPort));
+        }
         socketDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER;
         if (listenPort > Hccl::MAX_VALUE_TCPPORT) {
             HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, myRankId);
@@ -166,8 +171,10 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
         }
         socketDesc.listenPort = (uint16_t)listenPort; // socketDesc.port中填监听端口号
     } else {
+        u32 remotePort = rankIpPortMap[remoteRank][remoteIpAddr];
+        HCCL_INFO("TEST InsertClusterMonitorCxt client remotePort[%d]", remotePort);
         socketDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_CLIENT;
-        socketDesc.listenPort = (uint16_t)rmtPort; // socketDesc.port中填对端端口号(此场景下对端端口号也就是监听端口号)
+        socketDesc.listenPort = remotePort == 0 ? (uint16_t)rmtPort : (uint16_t)remotePort; // socketDesc.port中填对端端口号(此场景下对端端口号也就是监听端口号)
     }
     // socket建链需要心跳专用的tag，用来区分业务的socket以及心跳的sockt
     std::string tag = FormatConnTag(socketDesc.role, std::make_pair(myRankUID_, remoteUID));
