@@ -34,7 +34,6 @@ target_compile_definitions(ra_adp PRIVATE
 )
 
 target_include_directories(ra_adp PRIVATE
-    ${RDMA_CORE_INCLUDE_DIR}
     ${BASIC_PATH}/inc/network
     ${BASIC_PATH}/inc/private/network
     ${BASIC_PATH}/rdma_agent/inc
@@ -79,6 +78,7 @@ target_link_options(ra_adp PRIVATE
 #链接动态库
 target_link_libraries(ra_adp PRIVATE
     $<BUILD_INTERFACE:ascend_hal_headers>
+    $<BUILD_INTERFACE:rdma_core_headers>
     -Wl,--no-as-needed
     rs_device
     c_sec

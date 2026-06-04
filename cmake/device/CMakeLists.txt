@@ -43,10 +43,16 @@ find_cann_package(unified_dlog MODULE REQUIRED)
 
 # third_party
 include(${HCOMM_DIR}/cmake/hcomm_utils.cmake)
+include(${HCOMM_DIR}/cmake/third_party/ubengine.cmake)
 add_cann_third_party(json)
 add_cann_third_party(openssl)
-include(${HCOMM_DIR}/cmake/third_party/ubengine.cmake)
 add_cann_third_party(rdma-core)
+if(NOT TARGET rdma_core_headers)
+    add_library(rdma_core_headers INTERFACE)
+    target_include_directories(rdma_core_headers INTERFACE
+        ${RDMA_CORE_INCLUDE_DIR}
+    )
+endif()
 
 # 添加子目录
 add_cann_subdirectories_relative(${HCOMM_DIR}
@@ -58,6 +64,7 @@ cann_pack_targets_and_files(
     OUTPUT_TARGET "pack_cann_hcomm_compat"
     OUTPUT "cann-hcomm-compat.tar.gz"
     TARGETS rs_device ra_adp net_co hccp_service.bin tls_adp ascend_kms
+    SIZE_LIMIT 3968 # Align the maximum release package size to 105%(3779 * 105% = 3968)
     MANIFEST "hccp_compat_bin_hash.cfg"
 )
 sign_file(

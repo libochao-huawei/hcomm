@@ -213,7 +213,7 @@ void CcuErrorHandler::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuErr
             std::vector<std::string>({
                 std::to_string(baseInfo.deviceId),
                 baseInformation.c_str(), taskInformation.c_str(),
-                ""})
+                "none"})
         );
     }
     const string  statusMsg = StatusCode2Str(highPart, lowPart);

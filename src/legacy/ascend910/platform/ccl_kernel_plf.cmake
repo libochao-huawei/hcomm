@@ -217,7 +217,6 @@ if(BUILD_OPEN_PROJECT)
         # 临时依赖头文件，待删除
         ${HCOMM_DIR}/externel_depends/tsch/
         # 三方件头文件
-        ${RDMA_CORE_INCLUDE_DIR}
         ${JSON_INCLUDE_DIR}
     )
     target_include_directories(ccl_kernel_plf PRIVATE
@@ -234,6 +233,7 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:slog_headers>
+        $<BUILD_INTERFACE:rdma_core_headers>
         -Wl,--no-as-needed
         c_sec
         aicpu_sharder

@@ -322,8 +322,15 @@ HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const En
             HCCL_INFO("HcclRankGraphGetEndpointInfo success");
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
-    return HCCL_E_NOT_SUPPORT;
+    RankGraph* rankGraph = nullptr;
+    CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
+    HcclResult ret = rankGraph->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed to get endpoint info, ret[%d]", __func__, ret);
+        return ret;
+    }
+    HCCL_INFO("HcclRankGraphGetEndpointInfo success");
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcclGetHeterogMode(HcclComm comm, HcclHeterogMode *mode)

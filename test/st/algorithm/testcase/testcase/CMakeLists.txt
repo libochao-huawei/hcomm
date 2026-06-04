@@ -47,6 +47,7 @@ add_dependencies(open_hccl_test hccl_alg_analyzer hccl_alg_adaption hccl_alg_tes
 
 target_link_libraries(open_hccl_test PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core_headers>
     hccl_alg_analyzer
     hccl_alg_adaption
     hccl_alg_test
