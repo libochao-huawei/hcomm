@@ -11,6 +11,8 @@
 #ifndef CCU_PRIMITIVES_HPP
 #define CCU_PRIMITIVES_HPP
 
+#include <vector>
+
 #include "ccu_primitives_impl.h"
 #include "ccu_control_flow_macro.h"
 
@@ -80,11 +82,11 @@ inline CcuResult LocalReduce(CcuBuffer* buffers, uint32_t count, HcclDataType da
     if (buffers == nullptr || count == 0) {
         return CcuResult::CCU_E_PARA;
     }
-    CcuBufferHandle bufHandles[count];
+    std::vector<CcuBufferHandle> bufHandles(count);
     for (uint32_t i = 0; i < count; i++) {
         bufHandles[i] = buffers[i].handle;
     }
-    return CcuLocalBufferReduce(bufHandles, count, dataType, outputDataType, opType,len.handle, event.handle, mask);
+    return CcuLocalBufferReduce(bufHandles.data(), count, dataType, outputDataType, opType, len.handle, event.handle, mask);
 }
 
 // ==================== 远端读====================
