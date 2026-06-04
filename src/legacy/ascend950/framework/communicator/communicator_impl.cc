@@ -1399,7 +1399,8 @@ void CommunicatorImpl::InitDataBufferManager()
     if (rankSize > 1) {
         aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(HCCL_AIV_OFFLOAD_TAG_BUFFER_SIZE));
         HrtMemset(reinterpret_cast<void*>(aivOffloadTagBuffer->GetAddr()), aivOffloadTagBuffer->GetSize(), aivOffloadTagBuffer->GetSize());
-        cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize));
+        cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize * 2));
+        cclBuffer_ = DevBuffer::Create(reinterpret_cast<uintptr_t>(reinterpret_cast<u8 *>(cclBuffer->GetAddr())), scratchBufSize);
         HCCL_RUN_INFO(
             "[CommunicatorImpl][InitDataBufferManager] cclBuffer create, commId[%s], addr[%llu], size[%llu]M",
             GetId().c_str(), cclBuffer->GetAddr(), cclBufferSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
@@ -2060,13 +2061,24 @@ const NotifyTimeoutCfg &CommunicatorImpl::GetNotifyTimeoutCfg() const
 HcclResult CommunicatorImpl::CreateCommCclBuf()
 {
     HCCL_INFO("[%s] start.", __func__);
-    if (inCclBuffer == nullptr) { 
-        inCclBuffer = std::make_shared<DevBuffer>(cclBufferSize);
-        HCCL_INFO("CommunicatorImpl::CreateCommCclBuf, inCclBuffer is %p", inCclBuffer.get());
+    CHK_SMART_PTR_NULL(cclBuffer);
+    if (cclBufferSize == 0) {
+        HCCL_ERROR("CommunicatorImpl::CreateCommCclBuf failed, cclBufferSize is 0");
+        return HcclResult::HCCL_E_PARA;
+    }
+    size_t inOutCclBufferSize = cclBufferSize;
+    HCCL_INFO("CommunicatorImpl::CreateCommCclBuf inOutCclBufferSize[%u] inCclBuffer[%p] outCclBuffer[%p]", 
+        inOutCclBufferSize, cclBuffer->GetAddr(), reinterpret_cast<u8 *>(cclBuffer->GetAddr()) + inOutCclBufferSize);
+    if (inCclBuffer == nullptr) {
+        inCclBuffer = DevBuffer::Create(cclBuffer->GetAddr(), inOutCclBufferSize);
+        CHK_SMART_PTR_NULL(inCclBuffer);
+        HCCL_INFO("CommunicatorImpl::CreateCommCclBuf, inCclBuffer is %p", inCclBuffer->GetAddr());
     } 
     if (outCclBuffer == nullptr) {
-        outCclBuffer = std::make_shared<DevBuffer>(cclBufferSize);
-        HCCL_INFO("CommunicatorImpl::CreateCommCclBuf, outCclBuffer is %p", outCclBuffer.get());
+        outCclBuffer = DevBuffer::Create(reinterpret_cast<uintptr_t>(reinterpret_cast<u8 *>(cclBuffer->GetAddr()) + inOutCclBufferSize),
+            inOutCclBufferSize);
+        CHK_SMART_PTR_NULL(outCclBuffer);
+        HCCL_INFO("CommunicatorImpl::CreateCommCclBuf, outCclBuffer is %p", outCclBuffer->GetAddr());
     }
     if (indirectInCclBuffer == nullptr) {
         indirectInCclBuffer = std::make_shared<DevBuffer>(sizeof(uintptr_t));

@@ -193,7 +193,7 @@ public:
     {
         // 接口设计不合理，其他数据结构无权管理hccl buffer生命周期
         // 建议改为传递裸指针，但整改范围较大，本次性能优化暂不处理
-        return cclBuffer;
+        return cclBuffer_;
     }
 
     const shared_ptr<DevBuffer> GetAivTagBuffer() const
@@ -471,6 +471,7 @@ private:
     bool aivClearEnable = false;
 
     std::shared_ptr<DevBuffer> cclBuffer;
+    std::shared_ptr<DevBuffer> cclBuffer_;
     u64                        cclBufferSize = 0;
     std::shared_ptr<DevBuffer> aivTagBuffer;
     std::shared_ptr<DevBuffer> indirectInCclBuffer;
