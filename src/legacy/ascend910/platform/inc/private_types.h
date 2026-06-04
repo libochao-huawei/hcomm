@@ -76,21 +76,6 @@ struct TransportResourceInfo {
         deviceLogicId(DEFAULT_DEVICE_LOGIC_ID), isHdcMode(false), memBlockNum(MEM_BLOCK_NUM),
         remoteIsHdc(false), isESMode(false), isGlobalMrmanagerInit(false), hdcHostWqeBatchNum(DEFAULT_BATCH_NUM)
     {}
-    TransportResourceInfo (const TransportResInfo &res) : mrManager(res.mrManager), pMsgInfosMem(res.pMsgInfosMem),
-        pReqInfosMem(res.pReqInfosMem), memBlocksManager(res.memBlocksManager), pRecvWrInfosMem(res.pRecvWrInfosMem),
-        tagSrqInfo(SrqInfo()), dataSrqInfo(SrqInfo()), flag(QP_FLAG_RC), lkey(res.lkey), qpMode(NORMAL_QP_MODE),
-        deviceLogicId(DEFAULT_DEVICE_LOGIC_ID), isHdcMode(false), memBlockNum(MEM_BLOCK_NUM), remoteIsHdc(false),
-        isESMode(false), isGlobalMrmanagerInit(false), hdcHostWqeBatchNum(DEFAULT_BATCH_NUM)
-    {}
-
-    TransportResourceInfo (const TransportResInfo &res, s32 qpMode, s32 deviceLogicId, bool isHdcMode, bool isEsMode)
-        : mrManager(res.mrManager), pMsgInfosMem(res.pMsgInfosMem), pReqInfosMem(res.pReqInfosMem),
-        memBlocksManager(res.memBlocksManager), pRecvWrInfosMem(res.pRecvWrInfosMem),
-        tagSrqInfo(SrqInfo()), dataSrqInfo(SrqInfo()), flag(QP_FLAG_RC), lkey(res.lkey), qpMode(qpMode),
-        deviceLogicId(deviceLogicId), isHdcMode(isHdcMode), memBlockNum(MEM_BLOCK_NUM), remoteIsHdc(false),
-        isESMode(isEsMode), isGlobalMrmanagerInit(false), hdcHostWqeBatchNum(DEFAULT_BATCH_NUM)
-    {}
-
     TransportResourceInfo(const struct TransportResourceInfo &that)
         : mrManager(that.mrManager), pMsgInfosMem(that.pMsgInfosMem),
         pReqInfosMem(that.pReqInfosMem), memBlocksManager(that.memBlocksManager), pRecvWrInfosMem(that.pRecvWrInfosMem)

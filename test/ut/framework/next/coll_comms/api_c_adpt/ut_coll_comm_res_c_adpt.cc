@@ -7,7 +7,7 @@
 #include "llt_hccl_stub_rank_graph.h"
 #include <string>
 #include "mockcpp/mockcpp.hpp"
-#include "cluster_monitor.h"
+#include "dfx/cluster_monitor/cluster_monitor.h"
 #include "host/host_cpu_roce_channel.h"
 
 #define private public

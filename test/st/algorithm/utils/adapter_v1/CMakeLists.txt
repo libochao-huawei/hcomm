@@ -87,8 +87,6 @@ target_include_directories(hccl_alg_adaption PRIVATE
 
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 
-    ${RDMA_CORE_INCLUDE_DIR}
-
     ${ASCEND_CANN_INCLUDE_LIST}
     ${CMAKE_SOURCE_DIR}/test/legacy/depends/toolchain/
 )
@@ -108,6 +106,7 @@ target_compile_options(hccl_alg_adaption PRIVATE
 
 target_link_libraries(hccl_alg_adaption PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core_headers>
     hccl_alg_test
     -pthread
     ascend_protobuf

@@ -33,8 +33,11 @@ message(STATUS "PRODUCT_SIDE=${PRODUCT_SIDE}")
 # 组件间对外头文件目录
 add_library(hccl_headers INTERFACE)
 target_include_directories(hccl_headers INTERFACE
-    $<BUILD_INTERFACE:${TOP_DIR}/hcomm/include>
-    $<BUILD_INTERFACE:${TOP_DIR}/hcomm/include/hccl>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/include>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/include/hcomm>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/hccl>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/hcomm>
     $<INSTALL_INTERFACE:include>
     $<INSTALL_INTERFACE:include/hccl>
     $<INSTALL_INTERFACE:include/hccl/external>

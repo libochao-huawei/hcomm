@@ -33,7 +33,6 @@
 #include "hccl_communicator.h"
 #include "transport_heterog.h"
 #include "transport_heterog_roce_pub.h"
-#include "transport_roce_pub.h"
 #undef private
 
 #include <hccl/hccl_comm.h>

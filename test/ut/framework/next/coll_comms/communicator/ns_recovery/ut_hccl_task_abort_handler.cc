@@ -13,8 +13,8 @@
 #include <mockcpp/mockcpp.hpp>
 
 #define private public
-#include "next/coll_comms/communicator/coll_comm.h"
-#include "next/coll_comms/communicator/ns_recovery/task_abort_handler.h"
+#include "coll_comm.h"
+#include "ns_recovery/task_abort_handler.h"
 #include "ccu_device_pub.h"
 #undef private
 
