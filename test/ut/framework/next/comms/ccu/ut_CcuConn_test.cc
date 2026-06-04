@@ -29,6 +29,10 @@
 #include "adapter_rts.h"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+#include "hcom_common.h"
+>>>>>>> b90256df (合并主线代码ut不过了2)
 #include "env_config/env_config.h"
 =======
 >>>>>>> 84b3c665 (ut覆盖率不够)
@@ -307,7 +311,7 @@ TEST_F(CcuConnTest, Ut_UpdateInitStatus_WithMappedPriority_SetsJettyQos)
 >>>>>>> ece532e0 (ut覆盖率)
 }
 
-GetTpInfoParam gCapturedConnTpParam{};
+hcomm::GetTpInfoParam gCapturedConnTpParam{};
 
 HcclResult StubTpMgrGetTpInfoCaptureParam(hcomm::TpMgr *, const hcomm::GetTpInfoParam &param, hcomm::TpInfo &tpInfo)
 {
@@ -330,7 +334,7 @@ TEST_F(CcuConnTest, Ut_MakeGetTpInfoParam_When_QosAboveSeven_Expect_ClampsToDefa
 
     HcclResult ret = connection->UpdateInitStatus();
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(EnvConfig::UB_QOS_DEFAULT));
+    EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(::EnvConfig::UB_QOS_DEFAULT));
 
     GlobalMockObject::verify();
 <<<<<<< HEAD

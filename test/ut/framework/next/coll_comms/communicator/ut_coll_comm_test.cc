@@ -157,10 +157,14 @@ TEST_F(TestCollComm, Ut_ApplyUserCommConfig_When_ValidConfig_Expect_Success)
     hccl::CollComm coll(nullptr, 0, "ut_qos", hccl::ManagerCallbacks{});
     HcclCommConfig config{};
 <<<<<<< HEAD
+<<<<<<< HEAD
     UtInitHcclCommConfig(config);
 =======
     ASSERT_EQ(HcclCommConfigInit(&config, sizeof(config)), HCCL_SUCCESS);
 >>>>>>> 84b3c665 (ut覆盖率不够)
+=======
+    UtInitHcclCommConfig(config);
+>>>>>>> b90256df (合并主线代码ut不过了2)
     config.hcclOpExpansionMode = 2U;
     config.hcclRdmaTrafficClass = 120U;
     config.hcclRdmaServiceLevel = 3U;
@@ -186,10 +190,14 @@ TEST_F(TestCollComm, Ut_ApplyUserCommConfig_When_InvalidHcclQos_Expect_EPara)
     hccl::CollComm coll(nullptr, 0, "ut_qos", hccl::ManagerCallbacks{});
     HcclCommConfig config{};
 <<<<<<< HEAD
+<<<<<<< HEAD
     UtInitHcclCommConfig(config);
 =======
     ASSERT_EQ(HcclCommConfigInit(&config, sizeof(config)), HCCL_SUCCESS);
 >>>>>>> 84b3c665 (ut覆盖率不够)
+=======
+    UtInitHcclCommConfig(config);
+>>>>>>> b90256df (合并主线代码ut不过了2)
     config.hcclQos = 8U;
     uint32_t opExpansionMode = 0U;
     EXPECT_EQ(coll.ApplyUserCommConfig(&config, opExpansionMode), HCCL_E_PARA);
@@ -200,10 +208,14 @@ TEST_F(TestCollComm, Ut_ApplyUserCommConfig_When_InvalidTrafficClass_Expect_EPar
     hccl::CollComm coll(nullptr, 0, "ut_qos", hccl::ManagerCallbacks{});
     HcclCommConfig config{};
 <<<<<<< HEAD
+<<<<<<< HEAD
     UtInitHcclCommConfig(config);
 =======
     ASSERT_EQ(HcclCommConfigInit(&config, sizeof(config)), HCCL_SUCCESS);
 >>>>>>> 84b3c665 (ut覆盖率不够)
+=======
+    UtInitHcclCommConfig(config);
+>>>>>>> b90256df (合并主线代码ut不过了2)
     config.hcclRdmaTrafficClass = 256U;
     uint32_t opExpansionMode = 0U;
     EXPECT_EQ(coll.ApplyUserCommConfig(&config, opExpansionMode), HCCL_E_PARA);
@@ -214,10 +226,14 @@ TEST_F(TestCollComm, Ut_ApplyUserCommConfig_When_InvalidServiceLevel_Expect_EPar
     hccl::CollComm coll(nullptr, 0, "ut_qos", hccl::ManagerCallbacks{});
     HcclCommConfig config{};
 <<<<<<< HEAD
+<<<<<<< HEAD
     UtInitHcclCommConfig(config);
 =======
     ASSERT_EQ(HcclCommConfigInit(&config, sizeof(config)), HCCL_SUCCESS);
 >>>>>>> 84b3c665 (ut覆盖率不够)
+=======
+    UtInitHcclCommConfig(config);
+>>>>>>> b90256df (合并主线代码ut不过了2)
     config.hcclRdmaServiceLevel = 8U;
     uint32_t opExpansionMode = 0U;
     EXPECT_EQ(coll.ApplyUserCommConfig(&config, opExpansionMode), HCCL_E_PARA);
