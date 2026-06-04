@@ -40,7 +40,7 @@ HcclResult AicpuChannelProcess::ParsePackData(std::vector<char> &data, ChannelHa
     HCCL_INFO("[CollCommAicpu][ParsePackData] transType[%u]", transType);
     if (transType == Hccl::TransportType::UB) {
         std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-        EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+        EXCEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
             return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(ubTransportLiteImpl);
 

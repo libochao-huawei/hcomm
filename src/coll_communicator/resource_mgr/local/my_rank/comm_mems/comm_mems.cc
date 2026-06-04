@@ -64,7 +64,7 @@ HcclResult CommMems::HcclBufferMemset(void *&addr, uint64_t &len, bool clearFlag
     }
 
     if (addr != nullptr && len > 0) {
-        EXECEPTION_CATCH(Hccl::HrtMemset(addr, len, len), return HCCL_E_INTERNAL);
+        EXCEPTION_CATCH(Hccl::HrtMemset(addr, len, len), return HCCL_E_INTERNAL);
         return HCCL_SUCCESS;
     }
 
@@ -113,7 +113,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
 
     // 组装句柄（仅域内管理，无进程级注册）
     Handle h;
-    EXECEPTION_CATCH(h = std::make_shared<CommMemInfo>(), return HCCL_E_PTR);
+    EXCEPTION_CATCH(h = std::make_shared<CommMemInfo>(), return HCCL_E_PTR);
     h->mem.addr    = mem.addr;
     h->mem.size    = mem.size;
     h->mem.type    = mem.type;

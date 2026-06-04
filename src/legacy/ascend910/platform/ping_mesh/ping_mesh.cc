@@ -679,7 +679,7 @@ HcclResult PingMesh::RpingRecvTargetInfo(void *clientNetCtx, u32 port, HcclIpAdd
     std::string tag = "PingMesh" + std::string(ipAddr.GetReadableIP());
     HCCL_INFO("[HCCN][RpingRecvTargetInfo]socket tag[%s].", tag.c_str());
     std::shared_ptr<HcclSocket> socket = nullptr;
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         (socket = std::make_shared<HcclSocket>(tag, clientNetCtx, ipAddr, port, HcclSocketRole::SOCKET_ROLE_CLIENT)),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(socket);

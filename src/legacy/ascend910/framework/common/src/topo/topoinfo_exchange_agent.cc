@@ -331,7 +331,7 @@ HcclResult TopoInfoExchangeAgent::Connect(HcclIpAddress &serverIp, u32 port,
     std::shared_ptr<HcclSocket> &socket)
 {
     std::string tag = TOPO_DETECT_TAG + "_" + identifier_ + "_" + std::to_string(port);
-    EXECEPTION_CATCH((socket = std::make_shared<HcclSocket>(tag,
+    EXCEPTION_CATCH((socket = std::make_shared<HcclSocket>(tag,
         netDevCtx_, serverIp, port, HcclSocketRole::SOCKET_ROLE_CLIENT)), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(socket);
     CHK_RET(socket->Init());
@@ -347,7 +347,7 @@ HcclResult TopoInfoExchangeAgent::ConnectWithRetry(HcclIpAddress &serverIp, u32 
     HcclResult ret = HCCL_SUCCESS;
     while (retryTime <= AGENT_MAX_RETRY_TIME) {
         std::string tag = TOPO_DETECT_TAG + "_" + identifier_ + "_" + std::to_string(port);
-        EXECEPTION_CATCH((socket = std::make_shared<HcclSocket>(tag,
+        EXCEPTION_CATCH((socket = std::make_shared<HcclSocket>(tag,
             netDevCtx_, serverIp, port, HcclSocketRole::SOCKET_ROLE_CLIENT)), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(socket);
         CHK_RET(socket->Init());
