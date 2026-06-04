@@ -383,14 +383,11 @@ STATIC int CheckCtxLmemBatchReg(void *ctxHandle, struct MrRegInfoT *lmemInfoList
     struct RaCtxHandle *ctxHandleTmp = NULL;
 
     CHK_PRT_RETURN(ctxHandle == NULL || lmemInfoList == NULL || lmemHandleList == NULL,
-        hccp_err("ctx_handle or lmem_info_list or lmem_handle_list is NULL"), -EINVAL);
-
-    CHK_PRT_RETURN(num == 0 || num > LMEM_BATCH_MAX,
-        hccp_err("num[%u] out of range(0, %d]", num, LMEM_BATCH_MAX), -EINVAL);
+        hccp_err("ctxHandle or lmemInfoList or lmemHandleList is NULL"), -EINVAL);
 
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
     CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxLmemBatchRegister == NULL,
-        hccp_err("ctx_ops or ra_ctx_lmem_batch_register is NULL"), -EINVAL);
+        hccp_err("ctxOps or raCtxLmemBatchRegister is NULL"), -EINVAL);
 
     return 0;
 }
@@ -410,7 +407,7 @@ STATIC int PrepareCtxLmemBatchReg(struct RaLmemHandle *lmemHandleTmpList[], stru
         lmemHandleTmpList[i] = calloc(1, sizeof(struct RaLmemHandle));
         if (lmemHandleTmpList[i] == NULL) {
             ret = -ENOMEM;
-            hccp_err("calloc lmem_handle_tmp_list[%u] failed, errno(%d)", i, errno);
+            hccp_err("calloc lmemHandleTmpList[%u] failed, errno(%d)", i, errno);
             goto err;
         }
     }
@@ -423,7 +420,7 @@ err:
     }
     return ret;
 }
-
+ 	 
 HCCP_ATTRI_VISI_DEF int RaCtxLmemBatchRegister(void *ctxHandle, struct MrRegInfoT *lmemInfoList[],
     void *lmemHandleList[], unsigned int num)
 {
@@ -475,6 +472,7 @@ free_list:
     free(lmemHandleTmpList);
     return ConverReturnCode(RDMA_OP, ret);
 }
+ 	 
 
 HCCP_ATTRI_VISI_DEF int RaCtxLmemUnregister(void *ctxHandle, void *lmemHandle)
 {
