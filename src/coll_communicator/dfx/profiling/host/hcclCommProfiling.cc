@@ -16,8 +16,8 @@ namespace hccl {
 HcclResult HcclCommProfiling::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId, bool cachedReq) {
     u64 endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     uint64_t cmdItemId = Hccl::DlProfFunction::GetInstance().dlMsprofStr2Id(kernelName.c_str(), kernelName.length());
-    EXECEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeApi(beginTime, endTime, cmdItemId, threadId, cachedReq), return HCCL_E_PTR);
-    EXECEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeBasicInfo(endTime, cmdItemId, threadId, cachedReq), return HCCL_E_PTR);
+    EXCEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeApi(beginTime, endTime, cmdItemId, threadId, cachedReq), return HCCL_E_PTR);
+    EXCEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeBasicInfo(endTime, cmdItemId, threadId, cachedReq), return HCCL_E_PTR);
     HCCL_INFO("[HcclCommProfiling][ReportKernel] beginTime [%llu] endTime[%llu] kernelName[%s] commTag[%s] threadId[%u]",
             beginTime, endTime, kernelName.c_str(), commTag.c_str(), threadId);
     return HCCL_SUCCESS;

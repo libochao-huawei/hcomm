@@ -95,7 +95,7 @@ public:
     std::shared_ptr<LocalIpcRmaBufferMgr> GetlocalIpcRmaBufferMgr()
     {
         if (!localIpcRmaBufferMgr_) {
-            EXECEPTION_CATCH((localIpcRmaBufferMgr_ = std::make_shared<LocalIpcRmaBufferMgr>()),
+            EXCEPTION_CATCH((localIpcRmaBufferMgr_ = std::make_shared<LocalIpcRmaBufferMgr>()),
                 return nullptr);
         }
         return localIpcRmaBufferMgr_;
@@ -104,7 +104,7 @@ public:
     std::shared_ptr<LocalRdmaRmaBufferMgr> GetlocalRdmaRmaBufferMgr()
     {
         if (!localRdmaRmaBufferMgr_) {
-            EXECEPTION_CATCH((localRdmaRmaBufferMgr_ = std::make_shared<LocalRdmaRmaBufferMgr>()),
+            EXCEPTION_CATCH((localRdmaRmaBufferMgr_ = std::make_shared<LocalRdmaRmaBufferMgr>()),
                 return nullptr);
         }
         return localRdmaRmaBufferMgr_;

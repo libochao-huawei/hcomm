@@ -37,13 +37,13 @@ HcclResult Channel::CreateChannel(
     switch (engine) {
         case COMM_ENGINE_CPU:
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
-                EXECEPTION_CATCH(uniqueChannelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc),
+                EXCEPTION_CATCH(uniqueChannelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc),
                     return HCCL_E_PARA);
                 break;
             }
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
                 channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
-                EXECEPTION_CATCH(uniqueChannelPtr = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc),
+                EXCEPTION_CATCH(uniqueChannelPtr = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc),
                     return HCCL_E_PARA);
                 break;
             }
