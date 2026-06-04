@@ -1304,8 +1304,8 @@ HcclResult HrtRaUbLocalMemBatchRegister(RdmaHandle handle, const std::vector<Hrt
     std::vector<struct MrRegInfoT *> memInfos(memNum);
     std::vector<struct MrRegInfoT> infos(memNum);
     std::vector<void *> handles(memNum, nullptr);
+    CHECK_NULLPTR(handle, "[HrtRaUbLocalMemBatchReg] handle is nullptr!");
     for (u32 idx = 0; idx < memNum; ++idx) {
-        CHECK_NULLPTR(handle, "[HrtRaUbLocalMemBatchReg] handle is nullptr!");
         const auto &in = regParams[idx];
         HCCL_INFO("[HrtRaUbLocalMemBatchReg] Input params: handle=%p, addr=0x%llx, size=0x%llx", handle, in.addr, in.size);
         struct MrRegInfoT *info = &infos[idx];
@@ -1327,7 +1327,10 @@ HcclResult HrtRaUbLocalMemBatchRegister(RdmaHandle handle, const std::vector<Hrt
     if (ret != 0) {
         HCCL_ERROR("[%s] failed, call interface error[%d]",
             __func__, ret);
-            return HCCL_E_NETWORK;
+        for (u32 idx = 0; idx < memNum; ++idx) {
+            infos[idx].in.ub.tokenValue = 0;
+        }
+        return HCCL_E_NETWORK;
     }
     for (u32 idx = 0; idx < memNum; ++idx) {
         struct MrRegInfoT &info = infos[idx];
@@ -1358,8 +1361,8 @@ HcclResult HrtRaUbRemoteMemBatchImport(RdmaHandle handle, const std::vector<HrtR
     std::vector<struct MrImportInfoT *> importInfos(memNum);
     std::vector<struct MrImportInfoT> infos(memNum);
     std::vector<void *> handles(memNum, nullptr);
+    CHECK_NULLPTR(handle, "[HrtRaUbRemoteMemBatchImport] handle is nullptr!");
     for (u32 idx = 0; idx < memNum; ++idx) {
-        CHECK_NULLPTR(handle, "[HrtRaUbRemoteMemBatchImport] handle is nullptr!");
         const auto &in = importParams[idx];
         CHECK_NULLPTR(in.key, "[HrtRaUbRemoteMemBatchImport] key is nullptr!");
         HCCL_INFO("[HrtRaUbRemoteMemBatchImport] Input params: handle=%p, key=%d, keyLen=%u", handle, *(in.key), in.keyLen);
