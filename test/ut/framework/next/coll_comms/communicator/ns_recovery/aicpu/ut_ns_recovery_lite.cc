@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include <memory>
 
-#include "ns_recovery_lite.h"
+#include "ns_recovery/aicpu/ns_recovery_lite.h"
 #include "hdc_pub.h"
 
 using namespace hccl;

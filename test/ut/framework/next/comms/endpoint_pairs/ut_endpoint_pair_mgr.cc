@@ -4,8 +4,8 @@
 
 // Expose private members for testing purposes in this TU
 #define private public
-#include "next/comms/endpoint_pairs/endpoint_pair_mgr.h"
-#include "next/comms/endpoint_pairs/endpoint_pair.h"
+#include "endpoint_pair_mgr.h"
+#include "endpoint_pair.h"
 #undef private
 
 using namespace hcomm;

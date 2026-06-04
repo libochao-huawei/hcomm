@@ -334,6 +334,9 @@ set(UT_COMMON_INCLUDE_LIST
 )
 
 add_subdirectory(stub)
+add_subdirectory(framework/next)
+add_subdirectory(framework/next/coll_comms/dfx)
+add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
 add_subdirectory(common/debug/profiling)
