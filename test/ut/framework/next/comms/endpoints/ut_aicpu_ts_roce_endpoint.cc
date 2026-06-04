@@ -20,12 +20,12 @@
 #include "hccl_network.h"
 #include "hccl_socket.h"
 #include "network_manager_pub.h"
-#include "reged_mems/reged_mem_mgr.h"
+#include "reged_mem_mgr.h"
 #include "endpoint.h"
 
 #define private public
 #include "aicpu_ts_roce_endpoint.h"
-#include "reged_mems/aicpu_ts_roce_mem.h"
+#include "aicpu_ts_roce_mem.h"
 #undef private
 
 using namespace hcomm;

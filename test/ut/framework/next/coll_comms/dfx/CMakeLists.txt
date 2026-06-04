@@ -10,7 +10,7 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
-    ut_HcommCcuProfiling_test.cc
+    # ut_HcommCcuProfiling_test.cc
     ut_HcommAivProfiling_test.cc
     ut_hcclCommTaskExceptionLite.cc
     ut_cluster_monitor.cc

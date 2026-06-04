@@ -19,7 +19,6 @@
 #include "llt_hccl_stub.h"
 #include "tsd/tsd_client.h"
 #define private public
- #include "tcp_recv_task.h"
 #undef private
 #include "hccl_impl.h"
 #include <sys/epoll.h>
@@ -3846,13 +3845,6 @@ void TcpRecvDataCallbackFunc()
 {
     g_fdHandle.fd = 1;
     g_fdHandle.phy_id = 1;
-//    g_raSetTcpRecvCallbackPtr(&g_fdHandle);
-    std::unique_lock<std::mutex> lock(TcpRecvTask::GetRecvTaskInstance()->transportMapMutex_);
-    if (!TcpRecvTask::GetRecvTaskInstance()->fdTransportMap_.empty()) {
-        auto iter = TcpRecvTask::GetRecvTaskInstance()->fdTransportMap_.begin();
-        lock.unlock();
-        g_raSetTcpRecvCallbackPtr(iter->first);
-    }
 }
 
 // #ifdef __cplusplus

@@ -11,6 +11,8 @@
 #include <gtest/gtest.h>
 #include <mockcpp/mockcpp.hpp>
 #include <memory>
+#include <thread>
+#include <atomic>
 
 #define private public
 #define protected public
@@ -257,36 +259,6 @@ TEST_F(DpuManagerTest, Ut_DeInitDpuKernel_When_NotLaunched_Expect_Success)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-// DeInitDpuKernel: 已初始化后调用应正常清理
-// 由于WaitDpuKernelThreadTerminate有200秒超时，通过Mock GetKFCWorkSpace返回nullptr跳过等待循环
-// 这样可以测试hostShareBuf_被正确清理
-// 全局计数器
-static int g_memcpyCallCount = 0;
-aclError MockAclrtMemcpy(void *dst, const void *src, size_t size, int kind)
-{
-    g_memcpyCallCount++;
-    // 第一次返回 0（成功），之后返回 -1（失败）
-    return (g_memcpyCallCount == 1) ? 0 : -1;
-}
-TEST_F(DpuManagerTest, Ut_DeInitDpuKernel_When_Launched_Expect_Success)
-{
-    DpuManager dpuManager;
-    dpuManager.isDpuKernelLaunched_ = true;
-    dpuManager.hostShareBuf_ = malloc(1024);
-
-    g_memcpyCallCount = 0;
-
-    MOCKER(aclrtMemcpy).stubs().will(invoke(MockAclrtMemcpy));
-
-    HcclResult ret = dpuManager.DeInitDpuKernel();
-    // WaitDpuKernelThreadTerminate返回HCCL_E_MEMORY，所以DeInitDpuKernel也返回该错误
-    EXPECT_EQ(ret, HCCL_E_MEMORY);
-    // hostShareBuf_仍为nullptr（因为在WaitDpuKernelThreadTerminate失败后被free了）
-    EXPECT_EQ(dpuManager.hostShareBuf_, nullptr);
-
-    g_memcpyCallCount = 0;
-}
-
 // DeInitDpuKernel: hostShareBuf为nullptr时应正常处理
 TEST_F(DpuManagerTest, Ut_DeInitDpuKernel_When_HostShareBufIsNull_Expect_Success)
 {
@@ -300,31 +272,51 @@ TEST_F(DpuManagerTest, Ut_DeInitDpuKernel_When_HostShareBufIsNull_Expect_Success
 
 // ========== WaitDpuKernelThreadTerminate 测试用例 ==========
 
-// WaitDpuKernelThreadTerminate: 获取工作空间失败时返回错误
-TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_GetWorkspaceFailed_Expect_MemoryError)
+// WaitDpuKernelThreadTerminate: isDpuKernelLaunched_为false时直接返回成功
+TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_NotLaunched_Expect_Success)
 {
     DpuManager dpuManager;
-    // tagWorkspaceMap_为空，GetKFCWorkSpace返回nullptr
+    dpuManager.isDpuKernelLaunched_ = false;
+
+    HcclResult ret = dpuManager.WaitDpuKernelThreadTerminate();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// WaitDpuKernelThreadTerminate: isDpuKernelLaunched_为true但accessVA_为nullptr时返回错误
+TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_AccessVAIsNull_Expect_MemoryError)
+{
+    DpuManager dpuManager;
+    dpuManager.isDpuKernelLaunched_ = true;
+    dpuManager.accessVA_ = nullptr;
 
     HcclResult ret = dpuManager.WaitDpuKernelThreadTerminate();
     EXPECT_EQ(ret, HCCL_E_MEMORY);
 }
 
-// WaitDpuKernelThreadTerminate: aclrtMemcpy失败时返回错误
-// 注意：真正等待200秒超时的场景不适合UT测试，这里测试aclrtMemcpy返回错误的快速路径
-TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_MemcpyFailed_Expect_RuntimeError)
+// WaitDpuKernelThreadTerminate: while循环正常退出（后台线程更新flag使循环退出）
+TEST_F(DpuManagerTest, Ut_WaitDpuKernelThreadTerminate_When_WhileLoopExitNormally_Expect_Success)
 {
     DpuManager dpuManager;
-    // 先创建工作空间
-    const char *memTag = DPUTAG;
-    uint64_t size = 100 * 1024 * 1024; // SHARE_HBM_MEMORY_SIZE
-    dpuManager.CreateWorkspaceBuf(memTag, &size, nullptr);
+    dpuManager.isDpuKernelLaunched_ = true;
+    dpuManager.accessVA_ = new uint8_t[8]();
+    constexpr uint8_t DEVICE_SIGNAL_SECOND = 2;
+    constexpr uint8_t DEVICE_SIGNAL_THIRD = 3;
+    static_cast<uint8_t*>(dpuManager.accessVA_)[0] = DEVICE_SIGNAL_SECOND;
 
-    // Mock aclrtMemcpy返回失败，导致提前退出循环
-    MOCKER(aclrtMemcpy).stubs().will(returnValue(ACL_ERROR_INVALID_PARAM));
+    std::atomic<bool> updateReady{false};
+    std::thread worker([&dpuManager, &updateReady]() {
+        while (!updateReady.load(std::memory_order_acquire)) {
+            std::this_thread::yield();
+        }
+        static_cast<uint8_t*>(dpuManager.accessVA_)[0] = DEVICE_SIGNAL_THIRD;
+    });
+    worker.detach();
 
+    updateReady.store(true, std::memory_order_release);
     HcclResult ret = dpuManager.WaitDpuKernelThreadTerminate();
-    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    delete[] static_cast<uint8_t*>(dpuManager.accessVA_);
 }
 
 // ========== Init 测试用例 ==========
@@ -532,4 +524,108 @@ TEST_F(DpuManagerTest, Ut_Destructor_When_KernelLaunched_Expect_CallDeInit)
     MOCKER(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
 
     delete dpuManager; // 析构函数会调用DeInitDpuKernel
+}
+
+// ========== DestroyDpuKernelResource 测试用例 ==========
+
+// DestroyDpuKernelResource: 正常流程
+TEST_F(DpuManagerTest, Ut_DestroyDpuKernelResource_When_Normal_Expect_Success)
+{
+    DpuManager dpuManager;
+    dpuManager.isDpuKernelLaunched_ = true;
+    dpuManager.dpuContext_ = reinterpret_cast<aclrtContext>(malloc(64));
+    dpuManager.npuContext_ = reinterpret_cast<aclrtContext>(malloc(64));
+    dpuManager.dpuStream_ = reinterpret_cast<aclrtStream>(malloc(64));
+
+    MOCKER_CPP(&DpuManager::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(aclrtSetCurrentContext)
+        .stubs()
+        .will(returnValue(ACL_SUCCESS))
+        .then(returnValue(ACL_SUCCESS))
+        .then(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtDestroyStreamForce).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(Hccl::HrtResetXpuDevice).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = dpuManager.DestroyDpuKernelResource();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    free(dpuManager.dpuContext_);
+    free(dpuManager.npuContext_);
+    free(dpuManager.dpuStream_);
+}
+
+// DestroyDpuKernelResource: aclrtSetCurrentContext失败返回RuntimeError
+TEST_F(DpuManagerTest, Ut_DestroyDpuKernelResource_When_SetDpuCtxFail_Expect_RuntimeError)
+{
+    DpuManager dpuManager;
+    dpuManager.isDpuKernelLaunched_ = true;
+    dpuManager.dpuContext_ = reinterpret_cast<aclrtContext>(malloc(64));
+    dpuManager.npuContext_ = reinterpret_cast<aclrtContext>(malloc(64));
+    dpuManager.dpuStream_ = reinterpret_cast<aclrtStream>(malloc(64));
+
+    MOCKER_CPP(&DpuManager::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(aclrtSetCurrentContext)
+        .stubs()
+        .will(returnValue(ACL_ERROR_INVALID_PARAM))
+        .then(returnValue(ACL_SUCCESS))
+        .then(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtDestroyStreamForce).stubs().will(returnValue(ACL_SUCCESS));
+
+    HcclResult ret = dpuManager.DestroyDpuKernelResource();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+
+    free(dpuManager.dpuContext_);
+    free(dpuManager.npuContext_);
+    free(dpuManager.dpuStream_);
+}
+
+// DestroyDpuKernelResource: aclrtDestroyStreamForce失败返回RuntimeError
+TEST_F(DpuManagerTest, Ut_DestroyDpuKernelResource_When_DestroyStreamFail_Expect_RuntimeError)
+{
+    DpuManager dpuManager;
+    dpuManager.isDpuKernelLaunched_ = true;
+    dpuManager.dpuContext_ = reinterpret_cast<aclrtContext>(malloc(64));
+    dpuManager.npuContext_ = reinterpret_cast<aclrtContext>(malloc(64));
+    dpuManager.dpuStream_ = reinterpret_cast<aclrtStream>(malloc(64));
+
+    MOCKER_CPP(&DpuManager::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(aclrtSetCurrentContext)
+        .stubs()
+        .will(returnValue(ACL_SUCCESS))
+        .then(returnValue(ACL_SUCCESS))
+        .then(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtDestroyStreamForce).stubs().will(returnValue(ACL_ERROR_INVALID_PARAM));
+
+    HcclResult ret = dpuManager.DestroyDpuKernelResource();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+
+    free(dpuManager.dpuContext_);
+    free(dpuManager.npuContext_);
+    free(dpuManager.dpuStream_);
+}
+
+// DestroyDpuKernelResource: HrtResetXpuDevice失败返回RuntimeError
+TEST_F(DpuManagerTest, Ut_DestroyDpuKernelResource_When_ResetXpuFail_Expect_RuntimeError)
+{
+    DpuManager dpuManager;
+    dpuManager.isDpuKernelLaunched_ = true;
+    dpuManager.dpuContext_ = reinterpret_cast<aclrtContext>(malloc(64));
+    dpuManager.npuContext_ = reinterpret_cast<aclrtContext>(malloc(64));
+    dpuManager.dpuStream_ = reinterpret_cast<aclrtStream>(malloc(64));
+
+    MOCKER_CPP(&DpuManager::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(aclrtSetCurrentContext)
+        .stubs()
+        .will(returnValue(ACL_SUCCESS))
+        .then(returnValue(ACL_SUCCESS))
+        .then(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtDestroyStreamForce).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(Hccl::HrtResetXpuDevice).stubs().will(returnValue(HCCL_E_INTERNAL));
+
+    HcclResult ret = dpuManager.DestroyDpuKernelResource();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+
+    free(dpuManager.dpuContext_);
+    free(dpuManager.npuContext_);
+    free(dpuManager.dpuStream_);
 }
