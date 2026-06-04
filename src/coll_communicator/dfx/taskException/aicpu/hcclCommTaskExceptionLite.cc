@@ -87,19 +87,13 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]GetThreadCqe fail, aicpuComm[%s], streamId[%u]",
                 __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId()), ret);
 
-            if (cqeStatus != dfx::CqeStatus::kDefault) {
-                ret = ProcessCqe(aicpuComm, cqeException);
-                CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]ProcessCqe fail, aicpuComm[%s], streamId[%u], "
-                    "cqeStatus[%d]", __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId(), cqeStatus), ret);
-            }
+            ret = ProcessCqe(aicpuComm, cqeException, cqeStatus, aicpuCommInfo);
+            CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]ProcessCqe fail, aicpuComm[%s], streamId[%u], "
+                "cqeStatus[%d]", __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId(), cqeStatus), ret);
         }
         threadRwlock.readUnlock();
     }
     rwlock.readUnlock();
-
-    if (printAllThreads_) {
-        CHK_RET(PrintAllCommTaskException());
-    }
     return HCCL_SUCCESS;
 }
 
@@ -112,14 +106,14 @@ HcclResult HcclCommTaskExceptionLite::PrintAllCommTaskException()
     std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
     CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
 
-    HCCL_ERROR("[TaskException][AICPU]%s start, comm size[%u]", __func__, aicpuCommInfo.size());
+    HCCL_RUN_INFO("[TaskException][AICPU]%s start, comm size[%u]", __func__, aicpuCommInfo.size());
     HcclResult ret = HCCL_SUCCESS;
     for (auto &commInfo : aicpuCommInfo) {
         CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
         HcclResult pRet = PrintCommTaskException(aicpuComm);
         ret = (pRet != HCCL_SUCCESS) ? pRet : ret;
     }
-    HCCL_ERROR("[TaskException][AICPU]%s end, ret[%d]", __func__, ret);
+    HCCL_RUN_INFO("[TaskException][AICPU]%s end, ret[%d]", __func__, ret);
     rwlock.readUnlock();
     return ret;
 }
@@ -128,7 +122,7 @@ HcclResult HcclCommTaskExceptionLite::PrintCommTaskException(CollCommAicpu *aicp
 {
     CHK_PTR_NULL(aicpuComm);
     HcclResult ret = HCCL_SUCCESS;
-    HCCL_ERROR("[TaskException][AICPU]%s comm[%s] start", __func__, aicpuComm->GetIdentifier().c_str());
+    HCCL_RUN_INFO("[TaskException][AICPU]%s comm[%s] start", __func__, aicpuComm->GetIdentifier().c_str());
     ReadWriteLockBase &commThreadMutex = aicpuComm->GetThreadMutex();
     ReadWriteLock threadRwlock(commThreadMutex);
     threadRwlock.readLock();
@@ -152,7 +146,7 @@ HcclResult HcclCommTaskExceptionLite::PrintCommTaskException(CollCommAicpu *aicp
         ret = (pRet != HCCL_SUCCESS) ? pRet : ret;
     }
     threadRwlock.readUnlock();
-    HCCL_ERROR("[TaskException][AICPU]%s comm[%s] end, ret[%d]", __func__, aicpuComm->GetIdentifier().c_str(), ret);
+    HCCL_RUN_INFO("[TaskException][AICPU]%s comm[%s] end, ret[%d]", __func__, aicpuComm->GetIdentifier().c_str(), ret);
     return ret;
 }
 
@@ -182,8 +176,13 @@ HcclResult HcclCommTaskExceptionLite::GetThreadCqe(hccl::Thread* thread, rtLogic
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo)
+HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo,
+    const CqeStatus &cqeStatus, const std::vector<std::pair<std::string, CollCommAicpuMgr *>> &aicpuCommInfo)
 {
+    if (cqeStatus == dfx::CqeStatus::kDefault) {
+        return HCCL_SUCCESS;
+    }
+
     if (hcomm::GetTaskExceptionEnable() == false) {
         HCCL_ERROR("[TaskException][AICPU]taskException enable is false, skip print taskException");
         return HCCL_SUCCESS;
@@ -198,7 +197,18 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     ret = ReportErrMsg(aicpuComm, exceptionInfo);
     CHK_PRT_CONT(ret != HCCL_SUCCESS, HCCL_ERROR("[ReportErrMsg]fail, ret[%d], group[%s], sqId[%u], taskId[%u]",
         ret, aicpuComm->GetIdentifier().c_str(), exceptionInfo.sqId, exceptionInfo.taskId)); // 如果上报失败，继续打印taskException
-    return HCCL_SUCCESS;
+
+    // notify超时场景：step1 打印当前流信息；step2 打印当前通信域信息；step3 打印其他通信域信息
+    if (cqeStatus == dfx::CqeStatus::kCqeException && exceptionInfo.sqeType == RT_STARS_SQE_TYPE_PLACE_HOLDER) {
+        CHK_RET(PrintCommTaskException(aicpuComm));
+        for (auto &commInfo : aicpuCommInfo) {
+            CollCommAicpu *comm = commInfo.second->GetCollCommAicpu();
+            if (comm != nullptr && comm->GetIdentifier() != aicpuComm->GetIdentifier()) {
+                CHK_RET(PrintCommTaskException(comm));
+            }
+        }
+    }
+    return ret;
 }
 
 u32 HcclCommTaskExceptionLite::GetSqeId(uint16_t taskId, uint16_t streamId)
@@ -262,7 +272,6 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskExceptionBySqeId(CollCommAicpu *a
     if (curTask->taskParam_.taskType != Hccl::TaskParamType::TASK_NOTIFY_WAIT) { // 非notify场景，仅打印算子信息
         HCCL_ERROR("[TaskException][AICPU]opData information is %s.", curTask->GetIndopDataInfo().c_str());
     } else {
-        printAllThreads_ = true; // notify场景需要打印所有流的信息
         CHK_RET(PrintTaskContextInfo(aicpuComm, sqId, sqeId)); // notify场景打印算子信息和task序列
     }
     return HCCL_SUCCESS;

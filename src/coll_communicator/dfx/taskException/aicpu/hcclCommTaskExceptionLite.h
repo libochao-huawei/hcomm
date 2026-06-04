@@ -32,7 +32,8 @@ private:
     // 检测流上的异常cqe并进行打印和上报
     HcclResult HandleExceptionCqe();
     HcclResult GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
-    HcclResult ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
+    HcclResult ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo, const CqeStatus &cqeStatus,
+        const std::vector<std::pair<std::string, CollCommAicpuMgr *>> &aicpuCommInfo);
 
     // errMsg上报到host
     HcclResult ReportErrMsg(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
@@ -56,7 +57,6 @@ private:
     bool stopCall_{false}; // 避免taskException失败后刷屏
     u32 devId_{INVALID_UINT};
     Hccl::MirrorTaskManager* mirrorTaskManager_{nullptr};  // 使用原始指针，不管理生命周期
-    bool printAllThreads_{false};
     std::unordered_map<u32, u32> threadsPrinted_; // sqId -> sqeId, 记录已经打印过taskException的流信息
 };
 
