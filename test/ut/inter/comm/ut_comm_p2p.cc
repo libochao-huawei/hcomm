@@ -141,7 +141,6 @@ void* comm_p2p_task_handle(void* para)
                                     para_info->inputMem,
                                     para_info->outputMem,
                                     false,
-                                    nullptr, 0,
                                     para_info->tag,
                                     1));
     }
@@ -161,7 +160,7 @@ void* comm_p2p_task_handle(void* para)
                                     para_info->inputMem,
                                     para_info->outputMem,
                                     false,
-                                    nullptr, 0,
+
                                     para_info->tag,
                                     0));
     }
@@ -217,7 +216,6 @@ void* comm_p2p_errtask_handle(void* para)
                                 para_info->inputMem,
                                 para_info->outputMem,
                                 false,
-                                nullptr, 0,
                                 para_info->tag,
                                 para_info->userRank));
 
@@ -273,7 +271,7 @@ void* comm_p2p_errtask_handle1(void* para)
                                     para_info->inputMem,
                                     para_info->outputMem,
                                     false,
-                                    nullptr, 0,
+
                                     para_info->tag,
                                     1));
     }
@@ -293,7 +291,7 @@ void* comm_p2p_errtask_handle1(void* para)
                                     para_info->inputMem,
                                     para_info->outputMem,
                                     false,
-                                    nullptr, 0,
+
                                     para_info->tag,
                                     0));
     }
@@ -353,7 +351,7 @@ TEST_F(CommP2PTest, ut_CommP2P_init)
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
     CommP2P* comm_p2p = new CommP2P(collective_id_tmp, userRank, user_rank_size, 0, 1, topoFlag, dispatcher, nullptr, netDevCtxMap, exchanger,
-        para_vector,inputMem,outputMem, false, nullptr, 0);
+        para_vector,inputMem,outputMem, false);
 
     ret = comm_p2p->Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);

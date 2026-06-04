@@ -2768,6 +2768,13 @@ HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInf
     return HcclResult::HCCL_SUCCESS;
 }
 
+HrtRaUbLocalMemRegOutParam HrtRaUbLocalMemReg(RdmaHandle handle, const HrtRaUbLocMemRegParam &in)
+{
+    (void)handle;
+    (void)in;
+    return HrtRaUbLocalMemRegOutParam{};
+}
+
 HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbCreateJettyParam &in)
 {
     return HrtRaUbJettyCreatedOutParam{};

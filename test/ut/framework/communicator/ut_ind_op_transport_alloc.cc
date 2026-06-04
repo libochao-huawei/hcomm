@@ -102,7 +102,7 @@ TEST_F(IndOpTransportAllocTest, Ut_IndOpTransportAlloc_When_AllocFailed_Expect_R
         new (std::nothrow) TransportManager(
             cclBufferManager, socketManager, dispatcher, notifyPool,
             rankInfoList, 0, "test_tag", "test_tag", 0, NICDeployment::NIC_DEPLOYMENT_DEVICE, false,
-            nullptr, 0, false, false, nicRanksPort, vnicRanksPort, false,
+            false, false, nicRanksPort, vnicRanksPort, false,
             devIpAddr, hostIp, localVnicIp, netDevCtxMap));
 
     std::string tag = "test_tag";

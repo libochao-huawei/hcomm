@@ -9,7 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     transport_ibverbs.cc
-    transport_tcp.cc
     transport_p2p.cc
     transport_net.cc
     transport_virtural.cc
@@ -19,15 +18,12 @@ set(src_list
 if(TARGET hccl_plf)
     target_sources(hccl_plf PRIVATE
         ${src_list}
-        transport_roce.cc
-        transport_shm_event.cc
-    )
+            )
 endif()
 
 if(TARGET hccd)
     target_sources(hccd PRIVATE
-        transport_tcp.cc
-        transport_net.cc
+            transport_net.cc
     )
 endif()
 

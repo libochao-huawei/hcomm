@@ -4927,7 +4927,7 @@ TEST_F(HcclImplTest, ut_hcclimpl_AiCpuSetCommResource_MultiServer)
     for (int i = 0; i < 4; i++) {
         tmpComm.commLevel0[i].reset(new (std::nothrow) CommRing(tag, 0, 8, curRankId, rankSize,
             TopoType::TOPO_TYPE_8P_RING, implBase->dispatcher_, implBase->notifyPool_, netDevCtxMap, exchanger, paraVector,
-            inputMem, outputMem, false, nullptr, 0));
+            inputMem, outputMem, false));
     }
     EXPECT_EQ(tmpComm.commLevel0[0]->transportInfo_.size(), rankSize);
     tmpComm.commLevel0[0]->transportInfo_.clear();
@@ -5128,7 +5128,7 @@ TEST_F(HcclImplTest, ut_hcclimpl_AiCpuSetCommResource_AIVHierarchy)
     for (int i = 0; i < 4; i++) {
         tmpComm.commLevel0[i].reset(new (std::nothrow) CommMesh(tag, 0, 4, curRankId, rankSize,
             TopoType::TOPO_TYPE_8P_MESH, implBase->dispatcher_, implBase->notifyPool_, netDevCtxMap, exchanger,
-            paraVector, inputMem, outputMem, true, nullptr, 0, ""));
+            paraVector, inputMem, outputMem, true, ""));
     }
     EXPECT_EQ(tmpComm.commLevel0[0]->transportInfo_.size(), rankSize);
     tmpComm.commLevel0[0]->transportInfo_.clear();
@@ -5314,7 +5314,7 @@ TEST_F(HcclImplTest, ut_hcclimpl_AiCpuSetCommResource_AIVRoce)
     for (int i = 0; i < 4; i++) {
         tmpComm.commLevel0[i].reset(new (std::nothrow) CommMesh(tag, 0, 4, curRankId, rankSize,
             TopoType::TOPO_TYPE_8P_MESH, implBase->dispatcher_, implBase->notifyPool_, netDevCtxMap, exchanger,
-            paraVector, inputMem, outputMem, true, nullptr, 0, ""));
+            paraVector, inputMem, outputMem, true, ""));
     }
     EXPECT_EQ(tmpComm.commLevel0[0]->transportInfo_.size(), rankSize);
     tmpComm.commLevel0[0]->transportInfo_.clear();
@@ -6322,7 +6322,7 @@ TEST_F(HcclImplTest, ut_hcclimpl_AiCpuSetCommResource_EnvTest)
     for (int i = 0; i < 4; i++) {
         tmpComm.commLevel0[i].reset(new (std::nothrow) CommMesh(tag, 0, 4, curRankId, rankSize,
             TopoType::TOPO_TYPE_8P_MESH, implBase->dispatcher_, implBase->notifyPool_, netDevCtxMap, exchanger,
-            paraVector, inputMem, outputMem, true, nullptr, 0, ""));
+            paraVector, inputMem, outputMem, true, ""));
     }
     EXPECT_EQ(tmpComm.commLevel0[0]->transportInfo_.size(), rankSize);
     tmpComm.commLevel0[0]->transportInfo_.clear();

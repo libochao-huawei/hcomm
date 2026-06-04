@@ -40,7 +40,6 @@ public:
                          const std::vector<RankInfo> rankVector = std::vector<RankInfo>(0),
                          const NICDeployment nicDeploymentInner = NICDeployment::NIC_DEPLOYMENT_DEVICE,
                          bool isHeterogComm = false,
-                         const void* transportResourceInfoAddr = nullptr, size_t transportResourceInfoSize = 0,
                          u32 meshAggregationRankSize = 0, bool isHaveCpuRank = false,
                          bool isUsedInterHccsMode = false, bool useSuperPodMode = false);
 
@@ -147,8 +146,6 @@ private:
 
     NICDeployment nicDeployInner_;
     bool isHeterogComm_;
-    const void* transportResourceInfoAddr_;
-    size_t transportResourceInfoSize_;
     bool isHaveCpuRank_;
     // 复用Socket时, 复用SocketManager
     std::shared_ptr<HcclSocketManager> reusedSocketManager_;

@@ -195,27 +195,5 @@ struct RecvWrInfo {
     TransportHandle transportHandle = nullptr;
     void *buf = nullptr;
 };
-
-struct TransportResInfo {
-    static constexpr s32 DEFAULT_LKEY_VALUE = 0;
-
-    const std::unique_ptr<MrManager> &mrManager;
-    const std::unique_ptr<LocklessRingMemoryAllocate<HcclMessageInfo>> &pMsgInfosMem;
-    const std::unique_ptr<LocklessRingMemoryAllocate<HcclRequestInfo>> &pReqInfosMem;
-    const std::unique_ptr<HeterogMemBlocksManager> &memBlocksManager;
-    const std::unique_ptr<LocklessRingMemoryAllocate<RecvWrInfo>> &pRecvWrInfosMem;
-    u32 lkey;
-    TransportResInfo() : mrManager(nullptr), pMsgInfosMem(nullptr), pReqInfosMem(nullptr),
-        memBlocksManager(nullptr), pRecvWrInfosMem(nullptr), lkey(DEFAULT_LKEY_VALUE)
-    {}
-    TransportResInfo(const std::unique_ptr<MrManager> &mrManager,
-        const std::unique_ptr<LocklessRingMemoryAllocate<HcclMessageInfo>> &pMsgInfosMem,
-        const std::unique_ptr<LocklessRingMemoryAllocate<HcclRequestInfo>> &pReqInfosMem,
-        const std::unique_ptr<HeterogMemBlocksManager> &memBlocksManager,
-        const std::unique_ptr<LocklessRingMemoryAllocate<RecvWrInfo>> &pRecvWrInfosMem)
-        : mrManager(mrManager), pMsgInfosMem(pMsgInfosMem), pReqInfosMem(pReqInfosMem),
-        memBlocksManager(memBlocksManager), pRecvWrInfosMem(pRecvWrInfosMem), lkey(DEFAULT_LKEY_VALUE)
-    {}
-};
 }
 #endif

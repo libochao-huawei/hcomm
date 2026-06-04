@@ -144,7 +144,6 @@ void* comm_mesh_task_handle(void* para)
                                 para_info->inputMem,
                                 para_info->outputMem,
                                 false,
-                                nullptr, 0,
                                 para_info->tag
                                 ));
     ret = para_info->notifyPool->RegisterOp(para_info->tag);
@@ -170,7 +169,7 @@ TEST_F(CommMeshTest, destructor_D0)
 
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
-    CommMesh* comm_mesh = new CommMesh(rootInfo, 0, 1, 0, 1, topoFlag, nullptr, nullptr, netDevCtxMap, exchanger, para_vector, DeviceMem(), DeviceMem(), false, nullptr, 0, "");
+    CommMesh* comm_mesh = new CommMesh(rootInfo, 0, 1, 0, 1, topoFlag, nullptr, nullptr, netDevCtxMap, exchanger, para_vector, DeviceMem(), DeviceMem(), false, "");
 
     delete comm_mesh;
 }
@@ -210,7 +209,7 @@ TEST_F(CommMeshTest, init)
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
     CommMesh* comm_mesh = new CommMesh(collective_id_tmp, userRank, user_rank_size, 0, 1, topoFlag, nullptr, nullptr, netDevCtxMap, exchanger,
-        para_vector, inputMem, outputMem, true, nullptr, 0, "");
+        para_vector, inputMem, outputMem, true, "");
 
     ret = comm_mesh->Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -259,7 +258,7 @@ TEST_F(CommMeshTest, ut_set_machinePara)
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
     CommMesh* comm_mesh = new CommMesh(collective_id_tmp, userRank, user_rank_size, 0, 1, topoFlag, nullptr, nullptr, netDevCtxMap, exchanger,
-        para_vector, inputMem, outputMem, true, nullptr, 0, "tag_" + HCCL_MC2_MULTISERVER_SUFFIX);
+        para_vector, inputMem, outputMem, true, "tag_" + HCCL_MC2_MULTISERVER_SUFFIX);
 
     ret = comm_mesh->Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);

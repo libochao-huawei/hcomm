@@ -17,17 +17,17 @@ add_executable(hccl_utest_comms_ccu_rep_control ${src_to_test_list})
 
 target_include_directories(hccl_utest_comms_ccu_rep_control PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
-    ${HCCL_CODE_ROOT}/src/coll_communicator/ccu_representation
-    ${HCCL_CODE_ROOT}/src/coll_communicator/ccu_representation/context
-    ${HCCL_CODE_ROOT}/src/coll_communicator/ccu_representation/interface
-    ${HCCL_CODE_ROOT}/src/coll_communicator/reps
-    ${HCCL_CODE_ROOT}/src/coll_communicator/reps/arithmetic
-    ${HCCL_CODE_ROOT}/src/coll_communicator/reps/common
-    ${HCCL_CODE_ROOT}/src/coll_communicator/reps/control
-    ${HCCL_CODE_ROOT}/src/coll_communicator/reps/data
-    ${HCCL_CODE_ROOT}/src/coll_communicator/reps/loop
-    ${HCCL_CODE_ROOT}/src/coll_communicator/reps/sync
-    ${HCCL_CODE_ROOT}/src/coll_communicator/reps/translator
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/context
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/interface
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/arithmetic
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/common
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/control
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/data
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/loop
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/sync
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/translator
 )
 
 target_compile_definitions(hccl_utest_comms_ccu_rep_control PRIVATE
@@ -47,6 +47,7 @@ target_compile_options(hccl_utest_comms_ccu_rep_control PRIVATE
 
 target_link_libraries(hccl_utest_comms_ccu_rep_control PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt

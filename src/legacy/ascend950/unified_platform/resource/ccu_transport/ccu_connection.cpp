@@ -223,7 +223,13 @@ void CcuConnection::Serialize(std::vector<char> &dtoData)
     for (const auto &ccuJetty : ccuJettys_) {
         dtoStream << ccuJetty->GetCreateJettyParam().tokenValue;
         const auto &outParam = ccuJetty->GetJettyedOutParam();
-        dtoStream << outParam.key; // 此处的qpKey是数组
+        u8 patchedKey[HRT_UB_QP_KEY_MAX_LEN]{0};
+        (void)memcpy_s(patchedKey, sizeof(patchedKey), outParam.key, outParam.keySize);
+        // RsJettyKeyInfo 布局中 jettyId.eid 位于 key 起始，patch 为链路 EID
+        if (outParam.keySize >= URMA_EID_LEN) {
+            (void)memcpy_s(patchedKey, outParam.keySize, locAddr_.GetEid().raw, URMA_EID_LEN);
+        }
+        dtoStream << patchedKey;
         dtoStream << outParam.keySize;
     }
 
@@ -323,7 +329,12 @@ HcclResult CcuConnection::StartImportJettyRequest(uint32_t jettyIndex, RequestHa
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    auto &importCtxInParam = importJettyCtxs[jettyIndex].inParam;
+    auto &importCtx = importJettyCtxs[jettyIndex];
+    if (importCtx.inParam.keyLen >= URMA_EID_LEN) {
+        (void)memcpy_s(importCtx.remoteQpKey, importCtx.inParam.keyLen, rmtAddr_.GetEid().raw, URMA_EID_LEN);
+    }
+    importCtx.inParam.key = importCtx.remoteQpKey;
+    auto &importCtxInParam = importCtx.inParam;
     importCtxInParam.jettyImportCfg = jettyImportCfg;
     importCtxInParam.jettyImportCfg.protocol = tpProtocol;
     TRY_CATCH_RETURN(
