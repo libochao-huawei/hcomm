@@ -707,14 +707,14 @@ HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchUnimport(void *ctxHandle, void *rmemHandle
     int ret = 0;
 
     CHK_PRT_RETURN(ctxHandle == NULL || rmemHandleList == NULL,
-        hccp_err("ctx_handle or rmem_handle_list is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+        hccp_err("ctxHandle or rmemHandleList is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
 
     CHK_PRT_RETURN(num == 0 || num > RMEM_BATCH_MAX,
         hccp_err("num[%u] out of range(0, %d]", num, RMEM_BATCH_MAX), ConverReturnCode(RDMA_OP, -EINVAL));
 
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
     CHK_PRT_RETURN(ctxHandleTmp->ctxOps == NULL || ctxHandleTmp->ctxOps->raCtxRmemBatchUnimport == NULL,
-        hccp_err("ctx_ops or ra_ctx_rmem_batch_unimport is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+        hccp_err("ctxOps or raCtxRmemBatchUnimport is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
 
     rmemHandleTmpList = (struct RaRmemHandle **)rmemHandleList;
     for (i = 0; i < num; i++) {
@@ -735,10 +735,9 @@ HCCP_ATTRI_VISI_DEF int RaCtxRmemBatchUnimport(void *ctxHandle, void *rmemHandle
         }
     }
 
-    free(rmemHandleTmpList);
-    rmemHandleTmpList = NULL;
     return ConverReturnCode(RDMA_OP, ret);
 }
+ 	 
 
 HCCP_ATTRI_VISI_DEF int RaCtxChanCreate(void *ctxHandle, struct ChanInfoT *chanInfo, void **chanHandle)
 {
