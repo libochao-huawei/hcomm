@@ -139,15 +139,15 @@ void RtsqBase::ConfigDisableToEnable(u32 value)
     ConfigSqStatusByType(drvSqCqPropType_t::DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE, value);
 }
 
-HcclResult RtsqBase::GetStreamIdAndTaskIdByIdx(u32 idx, uint16_t& streamId, uint16_t& taskId)
+HcclResult RtsqBase::GetStreamIdAndTaskIdBySqIdx(u32 sqIdx, uint16_t& streamId, uint16_t& taskId)
 {
     const u32 rtsqLength = 2048;
-    if (sqBaseAddr_ == 0 || idx >= rtsqLength) {
-        HCCL_ERROR("[%s]fail, sqBaseAddr_[0x%llu], idx[%u]", sqBaseAddr_, idx);
+    if (sqBaseAddr_ == 0 || sqIdx >= rtsqLength) {
+        HCCL_ERROR("[%s]fail, sqBaseAddr_[0x%llu], sqIdx[%u]", sqBaseAddr_, sqIdx);
         return HCCL_E_PARA;
     }
 
-    Rt91095StarsNotifySqe* sqe = (Rt91095StarsNotifySqe*)(sqBaseAddr_ + idx * rtsqSqeSize);
+    Rt91095StarsNotifySqe* sqe = (Rt91095StarsNotifySqe*)(sqBaseAddr_ + sqIdx * RTSQ_SQE_SIZE);
     streamId = sqe->header.rtStreamId;
     taskId = sqe->header.taskId;
     HCCL_INFO("[%s]sqId:%u, streamId:%u, taskId:%u", __func__, sqId_, streamId, taskId);

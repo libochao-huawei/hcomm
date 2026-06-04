@@ -23,18 +23,19 @@ public:
     static HcclCommTaskExceptionLite &GetInstance();
     void Init(u32 devId);
     void Call() override;
+    HcclResult PrintAllCommTaskException(); // 打印所有通信域所有流的task信息
 
 private:
     HcclCommTaskExceptionLite() = default;
     ~HcclCommTaskExceptionLite() = default;
 
-    HcclResult ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
-    HcclResult ReportErrMsg(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
-    HcclResult PrintTaskException(CollCommAicpu *aicpuComm, u32 sqId, uint16_t taskId, uint16_t streamId);
-    HcclResult PrintThreadTaskInfo(CollCommAicpu *aicpuComm, u32 sqId, uint16_t taskId, uint16_t streamId);
-
+    // 检测流上的异常cqe并进行打印和上报
     HcclResult HandleExceptionCqe();
     HcclResult GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
+    HcclResult ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
+
+    // errMsg上报到host
+    HcclResult ReportErrMsg(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
     HcclResult GenerateErrorMessageReport(CollCommAicpu *aicpuComm, const Hccl::TaskInfo& taskInfo,
         const rtLogicCqReport_t &exceptionInfo, Hccl::ErrorMessageReport &errMsgInfo);
     void GetErrMsgInfo(const Hccl::TaskInfo& taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
@@ -42,13 +43,17 @@ private:
     HcclResult SendTaskExceptionByMBox(const u32 notifyId, const u32 tsId, const rtLogicCqReport_t &exceptionInfo);
     uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode);
     uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
+
+    // 打印流上的task信息的方法函数
+    HcclResult PrintCommTaskException(CollCommAicpu *aicpuComm);
+    HcclResult PrintTaskExceptionBySqeId(CollCommAicpu *aicpuComm, u32 sqId, u32 sqeId);
     HcclResult PrintTaskContextInfo(CollCommAicpu *aicpuComm, u32 sqId, u32 taskId);
+    void PrintEid(const Hccl::TaskInfo& taskInfo);
     std::string GetGroupInfo(const Hccl::TaskInfo& taskInfo);
     u32 GetSqeId(uint16_t taskId, uint16_t streamId);
 
-    void PrintEid(const Hccl::TaskInfo& taskInfo);
-
-    bool stopCall_{false};
+private:
+    bool stopCall_{false}; // 避免taskException失败后刷屏
     u32 devId_{INVALID_UINT};
     Hccl::MirrorTaskManager* mirrorTaskManager_{nullptr};  // 使用原始指针，不管理生命周期
     bool printAllThreads_{false};

@@ -51,7 +51,7 @@ void RtsqA5::Reset()
 {
     RtsqBase::Reset();
     pendingSqeCnt = 0;
-    s32 sRet      = memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt);
+    s32 sRet      = memset_s(locBuf, RTSQ_SQE_SIZE * PER_LAUNCH_SQE_CNT, 0, RTSQ_SQE_SIZE * PER_LAUNCH_SQE_CNT);
     if (UNLIKELY(sRet != EOK)) {
         auto msg = StringFormat("[RtsqA5][Reset] locBuf memset fail. errorno[%d]", sRet);
         THROW<InternalException>(msg);
@@ -112,13 +112,13 @@ void RtsqA5::MakeSureAvailableSpace()
 
 void RtsqA5::CopyLocBufToSq()
 {
-    u8 *sqCurrAddr = reinterpret_cast<u8 *>(sqBaseAddr_) + sqTail_ * rtsqSqeSize;
+    u8 *sqCurrAddr = reinterpret_cast<u8 *>(sqBaseAddr_) + sqTail_ * RTSQ_SQE_SIZE;
     if (sqTail_ >= sqHead_) {
         u32 depthLeft = sqDepth_ - sqTail_;
         if (pendingSqeCnt <= depthLeft) { // 没有回绕
             HCCL_INFO("RtsqA5::%s copy sqe from sqe buffer, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, size: %u, depth remain: %u", 
                 __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt, depthLeft);
-            int ret = memcpy_sp(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * rtsqSqeSize);
+            int ret = memcpy_sp(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * RTSQ_SQE_SIZE);
             if (UNLIKELY(ret != 0)) {
                 THROW<InternalException>(StringFormat("RtsqA5::%s sqe memcpy_sp failed, ret = %d", __func__, ret));
             }
@@ -126,13 +126,13 @@ void RtsqA5::CopyLocBufToSq()
             HCCL_INFO("RtsqA5::%s copy sqe twice, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, cnt: %u, depth remain: %u", 
                 __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt, depthLeft);
             // 先拷贝rtsq里剩余空间大小
-            int ret = memcpy_sp(sqCurrAddr, depthLeft * AC_SQE_SIZE, locBuf, depthLeft * rtsqSqeSize);
+            int ret = memcpy_sp(sqCurrAddr, depthLeft * AC_SQE_SIZE, locBuf, depthLeft * RTSQ_SQE_SIZE);
             if (ret != 0) {
                 THROW<InternalException>(
                     StringFormat("RtsqA5::%s rtsq remaining space memcpy_sp failed, ret = %d", __func__, ret));
             }
             // 拷贝剩余sqe
-            ret = memcpy_sp(reinterpret_cast<u8 *>(sqBaseAddr_), sqHead_ * rtsqSqeSize, locBuf + depthLeft * rtsqSqeSize,
+            ret = memcpy_sp(reinterpret_cast<u8 *>(sqBaseAddr_), sqHead_ * RTSQ_SQE_SIZE, locBuf + depthLeft * RTSQ_SQE_SIZE,
                            (pendingSqeCnt - depthLeft) * AC_SQE_SIZE);
             if (UNLIKELY(ret != 0)) {
                 THROW<InternalException>(
@@ -142,7 +142,7 @@ void RtsqA5::CopyLocBufToSq()
     } else {
         HCCL_INFO("RtsqA5::%s copy sqe from sqe buffer, tail < head, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, size: %u", 
                 __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt);
-        int ret = memcpy_sp(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * rtsqSqeSize);
+        int ret = memcpy_sp(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * RTSQ_SQE_SIZE);
         if (UNLIKELY(ret != 0)) {
             THROW<InternalException>(StringFormat("RtsqA5::%s sqe memcpy_sp failed, ret = %d", __func__, ret));
         }
@@ -175,7 +175,7 @@ void RtsqA5::LaunchTask()
     // 清空本地的locBuffer和sqeCnt数目
     HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
     pendingSqeCnt = 0;
-    (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt); // locBuffer清零
+    (void)memset_s(locBuf, RTSQ_SQE_SIZE * PER_LAUNCH_SQE_CNT, 0, RTSQ_SQE_SIZE * PER_LAUNCH_SQE_CNT); // locBuffer清零
 }
 
 void RtsqA5::TryLaunchTask()
@@ -202,13 +202,13 @@ void RtsqA5::TryLaunchTask()
     sqTail_ = newTail;
 
     pendingSqeCnt = 0;
-    (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt);
+    (void)memset_s(locBuf, RTSQ_SQE_SIZE * PER_LAUNCH_SQE_CNT, 0, RTSQ_SQE_SIZE * PER_LAUNCH_SQE_CNT);
     HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
 }
 
 u8 *RtsqA5::GetCurrSqeBuffer()
 {
-    return locBuf + pendingSqeCnt * rtsqSqeSize;
+    return locBuf + pendingSqeCnt * RTSQ_SQE_SIZE;
 }
 
 void RtsqA5::RefreshInfo()
@@ -223,7 +223,7 @@ void RtsqA5::RefreshInfo()
     }
 #endif
 
-    if (pendingSqeCnt != perLaunchSqeCnt) {
+    if (pendingSqeCnt != PER_LAUNCH_SQE_CNT) {
         return;
     }
     // 挂起的sqe数量为128个，则需要向芯片RTSQ中写入task
@@ -363,7 +363,7 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
 void RtsqA5::RdmaDbSend(const uint64_t &dbAddr, const uint64_t &dbValue)
 {
     BuildA5SqeRdmaDbSend(streamId_, taskId_, dbAddr, dbValue, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::RdmaDbSend: RdmaDbSend Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
+    HCCL_INFO("RtsqA5::RdmaDbSend: RdmaDbSend Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), RTSQ_SQE_SIZE).c_str());
     HCCL_INFO("[RtsqA5][RdmaDbSend] dbValue(dbValue):%llx, SqTail(Rtsq Pi):%u", dbAddr, sqTail_);
     RefreshInfo();
 }

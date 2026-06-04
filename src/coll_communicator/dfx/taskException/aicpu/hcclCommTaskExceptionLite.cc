@@ -61,6 +61,7 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
     ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
     ReadWriteLock rwlock(commAicpuMapMutex);
     rwlock.readLock();
+
     std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
     CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
 
@@ -92,29 +93,67 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
                     "cqeStatus[%d]", __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId(), cqeStatus), ret);
             }
         }
-
-        if (printAllThreads_) {
-            for (auto thread : threads) {
-                Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(thread->GetStreamLitePtr());
-                u32 sqHead = 0U;
-                u32 sqTail = 0U;
-                HcclResult ret = QuerySqStatus(devId_, streamLite->GetSqId(), sqHead, sqTail);
-                if (ret != HCCL_SUCCESS || sqHead == sqTail) { // 此流为空时，不打印
-                    HCCL_RUN_INFO("PrintThreadTaskInfo skip, QuerySqStatus ret[%d], aicpuComm[%s], devId[%u], sqId[%u], sqHead[%u], sqTail[%u]",
-                        ret, aicpuComm->GetIdentifier().c_str(), devId_, streamLite->GetSqId(), sqHead, sqTail);
-                    continue;
-                }
-
-                uint16_t streamId = 0;
-                uint16_t taskId = 0;
-                streamLite->GetRtsq()->GetStreamIdAndTaskIdByIdx(sqHead, streamId, taskId);
-                PrintTaskException(aicpuComm, streamLite->GetSqId(), sqHead, sqTail);
-            }
-        }
         threadRwlock.readUnlock();
     }
     rwlock.readUnlock();
+
+    if (printAllThreads_) {
+        CHK_RET(PrintAllCommTaskException());
+    }
     return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommTaskExceptionLite::PrintAllCommTaskException()
+{
+    ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
+    ReadWriteLock rwlock(commAicpuMapMutex);
+    rwlock.readLock();
+
+    std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
+    CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
+
+    HCCL_ERROR("[TaskException][AICPU]%s start, comm size[%u]", __func__, aicpuCommInfo.size());
+    HcclResult ret = HCCL_SUCCESS;
+    for (auto &commInfo : aicpuCommInfo) {
+        CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
+        HcclResult pRet = PrintCommTaskException(aicpuComm);
+        ret = (pRet != HCCL_SUCCESS) ? pRet : ret;
+    }
+    HCCL_ERROR("[TaskException][AICPU]%s end, ret[%d]", __func__, ret);
+    rwlock.readUnlock();
+    return ret;
+}
+
+HcclResult HcclCommTaskExceptionLite::PrintCommTaskException(CollCommAicpu *aicpuComm)
+{
+    CHK_PTR_NULL(aicpuComm);
+    HcclResult ret = HCCL_SUCCESS;
+    HCCL_ERROR("[TaskException][AICPU]%s comm[%s] start", __func__, aicpuComm->GetIdentifier().c_str());
+    ReadWriteLockBase &commThreadMutex = aicpuComm->GetThreadMutex();
+    ReadWriteLock threadRwlock(commThreadMutex);
+    threadRwlock.readLock();
+    const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
+    for (auto thread : threads) {
+        Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(thread->GetStreamLitePtr());
+        u32 sqHead = 0U;
+        u32 sqTail = 0U;
+        HcclResult ret = QuerySqStatus(devId_, streamLite->GetSqId(), sqHead, sqTail);
+        if (ret != HCCL_SUCCESS || sqHead == sqTail) { // 此流为空时，不打印
+            HCCL_RUN_INFO("PrintThreadTaskInfo skip, QuerySqStatus ret[%d], aicpuComm[%s], devId[%u], sqId[%u], sqHead[%u], sqTail[%u]",
+                ret, aicpuComm->GetIdentifier().c_str(), devId_, streamLite->GetSqId(), sqHead, sqTail);
+            continue;
+        }
+
+        uint16_t streamId = 0;
+        uint16_t taskId = 0;
+        streamLite->GetRtsq()->GetStreamIdAndTaskIdBySqIdx(sqHead, streamId, taskId);
+        const u32 sqeId = GetSqeId(taskId, streamId);
+        HcclResult pRet = PrintTaskExceptionBySqeId(aicpuComm, streamLite->GetSqId(), sqeId);
+        ret = (pRet != HCCL_SUCCESS) ? pRet : ret;
+    }
+    threadRwlock.readUnlock();
+    HCCL_ERROR("[TaskException][AICPU]%s comm[%s] end, ret[%d]", __func__, aicpuComm->GetIdentifier().c_str(), ret);
+    return ret;
 }
 
 HcclResult HcclCommTaskExceptionLite::GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException,
@@ -151,11 +190,14 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     }
 
     HcclResult ret = HCCL_SUCCESS;
-    ret = ReportErrMsg(aicpuComm, exceptionInfo);
-    CHK_PRT_CONT(ret != HCCL_SUCCESS, HCCL_ERROR("[ReportErrMsg]fail, ret[%d], group[%s]",
-        ret, aicpuComm->GetIdentifier().c_str())); // 如果上报失败，继续打印taskException
+    const u32 sqeId = GetSqeId(exceptionInfo.taskId, exceptionInfo.streamId);
+    ret = PrintTaskExceptionBySqeId(aicpuComm, exceptionInfo.sqId, sqeId);
+    CHK_PRT_CONT(ret != HCCL_SUCCESS, HCCL_ERROR("[PrintTaskExceptionBySqeId]fail, ret[%d], group[%s], sqId[%u], taskId[%u]",
+        ret, aicpuComm->GetIdentifier().c_str(), exceptionInfo.sqId, exceptionInfo.taskId)); // 如果上报失败，继续打印taskException
 
-    CHK_RET(PrintTaskException(aicpuComm, exceptionInfo.sqId, exceptionInfo.taskId, exceptionInfo.streamId));
+    ret = ReportErrMsg(aicpuComm, exceptionInfo);
+    CHK_PRT_CONT(ret != HCCL_SUCCESS, HCCL_ERROR("[ReportErrMsg]fail, ret[%d], group[%s], sqId[%u], taskId[%u]",
+        ret, aicpuComm->GetIdentifier().c_str(), exceptionInfo.sqId, exceptionInfo.taskId)); // 如果上报失败，继续打印taskException
     return HCCL_SUCCESS;
 }
 
@@ -192,16 +234,11 @@ HcclResult HcclCommTaskExceptionLite::ReportErrMsg(CollCommAicpu *aicpuComm, con
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommTaskExceptionLite::PrintTaskException(CollCommAicpu *aicpuComm, u32 sqId, uint16_t taskId,
-    uint16_t streamId)
+HcclResult HcclCommTaskExceptionLite::PrintTaskExceptionBySqeId(CollCommAicpu *aicpuComm, u32 sqId, u32 sqeId)
 {
     CHK_PTR_NULL(aicpuComm);
     CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite());
     CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite());
-
-    const u32 sqeId = GetSqeId(taskId, streamId);
-    HCCL_INFO("[%s]group[%s], sqeId[0x%x], taskId[%u], streamId[%u].",
-        __func__, aicpuComm->GetIdentifier().c_str(), sqeId, taskId, streamId);
 
     const auto curTask = aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite()->GetTaskInfo(sqId, sqeId);
     CHK_SMART_PTR_NULL(curTask);

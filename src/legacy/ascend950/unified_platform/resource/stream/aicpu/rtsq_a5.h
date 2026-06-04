@@ -82,7 +82,7 @@ private:
 
     bool launchFlag_ = false;
 
-    u8 locBuf[rtsqSqeSize * perLaunchSqeCnt]{0};
+    u8 locBuf[RTSQ_SQE_SIZE * PER_LAUNCH_SQE_CNT]{0};
 
     u32 rtsqFullTimeoutValue_{1836};
     std::chrono::duration<u64> rtsqFullTimeout_;
