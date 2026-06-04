@@ -27,6 +27,7 @@
 #include "internal_exception.h"
 #include "hccl_types.h"
 #include "adapter_rts.h"
+#include "hcom_common.h"
 #include "env_config/env_config.h"
 
 #undef private
@@ -296,7 +297,7 @@ TEST_F(CcuConnTest, Ut_UpdateInitStatus_WithMappedPriority_SetsJettyQos)
     GlobalMockObject::verify();
 }
 
-GetTpInfoParam gCapturedConnTpParam{};
+hcomm::GetTpInfoParam gCapturedConnTpParam{};
 
 HcclResult StubTpMgrGetTpInfoCaptureParam(hcomm::TpMgr *, const hcomm::GetTpInfoParam &param, hcomm::TpInfo &tpInfo)
 {
@@ -319,7 +320,7 @@ TEST_F(CcuConnTest, Ut_MakeGetTpInfoParam_When_QosAboveSeven_Expect_ClampsToDefa
 
     HcclResult ret = connection->UpdateInitStatus();
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(EnvConfig::UB_QOS_DEFAULT));
+    EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(::EnvConfig::UB_QOS_DEFAULT));
 
     GlobalMockObject::verify();
 }
