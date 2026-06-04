@@ -421,8 +421,8 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
 std::string HcclCommTaskExceptionLite::GetGroupInfo(const Hccl::TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-         HCCL_ERROR("[%s]TaskInfo communicator is nullptr.", __func__);
-         return "";
+        HCCL_ERROR("[%s]TaskInfo communicator is nullptr.", __func__);
+        return "";
     }
     CollCommAicpu* aicpuComm = static_cast<CollCommAicpu*>(taskInfo.dfxOpInfo_->comm_);
     return Hccl::StringFormat("group:[%s], rankSize:[%u], localRank:[%d]",
