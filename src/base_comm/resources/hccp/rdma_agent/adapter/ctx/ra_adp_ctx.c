@@ -720,7 +720,7 @@ int RaRsLmemBatchReg(char *inBuf, char *outBuf, int *outLen, int *opResult, int 
     }
 
     if (ret != 0) {
-        for (j = i; j < i; j++) {
+        for (j = 0; j < i; j++) {
             (void)gRaRsCtxOps.ctxLmemUnreg(&devInfo, opDataOut->rxData.memInfoList[j].ub.targetSegHandle);
             opDataOut->rxData.memInfoList[j].ub.tokenId = 0;
             opDataOut->rxData.memInfoList[j].ub.targetSegHandle = 0;
@@ -735,6 +735,7 @@ int RaRsLmemBatchReg(char *inBuf, char *outBuf, int *outLen, int *opResult, int 
 
 int RaRsLmemBatchUnreg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    union OpLmemBatchUnregInfoData *opDataOut = (union OpLmemBatchUnregInfoData *)(outBuf + sizeof(struct MsgHead));
     union OpLmemBatchUnregInfoData *opData = (union OpLmemBatchUnregInfoData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
     unsigned int i, num;
@@ -746,7 +747,7 @@ int RaRsLmemBatchUnreg(char *inBuf, char *outBuf, int *outLen, int *opResult, in
 
     RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
     num = opData->txData.num;
-    opData->rxData.num = num;
+    opDataOut->rxData.num = num;
 
     *opResult = 0;
     for (i = 0; i < num; i++) {
@@ -754,7 +755,7 @@ int RaRsLmemBatchUnreg(char *inBuf, char *outBuf, int *outLen, int *opResult, in
         if (ret != 0) {
             hccp_err("[deinit][ra_rs_lmem]unreg failed, ret[%d] phyId[%u] devIndex[0x%x]",
                 ret, devInfo.phyId, devInfo.devIndex);
-            opData->rxData.num--;
+            opDataOut->rxData.num--;
             *opResult = ret;
         }
     }

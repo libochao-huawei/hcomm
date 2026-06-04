@@ -153,14 +153,13 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
     HCCL_INFO("Construct RemoteUbRmaBuffer:%s", Describe().c_str());
 }
 
-HcclResult RemoteUbRmaBuffer::SetMemInfo(const HrtRaUbRemMemImportedOutParam &res)
+void RemoteUbRmaBuffer::SetMemInfo(const HrtRaUbRemMemImportedOutParam &res)
 {
     memHandle       = res.handle;
     segVa           = res.targetSegVa;
-    return HCCL_SUCCESS;
 }
 
-HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer *> &rmtBufs,
+HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteUbRmaBuffer *> &rmtBufs,
     const std::vector<HrtRaUbRemMemImportParam> &params)
 {
     CHK_PRT_RET(rmtBufs.size() != params.size(),
@@ -170,12 +169,7 @@ HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<
     std::vector<HrtRaUbRemMemImportedOutParam> reqRegs;
     CHK_RET(HrtRaUbRemoteMemBatchImport(rdmaHandle, params, reqRegs));
     for (u32 idx = 0; idx < rmtBufs.size(); ++idx) {
-        auto res = dynamic_cast<RemoteUbRmaBuffer*>(rmtBufs[idx]);
-        if(res) {
-            CHK_RET(res->SetMemInfo(reqRegs[idx]));
-        } else {
-            return HCCL_E_PTR;
-        }
+        rmtBufs[idx]->SetMemInfo(reqRegs[idx]);
     }
     return HCCL_SUCCESS;
 }

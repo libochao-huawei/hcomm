@@ -680,7 +680,7 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
     // 允许本端和远端交换内存数量不一致
     HCCL_INFO("unpack %s %s, locNum=%u, rmtNum=%u", type.Describe().c_str(), GetLinkDescInfo().c_str(), locNum,
                rmtNum);
-    std::vector<RemoteRmaBuffer *> rmtUbRmaBuffer;
+    std::vector<RemoteUbRmaBuffer *> rmtUbRmaBuffer;
     std::vector<HrtRaUbRemMemImportParam> importParams;
     for (u32 i = 0; i < rmtNum; i++) {
         u32 pos;
@@ -698,9 +698,10 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
             bufferVec.push_back(nullptr);
             FillRmtRmaBufferVec(nullptr, type);
         } else { // size非0，则构造一个remote buffer
-            bufferVec.push_back(make_unique<RemoteUbRmaBuffer>(rdmaHandle, dto, true));
-            importParams.push_back(dynamic_cast<RemoteUbRmaBuffer*>(bufferVec.back().get())->GetImportParam());
-            rmtUbRmaBuffer.push_back(bufferVec.back().get());
+            auto remoteUbRmaBuffer = make_unique<RemoteUbRmaBuffer>(rdmaHandle, dto, true);
+            importParams.push_back(remoteUbRmaBuffer->GetImportParam());
+            rmtUbRmaBuffer.push_back(remoteUbRmaBuffer.get());
+            bufferVec.push_back(std::move(remoteUbRmaBuffer));
             FillRmtRmaBufferVec(bufferVec.back().get(), type);
             HCCL_INFO("unpack buffer pos=%u, rmtRmaBuffer=%s", pos, bufferVec.back()->Describe().c_str());
         }
