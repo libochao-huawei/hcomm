@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "hcclCommTaskExceptionLite.h"
-#include "aicpu_indop_process.h"
 #include "stream_lite.h"
 #include "global_mirror_tasks.h"
 #include "task_scheduler_error.h"

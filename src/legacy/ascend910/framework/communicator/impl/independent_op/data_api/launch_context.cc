@@ -49,14 +49,12 @@ HcclResult LaunchContext::HandleDispatchAllStreams()
         if (it != launchModeMap_.end()) {
             std::vector<ThreadHandle> threadVec(it->second.begin(), it->second.end());
             CHK_RET(DispatchAllStreams(threadVec.data(), threadVec.size()));
-            HCCL_INFO("[%s]success, launchTag[%s], size[%u]", __func__, launchTag_.c_str(), threadVec.size());
         }
     }
 
     // 不带launchTag部分
     if (!threadVec_.empty()) {
         CHK_RET(DispatchAllStreams(threadVec_.data(), threadVec_.size()));
-        HCCL_INFO("[%s]success, size[%u]", __func__, threadVec_.size());
     }
     return HCCL_SUCCESS;
 }

@@ -180,18 +180,13 @@ void RtsqA5::LaunchTask()
 
 void RtsqA5::TryLaunchTask()
 {
-    HCCL_DEBUG("RtsqA5::%s: START, pendingSqeCnt[%u]", __func__, pendingSqeCnt);
-
     if (pendingSqeCnt == 0) {
-        HCCL_DEBUG("RtsqA5::%s: pendingSqeCnt is %u, return", __func__, pendingSqeCnt);
         return;
     }
 
     sqHead_ = QuerySqHead();
     u32 availableSpace = GetTailToHeadDist();
     if (availableSpace <= pendingSqeCnt) {
-        HCCL_DEBUG("RtsqA5::%s: no enough space, availableSpace[%u] < pendingSqeCnt[%u], return", __func__,
-                  availableSpace, pendingSqeCnt);
         return;
     }
 

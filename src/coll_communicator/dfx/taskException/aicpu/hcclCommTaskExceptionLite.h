@@ -15,6 +15,7 @@
 #include "coll_comm_aicpu.h"
 #include "aicpu_hccl_sqcq.h"
 #include "error_message_v2.h"
+#include "aicpu_indop_process.h"
 
 namespace hcomm {
 
