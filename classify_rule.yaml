@@ -15,7 +15,10 @@ hcomm:
       - src
       - include
     unrelease:
-      - src/
+      - src/legacy/ascend950/framework/ccu/ccu_ins/ccu_ins.h
+      - src/legacy/ascend950/service/
+      - src/legacy/ascend910/algorithm/
+      - src/base_comm/resources/hccp/
   llt:
     ut_check: true
     st_check: false

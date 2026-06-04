@@ -169,7 +169,7 @@ const std::string LOG_KEYWORDS_HOST = "HOST";
 const std::string LOG_KEYWORDS_HOST_TS = "HOST_TS";
 const std::string LOG_KEYWORDS_AIV = "AIV";
 const std::string LOG_KEYWORDS_AICPU = "AICPU";
-const std::string LOG_KEYWORDS_CQE_ERROR = "ROCE CQE ERROR";
+const std::string LOG_KEYWORDS_CQE_ERROR = "CQE ERROR";
  
 /* 通信域及本卡信息关键字 */
 const std::string LOG_KEYWORDS_COMMUNICATOR = "Communicator Key Info";
@@ -320,14 +320,9 @@ namespace hccl {
 enum class TransportType {
     TRANS_TYPE_IBV_EXP = 0,
     TRANS_TYPE_P2P = 1,
-    TRANS_TYPE_HOST_SHM = 2,
-    TRANS_TYPE_HOST_TCP = 3,
-    TRANS_TYPE_ROCE = 4,
-    TRANS_TYPE_HETEROG_P2P = 5,
-    TRANS_TYPE_HETEROG_ROCE = 6,
-    TRANS_TYPE_DEVICE_P2P = 7,
-    TRANS_TYPE_DEVICE_IBVERBS = 8,
-    TRANS_TYPE_DEVICE_DIRECT = 9,
+    TRANS_TYPE_DEVICE_P2P = 2,
+    TRANS_TYPE_DEVICE_IBVERBS = 3,
+    TRANS_TYPE_DEVICE_DIRECT = 4,
     TRANS_TYPE_RESERVED = 255,
 };
 
