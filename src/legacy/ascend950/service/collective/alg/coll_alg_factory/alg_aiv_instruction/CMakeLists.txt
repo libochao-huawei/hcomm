@@ -1947,6 +1947,58 @@ else()
     )
  
 endif()
+
+if(PRODUCT_SIDE STREQUAL "host")
+    add_dependencies(hccl_aiv_op_910_95 hccl_v2 hccl_alg hccl_plf hcomm)
+    # 批量为所有 superkernel target 添加依赖
+    set(AIV_SK_TARGETS
+        hccl_ar_superkernel_mesh_1d_oneshot_int8
+        hccl_ar_superkernel_mesh_1d_oneshot_int16
+        hccl_ar_superkernel_mesh_1d_oneshot_int32
+        hccl_ar_superkernel_mesh_1d_oneshot_float16
+        hccl_ar_superkernel_mesh_1d_oneshot_float32
+        hccl_ar_superkernel_mesh_1d_oneshot_bfloat16
+        hccl_ar_superkernel_mesh_1d_twoshot_int8
+        hccl_ar_superkernel_mesh_1d_twoshot_int16
+        hccl_ar_superkernel_mesh_1d_twoshot_int32
+        hccl_ar_superkernel_mesh_1d_twoshot_float16
+        hccl_ar_superkernel_mesh_1d_twoshot_float32
+        hccl_ar_superkernel_mesh_1d_twoshot_bfloat16
+        hccl_rs_superkernel_mesh_1d_int8
+        hccl_rs_superkernel_mesh_1d_int16
+        hccl_rs_superkernel_mesh_1d_int32
+        hccl_rs_superkernel_mesh_1d_float16
+        hccl_rs_superkernel_mesh_1d_float32
+        hccl_rs_superkernel_mesh_1d_bfloat16
+        hccl_ag_superkernel_mesh_1d_int8
+        hccl_ag_superkernel_mesh_1d_int16
+        hccl_ag_superkernel_mesh_1d_int32
+        hccl_ag_superkernel_mesh_1d_float16
+        hccl_ag_superkernel_mesh_1d_float32
+        hccl_ag_superkernel_mesh_1d_bfloat16
+        hccl_ag_superkernel_mesh_1d_uint8
+        hccl_ag_superkernel_mesh_1d_uint16
+        hccl_ag_superkernel_mesh_1d_uint32
+        hccl_ag_superkernel_mesh_1d_int64
+        hccl_ag_superkernel_mesh_1d_uint64
+        hccl_a2a_superkernel_mesh_1d_int8
+        hccl_a2a_superkernel_mesh_1d_int16
+        hccl_a2a_superkernel_mesh_1d_int32
+        hccl_a2a_superkernel_mesh_1d_float16
+        hccl_a2a_superkernel_mesh_1d_float32
+        hccl_a2a_superkernel_mesh_1d_bfloat16
+        hccl_a2a_superkernel_mesh_1d_uint8
+        hccl_a2a_superkernel_mesh_1d_uint16
+        hccl_a2a_superkernel_mesh_1d_uint32
+        hccl_a2a_superkernel_mesh_1d_int64
+        hccl_a2a_superkernel_mesh_1d_uint64
+    )
+    foreach(tgt ${AIV_SK_TARGETS})
+        if(TARGET ${tgt})
+            add_dependencies(${tgt} hccl_v2 hccl_alg hccl_plf hcomm)
+        endif()
+    endforeach()
+endif()
  
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o ${INSTALL_OPTIONAL}
     COMPONENT hcomm
