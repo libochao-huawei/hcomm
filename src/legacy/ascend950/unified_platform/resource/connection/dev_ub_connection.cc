@@ -27,6 +27,7 @@ constexpr u32 UB_SQ_OFFLOAD_DEPTH     = 128;
 constexpr u32 UB_SQ_WQEBB_SIZE        = 64;
 constexpr u32 WQE_NUM_PER_SQE         = 4; // URMA约束每个SQE包含4个WQEBB
 constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传输量256*1024*1024 Byte
+// TODO: 后续替换为硬件查询API，动态获取最大传输size
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                  const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
@@ -79,11 +80,13 @@ DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddr
 
 DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                          const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr,
+                                         const bool isUbg)
     : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {
     tpProtocol = TpProtocol::UBOE;
-    jettyTimeOut = 16; // UBoE场景的默认TA配置为16
+    isUbg_     = isUbg;
+    jettyTimeOut = 16;
 }
 
 std::vector<char> DevUbConnection::GetUniqueId() const
@@ -327,14 +330,13 @@ void DevUbConnection::ImportRmtDto()
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    // 获取tp attr，检查是否已经填过相同的tp attr
-    if ((tpProtocol == TpProtocol::UBOE) && GetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
-        HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
-    }
-
     // 设置tp attr(sip dip等)
     if ((tpProtocol == TpProtocol::UBOE) && SetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
+        HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
+        ThrowAbnormalStatus(std::string(__func__));
+    }
+    // 获取tp attr(smac dmac等) — UBG走UBLink，不需要配置MAC地址
+    if ((tpProtocol == TpProtocol::UBOE) && !isUbg_ && GetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
         HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
@@ -597,7 +599,7 @@ std::unique_ptr<BaseTask> DevUbConnection::ConstructTaskUbSend(const HrtRaUbSend
 }
 
 void DevUbConnection::ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer &rmt,
-                                    std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
+                                    std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32, u8)> processOneSlice,
                                     DataType                                                             dataType) const
 {
     HCCL_INFO("[DevUbConnection::%s] start", __func__);
@@ -621,13 +623,14 @@ void DevUbConnection::ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer 
         MemoryBuffer rmtSlice(rmt.addr + sliceIdx * sliceSize, sliceSize, rmt.memHandle);
         // 当前是最后一片，且没有lastSlice时，启用cqe
         u32 cqeEnable = (sliceIdx == sliceNum - 1 && lastSliceSize == 0) ? 1 : 0;
-        processOneSlice(locSlice, rmtSlice, cqeEnable);
+        u8 placeOdr = cqeEnable ? 0x02 : 0x01;
+        processOneSlice(locSlice, rmtSlice, cqeEnable, placeOdr);
     }
 
     if (lastSliceSize > 0) {
         MemoryBuffer lastLocSlice(loc.addr + sliceNum * sliceSize, lastSliceSize, loc.memHandle);
         MemoryBuffer lastRmtSlice(rmt.addr + sliceNum * sliceSize, lastSliceSize, rmt.memHandle);
-        processOneSlice(lastLocSlice, lastRmtSlice, 1);
+        processOneSlice(lastLocSlice, lastRmtSlice, 1, 0x02);
         sliceNum++;
     }
 
@@ -637,8 +640,8 @@ void DevUbConnection::ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer 
 
 void DevUbConnection::ProcessSlicesWithNotify(
     const MemoryBuffer &loc, const MemoryBuffer &rmt,
-    std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
-    std::function<void(const MemoryBuffer &, const MemoryBuffer &)> processOneSliceWithNotify, DataType dataType) const
+    std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32, u8)> processOneSlice,
+    std::function<void(const MemoryBuffer &, const MemoryBuffer &, u8)> processOneSliceWithNotify, DataType dataType) const
 {
     HCCL_INFO("[DevUbConnection::%s] start", __func__);
 
@@ -660,14 +663,15 @@ void DevUbConnection::ProcessSlicesWithNotify(
     for (u32 sliceIdx = 0; sliceIdx < sliceNum; sliceIdx++) {
         MemoryBuffer locSlice(loc.addr + sliceIdx * sliceSize, sliceSize, loc.memHandle);
         MemoryBuffer rmtSlice(rmt.addr + sliceIdx * sliceSize, sliceSize, rmt.memHandle);
-        // 固定会有lastSlice，则前面的cqe都不启用
-        processOneSlice(locSlice, rmtSlice, 0);
+        // 固定会有lastSlice，则前面的cqe都不启用，placeOdr=RO(0x01)
+        processOneSlice(locSlice, rmtSlice, 0, 0x01);
     }
 
     if (lastSliceSize > 0) {
         MemoryBuffer lastLocSlice(loc.addr + sliceNum * sliceSize, lastSliceSize, loc.memHandle);
         MemoryBuffer lastRmtSlice(rmt.addr + sliceNum * sliceSize, lastSliceSize, rmt.memHandle);
-        processOneSliceWithNotify(lastLocSlice, lastRmtSlice);
+        // 末尾片placeOdr=SO(0x02)
+        processOneSliceWithNotify(lastLocSlice, lastRmtSlice, 0x02);
         sliceNum++;
     }
 
@@ -685,10 +689,11 @@ unique_ptr<BaseTask> DevUbConnection::PrepareRead(const MemoryBuffer &remoteMemB
     }
 
     HrtRaUbSendWrRespParam sendWrResp{};
-    ProcessSlices(localMemBuf, remoteMemBuf, [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
+    ProcessSlices(localMemBuf, remoteMemBuf, [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable, u8 placeOdr) {
         HrtRaUbSendWrReqParam sendWrReq = {};
         PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::READ, rmtSlice, locSlice, remoteJettyHandle,
                                               config, cqeEnable);
+        sendWrReq.placeOdr = placeOdr;
 
         sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
     });
@@ -709,11 +714,12 @@ unique_ptr<BaseTask> DevUbConnection::PrepareReadReduce(const MemoryBuffer &remo
     HrtRaUbSendWrRespParam sendWrResp{};
     ProcessSlices(
         localMemBuf, remoteMemBuf,
-        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
+        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable, u8 placeOdr) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::READ, rmtSlice, locSlice,
                                                   remoteJettyHandle, config, cqeEnable);
             PrepareUbSendWrReqParamReduceInfo(sendWrReq, dataType, reduceOp);
+            sendWrReq.placeOdr = placeOdr;
 
             sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
         },
@@ -732,10 +738,11 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWrite(const MemoryBuffer &remoteMem
     }
 
     HrtRaUbSendWrRespParam sendWrResp{};
-    ProcessSlices(localMemBuf, remoteMemBuf, [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
+    ProcessSlices(localMemBuf, remoteMemBuf, [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable, u8 placeOdr) {
         HrtRaUbSendWrReqParam sendWrReq = {};
         PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
                                               remoteJettyHandle, config, cqeEnable);
+        sendWrReq.placeOdr = placeOdr;
         sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
     });
 
@@ -755,11 +762,12 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduce(const MemoryBuffer &rem
     HrtRaUbSendWrRespParam sendWrResp{};
     ProcessSlices(
         localMemBuf, remoteMemBuf,
-        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
+        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable, u8 placeOdr) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
                                                   remoteJettyHandle, config, cqeEnable);
             PrepareUbSendWrReqParamReduceInfo(sendWrReq, dataType, reduceOp);
+            sendWrReq.placeOdr = placeOdr;
             sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
         },
         dataType);
@@ -833,17 +841,19 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteWithNotify(const MemoryBuffer 
     HrtRaUbSendWrRespParam sendWrResp{};
     ProcessSlicesWithNotify(
         localMemBuf, remoteMemBuf,
-        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
+        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable, u8 placeOdr) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
                                                   remoteJettyHandle, config, cqeEnable);
+            sendWrReq.placeOdr = placeOdr;
             sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
         },
-        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice) {
+        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u8 placeOdr) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
                                                   remoteJettyHandle, config);
             PrepareUbSendWrReqParamNotifyInfo(sendWrReq, data, remoteNotifyMemBuf);
+            sendWrReq.placeOdr = placeOdr;
 
             sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
         });
@@ -866,19 +876,21 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduceWithNotify(const MemoryB
     HrtRaUbSendWrRespParam sendWrResp{};
     ProcessSlicesWithNotify(
         localMemBuf, remoteMemBuf,
-        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
+        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable, u8 placeOdr) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
                                                   remoteJettyHandle, config, cqeEnable);
             PrepareUbSendWrReqParamReduceInfo(sendWrReq, dataType, reduceOp);
+            sendWrReq.placeOdr = placeOdr;
             sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
         },
-        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice) {
+        [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u8 placeOdr) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
                                                   remoteJettyHandle, config);
             PrepareUbSendWrReqParamReduceInfo(sendWrReq, dataType, reduceOp);
             PrepareUbSendWrReqParamNotifyInfo(sendWrReq, data, remoteNotifyMemBuf);
+            sendWrReq.placeOdr = placeOdr;
             sendWrResp = HrtRaUbPostSend(jettyHandle, sendWrReq);
         },
         dataType);

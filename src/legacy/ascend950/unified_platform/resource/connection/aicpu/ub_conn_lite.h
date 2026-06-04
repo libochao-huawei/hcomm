@@ -106,17 +106,17 @@ private:
     u32  piDetourCount{0};
     u32  ciDetourCount{0};
     void ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
-                       std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32)> processOneSlice,
+                       std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32, u8)> processOneSlice,
                        DataType dataType = DataType::INVALID) const;
     void ProcessSlicesWithNotify(
         const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
-        std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32)> processOneSlice,
-        std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &)> processOneSliceWithNotify,
+        std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32, u8)> processOneSlice,
+        std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u8)> processOneSliceWithNotify,
         DataType                                                                 dataType = DataType::INVALID) const;
     void ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const StreamLite &stream);
     void ProcessOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                                  UdmaSqeWriteWithNotify *sqe, const RmtRmaBufSliceLite &notify, u64 notifyData,
-                                 u32 opCode, const StreamLite &stream);
+                                 u32 opCode, const StreamLite &stream, u8 placeOdr);
     void FillCommSqeReduceInfo(UdmaSqeCommon &sqeComm, ReduceOp reduceOp, DataType dataType, u32 udfType = 0) const;
     void FillOneSqeWrite(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                          UdmaSqeWrite *sqe, UdmaSqOpcode opCode, u32 cqeEnable = 1);

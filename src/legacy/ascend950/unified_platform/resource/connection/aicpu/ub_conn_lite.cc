@@ -30,6 +30,7 @@ constexpr u32 PI_NUM_TWO                 = 2;
 constexpr u32 WRITE_WITH_NOTIFY_OPCODE   = 0x5;
 constexpr u32 ADDR_BIT_LOW               = 0xffffffff;
 constexpr u32 UB_DMA_MAX_READ_WEITE_SIZE = 256 * 1024 * 1024; // Byte, UB协议一次传输的最大size
+// TODO: 后续替换为硬件查询API，动态获取最大传输size
 
 static std::map<DataType, u32> g_ubmaDataTypeMap
     = {{DataType::INT8, 0x0},   {DataType::INT16, 0x1},   {DataType::INT32, 0x2}, {DataType::UINT8, 0x3},
@@ -94,7 +95,7 @@ void UbConnLite::FillCommSqeReduceInfo(UdmaSqeCommon &sqeComm, ReduceOp reduceOp
 }
 
 void UbConnLite::ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
-                               std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32)> processOneSlice,
+                               std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32, u8)> processOneSlice,
                                DataType                                                                      dataType) const
 {
     // reduce操作需要保证切片大小是数据类型大小的整数倍
@@ -123,7 +124,7 @@ void UbConnLite::ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceL
                                     rmt.GetTokenValue());
         // 当前是最后一片，且没有lastSlice时，启用cqe
         u32 cqeEnable = (sliceIdx == sliceNum - 1 && lastSliceSize == 0) ? 1 : 0;
-        processOneSlice(locSlice, rmtSlice, cqeEnable);
+        processOneSlice(locSlice, rmtSlice, cqeEnable, cqeEnable ? 0x02 : 0x01);
     }
 
     if (lastSliceSize > 0) {
@@ -131,7 +132,7 @@ void UbConnLite::ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceL
 
         RmtRmaBufSliceLite lastRmtSlice(rmt.GetAddr() + sliceNum * sliceSize, lastSliceSize, 0, rmt.GetTokenId(),
                                         rmt.GetTokenValue());
-        processOneSlice(lastLocSlice, lastRmtSlice, 1);
+        processOneSlice(lastLocSlice, lastRmtSlice, 1, 0x02);
         sliceNum++;
     }
 
@@ -141,8 +142,8 @@ void UbConnLite::ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceL
 
 void UbConnLite::ProcessSlicesWithNotify(
     const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
-    std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32)> processOneSlice,
-    std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &)> processOneSliceWithNotify,
+    std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32, u8)> processOneSlice,
+    std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u8)> processOneSliceWithNotify,
     DataType                                                                 dataType) const
 {
     HCCL_INFO("[UbConnLite::%s] start", __func__);
@@ -170,8 +171,8 @@ void UbConnLite::ProcessSlicesWithNotify(
 
         RmtRmaBufSliceLite rmtSlice(rmt.GetAddr() + sliceIdx * sliceSize, sliceSize, 0, rmt.GetTokenId(),
                                     rmt.GetTokenValue());
-        // 固定会有lastSlice，则前面的cqe都不启用
-        processOneSlice(locSlice, rmtSlice, 0);
+        // 固定会有lastSlice，则前面的cqe都不启用，placeOdr=RO(0x01)
+        processOneSlice(locSlice, rmtSlice, 0, 0x01);
     }
 
     if (lastSliceSize > 0) {
@@ -179,7 +180,8 @@ void UbConnLite::ProcessSlicesWithNotify(
 
         RmtRmaBufSliceLite lastRmtSlice(rmt.GetAddr() + sliceNum * sliceSize, lastSliceSize, 0, rmt.GetTokenId(),
                                         rmt.GetTokenValue());
-        processOneSliceWithNotify(lastLocSlice, lastRmtSlice);
+        // 末尾片placeOdr=SO(0x02)
+        processOneSliceWithNotify(lastLocSlice, lastRmtSlice, 0x02);
     }
 
     HCCL_INFO("[UbConnLite::%s] end, locBufSize[%u], sliceNUm[%u], sliceSize[%u], lastSliceSize[%u]", __func__,
@@ -228,7 +230,7 @@ void UbConnLite::ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const Str
 void UbConnLite::ProcessOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
                                          const SqeConfigLite &cfg, UdmaSqeWriteWithNotify *sqe,
                                          const RmtRmaBufSliceLite &notify, u64 notifyData, u32 opCode,
-                                         const StreamLite &stream)
+                                         const StreamLite &stream, u8 placeOdr)
 {
     HCCL_INFO("[UbConnLite::%s] start, locSize[%u], opCode[%u]", __func__, loc.GetSize(), opCode);
 
@@ -242,6 +244,7 @@ void UbConnLite::ProcessOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRm
     // 填充sqe
     sqe->comm.inlineEn = 0;
     FillCommSqe(&(sqe->comm), rmt, cfg, WRITE_WITH_NOTIFY_OPCODE);
+    sqe->comm.placeOdr = placeOdr;
     FillNotifySqe(&(sqe->notify), notify, notifyData);
     FillLocalSgeSqe(&(sqe->localU.sge), loc);
     if (sqe->localU.sge.length == 0) {
@@ -282,9 +285,10 @@ void UbConnLite::Read(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
 {
     HCCL_INFO("[UbConnLite::%s] start", __func__);
 
-    ProcessSlices(loc, rmt, [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable) {
+    ProcessSlices(loc, rmt, [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable, u8 placeOdr) {
         UdmaSqeWrite sqe{};
         FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_READ, cqeEnable);
+        sqe.comm.placeOdr = placeOdr;
         ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_READ, stream);
     });
 
@@ -299,10 +303,11 @@ void UbConnLite::ReadReduce(ReduceIn reduceIn, const RmaBufSliceLite &loc, const
 
     ProcessSlices(
         loc, rmt,
-        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable) {
+        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable, u8 placeOdr) {
             UdmaSqeWrite sqe{};
             FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_READ, cqeEnable);
             FillCommSqeReduceInfo(sqe.comm, reduceIn.reduceOp, reduceIn.dataType);
+            sqe.comm.placeOdr = placeOdr;
             ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_READ, stream);
         },
         reduceIn.dataType);
@@ -316,9 +321,10 @@ void UbConnLite::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt
 {
     HCCL_INFO("[UbConnLite::%s] start, loc size = %llu", __func__, loc.GetSize());
 
-    ProcessSlices(loc, rmt, [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable) {
+    ProcessSlices(loc, rmt, [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable, u8 placeOdr) {
         UdmaSqeWrite sqe{};
         FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_WRITE, cqeEnable);
+        sqe.comm.placeOdr = placeOdr;
         ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_WRITE, stream);
     });
 
@@ -383,10 +389,11 @@ void UbConnLite::WriteReduce(DataType dataType, ReduceOp reduceOp, const RmaBufS
 
     ProcessSlices(
         loc, rmt,
-        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable) {
+        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable, u8 placeOdr) {
             UdmaSqeWrite sqe{};
             FillCommSqeReduceInfo(sqe.comm, reduceOp, dataType);
             FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_WRITE, cqeEnable);
+            sqe.comm.placeOdr = placeOdr;
             ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_WRITE, stream);
         },
         dataType);
@@ -403,14 +410,15 @@ void UbConnLite::WriteWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSlic
 
     ProcessSlicesWithNotify(
         loc, rmt,
-        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable) {
+        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable, u8 placeOdr) {
             UdmaSqeWrite sqe{};
             FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_WRITE, cqeEnable);
+            sqe.comm.placeOdr = placeOdr;
             ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_WRITE, stream);
         },
-        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice) {
+        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u8 placeOdr) {
             UdmaSqeWriteWithNotify sqe{};
-            ProcessOneWqeWithNotify(locSlice, rmtSlice, cfg, &sqe, notify, notifyData, WRITE_WITH_NOTIFY_OPCODE, stream);
+            ProcessOneWqeWithNotify(locSlice, rmtSlice, cfg, &sqe, notify, notifyData, WRITE_WITH_NOTIFY_OPCODE, stream, placeOdr);
         });
 
     out.pi = pi;
@@ -425,16 +433,17 @@ void UbConnLite::WriteReduceWithNotify(DataType dataType, ReduceOp reduceOp, con
 
     ProcessSlicesWithNotify(
         loc, rmt,
-        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable) {
+        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable, u8 placeOdr) {
             UdmaSqeWrite sqe{};
             FillCommSqeReduceInfo(sqe.comm, reduceOp, dataType);
             FillOneSqeWrite(locSlice, rmtSlice, cfg, &sqe, UdmaSqOpcode::UDMA_OPC_WRITE, cqeEnable);
+            sqe.comm.placeOdr = placeOdr;
             ProcessOneWqe(&sqe, UdmaSqOpcode::UDMA_OPC_WRITE, stream);
         },
-        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice) {
+        [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u8 placeOdr) {
             UdmaSqeWriteWithNotify sqe{};
             FillCommSqeReduceInfo(sqe.comm, reduceOp, dataType);
-            ProcessOneWqeWithNotify(locSlice, rmtSlice, cfg, &sqe, notify, notifyData, WRITE_WITH_NOTIFY_OPCODE, stream);
+            ProcessOneWqeWithNotify(locSlice, rmtSlice, cfg, &sqe, notify, notifyData, WRITE_WITH_NOTIFY_OPCODE, stream, placeOdr);
         },
         dataType);
 

@@ -89,6 +89,7 @@ public:
 
 protected:
     TpProtocol     tpProtocol{TpProtocol::INVALID};
+    bool           isUbg_{false};
     void           GetTimeOut();
     u8             jettyTimeOut{8};
 
@@ -164,12 +165,12 @@ private:
     void         ReleaseResource();
 
     void ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer &rmt,
-                       std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
+                       std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32, u8)> processOneSlice,
                        DataType dataType = DataType::INVALID) const;
 
     void ProcessSlicesWithNotify(const MemoryBuffer &loc, const MemoryBuffer &rmt,
-                                 std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
-                                 std::function<void(const MemoryBuffer &, const MemoryBuffer &)> processOneSliceWithNotify,
+                                 std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32, u8)> processOneSlice,
+                                 std::function<void(const MemoryBuffer &, const MemoryBuffer &, u8)> processOneSliceWithNotify,
                                  DataType dataType = DataType::INVALID) const;
     
     std::unique_ptr<BaseTask> ConstructTaskUbSend(const HrtRaUbSendWrRespParam &sendWrResp, const SqeConfig &config);
@@ -199,7 +200,8 @@ class DevUbUboeConnection : public DevUbConnection {
 public:
     DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                         const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
-                        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
+                        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
+                        const bool isUbg = false);
 };
 
 std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);
