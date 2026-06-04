@@ -132,11 +132,11 @@ HcclResult HcclCommTaskExceptionLite::PrintCommTaskException(CollCommAicpu *aicp
         u32 sqTail = 0U;
         HcclResult ret = QuerySqStatus(devId_, streamLite->GetSqId(), sqHead, sqTail);
         if (ret != HCCL_SUCCESS || sqHead == sqTail) { // 此流为空时，不打印
-            HCCL_RUN_INFO("PrintThreadTaskInfo skip, QuerySqStatus ret[%d], aicpuComm[%s], devId[%u], sqId[%u], sqHead[%u], sqTail[%u]",
-                ret, aicpuComm->GetIdentifier().c_str(), devId_, streamLite->GetSqId(), sqHead, sqTail);
+            HCCL_RUN_INFO("[TaskException][AICPU]PrintTaskExceptionBySqeId skip, "
+                "QuerySqStatus ret[%d], aicpuComm[%s], sqId[%u], sqHead[%u], sqTail[%u]",
+                ret, aicpuComm->GetIdentifier().c_str(), streamLite->GetSqId(), sqHead, sqTail);
             continue;
         }
-
         uint16_t streamId = 0;
         uint16_t taskId = 0;
         streamLite->GetRtsq()->GetStreamIdAndTaskIdBySqIdx(sqHead, streamId, taskId);
@@ -253,16 +253,21 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskExceptionBySqeId(CollCommAicpu *a
     CHK_SMART_PTR_NULL(curTask);
     CHK_SMART_PTR_NULL(curTask->dfxOpInfo_);
 
+    // 已经打印过的不再重复打印
     auto it = threadsPrinted_.find(sqId);
-    if (it != threadsPrinted_.end() && it->second == sqeId) { // 已经打印过的不再重复打印
+    if (it != threadsPrinted_.end() && it->second == sqeId) {
         HCCL_RUN_INFO("TaskException][AICPU]sqId:%u, sqeId:%u has been printed, skip", sqId, sqeId);
         return HCCL_SUCCESS;
     }
     threadsPrinted_[sqId] = sqeId;
 
+    u32 sqHead = 0U;
+    u32 sqTail = 0U;
+    (void)QuerySqStatus(devId_, sqId, sqHead, sqTail);
+
     // 1. 打印task信息
-    HCCL_ERROR("[TaskException][AICPU]base information is %s, %s",
-        curTask->GetIndopBaseInfo().c_str(), curTask->GetParaInfo().c_str());
+    HCCL_ERROR("[TaskException][AICPU]base information is %s, %s, sqHead:%u, sqTail:%u",
+        curTask->GetIndopBaseInfo().c_str(), curTask->GetParaInfo().c_str(), sqHead, sqTail);
     // 2. UB任务打印EID信息
     PrintEid(*curTask);
     // 3. 打印group信息
