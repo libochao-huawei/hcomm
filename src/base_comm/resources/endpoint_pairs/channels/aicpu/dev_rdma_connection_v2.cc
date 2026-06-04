@@ -202,7 +202,7 @@ HcclResult DevRdmaConnectionV2::GetExchangeDto(std::unique_ptr<Hccl::Serializabl
         return HCCL_E_ROCE_CONNECT;
     }
     std::unique_ptr<ExchangeRdmaConnDto> dto= nullptr;
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         dto = std::make_unique<ExchangeRdmaConnDto>(localQpAttr.qpn, localQpAttr.psn, localQpAttr.gidIdx),
         return HCCL_E_PTR
     );

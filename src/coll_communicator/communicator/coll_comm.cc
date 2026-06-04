@@ -99,7 +99,7 @@ HcclResult CollComm::InitSimpleMode(void* rankGraph, aclrtBinHandle binHandle, H
     CHK_PTR_NULL(rankgraph_);
     CHK_RET(rankgraph_->GetRankSize(&rankNum));
 
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_, rankIpPortMap_),
         return HCCL_E_PTR);
 
@@ -127,16 +127,16 @@ HcclResult CollComm::InitFullMode(void* rankGraph, aclrtBinHandle binHandle, Hcc
     u32 threadNum = 0xffffffff;
     u32 notifyNumPerThread = 0xffffffff;
     if (!commEngineResMgr_) {
-        EXECEPTION_CATCH(commEngineResMgr_ = std::make_unique<CommEngineResMgr>(),
+        EXCEPTION_CATCH(commEngineResMgr_ = std::make_unique<CommEngineResMgr>(),
             return HCCL_E_PTR);
         CHK_PRT(commEngineResMgr_->Init(threadNum, notifyNumPerThread, commId_, binHandle, callbacks_));
     }
 
     if (!contextMgr_) {
-        EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
+        EXCEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
     }
 
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_, rankIpPortMap_),
         return HCCL_E_PTR);
     uint32_t opExpansionMode = 0;
@@ -162,7 +162,7 @@ HcclResult CollComm::InitFullMode(void* rankGraph, aclrtBinHandle binHandle, Hcc
     CHK_RET(InitHDCommunicate());
 
  	if (!hcclCommDfx_) {
-        EXECEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
+        EXCEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
  	}
  	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_, rankId_));
     CHK_RET(InitTaskExceptionHandler());
@@ -221,12 +221,12 @@ uint32_t CollComm::GetMyRankId() const
 HcclResult CollComm::InitHDCommunicate()
 {
     // 初始化aicpu进程 host-device 共享内存
-    EXECEPTION_CATCH((kfcControlTransferH2D_ = 
+    EXCEPTION_CATCH((kfcControlTransferH2D_ = 
         std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_H2D, sizeof(Hccl::KfcCommand))),
         return HCCL_E_PTR);
     CHK_RET(kfcControlTransferH2D_->InitHost());
 
-    EXECEPTION_CATCH((kfcStatusTransferD2H_ = 
+    EXCEPTION_CATCH((kfcStatusTransferD2H_ = 
         std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(Hccl::KfcExecStatus))),
         return HCCL_E_PTR);
     CHK_RET(kfcStatusTransferD2H_->InitHost());

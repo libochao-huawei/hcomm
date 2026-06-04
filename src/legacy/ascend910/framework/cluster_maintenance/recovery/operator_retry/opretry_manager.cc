@@ -66,8 +66,8 @@ HcclResult OpRetryManager::RegisterAgentRetryMachine(OpRetryAgentParam &agentPar
     RetryCtrl retryCtrl;
     agentOpRetry_.insert(std::make_pair(group, std::move(retryCtrl)));
     std::shared_ptr<OpRetryBase> retryPtr;
-    EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryAgentRunning>()), return HCCL_E_PTR);
-    EXECEPTION_CATCH((agentOpRetry_[group].retryCtx =
+    EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryAgentRunning>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((agentOpRetry_[group].retryCtx =
         std::make_shared<RetryContext>(agentParam, retryPtr)), return HCCL_E_PTR);
     agentOpRetry_[group].startExec = true;
     agentOpRetry_[group].retryCtx->SetRetryState(RETRY_STATE_AGENT_RUNNING, retryPtr);
@@ -96,9 +96,9 @@ HcclResult OpRetryManager::RegisterServerRetryMachine(const std::string& group,
     RetryCtrl retryCtrl;
     serverOpRetry.insert(std::make_pair(group, std::move(retryCtrl)));
     std::shared_ptr<OpRetryBase> retryPtr = nullptr;
-    EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerRunning>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerRunning>()), return HCCL_E_PTR);
 
-    EXECEPTION_CATCH((serverOpRetry[group].retryCtx =
+    EXCEPTION_CATCH((serverOpRetry[group].retryCtx =
         std::make_shared<RetryContext>(serverConnections, retryPtr, agentInfo)), return HCCL_E_PTR);
     serverOpRetry[group].startExec = true;
     serverOpRetry[group].retryCtx->SetRetryState(RETRY_STATE_SERVER_RUNNING, retryPtr);

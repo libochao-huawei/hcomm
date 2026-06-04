@@ -59,6 +59,7 @@ protected:
         const std::vector<SendRecvInfo> &myMeshAggregationSendRecvInfo, u64 &localOffset, u32 &offsetCounter,
         u64 &localLength, u64 &remoteOffset, u32 meshAggregationRankSize);
     u64 CalAlltoAllVScratchMemSize(u64 &workSpaceMemSize);
+    HcclResult CalcScratchMemSizeWithForceCheck(const OpParam& param, u64& scratchMemSize);
     bool HasMassTasks(std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo);
 
     OpParam AlltoAllVParam_;

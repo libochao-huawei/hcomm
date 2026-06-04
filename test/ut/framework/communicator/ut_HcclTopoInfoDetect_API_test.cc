@@ -87,7 +87,7 @@ TEST_F(HcclTopoInfoDetectTest, Ut_SetupServer_When_AutoPort_ReturnIsHCCL_SUCCESS
 
     HcclRootHandle rootHandle;
     std::shared_ptr<TopoInfoDetect> topoDetectServer;
-    EXECEPTION_CATCH((topoDetectServer = std::make_shared<TopoInfoDetect>()), return);
+    EXCEPTION_CATCH((topoDetectServer = std::make_shared<TopoInfoDetect>()), return);
     HcclResult ret = topoDetectServer->SetupServer(rootHandle);
     close(server_fd);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -102,7 +102,7 @@ TEST_F(HcclTopoInfoDetectTest, Ut_SetupServer_When_IfBasePort_ReturnIsHCCL_SUCCE
 
     HcclRootHandle rootHandle;
     std::shared_ptr<TopoInfoDetect> topoDetectServer;
-    EXECEPTION_CATCH((topoDetectServer = std::make_shared<TopoInfoDetect>()), return);
+    EXCEPTION_CATCH((topoDetectServer = std::make_shared<TopoInfoDetect>()), return);
 
     ret = topoDetectServer->SetupServer(rootHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -117,7 +117,7 @@ TEST_F(HcclTopoInfoDetectTest, Ut_SetupServer_When_PortRange_ReturnIsHCCL_SUCCES
 
     HcclRootHandle rootHandle;
     std::shared_ptr<TopoInfoDetect> topoDetectServer;
-    EXECEPTION_CATCH((topoDetectServer = std::make_shared<TopoInfoDetect>()), return);
+    EXCEPTION_CATCH((topoDetectServer = std::make_shared<TopoInfoDetect>()), return);
 
     ret = topoDetectServer->SetupServer(rootHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);

@@ -44,21 +44,21 @@ HcclResult ServerSocketManager::HostSocketListen(const Hccl::PortData& localPort
     }
 
     Hccl::SocketHandle socketHandle{};
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
             socketHandle = Hccl::HostSocketHandleManager::GetInstance().Create(devPhyId, localPort.GetAddr()), return HCCL_E_PARA);
 
     std::unique_ptr<Hccl::Socket> serverSocket{};
-    EXECEPTION_CATCH(serverSocket = std::make_unique<Hccl::Socket>(
+    EXCEPTION_CATCH(serverSocket = std::make_unique<Hccl::Socket>(
         socketHandle, localPort.GetAddr(), requestedPort, localPort.GetAddr(), "server", 
         Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE), return HCCL_E_PARA); //端口号可能冲突，需要SE做决定
     HCCL_INFO("[ServerSocketManager][%s] listen_socket_info[%s]", __func__, serverSocket->Describe().c_str());
     uint32_t actualPort = requestedPort;
     if (requestedPort == 0) {
-        EXECEPTION_CATCH(serverSocket->Listen(actualPort), return HCCL_E_INTERNAL);
+        EXCEPTION_CATCH(serverSocket->Listen(actualPort), return HCCL_E_INTERNAL);
         HCCL_INFO("[ServerSocketManager][%s] allocated port[%u]", __func__, actualPort);
         *port = actualPort;
     } else {
-        EXECEPTION_CATCH(serverSocket->Listen(), return HCCL_E_INTERNAL);
+        EXCEPTION_CATCH(serverSocket->Listen(), return HCCL_E_INTERNAL);
     }
  
     hostServerSocketMap_[localPort][actualPort] = std::make_pair(std::move(serverSocket), 1);
@@ -82,28 +82,28 @@ HcclResult ServerSocketManager::DeviceSocketListen(const Hccl::PortData& localPo
     }
 
     if (socketMgrCompat_ == nullptr) {
-        EXECEPTION_CATCH(socketMgrCompat_ = std::make_unique<Hccl::SocketManager>(), return HCCL_E_INTERNAL);
+        EXCEPTION_CATCH(socketMgrCompat_ = std::make_unique<Hccl::SocketManager>(), return HCCL_E_INTERNAL);
     }
     // 查询socketMgrCompat_，如果查询到已有serversocket，？new一个空壳，放进map里面，计数+1
     bool isListen = socketMgrCompat_->CheckServerPortListening(localPort);
 
     Hccl::SocketHandle socketHandle{};
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
             socketHandle = Hccl::SocketHandleManager::GetInstance().Create(devPhyId, localPort), return HCCL_E_PARA);
 
     std::unique_ptr<Hccl::Socket> serverSocket;
-    EXECEPTION_CATCH(serverSocket = std::make_unique<Hccl::Socket>(
+    EXCEPTION_CATCH(serverSocket = std::make_unique<Hccl::Socket>(
         socketHandle, localPort.GetAddr(), requestedPort, localPort.GetAddr(), "server", 
         Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA); //端口号可能冲突，需要SE做决定
     HCCL_INFO("[ServerSocketManager][%s] listen_socket_info[%s]", __func__, serverSocket->Describe().c_str());
     uint32_t actualPort = requestedPort;
     if (!isListen) {
         if (requestedPort == 0) {
-            EXECEPTION_CATCH(serverSocket->Listen(actualPort), return HCCL_E_INTERNAL);
+            EXCEPTION_CATCH(serverSocket->Listen(actualPort), return HCCL_E_INTERNAL);
             HCCL_INFO("[ServerSocketManager][%s] allocated port[%u]", __func__, actualPort);
             *port = actualPort;
         } else {
-            EXECEPTION_CATCH(serverSocket->Listen(), return HCCL_E_INTERNAL);
+            EXCEPTION_CATCH(serverSocket->Listen(), return HCCL_E_INTERNAL);
         }
     }
     deviceServerSocketMap_[localPort][actualPort] = std::make_pair(std::move(serverSocket), 1);
@@ -138,7 +138,7 @@ HcclResult ServerSocketManager::DeviceSocketStopListen(const Hccl::PortData& loc
             deviceServerSocketMap_[localPort].erase(port);
             // 对应去查socketMgrCompat_，如果查询到已有serversocket，？停止其监听功能？
             if (socketMgrCompat_ == nullptr) {
-                EXECEPTION_CATCH(socketMgrCompat_ = std::make_unique<Hccl::SocketManager>(), return HCCL_E_INTERNAL);
+                EXCEPTION_CATCH(socketMgrCompat_ = std::make_unique<Hccl::SocketManager>(), return HCCL_E_INTERNAL);
             }
             bool isListen = socketMgrCompat_->CheckServerPortListening(localPort);
             if (isListen) {

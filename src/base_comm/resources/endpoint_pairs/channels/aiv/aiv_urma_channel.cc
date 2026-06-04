@@ -431,12 +431,12 @@ HcclResult AivUrmaChannel::BuildConnection()
     std::unique_ptr<Hccl::DevUbConnection> ubConn = nullptr;
     switch (protocol) {
         case Hccl::LinkProtocol::UB_TP:
-            EXECEPTION_CATCH(ubConn = std::make_unique<Hccl::DevUbTpConnection>(
+            EXCEPTION_CATCH(ubConn = std::make_unique<Hccl::DevUbTpConnection>(
                                  rdmaHandle_, locAddr, rmtAddr, opMode, devUsed, jfcMode),
                 return HCCL_E_PTR);
             break;
         case Hccl::LinkProtocol::UB_CTP:
-            EXECEPTION_CATCH(ubConn = std::make_unique<Hccl::DevUbCtpConnection>(
+            EXCEPTION_CATCH(ubConn = std::make_unique<Hccl::DevUbCtpConnection>(
                                  rdmaHandle_, locAddr, rmtAddr, opMode, devUsed, jfcMode),
                 return HCCL_E_PTR);
             break;
@@ -459,7 +459,7 @@ HcclResult AivUrmaChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>
     HCCL_INFO("AivUrmaChannel BuildBuffer start size[%u].", bufs.size());
     for (size_t i = 0; i < bufs.size(); i++) {
         std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
-        EXECEPTION_CATCH(bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_), return HCCL_E_PTR);
+        EXCEPTION_CATCH(bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_), return HCCL_E_PTR);
         commonRes_.bufferVec.push_back(bufferPtr.get());
         localRmaBuffers_.push_back(std::move(bufferPtr));
     }
@@ -475,7 +475,7 @@ HcclResult AivUrmaChannel::BuildAivUrmaTransport()
     CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
 
     // make_unique / make_shared / release 包一层抛异常的宏
-    EXECEPTION_CATCH(transport_ = std::make_unique<Hccl::AivUrmaTransport>(
+    EXCEPTION_CATCH(transport_ = std::make_unique<Hccl::AivUrmaTransport>(
                          commonRes_, attr_, linkData, socket, rdmaHandle_), // 这里区分是否是优先recv
         return HCCL_E_PTR);
     return HCCL_SUCCESS;
