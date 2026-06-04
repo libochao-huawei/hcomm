@@ -113,9 +113,13 @@ HcclResult CollRunAlltoAllVStaged::CalcScratchMemSize(u64& scratchMemSize)
             maxWorkSpaceMemSize = std::max(workSpaceMemSize, maxWorkSpaceMemSize);
         }
         scratchMemSize = CalAlltoAllVScratchMemSize(maxWorkSpaceMemSize);
+        HCCL_DEBUG("[CollRunAlltoAllVStaged][CalcScratchMemSize] OpBase branch, "
+            "maxWorkSpaceMemSize[%llu], scratchMemSize[%llu]",
+            maxWorkSpaceMemSize, scratchMemSize);
     }
 
-    HCCL_INFO("[CollRunAlltoAllVStaged][CalcScratchMemSize] scratchMemSize[%llu]", scratchMemSize);
+    HCCL_INFO("[CollRunAlltoAllVStaged][CalcScratchMemSize] workflowMode[%d], scratchMemSize[%llu]",
+        workflowMode_, scratchMemSize);
     return HCCL_SUCCESS;
 }
 

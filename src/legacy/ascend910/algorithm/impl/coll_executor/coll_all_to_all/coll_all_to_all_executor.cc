@@ -104,6 +104,33 @@ HcclResult CollAlltoAllExecutor::GetAdjInfo(AlgResourceResponse& algRes, AdjInfo
     return HCCL_SUCCESS;
 }
 
+HcclResult CollAlltoAllExecutor::CalcScratchMemSizeWithForceCheck(const OpParam& param, u64& scratchMemSize)
+{
+    // AICPU aicpuUnfold展开模式下强制OP_BASE，Host侧CalcScratchMemSize需同步覆盖
+    // 使scratch计算路径与AICPU侧一致，解决scratch mem size不匹配问题
+    const bool needForceOpBase = param.aicpuUnfoldMode && !param.isZeroCopy;
+    HCCL_INFO("[CollAlltoAllExecutor][CalcResRequest] aicpuUnfoldMode[%d] isZeroCopy[%d] "
+        "needForceOpBase[%d] workflowMode[%d] tag[%s]",
+        param.aicpuUnfoldMode, param.isZeroCopy, needForceOpBase,
+        workflowMode_, param.tag.c_str());
+    const HcclWorkflowMode savedWorkflowMode = workflowMode_;
+    if (needForceOpBase) {
+        HCCL_INFO("[CollAlltoAllExecutor][CalcResRequest] aicpuUnfoldMode force OpBase, "
+            "originalWorkflowMode[%d], tag[%s]",
+            savedWorkflowMode, param.tag.c_str());
+        workflowMode_ = HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
+    }
+
+    CHK_RET(CalcScratchMemSize(scratchMemSize));
+
+    if (needForceOpBase) {
+        HCCL_DEBUG("[CollAlltoAllExecutor][CalcResRequest] restore workflowMode "
+            "after CalcScratchMemSize, scratchMemSize[%llu]", scratchMemSize);
+        workflowMode_ = savedWorkflowMode;
+    }
+    return HCCL_SUCCESS;
+}
+
 // override----------------------资源计算接口----------------------
 HcclResult CollAlltoAllExecutor::CalcResRequest(const OpParam& param, AlgResourceRequest& resourceRequest)
 {
@@ -117,7 +144,7 @@ HcclResult CollAlltoAllExecutor::CalcResRequest(const OpParam& param, AlgResourc
         std::vector<LevelNSubCommTransport>(static_cast<u32>(COMM_LEVEL_RESERVED))
     };
 
-    CHK_RET(CalcScratchMemSize(scratchMemSize));
+    CHK_RET(CalcScratchMemSizeWithForceCheck(param, scratchMemSize));
     CHK_RET(CalcStreamNum(streamNum));
     CHK_RET(CalcNotifyNum(streamNum, notifyNum));
     CHK_RET(CalcAivBufferRequest(aivBufferRequest));
@@ -372,11 +399,18 @@ u64 CollAlltoAllExecutor::CalAlltoAllVScratchMemSize(u64 &workSpaceMemSize)
     u64 scratchMemSize = 0U;
     if (workSpaceMemSize == 0) {
         scratchMemSize = TINY_MEM_SIZE;
+        HCCL_DEBUG("[CalAlltoAllVScratchMemSize] workSpaceMemSize==0, use TINY_MEM_SIZE[%llu]",
+            TINY_MEM_SIZE);
     } else {
         if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             scratchMemSize = std::max(std::max(workSpaceMemSize, inCCLbufferSize_), TINY_MEM_SIZE);
+            HCCL_DEBUG("[CalAlltoAllVScratchMemSize] OpBase mode, workSpaceMemSize[%llu], "
+                "inCCLbufferSize_[%llu], scratchMemSize[%llu]",
+                workSpaceMemSize, inCCLbufferSize_, scratchMemSize);
         } else {
             scratchMemSize = workSpaceMemSize;
+            HCCL_DEBUG("[CalAlltoAllVScratchMemSize] non-OpBase mode, workSpaceMemSize[%llu], "
+                "scratchMemSize[%llu]", workSpaceMemSize, scratchMemSize);
         }
     }
     return scratchMemSize;
