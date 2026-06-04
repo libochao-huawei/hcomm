@@ -1655,14 +1655,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::InitMyRank()
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::CreateMyRank(HcclCommParams &params, const RankTable_t &rankTable, HcclTopoAttr &topoAttr)
-    {
-        return HCCL_SUCCESS;
-    }
     HcclResult HcclCommunicator::InitMyRankConnectMode(HcclCommParams &params, const RankTable_t &rankTable)
     {
         return HCCL_SUCCESS;

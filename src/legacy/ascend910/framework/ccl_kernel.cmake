@@ -44,7 +44,6 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/include/hccl
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
-    ${HCOMM_DIR}/pkg_inc/hcomm/ccu
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/aicpu
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
