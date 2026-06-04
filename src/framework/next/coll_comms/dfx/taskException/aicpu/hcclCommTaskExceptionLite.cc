@@ -171,14 +171,9 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
         CHK_RET(aicpuComm->SendErrorMessageReportToHost(errMsgInfo));
 
         // 2) send mbox to tsfw
-        if (curTask->dfxOpInfo_ == nullptr) {
-            HCCL_ERROR("[%s]dfxOpInfo is nullptr. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
-                __func__, devId_, exceptionInfo.sqId, sqeId);
-        } else {
-            u32 notifyId = curTask->dfxOpInfo_->cpuWaitAicpuNotifyId_;
-            CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
-            aicpuComm->SetErrorReported(true);
-        }
+        u32 notifyId = curTask->dfxOpInfo_->cpuWaitAicpuNotifyId_;
+        CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
+        aicpuComm->SetErrorReported(true);
     }
 
     // 1. 打印task信息
@@ -389,10 +384,6 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
     std::string taskContextInfo = "";
     Hccl::TaskInfo* lastTask = taskContext[0].get();
     for (u32 i = 0; i < taskContext.size(); ++i) {
-        if (taskContext[i] == nullptr || taskContext[i]->dfxOpInfo_ == nullptr) {
-            HCCL_ERROR("[%s]taskContext nullptr, taskContext[%u]=%p", __func__, i, taskContext[i]);
-            continue;
-        }
         std::string conciseInfo = taskContext[i]->GetConciseBaseInfo();
         conciseInfo += ",";
 

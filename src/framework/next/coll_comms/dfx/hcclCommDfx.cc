@@ -50,7 +50,11 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag, u32 myRank
 HcclResult HcclCommDfx::IsOpBase(bool &isOpBase) {
     CHK_SMART_PTR_NULL(mirrorTaskManager_);
     auto currDfxOpInfo = mirrorTaskManager_->GetCurrDfxOpInfo();
-    CHK_SMART_PTR_NULL(currDfxOpInfo);
+    if (currDfxOpInfo == nullptr) {
+        HCCL_WARNING("[HcclCommDfx::IsOpBase] opInfo is nullptr!");
+        isOpBase = false;
+        return HCCL_SUCCESS;
+    }
     isOpBase = currDfxOpInfo->op_.opMode == Hccl::OpMode::OPBASE;
     HCCL_INFO("[%s] IsOpBase: %d", __func__, isOpBase);
     return HCCL_SUCCESS;
