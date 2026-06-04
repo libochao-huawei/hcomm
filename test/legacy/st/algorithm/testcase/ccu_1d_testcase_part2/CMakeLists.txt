@@ -34,6 +34,7 @@ add_dependencies(legacy_alg_ccu_1d_testcase_part2 hccl_alg_analyzer_legacy hccl_
 
 target_link_libraries(legacy_alg_ccu_1d_testcase_part2 PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core_headers>
     hccl_alg_analyzer_legacy
     hccl_orion_alg_test
     hccl_alg_adaption_v2
