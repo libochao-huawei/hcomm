@@ -21,7 +21,7 @@ HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, Endpoi
     }
  
     std::unique_ptr<EndpointPair> endpointPair = nullptr;
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         (endpointPair = std::make_unique<EndpointPair>(
             endpointDescPair.first,
             endpointDescPair.second,
