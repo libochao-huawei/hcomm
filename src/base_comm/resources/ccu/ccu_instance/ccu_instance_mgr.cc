@@ -66,7 +66,7 @@ CcuResult CcuInstanceMgr::Create(
     std::unique_lock<std::shared_timed_mutex> lock(insMapMutex_);
 
     std::unique_ptr<CcuInstance> instance{nullptr};
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         instance = std::make_unique<CcuInstance>(insType),
         return CcuResult::CCU_E_PTR);
 
