@@ -145,7 +145,7 @@ HcclResult OpRetryConnection::GetInstance(const std::string &group, OpRetryConne
     std::lock_guard<std::shared_timed_mutex> guard(instance_->GetMtx());
     if (forceNew || instance_->FindLockFree(group) == instance_->EndLockFree()) {
         OpRetryConnectionPtr tmpConn;
-        EXECEPTION_CATCH(tmpConn = std::make_shared<OpRetryConnection>(), return HCCL_E_PTR);
+        EXCEPTION_CATCH(tmpConn = std::make_shared<OpRetryConnection>(), return HCCL_E_PTR);
         instance_->EmplaceLockFree(group, tmpConn);
     }
 
@@ -373,7 +373,7 @@ HcclResult OpRetryConnection::StartListen()
         CHK_RET(GetHostSocketWhiteList());
     }
 
-    EXECEPTION_CATCH((listenSocket_ = std::make_shared<HcclSocket>(serverNetCtx_, serverPort_)), return HCCL_E_PTR);
+    EXCEPTION_CATCH((listenSocket_ = std::make_shared<HcclSocket>(serverNetCtx_, serverPort_)), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(listenSocket_);
     CHK_RET(listenSocket_->Init());
     CHK_RET(listenSocket_->Listen());
@@ -542,7 +542,7 @@ HcclResult OpRetryConnection::Connect()
     }
 
     auto tag = GetTag();
-    EXECEPTION_CATCH((socket_ = std::make_shared<HcclSocket>(tag,
+    EXCEPTION_CATCH((socket_ = std::make_shared<HcclSocket>(tag,
         clientNetCtx_, serverIp_, serverPort_, HcclSocketRole::SOCKET_ROLE_CLIENT)), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(socket_);
     CHK_RET(socket_->Init());

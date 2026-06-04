@@ -349,7 +349,7 @@ namespace hccl
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
         CHK_RET(InitBinHandle());
 
-        EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks, initMode),
+        EXCEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks, initMode),
             return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
