@@ -639,6 +639,11 @@ int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32
     return HCCL_SUCCESS;
 }
 
+int32_t HcommThreadRegisterCheckOpStatus(ThreadHandle thread, std::function<HcclResult(bool)> callback)
+{
+    return HCCL_SUCCESS;
+}
+
 int32_t HcommDpuChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(const Hccl::TaskParam&, u64)> callback) {
     auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
     CHK_PTR_NULL(hostCpuRoceChannelPtr);

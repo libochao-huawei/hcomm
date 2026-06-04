@@ -63,6 +63,11 @@ public:
         checkOpExecStatusCallback_ = callback;
     }
 
+    void SetExecStatusCallback(std::function<HcclResult(bool&)> callback) // 自定义算子流程注册检查执行状态的回调函数
+    {
+        checkExecStatusCallback_ = callback;
+    }
+
     virtual void LaunchTask()
     {
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
@@ -239,6 +244,7 @@ protected:
     u32 taskIdEnd_{0}; // 当前流已经申请到的最大taskId
 
     std::function<void()> checkOpExecStatusCallback_{nullptr};
+    std::function<HcclResult(bool&)> checkExecStatusCallback_{nullptr}; // 自定义算子流程，检查执行状态
 
     u32 QuerySqDepth();
 

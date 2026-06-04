@@ -103,9 +103,8 @@ public:
  	    callback_ = callback;
  	    return HCCL_SUCCESS;
  	}
- 	std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {
- 	         return callback_;
- 	}
+ 	std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() { return callback_; }
+    virtual HcclResult SetCheckExecStatusCallback(std::function<HcclResult(bool &)> callback) { return HCCL_SUCCESS; }
 protected:
     HcclResult ReportAicpuNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool isMaster) const;
@@ -121,6 +120,7 @@ protected:
 private:
     std::unordered_map<CommEngine, ThreadHandle> threadHandleMap_; // CPU_TS上的ThreadHandle与其他引擎上的ThreadHandle的映射
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback_; // 上报task信息的回调函数
+    std::function<HcclResult(bool &)> checkExecStatusCallback_; // 检查执行状态
 };
 
 inline Stream *GetStream(uint64_t thread)

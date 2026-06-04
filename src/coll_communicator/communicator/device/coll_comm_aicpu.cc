@@ -150,6 +150,11 @@ HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread)
         HCCL_ERROR("[CollCommAicpu][RegisterThreadAddDfxTaskInfo] HcommThreadRegisterDfx failed, ret[%d]", ret);
         return HCCL_E_PTR;
     }
+
+    std::function<HcclResult(bool)> checkExecStatus = [this](bool isTimeout) {
+        return this->CheckOpExecStatus(isTimeout);
+    };
+    HcommThreadRegisterCheckOpStatus(thread, checkExecStatus);
  	return HCCL_SUCCESS;
 } 
 
