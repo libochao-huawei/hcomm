@@ -60,7 +60,7 @@ void ProfilingHandlerLite::SetCachedGroupName(const DfxOpInfo &opInfo)
 
 void ProfilingHandlerLite::Init()
 {
-    DlProfFunction::GetInstance().DlProfFunctionInit();
+    Hccl::DlProfFunction::GetInstance().DlProfFunctionInit();
     cachedTid_ = SalGetTid();
     SetCachedCclTag();
     if (MsprofReportBatchAdditionalInfo == nullptr) {
