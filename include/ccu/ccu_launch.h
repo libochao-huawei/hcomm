@@ -15,20 +15,24 @@
 #include "ccu_types.h"
 #include "hccl_res.h"
 
+#ifndef HCOMM_WEAK_SYMBOL
+#define HCOMM_WEAK_SYMBOL __attribute__((weak))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-extern CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle);
+extern CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle) HCOMM_WEAK_SYMBOL;
 
 extern CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle,
     const char *kernelFuncName, const void *kernelFunc,
-    const void *kernelArg, CcuKernelHandle *kernelHandle);
+    const void *kernelArg, CcuKernelHandle *kernelHandle) HCOMM_WEAK_SYMBOL;
 
-extern CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle);
+extern CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle) HCOMM_WEAK_SYMBOL;
 
 extern CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
-    CcuKernelHandle kernelHandle, const void *taskArgs, uint32_t argSize);
+    CcuKernelHandle kernelHandle, const void *taskArgs, uint32_t argSize) HCOMM_WEAK_SYMBOL;
 
 #ifdef __cplusplus
 }
