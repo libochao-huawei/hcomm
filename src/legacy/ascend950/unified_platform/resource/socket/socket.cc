@@ -348,6 +348,7 @@ bool Socket::CheckRecvRequestResult()
 
 SocketStatus Socket::GetAsyncStatus()
 {
+    HCCL_INFO("[Socket][%s] socketStatus =  %u",  __func__, socketStatus);
     switch (socketStatus) {
         case SocketStatus::OK:
         case SocketStatus::TIMEOUT:
@@ -390,10 +391,13 @@ SocketStatus Socket::GetAsyncStatus()
 
 void Socket::GetOneSocket()
 {
+    HCCL_INFO("[Socket][%s] socket des =  [%s]",  __func__, this->Describe().c_str());
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
-    
+    HCCL_INFO("[Socket][%s] fdHandleParam",  __func__);
     RaSocketFdHandleParam fdHandleParam(nullptr, 0);
+    HCCL_INFO("[Socket][%s] RaGetOneSocket",  __func__);
     EXCEPTION_CATCH(fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param), return);
+    HCCL_INFO("[Socket][%s] fdHandleParam.status = %u",  __func__, fdHandleParam.status);
     // socket status:0 not connected 1:connected 2:connect timeout 3:connecting
     if (fdHandleParam.status == SOCKET_CONNECTED) {
         // sockete 准备好时，可以读取信息
