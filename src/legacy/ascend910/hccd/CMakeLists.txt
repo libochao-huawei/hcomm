@@ -170,7 +170,6 @@ if(BUILD_OPEN_PROJECT)
 
     target_include_directories(hccd PRIVATE
         # 三方件头文件
-        ${JSON_INCLUDE_DIR}
         ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
     )
 
@@ -181,6 +180,7 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:rdma_core_headers>
+        $<BUILD_INTERFACE:json>
         -Wl,--no-as-needed
         c_sec
         mmpa
@@ -202,7 +202,7 @@ else()
         ${TOP_DIR}/abl/msprof/inc
         ${TOP_DIR}/open_source/json/include
         ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
- 	    ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal/hcomm
+        ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal/hcomm
     )
 
     target_link_libraries(hccd
@@ -222,9 +222,6 @@ else()
     # 安装
     install(TARGETS hccd
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
- 	    COMPONENT hcomm
+        COMPONENT hcomm
     )
 endif()
-
-# 设置依赖关系
-add_dependencies(hccd json)
