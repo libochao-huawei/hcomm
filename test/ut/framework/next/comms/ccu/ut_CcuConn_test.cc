@@ -64,7 +64,8 @@ protected:
 
 };
 
-pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> MockMakeCcuConnection(hcomm::TpProtocol tpProtocol)
+pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> MockMakeCcuConnection(
+    hcomm::TpProtocol tpProtocol, uint32_t qos = Hccl::UB_QOS_DEFAULT)
 {
     constexpr uint64_t fakeMemAddr = 0x12345678;
 
@@ -100,12 +101,11 @@ pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> Mock
         ccuJettys.emplace_back(std::move(ccuJetty));
     }
 
-    constexpr uint32_t kJettyQos = ::EnvConfig::UB_QOS_DEFAULT;
     unique_ptr<hcomm::CcuConnection> connection;
     if (tpProtocol == hcomm::TpProtocol::CTP) {
-        connection = make_unique<hcomm::CcuCtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, kJettyQos);
+        connection = make_unique<hcomm::CcuCtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, qos);
     } else {
-        connection = make_unique<hcomm::CcuRtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, kJettyQos);
+        connection = make_unique<hcomm::CcuRtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, qos);
     }
 
     return {std::move(connection), std::move(ccuJettys)};
@@ -319,9 +319,8 @@ HcclResult StubTpMgrGetTpInfoCaptureParam(hcomm::TpMgr *, const hcomm::GetTpInfo
 TEST_F(CcuConnTest, Ut_MakeGetTpInfoParam_When_QosAboveSeven_Expect_ClampsToDefault)
 {
     gCapturedConnTpParam = hcomm::GetTpInfoParam{};
-    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::RTP);
+    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::RTP, 9U);
     auto connection = resPair.first.get();
-    connection->qos_ = 9U;
     connection->innerStatus_ = hcomm::CcuConnection::InnerStatus::INIT;
 
     MOCKER_CPP(&hcomm::TpMgr::GetTpInfo).stubs().will(invoke(StubTpMgrGetTpInfoCaptureParam));

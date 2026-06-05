@@ -263,24 +263,6 @@ static bool DeviceSupportsRaGetTpAttrAsync(uint32_t phyId)
     return (ret == 0 && tpAttrVersion >= kGetTpAttrVersion);
 }
 
-/// 设备侧与 `RaGetTpAttrAsync` 一致走 HDC；`RaCtxSetTpAttr` 易触发 Rs 路径 phyId 无效，故统一用异步封装并同步等待完成。
-static HcclResult HrtRaSetTpAttrAsyncSync(RdmaHandle ctxHandle, uint64_t tpHandle, uint32_t attrBitmap,
-    struct TpAttr &attr, const char *logTag)
-{
-    RequestHandle reqHandle = 0;
-    try {
-        const HcclResult hret = HrtRaSetTpAttrAsync(ctxHandle, tpHandle, attrBitmap, attr, reqHandle);
-        if (hret != HcclResult::HCCL_SUCCESS) {
-            HCCL_ERROR("[TpManager][%s] HrtRaSetTpAttrAsync failed hcclRet[%d] tpHandle[%llu].", logTag,
-                static_cast<int>(hret), tpHandle);
-        }
-        return hret;
-    } catch (const NetworkApiException &ex) {
-        HCCL_ERROR("[TpManager][%s] HrtRaSetTpAttrAsync exception: %s tpHandle[%llu].", logTag, ex.what(), tpHandle);
-        return HcclResult::HCCL_E_NETWORK;
-    }
-}
-
 static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const IpAddress &locAddr, uint64_t tpHandle,
     uint32_t mappedSl)
 {
@@ -296,7 +278,16 @@ static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const IpAddres
     }
     struct TpAttr tpSlAttr {};
     tpSlAttr.sl = static_cast<uint8_t>(mappedSl & 0xFU);
-    return HrtRaSetTpAttrAsyncSync(ctxHandle, tpHandle, kTpAttrBitmapSl, tpSlAttr, "CommitMappedSlToTpAttr");
+    RequestHandle reqHandle = 0;
+    HcclResult hret = HcclResult::HCCL_SUCCESS;
+    TRY_CATCH_RETURN(
+        hret = HrtRaSetTpAttrAsync(ctxHandle, tpHandle, kTpAttrBitmapSl, tpSlAttr, reqHandle);
+    );
+    if (hret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[TpManager][CommitMappedSlToTpAttr] HrtRaSetTpAttrAsync failed hcclRet[%d] tpHandle[%llu].",
+            static_cast<int>(hret), tpHandle);
+    }
+    return hret;
 }
 
 static bool ParseDscpFromCfgByQos(const std::string &cfg, uint8_t qos, uint8_t &dscpOut)
@@ -370,7 +361,16 @@ static HcclResult CommitUboeDscpToTpAttr(const uint32_t devPhyId, const IpAddres
     }
     struct TpAttr tpDscpAttr {};
     tpDscpAttr.dscp = static_cast<uint8_t>(dscp & 0x3FU);
-    return HrtRaSetTpAttrAsyncSync(ctxHandle, tpHandle, kTpAttrBitmapDscp, tpDscpAttr, "CommitUboeDscpToTpAttr");
+    RequestHandle reqHandle = 0;
+    HcclResult hret = HcclResult::HCCL_SUCCESS;
+    TRY_CATCH_RETURN(
+        hret = HrtRaSetTpAttrAsync(ctxHandle, tpHandle, kTpAttrBitmapDscp, tpDscpAttr, reqHandle);
+    );
+    if (hret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[TpManager][CommitUboeDscpToTpAttr] HrtRaSetTpAttrAsync failed hcclRet[%d] tpHandle[%llu].",
+            static_cast<int>(hret), tpHandle);
+    }
+    return hret;
 }
 
 static HcclResult CommitTpAttrsAfterSlMapping(const uint32_t devPhyId, const RaUbGetTpInfoParam &param,

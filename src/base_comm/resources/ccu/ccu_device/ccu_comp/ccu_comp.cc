@@ -32,14 +32,14 @@
 
 namespace hcomm {
 
-constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::RTP; // 环回使用RTP避免被环境link down阻塞
+constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::RTP; // 环回默认RTP，调用方可传入其他 protocol
 
-static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr)
+static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr, const TpProtocol tpProtocol)
 {
     GetTpInfoParam param;
     param.locAddr = commAddr;
     param.rmtAddr = commAddr;
-    param.tpProtocol = LOOP_JETTY_PROTOCOL;
+    param.tpProtocol = tpProtocol;
     param.qos = 0U; // CCU 环回与通信域 hcclQos 解耦；SL 仅由 RaGetTpAttr.slBitmap + loopFirstTpLowestSl 决定
     param.slLevelCount = 0;
     param.loopFirstTpLowestSl = true;
@@ -409,19 +409,42 @@ HcclResult CcuComponent::CreateLoopChannel(const uint8_t dieId, uint32_t &channe
     return HcclResult::HCCL_SUCCESS;
 }
 
-JettyImportCfg GetJettyImportCfg(const TpInfo &tpInfo, const uint32_t &psn)
+static JettyImportCfg GetJettyImportCfg(const TpInfo &tpInfo, const uint32_t psn, const TpProtocol tpProtocol)
 {
     const TpHandle tpHandle = tpInfo.tpHandle;
-    HCCL_INFO("[CcuComponent][%s] loop channel use tp handle[%llu] psn[%u].",
-        __func__, tpHandle, psn);
+    HCCL_INFO("[CcuComponent][%s] loop channel use tp handle[%llu] psn[%u] protocol[%s].",
+        __func__, tpHandle, psn, tpProtocol.Describe().c_str());
 
     JettyImportCfg cfg = {};
     cfg.localTpHandle = tpHandle;
     cfg.remoteTpHandle = tpHandle;
     cfg.localPsn = psn;
     cfg.remotePsn = psn;
-    cfg.protocol = LOOP_JETTY_PROTOCOL;
+    cfg.protocol = tpProtocol;
     return cfg;
+}
+
+static HcclResult RequestNewLoopTpInfo(const uint32_t devPhyId, const CommAddr &commAddr,
+    const TpProtocol tpProtocol, TpInfo &tpInfo)
+{
+    constexpr auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
+    const auto startTime = std::chrono::steady_clock::now();
+
+    auto &tpMgr = TpMgr::GetInstance(devPhyId);
+    const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr, tpProtocol);
+    HcclResult ret = HcclResult::HCCL_SUCCESS;
+    do {
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_ERROR("[CcuComponent][%s] failed, get tp info "
+                "timeout[%d ms], devPhyId[%u].", __func__, timeout, devPhyId);
+            return HcclResult::HCCL_E_TIMEOUT;
+        }
+
+        ret = tpMgr.GetTpInfo(tpParam, tpInfo);
+    } while (ret == HcclResult::HCCL_E_AGAIN);
+
+    CHK_RET(ret); // 非重试属于异常情况
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
@@ -449,8 +472,10 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     auto &createdVec = createdOutParamMap_[dieId];
     auto &importedVec = importedOutParamMap_[dieId];
 
+    const TpProtocol loopJettyProtocol = LOOP_JETTY_PROTOCOL;
+
     TpInfo loopTpInfo{};
-    CHK_RET(GetLoopTpInfo(dieId, commAddr, loopTpInfo));
+    CHK_RET(GetLoopTpInfo(dieId, commAddr, loopTpInfo, loopJettyProtocol));
     const uint32_t loopJettyQos = loopTpInfo.hasMappedJettyPriority
         ? (loopTpInfo.mappedJettyPriority & 0xFU)
         : EnvConfig::UB_QOS_DEFAULT;
@@ -461,7 +486,7 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
 
     for (const auto &jettyInfo : jettyInfos) {
         const auto psn = GetNewPsn();
-        const auto jettyImportCfg = GetJettyImportCfg(loopTpInfo, psn);
+        const auto jettyImportCfg = GetJettyImportCfg(loopTpInfo, psn, loopJettyProtocol);
 
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
         HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue, tokenIdHandle, jettyMode,
@@ -482,36 +507,14 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuComponent::RequestNewLoopTpInfo(const CommAddr &commAddr, TpInfo &tpInfo)
-{
-    constexpr auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
-    const auto startTime = std::chrono::steady_clock::now();
-
-    auto &tpMgr = TpMgr::GetInstance(devPhyId_);
-    const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr);
-    HcclResult ret = HcclResult::HCCL_SUCCESS;
-    do {
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            HCCL_ERROR("[CcuComponent][%s] failed, get tp info "
-                "timeout[%d ms], devPhyId[%u].", __func__, timeout, devPhyId_);
-            return HcclResult::HCCL_E_TIMEOUT;
-        }
-
-        ret = tpMgr.GetTpInfo(tpParam, tpInfo);
-    } while (ret == HcclResult::HCCL_E_AGAIN);
-
-    CHK_RET(ret); // 非重试属于异常情况
-    return HcclResult::HCCL_SUCCESS;
-}
-
 HcclResult CcuComponent::GetLoopTpInfo(const uint8_t dieId,
-    const CommAddr &commAddr, TpInfo &tpInfo)
+    const CommAddr &commAddr, TpInfo &tpInfo, const TpProtocol tpProtocol)
 {
     const auto &srcIter = tpInfoMap_.find(dieId);
     // 优先使用已经创建过的tpHandle
     if (srcIter == tpInfoMap_.end()) {
         TpInfo newTpInfo{};
-        CHK_RET(RequestNewLoopTpInfo(commAddr, newTpInfo));
+        CHK_RET(RequestNewLoopTpInfo(devPhyId_, commAddr, tpProtocol, newTpInfo));
         tpInfoMap_[dieId] = std::move(newTpInfo);
     }
 
@@ -963,7 +966,7 @@ HcclResult CcuComponent::ReleaseAllTpInfos()
             return HcclResult::HCCL_E_NOT_FOUND;
         }
         const auto &commAddr = dieIdIter->second.second;
-        const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr);
+        const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr, LOOP_JETTY_PROTOCOL);
         (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(tpParam, tpInfo);
         item.second.tpHandle = 0; // 清理handle，避免重复释放
     }
