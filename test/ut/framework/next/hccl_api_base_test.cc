@@ -241,6 +241,8 @@ void BaseInit::SetUp() {
     MOCKER_CPP(&Heartbeat::UnRegisterRanks)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtCtxSetCurrent).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
 }
 void BaseInit::TearDown() {
     rtCloseNetService();

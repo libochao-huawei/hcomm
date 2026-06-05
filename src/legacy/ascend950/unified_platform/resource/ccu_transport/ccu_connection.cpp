@@ -21,6 +21,7 @@
 #include "local_ub_rma_buffer.h"
 
 namespace Hccl {
+
 CcuConnection::CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
@@ -220,9 +221,9 @@ void CcuConnection::Serialize(std::vector<char> &dtoData)
     dtoStream << jettyNum;
     HCCL_INFO("[CcuConnection][%s], jettyNum[%u]", __func__, jettyNum);
     for (const auto &ccuJetty : ccuJettys_) {
-        dtoStream << ccuJetty->GetCreateJettyParam().tokenValue; 
+        dtoStream << ccuJetty->GetCreateJettyParam().tokenValue;
         const auto &outParam = ccuJetty->GetJettyedOutParam();
-        dtoStream << outParam.key; // 此处的qpKey是数组
+        dtoStream << outParam.key;
         dtoStream << outParam.keySize;
     }
 

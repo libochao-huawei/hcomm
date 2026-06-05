@@ -35,12 +35,15 @@ union GetTpCfgFlag {
         uint32_t uboe : 1;
         uint32_t preDefined : 1;
         uint32_t dynamicDefined : 1;
-        uint32_t reserved : 26;
+        uint32_t udp : 5;
+        uint32_t groupId : 15;
+        uint32_t reserved : 6;
     } bs;
     uint32_t value;
 };
 
 #pragma pack(1)
+/** 与 ubengine `urma_tp_attr_value_t` 布局、`#pragma pack(1)` 一致（HCCP 侧字段名为驼峰），供 RsUbGetTpAttr / RsUbSetTpAttr 与 URMA 强转。 */
 struct TpAttr {
     uint8_t retryTimesInit : 3; // corresponding bitmap bit: 0
     uint8_t at : 5; // corresponding bitmap bit: 1
@@ -60,7 +63,10 @@ struct TpAttr {
     uint8_t sprayEn : 1; // corresponding bitmap bit: 15
     uint8_t udpGlobalEn : 1; // corresponding bitmap bit: 16
     uint8_t reserve0 : 2;
-    uint8_t reserved[73];
+    uint16_t slBitmap;
+    uint8_t dscpConfigMode : 1;
+    uint8_t reserve1 : 7;
+    uint8_t reserved[70];
 };
 #pragma pack()
 
