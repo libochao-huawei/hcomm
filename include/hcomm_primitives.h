@@ -433,6 +433,30 @@ extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle
  */
 extern int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut);
 
+/**
+ * @brief 查找aicpu task cache
+ * @param[in] tag 缓存标识符
+ * @param[out] isCacheMiss 是否cache miss
+ * @return int32_t 执行结果状态码
+ */
+extern HcommResult HcommAicpuTsCacheLookup(const char* tag, bool* isCacheMiss);
+
+/**
+ * @brief 提交aicpu task cache
+ * @param[in] tag 缓存标识符
+ * @param[in] addrs 内存基址信息数组
+ * @param[in] count 内存信息数组长度
+ * @return int32_t 执行结果状态码
+ */
+extern HcommResult HcommAicpuTsTaskCacheSubmit(const char* tag, void** addrs, uint64_t* sizes, uint32_t count);
+
+/**
+ * @brief 清理aicpu task cache中指定tag对应的cache entry
+ * @param[in] tag 缓存标识符
+ * @return int32_t 执行结果状态码
+ */
+extern HcommResult HcommAicpuTsTaskCacheClear(const char* tag);
+
 /** @} */  // 通知
 
 /**

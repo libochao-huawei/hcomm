@@ -21,6 +21,8 @@
 #include "rma_conn_lite.h"
 #include "kernel_param_lite.h"
 #include "hcomm_primitives.h"
+#include "ub_conn_lite.h"
+#include "rtsq_a5.h"
 
 namespace Hccl {
 
@@ -85,6 +87,21 @@ public:
 
     HcclResult ExecuteBatchTransfer(StreamLite *streamLitePtr, const HcommBatchTransferDesc *transferDescs,
                         uint32_t transferDescNum);
+
+    // 用于aicpu task cache
+    inline HcclResult SetNeedCacheTaskCallback(std::function<bool()> callback)
+    {
+        needCacheTaskCallback_ = callback;
+        return HCCL_SUCCESS;
+    }
+    inline HcclResult SetAddWqeArrayCallback(
+        std::function<HcclResult(UbConnLite*, UbTransportLiteImpl*, const std::vector<WqeTask>&, const uint32_t)> callback)
+    {
+        CHK_PTR_NULL(callback);
+        addWqeArrayCallback_ = callback;
+        return HCCL_SUCCESS;
+    }
+
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
@@ -169,6 +186,41 @@ private:
 
     void ExecProfiling(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt, 
                  const std::vector<BaseTransportLiteImpl::TransferOp> &transferOp, const StreamLite &stream, u32 taskId);
+
+    // 用于aicpu task cache
+    std::function<bool()> needCacheTaskCallback_{nullptr};
+    std::function<HcclResult(UbConnLite*, UbTransportLiteImpl*, const std::vector<WqeTask>&, const uint32_t)>
+        addWqeArrayCallback_{nullptr};
+
+    // 展开下发WQE前，按需设置cache context
+    inline HcclResult PreLaunchWqeForCache(UbConnLite*& ubConnLitePtr, bool& needCacheTask, RmaConnLite* connPtr)
+    {
+        CHK_PTR_NULL(needCacheTaskCallback_);
+        needCacheTask = needCacheTaskCallback_();
+        if (needCacheTask) {
+            CHK_PTR_NULL(connPtr);
+            ubConnLitePtr = dynamic_cast<UbConnLite*>(connPtr);
+            CHK_PTR_NULL(ubConnLitePtr);
+            ubConnLitePtr->EnableCacheContext();
+        }
+        return HCCL_SUCCESS;
+    }
+
+    // 展开下发WQE后, 展开下发DbSqe前, 按需缓存wqe及DbSqeIdx
+    inline HcclResult PostLaunchWqeForCache(UbConnLite* ubConnLitePtr, bool needCacheTask, const StreamLite &stream)
+    {
+        if (needCacheTask) {
+            // 调用addWqeArrayCallback_函数, 缓存wqe
+            CHK_PTR_NULL(ubConnLitePtr);
+            CHK_PTR_NULL(addWqeArrayCallback_);
+            const uint32_t pendingSqeCnt = dynamic_cast<RtsqA5*>(stream.GetRtsq())->GetPendingSqeCnt(); // 即SqeRingBuffer tailSqeIdx
+            CHK_RET(addWqeArrayCallback_(ubConnLitePtr, this, ubConnLitePtr->GetWqeTasks(), pendingSqeCnt));
+
+            // 缓存后清理cache context
+            ubConnLitePtr->DisableCacheContext();
+        }
+        return HCCL_SUCCESS;
+    }
 };
 
 } // namespace Hccl
