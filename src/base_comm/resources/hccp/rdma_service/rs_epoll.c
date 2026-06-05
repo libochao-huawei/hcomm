@@ -176,6 +176,7 @@ STATIC int RsSslRecvTagInHandle(struct RsAcceptInfo *acceptInfo, struct RsConnIn
     connTmp->state = RS_CONN_STATE_TAG_SYNC;
     connTmp->port = acceptInfo->sockPort;
     connTmp->ssl = acceptInfo->ssl;
+    connTmp->sslWriteBuffer = acceptInfo->sslWriteBuffer;
 
     hccp_info("recv tag success, server:{%s:%u} client:%s timeCost:%fms tagSyncTime:%u tagEintrTime:%u",
         acceptInfo->serverIpAddr.readAddr, acceptInfo->sockPort, acceptInfo->clientIpAddr.readAddr, timeCost,
@@ -202,6 +203,7 @@ out:
         ssl_adp_shutdown(acceptInfo->ssl);
         ssl_adp_free(acceptInfo->ssl);
         acceptInfo->ssl = NULL;
+        RaRsFreeBuffer(&acceptInfo->sslWriteBuffer);
     }
 
     /* do not shutdown ssl */
@@ -246,7 +248,7 @@ STATIC void RsDoSslHandshake(struct RsAcceptInfo *acceptInfo, struct rs_cb *rscb
 
 STATIC int RsEpollEventSslAcceptInHandle(struct rs_cb *rsCb, int fd)
 {
-    int ret;
+    int ret = -ENODEV;
 
     struct RsAcceptInfo *acceptInfo = NULL;
     struct RsAcceptInfo *acceptInfo2 = NULL;
@@ -264,14 +266,21 @@ STATIC int RsEpollEventSslAcceptInHandle(struct rs_cb *rsCb, int fd)
                 ret = ssl_adp_set_fd(acceptInfo->ssl, acceptInfo->connFd);
                 if (ret != 1) {
                     hccp_err("bind connfd and ssl failed, ret %d", ret);
-                    ssl_adp_shutdown(acceptInfo->ssl);
-                    ssl_adp_free(acceptInfo->ssl);
-                    acceptInfo->ssl = NULL;
-                    return -EINVAL;
+                    ret = -EINVAL;
+                    goto out;
                 }
 
                 ssl_adp_set_mode(acceptInfo->ssl, SSL_MODE_AUTO_RETRY);
                 ssl_adp_set_accept_state(acceptInfo->ssl);
+            }
+
+            if (acceptInfo->sslWriteBuffer == NULL) {
+                acceptInfo->sslWriteBuffer = calloc(RS_SOCKET_MAXLEN, sizeof(char));
+                if (acceptInfo->sslWriteBuffer == NULL) {
+                    hccp_err("calloc sslWriteBuffer failed");
+                    ret = -ENOMEM;
+                    goto out;
+                }
             }
 
             if (acceptInfo->state == RS_CONN_STATE_RESET) {
@@ -286,7 +295,12 @@ STATIC int RsEpollEventSslAcceptInHandle(struct rs_cb *rsCb, int fd)
         }
     }
 
-    return -ENODEV;
+out:
+    ssl_adp_shutdown(acceptInfo->ssl);
+    ssl_adp_free(acceptInfo->ssl);
+    acceptInfo->ssl = NULL;
+    RaRsFreeBuffer(&acceptInfo->sslWriteBuffer);
+    return ret;
 }
 
 STATIC int RsEpollTcpRecv(struct rs_cb *rsCb, int fd)

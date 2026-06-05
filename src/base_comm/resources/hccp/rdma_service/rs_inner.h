@@ -270,6 +270,7 @@ struct RsConnInfo {
 
     int connfd;
     SSL *ssl;
+    char *sslWriteBuffer;
     uint32_t state;  /* refer to enum rs_conn_state */
     struct timeval startTime;
     struct timeval endTime;
@@ -320,6 +321,7 @@ struct RsAcceptInfo {
     uint16_t sockPort;
     int connFd;
     SSL *ssl;
+    char *sslWriteBuffer;
     uint32_t state;
 
     struct RsListHead list;

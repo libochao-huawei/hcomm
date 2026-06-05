@@ -28,6 +28,7 @@
 #include "ssl_adp.h"
 #include "securec.h"
 #include "rs.h"
+#include "ra_rs_comm.h"
 #include "ra_rs_err.h"
 #include "rs_epoll.h"
 #include "rs_common_inner.h"
@@ -227,6 +228,7 @@ int RsSocketCopyConnInfo(struct RsConnInfo *connTmp, struct RsConnInfo *conn)
     conn->state = connTmp->state;
     conn->port = connTmp->port;
     conn->ssl = connTmp->ssl;
+    conn->sslWriteBuffer = connTmp->sslWriteBuffer;
     ret = memcpy_s(conn->tag, SOCK_CONN_TAG_SIZE + SOCK_CONN_DEV_ID_SIZE, connTmp->tag, sizeof(connTmp->tag));
     if (ret) {
         hccp_err("rs_conn_info tag copy failed, ret[%d]", ret);
@@ -983,6 +985,7 @@ out:
         ssl_adp_shutdown(conn->ssl);
         ssl_adp_free(conn->ssl);
         conn->ssl = NULL;
+        RaRsFreeBuffer(&conn->sslWriteBuffer);
     }
     RS_CLOSE_RETRY_FOR_EINTR(retClose, conn->connfd);
     conn->connfd = RS_FD_INVALID;
@@ -1016,6 +1019,7 @@ STATIC void RsSocketTagSync(struct RsConnInfo *conn)
             ssl_adp_shutdown(conn->ssl);
             ssl_adp_free(conn->ssl);
             conn->ssl = NULL;
+            RaRsFreeBuffer(&conn->sslWriteBuffer);
         }
         RS_CLOSE_RETRY_FOR_EINTR(ret, conn->connfd);
         conn->connfd = RS_FD_INVALID;
@@ -1534,6 +1538,7 @@ RS_ATTRI_VISI_DEF int RsSocketBatchClose(int disuseLinger, struct RsSocketCloseI
             ssl_adp_shutdown(connInfo->ssl);
             ssl_adp_free(connInfo->ssl);
             connInfo->ssl = NULL;
+            RaRsFreeBuffer(&connInfo->sslWriteBuffer);
         }
         RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
 
@@ -1592,6 +1597,7 @@ RS_ATTRI_VISI_DEF int RsSocketBatchAbort(struct SocketConnectInfo conn[], uint32
             ssl_adp_free(connInfo->ssl);
             connInfo->ssl = NULL;
             ssl_adp_clear_error();
+            RaRsFreeBuffer(&connInfo->sslWriteBuffer);
         }
         RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
 

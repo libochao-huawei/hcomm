@@ -375,5 +375,12 @@ static inline void RaRsSetDevInfo(struct RaRsDevInfo *devInfo, unsigned int phyI
     devInfo->devIndex = devIndex;
 }
 
+static inline void RaRsFreeBuffer(void **buffer)
+{
+    if (buffer == NULL || *buffer == NULL) {
+        return;
+    }
+    free(*buffer);
+    *buffer = NULL;
+}
 #endif
-

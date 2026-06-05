@@ -43,6 +43,7 @@
 #include "hccp_tlv.h"
 #include "rs_tlv.h"
 #endif
+#include "ra_rs_comm.h"
 #include "ra_rs_ctx.h"
 #include "rs_ccu.h"
 #include "rs_ctx.h"
@@ -1346,6 +1347,7 @@ STATIC void RsFreeAcceptOneNode(struct rs_cb *rscb, struct RsAcceptInfo *accept)
             ssl_adp_free(accept->ssl);
             accept->ssl = NULL;
         }
+        RaRsFreeBuffer(&accept->sslWriteBuffer);
     }
 
     RS_CLOSE_RETRY_FOR_EINTR(ret, accept->connFd);
@@ -1411,6 +1413,7 @@ STATIC void RsFreeConnOneNode(struct rs_cb *rscb, struct RsConnInfo *conn)
             ssl_adp_free(conn->ssl);
             conn->ssl = NULL;
         }
+        RaRsFreeBuffer(&conn->sslWriteBuffer);
     }
 
     RS_CLOSE_RETRY_FOR_EINTR(ret, conn->connfd);
