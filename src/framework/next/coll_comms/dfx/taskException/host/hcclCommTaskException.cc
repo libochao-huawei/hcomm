@@ -317,7 +317,7 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
 
 void TaskExceptionHost::GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo)
 {
-    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo->comm_ == nullptr) {
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
         HCCL_WARNING("[%s]dfxOpInfo_ or comm_ is nullptr!", __func__);
         return;
     }

@@ -158,13 +158,12 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
         return HCCL_E_PARA;
     }
     if (curTask->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[%s]dfxOpInfo is nullptr. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
+        HCCL_WARNING("[%s]dfxOpInfo is nullptr. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
             __func__, devId_, exceptionInfo.sqId, sqeId);
-        return HCCL_E_PARA;
     }
 
     // 每个通信域仅首次上报（N秒快恢时重置）
-    if (!aicpuComm->IsErrorReported()) {
+    if (!aicpuComm->IsErrorReported() && curTask->dfxOpInfo_ != nullptr) {
         // 1) errorMessage上报
         Hccl::ErrorMessageReport errMsgInfo{};
         CHK_RET(GenerateErrorMessageReport(aicpuComm, *curTask, exceptionInfo, errMsgInfo));
