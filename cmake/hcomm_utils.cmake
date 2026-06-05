@@ -84,22 +84,37 @@ elseif(PRODUCT_SIDE STREQUAL "host")
     )
 endif()
 
-if(NOT EXISTS ${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include)
-    file(MAKE_DIRECTORY "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include")
+if(NOT EXISTS "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include")
+    file(MAKE_DIRECTORY "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/legacy")
+    file(MAKE_DIRECTORY "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/tls_adp")
+    file(MAKE_DIRECTORY "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/kms")
 endif()
 
-# 创建导入的目标
+# 创建 headers 目标
+add_library(hcomm_legacy_headers INTERFACE IMPORTED)
+add_dependencies(hcomm_legacy_headers hcomm_utils)
+set_target_properties(hcomm_legacy_headers PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/legacy"
+)
+
+add_library(ascend_kms_headers INTERFACE IMPORTED)
+add_dependencies(ascend_kms_headers hcomm_utils)
+set_target_properties(ascend_kms_headers PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/kms"
+)
+
+# 创建链接库目标
 add_library(ascend_kms SHARED IMPORTED)
 add_dependencies(ascend_kms hcomm_utils)
 set_target_properties(ascend_kms PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include"
+    INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/kms"
     IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so"
 )
 
 add_library(tls_adp SHARED IMPORTED)
 add_dependencies(tls_adp hcomm_utils)
 set_target_properties(tls_adp PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include"
+    INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/tls_adp"
     IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libtls_adp.so"
 )
 
@@ -107,7 +122,7 @@ if(PRODUCT_SIDE STREQUAL "host")
     add_library(hccl_legacy SHARED IMPORTED)
     add_dependencies(hccl_legacy hcomm_utils)
     set_target_properties(hccl_legacy PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include"
+        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/legacy"
         IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libhccl_legacy.so"
     )
 endif()

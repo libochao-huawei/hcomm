@@ -109,12 +109,6 @@ if(BUILD_OPEN_PROJECT)
         LOG_CPP
     )
 
-    target_include_directories(hccl_plf PRIVATE
-        # 三方件头文件
-        ${JSON_INCLUDE_DIR}
-        ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy/
-    )
-
     target_link_libraries(hccl_plf
     PRIVATE
         $<BUILD_INTERFACE:ascend_hal_headers>
@@ -122,6 +116,8 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:rdma_core_headers>
+        $<BUILD_INTERFACE:hcomm_legacy_headers>
+        $<BUILD_INTERFACE:json>
         -Wl,--no-as-needed
         c_sec
         unified_dlog
