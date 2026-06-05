@@ -17,8 +17,13 @@ MemTransportCallback::MemTransportCallback(const LinkData link, MirrorTaskManage
 
 void MemTransportCallback::operator()(u32 streamId, u32 taskId, const TaskParam &taskParam)
 {
+    auto currDfxOpInfo = mirrorTaskManager_.GetCurrDfxOpInfo();
+    if (currDfxOpInfo == nullptr) {
+        HCCL_WARNING("[MemTransportCallback::operator] GetCurrDfxOpInfo is nullptr, skip!");
+        return;
+    }
     shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId,
-        link_.GetRemoteRankId(), taskParam, mirrorTaskManager_.GetCurrDfxOpInfo());
+        link_.GetRemoteRankId(), taskParam, currDfxOpInfo);
         
     mirrorTaskManager_.AddTaskInfo(taskInfo);
     return;
