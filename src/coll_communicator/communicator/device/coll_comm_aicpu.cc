@@ -147,16 +147,22 @@ HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread)
 {
     int32_t ret = HcommThreadRegisterDfx(thread, dfx_.GetCallback());
     if (ret != 0) {
-        HCCL_ERROR("[CollCommAicpu][RegisterThreadAddDfxTaskInfo] HcommThreadRegisterDfx failed, ret[%d]", ret);
+        HCCL_ERROR("[%s] HcommThreadRegisterDfx failed, ret[%d], thread[0x%llx], dfx_.GetCallback[%p]",
+            __func__, ret, thread, dfx_.GetCallback());
         return HCCL_E_PTR;
     }
 
-    std::function<HcclResult(bool)> checkExecStatus = [this](bool isTimeout) {
+    std::function<HcclResult(bool)> checkExecStatusCallback = [this](bool isTimeout) {
         return this->CheckOpExecStatus(isTimeout);
     };
-    HcommThreadRegisterCheckOpStatus(thread, checkExecStatus);
+    ret = HcommThreadRegisterCheckExecStatus(thread, checkExecStatusCallback);
+    if (ret != 0) {
+        HCCL_ERROR("[%s]HcommThreadRegisterCheckExecStatus failed, ret[%d], thread[0x%llx], checkExecStatusCallback[%p]",
+            __func__, ret, thread, checkExecStatusCallback);
+        return HCCL_E_PTR;
+    }
  	return HCCL_SUCCESS;
-} 
+}
 
 HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
 {

@@ -531,12 +531,11 @@ HcclResult AicpuTsThread::SupplementNotify(u32 notifyNum, const std::string &not
 
 HcclResult AicpuTsThread::SetCheckExecStatusCallback(std::function<HcclResult(bool &)> callback)
 {
-    void *streamLitePtr = GetStreamLitePtr();
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
+    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(GetStreamLitePtr());
     CHK_PTR_NULL(streamLite);
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
     CHK_PTR_NULL(rtsq);
-    rtsq->SetExecStatusCallback(callback);
+    rtsq->SetCheckExecStatusCallback(callback);
     return HCCL_SUCCESS;
 }
 } // namespace hccl

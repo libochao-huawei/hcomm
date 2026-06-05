@@ -63,7 +63,7 @@ public:
         checkOpExecStatusCallback_ = callback;
     }
 
-    void SetExecStatusCallback(std::function<HcclResult(bool&)> callback) // 自定义算子流程注册检查执行状态的回调函数
+    void SetCheckExecStatusCallback(std::function<HcclResult(bool&)> callback) // 自定义算子流程注册检查执行状态的回调函数
     {
         checkExecStatusCallback_ = callback;
     }
