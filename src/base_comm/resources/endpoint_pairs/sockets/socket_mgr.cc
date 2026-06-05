@@ -218,6 +218,7 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     }
 
     // 2. 不存在则创建
+    printf("[SocketMgr][%s] cannot find a correct socket in map", __func__);
     CHK_RET(CreateSocketWithSocketHandle(socketConfig));
 
     // 3. 再次查找
