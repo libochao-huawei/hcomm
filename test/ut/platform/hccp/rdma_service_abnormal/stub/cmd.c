@@ -586,12 +586,12 @@ int ibv_query_gid(struct ibv_context *context, uint8_t port_num,
 	return 0;
 }
 
-int ibv_query_gid_type(struct ibv_context *context, uint8_t port_num, unsigned int index, enum ibv_gid_type *type)
+int ibv_query_gid_type(struct ibv_context *context, uint8_t port_num, unsigned int index, enum ibv_gid_type_sysfs *type)
 {
 	if (index % 2 == 1) {
-		*type = IBV_GID_TYPE_ROCE_V2;
+		*type = IBV_GID_TYPE_SYSFS_ROCE_V2;
 	} else {
-		*type = IBV_GID_TYPE_IB_ROCE_V1;
+		*type = IBV_GID_TYPE_SYSFS_IB_ROCE_V1;
 	}
 	return 0;
 }
