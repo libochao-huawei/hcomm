@@ -293,9 +293,4 @@ HcclResult CollComm::GetRankIpPortMap()
     return HCCL_SUCCESS;
 }
 
-Hccl::RankIpPortMap CollComm::GetRankIpPortInfo()
-{
-    return *rankIpPortMap_;
-}
-
 }  // namespace hccl
