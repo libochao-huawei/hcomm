@@ -6540,7 +6540,7 @@ void TcRsEpollEventSslRecvTagInHandle()
     struct RsListHead list = {0};
 
     RS_INIT_LIST_HEAD(&list);
-    acceptInfo = malloc(sizeof(struct RsAcceptInfo));
+    acceptInfo = calloc(1, sizeof(struct RsAcceptInfo));
     acceptInfo->list = list;
     mocker_clean();
     mocker(RsSslRecvTagInHandle, 1, 0);
