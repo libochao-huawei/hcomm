@@ -902,7 +902,7 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
 { // 从 DTO 取得数据，然后生成 memHandle
 }
 
-HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer*> &rmtBufs,
+HcclResult RemoteUbRmaBuffer::BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteUbRmaBuffer*> &rmtBufs,
     const std::vector<HrtRaUbRemMemImportParam> &params)
 {
     return HCCL_SUCCESS;
