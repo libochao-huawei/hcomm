@@ -255,7 +255,7 @@ TEST_F(CcuCompPubTest, Ut_CreateAndImportLoopJettys_When_NoMappedPriority_Expect
     EXPECT_EQ(gCapturedLoopJettyQos, static_cast<uint32_t>(EnvConfig::UB_QOS_DEFAULT));
 }
 
-TEST_F(CcuCompPubTest, Ut_RequestNewLoopTpInfo_When_Called_Expect_LoopGetTpInfoParamFlags)
+TEST_F(CcuCompPubTest, Ut_GetLoopTpInfo_When_Called_Expect_LoopGetTpInfoParamFlags)
 {
     gCapturedLoopTpParam = GetTpInfoParam{};
     CcuComponent comp{};
@@ -266,7 +266,7 @@ TEST_F(CcuCompPubTest, Ut_RequestNewLoopTpInfo_When_Called_Expect_LoopGetTpInfoP
 
     const CommAddr commAddr = MakeLoopCommAddr("10.0.0.8");
     TpInfo tpInfo{};
-    EXPECT_EQ(comp.RequestNewLoopTpInfo(commAddr, tpInfo), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(comp.GetLoopTpInfo(0U, commAddr, tpInfo, TpProtocol::RTP), HcclResult::HCCL_SUCCESS);
     EXPECT_TRUE(gCapturedLoopTpParam.loopFirstTpLowestSl);
     EXPECT_TRUE(gCapturedLoopTpParam.ccuLoopbackGetTpInfo);
     EXPECT_EQ(gCapturedLoopTpParam.tpProtocol, TpProtocol::RTP);
