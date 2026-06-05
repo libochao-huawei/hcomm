@@ -298,12 +298,7 @@ HcclResult CcuConnection::Serialize(std::vector<char> &dtoData)
     for (const auto &ccuJetty : ccuJettys_) {
         dtoStream << ccuJetty->GetCreateJettyParam().tokenValue;
         const auto &outParam = ccuJetty->GetJettyedOutParam();
-        u8 patchedKey[HRT_UB_QP_KEY_MAX_LEN]{0};
-        (void)memcpy_s(patchedKey, sizeof(patchedKey), outParam.key, outParam.keySize);
-        if (outParam.keySize >= URMA_EID_LEN) {
-            (void)memcpy_s(patchedKey, outParam.keySize, locIpAddr.GetEid().raw, URMA_EID_LEN);
-        }
-        dtoStream << patchedKey;
+        dtoStream << outParam.key;
         dtoStream << outParam.keySize;
     }
 
