@@ -26,7 +26,7 @@ set(src_to_test_list
     ut_aicpu_ts_HcommReadReduceOnThread.cc
     ut_aicpu_ts_HcommChannelFenceOnThread.cc
     ut_launch_context.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
+    ${HCCL_CODE_ROOT}/src/base_comm/primitives/api_c_adpt/aicpu_ts_primitives_c_adpt.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/stream/aicpu/rtsq_base.cc
     ${HCCL_LLT_ROOT}/ut/stub/legacy/llt_stub_ub_transport_lite_impl.cc
 )

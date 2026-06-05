@@ -25,7 +25,6 @@ endif()
 if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${common_src_list}
-        hccl_api_data_aicpu_ts.cc
         sync_data_aicpu_ts.cc
     )
     target_include_directories(ccl_kernel PRIVATE

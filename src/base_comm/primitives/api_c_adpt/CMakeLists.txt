@@ -22,3 +22,12 @@ if(TARGET hcomm)
         ${PROJECT_SOURCE_DIR}/src/base_comm/resources/endpoint_pairs/channels/aiv
     )
 endif()
+
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        aicpu_ts_primitives_c_adpt.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()

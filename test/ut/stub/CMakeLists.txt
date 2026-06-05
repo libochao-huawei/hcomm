@@ -90,7 +90,7 @@ list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/primitives/aiv/.*")
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/primitives/aicpu/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/common/src/topo/topo_device/topoinfo_ranktableParser_device.cc")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc")
+list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/base_comm/primitives/api_c_adpt/aicpu_ts_primitives_c_adpt.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/common/src/topo/topo_device/.*")
 
 set(orion_list
