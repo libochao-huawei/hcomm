@@ -177,8 +177,12 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
 }
 } // namespace
 
-HcommResult HcommResMgrInit(uint32_t devPhyId)
+HcommResult HcommResMgrInit()
 {
+    int32_t devLogicId = 0;
+    uint32_t devPhyId = 0;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(devLogicId, devPhyId));
     // 临时方案：触发统一平台层单例触发静态对象声明
     // 内部流程触发各种单例声明，保证时序
     EXCEPTION_HANDLE_BEGIN
@@ -227,6 +231,7 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     EXCEPTION_HANDLE_BEGIN
     CHK_PTR_NULL(endpoint);
     CHK_PTR_NULL(endpointHandle);
+    (void)(void)HcommResMgrInit();;
     if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
         HCCL_ERROR("[%s] Only support END_POINT_LOCATION_DEVICE AND END_POINT_LOCATION_HOST, but "
                    "endpoint->loc.locType is %d",
@@ -270,6 +275,7 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
 
 HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 {
+    (void)(void)HcommResMgrInit();;
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
     s32 devLogicIdSigned = HcclGetThreadDeviceId();
     CHK_PRT_RET(devLogicIdSigned < 0,
@@ -306,6 +312,7 @@ HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port
 HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *port)
 {
     CHK_PTR_NULL(port);
+    (void)(void)HcommResMgrInit();;
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
@@ -319,6 +326,7 @@ HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const
     EXCEPTION_HANDLE_BEGIN
     CHK_PTR_NULL(mem);
     CHK_PTR_NULL(memHandle);
+    (void)(void)HcommResMgrInit();;
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
@@ -331,6 +339,7 @@ HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const
 HcommResult HcommMemUnreg(EndpointHandle endpointHandle, HcommMemHandle memHandle)
 {
     CHK_PTR_NULL(memHandle);
+    (void)(void)HcommResMgrInit();;
     EXCEPTION_HANDLE_BEGIN
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
@@ -347,6 +356,7 @@ HcommResult HcommMemExport(EndpointHandle endpointHandle, HcommMemHandle memHand
     CHK_PTR_NULL(memHandle);
     CHK_PTR_NULL(memDesc);
     CHK_PTR_NULL(memDescLen);
+    (void)(void)HcommResMgrInit();;
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
@@ -359,6 +369,7 @@ HcommResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, u
 {
     CHK_PTR_NULL(memDesc);
     CHK_PTR_NULL(outMem);
+    (void)(void)HcommResMgrInit();;
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
@@ -373,6 +384,7 @@ HcommResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, u
 HcommResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen)
 {
     CHK_PTR_NULL(memDesc);
+    (void)(void)HcommResMgrInit();;
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
@@ -443,7 +455,8 @@ HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
         __func__, channelNum), HCCL_E_PARA);
     HCCL_INFO("[%s] START. endpointHandle[0x%llx], engine[%d], channelNum[%u].",
         __func__, endpointHandle, engine, channelNum);
-
+    
+    (void)(void)HcommResMgrInit();;
     std::vector<HcommChannelDesc> channelDescFinals;
     CHK_RET(static_cast<HcclResult>(NormalizeHcommChannelDescs(channelDescs, channelNum, channelDescFinals)));
 
@@ -474,6 +487,7 @@ HcommResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t lis
     CHK_PTR_NULL(statusList);
     CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]",
         __func__, listNum), HCCL_E_PARA);
+    (void)(void)HcommResMgrInit();;
     // 为每个通道设置成功状态
     for (uint32_t i = 0; i < listNum; i++) {
         statusList[i] = 0;
@@ -490,6 +504,7 @@ HcommResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *noti
 HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum)
 {
     CHK_PTR_NULL(channels);
+    (void)(void)HcommResMgrInit();;
     return ChannelProcess::ChannelDestroy(channels, channelNum, g_BinHandle);
 }
 
@@ -511,6 +526,7 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32
     ThreadHandle *threads) {
     CHK_PTR_NULL(threads);
     CHK_PTR_NULL(notifyNumPerThread);
+    (void)(void)HcommResMgrInit();;
     const uint32_t notifyNum = notifyNumPerThread[0];
     if (threadNum > 1U) {
         HCCL_RUN_WARNING("[%s] only notifyNumPerThread[0] is used currently, threadNum[%u], notifyNum[0][%u].",
@@ -554,6 +570,7 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t not
 HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
 {
     CHK_PTR_NULL(threads);
+    (void)(void)HcommResMgrInit();;
     return hccl::FreeThreads(threads, threadNum, g_BinHandle);
 }
 
@@ -687,6 +704,7 @@ HcommResult HcommEndpointCheckFeature(HcommEndpointFeatureType featureType, cons
 {
     CHK_PTR_NULL(endpointDesc);
     CHK_PTR_NULL(value);
+    (void)(void)HcommResMgrInit();;
 
     return static_cast<HcommResult>(Endpoint::CheckFeature(*endpointDesc, featureType, *value));
 }
