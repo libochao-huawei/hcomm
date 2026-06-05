@@ -65,7 +65,7 @@
 #include "base_config.h"
 
 #include "../../../legacy/ascend950/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
-#include "../../../base_comm/resources/endpoint_pairs/channels/aicpu/device/aicpu_channel_process.h"
+#include "../../../base_comm/resource/channel/aicpu/device/aicpu_channel_process.h"
 
 #include "../../../legacy/ascend950/framework/resource_manager/socket/socket_manager.h"
 
