@@ -88,9 +88,10 @@ list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/c
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/comm_engine_res_mgr.cc")
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/primitives/aiv/.*")
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/primitives/aicpu/.*")
+list(FILTER BASE_COMM EXCLUDE REGEX "src/base_comm/primitives/api_c_adpt/aicpu_ts_primitives_c_adpt.cc")
+
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/common/src/topo/topo_device/topoinfo_ranktableParser_device.cc")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/base_comm/primitives/api_c_adpt/aicpu_ts_primitives_c_adpt.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/common/src/topo/topo_device/.*")
 
 set(orion_list
@@ -189,6 +190,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/one_sided_service
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/resource_manager
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/data_api
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/rank_graph
