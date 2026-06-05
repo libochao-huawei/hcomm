@@ -1042,7 +1042,12 @@ void CcuTaskException::GetCcuCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, cons
 {
     auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
     RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
-    hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
+    hccl::CollComm *collComm = nullptr;
+    if (taskInfo.dfxOpInfo_ != nullptr && taskInfo.dfxOpInfo_->comm_ != nullptr) {
+        collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
+    } else {
+        HCCL_WARNING("[%s] dfxOpInfo_ or comm_ is nullptr!", __func__);
+    }
     u32 remoteLocalId = INVALID_VALUE_RANKID;
     GetCcuCqeErrRemoteLocalIdByRankId(collComm, remoteRankId, remoteLocalId);
     std::string netInstanceId = "";
@@ -1491,7 +1496,7 @@ RankId CcuTaskException::GetRankIdByChannelId(uint16_t channelId, const Hccl::Ta
         return INVALID_UINT;
     }
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[%s]dfxOpInfo[%p] or comm is nullptr.", __func__, taskInfo.dfxOpInfo_);
+        HCCL_WARNING("[%s]dfxOpInfo[%p] or comm is nullptr.", __func__, taskInfo.dfxOpInfo_);
         return INVALID_UINT;
     }
 
