@@ -315,9 +315,7 @@ HcclResult DispatchAllStreams(ThreadHandle *threads, uint32_t threadNum)
     for (uint32_t i = 0; i < threadNum; i++) {
         Thread *threadPtrLoop = reinterpret_cast<Thread *>(threads[i]);
         CHK_PTR_NULL(threadPtrLoop);
-
-        HCCL_DEBUG("[%s] Dispatching streams in thread[0x%llx].", __func__, threads[i]);
-        threadPtrLoop->TryLaunchTask();
+        EXCEPTION_CATCH(threadPtrLoop->TryLaunchTask(), return HCCL_E_INTERNAL);
     }
     return HCCL_SUCCESS;
 }
@@ -898,6 +896,14 @@ int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32
     CHK_PTR_NULL(threadPtr);
     CHK_RET(threadPtr->SetAddTaskInfoCallback(callback));
     HCCL_INFO("[HcommThreadRegisterDfx] Init success");
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommThreadRegisterCheckExecStatus(ThreadHandle thread, std::function<HcclResult(bool)> callback)
+{
+    Thread *threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+    CHK_RET(threadPtr->SetCheckExecStatusCallback(callback));
     return HCCL_SUCCESS;
 }
 

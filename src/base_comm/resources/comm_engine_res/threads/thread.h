@@ -103,9 +103,8 @@ public:
  	    callback_ = callback;
  	    return HCCL_SUCCESS;
  	}
- 	std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {
- 	         return callback_;
- 	}
+ 	std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() { return callback_; }
+    virtual HcclResult SetCheckExecStatusCallback(std::function<HcclResult(bool &)> callback) { return HCCL_SUCCESS; }
 protected:
     HcclResult ReportAicpuNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool isMaster) const;
