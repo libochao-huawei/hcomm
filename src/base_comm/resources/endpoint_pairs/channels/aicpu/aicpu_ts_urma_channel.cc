@@ -33,6 +33,7 @@ AicpuTsUrmaChannel::~AicpuTsUrmaChannel()
 {
     if (socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        memTransport_->SetSocket(nullptr);
         socket_ = nullptr;
     }
 }
@@ -262,6 +263,7 @@ HcclResult AicpuTsUrmaChannel::Init()
     commonRes_.bufferVec.clear();
     CHK_RET(BuildBuffer(bufs_));
     CHK_RET(BuildUbMemTransport());
+    printf("[TEST]AicpuTsUrmaChannel::Init memTransport_->socket = %p\n", memTransport_->socket);
 
     return HCCL_SUCCESS;
 }
@@ -279,8 +281,8 @@ HcclResult AicpuTsUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 
 ChannelStatus AicpuTsUrmaChannel::GetStatus()
 {
+    printf("[TEST]AicpuTsUrmaChannel::GetStatus memTransport_->socket = %p\n", memTransport_->socket);
     ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
-
     if (isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
         std::string channelInfo = "create channel info:channel handle[";
         channelInfo.append(std::to_string(reinterpret_cast<uint64_t>(this)));
@@ -298,6 +300,7 @@ ChannelStatus AicpuTsUrmaChannel::GetStatus()
     
     if (out == ChannelStatus::READY && socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        memTransport_->SetSocket(nullptr);
     }
     return out;
 }
@@ -354,6 +357,7 @@ HcclResult AicpuTsUrmaChannel::Resume()
     BuildSocket();
     BuildConnection();
     BuildUbMemTransport();
+    printf("[TEST]AicpuTsUrmaChannel::Resume memTransport_->socket = %p\n", memTransport_->socket);
     return HCCL_SUCCESS;
 }
 
