@@ -94,7 +94,7 @@ void RtsqA5::MakeSureAvailableSpace()
         HcclResult checkRet = (checkExecStatusCallback_ != nullptr) ? checkExecStatusCallback_(isTimeout) : HCCL_SUCCESS;
         if (checkRet != HCCL_SUCCESS) {
             THROW<InternalException>(StringFormat("[%s]stop launch, isTimeout[%d], checkRet[%d]",
-                __func__, isTimeout, checkRet)); 
+                __func__, isTimeout, checkRet));
         }
 
         if (UNLIKELY(isTimeout)) { // timeout内还是不能向RTSQ中写入值，报错
