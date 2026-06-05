@@ -585,12 +585,12 @@ int ibv_query_gid(struct ibv_context *context, uint8_t port_num,
 	return 0;
 }
 
-int ibv_query_gid_type(struct ibv_context *context, uint8_t port_num, unsigned int index, enum ibv_gid_type *type)
+int ibv_query_gid_type(struct ibv_context *context, uint8_t port_num, unsigned int index, enum ibv_gid_type_sysfs *type)
 {
 	if (index % 2 == 1) {
-		*type = IBV_GID_TYPE_ROCE_V2;
+		*type = IBV_GID_TYPE_SYSFS_ROCE_V2;
 	} else {
-		*type = IBV_GID_TYPE_IB_ROCE_V1;
+		*type = IBV_GID_TYPE_SYSFS_IB_ROCE_V1;
 	}
 	return 0;
 }
@@ -961,6 +961,7 @@ int ibv_destroy_srq(struct ibv_srq* srq)
 struct ibv_cq *ibv_exp_create_cq(struct ibv_context *context,
 					      int cqe, void *cq_context,
 					      struct ibv_comp_channel *channel,
+					      int comp_vector,
 					      struct rdma_lite_device_cq_init_attr *attr, struct rdma_lite_device_cq_attr *cq_resp)
 {
 	struct ibv_cq *cq = malloc(sizeof(struct ibv_cq));

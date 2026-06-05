@@ -77,6 +77,7 @@ struct ibv_cq *ibv_create_ext_cq(struct ibv_context *context,
 struct ibv_cq *ibv_exp_create_cq(struct ibv_context *context,
 					      int cqe, void *cq_context,
 					      struct ibv_comp_channel *channel,
+					      int comp_vector,
 					      struct rdma_lite_device_cq_init_attr *attr, struct rdma_lite_device_cq_attr *cq_resp);
 
 int ibv_exp_query_device(struct ibv_context *context, struct dev_cap_info *cap);
