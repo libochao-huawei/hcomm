@@ -41,7 +41,8 @@ void ProfilingReporter::Init()
 
 void ProfilingReporter::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
 {
-    if (!profilingHandler_->GetHcclL1State() && !profilingHandler_->GetHcclL0State()) {  //这两个值只有profiling使用 如果没开就不进行hash
+    HCCL_INFO("[ProfilingReporter][SetCurrDfxOpInfo] L1State[%d] L0State[%d]", profilingHandler_->GetHcclL1State(), profilingHandler_->GetHcclL0State());
+    if (profilingHandler_->GetHcclL1State() || profilingHandler_->GetHcclL0State()) {  //这两个值只有profiling使用 如果没开就不进行hash
         auto it = CMD_OP_TYPE_INFO_MAP.find(static_cast<HcclCMDType>(dfxOpInfo->op_.oldOpType));
         if (it == CMD_OP_TYPE_INFO_MAP.end()) {
             HCCL_WARNING("%s dfxOpInfo.opType[%u] is not supported.", __func__, dfxOpInfo->op_.oldOpType);
@@ -49,6 +50,8 @@ void ProfilingReporter::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
             dfxOpInfo->op_.opType = it->second.first; // A3转A5
             dfxOpInfo->tag_ = it->second.second;      // A5转字符串    延后
         }
+
+        HCCL_INFO("[ProfilingReporter][SetCurrDfxOpInfo] dfxOpInfo->op_.oldOpType[%u] dfxOpInfo.opType[%u] tag_[%s]", dfxOpInfo->op_.oldOpType, dfxOpInfo->op_.opType, dfxOpInfo->tag_.c_str());
         dfxOpInfo->op_.reduceOp = Hccl::HcclReduceOpToReduceOp(static_cast<HcclReduceOp>(dfxOpInfo->op_.oldReduceOp));
         dfxOpInfo->op_.dataType = Hccl::HcclDataTypeToDataType(static_cast<HcclDataType>(dfxOpInfo->op_.oldDataType));
     }
