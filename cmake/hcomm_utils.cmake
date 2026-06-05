@@ -88,7 +88,20 @@ if(NOT EXISTS ${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include)
     file(MAKE_DIRECTORY "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include")
 endif()
 
-# 创建导入的目标
+# 创建 headers 目标
+add_library(hcomm_legacy_headers INTERFACE IMPORTED)
+add_dependencies(hcomm_legacy_headers hcomm_utils)
+set_target_properties(hcomm_legacy_headers PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/legacy"
+)
+
+add_library(ascend_kms_headers INTERFACE IMPORTED)
+add_dependencies(ascend_kms_headers hcomm_utils)
+set_target_properties(ascend_kms_headers PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/kms"
+)
+
+# 创建链接库目标
 add_library(ascend_kms SHARED IMPORTED)
 add_dependencies(ascend_kms hcomm_utils)
 set_target_properties(ascend_kms PROPERTIES
