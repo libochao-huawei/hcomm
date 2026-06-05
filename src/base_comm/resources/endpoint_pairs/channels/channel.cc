@@ -103,6 +103,7 @@ HcclResult Channel::CreateChannel(
 
 ChannelStatus Channel::TransportStatusToChannelStatus(Hccl::TransportStatus ts)
 {
+    HCCL_INFO("[TEST][Channel][%s] ts = %u", __func__, static_cast<uint8_t>(ts));
     switch (ts) {
         case Hccl::TransportStatus::INIT:
             return ChannelStatus::INIT;
