@@ -1155,7 +1155,7 @@ HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32
         }
     }
     /* 接口交互信息日志 */
-    HCCL_RUN_INFO("Entry-HcomSetGradFusionByIndex:group[%s], segmentNum[%u], inputIdxList[%s]",
+    HCCL_RUN_INFO("Entry-HcomSetGradFusionByIndex:group[%s], segmentNum[%u], IdxList[%s]",
         strGroup.c_str(), segmentNum, idxList.c_str());
 
     CHK_RET(HcomCheckGroupName(strGroup.c_str()));
@@ -1163,7 +1163,7 @@ HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32
     std::vector<u32> tempList;
 
     for (u32 segidx = 0; segidx < segmentNum; segidx++) {
-        tempList.push_back(inputIdxList[segidx]);
+        tempList.push_back(IdxList[segidx]);
     }
 
     for (u32 i = 0; i < tempList.size() - 1; i++) {
