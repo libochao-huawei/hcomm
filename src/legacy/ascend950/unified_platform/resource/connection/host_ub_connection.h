@@ -14,6 +14,7 @@
 #include "rma_connection.h"
 #include "op_mode.h"
 #include "orion_adapter_hccp.h"
+#include "../../../framework/env_config/env_config.h"
 #include "tp_manager.h"
 #include "local_ub_rma_buffer.h"
 #include "stream.h"
@@ -25,7 +26,8 @@ namespace Hccl {
 class HostUbConnection : public RmaConnection {
 public:
     HostUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                    const OpMode opMode, const HrtUbJfcMode jfcMode = HrtUbJfcMode::NORMAL);
+                    const OpMode opMode, const HrtUbJfcMode jfcMode = HrtUbJfcMode::NORMAL,
+                    u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
     void          Connect() override;
     RmaConnStatus GetStatus() override;
     bool          Suspend() override;
@@ -96,6 +98,7 @@ private:
     u32          tokenValue{GetUbToken()};
     Eid          rmtEid{};
     Eid          locEid{};
+    u8           qos_{static_cast<u8>(UB_QOS_DEFAULT)};
 
     u32       dieId{0};
     u32       funcId{0};
@@ -127,6 +130,9 @@ private:
     u32                 localTpnStart{0};
     u32                 localTpNum{0};
     TpInfo              tpInfo{};
+    /// 与 `TpManager` 缓存键一致：首次成功 `GetTpInfo` 时的 `p.qos`（须在改写 `qos_` 为 mapped priority 之前记录）
+    uint32_t            tpMgrReleaseQos_{0};
+    bool                tpMgrReleaseQosCaptured_{false};
 
     u32 piVal{0};
     u32 ciVal{0};
@@ -136,6 +142,7 @@ private:
     bool CheckRequestResult();
     void ThrowAbnormalStatus(std::string funcName);
 
+    void         AdvanceUbConnAfterTpInfoReady();
     void         GenerateLocalPsn();
     void         CreateJetty();
     void         SetJettyInfo();
@@ -155,13 +162,15 @@ private:
 class HostUbTpConnection : public HostUbConnection {
 public:
     HostUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                    const OpMode opMode, const HrtUbJfcMode jfcMode = HrtUbJfcMode::NORMAL);
+                    const OpMode opMode, const HrtUbJfcMode jfcMode = HrtUbJfcMode::NORMAL,
+                    u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
 };
 
 class HostUbCtpConnection : public HostUbConnection {
 public:
     HostUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                    const OpMode opMode, const HrtUbJfcMode jfcMode = HrtUbJfcMode::NORMAL);
+                    const OpMode opMode, const HrtUbJfcMode jfcMode = HrtUbJfcMode::NORMAL,
+                    u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
 };
 
 bool IfNeedUpdatingUbCi(const std::vector<HostUbConnection *> &ubConns);
