@@ -56,6 +56,7 @@ RemoteIpcRmaBuffer *UbMemoryTransport::GetRmtMemBuffer(const u32 bufIndex) const
 
 UbMemoryTransport::UBTransportStatus UbMemoryTransport::GetStatus()
 {
+    HCCL_INFO("UbMemoryTransport::GetStatus");
     UbMemoryTransport::UBTransportStatus status = UbMemoryTransport::UBTransportStatus::CONNECT_FAILED;
     try {
         status = StateMachine();
@@ -74,10 +75,13 @@ UbMemoryTransport::UBTransportStatus UbMemoryTransport::GetStatus()
 
 UbMemoryTransport::UBTransportStatus UbMemoryTransport::StateMachine()
 {
+    HCCL_INFO("UbMemoryTransport::StateMachine");
     if (ubStatus == UBTransportStatus::READY) {
         return ubStatus;
     }
+    HCCL_INFO("socket->GetAsyncStatus");
     SocketStatus socketStatus = socket->GetAsyncStatus();
+    HCCL_INFO("socket->GetAsyncStatus socketStatus = %u", static_cast<unsigned int>(socketStatus));
     if (socketStatus == SocketStatus::INIT) {
         THROW<InternalException>("[UbMemoryTransport][GetStatus]socket timeout or no link, please check");
     } else if (socketStatus == SocketStatus::TIMEOUT) {
@@ -85,6 +89,7 @@ UbMemoryTransport::UBTransportStatus UbMemoryTransport::StateMachine()
     } else if (socketStatus != SocketStatus::OK) {
         return ubStatus;
     }
+    HCCL_INFO("ubStatus = %u", static_cast<unsigned int>(ubStatus));
     switch (ubStatus) {
         case UBTransportStatus::INIT:
             ubStatus = UBTransportStatus::SOCKET_OK;

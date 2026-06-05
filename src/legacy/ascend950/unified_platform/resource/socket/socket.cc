@@ -348,6 +348,7 @@ bool Socket::CheckRecvRequestResult()
 
 SocketStatus Socket::GetAsyncStatus()
 {
+    printf("[TEST][Socket][%s] socketStatus =  %u\n",  __func__, static_cast<unsigned int>(socketStatus));
     switch (socketStatus) {
         case SocketStatus::OK:
         case SocketStatus::TIMEOUT:
@@ -390,10 +391,13 @@ SocketStatus Socket::GetAsyncStatus()
 
 void Socket::GetOneSocket()
 {
+    printf("[TEST][Socket][%s] socket des =  [%s]\n",  __func__, this->Describe().c_str());
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
-    
+    printf("[TEST][Socket][%s] fdHandleParam\n",  __func__);
     RaSocketFdHandleParam fdHandleParam(nullptr, 0);
+    printf("[TEST][Socket][%s] RaGetOneSocket\n",  __func__);
     EXCEPTION_CATCH(fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param), return);
+    printf("[TEST][Socket][%s] fdHandleParam.status = %u\n",  __func__, static_cast<unsigned int>(fdHandleParam.status));
     // socket status:0 not connected 1:connected 2:connect timeout 3:connecting
     if (fdHandleParam.status == SOCKET_CONNECTED) {
         // sockete 准备好时，可以读取信息

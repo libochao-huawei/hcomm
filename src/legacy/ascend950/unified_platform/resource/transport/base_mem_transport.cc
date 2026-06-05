@@ -187,4 +187,10 @@ void BaseMemTransport::CheckCommonLocRes(CommonLocRes &res)
     CheckLocConn(res);
 }
 
+void BaseMemTransport::SetSocket(Socket *socket_)
+{
+    socket = socket_;
+    HCCL_INFO("[AicpuTsUrmaChannel][%s] memTransport_ set socket, socket=%p", __func__, socket);
+}
+
 } // namespace Hccl
