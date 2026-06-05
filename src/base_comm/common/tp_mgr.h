@@ -60,11 +60,12 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
     TpProtocol tpProtocol{TpProtocol::CTP};
     /// 参与 TP/SL 分组与缓存键（0–7），连接侧已归一化
     uint32_t qos{EnvConfig::UB_QOS_DEFAULT};
-    /// 非 0 时与 sl_available 推导的 M 取 min 作为可用档位数上限
+    /// 非 0 时与 slBitmap 可用档位数取 min，作为 SL 分组上限（见 TpMgr::ResolveSlAvailableCntForPolicy）。
+    /// 预留：当前连接/CCU 等调用方均传 0；待管控面或连接侧按需注入非 0 后生效。
     uint32_t slLevelCount{0};
-    /// 环回等场景：首 TPID + 掩码内最小 SL
+    /// 环回等场景：首 TPID + 掩码内最小 SL（TpMgr 策略唯一依据；CCU 环回亦靠此字段表达）
     bool loopFirstTpLowestSl{false};
-    /// 仅 CCU 设备环回 GetTpInfo：与通信域 hcclQos 解耦，SL 来自 GetTpAttr.slBitmap；写回 SL 经 HrtRaSetTpAttrAsync（HDC）
+    /// CCU 环回调用方标记，仅用于 Describe/排查；TpMgr 不读取，行为由 loopFirstTpLowestSl 决定
     bool ccuLoopbackGetTpInfo{false};
 
     explicit GetTpInfoParamDef() = default;

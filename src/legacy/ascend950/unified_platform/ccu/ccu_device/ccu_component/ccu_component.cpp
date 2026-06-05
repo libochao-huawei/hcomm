@@ -109,8 +109,8 @@ static RaUbGetTpInfoParam MakeCcuLoopRaUbGetTpInfoParam(const IpAddress &locAddr
     p.tpProtocol = LOOP_JETTY_PROTOCOL;
     p.qos = 0U;
     p.slLevelCount = 0U;
-    p.loopFirstTpLowestSl = true;
-    p.ccuLoopbackGetTpInfo = true;
+    p.loopFirstTpLowestSl = true; // TpManager 环回策略入口
+    p.ccuLoopbackGetTpInfo = true; // 仅日志/排查标识，不参与 TpManager 分支
     return p;
 }
 

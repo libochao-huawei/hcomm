@@ -42,8 +42,8 @@ static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr, const TpP
     param.tpProtocol = tpProtocol;
     param.qos = 0U; // CCU 环回与通信域 hcclQos 解耦；SL 仅由 RaGetTpAttr.slBitmap + loopFirstTpLowestSl 决定
     param.slLevelCount = 0;
-    param.loopFirstTpLowestSl = true;
-    param.ccuLoopbackGetTpInfo = true;
+    param.loopFirstTpLowestSl = true; // TpMgr 环回策略入口
+    param.ccuLoopbackGetTpInfo = true; // 仅日志/UT 标识，不参与 TpMgr 分支
     return param;
 }
 
