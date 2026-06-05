@@ -384,4 +384,4 @@ static inline void RaRsFreeBuffer(void **buffer)
     free(*buffer);
     *buffer = NULL;
 }
-#endif
+#endif // RA_RS_COMM_H
