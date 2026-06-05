@@ -157,8 +157,11 @@ static bool ApplyTpQosSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uint16
 static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
     uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
 {
-    uint32_t slAvailableCnt = CalSlAvailableCnt(slMask); // slMask 里为 1 的 bit 个数 = 可用 SL 档位数
+    const uint32_t slRawCnt = CalSlAvailableCnt(slMask);
+    uint32_t slAvailableCnt = slRawCnt;
     if (slAvailableCnt == 0U) {
+        HCCL_ERROR("[TpMgr][ApplyUbcQosTpSlPolicy] slMask empty: nTp[%u] slMask[0x%x] param[%s].", nTp,
+            static_cast<unsigned>(slMask), param.Describe().c_str());
         return false;
     }
     if (param.slLevelCount != 0U) {
@@ -170,10 +173,15 @@ static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uin
         return true;
     }
     if (nTp == 0U || slAvailableCnt == 0U) {
+        HCCL_ERROR("[TpMgr][ApplyUbcQosTpSlPolicy] nTp or slAvailableCnt zero: nTp[%u] slAvailableCnt[%u] "
+                   "slMask[0x%x] param[%s].",
+            nTp, slAvailableCnt, static_cast<unsigned>(slMask), param.Describe().c_str());
         return false;
     }
     const uint32_t k = std::min(nTp, slAvailableCnt);
     if (k == 0U) {
+        HCCL_ERROR("[TpMgr][ApplyUbcQosTpSlPolicy] k is zero: nTp[%u] slAvailableCnt[%u] slMask[0x%x] param[%s].",
+            nTp, slAvailableCnt, static_cast<unsigned>(slMask), param.Describe().c_str());
         return false;
     }
     const uint32_t numGroups = std::min(8U, k);
@@ -183,11 +191,18 @@ static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uin
         (k == 3U) ? (qos < 3U ? 0U : (qos < 5U ? 1U : 2U)) : ((qos * numGroups) / 8U);
     const uint32_t slotIdx = (groupIdx * k) / numGroups;
     if (slotIdx >= k || slotIdx >= nTp) {
+        HCCL_ERROR("[TpMgr][ApplyUbcQosTpSlPolicy] slotIdx out of range: nTp[%u] slRawCnt[%u] slAvailableCnt[%u] "
+                   "k[%u] numGroups[%u] qos[%u] groupIdx[%u] slotIdx[%u] slMask[0x%x] param[%s].",
+            nTp, slRawCnt, slAvailableCnt, k, numGroups, qos, groupIdx, slotIdx, static_cast<unsigned>(slMask),
+            param.Describe().c_str());
         return false;
     }
     // hcclQos 越大优先级越高；UB SL 数值越小优先级越高，对档位取反
     const uint32_t slRank = (slAvailableCnt - 1U) - slotIdx;
     if (slRank >= slAvailableCnt) {
+        HCCL_ERROR("[TpMgr][ApplyUbcQosTpSlPolicy] slRank out of range: nTp[%u] slAvailableCnt[%u] k[%u] slRank[%u] "
+                   "slMask[0x%x] param[%s].",
+            nTp, slAvailableCnt, k, slRank, static_cast<unsigned>(slMask), param.Describe().c_str());
         return false;
     }
     tpListIndexOut = (k - 1U) - slotIdx;
@@ -348,21 +363,28 @@ static bool GetDscpByQosFromHccnCfg(const uint32_t devPhyId, uint8_t qos, uint8_
     std::vector<char> value(kCfgBufLen, 0);
     unsigned int valueLen = kCfgBufLen;
     const int ret = RaGetHccnCfg(&info, HCCN_CFG_QOS_DSCP, value.data(), &valueLen);
-    unsigned int logLen = valueLen;
-    if (logLen > kCfgBufLen) {
-        logLen = kCfgBufLen;
+    if (ret != 0) {
+        HCCL_WARNING("[TpMgr][%s] RaGetHccnCfg failed ret[%d] phyId[%u] qos[%u].", __func__, ret, devPhyId,
+            static_cast<unsigned>(qos));
+        return false;
     }
-    const std::string cfgLog(value.data(), logLen);
-    HCCL_INFO("[TpMgr][%s] RaGetHccnCfg ret[%d] phyId[%u] valueLen[%u] qos_dscp[%s].", __func__, ret, devPhyId,
-        valueLen, cfgLog.c_str());
-    if (ret != 0 || valueLen == 0U) {
+    if (valueLen == 0U) {
+        HCCL_WARNING("[TpMgr][%s] RaGetHccnCfg empty cfg phyId[%u] qos[%u].", __func__, devPhyId,
+            static_cast<unsigned>(qos));
         return false;
     }
     if (valueLen > kCfgBufLen) {
         valueLen = kCfgBufLen;
     }
-    std::string cfg(value.data(), valueLen);
-    return ParseDscpFromCfgByQos(cfg, qos, dscpOut);
+    const std::string cfg(value.data(), valueLen);
+    HCCL_INFO("[TpMgr][%s] RaGetHccnCfg ok phyId[%u] qos[%u] valueLen[%u] qos_dscp[%s].", __func__, devPhyId,
+        static_cast<unsigned>(qos), valueLen, cfg.c_str());
+    if (!ParseDscpFromCfgByQos(cfg, qos, dscpOut)) {
+        HCCL_WARNING("[TpMgr][%s] parse qos_dscp failed phyId[%u] qos[%u] cfg[%s].", __func__, devPhyId,
+            static_cast<unsigned>(qos), cfg.c_str());
+        return false;
+    }
+    return true;
 }
 
 } // namespace
@@ -466,7 +488,7 @@ HcclResult TpMgr::AdvanceGetTpInfoWaitList(const GetTpInfoParam &param, RequestC
     if (reqCtx.tpInfoNum == 0U) {
         qosMap.erase(it);
         reqCtxLock.unlock();
-        HCCL_WARNING("[TpMgr][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__, param.Describe().c_str());
+        HCCL_ERROR("[TpMgr][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__, param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
     }
     const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
@@ -858,7 +880,7 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
 {
     const uint32_t tpInfoNum = reqCtx.tpInfoNum;
     if (tpInfoNum == 0U) {
-        HCCL_WARNING("[TpMgr][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__,
+        HCCL_ERROR("[TpMgr][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__,
             param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
     }
