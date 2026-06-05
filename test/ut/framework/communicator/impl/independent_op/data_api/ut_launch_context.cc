@@ -25,7 +25,7 @@
 #include <mockcpp/mockcpp.hpp>
 
 #define private public
-#include "data_api/launch_context.h"
+#include "launch_context.h"
 #undef private
 #include "adapter_rts_common.h"
 
