@@ -62,6 +62,7 @@ set(src_to_test_list
     # Ns recovery相关测试用例
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_p2p_channel.cc
+    comms/endpoint_pairs/channels/ut_urma_channel_qos_v1v2_compat.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_uboe_channel.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_roce_channel.cc
     comms/endpoint_pairs/channels/aicpu/device/ut_aicpu_channel_process.cc

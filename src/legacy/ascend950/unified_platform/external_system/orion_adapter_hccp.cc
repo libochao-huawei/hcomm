@@ -27,6 +27,18 @@
 using namespace std;
 
 namespace Hccl {
+
+RaUbGetTpInfoParamDef::RaUbGetTpInfoParamDef()
+    : locAddr{}, rmtAddr{}, tpProtocol(TpProtocol::CTP), qos(::EnvConfig::UB_QOS_DEFAULT),
+      slLevelCount(0U), loopFirstTpLowestSl(false), ccuLoopbackGetTpInfo(false)
+{}
+
+RaUbGetTpInfoParamDef::RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr,
+    TpProtocol tpProtocol)
+    : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol), qos(::EnvConfig::UB_QOS_DEFAULT),
+      slLevelCount(0U), loopFirstTpLowestSl(false), ccuLoopbackGetTpInfo(false)
+{}
+
 constexpr u32 ONE_HUNDRED_MICROSECOND_OF_USLEEP = 100;
 constexpr u32 ONE_MILLISECOND_OF_USLEEP         = 1000;
 constexpr unsigned int SOCKET_NUM_ONE           = 1;
@@ -1489,7 +1501,6 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
         24-31代表芯片配置值b11:32s
     */
     attr.ub.errTimeout       = in.errTimeout;
-    attr.ub.priority         = static_cast<uint8_t>(in.qos & 0xFU);
     attr.ub.rnrRetry         = RNR_RETRY;
     attr.ub.flag.bs.shareJfr = 1;
     attr.ub.jettyId          = in.jettyId;
