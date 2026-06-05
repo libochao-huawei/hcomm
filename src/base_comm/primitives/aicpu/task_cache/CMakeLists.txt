@@ -8,8 +8,10 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-    aicpu_primitives_c_adpt.cc
-    aicpu_task_cache_c_adpt.cc
+    aicpu_task_cache_entry.cc
+    aicpu_task_cache_utils.cc
+    aicpu_task_cache.cc
+    aicpu_task_cache_manager.cc
 )
 
 if(TARGET hcomm)
@@ -20,5 +22,3 @@ if(TARGET hcomm)
         ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
-
-add_subdirectory(task_cache)
