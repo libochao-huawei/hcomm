@@ -89,7 +89,15 @@ void RtsqA5::MakeSureAvailableSpace()
                 "rtsqFullTimeoutValue:%u s", __func__, sqId_, sqHead_, sqTail_, availableSpace, pendingSqeCnt, rtsqFullTimeoutValue_);
             lastPrintTime = curTime;
         }
-        if (UNLIKELY((curTime - startTime) >= rtsqFullTimeout_)) { // timeout内还是不能向RTSQ中写入值，报错
+
+        bool isTimeout = (curTime - startTime) >= rtsqFullTimeout_;
+        HcclResult checkRet = (checkExecStatusCallback_ != nullptr) ? checkExecStatusCallback_(isTimeout) : HCCL_SUCCESS;
+        if (checkRet != HCCL_SUCCESS) {
+            THROW<InternalException>(StringFormat("[%s]stop launch, isTimeout[%d], checkRet[%d]",
+                __func__, isTimeout, checkRet));
+        }
+
+        if (UNLIKELY(isTimeout)) { // timeout内还是不能向RTSQ中写入值，报错
             auto msg = StringFormat("Rtsq full, rtsqFullTimeoutValue %u. sqId:%u, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
                 rtsqFullTimeoutValue_, sqId_, sqHead_, sqTail_, pendingSqeCnt);
             HCCL_ERROR("%s", msg.c_str());
