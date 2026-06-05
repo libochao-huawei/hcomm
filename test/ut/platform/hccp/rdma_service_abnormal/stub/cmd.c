@@ -201,6 +201,7 @@ int ibv_cmd_dealloc_mw(struct ibv_mw *mw)
 
 int ibv_cmd_create_cq(struct ibv_context *context, int cqe,
 		      struct ibv_comp_channel *channel,
+					      int comp_vector,
 		      int comp_vector, struct ibv_cq *cq,
 		      struct ibv_create_cq *cmd, size_t cmd_size,
 		      struct ib_uverbs_create_cq_resp *resp, size_t resp_size)
@@ -586,12 +587,12 @@ int ibv_query_gid(struct ibv_context *context, uint8_t port_num,
 	return 0;
 }
 
-int ibv_query_gid_type(struct ibv_context *context, uint8_t port_num, unsigned int index, enum ibv_gid_type *type)
+int ibv_query_gid_type(struct ibv_context *context, uint8_t port_num, unsigned int index, enum ibv_gid_type_sysfs *type)
 {
 	if (index % 2 == 1) {
-		*type = IBV_GID_TYPE_ROCE_V2;
+		*type = IBV_GID_TYPE_SYSFS_ROCE_V2;
 	} else {
-		*type = IBV_GID_TYPE_IB_ROCE_V1;
+		*type = IBV_GID_TYPE_SYSFS_IB_ROCE_V1;
 	}
 	return 0;
 }
@@ -609,6 +610,7 @@ int ibv_query_gid_type(struct ibv_context *context, uint8_t port_num, unsigned i
 struct ibv_cq *ibv_create_cq(struct ibv_context *context, int cqe,
 			     void *cq_context,
 			     struct ibv_comp_channel *channel,
+					      int comp_vector,
 			     int comp_vector)
 {
 	struct ibv_cq *cq;
@@ -870,6 +872,7 @@ int ibv_destroy_comp_channel(struct ibv_comp_channel *channel)
 }
 
 int ibv_get_cq_event(struct ibv_comp_channel *channel,
+					      int comp_vector,
                 struct ibv_cq **cq, void **cq_context)
 {
 	return 0;
@@ -938,6 +941,7 @@ int ibv_ext_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
 struct ibv_cq *ibv_create_ext_cq(struct ibv_context *context,
                                               int cqe, void *cq_context,
                                               struct ibv_comp_channel *channel,
+					      int comp_vector,
                                               int comp_vector, int partid)
 {
     return 0;
@@ -968,6 +972,7 @@ int ibv_destroy_srq(struct ibv_srq* srq)
 struct ibv_cq *ibv_exp_create_cq(struct ibv_context *context,
 					      int cqe, void *cq_context,
 					      struct ibv_comp_channel *channel,
+					      int comp_vector,
 					      struct rdma_lite_device_cq_init_attr *attr, struct rdma_lite_device_cq_attr *cq_resp)
 {
 	struct ibv_cq *cq = malloc(sizeof(struct ibv_cq));

@@ -137,7 +137,7 @@ struct ibv_mr *ibv_reg_mr(struct ibv_pd *pd, void *addr,
 int ibv_query_gid(struct ibv_context *context, uint8_t port_num,
 		  int index, union ibv_gid *gid);
 
-int ibv_query_gid_type(struct ibv_context *context, uint8_t port_num, unsigned int index, enum ibv_gid_type *type);
+int ibv_query_gid_type(struct ibv_context *context, uint8_t port_num, unsigned int index, enum ibv_gid_type_sysfs *type);
 /**
  * ibv_create_cq - Create a completion queue
  * @context - Context CQ will be attached to
