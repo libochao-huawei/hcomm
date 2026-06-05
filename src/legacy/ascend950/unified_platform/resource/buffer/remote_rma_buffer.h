@@ -144,7 +144,7 @@ public:
 
     std::string Describe() const final;
 
-    static HcclResult BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteRmaBuffer*> &rmtBufs,
+    static HcclResult BatchMemImport(RdmaHandle rdmaHandle, std::vector<RemoteUbRmaBuffer*> &rmtBufs,
         const std::vector<HrtRaUbRemMemImportParam> &params);
 
     uint32_t GetTokenId() const
@@ -175,7 +175,7 @@ private:
     u32        keySize{0};
     u64        segVa{0};
 
-    HcclResult SetMemInfo(const HrtRaUbRemMemImportedOutParam &res);
+    void SetMemInfo(const HrtRaUbRemMemImportedOutParam &res);
     HrtRaUbRemMemImportParam      importParam_{nullptr, 0, 0};
 };
 
