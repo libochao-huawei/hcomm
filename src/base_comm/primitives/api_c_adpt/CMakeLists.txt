@@ -26,6 +26,7 @@ endif()
 if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         aicpu_ts_primitives_c_adpt.cc
+        aicpu_ts_sync_data_a_adpt.cc
     )
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}

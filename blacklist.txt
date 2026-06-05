@@ -1,6 +1,6 @@
 src/legacy/ascend910/framework/device/framework/aicpu_communicator.cc 
 src/legacy/ascend910/framework/device/framework/aicpu_cache_manager.cc
-src/legacy/ascend910/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc
+src/base_comm/primitives/api_c_adpt/aicpu_ts_sync_data_a_adpt.cc
 src/legacy/ascend910/framework/communicator/impl/hccl_communicator_device.cc
 src/legacy/ascend910/framework/communicator/hccl_comm_device.cc
 src/base_comm/primitives/api_c_adpt/aicpu_ts_primitives_c_adpt.cc
