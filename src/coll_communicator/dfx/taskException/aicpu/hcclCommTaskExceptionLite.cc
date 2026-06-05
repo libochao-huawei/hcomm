@@ -201,7 +201,7 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
     errMsgInfo.rankId = aicpuComm->GetTopoInfo().userRank;
     errMsgInfo.rankSize = aicpuComm->GetTopoInfo().userRankSize;
     if (taskInfo.dfxOpInfo_ == nullptr) {
-        HCCL_WARNING("[%s]dfxOpinfo_ is nullptr, use default values!", __func__)
+        HCCL_WARNING("[%s]dfxOpinfo_ is nullptr, use default values!", __func__);
         strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, "MESH");
         errMsgInfo.opIndex = 0;
         errMsgInfo.opType = 0;

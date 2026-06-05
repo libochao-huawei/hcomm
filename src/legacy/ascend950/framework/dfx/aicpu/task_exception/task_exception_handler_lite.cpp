@@ -83,7 +83,7 @@ HcclResult GenerateErrorMessageReport(const CommunicatorImplLite *aicpuComm, std
     errMsgInfo.rankId = aicpuComm->GetMyRank();
     errMsgInfo.rankSize = aicpuComm->GetRankSize();
     if (taskInfo->dfxOpInfo_ == nullptr) {
-        HCCL_WARNING("[%s]dfxOpInfo_ is nullptr, use default values!", __func__)
+        HCCL_WARNING("[%s]dfxOpInfo_ is nullptr, use default values!", __func__);
         strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, AlgType{AlgType::MESH}.Describe().c_str());
         errMsgInfo.opIndex = 0;
         errMsgInfo.opType = 0;
@@ -125,7 +125,7 @@ HcclResult GenerateErrorMessageReport(const CommunicatorImplLite *aicpuComm, std
 
     if (taskInfo->dfxOpInfo_ != nullptr) {
         CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag),
-            taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size());)
+            taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size()));
     }
     memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group), aicpuComm->GetId().c_str(), aicpuComm->GetId().size());
 
