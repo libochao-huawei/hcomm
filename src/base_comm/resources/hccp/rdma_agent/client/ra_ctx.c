@@ -467,6 +467,7 @@ free_element:
     for (i = 0; i < num; i++) {
         free(lmemHandleTmpList[i]);
         lmemHandleTmpList[i] = NULL;
+        lmemHandleList[i] = NULL;
     }
 free_list:
     free(lmemHandleTmpList);
@@ -667,6 +668,7 @@ free_element:
     for (i = 0; i < num; i++) {
         free(rmemHandleTmpList[i]);
         rmemHandleTmpList[i] = NULL;
+        rmemHandleList[i] = NULL;
     }
 free_list:
     free(rmemHandleTmpList);
