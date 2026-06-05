@@ -221,9 +221,14 @@ HcclResult AicpuTsP2pChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum
 
 ChannelStatus AicpuTsP2pChannel::GetStatus()
 {
+    if (socket_ == nullptr) {
+        CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig_, socket_));
+        memTransport_->socket = socket_;
+    }
     ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
     if (out == ChannelStatus::READY && socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        memTransport_->socket = nullptr;
     }
     return out;
 }
