@@ -87,16 +87,8 @@ protected:
     virtual void TearDown() {
         delete rankInfoDetectClient_;
         rankInfoDetectClient_ = nullptr;
-<<<<<<< HEAD
-<<<<<<< HEAD
         // RankInfoDetectClient 析构会 detach 线程调 DeInit，需等其完成再 verify 清 mock
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-=======
->>>>>>> ac1513a7 (ut 继续修改)
-=======
-        // RankInfoDetectClient 析构会 detach 线程调 DeInit，需等其完成再 verify 清 mock
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
->>>>>>> d2cefc07 (ut继续)
         delete static_cast<int *>(socketHandle);
         socketHandle = nullptr;
         GlobalMockObject::verify();
@@ -332,10 +324,6 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentA
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> ac1513a7 (ut 继续修改)
 TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Timeout_Expect_Throw)
 {
     EnvSocketConfig fakeEnvSocketConfig;
@@ -346,19 +334,3 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Timeout_Expect_Throw)
 
     EXPECT_THROW(rankInfoDetectClient_->CheckStatus(), TimeoutException);
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> bd9af7f1 (ut)
-=======
-
-TEST_F(RankInfoDetectClientTest, Ut_VerifyRankTable_When_TlsStatus_Expect_Throw)
-{
-    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE});
-    rankInfoDetectClient_->rankSize_ = rankInfoDetectClient_->rankTable_.rankCount;
-
-    EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
-}
->>>>>>> ac1513a7 (ut 继续修改)
-=======
->>>>>>> 322e388b (ut 继续修改2)

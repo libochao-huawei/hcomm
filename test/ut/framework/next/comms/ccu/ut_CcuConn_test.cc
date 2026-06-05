@@ -27,18 +27,8 @@
 #include "internal_exception.h"
 #include "hccl_types.h"
 #include "adapter_rts.h"
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 #include "hcom_common.h"
->>>>>>> b90256df (合并主线代码ut不过了2)
 #include "env_config/env_config.h"
-=======
->>>>>>> 84b3c665 (ut覆盖率不够)
-=======
-#include "env_config/env_config.h"
->>>>>>> ece532e0 (ut覆盖率)
 
 #undef private
 #undef protected
@@ -313,10 +303,6 @@ TEST_F(CcuConnTest, Ut_UpdateInitStatus_WithMappedPriority_SetsJettyQos)
     EXPECT_EQ(jetty.GetCreateJettyParam().qos, static_cast<uint8_t>(4U));
 
     GlobalMockObject::verify();
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> ece532e0 (ut覆盖率)
 }
 
 hcomm::GetTpInfoParam gCapturedConnTpParam{};
@@ -345,9 +331,4 @@ TEST_F(CcuConnTest, Ut_MakeGetTpInfoParam_When_QosAboveSeven_Expect_ClampsToDefa
     EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(::EnvConfig::UB_QOS_DEFAULT));
 
     GlobalMockObject::verify();
-<<<<<<< HEAD
-=======
->>>>>>> 84b3c665 (ut覆盖率不够)
-=======
->>>>>>> ece532e0 (ut覆盖率)
 }

@@ -189,37 +189,14 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
     comp.devPhyId_ = 0U;
     comp.devLogicId_ = 0;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo = std::make_pair(0x88888888ULL, 1U);
-=======
-    const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo =
-        std::make_pair(reinterpret_cast<TokenIdHandle>(0x88888888), 1U);
->>>>>>> e3d1a974 (ut执行问题)
-=======
-    const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo = std::make_pair(0x88888888ULL, 1U);
->>>>>>> 08a09424 (解决覆盖率问题)
-=======
     const std::pair<Hccl::TokenIdHandle, uint32_t> fakeTokenInfo =
         std::make_pair(reinterpret_cast<Hccl::TokenIdHandle>(0x88888888ULL), 1U);
->>>>>>> 0f42a114 (ut编译失败)
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo).stubs().will(returnValue(fakeTokenInfo));
     MOCKER(Hccl::HrtRaUbLocalMemReg).stubs().will(returnValue(Hccl::HrtRaUbLocalMemRegOutParam()));
 
     auto buffer = std::make_shared<Hccl::Buffer>(0x1000ULL, 4096ULL);
     comp.ccuRmaBufferMap_[dieId] =
         std::make_unique<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
-=======
-    auto buffer = std::make_shared<Hccl::Buffer>(0x1000ULL, 4096ULL);
-<<<<<<< HEAD
-    comp.ccuRmaBufferMap_[dieId] = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
->>>>>>> ece532e0 (ut覆盖率)
-=======
-    comp.ccuRmaBufferMap_[dieId] =
-        std::make_unique<Hccl::LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x200));
->>>>>>> c6cde6e0 (ut编译问题)
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0xABCDULL;

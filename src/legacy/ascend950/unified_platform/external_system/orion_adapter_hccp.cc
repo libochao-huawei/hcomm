@@ -1,12 +1,12 @@
-﻿/**
-聽* Copyright (c) 2025 Huawei Technologies Co., Ltd.
-聽* This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-聽* CANN Open Software License Agreement Version 2.0 (the "License").
-聽* Please refer to the License for details. You may not use this file except in compliance with the License.
-聽* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-聽* INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-聽* See LICENSE in the root of the software repository for the full text of the License.
-聽*/
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "orion_adapter_hccp.h"
 #include <chrono>
 #include <unistd.h>
@@ -186,7 +186,7 @@ void HrtRaInit(HRaInitConfig &cfg)
     while (true) {
         ret = RaInit(&config);
         if (!ret) {
-            break; // 鎴愬姛璺冲嚭
+            break; // 成功跳出
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
@@ -195,7 +195,8 @@ void HrtRaInit(HRaInitConfig &cfg)
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            // 闈瀝a闄愰€熷満鏅敊璇紝涓嶈疆璇€傜洿鎺ラ€€鍑?            MACRO_THROW(NetworkApiException, StringFormat("[Init][Ra]errNo[0x%016llx] ra init fail, phy_id=%u, nic_position=%u, ret=%d",
+            // 非ra限速场景错误，不轮询。直接退出
+            MACRO_THROW(NetworkApiException, StringFormat("[Init][Ra]errNo[0x%016llx] ra init fail, phy_id=%u, nic_position=%u, ret=%d",
                 HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), config.phyId, config.nicPosition, ret));
         }
     }
@@ -218,7 +219,7 @@ void HrtRaDeInit(HRaInitConfig &cfg)
         ret = RaDeinit(&config);
         if (!ret) {
             HCCL_INFO("deinit ra success,return: ret[%d]", ret);
-            break; // 鎴愬姛璺冲嚭
+            break; // 成功跳出
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
@@ -227,7 +228,8 @@ void HrtRaDeInit(HRaInitConfig &cfg)
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            // 闈瀝a闄愰€熷満鏅敊璇紝涓嶈疆璇€傜洿鎺ラ€€鍑?            MACRO_THROW(NetworkApiException, StringFormat("[DeInit][Ra]errNo[0x%016llx] ra deinit fail, phy_id=%u, nic_position=%u, ret=%d",
+            // 非ra限速场景错误，不轮询。直接退出
+            MACRO_THROW(NetworkApiException, StringFormat("[DeInit][Ra]errNo[0x%016llx] ra deinit fail, phy_id=%u, nic_position=%u, ret=%d",
                 HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), config.phyId, config.nicPosition, ret));
         }
     }
@@ -244,7 +246,7 @@ static void SocketBatchConnect(SocketConnectInfoT conn[], u32 num)
         ret = RaSocketBatchConnect(conn, num);
         if (!ret) {
             HCCL_INFO("socket batch connect success, ret=%d", ret);
-            break; // 鎴愬姛璺冲嚭
+            break; // 成功跳出
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
@@ -292,7 +294,7 @@ static void HRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
         ret = RaSocketBatchClose(conn, num);
         if (!ret) {
             HCCL_INFO("socket batch close success, ret=%d", ret);
-            break; // 鎴愬姛璺冲嚭
+            break; // 成功跳出
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
@@ -301,7 +303,8 @@ static void HRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            // 闈瀝a闄愰€熷満鏅敊璇紝涓嶈疆璇紝鐩存帴閫€鍑?            MACRO_THROW(NetworkApiException, StringFormat("[BatchClose][RaSocket]errNo[0x%016llx] ra socket batch close fail, return[%d], params: num[%u]", 
+            // 非ra限速场景错误，不轮询，直接退出
+            MACRO_THROW(NetworkApiException, StringFormat("[BatchClose][RaSocket]errNo[0x%016llx] ra socket batch close fail, return[%d], params: num[%u]", 
                     HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret, num));
         }
     }
@@ -359,7 +362,8 @@ static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num, const
             MACRO_THROW(NetworkApiException, StringFormat("[%s] Socket listen start fail: "
                 "IP address is not available, please check the IP address configuration, return[%d]", __func__, ret));
         } else {
-            // 闈瀝a闄愰€熷満鏅敊璇紝涓嶈疆璇紝鐩存帴閫€鍑?            MACRO_THROW(NetworkApiException, StringFormat("[ListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
+            // 非ra限速场景错误，不轮询，直接退出
+            MACRO_THROW(NetworkApiException, StringFormat("[ListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
                     HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), EnvLinkTimeoutGet(), ret, num));
         }
     }
@@ -385,7 +389,8 @@ static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num, con
         MACRO_THROW(NetworkApiException, StringFormat("[%s] Socket listen start fail: " 
             "IP address is not available, please check the IP address configuration, return[%d]", __func__, ret));
     } else {
-        // 闈瀝a闄愰€熷満鏅敊璇紝涓嶈疆璇紝鐩存帴閫€鍑?        MACRO_THROW(NetworkApiException, StringFormat("[TryListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
+        // 非ra限速场景错误，不轮询，直接退出
+        MACRO_THROW(NetworkApiException, StringFormat("[TryListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
             HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret, num));
     }
 }
@@ -399,9 +404,9 @@ static void HRaSocketListenStop(struct SocketListenInfoT conn[], u32 num)
     auto timeout   = std::chrono::seconds(EnvLinkTimeoutGet());
     while (true) {
         ret = RaSocketListenStop(conn, num);
-        if (!ret || ret == 228202) { // 寰呬慨鏀? 鍚屾鐗堟湰鍚?228202 淇敼涓?SOCK_ENODEV
+        if (!ret || ret == 228202) { // 待修改: 同步版本后 228202 修改为 SOCK_ENODEV
             HCCL_INFO("socket listen stop success, ret=%d", ret);
-            break;                   // 鎴愬姛璺冲嚭
+            break;                   // 成功跳出
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout) {
@@ -410,7 +415,8 @@ static void HRaSocketListenStop(struct SocketListenInfoT conn[], u32 num)
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            // 闈瀝a闄愰€熷満鏅敊璇紝涓嶈疆璇紝鐩存帴閫€鍑?            MACRO_THROW(NetworkApiException, StringFormat("[ListenStop][RaSocket]errNo[0x%016llx] ra socket listen stop fail, return[%d], params: num[%u]", 
+            // 非ra限速场景错误，不轮询，直接退出
+            MACRO_THROW(NetworkApiException, StringFormat("[ListenStop][RaSocket]errNo[0x%016llx] ra socket listen stop fail, return[%d], params: num[%u]", 
                     HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret, num));
         }
     }
@@ -447,7 +453,8 @@ void HrtRaSocketListenOneStop(RaSocketListenParam &in)
     HRaSocketListenStop(&listenInfo, 1);
 }
 
-void RaBlockGetSockets(u32 role, SocketInfoT conn[], u32 num) // 淇敼涓哄唴閮ㄥ嚱鏁帮紝涓嶅澶?{
+void RaBlockGetSockets(u32 role, SocketInfoT conn[], u32 num) // 修改为内部函数，不对外
+{
     CHECK_NULLPTR(conn, "[RaBlockGetSockets] conn is nullptr!");
     HCCL_INFO("[GetSockets][RaBlock] Input params: role=%u, num=%u", role, num);
     s32  sockRet;
@@ -516,13 +523,14 @@ void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSiz
     HCCL_INFO("before ra socket send, para: fdHandle[%p], data[%p], size[%u]", fdHandle, sendData, sendSize);
 
     while (true) {
-        // 搴曞眰ra_socket_send host缃戝崱鏃犻檺鍒讹紝device缃戝崱鐢变簬HDC閫氶亾闄愬埗鐨勯檺鍒舵湁澶у皬闄愬埗(鐩墠澶у皬涓?4KB)
+        // 底层ra_socket_send host网卡无限制，device网卡由于HDC通道限制的限制有大小限制(目前大小为64KB)
         ret = RaSocketSend(fdHandle, reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(sendData) + totalSentSize),
                              sendSize - totalSentSize, &sentSize);
         HCCL_INFO("ra socket send, data[%p], size[%u] send size[%u]", sendData, sendSize, totalSentSize);
         if (ret == 0) {
             totalSentSize += sentSize;
-            if (totalSentSize == sendSize) { // 鍙湁瀹屽叏鍙戦€佸畬鎵嶈繑鍥炴垚鍔?                break;
+            if (totalSentSize == sendSize) { // 只有完全发送完才返回成功
+                break;
             }
 
             if (totalSentSize > sendSize) {
@@ -531,13 +539,13 @@ void HrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u32 sendSiz
             }
             SaluSleep(ONE_HUNDRED_MICROSECOND_OF_USLEEP);
         } else if (ret == SOCK_EAGAIN) {
-            /* ra閫熺巼闄愬埗 retry */
+            /* ra速率限制 retry */
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             MACRO_THROW(NetworkApiException, StringFormat("[Send][RaSocket]errNo[0x%016llx] ra socket send failed, fdHandle=%p, data=%p, size=%u, retSize=%u, ret=%d", 
                 HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), fdHandle, data, sendSize, sentSize, ret));
         }
-        /* 鑾峰彇褰撳墠鏃堕棿锛屽鏋滆€楁椂瓒呰繃timeout锛屽垯杩斿洖閿欒 */
+        /* 获取当前时间，如果耗时超过timeout，则返回错误 */
         const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start);
         if (elapsed > timeout) {
             MACRO_THROW(NetworkApiException, StringFormat("[Send][RaSocket]errNo[0x%016llx] Wait timeout for sockets send, fdHandle[%p], data[%p], size[%u], retsize[%u], ret[%d]",
@@ -583,7 +591,8 @@ HcclResult HrtRaSocketNonBlockSendHeart(const FdHandle fdHandle, void *data, u64
     } else if (ret == SOCK_EAGAIN) {
         return HCCL_E_AGAIN;
     } else if (ret == SOCK_CLOSE) {
-        return HCCL_E_INTERNAL; //鏆傛椂鐢ㄨ繖涓敊璇爜琛ㄧずhccp杩涚▼寮傚父閫€鍑?    } else {
+        return HCCL_E_INTERNAL; //暂时用这个错误码表示hccp进程异常退出
+    } else {
         HCCL_WARNING("[HrtRaSocketNonBlockSend]ra socket send failed, data[%p], size[%llu], send size[%llu], ret[%d]",
             data, size, *sentSize, ret);
         return HCCL_E_NETWORK;
@@ -604,7 +613,8 @@ HcclResult HrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64
     } else if (ret == SOCK_EAGAIN) {
         return HCCL_E_AGAIN;
     } else if (ret == SOCK_CLOSE) {
-        return HCCL_E_INTERNAL; //鏆傛椂鐢ㄨ繖涓敊璇爜琛ㄧずhccp杩涚▼寮傚父閫€鍑?    } else {
+        return HCCL_E_INTERNAL; //暂时用这个错误码表示hccp进程异常退出
+    } else {
         HCCL_WARNING("[HrtRaSocketNonBlockRecv]ra socket recv failed, data[%p], size[%llu], "\
             "recv[%llu], ret[%d], errno[%d][%s]", data, size, recvSize, ret, errno, strerror(errno));
         return HCCL_E_TCP_TRANSFER;
@@ -638,7 +648,7 @@ void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
         }
         rtRet = RaSocketRecv(fdHandle, reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(data) + getedLen),
                                size - getedLen, &recvSize);
-        if ((rtRet == 0) && (recvSize > 0)) { // 鎺ユ敹瀹屾垚锛屼篃鏈夊彲鑳借澶氭鎺ユ敹
+        if ((rtRet == 0) && (recvSize > 0)) { // 接收完成，也有可能要多次接收
             getedLen += recvSize;
             if (getedLen > size) {
                 MACRO_THROW(NetworkApiException, StringFormat("[Recv][RaSocket]errNo[0x%016llx] socket receive call RaSocketRecv failed,"
@@ -650,10 +660,11 @@ void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
             }
         } else if ((rtRet == 0) && (recvSize == 0)) {
             MACRO_THROW(NetworkApiException, StringFormat("[Recv][RaSocket]recv fail, fdHandle=%p, data=%p, bufLen=%u, recLen=%lld, ret=%d", fdHandle, data, size, recvSize, rtRet));
-        } else if (rtRet == SOCK_ESOCKCLOSED || rtRet == SOCK_CLOSE) { // 杩炴帴鍏抽棴锛屽嚭閿?            MACRO_THROW(NetworkApiException, StringFormat("[Recv][RaSocket]errNo[0x%016llx] recv fail, call RaSocketRecv failed, sock_esockclosed, fdhandle=%p, data=%p, bufLen=%u, recLen=%lld, ret=%d",
+        } else if (rtRet == SOCK_ESOCKCLOSED || rtRet == SOCK_CLOSE) { // 连接关闭，出错
+            MACRO_THROW(NetworkApiException, StringFormat("[Recv][RaSocket]errNo[0x%016llx] recv fail, call RaSocketRecv failed, sock_esockclosed, fdhandle=%p, data=%p, bufLen=%u, recLen=%lld, ret=%d",
                 HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_TRANSFER), fdHandle, data, size, recvSize, rtRet));
         } else if (rtRet != 0) {
-            SaluSleep(ONE_MILLISECOND_OF_USLEEP); // 灏氭湭鎺ユ敹鍒版暟鎹?寤舵椂1ms
+            SaluSleep(ONE_MILLISECOND_OF_USLEEP); // 尚未接收到数据,延时1ms
             continue;
         }
     }
@@ -799,14 +810,15 @@ void HrtRaSocketWhiteListDel(SocketHandle socketHandle, vector<RaSocketWhitelist
 }
 
 std::mutex g_deviceVnicIpMutex;
-std::map<u32, IpAddress> g_deviceIdVnicInfoMap;   // 璁板綍deviceid鍜寁nic ip鐨勫叧绯伙紝鐢ㄤ簬server鍐呮煡璇紝閬垮厤閲嶅鏌ヨ
+std::map<u32, IpAddress> g_deviceIdVnicInfoMap;   // 记录deviceid和vnic ip的关系，用于server内查询，避免重复查询
 
 void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP)
 {
     std::lock_guard<std::mutex> lock(g_deviceVnicIpMutex);
     auto iter = g_deviceIdVnicInfoMap.find(deviceId);
     if (iter != g_deviceIdVnicInfoMap.end()) {
-        // 缂撳瓨鏌ユ壘鍒帮紝鐩存帴浠庣紦瀛樿幏鍙?        vnicIP = iter->second;
+        // 缓存查找到，直接从缓存获取
+        vnicIP = iter->second;
         HCCL_INFO("[HrtRaSocketGetVnicIpInfos] vnicInfoMap deviceId[%u] found, Ip[%s]",
             deviceId, vnicIP.Describe().c_str());
         return;
@@ -999,7 +1011,7 @@ QpHandle HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode)
 
     s32 ret = RaQpCreate(rdmaHandle, flag, qpMode, &connHandle);
     if (ret != 0 || connHandle == nullptr) {
-        RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3鏄綋ROCE_ENOMEM_RET鎵嶄笂鎶I0011,鍐呭瓨澶у皬鍙栧喅浜巕p娣卞害閰嶇疆
+        RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3是当ROCE_ENOMEM_RET才上报EI0011,内存大小取决于qp深度配置
                             std::vector<std::string>({"262144~3145728"}));
         MACRO_THROW(NetworkApiException, StringFormat("[Create][RaQp]errNo[0x%016llx] ra qp create fail. call RaGetNotifyBaseAddr, params: rdmaHandle[%p], flag[%d], qpMode[%d], connHandle[%p]. return: ret[%d]",
             HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), rdmaHandle, flag, qpMode, connHandle, ret));
@@ -1145,7 +1157,7 @@ RaSendWrResp HrtRaSendOneWr(QpHandle qpHandle, HRaSendWr &in)
     wr.op        = in.op;
     wr.dstAddr   = in.rmtAddr;
     wr.sendFlag = in.sendFlag;
-    wr.bufNum   = 1; // 姝ゅlist鍙湁涓€涓紝璁剧疆涓?
+    wr.bufNum   = 1; // 此处list只有一个，设置为1
     wr.bufList  = &bufList;
     struct SendWrRsp opRsp = {};
     HrtRaSendWr(qpHandle, &wr, &opRsp);
@@ -1172,12 +1184,8 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
 
     struct CtxInitAttr ctxInfo {};
     ctxInfo.phyId = in.phyId;
-<<<<<<< HEAD
-    // urma_create_context(eidIndex) 鍐冲畾 ctx 鐨?local EID锛岄』涓?GetTpList/Import 浣跨敤鐨勯摼璺?EID 涓€鑷?    ctxInfo.ub.eidIndex = 0U;
-=======
     // urma_create_context(eidIndex) 决定 ctx 的 local EID，须与 GetTpList/Import 使用的链路 EID 一致
     ctxInfo.ub.eidIndex = 0U;
->>>>>>> dbe5f67d (优化local eid index 选择写法)
     const Eid linkEid = in.addr.GetEid();
     try {
         const vector<HrtDevEidInfo> eidInfoList = HrtRaGetDevEidInfoList(HRaInfo(in.mode, in.phyId));
@@ -1260,8 +1268,9 @@ constexpr u64 UB_MEM_PAGE_SIZE = 4096;
 std::pair<u64, u64> BufAlign(u64 addr, u64 size)
 {
     HCCL_INFO("[BufAlign] Input params: addr=0x%llx, size=%llu", addr, size);
-    // 寰呰В鍐? 姝ｅ紡鏂规寰呰璁?    u64 pageSize = UB_MEM_PAGE_SIZE;
-    u64 newAddr  = addr & (~(static_cast<u64>(pageSize - 1))); // UB鍐呭瓨娉ㄥ唽瑕佹眰璧峰鍦板潃4k瀵归綈
+    // 待解决: 正式方案待讨论
+    u64 pageSize = UB_MEM_PAGE_SIZE;
+    u64 newAddr  = addr & (~(static_cast<u64>(pageSize - 1))); // UB内存注册要求起始地址4k对齐
     u64 offset   = addr - newAddr;
     u64 newSize  = size + offset;
     HCCL_INFO("UB mem info: newAddr[%llx], newSize[%llu]", newAddr, newSize);
@@ -1473,24 +1482,25 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
     attr.ub.tokenValue       = in.tokenValue;
     attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
-    /* errTime閰嶇疆鍊硷細0-31
-        0-7浠ｈ〃鑺墖閰嶇疆鍊糱00:512ms
-        8-15浠ｈ〃鑺墖閰嶇疆鍊糱01:1s
-        16-23浠ｈ〃鑺墖閰嶇疆鍊糱10:8s
-        24-31浠ｈ〃鑺墖閰嶇疆鍊糱11:32s
+    /* errTime配置值：0-31
+        0-7代表芯片配置值b00:512ms
+        8-15代表芯片配置值b01:1s
+        16-23代表芯片配置值b10:8s
+        24-31代表芯片配置值b11:32s
     */
     attr.ub.errTimeout       = in.errTimeout;
     attr.ub.priority         = static_cast<uint8_t>(in.qos & 0xFU);
     attr.ub.rnrRetry         = RNR_RETRY;
     attr.ub.flag.bs.shareJfr = 1;
     attr.ub.jettyId          = in.jettyId;
-    // 鍦╟ontinue妯″紡涓?閰嶇疆浜唚qe鐨刦ence鏍囪锛屽苟涓旇繙绔湁涓€浜涙潈闄愭牎楠岄敊璇?鍐呭瓨寮傚父閿欒锛岀‖浠朵細鐩存帴鎸傛
-    // jfs_flag 鐨?error_suspend 璁剧疆涓?1锛?    attr.ub.jfsFlag.bs.errorSuspend = 1;
+    // 在continue模式下+配置了wqe的fence标记，并且远端有一些权限校验错误/内存异常错误，硬件会直接挂死
+    // jfs_flag 的 error_suspend 设置为 1，
+    attr.ub.jfsFlag.bs.errorSuspend = 1;
 
     attr.ub.extMode.sqebbNum = in.sqDepth;
     if (in.jettyMode == HrtJettyMode::HOST_OFFLOAD) {
         attr.ub.extMode.piType = 1;
-        attr.ub.extMode.cstmFlag.bs.sqCstm = 0; // 琛ㄧず涓嶆寚瀹歏a锛岀敱HCCP杩斿洖Va
+        attr.ub.extMode.cstmFlag.bs.sqCstm = 0; // 表示不指定Va，由HCCP返回Va
     } else if (in.jettyMode == HrtJettyMode::CCU_CCUM_CACHE) {
         attr.ub.tokenValue                   = in.tokenValue;
         attr.ub.extMode.cstmFlag.bs.sqCstm = 1;
@@ -1498,11 +1508,13 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
         attr.ub.extMode.sq.buffVa           = in.sqBufVa;
     } else if (in.jettyMode == HrtJettyMode::DEV_USED ||
                 in.jettyMode == HrtJettyMode::CACHE_LOCK_DWQE) {
-        attr.ub.extMode.cstmFlag.bs.sqCstm = 0; // 琛ㄧず涓嶆寚瀹歏a锛岀敱HCCP杩斿洖Va
+        attr.ub.extMode.cstmFlag.bs.sqCstm = 0; // 表示不指定Va，由HCCP返回Va
         attr.ub.extMode.sq.buffSize         = in.sqBufSize;
         attr.ub.extMode.sq.buffVa           = in.sqBufVa;
-    } // 棰勫煁HrtJettyMode::CACHE_LOCK_DWQE绫诲瀷锛屽綋鍓嶆祦绋嬫殏鏈娇鐢?
-    // 鍏朵粬Mode鏆傛椂涓嶉渶瑕侀澶栨洿鏂扮壒瀹氬瓧娈?    HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
+    } // 预埋HrtJettyMode::CACHE_LOCK_DWQE类型，当前流程暂未使用
+
+    // 其他Mode暂时不需要额外更新特定字段
+    HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
               "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
               "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
               "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u], timeout[%u].",
@@ -1533,7 +1545,7 @@ HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbC
     out.jettyVa   = info.va;
     out.dbVa      = info.ub.dbAddr;
     out.dbTokenId = info.ub.dbTokenId >> URMA_TOKEN_ID_RIGHT_SHIFT;
-    out.sqBuffVa  = info.ub.sqBuffVa; // 閫傞厤HCCP淇敼锛宩ettybufva鐢盚CCP鎻愪緵锛屼笉鍐嶇敱HCCL鍒嗛厤
+    out.sqBuffVa  = info.ub.sqBuffVa; // 适配HCCP修改，jettybufva由HCCP提供，不再由HCCL分配
 
     s32 sRet = memcpy_s(out.key, sizeof(out.key), info.key.value, info.key.size);
     if (sRet != EOK) {
@@ -1629,7 +1641,7 @@ HrtRaUbJettyImportedOutParam RaUbImportJetty(RdmaHandle handle, u8 *key, u32 key
     CHECK_NULLPTR(handle, "[RaUbImportJetty] handle is nullptr!");
     CHECK_NULLPTR(key, "[RaUbImportJetty] key is nullptr!");
     HCCL_INFO("[RaUbImportJetty] Input params: handle=%p, key=%d, keyLen=%u", handle, *key, keyLen);
-    // 璇ユ帴鍙ｄ粎閫傞厤闈炵鎺ч潰妯″紡锛屽綋鍓嶄笉鏈熸湜浣跨敤
+    // 该接口仅适配非管控面模式，当前不期望使用
     struct JettyImportExpCfg cfg = {};
     const auto mode = JettyImportMode::JETTY_IMPORT_MODE_NORMAL;
     return ImportJetty(handle, key, keyLen, tokenValue, cfg, mode);
@@ -1702,7 +1714,8 @@ static void ConstructWrSge(HrtRaUbSendWrReqParam &in, struct WrSgeList &sge)
 
 static void ConstructSendWrReq(HrtRaUbSendWrReqParam &in, struct WrSgeList &sge, struct SendWrData &sendWr)
 {
-    // 鐪嬩竴涓媓ccp娴嬭瘯鐢ㄤ緥鐨勫叆鍙?    sendWr.numSge                      = 1;
+    // 看一下hccp测试用例的入参
+    sendWr.numSge                      = 1;
     sendWr.sges                         = &sge;
     sendWr.remoteAddr                  = in.remoteAddr;
     sendWr.rmemHandle                  = reinterpret_cast<void *>(in.rmemHandle);
@@ -1740,7 +1753,7 @@ HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReq
     ConstructSendWrReq(in, sge, sendWr);
 
     HCCL_INFO("Sge addr = 0x%llx", in.localAddr);
-    HCCL_INFO("SendWR lmemHandle = 0x%llx", in.lmemHandle); // 鍜宯otifyFixedValue鑳藉惁瀵归綈
+    HCCL_INFO("SendWR lmemHandle = 0x%llx", in.lmemHandle); // 和notifyFixedValue能否对齐
     HCCL_INFO("SendWR rmemHandle = 0x%llx", in.rmemHandle); // remote
     HCCL_INFO("SendWR remote addr = 0x%llx", in.remoteAddr);
     HCCL_INFO("SendWR remote qp handle = 0x%llx", in.handle);
@@ -1921,19 +1934,22 @@ ReqHandleResult HrtRaGetAsyncReqResult(RequestHandle &reqHandle)
 
     int reqResult = 0;
     s32 ret = RaGetAsyncReqResult(reinterpret_cast<void *>(reqHandle), &reqResult);
-    // 杩斿洖 OTHERS_EAGAIN 浠ｈ〃鏌ヨ鍒板紓姝ヤ换鍔℃湭瀹屾垚锛岄渶瑕侀噸鏂版煡璇紝姝ゆ椂淇濈暀handle
+    // 返回 OTHERS_EAGAIN 代表查询到异步任务未完成，需要重新查询，此时保留handle
     if (ret == OTHERS_EAGAIN) {
         return ReqHandleResult::NOT_COMPLETED;
     }
 
-    // 杩斿洖鐮侀潪0浠ｈ〃璋冪敤鏌ヨ鎺ュ彛澶辫触锛屽綋鍓嶄粎鍏ュ弬閿欒鏃惰Е鍙?    if (ret != 0) {
+    // 返回码非0代表调用查询接口失败，当前仅入参错误时触发
+    if (ret != 0) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
             "reqhandle[%llu].", __func__, ret, reqHandle));
     }
 
     RequestHandle tmpReqHandle = reqHandle;
     reqHandle = 0;
-    // 杩斿洖鐮佷负 0 鏃讹紝reqResult涓哄紓姝ヤ换鍔″畬鎴愮粨鏋滐紝0浠ｈ〃鎴愬姛锛屽叾浠栧€间唬琛ㄥけ璐?    // SOCK_EAGAIN 涓?socket 绫绘墽琛岀粨鏋滐紝浠ｈ〃 socket 鎺ュ彛澶辫触闇€瑕侀噸璇?    if (reqResult == SOCK_EAGAIN) {
+    // 返回码为 0 时，reqResult为异步任务完成结果，0代表成功，其他值代表失败
+    // SOCK_EAGAIN 为 socket 类执行结果，代表 socket 接口失败需要重试
+    if (reqResult == SOCK_EAGAIN) {
         return ReqHandleResult::SOCK_E_AGAIN;
     }
 
@@ -2046,7 +2062,8 @@ RaSocketFdHandleParam RaGetOneSocket(u32 role, RaSocketGetParam &param)
     u32 connectedNum = 0;
     s32 sockRet = RaGetSockets(role, &socketInfo, SOCKET_NUM_ONE, &connectedNum);
     if ((connectedNum == 0 && sockRet == 0) || sockRet == SOCK_EAGAIN) {
-        // 鏇存柊涓?connecting 鐘舵€侊紝琛ㄧず杩炴帴鏈畬鎴?        socketInfo.status = SOCKET_CONNECTING;
+        // 更新为 connecting 状态，表示连接未完成
+        socketInfo.status = SOCKET_CONNECTING;
         return RaSocketFdHandleParam(socketInfo.fdHandle, socketInfo.status);
     }
 
@@ -2105,7 +2122,7 @@ RequestHandle RaUbLocalMemRegAsync(RdmaHandle handle, const HrtRaUbLocMemRegPara
     CHECK_NULLPTR(lmemHandle, "[RaUbLocalMemRegAsync] lmemHandle is nullptr!");
     HCCL_INFO("[RaUbLocalMemRegAsync] Input params: handle=%p, addr=0x%llx, size=0x%llx, lmemHandle=%p", handle, in.addr, in.size, lmemHandle);
     u64 pageSize = UB_MEM_PAGE_SIZE;
-    u64 newAddr  = in.addr & (~(static_cast<u64>(pageSize - 1))); // UB鍐呭瓨娉ㄥ唽瑕佹眰璧峰鍦板潃4k瀵归綈
+    u64 newAddr  = in.addr & (~(static_cast<u64>(pageSize - 1))); // UB内存注册要求起始地址4k对齐
     u64 offset   = in.addr - newAddr;
     u64 newSize  = in.size + offset + 4;
 
@@ -2211,17 +2228,19 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
     cfg.flag.bs.rtp = tpProtocol == TpProtocol::TP ? 1 : 0;
     cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
     cfg.flag.bs.uboe = tpProtocol == TpProtocol::UBOE ? 1 : 0;
-    cfg.transMode = TransportModeT::CONN_RM; // 褰撳墠鍙娇鐢≧M Jetty
+    cfg.transMode = TransportModeT::CONN_RM; // 当前只使用RM Jetty
     cfg.localEid = IpAddressToHccpEid(locAddr);
     HCCL_INFO("RaUbGetTpInfoAsync cfg.localEid=%s", HccpEidDesc(cfg.localEid).c_str());
     cfg.peerEid = IpAddressToHccpEid(rmtAddr);
     HCCL_INFO("RaUbGetTpInfoAsync cfg.peerEid=%s", HccpEidDesc(cfg.peerEid).c_str());
 
-    // 椤昏嚦灏戝绾?TP_HANDLE_REQUEST_NUM 鏉?HccpTpInfo锛岄伩鍏?RS 鎸?num 鍐欏鏉℃椂瓒婄晫鐮村潖鍫?    out.resize(static_cast<size_t>(TP_HANDLE_REQUEST_NUM) * sizeof(struct HccpTpInfo));
+    // 须至少容纳 TP_HANDLE_REQUEST_NUM 条 HccpTpInfo，避免 RS 按 num 写多条时越界破坏堆
+    out.resize(static_cast<size_t>(TP_HANDLE_REQUEST_NUM) * sizeof(struct HccpTpInfo));
     struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
 
     void *raReqHandle = nullptr;
-    num = TP_HANDLE_REQUEST_NUM; // 鎸囧畾闇€瑕佷粠绠℃帶闈㈢敵璇穞p handle鐨勬暟閲? hccp 浼氳繑鍥炲疄闄呬釜鏁?    s32 ret = RaGetTpInfoListAsync(rdmaHandle, &cfg, info, &num, &raReqHandle);
+    num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
+    s32 ret = RaGetTpInfoListAsync(rdmaHandle, &cfg, info, &num, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d] raReqHandle[%p], "
             "rdmaHandle[%p], locAddr[%s], rmtAddr[%s].", __func__, ret, raReqHandle, rdmaHandle,
@@ -2244,7 +2263,7 @@ void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param,
     struct GetTpCfg cfg{};
     cfg.flag.bs.rtp = tpProtocol == TpProtocol::TP ? 1 : 0;
     cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
-    cfg.transMode = TransportModeT::CONN_RM; // 褰撳墠鍙娇鐢≧M Jetty
+    cfg.transMode = TransportModeT::CONN_RM; // 当前只使用RM Jetty
     cfg.localEid = IpAddressToHccpEid(locAddr);
     HCCL_INFO("RaUbGetTpInfo cfg.localEid=%s", HccpEidDesc(cfg.localEid).c_str());
     cfg.peerEid = IpAddressToHccpEid(rmtAddr);
@@ -2253,7 +2272,8 @@ void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param,
     out.resize(static_cast<size_t>(TP_HANDLE_REQUEST_NUM) * sizeof(struct HccpTpInfo));
     struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
 
-    num = TP_HANDLE_REQUEST_NUM; // 鎸囧畾闇€瑕佷粠绠℃帶闈㈢敵璇穞p handle鐨勬暟閲? hccp 浼氳繑鍥炲疄闄呬釜鏁?    s32 ret = RaCtxGetTpInfoList(rdmaHandle, &cfg, info, &num);
+    num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
+    s32 ret = RaCtxGetTpInfoList(rdmaHandle, &cfg, info, &num);
     if (ret != 0) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
             "rdmaHandle[%p], locAddr[%s], rmtAddr[%s].", __func__, ret, rdmaHandle,
@@ -2316,7 +2336,7 @@ RequestHandle RaUbImportJettyAsync(const RdmaHandle rdmaHandle, const HrtRaUbJet
 {
     CHECK_NULLPTR(rdmaHandle, "[RaUbImportJettyAsync] rdmaHandle is nullptr!");
     HCCL_INFO("[RaUbImportJettyAsync] Input params: rdmaHandle=%p, remQpHandle=%p", rdmaHandle, remQpHandle);
-    // 璇ユ帴鍙ｄ粎閫傞厤闈炵鎺ч潰妯″紡锛屽綋鍓嶄笉鏈熸湜浣跨敤
+    // 该接口仅适配非管控面模式，当前不期望使用
     struct JettyImportExpCfg cfg = {};
     const auto mode = JettyImportMode::JETTY_IMPORT_MODE_NORMAL;
     return ImportJettyAsync(rdmaHandle, in, out, remQpHandle, cfg, mode);
@@ -2387,7 +2407,8 @@ HcclResult HrtRaCreateQpWithCq(RdmaHandle rdmaHandle, s32 sqEvent, s32 rqEvent,
     QpConfig config(MAX_WR_NUM, MAX_SEND_SGE_NUM, MAX_RECV_SGE_NUM, sqEvent, rqEvent);
     CqInfo cq(nullptr, nullptr, nullptr, MAX_CQ_DEPTH, config.sqEvent, config.rqEvent, info.srqContext,
         sChannel, rChannel);
-    // hdc妯″紡涓媓ccp娌℃湁瀵瑰鎻愪緵鍒涘缓CQ鐨勬帴鍙?    if (!isHdcMode) {
+    // hdc模式下hccp没有对外提供创建CQ的接口
+    if (!isHdcMode) {
         CHK_RET(HrtRaCreateCq(rdmaHandle, cq));
     }
     info.attr = config;
@@ -2495,7 +2516,7 @@ HcclResult HrtRaNormalQpCreate(RdmaHandle rdmaHandle, QpInfo& qp)
     ibQpAttr.cap.max_recv_wr = (qp.srq == nullptr ? qp.attr.maxWr : 0);
     ibQpAttr.cap.max_recv_sge = (qp.srq == nullptr ? qp.attr.maxRecvSge : 0);
     s32 ret = RaNormalQpCreate(rdmaHandle, &ibQpAttr, &(qp.qpHandle), reinterpret_cast<void **>(&(qp.qp)));
-    RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3鏄綋ROCE_ENOMEM_RET鎵嶄笂鎶I0011,鍐呭瓨澶у皬鍙栧喅浜巕p娣卞害閰嶇疆
+    RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3是当ROCE_ENOMEM_RET才上报EI0011,内存大小取决于qp深度配置
                             std::vector<std::string>({"262144~3145728"}));
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Create][NormalQp]errNo[0x%016llx] RaNormalQpCreate fail. return[%d], params: rdmaHandle[%p], context[%p]",\
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle, qp.context), HCCL_E_NETWORK);
@@ -2665,7 +2686,7 @@ HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_
 
         RequestHandle           reqHandle         = reinterpret_cast<RequestHandle>(raReqHandle);
         auto                    startTime         = std::chrono::steady_clock::now();
-        constexpr uint32_t      pollTimeoutMs     = 10000; // 杞瓒呮椂鏃堕棿10s
+        constexpr uint32_t      pollTimeoutMs     = 10000; // 轮询超时时间10s
         auto                    waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
         while (true) {
             if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
@@ -2684,7 +2705,8 @@ HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_
             }
         }
 
-        // 妫€鏌ユ槸鍚﹀垹闄ゅ畬鎴?        if (delNum > del_qp_handle.size()) {
+        // 检查是否删除完成
+        if (delNum > del_qp_handle.size()) {
             HCCL_ERROR("[%s] run RaCtxQpDestroyBatchAsync error, del jetty num[%u] greater than all jetty num[%u].", __func__, delNum, del_qp_handle.size());
             return HCCL_E_INTERNAL;
         } else if (del_qp_handle.size() == delNum) {
@@ -2727,11 +2749,12 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
 
     struct TlvMsg send_msg = {};
     struct TlvMsg recv_msg = {};
-    // 浣跨敤unique_ptr绠＄悊鍔ㄦ€佸垎閰嶇殑鍐呭瓨锛屽疄鐜癛AII
+    // 使用unique_ptr管理动态分配的内存，实现RAII
     auto send_data = std::make_unique<char[]>(sizeof(CcuMemReq));
     auto recv_data = std::make_unique<char[]>(sizeof(ccu_mem_rsp));
 
-    // 鍒濆鍖栬姹傛秷鎭?    send_msg.type = MSG_TYPE_CCU_GET_MEM_INFO;
+    // 初始化请求消息
+    send_msg.type = MSG_TYPE_CCU_GET_MEM_INFO;
     send_msg.length = sizeof(CcuMemReq);
     send_msg.data = send_data.get();
     
@@ -2739,7 +2762,8 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
     req->udieIdx = udieIdx;
     req->memTypeBitmap = memTypeBitmap;
     
-    // 鍒濆鍖栧搷搴旀秷鎭?    recv_msg.type = 0;
+    // 初始化响应消息
+    recv_msg.type = 0;
     recv_msg.length = sizeof(ccu_mem_rsp);
     recv_msg.data = recv_data.get();
     
@@ -2803,18 +2827,18 @@ HcclResult WaitRequestResult(void* raReqHandle, RequestHandle& reqHandle)
 {
     reqHandle = reinterpret_cast<RequestHandle>(raReqHandle);
     auto startTime = std::chrono::steady_clock::now();
-    constexpr uint32_t pollTimeoutMs     = 10000; // 杞瓒呮椂鏃堕棿
+    constexpr uint32_t pollTimeoutMs     = 10000; // 轮询超时时间
     auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
     while (true) {
         if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
             HCCL_ERROR("[WaitRequestResult] poll timeout.");
-            return HCCL_E_TIMEOUT;  // 瓒呮椂鎶ラ敊
+            return HCCL_E_TIMEOUT;  // 超时报错
         }
 
         ReqHandleResult result;
         TRY_CATCH_RETURN(result = HrtRaGetAsyncReqResult(reqHandle));
     
-        // 缁撴灉鍒ゆ柇
+        // 结果判断
         if (result == ReqHandleResult::NOT_COMPLETED) {
             continue;
         } else if (result == ReqHandleResult::COMPLETED) {

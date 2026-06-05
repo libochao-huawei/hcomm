@@ -653,30 +653,13 @@ HrtRaUbJettyImportedOutParam StubRaUbTpImportJetty(RdmaHandle, u8 *, u32, u32, c
     return HrtRaUbJettyImportedOutParam{};
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 void MockLoopJettyBufferDeps()
 {
     const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo = std::make_pair(0x88888888ULL, 1U);
-=======
-void MockLoopJettyBufferDeps()
-{
-<<<<<<< HEAD
-    const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo =
-        std::make_pair(reinterpret_cast<TokenIdHandle>(0x88888888), 1U);
->>>>>>> e3d1a974 (ut执行问题)
-=======
-    const std::pair<TokenIdHandle, uint32_t> fakeTokenInfo = std::make_pair(0x88888888ULL, 1U);
->>>>>>> 08a09424 (解决覆盖率问题)
     MOCKER_CPP(&RdmaHandleManager::GetTokenIdInfo).stubs().will(returnValue(fakeTokenInfo));
     MOCKER(HrtRaUbLocalMemReg).stubs().will(returnValue(HrtRaUbLocalMemRegOutParam()));
 }
 
-<<<<<<< HEAD
-=======
->>>>>>> ece532e0 (ut覆盖率)
-=======
->>>>>>> e3d1a974 (ut执行问题)
 } // namespace
 
 TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_QosMapped)
@@ -689,23 +672,10 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_
 
     const uint8_t dieId = 0U;
     const IpAddress ipAddr("192.168.10.1");
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> e3d1a974 (ut执行问题)
     MockLoopJettyBufferDeps();
     auto buffer = std::make_shared<Buffer>(0x1000ULL, 4096ULL);
     ccuComponent.localCcuRmaBufferMap[dieId] =
         std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x111));
-=======
-    auto buffer = std::make_shared<Buffer>(0x1000ULL, 4096ULL);
-<<<<<<< HEAD
-    ccuComponent.localCcuRmaBufferMap[dieId] = std::make_shared<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x111));
->>>>>>> ece532e0 (ut覆盖率)
-=======
-    ccuComponent.localCcuRmaBufferMap[dieId] =
-        std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x111));
->>>>>>> c6cde6e0 (ut编译问题)
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0x555ULL;
@@ -716,15 +686,7 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_
     ccuComponent.tpAttrInfoMap[ipAddr] = tpAttrInfo;
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x222)));
-<<<<<<< HEAD
-<<<<<<< HEAD
     MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x333ULL)));
-=======
-    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x333)));
->>>>>>> ece532e0 (ut覆盖率)
-=======
-    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x333ULL)));
->>>>>>> 437eb70e (ut  我希望是最后一次)
     MOCKER(HrtRaGetTpAttrAsync).stubs().will(invoke(StubHrtRaGetTpAttrAsyncLoopSl7));
     MOCKER(HrtRaUbCreateJetty).stubs().will(invoke(StubHrtRaUbCreateJettyCaptureQos));
     MOCKER(RaUbTpImportJetty).stubs().will(invoke(StubRaUbTpImportJetty));
@@ -751,23 +713,10 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpHandleZero_Expect_D
 
     const uint8_t dieId = 1U;
     const IpAddress ipAddr("192.168.10.2");
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> e3d1a974 (ut执行问题)
     MockLoopJettyBufferDeps();
     auto buffer = std::make_shared<Buffer>(0x2000ULL, 4096ULL);
     ccuComponent.localCcuRmaBufferMap[dieId] =
         std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x444));
-=======
-    auto buffer = std::make_shared<Buffer>(0x2000ULL, 4096ULL);
-<<<<<<< HEAD
-    ccuComponent.localCcuRmaBufferMap[dieId] = std::make_shared<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x444));
->>>>>>> ece532e0 (ut覆盖率)
-=======
-    ccuComponent.localCcuRmaBufferMap[dieId] =
-        std::make_unique<LocalUbRmaBuffer>(buffer, reinterpret_cast<RdmaHandle>(0x444));
->>>>>>> c6cde6e0 (ut编译问题)
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0ULL;
@@ -777,15 +726,7 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpHandleZero_Expect_D
     ccuComponent.tpAttrInfoMap[ipAddr] = tpAttrInfo;
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x555)));
-<<<<<<< HEAD
-<<<<<<< HEAD
     MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x666ULL)));
-=======
-    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(reinterpret_cast<void *>(0x666)));
->>>>>>> ece532e0 (ut覆盖率)
-=======
-    MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x666ULL)));
->>>>>>> 437eb70e (ut  我希望是最后一次)
     MOCKER(HrtRaUbCreateJetty).stubs().will(invoke(StubHrtRaUbCreateJettyCaptureQos));
     MOCKER(RaUbTpImportJetty).stubs().will(invoke(StubRaUbTpImportJetty));
 

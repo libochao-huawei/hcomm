@@ -30,45 +30,21 @@ class UbTimeoutEnvGuard {
 public:
     explicit UbTimeoutEnvGuard(const char *value)
     {
-<<<<<<< HEAD
-<<<<<<< HEAD
         SaveEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
         SaveEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
 
-=======
-        const char *saved = std::getenv("HCCL_UB_TIMEOUT");
-        if (saved != nullptr) {
-            savedValue_ = saved;
-            hadValue_ = true;
-        }
->>>>>>> 183ce91f ( ut覆盖率不够)
-=======
-        SaveEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
-        SaveEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
-
->>>>>>> 437eb70e (ut  我希望是最后一次)
         if (value != nullptr) {
             (void)setenv("HCCL_UB_TIMEOUT", value, 1);
         } else {
             (void)unsetenv("HCCL_UB_TIMEOUT");
         }
-<<<<<<< HEAD
-<<<<<<< HEAD
         // Parse() validates all env keys; CI may leave an invalid HCCL_DFS_CONFIG (typo detction).
         (void)setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
-=======
->>>>>>> 183ce91f ( ut覆盖率不够)
-=======
-        // Parse() validates all env keys; CI may leave an invalid HCCL_DFS_CONFIG (typo detction).
-        (void)setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
->>>>>>> 437eb70e (ut  我希望是最后一次)
         Hccl::EnvConfig::GetInstance().Parse();
     }
 
     ~UbTimeoutEnvGuard()
     {
-<<<<<<< HEAD
-<<<<<<< HEAD
         RestoreEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
         RestoreEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
         // Do not Parse() here: restoring invalid HCCL_DFS_CONFIG then Parse() throws and aborts the process.
@@ -99,50 +75,6 @@ private:
     std::string savedUbTimeout_;
     bool hadDfsConfig_{false};
     std::string savedDfsConfig_;
-=======
-        if (hadValue_) {
-            (void)setenv("HCCL_UB_TIMEOUT", savedValue_.c_str(), 1);
-        } else {
-            (void)unsetenv("HCCL_UB_TIMEOUT");
-        }
-=======
-        RestoreEnv("HCCL_UB_TIMEOUT", savedUbTimeout_, hadUbTimeout_);
-        RestoreEnv("HCCL_DFS_CONFIG", savedDfsConfig_, hadDfsConfig_);
->>>>>>> 437eb70e (ut  我希望是最后一次)
-        Hccl::EnvConfig::GetInstance().Parse();
-    }
-
-private:
-<<<<<<< HEAD
-    bool hadValue_{false};
-    std::string savedValue_;
->>>>>>> 183ce91f ( ut覆盖率不够)
-=======
-    static void SaveEnv(const char *name, std::string &saved, bool &had)
-    {
-        const char *value = std::getenv(name);
-        if (value != nullptr) {
-            saved = value;
-            had = true;
-        } else {
-            had = false;
-        }
-    }
-
-    static void RestoreEnv(const char *name, const std::string &saved, bool had)
-    {
-        if (had) {
-            (void)setenv(name, saved.c_str(), 1);
-        } else {
-            (void)unsetenv(name);
-        }
-    }
-
-    bool hadUbTimeout_{false};
-    std::string savedUbTimeout_;
-    bool hadDfsConfig_{false};
-    std::string savedDfsConfig_;
->>>>>>> 437eb70e (ut  我希望是最后一次)
 };
 
 void FillIpv4CommAddr(CommAddr &ca, const char *dotted)
@@ -313,24 +245,10 @@ int StubRaGetTpAttrAsyncTwoSlBits(void *ctxHandle, uint64_t tpHandle, uint32_t *
     return 0;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 int StubRaGetHccnCfgDscp(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
     (void)info;
     (void)key;
-=======
-int StubRaGetHccnCfgDscp(void *info, int cfgType, char *value, unsigned int *valueLen)
-{
-    (void)info;
-    (void)cfgType;
->>>>>>> 84b3c665 (ut覆盖率不够)
-=======
-int StubRaGetHccnCfgDscp(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
-{
-    (void)info;
-    (void)key;
->>>>>>> 4e5ae802 ( ut编译失败)
     if (value == nullptr || valueLen == nullptr) {
         return -1;
     }
@@ -344,25 +262,10 @@ int StubRaGetHccnCfgDscp(struct RaInfo *info, enum HccnCfgKey key, char *value, 
     return 0;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 int StubRaGetHccnCfgDscpKeyValue(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
     (void)info;
     (void)key;
-=======
-int StubRaGetHccnCfgDscpKeyValue(void *info, int cfgType, char *value, unsigned int *valueLen)
-{
-    (void)info;
-    (void)cfgType;
->>>>>>> 466ec5dc ( ut覆盖率不够)
-=======
-int StubRaGetHccnCfgDscpKeyValue(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
-{
-    (void)info;
-    (void)key;
->>>>>>> 4e5ae802 ( ut编译失败)
     if (value == nullptr || valueLen == nullptr) {
         return -1;
     }
@@ -432,11 +335,6 @@ int StubRaGetTpAttrAsyncSl01(void *ctxHandle, uint64_t tpHandle, uint32_t *attrB
     return 0;
 }
 
-<<<<<<< HEAD
-=======
->>>>>>> 84b3c665 (ut覆盖率不够)
-=======
->>>>>>> 466ec5dc ( ut覆盖率不够)
 } // namespace
 
 class TpMgrTest : public testing::Test {
@@ -663,24 +561,12 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Rtp_SlLevelCountCapsMapping_Expect_Success)
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_DscpFromHccnCfg_Expect_Success)
 {
     MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
-<<<<<<< HEAD
-<<<<<<< HEAD
     MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboeDscpMode0));
-=======
-    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboe));
->>>>>>> 84b3c665 (ut覆盖率不够)
-=======
-    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboeDscpMode0));
->>>>>>> 466ec5dc ( ut覆盖率不够)
     MOCKER(RaGetHccnCfg).stubs().will(invoke(StubRaGetHccnCfgDscp));
 
     TpMgr &mgr = TpMgr::GetInstance(0);
     const GetTpInfoParam param = MakeParam("10.10.16.1", "10.10.16.2", TpProtocol::UBOE, 2U);
     TpInfo tpInfo{};
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 466ec5dc ( ut覆盖率不够)
     ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
     EXPECT_EQ(tpInfo.tpHandle, 0x105ULL);
 }
@@ -696,12 +582,6 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_DscpKeyValueCfg_Expect_Success)
     TpInfo tpInfo{};
     EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
     EXPECT_EQ(tpInfo.tpHandle, 0x102ULL);
-<<<<<<< HEAD
-=======
-    EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
->>>>>>> 84b3c665 (ut覆盖率不够)
-=======
->>>>>>> 466ec5dc ( ut覆盖率不够)
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Ctp_WithQos_Expect_SuccessWithoutSlCommit)
@@ -712,10 +592,6 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Ctp_WithQos_Expect_SuccessWithoutSlCommit)
     EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
     EXPECT_NE(tpInfo.tpHandle, 0U);
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 466ec5dc ( ut覆盖率不够)
 
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Rtp_TwoTp_Qos5_Expect_Mapped)
 {
@@ -784,60 +660,22 @@ TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpInfo_TpHandleMismatch_Expect_EPara)
 
 TEST_F(TpMgrTest, Ut_TpMgr_CalcTaTimeout_When_EnvLessThanTp_Expect_Upgrade)
 {
-<<<<<<< HEAD
-<<<<<<< HEAD
     UbTimeoutEnvGuard envGuard("0");
-=======
-    auto &rdmaCfg = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
-    const auto savedUbTimeout = rdmaCfg.ubTimeOut;
-    rdmaCfg.ubTimeOut.value = 0U;
-    rdmaCfg.ubTimeOut.isParsed = true;
->>>>>>> 466ec5dc ( ut覆盖率不够)
-=======
-    UbTimeoutEnvGuard envGuard("0");
->>>>>>> 183ce91f ( ut覆盖率不够)
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 3U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpMgr::CalcTaTimeout(tpAttrInfo), 16U);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-    rdmaCfg.ubTimeOut = savedUbTimeout;
->>>>>>> 466ec5dc ( ut覆盖率不够)
-=======
->>>>>>> 183ce91f ( ut覆盖率不够)
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_CalcTaTimeout_When_EnvGreaterThanTp_Expect_EnvValue)
 {
-<<<<<<< HEAD
-<<<<<<< HEAD
     UbTimeoutEnvGuard envGuard("24");
-=======
-    auto &rdmaCfg = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
-    const auto savedUbTimeout = rdmaCfg.ubTimeOut;
-    rdmaCfg.ubTimeOut.value = 24U;
-    rdmaCfg.ubTimeOut.isParsed = true;
->>>>>>> 466ec5dc ( ut覆盖率不够)
-=======
-    UbTimeoutEnvGuard envGuard("24");
->>>>>>> 183ce91f ( ut覆盖率不够)
 
     TpAttrInfo tpAttrInfo{};
     tpAttrInfo.tpAttr.at = 0U;
     tpAttrInfo.tpAttr.retryTimesInit = 0U;
     EXPECT_EQ(TpMgr::CalcTaTimeout(tpAttrInfo), 24U);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-    rdmaCfg.ubTimeOut = savedUbTimeout;
->>>>>>> 466ec5dc ( ut覆盖率不够)
-=======
->>>>>>> 183ce91f ( ut覆盖率不够)
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpAttr_UseCntDecrement_Expect_Success)
@@ -855,10 +693,6 @@ TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpAttr_UseCntDecrement_Expect_Success)
     EXPECT_EQ(mgr.ReleaseTpAttr(tpInfo.tpHandle, tpAttrInfo), HCCL_SUCCESS);
     EXPECT_EQ(mgr.ReleaseTpAttr(tpInfo.tpHandle, tpAttrInfo), HCCL_SUCCESS);
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> ece532e0 (ut覆盖率)
 
 TEST_F(TpMgrTest, Ut_TpMgr_ReleaseTpInfo_QosKeyMismatch_Expect_NotFound)
 {
@@ -893,10 +727,3 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_ThreeTp_Qos2_Expect_GroupedFirstQos)
     EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
     EXPECT_NE(tpInfo.tpHandle, 0U);
 }
-<<<<<<< HEAD
-=======
->>>>>>> 84b3c665 (ut覆盖率不够)
-=======
->>>>>>> 466ec5dc ( ut覆盖率不够)
-=======
->>>>>>> ece532e0 (ut覆盖率)
