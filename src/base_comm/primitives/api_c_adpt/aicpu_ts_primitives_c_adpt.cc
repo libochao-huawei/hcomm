@@ -25,7 +25,7 @@
 #include "profiling_handler_lite.h"
 #include "hcclCommOp.h"
 #include "hcomm_diag.h"
-#include "hccl_api_data_aicpu_ts.h"
+#include "aicpu_ts_primitives_c_adpt.h"
 #include "hccl_diag.h"
 
 using namespace hccl;
