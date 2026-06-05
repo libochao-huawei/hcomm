@@ -29,7 +29,7 @@
 namespace hccl {
 RankTable_t g_hcclDefaultRankTable;
 
-hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identifier, std::string cclBufferName)
+hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identifier, std::string cclBuffName)
     : barrierSendBuf(nullptr), barrierRecvBuf(nullptr),
       inCCLbufferSize_(inCCLbufferSize), outCCLbufferSize_(outCCLbufferSize),
       deviceType_(DevType::DEV_TYPE_COUNT), isFirstBarrier_(true), identifier_(identifier), cclBuffName_(cclBufferName), isHeterogComm_(false),
