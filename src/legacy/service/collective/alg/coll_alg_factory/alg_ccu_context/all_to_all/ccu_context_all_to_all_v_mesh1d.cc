@@ -378,7 +378,6 @@ void CcuContextAllToAllVMesh1D::RefreshArgs(CollOpParams opParams, u32 rankSize,
         args.push_back(val);
     }
 
-
     for (u32 i = 0; i < rankSize; i++) {
         u64 curSendCounts = *(static_cast<const u64 *>(opParams.all2AllVDataDes.sendCounts) + i);
         u64 curSendDispls = *(static_cast<const u64 *>(opParams.all2AllVDataDes.sdispls) + i);

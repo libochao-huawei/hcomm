@@ -59,16 +59,16 @@ HcclResult  CalcResLinks(const RankId myRank, const RankGraph *rankGraph,
 HcclResult  CalcLinkInfo(const RankId myRank, const RankGraph *rankGraph, const LinkReq &linkReq,
                          std::vector<std::pair<u32, RankId>> &algTempLinksInfo);
 HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph, 
-std::vector<std::vector<RankId>>&virtRanks_, RankId myRank_, std::vector<map<u32, u32>>&rank2PathNumMap);
+std::vector<std::vector<RankId>> &virtRanks_, RankId myRank_, std::vector<map<u32, u32>> &rank2PathNumMap);
 
 HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph,
-std::vector<RankId>&virtRanks_, RankId myRank_, std::map<u32, u32>&rank2PathNumMap);
+std::vector<RankId> &virtRanks_, RankId myRank_, std::map<u32, u32> &rank2PathNumMap);
     
-HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr*linkMgr, 
-std::vector<std::vector<RankId>>&virtRanks_, RankId myRank_, std::vector<map<u32, u32>>&rank2PathNumMap);
+HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, 
+std::vector<std::vector<RankId>> &virtRanks_, RankId myRank_, std::vector<map<u32, u32>> &rank2PathNumMap);
 
-HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr*linkMgr, std::vector<RankId>&virtRanks_,
-RankId myRank_, map<u32, u32>&rank2PathNumMap);
+HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, std::vector<RankId> &virtRanks_,
+RankId myRank_, map<u32, u32> &rank2PathNumMap);
 
 
 } // namespace Hccl
