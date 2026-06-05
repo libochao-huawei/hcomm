@@ -58,11 +58,10 @@ cann_pack_targets_and_files(
     OUTPUT_TARGET "pack_cann_hcomm_compat"
     OUTPUT "cann-hcomm-compat.tar.gz"
     TARGETS rs_device ra_adp net_co hccp_service.bin tls_adp ascend_kms
-    SIZE_LIMIT 3968 # 文件大小限制为 3968 KB（即当前发布包 3779 KB 的 105%），超出则报错
+    SIZE_LIMIT 3968 # Align the maximum release package size to 105%(3779 * 105% = 3968)
     MANIFEST "hccp_compat_bin_hash.cfg"
-    GEN_INI
 )
-add_cann_sign_file(
+sign_file(
     OUTPUT_TARGET sign_cann_hcomm_compat
     INPUT "cann-hcomm-compat.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
@@ -78,7 +77,7 @@ cann_pack_targets_and_files(
     MANIFEST "bin_hash.cfg"
     TAR_ROOT_DIR "lib64"
 )
-add_cann_sign_file(
+sign_file(
     OUTPUT_TARGET sign_cann_hccd_compat
     INPUT "cann-hccd-compat.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
@@ -87,14 +86,14 @@ add_cann_sign_file(
 )
 
 # 打包并签名：aicpu_hcomm.tar.gz
-cann_pack_targets_and_files(
+pack_targets_and_files(
     OUTPUT_TARGET "pack_aicpu_hcomm"
     OUTPUT "aicpu_hcomm.tar.gz"
     TARGETS ccl_kernel ccl_kernel_plf
     MANIFEST "bin_hash.cfg"
     TAR_ROOT_DIR "aicpu_kernels_device"
 )
-add_cann_sign_file(
+sign_file(
     OUTPUT_TARGET sign_aicpu_hcomm
     INPUT "aicpu_hcomm.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
