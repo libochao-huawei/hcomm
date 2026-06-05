@@ -90,20 +90,7 @@ void RtsqA5::MakeSureAvailableSpace()
             lastPrintTime = curTime;
         }
 
-        bool isTimeout = (curTime - startTime) >= rtsqFullTimeout_;
-        HcclResult checkRet = (checkExecStatusCallback_ != nullptr) ? checkExecStatusCallback_(isTimeout) : HCCL_SUCCESS;
-        if (checkRet != HCCL_SUCCESS) {
-            THROW<InternalException>(StringFormat("[%s]stop launch Task, isTimeout[%d], checkRet[%d]",
-                __func__, isTimeout, checkRet));
-        }
-
-        if (UNLIKELY(isTimeout)) { // timeout内还是不能向RTSQ中写入值，报错
-            auto msg = StringFormat("Rtsq full, rtsqFullTimeoutValue %u. sqId:%u, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
-                rtsqFullTimeoutValue_, sqId_, sqHead_, sqTail_, pendingSqeCnt);
-            HCCL_ERROR("%s", msg.c_str());
-            THROW<InternalException>(msg);
-        }
-
+        CheckLaunchTaskStatus(startTime, curTime);
 #ifdef CCL_KERNEL_AICPU
         HcclResult ret = HandleDispatchAllStreams();
         if (UNLIKELY(ret != HCCL_SUCCESS)) {
@@ -115,6 +102,24 @@ void RtsqA5::MakeSureAvailableSpace()
         if (checkOpExecStatusCallback_ != nullptr) {
             checkOpExecStatusCallback_();
         }
+    }
+}
+
+void RtsqA5::CheckLaunchTaskStatus(const std::chrono::steady_clock::time_point &startTime,
+    const std::chrono::steady_clock::time_point &curTime)
+{
+    bool isTimeout = (curTime - startTime) >= rtsqFullTimeout_;
+    // step1 检测是否launch超时，如果超时打印rtsq full的ERROR日志
+    if (UNLIKELY(isTimeout)) {
+        HCCL_ERROR("Rtsq full, rtsqFullTimeoutValue %u. sqId:%u, sqHead:%u, sqTail:%u, pendingSqeCnt:%u",
+            rtsqFullTimeoutValue_, sqId_, sqHead_, sqTail_, pendingSqeCnt);
+    }
+
+    // step2 调用回调检查执行状态：1、如果超时，打印taskException；2、如果通信域不可用，终止launch
+    HcclResult checkRet = (checkExecStatusCallback_ != nullptr) ? checkExecStatusCallback_(isTimeout) : HCCL_SUCCESS;
+    if (UNLIKELY(isTimeout || checkRet != HCCL_SUCCESS)) {
+        THROW<InternalException>(StringFormat("[%s]stop launch Task, isTimeout[%d], checkRet[%d]",
+            __func__, isTimeout, checkRet));
     }
 }
 

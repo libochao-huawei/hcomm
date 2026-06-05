@@ -400,15 +400,16 @@ HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
 HcclResult CollCommAicpu::CheckIndOpExecStatus(bool timeout)
 {
     if (timeout) {
+        HCCL_ERROR("[%s]comm[%s] op launch timeout, print taskException", __func__, identifier_.c_str());
         // 先打印本通信域的taskException，再打印其他通信域的taskException
         hcomm::HcclCommTaskExceptionLite::GetInstance().PrintCommTaskException(this);
         hcomm::HcclCommTaskExceptionLite::GetInstance().PrintAllCommTaskException();
+        return HCCL_E_INTERNAL;
+    } else if (commStatus_ != HCCL_COMM_STATUS_READY) {
+        HCCL_ERROR("[%s]comm[%s] commStatus[%d] is not ready, return fail", __func__, identifier_.c_str(), commStatus_);
+        return HCCL_E_INTERNAL;
     }
-    HcclResult ret = (commStatus_ == HCCL_COMM_STATUS_READY) ? HCCL_SUCCESS : HCCL_E_INTERNAL;
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s]comm[%s] commStatus[%d] is not ready, stop launch", __func__, identifier_.c_str(), commStatus_);
-    }
-    return ret;
+    return HCCL_SUCCESS;
 }
 
 void CollCommAicpu::InitBackGroundThread()

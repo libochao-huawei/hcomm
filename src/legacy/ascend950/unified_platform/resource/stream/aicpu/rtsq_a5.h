@@ -96,6 +96,9 @@ private:
     void MakeSureAvailableSpace();
 
     u32 GetTailToHeadDist() const;
+
+    void CheckLaunchTaskStatus(const std::chrono::steady_clock::time_point &startTime,
+        const std::chrono::steady_clock::time_point &curTime);
 };
 
 } // namespace Hccl
