@@ -64,6 +64,7 @@ typedef struct {
 } HcommEndpointListenConfig;
 
 HcommResult HcommResMgrInit(uint32_t devPhyId);
+HcommResult HcommInitResMgr();
 
 HcommResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint);
 
