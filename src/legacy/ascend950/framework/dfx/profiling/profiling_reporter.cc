@@ -41,7 +41,7 @@ void ProfilingReporter::Init()
 
 void ProfilingReporter::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
 {
-    if (!profilingHandler_->GetHcclL1State() && !profilingHandler_->GetHcclL0State()) {  //这两个值只有profiling使用 如果没开就不进行hash
+    if (profilingHandler_->GetHcclL1State() && profilingHandler_->GetHcclL0State()) {  //这两个值只有profiling使用 如果没开就不进行hash
         auto it = CMD_OP_TYPE_INFO_MAP.find(static_cast<HcclCMDType>(dfxOpInfo->op_.oldOpType));
         if (it == CMD_OP_TYPE_INFO_MAP.end()) {
             HCCL_WARNING("%s dfxOpInfo.opType[%u] is not supported.", __func__, dfxOpInfo->op_.oldOpType);
