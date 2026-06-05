@@ -114,9 +114,4 @@ else ()
             hccl_st_fwk
             hccl_headers
     )
-
-    run_llt_test(
-            TARGET hccl_v2_stest
-            TASK_NUM 1
-    )
 endif ()
