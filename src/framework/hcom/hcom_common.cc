@@ -1121,7 +1121,7 @@ void HcomGroupCallbackFuncInstall(HcclResult (*p1)(const std::string &, const st
     g_hcomDestroyCallback = p4;
 }
 
-HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *inputIdxList)
+HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *IdxList)
 {
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
