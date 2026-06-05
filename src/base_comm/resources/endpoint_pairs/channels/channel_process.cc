@@ -163,8 +163,11 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
         int32_t status = 0;
 
         // 单锁：D2H 映射 + 查 map + 锁内调用 GetStatus()
+        HCCL_INFO("[%s] ChannelHandle, inHandle = %u", __func__, inHandle);
         HcclResult ret = WithChannelByHandleLocked(inHandle, [&](Channel &channel) -> HcclResult {
+            HCCL_INFO("[%s] channel, get status", __func__);
             status = channel.GetStatus();  // 锁内调用，防止 destroy 并发释放
+            HCCL_INFO("[%s] channel, status[%d]", __func__, status);
             return HcclResult::HCCL_SUCCESS;
         });
 
