@@ -1128,11 +1128,11 @@ HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32
         return HCCL_SUCCESS;
     }
 
-    RPT_INPUT_ERR(inputIdxList == nullptr,
+    RPT_INPUT_ERR(IdxList == nullptr,
         "EI0003",
         std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcomSetGradFusionByIndex", "nullptr", "inputIdxList", "non-null pointer"}));
-    CHK_PTR_NULL(inputIdxList);
+    CHK_PTR_NULL(IdxList);
     bool bRet = segmentNum == 0;
     RPT_INPUT_ERR(bRet,
         "EI0003",
@@ -1149,9 +1149,9 @@ HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32
     string idxList;
     for (u32 i = 0; i < segmentNum; i++) {
         if (i < segmentNum - 1) {
-            idxList += to_string(inputIdxList[i]) + ',';
+            idxList += to_string(IdxList[i]) + ',';
         } else if (i == segmentNum - 1) {
-            idxList += to_string(inputIdxList[i]);
+            idxList += to_string(IdxList[i]);
         }
     }
     /* 接口交互信息日志 */
