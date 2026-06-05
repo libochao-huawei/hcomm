@@ -47,12 +47,6 @@ include(${HCOMM_DIR}/cmake/third_party/ubengine.cmake)
 add_cann_third_party(json)
 add_cann_third_party(openssl)
 add_cann_third_party(rdma-core)
-if(NOT TARGET rdma_core_headers)
-    add_library(rdma_core_headers INTERFACE)
-    target_include_directories(rdma_core_headers INTERFACE
-        ${RDMA_CORE_INCLUDE_DIR}
-    )
-endif()
 
 # 添加子目录
 add_cann_subdirectories_relative(${HCOMM_DIR}
@@ -64,10 +58,11 @@ cann_pack_targets_and_files(
     OUTPUT_TARGET "pack_cann_hcomm_compat"
     OUTPUT "cann-hcomm-compat.tar.gz"
     TARGETS rs_device ra_adp net_co hccp_service.bin tls_adp ascend_kms
-    SIZE_LIMIT 3968 # Align the maximum release package size to 105%(3779 * 105% = 3968)
+    SIZE_LIMIT 3968 # 文件大小限制为 3968 KB（即当前发布包 3779 KB 的 105%），超出则报错
     MANIFEST "hccp_compat_bin_hash.cfg"
+    GEN_INI
 )
-sign_file(
+add_cann_sign_file(
     OUTPUT_TARGET sign_cann_hcomm_compat
     INPUT "cann-hcomm-compat.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
@@ -76,14 +71,14 @@ sign_file(
 )
 
 # 打包并签名：cann-hccd-compat.tar.gz
-pack_targets_and_files(
+cann_pack_targets_and_files(
     OUTPUT_TARGET "pack_cann_hccd_compat"
     OUTPUT "cann-hccd-compat.tar.gz"
     TARGETS rs ra ra_hdc ra_peer hccd tls_adp ascend_kms
     MANIFEST "bin_hash.cfg"
     TAR_ROOT_DIR "lib64"
 )
-sign_file(
+add_cann_sign_file(
     OUTPUT_TARGET sign_cann_hccd_compat
     INPUT "cann-hccd-compat.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
@@ -92,14 +87,14 @@ sign_file(
 )
 
 # 打包并签名：aicpu_hcomm.tar.gz
-pack_targets_and_files(
+cann_pack_targets_and_files(
     OUTPUT_TARGET "pack_aicpu_hcomm"
     OUTPUT "aicpu_hcomm.tar.gz"
     TARGETS ccl_kernel ccl_kernel_plf
     MANIFEST "bin_hash.cfg"
     TAR_ROOT_DIR "aicpu_kernels_device"
 )
-sign_file(
+add_cann_sign_file(
     OUTPUT_TARGET sign_aicpu_hcomm
     INPUT "aicpu_hcomm.tar.gz"
     CONFIG "${HCOMM_DIR}/scripts/sign/hcomm_check_cfg.xml"
