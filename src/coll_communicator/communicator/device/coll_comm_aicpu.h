@@ -38,6 +38,7 @@ using namespace hccl;
 
 class CollCommAicpu {
 public:
+    ~CollCommAicpu();
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);

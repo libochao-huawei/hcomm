@@ -26,6 +26,18 @@
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
+CollCommAicpu::~CollCommAicpu()
+{
+    ReadWriteLock rwLock(threadMutex_);
+    rwLock.writeLock();
+    for (auto& thread : threads_) {
+        HcommThreadRegisterCheckExecStatus(reinterpret_cast<ThreadHandle>(thread.get()), nullptr);
+    }
+    threads_.clear();
+    rwLock.writeUnlock();
+    HCCL_RUN_INFO("[CollCommAicpu][%s]Group[%s] destroy success", __func__, identifier_.c_str());
+}
+
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
     if (commStatus_ == HcclCommStatus::HCCL_COMM_STATUS_READY) {
