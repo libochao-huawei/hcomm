@@ -391,7 +391,6 @@ SocketStatus Socket::GetAsyncStatus()
 void Socket::GetOneSocket()
 {
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
-    
     RaSocketFdHandleParam fdHandleParam(nullptr, 0);
     EXCEPTION_CATCH(fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param), return);
     // socket status:0 not connected 1:connected 2:connect timeout 3:connecting

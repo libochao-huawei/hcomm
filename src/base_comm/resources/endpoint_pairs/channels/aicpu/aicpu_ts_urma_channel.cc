@@ -33,6 +33,7 @@ AicpuTsUrmaChannel::~AicpuTsUrmaChannel()
 {
     if (socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        memTransport_->SetSocket(nullptr);
         socket_ = nullptr;
     }
 }
@@ -279,8 +280,11 @@ HcclResult AicpuTsUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 
 ChannelStatus AicpuTsUrmaChannel::GetStatus()
 {
+    if (socket_ == nullptr && socketConfig_ != nullptr) {
+        SocketMgr::GetInstance(devicePhyId_).GetSocket(*socketConfig_, socket_);
+        memTransport_->SetSocket(socket_);
+    }
     ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
-
     if (isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
         std::string channelInfo = "create channel info:channel handle[";
         channelInfo.append(std::to_string(reinterpret_cast<uint64_t>(this)));
@@ -298,6 +302,7 @@ ChannelStatus AicpuTsUrmaChannel::GetStatus()
     
     if (out == ChannelStatus::READY && socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        memTransport_->SetSocket(nullptr);
     }
     return out;
 }
