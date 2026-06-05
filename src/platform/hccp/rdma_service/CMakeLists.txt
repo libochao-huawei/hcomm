@@ -86,6 +86,9 @@ target_include_directories(rs PRIVATE
 
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(rs PRIVATE
+        ${TOP_DIR}/ubengine/ssapi/userspace/umdk/src/urma/lib/urma/core/include
+        ${TOP_DIR}/ubengine/ssapi/userspace/umdk/src/urma/lib/urma/core
+        ${TOP_DIR}/ubengine/ssapi/userspace/udma/src/urma/hw/udma/include
         ${TOP_DIR}/drivers/network/tls_adp
         ${TOP_DIR}/runtime/pkg_inc/base
         ${TOP_DIR}/driver/driver/pkg_inc/
