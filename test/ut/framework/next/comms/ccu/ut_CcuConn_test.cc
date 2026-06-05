@@ -65,7 +65,7 @@ protected:
 };
 
 pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> MockMakeCcuConnection(
-    hcomm::TpProtocol tpProtocol, uint32_t qos = ::EnvConfig::UB_QOS_DEFAULT)
+    hcomm::TpProtocol tpProtocol, uint32_t qos = Hccl::UB_QOS_DEFAULT)
 {
     constexpr uint64_t fakeMemAddr = 0x12345678;
 
@@ -327,7 +327,7 @@ TEST_F(CcuConnTest, Ut_MakeGetTpInfoParam_When_QosAboveSeven_Expect_ClampsToDefa
 
     HcclResult ret = connection->UpdateInitStatus();
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(::EnvConfig::UB_QOS_DEFAULT));
+    EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(Hccl::UB_QOS_DEFAULT));
 
     GlobalMockObject::verify();
 }

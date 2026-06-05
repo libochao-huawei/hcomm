@@ -23,7 +23,7 @@
 #include "virtual_topo.h"
 #include "aicpu_res_package_helper.h"
 #include "tp_manager.h"
-#include "env_config.h"
+#include "env_config/env_config.h"
 
 namespace hcomm {
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
@@ -119,7 +119,7 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
     const u8 qosPre = static_cast<u8>(
-        (channelDesc_.qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (channelDesc_.qos & 7U));
+        (channelDesc_.qos > 7U) ? Hccl::UB_QOS_DEFAULT : (channelDesc_.qos & 7U));
 
     std::unique_ptr<Hccl::DevUbConnection> ubConn = nullptr;
     switch (protocol) {

@@ -36,7 +36,7 @@ static GetTpInfoParam MakeGetTpInfoParam(const CommAddr &locAddr, const CommAddr
     param.locAddr = locAddr;
     param.rmtAddr = rmtAddr;
     param.tpProtocol = tpProtocol;
-    param.qos = (qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (qos & 7U);
+    param.qos = (qos > 7U) ? Hccl::UB_QOS_DEFAULT : (qos & 7U);
     param.slLevelCount = 0;
     param.loopFirstTpLowestSl = false;
     return param;

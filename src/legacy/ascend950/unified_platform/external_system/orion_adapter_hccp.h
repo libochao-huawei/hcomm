@@ -603,7 +603,7 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     IpAddress locAddr{};
     IpAddress rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
-    /// 与 Next TpMgr 一致：参与 SL→jetty priority 映射（0–7）；默认见 `::EnvConfig::UB_QOS_DEFAULT`
+    /// 与 Next TpMgr 一致：参与 SL→jetty priority 映射（0–7）；默认见 `Hccl::UB_QOS_DEFAULT`
     uint32_t qos;
     /// 与 Next GetTpInfoParam::slLevelCount 对齐；非 0 时限制 SL 分组档位数。当前调用方均传 0（预留）。
     uint32_t slLevelCount{0U};
