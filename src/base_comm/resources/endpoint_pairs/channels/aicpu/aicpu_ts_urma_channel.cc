@@ -253,6 +253,7 @@ HcclResult AicpuTsUrmaChannel::Init()
     CHK_RET(ParseInputParam());
     CHK_RET(hrtGetDevice(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    InitSingleton();
     CHK_RET(StartListen());
     CHK_RET(BuildSocket());
     CHK_RET(BuildAttr());
@@ -427,6 +428,13 @@ HcclResult AicpuTsUrmaChannel::StartListen()
     CHK_RET(static_cast<HcclResult>(HcommEndpointStartListen(endpointHandle_, port, nullptr)));
     HCCL_INFO("[AicpuTsUrmaChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
+}
+
+void AicpuTsUrmaChannel::InitSingleton()
+{
+    // 管理单例类的实例化，确保销毁顺序正确
+    Hccl::SocketHandleManager::GetInstance();
+    SocketMgr::GetInstance(devicePhyId_);
 }
 
 } // namespace hcomm
