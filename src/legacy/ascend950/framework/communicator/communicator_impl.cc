@@ -2061,11 +2061,11 @@ HcclResult CommunicatorImpl::CreateCommCclBuf()
 {
     HCCL_INFO("[%s] start.", __func__);
     if (inCclBuffer == nullptr) { 
-        inCclBuffer = std::make_shared<DevBuffer>(cclBufferSize);
+        inCclBuffer = std::make_shared<DevBuffer>(20);
         HCCL_INFO("CommunicatorImpl::CreateCommCclBuf, inCclBuffer is %p", inCclBuffer.get());
     } 
     if (outCclBuffer == nullptr) {
-        outCclBuffer = std::make_shared<DevBuffer>(cclBufferSize);
+        outCclBuffer = std::make_shared<DevBuffer>(20);
         HCCL_INFO("CommunicatorImpl::CreateCommCclBuf, outCclBuffer is %p", outCclBuffer.get());
     }
     if (indirectInCclBuffer == nullptr) {
