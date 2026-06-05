@@ -20,10 +20,9 @@
 
 #include "hccl_common.h"
 #include "exception_handler.h"
-#include "network_api_exception.h"
+#include "exception_util.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
-#include "orion_adapter_hccp.h"
 #include "env_config/env_config.h"
 
 namespace hcomm {
@@ -238,26 +237,6 @@ static uint8_t ResolveUboeDscpLookupQos(const GetTpInfoParam &param, uint32_t nT
     return static_cast<uint8_t>(ResolveUbcGroupFirstHcclQos(param.qos, nTp, slAvailableCnt));
 }
 
-/// 与 Legacy `TpManager` 一致：`RaGetTpAttrAsync` 走 HDC，写回 SL/DSCP 用 `HrtRaSetTpAttrAsync`（同步等到完成），避免
-/// `RaCtxSetTpAttr` 经 Rs 路径在设备上出现 phyId 无效等问题。
-static HcclResult HrtRaSetTpAttrAsyncSync(const Hccl::RdmaHandle rdmaHandle, uint64_t tpHandle, uint32_t attrBitmap,
-    struct TpAttr &attr, const char *logTag)
-{
-    Hccl::RequestHandle reqHandle = 0;
-    try {
-        const HcclResult hret =
-            Hccl::HrtRaSetTpAttrAsync(rdmaHandle, tpHandle, attrBitmap, attr, reqHandle);
-        if (hret != HcclResult::HCCL_SUCCESS) {
-            HCCL_ERROR("[TpMgr][%s] HrtRaSetTpAttrAsync failed hcclRet[%d] tpHandle[%llu].", logTag,
-                static_cast<int>(hret), tpHandle);
-        }
-        return hret;
-    } catch (const Hccl::NetworkApiException &ex) {
-        HCCL_ERROR("[TpMgr][%s] HrtRaSetTpAttrAsync exception: %s tpHandle[%llu].", logTag, ex.what(), tpHandle);
-        return HcclResult::HCCL_E_NETWORK;
-    }
-}
-
 static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const CommAddr &locCommAddr, uint64_t tpHandle,
     uint32_t mappedSl)
 {
@@ -272,13 +251,19 @@ static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const CommAddr
 
     struct TpAttr tpSlAttr {};
     tpSlAttr.sl = static_cast<uint8_t>(mappedSl & 0xFU);
-    const HcclResult hret =
-        HrtRaSetTpAttrAsyncSync(rdmaHandle, tpHandle, kTpAttrBitmapSl, tpSlAttr, "CommitMappedSlToTpAttr");
-    if (hret == HcclResult::HCCL_SUCCESS) {
-        HCCL_INFO("[TpMgr][CommitMappedSlToTpAttr] ok tpHandle[%llu] sl[%u].", tpHandle,
-            static_cast<unsigned>(mappedSl & 0xFU));
+    Hccl::RequestHandle reqHandle = 0;
+    HcclResult hret = HcclResult::HCCL_SUCCESS;
+    TRY_CATCH_RETURN(
+        hret = Hccl::HrtRaSetTpAttrAsync(rdmaHandle, tpHandle, kTpAttrBitmapSl, tpSlAttr, reqHandle);
+    );
+    if (hret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[TpMgr][CommitMappedSlToTpAttr] HrtRaSetTpAttrAsync failed hcclRet[%d] tpHandle[%llu].",
+            static_cast<int>(hret), tpHandle);
+        return hret;
     }
-    return hret;
+    HCCL_INFO("[TpMgr][CommitMappedSlToTpAttr] ok tpHandle[%llu] sl[%u].", tpHandle,
+        static_cast<unsigned>(mappedSl & 0xFU));
+    return HcclResult::HCCL_SUCCESS;
 }
 
 static HcclResult CommitUboeDscpToTpAttr(const uint32_t devPhyId, const CommAddr &locCommAddr, uint64_t tpHandle,
@@ -295,13 +280,19 @@ static HcclResult CommitUboeDscpToTpAttr(const uint32_t devPhyId, const CommAddr
 
     struct TpAttr tpDscpAttr {};
     tpDscpAttr.dscp = static_cast<uint8_t>(dscp & 0x3FU);
-    const HcclResult hret =
-        HrtRaSetTpAttrAsyncSync(rdmaHandle, tpHandle, kTpAttrBitmapDscp, tpDscpAttr, "CommitUboeDscpToTpAttr");
-    if (hret == HcclResult::HCCL_SUCCESS) {
-        HCCL_INFO("[TpMgr][CommitUboeDscpToTpAttr] ok tpHandle[%llu] dscp[%u].", tpHandle,
-            static_cast<unsigned>(tpDscpAttr.dscp));
+    Hccl::RequestHandle reqHandle = 0;
+    HcclResult hret = HcclResult::HCCL_SUCCESS;
+    TRY_CATCH_RETURN(
+        hret = Hccl::HrtRaSetTpAttrAsync(rdmaHandle, tpHandle, kTpAttrBitmapDscp, tpDscpAttr, reqHandle);
+    );
+    if (hret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[TpMgr][CommitUboeDscpToTpAttr] HrtRaSetTpAttrAsync failed hcclRet[%d] tpHandle[%llu].",
+            static_cast<int>(hret), tpHandle);
+        return hret;
     }
-    return hret;
+    HCCL_INFO("[TpMgr][CommitUboeDscpToTpAttr] ok tpHandle[%llu] dscp[%u].", tpHandle,
+        static_cast<unsigned>(tpDscpAttr.dscp));
+    return HcclResult::HCCL_SUCCESS;
 }
 
 static bool ParseDscpFromCfgByQos(const std::string &cfg, uint8_t qos, uint8_t &dscpOut)

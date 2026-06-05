@@ -58,6 +58,7 @@ static uint8_t ResolveLoopJettyQosFromTpSl(RdmaHandle rdmaHandle, uint64_t tpHan
     struct TpAttr tpAttr {};
     uint32_t attrBitmap = (1U << kLoopTpAttrSlAvailableBit) | kLoopTpAttrBitmapSl;
     RequestHandle reqHandle = 0;
+    // HrtRaGetTpAttrAsync 底层走 RaGetTpAttrAsync，adapter 内 WaitRequestResult 同步等待完成，此处按同步调用使用
     const HcclResult startRet =
         HrtRaGetTpAttrAsync(devPhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle);
     if (startRet == HcclResult::HCCL_E_NOT_SUPPORT) {
