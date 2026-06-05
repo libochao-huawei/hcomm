@@ -16,6 +16,7 @@ set(src_list
 if(TARGET hcomm)
     target_sources(hcomm PRIVATE
         ${src_list}
+        cpu_primitives_c_adpt.cc
     )
     target_include_directories(hcomm PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}

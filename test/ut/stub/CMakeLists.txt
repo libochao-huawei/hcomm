@@ -190,7 +190,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/one_sided_service
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/resource_manager
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/data_api
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/rank_graph

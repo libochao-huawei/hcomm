@@ -4,7 +4,7 @@ src/base_comm/primitives/api_c_adpt/aicpu_ts_sync_data_a_adpt.cc
 src/legacy/ascend910/framework/communicator/impl/hccl_communicator_device.cc
 src/legacy/ascend910/framework/communicator/hccl_comm_device.cc
 src/base_comm/primitives/api_c_adpt/aicpu_ts_primitives_c_adpt.cc
-src/legacy/ascend910/framework/communicator/impl/independent_op/data_api/hccl_api_data_cpu.cc
+src/base_comm/primitives/api_c_adpt/cpu_primitives_c_adpt.cc
 src/coll_communicator/communicator/device/aicpu_indop_process.cc
 src/coll_communicator/dfx/hcclCommOp.cc
 src/legacy/ascend910/framework/device/debug/dfx/taskexception/task_exception.cc

@@ -40,7 +40,6 @@ if(TARGET ccl_kernel)
 endif()
 
 add_subdirectory(channel)
-add_subdirectory(data_api)
 add_subdirectory(resource)
 add_subdirectory(rank_graph)
 add_subdirectory(device)
