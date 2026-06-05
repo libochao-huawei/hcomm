@@ -372,7 +372,7 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
 string TaskExceptionHandlerLite::GetGroupRankInfo(const TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]TaskInfo dfxOpInfo or communicator is nullptr.", __func__);
         return "";
     }
     const CommunicatorImplLite* commImplLite = static_cast<CommunicatorImplLite*>(taskInfo.dfxOpInfo_->comm_);

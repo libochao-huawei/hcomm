@@ -55,7 +55,6 @@ HcclResult HcclCommDfx::IsOpBase(bool &isOpBase) {
         isOpBase = false;
         return HCCL_SUCCESS;
     }
-    CHK_SMART_PTR_NULL(currDfxOpInfo);
     isOpBase = currDfxOpInfo->op_.opMode == Hccl::OpMode::OPBASE;
     HCCL_INFO("[%s] IsOpBase: %d", __func__, isOpBase);
     return HCCL_SUCCESS;

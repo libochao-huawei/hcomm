@@ -53,6 +53,10 @@ void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
     {
         std::lock_guard<std::mutex> lock(profMutex);
         if (taskInfo->dfxOpInfo_ == nullptr) {
+            if (currDfxOpInfo_ == nullptr) {
+                HCCL_WARNING("[MirrorTaskManager][%s] both taskInfo->dfxOpInfo_ and currDfxOpInfo_ are nullptr!", __func__);
+                return;
+            }
             taskInfo->dfxOpInfo_ = currDfxOpInfo_;
         }
 

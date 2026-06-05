@@ -225,11 +225,12 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
             __func__, curTask.get(), ret, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
 
     if (curTask->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[%s]fail, dfxOpInfo is nullptr", __func__);
+        HCCL_WARNING("[%s]dfxOpInfo is nullptr. devId[%u], streamId[%u], taskId[%u].",
+            __func__, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
         return;
     }
 
-    bool isIndop_ = curTask->dfxOpInfo_->isIndop_;
+    bool isIndop_ = curTask->dfxOpInfo_ != nullptr ? curTask->dfxOpInfo_->isIndop_ : false;
     HCCL_INFO("[%s]isIndop_[%d], taskType[%s]", __func__, isIndop_, curTask->taskParam_.taskType.Describe().c_str());
     if (!isIndop_) {
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
@@ -246,7 +247,7 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]TaskInfo dfxOpInfo or communicator is nullptr.", __func__);
         return "";
     }
 

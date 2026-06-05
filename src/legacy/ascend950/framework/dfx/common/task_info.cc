@@ -36,7 +36,7 @@ std::string TaskInfo::Describe() const
 string TaskInfo::GetAlgTypeName() const
 {
     if (this->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        HCCL_WARNING("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "NULL";
     }
     return this->dfxOpInfo_->algType_;
@@ -45,7 +45,7 @@ string TaskInfo::GetAlgTypeName() const
 string TaskInfo::GetBaseInfo() const
 {
     if (this->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        HCCL_WARNING("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "";
     }
     return StringFormat("streamID(sqId):[%u], taskID(sqeId):[%u], taskType:[%s], tag:[%s], algType:[%s]",
@@ -120,7 +120,7 @@ string TaskInfo::GetParaNotify() const
 string TaskInfo::GetOpInfo() const
 {
     if (this->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        HCCL_WARNING("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "";
     }
     const auto opInfo = this->dfxOpInfo_;
@@ -220,7 +220,7 @@ string TaskInfo::GetIndopBaseInfo() const
 string TaskInfo::GetIndopDataInfo() const
 {
     if (this->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        HCCL_WARNING("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "";
     }
 

@@ -111,27 +111,27 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
 {
     HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos %s", it.taskParam_.Describe().c_str());
     taskDetailsInfos.localRank = 0xffffffff;
-    if (it.dfxOpInfo_ == nullptr) {
+    if (it.dfxOpInfo_ != nullptr) {
+        taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank;
+        std::string nameInfo = GetProfTaskOpNameV2(it.taskParam_.taskType);
+        taskDetailsInfos.itemId = GetProfHashId(nameInfo.c_str(), nameInfo.length());
+        taskDetailsInfos.cclTag       = GetProfHashId(it.dfxOpInfo_->tag_.c_str(), it.dfxOpInfo_->tag_.length());
+        if (it.dfxOpInfo_->isIndop_ == true) {
+            taskDetailsInfos.groupName = GetProfHashId(it.dfxOpInfo_->groupName_.c_str(), it.dfxOpInfo_->groupName_.length());
+            taskDetailsInfos.rankSize  = it.dfxOpInfo_->rankSize_;
+            HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos groupName_ %s, rankSize[%u]",
+                it.dfxOpInfo_->groupName_.c_str(), taskDetailsInfos.rankSize);
+        } else if (it.dfxOpInfo_->comm_ != nullptr) {
+            CommunicatorImplLite *commImp = static_cast<CommunicatorImplLite *>(it.dfxOpInfo_->comm_);
+            taskDetailsInfos.groupName = GetProfHashId(commImp->GetId().c_str(), commImp->GetId().length());
+            taskDetailsInfos.rankSize     = commImp->GetRankSize();
+            HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos groupName_ %s, rankSize[%u]",
+                it.dfxOpInfo_->groupName_.c_str(), taskDetailsInfos.rankSize);
+        }
+    } else {
         HCCL_WARNING("[ProfilingHandlerLite::GetTaskDetailInfos] dfxOpInfo_ is nullptr!");
-        return;
     }
-    taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank;
-    std::string nameInfo = GetProfTaskOpNameV2(it.taskParam_.taskType);
-    taskDetailsInfos.itemId = GetProfHashId(nameInfo.c_str(), nameInfo.length());
-    taskDetailsInfos.cclTag       = GetProfHashId(it.dfxOpInfo_->tag_.c_str(), it.dfxOpInfo_->tag_.length());
     taskDetailsInfos.remoteRank   = it.remoteRank_;
-    if (it.dfxOpInfo_->isIndop_ == true) {
-        taskDetailsInfos.groupName = GetProfHashId(it.dfxOpInfo_->groupName_.c_str(), it.dfxOpInfo_->groupName_.length());
-        taskDetailsInfos.rankSize  = it.dfxOpInfo_->rankSize_;
-        HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos groupName_ %s, rankSize[%u]",
-            it.dfxOpInfo_->groupName_.c_str(), taskDetailsInfos.rankSize);
-    } else if (it.dfxOpInfo_->comm_ != nullptr) {
-        CommunicatorImplLite *commImp = static_cast<CommunicatorImplLite *>(it.dfxOpInfo_->comm_);
-        taskDetailsInfos.groupName = GetProfHashId(commImp->GetId().c_str(), commImp->GetId().length());
-        taskDetailsInfos.rankSize     = commImp->GetRankSize();
-        HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos groupName_ %s, rankSize[%u]",
-            it.dfxOpInfo_->groupName_.c_str(), taskDetailsInfos.rankSize);
-    }
     taskDetailsInfos.stage        = 0;
     if (it.taskParam_.taskType == TaskParamType::TASK_SDMA || it.taskParam_.taskType == TaskParamType::TASK_RDMA
         || it.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
