@@ -557,7 +557,7 @@ void TcHdcQpConnectAsync()
 
     mocker_clean();
     mocker((stub_fn_t)calloc, 1, NULL);
-    struct RaQpHandle testQpHandle;
+    struct RaQpHandle testQpHandle = {0};
     ret = RaHdcQpConnectAsync(&testQpHandle, &socketHandle);
     EXPECT_INT_NE(ret, 0);
 }

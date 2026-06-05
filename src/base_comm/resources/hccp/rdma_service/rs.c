@@ -234,6 +234,7 @@ STATIC int RsPthreadMutexInit(struct rs_cb *rscb, struct RsInitConfig *cfg)
     RS_INIT_LIST_HEAD(&rscb->connCb.serverConnList);
     RS_INIT_LIST_HEAD(&rscb->connCb.whiteList);
     RS_INIT_LIST_HEAD(&rscb->rdevList);
+    RS_INIT_LIST_HEAD(&rscb->udevList);
     RS_INIT_LIST_HEAD(&rscb->heterogTcpFdList);
     rscb->connCb.wlistEnable = cfg->whiteListStatus;
     return 0;
@@ -1689,6 +1690,11 @@ STATIC void RsFreeRdevList(struct rs_cb *rsCb)
     unsigned int phyId = 0;
     int ret;
 
+    if (RsListEmpty(&rsCb->rdevList)) {
+        return;
+    }
+
+    hccp_run_warn("Rdev list is not empty!");
     ret = rsGetDevIDByLocalDevID(rsCb->chipId, &phyId);
     if (ret != 0) {
         hccp_err("chipId[%u] invalid, ret %d", rsCb->chipId, ret);
@@ -1713,8 +1719,13 @@ STATIC void RsFreeUdevList(struct rs_cb *rsCb)
     struct RsUbDevCb *udevCbNext = NULL;
     int ret;
 
-    RS_LIST_GET_HEAD_ENTRY(udevCbCurr, udevCbNext, &rsCb->rdevList, list, struct RsUbDevCb);
-    for (; (&udevCbCurr->list) != &rsCb->rdevList;
+    if (RsListEmpty(&rsCb->udevList)) {
+        return;
+    }
+
+    hccp_run_warn("Udev list is not empty!");
+    RS_LIST_GET_HEAD_ENTRY(udevCbCurr, udevCbNext, &rsCb->udevList, list, struct RsUbDevCb);
+    for (; (&udevCbCurr->list) != &rsCb->udevList;
         udevCbCurr = udevCbNext, udevCbNext = list_entry(udevCbNext->list.next, struct RsUbDevCb, list)) {
         ret = RsUbCtxDeinit(udevCbCurr);
         if (ret != 0) {
@@ -1722,27 +1733,6 @@ STATIC void RsFreeUdevList(struct rs_cb *rsCb)
         }
     }
 
-    return;
-}
-
-STATIC void RsFreeDevList(struct rs_cb *rsCb)
-{
-    if (RsListEmpty(&rsCb->rdevList)) {
-        return;
-    }
-
-    hccp_warn("dev list is not empty!");
-    switch (rsCb->protocol) {
-        case PROTOCOL_RDMA:
-            RsFreeRdevList(rsCb);
-            break;
-        case PROTOCOL_UDMA:
-            RsFreeUdevList(rsCb);
-            break;
-        default:
-            hccp_err("protocol[%d] not support", rsCb->protocol);
-            break;
-    }
     return;
 }
 
@@ -1811,7 +1801,8 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
     freeifaddrs(rscb->ifaddrList);
     rscb->ifaddrList = NULL;
     RS_PTHREAD_MUTEX_ULOCK(&rscb->mutex);
-    RsFreeDevList(rscb);
+    RsFreeRdevList(rscb);
+    RsFreeUdevList(rscb);
     RsSslFree(rscb);
     RsFreeHeterogTcpFdList(rscb);
 #ifdef CONFIG_TLV
