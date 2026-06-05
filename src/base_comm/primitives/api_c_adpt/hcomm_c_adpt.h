@@ -14,6 +14,7 @@
 #include "hcomm_res.h"
 #include "mem_host_pub.h"
 #include "hccl_diag.h"
+#include "orion_adapter_rts.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,6 +65,7 @@ typedef struct {
 } HcommEndpointListenConfig;
 
 HcommResult HcommResMgrInit(uint32_t devPhyId);
+HcommResult HcommResMgrInit();
 
 HcommResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint);
 
