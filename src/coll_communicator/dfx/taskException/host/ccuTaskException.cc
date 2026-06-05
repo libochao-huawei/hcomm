@@ -1043,7 +1043,7 @@ void CcuTaskException::GetCcuCqeErrorInfo(const CcuErrorInfo &ccuErrorInfo, cons
     auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
     RankId remoteRankId = GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, locDeviceId);
     hccl::CollComm *collComm = nullptr;
-    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
+    if (taskInfo.dfxOpInfo_ != nullptr && taskInfo.dfxOpInfo_->comm_ != nullptr) {
         collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     } else {
         HCCL_WARNING("[%s] dfxOpInfo_ or comm_ is nullptr!", __func__);

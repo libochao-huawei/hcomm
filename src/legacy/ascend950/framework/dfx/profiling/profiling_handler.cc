@@ -152,6 +152,10 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
     if (enableHcclL1_ == false && !cachedReq) {
         return;
     }
+    if (taskInfo.dfxOpInfo_ == nullptr) {
+        HCCL_WARNING("[%s] dfxOpInfo_ is nullptr!", __func__);
+        return;
+    }
     if (cachedReq) {
         std::lock_guard<std::mutex> lock(cacheTaskInfosMutex_);
         cacheTaskInfos_.push_back(taskInfo);
