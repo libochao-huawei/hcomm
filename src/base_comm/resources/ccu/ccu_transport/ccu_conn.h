@@ -74,7 +74,6 @@ private:
     HcclResult    GetTpInfo();
     HcclResult    GetTpAttr();
     HcclResult    GetTaTimeOut();
-    GetTpInfoParam MakeGetTpInfoParam() const;
     void          GenerateLocalPsn();
     void          ResetRequestCtxs();
     HcclResult    StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle);
@@ -117,8 +116,9 @@ private:
     uint32_t      rmtCcuBufTokenValue_{0};
 
     // 感知tp获取tp handle，import jetty后urma提供tpn
-    TpInfo   tpInfo_{};
-    TpAttrInfo tpAttrInfo_{};
+    TpInfo        tpInfo_{};
+    TpAttrInfo    tpAttrInfo_{};
+    GetTpInfoParam getTpInfoParam_{};
 
     // 异步import上下文信息
     std::vector<RequestHandle>  reqHandles_;

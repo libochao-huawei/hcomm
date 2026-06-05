@@ -29,6 +29,19 @@
 
 namespace hcomm {
 
+static GetTpInfoParam MakeGetTpInfoParam(const CommAddr &locAddr, const CommAddr &rmtAddr,
+    const TpProtocol tpProtocol, const uint32_t qos)
+{
+    GetTpInfoParam param;
+    param.locAddr = locAddr;
+    param.rmtAddr = rmtAddr;
+    param.tpProtocol = tpProtocol;
+    param.qos = (qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (qos & 7U);
+    param.slLevelCount = 0;
+    param.loopFirstTpLowestSl = false;
+    return param;
+}
+
 CcuConnection::CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys), qos_(qos)
@@ -40,6 +53,7 @@ CcuRtpConnection::CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtA
     : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::RTP;
+    getTpInfoParam_ = MakeGetTpInfoParam(locAddr_, rmtAddr_, tpProtocol_, qos_);
 }
 
 CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
@@ -47,6 +61,7 @@ CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtA
     : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::CTP;
+    getTpInfoParam_ = MakeGetTpInfoParam(locAddr_, rmtAddr_, tpProtocol_, qos_);
 }
 
 HcclResult CcuConnection::Init()
@@ -221,18 +236,6 @@ void CcuConnection::GenerateLocalPsn()
     jettyImportCfg_.localPsn = GetRandomNum();
 }
 
-GetTpInfoParam CcuConnection::MakeGetTpInfoParam() const
-{
-    GetTpInfoParam param;
-    param.locAddr = locAddr_;
-    param.rmtAddr = rmtAddr_;
-    param.tpProtocol = tpProtocol_;
-    param.qos = (qos_ > 7U) ? EnvConfig::UB_QOS_DEFAULT : (qos_ & 7U);
-    param.slLevelCount = 0;
-    param.loopFirstTpLowestSl = false;
-    return param;
-}
-
 HcclResult CcuConnection::GetTpInfo()
 {
     if (tpProtocol_ == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
@@ -241,7 +244,7 @@ HcclResult CcuConnection::GetTpInfo()
         return HcclResult::HCCL_E_PARA;
     }
 
-    HcclResult ret = TpMgr::GetInstance(devPhyId_).GetTpInfo(MakeGetTpInfoParam(), tpInfo_);
+    HcclResult ret = TpMgr::GetInstance(devPhyId_).GetTpInfo(getTpInfoParam_, tpInfo_);
     if (ret == HcclResult::HCCL_E_AGAIN) {
         return ret;
     }
@@ -533,7 +536,7 @@ HcclResult CcuConnection::ReleaseConnRes()
     }
 
     if (tpInfo_.tpHandle != 0) { // tp handle 复用，只释放一次
-        (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(MakeGetTpInfoParam(), tpInfo_);
+        (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(getTpInfoParam_, tpInfo_);
         tpInfo_.tpHandle = 0;
         tpInfo_.hasMappedJettyPriority = false;
     }
