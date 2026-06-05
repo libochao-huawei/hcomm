@@ -10,6 +10,7 @@
 
 #ifndef RA_RS_COMM_H
 #define RA_RS_COMM_H
+#include <stdlib.h>
 #include <stdint.h>
 #include <arpa/inet.h>
 #include <infiniband/verbs.h>
