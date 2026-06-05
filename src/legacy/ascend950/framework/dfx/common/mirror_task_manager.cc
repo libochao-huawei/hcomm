@@ -92,7 +92,7 @@ bool MirrorTaskManager::IsStaticGraphMode(const CollOperator &collOperator) cons
 void MirrorTaskManager::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
 {
     if (dfxOpInfo == nullptr) {
-        HCCL_ERROR("[MirrorTaskManager][SetCurrDfxOpInfo]fail, dfxOpInfo is nullptr");
+        HCCL_WARNING("[%s]dfxOpInfo is nullptr,skip SetCurrDfxOpInfo!", __func__);
         return;
     }
     currDfxOpInfo_     = dfxOpInfo;

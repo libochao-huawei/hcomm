@@ -51,7 +51,10 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
         }
     } else {
         CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo->comm_);
-        CHECK_NULLPTR(commImp, "[]commImp is nullptr!");
+        if (commImp == nullptr) {
+            HCCL_WARNING("[ProfilingReporter::ReportOp] commImp is nullptr!");
+            return;
+        }
         isAiCpu = commImp->GetOpAiCpuTSFeatureFlag();
     }
     // 上报op信息

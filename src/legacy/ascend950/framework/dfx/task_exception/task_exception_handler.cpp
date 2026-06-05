@@ -328,7 +328,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
 string TaskExceptionHandler::GetGroupRankInfo(const TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]TaskInfo dfxOpInfo or communicator is nullptr.", __func__);
         return "";
     }
     const CommunicatorImpl* communicator = static_cast<CommunicatorImpl*>(taskInfo.dfxOpInfo_->comm_);
@@ -534,7 +534,7 @@ vector<CcuTaskParam> TaskExceptionHandler::GetMC2AlgTaskParam(const TaskInfo& ta
         return {};
     }
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]Get MC2 Alg TaskParam failed, communicator is nullptr.", __func__);
+        HCCL_WARNING("[TaskInfo][%s]Get MC2 Alg TaskParam failed, communicator is nullptr.", __func__);
         return {};
     }
     const CommunicatorImpl* communicator = (CommunicatorImpl*)taskInfo.dfxOpInfo_->comm_;
@@ -1146,7 +1146,7 @@ RankId TaskExceptionHandler::GetRankIdByChannelId(uint16_t channelId, const Task
         return INVALID_RANKID;
     }
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskException][%s]Get RankId failed, communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]Get RankId failed, dfxOpInfo or communicator is nullptr.", __func__);
         return INVALID_RANKID;
     }
     const CommunicatorImpl* communicator = (CommunicatorImpl*)taskInfo.dfxOpInfo_->comm_;
@@ -1171,7 +1171,7 @@ std::pair<IpAddress, IpAddress> TaskExceptionHandler::GetAddrPairByChannelId(uin
         return dummy;
     }
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskException][%s]Get AddrPair failed, communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]Get AddrPair failed, dfxOpInfo or communicator is nullptr.", __func__);
         return dummy;
     }
     const CommunicatorImpl *communicator    = (CommunicatorImpl *)taskInfo.dfxOpInfo_->comm_;

@@ -251,7 +251,7 @@ HcclResult CcuTaskException::InitChannelMap(s32 deviceId, u64 ccuKernelHandle)
 std::string CcuTaskException::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]TaskInfo dfxOpInfo or communicator is nullptr.", __func__);
         return "";
     }
 
@@ -1530,7 +1530,7 @@ std::pair<Hccl::IpAddress, Hccl::IpAddress> CcuTaskException::GetAddrPairByChann
         return dummy;
     }
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskException][%s]Get AddrPair failed, communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]Get AddrPair failed, dfxOpInfo or communicator is nullptr.", __func__);
         return dummy;
     }
 

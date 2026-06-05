@@ -283,7 +283,7 @@ HcclResult SendTaskExceptionByMBox(CommunicatorImplLite *aicpuComm, const rtLogi
 string GetOpDataInfo(const TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[GetOpDataInfo]TaskInfo communicator is nullptr.");
+        HCCL_WARNING("[%s]TaskInfo dfxOpInfo or communicator is nullptr.", __func__);
         return "";
     }
     CommunicatorImplLite* aicpuComm = static_cast<CommunicatorImplLite*>(taskInfo.dfxOpInfo_->comm_);
