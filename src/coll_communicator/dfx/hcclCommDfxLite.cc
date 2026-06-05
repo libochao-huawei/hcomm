@@ -43,9 +43,14 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
     if (handle != INVALID_U64) {
         CHK_RET(GetChannelRemoteRankId(handle, remoteRankId));
     }
+    auto currDfxOpInfo = mirrorTaskManagerLite_->GetCurrDfxOpInfo();
+    if (currDfxOpInfo == nullptr) {
+        HCCL_WARNING("[%s] currDfxOpInfo is nullptr!", __func__);
+        return HCCL_E_PTR;
+    }
     std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
     EXCEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
-        remoteRankId, taskParam, mirrorTaskManagerLite_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
+        remoteRankId, taskParam, currDfxOpInfo), return HCCL_E_PTR);
     EXCEPTION_CATCH(mirrorTaskManagerLite_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
     HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
