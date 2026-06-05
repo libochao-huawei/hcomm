@@ -165,7 +165,7 @@ HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread)
     }
 
     std::function<HcclResult(bool)> checkExecStatusCallback = [this](bool isTimeout) {
-        return this->CheckOpExecStatus(isTimeout);
+        return this->CheckIndOpExecStatus(isTimeout);
     };
     ret = HcommThreadRegisterCheckExecStatus(thread, checkExecStatusCallback);
     if (ret != 0) {
@@ -397,7 +397,7 @@ HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::CheckOpExecStatus(bool timeout)
+HcclResult CollCommAicpu::CheckIndOpExecStatus(bool timeout)
 {
     if (timeout) {
         // 先打印本通信域的taskException，再打印其他通信域的taskException
@@ -406,7 +406,7 @@ HcclResult CollCommAicpu::CheckOpExecStatus(bool timeout)
     }
     HcclResult ret = (commStatus_ == HCCL_COMM_STATUS_READY) ? HCCL_SUCCESS : HCCL_E_INTERNAL;
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s]comm[%s] commStatus[%s] is not ready, stop launch", __func__, identifier_.c_str(), commStatus_);
+        HCCL_ERROR("[%s]comm[%s] commStatus[%d] is not ready, stop launch", __func__, identifier_.c_str(), commStatus_);
     }
     return ret;
 }

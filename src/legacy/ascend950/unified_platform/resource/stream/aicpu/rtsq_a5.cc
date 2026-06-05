@@ -93,7 +93,7 @@ void RtsqA5::MakeSureAvailableSpace()
         bool isTimeout = (curTime - startTime) >= rtsqFullTimeout_;
         HcclResult checkRet = (checkExecStatusCallback_ != nullptr) ? checkExecStatusCallback_(isTimeout) : HCCL_SUCCESS;
         if (checkRet != HCCL_SUCCESS) {
-            THROW<InternalException>(StringFormat("[%s]stop launch, isTimeout[%d], checkRet[%d]",
+            THROW<InternalException>(StringFormat("[%s]stop launch Task, isTimeout[%d], checkRet[%d]",
                 __func__, isTimeout, checkRet));
         }
 

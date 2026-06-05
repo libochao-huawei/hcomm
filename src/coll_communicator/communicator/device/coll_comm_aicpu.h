@@ -69,7 +69,7 @@ public:
     HcclResult Clean();
     HcclResult Resume(HcclChannelUrmaRes *commParam);
 
-    HcclResult CheckOpExecStatus(bool timeout);
+    HcclResult CheckIndOpExecStatus(bool timeout);
 
 private:
     // 初始化
