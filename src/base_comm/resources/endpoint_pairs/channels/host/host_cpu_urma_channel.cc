@@ -20,6 +20,7 @@
 #include "topo_common_types.h"
 #include "virtual_topo.h"
 #include "aicpu_res_package_helper.h"
+#include "env_config.h"
 
 namespace hcomm {
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
@@ -130,7 +131,7 @@ HcclResult HostCpuUrmaChannel::BuildConnection()
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
     const u8 qosPre = static_cast<u8>(
-        (channelDesc_.qos > 7U) ? Hccl::kRaUbGetTpInfoParamDefaultQos : (channelDesc_.qos & 7U));
+        (channelDesc_.qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (channelDesc_.qos & 7U));
 
     std::unique_ptr<Hccl::HostUbConnection> ubConn = nullptr;
     switch (protocol) {

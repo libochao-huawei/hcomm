@@ -439,6 +439,36 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_EightTp_Sl789_Qos7_Expect_FirstTp_Sl7)
     EXPECT_EQ(tpInfo.mappedJettyPriority, 7U);
 }
 
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_EightTp_Sl789_Qos345_Boundary)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncUboeSl789));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    struct Sl789BoundaryCase {
+        const char *loc;
+        const char *rmt;
+        uint32_t qos;
+        uint64_t expectedTpHandle;
+        uint32_t expectedSl;
+    };
+    const Sl789BoundaryCase cases[] = {
+        // slBitmap bits 7|8|9：高档 [5,7]→SL7，中档 [3,4]→SL8
+        {"10.10.15.1", "10.10.15.2", 5U, 0x102ULL, 7U},
+        {"10.10.15.3", "10.10.15.4", 4U, 0x103ULL, 8U},
+        {"10.10.15.5", "10.10.15.6", 3U, 0x104ULL, 8U},
+    };
+    for (const auto &c : cases) {
+        const GetTpInfoParam param = MakeParam(c.loc, c.rmt, TpProtocol::UBOE, c.qos);
+        TpInfo tpInfo{};
+        SCOPED_TRACE(c.qos);
+        ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+        EXPECT_EQ(tpInfo.tpHandle, c.expectedTpHandle);
+        EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+        EXPECT_EQ(tpInfo.mappedJettyPriority, c.expectedSl);
+    }
+}
+
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_DifferentQosKeys_Expect_Both_Success)
 {
     TpMgr &mgr = TpMgr::GetInstance(0);
