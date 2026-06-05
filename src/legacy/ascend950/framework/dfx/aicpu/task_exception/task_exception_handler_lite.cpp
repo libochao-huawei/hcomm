@@ -82,13 +82,26 @@ HcclResult GenerateErrorMessageReport(const CommunicatorImplLite *aicpuComm, std
     errMsgInfo.taskId = taskInfo->taskId_;
     errMsgInfo.rankId = aicpuComm->GetMyRank();
     errMsgInfo.rankSize = aicpuComm->GetRankSize();
-    strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, taskInfo->dfxOpInfo_ == nullptr ? AlgType{AlgType::MESH}.Describe().c_str() : taskInfo->dfxOpInfo_->algType_.c_str());
-    errMsgInfo.opIndex = taskInfo->dfxOpInfo_ == nullptr ? 0 : taskInfo->dfxOpInfo_->commIndex_;
-    errMsgInfo.opType = taskInfo->dfxOpInfo_->op_.opType;
-    errMsgInfo.count = taskInfo->dfxOpInfo_->op_.dataCount;
-    errMsgInfo.dataType = taskInfo->dfxOpInfo_->op_.dataType;
-    errMsgInfo.srcAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.inputMem->GetAddr());
-    errMsgInfo.dstAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.outputMem->GetAddr());
+    if (taskInfo.dfxOpInfo_ == nullptr) {
+        HCCL_WARNING("[%s]dfxOpinfo_ is nullptr, use default values!", __func__)
+        strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, AlgType{AlgType::MESH}.Describe().c_str());
+        errMsgInfo.opIndex = 0;
+        errMsgInfo.opType = 0;
+        errMsgInfo.count = 0;
+        errMsgInfo.dataType = 0;
+        errMsgInfo.srcAddr = 0;
+        errMsgInfo.dstAddr = 0;
+    } else {
+        strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, taskInfo.dfxOpInfo_->algType_.c_str());
+        errMsgInfo.opIndex = taskInfo->dfxOpInfo_->commIndex_;
+        errMsgInfo.opType = taskInfo->dfxOpInfo_->op_.opType;
+        errMsgInfo.count = taskInfo->dfxOpInfo_->op_.dataCount;
+        errMsgInfo.dataType = taskInfo->dfxOpInfo_->op_.dataType;
+        errMsgInfo.srcAddr = taskInfo->dfxOpInfo_->op_.inputMem != nullptr ?
+            static_cast<u64>(taskInfo->dfxOpInfo_->op_.inputMem->GetAddr()) : 0;
+        errMsgInfo.dstAddr = taskInfo->dfxOpInfo_->op_.outputMem != nullptr ?
+            static_cast<u64>(taskInfo->dfxOpInfo_->op_.outputMem->GetAddr()) : 0;
+    }
     errMsgInfo.taskType = taskInfo->taskParam_.taskType;
 
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
@@ -110,7 +123,10 @@ HcclResult GenerateErrorMessageReport(const CommunicatorImplLite *aicpuComm, std
         errMsgInfo.reduceType = taskInfo->taskParam_.taskPara.Reduce.reduceOp;
     }
 
-    memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag), taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size());
+    if (taskInfo->dfxOpInFO_ != nullptr) {
+        CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag),
+            taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size());)
+    }
     memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group), aicpuComm->GetId().c_str(), aicpuComm->GetId().size());
 
     GetUbErrMsgInfo(taskInfo, errMsgInfo, exceptionInfo);

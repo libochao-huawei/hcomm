@@ -66,7 +66,12 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
         hcclOpInfo.groupName = GetProfHashId(opInfo.groupName_.c_str(), opInfo.groupName_.length());
     } else {
         CommunicatorImplLite *commImp = static_cast<CommunicatorImplLite *>(opInfo.comm_);
-        hcclOpInfo.groupName = GetProfHashId(commImp->GetId().c_str(), commImp->GetId().length());
+        if (commImp == nullptr) {
+            HCCL_WARNING("[ProfilingHandlerLite::ReportHcclOpInfo] commImp is nullptr!");
+            hcclOpInfo.groupName = 0;
+        } else {
+            hcclOpInfo.groupName = GetProfHashId(commImp->GetId().c_str(), commImp->GetId().length());
+        }
     }
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] relay:%u, retry:%u, dataType:%s, algType:%u, count:%llu, "
               "groupName:%lu, ranksize:%u, taskId:%u, streamId:%u",
