@@ -32,6 +32,15 @@ extern int RaHdcAsyncMutexInit(unsigned int phyId);
 extern void RaHwAsyncSetConnectStatus(unsigned int phyId, unsigned int connectStatus);
 extern int RaHdcAsyncSessionClose(unsigned int phyId);
 extern struct HdcAsyncInfo gRaHdcAsync[RA_MAX_PHY_ID_NUM];
+extern int RaSocketSendAsync(const void *fdHandle, const void *data, unsigned long long size,
+    unsigned long long *sentSize, void **reqHandle);
+extern int RaSocketRecvAsync(const void *fdHandle, void *data, unsigned long long size,
+    unsigned long long *receivedSize, void **reqHandle);
+extern int RaGetAsyncReqResult(void *reqHandle, int *reqResult);
+extern int RaSocketBatchConnectAsync(struct SocketConnectInfoT conn[], unsigned int num, void **reqHandle);
+extern int RaSocketListenStartAsync(struct SocketListenInfoT conn[], unsigned int num, void **reqHandle);
+extern int RaSocketListenStopAsync(struct SocketListenInfoT conn[], unsigned int num, void **reqHandle);
+extern int RaSocketBatchCloseAsync(struct SocketCloseInfoT conn[], unsigned int num, void **reqHandle);
 
 int RaHdcSendMsgAsyncStub(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize,
     struct RaRequestHandle *reqHandle)
@@ -73,12 +82,12 @@ void TcRaCtxLmemRegisterAsync()
     ctxHandle.protocol = 1;
 
     mocker(RaHdcCtxLmemRegisterAsync, 10, -1);
-    ret = RaCtxLmemRegisterAsync(&ctxHandle, &lmemInfo, &lmemHandle, &reqHandle);
+    ret = RaCtxLmemRegisterAsync(&ctxHandle, &lmemInfo, (void **)&lmemHandle, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 10, 0);
-    ret = RaCtxLmemRegisterAsync(&ctxHandle, &lmemInfo, &lmemHandle, &reqHandle);
+    ret = RaCtxLmemRegisterAsync(&ctxHandle, &lmemInfo, (void **)&lmemHandle, (void **)&reqHandle);
     EXPECT_INT_EQ(ret, 0);
 
     reqHandle->recvBuf = &asyncData;
@@ -131,19 +140,19 @@ void TcRaCtxQpCreateAsync()
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    RaCtxQpCreateAsync(&ctxHandle, &qpAttr, &qpInfo, &qpHandle, &reqHandle);
+    RaCtxQpCreateAsync(&ctxHandle, &qpAttr, (struct QpCreateInfo *)&qpInfo, (void **)&qpHandle, (void **)&reqHandle);
     free(qpHandle);
     free(reqHandle);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    RaCtxQpCreateAsync(&ctxHandle, &qpAttr, &qpInfo, &qpHandle, &reqHandle);
+    RaCtxQpCreateAsync(&ctxHandle, &qpAttr, (struct QpCreateInfo *)&qpInfo, (void **)&qpHandle, (void **)&reqHandle);
     mocker_clean();
     free(qpHandle);
     free(reqHandle);
 
     mocker(RaHdcCtxQpCreateAsync, 1, -1);
-    RaCtxQpCreateAsync(&ctxHandle, &qpAttr, &qpInfo, &qpHandle, &reqHandle);
+    RaCtxQpCreateAsync(&ctxHandle, &qpAttr, (struct QpCreateInfo *)&qpInfo, (void **)&qpHandle, (void **)&reqHandle);
     mocker_clean();
 }
 
@@ -177,12 +186,12 @@ void TcRaCtxQpImportAsync()
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    RaCtxQpImportAsync(&ctxHandle, &info, &remQpHandle, &reqHandle);
+    RaCtxQpImportAsync(&ctxHandle, &info, (void **)&remQpHandle, (void **)&reqHandle);
     free(remQpHandle);
     mocker_clean();
 
     mocker(RaHdcCtxQpImportAsync, 1, -1);
-    RaCtxQpImportAsync(&ctxHandle, &info, &remQpHandle, &reqHandle);
+    RaCtxQpImportAsync(&ctxHandle, &info, (void **)&remQpHandle, (void **)&reqHandle);
     mocker_clean();
     free(reqHandle);
 }
@@ -213,7 +222,7 @@ void TcRaSocketSendAsync()
 
     mocker_clean();
     mocker(RaHdcSendMsgAsync, 1, 0);
-    RaSocketSendAsync(&fdHandle,"a", 1, &sentSize, &reqHandle);
+    RaSocketSendAsync(&fdHandle,"a", 1, &sentSize, (void **)&reqHandle);
     mocker_clean();
 
     free(reqHandle);
@@ -228,7 +237,7 @@ void TcRaSocketRecvAsync()
 
     mocker_clean();
     mocker(RaHdcSendMsgAsync, 1, 0);
-    RaSocketRecvAsync(&fdHandle, &data, 1, &receivedSize, &reqHandle);
+    RaSocketRecvAsync(&fdHandle, &data, 1, &receivedSize, (void **)&reqHandle);
     free(reqHandle->privData);
     mocker_clean();
 
@@ -271,7 +280,7 @@ void TcRaSocketBatchConnectAsyncNormal()
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketConnectInfo, 10, 0);
 
-    ret = RaSocketBatchConnectAsync(conn, 1, &reqHandle);
+    ret = RaSocketBatchConnectAsync(conn, 1, (void **)&reqHandle);
     free(reqHandle);
     mocker_clean();
     return;
@@ -292,17 +301,17 @@ void TcRaSocketBatchConnectAsyncFail()
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketConnectInfo, 10, 0);
 
-    ret = RaSocketBatchConnectAsync(NULL, 1, &reqHandle);
+    ret = RaSocketBatchConnectAsync(NULL, 1, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
-    ret = RaSocketBatchConnectAsync(conn, 0, &reqHandle);
+    ret = RaSocketBatchConnectAsync(conn, 0, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     ret = RaSocketBatchConnectAsync(conn, 1, NULL);
     EXPECT_INT_NE(ret, 0);
 
     conn[0].socketHandle = NULL;
-    ret = RaSocketBatchConnectAsync(conn, 1, &reqHandle);
+    ret = RaSocketBatchConnectAsync(conn, 1, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     mocker_clean();
@@ -329,7 +338,7 @@ void TcRaSocketListenStartAsyncNormal()
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketListenInfo, 10, 0);
 
-    ret = RaSocketListenStartAsync(conn, 1, &reqHandle);
+    ret = RaSocketListenStartAsync(conn, 1, (void **)&reqHandle);
     free(reqHandle->privData);
     free(reqHandle);
     mocker_clean();
@@ -350,17 +359,17 @@ void TcRaSocketListenStartAsyncFail()
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketListenInfo, 10, 0);
 
-    ret = RaSocketListenStartAsync(NULL, 1, &reqHandle);
+    ret = RaSocketListenStartAsync(NULL, 1, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
-    ret = RaSocketListenStartAsync(conn, 0, &reqHandle);
+    ret = RaSocketListenStartAsync(conn, 0, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     ret = RaSocketListenStartAsync(conn, 1, NULL);
     EXPECT_INT_NE(ret, 0);
 
     conn[0].socketHandle = NULL;
-    ret = RaSocketListenStartAsync(conn, 1, &reqHandle);
+    ret = RaSocketListenStartAsync(conn, 1, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     mocker_clean();
@@ -386,7 +395,7 @@ void TcRaSocketListenStopAsyncNormal()
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketListenInfo, 10, 0);
 
-    (void)RaSocketListenStopAsync(conn, 1, &reqHandle);
+    (void)RaSocketListenStopAsync(conn, 1, (void **)&reqHandle);
     free(reqHandle);
     mocker_clean();
     return;
@@ -406,17 +415,17 @@ void TcRaSocketListenStopAsyncFail()
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketListenInfo, 10, 0);
 
-    ret = RaSocketListenStopAsync(NULL, 1, &reqHandle);
+    ret = RaSocketListenStopAsync(NULL, 1, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
-    ret = RaSocketListenStopAsync(conn, 0, &reqHandle);
+    ret = RaSocketListenStopAsync(conn, 0, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     ret = RaSocketListenStopAsync(conn, 1, NULL);
     EXPECT_INT_NE(ret, 0);
 
     conn[0].socketHandle = NULL;
-    ret = RaSocketListenStopAsync(conn, 1, &reqHandle);
+    ret = RaSocketListenStopAsync(conn, 1, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     mocker_clean();
@@ -445,7 +454,7 @@ void TcRaSocketBatchCloseAsyncNormal()
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketConnectInfo, 10, 0);
 
-    ret = RaSocketBatchCloseAsync(conn, 1, &reqHandle);
+    ret = RaSocketBatchCloseAsync(conn, 1, (void **)&reqHandle);
     free(reqHandle->privData);
     free(reqHandle);
     mocker_clean();
@@ -468,17 +477,17 @@ void TcRaSocketBatchCloseAsyncFail()
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketConnectInfo, 10, 0);
 
-    ret = RaSocketBatchCloseAsync(NULL, 1, &reqHandle);
+    ret = RaSocketBatchCloseAsync(NULL, 1, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
-    ret = RaSocketBatchCloseAsync(conn, 0, &reqHandle);
+    ret = RaSocketBatchCloseAsync(conn, 0, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     ret = RaSocketBatchCloseAsync(conn, 1, NULL);
     EXPECT_INT_NE(ret, 0);
 
     conn[0].socketHandle = NULL;
-    ret = RaSocketBatchCloseAsync(conn, 1, &reqHandle);
+    ret = RaSocketBatchCloseAsync(conn, 1, (void **)&reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     mocker_clean();
@@ -517,21 +526,21 @@ void TcRaGetEidByIpAsync()
     int ret = 0;
 
     mocker_clean();
-    ret = RaGetEidByIpAsync(NULL, ip, eid, &num, &reqHandle);
+    ret = RaGetEidByIpAsync(NULL, ip, eid, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(ret, 128103);
 
     num = 33;
-    ret = RaGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
+    ret = RaGetEidByIpAsync(&ctxHandle, ip, eid, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(ret, 128103);
 
     num = 32;
     mocker(RaHdcGetEidByIpAsync, 10, -1);
-    ret = RaGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
+    ret = RaGetEidByIpAsync(&ctxHandle, ip, eid, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
     mocker(RaHdcGetEidByIpAsync, 10, 0);
-    ret = RaGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
+    ret = RaGetEidByIpAsync(&ctxHandle, ip, eid, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }
@@ -550,22 +559,22 @@ void TcRaHdcGetEidByIpAsync()
 
     mocker_clean();
     mocker(calloc, 1, NULL);
-    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
+    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
 
     mocker_invoke(calloc, CallocFirstStub, 2);
-    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
+    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, -1);
-    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
+    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
+    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
