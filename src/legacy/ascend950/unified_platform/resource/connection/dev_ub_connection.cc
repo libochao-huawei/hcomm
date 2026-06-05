@@ -33,7 +33,7 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
                                  const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, const u8 qos)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
       opMode(opMode), jfcMode(jfcMode), locIpv4Addr(locIpv4Addr), rmtIpv4Addr(rmtIpv4Addr),
-      rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid()), qos_(qos), devUsed_(devUsed)
+      rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid()), qos_(qos), isdevUsed(devUsed)
 {
     HCCL_INFO("[DevUbConnection::DevUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
     devLogicId = HrtGetDevice();
@@ -48,8 +48,6 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
     else {
         jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, cqInfo_, jfcMode);
     }
-    isdevUsed = devUsed;
-
     sqDepth = OPBASED_UB_SQ_DEPTH_MAX;
     if (opMode == OpMode::OFFLOAD && devUsed == false) {
         sqDepth = UB_SQ_OFFLOAD_DEPTH;
@@ -60,8 +58,8 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
         THROW<InternalException>("integer overflow occurs");
     }
 
-    if (!devUsed_) {
-        CreateJetty(devUsed_);
+    if (!isdevUsed) {
+        CreateJetty(isdevUsed);
     } else {
         HCCL_INFO("[DevUbConnection][Constructor] devUsed: defer CreateJetty until GetTpInfo maps qos.");
     }
@@ -225,9 +223,9 @@ void DevUbConnection::GetTimeOut() // 直接基于环境变量控制
 
 void DevUbConnection::AdvanceUbConnAfterTpInfoReady()
 {
-    if (devUsed_) {
+    if (isdevUsed) {
         GetTimeOut();
-        CreateJetty(devUsed_);
+        CreateJetty(isdevUsed);
         ubConnStatus = UbConnStatus::JETTY_CREATING;
         return;
     }

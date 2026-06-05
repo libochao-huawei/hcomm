@@ -115,8 +115,6 @@ private:
     Eid          locEid{};
     u8           qos_{static_cast<u8>(UB_QOS_DEFAULT)};
 
-    bool         devUsed_{false};
-
     int32_t   devLogicId{0};
     u32       dieId{0};
     u32       funcId{0};
