@@ -187,4 +187,14 @@ void BaseMemTransport::CheckCommonLocRes(CommonLocRes &res)
     CheckLocConn(res);
 }
 
+void BaseMemTransport::SetSocket(Socket *socket_)
+{
+    socket = socket_;
+}
+
+Socket *BaseMemTransport::GetSocket() const
+{
+    return socket;
+}
+
 } // namespace Hccl
