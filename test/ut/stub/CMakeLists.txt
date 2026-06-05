@@ -55,7 +55,6 @@ set(EXCLUDE_FREAMEWORK_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/coll_communicator/api_c_adpt/dev/dev_coll_comm_c_adpt.cc"
     "${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework/zero_copy_address_mgr.cc"
     "${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/op_base/src/op_base_device.cc"
-    "${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/diag/aicpu/hcomm_diag_adapt_aicpu.cc"
     )
 list(REMOVE_ITEM FRAMEWORK_HOST_SOURCES ${EXCLUDE_FREAMEWORK_DEVICE_REGEX})
 list(REMOVE_ITEM COLL_COMMUNICATOR ${EXCLUDE_FREAMEWORK_DEVICE_REGEX})
@@ -90,6 +89,7 @@ list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/primitives/aiv/.*")
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/primitives/aicpu/.*")
 list(FILTER BASE_COMM EXCLUDE REGEX "src/base_comm/primitives/api_c_adpt/aicpu_ts_primitives_c_adpt.cc")
 list(FILTER BASE_COMM EXCLUDE REGEX "src/base_comm/primitives/api_c_adpt/aicpu_ts_sync_data_a_adpt.cc")
+list(FILTER BASE_COMM EXCLUDE REGEX "src/base_comm/primitives/api_c_adpt/aicpu_ts_diag_c_adapt.cc")
 
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/common/src/topo/topo_device/topoinfo_ranktableParser_device.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/legacy/ascend910/framework/common/src/topo/topo_device/.*")
