@@ -292,10 +292,4 @@ HcclResult CollComm::GetRankIpPortMap()
     // 该映射表记录了：Rank ID -> (IP地址 -> 已占用的端口号)
     return HCCL_SUCCESS;
 }
-
-Hccl::RankIpPortMap CollComm::GetRankIpPortInfo()
-{
-    return *rankIpPortMap_;
-}
-
 }  // namespace hccl
