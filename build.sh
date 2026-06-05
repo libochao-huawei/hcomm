@@ -103,16 +103,16 @@ function run_ctest() {
     ctest ${JOB_NUM} \
           --verbose \
           --build-nocmake \
-          --timeout 1000 \
+          --timeout 300 \
           --output-on-failure \
           --stop-on-failure \
           --test-output-size-failed 10000000 \
           2>&1 | tee "${ctest_log}"
 
-    # 超时时间：200s
+    # 超时时间：300s
     local ctest_ret=${PIPESTATUS[0]}
     if [ "${ctest_ret}" -eq 137 ]; then
-        log "Error: ctest timeout: execute more than 200s killed"
+        log "Error: ctest timeout: execute more than 300s killed"
         exit 1
     fi
 
