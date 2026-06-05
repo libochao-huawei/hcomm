@@ -53,7 +53,6 @@ CcuRtpConnection::CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtA
     : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::RTP;
-    getTpInfoParam_ = MakeGetTpInfoParam(locAddr_, rmtAddr_, tpProtocol_, qos_);
 }
 
 CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
@@ -61,7 +60,6 @@ CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtA
     : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::CTP;
-    getTpInfoParam_ = MakeGetTpInfoParam(locAddr_, rmtAddr_, tpProtocol_, qos_);
 }
 
 HcclResult CcuConnection::Init()
@@ -244,6 +242,7 @@ HcclResult CcuConnection::GetTpInfo()
         return HcclResult::HCCL_E_PARA;
     }
 
+    getTpInfoParam_ = MakeGetTpInfoParam(locAddr_, rmtAddr_, tpProtocol_, qos_);
     HcclResult ret = TpMgr::GetInstance(devPhyId_).GetTpInfo(getTpInfoParam_, tpInfo_);
     if (ret == HcclResult::HCCL_E_AGAIN) {
         return ret;
