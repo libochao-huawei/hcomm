@@ -1347,7 +1347,7 @@ STATIC void RsFreeAcceptOneNode(struct rs_cb *rscb, struct RsAcceptInfo *accept)
             ssl_adp_free(accept->ssl);
             accept->ssl = NULL;
         }
-        RaRsFreeBuffer(&accept->sslWriteBuffer);
+        RaRsFreeBuffer((void **)&accept->sslWriteBuffer);
     }
 
     RS_CLOSE_RETRY_FOR_EINTR(ret, accept->connFd);
@@ -1413,7 +1413,7 @@ STATIC void RsFreeConnOneNode(struct rs_cb *rscb, struct RsConnInfo *conn)
             ssl_adp_free(conn->ssl);
             conn->ssl = NULL;
         }
-        RaRsFreeBuffer(&conn->sslWriteBuffer);
+        RaRsFreeBuffer((void **)&conn->sslWriteBuffer);
     }
 
     RS_CLOSE_RETRY_FOR_EINTR(ret, conn->connfd);

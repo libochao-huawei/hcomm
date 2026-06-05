@@ -300,7 +300,7 @@ out:
     ssl_adp_shutdown(conn->ssl);
     ssl_adp_free(conn->ssl);
     conn->ssl = NULL;
-    RaRsFreeBuffer(&conn->sslWriteBuffer);
+    RaRsFreeBuffer((void **)&conn->sslWriteBuffer);
     return ret;
 }
 

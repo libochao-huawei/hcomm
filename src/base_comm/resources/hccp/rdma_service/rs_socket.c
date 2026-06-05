@@ -985,7 +985,7 @@ out:
         ssl_adp_shutdown(conn->ssl);
         ssl_adp_free(conn->ssl);
         conn->ssl = NULL;
-        RaRsFreeBuffer(&conn->sslWriteBuffer);
+        RaRsFreeBuffer((void **)&conn->sslWriteBuffer);
     }
     RS_CLOSE_RETRY_FOR_EINTR(retClose, conn->connfd);
     conn->connfd = RS_FD_INVALID;
@@ -1019,7 +1019,7 @@ STATIC void RsSocketTagSync(struct RsConnInfo *conn)
             ssl_adp_shutdown(conn->ssl);
             ssl_adp_free(conn->ssl);
             conn->ssl = NULL;
-            RaRsFreeBuffer(&conn->sslWriteBuffer);
+            RaRsFreeBuffer((void **)&conn->sslWriteBuffer);
         }
         RS_CLOSE_RETRY_FOR_EINTR(ret, conn->connfd);
         conn->connfd = RS_FD_INVALID;
@@ -1538,7 +1538,7 @@ RS_ATTRI_VISI_DEF int RsSocketBatchClose(int disuseLinger, struct RsSocketCloseI
             ssl_adp_shutdown(connInfo->ssl);
             ssl_adp_free(connInfo->ssl);
             connInfo->ssl = NULL;
-            RaRsFreeBuffer(&connInfo->sslWriteBuffer);
+            RaRsFreeBuffer((void **)&connInfo->sslWriteBuffer);
         }
         RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
 
@@ -1597,7 +1597,7 @@ RS_ATTRI_VISI_DEF int RsSocketBatchAbort(struct SocketConnectInfo conn[], uint32
             ssl_adp_free(connInfo->ssl);
             connInfo->ssl = NULL;
             ssl_adp_clear_error();
-            RaRsFreeBuffer(&connInfo->sslWriteBuffer);
+            RaRsFreeBuffer((void **)&connInfo->sslWriteBuffer);
         }
         RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
 

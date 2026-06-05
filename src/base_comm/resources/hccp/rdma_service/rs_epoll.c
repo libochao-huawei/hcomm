@@ -203,7 +203,7 @@ out:
         ssl_adp_shutdown(acceptInfo->ssl);
         ssl_adp_free(acceptInfo->ssl);
         acceptInfo->ssl = NULL;
-        RaRsFreeBuffer(&acceptInfo->sslWriteBuffer);
+        RaRsFreeBuffer((void **)&acceptInfo->sslWriteBuffer);
     }
 
     /* do not shutdown ssl */
@@ -299,7 +299,7 @@ out:
     ssl_adp_shutdown(acceptInfo->ssl);
     ssl_adp_free(acceptInfo->ssl);
     acceptInfo->ssl = NULL;
-    RaRsFreeBuffer(&acceptInfo->sslWriteBuffer);
+    RaRsFreeBuffer((void **)&acceptInfo->sslWriteBuffer);
     return ret;
 }
 
