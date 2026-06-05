@@ -11,11 +11,12 @@
 #define HCCLV2_ENV_CONFIG_H
 
 #include "base_config.h"
+#include "env_config.h"
 
 namespace Hccl {
 
-/// UBC Jetty / TP 默认 QoS（0–7）；与 `src/framework/common/src/config/env_config.h` 中 `EnvConfig::UB_QOS_DEFAULT` 数值一致。放在命名空间级避免 `EnvConfig::` 在默认实参等场景下解析失败。
-constexpr u32 UB_QOS_DEFAULT = 4U;
+/// 别名，权威定义见 `::EnvConfig::UB_QOS_DEFAULT`；命名空间级供默认实参等场景使用。
+constexpr u32 UB_QOS_DEFAULT = ::EnvConfig::UB_QOS_DEFAULT;
 
 class EnvConfig {
 public:

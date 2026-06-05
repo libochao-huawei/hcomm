@@ -358,22 +358,35 @@ HcclResult CaptureCreateChannelsLoop(EndpointHandle, CommEngine, HcommChannelDes
 
 } // namespace
 
-TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_V1Desc_ClearsQosField)
+// adapter 层 v1/v2 归一化；channel 层 qosPre 见 ut_urma_channel_qos_v1v2_compat.cc
+TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_V1V2Desc_QosCompat)
 {
-    gCapturedChannelDescQos = 0U;
     EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
-    HcommChannelDesc channelDesc{};
-    ASSERT_EQ(HcommChannelDescInit(&channelDesc, 1), HCCL_SUCCESS);
-    channelDesc.header.version = HCOMM_CHANNEL_VERSION_ONE;
-    channelDesc.header.size = HCOMM_CHANNEL_DESC_ABI_V1_SIZE;
-    channelDesc.qos = 5U;
     ChannelHandle channels[1] = {0};
-
     MOCKER(ChannelProcess::CreateChannelsLoop).stubs().will(invoke(CaptureCreateChannelsLoop));
 
-    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CPU, &channelDesc, 1, channels);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+    // v1 对端：header.size 为 ABI v1 长度，传入的 qos 应归一化为 HCCL_COMM_QOS_CONFIG_NOT_SET
+    gCapturedChannelDescQos = 0U;
+    HcommChannelDesc v1ChannelDesc{};
+    ASSERT_EQ(HcommChannelDescInit(&v1ChannelDesc, 1), HCCL_SUCCESS);
+    v1ChannelDesc.header.version = HCOMM_CHANNEL_VERSION_ONE;
+    v1ChannelDesc.header.size = HCOMM_CHANNEL_DESC_ABI_V1_SIZE;
+    v1ChannelDesc.qos = 5U;
+    HcommResult v1Ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CPU, &v1ChannelDesc, 1, channels);
+    EXPECT_EQ(v1Ret, HCCL_SUCCESS);
     EXPECT_EQ(gCapturedChannelDescQos, 0xFFFFFFFFU);
+
+    // v2 本端：header.size 覆盖完整结构体，qos 应原样透传
+    gCapturedChannelDescQos = 0U;
+    HcommChannelDesc v2ChannelDesc{};
+    ASSERT_EQ(HcommChannelDescInit(&v2ChannelDesc, 1), HCCL_SUCCESS);
+    v2ChannelDesc.header.version = HCOMM_CHANNEL_VERSION_TWO;
+    v2ChannelDesc.header.size = sizeof(HcommChannelDesc);
+    constexpr uint32_t kTestQos = 7U;
+    v2ChannelDesc.qos = kTestQos;
+    HcommResult v2Ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CPU, &v2ChannelDesc, 1, channels);
+    EXPECT_EQ(v2Ret, HCCL_SUCCESS);
+    EXPECT_EQ(gCapturedChannelDescQos, kTestQos);
 }
 
 TEST_F(HcommCAdptTest, ut_HcommResMgrInit_When_Normal_Expect_Success)

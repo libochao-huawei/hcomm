@@ -65,7 +65,7 @@ protected:
 };
 
 pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> MockMakeCcuConnection(
-    hcomm::TpProtocol tpProtocol, uint32_t qos = HCCL_COMM_QOS_CONFIG_DEFAULT_UB)
+    hcomm::TpProtocol tpProtocol, uint32_t qos = ::EnvConfig::UB_QOS_DEFAULT)
 {
     constexpr uint64_t fakeMemAddr = 0x12345678;
 
