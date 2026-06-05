@@ -6714,10 +6714,10 @@ void TcRsFreeDevList(void)
     struct rs_cb rscb = {0};
 
     RS_INIT_LIST_HEAD(&rscb.rdevList);
-    RsFreeUdevList(&rscb);
+    RsFreeRdevList(&rscb);
 
-    rscb.protocol = PROTOCOL_UNSUPPORT;
-    RsFreeDevList(&rscb);
+    RS_INIT_LIST_HEAD(&rscb.udevList);
+    RsFreeUdevList(&rscb);
 }
 
 void TcRsFreeRdevList(void)
@@ -6748,9 +6748,9 @@ void TcRsFreeUdevList(void)
     struct RsUbDevCb udevCb = {0};
     struct rs_cb rscb = {0};
 
-	RS_INIT_LIST_HEAD(&rscb.rdevList);
+	RS_INIT_LIST_HEAD(&rscb.udevList);
     mocker(RsUbCtxDeinit, 1, -1);
-    RsListAddTail(&udevCb.list, &rscb.rdevList);
+    RsListAddTail(&udevCb.list, &rscb.udevList);
     RsFreeUdevList(&rscb);
     mocker_clean();
 
