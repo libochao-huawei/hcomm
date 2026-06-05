@@ -75,7 +75,7 @@ TEST_F(TestEndpointPair, Ut_EndpointPair_Create_Host_Socket_Expect_HCCL_SUCCESS)
     Hccl::Socket* socket = nullptr;
     ret = endpointPair.ServerInit(0, 1, "Hccl_Test_Group", 0, 0, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = endpointPair.GetConnectedSocket(0, 1, "Hccl_Test_Group", 60001, 0, socket, 0, 0);
+    ret = endpointPair.GetConnectedSocket(0, 1, "Hccl_Test_Group", "Hccl_Test_Group", 0, 60001, socket, 0, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -121,7 +121,7 @@ TEST_F(TestEndpointPair, Ut_SocketConfig_ConnectMode_0_Expect_Success)
     uint32_t myRank = 0;
     uint32_t rmtRank = 1;
 
-    Hccl::SocketConfig socketConfig(link, listenPort, tag, hostNic2DeviceNicMode, myRank, rmtRank);
+    Hccl::SocketConfig socketConfig(link, listenPort, tag, tag, hostNic2DeviceNicMode, myRank, rmtRank);
 
     EXPECT_EQ(socketConfig.remoteRank, rmtRank);
     EXPECT_EQ(socketConfig.listeningPort, listenPort);
@@ -147,7 +147,7 @@ TEST_F(TestEndpointPair, Ut_SocketConfig_ConnectMode_1_Expect_Success)
     uint32_t myRank = 1;
     uint32_t rmtRank = 0;
 
-    Hccl::SocketConfig socketConfig(link, listenPort, tag, hostNic2DeviceNicMode, myRank, rmtRank);
+    Hccl::SocketConfig socketConfig(link, listenPort, tag, tag, hostNic2DeviceNicMode, myRank, rmtRank);
 
     EXPECT_EQ(socketConfig.remoteRank, rmtRank);
     EXPECT_EQ(socketConfig.listeningPort, listenPort);

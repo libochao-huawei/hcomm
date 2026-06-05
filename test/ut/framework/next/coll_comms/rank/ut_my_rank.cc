@@ -184,19 +184,19 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     for (u32 i = 0; i < 3; ++i) {
         hcommDesc[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDesc[i]);
     }
-    EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 1, "test", hcommDesc), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 1, "test", "test", hcommDesc), HCCL_SUCCESS);
     std::vector<ChannelHandle> hostChannelHandles(3);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 1, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
     EXPECT_EQ(myRank.newChannels_[0], std::make_pair(channelIdx0, RmtEp1reuseIdx0));
 
-    EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 2, "test", hcommDesc), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 2, "test", "test", hcommDesc), HCCL_SUCCESS);
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 2, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
     EXPECT_EQ(myRank.newChannels_[0], std::make_pair(channelIdx1, RmtEp1reuseIdx1));
 
-    EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 3, "test", hcommDesc), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 3, "test", "test", hcommDesc), HCCL_SUCCESS);
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
     EXPECT_EQ(myRank.newChannels_[0], std::make_pair(channelIdx2, RmtEp2reuseIdx0));
