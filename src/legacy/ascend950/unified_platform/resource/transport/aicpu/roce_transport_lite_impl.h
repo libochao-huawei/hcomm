@@ -43,6 +43,9 @@ public:
     void Post(u32 index, const StreamLite &stream) override;
     void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
 
+    // ========== CQE 错误轮询接口 ==========
+    HcclResult PollErrorCqe(std::vector<RoceCqeErrInfo> &errInfos);
+
 private:
     u32 notifyNum_{0};
     u32 bufferNum_{0};

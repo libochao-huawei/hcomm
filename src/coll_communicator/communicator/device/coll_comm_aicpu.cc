@@ -21,6 +21,7 @@
 #include "profiling_command_handle_lite.h"
 #include "aicpu_daemon_service.h"
 #include "hcclCommTaskExceptionLite.h"
+#include "roce_cqe_err_handler_lite.h"
 #include "coll_comm_aicpu_destroy_func.h"
 #include "aicpu_indop_env.h"
 
@@ -387,6 +388,8 @@ void CollCommAicpu::InitBackGroundThread()
     // 注册守护进程函数
     hcomm::HcclCommTaskExceptionLite::GetInstance().Init(devId_);
     Hccl::AicpuDaemonService::GetInstance().Register(&hcomm::HcclCommTaskExceptionLite::GetInstance());
+    hcomm::RoceCqeErrHandlerLite::GetInstance().Init(devId_);
+    Hccl::AicpuDaemonService::GetInstance().Register(&hcomm::RoceCqeErrHandlerLite::GetInstance());
     Hccl::AicpuDaemonService::GetInstance().Register(&hccl::CollCommAicpuDestroyFunc::GetInstance());
     Hccl::AicpuDaemonService::GetInstance().Register(&NsRecoveryFuncLite::GetInstance());
 

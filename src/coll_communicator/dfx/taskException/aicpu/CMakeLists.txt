@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommTaskExceptionLite.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/roce_cqe_err_handler_lite.cc
 )
  	 
 if(TARGET ccl_kernel)

@@ -351,4 +351,19 @@ void RoceTransportLiteImpl::BuildNotifyWaitTask(u32 notifyId, const StreamLite &
     stream.GetRtsq()->NotifyWait(notifyId, timeout);
 }
 
+HcclResult RoceTransportLiteImpl::PollErrorCqe(std::vector<RoceCqeErrInfo> &errInfos)
+{
+    for (auto &conn : connVec_) {
+        if (conn == nullptr) {
+            continue;
+        }
+        HcclResult ret = conn->PollErrorCqe(errInfos);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[RoceTransportLiteImpl::%s] PollErrorCqe fail for conn[%s]",
+                __func__, conn->Describe().c_str());
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl

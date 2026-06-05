@@ -165,4 +165,59 @@ void RdmaConnLiteV2::DoSliceWrite(const RmaBufSliceLite &loc, const RmtRmaBufSli
     }
 }
 
+HcclResult RdmaConnLiteV2::PollErrorCqe(std::vector<RoceCqeErrInfo> &errInfos)
+{
+    if (cqContext.cqVa == 0 || cqContext.headAddr == 0 || cqContext.tailAddr == 0) {
+        return HCCL_SUCCESS;
+    }
+
+    u32 hwHead = 0;
+    auto ret = memcpy_s(&hwHead, sizeof(u32), reinterpret_cast<void *>(cqContext.headAddr), sizeof(u32));
+    if (ret != 0) {
+        HCCL_ERROR("[RdmaConnLiteV2::%s] read cq head addr failed, CQN=%u", __func__, cqContext.cqn);
+        return HCCL_E_INTERNAL;
+    }
+
+    u32 cqDepth = cqContext.cqDepth;
+    u32 cqPIMask = cqDepth - 1;
+    u32 cqeSize = cqContext.cqeSize;
+
+    while (cqTail_ != hwHead) {
+        u64 cqeAddr = cqContext.cqVa + (cqTail_ & cqPIMask) * cqeSize;
+
+        // 读取 CQE 的最后一个 dword，其中包含 opcode 和 status
+        // Ascend HNS RoCE CQE 格式: RoceCqeEntry { cqe0..cqe7 }，每个 32-bit
+        // cqe7 bits[31:24] = status, bits[23:16] = opcode
+        u32 cqeStatusWord = 0;
+        ret = memcpy_s(&cqeStatusWord, sizeof(u32),
+            reinterpret_cast<void *>(cqeAddr + cqeSize - sizeof(u32)), sizeof(u32));
+        if (ret != 0) {
+            HCCL_ERROR("[RdmaConnLiteV2::%s] read cqe at tail[%u] failed", __func__, cqTail_);
+            cqTail_++;
+            continue;
+        }
+
+        u8 cqeStatus = static_cast<u8>((cqeStatusWord >> 24) & 0xFF);
+
+        // status != 0 表示 CQE 错误 (RDMA_LITE_WC_SUCCESS = 0)
+        if (cqeStatus != 0) {
+            RoceCqeErrInfo errInfo;
+            errInfo.status = cqeStatus;
+            errInfo.qpn = sqContext.qpn;
+            gettimeofday(&errInfo.time, nullptr);
+            errInfos.push_back(errInfo);
+        }
+
+        cqTail_++;
+    }
+
+    // 更新硬件 tail 指针
+    ret = memcpy_s(reinterpret_cast<void *>(cqContext.tailAddr), sizeof(u32), &cqTail_, sizeof(u32));
+    if (ret != 0) {
+        HCCL_ERROR("[RdmaConnLiteV2::%s] write cq tail addr failed, CQN=%u", __func__, cqContext.cqn);
+    }
+
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl

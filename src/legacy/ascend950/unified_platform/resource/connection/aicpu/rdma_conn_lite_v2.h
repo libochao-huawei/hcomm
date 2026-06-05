@@ -11,11 +11,19 @@
 #ifndef HCCLV2_RDMA_CONN_LITE_V2_H_
 #define HCCLV2_RDMA_CONN_LITE_V2_H_
 
+#include <sys/time.h>
+#include <vector>
 #include "rma_conn_lite.h"
 #include "binary_stream.h"
 #include "exception_util.h"
 #include "not_support_exception.h"
 #include "log.h"
+
+struct RoceCqeErrInfo {
+    u32 status;          // CQE error status (非0表示错误)
+    u32 qpn;             // Queue Pair Number
+    struct timeval time; // 错误发生时间
+};
 
 struct RdmaSqContextLite {
     uint32_t qpn;
@@ -71,6 +79,9 @@ public:
                          u64                        &dbAddr,
                          u64                        &dbValue);
 
+    // ========== CQE 错误轮询 ==========
+    HcclResult PollErrorCqe(std::vector<RoceCqeErrInfo> &errInfos);
+
 private:
     void ParseSqContext(std::vector<char>& data);
     void ParseCqContext(std::vector<char>& data);
@@ -84,6 +95,8 @@ private:
 
     // ========== 辅助分片写入函数 ==========
     void DoSliceWrite(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt);
+
+    u32 cqTail_{0};  // CQE 轮询的软件 tail 指针
 };
 
 } // namespace Hccl
