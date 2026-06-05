@@ -317,6 +317,10 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
 
 void TaskExceptionHost::GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo)
 {
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr){
+        HCCL_WARNING("[%s] dfxOpInfo_ or comm_ is nullptr!", __func__);
+        return;
+    }
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     u32 remoteLocalId = INVALID_VALUE_RANKID;
     GetAicpuCqeErrRemoteLocalIdByRankId(collComm, errorMessage.remoteUserRank, remoteLocalId);

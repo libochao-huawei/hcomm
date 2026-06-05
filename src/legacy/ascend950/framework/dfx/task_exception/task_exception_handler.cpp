@@ -368,7 +368,8 @@ void TaskExceptionHandler::ProcessException(rtExceptionInfo_t* exceptionInfo, co
     HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, groupRank information is %s.", __func__,
         GetGroupRankInfo(taskInfo).c_str());
     auto count = GetOpCounter(taskInfo);
- 	HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", __func__, static_cast<u32>(count.first), static_cast<u32>(count.second), taskInfo.dfxOpInfo_->opIndex_);
+    u32 opIndex = (taskInfo.dfxOpInfo_ != nullptr) ? taskInfo.dfxOpInfo_->opIndex_ : 0;
+ 	HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", __func__, static_cast<u32>(count.first), static_cast<u32>(count.second), opIndex);
     HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, opData information is %s.", __func__, taskInfo.GetOpInfo().c_str());
 }
 
@@ -555,7 +556,8 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
     auto count = GetOpCounter(taskInfo);
- 	HCCL_ERROR("[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(count.first), static_cast<u32>(count.second), taskInfo.dfxOpInfo_->opIndex_);
+    u32 opIndex = (taskInfo.dfxOpInfo_ != nullptr) ? taskInfo.dfxOpInfo_->opIndex_ : 0;
+ 	HCCL_ERROR("[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(count.first), static_cast<u32>(count.second), opIndex);
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
     auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.ccuInfo;
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1

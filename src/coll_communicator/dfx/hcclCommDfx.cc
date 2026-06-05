@@ -50,6 +50,11 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag, u32 myRank
 HcclResult HcclCommDfx::IsOpBase(bool &isOpBase) {
     CHK_SMART_PTR_NULL(mirrorTaskManager_);
     auto currDfxOpInfo = mirrorTaskManager_->GetCurrDfxOpInfo();
+    if (currDfxOpInfo == nullptr) {
+        HCCL_WARNING("[%s] currDfxOpInfo is nullptr!", __func__);
+        isOpBase = false;
+        return HCCL_SUCCESS;
+    }
     CHK_SMART_PTR_NULL(currDfxOpInfo);
     isOpBase = currDfxOpInfo->op_.opMode == Hccl::OpMode::OPBASE;
     HCCL_INFO("[%s] IsOpBase: %d", __func__, isOpBase);
@@ -64,9 +69,14 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
     if (handle != INVALID_U64) {
         CHK_RET(GetChannelRemoteRankId(commTag_, handle, remoteRankId));
     }
+    auto currDfxOpInfo = mirrorTaskManager_->GetCurrDfxOpInfo();
+    if (currDfxOpInfo == nullptr) {
+        HCCL_WARNING("[%s] currDfxOpInfo is nullptr!", __func__);
+        return HCCL_E_PTR;
+    }
     std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
     EXCEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
-        remoteRankId, taskParam, mirrorTaskManager_->GetCurrDfxOpInfo(), taskParam.isMaster), return HCCL_E_PTR);
+        remoteRankId, taskParam, currDfxOpInfo, taskParam.isMaster), return HCCL_E_PTR);
     EXCEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
     HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
