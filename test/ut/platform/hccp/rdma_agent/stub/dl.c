@@ -9,6 +9,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "rdma_lite.h"
 
 typedef unsigned long long u64;

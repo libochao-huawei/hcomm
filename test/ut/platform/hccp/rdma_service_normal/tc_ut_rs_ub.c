@@ -47,6 +47,11 @@ extern uint32_t RsGenerateDevIndex(uint32_t devCnt, uint32_t dieId, uint32_t fun
 extern int RsUbGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct RsUbDevCb **devCb);
 extern int RsUrmaDeviceApiInit(void);
 extern int RsOpenUrmaSo(void);
+extern int RsUrmaApiInit(void);
+extern void RsUbCtxExtJettyCreateTaCache(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);
+extern int RsUbDevCbInit(struct CtxInitAttr *attr, struct RsUbDevCb *devCb, struct rs_cb *rscb,
+    int *devIndex, struct DevBaseAttr *devAttr);
+extern void RsJfcCallbackProcess(struct RsCtxJettyCb *jettyCb, urma_cr_t *cr, urma_jfc_t *jfc);
 extern int RsUrmaJettyApiInit(void);
 extern int RsUrmaJfcApiInit(void);
 extern int RsUrmaSegmentApiInit(void);
@@ -57,6 +62,7 @@ extern void RsUrmaFreeDeviceList(urma_device_t **deviceList);
 extern void RsUrmaFreeEidList(urma_eid_info_t *eidList);
 extern int RsUrmaGetEidByIp(const urma_context_t *ctx, const urma_net_addr_t *netAddr, urma_eid_t *eid);
 extern void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);
+extern void RsUbCtxExtJettyDelete(struct RsCtxJettyCb *jettyCb);
 extern int RsUbCtxRegJettyDb(struct RsCtxJettyCb *jettyCb, struct udma_u_jetty_info *jettyInfo);
 extern int RsInitRscbCfg(struct rs_cb *rscb, struct RsInitConfig *cfg);
 extern int RsUbCreateCtx(urma_device_t *urmaDev, unsigned int eidIndex, urma_context_t **urmaCtx);
@@ -286,7 +292,7 @@ void TcRsUbGetDevEidInfoNum()
     mocker_clean();
 
     mocker_invoke(RsUrmaGetDeviceList, TcRsUrmaGetDeviceListStub, 10);
-    mocker(RsUrmaGetEidList, 10, tcUrmaEidList);
+    mocker(RsUrmaGetEidList, 10, 0);
     mocker(RsUrmaFreeDeviceList, 10, 0);
     mocker(RsUrmaFreeEidList, 10, 0);
     ret = RsUbGetDevEidInfoNum(phyId, &num);
@@ -893,11 +899,11 @@ void TcRsUbCtxBatchSendWr()
     ret = RsUbCtxRmemImport(devCb, &memImportAttr, &memImportInfo);
     EXPECT_INT_EQ(0, ret);
 
-    wrData[0].devRmemHandle = memImportInfo.ub.targetSegHandle;
+    wrData[0].devRmemHandle = (uint64_t)(uintptr_t)memImportInfo.ub.targetSegHandle;
     wrData[0].numSge = 1;
-    wrData[0].sges[0].addr = addr;
+    wrData[0].sges[0].addr = (uint64_t)(uintptr_t)addr;
     wrData[0].sges[0].len = 1;
-    wrData[0].sges[0].devLmemHandle = memRegInfo.ub.targetSegHandle;
+    wrData[0].sges[0].devLmemHandle = (uint64_t)(uintptr_t)memRegInfo.ub.targetSegHandle;
 
     baseInfo.devIndex = devIndex;
     ret = RsUbCtxBatchSendWr(tcRsCb, &baseInfo, wrData, wrResp, &wrlistNum);
@@ -1193,7 +1199,7 @@ void TcRsUbCtxLmemReg()
     mocker_clean();
 
     mocker(RsUrmaImportSeg, 1, NULL);
-    ret = RsUbCtxRmemImport(&devCb, &memAttr, &memInfo);
+    ret = RsUbCtxRmemImport(&devCb, (struct MemImportAttrT *)&memAttr, (struct MemImportInfoT *)&memInfo);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 }

@@ -34,6 +34,8 @@ extern int RsGetPingCb(struct RaRsDevInfo *rdev, struct RsPingCtxCb **pingCb);
 extern int RsPingCommonPostRecv(struct RsPingLocalQpCb *qpCb);
 extern int RsPingCommonInitPostRecvAll(struct RsPingLocalQpCb *qpCb);
 extern void RsPingCommonDeinitLocalBuffer(struct RsPingCtxCb *pingCb);
+extern int RsPingCbInitMutex(struct RsPingCtxCb *pingCb);
+extern void *RsPingHandle(void *arg);
 extern int RsPingPongInitLocalBuffer(struct rs_cb *rscb, struct PingInitAttr *attr, struct PingInitInfo *info,
     struct RsPingCtxCb *pingCb);
 extern int RsPingCommonInitLocalQp(struct rs_cb *rscb, struct RsPingCtxCb *pingCb, union PingQpAttr*attr,
@@ -917,13 +919,13 @@ void TcRsPingCbGetDevRdevIndex()
 
     pthread_mutex_init(&pingCb.pingMutex, NULL);
     pingCb.rdevCb.devList = &devList;
-    mocker(RsIbvGetDeviceName, 1, "dev");
+    mocker(RsIbvGetDeviceName, 1, 0);
     mocker(RsRoceGetRoceDevData, 1, -1);
     ret = RsPingCbGetDevRdevIndex(&pingCb, index);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
-    mocker(RsIbvGetDeviceName, 1, "dev");
+    mocker(RsIbvGetDeviceName, 1, 0);
     mocker(RsRoceGetRoceDevData, 1, 0);
     ret = RsPingCbGetDevRdevIndex(&pingCb, index);
     EXPECT_INT_EQ(ret, 0);

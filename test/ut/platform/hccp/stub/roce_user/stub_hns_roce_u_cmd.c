@@ -97,7 +97,8 @@ int roce_get_qp_lb_value(struct ibv_qp *qp, int *lb_value)
     return 0;
 }
 
-int roce_get_qp_num(int *qp_num)
+int roce_get_qp_num(struct ibv_context *context, int *qp_num)
 {
+    (void)context;
     return 0;
 }
