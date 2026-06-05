@@ -29,6 +29,7 @@ target_link_libraries(aicpu_custom PRIVATE
     $<BUILD_INTERFACE:runtime_headers>
     $<BUILD_INTERFACE:slog_headers>
     $<BUILD_INTERFACE:rdma_core_headers>
+    $<BUILD_INTERFACE:json>
     -Wl,--no-as-needed
     ascend_hal
     c_sec
