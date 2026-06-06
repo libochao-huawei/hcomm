@@ -379,7 +379,7 @@ TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_V1V2Desc_QosCompat)
     gCapturedChannelDescQos = 0U;
     HcommChannelDesc v2ChannelDesc{};
     ASSERT_EQ(HcommChannelDescInit(&v2ChannelDesc, 1), HCCL_SUCCESS);
-    v2ChannelDesc.header.version = HCOMM_CHANNEL_VERSION_TWO;
+    v2ChannelDesc.header.version = HCOMM_CHANNEL_VERSION;
     v2ChannelDesc.header.size = sizeof(HcommChannelDesc);
     constexpr uint32_t kTestQos = 7U;
     v2ChannelDesc.qos = kTestQos;
