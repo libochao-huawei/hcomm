@@ -97,12 +97,12 @@ void ProfilingReporterLite::ReportAllTasks()
         }
         auto endPos = currQueue->Tail();
         auto iter = lastPoses_[streamId];
-        ++(*iter);// 上一次的最后一个元素++后 到这一次的最新的元素
+        ++(*iter); // 上一次的最后一个元素++后 到这一次的最新的元素
         for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {
             TaskInfo task = (*(*(*iter)));
             taskInfo.push_back(task);
         }
-        lastPoses_[streamId] = endPos;// 记录每个 stream 上次 ReportAllTasks 上报结束时已处理到的位置（即当时的 Tail）
+        lastPoses_[streamId] = endPos; // 记录每个 stream 上次 ReportAllTasks 上报结束时已处理到的位置（即当时的 Tail）
     }
     ProfilingHandlerLite::GetInstance().ReportHcclTaskDetails(taskInfo);
 }
@@ -116,7 +116,7 @@ void ProfilingReporterLite::UpdateAllLastPos()
 {
     for (auto it = mirrorTaskMgrLite_->Begin(); it != mirrorTaskMgrLite_->End(); ++it) {
         u32                               streamId  = it->first;
-        Queue<std::unique_ptr<TaskInfo>> *currQueue = it->second.get();// 一旦有streamid 必有queue 必不为空，只是元素可能会为0
+        Queue<std::unique_ptr<TaskInfo>> *currQueue = it->second.get(); // 一旦有streamid 必有queue 必不为空，只是元素可能会为0
 
         auto endPos = currQueue->Tail();
         lastPoses_[streamId] = endPos;

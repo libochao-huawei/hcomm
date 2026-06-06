@@ -1614,6 +1614,11 @@ std::string TaskInfo::GetConciseBaseInfo() const
     return "";
 }
 
+u32 TaskInfo::GetRemoteRankId() const
+{
+    return 0;
+}
+
 GlobalMirrorTasks GlobalMirrorTasks::ins_;
 
 GlobalMirrorTasks::GlobalMirrorTasks()
@@ -1637,13 +1642,13 @@ u32 GlobalMirrorTasks::DevSize() const
 
 TaskInfoQueue &GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType type)
 {
-    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
+    static CircularQueue<std::unique_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
     return queue;
 }
 
 TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
 {
-    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
+    static CircularQueue<std::unique_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
     return &queue;
 }
 
@@ -1663,13 +1668,13 @@ TaskInfoQueueMap::iterator GlobalMirrorTasks::End(u32 devId)
     return map.end();
 }
 
-std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
+TaskInfo* GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
 {
     return nullptr;
 }
 
 HcclResult GlobalMirrorTasks::FindTaskInfo(
-    u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const
+    u32 devId, u32 streamId, u32 taskId, TaskInfo*& curTask) const
 {
     return HCCL_E_NOT_FOUND;
 }
@@ -1689,7 +1694,7 @@ void MirrorTaskManager::RegFullyCallBack(std::function<void()> callBack)
 {
 }
 
-void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
+void MirrorTaskManager::AddTaskInfo(std::unique_ptr<TaskInfo> &taskInfo)
 {
 }
 
@@ -1739,17 +1744,27 @@ void MirrorTaskManagerLite::RegFullyCallBack(std::function<void()> callBack)
 {
 }
 
-void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
+void MirrorTaskManagerLite::RegGetRemoteRankCallBack(std::function<u32(u64)> callBack)
 {
 }
 
-bool MirrorTaskManagerLite::IsStaticGraphMode(const CollOperator &collOperator) const
+HcclResult MirrorTaskManagerLite::AddTaskInfo(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
 {
-    return false;
+    return HCCL_SUCCESS;
 }
 
-void MirrorTaskManagerLite::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
+void MirrorTaskManagerLite::AddTaskInfo(std::unique_ptr<TaskInfo> &taskInfo)
 {
+}
+
+HcclResult MirrorTaskManagerLite::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
+{
+    return HCCL_SUCCESS;
+}
+
+TaskInfo* MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
+{
+    return nullptr;
 }
 
 std::shared_ptr<DfxOpInfo> MirrorTaskManagerLite::GetCurrDfxOpInfo() const
@@ -2061,6 +2076,10 @@ uint64_t ProfilingHandlerLite::GetProfHashId(const char *name, uint32_t len) con
     return 0;
 }
 
+void ProfilingHandlerLite::SetCachedGroupName(const DfxOpInfo &opInfo)
+{
+}
+
 ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler *profilingHandler)
     : mirrorTaskMgr_(mirrorTaskMgr),
       profilingHandler_(profilingHandler)
@@ -2071,7 +2090,7 @@ ProfilingReporter::~ProfilingReporter()
 {
 }
 
-void ProfilingReporter::Init() const
+void ProfilingReporter::Init()
 {
 }
 
@@ -2342,11 +2361,6 @@ string RdmaLocalNotify::Describe() const
 }
 
 std::unique_ptr<Serializable> RdmaLocalNotify::GetExchangeDto()
-{
-    return nullptr;
-}
-
-std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
 {
     return nullptr;
 }

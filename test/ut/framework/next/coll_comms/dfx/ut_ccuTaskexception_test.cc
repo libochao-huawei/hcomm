@@ -166,13 +166,13 @@ TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_Normal) {
     // 模拟hrtGetDevicePhyIdByIndex
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
 
     // 模拟HccpRaCustomChannel
     MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
 
     uint16_t result = CcuTaskException::GetCcuCKEValue(0, 0, 0);
@@ -182,7 +182,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_Normal) {
 TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_GetDevicePhyIdFail) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     uint16_t result = CcuTaskException::GetCcuCKEValue(0, 0, 0);
@@ -192,11 +192,11 @@ TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_GetDevicePhyIdFail) {
 TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_CustomChannelFail) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     uint16_t result = CcuTaskException::GetCcuCKEValue(0, 0, 0);
@@ -206,11 +206,11 @@ TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_CustomChannelFail) {
 TEST_F(CcuTaskExceptionTest, GetMissContectF) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
 
     CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
@@ -220,7 +220,7 @@ TEST_F(CcuTaskExceptionTest, GetMissContectF) {
 TEST_F(CcuTaskExceptionTest, GetDevidFail) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
@@ -230,11 +230,11 @@ TEST_F(CcuTaskExceptionTest, GetDevidFail) {
 TEST_F(CcuTaskExceptionTest, GetMissContectFail) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
@@ -245,11 +245,11 @@ constexpr uint64_t INVALID_U64_VAL = 18446744073709551615ULL;
 TEST_F(CcuTaskExceptionTest, GetCcuGSAValue) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
 
     uint64_t result = CcuTaskException::GetCcuGSAValue(0, 0, 0);
@@ -259,7 +259,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuGSAValue) {
 TEST_F(CcuTaskExceptionTest, GetCcuGSAValuegetdevidfailed) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     uint64_t result = CcuTaskException::GetCcuGSAValue(0, 0, 0);
@@ -269,11 +269,11 @@ TEST_F(CcuTaskExceptionTest, GetCcuGSAValuegetdevidfailed) {
 TEST_F(CcuTaskExceptionTest, GetCcuGSAValuechannelfail) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     uint64_t result = CcuTaskException::GetCcuGSAValue(0, 0, 0);
@@ -283,11 +283,11 @@ TEST_F(CcuTaskExceptionTest, GetCcuGSAValuechannelfail) {
 TEST_F(CcuTaskExceptionTest, GetCcuXnValue) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
 
     uint64_t result = CcuTaskException::GetCcuXnValue(0, 0, 0);
@@ -297,7 +297,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuXnValue) {
 TEST_F(CcuTaskExceptionTest, GetCcuXnValuedevidfailed) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     uint64_t result = CcuTaskException::GetCcuXnValue(0, 0, 0);
@@ -307,11 +307,11 @@ TEST_F(CcuTaskExceptionTest, GetCcuXnValuedevidfailed) {
 TEST_F(CcuTaskExceptionTest, GetCcuXnValuechannelfail) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     uint64_t result = CcuTaskException::GetCcuXnValue(0, 0, 0);
@@ -344,11 +344,11 @@ TEST_F(CcuTaskExceptionTest, GetCcuErrorMsgMission) {
 TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_Normal) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HccpRaCustomChannel)
         .stubs()
-        .with(any(), any(), any(), any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
 
     CcuLoopContext result = CcuTaskException::GetCcuLoopContext(0, 0, 0);
@@ -358,7 +358,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_Normal) {
 TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_GetDevicePhyIdFail) {
     MOCKER(hrtGetDevicePhyIdByIndex)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
     CcuLoopContext result = CcuTaskException::GetCcuLoopContext(0, 0, 0);
     EXPECT_EQ(result.part0.value, 0u);
@@ -1275,7 +1275,7 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_Process_FindTaskInfo_NotFound_Tas
     taskParam.taskType = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
     shared_ptr<Hccl::DfxOpInfo> dfxOpInfo = make_shared<Hccl::DfxOpInfo>();
     dfxOpInfo->isIndop_ = true;
-    shared_ptr<Hccl::TaskInfo> taskInfo = make_shared<Hccl::TaskInfo>(0, 1, 0, taskParam, dfxOpInfo);
+    auto taskInfo = make_unique<Hccl::TaskInfo>(0, 1, 0, taskParam, dfxOpInfo);
     globalMirrorTasks.GetQueue(0, 0)->Append(taskInfo);
 
     rtExceptionInfo_t exceptionInfo{};
@@ -1294,7 +1294,7 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_Process_FindTaskInfo_Success_DfxO
 
     Hccl::TaskParam taskParam{};
     taskParam.taskType = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
-    shared_ptr<Hccl::TaskInfo> taskInfo = make_shared<Hccl::TaskInfo>(0, 0, 0, taskParam, nullptr);
+    auto taskInfo = make_unique<Hccl::TaskInfo>(0, 0, 0, taskParam, nullptr);
     globalMirrorTasks.GetQueue(0, 0)->Append(taskInfo);
 
     rtExceptionInfo_t exceptionInfo{};
@@ -1315,7 +1315,7 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_Process_FindTaskInfo_Success_IsIn
     taskParam.taskType = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
     shared_ptr<Hccl::DfxOpInfo> dfxOpInfo = make_shared<Hccl::DfxOpInfo>();
     dfxOpInfo->isIndop_ = false;
-    shared_ptr<Hccl::TaskInfo> taskInfo = make_shared<Hccl::TaskInfo>(0, 0, 0, taskParam, dfxOpInfo);
+    auto taskInfo = make_unique<Hccl::TaskInfo>(0, 0, 0, taskParam, dfxOpInfo);
     globalMirrorTasks.GetQueue(0, 0)->Append(taskInfo);
 
     rtExceptionInfo_t exceptionInfo{};
@@ -1336,7 +1336,7 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_Process_FindTaskInfo_Success_Task
     taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
     shared_ptr<Hccl::DfxOpInfo> dfxOpInfo = make_shared<Hccl::DfxOpInfo>();
     dfxOpInfo->isIndop_ = true;
-    shared_ptr<Hccl::TaskInfo> taskInfo = make_shared<Hccl::TaskInfo>(0, 0, 0, taskParam, dfxOpInfo);
+    auto taskInfo = make_unique<Hccl::TaskInfo>(0, 0, 0, taskParam, dfxOpInfo);
     globalMirrorTasks.GetQueue(0, 0)->Append(taskInfo);
 
     rtExceptionInfo_t exceptionInfo{};
@@ -1357,7 +1357,7 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_Process_FindTaskInfo_Success_Task
     taskParam.taskType = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
     shared_ptr<Hccl::DfxOpInfo> dfxOpInfo = make_shared<Hccl::DfxOpInfo>();
     dfxOpInfo->isIndop_ = true;
-    shared_ptr<Hccl::TaskInfo> taskInfo = make_shared<Hccl::TaskInfo>(0, 0, 0, taskParam, dfxOpInfo);
+    auto taskInfo = make_unique<Hccl::TaskInfo>(0, 0, 0, taskParam, dfxOpInfo);
     globalMirrorTasks.GetQueue(0, 0)->Append(taskInfo);
 
     rtExceptionInfo_t exceptionInfo{};
@@ -1383,7 +1383,7 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_PrintTaskContextInfo_Task_Not_Fou
     taskParam.taskType = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
     shared_ptr<Hccl::DfxOpInfo> dfxOpInfo = make_shared<Hccl::DfxOpInfo>();
     dfxOpInfo->isIndop_ = true;
-    shared_ptr<Hccl::TaskInfo> taskInfo = make_shared<Hccl::TaskInfo>(0, 0, 0, taskParam, dfxOpInfo);
+    auto taskInfo = make_unique<Hccl::TaskInfo>(0, 0, 0, taskParam, dfxOpInfo);
     globalMirrorTasks.GetQueue(0, 0)->Append(taskInfo);
 
     EXPECT_NO_THROW(hcomm::TaskExceptionHost::PrintTaskContextInfo(0, 0, 0));
@@ -1401,7 +1401,7 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_PrintTaskContextInfo_TaskId_Great
         taskParam.taskType = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
         shared_ptr<Hccl::DfxOpInfo> dfxOpInfo = make_shared<Hccl::DfxOpInfo>();
         dfxOpInfo->isIndop_ = true;
-        shared_ptr<Hccl::TaskInfo> taskInfo = make_shared<Hccl::TaskInfo>(0, i + 10, 0, taskParam, dfxOpInfo);
+        auto taskInfo = make_unique<Hccl::TaskInfo>(0, i + 10, 0, taskParam, dfxOpInfo);
         globalMirrorTasks.GetQueue(0, 0)->Append(taskInfo);
     }
 
@@ -1420,7 +1420,7 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_PrintTaskContextInfo_Success)
         taskParam.taskType = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
         shared_ptr<Hccl::DfxOpInfo> dfxOpInfo = make_shared<Hccl::DfxOpInfo>();
         dfxOpInfo->isIndop_ = true;
-        shared_ptr<Hccl::TaskInfo> taskInfo = make_shared<Hccl::TaskInfo>(0, i, 0, taskParam, dfxOpInfo);
+        auto taskInfo = make_unique<Hccl::TaskInfo>(0, i, 0, taskParam, dfxOpInfo);
         globalMirrorTasks.GetQueue(0, 0)->Append(taskInfo);
     }
 
