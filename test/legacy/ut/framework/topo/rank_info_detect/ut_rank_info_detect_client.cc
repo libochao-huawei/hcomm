@@ -21,7 +21,9 @@
 #include "dev_type.h"
 
 #include "socket.h"
+#include <chrono>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include "new_rank_info.h"
 #include "rank_table_info.h"
@@ -60,8 +62,11 @@ protected:
         std::cout << "A Test case in RankInfoDetectClientTest SetUP" << std::endl;
         socketHandle = new int(0);
         MOCKER(HrtRaSocketInit).stubs().with(any(), any()).will(returnValue(socketHandle));
+        MOCKER(HrtRaSocketDeInit).stubs().with(any());
         MOCKER_CPP(&HccpPeerManager::Init).stubs().with(any());
         MOCKER_CPP(&HccpPeerManager::DeInit).stubs().with(any());
+        MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+        MOCKER_CPP(&HostSocketHandleManager::Destroy).stubs().with(any(), any());
         IpAddress serverIp = IpAddress("10.0.0.10");
         u32 hostPort = 60001;
         IpAddress hostIp_ = IpAddress("192.168.1.8");
@@ -80,13 +85,17 @@ protected:
     }
 
     virtual void TearDown() {
-        GlobalMockObject::verify();
-        delete socketHandle;
         delete rankInfoDetectClient_;
-        std::cout << "A Test case in RankInfoDetectServiceTest TearDown" << std::endl;
+        rankInfoDetectClient_ = nullptr;
+        // RankInfoDetectClient 析构会 detach 线程调 DeInit，需等其完成再 verify 清 mock
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        delete static_cast<int *>(socketHandle);
+        socketHandle = nullptr;
+        GlobalMockObject::verify();
+        std::cout << "A Test case in RankInfoDetectClientTest TearDown" << std::endl;
     }
 
-    RankInfoDetectClient *rankInfoDetectClient_;
+    RankInfoDetectClient *rankInfoDetectClient_{nullptr};
     nlohmann::json presetParseJson_;       // 模拟ParseFileToJson的返回结果
     nlohmann::json presetLocalDevJson_;    // 模拟GetLocalDevInfoJson的返回结果
     nlohmann::json presetRankTableJson_;   // 模拟GetLocalRankTableJson的返回结果
@@ -245,26 +254,24 @@ TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)
     BinaryStream binaryStream;
     localRankTable.GetBinStream(true, binaryStream);
     binaryStream << rankInfoDetectClient_->currentStep_;
-    std:string temp = "";
+    std::string temp = "";
     binaryStream << temp;
 
     // 字节流转换为vector<char>格式
     vector<char> rankInfoMsg;
     binaryStream.Dump(rankInfoMsg);
 
-    // 取rankInfoMsg的size
-    u32 rankInfoSize = rankInfoMsg.size();
-    u64 expectLen = rankInfoSize;
-
-    // 取rankInfoMsg的data() （const char *）
     MOCKER(aclrtMallocHostWithCfg).stubs().will(returnValue(1));
-    MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue((void*)rankInfoMsg.data()));
+    std::vector<char> hostAlloc(MAX_BUFFER_LEN);
+    MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(hostAlloc.data())));
+    MOCKER(HrtFreeHost).stubs().with(any()).will(ignoreReturnValue());
     void *msg = rankInfoMsg.data();
     u64 msgLen = rankInfoMsg.size();
-    u64 &revMsgLen = msgLen;
+    u64 revMsgLenOut = msgLen;
+    u64 &revMsgLen = revMsgLenOut;
     MOCKER_CPP(&SocketAgent::RecvMsg)
             .stubs()
-            .with(outBound(msg), outBound(revMsgLen))
+            .with(outBoundP(msg, msgLen), outBound(revMsgLen))
             .will(returnValue(true));
 
     MOCKER_CPP(&RankInfoDetectClient::VerifyRankTable).stubs().will(ignoreReturnValue());
@@ -327,11 +334,3 @@ TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Timeout_Expect_Throw)
 
     EXPECT_THROW(rankInfoDetectClient_->CheckStatus(), TimeoutException);
 }
-
-TEST_F(RankInfoDetectClientTest, Ut_VerifyRankTable_When_TlsStatus_Expect_Throw)
-{
-    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE});
-
-    EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
-}
-

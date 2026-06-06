@@ -26,6 +26,9 @@
 #include "rdma_handle_manager.h"
 #include "internal_exception.h"
 #include "hccl_types.h"
+#include "adapter_rts.h"
+#include "hcom_common.h"
+#include "env_config/env_config.h"
 
 #undef private
 #undef protected
@@ -97,11 +100,12 @@ pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> Mock
         ccuJettys.emplace_back(std::move(ccuJetty));
     }
 
+    constexpr uint32_t kJettyQos = ::EnvConfig::UB_QOS_DEFAULT;
     unique_ptr<hcomm::CcuConnection> connection;
     if (tpProtocol == hcomm::TpProtocol::CTP) {
-        connection = make_unique<hcomm::CcuCtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs);
+        connection = make_unique<hcomm::CcuCtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, kJettyQos);
     } else {
-        connection = make_unique<hcomm::CcuRtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs);
+        connection = make_unique<hcomm::CcuRtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, kJettyQos);
     }
 
     return {std::move(connection), std::move(ccuJettys)};
@@ -205,7 +209,126 @@ TEST_F(CcuConnTest, Ut_UpdateInitStatus_TP_ATTR_GETTING_State_Transitions)
 
     HcclResult ret = connection->UpdateInitStatus();
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(connection->innerStatus_, hcomm::CcuConnection::InnerStatus::JETTY_CREATING);
+
+    ret = connection->UpdateInitStatus();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
     EXPECT_EQ(connection->innerStatus_, hcomm::CcuConnection::InnerStatus::EXCHANGEABLE);
+
+    GlobalMockObject::verify();
+}
+
+HcclResult StubTpMgrGetTpInfoWithMappedPriority(hcomm::TpMgr *, const hcomm::GetTpInfoParam &, hcomm::TpInfo &tpInfo)
+{
+    tpInfo.tpHandle = 0x4321ULL;
+    tpInfo.hasMappedJettyPriority = true;
+    tpInfo.mappedJettyPriority = 4U;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+TEST_F(CcuConnTest, Ut_CcuJetty_SetMappedJettyPriority_When_NotCreated_SetsQos)
+{
+    constexpr uint64_t fakeMemAddr = 0x12345678;
+    const uint32_t fakeTaJettyId = 1025;
+    const IpAddress locAddrIp{"2.2.2.2"};
+    hcomm::CcuJettyInfo jettyInfo{};
+    jettyInfo.taJettyId = fakeTaJettyId;
+    jettyInfo.sqBufVa = fakeMemAddr;
+    jettyInfo.sqBufSize = 1024;
+    jettyInfo.sqDepth = 4;
+
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
+    void *rdmaHandle = reinterpret_cast<void *>(0x300);
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs().will(returnValue(rdmaHandle));
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle)
+        .stubs()
+        .will(returnValue(static_cast<Hccl::JfcHandle>(0x400ULL)));
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo)
+        .stubs()
+        .will(returnValue(std::make_pair(static_cast<Hccl::TokenIdHandle>(0x500ULL), 0U)));
+
+    hcomm::CcuJetty jetty(locAddrIp, jettyInfo);
+    ASSERT_EQ(jetty.Init(), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(jetty.SetMappedJettyPriority(4U), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(jetty.GetCreateJettyParam().qos, static_cast<uint8_t>(4U));
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuConnTest, Ut_CcuJetty_SetMappedJettyPriority_When_Conflict_Expect_Internal)
+{
+    const IpAddress locAddrIp{"3.3.3.3"};
+    hcomm::CcuJettyInfo jettyInfo{};
+    jettyInfo.taJettyId = 2048;
+    jettyInfo.sqBufVa = 0x1000;
+    jettyInfo.sqBufSize = 512;
+    jettyInfo.sqDepth = 4;
+
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
+    void *rdmaHandle = reinterpret_cast<void *>(0x300);
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs().will(returnValue(rdmaHandle));
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle)
+        .stubs()
+        .will(returnValue(static_cast<Hccl::JfcHandle>(0x400ULL)));
+    MOCKER_CPP(&Hccl::RdmaHandleManager::GetTokenIdInfo)
+        .stubs()
+        .will(returnValue(std::make_pair(static_cast<Hccl::TokenIdHandle>(0x500ULL), 0U)));
+
+    hcomm::CcuJetty jetty(locAddrIp, jettyInfo);
+    ASSERT_EQ(jetty.Init(), HcclResult::HCCL_SUCCESS);
+    ASSERT_EQ(jetty.SetMappedJettyPriority(2U), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(jetty.SetMappedJettyPriority(5U), HcclResult::HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(CcuConnTest, Ut_UpdateInitStatus_WithMappedPriority_SetsJettyQos)
+{
+    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::RTP);
+    auto connection = resPair.first.get();
+    auto &jetty = *resPair.second.front();
+    connection->tpProtocol_ = hcomm::TpProtocol::RTP;
+    connection->innerStatus_ = hcomm::CcuConnection::InnerStatus::INIT;
+
+    MOCKER_CPP(&hcomm::TpMgr::GetTpInfo).stubs().will(invoke(StubTpMgrGetTpInfoWithMappedPriority));
+    MOCKER_CPP(&hcomm::TpMgr::GetTpAttr).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::TpMgr::CalcTaTimeout).stubs().will(returnValue(static_cast<uint8_t>(16)));
+    MOCKER_CPP(&hcomm::CcuJetty::CreateJetty).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+
+    HcclResult ret = connection->UpdateInitStatus();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(connection->innerStatus_, hcomm::CcuConnection::InnerStatus::TP_ATTR_GETTING);
+    EXPECT_EQ(jetty.GetCreateJettyParam().qos, static_cast<uint8_t>(4U));
+
+    GlobalMockObject::verify();
+}
+
+hcomm::GetTpInfoParam gCapturedConnTpParam{};
+
+HcclResult StubTpMgrGetTpInfoCaptureParam(hcomm::TpMgr *, const hcomm::GetTpInfoParam &param, hcomm::TpInfo &tpInfo)
+{
+    gCapturedConnTpParam = param;
+    tpInfo.tpHandle = 0x4321ULL;
+    tpInfo.hasMappedJettyPriority = true;
+    tpInfo.mappedJettyPriority = 3U;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+TEST_F(CcuConnTest, Ut_MakeGetTpInfoParam_When_QosAboveSeven_Expect_ClampsToDefault)
+{
+    gCapturedConnTpParam = hcomm::GetTpInfoParam{};
+    auto resPair = MockMakeCcuConnection(hcomm::TpProtocol::RTP);
+    auto connection = resPair.first.get();
+    connection->qos_ = 9U;
+    connection->innerStatus_ = hcomm::CcuConnection::InnerStatus::INIT;
+
+    MOCKER_CPP(&hcomm::TpMgr::GetTpInfo).stubs().will(invoke(StubTpMgrGetTpInfoCaptureParam));
+
+    HcclResult ret = connection->UpdateInitStatus();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(::EnvConfig::UB_QOS_DEFAULT));
 
     GlobalMockObject::verify();
 }

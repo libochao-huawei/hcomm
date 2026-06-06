@@ -72,6 +72,11 @@ using namespace std;
 
 using namespace hccl;
 
+inline void UtInitHcclCommConfig(HcclCommConfig &config)
+{
+    HcclCommConfigInit(&config);
+}
+
 // 1KB
 #define HCCL_COM_DATA_SIZE 1024
 
