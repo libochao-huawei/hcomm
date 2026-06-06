@@ -51,7 +51,7 @@ protected:
 
 private:
     MAKE_ENUM(InnerStatus,
-        INIT, TP_INFO_GETTING, TP_ATTR_GETTING,
+        INIT, TP_INFO_GETTING,
         JETTY_CREATING,
         EXCHANGEABLE, JETTY_IMPORTING,
         CONNECTED,
@@ -72,8 +72,6 @@ private:
     HcclResult    GetLocalCcuRmaBufferInfo();
     HcclResult    CreateJetty();
     HcclResult    GetTpInfo();
-    HcclResult    GetTpAttr();
-    HcclResult    GetTaTimeOut();
     void          GenerateLocalPsn();
     void          ResetRequestCtxs();
     HcclResult    StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle);
@@ -117,7 +115,6 @@ private:
 
     // 感知tp获取tp handle，import jetty后urma提供tpn
     TpInfo        tpInfo_{};
-    TpAttrInfo    tpAttrInfo_{};
     GetTpInfoParam getTpInfoParam_{};
 
     // 异步import上下文信息
