@@ -16,9 +16,6 @@
 #include "new_rank_info.h"
 #include "rank_table_info.h"
 #include "json_parser.h"
-#include "internal_exception.h"
-#include "timeout_exception.h"
-#include "socket_exception.h"
 #include "socket_agent.h"
 
 namespace Hccl {
@@ -33,7 +30,7 @@ public:
     }
     ~RankInfoDetectService();
 
-    void Setup();
+    HcclResult Setup();
 
 private:
     u32                                                      devPhyId_{0};
@@ -46,21 +43,20 @@ private:
     std::string                                              identifier_{};
     vector<RaSocketWhitelist>                                wlistInfo_{};
 
-    void GetConnections();
-    void GetRankTable();
-    void BroadcastRankTable();
-    void Disconnect();
-    void TearDown();
+    HcclResult GetConnections();
+    HcclResult GetRankTable();
+    HcclResult BroadcastRankTable();
+    HcclResult Disconnect();
+    HcclResult TearDown();
 
     bool RecvRemoteAgentId(SocketAgent &connSocketAgent, std::string &agentId);
     bool RecvRemoteRankSize(SocketAgent &connSocketAgent, u32 &rankSize);
-    void RecvRankInfoMsg(SocketAgent &connSocketAgent, vector<char> &rankInfoMsg);
-    void SendRankTable(Socket *connSocket);
+    HcclResult RecvRankInfoMsg(SocketAgent &connSocketAgent, vector<char> &rankInfoMsg);
+    HcclResult ParseRankTable(vector<char> &rankInfoMsg);
     void SortRankTable();
-    void ParseRankTable(vector<char> &rankInfoMsg);
 
     // 异常流程处理方法
-    void FailedConnectionAgentIdString(u32 rankSize);
+    HcclResult FailedConnectionAgentIdString(u32 rankSize);
 
     // 校验相关方法
     bool RecvAndVerifyRemoteAgentIdAndRankSize(

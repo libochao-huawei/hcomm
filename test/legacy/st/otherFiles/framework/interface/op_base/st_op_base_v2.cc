@@ -1654,7 +1654,7 @@ TEST_F(OpbaseTestV2, St_HcclGetRootInfoV2_When_NoNeedInput_Expect_Return_HCCL_SU
 {
     // when
     HcclRootHandleV2 rootHandle{};
-    MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(outBound(rootHandle)).will(ignoreReturnValue());
+    MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(outBound(rootHandle)).will(returns(HCCL_SUCCESS));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     
@@ -1666,7 +1666,7 @@ TEST_F(OpbaseTestV2, St_HcclGetRootInfoV2_When_NoNeedInput_Expect_Return_HCCL_SU
 TEST_F(OpbaseTestV2, St_HcclGetRootInfoV2_When_Throw_Expect_Return_HCCL_E_INTERNAL) 
 {
     // when
-    MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(any(), any()).will(throws(InternalException("...")));
+    MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(any(), any()).will(returns(HCCL_E_INTERNAL));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     
@@ -1679,8 +1679,8 @@ TEST_F(OpbaseTestV2, St_HcclCommInitRootInfoV2_When_InputValue_Expect_Return_HCC
 {
     // when
     HcclRootHandleV2 rootHandle{};
-    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(ignoreReturnValue());
-    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(returns(HCCL_SUCCESS));
+    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(returns(HCCL_SUCCESS));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -1698,8 +1698,8 @@ TEST_F(OpbaseTestV2, St_HcclCommInitRootInfoV2_When_InputValue_Expect_Return_HCC
 TEST_F(OpbaseTestV2, St_HcclCommInitRootInfoV2_When_Throw_Expect_Return_HCCL_E_INTERNAL) 
 {
     // when
-    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(throws(InternalException("...")));
-    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(returns(HCCL_E_INTERNAL));
+    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(returns(HCCL_SUCCESS));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -1721,8 +1721,8 @@ TEST_F(OpbaseTestV2, St_HcclCommInitRootInfoConfigV2_When_InputValue_Expect_Retu
 {
     // when
     HcclRootHandleV2 rootHandle{};
-    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(ignoreReturnValue());
-    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(returns(HCCL_SUCCESS));
+    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(returns(HCCL_SUCCESS));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -1744,8 +1744,8 @@ TEST_F(OpbaseTestV2, St_HcclCommInitRootInfoConfigV2_When_InputValue_Expect_Retu
 TEST_F(OpbaseTestV2, St_HcclCommInitRootInfoConfigV2_When_Throw_Expect_Return_HCCL_E_INTERNAL) 
 {
     // when
-    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(throws(InternalException("...")));
-    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(returns(HCCL_E_INTERNAL));
+    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(returns(HCCL_SUCCESS));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -1767,11 +1767,11 @@ TEST_F(OpbaseTestV2, St_HcclCommInitAllV2_When_InputValue_Expect_Return_HCCL_SUC
 {
     // when
     HcclRootHandleV2 rootHandle{};
-    MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(outBound(rootHandle)).will(ignoreReturnValue());
+    MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(outBound(rootHandle)).will(returns(HCCL_SUCCESS));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
-    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(ignoreReturnValue());
-    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(returns(HCCL_SUCCESS));
+    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(returns(HCCL_SUCCESS));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -1789,11 +1789,11 @@ TEST_F(OpbaseTestV2, St_HcclCommInitAllV2_When_InputValue_Expect_Return_HCCL_SUC
 TEST_F(OpbaseTestV2, St_HcclCommInitAllV2_When_Throw_Expect_Return_HCCL_E_INTERNAL) 
 {
     // when
-    MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(any(), any()).will(throws(InternalException("...")));
+    MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(any(), any()).will(returns(HCCL_E_INTERNAL));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
-    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(ignoreReturnValue());
-    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(returns(HCCL_SUCCESS));
+    MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(returns(HCCL_SUCCESS));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));

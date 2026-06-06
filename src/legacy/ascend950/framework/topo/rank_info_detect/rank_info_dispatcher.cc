@@ -29,16 +29,17 @@ namespace Hccl {
 
 RankInfoDispather::~RankInfoDispather()
 {
-    DECTOR_TRY_CATCH("RankInfoDispather", CleanResource());
-    DECTOR_TRY_CATCH("RankInfoDispather", CloseEpollFd());
+    CleanResource();
+    (void)CloseEpollFd();
 }
 
-void RankInfoDispather::BroadcastRankTable(const std::unordered_map<std::string, std::shared_ptr<Socket>> &connectSockets,
+HcclResult RankInfoDispather::BroadcastRankTable(const std::unordered_map<std::string, std::shared_ptr<Socket>> &connectSockets,
     const RankTableInfo &clusterInfo, const std::string &failedAgentIdList, u32 step)
 {
-    PrepareResource(connectSockets, clusterInfo, failedAgentIdList, step);
-    ProcessSend();
+    CHK_RET(PrepareResource(connectSockets, clusterInfo, failedAgentIdList, step));
+    CHK_RET(ProcessSend());
     HCCL_INFO("[RankInfoDispather::%s] broadcast topoinfo success, rankNum[%u], threadNum[%u]", __func__, rankNum_, threadNum_);
+    return HCCL_SUCCESS;
 }
 
 void RankInfoDispather::InitWorkerThread()
@@ -93,22 +94,23 @@ void RankInfoDispather::RunWorkerThread(s32 workId)
     HCCL_DEBUG("[RankInfoDispather::%s]finish thread! workId[%d]", __func__, workId);
 }
 
-void RankInfoDispather::PrepareResource(const std::unordered_map<std::string, std::shared_ptr<Socket>> connectSockets,
+HcclResult RankInfoDispather::PrepareResource(const std::unordered_map<std::string, std::shared_ptr<Socket>> connectSockets,
     const RankTableInfo &clusterInfo, const std::string &failedAgentIdList, u32 step)
 {
     rankNum_ = connectSockets.size();
     InitWorkerThread();
 
     s32 res = RaCreateEventHandle(&epollFds_);
-    CHK_PRT_THROW(res != 0, HCCL_ERROR("[RankInfoDispather::%s] create epoll event failed, res[%d].", __func__, res),
-                  NetworkApiException, "create epoll event error.");
+    CHK_PRT_RET(res != 0, HCCL_ERROR("[RankInfoDispather::%s] create epoll event failed, res[%d].", __func__, res),
+                HCCL_E_NETWORK);
     epollCreate_ = true;
 
     BinaryStream binaryStream;
     clusterInfo.GetBinStream(true, binaryStream);
     binaryStream << step;
     binaryStream << failedAgentIdList;
-    
+
+    // TODO A5
     binaryStream.Dump(rankTableMsg_);
 
     for (auto &it : connectSockets) {
@@ -116,14 +118,14 @@ void RankInfoDispather::PrepareResource(const std::unordered_map<std::string, st
         fdcontext.socket = it.second;
         fdcontext.txState.bodyLen = rankTableMsg_.size();
         fdcontext.txState.data = rankTableMsg_.data();
-        CHK_RET_THROW(InvalidParamsException, 
-            StringFormat("[RankInfoDispather::%s] ranid[%s] strToULong fail.", __func__, it.first.c_str()),
-            SalStrToULong(it.first, HCCL_BASE_DECIMAL, fdcontext.txState.rankId));
+        CHK_PRT_RET(SalStrToULong(it.first, HCCL_BASE_DECIMAL, fdcontext.txState.rankId),
+            HCCL_ERROR("[RankInfoDispather::%s] ranid[%s] strToULong fail.", __func__, it.first.c_str()), HCCL_E_PARA);
         HCCL_DEBUG("[RankInfoDispather::%s]rankId:%u, bodyLen:%u", __func__, fdcontext.txState.rankId, fdcontext.txState.bodyLen);
         fdHandleToFdContextMap_.emplace(it.second->GetFdHandle(), fdcontext);
     }
 
     HCCL_INFO("[RankInfoDispather::%s]fdHandleToFdContextMap_ size[%d]", __func__, fdHandleToFdContextMap_.size());
+    return HCCL_SUCCESS;
 }
 
 void RankInfoDispather::WakeWoker()
@@ -148,14 +150,20 @@ void RankInfoDispather::CleanResource()
     workerThreads_.clear();
 }
 
-void RankInfoDispather::ProcessOneSendEvent(s32 epollFd, FdHandle &fdHanlde)
+HcclResult RankInfoDispather::ProcessOneSendEvent(s32 epollFd, FdHandle &fdHanlde)
 {
     std::unique_lock<std::mutex> lckForMap(fdHandleMapMutex_);
-    CHK_PRT_RET_NULL(fdHandleToFdContextMap_.find(fdHanlde) == fdHandleToFdContextMap_.end(),
-        stop_ = true;HCCL_ERROR("[RankInfoDispather::%s]no fdhandle[%p]", __func__, fdHanlde));
+    if (fdHandleToFdContextMap_.find(fdHanlde) == fdHandleToFdContextMap_.end()) {
+        stop_ = true;
+        HCCL_ERROR("[RankInfoDispather::%s]no fdhandle[%p]", __func__, fdHanlde);
+        return HCCL_E_INTERNAL;
+    }
     auto ctx = &(fdHandleToFdContextMap_.at(fdHanlde));
-    CHK_PRT_RET_NULL(!ctx->txState.Send(ctx->socket),
-        stop_ = true;HCCL_ERROR("[RankInfoDispather::%s]send data to rank[%u] failed.", __func__, ctx->txState.rankId));
+    if (!ctx->txState.Send(ctx->socket)) {
+        stop_ = true;
+        HCCL_ERROR("[RankInfoDispather::%s]send data to rank[%u] failed.", __func__, ctx->txState.rankId);
+        return HCCL_E_TCP_TRANSFER;
+    }
 
     s32 ctlType = EPOLL_CTL_DEL;
     if (ctx->txState.IsOk()) {
@@ -165,32 +173,37 @@ void RankInfoDispather::ProcessOneSendEvent(s32 epollFd, FdHandle &fdHanlde)
     }
     // EPOLLOUT_LET_ONESHOT -> EPOLLOUT | EPOLLET | EPOLLONESHOT, 防止多个线程同时操作同一个fd（fd重复触发）
     s32 ret = RaCtlEventHandle(epollFds_, fdHanlde, ctlType, RaEpollEvent::RA_EPOLLOUT_LET_ONESHOT);
-    CHK_PRT_RET_NULL(ret != 0, stop_ = true;HCCL_ERROR("[RankInfoDispather::%s]epoll_ctl failed, ctlType[%d]", __func__, ctlType));
+    CHK_PRT_RET(ret != 0,
+        stop_ = true; HCCL_ERROR("[RankInfoDispather::%s]epoll_ctl failed, ctlType[%d]", __func__, ctlType),
+        HCCL_E_INTERNAL);
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDispather::SendOnce()
+HcclResult RankInfoDispather::SendOnce()
 {
     for (auto &it : fdHandleToFdContextMap_) {
         auto fdCtx = &(it.second);
-        CHK_PRT_THROW(!fdCtx->txState.Send(fdCtx->socket),
-            HCCL_ERROR("[RankInfoDispather::%s]Send data to rank[%u] failed.", __func__, fdCtx->txState.rankId),
-            InvalidParamsException, "send data error.");
+        if (!fdCtx->txState.Send(fdCtx->socket)) {
+            HCCL_ERROR("[RankInfoDispather::%s]Send data to rank[%u] failed.", __func__, fdCtx->txState.rankId);
+            return HCCL_E_TCP_TRANSFER;
+        }
 
         // 数据未发送完成，添加epoll事件
         if (!fdCtx->txState.IsOk()) {
             // EPOLLOUT_LET_ONESHOT -> EPOLLOUT | EPOLLET | EPOLLONESHOT, 防止多个线程同时操作同一个fd（fd重复触发）
             s32 ret = RaCtlEventHandle(epollFds_, it.first, EPOLL_CTL_ADD, RaEpollEvent::RA_EPOLLOUT_LET_ONESHOT);
-            CHK_PRT_THROW(ret != 0, HCCL_ERROR("[RankInfoDispather::%s]epoll_ctl add fd failed.", __func__),
-                InvalidParamsException, "send data error.");
+            CHK_PRT_RET(ret != 0,
+                HCCL_ERROR("[RankInfoDispather::%s]epoll_ctl add fd failed.", __func__), HCCL_E_INTERNAL);
         } else {
             sendDoneCount_++;
         }
     }
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDispather::ProcessSend()
+HcclResult RankInfoDispather::ProcessSend()
 {
-    SendOnce();  // 先尝试发送数据
+    CHK_RET(SendOnce());  // 先尝试发送数据
     HCCL_INFO("[RankInfoDispather::%s]sendOnce success, start epoll_wait. sendDoneCount[%d], rankNum[%u].",
                 __func__, sendDoneCount_.load(), rankNum_);
     const s32 sendEvsCount = 20;  // epoll_wait 缓冲区大小（单次触发的事件个数）
@@ -200,8 +213,9 @@ void RankInfoDispather::ProcessSend()
     auto startTime = std::chrono::steady_clock::now();
     HcclResult ret;
     while (sendDoneCount_ != rankNum_) {
-        CHK_PRT_THROW(stop_, HCCL_ERROR("[RankInfoDispather::%s] process stop.", __func__), InvalidParamsException, "process stop.");
-        
+        CHK_PRT_RET(stop_,
+            HCCL_ERROR("[RankInfoDispather::%s] process stop.", __func__), HCCL_E_INTERNAL);
+
         if (rankNum_ - sendDoneCount_ < sendEvsCount && !lastEpollWaitFlag) {  // 最后一轮epoll_wait
             lastEpollWaitFlag = true;
         }
@@ -214,24 +228,26 @@ void RankInfoDispather::ProcessSend()
                 std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
                     "Timeout was set to %lld seconds. Expected to send to %u nodes, completed %u nodes.",
                     static_cast<long long>(timeout.count()), rankNum_, sendDoneCount_.load())}));
-            THROW<TimeoutException>("epoll_wait timeout");
+            return HCCL_E_TIMEOUT;
         }
-        
+
         // 等待epoll事件
         s32 epollTimeout = lastEpollWaitFlag ? LAST_EPOLL_TIMEOUT_MS : EPOLL_TIMEOUT_MS;
         u32 eventsNum{0};
         ret = HrtRaWaitEventHandle(epollFds_, eventInfos, epollTimeout, sendEvsCount, eventsNum);
 
         // 最后一轮epoll_wait结束, 等待超时，epoll池内无事件
-        CHK_PRT_RET_NULL((eventsNum == 0 && ret == HCCL_SUCCESS && sendDoneCount_ == rankNum_),
+        if (eventsNum == 0 && ret == HCCL_SUCCESS && sendDoneCount_ == rankNum_) {
             HCCL_WARNING("[RankInfoDispather::%s]hrtRaWaitEventHandle is timeout[%d] ms, eventsNum[%u], "
-                         "sendDoneCount_[%d]", __func__, epollTimeout, eventsNum, sendDoneCount_.load()));
-        
+                         "sendDoneCount_[%d]", __func__, epollTimeout, eventsNum, sendDoneCount_.load());
+            break;
+        }
+
         // epoll wait事件失败
         // 可能出现ret==HCCL_SUCCESS但eventsNum==0的情况，属于正常情况，不报错退出，需要继续循环
-        CHK_PRT_THROW(ret != HCCL_SUCCESS, 
-                      HCCL_ERROR("[RankInfoDispather::%s] HrtRaWaitEventHandle failed ret[%d], eventsNum[%u].", __func__, ret, eventsNum),
-                      InvalidParamsException, "epoll_wait fail");
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[RankInfoDispather::%s] HrtRaWaitEventHandle failed ret[%d], eventsNum[%u].", __func__, ret, eventsNum),
+            HCCL_E_INTERNAL);
         for (u32 i = 0; i < eventsNum; ++i) {
             std::unique_lock<std::mutex> lck(taskQueueMutex_);
             taskQueue_.push(std::bind(&RankInfoDispather::ProcessOneSendEvent, this, epollFds_, static_cast<void*>(eventInfos[i].fdHandle)));
@@ -241,18 +257,21 @@ void RankInfoDispather::ProcessSend()
         WakeWoker();
     }
 
-    CloseEpollFd();
+    CHK_RET(CloseEpollFd());
     HCCL_INFO("[RankInfoDispather::%s]ProcessSend success, sendDoneCount[%d], rankNum[%d].", __func__, sendDoneCount_.load(), rankNum_);
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDispather::CloseEpollFd()
+HcclResult RankInfoDispather::CloseEpollFd()
 {
     if (epollCreate_) {
         s32 ret = RaDestroyEventHandle(&epollFds_);
-        CHK_PRT_THROW(ret != 0, HCCL_ERROR("[RankInfoDispather::%s] destroy epoll event failed, res[%d].", __func__, ret),
-                    NetworkApiException, "destroy epoll event error.");
+        CHK_PRT_RET(ret != 0,
+            HCCL_ERROR("[RankInfoDispather::%s] destroy epoll event failed, res[%d].", __func__, ret),
+            HCCL_E_NETWORK);
         epollCreate_ = false;
     }
+    return HCCL_SUCCESS;
 }
 
 bool RankInfoDispather::SendState::Send(std::shared_ptr<Socket> socket)
