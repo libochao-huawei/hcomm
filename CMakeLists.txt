@@ -155,9 +155,6 @@ elseif(BUILD_OPEN_PROJECT)
             INSTALL_COMMAND ${CMAKE_CPACK_COMMAND}
             BUILD_ALWAYS TRUE
         )
-        if(TARGET hcomm_utils)
-            add_dependencies(hcomm_device hcomm_utils)
-        endif()
 
         # 安装 device 侧编译产物
         install(FILES
