@@ -486,8 +486,7 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
     auto &createdVec = createdOutParamMap[dieId];
     auto &importedVec = importedOutParamMap[dieId];
 
-    const TpInfo loopTpInfo = GetTpInfo(ipAddr);
-    const uint8_t loopJettyQos = ResolveLoopJettyQosFromTpSl(rdmaHandle, loopTpInfo.tpHandle, devPhyId);
+    const uint8_t loopJettyQos = ResolveLoopJettyQosFromTpSl(rdmaHandle, tpInfo.tpHandle, devPhyId);
 
     for (const auto &jettyInfo : jettyInfos) {
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
@@ -499,7 +498,7 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
         createdVec.emplace_back(createdOutParam);
 
         const auto psn = GetPsn(ipAddr);
-        const auto jettyImportCfg = GetJettyImportCfg(loopTpInfo, psn);
+        const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
         const auto importedOutParam = RaUbTpImportJetty(rdmaHandle, createdOutParam.key,
             createdOutParam.keySize, ccuBufTokenValue, jettyImportCfg);
         importedVec.emplace_back(ImportOutParamPair{rdmaHandle, importedOutParam});

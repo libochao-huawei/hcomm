@@ -479,9 +479,16 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
         ? (loopTpInfo.mappedJettyPriority & 0xFU)
         : Hccl::UB_QOS_DEFAULT;
 
-    TpAttrInfo tpAttrInfo{};
-    CHK_RET(GetLoopTpAttr(dieId, commAddr, tpAttrInfo));
-    const uint8_t errTimeout = TpMgr::CalcTaTimeout(tpAttrInfo);
+    uint8_t errTimeout = 0;
+    if (loopJettyProtocol == TpProtocol::CTP) {
+        errTimeout = static_cast<uint8_t>(Hccl::EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
+    } else {
+        CHK_PRT_RET(!loopTpInfo.hasJettyErrTimeout,
+            HCCL_ERROR("[CcuComponent][%s] TpMgr did not provide jettyErrTimeout, devLogicId[%d].",
+                __func__, devLogicId_),
+            HcclResult::HCCL_E_INTERNAL);
+        errTimeout = loopTpInfo.jettyErrTimeout;
+    }
 
     for (const auto &jettyInfo : jettyInfos) {
         const auto psn = GetNewPsn();
@@ -518,55 +525,6 @@ HcclResult CcuComponent::GetLoopTpInfo(const uint8_t dieId,
     }
 
     tpInfo = tpInfoMap_[dieId];
-    return HcclResult::HCCL_SUCCESS;
-}
-
-static HcclResult RequestNewLoopTpAttr(const uint32_t devPhyId, CtxHandle ctxHandle,
-    const TpHandle tpHandle, TpAttrInfo &tpAttrInfo)
-{
-    constexpr auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
-    const auto startTime = std::chrono::steady_clock::now();
-
-    auto &tpMgr = TpMgr::GetInstance(devPhyId);
-    constexpr uint32_t TP_ATTR_BITMAP = 0;
-    const GetTpAttrParam tpAttrParam = {tpHandle, TP_ATTR_BITMAP};
-    HcclResult ret = HcclResult::HCCL_SUCCESS;
-    do {
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            HCCL_ERROR("[CcuComponent][%s] failed, get tp attr "
-                "timeout[%d ms], devPhyId[%d].", __func__, timeout, devPhyId);
-            return HcclResult::HCCL_E_TIMEOUT;
-        }
-
-        ret = tpMgr.GetTpAttr(tpAttrParam, tpAttrInfo, ctxHandle);
-    } while (ret == HcclResult::HCCL_E_AGAIN);
-
-    CHK_RET(ret);
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuComponent::GetLoopTpAttr(const uint8_t dieId,
-    const CommAddr &commAddr, TpAttrInfo &tpAttrInfo)
-{
-    const auto &srcIter = tpAttrInfoMap_.find(dieId);
-    if (srcIter == tpAttrInfoMap_.end()) {
-        const auto &tpInfoIter = tpInfoMap_.find(dieId);
-        CHK_PRT_RET(tpInfoIter == tpInfoMap_.end(),
-            HCCL_ERROR("[CcuComponent][%s] failed, tpInfo not found for dieId[%u], "
-                "devLogicId[%d].", __func__, dieId, devLogicId_),
-            HcclResult::HCCL_E_NOT_FOUND);
-
-        Hccl::IpAddress ipAddr{};
-        CHK_RET(CommAddrToIpAddress(commAddr, ipAddr));
-        auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-        const CtxHandle ctxHandle = static_cast<CtxHandle>(rdmaHandleMgr.GetByIp(devPhyId_, ipAddr));
-
-        TpAttrInfo newTpAttrInfo{};
-        CHK_RET(RequestNewLoopTpAttr(devPhyId_, ctxHandle, tpInfoIter->second.tpHandle, newTpAttrInfo));
-        tpAttrInfoMap_[dieId] = std::move(newTpAttrInfo);
-    }
-
-    tpAttrInfo = tpAttrInfoMap_[dieId];
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -940,22 +898,15 @@ HcclResult CcuComponent::UnimportAllJettys()
 
 HcclResult CcuComponent::ReleaseAllTpInfos()
 {
-    for (auto &item : tpAttrInfoMap_) {
-        const auto &dieId = item.first;
-        const auto &tpAttrInfo = item.second;
-        const auto &tpInfoIter = tpInfoMap_.find(dieId);
-        if (tpInfoIter != tpInfoMap_.end() && tpInfoIter->second.tpHandle != 0) {
-            (void)TpMgr::GetInstance(devPhyId_).ReleaseTpAttr(tpInfoIter->second.tpHandle, tpAttrInfo);
-        }
-    }
-    tpAttrInfoMap_.clear();
-
     for (auto &item : tpInfoMap_) {
         const auto &dieId = item.first;
-        const auto &tpInfo = item.second;
-        if (!tpInfo.tpHandle) {
+        auto &tpInfo = item.second;
+        if (tpInfo.tpHandle == 0) {
             continue;
         }
+
+        TpAttrInfo dummyTpAttrInfo{};
+        (void)TpMgr::GetInstance(devPhyId_).ReleaseTpAttr(tpInfo.tpHandle, dummyTpAttrInfo);
 
         const auto &dieIdIter = loopFeCommAddrMap_.find(dieId);
         if (dieIdIter == loopFeCommAddrMap_.end()) {
@@ -967,7 +918,7 @@ HcclResult CcuComponent::ReleaseAllTpInfos()
         const auto &commAddr = dieIdIter->second.second;
         const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr, LOOP_JETTY_PROTOCOL);
         (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(tpParam, tpInfo);
-        item.second.tpHandle = 0; // 清理handle，避免重复释放
+        tpInfo.tpHandle = 0; // 清理handle，避免重复释放
     }
     tpInfoMap_.clear();
     return HcclResult::HCCL_SUCCESS;
