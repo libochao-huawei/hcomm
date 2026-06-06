@@ -85,7 +85,7 @@ unique_ptr<RmaConnection> RmaConnManager::CreateUbConn(Socket *socket, const std
         // socket建链状态ok，并交换数据
         WaitUboeSocketReady(socket, linkData);
     } else if (linkData.GetLinkProtocol() == LinkProtocol::UBG) {
-        // UBG复用UBOE socket建链流程交换EID
+        // UBG 不需要 socket 交换 EID，地址已通过 EID type CommAddr 初始化
         WaitUboeSocketReady(socket, linkData);
     }
 
@@ -95,7 +95,7 @@ unique_ptr<RmaConnection> RmaConnManager::CreateUbConn(Socket *socket, const std
     } else if (linkData.GetLinkProtocol() == LinkProtocol::UBOE) {
         ubConn = make_unique<DevUbUboeConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr);
     } else if (linkData.GetLinkProtocol() == LinkProtocol::UBG) {
-        ubConn = make_unique<DevUbUboeConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr, true);
+        ubConn = make_unique<DevUbUbgConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locAddr, rmtAddr);
     } else {
         ubConn = make_unique<DevUbCtpConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode);
     }

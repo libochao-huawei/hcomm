@@ -108,7 +108,7 @@ protected:
     std::vector<char> GetLocBufferUniqueIds(LocalBufferVec &bufferVec, UboeRmtBufType type) const;
     std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue) const;
     std::vector<char> GetConnUniqueIds();
-private:
+protected:
     // --------------------- 入参 ---------------------
     EndpointHandle                                              endpointHandle_;
     HcommChannelDesc                                            channelDesc_;

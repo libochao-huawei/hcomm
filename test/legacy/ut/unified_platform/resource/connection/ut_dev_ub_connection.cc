@@ -997,3 +997,130 @@ TEST_F(DevUbConnectionTest, Ut_ImportRmtDto)
     devUbConnection.ImportRmtDto();
     GlobalMockObject::verify();
 }
+
+TEST_F(DevUbConnectionTest, Ut_ImportRmtDto_Ubg_Skips_GetTpAttrAsync)
+{
+    MOCKER_CPP(&DevUbConnection::SetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_E_INTERNAL));
+    MOCKER_CPP(&DevUbConnection::ThrowAbnormalStatus).stubs();
+    MOCKER_CPP(&DevUbConnection::ImportJetty).stubs();
+
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 0, 1, 0, 1);
+    Hccl::IpAddress locIpv4Addr("10.0.0.1");
+    Hccl::IpAddress rmtIpv4Addr("10.0.0.2");
+
+    DevUbUboeConnection ubgConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(),
+        OpMode::OPBASE, true, HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr, true);
+    EXPECT_EQ(ubgConn.isUbg_, true);
+    EXPECT_EQ(ubgConn.tpProtocol, TpProtocol::UBOE);
+    ubgConn.ubConnStatus = DevUbConnection::UbConnStatus::JETTY_CREATED;
+
+    ubgConn.ImportRmtDto();
+
+    EXPECT_EQ(ubgConn.ubConnStatus, DevUbConnection::UbConnStatus::JETTY_IMPORTING);
+    GlobalMockObject::verify();
+}
+
+TEST_F(DevUbConnectionTest, Ut_ImportRmtDto_Uboe_Calls_GetTpAttrAsync)
+{
+    MOCKER_CPP(&DevUbConnection::SetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DevUbConnection::ImportJetty).stubs();
+
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 0, 1, 0, 1);
+    Hccl::IpAddress locIpv4Addr("10.0.0.1");
+    Hccl::IpAddress rmtIpv4Addr("10.0.0.2");
+
+    DevUbUboeConnection uboeConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(),
+        OpMode::OPBASE, true, HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr);
+    EXPECT_EQ(uboeConn.isUbg_, false);
+    EXPECT_EQ(uboeConn.tpProtocol, TpProtocol::UBOE);
+    uboeConn.ubConnStatus = DevUbConnection::UbConnStatus::JETTY_CREATED;
+
+    uboeConn.ImportRmtDto();
+
+    EXPECT_EQ(uboeConn.ubConnStatus, DevUbConnection::UbConnStatus::JETTY_IMPORTING);
+    GlobalMockObject::verify();
+}
+
+TEST_F(DevUbConnectionTest, Ut_ImportRmtDto_Ubg_SetTpAttrAsync_Fails_ThrowsException)
+{
+    MOCKER_CPP(&DevUbConnection::SetTpAttrAsync).stubs().will(returnValue(HCCL_E_INTERNAL));
+    MOCKER_CPP(&DevUbConnection::ThrowAbnormalStatus).stubs();
+
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 0, 1, 0, 1);
+    Hccl::IpAddress locIpv4Addr("10.0.0.1");
+    Hccl::IpAddress rmtIpv4Addr("10.0.0.2");
+
+    DevUbUboeConnection ubgConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(),
+        OpMode::OPBASE, true, HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr, true);
+    ubgConn.ubConnStatus = DevUbConnection::UbConnStatus::JETTY_CREATED;
+
+    ubgConn.ImportRmtDto();
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(DevUbConnectionTest, Ut_ImportRmtDto_Ubg_ReadyStatus_ReturnsEarly)
+{
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 0, 1, 0, 1);
+    Hccl::IpAddress locIpv4Addr("10.0.0.1");
+    Hccl::IpAddress rmtIpv4Addr("10.0.0.2");
+
+    DevUbUboeConnection ubgConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(),
+        OpMode::OPBASE, true, HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr, true);
+    ubgConn.ubConnStatus = DevUbConnection::UbConnStatus::READY;
+
+    EXPECT_NO_THROW(ubgConn.ImportRmtDto());
+    EXPECT_EQ(ubgConn.ubConnStatus, DevUbConnection::UbConnStatus::READY);
+    GlobalMockObject::verify();
+}
+
+TEST_F(DevUbConnectionTest, Ut_ImportRmtDto_Ubg_InvalidStatus_ThrowsException)
+{
+    MOCKER_CPP(&DevUbConnection::ThrowAbnormalStatus).stubs();
+
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 0, 1, 0, 1);
+    Hccl::IpAddress locIpv4Addr("10.0.0.1");
+    Hccl::IpAddress rmtIpv4Addr("10.0.0.2");
+
+    DevUbUboeConnection ubgConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(),
+        OpMode::OPBASE, true, HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr, true);
+    ubgConn.ubConnStatus = DevUbConnection::UbConnStatus::INVALID;
+
+    ubgConn.ImportRmtDto();
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(DevUbConnectionTest, Ut_UbgConnection_Constructor_SetsIsUbg)
+{
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 0, 1, 0, 1);
+    Hccl::IpAddress locIpv4Addr("10.0.0.1");
+    Hccl::IpAddress rmtIpv4Addr("10.0.0.2");
+
+    DevUbUboeConnection ubgConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(),
+        OpMode::OPBASE, true, HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr, true);
+
+    EXPECT_EQ(ubgConn.isUbg_, true);
+    EXPECT_EQ(ubgConn.tpProtocol, TpProtocol::UBOE);
+    EXPECT_EQ(ubgConn.jettyTimeOut, 16);
+
+    DevUbUboeConnection uboeConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(),
+        OpMode::OPBASE, true, HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr);
+
+    EXPECT_EQ(uboeConn.isUbg_, false);
+    EXPECT_EQ(uboeConn.tpProtocol, TpProtocol::UBOE);
+}

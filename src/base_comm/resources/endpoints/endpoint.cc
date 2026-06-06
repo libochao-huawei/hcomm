@@ -14,6 +14,7 @@
 #include "urma_endpoint.h"
 #include "ub_mem_endpoint.h"
 #include "uboe_endpoint.h"
+#include "ubg_endpoint.h"
 #include "cpu_urma_endpoint.h"
 #include "aicputs_hccs_endpoint.h"
 #include "../../../../base_comm/resources/hccp/inc/private/network/ra_rs_comm.h"
@@ -85,7 +86,7 @@ if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == E
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBOE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UboeEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBG && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
-        EXECEPTION_CATCH(endpointPtr = std::make_unique<UboeEndpoint>(endpointDesc), return HCCL_E_PTR);
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<UbgEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_HCCS && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {

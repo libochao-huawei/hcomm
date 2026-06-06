@@ -21,6 +21,28 @@
 #include "mc2_type.h"
 #include "hcomm/hcomm_res_entity_defs.h"
 
+/*  TP attr bitmap bit位定义:
+    bit0:  retry_times_init  bit1:  at
+    bit2:  sip               bit3:  dip
+    bit4:  sma               bit5:  dma
+    bit6:  vlan_id           bit7:  vlan_en
+    bit8:  dscp              bit9:  at_times
+    bit10: sl                bit11: ttl
+    bit0/1 不用配置, bit9/10/11 不用配置
+*/
+constexpr uint32_t TP_ATTR_SIP_BIT      = (1U << 2U);
+constexpr uint32_t TP_ATTR_DIP_BIT      = (1U << 3U);
+constexpr uint32_t TP_ATTR_SMA_BIT      = (1U << 4U);
+constexpr uint32_t TP_ATTR_DMA_BIT      = (1U << 5U);
+constexpr uint32_t TP_ATTR_VLAN_ID_BIT  = (1U << 6U);
+constexpr uint32_t TP_ATTR_VLAN_EN_BIT  = (1U << 7U);
+constexpr uint32_t TP_ATTR_DSCP_BIT     = (1U << 8U);
+
+constexpr uint32_t TP_ATTR_BITMAP_UBOE  = TP_ATTR_SIP_BIT | TP_ATTR_DIP_BIT | TP_ATTR_SMA_BIT | TP_ATTR_DMA_BIT
+                                            | TP_ATTR_VLAN_ID_BIT | TP_ATTR_VLAN_EN_BIT | TP_ATTR_DSCP_BIT;
+constexpr uint32_t TP_ATTR_BITMAP_UBG   = TP_ATTR_SIP_BIT | TP_ATTR_DIP_BIT
+                                            | TP_ATTR_VLAN_ID_BIT | TP_ATTR_VLAN_EN_BIT | TP_ATTR_DSCP_BIT;
+
 namespace Hccl {
 
 class DevUbConnection : public RmaConnection {
@@ -199,9 +221,14 @@ class DevUbUboeConnection : public DevUbConnection {
 public:
     DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                         const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
-                        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
-                        const bool isUbg = false);
-    bool isUbg_{false};
+                        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
+};
+
+class DevUbUbgConnection : public DevUbConnection {
+public:
+    DevUbUbgConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                       const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
+                       const IpAddress &locAddrEid = IpAddress(), const IpAddress &rmtAddrEid = IpAddress());
 };
 
 std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);

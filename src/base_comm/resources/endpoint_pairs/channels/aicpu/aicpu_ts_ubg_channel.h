@@ -25,8 +25,18 @@ public:
         return HcommChannelKind::AICPU_TS_UBG;
     }
 
+    HcclResult Init() override;
+    ChannelStatus GetStatus() override;
+
 protected:
     HcclResult BuildConnection() override;
+    void ProcessUbgState();
+    void SendFinish();
+    void RecvFinish();
+
+    MAKE_ENUM(UbgStatus, INIT, BUILD_CONN, SEND_SIZE, RECV_SIZE, SEND_DATA,
+        RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, SET_READY, READY)
+    UbgStatus ubgStatus{UbgStatus::INIT};
 };
 
 } // namespace hcomm

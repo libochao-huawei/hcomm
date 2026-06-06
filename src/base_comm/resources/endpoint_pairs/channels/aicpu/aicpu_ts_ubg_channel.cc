@@ -4,19 +4,49 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "aicpu_ts_ubg_channel.h"
 #include "endpoint.h"
 #include "orion_adpt_utils.h"
+#include "hcomm_c_adpt.h"
+#include "exception_handler.h"
+
+// Orion
+#include "coll_alg_param.h"
+#include "topo_common_types.h"
+#include "virtual_topo.h"
+#include "tp_manager.h"
 
 namespace hcomm {
 
 AicpuTsUbgChannel::AicpuTsUbgChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc)
     : AicpuTsUboeChannel(endpointHandle, channelDesc)
 {
+}
+
+HcclResult AicpuTsUbgChannel::Init()
+{
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    CHK_RET(ParseInputParam());
+
+    // UBG 直接从 EID type CommAddr 获取地址，不做 IP→EID 转换
+    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locAddr_));
+    CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr_));
+    HCCL_INFO("[AicpuTsUbgChannel][%s] locAddr_[%s], rmtAddr_[%s]",
+        __func__, locAddr_.Describe().c_str(), rmtAddr_.Describe().c_str());
+
+    CHK_RET(BuildSocket());
+    CHK_RET(BuildNotify());
+    localRmaBuffers_.clear();
+    commonRes_.bufferVec.clear();
+    CHK_RET(BuildBuffer(bufs_));
+
+    return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsUbgChannel::BuildConnection()
@@ -26,19 +56,17 @@ HcclResult AicpuTsUbgChannel::BuildConnection()
     Hccl::LinkProtocol  protocol;
     CHK_RET(CommProtocolToLinkProtocol(localEp_.protocol, protocol));
 
-    Hccl::IpAddress locIpv4Addr;
-    Hccl::IpAddress rmtIpv4Addr;
-    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locIpv4Addr));
-    CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtIpv4Addr));
-    HCCL_INFO("[AicpuTsUbgChannel][%s] LinkProtocol[%s], locIpv4Addr[%s], rmtIpv4Addr[%s]",
-        __func__, protocol.Describe().c_str(), locIpv4Addr.Describe().c_str(), rmtIpv4Addr.Describe().c_str());
+    // UBG 的 locAddr_/rmtAddr_ 已经是 EID-based IpAddress，无需额外转换
+    HCCL_INFO("[AicpuTsUbgChannel][%s] LinkProtocol[%s], locAddr_[%s], rmtAddr_[%s]",
+        __func__, protocol.Describe().c_str(), locAddr_.Describe().c_str(), rmtAddr_.Describe().c_str());
 
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
-    std::unique_ptr<Hccl::DevUbConnection> ubConn = std::make_unique<Hccl::DevUbUboeConnection>(rdmaHandle_,
-        locAddr_, rmtAddr_, opMode, devUsed, Hccl::HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr, true);
+    // UBG 使用 DevUbUbgConnection，locAddr_/rmtAddr_ 作为 EID 地址
+    std::unique_ptr<Hccl::DevUbConnection> ubConn = std::make_unique<Hccl::DevUbUbgConnection>(rdmaHandle_,
+        locAddr_, rmtAddr_, opMode, devUsed, Hccl::HrtUbJfcMode::STARS_POLL, locAddr_, rmtAddr_);
     CHK_SMART_PTR_NULL(ubConn);
 
     commonRes_.connVec.clear();
@@ -47,6 +75,85 @@ HcclResult AicpuTsUbgChannel::BuildConnection()
     connections_.push_back(std::move(ubConn));
 
     return HCCL_SUCCESS;
+}
+
+void AicpuTsUbgChannel::SendFinish()
+{
+    HCCL_INFO("start send Finish Msg [%s]", UBG_FINISH_MSG);
+    sendFinishMsg_ = std::vector<char>(UBG_FINISH_MSG, UBG_FINISH_MSG + FINISH_MSG_SIZE);
+    socket_->SendAsync(reinterpret_cast<u8 *>(sendFinishMsg_.data()), FINISH_MSG_SIZE);
+    HCCL_INFO("end send Finish Msg [%s]", UBG_FINISH_MSG);
+}
+
+void AicpuTsUbgChannel::RecvFinish()
+{
+    recvFinishMsg_.resize(FINISH_MSG_SIZE);
+    HCCL_INFO("start recv Finish Msg [%s]", UBG_FINISH_MSG);
+    socket_->RecvAsync(reinterpret_cast<u8 *>(recvFinishMsg_.data()), FINISH_MSG_SIZE);
+    HCCL_INFO("end recv Finish Msg [%s]", UBG_FINISH_MSG);
+}
+
+void AicpuTsUbgChannel::ProcessUbgState()
+{
+    auto SetState = [&](UbgStatus next, ChannelStatus ch) { ubgStatus = next; channelStatus = ch; };
+
+    switch (ubgStatus) {
+        case UbgStatus::INIT:
+            SetState(UbgStatus::BUILD_CONN, channelStatus);
+            break;
+        case UbgStatus::BUILD_CONN:
+            BuildConn(); SetState(UbgStatus::SEND_SIZE, channelStatus);
+            break;
+        case UbgStatus::SEND_SIZE:
+            if (IsResReady()) { SendDataSize(); SetState(UbgStatus::RECV_SIZE, channelStatus); }
+            break;
+        case UbgStatus::RECV_SIZE:
+            RecvDataSize(); SetState(isRecvFirst_ ? UbgStatus::RECV_DATA : UbgStatus::SEND_DATA, channelStatus);
+            break;
+        case UbgStatus::SEND_DATA:
+            SendExchangeData(); SetState(isRecvFirst_ ? UbgStatus::PROCESS_DATA : UbgStatus::RECV_DATA, channelStatus);
+            break;
+        case UbgStatus::RECV_DATA:
+            RecvExchangeData(); SetState(isRecvFirst_ ? UbgStatus::SEND_DATA : UbgStatus::PROCESS_DATA, channelStatus);
+            break;
+        case UbgStatus::PROCESS_DATA:
+            if (RecvDataProcess()) {
+                ubgStatus = UbgStatus::SEND_FIN;
+            } else {
+                channelStatus = ChannelStatus::READY;
+                ubgStatus = UbgStatus::READY;
+            }
+            break;
+        case UbgStatus::SEND_FIN:
+            if (IsConnsReady()) { SendFinish(); SetState(UbgStatus::RECV_FIN, channelStatus); }
+            break;
+        case UbgStatus::RECV_FIN:
+            RecvFinish(); SetState(UbgStatus::SET_READY, channelStatus);
+            break;
+        case UbgStatus::SET_READY:
+            channelStatus = ChannelStatus::READY; SetState(UbgStatus::READY, ChannelStatus::READY);
+            break;
+        default:
+            break;
+    }
+}
+
+ChannelStatus AicpuTsUbgChannel::GetStatus()
+{
+    if (channelStatus == ChannelStatus::READY) {
+        return channelStatus;
+    }
+    if (channelStatus == ChannelStatus::INIT) ubgStatus = UbgStatus::INIT;
+
+    if (!IsSocketReady()) return channelStatus;
+
+    ProcessUbgState();
+    if (channelStatus == ChannelStatus::READY && socket_ != nullptr) {
+        SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        socket_ = nullptr;
+    }
+
+    return channelStatus;
 }
 
 } // namespace hcomm
