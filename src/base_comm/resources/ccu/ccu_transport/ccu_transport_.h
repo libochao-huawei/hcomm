@@ -16,7 +16,7 @@
 #include <shared_mutex>
 
 #include "../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
-#include "env_config.h"
+#include "env_config/env_config.h"
 #include "op_mode.h"
 #include "binary_stream.h"
 #include "ccu_conn.h"
@@ -74,14 +74,14 @@ public:
         CommAddr rmtAddr{};
         CcuChannelInfo channelInfo{};
         std::vector<CcuJetty *> ccuJettys{};
-        uint32_t qos{EnvConfig::UB_QOS_DEFAULT};
+        uint32_t qos{Hccl::UB_QOS_DEFAULT};
 
         explicit CcuConnectionInfo() = default;
         CcuConnectionInfo(const CcuConnectionType type,
             const CommAddr &locAddr, const CommAddr &rmtAddr,
             const CcuChannelInfo &channelInfo,
             const std::vector<CcuJetty *> &ccuJettys,
-            uint32_t qos = EnvConfig::UB_QOS_DEFAULT)
+            uint32_t qos = Hccl::UB_QOS_DEFAULT)
             : type(type), locAddr(locAddr), rmtAddr(rmtAddr),
               channelInfo(channelInfo), ccuJettys(ccuJettys), qos(qos) {}
     };

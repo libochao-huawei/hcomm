@@ -21,10 +21,15 @@
 
 #include "hccl_common.h"
 #include "exception_handler.h"
+#include "hccl_exception.h"
 #include "exception_util.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
 #include "env_config/env_config.h"
+
+using Hccl::HcclException;
+using std::exception;
+using std::string;
 
 namespace hcomm {
 
