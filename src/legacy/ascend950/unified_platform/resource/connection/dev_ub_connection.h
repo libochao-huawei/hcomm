@@ -184,7 +184,6 @@ private:
     HcclResult                GetTpAttrAsync(uint32_t& attrBitmap, struct TpAttr& tpAttr);
     HcclResult                Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U]);
     bool                      IpArrayCompare(uint8_t ipArrLeft[16U], uint8_t ipArrRight[16U]);
-    HcclResult                CalcTotalTimeout(uint32_t &outTotalTimeoutMs);
 };
 
 class DevUbTpConnection : public DevUbConnection {
