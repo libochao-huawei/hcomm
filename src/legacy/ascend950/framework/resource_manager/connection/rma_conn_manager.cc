@@ -81,11 +81,7 @@ unique_ptr<RmaConnection> RmaConnManager::CreateUbConn(Socket *socket, const std
     IpAddress rmtIpv4Addr = rmtAddr;
     HCCL_INFO("[RmaConnManager][%s] LinkProtocol[%s], locAddr[%s], rmtAddr[%s]", 
         __func__, linkData.GetLinkProtocol().Describe().c_str(), locAddr.Describe().c_str(), rmtAddr.Describe().c_str());
-    if (linkData.GetLinkProtocol() == LinkProtocol::UBOE) {
-        // socket建链状态ok，并交换数据
-        WaitUboeSocketReady(socket, linkData);
-    } else if (linkData.GetLinkProtocol() == LinkProtocol::UBG) {
-        // UBG 不需要 socket 交换 EID，地址已通过 EID type CommAddr 初始化
+    if (linkData.GetLinkProtocol() == LinkProtocol::UBOE || linkData.GetLinkProtocol() == LinkProtocol::UBG) {
         WaitUboeSocketReady(socket, linkData);
     }
 
