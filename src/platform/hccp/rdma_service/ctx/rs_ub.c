@@ -234,8 +234,8 @@ int RsUbGetDevCb(struct rs_cb *rscb, unsigned int devIndex, struct RsUbDevCb **d
     struct RsUbDevCb *devCbCurr = NULL;
     struct RsUbDevCb *devCbNext = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rscb->rdevList, list, struct RsUbDevCb);
-    for (; (&devCbCurr->list) != &rscb->rdevList;
+    RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rscb->udevList, list, struct RsUbDevCb);
+    for (; (&devCbCurr->list) != &rscb->udevList;
          devCbCurr = devCbNext,
          devCbNext = list_entry(devCbNext->list.next, struct RsUbDevCb, list)) {
         if (devCbCurr->index == devIndex) {
@@ -383,7 +383,7 @@ int RsUbCtxInit(struct rs_cb *rsCb, struct CtxInitAttr *attr, unsigned int *devI
     }
 
     RS_PTHREAD_MUTEX_LOCK(&rsCb->mutex);
-    RsListAddTail(&devCb->list, &rsCb->rdevList);
+    RsListAddTail(&devCb->list, &rsCb->udevList);
     RS_PTHREAD_MUTEX_ULOCK(&rsCb->mutex);
 
     hccp_run_info("[init][rs_ctx]phy_id:%u, eidIndex:%u, devIndex:0x%x init success", attr->phyId,
@@ -1842,8 +1842,8 @@ int RsUbCtxJettyFree(struct rs_cb *rscb, unsigned int ueInfo, unsigned int jetty
     struct RsCtxJettyCb *jettyCb = NULL;
     int ret = 0;
 
-    RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rscb->rdevList, list, struct RsUbDevCb);
-    for (; (&devCbCurr->list) != &rscb->rdevList;
+    RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rscb->udevList, list, struct RsUbDevCb);
+    for (; (&devCbCurr->list) != &rscb->udevList;
          devCbCurr = devCbNext, devCbNext = list_entry(devCbNext->list.next, struct RsUbDevCb, list)) {
         if ((devCbCurr->index & DEV_INDEX_UE_INFO_MASK) != ueInfo) {
             continue;
