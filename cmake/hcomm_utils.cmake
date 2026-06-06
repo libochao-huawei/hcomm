@@ -59,8 +59,8 @@ else()
     elseif(EXISTS ${HCOMM_UTILS_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG_PATH}")
-        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
-        set(HCOMM_UTILS_FULLPATH ${HCOMM_UTILS_PKG_PATH})
+        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH}/${HCOMM_UTILS_FILE})
+        set(HCOMM_UTILS_FULLPATH ${HCOMM_UTILS_PKG_PATH}/${HCOMM_UTILS_FILE})
     else()
         # 下载并解压
         message(STATUS "[ThirdParty] Downloading hcomm_utils from ${HCOMM_UTILS_URL}")
