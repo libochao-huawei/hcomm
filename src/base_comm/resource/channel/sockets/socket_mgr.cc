@@ -12,7 +12,7 @@
 #include <algorithm>
 
 #include "socket_mgr.h"
-#include "../channels/channel.h"
+#include "../channel/channel.h"
 #include "orion_adpt_utils.h"
 #include "host_socket_handle_manager.h"
 #include "exception_handler.h"

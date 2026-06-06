@@ -281,7 +281,7 @@ STATIC void *RsNdaDbMmapUbRes(struct RsNdaCb *ndaCb, struct doorbell_map_desc *d
 
     RsNdaMapPrivPrepare(desc, &resMapIn);
     resInfoIn.target_proc_type = PROCESS_CP1;
-    resInfoIn.res_type = RES_ADDR_TYPE_NDA_URMA_DB;
+    resInfoIn.res_type = RES_ADDR_TYPE_HCCP_URMA_DB;
     resInfoIn.res_id = RsNdaGenerateResId(resMapIn.db_idx, ndaCb->ndaUbCb.ndaDbGuidCnt);
     resInfoIn.priv_len = sizeof(struct NdaUbResMapPrivInfo);
     resInfoIn.priv = (void *)&resMapIn;
@@ -367,7 +367,7 @@ STATIC int RsNdaDbUnmapUbRes(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_m
 
     RsNdaMapPrivPrepare(desc, &resMapIn);
     resInfoIn.target_proc_type = PROCESS_CP1;
-    resInfoIn.res_type = RES_ADDR_TYPE_NDA_URMA_DB;
+    resInfoIn.res_type = RES_ADDR_TYPE_HCCP_URMA_DB;
     resInfoIn.res_id = RsNdaGenerateResId(resMapIn.db_idx, ndaGuidCb->guidIdx);
     resInfoIn.priv_len = sizeof(struct NdaUbResMapPrivInfo);
     resInfoIn.priv = (void *)&resMapIn;

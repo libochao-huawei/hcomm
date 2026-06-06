@@ -9,8 +9,8 @@
  */
 #include "aicpu_ts_hccs_channel.h"
 #include "endpoint.h"
-#include "../../../endpoints/aicputs_hccs_endpoint.h"
-#include "../../../endpoints/net_dev/global_net_dev_manager.h"
+#include "../../../endpoint/aicputs_hccs_endpoint.h"
+#include "../../../endpoint/net_dev/global_net_dev_manager.h"
 #include "channel_param.h"
 #include "inner/remote_ipc_rma_buffer.h"
 #include "inner/local_ipc_rma_buffer.h"

@@ -13,7 +13,7 @@
 
 #include <memory>
 #include <vector>
-#include "channels/channel.h"
+#include "channel/channel.h"
 #include "endpoint.h"
 #include "socket_mgr.h"
 #include "../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"

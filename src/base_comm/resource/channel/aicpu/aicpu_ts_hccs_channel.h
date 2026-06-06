@@ -21,7 +21,7 @@
 #include "hccl_dispatcher_ctx.h"
 #include "rma_buffer.h"
 #include "hcomm_c_adpt.h"
-#include "../../../endpoints/aicputs_hccs_endpoint.h"
+#include "../../../endpoint/aicputs_hccs_endpoint.h"
 
 namespace hcomm {
 /**

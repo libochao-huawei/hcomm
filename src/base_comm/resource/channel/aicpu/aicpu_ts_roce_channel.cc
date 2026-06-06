@@ -22,7 +22,7 @@
 #include "hcomm_c_adpt.h"
 #include "log.h"
 #include "endpoint.h"
-#include "../../../endpoints/aicpu_ts_roce_endpoint.h"
+#include "../../../endpoint/aicpu_ts_roce_endpoint.h"
 #include "aicpu_ts_roce_mem.h"
 #include "adapter_rts_common.h"
 #include "channel_param.h"
