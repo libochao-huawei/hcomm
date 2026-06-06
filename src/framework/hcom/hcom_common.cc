@@ -287,6 +287,7 @@ HcclResult HcomGetCommByGroup(const char *group, std::shared_ptr<hccl::hcclComm>
     return HCCL_SUCCESS;
 }
 
+
 void HcomTopoInfoRegCallback(HcclResult (*p1)(const char *, uint32_t), void (*p2)(const char *))
 {
     g_hcomSetGroupTopoInfo = p1;
