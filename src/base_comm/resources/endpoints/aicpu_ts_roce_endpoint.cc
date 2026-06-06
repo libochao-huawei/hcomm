@@ -214,15 +214,6 @@ HcclResult AicpuTsRoceEndpoint::Init()
     }
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
-    constexpr uint32_t defaultPort = 16666U;
-    ret = ServerSocketListen(defaultPort);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s]call trace: hcclRet -> %d", __func__, ret);
-        regedMemMgr_.reset();
-        ctxHandle_ = nullptr;
-        ReleaseSharedNetDev();
-        return ret;
-    }
     return HCCL_SUCCESS;
 }
 
