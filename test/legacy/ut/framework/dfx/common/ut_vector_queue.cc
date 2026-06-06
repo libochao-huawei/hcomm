@@ -85,7 +85,8 @@ TEST_F(VectorQueueTest, Ut_IsEmpty_When_VectorIsEmpty_ReturnIsTrue)
 TEST_F(VectorQueueTest, Ut_IsEmpty_When_VectorIsNotEmpty_ReturnIsFalse)
 {
     // When
-    fakeQueue.Append(10);
+    int val = 10;
+    fakeQueue.Append(val);
     // Then
     EXPECT_EQ(fakeQueue.IsEmpty(), false);
 }
@@ -93,7 +94,8 @@ TEST_F(VectorQueueTest, Ut_IsEmpty_When_VectorIsNotEmpty_ReturnIsFalse)
 TEST_F(VectorQueueTest, Ut_Find_When_ValueInVector_ReturnIsNeEnd)
 {
     // When
-    fakeQueue.Append(10);
+    int val = 10;
+    fakeQueue.Append(val);
     // Then
     auto it = fakeQueue.Find([](const int &value){return value == 10;});
     EXPECT_NE(*it, *fakeQueue.End());
@@ -103,7 +105,8 @@ TEST_F(VectorQueueTest, Ut_Find_When_ValueInVector_ReturnIsNeEnd)
 TEST_F(VectorQueueTest, Ut_Find_When_ValueNotInVector_ReturnIsEqEnd)
 {
     // When
-    fakeQueue.Append(10);
+    int val = 10;
+    fakeQueue.Append(val);
     // Then
     auto it = fakeQueue.Find([](const int &value){return value == 100;});
     EXPECT_EQ(*it, *fakeQueue.End());
@@ -112,9 +115,12 @@ TEST_F(VectorQueueTest, Ut_Find_When_ValueNotInVector_ReturnIsEqEnd)
 TEST_F(VectorQueueTest, Ut_Begin_When_NotEmpty_ReturnIsBegin)
 {
     // When
-    fakeQueue.Append(10);
-    fakeQueue.Append(20);
-    fakeQueue.Append(30);
+    int val = 10;
+    fakeQueue.Append(val);
+    val = 20;
+    fakeQueue.Append(val);
+    val = 30;
+    fakeQueue.Append(val);
     // Then
     auto it = fakeQueue.Begin();
     EXPECT_EQ(**it, 10);
@@ -130,9 +136,12 @@ TEST_F(VectorQueueTest, Ut_Begin_When_IsEmpty_ReturnIsEnd)
 TEST_F(VectorQueueTest, Ut_Tail_When_NotEmpty_ReturnIsBegin)
 {
     // When
-    fakeQueue.Append(10);
-    fakeQueue.Append(20);
-    fakeQueue.Append(30);
+    int val = 10;
+    fakeQueue.Append(val);
+    val = 20;
+    fakeQueue.Append(val);
+    val = 30;
+    fakeQueue.Append(val);
     // Then
     auto it = fakeQueue.Tail();
     EXPECT_EQ(**it, 30);
@@ -147,9 +156,12 @@ TEST_F(VectorQueueTest, Ut_Tail_When_IsEmpty_ReturnIsEnd)
 TEST_F(VectorQueueTest, Ut_Iterator_When_PlusAndMinus_ReturnIsOk)
 {
     // When
-    fakeQueue.Append(10);
-    fakeQueue.Append(20);
-    fakeQueue.Append(30);
+    int val = 10;
+    fakeQueue.Append(val);
+    val = 20;
+    fakeQueue.Append(val);
+    val = 30;
+    fakeQueue.Append(val);
 
     // Then ++it
     auto it = fakeQueue.Begin();
@@ -182,10 +194,12 @@ TEST_F(VectorQueueTest, Ut_Iterator_When_PlusAndMinus_ReturnIsOk)
 TEST_F(VectorQueueTest, Ut_Iterator_When_ScaleUp_ReturnIsOk)
 {   
     //When
-    fakeQueue.Append(10);
+    int val = 10;
+    fakeQueue.Append(val);
     fakeQueue.elems_.shrink_to_fit(); // 缩小空间
     auto it = fakeQueue.Begin();       // 取迭代器
     // Then 
-    fakeQueue.Append(20);             // 触发扩容
+    val = 20;
+    fakeQueue.Append(val);             // 触发扩容
     EXPECT_EQ(**it, 10);            // 校验
 }

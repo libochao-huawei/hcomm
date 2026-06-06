@@ -42,7 +42,7 @@ private:
     using lastPosesMap = std::unordered_map<u32, std::shared_ptr<Queue<std::unique_ptr<TaskInfo>>::Iterator>>;
     static std::array<lastPosesMap, REPORTER_MAX_MODULE_DEVICE_NUM> allLastPoses_;
     ProfilingHandler*                               profilingHandler_{nullptr};
-    s32 deviceLogicId;
+    s32 deviceLogicId_;
 };
 } // namespace Hccl
  

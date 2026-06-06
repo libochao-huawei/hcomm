@@ -138,7 +138,7 @@ TEST_F(RankInfoDetectClientTest, Ut_SendAgentIdAndRankSize_When_Normal_Expect_Su
 {
     MOCKER(HrtRaSocketBlockSend)
         .stubs()
-        .with(any(), any())
+        .with(mockcpp::any(), mockcpp::any())
         .will(returnValue(true));
 
     EXPECT_NO_THROW(rankInfoDetectClient_->SendAgentIdAndRankSize());
@@ -167,7 +167,7 @@ TEST_F(RankInfoDetectClientTest, Ut_ConstructRankTable_When_Normal_Expect_Succes
     MOCKER(realpath) 
         .stubs()  
         .with(
-            any(), 
+            mockcpp::any(), 
             outBoundP(
                 const_cast<char*>(testJsonPath.c_str()),  
                 testJsonPath.size() + 1                   

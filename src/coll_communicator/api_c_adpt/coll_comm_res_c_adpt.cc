@@ -556,7 +556,7 @@ HcclResult ConstructProfilingInfo(const hcomm::CcuTaskArg &arg, hcomm::CcuKernel
 {
     bool isProfilingEnabledL1 = Hccl::ProfilingHandler::GetInstance().GetHcclL1State();
     bool isProfilingEnabledL0 = Hccl::ProfilingHandler::GetInstance().GetHcclL0State();
-    if(isProfilingEnabledL1 == false && isProfilingEnabledL0 == false) {
+    if (isProfilingEnabledL1 == false && isProfilingEnabledL0 == false) {
         return HCCL_SUCCESS;
     }
     CHK_RET(kernel->GetCcuProfilingInfo(arg, allCcuProfilingInfo));
@@ -614,6 +614,7 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
         HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
         return HcclResult::HCCL_SUCCESS;
     }
+
 
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
     CHK_RET(ConstructProfilingInfo(*ccuTaskArgs, kernel, comm, allCcuProfilingInfo));

@@ -41,7 +41,7 @@ public:
     ~MirrorTaskManagerLite();
 
 private:
-    TaskInfoQueueMap               queueMap_; 
+    TaskInfoQueueMap               queueMap_;
     std::unordered_map<u32, u32>   queueTaskNum;
     std::shared_ptr<DfxOpInfo>     currDfxOpInfo_;
     std::function<void()>          fullyCallBack_;
