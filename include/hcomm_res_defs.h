@@ -193,7 +193,7 @@ typedef enum {
  * @brief 通道描述参数
  * @note 结构体末尾扩展需要自增版本号，并补充兼容处理逻辑。
  *       ABI v1：HCOMM_CHANNEL_VERSION_ONE，无 union 之后的 qos 字段，见 HCOMM_CHANNEL_DESC_ABI_V1_SIZE。
- *       ABI v2：HCOMM_CHANNEL_VERSION_TWO，在 union 之后增加 uint32_t qos（通信域 QoS，与协议解耦）。
+ *       ABI v2：HCOMM_CHANNEL_VERSION，在 union 之后增加 uint32_t qos（通信域 QoS，与协议解耦）。
  */
 typedef struct {
     CommAbiHeader header;            ///< ABI头部，包含版本等信息

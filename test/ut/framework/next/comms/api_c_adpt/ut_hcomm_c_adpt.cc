@@ -292,7 +292,6 @@ TEST_F(HcommCAdptTest, ut_HcommChannelDescInit_When_Normal_Expect_Version2AndFul
 {
     HcommChannelDesc channelDesc{};
     ASSERT_EQ(HcommChannelDescInit(&channelDesc, 1), HCCL_SUCCESS);
-    EXPECT_EQ(channelDesc.header.version, HCOMM_CHANNEL_VERSION_TWO);
     EXPECT_EQ(channelDesc.header.version, HCOMM_CHANNEL_VERSION);
     EXPECT_EQ(channelDesc.header.size, sizeof(HcommChannelDesc));
     EXPECT_GE(sizeof(HcommChannelDesc), HCOMM_CHANNEL_DESC_ABI_V1_SIZE + sizeof(uint32_t));
