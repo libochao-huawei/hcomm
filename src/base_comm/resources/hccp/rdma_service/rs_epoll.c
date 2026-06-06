@@ -248,10 +248,9 @@ STATIC void RsDoSslHandshake(struct RsAcceptInfo *acceptInfo, struct rs_cb *rscb
 
 STATIC int RsEpollEventSslAcceptInHandle(struct rs_cb *rsCb, int fd)
 {
-    int ret = -ENODEV;
-
-    struct RsAcceptInfo *acceptInfo = NULL;
     struct RsAcceptInfo *acceptInfo2 = NULL;
+    struct RsAcceptInfo *acceptInfo = NULL;
+    int ret = -ENODEV;
 
     /* Server event: ssl accept */
     RS_LIST_GET_HEAD_ENTRY(acceptInfo, acceptInfo2, &rsCb->connCb.serverAcceptList, list, struct RsAcceptInfo);
