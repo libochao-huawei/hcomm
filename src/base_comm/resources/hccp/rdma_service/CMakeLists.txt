@@ -80,7 +80,6 @@ target_link_libraries(rs PRIVATE
     $<BUILD_INTERFACE:msprof_headers>
     $<BUILD_INTERFACE:slog_headers>
     $<BUILD_INTERFACE:rdma_core_headers>
-    $<BUILD_INTERFACE:ascend_kms_headers>
     -Wl,--no-as-needed
     c_sec
     $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>

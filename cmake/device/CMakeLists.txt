@@ -58,8 +58,9 @@ cann_pack_targets_and_files(
     OUTPUT_TARGET "pack_cann_hcomm_compat"
     OUTPUT "cann-hcomm-compat.tar.gz"
     TARGETS rs_device ra_adp net_co hccp_service.bin tls_adp ascend_kms
-    SIZE_LIMIT 3968 # Align the maximum release package size to 105%(3779 * 105% = 3968)
     MANIFEST "hccp_compat_bin_hash.cfg"
+    SIZE_LIMIT 3968 # 文件大小限制为 3968 KB（即当前发布包 3779 KB 的 105%），超出则会报错
+    GEN_INI         # 生成版本号文件
 )
 sign_file(
     OUTPUT_TARGET sign_cann_hcomm_compat
