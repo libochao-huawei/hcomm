@@ -17,6 +17,7 @@
 #include "env_config.h"
 #include "mmpa_api.h"
 #include "mem_host_pub.h"
+#include "hccl_dl.h"
 
 using namespace std;
 
@@ -158,9 +159,23 @@ HcclResult CacheTaskOpInfo(aclrtStream stream, const std::string &identify)
 
     HCCL_INFO("[CacheTaskOpInfo] cacheOpInfoSwitch[%u] captureStatus[%d] identify[%s]", value.cacheOpInfoSwitch, captureStatus, identify.c_str());
     if (value.cacheOpInfoSwitch == 1 && captureStatus == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE) {
-        aclRet = aclrtCacheLastTaskExtendInfo(identify.c_str(), strlen(identify.c_str()));
-        CHK_PRT_RET(aclRet != ACL_SUCCESS,
-                    HCCL_ERROR("[%s]stream cache task op info fail. return[%d]", __func__, aclRet), HCCL_E_RUNTIME);
+        bool callFailed = false;
+        aclError dlFuncRet = ACL_SUCCESS;
+        void *aclHandle = HcclDlopen("libascendcl.so", RTLD_NOW);
+        if (aclHandle != nullptr) {
+            auto dlAclrtCache = (aclError (*)(const char *, size_t))(HcclDlsym(aclHandle, "aclrtCacheLastTaskExtendInfo"));
+            if (dlAclrtCache != nullptr) {
+                dlFuncRet = dlAclrtCache(identify.c_str(), strlen(identify.c_str()));
+                callFailed = (dlFuncRet != ACL_SUCCESS);
+            } else {
+                HCCL_INFO("[%s]aclrtCacheLastTaskExtendInfo not supported", __func__);
+            }
+            (void)HcclDlclose(aclHandle);
+        } else {
+            HCCL_WARNING("[%s]dlopen libascendcl.so failed, skip cache task op info", __func__);
+        }
+        CHK_PRT_RET(callFailed,
+                    HCCL_ERROR("[%s]stream cache task op info fail. return[%d]", __func__, dlFuncRet), HCCL_E_RUNTIME);
     }
     return HCCL_SUCCESS;
 }

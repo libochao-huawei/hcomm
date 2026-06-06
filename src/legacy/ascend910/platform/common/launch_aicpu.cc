@@ -18,7 +18,6 @@
 #include "mem_host_pub.h"
 #include "hccl_dl.h"
 
-
 using namespace std;
 
 namespace hccl {
