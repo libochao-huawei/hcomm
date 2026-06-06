@@ -408,7 +408,7 @@ int RsFd2conn(int fd, struct RsConnInfo **conn)
 int RsDrvSocketSend(int fd, const void *data, uint64_t size, int flags)
 {
     struct RsConnInfo *conn = NULL;
-    uint64_t sendSize;
+    uint64_t writeSize;
     int ret = 0;
     int errNo;
     int err;
@@ -420,9 +420,9 @@ int RsDrvSocketSend(int fd, const void *data, uint64_t size, int flags)
         ret = RsFd2conn(fd, &conn);
         CHK_PRT_RETURN(ret != 0 || conn->sslWriteBuffer == NULL,
             hccp_err("fd to conn failed, ret:%d or sslWriteBuffer is NULL", ret), ret);
-        sendSize = (size > RS_SOCKET_MAXLEN) ? RS_SOCKET_MAXLEN : size;
-        (void)memcpy_s(conn->sslWriteBuffer, sendSize, data, sendSize);
-        ret = ssl_adp_write(conn->ssl, conn->sslWriteBuffer, sendSize);
+        writeSize = (size > RS_SOCKET_MAXLEN) ? RS_SOCKET_MAXLEN : size;
+        (void)memcpy_s(conn->sslWriteBuffer, writeSize, data, writeSize);
+        ret = ssl_adp_write(conn->ssl, conn->sslWriteBuffer, writeSize);
         if (ret <= 0) {
             err = ssl_adp_get_error(conn->ssl, ret);
             errNo = errno;
