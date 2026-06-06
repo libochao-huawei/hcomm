@@ -169,12 +169,12 @@ TEST_F(MirrorTaskManagerTest, MirrorTaskManager_Iterator_2)
     mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
 
     auto taskInfo1 = std::make_unique<TaskInfo>(3, 0, 0, taskParam, dfxOpInfo);
-    auto taskInfo2 = std::make_unique<TaskInfo>(0, 1, 1, taskParam, dfxOpInfo);
 
     mirrorTaskManager.AddTaskInfo(taskInfo1);
     mirrorTaskManager.GetQueue(3)->PopFront();
     for(int i = 0; i < 10000; i++) {
-        mirrorTaskManager.AddTaskInfo(taskInfo2);
+        auto taskInfo = std::make_unique<TaskInfo>(0, 1, i, taskParam, dfxOpInfo);
+        mirrorTaskManager.AddTaskInfo(taskInfo);
     }
     EXPECT_EQ(callBackCalled, true);
 
