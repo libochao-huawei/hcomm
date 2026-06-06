@@ -90,7 +90,9 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchSdmaCqeErrCodeToTsErrCode_taskexc
 {
     hcomm::SetTaskExceptionEnable(false);
     rtLogicCqReport_t exceptionInfo;
-    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().ProcessCqe(nullptr, exceptionInfo);
+    dfx::CqeStatus cqeStatus = dfx::CqeStatus::kDefault;
+    std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().ProcessCqe(nullptr, exceptionInfo, cqeStatus, aicpuCommInfo);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::SetTaskExceptionEnable(true);
 }
