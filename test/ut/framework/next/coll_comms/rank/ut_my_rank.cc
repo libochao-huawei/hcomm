@@ -656,7 +656,7 @@ TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcTp_QosUnset_UsesUbQosDefault
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     in.channelProtocol = COMM_PROTOCOL_UBC_TP;
     HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
-    EXPECT_EQ(out.qos, static_cast<uint32_t>(EnvConfig::UB_QOS_DEFAULT));
+    EXPECT_EQ(out.qos, static_cast<uint32_t>(Hccl::UB_QOS_DEFAULT));
 }
 
 TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Roce_DoesNotUseUbAttrBranch)

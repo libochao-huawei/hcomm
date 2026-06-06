@@ -23,7 +23,7 @@
 #include "tp_manager.h"
 #include "makebufs_helper.h"
 #include "orion_adapter_hccp.h"
-#include "env_config.h"
+#include "env_config/env_config.h"
 
 #include <cstdint>
 #include <cstdlib>
@@ -423,7 +423,7 @@ HcclResult AivUrmaChannel::BuildConnection()
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
     const u8 qosPre = static_cast<u8>(
-        (channelDesc_.qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (channelDesc_.qos & 7U));
+        (channelDesc_.qos > 7U) ? Hccl::UB_QOS_DEFAULT : (channelDesc_.qos & 7U));
 
     std::unique_ptr<Hccl::DevUbConnection> ubConn = nullptr;
     switch (protocol) {
