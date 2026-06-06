@@ -95,7 +95,7 @@ GetTpInfoParam MakeParam(const char *loc, const char *rmt, TpProtocol proto, uin
 
 HcclResult PollGetTpInfo(TpMgr &mgr, const GetTpInfoParam &param, TpInfo &tpInfo)
 {
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 12; ++i) {
         const HcclResult ret = mgr.GetTpInfo(param, tpInfo);
         if (ret != HCCL_E_AGAIN) {
             return ret;
@@ -360,6 +360,7 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Rtp_WithQos_Expect_Success)
     EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
     EXPECT_NE(tpInfo.tpHandle, 0U);
     EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+    EXPECT_TRUE(tpInfo.hasJettyErrTimeout);
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_CacheHit_Expect_Success)
