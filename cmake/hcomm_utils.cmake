@@ -59,8 +59,8 @@ else()
     elseif(EXISTS ${HCOMM_UTILS_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG_PATH}")
-        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
-        set(HCOMM_UTILS_FULLPATH ${HCOMM_UTILS_PKG_PATH})
+        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH}/${HCOMM_UTILS_FILE})
+        set(HCOMM_UTILS_FULLPATH ${HCOMM_UTILS_PKG_PATH}/${HCOMM_UTILS_FILE})
     else()
         # 下载并解压
         message(STATUS "[ThirdParty] Downloading hcomm_utils from ${HCOMM_UTILS_URL}")
@@ -110,7 +110,7 @@ set_target_properties(ascend_kms PROPERTIES
     IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so"
 )
 
-add_library(tls_adp_headers SHARED IMPORTED)
+add_library(tls_adp_headers INTERFACE IMPORTED)
 add_dependencies(tls_adp_headers hcomm_utils)
 set_target_properties(tls_adp_headers PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/tls_adp"
@@ -123,7 +123,7 @@ set_target_properties(tls_adp PROPERTIES
     IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libtls_adp.so"
 )
 
-add_library(hccl_legacy_headers SHARED IMPORTED)
+add_library(hccl_legacy_headers INTERFACE IMPORTED)
 add_dependencies(hccl_legacy_headers hcomm_utils)
 set_target_properties(hccl_legacy_headers PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include/legacy"
@@ -137,6 +137,7 @@ if(PRODUCT_SIDE STREQUAL "host")
         IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libhccl_legacy.so"
     )
 
+    # 安装 host 侧需要的库
     set(HCOMM_UTILS_HOST_LIB_FILES
         ${HCOMM_UTILS_INSTALL_PATH}/host/lib/libtls_adp.so
         ${HCOMM_UTILS_INSTALL_PATH}/host/lib/libhccl_legacy.so

@@ -175,7 +175,7 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:rdma_core_headers>
-        $<BUILD_INTERFACE:hcomm_legacy_headers>
+        $<BUILD_INTERFACE:hccl_legacy_headers>
         $<BUILD_INTERFACE:json>
         -Wl,--no-as-needed
         c_sec
