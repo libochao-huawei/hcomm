@@ -87,6 +87,7 @@ namespace {
     constexpr char ACL_RT_IPC_MEM_GET_EXPORT_KEY[] = "aclrtIpcMemGetExportKey";
     constexpr char ACL_RT_MEMCPY[] = "aclrtMemcpy";
     constexpr char ACL_RT_POINTER_GET_ATTRIBUTES[] = "aclrtPointerGetAttributes";
+    constexpr char ACL_RT_CACHE_LAST_TASK_EXTEND_INFO[] = "aclrtCacheLastTaskExtendInfo";
 }
 u32 g_stubDeviceId = 0;
 static std::unordered_map<s32, s64> g_deviceChipIdMap; // 记录 devLogID 和 chipID 的关系，避免重复查询
@@ -2552,6 +2553,20 @@ HcclResult hrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
     HCCL_ERROR("[hrtThreadExchangeCaptureMode]Does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
+}
+
+HcclResult hrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
+{
+    auto funcPtr = (aclError(*)(const char*, size_t))g_dlAcl.Handle<ACL_RT_CACHE_LAST_TASK_EXTEND_INFO>();
+    if (funcPtr == nullptr) {
+        HCCL_INFO("[hrtCacheLastTaskExtendInfo] aclrtCacheLastTaskExtendInfo not supported.");
+        return HCCL_E_NOT_SUPPORT;
+    }
+    aclError ret = funcPtr(tag, tagLen);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[hrtCacheLastTaskExtendInfo] call aclrtCacheLastTaskExtendInfo fail, return[%d]", ret),
+        HCCL_E_RUNTIME);
+    return HCCL_SUCCESS;
 }
 
 __attribute__((constructor)) void CallBackInitRts()

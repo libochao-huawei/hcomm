@@ -21,6 +21,7 @@ HcclResult hrtStreamSetMode(HcclRtStream stream, const uint64_t stmMode);
 HcclResult hrtStreamGetMode(HcclRtStream const stream, uint64_t *const stmMode);
 HcclResult hrtGetStreamId(HcclRtStream stream, s32 &streamId);
 HcclResult hrtStreamActive(HcclRtStream activeStream, HcclRtStream stream);
+HcclResult hrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen);
 #endif
 
 HcclResult hrtCtxGetCurrent(HcclRtContext *ctx);

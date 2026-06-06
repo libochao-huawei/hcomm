@@ -19,20 +19,10 @@
 #undef private
 #undef protected
 
-#include "hccl_dl.h"
+#include "adapter_rts_common.h"
 
 using namespace std;
 using namespace hccl;
-
-static aclError StubAclrtCacheSuccess(const char *, size_t)
-{
-    return ACL_SUCCESS;
-}
-
-static aclError StubAclrtCacheFail(const char *, size_t)
-{
-    return static_cast<aclError>(ACL_ERROR_RT_INTERNAL_ERROR);
-}
 
 class LaunchAicpuUT : public testing::Test {
 protected:
@@ -84,7 +74,7 @@ TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_GetFunctionFail_Expect_ReturnR
     GlobalMockObject::verify();
 }
 
-TEST_F(LaunchAicpuUT, CacheTaskOpInfo_DlopenFailed_Expect_ReturnSuccess)
+TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoNotSupported_Expect_ReturnSuccess)
 {
     aclrtStream stream = reinterpret_cast<aclrtStream>(1);
 
@@ -103,16 +93,16 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_DlopenFailed_Expect_ReturnSuccess)
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    MOCKER(HcclDlopen)
+    MOCKER(hrtCacheLastTaskExtendInfo)
         .stubs()
-        .will(returnValue(static_cast<void *>(nullptr)));
+        .will(returnValue(HCCL_E_NOT_SUPPORT));
 
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
 
-TEST_F(LaunchAicpuUT, CacheTaskOpInfo_DlsymFailed_Expect_ReturnSuccess)
+TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoCallSuccess_Expect_ReturnSuccess)
 {
     aclrtStream stream = reinterpret_cast<aclrtStream>(1);
 
@@ -131,24 +121,16 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_DlsymFailed_Expect_ReturnSuccess)
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    MOCKER(HcclDlopen)
+    MOCKER(hrtCacheLastTaskExtendInfo)
         .stubs()
-        .will(returnValue(reinterpret_cast<void *>(1)));
-
-    MOCKER(HcclDlsym)
-        .stubs()
-        .will(returnValue(static_cast<void *>(nullptr)));
-
-    MOCKER(HcclDlclose)
-        .stubs()
-        .will(returnValue(0));
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
 
-TEST_F(LaunchAicpuUT, CacheTaskOpInfo_DynamicCallSuccess_Expect_ReturnSuccess)
+TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoCallFailed_Expect_ReturnRuntimeError)
 {
     aclrtStream stream = reinterpret_cast<aclrtStream>(1);
 
@@ -167,53 +149,9 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_DynamicCallSuccess_Expect_ReturnSuccess)
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    MOCKER(HcclDlopen)
+    MOCKER(hrtCacheLastTaskExtendInfo)
         .stubs()
-        .will(returnValue(reinterpret_cast<void *>(1)));
-
-    MOCKER(HcclDlsym)
-        .stubs()
-        .will(returnValue(reinterpret_cast<void *>(&StubAclrtCacheSuccess)));
-
-    MOCKER(HcclDlclose)
-        .stubs()
-        .will(returnValue(0));
-
-    HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify();
-}
-
-TEST_F(LaunchAicpuUT, CacheTaskOpInfo_DynamicCallFailed_Expect_ReturnRuntimeError)
-{
-    aclrtStream stream = reinterpret_cast<aclrtStream>(1);
-
-    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE;
-    int mockModel = 0;
-    void *pmockModel = &mockModel;
-    MOCKER(aclmdlRICaptureGetInfo)
-        .stubs()
-        .with(any(), outBoundP(&captureStatus, sizeof(captureStatus)), outBoundP(&pmockModel, sizeof(pmockModel)))
-        .will(returnValue(ACL_SUCCESS));
-
-    aclrtStreamAttrValue value;
-    value.cacheOpInfoSwitch = 1;
-    MOCKER(aclrtGetStreamAttribute)
-        .stubs()
-        .with(any(), any(), outBoundP(&value, sizeof(value)))
-        .will(returnValue(ACL_SUCCESS));
-
-    MOCKER(HcclDlopen)
-        .stubs()
-        .will(returnValue(reinterpret_cast<void *>(1)));
-
-    MOCKER(HcclDlsym)
-        .stubs()
-        .will(returnValue(reinterpret_cast<void *>(&StubAclrtCacheFail)));
-
-    MOCKER(HcclDlclose)
-        .stubs()
-        .will(returnValue(0));
+        .will(returnValue(HCCL_E_RUNTIME));
 
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
