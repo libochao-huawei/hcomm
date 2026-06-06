@@ -252,7 +252,7 @@ TEST_F(CcuCompPubTest, Ut_CreateAndImportLoopJettys_When_NoMappedPriority_Expect
     jettyInfo.sqDepth = 4U;
 
     EXPECT_EQ(comp.CreateAndImportLoopJettys(dieId, commAddr, {jettyInfo}), HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(gCapturedLoopJettyQos, static_cast<uint32_t>(EnvConfig::UB_QOS_DEFAULT));
+    EXPECT_EQ(gCapturedLoopJettyQos, static_cast<uint32_t>(Hccl::UB_QOS_DEFAULT));
 }
 
 TEST_F(CcuCompPubTest, Ut_GetLoopTpInfo_When_Called_Expect_LoopGetTpInfoParamFlags)
