@@ -306,7 +306,7 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_PrintCommTaskException)
     aicpuComm.dfx_.mirrorTaskManagerLite_->SetCurrDfxOpInfo(dfxOpInfoOnce);
 
     Hccl::TaskParam taskParam{};
-    taskParam.taskType = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
+    taskParam.taskType = Hccl::TaskParamType::TASK_NOTIFY_RECORD;
     taskParam.taskPara.Notify.notifyID = 101;
     taskParam.taskPara.Notify.value = 1;
 
