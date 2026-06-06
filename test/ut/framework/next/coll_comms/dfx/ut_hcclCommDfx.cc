@@ -199,11 +199,9 @@ TEST_F(HcclCommDfxTest, Ut_Add_Get_ChannelRemoteRankId)
     u32 remoteRankId = 3;
     dfxLite_->AddChannelRemoteRankId(channelHandle, remoteRankId);
 
-    u32 value = 0;
-    EXPECT_EQ(dfxLite_->GetChannelRemoteRankId(channelHandle, value), HCCL_SUCCESS);
-    EXPECT_EQ(value, remoteRankId);
+    EXPECT_EQ(dfxLite_->GetChannelRemoteRankId(channelHandle), remoteRankId);
 
-    EXPECT_NE(dfxLite_->GetChannelRemoteRankId(0x123, value), HCCL_SUCCESS);
+    EXPECT_EQ(dfxLite_->GetChannelRemoteRankId(0x123), INVALID_UINT);
 }
 
 // 测试 IsOpBase - OFFLOAD 模式返回 false

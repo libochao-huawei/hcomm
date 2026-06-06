@@ -142,7 +142,7 @@ TaskInfo* MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
     return (*task).get();
 }
 
-TaskInfoQueueMap::iterator MirrorTaskManagerLite::Begin() 
+TaskInfoQueueMap::iterator MirrorTaskManagerLite::Begin()
 {
     return queueMap_.begin();
 }

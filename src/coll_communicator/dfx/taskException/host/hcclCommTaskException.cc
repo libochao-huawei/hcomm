@@ -214,7 +214,7 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
         return;
     }
 
-    Hccl::TaskInfo* curTask;
+    Hccl::TaskInfo* curTask = nullptr;
     HcclResult ret = Hccl::GlobalMirrorTasks::Instance().FindTaskInfo(exceptionInfo->deviceid, exceptionInfo->streamid,
         exceptionInfo->taskid, curTask);
     CHK_PRT_RET(ret == HCCL_E_NOT_FOUND, HCCL_RUN_WARNING("[%s]FindTaskInfo not found, deviceid[%u] streamid[%u] taskid[%u].",

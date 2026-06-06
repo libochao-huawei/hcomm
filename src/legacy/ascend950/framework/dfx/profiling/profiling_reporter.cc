@@ -29,9 +29,9 @@ ProfilingReporter::~ProfilingReporter()
 
 void ProfilingReporter::Init()
 {
-    deviceLogicId = HrtGetDevice();
-    if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
-        HCCL_ERROR("[ProfilingReporter][Init] deviceLogicId[%d] out of range", deviceLogicId);
+    deviceLogicId_ = HrtGetDevice();
+    if (deviceLogicId_ >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId_ < 0) {
+        HCCL_ERROR("[ProfilingReporter][Init] deviceLogicId_[%d] out of range", deviceLogicId_);
         return;
     }
 
@@ -94,7 +94,7 @@ void ProfilingReporter::ReportAllTasksLog() const
     if (HcclCheckLogLevel(HCCL_LOG_INFO) == 0) {
         return;
     }
-    auto& curLastPoses = allLastPoses_[deviceLogicId];
+    auto& curLastPoses = allLastPoses_[deviceLogicId_];
     for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
         u32 streamId = it->first;
         Queue<std::unique_ptr<TaskInfo>> *currQueue = it->second;
@@ -135,7 +135,7 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
 {
     std::lock_guard<std::mutex> lock(mirrorTaskMgr_->GetTaskMutex());
     ReportAllTasksLog();
-    auto& curLastPoses = allLastPoses_[deviceLogicId];
+    auto& curLastPoses = allLastPoses_[deviceLogicId_];
     if (mirrorTaskMgr_ == nullptr || profilingHandler_ == nullptr) {
         HCCL_ERROR("[ProfilingReporter][ReportAllTasks] mirrorTaskMgr_[%p] or profilingHandler_[%p] is nullptr", mirrorTaskMgr_, profilingHandler_);
         return;
@@ -147,11 +147,11 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
             HCCL_WARNING("[ProfilingReporter][ReportAllTasks] currQueue is nullptr, continue to next task.");
             continue;
         }
-        if (*(*(currQueue->Begin())) == nullptr) {	 
+        if (*(*(currQueue->Begin())) == nullptr) {
              HCCL_WARNING("[ProfilingReporter][ReportAllTasks] (*(*(currQueue->Begin())) is nullptr, continue to next task.");
             continue;
         }
-        if (curLastPoses.find(streamId) == curLastPoses.end() && currQueue->Begin() != nullptr) { // 是首个任务	 
+        if (curLastPoses.find(streamId) == curLastPoses.end() && currQueue->Begin() != nullptr) { // 是首个任务
             TaskInfo task = (*(*(*currQueue->Begin())));
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, task.isMaster_, cachedReq, true);
@@ -161,8 +161,8 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         
         auto endPos = currQueue->Tail();
         auto iter = curLastPoses[streamId];
-        ++(*(iter));	 
-        for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {	 
+        ++(*(iter));
+        for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {
             TaskInfo task = (*(*(*iter)));
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, task.isMaster_, cachedReq, true);
@@ -185,7 +185,7 @@ void ProfilingReporter::UpdateProfStat(void)
     }
     if (enableHcclL1_ != newEnableHcclL1) {
         enableHcclL1_ = newEnableHcclL1;
-        auto& curLastPoses = allLastPoses_[deviceLogicId];
+        auto& curLastPoses = allLastPoses_[deviceLogicId_];
         for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
             u32 streamId = it->first;
             if (it->second == nullptr) {

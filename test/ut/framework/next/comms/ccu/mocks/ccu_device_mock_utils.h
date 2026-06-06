@@ -99,7 +99,7 @@ void MockCcuNetworkDeviceDefault(int32_t devPhyId)
 
     MOCKER(hcomm::RaGetDevEidInfos)
         .stubs()
-        .with(any(), outBound(fakeEidInfos))
+        .with(mockcpp::any(), outBound(fakeEidInfos))
         .will(returnValue(HcclResult::HCCL_SUCCESS));
 
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs()
