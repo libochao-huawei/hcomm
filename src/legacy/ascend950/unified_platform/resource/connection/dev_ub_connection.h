@@ -156,12 +156,6 @@ private:
 
     bool CheckRequestResult();
     void ThrowAbnormalStatus(std::string funcName);
-    void AdvanceUbConnFromInit();
-    void AdvanceUbConnFromTpInfoGetting();
-    void AdvanceUbConnAfterTpInfoReady();
-    void AdvanceUbConnFromJettyCreating();
-    void AdvanceUbConnFromJettyCreated();
-    void AdvanceUbConnFromJettyImporting();
 
     void         GenerateLocalPsn();
     void         CreateJetty(const bool devUsed);
