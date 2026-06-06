@@ -411,6 +411,9 @@ TEST_F(TpManagerTest, tp_manager_device_qos_sl_mapping_success)
     EXPECT_EQ(result, HCCL_E_AGAIN);
 
     result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
     EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
 }
@@ -428,6 +431,9 @@ TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_success)
     param.loopFirstTpLowestSl = true;
     param.qos = 2U;
     TpInfo tpInfo{};
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
 
     result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_E_AGAIN);
@@ -486,6 +492,8 @@ TEST_F(TpManagerTest, tp_manager_device_uboe_eight_tp_qos7_success)
     result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_E_AGAIN);
     result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
     EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
     EXPECT_EQ(tpInfo.tpHandle, 0x300ULL);
@@ -532,6 +540,8 @@ TEST_F(TpManagerTest, tp_manager_device_uboe_dscp_from_hccn_success)
     result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_E_AGAIN);
     result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
     EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
     EXPECT_EQ(tpInfo.tpHandle, 0x305ULL);
@@ -567,6 +577,8 @@ TEST_F(TpManagerTest, tp_manager_device_two_tp_qos5_success)
     TpInfo tpInfo{};
 
     HcclResult result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_E_AGAIN);
     result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_E_AGAIN);
