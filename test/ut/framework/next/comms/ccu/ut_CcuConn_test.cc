@@ -100,7 +100,7 @@ pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> Mock
         ccuJettys.emplace_back(std::move(ccuJetty));
     }
 
-    constexpr uint32_t kJettyQos = EnvConfig::UB_QOS_DEFAULT;
+    constexpr uint32_t kJettyQos = ::EnvConfig::UB_QOS_DEFAULT;
     unique_ptr<hcomm::CcuConnection> connection;
     if (tpProtocol == hcomm::TpProtocol::CTP) {
         connection = make_unique<hcomm::CcuCtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, kJettyQos);
