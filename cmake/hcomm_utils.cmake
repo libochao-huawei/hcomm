@@ -20,13 +20,14 @@ endif()
 if(PRODUCT_SIDE STREQUAL "device")
     set(HCOMM_UTILS_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/device/hcomm_utils)
     set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg/device)
+    set(HCOMM_UTILS_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}")
 else()
     set(HCOMM_UTILS_INSTALL_PATH ${CANN_3RD_LIB_PATH}/lib_cache/hcomm_utils)
     set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
+    set(HCOMM_UTILS_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 endif()
 
 set(HCOMM_UTILS_VERSION "9.1.0")
-set(HCOMM_UTILS_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 set(HCOMM_UTILS_FILE "cann-hcomm-utils_${HCOMM_UTILS_VERSION}_linux-${HCOMM_UTILS_ARCH}.tar.gz")
 set(HCOMM_UTILS_URL "https://ascend-cann.obs.cn-north-4.myhuaweicloud.com/CANN/20260527_newest/${HCOMM_UTILS_FILE}")
 
@@ -87,6 +88,7 @@ else()
         INSTALL_COMMAND ""
         DOWNLOAD_NO_EXTRACT TRUE
         DOWNLOAD_NO_PROGRESS TRUE
+        TIMEOUT 300
     )
 endif()
 
