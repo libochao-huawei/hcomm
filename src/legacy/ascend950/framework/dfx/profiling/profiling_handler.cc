@@ -545,13 +545,6 @@ void ProfilingHandler::GetCcuWaitSignalInfo(const TaskInfo &taskInfo, const CcuP
         waitSignalInfo.version, waitSignalInfo.itemId, waitSignalInfo.groupName, waitSignalInfo.rankId, waitSignalInfo.ranksize,
         waitSignalInfo.workFlowMode, waitSignalInfo.streamId, waitSignalInfo.taskId, waitSignalInfo.dieId, waitSignalInfo.instrId,
         waitSignalInfo.missionId, waitSignalInfo.ckeId, waitSignalInfo.mask);
-    for (auto i = 0; i < CCU_MAX_CHANNEL_NUM; i++) {
-        if (waitSignalInfo.channelId[i] != INVALID_VALUE_CHANNELID && waitSignalInfo.remoteRankId[i] != INVALID_RANKID) {
-            HCCL_INFO(
-                "[ProfilingHandler]GetCcuWaitSignalInfo, waitSignalInfo data is: channelId[%d] =  %u, remoteRankId[%d] = %u",
-                i, waitSignalInfo.channelId[i], i, waitSignalInfo.remoteRankId[i]);
-        }
-    }
     MsprofAdditionalInfo reporterData{};
     reporterData.level     = MSPROF_REPORT_HCCL_NODE_LEVEL;
     reporterData.type      = MSPROF_REPORT_CCU_WAIT_SIGNAL_INFO;
