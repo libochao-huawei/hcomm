@@ -57,12 +57,6 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
     if (sqDepth > (UINT32_MAX / UB_SQ_WQEBB_SIZE / WQE_NUM_PER_SQE)) {
         THROW<InternalException>("integer overflow occurs");
     }
-
-    if (!isdevUsed) {
-        CreateJetty(isdevUsed);
-    } else {
-        HCCL_INFO("[DevUbConnection][Constructor] devUsed: defer CreateJetty until GetTpInfo maps qos.");
-    }
 }
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
@@ -221,69 +215,6 @@ void DevUbConnection::GetTimeOut() // 直接基于环境变量控制
     HCCL_INFO("%s final TA Timeout [%u] (%ums).", __func__, jettyTimeOut);
 }
 
-void DevUbConnection::AdvanceUbConnAfterTpInfoReady()
-{
-    if (isdevUsed) {
-        GetTimeOut();
-        CreateJetty(isdevUsed);
-        ubConnStatus = UbConnStatus::JETTY_CREATING;
-        return;
-    }
-    GetTimeOut();
-    CreateJetty(isdevUsed);
-    if (!CheckRequestResult()) {
-        ubConnStatus = UbConnStatus::JETTY_CREATING;
-        return;
-    }
-    SetJettyInfo();
-    status       = RmaConnStatus::EXCHANGEABLE;
-    ubConnStatus = UbConnStatus::JETTY_CREATED;
-}
-
-void DevUbConnection::AdvanceUbConnFromInit()
-{
-    HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
-              ubConnStatus.Describe().c_str());
-
-    if (!GetTpInfo()) {
-        ubConnStatus = UbConnStatus::TP_INFO_GETTING;
-        return;
-    }
-    AdvanceUbConnAfterTpInfoReady();
-}
-
-void DevUbConnection::AdvanceUbConnFromTpInfoGetting()
-{
-    if (!GetTpInfo()) {
-        return;
-    }
-    AdvanceUbConnAfterTpInfoReady();
-}
-
-void DevUbConnection::AdvanceUbConnFromJettyCreating()
-{
-    if (CheckRequestResult()) {
-        SetJettyInfo();
-        status       = RmaConnStatus::EXCHANGEABLE;
-        ubConnStatus = UbConnStatus::JETTY_CREATED;
-    }
-}
-
-void DevUbConnection::AdvanceUbConnFromJettyCreated()
-{
-    HCCL_INFO("[DevUbConnection][%s] status[%s] will not change, "
-              "should call ImportRmtDto to change status.",
-              __func__, status.Describe().c_str());
-}
-
-void DevUbConnection::AdvanceUbConnFromJettyImporting()
-{
-    SetImportInfo();
-
-    status       = RmaConnStatus::READY;
-    ubConnStatus = UbConnStatus::READY;
-}
-
 RmaConnStatus DevUbConnection::GetStatus()
 {
     if (!CheckRequestResult()) {
@@ -292,19 +223,38 @@ RmaConnStatus DevUbConnection::GetStatus()
 
     switch (ubConnStatus) {
         case UbConnStatus::INIT:
-            AdvanceUbConnFromInit();
+            HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
+                ubConnStatus.Describe().c_str());
+            if (!GetTpInfo()) {
+                ubConnStatus = UbConnStatus::TP_INFO_GETTING;
+                break;
+            }
+            GetTimeOut();
+            CreateJetty(isdevUsed);
+            ubConnStatus = UbConnStatus::JETTY_CREATING;
             break;
         case UbConnStatus::TP_INFO_GETTING:
-            AdvanceUbConnFromTpInfoGetting();
+            if (!GetTpInfo()) {
+                break;
+            }
+            GetTimeOut();
+            CreateJetty(isdevUsed);
+            ubConnStatus = UbConnStatus::JETTY_CREATING;
             break;
         case UbConnStatus::JETTY_CREATING:
-            AdvanceUbConnFromJettyCreating();
+            SetJettyInfo();
+            status = RmaConnStatus::EXCHANGEABLE;
+            ubConnStatus = UbConnStatus::JETTY_CREATED;
             break;
         case UbConnStatus::JETTY_CREATED:
-            AdvanceUbConnFromJettyCreated();
+            HCCL_INFO("[DevUbConnection][%s] status[%s] will not change, "
+                "should call ImportRmtDto to change status.",
+                __func__, status.Describe().c_str());
             break;
         case UbConnStatus::JETTY_IMPORTING:
-            AdvanceUbConnFromJettyImporting();
+            SetImportInfo();
+            status = RmaConnStatus::READY;
+            ubConnStatus = UbConnStatus::READY;
             break;
         case UbConnStatus::READY:
             break;
