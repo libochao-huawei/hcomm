@@ -50,6 +50,7 @@ int Sample(void *arg)
     uint32_t device = ctx->device;
     uint64_t count = ctx->devCount;
     size_t mallocSize = count * sizeof(float);
+    
 
     // 申请集合通信操作的 Device 内存
     ACLCHECK(aclrtMalloc(&sendBuf, mallocSize, ACL_MEM_MALLOC_HUGE_ONLY));
