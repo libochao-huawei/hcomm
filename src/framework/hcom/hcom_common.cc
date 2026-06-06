@@ -238,7 +238,9 @@ HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
 
     std::shared_ptr<hcclComm> hcclComm;
     s32 deviceLogicId = 0;
-    CHK_RET(HcclDeviceRefresh(deviceLogicId));
+    CHK_PRT_RET(HcclDeviceRefresh(deviceLogicId) != HCCL_SUCCESS,
+        HCCL_ERROR("[HcomGetCommHandleByGroup]HcclDeviceRefresh failed, group[%s], deviceLogicId[%d]",
+        group, deviceLogicId), HCCL_E_INTERNAL);
 
     // MC2单算子和动态图下发性能优化，优先查询返回
     HcclOpInfoCtx &opBaseHcom = GetHcclExistDeviceOpInfoCtx();
@@ -246,7 +248,9 @@ HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
     auto iter = opBaseHcom.opGroup2CommMap.find(std::string(group));
     if (iter != opBaseHcom.opGroup2CommMap.end()) {
         hcclComm = iter->second;
-        CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("[HcomGetCommHandleByGroup]opBaseHcom.comm is null"), HCCL_E_PTR);
+        CHK_PRT_RET(hcclComm == nullptr,
+            HCCL_ERROR("[HcomGetCommHandleByGroup]opBaseHcom.comm is null, group[%s], deviceLogicId[%d]",
+            group, deviceLogicId), HCCL_E_PTR);
         *commHandle = static_cast<HcclComm>(hcclComm.get());
         return HCCL_SUCCESS;
     }
@@ -274,7 +278,8 @@ HcclResult HcomGetCommByGroup(const char *group, std::shared_ptr<hccl::hcclComm>
                 "group is not exist", HCOM_ERROR_CODE(HCCL_E_NOT_FOUND), strGroup.c_str()), HCCL_E_NOT_FOUND);
         } else {
             hcclComm = (iter->second).pSubComm;
-            CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("[Get][CommByGroup] Get Comm is null"), HCCL_E_PTR);
+            CHK_PRT_RET(hcclComm == nullptr,
+                HCCL_ERROR("[Get][CommByGroup] Get Comm is null, group[%s]", strGroup.c_str()), HCCL_E_PTR);
         }
         groupParaLock.unlock();
     }
