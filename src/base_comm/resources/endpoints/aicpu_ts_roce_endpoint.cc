@@ -135,11 +135,28 @@ void AicpuTsRoceEndpoint::ReleaseSharedNetDev()
     }
     netDev_ = nullptr;
     if (toClose != nullptr) {
+        if (!hasListenSocketRef_) {
+            ReleaseNicSocketHandle(toClose);
+        }
         HCCL_INFO("[AicpuTsRoceEndpoint][ReleaseSharedNetDev] closing HcclNetDev for devicePhyId[%u]", key);
         const HcclResult ret = HcclNetDevClose(toClose);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[AicpuTsRoceEndpoint][ReleaseSharedNetDev] HcclNetDevClose failed, ret[%d]", ret);
         }
+    }
+}
+
+void AicpuTsRoceEndpoint::ReleaseNicSocketHandle(HcclNetDev netDev)
+{
+    auto *netDevCtx = static_cast<hccl::NetDevContext *>(netDev);
+    if (netDevCtx == nullptr) {
+        return;
+    }
+    const hccl::HcclIpAddress localIp = netDevCtx->GetLocalIp();
+    const HcclResult ret = hccl::NetworkManager::GetInstance(netDevCtx->GetLogicId()).StopNicSocketHandle(localIp);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[AicpuTsRoceEndpoint][%s] StopNicSocketHandle failed, ip[%s], ret[%d]",
+            __func__, localIp.GetReadableAddress(), ret);
     }
 }
 
@@ -214,15 +231,6 @@ HcclResult AicpuTsRoceEndpoint::Init()
     }
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
-    constexpr uint32_t defaultPort = 16666U;
-    ret = ServerSocketListen(defaultPort);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s]call trace: hcclRet -> %d", __func__, ret);
-        regedMemMgr_.reset();
-        ctxHandle_ = nullptr;
-        ReleaseSharedNetDev();
-        return ret;
-    }
     return HCCL_SUCCESS;
 }
 
@@ -238,6 +246,7 @@ HcclResult AicpuTsRoceEndpoint::ServerSocketListen(const uint32_t port)
         if (it != serverSocketMap.end() && it->second.socket != nullptr) {
             it->second.refCount++;
             listenRefKeys_.push_back(key);
+            hasListenSocketRef_ = true;
             serverSocket_ = it->second.socket;
             HCCL_INFO("[AicpuTsRoceEndpoint::%s] reuse serverSocket for key[dev=%u,port=%u], ref[%u]",
                 __func__, key.devicePhyId, key.port, it->second.refCount);
@@ -270,6 +279,7 @@ HcclResult AicpuTsRoceEndpoint::ServerSocketListen(const uint32_t port)
     if (it != serverSocketMap.end() && it->second.socket != nullptr) {
         it->second.refCount++;
         listenRefKeys_.push_back(key);
+        hasListenSocketRef_ = true;
         serverSocket_ = it->second.socket;
         HCCL_INFO("[AicpuTsRoceEndpoint::%s] concurrent reuse key[dev=%u,port=%u], ref[%u]",
             __func__, key.devicePhyId, key.port, it->second.refCount);
@@ -278,6 +288,7 @@ HcclResult AicpuTsRoceEndpoint::ServerSocketListen(const uint32_t port)
 
     serverSocketMap[key] = AicpuTsListenSocketSlot{serverSocket_, 1U};
     listenRefKeys_.push_back(key);
+    hasListenSocketRef_ = true;
     HCCL_INFO("[AicpuTsRoceEndpoint][%s] listen on key[dev=%u,port=%u] success",
         __func__, key.devicePhyId, key.port);
     return HCCL_SUCCESS;

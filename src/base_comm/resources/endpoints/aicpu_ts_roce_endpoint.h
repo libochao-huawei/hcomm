@@ -80,12 +80,14 @@ private:
     static std::mutex &NetDevMapMutex();
     HcclResult AcquireSharedNetDev(uint32_t devicePhyId, const HcclNetDevInfos &info);
     void ReleaseSharedNetDev();
+    void ReleaseNicSocketHandle(HcclNetDev netDev);
     HcclResult AcquireRdmaContext(uint32_t devPhyId, const EndpointDesc &endpointDesc);
 
     HcclNetDev netDev_{nullptr};
     uint32_t netDevRefPhyId_{UINT32_MAX};
     std::shared_ptr<hccl::HcclSocket> serverSocket_{nullptr};
     std::vector<SocketMapKey> listenRefKeys_{};
+    bool hasListenSocketRef_{false};
 };
 }
 #endif // AICPUTS_ROCE_ENDPOINT_H
