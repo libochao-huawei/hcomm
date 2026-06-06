@@ -327,7 +327,7 @@ TEST_F(CcuConnTest, Ut_MakeGetTpInfoParam_When_QosAboveSeven_Expect_ClampsToDefa
 
     HcclResult ret = connection->UpdateInitStatus();
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(::EnvConfig::UB_QOS_DEFAULT));
+    EXPECT_EQ(gCapturedConnTpParam.qos, static_cast<uint32_t>(Hccl::UB_QOS_DEFAULT));
 
     GlobalMockObject::verify();
 }

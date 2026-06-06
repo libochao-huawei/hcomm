@@ -11,7 +11,7 @@
 #ifndef CCU_CONN_H
 #define CCU_CONN_H
 
-#include "env_config.h"
+#include "env_config/env_config.h"
 #include "tp_mgr.h"
 #include "ccu_jetty_.h"
 #include "ccu_dev_mgr_imp.h"
@@ -93,7 +93,7 @@ private:
     CommAddr         rmtAddr_{};
     CcuChannelInfo          channelInfo_{};
     std::vector<CcuJetty *> ccuJettys_;
-    uint32_t      qos_{EnvConfig::UB_QOS_DEFAULT};
+    uint32_t      qos_{Hccl::UB_QOS_DEFAULT};
 
     int32_t       devLogicId_{0};
     uint32_t      devPhyId_{0};

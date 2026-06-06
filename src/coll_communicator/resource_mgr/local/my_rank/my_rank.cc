@@ -28,7 +28,7 @@ namespace MyRankUtils {
 static uint32_t ResolveUbCommDomainQos(const hccl::CommConfig &commConfig)
 {
     if (commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET) {
-        return EnvConfig::UB_QOS_DEFAULT;
+        return Hccl::UB_QOS_DEFAULT;
     }
     return commConfig.GetConfigHcclQos();
 }

@@ -96,7 +96,7 @@ TEST_F(UrmaChannelQosV1V2CompatTest, Ut_AicpuTsUrmaChannel_V1NormalizedQos_UsesU
     MockBuildConnectionDeps();
 
     ASSERT_EQ(ch.BuildConnection(), HCCL_SUCCESS);
-    ExpectDevConnQos<DevUbTpConnection>(ch.connections_, static_cast<u8>(EnvConfig::UB_QOS_DEFAULT));
+    ExpectDevConnQos<DevUbTpConnection>(ch.connections_, static_cast<u8>(Hccl::UB_QOS_DEFAULT));
 }
 
 TEST_F(UrmaChannelQosV1V2CompatTest, Ut_AicpuTsUrmaChannel_V2Qos_PreservedOnConnection)
@@ -123,7 +123,7 @@ TEST_F(UrmaChannelQosV1V2CompatTest, Ut_HostCpuUrmaChannel_V1NormalizedQos_UsesU
     MockBuildConnectionDeps();
 
     ASSERT_EQ(ch.BuildConnection(), HCCL_SUCCESS);
-    ExpectHostConnQos(ch.connections_, static_cast<u8>(EnvConfig::UB_QOS_DEFAULT));
+    ExpectHostConnQos(ch.connections_, static_cast<u8>(Hccl::UB_QOS_DEFAULT));
 }
 
 TEST_F(UrmaChannelQosV1V2CompatTest, Ut_HostCpuUrmaChannel_V2Qos_PreservedOnConnection)
@@ -150,7 +150,7 @@ TEST_F(UrmaChannelQosV1V2CompatTest, Ut_AivUrmaChannel_V1NormalizedQos_UsesUbQos
     MockBuildConnectionDeps();
 
     ASSERT_EQ(ch.BuildConnection(), HCCL_SUCCESS);
-    ExpectDevConnQos<DevUbTpConnection>(ch.connections_, static_cast<u8>(EnvConfig::UB_QOS_DEFAULT));
+    ExpectDevConnQos<DevUbTpConnection>(ch.connections_, static_cast<u8>(Hccl::UB_QOS_DEFAULT));
 }
 
 TEST_F(UrmaChannelQosV1V2CompatTest, Ut_AivUrmaChannel_V2Qos_PreservedOnConnection)

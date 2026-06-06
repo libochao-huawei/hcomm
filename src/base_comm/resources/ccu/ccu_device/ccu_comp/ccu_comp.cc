@@ -24,7 +24,6 @@
 #include "exception_handler.h"
 #include "adapter_rts_common.h"
 #include "ccu_error_info_v1.h"
-#include "env_config.h"
 #include "orion_adapter_hccp.h"
 #include "env_config/env_config.h"
 #include "exception_util.h"
@@ -478,7 +477,7 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     CHK_RET(GetLoopTpInfo(dieId, commAddr, loopTpInfo, loopJettyProtocol));
     const uint32_t loopJettyQos = loopTpInfo.hasMappedJettyPriority
         ? (loopTpInfo.mappedJettyPriority & 0xFU)
-        : EnvConfig::UB_QOS_DEFAULT;
+        : Hccl::UB_QOS_DEFAULT;
 
     TpAttrInfo tpAttrInfo{};
     CHK_RET(GetLoopTpAttr(dieId, commAddr, tpAttrInfo));

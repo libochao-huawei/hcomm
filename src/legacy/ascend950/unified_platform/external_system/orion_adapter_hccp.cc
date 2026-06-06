@@ -29,13 +29,13 @@ using namespace std;
 namespace Hccl {
 
 RaUbGetTpInfoParamDef::RaUbGetTpInfoParamDef()
-    : locAddr{}, rmtAddr{}, tpProtocol(TpProtocol::CTP), qos(::EnvConfig::UB_QOS_DEFAULT),
+    : locAddr{}, rmtAddr{}, tpProtocol(TpProtocol::CTP), qos(UB_QOS_DEFAULT),
       slLevelCount(0U), loopFirstTpLowestSl(false), ccuLoopbackGetTpInfo(false)
 {}
 
 RaUbGetTpInfoParamDef::RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr,
     TpProtocol tpProtocol)
-    : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol), qos(::EnvConfig::UB_QOS_DEFAULT),
+    : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol), qos(UB_QOS_DEFAULT),
       slLevelCount(0U), loopFirstTpLowestSl(false), ccuLoopbackGetTpInfo(false)
 {}
 

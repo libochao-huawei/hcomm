@@ -11,12 +11,11 @@
 #define HCCLV2_ENV_CONFIG_H
 
 #include "base_config.h"
-#include "env_config.h"
 
 namespace Hccl {
 
-/// 别名，权威定义见 `::EnvConfig::UB_QOS_DEFAULT`；命名空间级供默认实参等场景使用。
-constexpr u32 UB_QOS_DEFAULT = ::EnvConfig::UB_QOS_DEFAULT;
+/// UBC Jetty / TP / 通信域默认 QoS（0–7）；全库唯一权威定义，命名空间级供默认实参等场景使用
+constexpr u32 UB_QOS_DEFAULT = 4U;
 
 class EnvConfig {
 public:

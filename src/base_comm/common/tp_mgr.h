@@ -59,7 +59,7 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
     CommAddr rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
     /// 参与 TP/SL 分组与缓存键（0–7），连接侧已归一化
-    uint32_t qos{EnvConfig::UB_QOS_DEFAULT};
+    uint32_t qos{Hccl::UB_QOS_DEFAULT};
     /// 非 0 时与 slBitmap 可用档位数取 min，作为 SL 分组上限（见 TpMgr::ResolveSlAvailableCntForPolicy）。
     /// 预留：当前连接/CCU 等调用方均传 0；待管控面或连接侧按需注入非 0 后生效。
     uint32_t slLevelCount{0};
