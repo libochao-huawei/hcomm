@@ -487,10 +487,14 @@ bool DevUbConnection::GetTpInfo()
 
     switch (ret) {
         case HcclResult::HCCL_SUCCESS:
+            // TpManager 按 loc×rmt×protocol×qos 缓存 tpInfo；ReleaseTpInfo 须用同一 qos 键。
+            // 此处保存的是通信域 hcclQos（p.qos），须在下一步改写 qos_ 之前记录，且只记首次成功。
             if (!tpMgrReleaseQosCaptured_) {
                 tpMgrReleaseQos_ = p.qos;
                 tpMgrReleaseQosCaptured_ = true;
             }
+            // TpManager 已按 hcclQos 选好 TP/SL；mappedJettyPriority 为 jetty attr.ub.priority 低 4 位，
+            // 供 CreateJetty 使用，与 tpInfo 缓存键解耦（qos_ 语义从「请求 QoS」变为「映射后的 priority」）。
             if (tpInfo.hasMappedJettyPriority) {
                 qos_ = static_cast<u8>(tpInfo.mappedJettyPriority & 0xFU);
             }
