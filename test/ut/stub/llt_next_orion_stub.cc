@@ -2799,3 +2799,8 @@ int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(
 {
     return 0;
 }
+
+HcclResult RtsqBase::GetStreamIdAndTaskIdBySqIdx(u32 sqIdx, uint16_t& streamId, uint16_t& taskId)
+{
+    return HCCL_SUCCESS;
+}
