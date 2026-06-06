@@ -1,4 +1,5 @@
 #include "orion_adapter_hccp.h"
+#include <cstring>
 #include "rt_external.h"
 #include "dev_type.h"
 #include "hccp_ctx.h"
@@ -145,6 +146,32 @@ void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceI
 
 HcclResult HrtGetUboeFlagEnable(const u32 devPhyId)
 {
+    (void)devPhyId;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t attrBitmap, TpAttr &attr,
+    RequestHandle &reqHandle)
+{
+    (void)handle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    (void)attr;
+    reqHandle = 1U;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaGetTpAttrAsync(u32 phyId, RdmaHandle handle, uint64_t tpHandle, uint32_t &attrBitmap,
+    TpAttr &attr, RequestHandle &reqHandle)
+{
+    (void)phyId;
+    (void)handle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    (void)std::memset(&attr, 0, sizeof(attr));
+    attr.slBitmap = 1U;
+    attr.dscpConfigMode = 1U;
+    reqHandle = 1U;
     return HCCL_SUCCESS;
 }
 

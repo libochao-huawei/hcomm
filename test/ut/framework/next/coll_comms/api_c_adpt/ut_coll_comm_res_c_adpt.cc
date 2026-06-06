@@ -1,5 +1,7 @@
-#include "../../hccl_api_base_test.h"
+#include "gtest/gtest.h"
 #include "hccl/hccl_res.h"
+#include "hccl_common.h"
+#include "config/env_config.h"
 #include "independent_op_context_manager.h"
 #include "log.h"
 #include "hccl_comm_pub.h"
@@ -9,17 +11,20 @@
 #include "mockcpp/mockcpp.hpp"
 #include "dfx/cluster_monitor/cluster_monitor.h"
 #include "host/host_cpu_roce_channel.h"
+#include "param_check_pub.h"
 
 #define private public
 
 using namespace hccl;
 using namespace hcomm;
 
+HcclResult ProcessUbChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
+    hcclComm *hcclComm);
+
 class HcclChannelDescTest : public BaseInit {
 public:
     void SetUp() override
     {
-        BaseInit::SetUp();
         const char *fakeA5SocName = "Ascend950PR_958b";
         MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
         MOCKER(&HcclCommDfx::ReportKernel).stubs().will(returnValue(HCCL_SUCCESS));
@@ -28,7 +33,6 @@ public:
     }
     void TearDown() override
     {
-        BaseInit::TearDown();
         GlobalMockObject::verify();
     }
 protected: 
@@ -59,6 +63,7 @@ protected:
         char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
         hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, commName);
         HcclCommConfig config;
+        UtInitHcclCommConfig(config);
         config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
         config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
         config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level 
@@ -185,3 +190,84 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_IbvPostRecv_Fails_Return_
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
+<<<<<<< HEAD
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_WrongProtocol_Expect_E_PARA)
+{
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_ROCE;
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_Hccs_Expect_E_PARA)
+{
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_HCCS;
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_UbcCtp_QosUnset_UsesCommHcclQos)
+{
+    hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(5u);
+    comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_CTP;
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_UbcTp_QosUnset_UsesUbQosDefault)
+{
+    hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(HCCL_COMM_QOS_CONFIG_NOT_SET);
+    comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_TP;
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_UbcCtp_Valid_Expect_Success)
+{
+    hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(1u);
+    comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_CTP;
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_Uboe_QosUnset_UsesCommHcclQos)
+{
+    hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(3u);
+    comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBOE;
+    ret = ProcessUbChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+=======
+>>>>>>> 150e99e1... debug: enable AIV to directly drive URMA
