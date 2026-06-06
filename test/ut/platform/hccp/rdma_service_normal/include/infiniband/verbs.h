@@ -47,6 +47,8 @@
 #include <stdint.h>
 #include <infiniband/verbs_api.h>
 
+struct ibv_poll_cq_attr;
+
 #ifdef __cplusplus
 #include <limits>
 #endif

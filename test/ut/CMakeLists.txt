@@ -105,9 +105,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/task/rtsq_interact/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/typical
 
-    # hccp (moved to base_comm/resources)
+    # hccp (moved to base_comm/resource)
     ${HCCL_CODE_ROOT}/src/base_comm/resource/hccp/inc
     ${HCCL_CODE_ROOT}/src/base_comm/resource/hccp/inc/network
+    /src/base_comm/resource/hccp/inc/private/network
 
     # hccl/algorithm 目录下头文件 (legacy/ascend910)
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/pub_inc

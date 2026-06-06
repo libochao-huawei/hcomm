@@ -505,7 +505,7 @@ int TlsGetUserConfig(unsigned int saveMode, unsigned int chipId, const char *nam
 
 void TlsGetEnableInfo(unsigned int saveMode, unsigned int chipId, unsigned char *buf, unsigned int bufSize)
 {
-    return 0;
+    return;
 }
 
 struct KmcEncInfo {

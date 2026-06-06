@@ -505,16 +505,18 @@ bool AlltoAllOperator::IsSatisfyAlltoallPipelineCondition()
     bool multiRankPerServer = meshAggregationRankSize_ > 1;
     bool isMultiServer = ((userRankSize_ > meshAggregationRankSize_) &&
         (userRankSize_ % meshAggregationRankSize_) == 0);
-    auto autoAlgTypeLevel1 = static_cast<u32>(algType_.algoLevel1);
-    bool satisfyAlgType = (static_cast<AlgTypeLevel1>(autoAlgTypeLevel1) == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) &&
+    bool isDefaultAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING)
+        || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD);
+    bool isPipelineAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE);
+    bool isSatisfyAlgType = (isPipelineAlgo || isDefaultAlgo) &&
         CalcContextNumForPipeline(HcclCMDType::HCCL_CMD_ALLTOALL) <= HCCL_FFTS_CAPACITY;
     HCCL_DEBUG("[AlltoAllOperator][IsSatisfyAlltoallPipelineCondition]multiRankPerServer %u, "
         "isMultiServer %u, satisfyAlgType, %u, multiModuleDiffDeviceNumMode_ %u", multiRankPerServer,
-        isMultiServer, satisfyAlgType, multiModuleDiffDeviceNumMode_);
-    bool res = (deviceType_ == DevType::DEV_TYPE_910B && satisfyAlgType && multiRankPerServer &&
+        isMultiServer, isSatisfyAlgType, multiModuleDiffDeviceNumMode_);
+    bool res = (deviceType_ == DevType::DEV_TYPE_910B && isSatisfyAlgType && multiRankPerServer &&
         GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && isMultiServer &&
         !multiModuleDiffDeviceNumMode_ && cclBigEnough);
-    if (satisfyAlgType && !res) {
+    if (isSatisfyAlgType && !res) {
         HCCL_WARNING("AllToAll algo type is set to pipeline, but cclBigEnough is %u, multiRankPerServer is %u, "
             "isMultiServer is %u", cclBigEnough, multiRankPerServer, isMultiServer);
     }
