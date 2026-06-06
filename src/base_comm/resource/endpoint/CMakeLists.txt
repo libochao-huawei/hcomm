@@ -24,7 +24,7 @@ if(TARGET hcomm)
     )
     target_include_directories(hcomm PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${PROJECT_SOURCE_DIR}/src/base_comm/resources/hccp/inc/private/network
+        ${PROJECT_SOURCE_DIR}/src/base_comm/resource/hccp/inc/private/network
     )
 endif()
 
