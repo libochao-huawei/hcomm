@@ -429,10 +429,8 @@ int RsDrvSocketSend(int fd, const void *data, uint64_t size, int flags)
             rs_ssl_err_string(conn->connfd, err);
             CHK_PRT_RETURN((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ),
                 hccp_info("ssl_adp_write fd:%d need to retry, err:%d errno:%d", fd, err, errNo), -EAGAIN);
-            if (err == SSL_ERROR_SYSCALL) {
-                CHK_PRT_RETURN(errNo == EAGAIN || errNo == EWOULDBLOCK || errNo == EINTR,
-                    hccp_info("ssl_adp_write fd:%d need to retry, err:%d errno:%d", fd, err, errNo), -EAGAIN);
-            }
+            CHK_PRT_RETURN((err == SSL_ERROR_SYSCALL) && (errNo == EAGAIN || errNo == EWOULDBLOCK || errNo == EINTR),
+                hccp_info("ssl_adp_write fd:%d need to retry, err:%d errno:%d", fd, err, errNo), -EAGAIN);
             hccp_warn("ssl_adp_write fd:%d ret:%d, size:%llu err:%d errno:%d", fd, ret, size, err, errNo);
         }
     } else {
@@ -472,11 +470,9 @@ int RsDrvSocketRecv(int fd, void *data, uint64_t size, int flags)
             errNo = errno;
             rs_ssl_err_string(conn->connfd, err);
             CHK_PRT_RETURN((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ),
-                hccp_dbg("ssl_adp_read fd:%d need to retry", fd), -EAGAIN);
-            if (err == SSL_ERROR_SYSCALL) {
-                CHK_PRT_RETURN(errNo == EAGAIN || errNo == EWOULDBLOCK || errNo == EINTR,
-                    hccp_dbg("ssl_adp_read fd:%d need to retry", fd), -EAGAIN);
-            }
+                hccp_dbg("ssl_adp_read fd:%d need to retry, err:%d errno:%d", fd, err, errNo), -EAGAIN);
+            CHK_PRT_RETURN((err == SSL_ERROR_SYSCALL) && (errNo == EAGAIN || errNo == EWOULDBLOCK || errNo == EINTR),
+                hccp_dbg("ssl_adp_read fd:%d need to retry, err:%d errno:%d", fd, err, errNo), -EAGAIN);
             hccp_warn("ssl_adp_read fd:%d ret:%d, size:%llu err:%d errno:%d", fd, ret, size, err, errNo);
         }
     } else {
