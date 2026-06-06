@@ -172,6 +172,8 @@ HcclResult StubTpMgrGetLoopTpInfo(TpMgr *, const GetTpInfoParam &param, TpInfo &
     tpInfo.tpHandle = 0xABCDULL;
     tpInfo.hasMappedJettyPriority = true;
     tpInfo.mappedJettyPriority = 2U;
+    tpInfo.hasJettyErrTimeout = true;
+    tpInfo.jettyErrTimeout = 8U;
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -202,11 +204,9 @@ void PrepareLoopJettyTestFixture(CcuComponent &comp, const uint8_t dieId, const 
     tpInfo.tpHandle = 0xABCDULL;
     tpInfo.hasMappedJettyPriority = true;
     tpInfo.mappedJettyPriority = mappedJettyPriority;
+    tpInfo.hasJettyErrTimeout = true;
+    tpInfo.jettyErrTimeout = 8U;
     comp.tpInfoMap_[dieId] = tpInfo;
-
-    TpAttrInfo tpAttrInfo{};
-    tpAttrInfo.tpAttr.at = 1U;
-    comp.tpAttrInfoMap_[dieId] = tpAttrInfo;
 
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x300)));
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle)
