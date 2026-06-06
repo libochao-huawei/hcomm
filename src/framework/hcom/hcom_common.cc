@@ -257,6 +257,7 @@ HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
     return HCCL_SUCCESS;
 }
 
+
 HcclResult HcomGetCommByGroup(const char *group, std::shared_ptr<hccl::hcclComm> &hcclComm)
 {
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
