@@ -1842,14 +1842,14 @@ RS_ATTRI_VISI_DEF int RsPeerSocketSend(uint32_t sslEnable, int fd, const void *d
         if (ret <= 0) {
             err = ssl_adp_get_error(conn->ssl, ret);
             errNo = errno;
-            hccp_warn("ssl_adp_write fd:%d ret:%d, size:%llu err:%d errno:%d", fd, ret, size, err, errNo);
             rs_ssl_err_string(conn->connfd, err);
             CHK_PRT_RETURN((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ),
-                hccp_info("ssl_adp_write fd:%d need to retry", fd), -EAGAIN);
+                hccp_info("ssl_adp_write fd:%d need to retry, err:%d errno:%d", fd, err, errNo), -EAGAIN);
             if (err == SSL_ERROR_SYSCALL) {
                 CHK_PRT_RETURN(errNo == EAGAIN || errNo == EWOULDBLOCK || errNo == EINTR,
-                    hccp_info("ssl_adp_write fd:%d need to retry", fd), -EAGAIN);
+                    hccp_info("ssl_adp_write fd:%d need to retry, err:%d errno:%d", fd, err, errNo), -EAGAIN);
             }
+            hccp_warn("ssl_adp_write fd:%d ret:%d, size:%llu err:%d errno:%d", fd, ret, size, err, errNo);
         }
     } else {
         ret = (int)send(fd, data, size, MSG_DONTWAIT | MSG_NOSIGNAL);
@@ -1894,14 +1894,14 @@ RS_ATTRI_VISI_DEF int RsPeerSocketRecv(uint32_t sslEnable, int fd, void *data, u
         if (ret <= 0) {
             err = ssl_adp_get_error(conn->ssl, ret);
             errNo = errno;
-            hccp_dbg("ssl_adp_read fd:%d ret:%d, size:%llu err:%d errno:%d", fd, ret, size, err, errNo);
             rs_ssl_err_string(conn->connfd, err);
             CHK_PRT_RETURN((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ),
-                hccp_dbg("ssl_adp_read fd:%d need to retry", fd), -EAGAIN);
+                hccp_dbg("ssl_adp_read fd:%d need to retry, err:%d errno:%d", fd, err, errNo), -EAGAIN);
             if (err == SSL_ERROR_SYSCALL) {
                 CHK_PRT_RETURN(errNo == EAGAIN || errNo == EWOULDBLOCK || errNo == EINTR,
-                    hccp_dbg("ssl_adp_read fd:%d need to retry", fd), -EAGAIN);
+                    hccp_dbg("ssl_adp_read fd:%d need to retry, err:%d errno:%d", fd, err, errNo), -EAGAIN);
             }
+            hccp_dbg("ssl_adp_read fd:%d ret:%d, size:%llu err:%d errno:%d", fd, ret, size, err, errNo);
         }
     } else {
         ret = (int)recv(fd, data, size, MSG_DONTWAIT);
