@@ -136,58 +136,60 @@ struct TaskParam {
     std::shared_ptr<std::vector<CcuProfilingInfo>> ccuDetailInfo; // taskType为TASK_CCU时，ParaCcu的补充profiling信息
     std::string Describe() const
     {
-        std::string result = StringFormat("TaskParam[taskType[%s] beginTime[%llu] endTime[%llu] aicpuTaskId[%llu]",
-                                          taskType.Describe().c_str(), beginTime, endTime, aicpuTaskId);
-        switch (taskType) {
-            case TaskParamType::TASK_SDMA:
-            case TaskParamType::TASK_RDMA:
-            case TaskParamType::TASK_SEND_PAYLOAD:
-            case TaskParamType::TASK_UB_INLINE_WRITE:
-            case TaskParamType::TASK_UB:
-            case TaskParamType::TASK_WRITE_WITH_NOTIFY:
-            case TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY:
-            case TaskParamType::TASK_DPU_INLINE_WRITE:
+        return StringFormat("TaskParam[taskType[%s] beginTime[%llu] endTime[%llu] aicpuTaskId[%llu]",
+                            taskType.Describe().c_str(), beginTime, endTime, aicpuTaskId)
+             + DescribeDetail(*this) + "]";
+    }
+
+private:
+    static std::string DescribeDetail(const TaskParam &param)
+    {
+        std::string result;
+        switch (param.taskType) {
+            case TaskParamType::TASK_SDMA: case TaskParamType::TASK_RDMA:
+            case TaskParamType::TASK_SEND_PAYLOAD: case TaskParamType::TASK_UB_INLINE_WRITE:
+            case TaskParamType::TASK_UB: case TaskParamType::TASK_WRITE_WITH_NOTIFY:
+            case TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY: case TaskParamType::TASK_DPU_INLINE_WRITE:
             case TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY:
                 result += StringFormat(" src[%p] dst[%p] size[%zu] notifyID[%llu] dmaOp[%s] linkType[%s]",
-                                       taskPara.DMA.src, taskPara.DMA.dst, taskPara.DMA.size,
-                                       taskPara.DMA.notifyID, taskPara.DMA.dmaOp.Describe().c_str(),
-                                       taskPara.DMA.linkType.Describe().c_str());
+                                       param.taskPara.DMA.src, param.taskPara.DMA.dst,
+                                       param.taskPara.DMA.size, param.taskPara.DMA.notifyID,
+                                       param.taskPara.DMA.dmaOp.Describe().c_str(),
+                                       param.taskPara.DMA.linkType.Describe().c_str());
                 break;
-            case TaskParamType::TASK_REDUCE_INLINE:
-            case TaskParamType::TASK_UB_REDUCE_INLINE:
+            case TaskParamType::TASK_REDUCE_INLINE: case TaskParamType::TASK_UB_REDUCE_INLINE:
             case TaskParamType::TASK_REDUCE_TBE:
                 result += StringFormat(" src[%p] dst[%p] size[%zu] notifyID[%llu] reduceOp[%d] dataType[%d] linkType[%s]",
-                                       taskPara.Reduce.src, taskPara.Reduce.dst, taskPara.Reduce.size,
-                                       taskPara.Reduce.notifyID, static_cast<int>(taskPara.Reduce.reduceOp),
-                                       static_cast<int>(taskPara.Reduce.dataType),
-                                       taskPara.Reduce.linkType.Describe().c_str());
+                                       param.taskPara.Reduce.src, param.taskPara.Reduce.dst,
+                                       param.taskPara.Reduce.size, param.taskPara.Reduce.notifyID,
+                                       static_cast<int>(param.taskPara.Reduce.reduceOp),
+                                       static_cast<int>(param.taskPara.Reduce.dataType),
+                                       param.taskPara.Reduce.linkType.Describe().c_str());
                 break;
-            case TaskParamType::TASK_NOTIFY_RECORD:
-            case TaskParamType::TASK_NOTIFY_WAIT:
-            case TaskParamType::TASK_SEND_NOTIFY:
-            case TaskParamType::TASK_DPU_NOTIFY_WAIT:
+            case TaskParamType::TASK_NOTIFY_RECORD: case TaskParamType::TASK_NOTIFY_WAIT:
+            case TaskParamType::TASK_SEND_NOTIFY: case TaskParamType::TASK_DPU_NOTIFY_WAIT:
             case TaskParamType::TASK_DPU_CHANNEL_FENCE:
                 result += StringFormat(" notifyID[%llu] value[%u]",
-                                       taskPara.Notify.notifyID, taskPara.Notify.value);
+                                       param.taskPara.Notify.notifyID, param.taskPara.Notify.value);
                 break;
             case TaskParamType::TASK_AIV:
                 result += StringFormat(" cmdType[%d] tag[%u] count[%llu] numBlocks[%u] rankSize[%u]"
                                        " rank[%u] remoteRank[%u] dataType[%d]",
-                                       static_cast<int>(taskPara.Aiv.cmdType), taskPara.Aiv.tag,
-                                       taskPara.Aiv.count, taskPara.Aiv.numBlocks, taskPara.Aiv.rankSize,
-                                       taskPara.Aiv.rank, taskPara.Aiv.sendRecvRemoteRank,
-                                       static_cast<int>(taskPara.Aiv.dataType));
+                                       static_cast<int>(param.taskPara.Aiv.cmdType), param.taskPara.Aiv.tag,
+                                       param.taskPara.Aiv.count, param.taskPara.Aiv.numBlocks,
+                                       param.taskPara.Aiv.rankSize, param.taskPara.Aiv.rank,
+                                       param.taskPara.Aiv.sendRecvRemoteRank,
+                                       static_cast<int>(param.taskPara.Aiv.dataType));
                 break;
             case TaskParamType::TASK_CCU:
                 result += StringFormat(" dieId[%u] missionId[%u] execMissionId[%u] instrId[%u] executeId[%llu]",
-                                       taskPara.Ccu.dieId, taskPara.Ccu.missionId,
-                                       taskPara.Ccu.execMissionId, taskPara.Ccu.instrId,
-                                       taskPara.Ccu.executeId);
+                                       param.taskPara.Ccu.dieId, param.taskPara.Ccu.missionId,
+                                       param.taskPara.Ccu.execMissionId, param.taskPara.Ccu.instrId,
+                                       param.taskPara.Ccu.executeId);
                 break;
             default:
                 break;
         }
-        result += "]";
         return result;
     }
 };
