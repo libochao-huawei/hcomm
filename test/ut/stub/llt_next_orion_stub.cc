@@ -479,6 +479,11 @@ void RtsqBase::Reset()
 {
 }
 
+HcclResult RtsqBase::GetStreamIdAndTaskIdBySqIdx(u32 sqIdx, uint16_t& streamId, uint16_t& taskId)
+{
+    return HCCL_SUCCESS;
+}
+
 StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds) : id(id), sqId(sqIds), devPhyId(phyId), cqId(cqIds)
 {
     rtsq = std::make_unique<RtsqBase>(phyId, id, sqIds);
@@ -2798,9 +2803,4 @@ HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReq
 int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(unsigned int, unsigned int, const Hccl::TaskParam&, unsigned long long)> callback)
 {
     return 0;
-}
-
-HcclResult RtsqBase::GetStreamIdAndTaskIdBySqIdx(u32 sqIdx, uint16_t& streamId, uint16_t& taskId)
-{
-    return HCCL_SUCCESS;
 }
