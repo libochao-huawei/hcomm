@@ -294,6 +294,8 @@ STATIC int RsEpollEventSslAcceptInHandle(struct rs_cb *rsCb, int fd)
         }
     }
 
+    return ret;
+
 out:
     ssl_adp_shutdown(acceptInfo->ssl);
     ssl_adp_free(acceptInfo->ssl);
