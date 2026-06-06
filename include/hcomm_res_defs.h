@@ -26,6 +26,8 @@ static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x0fcf0f0fU;
 static const uint32_t HCOMM_CHANNEL_VERSION_ONE = 1U;
 /** ABI v2：在 union 之后增加与协议解耦的通信域 qos（uint32_t）等布局变更 */
 static const uint32_t HCOMM_CHANNEL_VERSION = 2u;
+/** 通信域 UB QoS 默认值（0–7），与 UB_QOS_DEFAULT 一致 */
+static const uint32_t HCOMM_CHANNEL_QOS_DEFAULT = 4U;
 
 typedef int32_t HcommResult;
 
@@ -286,6 +288,7 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
         channelDesc->socket = NULL;
         channelDesc->role = HCOMM_SOCKET_ROLE_RESERVED;
         channelDesc->port = 0;
+        channelDesc->qos = HCOMM_CHANNEL_QOS_DEFAULT;
         if (EndpointDescInit(&channelDesc->remoteEndpoint, 1) != 0) {
             return hcommEInternal;
         }
