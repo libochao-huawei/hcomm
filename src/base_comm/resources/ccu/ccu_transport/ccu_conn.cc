@@ -138,18 +138,6 @@ HcclResult CcuConnection::StatusMachine()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuConnection::GetTaTimeOut()
-{
-    if (tpProtocol_ == TpProtocol::CTP) {
-        errTimeout_ = static_cast<uint8_t>(Hccl::EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
-        HCCL_INFO("[CcuConnection][%s] CTP, env errTimeout[%u].", __func__, errTimeout_);
-        return HcclResult::HCCL_SUCCESS;
-    }
-
-    errTimeout_ = TpMgr::CalcTaTimeout(tpAttrInfo_);
-    return HcclResult::HCCL_SUCCESS;
-}
-
 HcclResult CcuConnection::UpdateInitStatus()
 {
     switch (innerStatus_) {
@@ -167,18 +155,15 @@ HcclResult CcuConnection::UpdateInitStatus()
         for (auto *jetty : ccuJettys_) {
             CHK_RET(jetty->SetMappedJettyPriority(tpInfo_.mappedJettyPriority));
         }
-        innerStatus_ = InnerStatus::TP_ATTR_GETTING;
-        return HcclResult::HCCL_SUCCESS;
-    }
-    case InnerStatus::TP_ATTR_GETTING: {
-        auto ret = GetTpAttr();
-        if (ret == HcclResult::HCCL_E_AGAIN) {
-            innerStatus_ = InnerStatus::TP_ATTR_GETTING;
-            return HcclResult::HCCL_SUCCESS;
+        if (tpProtocol_ == TpProtocol::CTP) {
+            errTimeout_ = static_cast<uint8_t>(Hccl::EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
+            HCCL_INFO("[CcuConnection][%s] CTP, env errTimeout[%u].", __func__, errTimeout_);
+        } else {
+            CHK_PRT_RET(!tpInfo_.hasJettyErrTimeout,
+                HCCL_ERROR("[CcuConnection][%s] TpMgr did not provide jettyErrTimeout.", __func__),
+                HcclResult::HCCL_E_INTERNAL);
+            errTimeout_ = tpInfo_.jettyErrTimeout;
         }
-        CHK_RET(ret);
-
-        GetTaTimeOut();
         innerStatus_ = InnerStatus::JETTY_CREATING;
         return HcclResult::HCCL_SUCCESS;
     }
@@ -254,28 +239,6 @@ HcclResult CcuConnection::GetTpInfo()
     }
 
     jettyImportCfg_.localTpHandle = tpInfo_.tpHandle;
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuConnection::GetTpAttr()
-{
-    if (tpProtocol_ == TpProtocol::CTP) {
-        HCCL_INFO("[CcuConnection][%s] CTP.", __func__);
-        return HcclResult::HCCL_SUCCESS;
-    }
-
-    constexpr uint32_t TP_ATTR_BITMAP = 0;
-    HcclResult ret = TpMgr::GetInstance(devPhyId_)
-        .GetTpAttr({tpInfo_.tpHandle, TP_ATTR_BITMAP}, tpAttrInfo_, ctxHandle_);
-    if (ret == HcclResult::HCCL_E_AGAIN) {
-        return ret;
-    }
-
-    if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuConnection][%s] failed, hccl result[%d]", __func__, ret);
-        return HcclResult::HCCL_E_NETWORK;
-    }
-
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -529,15 +492,11 @@ HcclResult CcuConnection::ReleaseConnRes()
     }
     importJettyCtxs_.clear();
 
-    if (tpProtocol_ == TpProtocol::RTP && tpInfo_.tpHandle != 0) {
-        (void)TpMgr::GetInstance(devPhyId_)
-            .ReleaseTpAttr(tpInfo_.tpHandle, tpAttrInfo_);
-    }
-
     if (tpInfo_.tpHandle != 0) { // tp handle 复用，只释放一次
         (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(getTpInfoParam_, tpInfo_);
         tpInfo_.tpHandle = 0;
         tpInfo_.hasMappedJettyPriority = false;
+        tpInfo_.hasJettyErrTimeout = false;
     }
     // CcuJetty 生命周期跟随通信域CcuJettyMgr
     // 不需要connection主动销毁
