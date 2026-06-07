@@ -71,30 +71,28 @@ std::string HostRdmaConnection::Describe() const
 HcclResult HostRdmaConnection::CreateQp()
 {
     if (socket_->GetStatus() != Hccl::SocketStatus::OK) {
-        HCCL_WARNING("[HostRdmaConnection::CreateQp] qp_num[%u], socket status is not ok, please check.",
-                     qpInfo_.qp->qp_num);
+        HCCL_WARNING("[HostRdmaConnection::CreateQp] socket status is not ok, please check.");
         return HCCL_E_AGAIN;
     }
 
     // 创建receive & send channel，用于poll cq，避免软件一直轮询cq
-    HCCL_INFO("HostRdmaConnection CreateCompChannel, qp_num[%u]", qpInfo_.qp->qp_num);
     s32 ret = RaCreateCompChannel(qpInfo_.rdmaHandle, &sendCompChannel_);
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostRdmaConnection::CreateQp][CreateSendCompChannel]errNo[0x%016llx] RaCreateCompChannel fail. "
-        "return[%d], qp_num[%u], params: rdmaHandle[%p], sendCompChannel[%p]",
-        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.qp->qp_num, qpInfo_.rdmaHandle, &sendCompChannel_),
+        "return[%d], params: rdmaHandle[%p], sendCompChannel[%p]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.rdmaHandle, &sendCompChannel_),
         HCCL_E_NETWORK);
     ret = RaCreateCompChannel(qpInfo_.rdmaHandle, &recvCompChannel_);
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostRdmaConnection::CreateQp][CreateReceiveCompChannel]errNo[0x%016llx] RaCreateCompChannel fail. "
-        "return[%d], qp_num[%u], params: rdmaHandle[%p], rcvCompChannel[%p]",
-        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.qp->qp_num, qpInfo_.rdmaHandle, &recvCompChannel_),
+        "return[%d], params: rdmaHandle[%p], rcvCompChannel[%p]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.rdmaHandle, &recvCompChannel_),
         HCCL_E_NETWORK);
 
     // 创建CQ和QP
     // qp创建时不指定srq/srq cq/srq context，由qp创建时创建独立的sq和rq，并创建对应的cq
     // cq for sq句柄保存在qpInfo_.sendCq中; cq for rq句柄保存在qpInfo_.receiveCq变量中
-    HCCL_INFO("HostRdmaConnection CreateCqAndQp, qp_num[%u]", qpInfo_.qp->qp_num);
+    HCCL_INFO("HostRdmaConnection CreateCqAndQp");
     CHK_RET(Hccl::HrtRaCreateQpWithCq(qpInfo_.rdmaHandle, -1, -1, sendCompChannel_,
         recvCompChannel_, qpInfo_, isHdcMode_));
 
