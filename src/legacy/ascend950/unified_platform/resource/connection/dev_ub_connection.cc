@@ -203,7 +203,6 @@ RmaConnStatus DevUbConnection::GetStatus()
                 break;
             }
             GetTimeOut();
-            CreateJetty(isdevUsed);
             ubConnStatus = UbConnStatus::JETTY_CREATING;
             break;
         case UbConnStatus::TP_INFO_GETTING:
@@ -211,18 +210,24 @@ RmaConnStatus DevUbConnection::GetStatus()
                 break;
             }
             GetTimeOut();
-            CreateJetty(isdevUsed);
             ubConnStatus = UbConnStatus::JETTY_CREATING;
             break;
         case UbConnStatus::JETTY_CREATING:
-            SetJettyInfo();
-            status = RmaConnStatus::EXCHANGEABLE;
+            if (reqHandle == 0) {
+                CreateJetty(isdevUsed);
+                break;
+            }
             ubConnStatus = UbConnStatus::JETTY_CREATED;
             break;
         case UbConnStatus::JETTY_CREATED:
-            HCCL_INFO("[DevUbConnection][%s] status[%s] will not change, "
-                "should call ImportRmtDto to change status.",
-                __func__, status.Describe().c_str());
+            if (status != RmaConnStatus::EXCHANGEABLE) {
+                SetJettyInfo();
+                status = RmaConnStatus::EXCHANGEABLE;
+            } else {
+                HCCL_INFO("[DevUbConnection][%s] status[%s] will not change, "
+                    "should call ImportRmtDto to change status.",
+                    __func__, status.Describe().c_str());
+            }
             break;
         case UbConnStatus::JETTY_IMPORTING:
             SetImportInfo();

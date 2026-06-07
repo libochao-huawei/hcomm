@@ -246,9 +246,11 @@ static bool TryApplyUboeEightTpQosPolicy(const GetTpInfoParam &param, uint32_t n
 static bool ApplyTpQosSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uint16_t slMask,
     uint32_t &tpListIndexOut, uint32_t &mappedSlOut)
 {
+    // UBOE 8 TP 特化：qos 0..7 一一对应 TP 7..0，SL 走专用映射；条件不满足则返回 false 走通用策略。
     if (TryApplyUboeEightTpQosPolicy(param, nTp, slMask, tpListIndexOut, mappedSlOut)) {
         return true;
     }
+    // 通用 QoS→TP→SL：按 hcclQos 分组选 TP 槽位，再按 SL 档位（数值越小优先级越高）取 mappedSl。
     return ApplyUbcQosTpSlPolicy(param, nTp, slMask, tpListIndexOut, mappedSlOut);
 }
 
@@ -514,17 +516,6 @@ HcclResult TpMgr::FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
     return HcclResult::HCCL_SUCCESS;
 }
 
-/// 创建 reqCtx 槽位并发起 TP List 异步查询。
-HcclResult TpMgr::BeginGetTpInfoListRequest(const GetTpInfoParam &param, ReqQosMap &qosMap, const QosKey qosKey)
-{
-    RequestCtx &reqCtx = qosMap[qosKey];
-    CHK_RET(StartGetTpInfoListRequest(param, reqCtx));
-    HCCL_INFO("[TpMgr][GetTpInfo] RaGetTpInfoListAsync submitted, devPhyId[%u] reqHandle[%llu] phase[WAIT_LIST] "
-              "param[%s].",
-        devPhyId_, static_cast<unsigned long long>(reqCtx.handle), param.Describe().c_str());
-    return HcclResult::HCCL_E_AGAIN;
-}
-
 /// 同链路已 bootstrap 过则复用 linkAttr，免二次 GetTpAttr。
 bool TpMgr::TryGetLinkAttrCache(const GetTpInfoParam &param, TpAttr &outAttr)
 {
@@ -709,17 +700,22 @@ HcclResult TpMgr::FinalizeGetTpInfo(RequestCtx reqCtx, const GetTpInfoParam &par
     return HcclResult::HCCL_SUCCESS;
 }
 
-/// 在 req 锁内 poll 并推进 WAIT_LIST → WAIT_ATTR → WAIT_COMMIT。
-HcclResult TpMgr::PollGetTpInfoReqCtx(std::unique_lock<std::mutex> &reqCtxLock, const GetTpInfoParam &param,
-    TpInfo &tpInfo)
+/// 异步 GetTpInfo：在 reqCtxMap 上按 phase 推进，未完成返回 HCCL_E_AGAIN。
+HcclResult TpMgr::RunAsyncGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
 {
+    std::unique_lock<std::mutex> reqCtxLock(GetReqCtxMutex(param.tpProtocol));
     auto &reqCtxMap = GetReqCtxMap(param.tpProtocol);
     TpInfoAddrKey key{};
     CHK_RET(ResolveTpInfoAddrKey(param, key));
     auto &qosMap = reqCtxMap[key.locAddr][key.rmtAddr];
     auto it = qosMap.find(key.qosKey);
     if (it == qosMap.end()) {
-        return BeginGetTpInfoListRequest(param, qosMap, key.qosKey);
+        RequestCtx &reqCtx = qosMap[key.qosKey];
+        CHK_RET(StartGetTpInfoListRequest(param, reqCtx));
+        HCCL_INFO("[TpMgr][GetTpInfo] RaGetTpInfoListAsync submitted, devPhyId[%u] reqHandle[%llu] phase[WAIT_LIST] "
+                  "param[%s].",
+            devPhyId_, static_cast<unsigned long long>(reqCtx.handle), param.Describe().c_str());
+        return HcclResult::HCCL_E_AGAIN;
     }
 
     RequestCtx &reqCtx = it->second;
@@ -759,8 +755,7 @@ HcclResult TpMgr::GetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo)
         return HcclResult::HCCL_SUCCESS;
     }
 
-    std::unique_lock<std::mutex> reqCtxLock(GetReqCtxMutex(param.tpProtocol));
-    return PollGetTpInfoReqCtx(reqCtxLock, param, tpInfo);
+    return RunAsyncGetTpInfo(param, tpInfo);
 }
 
 /// 释放 GetTpInfo 缓存引用；useCnt 归零时删除 loc×rmt×qos 条目。

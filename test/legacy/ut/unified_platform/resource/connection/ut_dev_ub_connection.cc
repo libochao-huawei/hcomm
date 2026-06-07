@@ -62,6 +62,15 @@ protected:
     std::string tag = "test";
 };
 
+static RmaConnStatus DriveDevUbConnectionUntilExchangeable(DevUbConnection &conn)
+{
+    RmaConnStatus status = conn.GetStatus();
+    for (int i = 0; i < 8 && status != RmaConnStatus::EXCHANGEABLE; ++i) {
+        status = conn.GetStatus();
+    }
+    return status;
+}
+
 TEST_F(DevUbConnectionTest, rma_ub_connection_get_status_return_exchanging_and_ok)
 {
     MOCKER_CPP(&DevUbConnection::GetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
@@ -82,7 +91,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_get_status_return_exchanging_and_o
     // Then
     RmaConnStatus status = devUbConnection.GetStatus();
     EXPECT_EQ(RmaConnStatus::INIT, status);
-    status = devUbConnection.GetStatus();
+    status = DriveDevUbConnectionUntilExchangeable(devUbConnection);
     EXPECT_EQ(RmaConnStatus::EXCHANGEABLE, status);
     EXPECT_EQ(DevUbConnection::UbConnStatus::JETTY_CREATED, devUbConnection.ubConnStatus);
 
@@ -132,7 +141,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_get_rma_conn_lite)
     // Then
     RmaConnStatus status = devUbConnection.GetStatus();
     EXPECT_EQ(RmaConnStatus::INIT, status);
-    status = devUbConnection.GetStatus();
+    status = DriveDevUbConnectionUntilExchangeable(devUbConnection);
     EXPECT_EQ(RmaConnStatus::EXCHANGEABLE, status);
     EXPECT_EQ(DevUbConnection::UbConnStatus::JETTY_CREATED, devUbConnection.ubConnStatus);
 }
@@ -154,7 +163,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_getstatus_change_status_ready)
     // Then
     RmaConnStatus status = devUbConnection.GetStatus();
     EXPECT_EQ(RmaConnStatus::INIT, status);
-    status = devUbConnection.GetStatus();
+    status = DriveDevUbConnectionUntilExchangeable(devUbConnection);
     EXPECT_EQ(RmaConnStatus::EXCHANGEABLE, status);
     EXPECT_EQ(DevUbConnection::UbConnStatus::JETTY_CREATED, devUbConnection.ubConnStatus);
  
@@ -872,7 +881,7 @@ TEST_F(DevUbConnectionTest, tp_import_test)
     std::string tag = "test";
     DevUbTpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
     EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::INIT); // TP_INFO_GETTING
-    EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::EXCHANGEABLE);
+    EXPECT_EQ(DriveDevUbConnectionUntilExchangeable(devUbConnection), RmaConnStatus::EXCHANGEABLE);
 
     // Then
     auto rmtDto = devUbConnection.GetExchangeDto();
@@ -900,7 +909,7 @@ TEST_F(DevUbConnectionTest, ctp_import_test)
     std::string tag = "test";
     DevUbCtpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
     EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::INIT); // TP_INFO_GETTING
-    EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::EXCHANGEABLE);
+    EXPECT_EQ(DriveDevUbConnectionUntilExchangeable(devUbConnection), RmaConnStatus::EXCHANGEABLE);
 
     // Then
     auto rmtDto = devUbConnection.GetExchangeDto();
@@ -1049,7 +1058,14 @@ TEST_F(DevUbConnectionTest, Ut_DevUsed_DeferJettyUntilTpReady_And_MapQos)
     EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::INIT);
     EXPECT_EQ(devUbConnection.ubConnStatus, DevUbConnection::UbConnStatus::JETTY_CREATING);
     EXPECT_EQ(devUbConnection.qos_, static_cast<u8>(6U));
+
+    EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::INIT);
+    EXPECT_EQ(devUbConnection.ubConnStatus, DevUbConnection::UbConnStatus::JETTY_CREATING);
     EXPECT_EQ(gCapturedJettyCreateQos, static_cast<u8>(6U));
+
+    EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::INIT);
+    EXPECT_EQ(devUbConnection.ubConnStatus, DevUbConnection::UbConnStatus::JETTY_CREATED);
+
     EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::EXCHANGEABLE);
     GlobalMockObject::verify();
 }

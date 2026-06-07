@@ -89,7 +89,7 @@ class TpManager {
 public:
     static TpManager &GetInstance(const int32_t deviceLogicId);
     void Init();
-    /// `isSync==true`：HostUb 同步路径（GetByAddr + `RaUbGetTpInfo`），list 完成后不做 QoS/SL Mapping。
+    /// `isSync==true`：HostUb 一次同步完成 list→attr→Mapping→commit；false 走 Device 异步状态机。
     HcclResult GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync = false);
     // unimport jetty 会 URMA 销毁 tp 资源，hccl 配套删除记录
     HcclResult ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInfo &tpInfo);
@@ -134,14 +134,12 @@ private:
      *   WAIT_LIST   → RaUbGetTpInfo(Async)
      *   WAIT_ATTR   → RaGetTpAttrAsync(list[0])；linkCache 命中则跳过 Get
      *   WAIT_COMMIT → HrtRaSetTpAttrAsync(selectedTp, SL；UBOE 且 dscpConfigMode==0 时 SL+DSCP 同次)
-     * isSync==true 时 list 同步完成后直接 Finalize（无 Mapping/Commit）。
      */
     enum class ReqPhase : uint8_t { WAIT_LIST = 0, WAIT_ATTR = 1, WAIT_COMMIT = 2 };
     struct RequestCtx {
         ReqPhase phase{ReqPhase::WAIT_LIST};
         RequestHandle handle{0};
         uint32_t tpInfoNum{0};
-        bool isSync{false};
         std::vector<char_t> dataBuffer;
         TpAttr linkTpAttr{};
         uint32_t bootstrapAttrBitmap{0};
@@ -201,20 +199,23 @@ private:
     TpManager &operator=(const TpManager &that) = delete;
 
     HcclResult FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
-    HcclResult PollGetTpInfoReqCtx(std::unique_lock<std::mutex> &reqCtxLock, const RaUbGetTpInfoParam &param,
-        TpInfo &tpInfo, bool isSync);
-    HcclResult BeginGetTpInfoListRequest(const RaUbGetTpInfoParam &param, ReqQosMap &qosMap, QosKey qosKey,
-        bool isSync);
+    HcclResult RunHostSyncGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult RunAsyncGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult SelectTpByQosSl(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx);
+    HcclResult StoreGetTpInfoResult(const RaUbGetTpInfoParam &param, const RequestCtx &reqCtx, TpInfo &tpInfo);
+    void SyncCommitTpAttr(const RaUbGetTpInfoParam &param, const RequestCtx &reqCtx) const;
+    HcclResult SelectTpAndContinueAsync(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, ReqQosMap &qosMap,
+        ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
+    /// WAIT_LIST 完成：拉 linkAttr 或走缓存，再 Mapping/Commit。
     HcclResult AdvanceFromWaitList(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, ReqQosMap &qosMap,
         ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
+    /// WAIT_ATTR 完成：写入 linkCache，执行 Mapping/Commit。
     HcclResult AdvanceFromWaitAttr(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, ReqQosMap &qosMap,
         ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
     HcclResult AdvanceFromWaitCommit(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, ReqQosMap &qosMap,
         ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
-    HcclResult RunMappingAndContinue(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, ReqQosMap &qosMap,
-        ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
     HcclResult FinalizeGetTpInfo(RequestCtx reqCtx, const RaUbGetTpInfoParam &param, ReqQosMap &qosMap,
-        ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo, bool withSlPolicy);
+        ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
     void StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, bool isSync) const;
     HcclResult StartBootstrapLinkAttr(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult StartCommitTpAttr(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx) const;
