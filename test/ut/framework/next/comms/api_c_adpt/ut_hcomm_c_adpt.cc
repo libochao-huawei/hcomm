@@ -292,7 +292,6 @@ TEST_F(HcommCAdptTest, ut_HcommChannelDescInit_When_Normal_Expect_Version2AndFul
 {
     HcommChannelDesc channelDesc{};
     ASSERT_EQ(HcommChannelDescInit(&channelDesc, 1), HCCL_SUCCESS);
-    EXPECT_EQ(channelDesc.header.version, HCOMM_CHANNEL_VERSION_TWO);
     EXPECT_EQ(channelDesc.header.version, HCOMM_CHANNEL_VERSION);
     EXPECT_EQ(channelDesc.header.size, sizeof(HcommChannelDesc));
     EXPECT_GE(sizeof(HcommChannelDesc), HCOMM_CHANNEL_DESC_ABI_V1_SIZE + sizeof(uint32_t));
@@ -380,7 +379,7 @@ TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_V1V2Desc_QosCompat)
     gCapturedChannelDescQos = 0U;
     HcommChannelDesc v2ChannelDesc{};
     ASSERT_EQ(HcommChannelDescInit(&v2ChannelDesc, 1), HCCL_SUCCESS);
-    v2ChannelDesc.header.version = HCOMM_CHANNEL_VERSION_TWO;
+    v2ChannelDesc.header.version = HCOMM_CHANNEL_VERSION;
     v2ChannelDesc.header.size = sizeof(HcommChannelDesc);
     constexpr uint32_t kTestQos = 7U;
     v2ChannelDesc.qos = kTestQos;

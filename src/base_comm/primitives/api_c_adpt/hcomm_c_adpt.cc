@@ -142,7 +142,7 @@ HcommResult ProcessHcommChannelDescs(const HcommChannelDesc &channelDesc, HcommC
     }
 
     // v1：无 union 之后的通信域 qos；header.size 未覆盖 qos 字段时不解析传入的 qos 字节
-    if (channelDesc.header.version < HCOMM_CHANNEL_VERSION_TWO ||
+    if (channelDesc.header.version <= HCOMM_CHANNEL_VERSION_ONE ||
         channelDesc.header.size <= HCOMM_CHANNEL_DESC_ABI_V1_SIZE) {
         channelDescFinal.qos = 0xFFFFFFFFU;
     }

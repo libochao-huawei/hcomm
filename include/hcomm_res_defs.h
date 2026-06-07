@@ -25,8 +25,7 @@ static const uint32_t COMM_ADDR_EID_LEN = 16U;
 static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x0fcf0f0fU;
 static const uint32_t HCOMM_CHANNEL_VERSION_ONE = 1U;
 /** ABI v2：在 union 之后增加与协议解耦的通信域 qos（uint32_t）等布局变更 */
-static const uint32_t HCOMM_CHANNEL_VERSION_TWO = 2U;
-static const uint32_t HCOMM_CHANNEL_VERSION = HCOMM_CHANNEL_VERSION_TWO;
+static const uint32_t HCOMM_CHANNEL_VERSION = 2u;
 /** 通信域 UB QoS 默认值（0–7），与 UB_QOS_DEFAULT 一致 */
 static const uint32_t HCOMM_CHANNEL_QOS_DEFAULT = 4U;
 
@@ -196,7 +195,7 @@ typedef enum {
  * @brief 通道描述参数
  * @note 结构体末尾扩展需要自增版本号，并补充兼容处理逻辑。
  *       ABI v1：HCOMM_CHANNEL_VERSION_ONE，无 union 之后的 qos 字段，见 HCOMM_CHANNEL_DESC_ABI_V1_SIZE。
- *       ABI v2：HCOMM_CHANNEL_VERSION_TWO，在 union 之后增加 uint32_t qos（通信域 QoS，与协议解耦）。
+ *       ABI v2：HCOMM_CHANNEL_VERSION，在 union 之后增加 uint32_t qos（通信域 QoS，与协议解耦）。
  */
 typedef struct {
     CommAbiHeader header;            ///< ABI头部，包含版本等信息
