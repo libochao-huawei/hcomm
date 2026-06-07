@@ -288,7 +288,8 @@ static uint32_t BuildBootstrapAttrBitmap(TpProtocol tpProtocol)
 static RdmaHandle ResolveUbRdmaHandle(const uint32_t phyId, const Hccl::IpAddress &locAddr, const bool isSync)
 {
     if (isSync) {
-        return RdmaHandleManager::GetInstance().GetByAddr(phyId, LinkProtoType::UB, locAddr,
+        Hccl::IpAddress addr = locAddr;
+        return RdmaHandleManager::GetInstance().GetByAddr(phyId, LinkProtoType::UB, addr,
             Hccl::PortDeploymentType::HOST_NET);
     }
     return RdmaHandleManager::GetInstance().GetByIp(phyId, locAddr);
