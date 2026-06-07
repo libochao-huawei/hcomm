@@ -131,6 +131,10 @@ HcommResult ProcessHcommChannelDescs(const HcommChannelDesc &channelDesc, HcommC
         channelDescFinal.port = channelDesc.port;
     }
 
+    if (channelDesc.header.version >= HCOMM_CHANNEL_VERSION_TWO) {
+        channelDescFinal.roceAttr.multiQpThreshold = channelDesc.roceAttr.multiQpThreshold;
+    }
+
     if (channelDesc.header.version > HCOMM_CHANNEL_VERSION) {
         HCCL_RUN_WARNING("The version of provided [%u] is higher than the current version[%u], "
             "unsupported configuration will be ignored.",

@@ -38,6 +38,7 @@ public:
             value = defaultBackup;
             return;
         }
+
         isSetByEnvironment_ = true;
         // 类型转换
         if (cast) {
@@ -67,6 +68,7 @@ public:
                 THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]Env config \"%s\" value is invalid.%s", name.c_str(), e.what()));
             }
         }
+
         // 后处理
         if (postProc) {
             postProc(value);
