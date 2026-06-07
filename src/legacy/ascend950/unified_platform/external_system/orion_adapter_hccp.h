@@ -628,6 +628,10 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
 
 void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param, vector<char_t> &out, uint32_t &num);
 
+void RaUbGetTpAttr(const RdmaHandle rdmaHandle, uint64_t tpHandle, uint32_t &attrBitmap, TpAttr &attr);
+
+void RaUbSetTpAttr(const RdmaHandle rdmaHandle, uint64_t tpHandle, uint32_t attrBitmap, TpAttr &attr);
+
 RequestHandle RaUbImportJettyAsync(const RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,
     vector<char_t> &out, void* &remQpHandle);
 RequestHandle RaUbTpImportJettyAsync(const RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,
