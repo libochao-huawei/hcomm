@@ -2291,7 +2291,33 @@ void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param,
             locAddr.Describe().c_str(), rmtAddr.Describe().c_str()));
     }
 
-    HCCL_INFO("[%s] ok, get handle[%llu].", __func__);
+    HCCL_INFO("[%s] ok, tpInfoNum[%u].", __func__, num);
+}
+
+void RaUbGetTpAttr(const RdmaHandle rdmaHandle, const uint64_t tpHandle, uint32_t &attrBitmap, TpAttr &attr)
+{
+    CHECK_NULLPTR(rdmaHandle, "[RaUbGetTpAttr] rdmaHandle is nullptr!");
+    const s32 ret = RaCtxGetTpAttr(rdmaHandle, tpHandle, &attrBitmap, &attr);
+    if (ret != 0) {
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
+            "rdmaHandle[%p], tpHandle[%llu].", __func__, ret, rdmaHandle,
+            static_cast<unsigned long long>(tpHandle)));
+    }
+    HCCL_INFO("[RaUbGetTpAttr] ok, tpHandle[%llu] attrBitmap[0x%x].", static_cast<unsigned long long>(tpHandle),
+        attrBitmap);
+}
+
+void RaUbSetTpAttr(const RdmaHandle rdmaHandle, const uint64_t tpHandle, const uint32_t attrBitmap, TpAttr &attr)
+{
+    CHECK_NULLPTR(rdmaHandle, "[RaUbSetTpAttr] rdmaHandle is nullptr!");
+    const s32 ret = RaCtxSetTpAttr(rdmaHandle, tpHandle, attrBitmap, &attr);
+    if (ret != 0) {
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
+            "rdmaHandle[%p], tpHandle[%llu].", __func__, ret, rdmaHandle,
+            static_cast<unsigned long long>(tpHandle)));
+    }
+    HCCL_INFO("[RaUbSetTpAttr] ok, tpHandle[%llu] attrBitmap[0x%x].", static_cast<unsigned long long>(tpHandle),
+        attrBitmap);
 }
 
 static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,

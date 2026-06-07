@@ -210,10 +210,8 @@ private:
     /// 在三级 infoMap 中定位 loc/rmt/qos 条目迭代器（供 ReleaseTpInfo 级联删除用）。
     HcclResult LookupInfoCtxEntry(InfoCtxMap &infoMap, const Hccl::IpAddress &locAddr, const Hccl::IpAddress &rmtAddr,
         QosKey qosKey, InfoCtxMap::iterator &lit, InfoRmtMap::iterator &rit, InfoQosMap::iterator &qosIt) const;
-    /// GetTpInfo 状态机驱动：poll 异步结果并按 phase 推进。
-    HcclResult PollGetTpInfoReqCtx(std::unique_lock<std::mutex> &reqCtxLock, const GetTpInfoParam &param, TpInfo &tpInfo);
-    /// 首次请求：提交 RaGetTpInfoListAsync，进入 WAIT_LIST。
-    HcclResult BeginGetTpInfoListRequest(const GetTpInfoParam &param, ReqQosMap &qosMap, QosKey qosKey);
+    /// GetTpInfo 状态机驱动：加 req 锁并 poll 异步结果、按 phase 推进。
+    HcclResult RunAsyncGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
     /// WAIT_LIST 完成：拉 linkAttr 或走缓存，再 Mapping/Commit。
     HcclResult AdvanceFromWaitList(const GetTpInfoParam &param, RequestCtx &reqCtx, ReqQosMap &qosMap,
         ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
