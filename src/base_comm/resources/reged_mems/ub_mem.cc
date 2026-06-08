@@ -41,9 +41,32 @@ HcclResult UbMemRegedMemMgr::UnregisterMemory(void* memHandle)
 {
     HCCL_INFO("[%s] Begin", __func__);
     CHK_PTR_NULL(localIpcRmaBufferMgr_);
-    return UnregisterMemoryImpl(memHandle, localIpcRmaBufferMgr_, allRegisteredBuffers_,
-        [](auto* b) { return b->GetIpcPtr(); },
-        [](auto a, auto b) { return a == b; });
+
+    Hccl::LocalIpcRmaBuffer* buffer = static_cast<Hccl::LocalIpcRmaBuffer*>(memHandle);
+    CHK_PTR_NULL(buffer);
+    auto bufferInfo = buffer->GetBufferInfo();
+
+    // 从LocalIpcRmaBuffer计数器删除HcclBuf
+    hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
+    bool isDeleted = false;
+    EXCEPTION_CATCH(isDeleted = localIpcRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
+    // 计数器大于1时，仅减少引用计数
+    if (!isDeleted) {
+        HCCL_INFO("[%s] Memory reference count is larger than 0, just decrease the reference count.", __func__);
+        return HCCL_SUCCESS;
+    }
+    // 删除vector中的LocalUbRmaBuffer
+    auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+            [buffer](const std::shared_ptr<Hccl::LocalIpcRmaBuffer>& ptr) {
+                return ptr.get() == buffer;
+            });
+    if (it == allRegisteredBuffers_.end()) {
+        HCCL_ERROR("[%s] Memory not found in vector!", __func__);
+        return HCCL_E_NOT_FOUND;
+    }
+
+    allRegisteredBuffers_.erase(it);
+    return HCCL_SUCCESS;
 }
 
 HcclResult UbMemRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, void *memHandle, void **memDesc, uint32_t *memDescLen)
