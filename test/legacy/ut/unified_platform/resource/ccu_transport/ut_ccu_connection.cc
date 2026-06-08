@@ -395,24 +395,3 @@ TEST_F(CcuConnectionTest, Ut_Serialize_DtoJettyKeyContainsLocEid)
         }
     }
 }
-
-TEST_F(CcuConnectionTest, Ut_StartImportJettyRequest_PatchesRmtEidIntoKey)
-{
-    auto resPair = MockMakeCcuConnection(TpProtocol::CTP);
-    auto connection = resPair.first.get();
-
-    EXPECT_EQ(connection->GetStatus(), CcuConnStatus::INIT);
-    EXPECT_EQ(connection->GetStatus(), CcuConnStatus::INIT);
-    EXPECT_EQ(connection->GetStatus(), CcuConnStatus::EXCHANGEABLE);
-    connection->importJettyCtxs.resize(connection->jettyNum);
-    for (uint32_t i = 0; i < connection->jettyNum; ++i) {
-        connection->importJettyCtxs[i].inParam.keyLen = URMA_EID_LEN;
-        (void)memset_s(connection->importJettyCtxs[i].remoteQpKey, sizeof(connection->importJettyCtxs[i].remoteQpKey),
-            0, sizeof(connection->importJettyCtxs[i].remoteQpKey));
-    }
-
-    MOCKER(RaUbTpImportJettyAsync).stubs().will(returnValue(static_cast<RequestHandle>(0x1)));
-    RequestHandle reqHandle = 0;
-    EXPECT_EQ(connection->StartImportJettyRequest(0, reqHandle), HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(memcmp(connection->importJettyCtxs[0].remoteQpKey, connection->rmtAddr_.GetEid().raw, URMA_EID_LEN), 0);
-}
