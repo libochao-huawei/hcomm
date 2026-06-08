@@ -13,7 +13,6 @@
 #undef private
 #include "hccl_comm_pub.h"
 #include "llt_hccl_stub_rank_graph.h"
-#include "rank_consistency_checker_v2.h"
 
 using namespace hccl;
 
@@ -115,9 +114,6 @@ TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Succe
     MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
         .stubs()
         .will(returnValue((s32)30));
-    MOCKER_CPP(&RankConsistencyCheckerV2::CompareCheckFrameV2)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
 
     HcclChannelDesc channelDescs[1];
     channelDescs[0].remoteRank = 1;
@@ -127,8 +123,6 @@ TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Succe
     std::vector<HcommChannelDesc> hcommDescVec;
     hcommDescVec.push_back(hcommDesc);
     ExchangeInfoMgr exchangeInfoMgr;
-    std::vector<std::pair<u32, u32>> newChannels;
-    newChannels.emplace_back(std::make_pair(1, 1));
-    ret = exchangeInfoMgr.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, newChannels, collCommConfigConsistency, "test_tag");
+    ret = exchangeInfoMgr.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, collCommConfigConsistency, "test_tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
