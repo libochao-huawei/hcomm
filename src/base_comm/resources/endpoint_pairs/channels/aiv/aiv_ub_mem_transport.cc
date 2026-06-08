@@ -184,7 +184,7 @@ HcclResult AivUbMemTransport::SendMemInfo()
     return HCCL_SUCCESS;
 }
 
-void AivUbMemTransport::BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec)
+HcclResult AivUbMemTransport::BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec)
 {
     u32 vecSize = bufferVec.size();
     binaryStream << vecSize;
