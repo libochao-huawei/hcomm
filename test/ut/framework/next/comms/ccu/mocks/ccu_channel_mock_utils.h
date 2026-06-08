@@ -29,6 +29,8 @@
 #include "ccu_transport_.h"
 #include "ccu_conn.h"
 
+#include "endpoint_monitor.h"
+
 #undef private
 #undef protected
 
@@ -135,6 +137,7 @@ HcclResult MockCcuTransportGetRmtXn(hcomm::CcuTransport *This, const uint32_t in
 
 void MockCcuChannelGetRes()
 {
+    MOCKER_CPP(&hcomm::EndpointMonitor::RegisterToEndpointMonitor).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&hcomm::CcuConnection::ImportJetty).stubs().will(invoke(MockCcuConnectionImportJettys));
     MOCKER_CPP(&hcomm::CcuTransport::RecvDataSize).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&hcomm::CcuTransport::RecvConnAndTransInfo).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
