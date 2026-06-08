@@ -1376,6 +1376,11 @@ void BaseMemTransport::CheckLocConn(CommonLocRes &res)
 void BaseMemTransport::CheckCommonLocRes(CommonLocRes &res)
 {
 }
+
+void BaseMemTransport::SetSocket(Socket *socket)
+{
+}
+
 HcclResult HrtRaCreateQpWithCq(
     RdmaHandle rdmaHandle, s32 sqEvent, s32 rqEvent, void *sendChannel, void *recvChannel, QpInfo &info, bool isHdcMode)
 {
