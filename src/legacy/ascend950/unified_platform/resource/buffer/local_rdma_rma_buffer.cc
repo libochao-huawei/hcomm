@@ -33,7 +33,7 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
     struct MrInfoT mrInfo;
     mrInfo.addr   = reinterpret_cast<void *>(bufAddr);
     mrInfo.size   = bufSize;
-    mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;
+    mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ | RA_ACCESS_REMOTE_ATOMIC;
 
     s32 ret = RaRegisterMr(rdmaHandle, &mrInfo, &mrHandle);
     if (ret != 0 || mrHandle == nullptr) {
