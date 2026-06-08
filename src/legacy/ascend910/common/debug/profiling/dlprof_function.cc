@@ -61,7 +61,7 @@ int32_t MsprofReportAdditionalInfoStub(uint32_t agingFlag, const VOID_PTR data, 
     return 0;
 }
 
-uint64_t MsprofStr2IdStub(const char *hashInfo, size_t length)
+uint64_t MsprofStr2IdStub(const char *hashInfo, uint32_t length)
 {
     HCCL_WARNING("Entry MsprofStr2IdStub");
     return 0;
