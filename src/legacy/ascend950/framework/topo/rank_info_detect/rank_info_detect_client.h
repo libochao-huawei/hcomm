@@ -15,13 +15,12 @@
 #include "new_rank_info.h"
 #include "rank_table_info.h"
 #include "json_parser.h"
-#include "internal_exception.h"
-#include "timeout_exception.h"
-#include "socket_exception.h"
 #include "socket_agent.h"
 #include "root_handle_v2.h"
 
 namespace Hccl {
+
+const u32 RANKINFO_DETECT_AGENT_WAIT_ERROR_BROADCAST_TIME = 20;
 
 class RankInfoDetectClient {
 public:
@@ -31,7 +30,7 @@ public:
     }
     ~RankInfoDetectClient();
 
-    void Setup(RankTableInfo &rankTable, u32 hostPort);
+    HcclResult Setup(RankTableInfo &rankTable, u32 hostPort);
 
 private:
     u32                             devPhyId_{0};
@@ -41,26 +40,26 @@ private:
     u32                             currentStep_{0};
     RankTableInfo                   rankTable_{};
     SocketAgent                     socketAgent_;
-    
-    void Connect();
-    void CheckStatus();
-    void SendAgentIdAndRankSize();
-    void SendLocalRankTable(const RankTableInfo &localRankTable);
-    void ConstructRankTable(RankTableInfo &localRankTable);
-    void VerifyRankTable();
-    void RecvRankTable();
-    void RecvRankTableMsg(vector<char> &rankInfoMsg);
-    void ParseRankTable(vector<char> &rankInfoMsg);
-    void GetLocalRankTableJson(const nlohmann::json &parseJson, nlohmann::json &localRankTableJson);
-    void GetLocalDevInfoJson(const nlohmann::json &parseJson, nlohmann::json &localDevInfoJson);
-    void ConstructSingleRank(RankTableInfo &localRankTable);
+
+    HcclResult Connect();
+    HcclResult CheckStatus();
+    HcclResult SendAgentIdAndRankSize();
+    HcclResult SendLocalRankTable(const RankTableInfo &localRankTable);
+    HcclResult ConstructRankTable(RankTableInfo &localRankTable);
+    HcclResult VerifyRankTable();
+    HcclResult RecvRankTable();
+    HcclResult RecvRankTableMsg(vector<char> &rankInfoMsg);
+    HcclResult ParseRankTable(vector<char> &rankInfoMsg);
+    HcclResult GetLocalRankTableJson(const nlohmann::json &parseJson, nlohmann::json &localRankTableJson);
+    HcclResult GetLocalDevInfoJson(const nlohmann::json &parseJson, nlohmann::json &localDevInfoJson);
+    HcclResult ConstructSingleRank(RankTableInfo &localRankTable);
     HcclResult GetLocalTlsStatus(TlsStatus &tlsStatus) const;
     HcclResult VerifyTlsConsistency() const;
     void GenerateTlsStatusStr(std::string &tlsStatusStr, const std::vector<u32> &tlsStatusRanks) const;
     void ReportTlsConfigurationError(
         const std::string &tlsInconsistentTlsType, const std::string &tlsEnableRankStr,
         const std::string &tlsDisableRankStr, const std::string &tlsUnknownRankStr) const;
-    void TearDown();
+    HcclResult TearDown();
 };
 
 } // namespace Hccl

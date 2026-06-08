@@ -510,7 +510,7 @@ HcclResult HcclGetRootInfoV2(HcclRootInfo *rootInfo)
     HcclRootHandleV2 rootHandle{};
     std::shared_ptr<RankInfoDetect> rankInfoDetectServer;
     EXCEPTION_CATCH((rankInfoDetectServer = std::make_shared<RankInfoDetect>()), return HCCL_E_MEMORY);
-    TRY_CATCH_RETURN(rankInfoDetectServer->SetupServer(rootHandle));
+    CHK_RET(rankInfoDetectServer->SetupServer(rootHandle));
 
     // 校验rootHandle大小是否超过rootInfo->internal大小
     u32 rootHandleLen = sizeof(HcclRootHandleV2);
@@ -1653,15 +1653,10 @@ HcclResult RootInfoDetect(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, c
                   __func__, nRanks, rank, rootHandle.ip, rootHandle.listenPort,
                   rootHandle.netMode.Describe().c_str(), rootHandle.identifier, deviceLogicId, devPhyId);
     // client端拓扑探测
-    
-    bool hasException = false;
-    EXCEPTION_CATCH(rankInfoDetectAgent->SetupAgent(nRanks, rank, rootHandle), hasException = true);
+    CHK_RET(rankInfoDetectAgent->SetupAgent(nRanks, rank, rootHandle));
 
     // 等server端执行结束
-    EXCEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_IDLE), hasException = true);
-
-    // 若探测流程异常返回错误信息
-    CHK_PRT_RET(hasException, HCCL_ERROR("[%s] RankInfoDetect SetupAgent fail, identifier[%s].", __func__, rootHandle.identifier), HCCL_E_INTERNAL);
+    CHK_RET(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_IDLE));
 
     // 获取ranktable
     rankInfoDetectAgent->GetRankTable(rankTable);

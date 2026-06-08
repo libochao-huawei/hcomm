@@ -28,6 +28,11 @@ using HcclRootHandleV2 = struct HcclRootHandleDefV2 {
     char         identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH];
 };
 
+// 通信域初始化阶段临终遗言故障类型
+enum class TopoDetectFaultType : int {
+    TOPO_DETECT_CONNECT_FAILED = 1
+};
+
 // buffer大小
 constexpr u32 MAX_BUFFER_LEN  = 10 * 1024 * 1024; // 10M
 

@@ -418,6 +418,7 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
             HCCL_ERROR("[%s][%s] topo exchange agent get socket timeout! timeout[%lld s]",
                 LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), timeout);
             PrintSocketTimeoutReasons(serverIp, port, socket);
+            // TODO A3
             sleep(WAIT_ERROR_BROADCAST_TIME);
             return HCCL_E_TIMEOUT;
         }

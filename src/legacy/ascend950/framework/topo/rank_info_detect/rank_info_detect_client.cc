@@ -24,37 +24,39 @@
 
 namespace Hccl {
 
-void RankInfoDetectClient::Setup(RankTableInfo &rankTable, u32 hostPort)
+HcclResult RankInfoDetectClient::Setup(RankTableInfo &rankTable, u32 hostPort)
 {
     // 1. 构造localRankTable
     RankTableInfo localRankTable{};
-    ConstructRankTable(localRankTable);
+    CHK_RET(ConstructRankTable(localRankTable));
 
     // 若启用单卡多进程抢占端口则执行
     SocketManager::ServerInitAll(localRankTable.ranks[0]);
     localRankTable.ranks[0].hostPort = hostPort;
 
     // 2. 连接root节点
-    Connect();
+    CHK_RET(Connect());
 
     // 3. 发送本端agentId和rankSize
-    SendAgentIdAndRankSize();
-    
+    CHK_RET(SendAgentIdAndRankSize());
+
     // 4. 发送给root节点
-    SendLocalRankTable(localRankTable);
-    
+    CHK_RET(SendLocalRankTable(localRankTable));
+
     // 5. 接收完整rankTable
-    RecvRankTable();
+    CHK_RET(RecvRankTable());
     rankTable = rankTable_;
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::Connect()
+HcclResult RankInfoDetectClient::Connect()
 {
-    clientSocket_->Connect(); 
-    CheckStatus();
+    clientSocket_->Connect();
+    CHK_RET(CheckStatus());
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::CheckStatus()
+HcclResult RankInfoDetectClient::CheckStatus()
 {
     HCCL_DEBUG("[RankInfoDetectClient::%s] start.", __func__);
 
@@ -69,35 +71,41 @@ void RankInfoDetectClient::CheckStatus()
                 std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
                     "Timeout was set to %lld seconds. Check whether node rankId[%u] reports an error.",
                     static_cast<long long>(timeout.count()), rankId_)}));
-            THROW<TimeoutException>("client get connection timeout");
+            // 建链超时后，sleep 20s
+            // TODO A5
+            return HCCL_E_TIMEOUT;
         }
 
-        if (clientSocket_->GetStatus() == SocketStatus::OK) {
+        SocketStatus status = SocketStatus::INVALID;
+        TRY_CATCH_RETURN(status = clientSocket_->GetStatus());
+        if (status == SocketStatus::OK) {
             HCCL_DEBUG("[RankInfoDetectClient::%s] client get socket connection success.", __func__);
             break;
         }
     }
 
     HCCL_INFO("[RankInfoDetectClient::%s] end, connect ok.", __func__);
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::SendAgentIdAndRankSize()
+HcclResult RankInfoDetectClient::SendAgentIdAndRankSize()
 {
     HCCL_DEBUG("[RankInfoDetectClient::%s] start.", __func__);
 
     // 发送agentId
     std::string rankID  = std::to_string(rankId_);
     std::string agentID = std::string(16 - rankID.length(), '0') + rankID;
-    socketAgent_.SendMsg(agentID.c_str(), agentID.size());
+    CHK_RET(socketAgent_.SendMsg(agentID.c_str(), agentID.size()));
 
     // 发送rankSize
-    socketAgent_.SendMsg(&rankSize_, sizeof(rankSize_));
+    CHK_RET(socketAgent_.SendMsg(&rankSize_, sizeof(rankSize_)));
 
-    HCCL_INFO("[RankInfoDetectClient::%s] send agentID[%s] and rankSize_[%u] end.", 
+    HCCL_INFO("[RankInfoDetectClient::%s] send agentID[%s] and rankSize_[%u] end.",
         __func__, agentID.c_str(), rankSize_);
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::SendLocalRankTable(const RankTableInfo &localRankTable)
+HcclResult RankInfoDetectClient::SendLocalRankTable(const RankTableInfo &localRankTable)
 {
     HCCL_DEBUG("[RankInfoDetectClient::%s] start.", __func__);
 
@@ -111,13 +119,14 @@ void RankInfoDetectClient::SendLocalRankTable(const RankTableInfo &localRankTabl
     binaryStream.Dump(sendMsg);
 
     // 发送
-    socketAgent_.SendMsg(sendMsg.data(), sendMsg.size());
+    CHK_RET(socketAgent_.SendMsg(sendMsg.data(), sendMsg.size()));
 
     HCCL_INFO("[RankInfoDetectClient::%s] end, currentStep_[%u].", __func__, currentStep_);
     currentStep_++;
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::ConstructSingleRank(RankTableInfo &localRankTable)
+HcclResult RankInfoDetectClient::ConstructSingleRank(RankTableInfo &localRankTable)
 {
     localRankTable.version = "2.0";
     localRankTable.rankCount = 1;
@@ -131,26 +140,27 @@ void RankInfoDetectClient::ConstructSingleRank(RankTableInfo &localRankTable)
     // 打印
     localRankTable.Dump();
     HCCL_INFO("[RankInfoDetectClient::%s] end, single rank, localRankTable[%s].", __func__, localRankTable.Describe().c_str());
+    return HCCL_SUCCESS;
 }
 
-void CheckRootInfoJson(const nlohmann::json &parseJson)
+HcclResult CheckRootInfoJson(const nlohmann::json &parseJson)
 {
     // check version
     std::string version{};
     std::string msgVersion   = "error occurs when parser rootinfo object of propName \"version\"";
-    TRY_CATCH_THROW(InvalidParamsException, msgVersion, version = GetJsonProperty(parseJson, "version"););
+    TRY_CATCH_RETURN(version = GetJsonProperty(parseJson, "version"));
     if (version != "2.0") {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
             std::vector<std::string>({version, "version", "2.0"}));
         HCCL_ERROR("[%s] failed with version [%s] is not \"2.0\".", __func__ , version.c_str());
-        THROW<InvalidParamsException>("version error");
+        return HCCL_E_PARA;
     }
-    
+
     // parser topo_file_path
     std::string topoFilePath{};
     std::string msgRankTopoFile = "error occurs when parser object of propName \"topo_file_path\"";
-    TRY_CATCH_THROW(InvalidParamsException, msgRankTopoFile, topoFilePath = GetJsonProperty(parseJson, "topo_file_path"););
-    
+    TRY_CATCH_RETURN(topoFilePath = GetJsonProperty(parseJson, "topo_file_path"));
+
     // check topo_file_path
     char resolvedPath[PATH_MAX] = {0};
     bool isInvalidPath = (realpath(topoFilePath.c_str(), resolvedPath) == nullptr);
@@ -158,20 +168,19 @@ void CheckRootInfoJson(const nlohmann::json &parseJson)
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
             std::vector<std::string>({topoFilePath, "topo_file_path", "vaild path"}));
         HCCL_ERROR("[%s] topo_file_path[%s] is not a valid real path", __func__, topoFilePath.c_str());
-        THROW<InvalidParamsException>("topo_file_path error");
+        return HCCL_E_PARA;
     }
 
     // parser rank_count
     u32         rankCount{};
     std::string msgRankcount = "error occurs when parser object of propName \"rank_count\"";
-    TRY_CATCH_THROW(InvalidParamsException, msgRankcount, rankCount = GetJsonPropertyUInt(parseJson, "rank_count"););
- 
+    TRY_CATCH_RETURN(rankCount = GetJsonPropertyUInt(parseJson, "rank_count"));
+
     // parser rank_list
     nlohmann::json rankJsons{};
     std::string    msgRanklist = "error occurs when parser object of propName \"rank_list\"";
-    TRY_CATCH_THROW(InvalidParamsException, msgRanklist,
-                         GetJsonPropertyList(parseJson, "rank_list", rankJsons););
-    
+    TRY_CATCH_RETURN(GetJsonPropertyList(parseJson, "rank_list", rankJsons));
+
     // check rank_count
     bool isRankCountMismatch = (rankCount != rankJsons.size());
     if (isRankCountMismatch) {
@@ -179,16 +188,20 @@ void CheckRootInfoJson(const nlohmann::json &parseJson)
             std::vector<std::string>({std::to_string(rankCount), "rankCount", std::to_string(rankJsons.size())}));
         HCCL_ERROR("[%s] failed with rankCount is not equal to rank_list size."
             "rankCount[%u], ranks.size[%u]", __func__, rankCount, rankJsons.size());
-        THROW<InvalidParamsException>("rankCount error");
+        return HCCL_E_PARA;
     }
+
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
+HcclResult RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
 {
     HCCL_INFO("[RankInfoDetectClient::%s] start.", __func__);
 
     // 单P场景处理
-    CHK_PRT_RET_NULL((rankSize_ == 1), ConstructSingleRank(localRankTable));
+    if (rankSize_ == 1) {
+        return ConstructSingleRank(localRankTable);
+    }
 
     // 1. 解析文件topoInfo.json
     std::string filePath = "/etc/hccl_rootinfo.json";
@@ -200,58 +213,53 @@ void RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
     } else {
         size_t bufSize;
         s32 result = TopoAddrInfoGetSize(devPhyId_, &bufSize); // 获取rankInfo大小，用于提前分配内存
-        CHK_PRT_THROW(result != 0 || bufSize > MAX_BUFFER_LEN,
-                  HCCL_ERROR("[RankInfoDetectClient::%s] Get rankinfo size failed.", __func__),
-                  InvalidParamsException, "Get rankinfo size failed.");
+        CHK_PRT_RET(result != 0 || bufSize > MAX_BUFFER_LEN,
+                  HCCL_ERROR("[RankInfoDetectClient::%s] Get rankinfo size failed.", __func__), HCCL_E_PARA);
         std::vector<char> buffer(bufSize, '\0');
         result = TopoAddrInfoGet(devPhyId_, buffer.data(), &bufSize); // 获取rankInfo 并更新大小
-        CHK_PRT_THROW(result != 0,
-                  HCCL_ERROR("[RankInfoDetectClient::%s] Get rankinfo failed.", __func__),
-                  InvalidParamsException, "Get rankinfo size failed.");
+        CHK_PRT_RET(result != 0,
+                  HCCL_ERROR("[RankInfoDetectClient::%s] Get rankinfo failed.", __func__), HCCL_E_PARA);
         std::string jsonString(buffer.data(), bufSize);
         // 将生成的info信息转换成json文件
         parseJson = nlohmann::json::parse(jsonString);
     }
-    CheckRootInfoJson(parseJson);
+    CHK_RET(CheckRootInfoJson(parseJson));
 
     // 2. 获取当前devPhyId_对应的devInfo
     nlohmann::json localDevInfoJson{};
-    GetLocalDevInfoJson(parseJson, localDevInfoJson);
+    CHK_RET(GetLocalDevInfoJson(parseJson, localDevInfoJson));
 
     // 3. 组rankTable的json格式
     nlohmann::json localRankTableJson{};
-    GetLocalRankTableJson(parseJson, localRankTableJson);
+    CHK_RET(GetLocalRankTableJson(parseJson, localRankTableJson));
     localRankTableJson["rank_list"].push_back(localDevInfoJson); // 添加localDevInfoJson
 
     // 4. 反序列化获得RankTableInfo
     std::string msgDeserialize = "error occurs when localRankTable Deserialize";
-    TRY_CATCH_THROW(InvalidParamsException, msgDeserialize, localRankTable.Deserialize(localRankTableJson, false););
+    TRY_CATCH_RETURN(localRankTable.Deserialize(localRankTableJson, false));
 
-    CHK_PRT_THROW(localRankTable.ranks.empty(),
-        HCCL_ERROR("[RankInfoDetectClient::%s] local rank table has no rank.", __func__),
-        InvalidParamsException, "local rank table has no rank");
+    CHK_PRT_RET(localRankTable.ranks.empty(),
+        HCCL_ERROR("[RankInfoDetectClient::%s] local rank table has no rank.", __func__), HCCL_E_PARA);
     CHK_PRT_CONT(GetLocalTlsStatus(localRankTable.ranks[0].tlsStatus),
         HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::GetLocalDevInfoJson(const nlohmann::json &parseJson, nlohmann::json &localDevInfoJson)
+HcclResult RankInfoDetectClient::GetLocalDevInfoJson(const nlohmann::json &parseJson, nlohmann::json &localDevInfoJson)
 {
     HCCL_INFO("[RankInfoDetectClient::%s] start.", __func__);
 
     // rankList字段对应json内容
     nlohmann::json rankJsons;
     std::string    msgRanklist = "error occurs when parser object of propName \"rank_list\"";
-    TRY_CATCH_THROW(InvalidParamsException, msgRanklist,
-                         GetJsonPropertyList(parseJson, "rank_list", rankJsons););
-    
+    TRY_CATCH_RETURN(GetJsonPropertyList(parseJson, "rank_list", rankJsons));
+
     // 获取localrankJsons, 匹配deviceId字段与当前devPhyId_匹配的内容
     for (auto &rankJson : rankJsons) {
         u32 devId = 0;
         std::string msgDeviceId = "error occurs when parser object of propName \"device_id\"";
-        TRY_CATCH_THROW(InvalidParamsException, msgDeviceId,
-            devId = GetJsonPropertyUInt(rankJson, "device_id");
-        );
+        TRY_CATCH_RETURN(devId = GetJsonPropertyUInt(rankJson, "device_id"));
         if (devId == devPhyId_) {
             HCCL_INFO("[RankInfoDetectClient::%s] find localDevInfoJson.", __func__);
             localDevInfoJson = rankJson;
@@ -259,37 +267,38 @@ void RankInfoDetectClient::GetLocalDevInfoJson(const nlohmann::json &parseJson, 
         }
     }
 
-    if (localDevInfoJson.empty()) {
-        HCCL_ERROR("[%s] failed, no device_id matches devPhyId_[%u] in rank_list.", __func__, devPhyId_);
-    }
+    CHK_PRT_RET(localDevInfoJson.empty(),
+        HCCL_ERROR("[%s] failed, no device_id matches devPhyId_[%u] in rank_list.", __func__, devPhyId_), HCCL_E_PARA);
 
     // 添加rankId
     localDevInfoJson["rank_id"] = rankId_;
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::GetLocalRankTableJson(const nlohmann::json &parseJson, nlohmann::json &localRankTableJson)
+HcclResult RankInfoDetectClient::GetLocalRankTableJson(const nlohmann::json &parseJson, nlohmann::json &localRankTableJson)
 {
     HCCL_INFO("[RankInfoDetectClient::%s] start.", __func__);
 
     std::string version;
     std::string msgVersion  = "error occurs when parser object of propName \"version\"";
-    TRY_CATCH_THROW(InvalidParamsException, msgVersion, version = GetJsonProperty(parseJson, "version"););
+    TRY_CATCH_RETURN(version = GetJsonProperty(parseJson, "version"));
     localRankTableJson["version"] = version;
 
     std::string detour;
     std::string msgDetour = "error occurs when parser object of propName \"detour\"";
-    TRY_CATCH_THROW(InvalidParamsException, msgDetour, detour = GetJsonProperty(parseJson, "detour", false););
+    TRY_CATCH_RETURN(detour = GetJsonProperty(parseJson, "detour", false));
     if (detour == "true") {
         localRankTableJson["detour"] = detour;
     }
 
     localRankTableJson["rank_count"] = rankSize_;
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::RecvRankTableMsg(vector<char> &rankInfoMsg)
+HcclResult RankInfoDetectClient::RecvRankTableMsg(vector<char> &rankInfoMsg)
 {
     HCCL_INFO("[RankInfoDetectClient::%s] start.", __func__);
 
@@ -297,19 +306,19 @@ void RankInfoDetectClient::RecvRankTableMsg(vector<char> &rankInfoMsg)
     u64 revMsgLen = 0;
     std::unique_ptr<HostBuffer> msg = std::make_unique<HostBuffer>(MAX_BUFFER_LEN);
     char *msgAddr = reinterpret_cast<char *>(msg->GetAddr());
-    CHK_PRT_THROW(!socketAgent_.RecvMsg(msgAddr, revMsgLen),
-        HCCL_ERROR("RankInfoDetectClient::%s, recv rankTable error.", __func__),
-        SocketException, "client recv fail");
+    CHK_PRT_RET(!socketAgent_.RecvMsg(msgAddr, revMsgLen),
+        HCCL_ERROR("RankInfoDetectClient::%s, recv rankTable error.", __func__), HCCL_E_TCP_TRANSFER);
 
     // 以vector<char>格式保存
     rankInfoMsg.resize(revMsgLen);
     rankInfoMsg.assign(msgAddr, msgAddr + revMsgLen);
 
     HCCL_INFO("[RankInfoDetectClient::%s] end, revMsgLen[%llu].", __func__, revMsgLen);
+    return HCCL_SUCCESS;
 }
 
 // 解析接收到的rank table信息
-void RankInfoDetectClient::ParseRankTable(vector<char> &rankInfoMsg)
+HcclResult RankInfoDetectClient::ParseRankTable(vector<char> &rankInfoMsg)
 {
     HCCL_INFO("[RankInfoDetectClient::%s] start.", __func__);
 
@@ -328,44 +337,47 @@ void RankInfoDetectClient::ParseRankTable(vector<char> &rankInfoMsg)
     std::string failedAgentIdList;
     binStream >> failedAgentIdList;
     if (failedAgentIdList.size() > 0) {
+        // 建链失败时 root 节点发来的临终遗言
+        // TODO A5
         HCCL_ERROR("[RankInfoDetectClient::%s] failedAgentIdList %s", __func__, failedAgentIdList.c_str());
     }
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::RecvRankTable()
+HcclResult RankInfoDetectClient::RecvRankTable()
 {
     // 获取rankTable
     vector<char> rankInfoMsg{};
-    RecvRankTableMsg(rankInfoMsg);
+    CHK_RET(RecvRankTableMsg(rankInfoMsg));
 
     // 解析rankTable
-    ParseRankTable(rankInfoMsg);
+    CHK_RET(ParseRankTable(rankInfoMsg));
 
     // 校验
-    VerifyRankTable();
+    CHK_RET(VerifyRankTable());
+    return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::VerifyRankTable()
+HcclResult RankInfoDetectClient::VerifyRankTable()
 {
     HCCL_INFO("[RankInfoDetectClient::%s] start.", __func__);
 
     // 校验rankCount符合预期
     if (rankTable_.rankCount != rankSize_) {
-        THROW<InvalidParamsException>(StringFormat("[RankInfoDetectClient::%s] rank_count[%u] does not match"
-            " rankSize_[%u].", __func__, rankTable_.rankCount, rankSize_));
+        HCCL_ERROR("[RankInfoDetectClient::%s] rank_count[%u] does not match rankSize_[%u].",
+            __func__, rankTable_.rankCount, rankSize_);
+        return HCCL_E_PARA;
     }
 
     // 校验rankTable内容
     rankTable_.Check();
     // TLS开关一致性校验
-    HcclResult ret = VerifyTlsConsistency();
-    CHK_PRT_THROW(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[RankInfoDetectClient::%s] tls consistency verify failed, ret[%d]", __func__, ret),
-        InvalidParamsException, "tls consistency verify failed");
+    CHK_RET(VerifyTlsConsistency());
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
+    return HCCL_SUCCESS;
 }
 
 HcclResult RankInfoDetectClient::GetLocalTlsStatus(TlsStatus &tlsStatus) const
@@ -464,13 +476,13 @@ HcclResult RankInfoDetectClient::VerifyTlsConsistency() const
     return HCCL_SUCCESS;
 }
 
-void RankInfoDetectClient::TearDown()
+HcclResult RankInfoDetectClient::TearDown()
 {
     HCCL_INFO("[RankInfoDetectClient::%s] start.", __func__);
-    
+
     // close socket
     clientSocket_->Close();
-    
+
     // deinit handle
     HostSocketHandleManager::GetInstance().Destroy(devPhyId_, clientSocket_->GetLocalIp());
 
@@ -482,11 +494,12 @@ void RankInfoDetectClient::TearDown()
     }}.detach();
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
+    return HCCL_SUCCESS;
 }
 
 RankInfoDetectClient::~RankInfoDetectClient()
 {
-    DECTOR_TRY_CATCH("RankInfoDetectClient", TearDown());
+    (void)TearDown();
 }
 
 }
