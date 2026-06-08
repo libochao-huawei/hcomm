@@ -105,8 +105,8 @@ target_include_directories(hccl_alg PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/
 
     # hccp (base_comm/resources)
-    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network/
-    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/
+    ${HCOMM_DIR}/src/base_comm/resource/hccp/inc/network/
+    ${HCOMM_DIR}/src/base_comm/resource/hccp/inc/
 )
 
 if(BUILD_OPEN_PROJECT)
