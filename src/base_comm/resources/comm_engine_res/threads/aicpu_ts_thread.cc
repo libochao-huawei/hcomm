@@ -244,7 +244,7 @@ HcclResult AicpuTsThread::LocalNotifyRecord(ThreadHandle dstThread, uint32_t dst
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) const
+HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyIdx, uint32_t timeout) const
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
     void *streamLitePtr = GetStreamLitePtr();
@@ -252,16 +252,16 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) c
     Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
     u32 taskId = rtsq->GetTaskId();
 
-    CHK_RET(pImpl_->NotifyWait(notifyId, timeout));
+    CHK_RET(pImpl_->NotifyWait(notifyIdx, timeout));
 
-    CHK_RET(ReportAicpuNotifyWaitTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
+    CHK_RET(ReportAicpuNotifyWaitTask(notifyIdx, beginTime, taskId, streamLite->GetSqId()));
     
     return HCCL_SUCCESS;
 }
 
 template <typename Operation, typename ReportOp>
 HcclResult AicpuTsThread::LocalProcess(
-    void *dst, const void *src, uint64_t sizeByte, Operation &&op, ReportOp &&reportOp) const
+    void *dst, const void *src, uint64_t size, Operation &&op, ReportOp &&reportOp) const
 {
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
@@ -272,7 +272,7 @@ HcclResult AicpuTsThread::LocalProcess(
     uint8_t *dstByte = static_cast<uint8_t *>(dst);
     uint8_t *srcByte = static_cast<uint8_t *>(const_cast<void *>(src));
 
-    uint64_t remainSize = sizeByte;
+    uint64_t remainSize = size;
     uint64_t doneSize = 0;
 
     while (remainSize > 0) {

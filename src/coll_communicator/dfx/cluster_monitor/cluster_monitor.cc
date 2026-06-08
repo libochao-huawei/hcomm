@@ -812,8 +812,7 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t 
     auto total_us = duration_us.count();
     // 分离秒和微秒部分
     auto microseconds = total_us % 1000000;
-    struct tm *now;
-    now = localtime(&tmpt);
+    struct tm *now = localtime(&tmpt);
     char errorLinkLogBuffer[LOG_TMPBUF_SIZE];
 
     s32 stringRet = snprintf_s(errorLinkLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE- 1U,
@@ -825,8 +824,10 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t 
     if (now == nullptr) {
         HCCL_ERROR("[%s][%s][%s]localtime fail, cqe error status[%u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), cqeErrInfo_.cqeStatus, errorLinkLogBuffer);
     } else {
+        constexpr int YEAR_OFFSET = 1900;
+        constexpr int MONTH_OFFSET = 1;
         HCCL_ERROR("[%s][%s][%s]cqe error status[%u], time:[%04u-%02d-%02d %02d:%0d:%02d.%06u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), 
-        cqeErrInfo_.cqeStatus, now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour,
+        cqeErrInfo_.cqeStatus, now->tm_year + YEAR_OFFSET, now->tm_mon + MONTH_OFFSET, now->tm_mday, now->tm_hour,
         now->tm_min, now->tm_sec, microseconds, errorLinkLogBuffer);
     }   
     return;

@@ -304,10 +304,11 @@ HcclResult HostCpuUrmaChannel::GetLocalAndRemoteSeg(urma_opcode_t opcode, void *
 
 HcclResult HostCpuUrmaChannel::UrmaPostJettySendWr(urma_opcode_t opcode, void *dst, const void *src, uint64_t len)
 {
+    constexpr u32 STRONG_ORDER_FLAG = 2;
     // 构造urma的wr
     urma_jfs_wr_t urmaWriteWr{};
     urmaWriteWr.opcode = opcode;
-    urmaWriteWr.flag.bs.place_order = (fenceFlag_ == true ? 2 : 1);
+    urmaWriteWr.flag.bs.place_order = (fenceFlag_ == true ? STRONG_ORDER_FLAG : 1);
     urmaWriteWr.flag.bs.comp_order = 1;     // comp_order要一直保持为1,
     urmaWriteWr.flag.bs.fence = (fenceFlag_ == true ? 1 : 0);
     urmaWriteWr.flag.bs.complete_enable = 0;
@@ -348,7 +349,7 @@ HcclResult HostCpuUrmaChannel::UrmaPostJettySendWr(urma_opcode_t opcode, void *d
         // 只有最后一个wr上报cqe
         if (i == splitNum - 1) {
             urmaWriteWr.flag.bs.complete_enable = 1;
-            urmaWriteWr.flag.bs.place_order = 2; // 最后一个wr设置为strong order
+            urmaWriteWr.flag.bs.place_order = STRONG_ORDER_FLAG; // 最后一个wr设置为strong order
         }
         CHK_RET(HrtUrmaPostJettySendWr(reinterpret_cast<urma_jetty_t*>(connections_[0]->GetJettyVa()), &urmaWriteWr, &badWr));
         offset += chunkLen;
