@@ -16,6 +16,7 @@
 #include "dlhal_function_v2.h"
 #include "read_write_lock.h"
 #include "aicpu_indop_env.h"
+#include "heartbeat.h"  // [新增] 用于BroadcastTaskException
 
 namespace hcomm {
 constexpr u32 RT_SDMA_COMPERR = 0x9; // A3 sdma error类型为0x9时，表示写拷贝发生超时代答，或者数据搬移时地址译码错误
@@ -194,6 +195,8 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     } else {
         CHK_RET(PrintTaskContextInfo(aicpuComm, exceptionInfo.sqId, sqeId)); // notify场景打印算子信息和task序列
     }
+    // [新增] 通过心跳机制将TaskException状态广播给其他rank
+    Heartbeat::GetInstance(devId_).BroadcastTaskException();
     return HCCL_SUCCESS;
 }
 

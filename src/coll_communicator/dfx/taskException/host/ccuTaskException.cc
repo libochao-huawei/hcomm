@@ -32,6 +32,7 @@
 
 #include "net_instance.h"
 #include "hccl_communicator.h"
+#include "heartbeat.h"  // [新增] 用于BroadcastTaskException
 
 namespace hcomm {
 
@@ -223,6 +224,8 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
         HCCL_ERROR("[CcuTaskException][%s] failed to clean ccu die ckes, dieId[%u], devLogicId[%d].",
             __func__, dieId, devLogicId);
     }
+    // [新增] 通过心跳机制将TaskException状态广播给其他rank
+    Heartbeat::GetInstance(deviceId).BroadcastTaskException();
 }
 
 HcclResult CcuTaskException::InitChannelMap(s32 deviceId, u64 ccuKernelHandle)
