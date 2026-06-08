@@ -33,6 +33,35 @@ void RegisterAicpuGetErrStatusVecCallBack(AicpuGetErrStatusVecCallBack);
 
 extern std::array<std::map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMapV2;
 
+struct DpuTaskexceptionParams {
+        HcclResult ret;
+        ChannelHandle channelHandle;
+        CommProtocol protocol = CommProtocol::COMM_PROTOCOL_RESERVED;
+        EndpointLocType locationType = EndpointLocType::ENDPOINT_LOC_TYPE_RESERVED;
+
+        std::vector<char> Serialize() const
+        {
+            BinaryStream binaryStream;
+            binaryStream << ret;
+            binaryStream << channelHandle;
+            binaryStream << protocol;
+            binaryStream << locationType;
+
+            std::vector<char> result;
+            binaryStream.Dump(result);
+            return result;
+        }
+
+        void DeSerialize(std::vector<char> &data)
+        {
+            BinaryStream binaryStream(data);
+            binaryStream >> ret;
+            binaryStream >> channelHandle;
+            binaryStream >> protocol;
+            binaryStream >> locationType;
+        }
+    };
+
 class TaskExceptionHost {
 public:
     TaskExceptionHost() = default;
