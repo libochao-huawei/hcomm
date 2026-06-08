@@ -12,7 +12,7 @@ add_subdirectory(alg_template)
 add_subdirectory(mc2_handler)
 
 if(PRODUCT_SIDE STREQUAL "host")
-    add_subdirectory(alg_aiv_template)
+    #add_subdirectory(alg_aiv_template)  # AIV requires device-side compiler, skip on host build
 endif()
 
 if(TARGET ccl_kernel)

@@ -62,15 +62,16 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/one_sided_service
     ${HCOMM_DIR}/src/legacy/ascend910/framework/op_base/src
 
-    # src/framework/next 头文件 (已拆分到 base_comm 和 coll_communicator)
+    # src/framework/next 头文件 (已拆分到 base_comm 和 coll_communicator_mgr)
     ${HCOMM_DIR}/src/base_comm/common
-    ${HCOMM_DIR}/src/base_comm/resources/ccu/pub_inc
-    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device
-    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device/ccu_comp
-    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel
-    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe
-    ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1
-    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/channels/host
+    ${HCOMM_DIR}/src/base_comm/resource/comm_engine/ccu/pub_inc
+    ${HCOMM_DIR}/src/base_comm/resource/comm_engine/ccu/ccu_device
+    ${HCOMM_DIR}/src/base_comm/resource/comm_engine/ccu/ccu_device/ccu_comp
+    ${HCOMM_DIR}/src/base_comm/resource/comm_engine/ccu/ccu_device/ccu_comp/ccu_channel
+    ${HCOMM_DIR}/src/base_comm/resource/comm_engine/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe
+    ${HCOMM_DIR}/src/base_comm/resource/comm_engine/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1
+    ${HCOMM_DIR}/src/base_comm/resource/channel/host
+    ${HCOMM_DIR}/src/coll_communicator_mgr/communicator
 
     # src/common 头文件 (legacy/ascend910)
     ${HCOMM_DIR}/src/legacy/ascend910/common/debug/profiling/inc
@@ -102,9 +103,9 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/socket
 
     # base_comm/resources 头文件 (原 platform/hccp)
-    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc
-    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network
-    ${HCOMM_DIR}/src/base_comm/resources/hccp/external_depends/ubengine
+    ${HCOMM_DIR}/src/base_comm/resource/hccp/inc
+    ${HCOMM_DIR}/src/base_comm/resource/hccp/inc/network
+    ${HCOMM_DIR}/src/base_comm/resource/hccp/external_depends/ubengine
 
     # src/legacy 头文件 (legacy/ascend950)
     ${LEGACY_ASCEND950_INCLUDE_LIST}
