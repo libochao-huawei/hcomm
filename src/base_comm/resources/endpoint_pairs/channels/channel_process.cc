@@ -35,7 +35,7 @@ template <typename Func>
 HcclResult ChannelProcess::WithChannelByHandleLocked(ChannelHandle inHandle, Func &&func)
 {
     int32_t deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
 
     std::shared_ptr<Channel> channelPtr = nullptr;
     {
@@ -80,7 +80,7 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
     CHK_PTR_NULL(endpointHandle);
 
     int32_t deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
 
     for (uint32_t i = 0; i < channelNum; ++i) {
         std::shared_ptr<Channel> tmpPtr = nullptr;
@@ -116,7 +116,7 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
 {
     EXCEPTION_HANDLE_BEGIN
     int32_t deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
 
     Channel *channel = nullptr;
     {
@@ -261,7 +261,7 @@ HcclResult ChannelProcess::FillChannelD2HMap(ChannelHandle *deviceChannelHandles
     CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]", __func__, listNum), HCCL_E_PARA);
 
     int32_t deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
 
     std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
     for (uint32_t idx = 0; idx < listNum; idx++) {
@@ -297,7 +297,7 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     channelParam.uniqueIdSize = totalListNum;
     channelParam.channelSizeAddr = static_cast<void *>(channelSizeAddr.ptr());
 
-    CHK_RET(hrtGetDevice(&channelParam.deviceLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&channelParam.deviceLogicId));
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     channelParam.deviceType = static_cast<u32>(devType);
@@ -525,7 +525,7 @@ HcclResult ChannelProcess::LaunchCommonChannelKernel(ChannelHandle *channelHandl
     channelParam.channelDataListAddr = static_cast<void *>(dev.data.ptr());
     channelParam.channelDataSizeListAddr = static_cast<void *>(dev.size.ptr());
     channelParam.channelTypeListAddr = static_cast<void *>(dev.type.ptr());
-    CHK_RET(hrtGetDevice(&channelParam.deviceInfo.deviceLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&channelParam.deviceInfo.deviceLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(channelParam.deviceInfo.deviceLogicId), channelParam.deviceInfo.devicePhyId));
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
@@ -659,7 +659,7 @@ HcclResult ChannelProcess::ChannelGet(const ChannelHandle channelHandle, void **
 {
     CHK_PTR_NULL(channel);
     int32_t deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
 
     std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
     DeviceChannelKey key{deviceId, channelHandle};
@@ -750,7 +750,7 @@ HcclResult ChannelProcess::ChannelDestroy(const ChannelHandle *channels, uint32_
     HCCL_INFO("[%s] START. channelNum[%u].", __func__, channelNum);
 
     int32_t deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
 
     std::vector<ChannelHandle> deviceHandles;
 
