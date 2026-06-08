@@ -154,8 +154,11 @@ HcclResult AicpuTsRoceChannelV2::BuildBuffer()
         HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localRdmaBuffer = memHandles[i];
-            HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemTag().c_str());
+            HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memType[%d], memTag[%s].",
+                __func__, i, static_cast<unsigned long long>(localRdmaBuffer->GetAddr()),
+                static_cast<unsigned long long>(localRdmaBuffer->GetSize()),
+                static_cast<int>(localRdmaBuffer->GetBuf()->GetMemType()),
+                localRdmaBuffer->GetBuf()->GetMemTag().c_str());
             localRmaBuffers_.emplace_back(localRdmaBuffer.get());
         }
     } else {
@@ -165,8 +168,11 @@ HcclResult AicpuTsRoceChannelV2::BuildBuffer()
         for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
             CHK_PTR_NULL(channelDesc_.memHandles[i]);
             auto *localRdmaBuffer = reinterpret_cast<Hccl::LocalRdmaRmaBuffer *>(channelDesc_.memHandles[i]);
-            HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemTag().c_str());
+            HCCL_INFO("[AicpuTsRoceChannelV2][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memType[%d], memTag[%s].",
+                __func__, i, static_cast<unsigned long long>(localRdmaBuffer->GetAddr()),
+                static_cast<unsigned long long>(localRdmaBuffer->GetSize()),
+                static_cast<int>(localRdmaBuffer->GetBuf()->GetMemType()),
+                localRdmaBuffer->GetBuf()->GetMemTag().c_str());
             localRmaBuffers_.emplace_back(localRdmaBuffer);
         }
     }

@@ -61,8 +61,11 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
         HCCL_INFO("[HostCpuUrmaChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
-            HCCL_INFO("[HostCpuUrmaChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
-                __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+            HCCL_INFO("[HostCpuUrmaChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memType[%d], memTag[%s].",
+                __func__, i, static_cast<unsigned long long>(localUbRmaBuffer->GetAddr()),
+                static_cast<unsigned long long>(localUbRmaBuffer->GetSize()),
+                static_cast<int>(localUbRmaBuffer->GetBuf()->GetMemType()),
+                localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
                 localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
             ));

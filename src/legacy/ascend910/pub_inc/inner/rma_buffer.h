@@ -25,11 +25,21 @@ public:
     {
     }
 
+    RmaBuffer(const HcclNetDevCtx netDevCtx, void *addr, u64 size, const RmaMemType memType, const RmaType rmaType, bool isAlias)
+        : netDevCtx(netDevCtx), addr(addr), size(size), memType(memType), rmaType(rmaType), isAlias_(isAlias)
+    {
+    }
+
     virtual ~RmaBuffer() = default;
 
     RmaBuffer(const RmaBuffer &that) = delete;
 
     RmaBuffer &operator=(const RmaBuffer &that) = delete;
+
+    inline bool IsAlias() const
+    {
+        return isAlias_;
+    }
 
     inline void* GetAddr() const
     {
@@ -68,6 +78,7 @@ protected:
     void*       devAddr{nullptr};
     RmaMemType  memType{RmaMemType::TYPE_NUM};
     RmaType     rmaType{RmaType::RMA_TYPE_RESERVED};
+    bool        isAlias_{false};
 };
 
 struct RmaBufferSlice {
