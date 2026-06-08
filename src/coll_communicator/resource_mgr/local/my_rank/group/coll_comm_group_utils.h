@@ -10,6 +10,7 @@
 #ifndef COLL_COMM_GROUP_UTILS_H
 #define COLL_COMM_GROUP_UTILS_H
 
+#include <cstddef>
 #include <deque>
 #include <vector>
 #include <hccl/hccl_types.h>
@@ -17,6 +18,7 @@
 #include "hcomm_res_defs.h"
 
 constexpr int32_t MAX_P2P_TASK_NUM = 2048;
+constexpr uint32_t HOST_NOTIFY_WAIT_TIMEOUT_MS = 1827;
 
 namespace hccl {
 

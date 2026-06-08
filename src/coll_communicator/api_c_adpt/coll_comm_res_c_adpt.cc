@@ -26,8 +26,6 @@
 #include "channel_process.h"
 #include "aicpu_ts_roce_channel_v2.h"
 #include "aiv_urma_channel.h"
-#include "rank_consistency_checker_v2.h"
-#include "rank_table_crc_bridge.h"
 #include "hccl_group.h"
 #include "../resource_mgr/local/my_rank/group/coll_comm_group.h"
 #include "param_check_basic_v2.h"
