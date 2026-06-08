@@ -79,11 +79,10 @@ HcclResult RankInfoDetectService::GetConnections()
         }
         std::shared_ptr<Socket> connSocket = std::make_shared<Socket>(
             hccpHostSocketHandle, hostIp_, hostPort, hostIp_, connSocketTag, SocketRole::SERVER, NicType::HOST_NIC_TYPE);
-        SocketStatus prevStatus = status;
         EXCEPTION_CATCH(status = connSocket->GetStatus(),
             {
                 // 非本端client首次连接异常，直接重试
-                if (prevStatus == SocketStatus::OK) {
+                if (status == SocketStatus::OK) {
                     status = SocketStatus::CONNECTING;
                 }
                 HCCL_ERROR("[RankInfoDetectService::%s] server get socket fail", __func__);
@@ -118,7 +117,7 @@ HcclResult RankInfoDetectService::GetConnections()
     // 处理异常流程
     if (expectedSocketNum > 0) {
         // 将建立连接超时的client信息添加到failedAgentIdList_
-        CHK_RET(FailedConnectionAgentIdString(expectedSocketNum));
+        FailedConnectionAgentIdString(expectedSocketNum);
         DisplayConnectedRanks();
         HCCL_INFO("[RankInfoDetectService::%s] end, there exist non-connected ranks.", __func__);
     } else {
@@ -212,7 +211,8 @@ HcclResult RankInfoDetectService::RecvRankInfoMsg(SocketAgent &connSocketAgent, 
     std::unique_ptr<HostBuffer> msg = std::make_unique<HostBuffer>(MAX_BUFFER_LEN);
     char *msgAddr = reinterpret_cast<char *>(msg->GetAddr());
     CHK_PRT_RET(!connSocketAgent.RecvMsg(msgAddr, revMsgLen),
-        HCCL_ERROR("[RankInfoDetectService::%s] RecvMsg fail, revMsgLen[%llu]", __func__, revMsgLen), HCCL_E_TCP_TRANSFER);
+        HCCL_ERROR("[RankInfoDetectService::%s] RecvMsg fail, revMsgLen[%llu]", __func__, revMsgLen),
+        HCCL_E_TCP_CONNECT);
 
     // 以vector<char>格式保存
     rankInfoMsg.resize(revMsgLen);
@@ -260,17 +260,17 @@ void RankInfoDetectService::SortRankTable()
     std::sort(rankTable_.ranks.begin(), rankTable_.ranks.end(), RankIdCompare);
 }
 
-HcclResult RankInfoDetectService::FailedConnectionAgentIdString(u32 rankSize)
+void RankInfoDetectService::FailedConnectionAgentIdString(u32 rankSize)
 {
     HCCL_INFO("[RankInfoDetectService::%s] start.", __func__);
 
     std::vector<bool> connectedRank(rankSize, false);
     for (auto it : connSockets_) {
         u32 rankid = 0;
-        CHK_PRT_RET(SalStrToULong(it.first, HCCL_BASE_DECIMAL, rankid),
-            HCCL_ERROR("[RankInfoDetectService::%s] agentId[%s] strToULong fail.", __func__, it.first.c_str()), HCCL_E_PARA);
-        CHK_PRT_RET(rankid >= rankSize,
-            HCCL_ERROR("[RankInfoDetectService::%s] invalid rank id[%u], rankSize[%u].", __func__, rankid, rankSize), HCCL_E_PARA);
+        CHK_PRT_RET_NULL(SalStrToULong(it.first, HCCL_BASE_DECIMAL, rankid),
+            HCCL_ERROR("[RankInfoDetectService::%s] agentId[%s] strToULong fail.", __func__, it.first.c_str()));
+        CHK_PRT_RET_NULL(rankid >= rankSize,
+            HCCL_ERROR("[RankInfoDetectService::%s] invalid rank id[%u], rankSize[%u].", __func__, rankid, rankSize));
         connectedRank[rankid] = true;
     }
 
@@ -281,7 +281,6 @@ HcclResult RankInfoDetectService::FailedConnectionAgentIdString(u32 rankSize)
     }
 
     HCCL_INFO("[RankInfoDetectService::%s] end.", __func__);
-    return HCCL_SUCCESS;
 }
 
 // 校验相关方法
@@ -372,14 +371,10 @@ void RankInfoDetectService::DisplayConnectingStatus(u32 totalSockets, u32 waitSo
     std::vector<bool> rankinfos(totalSockets, false);
     for (auto it : connSockets_) {  // 建立映射
         u32 rankid = 0;
-        if (SalStrToULong(it.first, HCCL_BASE_DECIMAL, rankid)) {
-            HCCL_ERROR("[RankInfoDetectService::%s] agentId[%s] strToULong fail.", __func__, it.first.c_str());
-            return;
-        }
-        if (rankid >= totalSockets) {
-            HCCL_ERROR("[RankInfoDetectService::%s] invalid rankid[%u], rankSize[%u].", __func__, rankid, totalSockets);
-            return;
-        }
+        CHK_PRT_RET_NULL(SalStrToULong(it.first, HCCL_BASE_DECIMAL, rankid),
+            HCCL_ERROR("[RankInfoDetectService::%s] agentId[%s] strToULong fail.", __func__, it.first.c_str()));
+        CHK_PRT_RET_NULL(rankid >= totalSockets,
+            HCCL_ERROR("[RankInfoDetectService::%s] invalid rankid[%u], rankSize[%u].", __func__, rankid, totalSockets));
         rankinfos[rankid] = true;
     }
 
@@ -420,8 +415,9 @@ HcclResult RankInfoDetectService::TearDown()
     }
 
     // close socket
-    CHK_PRT_CONT(Disconnect() != HCCL_SUCCESS,
-        HCCL_WARNING("[RankInfoDetectService::%s] Disconnect fail.", __func__));
+    HcclResult ret = Disconnect();
+    CHK_PRT_CONT(ret != HCCL_SUCCESS,
+        HCCL_WARNING("[RankInfoDetectService::%s] Disconnect fail, ret[%d].", __func__, ret));
 
     // 如果白名单使能则删除白名单
     if (!EnvConfig::GetInstance().GetHostNicConfig().GetWhitelistDisable()) {
@@ -451,7 +447,8 @@ HcclResult RankInfoDetectService::TearDown()
 
 RankInfoDetectService::~RankInfoDetectService()
 {
-    (void)TearDown();
+    HcclResult ret = TearDown();
+    CHK_PRT_CONT(ret != HCCL_SUCCESS, HCCL_ERROR("[RankInfoDetectService::%s] TearDown fail, ret[%d].", __func__, ret));
 }
 
 }  // namespace Hccl

@@ -38,9 +38,9 @@ RankInfoDetect::RankInfoDetect()
 {
     devLogicId_ = HrtGetDevice();
     s32 deviceNum = HrtGetDeviceCount();
-    if (devLogicId_ >= deviceNum) {
-        HCCL_ERROR("[RankInfoDetect::%s] deviceLogicId[%d] is invalid, deviceNum[%d].", __func__, devLogicId_, deviceNum);
-    }
+    CHK_PRT_THROW(devLogicId_ >= deviceNum,
+        HCCL_ERROR("[RankInfoDetect::%s] deviceLogicId[%d] is invalid, deviceNum[%d].", __func__, devLogicId_, deviceNum),
+        InternalException, "get hostIp fail");
     devPhyId_ = HrtGetDevicePhyIdByIndex(devLogicId_);
 
     HCCL_INFO("[RankInfoDetect::%s] end, deviceNum[%d], devLogicId_[%d], devPhyId_[%u].",
@@ -63,7 +63,8 @@ HcclResult RankInfoDetect::SetupServer(HcclRootHandleV2 &rootHandle)
     hostPort_ = GetHostListenPort();
 
     // 1. 创建serverSocket，为serverSocket添加白名单，启动监听
-    shared_ptr<Socket> serverSocket = ServerInit();
+    std::shared_ptr<Socket> serverSocket;
+    CHK_RET(ServerInit(serverSocket));
 
     // 2. 构建rootHandle
     CHK_RET(GetRootHandle(rootHandle));
@@ -77,7 +78,7 @@ HcclResult RankInfoDetect::SetupServer(HcclRootHandleV2 &rootHandle)
     return HCCL_SUCCESS;
 }
 
-SocketHandle RankInfoDetect::GetHostSocketHandle()
+HcclResult RankInfoDetect::GetHostSocketHandle(SocketHandle &socketHandle)
 {
     HCCL_DEBUG("[RankInfoDetect::%s] server get host socket handle start.", __func__);
 
@@ -88,24 +89,25 @@ SocketHandle RankInfoDetect::GetHostSocketHandle()
     if (!EnvConfig::GetInstance().GetHostNicConfig().GetWhitelistDisable()) {
         std::vector<IpAddress> hostSocketWhitelist{};
         Whitelist::GetInstance().GetHostWhiteList(hostSocketWhitelist);
-        if (hostSocketWhitelist.empty()) {
-            HCCL_ERROR("[%s] whitelist file have no valid host ip.", __func__);
-            return nullptr;
-        }
+        CHK_PRT_RET(hostSocketWhitelist.empty(),
+            HCCL_ERROR("[%s] whitelist file have no valid host ip.", __func__),
+            HCCL_E_INTERNAL);
         u32 whiteListEnable = 1;
         HrtRaSocketSetWhiteListStatus(whiteListEnable);
         AddHostSocketWhitelist(hostSocketHandle, hostSocketWhitelist);
     }
 
     HCCL_INFO("[RankInfoDetect::%s] get host socket handle success, socketHandle[%p].", __func__, hostSocketHandle);
-    return hostSocketHandle;
+    socketHandle = hostSocketHandle;
+    return HCCL_SUCCESS;
 }
 
-shared_ptr<Socket> RankInfoDetect::ServerInit()
+HcclResult RankInfoDetect::ServerInit(std::shared_ptr<Socket> &serverSocketPtr)
 {
     HCCL_DEBUG("[RankInfoDetect::%s] server init start.", __func__);
 
-    SocketHandle hccpHostSocketHandle = GetHostSocketHandle();
+    SocketHandle hccpHostSocketHandle;
+    CHK_RET(GetHostSocketHandle(hccpHostSocketHandle));
     std::shared_ptr<Socket> serverSocket = std::make_shared<Socket>(
         hccpHostSocketHandle, hostIp_, hostPort_, hostIp_, "server", SocketRole::SERVER, NicType::HOST_NIC_TYPE);
     if (hostPort_ == HCCL_INVALID_PORT) {
@@ -120,7 +122,8 @@ shared_ptr<Socket> RankInfoDetect::ServerInit()
     }
 
     HCCL_INFO("[RankInfoDetect::%s] serverSocket[%s] listen success.", __func__, serverSocket->Describe().c_str());
-    return serverSocket;
+    serverSocketPtr = serverSocket;
+    return HCCL_SUCCESS;
 }
 
 void RankInfoDetect::AddHostSocketWhitelist(SocketHandle &socketHandle, const std::vector<IpAddress> &hostSocketWlist)
@@ -219,9 +222,8 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
     std::shared_ptr<RankInfoDetectService> rankInfoDetectService = make_shared<RankInfoDetectService>(devPhyId, serverSocket, identifier, wlistInfo);
 
     HcclResult ret = rankInfoDetectService->Setup();
-
-    // 若有错误则设置error状态退出
     if (ret != HCCL_SUCCESS) {
+        // 若有错误则设置error状态退出
         g_detectServerStatus_.EmplaceAndUpdate(hostPort,
             [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_ERROR; });
         HCCL_ERROR("[RankInfoDetect::%s] end, status error, ret[%d].", __func__, ret);
@@ -229,12 +231,12 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
     }
 
     // 正常结束则设置为idle状态
-    g_detectServerStatus_.EmplaceAndUpdate(
-        hostPort, [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_IDLE; });
-
+    g_detectServerStatus_.EmplaceAndUpdate(hostPort,
+        [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_IDLE; });
     HCCL_INFO("[RankInfoDetect::%s] end, status idle.", __func__);
 
     // 确保root info流程先销毁server socket 再返回
+    // 可能失败，需要将错误状态带出
     serverSocket->Destroy();
     HrtResetDevice(devLogicId);
 

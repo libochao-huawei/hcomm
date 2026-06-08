@@ -20,11 +20,11 @@ HcclResult SocketAgent::SendMsg(const void *data, u64 dataLen)
 
     // 发送数据长度
     CHK_PRT_RET(!socket_->Send(&dataLen, sizeof(dataLen)),
-        HCCL_ERROR("[SocketAgent::%s] Send data len failed", __func__), HCCL_E_TCP_TRANSFER);
+        HCCL_ERROR("[SocketAgent::%s] Send data len failed", __func__), HCCL_E_TCP_CONNECT);
 
     // 发送数据
     CHK_PRT_RET(!socket_->Send(data, dataLen),
-        HCCL_ERROR("[SocketAgent::%s] Send data failed", __func__), HCCL_E_TCP_TRANSFER);
+        HCCL_ERROR("[SocketAgent::%s] Send data failed", __func__), HCCL_E_TCP_CONNECT);
 
     HCCL_INFO("[SocketAgent::%s] end.", __func__);
     return HCCL_SUCCESS;

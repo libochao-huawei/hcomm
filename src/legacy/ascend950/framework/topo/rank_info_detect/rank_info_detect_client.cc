@@ -76,6 +76,7 @@ HcclResult RankInfoDetectClient::CheckStatus()
             return HCCL_E_TIMEOUT;
         }
 
+        // 捕获异常
         SocketStatus status = SocketStatus::INVALID;
         TRY_CATCH_RETURN(status = clientSocket_->GetStatus());
         if (status == SocketStatus::OK) {
@@ -307,7 +308,7 @@ HcclResult RankInfoDetectClient::RecvRankTableMsg(vector<char> &rankInfoMsg)
     std::unique_ptr<HostBuffer> msg = std::make_unique<HostBuffer>(MAX_BUFFER_LEN);
     char *msgAddr = reinterpret_cast<char *>(msg->GetAddr());
     CHK_PRT_RET(!socketAgent_.RecvMsg(msgAddr, revMsgLen),
-        HCCL_ERROR("RankInfoDetectClient::%s, recv rankTable error.", __func__), HCCL_E_TCP_TRANSFER);
+        HCCL_ERROR("RankInfoDetectClient::%s, recv rankTable error.", __func__), HCCL_E_TCP_CONNECT);
 
     // 以vector<char>格式保存
     rankInfoMsg.resize(revMsgLen);
@@ -374,7 +375,10 @@ HcclResult RankInfoDetectClient::VerifyRankTable()
     // 校验rankTable内容
     rankTable_.Check();
     // TLS开关一致性校验
-    CHK_RET(VerifyTlsConsistency());
+    HcclResult ret = VerifyTlsConsistency();
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[RankInfoDetectClient::%s] tls consistency verify failed, ret[%d]", __func__, ret),
+        HCCL_E_PARA);
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
     return HCCL_SUCCESS;
@@ -499,7 +503,10 @@ HcclResult RankInfoDetectClient::TearDown()
 
 RankInfoDetectClient::~RankInfoDetectClient()
 {
-    (void)TearDown();
+    HcclResult ret = TearDown();
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RankInfoDetectClient::%s] TearDown failed, ret[%d]", __func__, ret);
+    }
 }
 
 }
