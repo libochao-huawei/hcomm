@@ -125,7 +125,6 @@ HcclResult CollAllReduceMeshOpbaseMidCountDeterministicExecutor::RunAllReduceLev
 {
     std::unique_ptr<AlgTemplateBase> level1TempAlg;
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
-    const u32 sliceNum = level0CommInfo.localRankSize;
     const u32 perDataSize = SIZE_TABLE[param.DataDes.dataType];
     const u32 commIndex = level0CommInfo.localRank;
 

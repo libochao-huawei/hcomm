@@ -131,7 +131,6 @@ HcclResult AllReduceMultiDeterPipeline::RunIntraAlltoallPreSync(u32 step)
     for (u32 i = 0; i < intraRankSize_ - 1; ++i) {
         HCCL_DEBUG("[%s] intra-server SDMA send begin, userRank[%u] step[%u] pro[%u/%u]", __func__, userRank_, i, i + 1, intraRankSize_ - 1);
         // 从机内rankId为recvIntraRankId收集数据，也发给机内rankId为sendIntraRankId数据
-        u32 recvIntraRankId = GetPreIntraRankIdByStep(i + 1);
         u32 sendIntraRankId = GetNextIntraRankIdByStep(i + 1);
         LINK sendIntraLink = intraLinks_[sendIntraRankId];
         CHK_RET(sendIntraLink->TxAck(subStreams_[i]));
@@ -289,7 +288,6 @@ HcclResult AllReduceMultiDeterPipeline::RunInterSend(u32 step)
     HCCL_DEBUG("[%s] inter-server RDMA write begin, if use last small mem? : isLastRank[%u], ifSendToLastServer[%u]",
         __func__, isLastRank_, ifSendToLastServer);
     if (recvInterLink->IsSpInlineReduce() && sendInterLink->IsSpInlineReduce()) {
-        u32 remoteUserRank = recvInterLink->GetRemoteRank();
         CHK_RET(sendInterLink->TxAck(mainStream_));
         CHK_RET(recvInterLink->RxAck(mainStream_));
         DeviceMem dstMem = std::move(recvMem);
