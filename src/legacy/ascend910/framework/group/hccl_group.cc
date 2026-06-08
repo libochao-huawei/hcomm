@@ -117,7 +117,7 @@ static HcclResult asyncJobLaunch()
     if (!hcclInitJobs.empty()) {
         for (auto job : hcclInitJobs) {
             CHK_PRT_RET(!job, HCCL_ERROR("[asyncJobLaunch] job is nullptr"), HCCL_E_INTERNAL);
-            job->thread.reset(new (std::nothrow) std::thread(&hcclAsyncJobMain, job.get()));
+            job->thread.reset(new (std::nothrow) std::thread(&hcclAsyncJobMain, std::ref(job)));
             CHK_PRT_RET(!job->thread, HCCL_ERROR("[asyncJobLaunch]threads reset failed "), HCCL_E_INTERNAL);
         }
 
