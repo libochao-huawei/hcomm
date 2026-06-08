@@ -21,7 +21,7 @@ CommConfiger& CommConfiger::GetInstance()
 }
  
 CommConfiger::CommConfiger() : initialized_(true) {}
- 
+
 HcclResult CommConfiger::SetCommConfig(CommConfig config, const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
