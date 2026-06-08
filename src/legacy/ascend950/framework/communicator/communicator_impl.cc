@@ -1517,7 +1517,6 @@ void CommunicatorImpl::TryInitCcuFeature()
     if (ccuDrvHandle) { // 已开启ccu驱动时跳过
         return;
     }
-    // 打开ccu驱动后初始化ccu资源
     ccuDrvHandle = CommManager::GetInstance(devLogicId).GetCcuDriver();
     if (ccuDrvHandle == nullptr) {
         HCCL_WARNING("CCU not support reuse in single device multi-precess services, accelerator fallback AICPU_TS");

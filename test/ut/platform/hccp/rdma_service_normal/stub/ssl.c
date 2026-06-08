@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdint.h>
+#include <stdio.h>
 
 long ASN1_INTEGER_get(const ASN1_INTEGER *a)
 {
@@ -264,7 +265,7 @@ int SSL_write(SSL *ssl, const void *buf, int num)
     int ret;
     ret = send(ssl->fd, buf, num, 0);
     if (ret <= 0) {
-        fprintf("SSL write size is %d", ret);
+        fprintf(stderr, "SSL write size is %d", ret);
     }
     return ret;
 }
@@ -274,7 +275,7 @@ int SSL_read(SSL *ssl, void *buf, int num)
     int ret;
     ret = recv(ssl->fd, buf, num ,0);
     if (ret <= 0) {
-        fprintf("SSL read size is %d", ret);
+        fprintf(stderr, "SSL read size is %d", ret);
     }
     return ret;
 }
@@ -442,7 +443,7 @@ int ssl_adp_write(SSL *s, const void *buf, int num)
 
 int ssl_adp_set_fd(SSL *s, int fd)
 {
-    return;
+    return 0;
 }
 
 void ssl_adp_ctx_free(SSL_CTX *a)
@@ -563,11 +564,11 @@ int rs_ssl_inner_init(struct rs_cb *rscb)
     return 0;
 }
 
-rs_ssl_ca_ky_init(SSL_CTX *ssl_ctx, struct rs_cb *rscb)
+int rs_ssl_ca_ky_init(SSL_CTX *ssl_ctx, struct rs_cb *rscb)
 {
     return 0;
 }
-rs_ssl_load_ca(SSL_CTX *ssl_ctx, struct rs_cb *rscb, struct tls_cert_mng_info* mng_info)
+int rs_ssl_load_ca(SSL_CTX *ssl_ctx, struct rs_cb *rscb, struct tls_cert_mng_info* mng_info)
 {
     return 0;
 }

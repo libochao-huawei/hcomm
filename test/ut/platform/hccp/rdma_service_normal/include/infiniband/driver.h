@@ -598,7 +598,7 @@ static inline bool check_comp_mask(uint64_t input, uint64_t supported)
 }
 
 int ibv_query_gid_type(struct ibv_context *context, uint8_t port_num,
-		       unsigned int index, enum ibv_gid_type *type);
+		       unsigned int index, enum ibv_gid_type_sysfs *type);
 
 static inline int
 ibv_check_alloc_parent_domain(struct ibv_parent_domain_init_attr *attr)

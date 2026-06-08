@@ -540,6 +540,7 @@ struct rs_cb {
 
     unsigned int devCnt;
     struct RsListHead rdevList;
+    struct RsListHead udevList;
     struct RsListHead heterogTcpFdList;
 
     struct RsPingCtxCb pingCb;
