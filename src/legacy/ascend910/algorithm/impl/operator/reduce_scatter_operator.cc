@@ -16,18 +16,34 @@
 #include "stream_active_manager.h"
 #include "hccl_aiv.h"
 #include "coll_alg_op_registry.h"
+#include "sal_pub.h"
 #include <algorithm>
+#include <cstdlib>
 
 constexpr u32 MODULE_NUM_FOUR = 4;
 constexpr u32 HCCL_310P_DATA_SIZE_MID_COUNT = 320 * 1024;
 constexpr u32 HCCL_310P_DATA_SIZE_SMALL_COUNT = 1024;
 constexpr u32 HCCL_310P_SLIM_RING_MAX_SIZE = 8;
+constexpr char HCCL_RS_PIPLINE_ENABLED_ENV[] = "HCCL_RS_PIPLINE_ENABLED";
 
 // Pipeline并行比串行更优的总数据量临界点（基于910_93 2 SuperPod, 1 Server, 12 Rank 性能基线测试，
 // 数据量低于此值时调度开销超过流水收益）
 constexpr u64 HCCL_PIPELINE_TOTAL_DATA_SIZE_THRESHOLD = 608 * 1024 * 1024;
 
 namespace hccl {
+namespace {
+bool IsRsPipelineEnabledByEnv()
+{
+    const char *envValue = std::getenv(HCCL_RS_PIPLINE_ENABLED_ENV);
+    if (envValue == nullptr || envValue[0] == '\0') {
+        return false;
+    }
+
+    char *endPtr = nullptr;
+    unsigned long envDigit = std::strtoul(envValue, &endPtr, HCCL_BASE_DECIMAL);
+    return endPtr != envValue && *endPtr == '\0' && envDigit != 0;
+}
+}
 
 ReduceScatterOperator::ReduceScatterOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
     HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher) :
@@ -468,11 +484,13 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         maxPipelineBlockSize = commInputSize / userRankSize_ / HCCL_DEVICE_NUM_TWO /
             HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN;
     }
-    bool isSupportPipelineFor91093 = (maxPipelineBlockSize >= HCCL_SMALL_COUNT_4_MB) &&
+    bool isRsPipelineEnabled = IsRsPipelineEnabledByEnv();
+    bool isSupportPipelineFor91093 = isRsPipelineEnabled &&
+        (maxPipelineBlockSize >= HCCL_SMALL_COUNT_4_MB) &&
         (dataSize * userRankSize_ > HCCL_PIPELINE_TOTAL_DATA_SIZE_THRESHOLD);
     HCCL_INFO("[ReduceScatterOperator][SelectAlgfor91093] dataSize[%llu] commInputSize[%llu] "
-        "userRankSize[%u] maxPipelineBlockSize[%llu] isSupportPipelineFor91093[%d]",
-        dataSize, commInputSize, userRankSize_, maxPipelineBlockSize, isSupportPipelineFor91093);
+        "userRankSize[%u] maxPipelineBlockSize[%llu] isRsPipelineEnabled[%d] isSupportPipelineFor91093[%d]",
+        dataSize, commInputSize, userRankSize_, maxPipelineBlockSize, isRsPipelineEnabled, isSupportPipelineFor91093);
     bool dmaReduceLimit = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) && isPowOfTwo &&
         ((commInputSize * HCCL_DEVICE_NUM_TWO < param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] * userRankSize_) ||
         retryEnable_);
