@@ -18,6 +18,7 @@
 #include "task_exception_handler.h"
 #include "ccuTaskException.h"
 #include "hccl_types.h"
+#include "dpu_kernel_entrance.h"
 
 namespace hcomm {
 
@@ -199,6 +200,34 @@ bool IsMC2Exception(rtExceptionInfo_t* exceptionInfo)
            exceptionInfo->expandInfo.u.fusionInfo.type == RT_FUSION_AICORE_CCU;
 }
 
+static std::string GetErrCommId()
+{
+    std::string commId = ""; // 若有错，返回commId；无错返回空
+    // 如何找有错的commId?
+    return commId;
+}
+
+void TaskExceptionHost::ProcessDpuException()
+{
+    HCCL_RUN_INFO("[TaskExceptionHost][%s]begin to execute hccl task exception callback function.", __func__);
+    std::string commId = GetErrCommId(); // 获取dpu任务出错的通信域
+    auto it = g_taskExpMemMap.find(commId);
+    if (it == g_taskExpMemMap.end()) {
+        return; // 无dpu任务出错
+    }
+    // 读取共享内存内容并打印
+    void *tempPtr = malloc(sizeof(DpuTaskexceptionParams));
+    auto taskexpShmem = reinterpret_cast<char *>(tempPtr);
+    memcpy_s(taskexpShmem, sizeof(DpuTaskexceptionParams), it->second, sizeof(DpuTaskexceptionParams));
+    std::vector<char> sequenceData(taskexpShmem, taskexpShmem + sizeof(DpuTaskexceptionParams));
+    DpuTaskexceptionParams dpuTaskexception;
+    dpuTaskexception.DeSerialize(sequenceData);
+    HCCL_ERROR("[TaskExceptionHost][ProcessDpuException] Task from HCCL run failed.");
+    HCCL_ERROR("[TaskExceptionHost][ProcessDpuException] channel information: channelHandle[%llu], commProtocol[%d], endpointLocType[%d].",
+                dpuTaskexception.channelHandle, dpuTaskexception.protocol, dpuTaskexception.locationType);
+    free(tempPtr);
+}
+
 void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 {
     if (exceptionInfo == nullptr) {
@@ -213,6 +242,9 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
         return;
     }
+
+    // dpu taskexception
+    ProcessDpuException();
 
     std::shared_ptr<Hccl::TaskInfo> curTask = nullptr;
     HcclResult ret = Hccl::GlobalMirrorTasks::Instance().FindTaskInfo(exceptionInfo->deviceid, exceptionInfo->streamid,

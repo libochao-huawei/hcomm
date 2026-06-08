@@ -20,6 +20,7 @@
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
 #include "coll_comm.h"
+#include "binary_stream.h"
 
 namespace hcomm {
 using RdmaHandle = void*;
@@ -32,6 +33,35 @@ using AicpuGetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogi
 void RegisterAicpuGetErrStatusVecCallBack(AicpuGetErrStatusVecCallBack);
 
 extern std::array<std::map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMapV2;
+
+struct DpuTaskexceptionParams {
+        HcclResult ret;
+        ChannelHandle channelHandle;
+        CommProtocol protocol = CommProtocol::COMM_PROTOCOL_RESERVED;
+        EndpointLocType locationType = EndpointLocType::ENDPOINT_LOC_TYPE_RESERVED;
+
+        std::vector<char> Serialize() const
+        {
+            Hccl::BinaryStream binaryStream;
+            binaryStream << ret;
+            binaryStream << channelHandle;
+            binaryStream << protocol;
+            binaryStream << locationType;
+
+            std::vector<char> result;
+            binaryStream.Dump(result);
+            return result;
+        }
+
+        void DeSerialize(std::vector<char> &data)
+        {
+            Hccl::BinaryStream binaryStream(data);
+            binaryStream >> ret;
+            binaryStream >> channelHandle;
+            binaryStream >> protocol;
+            binaryStream >> locationType;
+        }
+    };
 
 class TaskExceptionHost {
 public:
@@ -57,6 +87,7 @@ private:
     static void GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo);
     static void GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId);
     static void GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId);
+    static void ProcessDpuException();
 
 private:
     bool isRegistered_ {false};
