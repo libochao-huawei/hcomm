@@ -20,6 +20,8 @@
 #include "virtual_topo.h"
 #include "p2p_connection.h"
 
+#include "../../sockets/socket_mgr.h"
+
 namespace hcomm {
 
 AicpuTsP2pChannel::AicpuTsP2pChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
