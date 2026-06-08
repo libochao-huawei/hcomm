@@ -27,7 +27,7 @@ TEST_F(HcclBarrierTest, Ut_HcclBarrier_When_CommIsNull_Expect_ReturnIsHCCL_E_PTR
     Ut_Device_Set(0);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclBarrierInner(comm, stream);
+    HcclResult ret = HcclBarrier(comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -36,7 +36,7 @@ TEST_F(HcclBarrierTest, Ut_HcclBarrier_When_RankSizeIsNull_Expect_ReturnIsHCCL_E
     UT_COMM_CREATE_DEFAULT(comm);
     rtStream_t stream = nullptr;
 
-    HcclResult ret = HcclBarrierInner(comm, stream);
+    HcclResult ret = HcclBarrier(comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     Ut_Comm_Destroy(comm);
