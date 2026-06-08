@@ -17,6 +17,7 @@
 #include "user_remote_mem_getter.h"
 
 // Orion
+#include "adapter_rts_common.h"
 #include "coll_alg_param.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
@@ -119,8 +120,11 @@ HcclResult AicpuTsUboeChannel::BuildConnection()
     CHK_RET(hrtGetDevice(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
-    std::unique_ptr<Hccl::DevUbConnection> ubConn = std::make_unique<Hccl::DevUbUboeConnection>(rdmaHandle_, 
-        locAddr_, rmtAddr_, opMode, devUsed, Hccl::HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr);
+    const u8 qosPre = static_cast<u8>(
+        (channelDesc_.qos > 7U) ? Hccl::kRaUbGetTpInfoParamDefaultQos : (channelDesc_.qos & 7U));
+
+    std::unique_ptr<Hccl::DevUbConnection> ubConn = std::make_unique<Hccl::DevUbUboeConnection>(rdmaHandle_,
+        locAddr_, rmtAddr_, opMode, devUsed, Hccl::HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr, qosPre);
     CHK_SMART_PTR_NULL(ubConn);
 
     commonRes_.connVec.clear();
@@ -145,7 +149,7 @@ HcclResult AicpuTsUboeChannel::BuildNotify()
     bool devUsed = true;
     for (uint32_t i = 0; i < notifyNum_; ++i) {
         std::unique_ptr<Hccl::UbLocalNotify> notifyPtr = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle_, devUsed),
             return HCCL_E_PTR
         );
@@ -195,7 +199,7 @@ HcclResult AicpuTsUboeChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buf
     bufferVecTemp_.clear();
     for (size_t i = 0; i < bufs.size(); i++) {
         std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_),
             return HCCL_E_PTR
         );
@@ -220,10 +224,10 @@ HcclResult AicpuTsUboeChannel::BuildSocket()
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(localEp_.loc.device.devPhyId), type, 0, ipaddr);
     Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
-    EXECEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, 
+    EXCEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, 
         ipaddr, "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
     HCCL_INFO("[AicpuTsUboeChannel][%s] listen_socket_info[%s]", __func__, serverSocket_->Describe().c_str());
-    EXECEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
 
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));

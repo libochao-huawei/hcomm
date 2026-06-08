@@ -39,13 +39,13 @@ HcclResult UbgEndpoint::Init()
     Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
     // UBG 直接用 EID 地址获取 rdmaHandle，不做 IP→EID 查询
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, eidAddr)), 
+    EXCEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, eidAddr)), 
         return HCCL_E_PARA);
     CHK_PTR_NULL(ctxHandle_);
     HCCL_INFO("%s success, devId[%u], eidAddr[%s], ctxHandle[%p]",
         __func__, devPhyId, eidAddr.Describe().c_str(), ctxHandle_);
 
-    EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
     regedMemMgr_->rdmaHandle_ = ctxHandle_;
 
     return HcclResult::HCCL_SUCCESS;

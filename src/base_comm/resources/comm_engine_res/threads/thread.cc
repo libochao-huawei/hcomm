@@ -49,9 +49,9 @@ HcclResult CreateThread(CommEngine engine, StreamType streamType,
  
     if (engine == COMM_ENGINE_CPU_TS || engine == COMM_ENGINE_CPU
         || engine == COMM_ENGINE_CCU) {
-        EXECEPTION_CATCH(out_thread = make_shared<CpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
+        EXCEPTION_CATCH(out_thread = make_shared<CpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
     } else if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) {
-        EXECEPTION_CATCH(out_thread = make_shared<AicpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
+        EXCEPTION_CATCH(out_thread = make_shared<AicpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
     } else {
         return HCCL_E_NOT_SUPPORT;
     }
@@ -212,7 +212,7 @@ HcclResult StoreThreadHandles(vector<shared_ptr<Thread>>& newThreads,
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         // AICPU引擎处理逻辑
         unique_ptr<ThreadHandle[]> aicpuHandle;
-        EXECEPTION_CATCH(aicpuHandle = make_unique<ThreadHandle[]>(newThreads.size()),
+        EXCEPTION_CATCH(aicpuHandle = make_unique<ThreadHandle[]>(newThreads.size()),
                          return HCCL_E_PTR);
         CHK_PTR_NULL(binHandle);
         HcclResult ret = AicpuLaunchMgr::ThreadKernelLaunchForBase(

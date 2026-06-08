@@ -21,6 +21,48 @@
 #include "ub_memory_transport.h"
 using namespace Hccl;
 
+namespace {
+
+constexpr u32 kGetTpAttrVersion = 2U;
+
+static uint8_t gCapturedJettyPriority = 0U;
+
+int StubRaCtxQpCreateCapturePriority(void *ctxHandle, struct QpCreateAttr *attr, struct QpCreateInfo *info,
+    void **qpHandle)
+{
+    (void)ctxHandle;
+    (void)info;
+    if (attr != nullptr) {
+        gCapturedJettyPriority = attr->ub.priority;
+    }
+    static char fakeQpHandle{};
+    if (qpHandle != nullptr) {
+        *qpHandle = &fakeQpHandle;
+    }
+    return 0;
+}
+
+static uint32_t gCapturedUboeFlag = 0U;
+
+int StubRaGetTpInfoListAsyncCaptureUboe(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num, void **reqHandle)
+{
+    (void)ctxHandle;
+    (void)infoList;
+    if (cfg != nullptr) {
+        gCapturedUboeFlag = cfg->flag.bs.uboe;
+    }
+    if (num != nullptr) {
+        *num = 1U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = reinterpret_cast<void *>(0x12345678ULL);
+    }
+    return 0;
+}
+
+} // namespace
+
 class AdapterHccpTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -1106,4 +1148,145 @@ TEST_F(AdapterHccpTest, ut_HrtCheckUboeSupported_When_DevFeatureBitNotSet_Expect
     devFeature = 0xFFFFFFFF & ~(1 << UBOE_DEV_FLAG_RIGHT_SHIFT);
     result = HrtCheckUboeSupported(devFeature);
     EXPECT_FALSE(result);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtRaUbCreateJetty_When_QosSet_Expect_PriorityMapped)
+{
+    GlobalMockObject::verify();
+    gCapturedJettyPriority = 0U;
+    MOCKER(RaCtxQpCreate).stubs().will(invoke(StubRaCtxQpCreateCapturePriority));
+
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    HrtRaUbCreateJettyParam inParam{100, 100, 100, 100, HrtJettyMode::HOST_OPBASE, 0, 100, 100, 100, 100};
+    inParam.qos = 0x17U;
+
+    (void)HrtRaUbCreateJetty(handle, inParam);
+    EXPECT_EQ(gCapturedJettyPriority, 7U);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtRaSetTpAttrAsync_When_RaSetOk_Expect_Success)
+{
+    int reqResult = 0;
+    MOCKER(RaGetAsyncReqResult).stubs().with(any(), outBoundP(&reqResult, sizeof(reqResult))).will(returnValue(0));
+
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    TpAttr attr{};
+    RequestHandle reqHandle = 0;
+    HcclResult ret = HrtRaSetTpAttrAsync(handle, 0x100ULL, 0x1U, attr, reqHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtRaSetTpAttrAsync_When_RaSetFails_Expect_Throw)
+{
+    MOCKER(RaSetTpAttrAsync).stubs().will(returnValue(-1));
+
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    TpAttr attr{};
+    RequestHandle reqHandle = 0;
+    EXPECT_THROW(HrtRaSetTpAttrAsync(handle, 0x100ULL, 0x1U, attr, reqHandle), NetworkApiException);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtRaSetTpAttrAsync_When_AsyncUnexpected_Expect_Internal)
+{
+    int reqResult = SOCK_EAGAIN;
+    MOCKER(RaGetAsyncReqResult).stubs().with(any(), outBoundP(&reqResult, sizeof(reqResult))).will(returnValue(0));
+
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    TpAttr attr{};
+    RequestHandle reqHandle = 0;
+    HcclResult ret = HrtRaSetTpAttrAsync(handle, 0x100ULL, 0x1U, attr, reqHandle);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtRaGetTpAttrAsync_When_VersionOk_Expect_Success)
+{
+    u32 tpAttrVersion = kGetTpAttrVersion;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(tpAttrVersion)))
+        .will(returnValue(0));
+    int reqResult = 0;
+    MOCKER(RaGetAsyncReqResult).stubs().with(any(), outBoundP(&reqResult, sizeof(reqResult))).will(returnValue(0));
+
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    uint32_t attrBitmap = 0U;
+    TpAttr attr{};
+    RequestHandle reqHandle = 0;
+    HcclResult ret = HrtRaGetTpAttrAsync(0U, handle, 0x100ULL, attrBitmap, attr, reqHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtRaGetTpAttrAsync_When_VersionTooLow_Expect_NotSupport)
+{
+    u32 tpAttrVersion = kGetTpAttrVersion - 1U;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(tpAttrVersion)))
+        .will(returnValue(0));
+
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    uint32_t attrBitmap = 0U;
+    TpAttr attr{};
+    RequestHandle reqHandle = 0;
+    HcclResult ret = HrtRaGetTpAttrAsync(0U, handle, 0x100ULL, attrBitmap, attr, reqHandle);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtRaGetTpAttrAsync_When_RaGetInterfaceVersionFails_Expect_NotSupport)
+{
+    MOCKER(RaGetInterfaceVersion).stubs().will(returnValue(-1));
+
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    uint32_t attrBitmap = 0U;
+    TpAttr attr{};
+    RequestHandle reqHandle = 0;
+    HcclResult ret = HrtRaGetTpAttrAsync(0U, handle, 0x100ULL, attrBitmap, attr, reqHandle);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(AdapterHccpTest, ut_HrtRaGetTpAttrAsync_When_RaGetTpAttrAsyncFails_Expect_Throw)
+{
+    u32 tpAttrVersion = kGetTpAttrVersion;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(tpAttrVersion)))
+        .will(returnValue(0));
+    MOCKER(RaGetTpAttrAsync).stubs().will(returnValue(-1));
+
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    uint32_t attrBitmap = 0U;
+    TpAttr attr{};
+    RequestHandle reqHandle = 0;
+    EXPECT_THROW(HrtRaGetTpAttrAsync(0U, handle, 0x100ULL, attrBitmap, attr, reqHandle), NetworkApiException);
+}
+
+TEST_F(AdapterHccpTest, ut_RaUbGetTpInfoAsync_When_UboeProtocol_Expect_UboeFlagSet)
+{
+    gCapturedUboeFlag = 0U;
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncCaptureUboe));
+
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    IpAddress locAddr("8.0.0.1");
+    IpAddress rmtAddr("8.0.0.2");
+    RaUbGetTpInfoParam param{locAddr, rmtAddr, TpProtocol::UBOE};
+    vector<char_t> out;
+    uint32_t num = 0U;
+
+    RequestHandle reqHandle = RaUbGetTpInfoAsync(handle, param, out, num);
+    EXPECT_NE(reqHandle, 0ULL);
+    EXPECT_EQ(gCapturedUboeFlag, 1U);
+}
+
+TEST_F(AdapterHccpTest, ut_RaUbGetTpInfoAsync_When_RaGetTpInfoListAsyncFails_Expect_Throw)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(returnValue(-1));
+
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    IpAddress locAddr("8.0.0.1");
+    IpAddress rmtAddr("8.0.0.2");
+    RaUbGetTpInfoParam param{locAddr, rmtAddr, TpProtocol::TP};
+    vector<char_t> out;
+    uint32_t num = 0U;
+
+    EXPECT_THROW(RaUbGetTpInfoAsync(handle, param, out, num), NetworkApiException);
 }

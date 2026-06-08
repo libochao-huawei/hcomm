@@ -20,11 +20,11 @@ HcclResult CommEngineResMgr::Init(uint32_t threadNum, uint32_t notifyNumPerThrea
     HCCL_INFO("[CommEngineResMgr][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u]", 
         __func__, commId.c_str(), threadNum, notifyNumPerThread);
     if (!threadMgr_) {
-        EXECEPTION_CATCH(threadMgr_ = std::make_unique<ThreadMgr>(threadNum, notifyNumPerThread, commId, binHandle, callbacks),
+        EXCEPTION_CATCH(threadMgr_ = std::make_unique<ThreadMgr>(threadNum, notifyNumPerThread, commId, binHandle, callbacks),
             return HCCL_E_PTR);
     }
     if (!notifyMgr_) {
-        EXECEPTION_CATCH(notifyMgr_ = std::make_unique<NotifyManager>(commId, binHandle, callbacks),
+        EXCEPTION_CATCH(notifyMgr_ = std::make_unique<NotifyManager>(commId, binHandle, callbacks),
             return HCCL_E_PTR);
     }
     return HCCL_SUCCESS;

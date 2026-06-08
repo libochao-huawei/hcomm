@@ -31,7 +31,7 @@ static HcclResult HcclMemRegIpc(NetDevContext *netDevCtx, const HcclMem *mem, Hc
     u64 size = static_cast<u64>(mem->size);
     BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem->addr), size);
     std::shared_ptr<LocalIpcRmaBuffer> localbufferPtr = nullptr;
-    EXECEPTION_CATCH((localbufferPtr = std::make_shared<LocalIpcRmaBuffer>(netDevCtx, mem->addr, size, memType)),
+    EXCEPTION_CATCH((localbufferPtr = std::make_shared<LocalIpcRmaBuffer>(netDevCtx, mem->addr, size, memType)),
         return HCCL_E_PTR);
     auto resultPair = localRmaBufferMgr->Add(tempKey, localbufferPtr);
     if (resultPair.first == localRmaBufferMgr->End()) {
@@ -98,7 +98,7 @@ static HcclResult HcclMemRegRoce(NetDevContext *netDevCtx, const HcclMem *mem, H
     u64 size = static_cast<u64>(mem->size);
     BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem->addr), size);
     std::shared_ptr<LocalRdmaRmaBuffer> localbufferPtr = nullptr;
-    EXECEPTION_CATCH((localbufferPtr = std::make_shared<LocalRdmaRmaBuffer>(netDevCtx, mem->addr, size, memType)),
+    EXCEPTION_CATCH((localbufferPtr = std::make_shared<LocalRdmaRmaBuffer>(netDevCtx, mem->addr, size, memType)),
         return HCCL_E_PTR);
     auto resultPair = localRmaBufferMgr->Add(tempKey, localbufferPtr);
     if (resultPair.first == localRmaBufferMgr->End()) {

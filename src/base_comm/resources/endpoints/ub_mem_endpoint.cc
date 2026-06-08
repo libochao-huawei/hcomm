@@ -19,7 +19,7 @@ UbMemEndpoint::UbMemEndpoint(const EndpointDesc &endpointDesc) : Endpoint(endpoi
 
 HcclResult UbMemEndpoint::Init()
 {
-    EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<UbMemRegedMemMgr>(), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(regedMemMgr_ = std::make_unique<UbMemRegedMemMgr>(), return HCCL_E_INTERNAL);
 
     return HcclResult::HCCL_SUCCESS;
 }

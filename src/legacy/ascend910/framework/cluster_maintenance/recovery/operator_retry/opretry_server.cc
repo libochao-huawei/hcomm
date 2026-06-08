@@ -21,19 +21,19 @@ HcclResult CreateOpRetryServerByState(RetryState state, RetryContext* retryCtx)
     std::shared_ptr<OpRetryBase> retryPtr = nullptr;
     switch (state) {
         case RETRY_STATE_SERVER_RUNNING: {
-            EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerRunning>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerRunning>()), return HCCL_E_PTR);
             break;
         }
         case RETRY_STETA_HANDLE_ALL_ERR: {
-            EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerHandleError>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerHandleError>()), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_SERVER_RETRY_FAIL: {
-            EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerRetryFail>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerRetryFail>()), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_WAIT_LINK_CHECKED:
-            EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerWaitLinkInfo>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerWaitLinkInfo>()), return HCCL_E_PTR);
             break;
         case RETRY_STATE_WAIT_AICPU_STOPED:
         case RETRY_STATE_WAIT_STREAM_STOPED:
@@ -43,14 +43,14 @@ HcclResult CreateOpRetryServerByState(RetryState state, RetryContext* retryCtx)
         case RETRY_STATE_WAIT_RESUME_TRANSPORT:
         case RETRY_STATE_WAIT_CHECK_INFO:
         case RETRY_STATE_WAIT_CAN_RETRY: {
-            EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerWaitResp>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerWaitResp>()), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_CHECK_ALL_LINK:
-            EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerCheckAllLink>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerCheckAllLink>()), return HCCL_E_PTR);
             break;
         case RETRY_STATE_CMD_RESUME_TRANSPORT: {
-            EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerIssueChangeLinkAndResume>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerIssueChangeLinkAndResume>()), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_CMD_STOP_AICPU:
@@ -61,26 +61,26 @@ HcclResult CreateOpRetryServerByState(RetryState state, RetryContext* retryCtx)
         case RETRY_STATE_CMD_RESET_NOTIFY:
         case RETRY_STATE_CMD_CHECK:
         case RETRY_STATE_CMD_CAN_RETRY: {
-            EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerIssueCmd>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerIssueCmd>()), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_CHECK_OP: {
-            EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerCheckOp>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerCheckOp>()), return HCCL_E_PTR);
             break;
         }
         // 检查各agennt主动接轨信息，并发送cmd命令
         case RETRY_STATE_CMD_PLAN_SWITCH_NIC : {
-            EXECEPTION_CATCH((retryPtr = std::make_shared<SwitchNicServerCheckAllSwitchRanks>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<SwitchNicServerCheckAllSwitchRanks>()), return HCCL_E_PTR);
             break;
         }
         // Server下发命令给agent进行链路检查，接收到agent回复消息后，检查所有链路情况
         case RETRY_RESUME_STATE_SERVER_CHECK_LINK: {
-            EXECEPTION_CATCH((retryPtr = std::make_shared<ResumeServerCheckAllLink>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<ResumeServerCheckAllLink>()), return HCCL_E_PTR);
             break;
         }
         // Server下发命令给agent进行借轨操作，接收到借轨成功消息后，切换下一状态
         case RETRY_RESUME_STATE_SERVER_CHANGE_LINK: {
-            EXECEPTION_CATCH((retryPtr = std::make_shared<ResumeServerChangeLink>()), return HCCL_E_PTR);
+            EXCEPTION_CATCH((retryPtr = std::make_shared<ResumeServerChangeLink>()), return HCCL_E_PTR);
             break;
         }
         default: {
@@ -588,7 +588,7 @@ HcclResult OpRetryServerIssueChangeLinkAndResume::ProcessEvent(RetryContext* ret
     }
     // 再发送resume transport命令至每个agent
     std::shared_ptr<OpRetryBase> retryPtr = nullptr;
-    EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerIssueCmd>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerIssueCmd>()), return HCCL_E_PTR);
     RetryState nextState = RETRY_STATE_CMD_RESUME_TRANSPORT;
     retryCtx->SetRetryState(nextState, retryPtr);
     HCCL_INFO("[OpRetry][Server]OpRetryServerIssueChangeLinkAndResume success");

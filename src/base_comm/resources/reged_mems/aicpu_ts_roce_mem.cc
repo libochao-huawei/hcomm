@@ -36,7 +36,7 @@ std::shared_ptr<LocalBufferMgrCtx> GetOrCreateLocalBufferMgr(s32 devicePhyId)
     std::shared_ptr<LocalBufferMgrCtx> &slot = g_phyIdToLocalBufferMgrCtx[devicePhyId];
     if (slot == nullptr) {
         std::shared_ptr<LocalRdmaRmaBufferMgr> mgr;
-        EXECEPTION_CATCH((mgr = std::make_shared<LocalRdmaRmaBufferMgr>()), return nullptr);
+        EXCEPTION_CATCH((mgr = std::make_shared<LocalRdmaRmaBufferMgr>()), return nullptr);
         slot = std::make_shared<LocalBufferMgrCtx>();
         slot->mu = std::make_shared<std::mutex>();
         slot->mgr = std::move(mgr);
@@ -99,7 +99,7 @@ HcclResult AicpuTsRoceRegedMemMgr::GetOrCreateLocalRdmaRmaBuffer(hccl::NetDevCon
     }
     HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] Find miss, construct LocalRdmaRmaBuffer key {%p, %llu} type[%u]",
         mem.addr, mem.size, static_cast<unsigned int>(mem.type));
-    EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<hccl::LocalRdmaRmaBuffer>(netDevCtx, mem.addr,
+    EXCEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<hccl::LocalRdmaRmaBuffer>(netDevCtx, mem.addr,
         static_cast<u64>(mem.size), memType)), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
@@ -170,7 +170,7 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buffer->GetAddr()), buffer->GetSize());
 
     bool delOk = false;
-    EXECEPTION_CATCH(delOk = localRdmaRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
+    EXCEPTION_CATCH(delOk = localRdmaRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
     if (!delOk) {
         HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] ref count > 0");
     }
@@ -249,12 +249,12 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t de
     CHK_RET(GetParamsFromMemDesc(memDesc, descLen, endpointDesc, rdmaBlob));
 
     std::shared_ptr<hccl::RemoteRdmaRmaBuffer> remoteBuf;
-    EXECEPTION_CATCH(remoteBuf = std::make_shared<hccl::RemoteRdmaRmaBuffer>(), return HCCL_E_PTR);
+    EXCEPTION_CATCH(remoteBuf = std::make_shared<hccl::RemoteRdmaRmaBuffer>(), return HCCL_E_PTR);
     CHK_RET(remoteBuf->Deserialize(rdmaBlob));
 
     if (remoteRdmaRmaBufferMgrs_.find(endpointDesc) == remoteRdmaRmaBufferMgrs_.end()) {
         std::unique_ptr<RemoteRdmaRmaBufferMgr> mgr;
-        EXECEPTION_CATCH(mgr = std::make_unique<RemoteRdmaRmaBufferMgr>(), return HCCL_E_PTR);
+        EXCEPTION_CATCH(mgr = std::make_unique<RemoteRdmaRmaBufferMgr>(), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(mgr);
         remoteRdmaRmaBufferMgrs_[endpointDesc] = std::move(mgr);
         HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryImport] created RemoteRdmaRmaBufferMgr for new endpoint, mgrCnt[%zu]",
@@ -291,12 +291,12 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t 
     }
 
     std::shared_ptr<hccl::RemoteRdmaRmaBuffer> probe;
-    EXECEPTION_CATCH(probe = std::make_shared<hccl::RemoteRdmaRmaBuffer>(), return HCCL_E_PTR);
+    EXCEPTION_CATCH(probe = std::make_shared<hccl::RemoteRdmaRmaBuffer>(), return HCCL_E_PTR);
     CHK_RET(probe->Deserialize(rdmaBlob));
 
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(probe->GetAddr()), probe->GetSize());
     bool delOk = false;
-    EXECEPTION_CATCH(delOk = mgrIt->second->Del(tempKey), return HCCL_E_NOT_FOUND);
+    EXCEPTION_CATCH(delOk = mgrIt->second->Del(tempKey), return HCCL_E_NOT_FOUND);
     if (!delOk) {
         HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryUnimport] ref count > 0");
         return HCCL_E_AGAIN;

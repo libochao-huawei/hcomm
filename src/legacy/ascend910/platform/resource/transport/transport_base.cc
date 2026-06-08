@@ -760,7 +760,7 @@ HcclResult TransportBase::SignalInit(const std::shared_ptr<LocalNotify> &notify,
     CHK_SMART_PTR_NULL(notify);
     HcclSignalInfo signalInfo;
     CHK_RET(notify->GetNotifyData(signalInfo));
-    EXECEPTION_CATCH((ipcNotify = std::make_shared<LocalIpcNotify>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((ipcNotify = std::make_shared<LocalIpcNotify>()), return HCCL_E_PTR);
     CHK_RET(ipcNotify->Init(signalInfo, NotifyLoadType::DEVICE_NOTIFY));
     HCCL_INFO("%s notifyId_ [%u]", __func__, ipcNotify->notifyId_);
     return HCCL_SUCCESS;
@@ -944,7 +944,7 @@ HcclResult TransportBase::RecvAndCheckExchangeData(void)
 HcclResult TransportBase::OpenRemoteNotify(const std::vector<u8>& byteVector,
     std::shared_ptr<RemoteNotify> &remoteNotify)
 {
-    EXECEPTION_CATCH((remoteNotify = std::make_shared<RemoteNotify>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((remoteNotify = std::make_shared<RemoteNotify>()), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(remoteNotify);
 
     HcclResult ret = HCCL_SUCCESS;
