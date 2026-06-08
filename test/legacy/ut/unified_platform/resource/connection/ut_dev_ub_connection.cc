@@ -29,6 +29,14 @@
 
 using namespace Hccl;
 
+static HcclResult StubGetTpInfoWithJettyTimeout(TpManager *, const RaUbGetTpInfoParam &, TpInfo &tpInfo, bool)
+{
+    tpInfo.tpHandle = 1ULL;
+    tpInfo.hasJettyErrTimeout = true;
+    tpInfo.jettyErrTimeout = 8U;
+    return HCCL_SUCCESS;
+}
+
 class DevUbConnectionTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -61,14 +69,6 @@ protected:
     u32 listenPort = 100;
     std::string tag = "test";
 };
-
-static HcclResult StubGetTpInfoWithJettyTimeout(TpManager *, const RaUbGetTpInfoParam &, TpInfo &tpInfo, bool)
-{
-    tpInfo.tpHandle = 1ULL;
-    tpInfo.hasJettyErrTimeout = true;
-    tpInfo.jettyErrTimeout = 8U;
-    return HCCL_SUCCESS;
-}
 
 static RmaConnStatus DriveDevUbConnectionUntilExchangeable(DevUbConnection &conn)
 {
