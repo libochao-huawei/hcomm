@@ -48,7 +48,6 @@ target_link_libraries(hccl_v2 PRIVATE
     $<BUILD_INTERFACE:runtime_headers>
     $<BUILD_INTERFACE:slog_headers>
     $<BUILD_INTERFACE:rdma_core_headers>
-    $<BUILD_INTERFACE:json>
     -Wl,--no-as-needed
     c_sec
     unified_dlog
@@ -85,7 +84,12 @@ target_include_directories(hccl_v2 PRIVATE
     ${HCOMM_DIR}/src/base_comm/resources/hccp/orion/hcomm_dev/inc/network
     # 外部依赖
     ${HCOMM_DIR}/externel_depends/tsch
+    # 三方件头文件
+    ${JSON_INCLUDE_DIR}
 )
+
+# 设置依赖
+add_dependencies(hccl_v2 json)
 
 # 将hccl编译出的动态库加入CANN的安装包
 install(TARGETS hccl_v2

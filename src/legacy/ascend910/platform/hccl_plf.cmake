@@ -109,6 +109,11 @@ if(BUILD_OPEN_PROJECT)
         LOG_CPP
     )
 
+    target_include_directories(hccl_plf PRIVATE
+        # 三方件头文件
+        ${JSON_INCLUDE_DIR}
+    )
+
     target_link_libraries(hccl_plf
     PRIVATE
         $<BUILD_INTERFACE:ascend_hal_headers>
@@ -117,7 +122,6 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:rdma_core_headers>
         $<BUILD_INTERFACE:hccl_legacy_headers>
-        $<BUILD_INTERFACE:json>
         -Wl,--no-as-needed
         c_sec
         unified_dlog
@@ -170,6 +174,9 @@ else()
         hccl_headers
     )
 endif()
+
+# 设置依赖
+add_dependencies(hccl_plf json)
 
 # 安装
 install(TARGETS hccl_plf
