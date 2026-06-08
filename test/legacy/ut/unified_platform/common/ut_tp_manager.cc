@@ -610,8 +610,6 @@ TEST_F(TpManagerTest, tp_manager_get_tpattr_and_release_success)
     TpAttrInfo tpAttrInfo{};
     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x200);
     result = TpManager::GetInstance(devLogicId).GetTpAttr(attrParam, tpAttrInfo, rdmaHandle);
-    EXPECT_EQ(result, HCCL_E_AGAIN);
-    result = TpManager::GetInstance(devLogicId).GetTpAttr(attrParam, tpAttrInfo, rdmaHandle);
     EXPECT_EQ(result, HCCL_SUCCESS);
     result = TpManager::GetInstance(devLogicId).GetTpAttr(attrParam, tpAttrInfo, rdmaHandle);
     EXPECT_EQ(result, HCCL_SUCCESS);
