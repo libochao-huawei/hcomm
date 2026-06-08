@@ -82,6 +82,7 @@ set(src_to_test_list
     comms/adpt/ut_hcomm_adapter_hccp_test.cc
     comms/endpoints/dfx/ut_endpoint_monitor.cc
     coll_comms/rank/ut_exchange_info_mgr.cc
+    coll_comms/group/ut_coll_comm_group.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
@@ -91,6 +92,7 @@ target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/group
 )
 
 target_compile_definitions(hccl_utest_test_next_resource PRIVATE
