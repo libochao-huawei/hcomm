@@ -250,6 +250,7 @@ STATIC int RsGetChipLogicId(unsigned int chipId, enum NetworkMode hccpMode, unsi
     return 0;
 }
 
+#ifdef CUSTOM_INTERFACE
 STATIC int RsInitNetAdapt(struct rs_cb *rscb) {
     int ret = 0;
 
@@ -271,6 +272,7 @@ STATIC void RsDeInitNetAdapt(struct rs_cb *rscb) {
 
     RsNetAdaptUninit();
 }
+#endif
 
 STATIC int RsInitRscbCfg(struct rs_cb *rscb)
 {

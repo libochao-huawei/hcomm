@@ -293,6 +293,7 @@ STATIC int RsIbverbsApiInit(void)
     return 0;
 }
 
+#ifdef CUSTOM_INTERFACE
 STATIC int RsOpenRoceUserSo(enum SoType *type)
 {
     pthread_mutex_lock(&gRoceUserApiLock);
@@ -328,6 +329,7 @@ out:
     pthread_mutex_unlock(&gRoceUserApiLock);
     return 0;
 }
+#endif
 
 STATIC void RsCloseRoceUserSo(void)
 {
@@ -350,9 +352,10 @@ out:
     return;
 }
 
+#ifdef CUSTOM_INTERFACE
+#ifndef CA_CONFIG_LLT
 STATIC int RsRoceUserIbvApiInit(void)
 {
-#ifndef CA_CONFIG_LLT
     gRoceUserOps.rsIbvExpCreateQp = (struct ibv_qp* (*)(struct ibv_pd *pd,
         struct ibv_exp_qp_init_attr *qpInitAttr, struct rdma_lite_device_qp_attr *qpResp))
         HccpDlsym(gRoceUserApiHandle, "ibv_exp_create_qp");
@@ -379,13 +382,15 @@ STATIC int RsRoceUserIbvApiInit(void)
     gRoceUserOps.rsIbvExpCreateAh = (struct ibv_ah* (*)(struct ibv_pd *pd, struct ibv_exp_ah_attr *attrx))
         HccpDlsym(gRoceUserApiHandle, "ibv_exp_create_ah");
     DL_API_RET_IS_NULL_CHECK(gRoceUserOps.rsIbvExpCreateAh, "ibv_exp_create_ah");
-#endif
     return 0;
 }
+#endif
+#endif
 
+#ifdef CUSTOM_INTERFACE
+#ifndef CA_CONFIG_LLT
 STATIC int RsRoceUserDrvApiInit(void)
 {
-#ifndef CA_CONFIG_LLT
     gRoceUserOps.rsRoceGetRoceDevData = (int (*)(const char *devName, struct roce_dev_data *rdevData))
         HccpDlsym(gRoceUserApiHandle, "roce_get_roce_dev_data");
     DL_API_RET_IS_NULL_CHECK(gRoceUserOps.rsRoceGetRoceDevData, "roce_get_roce_dev_data");
@@ -424,10 +429,12 @@ STATIC int RsRoceUserDrvApiInit(void)
     gRoceUserOps.rsRoceGetApiVersion = (unsigned int (*)(void))
         HccpDlsym(gRoceUserApiHandle, "roce_get_api_version");
     DL_API_RET_IS_NULL_CHECK(gRoceUserOps.rsRoceGetApiVersion, "roce_get_api_version");
-#endif
     return 0;
 }
+#endif
+#endif
 
+#ifdef CUSTOM_INTERFACE
 STATIC int RsRoceUserApiInit(void)
 {
     enum SoType type = SO_TYPE_INVALID;
@@ -468,6 +475,7 @@ close_roce_user_so:
 #endif
     return ret;
 }
+#endif
 
 STATIC int RsHrnIbvApiInit(void)
 {
