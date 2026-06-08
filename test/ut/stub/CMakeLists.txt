@@ -387,6 +387,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_mems/
     ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/remote/rank_pairs
     ${HCCL_CODE_ROOT}/src/coll_communicator/common/loggers
+    ${HCCL_CODE_ROOT}/src/coll_communicator/api_c_adpt/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/

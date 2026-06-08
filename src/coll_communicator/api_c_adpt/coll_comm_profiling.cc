@@ -10,7 +10,7 @@
 
 #include "prof_common.h"
 #include "adapter_prof.h"
-#include "profiling.h"
+#include "coll_comm_profiling.h"
 #include "profiling_manager_pub.h"
 #include "hccl_comm_pub.h"
 #include "stream_pub.h"
