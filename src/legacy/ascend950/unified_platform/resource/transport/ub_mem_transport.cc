@@ -540,6 +540,10 @@ void UbMemTransport::SendDataSize()
     binaryStream.Dump(sendData);
     u32 sendSize = sendData.size();
 
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("UbMemTransport::SendDataSize socket is nullptr, please check"));
+        return;
+    }
     // 发送数据包尺寸
     if (isHost_) {
         socket->Send(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
@@ -552,6 +556,10 @@ void UbMemTransport::SendDataSize()
 
 void UbMemTransport::RecvDataSize()
 {
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("UbMemTransport::RecvDataSize socket is nullptr, please check"));
+        return;
+    }
     // 接收数据包尺寸
     if (isHost_) {
         socket->Recv(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
@@ -564,6 +572,10 @@ void UbMemTransport::RecvDataSize()
 
 void UbMemTransport::SendExchangeData()
 {
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("UbMemTransport::SendExchangeData socket is nullptr, please check"));
+        return;
+    }
     if (isHost_) {
         socket->Send(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
     } else {
@@ -574,6 +586,10 @@ void UbMemTransport::SendExchangeData()
 
 void UbMemTransport::RecvExchangeData()
 {
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("UbMemTransport::RecvExchangeData socket is nullptr, please check"));
+        return;
+    }
     recvData.resize(exchangeDataSize);
     if (isHost_) {
         socket->Recv(reinterpret_cast<u8 *>(recvData.data()), recvData.size());
@@ -756,6 +772,10 @@ void UbMemTransport::SendFinish()
 {
     HCCL_INFO("start send Finish Msg %s [%s]", GetLinkDescInfo().c_str(), FINISH_MSG);
     sendFinishMsg = std::vector<char>(FINISH_MSG, FINISH_MSG + FINISH_MSG_SIZE);
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("UbMemTransport::SendFinish socket is nullptr, please check"));
+        return;
+    }
     if (isHost_) {
         socket->Send(reinterpret_cast<u8 *>(sendFinishMsg.data()), FINISH_MSG_SIZE);
     } else {
@@ -768,6 +788,10 @@ void UbMemTransport::RecvFinish()
 {
     recvFinishMsg.resize(FINISH_MSG_SIZE);
     HCCL_INFO("start recv Finish Msg %s [%s]", GetLinkDescInfo().c_str(), FINISH_MSG);
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("UbMemTransport::RecvFinish socket is nullptr, please check"));
+        return;
+    }
     if (isHost_) {
         socket->Recv(reinterpret_cast<u8 *>(recvFinishMsg.data()), FINISH_MSG_SIZE);
     } else {
@@ -1054,6 +1078,12 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVe
     sendData.clear();
     BinaryStream sendStream;
     std::vector<std::unique_ptr<RemoteUbRmaBuffer>> rmtBufferTemp{};
+
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("UbMemTransport::UpdateMemInfo socket is nullptr, please check"));
+        return;
+    }
+    
     TRY_CATCH_RETURN(
         [&]() -> void {
             BufferVecPack(sendStream, bufferVecTemp, locMemTagTemp_);
@@ -1102,6 +1132,10 @@ HcclResult UbMemTransport::Init()
  
 HcclResult UbMemTransport::DeInit() const
 {
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("UbMemTransport::DeInit socket is nullptr, please check"));
+        return;
+    }
     socket->Destroy();
     return HCCL_SUCCESS;
 }

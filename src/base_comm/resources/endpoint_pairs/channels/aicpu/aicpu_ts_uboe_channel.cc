@@ -39,7 +39,7 @@ AicpuTsUboeChannel::~AicpuTsUboeChannel()
 {
     if (socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
-        socket_ = nullptr;
+        memTransport_->SetSocket(socket_);
     }
 }
 
@@ -693,7 +693,7 @@ ChannelStatus AicpuTsUboeChannel::GetStatus()
     ProcessUboeState();
     if (channelStatus == ChannelStatus::READY && socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
-        socket_ = nullptr;
+        memTransport_->SetSocket(socket_);
     }
 
     return channelStatus;
