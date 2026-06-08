@@ -8,15 +8,10 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_op_ctx.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/independent_op_context_manager.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_op_mem.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/independent_op.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_op_channel.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/reg_mem_manager.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/comm_mem_manager.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_rank_graph.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_op_engine.cc
 )
  
 if(TARGET hcomm)
@@ -29,13 +24,9 @@ if(TARGET hcomm)
 endif()
 
 if(TARGET ccl_kernel)
-    target_sources(ccl_kernel PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_rank_graph.cc
-    )
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/resource
-        ${CMAKE_CURRENT_SOURCE_DIR}/resource/engine
     )
 endif()
 
@@ -44,4 +35,3 @@ add_subdirectory(resource)
 add_subdirectory(rank_graph)
 add_subdirectory(device)
 add_subdirectory(diag)
-add_subdirectory(profiling)
