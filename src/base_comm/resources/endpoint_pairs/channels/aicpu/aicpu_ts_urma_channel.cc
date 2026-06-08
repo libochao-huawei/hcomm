@@ -34,7 +34,7 @@ AicpuTsUrmaChannel::~AicpuTsUrmaChannel()
 {
     if (socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
-        socket_ = nullptr;
+        memTransport_->SetSocket(socket_);
     }
 }
 
@@ -304,6 +304,7 @@ ChannelStatus AicpuTsUrmaChannel::GetStatus()
     
     if (out == ChannelStatus::READY && socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        memTransport_->SetSocket(socket_);
     }
     return out;
 }

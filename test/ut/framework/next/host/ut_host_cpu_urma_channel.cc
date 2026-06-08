@@ -226,3 +226,33 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_Init_WithExchangeAllMems_Expect_Success)
     auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
     EXPECT_NO_THROW(impl->Init());
 }
+
+TEST_F(HostCpuUrmaChannelTest, Ut_SocketNotNullptr_When_Ready)
+{
+    MOCKER_CPP(&SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
+ 	MOCKER_CPP(&SocketMgr::PutSocket).stubs().will(returnValue(HCCL_SUCCESS));
+    HcommChannelDesc desc{};
+    desc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    HostCpuUrmaChannel ch(ep, desc);
+
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(0x02);
+
+    Hccl::BaseMemTransport::LocCntNotifyRes locCntNotifyRes{};
+    locCntNotifyRes.vec.clear();
+    locCntNotifyRes.desc.clear();
+    const Hccl::Socket &socket = *ch.socket_;
+
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    EndpointDescPairToLinkData(ch.localEp_, ch.remoteEp_, linkData);
+
+    bool isRecvFirst = true;
+
+    ch.memTransport_ = std::make_unique<Hccl::UbMemTransport>(
+            ch.commonRes_, ch.attr_, linkData, socket, ch.rdmaHandle_, locCntNotifyRes, isRecvFirst
+        );
+
+    ch.memTransport_->baseStatus = Hccl::TransportStatus::READY;
+    ch.GetStatus();
+    GlobalMockObject::verify();
+}
