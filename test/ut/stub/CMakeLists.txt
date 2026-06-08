@@ -466,6 +466,7 @@ target_link_libraries(hccl_llt  PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     -Wl,--allow-multiple-definition
+    -lgcov
     -lrt
     -ldl
 )
