@@ -171,10 +171,13 @@ TEST_F(HcommCcuControlApiTest, testName)                                        
                                                                                                             \
     int32_t dummyArg = 0;                                                                                   \
     CcuKernelArg kernelArg = static_cast<CcuKernelArg>(&dummyArg);                                          \
+    const void *kernelArgs[] = {kernelArg};                                                                 \
     CcuKernelHandle kernelHandle{0};                                                                        \
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);                                                   \
-    ccuRet = HcommCcuKernelRegister(insHandle, const_cast<char *>(#demoFunc), kernelFunc, kernelArg,        \
-        &kernelHandle);                                                                                     \
+    constexpr uint32_t fakeDieId = 0;                                                                       \
+    constexpr uint32_t kernelArgNum = 1;                                                                    \
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId, const_cast<char *>(#demoFunc),                    \
+        kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);                                               \
     if (expectRegisterSuccess) {                                                                            \
         EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);                                                          \
         ccuRet = HcommCcuKernelRegisterEnd(insHandle);                                                      \
@@ -226,10 +229,15 @@ TEST_F(HcommCcuControlApiTest, Ut_LoopObjectApi_Expect_Success)
     demoArg.numA = 3;
     demoArg.numB = 4;
     CcuKernelArg kernelArg = static_cast<CcuKernelArg>(&demoArg);
-    CcuKernelHandle kernelHandle{0};
+    const void *kernelArgs[] = {kernelArg};
     auto kernelFunc = reinterpret_cast<void *>(CcuLoopAddDemoKernel);
-    ccuRet = HcommCcuKernelRegister(insHandle, const_cast<char *>("CcuLoopAddDemoKernel"),
-        kernelFunc, kernelArg, &kernelHandle);
+
+    char *kernelFuncName = "CcuLoopAddDemoKernel";
+    CcuKernelHandle kernelHandle{0};
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
@@ -287,6 +295,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
 
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     // 重置CCU资源
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
@@ -295,8 +304,10 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     // kernel注册
     char *kernelFuncName = "ccu_var_add_simple_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     // kernel翻译
@@ -310,9 +321,9 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     // 需要与样例需要的load args对应
     std::vector<uint64_t> taskArgs{};
     void *fakeTaskArgs = static_cast<void *>(taskArgs.data());
-    uint32_t fakeArgSize = taskArgs.size();
+    uint32_t fakeArgNum = taskArgs.size();
     EXPECT_EQ(HcommCcuKernelLaunch(fakeThreadHandle, kernelHandle,
-        fakeTaskArgs, fakeArgSize), CcuResult::CCU_SUCCESS);
+        fakeTaskArgs, fakeArgNum), CcuResult::CCU_SUCCESS);
 
     // 清理各种资源，析构有时序要求
     MockChannelDestory(handlePair);
@@ -360,14 +371,17 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhile_When_AllFine_Expect_Retu
     demoArg.loopCount = 5;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_do_while_while_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
@@ -421,14 +435,17 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedIfOuterElse_When_AllFine_E
     demoArg.innerExpected = 2;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_nested_if_outer_else_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
@@ -482,14 +499,17 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedIfInnerElse_When_AllFine_E
     demoArg.innerExpected = 2;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_nested_if_inner_else_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
@@ -540,14 +560,17 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhileUnified_When_AllFine_Expe
     demoArg.loopCount = 5;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_do_while_unified_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
@@ -599,14 +622,17 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelLoopAdd_When_AllFine_Expect_Retu
     demoArg.numB = 11;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_loop_add_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
@@ -657,14 +683,17 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteRead_When_AllFine_Expect_R
     demoArg.channelHandle = handlePair.second;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_remote_read_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
@@ -715,14 +744,17 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteWrite_When_AllFine_Expect_
     demoArg.channelHandle = handlePair.second;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_remote_write_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
@@ -773,14 +805,17 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAlloc_When_AllFine_Expect_Return
     demoArg.channelHandle = handlePair.second;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_alloc_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
@@ -843,6 +878,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine
 
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     // 重置CCU资源
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
@@ -851,8 +887,10 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine
     // kernel注册
     char *kernelFuncName = "ccu_reduce_scatter_mesh1d_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     // kernel翻译
@@ -920,14 +958,17 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedInIfIf_When_AllFine_Expect
     demoArg.innerExpected_2 = 3;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_nested_in_if_if_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
@@ -983,14 +1024,17 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAllGatherMesh1dMem2Mem_When_AllF
 
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg  = static_cast<CcuKernelArg>(&demoArg);
+    const void *kernelArgs[] = {kernelArg};
 
     ccuRet = HcommCcuKernelRegisterStart(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     char *kernelFuncName = "ccu_all_gather_mesh1d_mem2mem_demo";
     CcuKernelHandle kernelHandle{0};
-    ccuRet = HcommCcuKernelRegister(insHandle, kernelFuncName,
-        kernelFunc, kernelArg, &kernelHandle);
+    constexpr uint32_t fakeDieId = 0;
+    constexpr uint32_t kernelArgNum = 1;
+    ccuRet = HcommCcuKernelRegister(insHandle, fakeDieId,
+        kernelFuncName, kernelFunc, kernelArgs, kernelArgNum, &kernelHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
