@@ -18,11 +18,22 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr
     pimpl_ = std::make_unique<LocalRdmaRmaBufferImpl>(netDevCtx, addr, size, memType);
 }
 
+LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
+    const RmaMemType memType, const LocalRdmaRmaBuffer& parent)
+    : RmaBuffer(netDevCtx, addr, size, memType, RmaType::RDMA_RMA, true)
+{
+    pimpl_ = std::make_unique<LocalRdmaRmaBufferImpl>(netDevCtx, addr, size, memType, parent.GetImpl());
+    this->devAddr = this->addr;
+    HCCL_INFO("[LocalRdmaRmaBuffer] alias constructor, lkey[%u]", GetKey());
+}
+
 LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
 {
-    HcclResult res = Destroy();
-    if (res != HCCL_SUCCESS) {
-        HCCL_ERROR("[LocalRdmaRmaBuffer][~LocalRdmaRmaBuffer]failed, ret[%d]", res);
+    if (!isAlias_) {
+        HcclResult res = Destroy();
+        if (res != HCCL_SUCCESS) {
+            HCCL_ERROR("[LocalRdmaRmaBuffer][~LocalRdmaRmaBuffer]failed, ret[%d]", res);
+        }
     }
 }
 

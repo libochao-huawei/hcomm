@@ -354,21 +354,27 @@ TEST_F(AiCpuTsHccsEndpointTest, Ut_When_Double_Register_Unregister_Memory_Expect
 {
     void* endpointHandle{nullptr};
     EndpointDesc endpointDesc;
-    
+
     StubSetDevice(0);
     HcommResult ret = CreateHccsEndpoint(0, 0, endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     CommMem mem = CreateCommMem((void*)0x01, 10, COMM_MEM_TYPE_DEVICE);
-    void *memHandle;
+    void *memHandle1 = nullptr;
+    void *memHandle2 = nullptr;
 
-    ret = HcommMemReg(endpointHandle, "memTag", &mem, &memHandle);
+    ret = HcommMemReg(endpointHandle, "memTag", &mem, &memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcommMemReg(endpointHandle, "memTag", &mem, &memHandle);
+    EXPECT_NE(memHandle1, nullptr);
+
+    ret = HcommMemReg(endpointHandle, "memTag", &mem, &memHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcommMemUnreg(endpointHandle, memHandle);
+    EXPECT_NE(memHandle2, nullptr);
+
+    ret = HcommMemUnreg(endpointHandle, memHandle2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcommMemUnreg(endpointHandle, memHandle);
+
+    ret = HcommMemUnreg(endpointHandle, memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret = HcommEndpointDestroy(endpointHandle);
