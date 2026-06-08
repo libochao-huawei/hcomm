@@ -21,7 +21,6 @@ set(hccl_utest_device_src_list
     ut_launch_aicpu.cc
 
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/stream/stream_utils_aicpu.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/launch_aicpu.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/debug/profiling/plugin_runner_device.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/config/env_config_aicpu.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/op_base/src/op_base_device.cc
