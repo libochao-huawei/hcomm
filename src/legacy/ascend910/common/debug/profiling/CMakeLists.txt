@@ -28,6 +28,10 @@ if(TARGET hccl_alg)
     target_sources(hccl_alg PRIVATE
         ${src_list}
     )
+    # [新增] 添加heartbeat头文件路径，用于BroadcastTaskException
+    target_include_directories(hccl_alg PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../framework/cluster_maintenance/health/heartbeat
+    )
 endif()
 
 if(TARGET ccl_kernel)
