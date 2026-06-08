@@ -67,9 +67,9 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/resource_manager
 
-    # framework/next 头文件 (拆分到 base_comm 和 coll_communicator)
+    # framework/next 头文件 (拆分到 base_comm 和 coll_communicator_mgr)
     ${HCOMM_DIR}/src/base_comm/resources/endpoints
-    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/endpoints
     ${HCOMM_DIR}/src/base_comm/resources/reged_mems
     ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs
     ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/sockets
@@ -77,12 +77,12 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/base_comm/common/device
     ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device
     ${HCOMM_DIR}/src/base_comm/primitives/api_c_adpt
-    ${HCOMM_DIR}/src/coll_communicator
-    ${HCOMM_DIR}/src/coll_communicator/communicator
-    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/local/my_rank
-    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
-    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/remote/rank_pairs
-    ${HCOMM_DIR}/src/coll_communicator/dfx/profiling/aicpu
+    ${HCOMM_DIR}/src/coll_communicator_mgr
+    ${HCOMM_DIR}/src/coll_communicator_mgr/communicator
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/remote/rank_pairs
+    ${HCOMM_DIR}/src/coll_communicator_mgr/dfx/profiling/aicpu
 
     # src/platform 头文件 (legacy/ascend910)
     ${HCOMM_DIR}/src/legacy/ascend910/platform/inc

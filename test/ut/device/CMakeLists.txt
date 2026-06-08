@@ -46,7 +46,7 @@ target_include_directories(hccl_utest_device PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/device/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/device/
-    ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/device/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator/device/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/
 )
