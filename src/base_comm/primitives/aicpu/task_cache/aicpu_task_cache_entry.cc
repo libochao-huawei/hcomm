@@ -16,6 +16,8 @@
 
 #include "log.h"
 #include "rma_buffer_lite.h"
+#include "buffer.h"
+#include "rmt_rma_buf_slice_lite.h"
 #include "sqe.h"
 #include "sqe_v82.h"
 
@@ -210,7 +212,7 @@ HcclResult AicpuTaskCacheEntry::SubmitCacheEntry(const uint64_t* baseAddrs, cons
         entryBytes_ += sqeCount * sizeof(AddrRefreshInfo);
         const uint8_t* sqePtr = sqeArrays_[arrayIdx];
         for (size_t sqeIdx = 0; sqeIdx < sqeCount; sqeIdx++) {
-            CHK_RET(GetSqeAddrRefreshInfo_(sqePtr, sqeSrcAddrRefreshInfoArrays_.back()[sqeIdx],
+            CHK_RET(UpdateSqeAddrRefreshInfo_(sqePtr, sqeSrcAddrRefreshInfoArrays_.back()[sqeIdx],
                 sqeDstAddrRefreshInfoArrays_.back()[sqeIdx]));
             
             // 打印SQE AddrRefreshInfo
@@ -229,23 +231,23 @@ HcclResult AicpuTaskCacheEntry::SubmitCacheEntry(const uint64_t* baseAddrs, cons
     // 更新每段WQE数组的AddrRefreshInfo
     for (size_t arrayIdx = 0; arrayIdx < wqeTaskArrays_.size(); arrayIdx++) {
         const uint32_t wqeCount = wqeTaskArrays_[arrayIdx].size();
-        wqeSrcAddrRefreshInfoArrays_.emplace_back(wqeCount);
+        wqeLocAddrRefreshInfoArrays_.emplace_back(wqeCount);
         entryBytes_ += wqeCount * sizeof(AddrRefreshInfo);
-        wqeDstAddrRefreshInfoArrays_.emplace_back(wqeCount);
+        wqeRmtAddrRefreshInfoArrays_.emplace_back(wqeCount);
         entryBytes_ += wqeCount * sizeof(AddrRefreshInfo);
         std::vector<WqeTask>& wqeTasks = wqeTaskArrays_[arrayIdx];
         for (size_t wqeIdx = 0; wqeIdx < wqeCount; wqeIdx++) {
-            CHK_RET(GetWqeAddrRefreshInfo_(wqeTasks[wqeIdx], wqeSrcAddrRefreshInfoArrays_.back()[wqeIdx],
-                wqeDstAddrRefreshInfoArrays_.back()[wqeIdx]));
+            CHK_RET(UpdateWqeAddrRefreshInfo_(wqeTasks[wqeIdx], wqeLocAddrRefreshInfoArrays_.back()[wqeIdx],
+                wqeRmtAddrRefreshInfoArrays_.back()[wqeIdx]));
 
             // 打印WQE AddrRefreshInfo
             HCCL_INFO("[AicpuTaskCacheEntry][SubmitCacheEntry] wqeTaskArrays_[%u][%u]: "
                 "srcAddrRefreshInfo[needRefresh-%d memIdx-%u] "
                 "dstAddrRefreshInfo[needRefresh-%d memIdx-%u]",
-                arrayIdx, wqeIdx, wqeSrcAddrRefreshInfoArrays_.back()[wqeIdx].needRefresh,
-                wqeSrcAddrRefreshInfoArrays_.back()[wqeIdx].memIdx,
-                wqeDstAddrRefreshInfoArrays_.back()[wqeIdx].needRefresh,
-                wqeDstAddrRefreshInfoArrays_.back()[wqeIdx].memIdx);
+                arrayIdx, wqeIdx, wqeLocAddrRefreshInfoArrays_.back()[wqeIdx].needRefresh,
+                wqeLocAddrRefreshInfoArrays_.back()[wqeIdx].memIdx,
+                wqeRmtAddrRefreshInfoArrays_.back()[wqeIdx].needRefresh,
+                wqeRmtAddrRefreshInfoArrays_.back()[wqeIdx].memIdx);
         }
     }
 
@@ -308,7 +310,7 @@ HcclResult AicpuTaskCacheEntry::RefreshAndLaunch(const uint64_t* baseAddrs, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTaskCacheEntry::GetSqeAddrRefreshInfo_(const uint8_t* sqePtr, AddrRefreshInfo& srcAddrRefreshInfo,
+HcclResult AicpuTaskCacheEntry::UpdateSqeAddrRefreshInfo_(const uint8_t* sqePtr, AddrRefreshInfo& srcAddrRefreshInfo,
     AddrRefreshInfo& dstAddrRefreshInfo) const
 {
     // 参考sqe_build_a5.h, 提取给定SQE的AddrRefreshInfo
@@ -327,27 +329,27 @@ HcclResult AicpuTaskCacheEntry::GetSqeAddrRefreshInfo_(const uint8_t* sqePtr, Ad
             break;
         case Rt91095StarsSqeType::RT_91095_SQE_TYPE_SDMA:
             Rt91095StarsMemcpySqe *memcpySqePtr = (Rt91095StarsMemcpySqe *)sqePtr;
-            CHK_RET(GetAddrRefreshInfo_(memcpySqePtr->u.strideMode0.srcAddrLow, memcpySqePtr->u.strideMode0.srcAddrHigh,
+            CHK_RET(UpdateAddrRefreshInfo_(memcpySqePtr->u.strideMode0.srcAddrLow, memcpySqePtr->u.strideMode0.srcAddrHigh,
                 srcAddrRefreshInfo));
-            CHK_RET(GetAddrRefreshInfo_(memcpySqePtr->u.strideMode0.dstAddrLow, memcpySqePtr->u.strideMode0.dstAddrHigh,
+            CHK_RET(UpdateAddrRefreshInfo_(memcpySqePtr->u.strideMode0.dstAddrLow, memcpySqePtr->u.strideMode0.dstAddrHigh,
                 dstAddrRefreshInfo));
             break;
         case Rt91095StarsSqeType::RT_91095_SQE_TYPE_WRITE_VALUE:
             Rt91095StarsWriteValueSqe *writeValueSqePtr = (Rt91095StarsWriteValueSqe *)sqePtr;
-            CHK_RET(GetAddrRefreshInfo_(writeValueSqePtr->writeAddrLow, writeValueSqePtr->writeAddrHigh,
+            CHK_RET(UpdateAddrRefreshInfo_(writeValueSqePtr->writeAddrLow, writeValueSqePtr->writeAddrHigh,
                 dstAddrRefreshInfo));
             break;
         default:
             // sqe_build_a5.h中未使用的SQE类型, 告警后跳过
-            HCCL_WARNING("[AicpuTaskCacheEntry][GetSqeAddrRefreshInfo_] unexpected sqeType[%u]", sqeType);
+            HCCL_WARNING("[AicpuTaskCacheEntry][UpdateSqeAddrRefreshInfo_] unexpected sqeType[%u]", sqeType);
             break;
     }
 
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTaskCacheEntry::GetWqeAddrRefreshInfo_(const WqeTask& wqeTask, AddrRefreshInfo& srcAddrRefreshInfo,
-    AddrRefreshInfo& dstAddrRefreshInfo)
+HcclResult AicpuTaskCacheEntry::UpdateWqeAddrRefreshInfo_(const WqeTask& wqeTask, AddrRefreshInfo& locAddrRefreshInfo,
+    AddrRefreshInfo& rmtAddrRefreshInfo)
 {
     // 参考ub_conn_lite.cc, 提取给定WQE的AddrRefreshInfo
 
@@ -358,38 +360,38 @@ HcclResult AicpuTaskCacheEntry::GetWqeAddrRefreshInfo_(const WqeTask& wqeTask, A
     switch (wqeCode) {
         case UdmaSqOpcode::UDMA_OPC_READ: // UdmaSqeWrite
             // normal read
-            CHK_RET(GetAddrRefreshInfo_(wqeTask.wqeWrite.u.sge.dataAddrLow, wqeTask.wqeWrite.u.sge.dataAddrHigh,
-                srcAddrRefreshInfo));
-            CHK_RET(GetAddrRefreshInfo_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
-                dstAddrRefreshInfo));
+            CHK_RET(UpdateAddrRefreshInfo_(wqeTask.wqeWrite.u.sge.dataAddrLow, wqeTask.wqeWrite.u.sge.dataAddrHigh,
+                locAddrRefreshInfo));
+            CHK_RET(UpdateAddrRefreshInfo_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
+                rmtAddrRefreshInfo));
             break;
         case UdmaSqOpcode::UDMA_OPC_WRITE: // UdmaSqeWrite
             const uint32_t inlineEn = wqeTask.wqeWrite.comm.inlineEn;
             if (inlineEn) { // inline write
-                CHK_RET(GetAddrRefreshInfo_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
-                    dstAddrRefreshInfo));
+                CHK_RET(UpdateAddrRefreshInfo_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
+                    rmtAddrRefreshInfo));
             } else { // normal write or write reduce
-                CHK_RET(GetAddrRefreshInfo_(wqeTask.wqeWrite.u.sge.dataAddrLow, wqeTask.wqeWrite.u.sge.dataAddrHigh,
-                    srcAddrRefreshInfo));
-                CHK_RET(GetAddrRefreshInfo_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
-                    dstAddrRefreshInfo));
+                CHK_RET(UpdateAddrRefreshInfo_(wqeTask.wqeWrite.u.sge.dataAddrLow, wqeTask.wqeWrite.u.sge.dataAddrHigh,
+                    locAddrRefreshInfo));
+                CHK_RET(UpdateAddrRefreshInfo_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
+                    rmtAddrRefreshInfo));
             }
             break;
         case WRITE_WITH_NOTIFY_OPCODE: // UdmaSqeWriteWithNotify
             // write with notify (对于给定slice的最后一个UB chunk)
-            CHK_RET(GetAddrRefreshInfo_(wqeTask.wqeWriteWithNotify.localU.sge.dataAddrLow,
-                wqeTask.wqeWriteWithNotify.localU.sge.dataAddrHigh, srcAddrRefreshInfo));
-            CHK_RET(GetAddrRefreshInfo_(wqeTask.wqeWriteWithNotify.comm.rmtAddrLow,
-                wqeTask.wqeWriteWithNotify.comm.rmtAddrHigh, dstAddrRefreshInfo));
+            CHK_RET(UpdateAddrRefreshInfo_(wqeTask.wqeWriteWithNotify.localU.sge.dataAddrLow,
+                wqeTask.wqeWriteWithNotify.localU.sge.dataAddrHigh, locAddrRefreshInfo));
+            CHK_RET(UpdateAddrRefreshInfo_(wqeTask.wqeWriteWithNotify.comm.rmtAddrLow,
+                wqeTask.wqeWriteWithNotify.comm.rmtAddrHigh, rmtAddrRefreshInfo));
             break;
         default:
             // ub_conn_lite.cc中未使用的WQE类型, 告警后跳过
-            HCCL_WARNING("[AicpuTaskCacheEntry][GetWqeAddrRefreshInfo_] unexpected wqeCode[%u]", wqeCode);
+            HCCL_WARNING("[AicpuTaskCacheEntry][UpdateWqeAddrRefreshInfo_] unexpected wqeCode[%u]", wqeCode);
             break;
     }
 }
 
-HcclResult AicpuTaskCacheEntry::GetAddrRefreshInfo_(const uint32_t addrLow, const uint32_t addrHigh,
+HcclResult AicpuTaskCacheEntry::UpdateAddrRefreshInfo_(const uint32_t addrLow, const uint32_t addrHigh,
     AddrRefreshInfo& addrRefreshInfo)
 {
     // 拼接地址
@@ -402,7 +404,7 @@ HcclResult AicpuTaskCacheEntry::GetAddrRefreshInfo_(const uint32_t addrLow, cons
         const uint64_t baseAddr = cachedBaseAddrs_[memIdx];
         const uint64_t memSize = cachedMemSizes__[memIdx];
         CHK_PRT_RET(baseAddr == 0,
-            HCCL_ERROR("[AicpuTaskCacheEntry][GetAddrRefreshInfo_] cachedBaseAddrs_[%u] is 0, memSize[%llu]",
+            HCCL_ERROR("[AicpuTaskCacheEntry][UpdateAddrRefreshInfo_] cachedBaseAddrs_[%u] is 0, memSize[%llu]",
                 memIdx, memSize),
             HCCL_E_INTERNAL);
 
@@ -425,25 +427,25 @@ HcclResult AicpuTaskCacheEntry::RefreshWqeTasks_(const size_t arrayIdx, const ui
     const uint64_t* memSizes, const uint32_t count)
 {
     // 校验arrayIdx
-    CHK_PRT_RET(arrayIdx >= wqeTaskArrays_.size() || arrayIdx >= wqeSrcAddrRefreshInfoArrays_.size() ||
-        arrayIdx >= wqeDstAddrRefreshInfoArrays_.size() || arrayIdx >= ubTransportLiteImplPtrs_.size(),
+    CHK_PRT_RET(arrayIdx >= wqeTaskArrays_.size() || arrayIdx >= wqeLocAddrRefreshInfoArrays_.size() ||
+        arrayIdx >= wqeRmtAddrRefreshInfoArrays_.size() || arrayIdx >= ubTransportLiteImplPtrs_.size(),
         HCCL_ERROR("[AicpuTaskCacheEntry][RefreshWqeTasks_] arrayIdx[%u] >= wqeTaskArrays_.size[%u] / "
-            "wqeSrcAddrRefreshInfoArrays_.size[%u] / wqeDstAddrRefreshInfoArrays_.size[%u] / "
+            "wqeLocAddrRefreshInfoArrays_.size[%u] / wqeRmtAddrRefreshInfoArrays_.size[%u] / "
             "ubTransportLiteImplPtrs_.size[%u]",
-            arrayIdx, wqeTaskArrays_.size(), wqeSrcAddrRefreshInfoArrays_.size(), wqeDstAddrRefreshInfoArrays_.size(),
+            arrayIdx, wqeTaskArrays_.size(), wqeLocAddrRefreshInfoArrays_.size(), wqeRmtAddrRefreshInfoArrays_.size(),
             ubTransportLiteImplPtrs_.size()),
         HCCL_E_INVALID_PARAM);
     
     // 逐个刷新地址
     std::vector<WqeTask>& wqeTasks = wqeTaskArrays_[arrayIdx];
-    const std::vector<AddrRefreshInfo>& wqeSrcAddrRefreshInfoArray = wqeSrcAddrRefreshInfoArrays_[arrayIdx];
-    const std::vector<AddrRefreshInfo>& wqeDstAddrRefreshInfoArray = wqeDstAddrRefreshInfoArrays_[arrayIdx];
+    const std::vector<AddrRefreshInfo>& wqeLocAddrRefreshInfoArray = wqeLocAddrRefreshInfoArrays_[arrayIdx];
+    const std::vector<AddrRefreshInfo>& wqeRmtAddrRefreshInfoArray = wqeRmtAddrRefreshInfoArrays_[arrayIdx];
     UbTransportLiteImpl* ubTransportLitePtr = ubTransportLiteImplPtrs_[arrayIdx];
     CHK_PTR_NULL(ubTransportLitePtr);
     for (size_t wqeIdx = 0; wqeIdx < wqeTasks.size(); wqeIdx++) {
         WqeTask& wqeTask = wqeTasks[wqeIdx];
-        const AddrRefreshInfo& srcAddrRefreshInfo = wqeSrcAddrRefreshInfoArray[wqeIdx];
-        const AddrRefreshInfo& dstAddrRefreshInfo = wqeDstAddrRefreshInfoArray[wqeIdx];
+        const AddrRefreshInfo& locAddrRefreshInfo = wqeLocAddrRefreshInfoArray[wqeIdx];
+        const AddrRefreshInfo& rmtAddrRefreshInfo = wqeRmtAddrRefreshInfoArray[wqeIdx];
 
         // 根据WQE类型刷新对应地址字段及token id/value
         UdmaSqeCommon* wqeCommonPtr = (UdmaSqeCommon*)(&wqeTask);
@@ -452,152 +454,127 @@ HcclResult AicpuTaskCacheEntry::RefreshWqeTasks_(const size_t arrayIdx, const ui
             case UdmaSqOpcode::UDMA_OPC_READ: // UdmaSqeWrite
                 // normal read
 
-                // 刷新src addr
-                uint64_t srcAddr = 0;
-                AicpuTaskCacheEntry::CombineUint32ToUint64(srcAddr, wqeTask.wqeWrite.u.sge.dataAddrHigh,
-                    wqeTask.wqeWrite.u.sge.dataAddrLow);
-                CHK_RET(RefreshTaskAddr_(wqeTask.wqeWrite.u.sge.dataAddrLow, wqeTask.wqeWrite.u.sge.dataAddrHigh,
-                    srcAddr, srcAddrRefreshInfo, baseAddrs, memSizes, count));
+                // 如果需要刷新loc地址信息
+                if (locAddrRefreshInfo.needRefresh) {
+                    // 刷新loc addr
+                    uint64_t newLocAddr = 0;
+                    CHK_RET(RefreshTaskAddr_(wqeTask.wqeWrite.u.sge.dataAddrLow, wqeTask.wqeWrite.u.sge.dataAddrHigh,
+                        locAddrRefreshInfo, baseAddrs, memSizes, count, &newLocAddr));
+                    
+                    // 根据刷新后的loc addr, 刷新loc token id (注意: loc不需要刷新token value)
+                    CHK_RET(RefreshWqeLocTokenId_(wqeTask.wqeWrite.u.sge.tokenId, locAddrRefreshInfo, newLocAddr,
+                        wqeTask.wqeWrite.u.sge.length, ubTransportLitePtr));
+                }
 
-                // 刷新dst addr
-                uint64_t dstAddr = 0;
-                AicpuTaskCacheEntry::CombineUint32ToUint64(dstAddr, wqeTask.wqeWrite.comm.rmtAddrHigh,
-                    wqeTask.wqeWrite.comm.rmtAddrLow);
-                CHK_RET(RefreshTaskAddr_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
-                    dstAddr, dstAddrRefreshInfo, baseAddrs, memSizes, count));
-                
-                // 刷新src token id (注意: src不需要刷新token value)
-                // 注意: 参考hccl_api_data_aicpu_ts.cc (例如HcommWriteOnThread), 获取src token id
-                // 注意: 无需通过ubTransportLitePtr->GetRmaBufSlicelite(locRmaBuf)构造Hccl::RmaBufSliceLite locRmaBufSlicelite,
-                //     再调用locRmaBufSlicelite.GetTokenId()获取token id (一定与Hccl::RmaBufferLite locRmaBuf的token id相同)
-                const uint32_t len = wqeTask.wqeWrite.u.sge.length;
-                Hccl::RmaBufferLite locRmaBuf;
-                CHK_RET(ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(srcAddr), len, locRmaBuf));
-                const uint32_t newSrcTokenId = locRmaBuf.GetTokenId();
-                HCCL_INFO("[AicpuTaskCacheEntry][RefreshWqeTasks_] refresh loc tokenId from %u to %u",
-                    wqeTask.wqeWrite.u.sge.tokenId, newSrcTokenId);
-                wqeTask.wqeWrite.u.sge.tokenId = newSrcTokenId;
+                // 如果需要刷新rmt地址信息
+                if (rmtAddrRefreshInfo.needRefresh) {
+                    // 刷新rmt addr
+                    uint64_t newRmtAddr = 0;
+                    CHK_RET(RefreshTaskAddr_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
+                        rmtAddrRefreshInfo, baseAddrs, memSizes, count, &newRmtAddr));
 
-                // 刷新dst token id/value
-                const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dstAddr), len};
-                RmtRmaBufSliceLite rmtRmaBufSlicelite;
-                // rmtRmaBufSlicelite = ubTransportLitePtr->GetRmtRmaBufSliceLite(rmtBuf); // TODOSSY
-                const uint32_t newDstTokenId = rmtRmaBufSlicelite.GetTokenId();
-                const uint32_t newDstTokenValue = rmtRmaBufSlicelite.GetTokenValue();
-                HCCL_INFO("[AicpuTaskCacheEntry][RefreshWqeTasks_] refresh rmt tokenId from %u to %u, tokenValue from %u to %u",
-                    wqeTask.wqeWrite.comm.rmtObjId, newDstTokenId, wqeTask.wqeWrite.comm.rmtTokenValue, newDstTokenValue);
-                wqeTask.wqeWrite.comm.rmtObjId = newDstTokenId;
-                wqeTask.wqeWrite.comm.rmtTokenValue = newDstTokenValue;
+                    // 根据刷新后的rmt addr, 刷新rmt token id/value
+                    CHK_RET(RefreshWqeRmtTokenIdAndValue_(wqeTask.wqeWrite.comm.rmtObjId, wqeTask.wqeWrite.comm.rmtTokenValue,
+                        rmtAddrRefreshInfo, newRmtAddr, wqeTask.wqeWrite.u.sge.length, ubTransportLitePtr));
+                }
 
                 break;
             case UdmaSqOpcode::UDMA_OPC_WRITE: // UdmaSqeWrite
                 const uint32_t inlineEn = wqeTask.wqeWrite.comm.inlineEn;
                 if (inlineEn) { // inline write
-                    // 刷新dst addr
-                    uint64_t dstAddr = 0;
-                    AicpuTaskCacheEntry::CombineUint32ToUint64(dstAddr, wqeTask.wqeWrite.comm.rmtAddrHigh,
-                        wqeTask.wqeWrite.comm.rmtAddrLow);
-                    CHK_RET(RefreshTaskAddr_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
-                        dstAddr, dstAddrRefreshInfo, baseAddrs, memSizes, count));
-                    
-                    // 刷新dst token id/value
-                    const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dstAddr), len};
-                    RmtRmaBufSliceLite rmtRmaBufSlicelite;
-                    // rmtRmaBufSlicelite = ubTransportLitePtr->GetRmtRmaBufSliceLite(rmtBuf); // TODOSSY
-                    const uint32_t newDstTokenId = rmtRmaBufSlicelite.GetTokenId();
-                    const uint32_t newDstTokenValue = rmtRmaBufSlicelite.GetTokenValue();
-                    HCCL_INFO("[AicpuTaskCacheEntry][RefreshWqeTasks_] refresh rmt tokenId from %u to %u, tokenValue from %u to %u",
-                        wqeTask.wqeWrite.comm.rmtObjId, newDstTokenId, wqeTask.wqeWrite.comm.rmtTokenValue, newDstTokenValue);
-                    wqeTask.wqeWrite.comm.rmtObjId = newDstTokenId;
-                    wqeTask.wqeWrite.comm.rmtTokenValue = newDstTokenValue;
+                    // 注意: inline write使用WriteWqe实现notify功能 (类似A3使用WriteValue实现notify功能)
+                    // 因为notify token id/value以及notify addr不会改变, 因此inline write无需刷新WQE
+                    if (UNLIKELY(rmtAddrRefreshInfo.needRefresh)) {
+                        // 打印地址刷新信息
+                        HCCL_ERROR("[AicpuTaskCacheEntry][RefreshWqeTasks_] inline write should not refresh rmt addr: "
+                            "rmtAddrRefreshInfo.needRefresh[%d] rmtAddrRefreshInfo.memIdx[%u]",
+                            rmtAddrRefreshInfo.needRefresh, rmtAddrRefreshInfo.memIdx);
+
+                        // 校验memIdx
+                        CHK_PRT_RET(rmtAddrRefreshInfo.memIdx >= cachedBaseAddrs_.size() ||
+                            rmtAddrRefreshInfo.memIdx >= cachedMemSizes_.size(),
+                            HCCL_ERROR("[AicpuTaskCacheEntry][RefreshWqeTasks_] invalid memIdx[%u] >= "
+                                "cachedBaseAddrs_.size[%u] or cachedMemSizes_.size[%u]",
+                                rmtAddrRefreshInfo.memIdx, cachedBaseAddrs_.size(), cachedMemSizes_.size()),
+                            HCCL_E_INTERNAL);
+
+                        // 打印地址信息
+                        uint64_t rmtAddr = 0;
+                        AicpuTaskCacheEntry::CombineUint32ToUint64(rmtAddr, wqeTask.wqeWrite.comm.rmtAddrHigh,
+                            wqeTask.wqeWrite.comm.rmtAddrLow);
+                        const uint64_t cachedBaseAddr = cachedBaseAddrs_[rmtAddrRefreshInfo.memIdx];
+                        const uint64_t cachedMemSize = cachedMemSizes_[rmtAddrRefreshInfo.memIdx];
+                        HCCL_ERROR("[AicpuTaskCacheEntry][RefreshWqeTasks_] rmtAddr[0x%016llx] "
+                            "cachedBaseAddr[0x%016llx] endAddr[0x%016llx] memSize[%llu]",
+                            rmtAddr, cachedBaseAddr, cachedBaseAddr + cachedMemSize, cachedMemSize);
+                        
+                        return HCCL_E_INTERNAL;
+                    }
                 } else { // normal write or write reduce
-                    // 刷新src addr
-                    uint64_t srcAddr = 0;
-                    AicpuTaskCacheEntry::CombineUint32ToUint64(srcAddr, wqeTask.wqeWrite.u.sge.dataAddrHigh,
-                        wqeTask.wqeWrite.u.sge.dataAddrLow);
-                    CHK_RET(RefreshTaskAddr_(wqeTask.wqeWrite.u.sge.dataAddrLow, wqeTask.wqeWrite.u.sge.dataAddrHigh,
-                        srcAddr, srcAddrRefreshInfo, baseAddrs, memSizes, count));
+                    // 如果需要刷新loc地址信息
+                    if (locAddrRefreshInfo.needRefresh) {
+                        // 刷新loc addr
+                        uint64_t newLocAddr = 0;
+                        CHK_RET(RefreshTaskAddr_(wqeTask.wqeWrite.u.sge.dataAddrLow, wqeTask.wqeWrite.u.sge.dataAddrHigh,
+                            locAddrRefreshInfo, baseAddrs, memSizes, count, &newLocAddr));
 
-                    // 刷新dst addr
-                    uint64_t dstAddr = 0;
-                    AicpuTaskCacheEntry::CombineUint32ToUint64(dstAddr, wqeTask.wqeWrite.comm.rmtAddrHigh,
-                        wqeTask.wqeWrite.comm.rmtAddrLow);
-                    CHK_RET(RefreshTaskAddr_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
-                        dstAddr, dstAddrRefreshInfo, baseAddrs, memSizes, count));
-                    
-                    // 刷新src token id (注意: src不需要刷新token value)
-                    const uint32_t len = wqeTask.wqeWrite.u.sge.length;
-                    Hccl::RmaBufferLite locRmaBuf;
-                    // CHK_RET(ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(srcAddr), len, locRmaBuf)); // TODOSSY
-                    RmaBufSliceLite locRmaBufSlicelite;
-                    // locRmaBufSlicelite = ubTransportLitePtr->GetRmaBufSlicelite(locRmaBuf); // TODOSSY
-                    const uint32_t newSrcTokenId = locRmaBufSlicelite.GetTokenId();
-                    HCCL_INFO("[AicpuTaskCacheEntry][RefreshWqeTasks_] refresh loc tokenId from %u to %u",
-                        wqeTask.wqeWrite.u.sge.tokenId, newSrcTokenId);
-                    wqeTask.wqeWrite.u.sge.tokenId = newSrcTokenId;
+                        // 根据刷新后的loc addr, 刷新loc token id (注意: loc不需要刷新token value)
+                        CHK_RET(RefreshWqeLocTokenId_(wqeTask.wqeWrite.u.sge.tokenId, locAddrRefreshInfo, newLocAddr,
+                            wqeTask.wqeWrite.u.sge.length, ubTransportLitePtr));
+                    }
 
-                    // 刷新dst token id/value
-                    const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dstAddr), len};
-                    RmtRmaBufSliceLite rmtRmaBufSlicelite;
-                    // rmtRmaBufSlicelite = ubTransportLitePtr->GetRmtRmaBufSliceLite(rmtBuf); // TODOSSY
-                    const uint32_t newDstTokenId = rmtRmaBufSlicelite.GetTokenId();
-                    const uint32_t newDstTokenValue = rmtRmaBufSlicelite.GetTokenValue();
-                    HCCL_INFO("[AicpuTaskCacheEntry][RefreshWqeTasks_] refresh rmt tokenId from %u to %u, tokenValue from %u to %u",
-                        wqeTask.wqeWrite.comm.rmtObjId, newDstTokenId, wqeTask.wqeWrite.comm.rmtTokenValue, newDstTokenValue);
-                    wqeTask.wqeWrite.comm.rmtObjId = newDstTokenId;
-                    wqeTask.wqeWrite.comm.rmtTokenValue = newDstTokenValue;
+                    // 如果需要刷新rmt地址信息
+                    if (rmtAddrRefreshInfo.needRefresh) {
+                        // 刷新rmt addr
+                        uint64_t newRmtAddr = 0;
+                        CHK_RET(RefreshTaskAddr_(wqeTask.wqeWrite.comm.rmtAddrLow, wqeTask.wqeWrite.comm.rmtAddrHigh,
+                            rmtAddrRefreshInfo, baseAddrs, memSizes, count, &newRmtAddr));
+
+                        // 根据刷新后的rmt addr, 刷新rmt token id/value
+                        CHK_RET(RefreshWqeRmtTokenIdAndValue_(wqeTask.wqeWrite.comm.rmtObjId, wqeTask.wqeWrite.comm.rmtTokenValue,
+                            rmtAddrRefreshInfo, newRmtAddr, wqeTask.wqeWrite.u.sge.length, ubTransportLitePtr));
+                    }
                 }
+
                 break;
             case WRITE_WITH_NOTIFY_OPCODE: // UdmaSqeWriteWithNotify
                 // write with notify (对于给定slice的最后一个UB chunk)
 
-                // 刷新src addr
-                uint64_t srcAddr = 0;
-                AicpuTaskCacheEntry::CombineUint32ToUint64(srcAddr, wqeTask.wqeWriteWithNotify.localU.sge.dataAddrHigh,
-                    wqeTask.wqeWriteWithNotify.localU.sge.dataAddrLow);
-                CHK_RET(RefreshTaskAddr_(wqeTask.wqeWriteWithNotify.localU.sge.dataAddrLow,
-                    wqeTask.wqeWriteWithNotify.localU.sge.dataAddrHigh,
-                    srcAddr, srcAddrRefreshInfo, baseAddrs, memSizes, count));
+                // 如果需要刷新loc地址信息
+                if (locAddrRefreshInfo.needRefresh) {
+                    // 刷新loc addr
+                    uint64_t newLocAddr = 0;
+                    CHK_RET(RefreshTaskAddr_(wqeTask.wqeWriteWithNotify.localU.sge.dataAddrLow,
+                        wqeTask.wqeWriteWithNotify.localU.sge.dataAddrHigh,
+                        locAddrRefreshInfo, baseAddrs, memSizes, count, &newLocAddr));
+                    
+                    // 根据刷新后的loc addr, 刷新loc token id (注意: loc不需要刷新token value)
+                    CHK_RET(RefreshWqeLocTokenId_(wqeTask.wqeWriteWithNotify.localU.sge.tokenId, locAddrRefreshInfo,
+                        newLocAddr, wqeTask.wqeWriteWithNotify.localU.sge.length, ubTransportLitePtr));
+                }
 
-                // 刷新dst addr
-                uint64_t dstAddr = 0;
-                AicpuTaskCacheEntry::CombineUint32ToUint64(dstAddr, wqeTask.wqeWriteWithNotify.comm.rmtAddrHigh,
-                    wqeTask.wqeWriteWithNotify.comm.rmtAddrLow);
-                CHK_RET(RefreshTaskAddr_(wqeTask.wqeWriteWithNotify.comm.rmtAddrLow,
-                    wqeTask.wqeWriteWithNotify.comm.rmtAddrHigh,
-                    dstAddr, dstAddrRefreshInfo, baseAddrs, memSizes, count));
+                // 如果需要刷新rmt地址信息
+                if (rmtAddrRefreshInfo.needRefresh) {
+                    // 刷新rmt addr
+                    uint64_t newRmtAddr = 0;
+                    CHK_RET(RefreshTaskAddr_(wqeTask.wqeWriteWithNotify.comm.rmtAddrLow,
+                        wqeTask.wqeWriteWithNotify.comm.rmtAddrHigh,
+                        rmtAddrRefreshInfo, baseAddrs, memSizes, count, &newRmtAddr));
 
-                // 刷新src token id (注意: src不需要刷新token value)
-                const uint32_t len = wqeTask.wqeWriteWithNotify.localU.sge.length;
-                Hccl::RmaBufferLite locRmaBuf;
-                // CHK_RET(ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(srcAddr), len, locRmaBuf)); // TODOSSY
-                RmaBufSliceLite locRmaBufSlicelite;
-                // locRmaBufSlicelite = ubTransportLitePtr->GetRmaBufSlicelite(locRmaBuf); // TODOSSY
-                const uint32_t newSrcTokenId = locRmaBufSlicelite.GetTokenId();
-                HCCL_INFO("[AicpuTaskCacheEntry][RefreshWqeTasks_] refresh loc tokenId from %u to %u",
-                    wqeTask.wqeWriteWithNotify.localU.sge.tokenId, newSrcTokenId);
-                wqeTask.wqeWriteWithNotify.localU.sge.tokenId = newSrcTokenId;
-
-                // 刷新dst token id/value
-                const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dstAddr), len};
-                RmtRmaBufSliceLite rmtRmaBufSlicelite;
-                // rmtRmaBufSlicelite = ubTransportLitePtr->GetRmtRmaBufSliceLite(rmtBuf); // TODOSSY
-                const uint32_t newDstTokenId = rmtRmaBufSlicelite.GetTokenId();
-                const uint32_t newDstTokenValue = rmtRmaBufSlicelite.GetTokenValue();
-                HCCL_INFO("[AicpuTaskCacheEntry][RefreshWqeTasks_] refresh rmt tokenId from %u to %u, tokenValue from %u to %u",
-                    wqeTask.wqeWriteWithNotify.comm.rmtObjId, newDstTokenId,
-                    wqeTask.wqeWriteWithNotify.comm.rmtTokenValue, newDstTokenValue);
-                wqeTask.wqeWriteWithNotify.comm.rmtObjId = newDstTokenId;
-                wqeTask.wqeWriteWithNotify.comm.rmtTokenValue = newDstTokenValue;
+                    // 根据刷新后的rmt addr, 刷新rmt token id/value
+                    CHK_RET(RefreshWqeRmtTokenIdAndValue_(wqeTask.wqeWriteWithNotify.comm.rmtObjId,
+                        wqeTask.wqeWriteWithNotify.comm.rmtTokenValue,
+                        rmtAddrRefreshInfo, newRmtAddr, wqeTask.wqeWriteWithNotify.localU.sge.length, ubTransportLitePtr));
+                }
 
                 break;
             default:
                 // ub_conn_lite.cc中未使用的WQE类型, 告警后跳过
-                HCCL_WARNING("[AicpuTaskCacheEntry][GetWqeAddrRefreshInfo_] unexpected wqeCode[%u]", wqeCode);
+                HCCL_WARNING("[AicpuTaskCacheEntry][UpdateWqeAddrRefreshInfo_] unexpected wqeCode[%u]", wqeCode);
                 break;
         } // switch(wqeCode)
 
-        // TODOSSY: 在UbTransportLiteImpl中封装ReprotXXX, 按需构造TaskParam上报profiling
+        // TODO: AR6 在UbTransportLiteImpl中封装ReportXXX, 按需构造TaskParam上报profiling
     }
 
     return HCCL_SUCCESS;
@@ -685,12 +662,18 @@ HcclResult AicpuTaskCacheEntry::RefreshDbSqe_(const size_t arrayIdx)
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTaskCacheEntry::RefreshTaskAddr_(uint32_t& addrLow, uint32_t& addrHigh, const uint64_t addr,
-    const AddrRefreshInfo& addrRefreshInfo, const uint64_t* baseAddrs, const uint64_t* memSizes, const uint32_t count) const
+HcclResult AicpuTaskCacheEntry::RefreshTaskAddr_(uint32_t& addrLow, uint32_t& addrHigh,
+    const AddrRefreshInfo& addrRefreshInfo, const uint64_t* baseAddrs, const uint64_t* memSizes, const uint32_t count,
+    uint64_t* refreshedAddr) const
 {
-    if (!addrRefreshInfo.needRefresh) {
-        return HCCL_SUCCESS;
-    }
+    CHK_PRT_RET(!addrRefreshInfo.needRefresh,
+        HCCL_ERROR("[AicpuTaskCacheEntry][RefreshTaskAddr_] addrRefreshInfo.needRefresh[%u] should be true",
+            addrRefreshInfo.needRefresh),
+        HCCL_E_PARA);
+
+    // 拼接地址
+    uint64_t addr = 0;
+    AicpuTaskCacheEntry::CombineUint32ToUint64(addr, addrHigh, addrLow);
 
     // 校验memIdx
     const uint32_t memIdx = addrRefreshInfo.memIdx;
@@ -724,6 +707,74 @@ HcclResult AicpuTaskCacheEntry::RefreshTaskAddr_(uint32_t& addrLow, uint32_t& ad
         "to newAddr[0x%016llx] in newMemRange[0x%016llx, 0x%016llx]",
         addr, cachedBaseAddrs_[memIdx], cachedBaseAddrs_[memIdx] + cachedMemSizes_[memIdx],
         newAddr, baseAddrs[memIdx], baseAddrs[memIdx] + memSizes[memIdx]);
+
+    // 注意: 如果需要刷新地址, 刷新后的地址一定不是0
+    CHK_PRT_RET(newAddr == 0,
+        HCCL_ERROR("[AicpuTaskCacheEntry][RefreshTaskAddr_] newAddr[0x%016llx] is 0", newAddr),
+        HCCL_E_INTERNAL);
+
+    // 按需返回newAddr
+    if (refreshedAddr != nullptr) {
+        *refreshedAddr = newAddr;
+        HCCL_INFO("[AicpuTaskCacheEntry][RefreshTaskAddr_] set *refreshedAddr as newAddr[0x%016llx]", newAddr);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTaskCacheEntry::RefreshWqeLocTokenId_(uint32_t& tokenId, const AddrRefreshInfo& addrRefreshInfo,
+    const uint64_t newLocAddr, const uint32_t len, UbTransportLiteImpl* ubTransportLitePtr) const
+{
+    CHK_PRT_RET(!addrRefreshInfo.needRefresh,
+        HCCL_ERROR("[AicpuTaskCacheEntry][RefreshWqeLocTokenId_] addrRefreshInfo.needRefresh[%u] should be true",
+            addrRefreshInfo.needRefresh),
+        HCCL_E_PARA);
+
+    CHK_PTR_NULL(ubTransportLitePtr);
+
+    // 注意: RefreshTaskAddr_保证, 如果需要刷新, 刷新后的newLocAddr一定不是0
+    CHK_PRT_RET(newLocAddr == 0,
+        HCCL_ERROR("[AicpuTaskCacheEntry][RefreshWqeLocTokenId_] newLocAddr[0x%016llx] is 0", newLocAddr),
+        HCCL_E_INTERNAL);
+
+    // 参考hccl_api_data_aicpu_ts.cc (例如HcommWriteOnThread), 获取新loc token id
+    // 注意: 无需通过ubTransportLitePtr->GetRmaBufSlicelite(locRmaBuf)构造Hccl::RmaBufSliceLite locRmaBufSlicelite,
+    //     再调用locRmaBufSlicelite.GetTokenId()获取token id (一定与Hccl::RmaBufferLite locRmaBuf的token id相同)
+    Hccl::RmaBufferLite locRmaBuf;
+    CHK_RET(ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(newLocAddr), len, locRmaBuf));
+    const uint32_t newSrcTokenId = locRmaBuf.GetTokenId();
+
+    // 刷新loc token id
+    HCCL_INFO("[AicpuTaskCacheEntry][RefreshWqeLocTokenId_] refresh loc tokenId from %u to %u for newLocAddr[0x%016llx]",
+        tokenId, newSrcTokenId, newLocAddr);
+    tokenId = newSrcTokenId;
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTaskCacheEntry::RefreshWqeRmtTokenIdAndValue_(uint32_t& tokenId, uint32_t& tokenValue,
+    const AddrRefreshInfo& addrRefreshInfo, const uint64_t newRmtAddr, const uint32_t len,
+    UbTransportLiteImpl* ubTransportLitePtr) const
+{
+    CHK_PRT_RET(!addrRefreshInfo.needRefresh,
+        HCCL_ERROR("[AicpuTaskCacheEntry][RefreshWqeRmtTokenIdAndValue_] addrRefreshInfo.needRefresh[%u] should be true",
+            addrRefreshInfo.needRefresh),
+        HCCL_E_PARA);
+
+    // 参考hccl_api_data_aicpu_ts.cc (例如HcommRead/Write/WriteReduce/WriteWithNotifyOnThread), 获取新rmt token id/value
+    // 注意: Hccl::Buffer本身不含token id/value, 必须通过调用ubTransportLitePtr->GetRmtRmaBufSliceLite,
+    //     构造Hccl::RmtRmaBufSliceLite, 再调用GetTokenId/Value获取token id/value
+    const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(newRmtAddr), len};
+    Hccl::RmtRmaBufSliceLite rmtRmaBufSlicelite = ubTransportLitePtr->GetRmtRmaBufSliceLite(rmtBuf);
+    const uint32_t newDstTokenId = rmtRmaBufSlicelite.GetTokenId();
+    const uint32_t newDstTokenValue = rmtRmaBufSlicelite.GetTokenValue();
+
+    // 刷新remote token id/value
+    HCCL_INFO("[AicpuTaskCacheEntry][RefreshWqeRmtTokenIdAndValue_] refresh rmt tokenId from %u to %u, "
+        "rmt tokenValue from %u to %u, for newRmtAddr[0x%016llx]",
+        tokenId, newDstTokenId, tokenValue, newDstTokenValue, newRmtAddr);
+    tokenId = newDstTokenId;
+    tokenValue = newDstTokenValue;
 
     return HCCL_SUCCESS;
 }
