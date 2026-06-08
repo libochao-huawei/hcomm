@@ -36,6 +36,7 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/aicpu_thread_process.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework/aicpu_one_side_service.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/hccl_aicpu_interface.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/launch_aicpu.cc
 )
 
 add_executable(hccl_utest_device ${hccl_utest_device_src_list})
