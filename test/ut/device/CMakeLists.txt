@@ -33,7 +33,7 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/topo/topo_device/topoinfo_ranktableConcise_device.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_executor_aicpu.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/device/engine_aicpu_interface.cc
-    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/aicpu_thread_process.cc
+    ${HCCL_CODE_ROOT}/src/base_comm/resource/comm_engine/threads/device/aicpu_thread_process.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework/aicpu_one_side_service.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/hccl_aicpu_interface.cc
 )
@@ -46,9 +46,9 @@ target_include_directories(hccl_utest_device PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/device/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/device/
-    ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/device/
-    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/
-    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator/device/
+    ${HCCL_CODE_ROOT}/src/base_comm/resource/comm_engine/threads/device/
+    ${HCCL_CODE_ROOT}/src/base_comm/resource/comm_engine/threads/
 )
 target_compile_definitions(hccl_utest_device PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0

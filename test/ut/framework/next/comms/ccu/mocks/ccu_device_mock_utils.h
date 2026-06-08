@@ -11,7 +11,7 @@
 #define private public
 #define protected public
 
-#include "../../../../../src/base_comm/resources/ccu/ccu_device/ccu_res_batch_allocator.h"
+#include "../../../../../src/base_comm/resource/comm_engine/ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_pfe_cfg_mgr.h"
 #include "ccu_device/ccu_res_specs.h"
 #include "ccu_comp.h"
@@ -99,7 +99,7 @@ void MockCcuNetworkDeviceDefault(int32_t devPhyId)
 
     MOCKER(hcomm::RaGetDevEidInfos)
         .stubs()
-        .with(any(), outBound(fakeEidInfos))
+        .with(mockcpp::any(), outBound(fakeEidInfos))
         .will(returnValue(HcclResult::HCCL_SUCCESS));
 
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs()
