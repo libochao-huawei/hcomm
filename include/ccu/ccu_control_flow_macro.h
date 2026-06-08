@@ -65,7 +65,9 @@
     for (int uid##_rc =                                                     \
              (int)CcuIfBegin(uid##_ce.var->handle, uid##_ce.imm,            \
                  uid##_ce.cond, CCU_LABEL(uid)),                            \
-             uid##_done = (_CcuIfStackPush(CCU_LABEL(uid)), 0);             \
+             uid##_done = (uid##_rc == (int)CCU_SUCCESS                     \
+                 ? (_CcuIfStackPush(CCU_LABEL(uid)), 0)                     \
+                 : 1);                                                      \
          uid##_rc == (int)CCU_SUCCESS && uid##_done == 0;                   \
          uid##_done = 1,                                                    \
              ((void)CcuFlushPendingIfs(),                                   \
