@@ -4329,7 +4329,7 @@ HcclResult RunGather(u64 *sendCounts, u64 *sdispls, void *sendDevBuf, GatherPara
         memPara.beginIndex = num * perThreadCount * NUM_TWO;
         memPara.count = perThreadCounts[num];
         memPara.tmpMemSize = memSize;
-        threads[num].reset(new (std::nothrow) std::thread(&GatherMemCopyThread, std::ref(tmpHostMem),
+        threads[num].reset(new (std::nothrow) std::thread(&GatherMemCopyThread, tmpHostMem.ptr(),
             offset[num], std::ref(gatherPara.addrInfo), memPara));
         CHK_PRT_RET(!threads[num], HCCL_ERROR("[Exec][EnqueueGatherAlltoAllV]threads[%u] reset "\
             "failed ", num), HCCL_E_INTERNAL);
