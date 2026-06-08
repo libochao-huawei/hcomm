@@ -15,6 +15,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cstddef>
 
 #include "hccl_aicpu_interface.h"
 #include "coll_alg_utils.h"
@@ -29,6 +30,34 @@ using namespace hccl;
 thread_local s32 hcclP2pTaskNums = 0;
 thread_local std::vector<HcclComm> hcclGroupCommListV2;
 namespace {
+HcclResult getCurLocalRank(u32 userRank, u32 serverNum, const std::map<u32, std::vector<u32>> &serverToRankList,
+ 	     const std::map<u32, u32> &serverToRankSize, u32 &localRank)
+{
+    u32 curServerIdx = 0;
+    for (u32 cumulativeRank = 0, serverIdx = 0; serverIdx < serverNum; serverIdx++) {
+        cumulativeRank += serverToRankSize.at(serverIdx);
+        if (userRank < cumulativeRank) {
+            curServerIdx = serverIdx;
+            break;
+        }
+    }
+
+    u32 curLocalRank = 0;
+    for (u32 rankIdx: serverToRankList.at(curServerIdx)) {
+        if (userRank == rankIdx) {
+            break;
+        }
+        curLocalRank++;
+    }
+
+    if (curLocalRank >= serverToRankSize.at(curServerIdx)) {
+        HCCL_ERROR("[getCurLocalRank] is inValid:%u", curLocalRank);
+        return HCCL_E_INTERNAL;
+    }
+
+    localRank = curLocalRank;
+    return HCCL_SUCCESS;
+}
 
 std::string rankQueToString(const std::vector<HcclP2pTask> &arr)
 {
@@ -47,16 +76,6 @@ u32 pow2Up(u32 n) {
     u32 power = 1;
     while (power < n) { power *= 2; }
     return power;
-}
-
-void serverRankMapCreate(
-    const u32 rankSize, std::map<u32, std::vector<u32>> &serverToRankList, std::map<u32, u32> &serverToRankSize)
-{
-    for (u32 rankIdx = 0; rankIdx < rankSize; rankIdx++) {
-        u32 serverIdx = 0;
-        serverToRankList[serverIdx].emplace_back(rankIdx);
-        serverToRankSize[serverIdx]++;
-    }
 }
 
 u32 calculateGroupSize(u32 rankSize, u32 serverNum,
@@ -143,23 +162,28 @@ HcclResult HcclP2pSchedulerGenerate(HcclComm comm, u32 rankSize)
     
     std::shared_ptr<hcclKernelPlannerV2> planner = collComm->plannerV2;
     u32 userRank =  collComm->GetMyRankId();
-    // u32 serverNum = hcclComm->GetServerNum();
-
-    // todo stub
-    u32 serverNum = 1;
-    u32 curlocalRank = userRank;
-
+    constexpr u32 netLayerServer = 0;
+    u32 *serverSizeList = nullptr;
+    u32 serverNum = 0;
     std::map<u32, std::vector<u32>> serverToRankList;
     std::map<u32, u32> serverToRankSize;
-    serverRankMapCreate(rankSize, serverToRankList, serverToRankSize);
+    CHK_PRT(HcclRankGraphGetInstSizeListByLayer(comm, netLayerServer, &serverSizeList, &serverNum));
+    for (u32 serverIdx = 0, rankIdx = 0; serverIdx < serverNum; serverIdx++) {
+        serverToRankSize[serverIdx] = serverSizeList[serverIdx];
+        for (u32 localIdx = 0; localIdx < serverSizeList[serverIdx]; localIdx++) {
+            serverToRankList[serverIdx].emplace_back(rankIdx++);
+        }
+    }
+    u32 curLocalRank = 0; // 当前rank所在server的局部排序号
+    CHK_PRT(getCurLocalRank(userRank, serverNum, serverToRankList, serverToRankSize, curLocalRank));
 
     u32 groupSize = calculateGroupSize(rankSize, serverNum, serverToRankSize);
-    u32 curGroupLocalRankIdx = curlocalRank % groupSize;
-    u32 curGroupIdx = curlocalRank / groupSize;
+    u32 curGroupLocalRankIdx = curLocalRank % groupSize;
+    u32 curGroupIdx = userRank / groupSize;
     u32 nGroups = rankSize / groupSize;
     u32 nGroupsPow2 = pow2Up(nGroups);
-    HCCL_DEBUG("[HcclP2pSchedulerGenerate] groupSize:%u, nGroups:%u, nGroupsPow2:%u", 
-        groupSize, nGroups, nGroupsPow2);
+    HCCL_INFO("[HcclP2pSchedulerGenerate] userRank:%u, localRank:%u, groupSize:%u, nGroups:%u, nGroupsPow2:%u",
+        userRank, curLocalRank, groupSize, nGroups, nGroupsPow2);
 
     std::vector<u32> groupToServer(nGroups);
     std::vector<u32> groupToLocalRankBase(nGroups);
@@ -295,7 +319,7 @@ HcclResult HcclGroupAddP2pTaskV2(HcclComm comm, const HcclP2pTask& task, const H
         planner->peers[p2pDesc.remoteRank].recvQue.emplace_back(task);
     }
     planner->nTasksP2p += 1;
-
+    hcclP2pTaskNums++;
     auto itComm = std::find(hcclGroupCommListV2.begin(), hcclGroupCommListV2.end(), comm);
     if (itComm == hcclGroupCommListV2.end()) {
         hcclGroupCommListV2.emplace_back(comm);
@@ -395,7 +419,6 @@ HcclResult HcclAicpuKernelLaunch(HcclComm comm, HcclOpDesc opInfo, HcclKernelFun
         task.argSize = argSize;
         task.usrStream = userStream;
         CHK_RET(HcclGroupAddP2pTaskV2(comm, task, opInfo.p2p));
-        hcclP2pTaskNums++;
         return HCCL_SUCCESS;
     }
 
@@ -688,6 +711,8 @@ static HcclResult groupLaunchA5()
             CHK_RET(hcclStreamSynchronize(collComm->plannerV2->usrStream));
         }
     }
+
+    hcclP2pTaskNums = 0;
     return HCCL_SUCCESS;
 }
 
