@@ -361,7 +361,7 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
         GetGroupRankInfo(taskInfo).c_str());
     HCCL_ERROR("[TaskExceptionHost]Task run failed, opData information is %s.", taskInfo.GetIndopDataInfo().c_str());
     // [新增] 通过心跳机制将TaskException状态广播给其他rank
-    Heartbeat::GetInstance(exceptionInfo->deviceid).BroadcastTaskException();
+    hccl::Heartbeat::GetInstance(exceptionInfo->deviceid).BroadcastTaskException();
 }
 
 void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId)

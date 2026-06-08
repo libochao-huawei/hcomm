@@ -196,7 +196,7 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
         CHK_RET(PrintTaskContextInfo(aicpuComm, exceptionInfo.sqId, sqeId)); // notify场景打印算子信息和task序列
     }
     // [新增] 通过心跳机制将TaskException状态广播给其他rank
-    Heartbeat::GetInstance(devId_).BroadcastTaskException();
+    hccl::Heartbeat::GetInstance(devId_).BroadcastTaskException();
     return HCCL_SUCCESS;
 }
 
