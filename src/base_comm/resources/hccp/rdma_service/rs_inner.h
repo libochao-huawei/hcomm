@@ -46,7 +46,11 @@
     !RC2:!RC4:!MD2:!MD4:!MD5:!DES:!3DES:!SHA1:!BLOWFISH:!CBC:!ECB:!ADH:!LOW:!PSK:!SRP:!DSS:!eNULL:!aNULL:!EXP:@STRENGTH"
 
 #define RS_S6_ADDR32 2
+#ifdef HNS_ROCE_LLT
+#define RS_USLEEP_TIME 1000
+#else
 #define RS_USLEEP_TIME 20000
+#endif
 #define RS_RECV_MAX_TIME (1000.0 * 5) // ms
 #define RS_RECV_TAG_MAX_TIME (1000.0 * 90) // ms
 #define RS_DEVICE_NUM 0x3
@@ -75,7 +79,11 @@
 #define TLS_CA_SSL_MAX_NEW_CERT_NUM 8
 
 #define RS_CONN_EXIT_FLAG 2
+#ifdef HNS_ROCE_LLT
+#define RS_TRY_TIME 5000
+#else
 #define RS_TRY_TIME 200
+#endif
 #define RS_WLIST_VALID_FLAG_SIZE   6
 #define RS_SSL_CERT_LEN 2048
 #define RS_SSL_MIN_CERT_NUM 2
