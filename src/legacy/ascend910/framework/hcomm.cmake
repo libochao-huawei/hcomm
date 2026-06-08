@@ -110,6 +110,7 @@ target_include_directories(hcomm PRIVATE
     ${LEGACY_ASCEND950_INCLUDE_LIST}
 
     # 三方件头文件
+    ${JSON_INCLUDE_DIR}
     ${URMA_INCLUDE_DIR}
 )
 
@@ -130,7 +131,6 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:rdma_core_headers>
         $<BUILD_INTERFACE:hccl_legacy_headers>
-        $<BUILD_INTERFACE:json>
         -Wl,--no-as-needed
         c_sec
         unified_dlog

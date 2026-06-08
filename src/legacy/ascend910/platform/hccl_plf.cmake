@@ -117,7 +117,6 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:rdma_core_headers>
         $<BUILD_INTERFACE:hccl_legacy_headers>
-        $<BUILD_INTERFACE:json>
         -Wl,--no-as-needed
         c_sec
         unified_dlog
@@ -170,6 +169,9 @@ else()
         hccl_headers
     )
 endif()
+
+# 设置依赖
+add_dependencies(hccl_plf json)
 
 # 安装
 install(TARGETS hccl_plf

@@ -176,7 +176,6 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:rdma_core_headers>
         $<BUILD_INTERFACE:hccl_legacy_headers>
-        $<BUILD_INTERFACE:json>
         -Wl,--no-as-needed
         c_sec
         mmpa
@@ -221,3 +220,6 @@ else()
         COMPONENT hcomm
     )
 endif()
+
+# 设置依赖关系
+add_dependencies(hccd json)
