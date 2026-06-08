@@ -226,3 +226,16 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_Init_WithExchangeAllMems_Expect_Success)
     auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
     EXPECT_NO_THROW(impl->Init());
 }
+
+TEST_F(HostCpuUrmaChannelTest, Ut_SocketNotNullptr_When_Ready)
+{
+    HcommChannelDesc desc{};
+    desc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    HostCpuUrmaChannel ch(ep, desc);
+
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(0x02);
+    MOCKER_CPP(&Channel::TransportStatusToChannelStatus).stubs().will(returnValue(ChannelStatus::READY));
+    ch.GetStatus();
+    GlobalMockObject::verify();
+}
