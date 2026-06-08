@@ -5,6 +5,7 @@
 #define private public
 #define protected public
 #include "aicpu/aicpu_ts_urma_channel.h"
+#include "orion_adpt_utils.h"
 #undef private
 #undef protected
 using namespace hcomm;
@@ -121,4 +122,47 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_StartListen_When_RoleNotServer_Expect_SUCCESS)
 
     auto ret = ch.StartListen();
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(AicpuTsUrmaChannelTest, Ut_SocketNotNullptr_When_Destruct)
+{
+    MOCKER_CPP(&SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
+ 	MOCKER_CPP(&SocketMgr::PutSocket).stubs().will(returnValue(HCCL_SUCCESS));
+    HcommChannelDesc desc{};
+    desc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUrmaChannel ch(ep, desc);
+
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(0x02);
+}
+
+TEST_F(AicpuTsUrmaChannelTest, Ut_SocketNotNullptr_When_Ready)
+{
+    MOCKER_CPP(&SocketMgr::GetSocket).stubs().will(returnValue(HCCL_SUCCESS));
+ 	MOCKER_CPP(&SocketMgr::PutSocket).stubs().will(returnValue(HCCL_SUCCESS));
+    HcommChannelDesc desc{};
+    desc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUrmaChannel ch(ep, desc);
+
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(0x02);
+
+    Hccl::BaseMemTransport::LocCntNotifyRes locCntNotifyRes{};
+    locCntNotifyRes.vec.clear();
+    locCntNotifyRes.desc.clear();
+    const Hccl::Socket &socket = *ch.socket_;
+
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    EndpointDescPairToLinkData(ch.localEp_, ch.remoteEp_, linkData);
+
+    bool isRecvFirst = true;
+
+    ch.memTransport_ = std::make_unique<Hccl::UbMemTransport>(
+            ch.commonRes_, ch.attr_, linkData, socket, ch.rdmaHandle_, locCntNotifyRes, isRecvFirst
+        );
+
+    ch.memTransport_->baseStatus = Hccl::TransportStatus::READY;
+    ch.isFirstPrintChannelInfo_ = false;
+    ch.GetStatus();
+    GlobalMockObject::verify();
 }
