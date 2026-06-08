@@ -44,6 +44,7 @@
 #include "comm_configer.h"
 #include "hccl_group.h"
 #include "hostdpu/dpu_kernel_entrance.h"
+#include "rank_consistency_checker_v2.h"
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 #include "hcomm_c_adpt.h"
 #endif
@@ -1291,6 +1292,11 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
             CheckCcuMc2CompatMode();
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(*comm);
             CHK_PTR_NULL(hcclComm);
+            
+            const std::string &parentIdentifier = hcclComm->GetIdentifier();
+            s32 deviceLogicId = 0;
+            (void)hrtGetDeviceRefresh(&deviceLogicId);
+            CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordSubCommParaV2(parentIdentifier, rankNum, rankIds, subCommId));
             void* commV2 = hcclComm->GetCommunicatorV2();
             CHK_PTR_NULL(commV2);
             void* subCommV2 = nullptr;

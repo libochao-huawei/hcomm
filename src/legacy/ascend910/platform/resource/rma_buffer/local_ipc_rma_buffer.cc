@@ -18,11 +18,22 @@ LocalIpcRmaBuffer::LocalIpcRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, 
     pimpl_ = std::make_unique<LocalIpcRmaBufferImpl>(netDevCtx, addr, size, memType);
 }
 
+LocalIpcRmaBuffer::LocalIpcRmaBuffer(const HcclNetDevCtx netDevCtx, void* addr, u64 size,
+    const RmaMemType memType, const LocalIpcRmaBuffer& parent)
+    : RmaBuffer(netDevCtx, addr, size, memType, RmaType::IPC_RMA, true)
+{
+    pimpl_ = std::make_unique<LocalIpcRmaBufferImpl>(netDevCtx, addr, size, memType, *parent.pimpl_);
+    this->devAddr = this->addr;
+    HCCL_INFO("[LocalIpcRmaBuffer] alias constructor");
+}
+
 LocalIpcRmaBuffer::~LocalIpcRmaBuffer()
 {
-    HcclResult res = Destroy();
-    if (res != HCCL_SUCCESS) {
-        HCCL_ERROR("[LocalIpcRmaBuffer][~LocalIpcRmaBuffer]failed, ret[%d]", res);
+    if (!isAlias_) {
+        HcclResult res = Destroy();
+        if (res != HCCL_SUCCESS) {
+            HCCL_ERROR("[LocalIpcRmaBuffer][~LocalIpcRmaBuffer]failed, ret[%d]", res);
+        }
     }
 }
 
