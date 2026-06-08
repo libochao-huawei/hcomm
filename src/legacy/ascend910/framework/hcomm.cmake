@@ -62,7 +62,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/one_sided_service
     ${HCOMM_DIR}/src/legacy/ascend910/framework/op_base/src
 
-    # src/framework/next 头文件 (已拆分到 base_comm 和 coll_communicator)
+    # src/framework/next 头文件 (已拆分到 base_comm 和 coll_communicator_mgr)
     ${HCOMM_DIR}/src/base_comm/common
     ${HCOMM_DIR}/src/base_comm/resources/ccu/pub_inc
     ${HCOMM_DIR}/src/base_comm/resources/ccu/ccu_device
