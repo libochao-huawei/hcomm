@@ -1501,6 +1501,7 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
         24-31代表芯片配置值b11:32s
     */
     attr.ub.errTimeout       = in.errTimeout;
+    attr.ub.priority         = static_cast<uint8_t>(in.qos & 0xFU);
     attr.ub.rnrRetry         = RNR_RETRY;
     attr.ub.flag.bs.shareJfr = 1;
     attr.ub.jettyId          = in.jettyId;
