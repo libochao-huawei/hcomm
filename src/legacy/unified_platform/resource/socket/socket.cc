@@ -390,10 +390,13 @@ SocketStatus Socket::GetAsyncStatus()
 
 void Socket::GetOneSocket()
 {
+    printf("[TEST]Socket::GetOneSocket start\n");
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
-    
+    printf("[TEST]Socket::GetOneSocket param\n");
     RaSocketFdHandleParam fdHandleParam(nullptr, 0);
+    printf("[TEST]Socket::GetOneSocket fdHandleParam\n");
  	EXECEPTION_CATCH(fdHandleParam = RaGetOneSocket(static_cast<u32>(role), param), return);
+    printf("[TEST]Socket::GetOneSocket RaGetOneSocket\n");
     // socket status:0 not connected 1:connected 2:connect timeout 3:connecting
     if (fdHandleParam.status == SOCKET_CONNECTED) {
         // sockete 准备好时，可以读取信息
