@@ -629,6 +629,10 @@ void TcHost()
     ret = RaSetTsqpDepth(rdmaHandle, tempDepth, &qpNum);
     EXPECT_INT_EQ(128103, ret);
 
+    /* Save global ops pointers before NULL-ing to avoid polluting gRaHdcRdmaOps across iterations */
+    void *savedRaQpCreate = (void *)(uintptr_t)rdmaHandle->rdmaOps->raQpCreate;
+    void *savedRaQpCreateWithAttrs = (void *)(uintptr_t)rdmaHandle->rdmaOps->raQpCreateWithAttrs;
+    void *savedRaTypicalQpCreate = (void *)(uintptr_t)rdmaHandle->rdmaOps->raTypicalQpCreate;
     rdmaHandle->rdmaOps->raQpCreate = NULL;
     rdmaHandle->rdmaOps->raQpCreateWithAttrs = NULL;
     rdmaHandle->rdmaOps->raTypicalQpCreate = NULL;
@@ -638,6 +642,10 @@ void TcHost()
     EXPECT_INT_NE(0, ret);
     ret = RaTypicalQpCreate(rdmaHandle, 0, RA_RS_OP_QP_MODE_EXT, &qpInfo, (void **)&typicalQpHandle1);
     EXPECT_INT_NE(0, ret);
+    /* Restore global ops pointers so subsequent iterations are not affected */
+    rdmaHandle->rdmaOps->raQpCreate = savedRaQpCreate;
+    rdmaHandle->rdmaOps->raQpCreateWithAttrs = savedRaQpCreateWithAttrs;
+    rdmaHandle->rdmaOps->raTypicalQpCreate = savedRaTypicalQpCreate;
 
     struct RaQpHandle qpHandle2 = {0};
     qpHandle = &qpHandle2;

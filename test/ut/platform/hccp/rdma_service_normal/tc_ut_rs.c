@@ -139,7 +139,7 @@ struct RsRdevCb gRdevCb = {0};
 struct RsListenInfo gListenInfo = {0};
 struct RsListenInfo *gPlistenInfo = &gListenInfo;
 
-#define SLEEP_TIME 50000
+#define SLEEP_TIME 10000
 
 int RsConnInit(int index);
 void RsConnPrepare(void *arg);
@@ -621,7 +621,7 @@ void TcRsSocketConnect()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socketInfo[i].fd, socketInfo[i].status);
 
@@ -637,7 +637,7 @@ void TcRsSocketConnect()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -657,7 +657,7 @@ void TcRsSocketConnect()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[0].fd:%d, client if:0x%x, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].remoteIp.addr.s_addr, socketInfo[i].status);
@@ -733,7 +733,7 @@ void TcRsGetSockets()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 		rs_ut_msg(">>**RsGetSockets ret:%d\n", ret);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socketInfo[i].fd, socketInfo[i].status);
@@ -749,7 +749,7 @@ void TcRsGetSockets()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -783,7 +783,7 @@ void TcRsGetSockets()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[0].fd:%d, client if:0x%x, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].remoteIp.addr.s_addr, socketInfo[i].status);
@@ -949,7 +949,7 @@ void TcRsQpCreate()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -1041,7 +1041,7 @@ void TcRsQpCreate()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -1237,7 +1237,7 @@ void TcRsQpCreateWithAttrsV1()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -1316,7 +1316,7 @@ void TcRsQpCreateWithAttrsV1()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -1477,7 +1477,7 @@ void TcRsMrSync()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -1521,7 +1521,7 @@ void TcRsMrSync()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -1638,7 +1638,7 @@ static int TcRsSockQpCreateNormal(int *fd, uint32_t *qpn, int *fd2, uint32_t *qp
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-        usleep(30000);
+        usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -1667,7 +1667,7 @@ static int TcRsSockQpCreateNormal(int *fd, uint32_t *qpn, int *fd2, uint32_t *qp
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
-        usleep(30000);
+        usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -1750,7 +1750,7 @@ static int TcRsSockQpCreate(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2)
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -1781,7 +1781,7 @@ static int TcRsSockQpCreate(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2)
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -2189,7 +2189,7 @@ void TcRsSocketOps()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socketInfo[i].fd, socketInfo[i].status);
 
@@ -2204,7 +2204,7 @@ void TcRsSocketOps()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -2275,7 +2275,7 @@ void TcRsSocketOps()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[0].fd:%d, client if:0x%x, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].remoteIp.addr.s_addr, socketInfo[i].status);
@@ -2990,7 +2990,7 @@ void TcRsWhiteList()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo, 1);
-        usleep(30000);
+        usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socketInfo.fd, socketInfo.status);
 
@@ -3129,7 +3129,7 @@ void TcRsSslTest1()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-        usleep(30000);
+        usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -3144,7 +3144,7 @@ void TcRsSslTest1()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
-        usleep(30000);
+        usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -4526,10 +4526,12 @@ void TcRsRegisterMr()
 	mrRegInfo1.access = RS_ACCESS_LOCAL_WRITE;
 
 	gRsCb = malloc(sizeof(struct rs_cb));
+	memset(gRsCb, 0xff, sizeof(struct rs_cb));
 	struct rs_cb *temPtr = gRsCb;
 
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
+	gRsCb->chipId = cfg.chipId;
 	rs_ut_msg("RS INIT, ret:%d !\n", ret);
 
 	struct rdev rdevInfo = {0};
@@ -5251,7 +5253,7 @@ void TcRsNormalQpCreate()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -5329,7 +5331,7 @@ void TcRsNormalQpCreate()
 	tryNum = 10;
 	do {
 		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
-		usleep(30000);
+		usleep(5000);
 	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
@@ -5535,10 +5537,12 @@ void TcRsCreateCompChannel()
 	cfg.hccpMode = NETWORK_OFFLINE;
 
 	gRsCb = malloc(sizeof(struct rs_cb));
+	memset(gRsCb, 0xff, sizeof(struct rs_cb));
 	struct rs_cb *temPtr = gRsCb;
 
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
+	gRsCb->chipId = cfg.chipId;
 	rs_ut_msg("RS INIT, ret:%d !\n", ret);
 
 	struct rdev rdevInfo = {0};
@@ -5740,10 +5744,12 @@ void TcRsCreateSrq()
 	cfg.hccpMode = NETWORK_OFFLINE;
 
 	gRsCb = malloc(sizeof(struct rs_cb));
+	memset(gRsCb, 0xff, sizeof(struct rs_cb));
 	struct rs_cb *temPtr = gRsCb;
 
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
+	gRsCb->chipId = cfg.chipId;
 	rs_ut_msg("RS INIT, ret:%d !\n", ret);
 
 	struct rdev rdevInfo = {0};

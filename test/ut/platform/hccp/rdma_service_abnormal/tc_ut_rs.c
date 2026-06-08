@@ -144,7 +144,7 @@ int rs_get_pridata(struct rs_cb *rscb, struct RsSecPara *rsPara, struct tls_cert
 int rs_ssl_put_certs(struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo, struct RsCerts *certs,
     struct tls_ca_new_certs *newCerts, struct CertFile *fileName);
 
-#define SLEEP_TIME 500000
+#define SLEEP_TIME 10000
 #define rs_ut_msg(fmt, args...)	fprintf(stderr, "\t>>>>> " fmt, ##args)
 
 int tryAgain;
