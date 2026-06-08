@@ -22,6 +22,8 @@
 #include "profiling_command_handle_lite.h"
 #include "aicpu_indop_process.h"
 #endif
+
+std::unordered_map<std::string, void*> g_taskExpDevMemMap;
 extern "C" {
 using namespace Hccl;
 
@@ -114,4 +116,22 @@ uint32_t HcclUpdateCommKernelEntrance(void *args)
     HCCL_INFO("[NsRecovery] HcclUpdateCommKernelEntrance success.");
     return 0;
 }
+
+uint32_t HcclDpuTaskexpShmemRestore(void *args)
+{   
+    struct AicpuKernelLaunchParam {
+        std::string commId;
+        void       *taskexceptionVa;
+        u64         memorySize;
+        int32_t     deviceId;
+    };
+    auto *kernelParam = reinterpret_cast<AicpuKernelLaunchParam *>(args);
+    auto it = g_taskExpDevMemMap.find(kernelParam->commId);
+    if (it == g_taskExpDevMemMap.end()) {
+        g_taskExpDevMemMap.insert({kernelParam->commId, kernelParam->taskexceptionVa});
+    }
+    HCCL_INFO("HcclDpuTaskexpShmemRestore success.");
+    return 0;
+}
+
 }

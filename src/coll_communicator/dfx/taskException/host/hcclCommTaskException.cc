@@ -18,6 +18,7 @@
 #include "task_exception_handler.h"
 #include "ccuTaskException.h"
 #include "hccl_types.h"
+#include "dpu_kernel_entrance.h"
 
 namespace hcomm {
 
@@ -199,6 +200,57 @@ bool IsMC2Exception(rtExceptionInfo_t* exceptionInfo)
            exceptionInfo->expandInfo.u.fusionInfo.type == RT_FUSION_AICORE_CCU;
 }
 
+static std::string GetErrCommId(rtExceptionInfo_t* exceptionInfo)
+{
+    std::string commId = ""; // 若有错，返回commId；无错返回空
+    // 如何找有错的commId?不能真是遍历map吧？
+    // device侧在aicpu的hdc共享内存写通信域id，在这里取出
+    Hccl::ErrorMessageReport errorMsg;
+    unique_lock<std::mutex> lock(g_commHadCallbackArrayMutexV2);
+    if (g_commHadCallbackArrayV2[exceptionInfo->deviceid]) {
+        // 防止同一个device上出现通信主流和kernel流均出现task exception时runtime调用两次callback
+        // HDC通道信息不是读清，防止aicpu task exception重复上报
+        HCCL_WARNING("aicpu error message been reported. deviceid[%u]", exceptionInfo->deviceid);
+        return "";
+    }
+    lock.unlock();
+    if (g_communicatorCallbackMapV2[exceptionInfo->deviceid].find(exceptionInfo->streamid) !=\
+        g_communicatorCallbackMapV2[exceptionInfo->deviceid].end()) {
+        // 找到对应的通信域，并调用回调函数从HDC通道获取AICPU异常信息
+        errorMsg = (g_communicatorCallbackMapV2[exceptionInfo->deviceid])[exceptionInfo->streamid]();
+        commId = errorMsg.group;
+        lock.lock();
+        g_commHadCallbackArrayV2[exceptionInfo->deviceid] = true;
+    } else {
+        HCCL_INFO("GetErrCommId streamId[%u] is not found.", exceptionInfo->streamid);
+    }
+    return commId;
+}
+
+void TaskExceptionHost::ProcessDpuException(rtExceptionInfo_t* exceptionInfo)
+{
+    HCCL_RUN_INFO("[TaskExceptionHost][%s]begin to execute hccl task exception callback function.", __func__);
+    std::string commId = GetErrCommId(exceptionInfo); // 获取dpu任务出错的通信域
+    auto it = g_taskExpMemMap.find(commId);
+    if (it == g_taskExpMemMap.end()) {
+        return; // 无dpu任务出错
+    }
+    // 读取共享内存内容并打印
+    void *tempPtr = malloc(sizeof(DpuTaskexceptionParams));
+    auto taskexpShmem = reinterpret_cast<char *>(tempPtr);
+    memcpy_s(taskexpShmem, sizeof(DpuTaskexceptionParams), it->second, sizeof(DpuTaskexceptionParams));
+    std::vector<char> sequenceData(taskexpShmem, taskexpShmem + sizeof(DpuTaskexceptionParams));
+    DpuTaskexceptionParams dpuTaskexception;
+    dpuTaskexception.DeSerialize(sequenceData);
+    if (dpuTaskexception.ret != 0) {
+        HCCL_ERROR("[TaskExceptionHost][ProcessDpuException] Task from HCCL run failed.");
+        HCCL_ERROR("[TaskExceptionHost][ProcessDpuException] channel information: channelHandle[%llu], commProtocol[%d], endpointLocType[%d].",
+                dpuTaskexception.channelHandle, dpuTaskexception.protocol, dpuTaskexception.locationType);
+        memset_s(it->second, sizeof(DpuTaskexceptionParams), 0, sizeof(DpuTaskexceptionParams)); // 清空 dpu taskexception共享内存内容
+    }
+    free(tempPtr);
+}
+
 void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 {
     if (exceptionInfo == nullptr) {
@@ -213,6 +265,9 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
         return;
     }
+
+    // dpu taskexception
+    ProcessDpuException(exceptionInfo);
 
     std::shared_ptr<Hccl::TaskInfo> curTask = nullptr;
     HcclResult ret = Hccl::GlobalMirrorTasks::Instance().FindTaskInfo(exceptionInfo->deviceid, exceptionInfo->streamid,
