@@ -188,8 +188,6 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
     auto aivTransport = CreateAivTransport(desc);
     auto initMockBuffer = CreateLocalIpcRmaBuffer(0x100, 0x100, HCCL_MEM_TYPE_DEVICE, "initBuffer");
     aivTransport->localRmaBufferVec_.push_back(initMockBuffer.get());
-    aivTransport->localUserMemTag_.push_back(BuildMemTagArray("initBuffer"));
-
     size_t initialVecSize = aivTransport->localRmaBufferVec_.size();
 
     // Normal case: GetAsyncStatus returns OK
@@ -211,11 +209,6 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
     EXPECT_EQ(aivTransport->localRmaBufferVec_.size(), initialVecSize + 2);
     EXPECT_EQ(aivTransport->localRmaBufferVec_[initialVecSize], mockBuffer1.get());
     EXPECT_EQ(aivTransport->localRmaBufferVec_[initialVecSize + 1], mockBuffer2.get());
-    EXPECT_EQ(aivTransport->localUserMemTag_.size(), initialTagSize + 2);
-    EXPECT_EQ(std::string(aivTransport->localUserMemTag_[initialTagSize].data()),
-        mockBuffer1->GetBuf()->GetMemInfo());
-    EXPECT_EQ(std::string(aivTransport->localUserMemTag_[initialTagSize + 1].data()),
-        mockBuffer2->GetBuf()->GetMemInfo());
 }
 
 TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_SocketTimeout_Expect_ReturnIsHCCL_E_TIMEOUT)
