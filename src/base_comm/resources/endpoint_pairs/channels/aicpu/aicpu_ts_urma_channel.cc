@@ -17,6 +17,7 @@
 #include "config_log.h"
 
 // Orion
+#include "adapter_rts_common.h"
 #include "coll_alg_param.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
@@ -116,17 +117,22 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     CHK_RET(hrtGetDevice(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
+    const u8 qosPre = static_cast<u8>(
+        (channelDesc_.qos > 7U) ? Hccl::kRaUbGetTpInfoParamDefaultQos : (channelDesc_.qos & 7U));
+
     std::unique_ptr<Hccl::DevUbConnection> ubConn = nullptr;
     switch (protocol) {
         case Hccl::LinkProtocol::UB_TP:
-            EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
+            EXCEPTION_CATCH(
+                ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed,
+                    Hccl::HrtUbJfcMode::STARS_POLL, Hccl::IpAddress(), Hccl::IpAddress(), qosPre),
                 return HCCL_E_PTR
             );
             break;
         case Hccl::LinkProtocol::UB_CTP:
-            EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
+            EXCEPTION_CATCH(
+                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed,
+                    Hccl::HrtUbJfcMode::STARS_POLL, Hccl::IpAddress(), Hccl::IpAddress(), qosPre),
                 return HCCL_E_PTR
             );
             break;
@@ -151,7 +157,7 @@ HcclResult AicpuTsUrmaChannel::BuildNotify()
     bool devUsed = true;
     for (uint32_t i = 0; i < notifyNum_; ++i) {
         std::unique_ptr<Hccl::UbLocalNotify> notifyPtr = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             notifyPtr = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle_, devUsed),
             return HCCL_E_PTR
         );
@@ -167,7 +173,7 @@ HcclResult AicpuTsUrmaChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buf
     bufferVecTemp_.clear();
     for (size_t i = 0; i < bufs.size(); i++) {
         std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_),
             return HCCL_E_PTR
         );
@@ -191,7 +197,7 @@ HcclResult AicpuTsUrmaChannel::BuildUbMemTransport()
     bool isRecvFirst = socket.GetRole() == Hccl::SocketRole::CLIENT ? true : false;
 
     // make_unique / make_shared / release 包一层抛异常的宏
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         memTransport_ = std::make_unique<Hccl::UbMemTransport>(
             commonRes_, attr_, linkData, socket, rdmaHandle_, locCntNotifyRes, isRecvFirst
         ),
@@ -213,11 +219,11 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
     if (channelDesc_.role == HCOMM_SOCKET_ROLE_RESERVED) {
         Hccl::SocketHandle socketHandle
             = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
-        EXECEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, DEFAULT_LISTENING_PORT, ipaddr, "server",
+        EXCEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, DEFAULT_LISTENING_PORT, ipaddr, "server",
                              Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE),
             return HCCL_E_PARA);
         HCCL_INFO("[AicpuTsUrmaChannel][%s] listen_socket_info[%s]", __func__, serverSocket_->Describe().c_str());
-        EXECEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
+        EXCEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
         Hccl::LinkData linkData = BuildDefaultLinkData();
         CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
         HCCL_INFO("[AicpuTsUrmaChannel][%s] built linkData: %s", __func__, linkData.Describe().c_str());

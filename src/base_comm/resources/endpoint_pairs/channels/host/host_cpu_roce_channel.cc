@@ -192,7 +192,7 @@ HcclResult HostCpuRoceChannel::BuildConnection()
 
     for (u32 i = 0; i < loopTimes; i++) {
         std::unique_ptr<HostRdmaConnection> conn;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             conn = std::make_unique<HostRdmaConnection>(socket_, rdmaHandle_),
             return HCCL_E_INTERNAL);
         CHK_PTR_NULL(conn);
@@ -490,7 +490,7 @@ HcclResult HostCpuRoceChannel::RmtBufferVecUnpackProc(Hccl::BinaryStream &binary
         dto.Deserialize(binaryStream);
 
         HCCL_INFO("[HostCpuRoceChannel::%s] pos=%u, dto %s", __func__, pos, dto.Describe().c_str());
-        EXECEPTION_CATCH(rmtRmaBuffers_[pos] = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle_, dto),
+        EXCEPTION_CATCH(rmtRmaBuffers_[pos] = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle_, dto),
             HCCL_ERROR("[HostCpuRoceChannel::%s] make_unique<Hccl::RemoteRdmaRmaBuffer> throws an exception!", __func__);
             return HCCL_E_INTERNAL);
         HCCL_INFO("[HostCpuRoceChannel::%s] pos=%u, rmtRmaBuffer=%s", __func__, pos, rmtRmaBuffers_[pos]->Describe().c_str());
@@ -1547,7 +1547,7 @@ HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needS
         CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(*socketConfig_, socket_));
     }
     CHK_RET(HrtRaQpConnectAsync(qpInfo.qpHandle, socket_->GetFdHandle(), needStop));
-    
+
     // 查询QP建链是否成功
     s32 qpStatus = 0;
     s32 raRet = 0;

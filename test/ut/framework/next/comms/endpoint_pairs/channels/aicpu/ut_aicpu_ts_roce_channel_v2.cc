@@ -15,7 +15,7 @@
 #include <iostream>
 #include <cstring>
 #include "aicpu_ts_roce_channel_v2.h"
-#include "next/comms/endpoint_pairs/channels/aicpu/dev_rdma_connection_v2.h"
+#include "aicpu/dev_rdma_connection_v2.h"
 #include "socket.h"
 #include "orion_adapter_hccp.h"
 #include "hccp.h"
@@ -28,7 +28,7 @@
 #include "mem_device_pub.h"
 #include "aicpu_res_package_helper.h"
 #include "exchange_rdma_buffer_dto.h"
-#include "next/comms/endpoint_pairs/channels/host/exchange_rdma_conn_dto.h"
+#include "channels/host/exchange_rdma_conn_dto.h"
 
 #define private public
 

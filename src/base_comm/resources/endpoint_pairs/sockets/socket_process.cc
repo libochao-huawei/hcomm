@@ -253,16 +253,16 @@ HcclResult SocketProcess::BuildSocket(SocketDesc *socketDesc, const std::string 
 
     Hccl::IpAddress ipaddr{};
     CHK_RET(CommAddrToIpAddress(socketDesc->localEndpoint.commAddr, ipaddr));
-    if (serverSocketMap_.find(localListenPair) == serverSocketMap_.end()) {
+    if (socketDesc->role == HCOMM_SOCKET_ROLE_SERVER && serverSocketMap_.find(localListenPair) == serverSocketMap_.end()) {
         Hccl::SocketHandle serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Get(devicePhyId_, localListenPair.first);
         if (serverSocketHandle == nullptr) {
             serverSocketHandle = Hccl::SocketHandleManager::GetInstance().Create(devicePhyId_, localListenPair.first);
         }
-        EXECEPTION_CATCH(serverSocketMap_[localListenPair] = std::make_unique<Hccl::Socket>(
+        EXCEPTION_CATCH(serverSocketMap_[localListenPair] = std::make_unique<Hccl::Socket>(
             serverSocketHandle, ipaddr, localListenPair.second, ipaddr, socketDesc->tag,
             Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
         HCCL_INFO("[%s] listen_socket_info[%s]", __func__, serverSocketMap_[localListenPair].get()->Describe().c_str());
-        EXECEPTION_CATCH(serverSocketMap_[localListenPair].get()->Listen(), return HCCL_E_INTERNAL);
+        EXCEPTION_CATCH(serverSocketMap_[localListenPair].get()->Listen(), return HCCL_E_INTERNAL);
     }
     HCCL_INFO("[SocketProcess][%s] ip[%s] has been listening.", __func__, ipaddr.GetIpStr().c_str());
 

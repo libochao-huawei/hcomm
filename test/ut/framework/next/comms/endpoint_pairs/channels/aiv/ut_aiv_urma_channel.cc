@@ -4,8 +4,8 @@
 
 #define private public
 #define protected public
-#include "next/comms/endpoint_pairs/channels/aiv/aiv_urma_channel.h"
-#include "next/comms/endpoint_pairs/channels/aiv/aiv_urma_transport.h"
+#include "aiv_urma_channel.h"
+#include "aiv_urma_transport.h"
 #undef protected
 #undef private
 #include "exchange_ub_buffer_dto.h"

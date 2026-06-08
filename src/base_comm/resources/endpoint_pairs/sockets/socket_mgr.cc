@@ -34,6 +34,8 @@ SocketMgr& SocketMgr::GetInstance(s32 phyId)
 {
     static SocketMgr instances[MAX_MODULE_DEVICE_NUM];  // C++11 保证线程安全
     if (static_cast<u32>(phyId) >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_WARNING("[SocketMgr] devicePhyId >= MAX_MODULE_DEVICE_NUM, devicePhyId=%d, MAX_MODULE_DEVICE_NUM=%d",
+ 	        phyId, MAX_MODULE_DEVICE_NUM);
         return instances[0];
     }
     instances[phyId].devicePhyId_ = phyId;
@@ -120,7 +122,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
     
     std::unique_ptr<Hccl::Socket> tmpSocket = nullptr;
     if (socketConfig.link.GetType() == Hccl::PortDeploymentType::DEV_NET) {
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             tmpSocket = std::make_unique<Hccl::Socket>(
                 socketHandle, localIpAddress, socketConfig.listeningPort,
                 remoteIpAddress, hccpSocketTag,
@@ -131,7 +133,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
         HCCL_INFO("[SocketMgr][%s] client_socket_info[%s]", __func__, tmpSocket->Describe().c_str());
         tmpSocket->ConnectAsync();
     } else if (socketConfig.link.GetType() == Hccl::PortDeploymentType::HOST_NET) {
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             tmpSocket = std::make_unique<Hccl::Socket>(socketHandle,
             localIpAddress,
             socketConfig.listeningPort,
@@ -195,6 +197,7 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     }
     if (it != socketMap_.end()) {
         if (socketConfig.hostNic2DeviceNicMode_) {
+            HCCL_INFO("[SocketMgr][%s] destroy a socket[%p] in hostNic2DeviceNicMode", __func__, static_cast<void*>(socket));
             socket->Destroy();
             socketMap_.erase(it);
             socketInUseMap_.erase(socket);
@@ -261,6 +264,7 @@ HcclResult SocketMgr::UpdateSocketConfig(const Hccl::SocketConfig*& socketConfig
 
 HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     CHK_PTR_NULL(socket);
     bool socketExist = false;
     for (auto it = socketMap_.begin(); it != socketMap_.end(); ++it) {
@@ -270,8 +274,8 @@ HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
         }
     }
     if (!socketExist) {
-        HCCL_WARNING("[DeleteWhiteList] socket not found in socketMap_, nothing to delete.",
-            socket);
+        HCCL_WARNING("[DeleteWhiteList] socket[%p] not found in socketMap_, nothing to delete.",
+ 	        static_cast<void*>(socket));
         return HCCL_SUCCESS;
     }
     auto iter = handle2WhiteListMap_.find(socket->GetFdHandle());
@@ -287,7 +291,7 @@ HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
         return HCCL_SUCCESS;
     }
 
-    EXECEPTION_CATCH(Hccl::HrtRaSocketWhiteListDel(socket->GetFdHandle(), wlistInfoVec), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(Hccl::HrtRaSocketWhiteListDel(socket->GetFdHandle(), wlistInfoVec), return HCCL_E_INTERNAL);
     handle2WhiteListMap_.erase(iter);
 
     return HCCL_SUCCESS;
@@ -295,6 +299,7 @@ HcclResult SocketMgr::DeleteWhiteList(Hccl::Socket* socket)
 
 HcclResult SocketMgr::DestroySocket(Hccl::Socket* socket)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     if (socket == nullptr) {
         HCCL_WARNING("[DestroySocket] socket is nullptr, nothing to destroy.");
         return HCCL_SUCCESS;

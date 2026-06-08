@@ -409,7 +409,7 @@ HcclResult HcclSocket::Accept(const std::string &tag, std::shared_ptr<HcclSocket
         return HCCL_E_PARA;
     }
 
-    EXECEPTION_CATCH((socket = std::make_shared<HcclSocket>(tag,
+    EXCEPTION_CATCH((socket = std::make_shared<HcclSocket>(tag,
         netDevCtx_, remoteIp_, 0, HcclSocketRole::SOCKET_ROLE_SERVER)), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(socket);
     CHK_RET(socket->Init());

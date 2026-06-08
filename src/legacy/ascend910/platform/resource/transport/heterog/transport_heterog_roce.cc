@@ -1247,7 +1247,7 @@ HcclResult TransportHeterogRoce::GetNotifySize()
 HcclResult TransportHeterogRoce::CreateRdmaSignal(std::shared_ptr<LocalIpcNotify> &localNotify,
     HcclRdmaSignalInfo &rdmaSignalInfo, MemType notifyType)
 {
-    EXECEPTION_CATCH((localNotify = std::make_shared<LocalIpcNotify>()), return HCCL_E_PTR);
+    EXCEPTION_CATCH((localNotify = std::make_shared<LocalIpcNotify>()), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(localNotify);
     s32 pid = 0;
     CHK_RET(SalGetBareTgid(&pid)); // 当前进程id

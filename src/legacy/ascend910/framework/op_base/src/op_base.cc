@@ -467,7 +467,7 @@ HcclResult InitOneSidedHcomInfo(s32 deviceLogicId, const std::string &commName)
     // comm name not exit
     if (g_oneSidedCommHcomInfos[deviceLogicId].count(commName) == 0) {
         std::shared_ptr<HcclOpInfoCtx> opBaseHcomPtr;
-        EXECEPTION_CATCH((opBaseHcomPtr = std::make_shared<HcclOpInfoCtx>()), return HCCL_E_PARA);
+        EXCEPTION_CATCH((opBaseHcomPtr = std::make_shared<HcclOpInfoCtx>()), return HCCL_E_PARA);
         g_oneSidedCommHcomInfos[deviceLogicId][commName] = opBaseHcomPtr;
     }
     // comm name exit && isUsed = False
@@ -544,7 +544,7 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *co
     cclBuffer.type = cclBufferMemType;
     cclBuffer.addr = reinterpret_cast<void*>(cclBufferAddr);
     HcclCommPtr hcclCommPtr = nullptr;
-    EXECEPTION_CATCH(hcclCommPtr = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName), return HCCL_E_PTR);
+    EXCEPTION_CATCH(hcclCommPtr = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName), return HCCL_E_PTR);
     CommConfig commConfig(commName);
     HcclOpInfoCtx &opBaseHcom = GetHcclOpInfoCtx();
     CHK_RET(CheckOpBasedHcom(opBaseHcom, rank, commConfig));
@@ -700,6 +700,9 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         hcclNslbDp::GetInstance().SetGlobalRank_RankTableExit(opBaseHcom.rankTable);
         hcclNslbDp::GetInstance().SendGlobalRankTable(rank);
     }
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_RET(opBaseHcom.pComm->InitCollCommInner(rank));
+#endif
     /* 关键状态记录 */
     HCCL_INFO("%s success, rankNum[%u], rank[%u], server[%s], device[%d].",
         __func__, opBaseHcom.rankTable.rankNum, rank, opBaseHcom.params.serverId.c_str(),
@@ -778,7 +781,7 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
     if(hcclGroupDepth > 0){
         HcclResult ret = HCCL_SUCCESS;
         std::shared_ptr<struct hcclCommInitRankTableAsyncJob> job;
-        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableAsyncJob>()), return HCCL_E_PARA);
+        EXCEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableAsyncJob>()), return HCCL_E_PARA);
         job->clusterInfo = clusterInfo;
         job->rank = rank;
         job->initComm = comm;
@@ -1017,7 +1020,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     if(hcclGroupDepth > 0){
         HcclResult ret = HCCL_SUCCESS;
         std::shared_ptr<struct hcclCommInitRankTableConfigAsyncJob> job;
-        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableConfigAsyncJob>()), return HCCL_E_PARA);
+        EXCEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableConfigAsyncJob>()), return HCCL_E_PARA);
         job->clusterInfo = clusterInfo;
         job->rank = rank;
         job->config = config;
@@ -1350,7 +1353,7 @@ HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo)
 
     HcclRootHandle rootHandle;
     std::shared_ptr<TopoInfoDetect> topoDetectServer;
-    EXECEPTION_CATCH((topoDetectServer = std::make_shared<TopoInfoDetect>()),
+    EXCEPTION_CATCH((topoDetectServer = std::make_shared<TopoInfoDetect>()),
         return HCCL_E_MEMORY);
     HcclResult ret = topoDetectServer->SetupServer(rootHandle);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]%s failed, ret[%u]",
@@ -1368,7 +1371,7 @@ HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo)
     }
 
     HcclOpInfoCtx& opBaseInfo = GetHcclOpInfoCtx();
-    EXECEPTION_CATCH(opBaseInfo.hcclCommTopoInfoDetectServer.insert({rootHandle.identifier, topoDetectServer}),
+    EXCEPTION_CATCH(opBaseInfo.hcclCommTopoInfoDetectServer.insert({rootHandle.identifier, topoDetectServer}),
         return HCCL_E_MEMORY);
     /* 首节点诊断信息记录 */
     HCCL_RUN_INFO("[HCCL_TRACE]HcclGetRootInfo success, take time [%lld]us, identifier[%s]",
@@ -1488,8 +1491,8 @@ HcclResult HcclGetCommConnections(const HcclRootHandle &rootHandle, const std::s
 void HcclCloseCommConnections(const std::string &identifier)
 {
     HcclOpInfoCtx& opBaseInfo = GetHcclOpInfoCtx();
-    EXECEPTION_CATCH(opBaseInfo.hcclCommTopoInfoDetectServer.erase(identifier), return);
-    EXECEPTION_CATCH(opBaseInfo.hcclCommTopoInfoDetectAgent.erase(identifier), return);
+    EXCEPTION_CATCH(opBaseInfo.hcclCommTopoInfoDetectServer.erase(identifier), return);
+    EXCEPTION_CATCH(opBaseInfo.hcclCommTopoInfoDetectAgent.erase(identifier), return);
     return;
 }
 
@@ -1501,7 +1504,7 @@ HcclResult SetupHierarchical(const u32 nRanks, const u32 rank, const HcclRootHan
     HcclRankHandle rankHandle;
     std::vector<HcclIpAddress> whitelist;
     std::shared_ptr<TopoInfoDetect> topoDetectGroupLeader;
-    EXECEPTION_CATCH((topoDetectGroupLeader = std::make_shared<TopoInfoDetect>()), return HCCL_E_MEMORY);
+    EXCEPTION_CATCH((topoDetectGroupLeader = std::make_shared<TopoInfoDetect>()), return HCCL_E_MEMORY);
 
     CHK_PTR_NULL(topoDetectAgent);
 
@@ -1623,14 +1626,14 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         CHK_SMART_PTR_NULL(pComm);
 
         std::shared_ptr<TopoInfoDetect> topoDetectAgent;
-        EXECEPTION_CATCH((topoDetectAgent = std::make_shared<TopoInfoDetect>()), return HCCL_E_MEMORY);
+        EXCEPTION_CATCH((topoDetectAgent = std::make_shared<TopoInfoDetect>()), return HCCL_E_MEMORY);
         topoDetectAgent->SetIsInterSuperPodRetryEnable(commConfig.GetConfigInterSuperPodRetryEnable());
         // 32k 作为agent开启阈值
         if (nRanks > TOPO_HIERARCHICAL_ENABLE_THRESHOLD ) {
             HCCL_RUN_INFO("[Init][CommRootInfo][Hierarchical]nRanks[%u] entry hierarchical topo detect.", nRanks);
 
             std::shared_ptr<TopoInfoDetect> topoDetectMember;
-            EXECEPTION_CATCH((topoDetectMember = std::make_shared<TopoInfoDetect>()), return HCCL_E_MEMORY);
+            EXCEPTION_CATCH((topoDetectMember = std::make_shared<TopoInfoDetect>()), return HCCL_E_MEMORY);
             topoDetectMember->SetIsInterSuperPodRetryEnable(commConfig.GetConfigInterSuperPodRetryEnable());
 
             HcclRankHandle groupLeader;
@@ -1657,7 +1660,7 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         CHK_RET(DisplayRanktableInfo(rankTable));
 
         if (retryEnable) {
-            EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectAgent.insert({ commIdentifier, topoDetectAgent }),
+            EXCEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectAgent.insert({ commIdentifier, topoDetectAgent }),
                 return HCCL_E_MEMORY);
             ret = HcclGetCommConnections(rootHandle, commIdentifier, params.commConnections);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][RootInfo]HcclGetCommConnections failed."),
@@ -1788,13 +1791,13 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
     bool serverExist = opBaseHcom.hcclCommTopoInfoDetectServer.find(defaultIdentifier)
         != opBaseHcom.hcclCommTopoInfoDetectServer.end();
     if (defaultIdentifier.compare(commIdentifier) != 0 && retryEnable && serverExist) {
-        EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectServer.insert({commIdentifier,
+        EXCEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectServer.insert({commIdentifier,
             opBaseHcom.hcclCommTopoInfoDetectServer[defaultIdentifier]}), return HCCL_E_MEMORY);
-        EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectServer.erase(defaultIdentifier), return HCCL_E_MEMORY);
+        EXCEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectServer.erase(defaultIdentifier), return HCCL_E_MEMORY);
         HCCL_INFO("[InitCommRootInfo] replace key of topoDetectServer from [%s] to [%s]",
             defaultIdentifier.c_str(), commIdentifier.c_str());
     } else if (!retryEnable && serverExist) {
-        EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectServer.erase(defaultIdentifier), return HCCL_E_MEMORY);
+        EXCEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectServer.erase(defaultIdentifier), return HCCL_E_MEMORY);
         HCCL_INFO("[InitCommRootInfo] close topoDetectServer identifier[%s]", commIdentifier.c_str());
     }
 
@@ -1915,7 +1918,7 @@ HcclResult HcclCommInitRootInfo(uint32_t nRanks, const HcclRootInfo *rootInfo, u
     HcclResult ret = HCCL_SUCCESS;
     if(hcclGroupDepth > 0){
         std::shared_ptr<struct hcclCommInitAsyncJob> job;
-        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitAsyncJob>()), return HCCL_E_PARA);
+        EXCEPTION_CATCH((job = std::make_shared<struct hcclCommInitAsyncJob>()), return HCCL_E_PARA);
         job->nRanks = nRanks;
         job->rootInfo = rootInfo;
         job->rank = rank;
@@ -2044,7 +2047,7 @@ HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo *rootI
     HCCL_INFO("hcclGroupDepth=[%d]", hcclGroupDepth);
     if(hcclGroupDepth > 0){
         std::shared_ptr<struct hcclCommInitConfigAsyncJob> job;
-        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitConfigAsyncJob>()), return HCCL_E_PARA);
+        EXCEPTION_CATCH((job = std::make_shared<struct hcclCommInitConfigAsyncJob>()), return HCCL_E_PARA);
         job->nRanks = nRanks;
         job->rootInfo = rootInfo;
         job->rank = rank;
@@ -3175,7 +3178,7 @@ HcclResult HcclOneSidedCommDestroy(HcclComm comm, s32 deviceLogicId, HcclUs star
     std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
     auto iter = opBaseHcom.opGroup2CommMap.find(group);
     if (iter != opBaseHcom.opGroup2CommMap.end()) {
-        EXECEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
+        EXCEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
         HcclCloseCommConnections(group);
     } else {
         HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(),
@@ -3235,7 +3238,7 @@ HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
         std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
         auto iter = opBaseHcom.opGroup2CommMap.find(group);
         if (iter != opBaseHcom.opGroup2CommMap.end()) {
-            EXECEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
+            EXCEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
         } else {
             HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
             return HCCL_E_PARA;
@@ -3281,7 +3284,7 @@ HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
     std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
     auto iter = opBaseHcom.opGroup2CommMap.find(group);
     if (iter != opBaseHcom.opGroup2CommMap.end()) {
-        EXECEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
+        EXCEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
         HcclCloseCommConnections(group);
     } else {
         HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
@@ -3307,7 +3310,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
 {
     if(hcclGroupDepth > 0){
         std::shared_ptr<struct hcclCommDestroyAsyncJob> job;
-        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommDestroyAsyncJob>()), return HCCL_E_PARA);
+        EXCEPTION_CATCH((job = std::make_shared<struct hcclCommDestroyAsyncJob>()), return HCCL_E_PARA);
         job->initComm = comm;
         s32 devId = 0;
         HcclResult ret = HcclDeviceRefresh(devId);
@@ -3336,7 +3339,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
             std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
             auto iter = opBaseHcom.opGroup2CommMap.find(group);
             if (iter != opBaseHcom.opGroup2CommMap.end()) {
-                EXECEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
+                EXCEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
             } else {
                 HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
                 return HCCL_E_PARA;
@@ -3384,7 +3387,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
     std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
     auto iter = opBaseHcom.opGroup2CommMap.find(group);
     if (iter != opBaseHcom.opGroup2CommMap.end()) {
-        EXECEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
+        EXCEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
         HcclCloseCommConnections(group);
     } else {
         HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
@@ -3464,14 +3467,10 @@ HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
         return HcclResult::HCCL_E_PARA;
     }
 
-    MyRank *myRank;
     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto *collComm = hcclComm->GetCollComm();
-    if (collComm == nullptr) {
-        myRank = (MyRank *)hcclComm->GetMyRank();
-    } else {
-        myRank = collComm->GetMyRank();
-    }
+    CHK_PTR_NULL(collComm);
+    auto *myRank = collComm->GetMyRank();
     CHK_PTR_NULL(myRank);
     const uint32_t opExpansionModeValue = myRank->GetOpExpansionMode();
     const auto opExpansionMode = OpExpansionModeValueToModeEnum(opExpansionModeValue);
@@ -4865,26 +4864,31 @@ int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
     HcclResult ret;
     if (commV2 != nullptr) {
         ret =  HcclTaskRegisterV2(commV2, msgTag, cb);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskRegisterV2 failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskRegisterV2 failed, ret[0x%016llx]",
+            HCCL_ERROR_CODE(ret)), ret);
     } else {
         std::string commId = hcclComm->GetIdentifier();
         if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
             return HCCL_E_NOT_FOUND;
         }
         ret =  g_taskServiceMap[commId]->TaskRegister(msgTag, cb);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskRegister failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskRegister failed, ret[0x%016llx]",
+            HCCL_ERROR_CODE(ret)), ret);
+        return HCCL_SUCCESS;
     }
     uint32_t dpuStreamId;
     CHK_PTR_NULL(commV2);
     ret = HcclGetDpuSteamIdV2(commV2, dpuStreamId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] GetDpuSteamIdV2 failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] GetDpuSteamIdV2 failed, ret[0x%016llx]",
+        HCCL_ERROR_CODE(ret)), ret);
     hccl::CollComm *collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
     collComm->GetHcclCommDfx()->SetDpuStreamId(dpuStreamId);
     auto profCallback = collComm->GetHcclCommDfx()->GetDpuCallback();
     CHK_PTR_NULL(profCallback);
     ret = HcclTaskRegisterProfV2(commV2, profCallback);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskProfRegister failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclTaskRegister] TaskProfRegister failed, ret[0x%016llx]",
+        HCCL_ERROR_CODE(ret)), ret);
     return ret;
 
 #endif

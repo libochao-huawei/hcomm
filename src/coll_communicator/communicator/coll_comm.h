@@ -30,16 +30,22 @@ namespace hccl {
  * 当前需包含原有的91092/91093的通信域、原有的91095的通信域void
  * *指针、及新独立算子架构的通信域（支持91092/91093/91095...）。
  */
+enum class CollCommInitMode {
+    fullMode,    // 全功能模式：给A5及后续新架构使用，完整的CollComm初始化和资源管理
+    simpleMode   // 简化模式：给A2/A3老芯片使用，由于架构限制，仅将RankGraph、MyRank等放入CollComm管理
+};
+
 class CollComm {
 public:
-    CollComm(void *comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks);
+    CollComm(void *comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks,
+             CollCommInitMode initMode = CollCommInitMode::fullMode);
     ~CollComm();
     
     // 初始化通信域
     HcclResult Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config);
 
     inline CommConfig& GetCommConfig() { return config_;}
-    inline RankGraph* GetRankGraph() { return rankgraph_.get(); }
+    inline RankGraph* GetRankGraph() { return rankgraph_; }
     inline CommEngineResMgr* GetCommEngineResMgr() { return commEngineResMgr_.get(); }
     inline ContextManager* GetContextManager() { return contextMgr_.get(); }
     inline CommMemMgr* GetCommMemMgr() { return commMemMgr_.get(); }
@@ -99,11 +105,26 @@ public:
     HcclResult Resume();
 
 private:
+    HcclResult ValidateConfig(const HcclCommConfig *config);
     HcclResult DestroyAicpuComm();
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
     HcclResult GetRankIpPortMap();
+    HcclResult ApplyUserCommConfig(HcclCommConfig *config, uint32_t &opExpansionMode);
+
+    /* 
+     * CollComm初始化方式：
+     *      fullMode：给A5及后续新架构使用，完整的CollComm初始化和资源管理
+     *      SimpleMode：给A2/A3老芯片使用，由于架构限制，仅将RankGraph、MyRank等放入CollComm管理，简化CollComm实现
+     */
+    HcclResult InitFullMode(void* rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig* config);
+    HcclResult InitSimpleMode(void* rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig* config);
+
+    /* A2/A3：使用simpleMode兼容模式没有CommV2，使用简化版的CollComm代理rankgraph、myrank对象，其他功能暂不实现
+     * A5&&下一代：使用fullMode全功能collComm模式
+     */
+    bool IsFullMode() const { return initMode_ == CollCommInitMode::fullMode; }
 
     void* comm_{nullptr};
     uint32_t rankId_{};
@@ -116,7 +137,7 @@ private:
     uint32_t index_{0};
     std::unordered_set<s32> aicpuStreamIds_;
 
-    std::unique_ptr<RankGraph> rankgraph_{nullptr};
+    RankGraph* rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
     std::unique_ptr<ContextManager>  contextMgr_{nullptr};
     std::unique_ptr<CommMemMgr> commMemMgr_{nullptr};
@@ -133,6 +154,8 @@ private:
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
     Hccl::RankIpPortMapPtr rankIpPortMap_;
+
+    CollCommInitMode initMode_{CollCommInitMode::fullMode};  // 初始化模式
 };
 }  // namespace hccl
 

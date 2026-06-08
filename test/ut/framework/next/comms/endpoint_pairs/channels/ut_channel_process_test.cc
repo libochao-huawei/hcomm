@@ -10,8 +10,8 @@
 
 #include "../../../ut_hcomm_base.h"
 #include "channel_process.h"
-#include "next/comms/endpoint_pairs/channels/aiv/aiv_urma_channel.h"
-#include "next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_roce_channel_v2.h"
+#include "aiv_urma_channel.h"
+#include "aicpu_ts_roce_channel_v2.h"
 
 class TestChannelProcess : public TestHcommCAdptBase {
 public:

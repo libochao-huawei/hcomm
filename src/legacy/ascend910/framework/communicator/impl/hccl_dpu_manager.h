@@ -40,6 +40,10 @@ public:
     HcclResult CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated);
     std::shared_ptr<Hccl::DevBuffer> GetKFCWorkSpace(const char *memTag);
     HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
+    HcclResult GetKFCWorkSpaceVA(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
+    HcclResult AllocAndRegKFCWorkSpace(uint64_t size);
+    HcclResult DestroyKFCWorkSpaceVA();
+    HcclResult DestroyDpuKernelResource();
 
 private:
     HcclResult InitAndLaunchDpuKernel();
@@ -50,6 +54,9 @@ private:
     std::string commId_;
     u32 devLogicId_{0};
     void *hostShareBuf_{nullptr};
+    void* va_{nullptr};
+    void* accessVA_{nullptr};
+    std::unordered_map<std::string, std::shared_ptr<Hccl::DevBuffer>> tagWorkspaceVAMap_;
     aclrtStream dpuStream_{nullptr};
     aclrtContext dpuContext_{nullptr};
     aclrtContext npuContext_{nullptr};

@@ -223,7 +223,7 @@ HcclResult AicpuTsRoceChannel::BuildClientDataSocket(HcclNetDevCtx netDevCtx, co
     uint32_t port, const std::string &socketTag)
 {
     HCCL_INFO("[AicpuTsRoceChannel][client] BuildDataSocket connect to server");
-    EXECEPTION_CATCH(dataSocket_ = std::make_shared<hccl::HcclSocket>(socketTag, netDevCtx, remoteIp, port,
+    EXCEPTION_CATCH(dataSocket_ = std::make_shared<hccl::HcclSocket>(socketTag, netDevCtx, remoteIp, port,
                          hccl::HcclSocketRole::SOCKET_ROLE_CLIENT),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(dataSocket_);
@@ -321,7 +321,7 @@ void AicpuTsRoceChannel::ConfigureTransportParaForRoce()
 
 HcclResult AicpuTsRoceChannel::CreateAndInitTransport(HcclDispatcher dispatcher)
 {
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         transport_ = std::make_unique<hccl::Transport>(hccl::TransportType::TRANS_TYPE_IBV_EXP, transportPara_, dispatcher,
             notifyPoolHolder_, machinePara_),
         return HCCL_E_PTR);
@@ -446,10 +446,10 @@ HcclResult AicpuTsRoceChannel::BuildSerializeChannelMem(AicpuTsRoceChannelMem &b
     const u64 localBytes = static_cast<u64>(nL * sizeof(RoceMemDetails));
     const u64 remoteBytes = static_cast<u64>(nR * sizeof(RoceMemDetails));
 
-    EXECEPTION_CATCH(bundle.resAlloc = hccl::DeviceMem::alloc(sizeof(HcommRoceChannelRes)), return HCCL_E_PTR);
+    EXCEPTION_CATCH(bundle.resAlloc = hccl::DeviceMem::alloc(sizeof(HcommRoceChannelRes)), return HCCL_E_PTR);
     CHK_PTR_NULL(bundle.resAlloc.ptr());
     if (nL > 0U) {
-        EXECEPTION_CATCH(bundle.localAlloc = hccl::DeviceMem::alloc(localBytes), return HCCL_E_PTR);
+        EXCEPTION_CATCH(bundle.localAlloc = hccl::DeviceMem::alloc(localBytes), return HCCL_E_PTR);
         CHK_PTR_NULL(bundle.localAlloc.ptr());
         CHK_RET(hrtMemSyncCopy(bundle.localAlloc.ptr(),
             localBytes,
@@ -458,7 +458,7 @@ HcclResult AicpuTsRoceChannel::BuildSerializeChannelMem(AicpuTsRoceChannelMem &b
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     }
     if (nR > 0U) {
-        EXECEPTION_CATCH(bundle.remoteAlloc = hccl::DeviceMem::alloc(remoteBytes), return HCCL_E_PTR);
+        EXCEPTION_CATCH(bundle.remoteAlloc = hccl::DeviceMem::alloc(remoteBytes), return HCCL_E_PTR);
         CHK_PTR_NULL(bundle.remoteAlloc.ptr());
         CHK_RET(hrtMemSyncCopy(bundle.remoteAlloc.ptr(),
             remoteBytes,
@@ -512,10 +512,10 @@ HcclResult AicpuTsRoceChannel::Serialize(std::shared_ptr<hccl::DeviceMem> &out)
     CHK_RET(BuildSerializeChannelMem(bundle, localMd, remoteMd, aiQpInfos, qpNum));
 
     std::shared_ptr<AicpuTsRoceChannelMem> bundleKeep;
-    EXECEPTION_CATCH(bundleKeep = std::make_shared<AicpuTsRoceChannelMem>(std::move(bundle)), return HCCL_E_PTR);
+    EXCEPTION_CATCH(bundleKeep = std::make_shared<AicpuTsRoceChannelMem>(std::move(bundle)), return HCCL_E_PTR);
 
     hccl::DeviceMem *viewPtr = nullptr;
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         viewPtr = new hccl::DeviceMem(
             hccl::DeviceMem::create(bundleKeep->resAlloc.ptr(), sizeof(HcommRoceChannelRes))),
         return HCCL_E_PTR);

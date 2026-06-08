@@ -18,6 +18,7 @@
 
 #include "ccu_urma_channel.h"
 #include "ccu_transport_.h"
+#include "ccu_conn.h"
 #include "local_ub_rma_buffer.h"
 #include "env_config/env_config.h"
 #include "base_config.h"
@@ -224,5 +225,28 @@ TEST_F(CcuTransportTest, ut_CcuTransport_BufferInfoUnpack_When_Normal_Expect_Ret
 
     HcclResult ret = ccuTransport->BufferInfoUnpack(binaryStream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(ccuTransport->rmtbufferVec_.size(), rmtBufferNum);
+    EXPECT_EQ(ccuTransport->rmtBufferInfos_.size(), rmtBufferNum);
+}
+
+TEST_F(CcuTransportTest, ut_BuildCcuConnection_When_CtpAndRtp_Expect_QosPropagated)
+{
+    hcomm::CcuTransport::CcuConnectionInfo ctpInfo{};
+    ctpInfo.type = hcomm::CcuTransport::CcuConnectionType::UBC_CTP;
+    ctpInfo.qos = 6U;
+    ctpInfo.locAddr.type = COMM_ADDR_TYPE_IP_V4;
+    ctpInfo.rmtAddr.type = COMM_ADDR_TYPE_IP_V4;
+    MOCKER_CPP(&hcomm::CcuConnection::Init).stubs().will(returnValue(HCCL_SUCCESS));
+
+    std::unique_ptr<hcomm::CcuConnection> ctpConn{};
+    EXPECT_EQ(hcomm::BuildCcuConnection(ctpInfo, ctpConn), HCCL_SUCCESS);
+    ASSERT_NE(ctpConn, nullptr);
+    EXPECT_EQ(ctpConn->qos_, 6U);
+
+    hcomm::CcuTransport::CcuConnectionInfo rtpInfo = ctpInfo;
+    rtpInfo.type = hcomm::CcuTransport::CcuConnectionType::UBC_TP;
+    rtpInfo.qos = 2U;
+    std::unique_ptr<hcomm::CcuConnection> rtpConn{};
+    EXPECT_EQ(hcomm::BuildCcuConnection(rtpInfo, rtpConn), HCCL_SUCCESS);
+    ASSERT_NE(rtpConn, nullptr);
+    EXPECT_EQ(rtpConn->qos_, 2U);
 }

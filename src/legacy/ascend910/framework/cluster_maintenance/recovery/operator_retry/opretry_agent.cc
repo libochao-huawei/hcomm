@@ -22,11 +22,11 @@ HcclResult CreateOpRetryAgentByState(RetryState state, RetryContext* retryCtx)
     std::shared_ptr<OpRetryBase> retryPtr = nullptr;
     switch (state) {
         case RETRY_STATE_AGENT_RUNNING: {
-            EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentRunning>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentRunning>(), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_AGENT_RETRY_FAIL: {
-            EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentRetryFail>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentRetryFail>(), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_RESP_AICPU_ERR:
@@ -40,15 +40,15 @@ HcclResult CreateOpRetryAgentByState(RetryState state, RetryContext* retryCtx)
         case RETRY_STATE_RESP_CHECK_INFO:
         case RETRY_STATE_RESP_AICPU_RETRYEND:
         case RETRY_STATE_RESP_RUNNING_ERR: {
-            EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentResponse>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentResponse>(), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_RESP_LINK_CHECKED: {
-            EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentResponseLinkInfo>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentResponseLinkInfo>(), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_WAIT_CHANGE_LINK_INFO: {
-            EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentWaitChangeLinkInfo>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentWaitChangeLinkInfo>(), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_WAIT_CMD_STOP_AICPU:
@@ -61,31 +61,31 @@ HcclResult CreateOpRetryAgentByState(RetryState state, RetryContext* retryCtx)
         case RETRY_STATE_WAIT_CMD_CHECK:
         case RETRY_STATE_WAIT_CMD_CAN_RETRY:
         case RETRY_STATE_WAIT_CMD_RETRY_FAIL: {
-            EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentWaitCmd>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentWaitCmd>(), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_POLL_AICPU_STOPED:
         case RETRY_STATE_POLL_AICPU_CHANGED:
         case RETRY_STATE_POLL_AICPU_RETRYEND:
         case RETRY_STATE_POLL_STREAM_STOPED: {
-            EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentPollAicpuStop>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentPollAicpuStop>(), return HCCL_E_PTR);
             break;
         }
         // 发送主动借轨信息
         case RETRY_STATE_SEND_SWITCH_INFO:
-            EXECEPTION_CATCH(retryPtr = std::make_shared<SwitchNicAgentSendSwitchInfo>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<SwitchNicAgentSendSwitchInfo>(), return HCCL_E_PTR);
             break;
         // 等待server RetryCommand命令
         case RETRY_STATE_WAIT_CMD_SEND_AICPU:
-            EXECEPTION_CATCH(retryPtr = std::make_shared<SwitchNicAgentWaitCmd>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<SwitchNicAgentWaitCmd>(), return HCCL_E_PTR);
             break;
         // Resume 过程中检查网口和链路状态(接收来自Server的命令，检查网口和链路状态，将信息回复发送给Server)
         case RETRY_RESUME_STATE_AGENT_CHECK_LINK:
-            EXECEPTION_CATCH(retryPtr = std::make_shared<ResumeAgentCheckLink>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<ResumeAgentCheckLink>(), return HCCL_E_PTR);
             break;
         // Resume 过程中接收Server借轨命令，下发给Aicpu背景线程，借轨完成通知Server
         case RETRY_RESUME_STATE_AGENT_CHANGE_LINK:
-            EXECEPTION_CATCH(retryPtr = std::make_shared<ResumeAgentChangeLink>(), return HCCL_E_PTR);
+            EXCEPTION_CATCH(retryPtr = std::make_shared<ResumeAgentChangeLink>(), return HCCL_E_PTR);
             break;
         default: {
             HCCL_ERROR("[OpRetry][Agent]CreateOpRetryAgentByState failed, state[%s] is invalid",

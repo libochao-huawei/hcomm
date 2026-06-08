@@ -39,7 +39,7 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-#include "dfx/endpoint_monitor.h" // cmakelist加include
+#include "endpoint_monitor.h"
 
 
 namespace hcomm {
@@ -139,6 +139,12 @@ HcommResult ProcessHcommChannelDescs(const HcommChannelDesc &channelDesc, HcommC
         HCCL_RUN_WARNING("The version of provided [%u] is lower than the current version[%u], "
             "configurations supported by later versions will be ignored.",
             channelDesc.header.version, HCOMM_CHANNEL_VERSION);
+    }
+
+    // v1：无 union 之后的通信域 qos；或 header.size 未覆盖当前结构体时，不解析传入的 qos 字节
+    if (channelDesc.header.version <= HCOMM_CHANNEL_VERSION_ONE ||
+        channelDesc.header.size < sizeof(HcommChannelDesc)) {
+        channelDescFinal.qos = 0xFFFFFFFFU;
     }
 
     return HCOMM_SUCCESS;
@@ -251,7 +257,7 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
 
     const EndpointHandle handle = reinterpret_cast<EndpointHandle>(endpointPtr.get());
     CHK_PTR_NULL(handle);
-    EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
 
     if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
@@ -558,7 +564,7 @@ HcommResult HcommThreadAllocWithStream(CommEngine engine,
     hccl::NotifyLoadType notifyLoadType;
     CHK_RET(CommHostEngineToNotifyLoadType(engine, notifyLoadType));
     std::shared_ptr<hccl::Thread> handle;
-    EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
+    EXCEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());
  
     // 返回第一个句柄

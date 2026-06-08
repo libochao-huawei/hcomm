@@ -100,7 +100,7 @@ HcclResult AicpuTsRoceChannelV2::BuildSocket()
 HcclResult AicpuTsRoceChannelV2::BuildConnection()
 {
     std::unique_ptr<DevRdmaConnectionV2> conn;
-    EXECEPTION_CATCH(
+    EXCEPTION_CATCH(
         conn = std::make_unique<DevRdmaConnectionV2>(socket_, rdmaHandle_),
         return HCCL_E_INTERNAL);
     CHK_PTR_NULL(conn);
@@ -133,7 +133,7 @@ HcclResult AicpuTsRoceChannelV2::BuildNotify()
     bool devUsed = true;
     for (uint32_t i = 0; i < notifyNum_; ++i) {
         std::unique_ptr<Hccl::RdmaLocalNotify> notifyPtr = nullptr;
-        EXECEPTION_CATCH(
+        EXCEPTION_CATCH(
             notifyPtr = std::make_unique<Hccl::RdmaLocalNotify>(rdmaHandle_, devUsed),
             return HCCL_E_PTR
         );
@@ -183,13 +183,13 @@ HcclResult AicpuTsRoceChannelV2::BuildNotifyValueBuffer()
     }
     
     u32 notifysize = Hccl::DevCapability::GetInstance().GetNotifySize();
-    EXECEPTION_CATCH((notifyValueMem_ = std::make_shared<Hccl::DevBuffer>(notifysize)),
+    EXCEPTION_CATCH((notifyValueMem_ = std::make_shared<Hccl::DevBuffer>(notifysize)),
         return HCCL_E_PTR);
     HCCL_DEBUG("create notify value buffer[%p], size[%u]", notifyValueMem_.get(), notifysize);
     u64 notifyValue = 1; // notify值写1表示record
     Hccl::HrtMemcpy(reinterpret_cast<void *>(notifyValueMem_->GetAddr()), notifyValueMem_->GetSize(), &notifyValue, notifysize,
             Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
-    EXECEPTION_CATCH((notifyValueBuffer_ = std::make_unique<Hccl::LocalRdmaRmaBuffer>(notifyValueMem_, rdmaHandle_)),
+    EXCEPTION_CATCH((notifyValueBuffer_ = std::make_unique<Hccl::LocalRdmaRmaBuffer>(notifyValueMem_, rdmaHandle_)),
         return HCCL_E_PTR);
     HCCL_INFO("[AicpuTsRoceChannelV2::%s] build notify value buffer success.", __func__);
     return HCCL_SUCCESS;
@@ -431,7 +431,7 @@ HcclResult AicpuTsRoceChannelV2::RmtBufferVecUnpackProc(Hccl::BinaryStream &bina
         dto.Deserialize(binaryStream);
 
         HCCL_INFO("[AicpuTsRoceChannelV2::%s] pos=%u, dto %s", __func__, pos, dto.Describe().c_str());
-        EXECEPTION_CATCH(rmtRmaBuffers_[pos] = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle_, dto),
+        EXCEPTION_CATCH(rmtRmaBuffers_[pos] = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle_, dto),
             HCCL_ERROR("[AicpuTsRoceChannelV2::%s] make_unique<Hccl::RemoteRdmaRmaBuffer> throws an exception!", __func__);
             return HCCL_E_INTERNAL);
         HCCL_INFO("[AicpuTsRoceChannelV2::%s] pos=%u, rmtRmaBuffer=%s", __func__, pos, rmtRmaBuffers_[pos]->Describe().c_str());
@@ -1002,7 +1002,7 @@ HcclResult AicpuTsRoceChannelV2::Serialize(std::shared_ptr<hccl::DeviceMem> &out
         HCCL_E_INTERNAL);
 
     hccl::DeviceMem devMem;
-    EXECEPTION_CATCH(devMem = hccl::DeviceMem::alloc(totalBytes), return HCCL_E_PTR);
+    EXCEPTION_CATCH(devMem = hccl::DeviceMem::alloc(totalBytes), return HCCL_E_PTR);
 
     Hccl::HrtMemcpy(devMem.ptr(), totalBytes, hostBuffer.data(), totalBytes,
         Hccl::tagRtMemcpyKind::RT_MEMCPY_HOST_TO_DEVICE);
