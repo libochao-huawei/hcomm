@@ -182,14 +182,22 @@ HcclResult SocketMgr::MakeSocketInUse(Hccl::Socket*& socket)
 
 HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket)
 {
+    HCCL_INFO("[SocketMgr][%s] start", __func__);
     std::unique_lock<std::mutex> lock(mutex_);
+    HCCL_INFO("[SocketMgr][%s] lock", __func__);
     CHK_RET(Init());
     // 1. 先查找
     std::unordered_map<Hccl::SocketConfig,
                     std::unique_ptr<Hccl::Socket>>::iterator it =
         socketMap_.begin();
 
+    HCCL_INFO("[SocketMgr][%s] socketConfig link.GetLocalPort().GetAddr() = %s, link.GetRemotePort().GetAddr() = %s, tag = %s, listeningPort = %u, noRankId = %d, remoteRank = %d",
+        __func__, socketConfig.link.GetLocalPort().GetAddr().Describe().c_str(), socketConfig.link.GetRemotePort().GetAddr().Describe().c_str(),
+        socketConfig.tag.c_str(), socketConfig.listeningPort, socketConfig.noRankId, socketConfig.remoteRank);
     for (; it != socketMap_.end(); ++it) {
+        HCCL_INFO("[SocketMgr][%s] mapConfig link.GetLocalPort().GetAddr() = %s, link.GetRemotePort().GetAddr() = %s, tag = %s, listeningPort = %u, noRankId = %d, remoteRank = %d",
+            __func__, it->first.link.GetLocalPort().GetAddr().Describe().c_str(), it->first.link.GetRemotePort().GetAddr().Describe().c_str(),
+            it->first.tag.c_str(), it->first.listeningPort, it->first.noRankId, it->first.remoteRank);
         if (std::equal_to<Hccl::SocketConfig>{}(socketConfig, it->first)) {
             socket = it->second.get();
             break;
@@ -216,6 +224,8 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
             return HCCL_SUCCESS;
         }
     }
+
+    HCCL_INFO("[SocketMgr][%s] can not find a correct socket in map", __func__);
 
     // 2. 不存在则创建
     CHK_RET(CreateSocketWithSocketHandle(socketConfig));
