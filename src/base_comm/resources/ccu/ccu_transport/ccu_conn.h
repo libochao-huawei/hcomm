@@ -48,6 +48,7 @@ public:
 
 protected:
     TpProtocol tpProtocol_{TpProtocol::INVALID};
+    void InitGetTpInfoParam();
 
 private:
     MAKE_ENUM(InnerStatus,
