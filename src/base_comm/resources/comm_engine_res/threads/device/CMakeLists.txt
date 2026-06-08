@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     aicpu_thread_process.cc
+    aicpu_thread_kernel.cc
 )
 
 if(TARGET ccl_kernel)
