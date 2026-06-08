@@ -35,12 +35,12 @@ protected:
         std::cout << "1";
         MOCKER_CPP(&SocketHandleManager::Create)
             .stubs()
-            .with(mockcpp::any(), mockcpp::any())
+            .with(any(), any())
             .will(returnValue(hccpSocketHandle));
         std::cout << "2";
         MOCKER_CPP(&SocketHandleManager::Get)
             .stubs()
-            .with(mockcpp::any(), mockcpp::any())
+            .with(any(), any())
             .will(returnValue(hccpSocketHandle));
         std::cout << "3";
         SetLinks();

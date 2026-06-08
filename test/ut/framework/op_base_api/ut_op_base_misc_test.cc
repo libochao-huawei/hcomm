@@ -19,7 +19,7 @@ public:
         // 将enableEntryLog默认返回为true
         MOCKER(GetExternalInputHcclEnableEntryLog)
             .stubs()
-            .with(mockcpp::any())
+            .with(any())
             .will(returnValue(true));
     }
     

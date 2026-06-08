@@ -94,12 +94,12 @@ TEST_F(AllGatherMix_Opbase_Test, ut_HcclAllGatherOutPlace_mix_ranksize_1)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCallbackTask::CallbackRegStream)
     .stubs()
-    .with(mockcpp::any())
+    .with(any())
     .will(returnValue(HCCL_SUCCESS));
     s32 portNum = -1;
     MOCKER(hrtGetHccsPortNum)
     .stubs()
-    .with(mockcpp::any(), outBound(portNum))
+    .with(any(), outBound(portNum))
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitPreResource)
     .stubs()
@@ -109,7 +109,7 @@ TEST_F(AllGatherMix_Opbase_Test, ut_HcclAllGatherOutPlace_mix_ranksize_1)
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::RegisterToHeartBeat, HcclResult(HcclCommunicator::*)())
     .stubs()
-    .with(mockcpp::any())
+    .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = HCCL_SUCCESS;

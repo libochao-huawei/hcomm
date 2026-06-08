@@ -34,7 +34,7 @@ protected:
         socketHandle = new int(0);
         MOCKER(HrtRaSocketInit)
         .stubs()
-        .with(mockcpp::any(), mockcpp::any())
+        .with(any(), any())
         .will(returnValue(socketHandle));
     }
 

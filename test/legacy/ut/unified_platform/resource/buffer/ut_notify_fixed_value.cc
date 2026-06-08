@@ -51,7 +51,7 @@ TEST_F(NotifyFixedValueTest, notify_fixed_value_get_addr_and_size)
     void* fakeAddr = nullptr;
     MOCKER(HrtMalloc)
         .stubs()
-        .with(mockcpp::any(), mockcpp::any())
+        .with(any(), any())
         .will(returnValue(fakeAddr));
  
     NotifyFixedValue notifyFixedValue;

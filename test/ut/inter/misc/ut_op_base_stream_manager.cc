@@ -37,7 +37,7 @@ protected:
         s32 portNum = 7;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(mockcpp::any(), outBound(portNum))
+            .with(any(), outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         master = Stream(StreamType::STREAM_TYPE_OFFLINE);
         master.SetMode(1);

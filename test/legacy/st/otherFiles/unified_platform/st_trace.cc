@@ -45,7 +45,7 @@ TEST(TraceTest, save_test)
     auto size = sizeof(buffer);
     MOCKER(TraceSubmit)
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(true));
     Trace trace;
     trace.Save(buffer);

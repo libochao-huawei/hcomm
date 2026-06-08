@@ -96,7 +96,7 @@ TEST(CcuInsGroupTest, should_return_success_when_calling_getCtxSignature)
     ctxSignature.Append("a");
     MOCKER(GenerateCcuCtxSignature)
         .stubs()
-        .with(outBound(ctxSignature), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .with(outBound(ctxSignature), any(), any(), any())
         .will(returnValue(HcclResult::HCCL_SUCCESS));
 
     // check

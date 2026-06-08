@@ -18,13 +18,13 @@ public:
         // 将enableEntryLog默认返回为true
         MOCKER(GetExternalInputHcclEnableEntryLog)
             .stubs()
-            .with(mockcpp::any())
+            .with(any())
             .will(returnValue(true));
         // MOCK掉对communicator层的依赖，保证分层测试
         HcclCommunicator commun_mock;
         MOCKER_CPP_VIRTUAL(commun_mock, &HcclCommunicator::SendOutPlace)
             .stubs()
-            .with(mockcpp::any())
+            .with(any())
             .will(returnValue(HCCL_SUCCESS));
     }
     void TearDown() override {
@@ -150,7 +150,7 @@ TEST_F(HcclSendTest, Ut_HcclSend_When_GroupModeSuccess_Expect_ReturnIsHCCL_SUCCE
 {
     MOCKER(taskAppend)
         .stubs()
-        .with(mockcpp::any(), mockcpp::any())
+        .with(any(), any())
         .will(returnValue(HCCL_SUCCESS));
     UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
     int destRank = 1;

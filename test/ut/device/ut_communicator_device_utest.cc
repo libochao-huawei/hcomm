@@ -43,7 +43,7 @@ protected:
         s32 portNum = -1;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(mockcpp::any(), outBound(portNum))
+            .with(any(), outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }

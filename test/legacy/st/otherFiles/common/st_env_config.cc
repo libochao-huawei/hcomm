@@ -93,13 +93,13 @@ protected:
     {
         MOCKER(getenv)
             .stubs()
-            .with(mockcpp::any())
+            .with(any())
             .will(invoke(getenv_stub));
 
         char c = '1';
         MOCKER(realpath)
             .stubs()
-            .with(mockcpp::any())
+            .with(any())
             .will(returnValue(&c));
 
         MOCKER(HrtGetDeviceType)
@@ -195,13 +195,13 @@ TEST_F(EnvConfigTest, parse_env_config_should_success2)
 
     MOCKER(getenv)
     .stubs()
-    .with(mockcpp::any())
+    .with(any())
     .will(invoke(getenv_stub));
 
     char c = '1';
     MOCKER(realpath)
     .stubs()
-    .with(mockcpp::any())
+    .with(any())
     .will(returnValue(&c));
 
     MOCKER(HrtGetDeviceType)

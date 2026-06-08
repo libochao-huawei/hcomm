@@ -272,7 +272,7 @@ TEST_F(AclgraphCallbackTest, InsertNewTag_CallbackRegistration)
 
     MOCKER(aclmdlRIDestroyRegisterCallback)
         .stubs()
-        .with(mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .with(any(), any(), any())
         .will(returnValue(ACL_SUCCESS));
 
     // 构造 OpParam（stream 需要有合法 .ptr() 避免空指针）

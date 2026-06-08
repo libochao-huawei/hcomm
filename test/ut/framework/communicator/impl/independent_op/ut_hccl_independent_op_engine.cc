@@ -81,7 +81,7 @@ void LocalCopyFfts(ThreadHandle thread) {
 
     MOCKER(GetExternalInputHcclEnableFfts)
     .stubs()
-    .with(mockcpp::any())
+    .with(any())
     .will(returnValue(true));
 
     DevType deviceType = DevType::DEV_TYPE_910B;
@@ -92,12 +92,12 @@ void LocalCopyFfts(ThreadHandle thread) {
 
     MOCKER(GetExternalInputHcclAicpuUnfold)
     .stubs()
-    .with(mockcpp::any())
+    .with(any())
     .will(returnValue(false));
 
     MOCKER(GetWorkflowMode)
     .stubs()
-    .with(mockcpp::any())
+    .with(any())
     .will(returnValue(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
 
     DispatcherCtxPtr ctx;

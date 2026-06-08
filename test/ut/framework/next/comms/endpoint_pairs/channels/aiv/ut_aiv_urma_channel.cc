@@ -84,11 +84,11 @@ TEST_F(AivUrmaChannelTest, Ut_Resume_WhenBuildsMocked_Returns_SUCCESS)
 
     MOCKER_CPP(&AivUrmaChannel::BuildConnection, HcclResult(AivUrmaChannel::*)())
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&AivUrmaChannel::BuildAivUrmaTransport, HcclResult(AivUrmaChannel::*)())
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(HCCL_SUCCESS));
 
     EXPECT_EQ(ch.Resume(), HCCL_SUCCESS);
@@ -101,19 +101,19 @@ TEST_F(AivUrmaChannelTest, Ut_Init_WhenBuildsMocked_Returns_SUCCESS)
 
     MOCKER_CPP(&AivUrmaChannel::ParseInputParam, HcclResult(AivUrmaChannel::*)())
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&AivUrmaChannel::BuildSocket, HcclResult(AivUrmaChannel::*)())
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&AivUrmaChannel::BuildAttr, HcclResult(AivUrmaChannel::*)())
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&AivUrmaChannel::BuildConnection, HcclResult(AivUrmaChannel::*)())
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&AivUrmaChannel::BuildBuffer,
         HcclResult(AivUrmaChannel::*)(std::vector<std::shared_ptr<Hccl::Buffer>> &))
@@ -121,7 +121,7 @@ TEST_F(AivUrmaChannelTest, Ut_Init_WhenBuildsMocked_Returns_SUCCESS)
         .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&AivUrmaChannel::BuildAivUrmaTransport, HcclResult(AivUrmaChannel::*)())
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(HCCL_SUCCESS));
 
     EXPECT_EQ(ch.Init(), HCCL_SUCCESS);
@@ -159,7 +159,7 @@ TEST_F(AivUrmaChannelTest, Ut_BuildSocket_WhenSocketNull_GetsSocketFromSocketMgr
 
     MOCKER_CPP(&SocketMgr::GetSocket)
         .stubs()
-        .with(mockcpp::any(), outBound(&socket))
+        .with(any(), outBound(&socket))
         .will(returnValue(HCCL_SUCCESS));
 
     EXPECT_EQ(ch.BuildSocket(), HCCL_SUCCESS);
@@ -234,7 +234,7 @@ TEST_F(AivUrmaChannelTest, Ut_GetStatus_WhenTransportStatusTimeout_Returns_SOCKE
 
     MOCKER_CPP(&Socket::GetAsyncStatus, SocketStatus(Socket::*)())
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(fakeSocketStatus));
 
     EXPECT_EQ(ch.GetStatus(), ChannelStatus::SOCKET_TIMEOUT);
@@ -692,7 +692,7 @@ TEST_F(AivUrmaTransportTest, Ut_GetStatus_WhenSocketTimeout_Returns_SOCKET_TIMEO
 
     MOCKER_CPP(&Socket::GetAsyncStatus, SocketStatus(Socket::*)())
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(fakeSocketStatus));
 
     EXPECT_EQ(transport->GetStatus(), TransportStatus::SOCKET_TIMEOUT);

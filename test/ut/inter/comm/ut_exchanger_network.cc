@@ -62,12 +62,12 @@ TEST_F(ExchangerNetworkTest, ut_init_rdma)
 {   
     MOCKER(HrtRaRdmaInitWithAttr)
     .stubs()
-    .with(mockcpp::any())
+    .with(any())
     .will(invoke(stub_HrtRaRdmaInitWithAttr));
     
     MOCKER(HrtRaRdmaInit)
     .stubs()
-    .with(mockcpp::any())
+    .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
     s32 ret = HCCL_SUCCESS;

@@ -43,13 +43,13 @@ protected:
         s32 portNum = 7;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(mockcpp::any(), outBound(portNum))
+            .with(any(), outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         g_stubDevType = DevType::DEV_TYPE_910B;
         MockGetSendRecvCnt();
         MOCKER(halGetDeviceInfo)
             .stubs()
-            .with(mockcpp::any())
+            .with(any())
             .will(invoke(StubhalGetDeviceInfo));
         MOCKER(QuerySqStatusByType)
             .stubs()

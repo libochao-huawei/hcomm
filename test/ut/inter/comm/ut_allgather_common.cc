@@ -220,7 +220,7 @@ protected:
         s32 portNum = 7;
         MOCKER(hrtGetHccsPortNum)
             .stubs()
-            .with(mockcpp::any(), outBound(portNum))
+            .with(any(), outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&Heartbeat::Init)
         .stubs()

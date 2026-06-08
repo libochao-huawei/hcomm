@@ -724,7 +724,7 @@ TEST_F(TaskExceptionTest, St_PrintCommAivInfo_When_GetDevice_Fail_Expect_Ret_HCC
 {
     MOCKER(hrtGetDevice)
         .stubs()
-        .with(mockcpp::any())
+        .with(any())
         .will(returnValue(HCCL_E_INTERNAL));
 
     u32 deviceLogicId = 0;

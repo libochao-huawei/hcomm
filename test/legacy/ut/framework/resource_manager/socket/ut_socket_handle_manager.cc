@@ -31,7 +31,7 @@ protected:
         hccpSocketHandle = new int(0);
         MOCKER(HrtRaSocketInit)
         .stubs()
-        .with(mockcpp::any(), mockcpp::any())
+        .with(any(), any())
         .will(returnValue(hccpSocketHandle));
 
         BasePortType basePortType(PortDeploymentType::P2P, ConnectProtoType::UB);
