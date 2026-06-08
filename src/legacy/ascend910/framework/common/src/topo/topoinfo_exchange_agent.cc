@@ -92,8 +92,7 @@ HcclResult TopoInfoExchangeAgent::Setup()
         u32 grpIndex = localRankInfo_.rank / TOPO_MAX_GROUP_SIZE;
         grpLeader_ = grpLeaderInfo_.GroupLeaderList[grpIndex];
     } else {
-        CHK_RET(DetectClusterTopoInfo(socket_, clusterTopoInfo_));
- 
+        CHK_RET(DetectClusterTopoInfo(socket_, clusterTopoInfo_)); 
         ret = VerifyClusterInfo(clusterTopoInfo_);
         if (ret != HCCL_SUCCESS) {
             auto current = g_broadcastStage.load(std::memory_order_acquire);
@@ -831,7 +830,6 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterBackupDeviceIP(RankTable_t &clust
                     errormessage.c_str());
                 return HCCL_E_PARA;
             }
-
         }
     }
     return HCCL_SUCCESS;
@@ -944,7 +942,6 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
                 errormessage.c_str());
             return HCCL_E_PARA;
         }
-
 
         auto iter = superPodSrvIdMap.find(rankInfo[i].superPodId);
         if (iter == superPodSrvIdMap.end()) {

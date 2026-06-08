@@ -2907,7 +2907,7 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], recvCounts[%llu], recvDispls[%llu], "
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], recvCounts[%u], recvDispls[%u], "
             "dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCount, recvCounts, recvDispls,
             GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
@@ -4329,7 +4329,7 @@ HcclResult RunGather(u64 *sendCounts, u64 *sdispls, void *sendDevBuf, GatherPara
         memPara.beginIndex = num * perThreadCount * NUM_TWO;
         memPara.count = perThreadCounts[num];
         memPara.tmpMemSize = memSize;
-        threads[num].reset(new (std::nothrow) std::thread(&GatherMemCopyThread, tmpHostMem.ptr(),
+        threads[num].reset(new (std::nothrow) std::thread(&GatherMemCopyThread, std::ref(tmpHostMem),
             offset[num], std::ref(gatherPara.addrInfo), memPara));
         CHK_PRT_RET(!threads[num], HCCL_ERROR("[Exec][EnqueueGatherAlltoAllV]threads[%u] reset "\
             "failed ", num), HCCL_E_INTERNAL);
@@ -4716,7 +4716,7 @@ HcclResult HcclBatchSendRecvGroup(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
         if (GetExternalInputHcclEnableEntryLog()) {
             char stackLogBuffer[LOG_TMPBUF_SIZE];
             s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                "SendRecvItem : SendRecvType[%d], remoteRank[%d], count[%llu], dataType[%d], buf[%p].",
+                "SendRecvItem : SendRecvType[%d], remoteRank[%u], count[%llu], dataType[%d], buf[%p].",
                 (sendRecvInfo + i)->sendRecvType, (sendRecvInfo + i)->remoteRank, (sendRecvInfo + i)->count,
                 (sendRecvInfo + i)->dataType, (sendRecvInfo + i)->buf);
             CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
@@ -4818,7 +4818,7 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
         if (GetExternalInputHcclEnableEntryLog()) {
             char stackLogBuffer[LOG_TMPBUF_SIZE];
             s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                "SendRecvItem : SendRecvType[%d], remoteRank[%d], count[%llu], dataType[%d], buf[%p].",
+                "SendRecvItem : SendRecvType[%d], remoteRank[%u], count[%llu], dataType[%d], buf[%p].",
                 (sendRecvInfo + i)->sendRecvType, (sendRecvInfo + i)->remoteRank, (sendRecvInfo + i)->count,
                 (sendRecvInfo + i)->dataType, (sendRecvInfo + i)->buf);
             CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));

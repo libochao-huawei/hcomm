@@ -220,7 +220,7 @@ HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, co
                 singleSubCommTransport.supportDataReceivedAck, singleSubCommTransport.linkMode, 
                 singleSubCommTransport.enableUseOneDoorbell, threadStr,
                 connectSockets, inputMem, outputMem, transportRequest.isUsedRdma, 
-                std::ref(link), isAicpuModeEn, std::ref(subCommLinkPara.linkResult[i]), netDevCtx,
+                std::ref(link), isAicpuModeEn, std::ref(subCommLinkPara.linkResult[i]), std::ref(netDevCtx),
                 transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
                 isIndOp, indOpMem, opType, false));
         CHK_SMART_PTR_NULL(subCommLinkPara.linkThreads[i]); // 异常时其他线程待处理
@@ -592,7 +592,7 @@ HcclResult TransportManager::AllocBatchSendRecvLinks(HcclSendRecvItem *sendRecvI
     struct LinkPoolPara senderLinkPoolPara(singleSubCommTransport, "sender", senderList);
     struct LinkPoolPara receiverLinkPoolPara(singleSubCommTransport, "receiver", receiverList);
     for (u32 i = 0; i < senderLinkPoolPara.linkThreads.size(); ++i) {
-        senderLinkPoolPara.linkThreads[i].reset(new (std::nothrow) std::thread(
+        senderLinkPoolPara.linkThreads[i].reset(new (std::nothrow) std::ref(
             &TransportManager::CreateBatchSendRecvLinks, this, 
             tag, std::ref(transMem), std::ref(senderLinkPoolPara),
             isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp
@@ -774,7 +774,7 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                             singleSubCommTransport.enableUseOneDoorbell, threadStr, connectSockets,
                             inputMem, outputMem, transportRequest.isUsedRdma,
                             std::ref(singleSubCommTransport.links[linkIdx]), isAicpuModeEn,
-                            std::ref(linkResult[threadsRapplyNum]), netDevCtx,
+                            std::ref(linkResult[threadsRapplyNum]), std::ref(netDevCtx),
                             transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
                             isIndOp, indOpMem, opType, chooseAivRoceDirect));
                         CHK_SMART_PTR_NULL(linkThreads[threadsRapplyNum]); // 异常时其他线程待处理
@@ -932,7 +932,7 @@ HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportI
                             reqSingleSubComm.supportDataReceivedAck, reqSingleSubComm.linkMode,
                             reqSingleSubComm.enableUseOneDoorbell, threadStr, connectSockets, inputMem, outputMem,
                             transportRequest.isUsedRdma, std::ref(respSingleSubComm.links[rankIndex]), isAicpuModeEn,
-                            std::ref(linkResult[threadsRapplyNum]), netDevCtx,
+                            std::ref(linkResult[threadsRapplyNum]), std::ref(netDevCtx),
                             transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
                             isIndOp, indOpMem, opType, false));
                         CHK_SMART_PTR_NULL(linkThreads[threadsRapplyNum]); // 异常时其他线程待处理
@@ -1361,8 +1361,8 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
 
         char errorLogBuffer[LOG_TMPBUF_SIZE];
         s32 stringRet = snprintf_s(errorLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                             "createLink para:rank[%u]-localUserrank[%u]-localIpAddr[%s/%u], "
-                             "remoteRank[%u]-remoteUserrank[%u]-remoteIpAddr[%s/%u], "
+                             "createLink para:rank[%u]-localUserrank[%u]-localIpAddr[%s/%d], "
+                             "remoteRank[%u]-remoteUserrank[%u]-remoteIpAddr[%s/%d], "
                              "machineType[%d], linkMode[%d], isUsedRdma[%d], tag[%s]",
                              userRank_, rankInfoList_[userRank_].worldRank, rankInfoList_[userRank_].serverId.c_str(), rankInfoList_[userRank_].devicePhyId,
                              remoteRank, rankInfoList_[remoteRank].worldRank, rankInfoList_[remoteRank].serverId.c_str(), rankInfoList_[remoteRank].devicePhyId,
