@@ -108,13 +108,17 @@ HcclResult AicpuTaskCache::AddEntry(const std::string& cacheTag, AicpuTaskCacheE
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTaskCache::IncCacheBytes(const uint64_t entryBytes)
+HcclResult AicpuTaskCache::IncCacheBytes(const std::string& cacheTag, const uint64_t entryBytes)
 {
     std::lock_guard<std::shared_time_mutex> lock(cacheMtx_); // 写锁
 
     cacheBytes_ += entryBytes;
-    HCCL_INFO("[AicpuTaskCache][IncCacheBytes] add entryBytes[%llu] and get cacheBytes[%llu] (maxCacheBytes[%llu])",
-        entryBytes, cacheBytes_, maxCacheBytes_);
+    cacheBytes_ += cacheTag.size();
+    cacheBytes_ += sizeof(AicpuTaskCacheEntry*);
+
+    HCCL_INFO("[AicpuTaskCache][IncCacheBytes] add entryBytes[%llu] + cacheTag[%llu] + AicpuTaskCacheEntry*[%llu] -> "
+        "cacheBytes[%llu] (maxCacheBytes[%llu])",
+        entryBytes, cacheTag.size(), sizeof(AicpuTaskCacheEntry*), cacheBytes_, maxCacheBytes_);
 
     return HCCL_SUCCESS;
 }
@@ -132,12 +136,19 @@ HcclResult AicpuTaskCache::ClearEntry(const std::string& cacheTag)
         CHK_PTR_NULL(entryPtr);
         const uint64_t entryBytes = entryPtr->GetEntryBytes();
 
+        // 计算clear bytes
+        const uint64_t clearBytes = entryBytes + cacheTag.size() + sizeof(AicpuTaskCacheEntry*);
+
         // 更新cache bytes
-        if (cacheBytes_ > entryBytes) {
-            cacheBytes_ -= entryBytes;
+        if (cacheBytes_ > clearBytes) {
+            cacheBytes_ -= clearBytes;
         } else {
             cacheBytes_ = 0;
         }
+        
+        HCCL_INFO("[AicpuTaskCache][ClearEntry] dec entryBytes[%llu] + cacheTag[%llu] + AicpuTaskCacheEntry*[%llu] -> "
+            "cacheBytes[%llu] (maxCacheBytes[%llu])",
+            entryBytes, cacheTag.size(), sizeof(AicpuTaskCacheEntry*), cacheBytes_, maxCacheBytes_);
 
         // 释放cache entry
         delete entryPtr;

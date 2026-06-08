@@ -63,7 +63,7 @@ HcommResult HcommAicpuTsTaskCacheSubmit(const char* tag, void** addrs, uint64_t*
 
         // 更新cache空间消耗
         const uint64_t entryBytes = AicpuTaskCacheManager::cacheEntryPtr->GetEntryBytes();
-        CHK_RET(AicpuTaskCacheManager::aicpuTaskCache.IncCacheBytes(entryBytes));
+        CHK_RET(AicpuTaskCacheManager::aicpuTaskCache.IncCacheBytes(AicpuTaskCacheManager::cacheTag, entryBytes));
     } else if (!AicpuTaskCacheManager::isCacheMiss) { // cache hit
         CHK_PTR_NULL(AicpuTaskCacheManager::cacheEntryPtr);
 

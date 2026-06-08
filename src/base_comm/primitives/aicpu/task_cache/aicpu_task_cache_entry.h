@@ -120,7 +120,7 @@ private:
     HcclResult RefreshDbSqe_(const size_t arrayIdx);
 
     // 根据AddrRefreshInfo刷新task地址字段
-    inline HcclResult RefreshTaskAddr_(uint32_t& addrLow, uint32_t& addrHigh, AddrRefreshInfo& addrRefreshInfo,
+    inline HcclResult RefreshTaskAddr_(uint32_t& addrLow, uint32_t& addrHigh, const AddrRefreshInfo& addrRefreshInfo,
         const uint64_t* baseAddrs, const uint64_t* memSizes, const uint32_t count) const
     {
         // 拼接地址
@@ -129,7 +129,7 @@ private:
         CHK_RET(RefreshTaskAddr_(addrLow, addrHigh, addr, addrRefreshInfo, baseAddrs, memSizes, count));
         return HCCL_SUCCESS;
     }
-    HcclResult RefreshTaskAddr_(uint32_t& addrLow, uint32_t& addrHigh, const uint64_t addr, AddrRefreshInfo& addrRefreshInfo,
+    HcclResult RefreshTaskAddr_(uint32_t& addrLow, uint32_t& addrHigh, const uint64_t addr, const AddrRefreshInfo& addrRefreshInfo,
         const uint64_t* baseAddrs, const uint64_t* memSizes, const uint32_t count) const;
 
     // 统计当前cache entry的bytes开销

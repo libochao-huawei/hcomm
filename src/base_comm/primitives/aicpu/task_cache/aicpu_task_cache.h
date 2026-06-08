@@ -29,7 +29,7 @@ public:
 
     // Cache miss
     HcclResult AddEntry(const std::string& cacheTag, AicpuTaskCacheEntry** entryPtrPtr); // 如果cache满了, 则设置nullptr
-    HcclResult IncCacheBytes(const uint64_t entryBytes);
+    HcclResult IncCacheBytes(const std::string& cacheTag, const uint64_t entryBytes);
 
     HcclResult ClearEntry(const std::string& cacheTag);
 

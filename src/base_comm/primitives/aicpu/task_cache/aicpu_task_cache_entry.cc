@@ -15,6 +15,7 @@
 #include "aicpu_task_cache_entry.h"
 
 #include "log.h"
+#include "rma_buffer_lite.h"
 #include "sqe.h"
 #include "sqe_v82.h"
 
@@ -424,19 +425,25 @@ HcclResult AicpuTaskCacheEntry::RefreshWqeTasks_(const size_t arrayIdx, const ui
     const uint64_t* memSizes, const uint32_t count)
 {
     // 校验arrayIdx
-    CHK_PRT_RET(arrayIdx >= wqeTaskArrays_.size() || arrayIdx >= sqeSrcAddrRefreshInfoArrays_.size() ||
-        arrayIdx >= sqeDstAddrRefreshInfoArrays_.size(),
+    CHK_PRT_RET(arrayIdx >= wqeTaskArrays_.size() || arrayIdx >= wqeSrcAddrRefreshInfoArrays_.size() ||
+        arrayIdx >= wqeDstAddrRefreshInfoArrays_.size() || arrayIdx >= ubTransportLiteImplPtrs_.size(),
         HCCL_ERROR("[AicpuTaskCacheEntry][RefreshWqeTasks_] arrayIdx[%u] >= wqeTaskArrays_.size[%u] / "
-            "sqeSrcAddrRefreshInfoArrays_.size[%u] / sqeDstAddrRefreshInfoArrays_.size[%u]",
-            arrayIdx, wqeTaskArrays_.size(), sqeSrcAddrRefreshInfoArrays_.size(), sqeDstAddrRefreshInfoArrays_.size()),
+            "wqeSrcAddrRefreshInfoArrays_.size[%u] / wqeDstAddrRefreshInfoArrays_.size[%u] / "
+            "ubTransportLiteImplPtrs_.size[%u]",
+            arrayIdx, wqeTaskArrays_.size(), wqeSrcAddrRefreshInfoArrays_.size(), wqeDstAddrRefreshInfoArrays_.size(),
+            ubTransportLiteImplPtrs_.size()),
         HCCL_E_INVALID_PARAM);
     
     // 逐个刷新地址
     std::vector<WqeTask>& wqeTasks = wqeTaskArrays_[arrayIdx];
+    const std::vector<AddrRefreshInfo>& wqeSrcAddrRefreshInfoArray = wqeSrcAddrRefreshInfoArrays_[arrayIdx];
+    const std::vector<AddrRefreshInfo>& wqeDstAddrRefreshInfoArray = wqeDstAddrRefreshInfoArrays_[arrayIdx];
+    UbTransportLiteImpl* ubTransportLitePtr = ubTransportLiteImplPtrs_[arrayIdx];
+    CHK_PTR_NULL(ubTransportLitePtr);
     for (size_t wqeIdx = 0; wqeIdx < wqeTasks.size(); wqeIdx++) {
         WqeTask& wqeTask = wqeTasks[wqeIdx];
-        AddrRefreshInfo& srcAddrRefreshInfo = sqeSrcAddrRefreshInfoArrays_[arrayIdx][wqeIdx];
-        AddrRefreshInfo& dstAddrRefreshInfo = sqeDstAddrRefreshInfoArrays_[arrayIdx][wqeIdx];
+        const AddrRefreshInfo& srcAddrRefreshInfo = wqeSrcAddrRefreshInfoArray[wqeIdx];
+        const AddrRefreshInfo& dstAddrRefreshInfo = wqeDstAddrRefreshInfoArray[wqeIdx];
 
         // 根据WQE类型刷新对应地址字段及token id/value
         UdmaSqeCommon* wqeCommonPtr = (UdmaSqeCommon*)(&wqeTask);
@@ -460,12 +467,13 @@ HcclResult AicpuTaskCacheEntry::RefreshWqeTasks_(const size_t arrayIdx, const ui
                     dstAddr, dstAddrRefreshInfo, baseAddrs, memSizes, count));
                 
                 // 刷新src token id (注意: src不需要刷新token value)
+                // 注意: 参考hccl_api_data_aicpu_ts.cc (例如HcommWriteOnThread), 获取src token id
+                // 注意: 无需通过ubTransportLitePtr->GetRmaBufSlicelite(locRmaBuf)构造Hccl::RmaBufSliceLite locRmaBufSlicelite,
+                //     再调用locRmaBufSlicelite.GetTokenId()获取token id (一定与Hccl::RmaBufferLite locRmaBuf的token id相同)
                 const uint32_t len = wqeTask.wqeWrite.u.sge.length;
                 Hccl::RmaBufferLite locRmaBuf;
-                // CHK_RET(ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(srcAddr), len, locRmaBuf)); // TODOSSY
-                RmaBufSliceLite locRmaBufSlicelite;
-                // locRmaBufSlicelite = ubTransportLitePtr->GetRmaBufSlicelite(locRmaBuf); // TODOSSY
-                const uint32_t newSrcTokenId = locRmaBufSlicelite.GetTokenId();
+                CHK_RET(ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(srcAddr), len, locRmaBuf));
+                const uint32_t newSrcTokenId = locRmaBuf.GetTokenId();
                 HCCL_INFO("[AicpuTaskCacheEntry][RefreshWqeTasks_] refresh loc tokenId from %u to %u",
                     wqeTask.wqeWrite.u.sge.tokenId, newSrcTokenId);
                 wqeTask.wqeWrite.u.sge.tokenId = newSrcTokenId;
@@ -678,7 +686,7 @@ HcclResult AicpuTaskCacheEntry::RefreshDbSqe_(const size_t arrayIdx)
 }
 
 HcclResult AicpuTaskCacheEntry::RefreshTaskAddr_(uint32_t& addrLow, uint32_t& addrHigh, const uint64_t addr,
-    AddrRefreshInfo& addrRefreshInfo, const uint64_t* baseAddrs, const uint64_t* memSizes, const uint32_t count) const
+    const AddrRefreshInfo& addrRefreshInfo, const uint64_t* baseAddrs, const uint64_t* memSizes, const uint32_t count) const
 {
     if (!addrRefreshInfo.needRefresh) {
         return HCCL_SUCCESS;
