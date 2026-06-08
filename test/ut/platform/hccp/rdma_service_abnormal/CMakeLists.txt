@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-set(CTX_DIR ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/ctx)
+set(CTX_DIR ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/ctx)
 
 set(rs_ut_abnormal_list
     stub/cmd.c
@@ -28,24 +28,24 @@ set(rs_ut_abnormal_list
     tc_ut_rs_ping.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/crypto/encrypt.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/crypto/kmc_crypt.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_rdma.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_ping.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_ping_roce.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_rdma.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_ping.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_ping_roce.c
     ${CTX_DIR}/rs_ping_urma.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_ping_inner.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_nda.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_comm.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_drv_sensor.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_drv_rdma.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_epoll.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_drv_socket.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/dl_ibverbs_function.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/dl_nda_function.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/hccp_dl.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_socket.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_ping_inner.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_nda.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_comm.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_drv_sensor.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_drv_rdma.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_epoll.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_drv_socket.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/dl_ibverbs_function.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/dl_nda_function.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/hccp_dl.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/rs_socket.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/roce_user/stub_hns_roce_u_cmd.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/common/dl_hal_function.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/common/dl_hal_function.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/devdrv_runtime_api.c
     ${CTX_DIR}/dl_ccu_function.c
     ${CTX_DIR}/dl_urma_function.c
@@ -73,19 +73,19 @@ target_include_directories(rs_ut_abnormal PRIVATE
     ${SRC_DIR}/test/ut/platform/hccp/stub/
     ${SRC_DIR}/test/ut/platform/hccp/stub/roce_user
     ${SRC_DIR}/test/ut/depends/include
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/tlv
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/ctx/product
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/ctx
-    ${SRC_DIR}/src/base_comm/resources/hccp/inc/private/network
-    ${SRC_DIR}/src/base_comm/resources/hccp/inc/network
-    ${SRC_DIR}/src/base_comm/resources/hccp/common
-    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/net_adapt
-    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/inc
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/tlv
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/ctx/product
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/ctx
+    ${SRC_DIR}/src/base_comm/resource/hccp/inc/private/network
+    ${SRC_DIR}/src/base_comm/resource/hccp/inc/network
+    ${SRC_DIR}/src/base_comm/resource/hccp/common
+    ${SRC_DIR}/src/base_comm/resource/hccp/external_depends/net_adapt
+    ${SRC_DIR}/src/base_comm/resource/hccp/external_depends/inc
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/ubengine
-    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/ccu
-    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/nda
+    ${SRC_DIR}/src/base_comm/resource/hccp/external_depends/ubengine
+    ${SRC_DIR}/src/base_comm/resource/hccp/external_depends/ccu
+    ${SRC_DIR}/src/base_comm/resource/hccp/external_depends/nda
     ${CANN_3RD_LIB_PATH}/hcomm_utils/host/include/tls_adp
 )
 

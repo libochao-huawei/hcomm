@@ -17,8 +17,8 @@ add_executable(hccl_utest_comms_ccu_rep_loop ${src_to_test_list})
 
 target_include_directories(hccl_utest_comms_ccu_rep_loop PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
-    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/loop
-    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
+    ${HCCL_CODE_ROOT}/src/base_comm/resource/comm_engine/ccu/ccu_representation/reps/loop
+    ${HCCL_CODE_ROOT}/src/base_comm/resource/comm_engine/ccu/ccu_microcode
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/common/exception
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
 )
