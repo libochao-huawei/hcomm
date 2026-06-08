@@ -73,8 +73,8 @@ set(HCOMM_PLATFORM_INCLUDE_LIST
     ${HCOMM_CODE_PLATFORM}/inc/adapter/host
     ${HCOMM_CODE_PLATFORM}/common
     ${HCOMM_CODE_PLATFORM}/task/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/external_depends/inc/log
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc/network/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/hccp/external_depends/inc/log
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/hccp/inc/network/
 )
 
 set(HCOMM_COMMON_INCLUDE_LIST
@@ -142,53 +142,56 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/rank_graph
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/resource/engine
 
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/
-    ${HCOMM_CODE_ROOT}/src/coll_communicator
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/communicator
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/communicator/device
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/remote/rank_pairs
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/profiling
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/profiling/aicpu
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/profiling/host
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/taskException
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/taskException/aicpu
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/taskException/host
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_engine/threads
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_engine/threads/device/
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/communicator
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/communicator/device
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/remote/rank_pairs
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/remote/rank_pairs/endpoint_pair
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/comm_dfx
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/comm_dfx/profiling
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/comm_dfx/profiling/aicpu
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/comm_dfx/profiling/host
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/comm_dfx/taskException
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/comm_dfx/taskException/aicpu
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/comm_dfx/taskException/host
     ${HCOMM_CODE_FRAMEWORK}/device/framework
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/slaves
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/sockets/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoints/
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_mems
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoints/dfx
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/reged_mems/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/
-    ${HCOMM_CODE_ROOT}/src/base_comm/primitives/api_c_adpt/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/channel/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/channel/slaves
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/endpoint
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/endpoint/channels
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/channel/aicpu/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/endpoint/sockets/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/endpoint/
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/endpoint
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_mem
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine/engine_ctxs
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/endpoint/dfx
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_mem/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/endpoint/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/api_c_adpt/
     ${HCOMM_CODE_ROOT}/src/base_comm/common/
     ${HCOMM_CODE_ROOT}/src/base_comm/common/device
     ${HCOMM_CODE_ROOT}/src/legacy/ascend910/common/stream
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp/inc/network
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/hccp/inc
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/hccp/inc/network
 
     # ccu 头文件
     ${HCOMM_CODE_ROOT}/pkg_inc/hcomm/ccu/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/adpt/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_engine/ccu/adpt/
     ${HCOMM_CODE_ROOT}/src/base_comm/common/
  
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/pub_inc/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_transport/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_engine/ccu/pub_inc/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_engine/ccu/ccu_device/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_engine/ccu/ccu_device/ccu_comp/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_engine/ccu/ccu_device/ccu_comp/ccu_channel/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_engine/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_engine/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resource/comm_engine/ccu/ccu_transport/
 )
 
 set(HCOMM_LEGACY_INCLUDE_LIST

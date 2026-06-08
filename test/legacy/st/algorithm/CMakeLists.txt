@@ -140,7 +140,7 @@ set(legacy_platform_include_list
     ${HCOMM_LEGACY_PLATFORM}/ccu/ccu_device/ccu_component/ccu_pfe
     ${HCOMM_LEGACY_PLATFORM}/ccu/dfx
     ${HCOMM_LEGACY_PLATFORM}/aiv
-    ${HCOMM_ROOT_PATH}/src/base_comm/resources/hccp/inc/network
+    ${HCOMM_ROOT_PATH}/src/base_comm/resource/hccp/inc/network
 
     ${HCOMM_LEGACY_PLATFORM}
     ${HCOMM_LEGACY_PLATFORM}/common
@@ -228,7 +228,7 @@ set(checker_include_list
 )
 
 set(HCOMM_PLATFORM_INCLUDE_LIST
-    ${HCOMM_ROOT_PATH}/src/base_comm/resources/hccp/inc/network
+    ${HCOMM_ROOT_PATH}/src/base_comm/resource/hccp/inc/network
 )
 
 # 设置全局包含路径，让所有子目录继承

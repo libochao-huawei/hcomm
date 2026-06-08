@@ -17,7 +17,7 @@
 #include "adapter_hal_pub.h"
 #include "adapter_rts.h"
 #include "op_base_v2.h"
-#include "host/host_cpu_roce_channel.h"
+#include "channel/host/host_cpu_roce_channel.h"
 #include "hccl_comm_pub.h"
 #include "op_base.h"
 #include "dlprof_function.h"

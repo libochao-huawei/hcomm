@@ -23,6 +23,12 @@
 #include "launch_device.h"
 #include "hccl_aiv.h"
 
+// CANN API compatibility: different versions use different function names
+#ifndef aclrtCacheLastTaskExtendInfo
+#define aclrtCacheLastTaskExtendInfo aclrtCacheLastTaskOpInfo
+#endif
+
+
 using namespace std;
 
 namespace hccl {
