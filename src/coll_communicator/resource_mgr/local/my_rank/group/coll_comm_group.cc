@@ -15,7 +15,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <cstddef>
 
 #include "hccl_aicpu_interface.h"
 #include "coll_alg_utils.h"
@@ -397,6 +396,7 @@ HcclResult HcclAicpuKernelLaunch(HcclComm comm, HcclOpDesc opInfo, HcclKernelFun
     void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream)
 {
     CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(args);
     CHK_PTR_NULL(userStream);
 
     if (argSize > 0 && args == nullptr) {
@@ -517,7 +517,7 @@ static HcclResult LaunchNotifyWaitToThread(
     param.notifyIdx = dstNotifyIdx;
     param.timeOut = 1827;
     aclrtParamHandle paraHandle;
-    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(ThreadNotifyRecordParam), &paraHandle);
+    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(ThreadNotifyWaitParam), &paraHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS,
         HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, "
                    "kernelName:%s",
@@ -581,7 +581,7 @@ static HcclResult LaunchP2pExec(HcclComm comm, aclrtStream usrStream, HcclKernel
     param.sendRecvStream = sendRecvStream;
 
     aclrtParamHandle paraHandle;
-    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(ThreadNotifyRecordParam), &paraHandle);
+    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(P2pGroupAicpuKernelParam), &paraHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS,
         HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, "
                    "kernelName:%s",

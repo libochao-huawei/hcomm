@@ -10,6 +10,7 @@
 #ifndef COLL_COMM_GROUP_UTILS_H
 #define COLL_COMM_GROUP_UTILS_H
 
+#include <cstddef>
 #include <deque>
 #include <vector>
 #include <hccl/hccl_types.h>
