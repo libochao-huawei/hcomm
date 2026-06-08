@@ -24,3 +24,5 @@ if(TARGET hcomm)
         ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
+
+add_subdirectory(resource)
