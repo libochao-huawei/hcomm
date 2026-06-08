@@ -33,7 +33,7 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
 │   │   ├── common                       # 基础通信层公共基础功能目录
 │   │   ├── primitives                   # 基础通信原语
 │   │   └── resources                    # 基础通信资源
-│   ├── coll_communicator                # 集合通信域管理
+│   ├── coll_communicator_mgr            # 集合通信域管理
 │   │   ├── api_c_adpt                   # C接口适配
 │   │   ├── common                       # 集合通信层公共基础功能目录
 │   │   ├── communicator                 # 通信域
