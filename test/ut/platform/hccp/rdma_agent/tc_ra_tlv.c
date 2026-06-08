@@ -29,21 +29,21 @@ void TcRaTlvInit() {
 
     mocker(memcpy_s, 10 , 0);
     mocker(RaHdcTlvInit, 100 , -1);
-    ret = RaTlvInit(&initInfo, &bufferSize, &tlvHandleTmp);
+    ret = RaTlvInit(&initInfo, &bufferSize, (void **)&tlvHandleTmp);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker(RaHdcTlvInit, 100 , 0);
     mocker(memcpy_s, 10 , 0);
     mocker(pthread_mutex_init, 100 , -1);
-    ret = RaTlvInit(&initInfo, &bufferSize, &tlvHandleTmp);
+    ret = RaTlvInit(&initInfo, &bufferSize, (void **)&tlvHandleTmp);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker(RaHdcTlvInit, 100 , 0);
     mocker(memcpy_s, 10 , 0);
     mocker(pthread_mutex_init, 100 , 0);
-    ret = RaTlvInit(&initInfo, &bufferSize, &tlvHandleTmp);
+    ret = RaTlvInit(&initInfo, &bufferSize, (void **)&tlvHandleTmp);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
     free(tlvHandleTmp);

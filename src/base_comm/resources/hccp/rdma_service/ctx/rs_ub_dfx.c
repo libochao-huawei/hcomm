@@ -206,8 +206,8 @@ int RsEpollEventJfcInHandle(struct rs_cb *rsCb, int fd)
         return -ENODEV;
     }
 
-    RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rsCb->rdevList, list, struct RsUbDevCb);
-    for (; (&devCbCurr->list) != &rsCb->rdevList;
+    RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rsCb->udevList, list, struct RsUbDevCb);
+    for (; (&devCbCurr->list) != &rsCb->udevList;
         devCbCurr = devCbNext, devCbNext = list_entry(devCbNext->list.next, struct RsUbDevCb, list)) {
         ret = RsHandleJfcEpollEvent(devCbCurr, fd);
         if (ret == -ENODEV) {
@@ -317,8 +317,8 @@ int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd)
         return -ENODEV;
     }
 
-    RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rsCb->rdevList, list, struct RsUbDevCb);
-    for (; (&devCbCurr->list) != &rsCb->rdevList;
+    RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rsCb->udevList, list, struct RsUbDevCb);
+    for (; (&devCbCurr->list) != &rsCb->udevList;
         devCbCurr = devCbNext, devCbNext = list_entry(devCbNext->list.next, struct RsUbDevCb, list)) {
         RS_PTHREAD_MUTEX_LOCK(&devCbCurr->mutex);
         if (devCbCurr->urmaCtx != NULL && devCbCurr->urmaCtx->async_fd == fd) {

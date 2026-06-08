@@ -32,6 +32,9 @@ extern int RsGetNdaPcieDbCb(struct RsNdaCb *ndaCb, uint64_t hva, struct NdaPcieD
 extern int RsGetNdaUbDbCb(struct RsNdaCb *ndaCb, uint64_t guidL, uint64_t guidH, struct NdaUbDbCb **ndaDbCb);
 extern int RsNdaCqCreateEx(struct RsRdevCb *rdevCb, struct ibv_cq_init_attr_extend *cqInitAttrEx,
     struct NdaCqInfo *info, void **ibvCqExt);
+extern void *RsNdaUbAlloc(size_t size);
+extern void *RsNdaDbMmap(struct doorbell_map_desc *desc);
+extern int RsNdaDbUnmap(void *ptr, struct doorbell_map_desc *desc);
 
 int RsQueryRdevCbNdaStub(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb)
 {

@@ -11,6 +11,7 @@
 #include "dl_hal_function.h"
 #include "ascend_hal_error.h"
 #include <dlfcn.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define LLT_MAX_HDC_DATA	65536
@@ -20,8 +21,8 @@ int tc_host_hdc_len = 0;
 char tc_device_hdc_memory[LLT_MAX_HDC_DATA] = {0};
 int tc_device_hdc_len = 0;
 
-HDC_SESSION tc_host_hdc_session = 2;
-HDC_SESSION tc_device_hdc_session = 1;
+HDC_SESSION tc_host_hdc_session = (HDC_SESSION)(uintptr_t)2;
+HDC_SESSION tc_device_hdc_session = (HDC_SESSION)(uintptr_t)1;
 
 int tc_host_hdc_flag = 0;
 int tc_device_hdc_flag = 0;
@@ -309,7 +310,7 @@ int AscendHalDlclose(void *handle)
     return 0;
 }
 int halSetUserConfig(unsigned int dev_id, const char *name, unsigned char *buf, unsigned int buf_size);
-void *hal_api_handle = 0xabcd;
+void *hal_api_handle = (void *)(uintptr_t)0xabcd;
 
 struct {
     const char *name;

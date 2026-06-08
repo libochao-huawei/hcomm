@@ -2,6 +2,8 @@
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 
+#include "env_config/env_config.h"
+
 #define private public
 #include "ccu_urma_channel.h"
 #undef private
@@ -29,8 +31,9 @@ TEST_F(CcuUrmaChannelTest, Ut_Clean_When_ImplIsNull_Expect_HCCL_E_PTR) {
 class TestCcuConnection : public CcuConnection {
 public:
     TestCcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-        : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys) {}
+        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys,
+        uint32_t qos = Hccl::UB_QOS_DEFAULT)
+        : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos) {}
     // Do not call Init(); use default base behavior for Clean()
 };
 
@@ -46,7 +49,8 @@ TEST_F(CcuUrmaChannelTest, Ut_Clean_When_ImplIsPresent_Expect_HCCL_SUCCESS) {
     std::vector<CcuJetty *> jettys{};
 
     // Create a test connection (does not call Init)
-    std::unique_ptr<CcuConnection> conn(new TestCcuConnection(locAddr, rmtAddr, channelInfo, jettys));
+    std::unique_ptr<CcuConnection> conn(
+        new TestCcuConnection(locAddr, rmtAddr, channelInfo, jettys, Hccl::UB_QOS_DEFAULT));
 
     // Fake socket pointer (not dereferenced by Clean())
     Hccl::Socket *fakeSocket = reinterpret_cast<Hccl::Socket *>(0x1);
@@ -83,7 +87,7 @@ TEST_F(CcuUrmaChannelTest, Ut_GetStatus_DfxInfo_TEST) {
     CcuChannelInfo channelInfo{};
     std::vector<CcuJetty*> jettys{};
 
-    auto conn = std::make_unique<CcuConnection>(locAddr, rmtAddr, channelInfo, jettys);
+    auto conn = std::make_unique<CcuConnection>(locAddr, rmtAddr, channelInfo, jettys, Hccl::UB_QOS_DEFAULT);
     auto fakeSocket = reinterpret_cast<Hccl::Socket*>(1);
     CcuTransport::CclBufferInfo bufInfo(0x1000, 0x100, 1, 1);
 
