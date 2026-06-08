@@ -34,7 +34,7 @@ inline HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
     return reduceTypeMap[reduceOp];
 }
 
-MAKE_ENUM(TransferType, WRITE, WRITE_REDUCE, WRITE_WITH_NOTIFY, WRITE_REDUCE_WITH_NOTIFY, READ, READ_REDUCE, NOTIFY_RECORD, NOTIFY_WAIT)
+MAKE_ENUM(TransferType, WRITE, WRITE_REDUCE, WRITE_WITH_NOTIFY, WRITE_REDUCE_WITH_NOTIFY, READ, READ_REDUCE, NOTIFY_RECORD)
 
 class BaseTransportLiteImpl {
 public:

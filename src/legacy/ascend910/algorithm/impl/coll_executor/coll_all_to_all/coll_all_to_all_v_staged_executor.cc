@@ -105,6 +105,11 @@ HcclResult CollRunAlltoAllVStaged::CalcScratchMemSize(u64& scratchMemSize)
             topoAttr_.meshAggregationRankSize);
         scratchMemSize = CalAlltoAllVScratchMemSize(workSpaceMemSize);
     } else {
+        if(isAlltoAllZCopyMode_ && topoAttr_.isSingleMeshAggregation) {
+            scratchMemSize = 0;
+            HCCL_INFO("[CollRunAlltoAllVStaged][CalcScratchMemSize] scratchMemSize[%llu]", scratchMemSize);
+            return HCCL_SUCCESS;
+        }
         for (u32 rank = 0; rank < topoAttr_.userRankSize; rank++) {
             u64 workSpaceMemSize = 0;
             tmpUserRankInfo.userRank = rank;

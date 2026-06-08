@@ -461,7 +461,7 @@ void TcSendWr()
     TcCommonTest();
 }
 
-extern memcpy_s(void *dest, size_t destMax, const void *src, size_t count);
+extern int memcpy_s(void *dest, size_t destMax, const void *src, size_t count);
 void TcSendWrlist()
 {
     TcAdpEnvInit();
@@ -662,6 +662,12 @@ void TcGetInterfaceVersion()
     TcCommonTest();
 }
 
+extern int RaRsNotifyCfgSet(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsNotifyCfgGet(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsSendWrListV2(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsSendWrList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsSendWrListExtV2(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsSendWrListExt(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 void TcSetNotifyCfg()
 {
     int result;

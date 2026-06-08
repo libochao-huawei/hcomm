@@ -13,6 +13,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <errno.h>
+#include "securec.h"
 #include "ut_dispatch.h"
 #include "rs_inner.h"
 #include "rs_ub_tp.h"
@@ -31,6 +32,17 @@ extern void RsUbCtxFreeJettyCb(struct RsCtxJettyCb *jettyCb);
 extern int RsCcuDeviceApiInit(void);
 extern int RsOpenCcuSo(void);
 extern void RsCloseCcuSo(void);
+extern int RsEschedProcessEvent(struct rs_cb *rscb, struct event_info *event);
+extern void RsEschedHandleEvent(struct rs_cb *rscb);
+extern void RsEschedAckEvent(struct rs_cb *rscb, struct event_info *event);
+extern int RsNetApiInit(void);
+extern void RsNetApiDeinit(void);
+extern int RsNetAllocJfcId(const char *udevName, unsigned int jfcMode, unsigned int *jfcId);
+extern int RsNetFreeJfcId(const char *udevName, unsigned int jfcMode, unsigned int jfcId);
+extern int RsNetAllocJettyId(const char *udevName, unsigned int jettyMode, unsigned int *jettyId);
+extern int RsNetFreeJettyId(const char *udevName, unsigned int jettyMode, unsigned int jettyId);
+extern int RsNetGetCqeBaseAddr(unsigned int dieId, unsigned long long *cqeBaseAddr);
+extern int RsCcuGetCqeBaseAddr(unsigned int dieId, unsigned long long *cqeBaseAddr);
 
 struct rs_cb stubRsCb;
 struct RsUbDevCb stubDevCb;
@@ -80,13 +92,13 @@ void TcRsGetDevEidInfoNum()
 void TcRsGetDevEidInfoList()
 {
     struct HccpDevEidInfo infoList[5] = {0};
-    unsigned int num = 0;
+    unsigned int count = 0;
     int ret = 0;
 
     mocker_clean();
     mocker_invoke(RsGetRsCb, StubRsGetRsCb, 1);
     mocker(RsUbGetDevEidInfoList, 1, 0);
-    ret = RsGetDevEidInfoList(0, infoList, 0, &num);
+    ret = RsGetDevEidInfoList(0, infoList, 0, count);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }
@@ -185,8 +197,8 @@ void TcRsCtxLmemUnreg()
 void TcRsCtxRmemImport()
 {
     struct RaRsDevInfo devInfo = {0};
-    struct MemRegAttrT memAttr = {0};
-    struct MemRegInfoT memInfo = {0};
+    struct MemImportAttrT memAttr = {0};
+    struct MemImportInfoT memInfo = {0};
     int ret = 0;
 
     mocker_clean();
@@ -432,8 +444,8 @@ void TcRsCtxEsched()
     struct TagTsHccpMsg  *hccpMsg = (struct TagTsHccpMsg *)event.priv.msg;
     ccuTaskInfo.num = 1;
     ubTaskInfo.num = 1;
-    RS_INIT_LIST_HEAD(&rscb.rdevList);
-    RsListAddTail(&rdevCb.list, &rscb.rdevList);
+    RS_INIT_LIST_HEAD(&rscb.udevList);
+    RsListAddTail(&rdevCb.list, &rscb.udevList);
     jettyCb.jetty = &jetty;
     jettyCb.state = RS_JETTY_STATE_BIND;
     RS_INIT_LIST_HEAD(&rdevCb.jettyList);

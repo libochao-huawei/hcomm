@@ -29,13 +29,16 @@
 
 static struct rs_cb stubRsCb;
 extern int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMsgHead *head, char *data,
-    unsigned int *sendFinish);
+    bool *sendFinish);
 extern void RsEpollEventHandleOne(struct rs_cb *rsCb, struct epoll_event *events);
 extern int RsNslbRequest(struct TlvRequestMsgHead *head, char *data);
 extern int RsNetcoTblApiInit(void);
 extern int RsCcuRequest(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut, unsigned int *bufferSize);
 extern int RsGetTlvCb(uint32_t phyId, struct RsTlvCb **tlvCb);
 extern int RsNetcoInitArg(unsigned int phyId, NetCoIpPortArg *netcoArg);
+extern int RsNetcoApiInit(void);
+extern int RsNslbNetcoInit(unsigned int phyId, struct RsNslbCb *nslbCb);
+extern void RsNslbNetcoDeinit(struct RsNslbCb *nslbCb);
 
 int StubRsGetNslbCb(uint32_t phyId, struct RsTlvCb **tlvCb)
 {
@@ -338,7 +341,7 @@ void tc_RsNslbNetcoInitDeinit()
     mocker(RsNetcoInitArg, 10, 0);
     mocker(RsNslbApiInit, 10, 0);
     mocker_invoke(RsGetRsCb, StubRsGetRsCbV2, 10);
-    mocker(RsNetcoInit, 10, &netcoCb);
+    mocker(RsNetcoInit, 10, (int)(uintptr_t)&netcoCb);
     ret = RsNslbNetcoInit(0, &nslbCb);
     EXPECT_INT_EQ(0, ret);
 

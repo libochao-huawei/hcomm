@@ -14,6 +14,7 @@
 #include "kfc.h"
 #include "dlhal_function.h"
 #include "hcclCommTaskException.h"
+#include "hcom_common.h"
 
 constexpr uint32_t MULTIPLE = 4;               // 用于A5判断TC是否为4的倍数
 constexpr uint32_t TC_MAX = 255;               // TC的最大值（不区分芯片类型）
@@ -72,6 +73,34 @@ HcclResult CollComm::ValidateConfig(const HcclCommConfig *config)
             HCCL_ERROR_CODE(HCCL_E_PARA), sl),
         HCCL_E_PARA);
     CHK_RET(config_.SetConfigServiceLevel(sl));
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollComm::ApplyUserCommConfig(HcclCommConfig *config, uint32_t &opExpansionMode)
+{
+    if (config) {
+        opExpansionMode = config->hcclOpExpansionMode;
+        u32 tc = config->hcclRdmaTrafficClass;
+        CHK_PRT_RET((tc != TC_DEFAULT) && (tc > TC_MAX || (tc % MULTIPLE != 0)),
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255] and a multiple of 4",
+                HCCL_ERROR_CODE(HCCL_E_PARA), tc),
+            HCCL_E_PARA);
+        CHK_RET(config_.SetConfigTrafficClass(tc));
+
+        u32 sl = config->hcclRdmaServiceLevel;
+        CHK_PRT_RET((sl != SL_DEFAULT) && (sl > SL_MAX),
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaServiceLevel[%u], must be 0xFFFFFFFF or in [0,7]",
+                HCCL_ERROR_CODE(HCCL_E_PARA), sl),
+            HCCL_E_PARA);
+        CHK_RET(config_.SetConfigServiceLevel(sl));
+
+        u32 qos = config->hcclQos;
+        CHK_PRT_RET((qos != 0xFFFFFFFFu) && (qos > 7u),
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclQos[%u], must be 0xFFFFFFFF or in [0,7]",
+                HCCL_ERROR_CODE(HCCL_E_PARA), qos),
+            HCCL_E_PARA);
+        CHK_RET(config_.SetConfigHcclQos(qos));
+    }
     return HCCL_SUCCESS;
 }
 
@@ -136,26 +165,12 @@ HcclResult CollComm::InitFullMode(void* rankGraph, aclrtBinHandle binHandle, Hcc
         EXCEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
     }
 
+    uint32_t opExpansionMode = 0;
+    CHK_RET(ApplyUserCommConfig(config, opExpansionMode));
+
     EXCEPTION_CATCH(
         myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_, rankIpPortMap_),
         return HCCL_E_PTR);
-    uint32_t opExpansionMode = 0;
-    if (config) {
-        opExpansionMode = config->hcclOpExpansionMode;
-        u32 tc = config->hcclRdmaTrafficClass;
-        CHK_PRT_RET((tc != TC_DEFAULT) && (tc > TC_MAX || (tc % MULTIPLE != 0)),
-            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255] and a multiple of 4",
-                HCCL_ERROR_CODE(HCCL_E_PARA), tc),
-            HCCL_E_PARA);
-        CHK_RET(config_.SetConfigTrafficClass(tc));
-
-        u32 sl = config->hcclRdmaServiceLevel;
-        CHK_PRT_RET((sl != SL_DEFAULT) && (sl > SL_MAX),
-            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaServiceLevel[%u], must be 0xFFFFFFFF or in [0,7]",
-                HCCL_ERROR_CODE(HCCL_E_PARA), sl),
-            HCCL_E_PARA);
-        CHK_RET(config_.SetConfigServiceLevel(sl));
-    }
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
     CHK_RET(hrtGetDevice(&deviceLogicId_));
 
