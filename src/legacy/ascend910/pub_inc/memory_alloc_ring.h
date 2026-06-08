@@ -229,13 +229,36 @@ private:
             newStatus[i] = OperateState::MEMORY_VALID;
         }
 
-        size_t oldCapacity = capacity_;
+        if (ringQueue_ != nullptr) {	 
+            delete[] ringQueue_; 
+        } 
+        if (recordQueue_ != nullptr) { 
+            delete[] recordQueue_; 
+        } 
+        if (status_ != nullptr) { 
+            delete[] status_; 
+        }
+
+        ringQueue_ = newRingQueue; 
+        recordQueue_ = newRecordQueue; 
+        status_ = newStatus;
+
         head_ = newHead;
         tail_ = newCapacity;
         capacity_ = newCapacity;
         ringQueue_ = newRingQueue;
         recordQueue_ = newRecordQueue;
         status_ = newStatus;
+
+        if (oldRingQueue != nullptr) {
+            delete[] oldRingQueue;
+        }
+        if (oldRecordQueue != nullptr) {
+            delete[] oldRecordQueue;
+        }
+        if (oldStatus != nullptr) {
+            delete[] oldStatus;
+        }
 
         for (size_t i = 0; i < newCapacity - newHead; i++) {
             sem_post(&allocAvailable_);
