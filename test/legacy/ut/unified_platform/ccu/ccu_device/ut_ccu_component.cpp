@@ -592,27 +592,44 @@ TEST_F(CcuComponentTest, Ut_SetTaskKillAndSetTaskKillDone_When_CcuV1_Expect_Retu
     EXPECT_EQ(ccuComponent.status, CcuComponent::CcuTaskKillStatus::INIT);
 }
 
-TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_Cached_ReturnsCachedValue)
+TEST_F(CcuComponentTest, Ut_GetTpInfo_Cached_ReturnsCachedValue)
 {
     const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
     CcuComponent ccuComponent;
     ccuComponent.devLogicId = devLogicId;
 
     IpAddress ipAddr("10.0.0.1");
-    TpAttrInfo cachedTpAttrInfo{};
-    cachedTpAttrInfo.tpAttr.at = 2;
-    cachedTpAttrInfo.tpAttr.retryTimesInit = 1;
-    ccuComponent.tpAttrInfoMap[ipAddr] = cachedTpAttrInfo;
+    TpInfo cachedTpInfo{};
+    cachedTpInfo.tpHandle = 12345ULL;
+    cachedTpInfo.mappedJettyPriority = 7U;
+    cachedTpInfo.hasMappedJettyPriority = true;
+    cachedTpInfo.jettyErrTimeout = 2U;
+    cachedTpInfo.hasJettyErrTimeout = true;
+    ccuComponent.tpInfoMap[ipAddr] = cachedTpInfo;
 
-    TpHandle tpHandle = 12345;
-    TpAttrInfo result = ccuComponent.GetLoopTpAttr(ipAddr, tpHandle);
-    EXPECT_EQ(result.tpAttr.at, 2);
-    EXPECT_EQ(result.tpAttr.retryTimesInit, 1);
+    TpInfo result = ccuComponent.GetTpInfo(ipAddr);
+    EXPECT_EQ(result.tpHandle, 12345ULL);
+    EXPECT_EQ(result.mappedJettyPriority, 7U);
+    EXPECT_TRUE(result.hasMappedJettyPriority);
+    EXPECT_EQ(result.jettyErrTimeout, 2U);
+    EXPECT_TRUE(result.hasJettyErrTimeout);
 
     GlobalMockObject::verify();
 }
 
-TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_NotCached_CallsRaGetTpAttrAsync)
+static HcclResult StubTpManagerGetTpInfoForLoop(TpManager *, const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool)
+{
+    EXPECT_TRUE(param.loopFirstTpLowestSl);
+    EXPECT_TRUE(param.ccuLoopbackGetTpInfo);
+    tpInfo.tpHandle = 999ULL;
+    tpInfo.mappedJettyPriority = 4U;
+    tpInfo.hasMappedJettyPriority = true;
+    tpInfo.jettyErrTimeout = 1U;
+    tpInfo.hasJettyErrTimeout = true;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+TEST_F(CcuComponentTest, Ut_GetTpInfo_NotCached_CallsTpManager)
 {
     const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
     CcuComponent ccuComponent;
@@ -620,12 +637,13 @@ TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_NotCached_CallsRaGetTpAttrAsync)
     ccuComponent.devPhyId = 0;
 
     IpAddress ipAddr("10.0.0.2");
-    TpHandle tpHandle = 12345;
 
-    MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue((void*)0x12345678));
+    MOCKER_CPP(&TpManager::GetTpInfo).stubs().will(invoke(StubTpManagerGetTpInfoForLoop));
 
-    TpAttrInfo result = ccuComponent.GetLoopTpAttr(ipAddr, tpHandle);
-    EXPECT_EQ(ccuComponent.tpAttrInfoMap.count(ipAddr), 1);
+    TpInfo result = ccuComponent.GetTpInfo(ipAddr);
+    EXPECT_EQ(ccuComponent.tpInfoMap.count(ipAddr), 1);
+    EXPECT_EQ(result.tpHandle, 999ULL);
+    EXPECT_TRUE(result.hasMappedJettyPriority);
 
     GlobalMockObject::verify();
 }
@@ -633,12 +651,6 @@ TEST_F(CcuComponentTest, Ut_GetLoopTpAttr_NotCached_CallsRaGetTpAttrAsync)
 namespace {
 
 uint8_t gLegacyLoopJettyQos = 0U;
-
-HcclResult StubHrtRaGetTpAttrAsyncLoopSl7(u32, RdmaHandle, uint64_t, uint32_t &, TpAttr &tpAttr, RequestHandle &)
-{
-    tpAttr.slBitmap = (1U << 7U);
-    return HcclResult::HCCL_SUCCESS;
-}
 
 HrtRaUbJettyCreatedOutParam StubHrtRaUbCreateJettyCaptureQos(RdmaHandle, const HrtRaUbCreateJettyParam &req)
 {
@@ -679,15 +691,14 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0x555ULL;
+    tpInfo.mappedJettyPriority = 7U;
+    tpInfo.hasMappedJettyPriority = true;
+    tpInfo.jettyErrTimeout = 1U;
+    tpInfo.hasJettyErrTimeout = true;
     ccuComponent.tpInfoMap[ipAddr] = tpInfo;
-
-    TpAttrInfo tpAttrInfo{};
-    tpAttrInfo.tpAttr.at = 1U;
-    ccuComponent.tpAttrInfoMap[ipAddr] = tpAttrInfo;
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x222)));
     MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x333ULL)));
-    MOCKER(HrtRaGetTpAttrAsync).stubs().will(invoke(StubHrtRaGetTpAttrAsyncLoopSl7));
     MOCKER(HrtRaUbCreateJetty).stubs().will(invoke(StubHrtRaUbCreateJettyCaptureQos));
     MOCKER(RaUbTpImportJetty).stubs().will(invoke(StubRaUbTpImportJetty));
 
@@ -720,10 +731,11 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpHandleZero_Expect_D
 
     TpInfo tpInfo{};
     tpInfo.tpHandle = 0ULL;
+    tpInfo.mappedJettyPriority = static_cast<uint32_t>(UB_QOS_DEFAULT);
+    tpInfo.hasMappedJettyPriority = true;
+    tpInfo.jettyErrTimeout = 1U;
+    tpInfo.hasJettyErrTimeout = true;
     ccuComponent.tpInfoMap[ipAddr] = tpInfo;
-
-    TpAttrInfo tpAttrInfo{};
-    ccuComponent.tpAttrInfoMap[ipAddr] = tpAttrInfo;
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x555)));
     MOCKER_CPP(&RdmaHandleManager::GetJfcHandle).stubs().will(returnValue(static_cast<JfcHandle>(0x666ULL)));
