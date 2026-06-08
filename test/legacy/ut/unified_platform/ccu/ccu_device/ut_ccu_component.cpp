@@ -24,6 +24,7 @@
 #include "env_config/env_config.h"
 #include "buffer.h"
 #include "local_ub_rma_buffer.h"
+#include "hccp.h"
 
 #undef private
 #undef protected
@@ -130,6 +131,13 @@ void MockCcuNetworkDevice(const int32_t devLogicId)
     MOCKER_CPP(&RdmaHandleManager::GetDieAndFuncId).stubs().will(returnValue(fakeDieFuncPair));
     std::pair<TokenIdHandle, uint32_t> fakeTokenInfo = std::make_pair(0x12345678, 1);
     MOCKER_CPP(&RdmaHandleManager::GetTokenIdInfo).stubs().will(returnValue(fakeTokenInfo));
+
+    u32 tpAttrVersion = 2U;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(tpAttrVersion)))
+        .will(returnValue(0));
+    MOCKER(HrtRaSetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
 }
 
 TEST_F(CcuComponentTest, Ut_Init_When_CcuV1_Expect_Return_Ok)

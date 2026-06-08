@@ -66,6 +66,15 @@ void MockDeviceTpAttrAsyncSupport()
     MOCKER(HrtRaSetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
 }
 
+HcclResult PollGetTpInfoUntilReady(TpManager &tpMgr, const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
+{
+    HcclResult result = tpMgr.GetTpInfo(param, tpInfo);
+    for (int i = 0; i < 7 && result == HCCL_E_AGAIN; ++i) {
+        result = tpMgr.GetTpInfo(param, tpInfo);
+    }
+    return result;
+}
+
 RequestHandle StubRaUbGetTpInfoAsyncEight(const RdmaHandle, const RaUbGetTpInfoParam &, vector<char_t> &out,
     uint32_t &num)
 {
@@ -162,7 +171,7 @@ protected:
         MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<DevId>(0)));
         void *rdmaHandle = (void*)0x200;
         MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
-        MOCKER(RaGetInterfaceVersion).defaults().will(returnValue(static_cast<s32>(-1)));
+        MockDeviceTpAttrAsyncSupport();
         TpManager::GetInstance(0).Init();
         std::cout << "A Test case in TpManagerTest SetUP" << std::endl;
     }
@@ -183,6 +192,12 @@ TEST_F(TpManagerTest, tp_manager_get_infos_success)
     IpAddress rmtAddr("3.0.0.2");
     TpProtocol protocol = TpProtocol::TP;
     TpInfo tpInfo;
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo({locAddr, rmtAddr, protocol}, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo({locAddr, rmtAddr, protocol}, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
 
     result = TpManager::GetInstance(devLogicId).GetTpInfo({locAddr, rmtAddr, protocol}, tpInfo);
     EXPECT_EQ(result, HCCL_E_AGAIN);
@@ -291,7 +306,7 @@ TEST_F(TpManagerTest, Ut_ReleaseTpInfo_When_InputValue_Expect_Return_HCCL_SUCCES
     result = TpManager::GetInstance(devLogicId).ReleaseTpInfo({locAddr, rmtAddr, protocol}, fakeTpInfo);
     EXPECT_EQ(result, HCCL_E_NOT_FOUND);
 
-    result = TpManager::GetInstance(devLogicId).GetTpInfo({locAddr, rmtAddr, protocol}, tpInfo);
+    result = PollGetTpInfoUntilReady(TpManager::GetInstance(devLogicId), {locAddr, rmtAddr, protocol}, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
 
     result = TpManager::GetInstance(devLogicId).ReleaseTpInfo({locAddr, rmtAddr, protocol}, tpInfo);
@@ -462,14 +477,10 @@ TEST_F(TpManagerTest, tp_manager_qos_cache_by_key_success)
     paramQos7.qos = 7U;
     TpInfo tpInfo7{};
 
-    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos0, tpInfo0);
-    EXPECT_EQ(result, HCCL_E_AGAIN);
-    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos0, tpInfo0);
+    result = PollGetTpInfoUntilReady(TpManager::GetInstance(devLogicId), paramQos0, tpInfo0);
     EXPECT_EQ(result, HCCL_SUCCESS);
 
-    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos7, tpInfo7);
-    EXPECT_EQ(result, HCCL_E_AGAIN);
-    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos7, tpInfo7);
+    result = PollGetTpInfoUntilReady(TpManager::GetInstance(devLogicId), paramQos7, tpInfo7);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
@@ -510,9 +521,7 @@ TEST_F(TpManagerTest, tp_manager_release_tpinfo_qos_key_mismatch)
     paramQos0.qos = 0U;
     TpInfo tpInfo{};
 
-    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos0, tpInfo);
-    EXPECT_EQ(result, HCCL_E_AGAIN);
-    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos0, tpInfo);
+    result = PollGetTpInfoUntilReady(TpManager::GetInstance(devLogicId), paramQos0, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
 
     RaUbGetTpInfoParam paramQos1{locAddr, rmtAddr, TpProtocol::TP};
@@ -556,9 +565,7 @@ TEST_F(TpManagerTest, tp_manager_device_ctp_with_qos_success)
     param.qos = 4U;
     TpInfo tpInfo{};
 
-    HcclResult result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
-    EXPECT_EQ(result, HCCL_E_AGAIN);
-    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    HcclResult result = PollGetTpInfoUntilReady(TpManager::GetInstance(devLogicId), param, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
     EXPECT_NE(tpInfo.tpHandle, 0U);
 }
@@ -596,9 +603,7 @@ TEST_F(TpManagerTest, tp_manager_get_tpattr_and_release_success)
     tpParam.qos = 1U;
     TpInfo tpInfo{};
 
-    HcclResult result = TpManager::GetInstance(devLogicId).GetTpInfo(tpParam, tpInfo);
-    EXPECT_EQ(result, HCCL_E_AGAIN);
-    result = TpManager::GetInstance(devLogicId).GetTpInfo(tpParam, tpInfo);
+    HcclResult result = PollGetTpInfoUntilReady(TpManager::GetInstance(devLogicId), tpParam, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
 
     GetTpAttrParam attrParam(tpInfo.tpHandle, (1U << 10U));
@@ -623,9 +628,7 @@ TEST_F(TpManagerTest, tp_manager_release_tpinfo_usecnt_decrement)
     param.qos = 3U;
     TpInfo tpInfo{};
 
-    HcclResult result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
-    EXPECT_EQ(result, HCCL_E_AGAIN);
-    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    HcclResult result = PollGetTpInfoUntilReady(TpManager::GetInstance(devLogicId), param, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
     result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
@@ -644,9 +647,7 @@ TEST_F(TpManagerTest, tp_manager_release_tpinfo_handle_mismatch)
     param.qos = 6U;
     TpInfo tpInfo{};
 
-    HcclResult result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
-    EXPECT_EQ(result, HCCL_E_AGAIN);
-    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    HcclResult result = PollGetTpInfoUntilReady(TpManager::GetInstance(devLogicId), param, tpInfo);
     EXPECT_EQ(result, HCCL_SUCCESS);
 
     TpInfo wrongTpInfo{};
@@ -692,6 +693,8 @@ TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_uboe_success)
     TpInfo tpInfo{};
 
     HcclResult result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_E_AGAIN);
     result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
     EXPECT_EQ(result, HCCL_E_AGAIN);
