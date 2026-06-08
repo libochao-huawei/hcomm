@@ -592,8 +592,8 @@ HcclResult TransportManager::AllocBatchSendRecvLinks(HcclSendRecvItem *sendRecvI
     struct LinkPoolPara senderLinkPoolPara(singleSubCommTransport, "sender", senderList);
     struct LinkPoolPara receiverLinkPoolPara(singleSubCommTransport, "receiver", receiverList);
     for (u32 i = 0; i < senderLinkPoolPara.linkThreads.size(); ++i) {
-        senderLinkPoolPara.linkThreads[i].reset(new (std::nothrow) std::ref(
-            &TransportManager::CreateBatchSendRecvLinks, this, 
+        senderLinkPoolPara.linkThreads[i].reset(new (std::nothrow) std::thread(
+            &TransportManager::CreateBatchSendRecvLinks, std::ref(*this), 
             tag, std::ref(transMem), std::ref(senderLinkPoolPara),
             isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp
         ));
