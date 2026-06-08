@@ -150,7 +150,7 @@ u32 HcclCommDfx::GetTaskId(u32 streamId)
 {
     rwLock_.writeLock();
     auto& taskIdRef = streamIdToTaskId_[streamId];
-    constexpr u32 TASK_ID_MODULO = 65536
+    constexpr u32 TASK_ID_MODULO = 65536;
     taskIdRef = (taskIdRef + 1) % TASK_ID_MODULO;
     u32 retTaskId = taskIdRef; 
     rwLock_.writeUnlock();
