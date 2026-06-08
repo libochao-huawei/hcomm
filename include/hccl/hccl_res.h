@@ -173,8 +173,8 @@ extern HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine, 
  * @note 内部逻辑：先判断通信域中是否已存在该useType对应的专用线程，
  *       若存在则直接返回，不存在则调用HcclThreadAcquire创建并缓存
  */
-extern HcclResult HcclDedicatedThreadAcquire(HcclComm comm, uint8_t useType,
-    uint32_t notifyNumPerThread, ThreadHandle *thread);
+extern HcclResult HcclDedicatedThreadAcquire(
+    HcclComm comm, uint8_t useType, uint32_t notifyNumPerThread, ThreadHandle *thread);
 
 /** @} */  // 通信引擎资源管理
 

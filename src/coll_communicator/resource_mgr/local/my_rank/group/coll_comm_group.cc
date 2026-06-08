@@ -397,6 +397,7 @@ HcclResult HcclAicpuKernelLaunch(HcclComm comm, HcclOpDesc opInfo, HcclKernelFun
     void *args, uint32_t argSize, ThreadHandle aicpuThreadHandle, aclrtStream userStream)
 {
     CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(args);
     CHK_PTR_NULL(userStream);
 
     if (argSize > 0 && args == nullptr) {
