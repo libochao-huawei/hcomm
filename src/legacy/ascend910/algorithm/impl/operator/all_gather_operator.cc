@@ -16,13 +16,30 @@
 #include "stream_active_manager.h"
 #include "hccl_aiv.h"
 #include "coll_alg_op_registry.h"
+#include "sal_pub.h"
+#include <cstdlib>
 
 constexpr u32 MODULE_NUM_FOUR = 4;
 constexpr u32 HCCL_310P_DATA_SIZE_MID_COUNT = 320 * 1024;
 constexpr u32 HCCL_310P_DATA_SIZE_SMALL_COUNT = 1024;
 constexpr u32 HCCL_310P_SLIM_RING_MAX_SIZE = 8;
+constexpr char HCCL_AG_PIPLINE_ENABLED_ENV[] = "HCCL_AG_PIPLINE_ENABLED";
 
 namespace hccl {
+namespace {
+bool IsAgPipelineEnabledByEnv()
+{
+    const char *envValue = std::getenv(HCCL_AG_PIPLINE_ENABLED_ENV);
+    if (envValue == nullptr || envValue[0] == '\0') {
+        return false;
+    }
+
+    char *endPtr = nullptr;
+    unsigned long envDigit = std::strtoul(envValue, &endPtr, HCCL_BASE_DECIMAL);
+    return endPtr != envValue && *endPtr == '\0' && envDigit != 0;
+}
+}
+
 AllGatherOperator::AllGatherOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
     HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher)
     : CollAlgOperator(algConfigurator, cclBufferManager, dispatcher, topoMatcher, HcclCMDType::HCCL_CMD_ALLGATHER)
@@ -349,6 +366,15 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
     if (maxCountPerLoop != 0) {
         bufferSliceNum = (param.DataDes.count + maxCountPerLoop - 1) / maxCountPerLoop;
     }
+    bool isAgPipelineEnabled = IsAgPipelineEnabledByEnv();
+    bool isSupportPipelineFor91093 = isAgPipelineEnabled &&
+        (maxCountPerLoop * unitSize > ALLGATHER_PIPELINE_THRESHOLD) &&
+        (bufferSliceNum > ALLGATHER_PIPELINE_SLICE_THRESHOLD);
+    HCCL_INFO("[AllGatherOperator][SelectAlgfor91093] dataSize[%llu] inCCLbufferSize[%llu] "
+        "userRankSize[%u] maxCountPerLoop[%llu] bufferSliceNum[%llu] isAgPipelineEnabled[%d] "
+        "isSupportPipelineFor91093[%d]",
+        dataSize, cclBufferManager_.GetInCCLbufferSize(), userRankSize_, maxCountPerLoop, bufferSliceNum,
+        isAgPipelineEnabled, isSupportPipelineFor91093);
 
     bool isHccsPlusSio = userRankSize_ == 2 && pairLinkCounter_[static_cast<u32>(LinkTypeInServer::SIO_TYPE)] == 2 &&
                          pairLinkCounter_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)] == 0;
@@ -387,7 +413,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         } else {
             algName = "AllGatherRingZerocopyExchangeExecutor";      // 连续数据通信+额外的数据交换（AHC不支持）
         }
-    } else if (superPodNum_ > 1 && maxCountPerLoop * unitSize > ALLGATHER_PIPELINE_THRESHOLD && bufferSliceNum > ALLGATHER_PIPELINE_SLICE_THRESHOLD
+    } else if (superPodNum_ > 1 && isSupportPipelineFor91093
                && isOpbase && !isAHCAlgo && !multiModuleDiffDeviceNumMode_
                && (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING
                    || topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING)) {
