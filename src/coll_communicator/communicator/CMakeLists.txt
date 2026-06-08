@@ -18,6 +18,7 @@ if(TARGET hcomm)
     )
     target_include_directories(hcomm PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/group
     )
 endif()
 

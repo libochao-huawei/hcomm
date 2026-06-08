@@ -15,7 +15,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <cstddef>
 
 #include "hccl_aicpu_interface.h"
 #include "coll_alg_utils.h"
@@ -377,8 +376,8 @@ static HcclResult AicpuKernelLaunchDirect(HcclComm comm, HcclOpDesc opInfo, Hccl
     constexpr u32 numBlocks = 1;
 
     ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, opInfo.p2p.stream, &cfg, argsHandle, nullptr);
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[LoadCustomKernel][aclrtLaunchKernelWithConfig]"
-        "errNo[0x%016llx] launch kernel failed, launchStream[%p]", ret, userStream), HCCL_E_OPEN_FILE_FAILURE);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[AicpuKernelLaunchDirect][aclrtLaunchKernelWithConfig]"
+        "errNo[0x%016llx] launch kernel failed, launchStream[%p]", ret, userStream), HCCL_E_RUNTIME);
 
     char* kernelNameCStr = const_cast<char*>(kernelName.c_str());
     HcclResult ret1 = HcclReportAicpuKernel(comm, beginTime, kernelNameCStr);
@@ -479,11 +478,8 @@ static HcclResult LaunchNotifyRecordToThread(HcclComm comm, aclrtStream unfoldSt
     constexpr u32 numBlocks = 1;
 
     ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, unfoldStream, &cfg, argsHandle, nullptr);
-    CHK_PRT_RET(ret != ACL_SUCCESS,
-        HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed, "
-                   "kernelName:%s",
-            ret, kernelName.c_str()),
-        HCCL_E_RUNTIME);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed, "
+        "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
 
     return HCCL_SUCCESS;
 }
@@ -515,9 +511,9 @@ static HcclResult LaunchNotifyWaitToThread(
     ThreadNotifyWaitParam param;
     param.thread = srcThread;
     param.notifyIdx = dstNotifyIdx;
-    param.timeOut = 1827;
+    param.timeOut = HOST_NOTIFY_WAIT_TIMEOUT_MS;
     aclrtParamHandle paraHandle;
-    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(ThreadNotifyRecordParam), &paraHandle);
+    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(ThreadNotifyWaitParam), &paraHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS,
         HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, "
                    "kernelName:%s",
@@ -542,11 +538,8 @@ static HcclResult LaunchNotifyWaitToThread(
     constexpr u32 numBlocks = 1;
 
     ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, unfoldStream, &cfg, argsHandle, nullptr);
-    CHK_PRT_RET(ret != ACL_SUCCESS,
-        HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed, "
-                   "kernelName:%s",
-            ret, kernelName.c_str()),
-        HCCL_E_RUNTIME);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed, "
+            "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
 
     return HCCL_SUCCESS;
 }
@@ -581,7 +574,7 @@ static HcclResult LaunchP2pExec(HcclComm comm, aclrtStream usrStream, HcclKernel
     param.sendRecvStream = sendRecvStream;
 
     aclrtParamHandle paraHandle;
-    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(ThreadNotifyRecordParam), &paraHandle);
+    ret = aclrtKernelArgsAppend(argsHandle, &param, sizeof(P2pGroupAicpuKernelParam), &paraHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS,
         HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, "
                    "kernelName:%s",
@@ -606,11 +599,8 @@ static HcclResult LaunchP2pExec(HcclComm comm, aclrtStream usrStream, HcclKernel
     constexpr u32 numBlocks = 1;
 
     ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, usrStream, &cfg, argsHandle, nullptr);
-    CHK_PRT_RET(ret != ACL_SUCCESS,
-        HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed, "
-                   "kernelName:%s",
-            ret, kernelName.c_str()),
-        HCCL_E_RUNTIME);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed, "
+            "kernelName:%s", ret, kernelName.c_str()), HCCL_E_RUNTIME);
 
     return HCCL_SUCCESS;
 }
@@ -618,7 +608,7 @@ static HcclResult LaunchP2pExec(HcclComm comm, aclrtStream usrStream, HcclKernel
 static HcclResult groupLaunchA5()
 {
     HCCL_INFO("[groupLaunchA5] to the start hcclGroupCommListV2.size[%u]", hcclGroupCommListV2.size());
-    constexpr u32 hostNotifyWaitTime = 1827;
+    constexpr u32 hostNotifyWaitTime = HOST_NOTIFY_WAIT_TIMEOUT_MS;
 
     for (HcclComm comm : hcclGroupCommListV2) {
         hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
