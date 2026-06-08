@@ -2362,8 +2362,6 @@ STATIC void RsTypicalQpModifyInfoRelated(struct RsQpCb *qpCb, struct TypicalQp *
 RS_ATTRI_VISI_DEF int RsTypicalQpModify(unsigned int phyId, unsigned int rdevIndex,
     struct TypicalQp localQpInfo, struct TypicalQp remoteQpInfo, unsigned int *udpSport)
 {
-    unsigned int qpAttrMask = HNS_ROCE_AI_QPC_UDPSPN;
-    struct hns_roce_qpc_attr_val qpAttrVal = { 0 };
     struct ibv_qp_init_attr initAttr = { 0 };
     struct ibv_qp_attr attr = { 0 };
     struct RsQpCb *qpCb = NULL;
@@ -2394,6 +2392,8 @@ RS_ATTRI_VISI_DEF int RsTypicalQpModify(unsigned int phyId, unsigned int rdevInd
 
 #ifdef CUSTOM_INTERFACE
     if (RsIsCustomInterfaceSupported()) {
+        unsigned int qpAttrMask = HNS_ROCE_AI_QPC_UDPSPN;
+        struct hns_roce_qpc_attr_val qpAttrVal = { 0 };
         ret = RsRoceQueryQpc(qpCb->ibQp, &qpAttrVal, qpAttrMask);
         if (ret != 0) {
             hccp_warn("qpn:%d query qpc unsuccessful, ret %d", localQpInfo.qpn, ret);
@@ -2550,8 +2550,6 @@ RS_ATTRI_VISI_DEF int RsQpConnectAsync(unsigned int phyId, unsigned int rdevInde
 RS_ATTRI_VISI_DEF int RsGetQpStatus(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
     struct RsQpStatusInfo *qpInfo)
 {
-    unsigned int qpAttrMask = HNS_ROCE_AI_QPC_UDPSPN;
-    struct hns_roce_qpc_attr_val qpAttrVal = { 0 };
     struct RsQpCb *qpCb = NULL;
     int ret;
 
@@ -2579,6 +2577,8 @@ RS_ATTRI_VISI_DEF int RsGetQpStatus(unsigned int phyId, unsigned int rdevIndex, 
 update_qp_cb:
 #ifdef CUSTOM_INTERFACE
     if (RsIsCustomInterfaceSupported()) {
+        unsigned int qpAttrMask = HNS_ROCE_AI_QPC_UDPSPN;
+        struct hns_roce_qpc_attr_val qpAttrVal = { 0 };
         ret = RsRoceQueryQpc(qpCb->ibQp, &qpAttrVal, qpAttrMask);
         if (ret != 0) {
             hccp_warn("qpn:%d query qpc unsuccessful, ret %d", qpCb->qpInfoLo.qpn, ret);
