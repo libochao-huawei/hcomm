@@ -368,6 +368,22 @@ static bool GetDscpByQosFromHccnCfg(const uint32_t devPhyId, uint8_t qos, uint8_
     return true;
 }
 
+static void BuildCommitTpAttr(const RaUbGetTpInfoParam &param, uint32_t devPhyId, uint32_t mappedSl,
+    const struct TpAttr &linkTpAttr, uint32_t tpInfoNum, struct TpAttr &tpAttr, uint32_t &attrBitmap)
+{
+    tpAttr = {};
+    tpAttr.sl = static_cast<uint8_t>(mappedSl & 0xFU);
+    attrBitmap = kTpAttrBitmapSl;
+    if (param.tpProtocol == TpProtocol::UBOE && (linkTpAttr.dscpConfigMode & 1U) == 0U) {
+        const uint16_t slMask = ReadSlAvailableMask16(linkTpAttr);
+        const uint8_t dscpLookupQos = ResolveUboeDscpLookupQos(param, tpInfoNum, slMask);
+        uint8_t dscp = 33U;
+        (void)GetDscpByQosFromHccnCfg(devPhyId, dscpLookupQos, dscp);
+        tpAttr.dscp = static_cast<uint8_t>(dscp & 0x3FU);
+        attrBitmap |= kTpAttrBitmapDscp;
+    }
+}
+
 } // namespace
 
 inline TpInfo ParseTpInfo(const struct HccpTpInfo *infoPtr)
@@ -1003,18 +1019,8 @@ void TpManager::SyncCommitTpAttr(const RaUbGetTpInfoParam &param, const RequestC
     }
 
     struct TpAttr tpAttr {};
-    tpAttr.sl = static_cast<uint8_t>(reqCtx.mappedSl & 0xFU);
-    uint32_t attrBitmap = kTpAttrBitmapSl;
-
-    if (param.tpProtocol == TpProtocol::UBOE && (reqCtx.linkTpAttr.dscpConfigMode & 1U) == 0U) {
-        const uint16_t slMask = ReadSlAvailableMask16(reqCtx.linkTpAttr);
-        const uint8_t dscpLookupQos = ResolveUboeDscpLookupQos(param, reqCtx.tpInfoNum, slMask);
-        uint8_t dscp = 33U;
-        (void)GetDscpByQosFromHccnCfg(devPhyId, dscpLookupQos, dscp);
-        tpAttr.dscp = static_cast<uint8_t>(dscp & 0x3FU);
-        attrBitmap |= kTpAttrBitmapDscp;
-    }
-
+    uint32_t attrBitmap = 0;
+    BuildCommitTpAttr(param, devPhyId, reqCtx.mappedSl, reqCtx.linkTpAttr, reqCtx.tpInfoNum, tpAttr, attrBitmap);
     RaUbSetTpAttr(rdmaHandle, reqCtx.selectedTpHandle, attrBitmap, tpAttr);
 }
 
@@ -1026,17 +1032,8 @@ HcclResult TpManager::StartCommitTpAttr(const RaUbGetTpInfoParam &param, Request
     }
 
     struct TpAttr tpAttr {};
-    tpAttr.sl = static_cast<uint8_t>(reqCtx.mappedSl & 0xFU);
-    uint32_t attrBitmap = kTpAttrBitmapSl;
-
-    if (param.tpProtocol == TpProtocol::UBOE && (reqCtx.linkTpAttr.dscpConfigMode & 1U) == 0U) {
-        const uint16_t slMask = ReadSlAvailableMask16(reqCtx.linkTpAttr);
-        const uint8_t dscpLookupQos = ResolveUboeDscpLookupQos(param, reqCtx.tpInfoNum, slMask);
-        uint8_t dscp = 33U;
-        (void)GetDscpByQosFromHccnCfg(devPhyId, dscpLookupQos, dscp);
-        tpAttr.dscp = static_cast<uint8_t>(dscp & 0x3FU);
-        attrBitmap |= kTpAttrBitmapDscp;
-    }
+    uint32_t attrBitmap = 0;
+    BuildCommitTpAttr(param, devPhyId, reqCtx.mappedSl, reqCtx.linkTpAttr, reqCtx.tpInfoNum, tpAttr, attrBitmap);
 
     RequestHandle reqHandle = 0;
     HcclResult hret = HcclResult::HCCL_SUCCESS;

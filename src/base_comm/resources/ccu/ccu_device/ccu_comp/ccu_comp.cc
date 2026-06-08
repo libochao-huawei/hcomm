@@ -446,6 +446,24 @@ static HcclResult RequestNewLoopTpInfo(const uint32_t devPhyId, const CommAddr &
     return HcclResult::HCCL_SUCCESS;
 }
 
+static HcclResult ResolveLoopJettyQosAndErrTimeout(const TpInfo &loopTpInfo, const TpProtocol loopJettyProtocol,
+    const int32_t devLogicId, uint32_t &loopJettyQos, uint8_t &errTimeout)
+{
+    loopJettyQos = loopTpInfo.hasMappedJettyPriority
+        ? (loopTpInfo.mappedJettyPriority & 0xFU)
+        : Hccl::UB_QOS_DEFAULT;
+    if (loopJettyProtocol == TpProtocol::CTP) {
+        errTimeout = static_cast<uint8_t>(Hccl::EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
+        return HcclResult::HCCL_SUCCESS;
+    }
+    CHK_PRT_RET(!loopTpInfo.hasJettyErrTimeout,
+        HCCL_ERROR("[CcuComponent][CreateAndImportLoopJettys] TpMgr did not provide jettyErrTimeout, "
+            "devLogicId[%d].", devLogicId),
+        HcclResult::HCCL_E_INTERNAL);
+    errTimeout = loopTpInfo.jettyErrTimeout;
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     const CommAddr &commAddr, const std::vector<JettyInfo> &jettyInfos)
 {
@@ -475,20 +493,10 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
 
     TpInfo loopTpInfo{};
     CHK_RET(GetLoopTpInfo(dieId, commAddr, loopTpInfo, loopJettyProtocol));
-    const uint32_t loopJettyQos = loopTpInfo.hasMappedJettyPriority
-        ? (loopTpInfo.mappedJettyPriority & 0xFU)
-        : Hccl::UB_QOS_DEFAULT;
-
+    uint32_t loopJettyQos = 0;
     uint8_t errTimeout = 0;
-    if (loopJettyProtocol == TpProtocol::CTP) {
-        errTimeout = static_cast<uint8_t>(Hccl::EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
-    } else {
-        CHK_PRT_RET(!loopTpInfo.hasJettyErrTimeout,
-            HCCL_ERROR("[CcuComponent][%s] TpMgr did not provide jettyErrTimeout, devLogicId[%d].",
-                __func__, devLogicId_),
-            HcclResult::HCCL_E_INTERNAL);
-        errTimeout = loopTpInfo.jettyErrTimeout;
-    }
+    // 由 TpMgr 环回结果解析 jetty qos（mappedJettyPriority）与 errTimeout（TP 来自 TpInfo，CTP 来自环境配置）
+    CHK_RET(ResolveLoopJettyQosAndErrTimeout(loopTpInfo, loopJettyProtocol, devLogicId_, loopJettyQos, errTimeout));
 
     for (const auto &jettyInfo : jettyInfos) {
         const auto psn = GetNewPsn();

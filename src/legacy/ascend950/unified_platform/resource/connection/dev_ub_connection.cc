@@ -196,8 +196,6 @@ RmaConnStatus DevUbConnection::GetStatus()
 
     switch (ubConnStatus) {
         case UbConnStatus::INIT:
-            HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
-                ubConnStatus.Describe().c_str());
             if (!GetTpInfo()) {
                 ubConnStatus = UbConnStatus::TP_INFO_GETTING;
                 break;
