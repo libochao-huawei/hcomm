@@ -134,6 +134,9 @@ string BaseMemTransport::GetLinkDescInfo()
 
 string BaseMemTransport::DescribeSocket() const
 {
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("%s socket is nullptr, please check", GetLinkDescInfo().c_str()));
+    }
     return StringFormat("BaseMemTransport socket=[%s]", socket->Describe().c_str());
 }
 
@@ -185,6 +188,11 @@ void BaseMemTransport::CheckCommonLocRes(CommonLocRes &res)
     CheckLocNotify(res);
     CheckLocBuffer(res);
     CheckLocConn(res);
+}
+
+void BaseMemTransport::SetSocket(Socket *socket)
+{
+    socket = socket_;
 }
 
 } // namespace Hccl
