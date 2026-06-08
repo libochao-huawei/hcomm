@@ -1310,6 +1310,14 @@ HcclResult Heartbeat::ParseFrame(HeartBeatFrame &bf, UIDType &src)
         SetStatus(bf.crimer, bf.informer, bf.status);
     }
 
+    // [新增] 收到其他rank的TaskException广播时，打印本rank的诊断信息
+    if (bf.status == HeartBeatStatus::HEARTBEAT_TASK_EXCEPTION) {
+        HCCL_RUN_INFO("[Heartbeat][ParseFrame] rank[%s] received TASK_EXCEPTION from rank[%s], "
+            "triggering local op diag print",
+            FormatUId(uid_).c_str(), FormatUId(bf.crimer).c_str());
+        PrintLocalOpDiagInfo();
+    }
+
     return HCCL_SUCCESS;
 }
 
@@ -1333,6 +1341,14 @@ HcclResult Heartbeat::ParseFrameWithOpCheck(HeartBeatFrameWithOpCheck &bf, UIDTy
  
     if (bf.status != HeartBeatStatus::HEARTBEAT_OK) {
         SetStatus(bf.crimer, bf.informer, bf.status);
+    }
+
+    // [新增] 收到其他rank的TaskException广播时，打印本rank的诊断信息
+    if (bf.status == HeartBeatStatus::HEARTBEAT_TASK_EXCEPTION) {
+        HCCL_RUN_INFO("[Heartbeat][ParseFrameWithOpCheck] rank[%s] received TASK_EXCEPTION from rank[%s], "
+            "triggering local op diag print",
+            FormatUId(uid_).c_str(), FormatUId(bf.crimer).c_str());
+        PrintLocalOpDiagInfo();
     }
  
     SaveOpInfo(bf.opInfoTagQueueFrame, src);
@@ -1373,6 +1389,7 @@ bool Heartbeat::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::str
         case HeartBeatStatus::HEARTBEAT_CQE_ERR:
         case HeartBeatStatus::HEARTBEAT_INCONSISTENT:
         case HeartBeatStatus::HEARTBEAT_OPRETRY_NOT_SUPPORT:
+        case HeartBeatStatus::HEARTBEAT_TASK_EXCEPTION:  // [新增]
             detectionTime = 0;
             break;
         case HeartBeatStatus::HEARTBEAT_STUCK:
@@ -1435,6 +1452,11 @@ void Heartbeat::MakeErrMsg(std::queue<HeartBeatFrame> &keyEvents, std::vector<st
             case HeartBeatStatus::HEARTBEAT_INCONSISTENT:
                 errStr = errStr + "[Op Inconsistent Occurred]";
                 reasonStr = reasonStr + "communication operator is inconsistent";
+                errStr = headStr + crimerStr + "]" + timeStr + errStr + reasonStr;
+                break;
+            case HeartBeatStatus::HEARTBEAT_TASK_EXCEPTION:
+                errStr = errStr + "[Task Exception Occurred]";
+                reasonStr = reasonStr + "Device task execution exception detected on remote rank";
                 errStr = headStr + crimerStr + "]" + timeStr + errStr + reasonStr;
                 break;
             default:
@@ -2119,4 +2141,99 @@ __attribute__((constructor)) void HeartBeatCallBackInit()
     RegisterHeartBeatCallBack(RegisterToHeartBeat, UnRegisterRanks, SetRankPortInfo);
     RegisterGetErrStatusVecCallBack(GetErrStatusVec);
 }
+
+HcclResult Heartbeat::BroadcastTaskException()
+{
+    if (!initialized_) {
+        HCCL_WARNING("[Heartbeat][BroadcastTaskException] heartbeat not initialized, skip broadcast");
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_RUN_INFO("[Heartbeat][BroadcastTaskException] local rank[%s] trigger TaskException, broadcasting to all peers",
+        FormatUId(uid_).c_str());
+
+    // 先打印本rank的诊断信息
+    PrintLocalOpDiagInfo();
+
+    // 通过SetStatus设置HEARTBEAT_TASK_EXCEPTION状态，并触发广播
+    SetStatus(uid_, uid_, HeartBeatStatus::HEARTBEAT_TASK_EXCEPTION, true);
+
+    return HCCL_SUCCESS;
+}
+
+void Heartbeat::PrintLocalOpDiagInfo()
+{
+    // 1. 打印OpExeCounter头尾计数
+    std::pair<int32_t, int32_t> counter;
+    HcclResult ret = OpExeCounter::GetInstance(deviceLogicId_).GetCounter(counter);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] rank[%s] failed to get OpExeCounter, ret[%d]",
+            FormatUId(uid_).c_str(), ret);
+        return;
+    }
+
+    HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] === rank[%s] OpExeCounter: headCount[%d], tailCount[%d] ===",
+        FormatUId(uid_).c_str(), counter.first, counter.second);
+
+    // 2. 直接从已有的opInfoMap_读取算子信息，零额外下发开销
+    // headCount表示已下发的算子数，tailCount表示已完成的算子数
+    // 以tailCount为中心，前后各打印OP_DIAG_PRINT_NEARBY_COUNT个op
+    std::lock_guard<std::mutex> lock(opInfoMapMutex_);
+
+    int32_t tailCount = counter.second;
+    int32_t headCount = counter.first;
+    int32_t printStart = tailCount - static_cast<int32_t>(OP_DIAG_PRINT_NEARBY_COUNT);
+    int32_t printEnd = tailCount + static_cast<int32_t>(OP_DIAG_PRINT_NEARBY_COUNT);
+    if (printStart < 0) {
+        printStart = 0;
+    }
+
+    HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] === rank[%s] op diag info "
+        "(printRange[opIndex %d ~ %d], headCount[%d], tailCount[%d]) ===",
+        FormatUId(uid_).c_str(), printStart, printEnd, headCount, tailCount);
+
+    // 遍历opInfoMap_中所有tag的算子，打印在范围内的op
+    int printCount = 0;
+    for (auto &tagPair : opInfoMap_) {
+        const std::string &tag = tagPair.first;
+        auto &opList = tagPair.second;
+        for (auto &idxPair : opList) {
+            uint64_t opIndex = idxPair.first;
+            const OpInfoDesc &opInfo = idxPair.second;
+            if (static_cast<int64_t>(opIndex) >= printStart &&
+                static_cast<int64_t>(opIndex) <= printEnd) {
+                HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo]   tag[%s] opIndex[%llu]: "
+                    "opType[%d], dataType[%d], reduceOp[%d], root[%u], count[%llu]",
+                    tag.c_str(), opIndex,
+                    static_cast<int>(opInfo.opType), static_cast<int>(opInfo.dataType),
+                    static_cast<int>(opInfo.reduceOp), opInfo.root, opInfo.count);
+                printCount++;
+            }
+        }
+    }
+
+    // 如果按tailCount附近没找到op，补充打印所有tag的最近op
+    if (printCount == 0) {
+        HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] no op found near tailCount[%d], printing latest ops per tag",
+            tailCount);
+        for (auto &tagPair : opInfoMap_) {
+            const std::string &tag = tagPair.first;
+            auto &opList = tagPair.second;
+            if (opList.empty()) {
+                continue;
+            }
+            auto it = opList.rbegin();
+            for (u32 i = 0; i < OP_DIAG_PRINT_NEARBY_COUNT && it != opList.rend(); i++, ++it) {
+                HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo]   tag[%s] opIndex[%llu]: "
+                    "opType[%d], dataType[%d], reduceOp[%d], root[%u], count[%llu]",
+                    tag.c_str(), it->first,
+                    static_cast<int>(it->second.opType), static_cast<int>(it->second.dataType),
+                    static_cast<int>(it->second.reduceOp), it->second.root, it->second.count);
+            }
+        }
+    }
+
+    HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] === rank[%s] op diag info end ===", FormatUId(uid_).c_str());
+}
+
 } // namespace hccl

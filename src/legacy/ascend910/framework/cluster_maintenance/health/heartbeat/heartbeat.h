@@ -49,6 +49,9 @@ constexpr s32 HCCL_STUCK_DETECT_TIME_MIN = 60; // 卡住检测最短时间
 constexpr s32 HCCL_STUCK_DETECT_TIME_BASE = 3; // 卡住检测时间为execTime/3
 constexpr s32 HCCL_LOST_THRESHOLD = 30; // 心跳丢失阈值为30s
 
+// [新增] 打印异常时，头尾计数附近打印的op个数
+constexpr u32 OP_DIAG_PRINT_NEARBY_COUNT = 10;
+
 using UIDType = struct HcclHeartBeatUid {
     char id[512] = {0}; // ip[IP_ADDRESS_BUFFER_LEN] + ifname[MAX_INTERFACE_NAME_LEN] + devid 最大不超过512字节
     bool operator == (const HcclHeartBeatUid &that) const
@@ -88,7 +91,8 @@ enum class HeartBeatStatus {
     HEARTBEAT_CQE_ERR,
     HEARTBEAT_OPRETRY_NOT_SUPPORT,
     HEARTBEAT_STUCK,
-    HEARTBEAT_INCONSISTENT
+    HEARTBEAT_INCONSISTENT,
+    HEARTBEAT_TASK_EXCEPTION  // [新增] TaskException异常广播状态
 };
 const std::map<HeartBeatStatus, std::string> HEARTBEAT_STATUS_STR_MAP{
     {HeartBeatStatus::HEARTBEAT_OK, "OK"},
@@ -97,7 +101,8 @@ const std::map<HeartBeatStatus, std::string> HEARTBEAT_STATUS_STR_MAP{
     {HeartBeatStatus::HEARTBEAT_CQE_ERR, "ERROR CQE"},
     {HeartBeatStatus::HEARTBEAT_OPRETRY_NOT_SUPPORT, "OPRETRY NOT SUPPORT"},
     {HeartBeatStatus::HEARTBEAT_STUCK, "STUCK"},
-    {HeartBeatStatus::HEARTBEAT_INCONSISTENT, "INCONSISTENT"}
+    {HeartBeatStatus::HEARTBEAT_INCONSISTENT, "INCONSISTENT"},
+    {HeartBeatStatus::HEARTBEAT_TASK_EXCEPTION, "TASK EXCEPTION"}  // [新增]
 };
 inline std::string GetHeartBeatStatusStr(HeartBeatStatus  status)
 {
@@ -289,7 +294,12 @@ public:
     void GetIpQueue();
     bool IsPaused() const;
     bool IsResumed() const;
- 
+
+    // [新增] 当本rank触发TaskException时，通过心跳广播异常状态给其他rank
+    HcclResult BroadcastTaskException();
+    // [新增] 打印本rank的算子诊断信息（头尾计数 + 附近op详情），直接从opInfoMap_读取，零额外下发开销
+    void PrintLocalOpDiagInfo();
+
 private:
     Heartbeat() = default;
     ~Heartbeat();

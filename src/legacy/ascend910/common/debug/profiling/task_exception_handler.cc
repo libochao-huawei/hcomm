@@ -20,6 +20,7 @@
 #include "../../../algorithm/pub_inc/common.h"
 #include "acl/error_codes/rt_error_codes.h"
 #include "task_exception_handler.h"
+#include "heartbeat.h"  // [新增] 用于BroadcastTaskException
 
 using namespace hccl;
 using namespace std;
@@ -848,6 +849,8 @@ bool TaskExceptionHandler::DealExceptionCtx(rtExceptionInfo *exceptionInfo)
             );
         }
     }
+    // [新增] 通过心跳机制将TaskException状态广播给其他rank
+    Heartbeat::GetInstance(exceptionInfo->deviceid).BroadcastTaskException();
     return true;
 }
 
@@ -992,6 +995,8 @@ bool TaskExceptionHandler::DealExceptionOp(rtExceptionInfo *exceptionInfo)
             );
         }
     }
+    // [新增] 通过心跳机制将TaskException状态广播给其他rank
+    Heartbeat::GetInstance(exceptionInfo->deviceid).BroadcastTaskException();
     return true;
 }
 
@@ -1291,6 +1296,8 @@ bool TaskExceptionHandler::DealExceptionTask(rtExceptionInfo *exceptionInfo)
             );
         }
     }
+    // [新增] 通过心跳机制将TaskException状态广播给其他rank
+    Heartbeat::GetInstance(exceptionInfo->deviceid).BroadcastTaskException();
     return true;
 }
 
