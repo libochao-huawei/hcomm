@@ -48,7 +48,6 @@ set(hccl_utest_misc_list
     ut_interface_multithread.cc
     ut_topoinfo_exchange_agent.cc
     ut_exchange_info.cc
-    ut_rankconsistent_v2.cc
 )
 add_executable(hccl_utest_misc ${hccl_utest_misc_list})
 

@@ -14,5 +14,4 @@ target_sources(hccl_v2_stest
 
         ${HCCL_V2_CODE_ROOT}/framework/entrance/op_base/op_base_v2.cc
         ${HCCL_V2_CODE_ROOT}/framework/entrance/param_check_v2.cc
-        ${HCCL_V2_CODE_ROOT}/framework/entrance/rank_table_crc_bridge.cc
 )
