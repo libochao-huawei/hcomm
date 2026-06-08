@@ -855,11 +855,6 @@ TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_Normal_Expect_Print
     taskInfo->taskParam_.taskPara.Aiv.flagMem = flagMemData;
     taskInfo->taskParam_.taskPara.Aiv.flagMemSize = flagMemSize;
 
-    // 打桩GlobalMirrorTasks
-    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
-    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
-    mirrorTaskManager.AddTaskInfo(taskInfo);
-
     // 打桩ACL函数
     void* mockFlagBuff = malloc(flagMemSize);
     MOCKER(aclrtMallocHost).stubs().will(returnValue(ACL_SUCCESS));
@@ -875,9 +870,14 @@ TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_Normal_Expect_Print
     exceptionInfo.streamid = 0;
     exceptionInfo.taskid = 0;
 
-    // 调用ProcessAivException
+    // 调用ProcessAivException（必须在AddTaskInfo之前，因为AddTaskInfo会move走taskInfo）
     TaskExceptionHandler handler(0);
     handler.ProcessAivException(&exceptionInfo, *taskInfo);
+
+    // 打桩GlobalMirrorTasks
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
+    mirrorTaskManager.AddTaskInfo(taskInfo);
 
     // 清理
     globalMirrorTasks.DestroyQueue(0, 0);
@@ -894,11 +894,6 @@ TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_MallocFailure_Expec
     taskInfo->taskParam_.taskPara.Aiv.cmdType = HcclCMDType::HCCL_CMD_ALLGATHER;
     taskInfo->taskParam_.taskPara.Aiv.flagMemSize = 1024;
 
-    // 打桩GlobalMirrorTasks
-    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
-    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
-    mirrorTaskManager.AddTaskInfo(taskInfo);
-
     // 打桩aclrtMallocHost失败
     MOCKER(aclrtMallocHost).stubs().will(returnValue(ACL_ERROR_BAD_ALLOC));
 
@@ -908,9 +903,14 @@ TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_MallocFailure_Expec
     exceptionInfo.streamid = 0;
     exceptionInfo.taskid = 0;
 
-    // 调用ProcessAivException
+    // 调用ProcessAivException（必须在AddTaskInfo之前，因为AddTaskInfo会move走taskInfo）
     TaskExceptionHandler handler(0);
     handler.ProcessAivException(&exceptionInfo, *taskInfo);
+
+    // 打桩GlobalMirrorTasks
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
+    mirrorTaskManager.AddTaskInfo(taskInfo);
 
     // 清理
     globalMirrorTasks.DestroyQueue(0, 0);
@@ -924,11 +924,6 @@ TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_MemcpyFailure_Expec
     taskInfo->taskParam_.taskPara.Aiv.cmdType = HcclCMDType::HCCL_CMD_ALLGATHER;
     taskInfo->taskParam_.taskPara.Aiv.flagMemSize = 1024;
 
-    // 打桩GlobalMirrorTasks
-    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
-    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
-    mirrorTaskManager.AddTaskInfo(taskInfo);
-
     // 打桩aclrtMallocHost成功，但aclrtMemcpy失败
     MOCKER(aclrtMallocHost).stubs().will(returnValue(ACL_SUCCESS));
     MOCKER(aclrtMemcpy).stubs().will(returnValue(ACL_ERROR_RT_MEMORY_FREE));
@@ -940,9 +935,14 @@ TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_MemcpyFailure_Expec
     exceptionInfo.streamid = 0;
     exceptionInfo.taskid = 0;
 
-    // 调用ProcessAivException
+    // 调用ProcessAivException（必须在AddTaskInfo之前，因为AddTaskInfo会move走taskInfo）
     TaskExceptionHandler handler(0);
     handler.ProcessAivException(&exceptionInfo, *taskInfo);
+
+    // 打桩GlobalMirrorTasks
+    GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
+    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);
+    mirrorTaskManager.AddTaskInfo(taskInfo);
 
     // 清理
     globalMirrorTasks.DestroyQueue(0, 0);
