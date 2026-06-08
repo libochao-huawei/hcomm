@@ -139,7 +139,6 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/resource_manager
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/channel
-    ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/rank_graph
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/resource/engine
 
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/
@@ -157,6 +156,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException
     ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException/aicpu
     ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException/host
+    ${HCOMM_CODE_ROOT}/src/coll_communicator/rank_graphs
     ${HCOMM_CODE_FRAMEWORK}/device/framework
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/slaves
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs
