@@ -27,6 +27,12 @@ enum SocketLocation {
     SOCKET_NPU = 1
 };
 
+enum class InconsistentCheckMode {
+    OFF = -1,    // 完全不做校验
+    FIRST = 0,  // 仅首次算子下发校验
+    ON = 1      // 每次算子下发都校验
+};
+
 // 定义结构体封装环境变量配置参数
 struct EnvConfigParam {
     std::string envName;    // 环境变量名
@@ -51,7 +57,7 @@ const bool& GetExternalInputHcclHeartBeatEnable();
 
 const bool& GetExternalInputStuckDetect();
 
-const bool& GetExternalInconsistentCheckSwitch();
+const InconsistentCheckMode& GetExternalInconsistentCheckSwitch();
 
 s32& GetExternalInputDfsConnectionFaultDetectionTime();
 
@@ -74,7 +80,7 @@ struct EnvConfig {
     u32 rdmaRetryCnt;       // RDMA重传次数，配置范围1-7，默认值为7
     bool enableClusterHeartBeat;
     bool opCounterEnable;
-    bool inconsistentCheckSwitch;
+    InconsistentCheckMode inconsistentCheckSwitch;
     s32 dfsConnectionFaultDetectionTime;
     u32 dfsTaskMonitorInterval;
 
@@ -105,7 +111,7 @@ struct EnvConfig {
         enableClusterHeartBeat = true;
         opCounterEnable = true;
         // 初始化 inconsistentCheckSwitch 为默认值
-        inconsistentCheckSwitch = false;
+        inconsistentCheckSwitch = InconsistentCheckMode::FIRST;
         dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
         dfsTaskMonitorInterval = 0;
         specificAlgoMode = false;
@@ -138,6 +144,8 @@ struct EnvConfig {
     static const u32 HCCL_QOS_MIN = 0;
  	static const u32 HCCL_QOS_MAX = 7;
  	static const u32 HCCL_QOS_DEFAULT = 6;
+    /// UBC CCU 路径：通信域 QoS 未配置或与 TP 策略分组对齐时的默认 QoS（0–7）
+    static const u32 UB_QOS_DEFAULT = 4;
     // 解析RDMATrafficClass
     HcclResult ParseRDMATrafficClass();
     // 解析RDMAServerLevel

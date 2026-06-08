@@ -17,6 +17,7 @@
 #include "orion_adpt_utils.h"
 
 #include "exception_handler.h"
+#include "comm_mems.h"
 
 #include "config_log.h"
 
@@ -34,25 +35,25 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        CHK_PTR_NULL(locMemInfo);
-        auto locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(locMemInfo->bufferHandle);
-        CHK_PTR_NULL(locRmaBuffer);
-        HCCL_INFO("[BuildBufferInfos] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
+        auto localRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
+        CHK_PTR_NULL(localRmaBuffer);
+        auto buf = localRmaBuffer->GetBuf();
+        CHK_PTR_NULL(buf);
+        HCCL_INFO("[BuildBufferInfos] localRmaBuffer[%s]", localRmaBuffer->Describe().c_str());
 
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = locMemInfo->memTag;
+        std::string tag = buf->GetMemTag();
         if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
             HCCL_ERROR("[BuildBufferInfos] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
-            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr),
-            static_cast<uint32_t>(locMemInfo->mem.size),
-            locRmaBuffer->GetTokenId(),
-            locRmaBuffer->GetTokenValue(),
-            locMemInfo->mem.type,
+            localRmaBuffer->GetAddr(),
+            static_cast<uint32_t>(localRmaBuffer->GetSize()),
+            localRmaBuffer->GetTokenId(),
+            localRmaBuffer->GetTokenValue(),
+            hccl::ConvertHcclToCommMemType(buf->GetMemType()),
             memTag);
     }
     return HCCL_SUCCESS;
@@ -60,7 +61,7 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
 
 static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     const Hccl::LinkData &linkData, Hccl::Socket *socket, HcommMemHandle *memHandles,
-    uint32_t memHandleNum, std::unique_ptr<CcuTransport> &impl, uint32_t sqSize)
+    uint32_t memHandleNum, uint32_t qos, uint32_t sqSize, std::unique_ptr<CcuTransport> &impl)
 {
     HCCL_INFO("[CcuUrmaChannel][%s] begin, sqSize[%u]", __func__, sqSize);
     // 当前ccu channel不支持按需申请cke
@@ -98,7 +99,7 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
         CcuTransport::CcuConnectionType::UBC_TP;
 
     CcuTransport::CcuConnectionInfo connectionInfo{type_,
-        locAddr, rmtAddr, channelInfo, ccuJettys};
+        locAddr, rmtAddr, channelInfo, ccuJettys, qos};
 
     std::vector<CcuTransport::CclBufferInfo> bufferInfos{};
     CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferInfos));
@@ -166,7 +167,8 @@ HcclResult CcuUrmaChannel::Init()
     HCCL_WARNING("[CcuUrmaChannel][%s] now only support to exchange hccl buffer.",
         __func__);
     CHK_RET_UNAVAIL(CreateCcuTransport(ccuEndpoint, linkData, socket,
-        channelDesc_.memHandles, channelDesc_.memHandleNum, impl_, channelDesc_.ubAttr.sqDepth));
+        channelDesc_.memHandles, channelDesc_.memHandleNum, channelDesc_.qos,
+        channelDesc_.ubAttr.sqDepth, impl_));
 
     hcclBufferInfoPtr_.reset(new (std::nothrow) HcclMem());
     CHK_PTR_NULL(hcclBufferInfoPtr_);

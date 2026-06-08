@@ -5,6 +5,7 @@
 #include "rank_graph_interface.h"
 #include "rank_graph_v2.h"
 #include "hcomm_c_adpt.h"
+#include <hccl/hccl_comm.h>
 #include "channel_process.h"
 #include "base_config.h"
 #define private public
@@ -12,6 +13,7 @@
 #undef private
 #include "hccl_comm_pub.h"
 #include "llt_hccl_stub_rank_graph.h"
+#include "rank_consistency_checker_v2.h"
 
 using namespace hccl;
 
@@ -45,7 +47,7 @@ protected:
     Hccl::RankIpPortMapPtr rankIpPortMap;
 };
 
-void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
+static HcclResult InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
 {
     RankGraphStub rankGraphStub;
     std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
@@ -57,10 +59,11 @@ void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
     cclBuffer.addr = (void*)0x1000;
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
     HcclCommConfig config;
+    HcclCommConfigInit(&config);
     config.hcclOpExpansionMode = 1;
     config.hcclRdmaTrafficClass = 0xFFFFFFFF;
     config.hcclRdmaServiceLevel = 0xFFFFFFFF;
-    hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    return hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
 }
 
 TEST_F(ExchangeInfoMgrTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
@@ -88,8 +91,8 @@ TEST_F(ExchangeInfoMgrTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
     HcclResult ret = HCCL_SUCCESS;
-    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();;
-    InitCollComm(hcclCommPtr);
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();
+    ASSERT_EQ(InitCollComm(hcclCommPtr), HCCL_SUCCESS);
     hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
     hccl::MyRank* myRank = collComm->GetMyRank();
     CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
@@ -112,6 +115,9 @@ TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Succe
     MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
         .stubs()
         .will(returnValue((s32)30));
+    MOCKER_CPP(&RankConsistencyCheckerV2::CompareCheckFrameV2)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclChannelDesc channelDescs[1];
     channelDescs[0].remoteRank = 1;
@@ -121,6 +127,8 @@ TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Succe
     std::vector<HcommChannelDesc> hcommDescVec;
     hcommDescVec.push_back(hcommDesc);
     ExchangeInfoMgr exchangeInfoMgr;
-    ret = exchangeInfoMgr.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, collCommConfigConsistency, "test_tag");
+    std::vector<std::pair<u32, u32>> newChannels;
+    newChannels.emplace_back(std::make_pair(1, 1));
+    ret = exchangeInfoMgr.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, newChannels, collCommConfigConsistency, "test_tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }

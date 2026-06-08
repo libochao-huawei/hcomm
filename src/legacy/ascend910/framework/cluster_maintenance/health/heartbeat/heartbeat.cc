@@ -403,7 +403,7 @@ void Heartbeat::CreateLinkWithRemote(std::string group, UIDType rem, ConnInfo ne
         needConnectRank.newConn = false;
         rankId2SocketMap_.insert(rem, needConnectRank);
         // 心跳socket建链完成后，需要立即及激活其心跳收发能力
-        auto frameSize = GetExternalInconsistentCheckSwitch() ? sizeof(HeartBeatFrameWithOpCheck) : sizeof(HeartBeatFrame);
+        auto frameSize = GetExternalInconsistentCheckSwitch() == InconsistentCheckMode::ON ? sizeof(HeartBeatFrameWithOpCheck) : sizeof(HeartBeatFrame);
         if (rankId2SocketMap_[rem].recvBuffer.Init(BASE_NUMBER * frameSize) != HCCL_SUCCESS) {// 2倍帧长，确报不会溢出
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] heartbeat connection failed. Reason: socket recv buffer init"
@@ -953,7 +953,7 @@ void Heartbeat::GetOneOpInfo(std::string &tag, OpInfoDesc &opInfo)
 
 void Heartbeat::GetSendOpInfoList(OpInfoTagQueueFrame &opInfoTagQueueFrame)
 {
-    if (!GetExternalInconsistentCheckSwitch()){
+    if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON){
         return ;
     }
     while (opInfoQueueForSend_.size() < OPINFO_TAG_QUEUE_NUM * OPINFO_SEND_NUM_BY_TAG) {
@@ -1071,7 +1071,7 @@ HcclResult Heartbeat::CheckIsSameOp(const OpInfoDesc &localOpInfo, const OpInfoD
 
 void Heartbeat::CheckRecvOpInfoList()
 {
-    if (!GetExternalInconsistentCheckSwitch()){
+    if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON){
         return ;
     }
     // 校验接收队列中接收到的opInfo
@@ -1480,7 +1480,7 @@ void Heartbeat::ProcessExceptionEvent()
             UIDType rem = iterRem->first;
             if (rem != rankId2StatusMap_[cur].informer &&
                 rankId2StatusMap_[rem].status == HeartBeatStatus::HEARTBEAT_OK) {
-                if (!GetExternalInconsistentCheckSwitch()) {
+                if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) {
                     (void)SendFrame(rem, cur, rankId2StatusMap_[cur].informer, rankId2StatusMap_[cur].status);   
                 } else {
                     (void)SendFrameWithOpCheck(rem, cur, rankId2StatusMap_[cur].informer, rankId2StatusMap_[cur].status, opInfoTagQueueFrame);   
@@ -1562,14 +1562,18 @@ void Heartbeat::HeartbeatStatusMonitor()
                 HCCL_DEBUG("rank[%s] Try to Send HeartBeat to rank[%s]", FormatUId(uid_).c_str(),
                     FormatUId(rem).c_str());
                 rankId2SocketMap_[rem].lostNum++;
-                if (!GetExternalInconsistentCheckSwitch()) {
-                    ret = SendFrame(rem, uid_, uid_,
-                        (counterStat.issueCnt != 0) ? HeartBeatStatus::HEARTBEAT_STUCK : HeartBeatStatus::HEARTBEAT_OK);
-                } else {
-                    ret = SendFrameWithOpCheck(rem, uid_, uid_,
-                        (counterStat.issueCnt != 0) ? HeartBeatStatus::HEARTBEAT_STUCK : HeartBeatStatus::HEARTBEAT_OK, opInfoTagQueueFrame);
+                HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
+                if (counterStat.issueCnt != 0) {
+                    status = HeartBeatStatus::HEARTBEAT_STUCK;
                 }
-                ret == HCCL_E_INTERNAL ? errorSocket_.push_back(rem) : void(0);
+                if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) {
+                    ret = SendFrame(rem, uid_, uid_, status);
+                } else {
+                    ret = SendFrameWithOpCheck(rem, uid_, uid_, status, opInfoTagQueueFrame);
+                }
+                if (ret == HCCL_E_INTERNAL) {
+                    errorSocket_.push_back(rem);
+                }
             }
             DelErrorSocket();
             ProcessCqeErrInfo();
@@ -1581,7 +1585,7 @@ void Heartbeat::HeartbeatStatusMonitor()
         for (auto iter = rankId2SocketMap_.begin(); iter != rankId2SocketMap_.end(); iter++) {
             UIDType rem = iter->first;
             HCCL_DEBUG("rank[%s] Try to Recv from rank[%s]", FormatUId(uid_).c_str(), FormatUId(rem).c_str());
-            ret = !GetExternalInconsistentCheckSwitch()? RecvFrame(rem) : RecvFrameWithOpCheck(rem);
+            ret = (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) ? RecvFrame(rem) : RecvFrameWithOpCheck(rem);
             if (ret == HCCL_E_INTERNAL) {
                 errorSocket_.push_back(rem);
             } else if (rankId2SocketMap_[rem].lostNum >= lostThreshold_) {
@@ -1594,7 +1598,7 @@ void Heartbeat::HeartbeatStatusMonitor()
         ProcessExceptionEvent();
         ProcessLock_.unlock();
 
-        auto sleeptime = !GetExternalInconsistentCheckSwitch() ? BROADCAST_INTERVAL : BROADCAST_INTERVAL_WITH_CHECK;
+        auto sleeptime = (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON) ? BROADCAST_INTERVAL : BROADCAST_INTERVAL_WITH_CHECK;
         std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
     }
     linkThreadRunning_ = false;
@@ -1989,7 +1993,7 @@ void Heartbeat::AddInconsistentOpRecord(const std::string &identifier, const OpI
 
 HcclResult Heartbeat::CheckOpInconsistentError(const std::string &identifier, HcclResult &result)
 {
-    if (!GetExternalInconsistentCheckSwitch()){
+    if (GetExternalInconsistentCheckSwitch() != InconsistentCheckMode::ON){
         return HCCL_SUCCESS;
     }
     std::lock_guard<std::mutex> lock(inconsistentOpMutex_);

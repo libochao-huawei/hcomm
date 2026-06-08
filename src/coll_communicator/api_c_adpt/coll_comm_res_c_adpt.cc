@@ -23,7 +23,8 @@
 #include "hccl_ccu_res.h"
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
-
+#include "rank_consistency_checker_v2.h"
+#include "rank_table_crc_bridge.h"
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -113,6 +114,24 @@ HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
     return HCCL_SUCCESS;
 }
 
+HcclResult ProcessUbChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
+    hccl::hcclComm *hcclComm)
+{
+    (void)channelDescFinal;
+    (void)hcclComm;
+
+    if (channelDesc.channelProtocol != COMM_PROTOCOL_UBC_CTP &&
+        channelDesc.channelProtocol != COMM_PROTOCOL_UBC_TP &&
+        channelDesc.channelProtocol != COMM_PROTOCOL_UBOE) {
+        HCCL_ERROR("[%s] unexpected channelProtocol[%d], expect UBC_CTP/UBC_TP/UBOE", __func__,
+            static_cast<int>(channelDesc.channelProtocol));
+        return HCCL_E_PARA;
+    }
+    HCCL_INFO("[%s] channelProtocol[%d] ub comm-domain qos applied in HcommChannelDesc::qos when converting (HcclChannelDesc has no qos field)",
+        __func__, static_cast<int>(channelDesc.channelProtocol));
+    return HCCL_SUCCESS;
+}
+
 HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
 {
     channelDescFinal.remoteRank = channelDesc.remoteRank;
@@ -129,11 +148,12 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_HCCS_ONLY:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_SIO:
-        case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UB_MEM:
+            break;
+        case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UBC_TP:
         case COMM_PROTOCOL_UBOE:
-            break;
+            return ProcessUbChannelDesc(channelDesc, channelDescFinal, hcclComm);
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
         default: {
@@ -272,6 +292,15 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         const std::string &commTag = hcclComm->GetIdentifier();
         hccl::MyRank* myRank = collComm->GetMyRank();
         CHK_PTR_NULL(myRank);
+
+        s32 deviceLogicId = 0;
+        (void)hrtGetDeviceRefresh(&deviceLogicId);
+        u32 rankTableCrc = RankTableCrcBridge::GetInstance().ConsumeRankTableJsonCrc(deviceLogicId);
+        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordRankTableCrcV2(rankTableCrc));
+        u64 buffSize = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetBuffSize();
+        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordEnvVarCrcV2(buffSize));
+        const std::string &curVersion = Hccl::EnvConfig::GetInstance().GetLogConfig().GetCannVersion();
+        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordCannVersionV2(curVersion));
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
         if (!CheckCommEngine(engine, opExpansionMode)) {

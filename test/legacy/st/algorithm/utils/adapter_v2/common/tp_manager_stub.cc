@@ -26,6 +26,9 @@ TpManager& TpManager::GetInstance(const int32_t deviceLogicId)
 HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo, bool isSync)
 {
     TpInfo info;
+    info.tpHandle = 1;
+    info.mappedJettyPriority = static_cast<uint32_t>(param.qos & 0xFU);
+    info.hasMappedJettyPriority = true;
     tpInfo = info;
     return HCCL_SUCCESS;
 }

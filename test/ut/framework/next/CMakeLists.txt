@@ -18,6 +18,7 @@ set(src_to_test_list
     comms/ccu/ut_CcuTransport_API_test.cc
     comms/comm_engine_res/ccu/ut_ccu_res_container.cc
     comms/common/ut_orion_adpt_utils.cc
+    comms/common/ut_tp_mgr.cc
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_iaicpu_ts_thread_interface.cc
@@ -29,6 +30,7 @@ set(src_to_test_list
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
+    coll_comms/rank/comm_mems/test_comm_reg_mem_api.cc
     comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
     comms/api_c_adpt/ut_hcomm_endpoint_test.cc
     comms/api_c_adpt/ut_hcomm_endpoint_uboe_test.cc
@@ -53,10 +55,13 @@ set(src_to_test_list
     comms/endpoints/ut_ub_mem_endpoint.cc
     comms/endpoints/reged_mems/ut_roce_mem_test.cc
     comms/endpoints/reged_mems/ut_urma_mem_test.cc
+    comms/endpoints/reged_mems/ut_ub_mem_test.cc
+    comms/endpoints/reged_mems/ut_hccs_reged_mem_mgr_test.cc
     coll_comms/api_c_adpt/ut_coll_comm_res_c_adpt.cc
     comms/endpoints/reged_mems/ut_aicpu_ts_roce_mem.cc
     # Ns recovery相关测试用例
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
+    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_p2p_channel.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_uboe_channel.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_roce_channel.cc
     comms/endpoint_pairs/channels/aicpu/device/ut_aicpu_channel_process.cc
@@ -85,6 +90,7 @@ add_executable(hccl_utest_test_next_resource ${src_to_test_list})
 target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/
 )
 
 target_compile_definitions(hccl_utest_test_next_resource PRIVATE
