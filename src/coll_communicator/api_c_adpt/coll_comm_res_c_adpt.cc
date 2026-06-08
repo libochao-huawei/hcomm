@@ -23,8 +23,6 @@
 #include "hccl_ccu_res.h"
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
-#include "rank_consistency_checker_v2.h"
-#include "rank_table_crc_bridge.h"
 #include "hccl_group.h"
 #include "../resource_mgr/local/my_rank/group/coll_comm_group.h"
 #include "param_check_basic_v2.h"
