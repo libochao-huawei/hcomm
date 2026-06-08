@@ -317,7 +317,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/pub_inc/ccu/
 
     # ccu 头文件
-    ${HCCL_CODE_ROOT}/src/base_comm/resources/adpt/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/southbound_adpt/
     ${HCCL_CODE_ROOT}/src/base_comm/common/
     ${HCCL_CODE_ROOT}/src/base_comm/common/device
 

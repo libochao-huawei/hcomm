@@ -179,7 +179,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
 
     # ccu 头文件
     ${HCOMM_CODE_ROOT}/pkg_inc/hcomm/ccu/
-    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/adpt/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/southbound_adpt/
     ${HCOMM_CODE_ROOT}/src/base_comm/common/
  
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/pub_inc/
