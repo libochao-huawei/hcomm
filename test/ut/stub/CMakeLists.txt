@@ -100,6 +100,7 @@ set(orion_list
 
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/interface/aicpu_ts_thread_interface.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/common/exception/exception_defination.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/transport/base_mem_transport.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/transport/aicpu/roce_transport_lite_impl.cc
