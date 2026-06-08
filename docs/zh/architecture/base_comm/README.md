@@ -8,4 +8,4 @@
 
 ## 代码路径
 
-`src/platform/`
+`src/base_comm/`

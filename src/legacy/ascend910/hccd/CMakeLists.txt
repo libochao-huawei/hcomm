@@ -107,20 +107,21 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
-    ${HCOMM_DIR}/src/base_comm/resources/endpoints
-    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
-    ${HCOMM_DIR}/src/base_comm/resources/reged_mems
-    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs
-    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/sockets
-    ${HCOMM_DIR}/src/base_comm/resources/comm_engine_res/threads
+    ${HCOMM_DIR}/src/base_comm/resource/endpoint
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/endpoint
+    ${HCOMM_DIR}/src/base_comm/resource/comm_mem
+    ${HCOMM_DIR}/src/base_comm/resource/endpoint
+    ${HCOMM_DIR}/src/base_comm/resource/endpoint/sockets
+    ${HCOMM_DIR}/src/base_comm/resource/comm_engine/threads
+    ${HCOMM_DIR}/src/base_comm/resource/comm_engine
 
     # src/platform 头文件
     ${HCOMM_DIR}/src/legacy/ascend910/platform/inc
     ${HCOMM_DIR}/src/legacy/ascend910/platform/inc/adapter
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common
     ${HCOMM_DIR}/src/legacy/ascend910/platform/task
-    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc
-    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network
+    ${HCOMM_DIR}/src/base_comm/resource/hccp/inc
+    ${HCOMM_DIR}/src/base_comm/resource/hccp/inc/network
     ${HCOMM_DIR}/src/legacy/ascend910/platform/ping_mesh
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/device

@@ -9,10 +9,9 @@
 # -----------------------------------------------------------------------------------------------------------
 add_subdirectory(common)
 add_subdirectory(primitives)
-add_subdirectory(resources)
+add_subdirectory(resource)
 
 set(src_list
-    hcomm_res_mgr.cc
 )
 
 if(TARGET hcomm)
@@ -21,7 +20,7 @@ if(TARGET hcomm)
     )
     target_include_directories(hcomm PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/resources
-        ${CMAKE_CURRENT_SOURCE_DIR}/resources/ccu/ccu_device
+        ${CMAKE_CURRENT_SOURCE_DIR}/resource
+        ${CMAKE_CURRENT_SOURCE_DIR}/resource/comm_engine/ccu/ccu_device
     )
 endif()
