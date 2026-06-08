@@ -270,7 +270,7 @@ HcclResult AicpuTsThread::LocalProcess(
     uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
     uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
     uint8_t *dstByte = static_cast<uint8_t *>(dst);
-    uint8_t *srcByte = static_cast<uint8_t *>(const_cast<void *>(src));
+    uint8_t *srcByte = static_cast<uint8_t *>(std::remove_const_t<void *>(src));
 
     uint64_t remainSize = sizeByte;
     uint64_t doneSize = 0;

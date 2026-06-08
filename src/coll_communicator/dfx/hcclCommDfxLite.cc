@@ -13,7 +13,7 @@
 
 namespace hccl {
 // HcclCommDfxLite构造函数实现
-HcclCommDfxLite::HcclCommDfxLite() {
+HcclCommDfxLite::HcclCommDfxLite() : deviceId_(0), commTag_("") {
 }
 
 // HcclCommDfxLite初始化流程 - 修改为返回HcclResult类型
