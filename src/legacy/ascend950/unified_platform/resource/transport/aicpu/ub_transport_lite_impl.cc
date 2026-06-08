@@ -176,6 +176,7 @@ void UbTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmaUbBufTyp
         binaryStream >> ubBufLite.size;
         binaryStream >> ubBufLite.tokenId;
         binaryStream >> ubBufLite.tokenValue;
+        binaryStream >> ubBufLite.notifyId;
         HCCL_INFO("idx=%u, %s %s", idx, rmtType.Describe().c_str(), ubBufLite.Describe().c_str());
         if (rmtType == RmaUbBufType::NOTIFY) {
             rmtNotifyVec.push_back(ubBufLite);

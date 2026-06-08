@@ -157,6 +157,11 @@ public:
         return segVa;
     }
 
+    uint32_t GetNotifyId() const
+    {
+        return notifyId;
+    }
+
 private:
     RdmaHandle rdmaHandle{nullptr};
     u8         key[HRT_UB_MEM_KEY_MAX_LEN]{0};
@@ -164,6 +169,7 @@ private:
     u32        tokenId{0};
     u32        keySize{0};
     u64        segVa{0};
+    u32        notifyId{INVALID_U32};
 };
 
 } // namespace Hccl

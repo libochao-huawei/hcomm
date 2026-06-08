@@ -137,6 +137,7 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
     tokenId    = dto.tokenId;
     tokenValue = dto.tokenValue;
     keySize    = dto.keySize;
+    notifyId   = dto.notifyId;
     
     if (keySize != 0) {
         auto res        = HrtRaUbRemoteMemImport(rdmaHandle1, key, keySize, tokenValue);
@@ -151,8 +152,8 @@ RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable 
 
 string RemoteUbRmaBuffer::Describe() const
 {
-    return StringFormat("RemoteUbRmaBuffer[rdmaHandle=%p, addr=0x%llx, size=0x%llx, memHandle=%p segVa=%llu]",
-                        rdmaHandle, addr, size, memHandle, segVa);
+    return StringFormat("RemoteUbRmaBuffer[rdmaHandle=%p, addr=0x%llx, size=0x%llx, memHandle=%p segVa=%llu, notifyId=%u]",
+                        rdmaHandle, addr, size, memHandle, segVa, notifyId);
 }
 
 } // namespace Hccl
