@@ -227,12 +227,11 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
     if (curTask->dfxOpInfo_ == nullptr) {
         HCCL_WARNING("[%s]dfxOpInfo is nullptr. devId[%u], streamId[%u], taskId[%u].",
             __func__, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
-        return;
     }
 
     bool isIndop_ = curTask->dfxOpInfo_ != nullptr ? curTask->dfxOpInfo_->isIndop_ : false;
     HCCL_INFO("[%s]isIndop_[%d], taskType[%s]", __func__, isIndop_, curTask->taskParam_.taskType.Describe().c_str());
-    if (!isIndop_) {
+    if (curTask->dfxOpInfo_ != nullptr && !isIndop_) {
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
         return;
     }
@@ -259,7 +258,7 @@ std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId)
 {
     if (collComm == nullptr || rankid == INVALID_VALUE_RANKID) {
-        HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
+        HCCL_WARNING("[GetAicpuCqeErrRemoteLocalIdByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
         remoteLocalId = INVALID_VALUE_RANKID;
         return;
     }
@@ -286,7 +285,7 @@ void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* coll
 void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
 {
     if (collComm == nullptr || rankid == INVALID_VALUE_RANKID) {
-        HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
+        HCCL_WARNING("[GetAicpuCqeErrNetInstanceByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
         netInstanceId = "";
         return;
     }
@@ -353,7 +352,8 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
             std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
             std::vector<std::string>({
                 std::to_string(taskInfo.remoteRank_),
-                taskInfo.GetBaseInfo(), (taskInfo.GetParaInfo()),
+                taskInfo.dfxOpInfo_ != nullptr ? taskInfo.GetBaseInfo() : taskInfo.GetIndopBaseInfo(),
+                (taskInfo.GetParaInfo()),
                 ""})
         );
     }

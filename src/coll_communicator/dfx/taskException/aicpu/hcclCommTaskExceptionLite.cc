@@ -163,15 +163,19 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     }
 
     // 每个通信域仅首次上报（N秒快恢时重置）
-    if (!aicpuComm->IsErrorReported() && curTask->dfxOpInfo_ != nullptr) {
+    if (!aicpuComm->IsErrorReported()) {
         // 1) errorMessage上报
         Hccl::ErrorMessageReport errMsgInfo{};
         CHK_RET(GenerateErrorMessageReport(aicpuComm, *curTask, exceptionInfo, errMsgInfo));
         CHK_RET(aicpuComm->SendErrorMessageReportToHost(errMsgInfo));
 
         // 2) send mbox to tsfw
-        u32 notifyId = curTask->dfxOpInfo_->cpuWaitAicpuNotifyId_;
-        CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
+        if (curTask->dfxOpInfo_ != nullptr) {
+            u32 notifyId = curTask->dfxOpInfo_->cpuWaitAicpuNotifyId_;
+            CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
+        } else {
+            HCCL_WARNING("[%s]dfxOpInfo_ is nullptr, skip SendTaskExceptionByMBox!", __func__);
+        }
         aicpuComm->SetErrorReported(true);
     }
 

@@ -971,7 +971,7 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
 void CcuTaskException::GetCcuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId)
 {
     if (collComm == nullptr) {
-        HCCL_ERROR("[GetCcuCqeErrRemoteLocalIdByRankId] collComm is nullptr");
+        HCCL_WARNING("[GetCcuCqeErrRemoteLocalIdByRankId] collComm is nullptr");
         return;
     }
 
@@ -1009,7 +1009,7 @@ void CcuTaskException::GetCcuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collCom
 void CcuTaskException::GetCcuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
 {
     if (collComm == nullptr) {
-        HCCL_ERROR("[GetCcuCqeErrNetInstanceByRankId] collComm is nullptr");
+        HCCL_WARNING("[GetCcuCqeErrNetInstanceByRankId] collComm is nullptr");
         return;
     }
     if (rankid == INVALID_VALUE_RANKID) {

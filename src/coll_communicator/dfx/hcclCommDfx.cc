@@ -52,8 +52,7 @@ HcclResult HcclCommDfx::IsOpBase(bool &isOpBase) {
     auto currDfxOpInfo = mirrorTaskManager_->GetCurrDfxOpInfo();
     if (currDfxOpInfo == nullptr) {
         HCCL_WARNING("[%s] currDfxOpInfo is nullptr!", __func__);
-        isOpBase = false;
-        return HCCL_SUCCESS;
+        return HCCL_E_PTR;
     }
     isOpBase = currDfxOpInfo->op_.opMode == Hccl::OpMode::OPBASE;
     HCCL_INFO("[%s] IsOpBase: %d", __func__, isOpBase);
