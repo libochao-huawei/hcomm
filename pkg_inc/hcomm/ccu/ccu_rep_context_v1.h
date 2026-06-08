@@ -78,7 +78,6 @@ public:
     void     SetMissionKey(uint32_t missionKey);
     uint32_t GetMissionKey() const;
 
-
     // ccu profiling相关接口
     std::vector<CcuProfilingInfo> &GetProfilingInfo();
     CcuRep::LoopGroupProfilingInfo &GetLGProfilingInfo();
