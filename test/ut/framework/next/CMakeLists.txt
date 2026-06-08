@@ -34,6 +34,7 @@ set(src_to_test_list
     comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
     comms/api_c_adpt/ut_hcomm_endpoint_test.cc
     comms/api_c_adpt/ut_hcomm_endpoint_uboe_test.cc
+    comms/api_c_adpt/ut_hcomm_endpoint_ubg_test.cc
     comms/api_c_adpt/ut_hcomm_mem_test.cc
     comms/api_c_adpt/ut_hcomm_channel_test.cc
     comms/api_c_adpt/ut_hcomm_engine_ctx_test.cc
@@ -45,7 +46,7 @@ set(src_to_test_list
     host/ut_cpu_roce_endpoint.cc
     host/ut_host_cpu_roce_channel.cc
     host/ut_host_rdma_connection.cc
-    host/ut_server_socket_manager.cc
+    host/ut_server_socket_management.cc
     host/ut_cpu_urma_endpoint.cc
     host/ut_host_cpu_urma_channel.cc
     host/ut_host_ub_connection.cc
@@ -63,6 +64,7 @@ set(src_to_test_list
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_p2p_channel.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_uboe_channel.cc
+    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_ubg_channel.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_roce_channel.cc
     comms/endpoint_pairs/channels/aicpu/device/ut_aicpu_channel_process.cc
     comms/endpoints/ut_urma_endpoint.cc
@@ -85,8 +87,25 @@ set(src_to_test_list
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
-
-#头文件搜索路径
+#     comms/endpoint_pairs/channels/aicpu/device/ut_aicpu_channel_process.cc
+#     comms/endpoints/ut_urma_endpoint.cc
+#     comms/endpoints/ut_aicpu_ts_roce_endpoint.cc
+#     comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
+#     comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_channel.cc
+#     comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_transport.cc
+#     comms/endpoint_pairs/channels/aiv/ut_aiv_urma_channel.cc
+#     comms/endpoint_pairs/ut_endpoint_pair_mgr.cc
+#     comms/ccu/ccu_device/ccu_comp/ut_ccu_comp_pub.cc
+#     coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
+#     coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
+#     coll_comms/rank_pairs/ut_rank_pair.cc
+#     coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
+#     coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
+#     coll_comms/communicator/ns_recovery/ut_ns_recovery.cc
+#     comms/adpt/ut_hcomm_adapter_hccp_test.cc
+#     comms/endpoints/dfx/ut_endpoint_monitor.cc
+#     coll_comms/rank/ut_exchange_info_mgr.cc
+# #     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_roce_channel.cc
 target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels
@@ -114,9 +133,9 @@ target_link_libraries(hccl_utest_test_next_resource PRIVATE
     $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
-    hccl_llt
+hccl_llt
     -Wl,--whole-archive
-    -Wl,--no-whole-archi
+    -Wl,--no-whole-archive
     -lgcov
     -lrt
     -ldl
@@ -164,7 +183,7 @@ target_link_libraries(hccl_utest_test_next_resource_a3 PRIVATE
     -pthread
     hccl_llt
     -Wl,--whole-archive
-    -Wl,--no-whole-archi
+    -Wl,--no-whole-archive
     -lgcov
     -lrt
     -ldl

@@ -56,15 +56,15 @@ public:
     HcclResult Read(void *dst, const void *src, uint64_t len) override;
     HcclResult ChannelFence() override;
 
-private:
-    MAKE_ENUM(UboeRmtBufType, NOTIFY, BUFFER)
+protected:
+     MAKE_ENUM(UboeRmtBufType, NOTIFY, BUFFER)
     using RemoteBufferVec = std::vector<std::unique_ptr<Hccl::RemoteUbRmaBuffer>>;
     using LocalBufferVec = std::vector<Hccl::LocalUbRmaBuffer *>;
 
     HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
         std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult ParseInputParam();
-    HcclResult BuildConnection();
+    virtual HcclResult BuildConnection();
     HcclResult BuildNotify();
     HcclResult BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult BuildUbMemTransport();
@@ -108,7 +108,7 @@ private:
     std::vector<char> GetLocBufferUniqueIds(LocalBufferVec &bufferVec, UboeRmtBufType type) const;
     std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue) const;
     std::vector<char> GetConnUniqueIds();
-private:
+protected:
     // --------------------- 入参 ---------------------
     EndpointHandle                                              endpointHandle_;
     HcommChannelDesc                                            channelDesc_;

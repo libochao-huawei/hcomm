@@ -908,7 +908,8 @@ CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol)
         {LinkProtocol::HCCS, COMM_PROTOCOL_HCCS},
         {LinkProtocol::PCIE, COMM_PROTOCOL_PCIE},
         {LinkProtocol::UB_MEM, COMM_PROTOCOL_UB_MEM},
-        {LinkProtocol::UBOE, COMM_PROTOCOL_UBOE}};
+        {LinkProtocol::UBOE, COMM_PROTOCOL_UBOE},
+        {LinkProtocol::UBG, COMM_PROTOCOL_UBG}};
 
     for (const auto &p : protocolPairs) {
         if (p.first == linkProtocol) {

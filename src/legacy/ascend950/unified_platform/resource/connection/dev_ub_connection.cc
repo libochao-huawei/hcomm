@@ -89,7 +89,16 @@ DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAd
     : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr, qos)
 {
     tpProtocol = TpProtocol::UBOE;
-    jettyTimeOut = 16; // UBoE场景的默认TA配置为16
+    jettyTimeOut = 16;
+}
+
+DevUbUbgConnection::DevUbUbgConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                        const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
+                                        const IpAddress &locAddrEid, const IpAddress &rmtAddrEid)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locAddrEid, rmtAddrEid)
+{
+    tpProtocol = TpProtocol::UBG;
+    jettyTimeOut = 16;
 }
 
 std::vector<char> DevUbConnection::GetUniqueId() const
@@ -199,7 +208,7 @@ void DevUbConnection::GetTimeOut() // 直接基于环境变量控制
         return;
     }
 
-    if (tpProtocol == TpProtocol::UBOE) {
+    if (tpProtocol == TpProtocol::UBOE || tpProtocol == TpProtocol::UBG) {
         envValue = static_cast<uint8_t>(EnvConfig::GetInstance().GetRdmaConfig().GetUboeTimeOut());
         envTimeOut = TpManager::TaHwValueToMs(envValue);
         HCCL_INFO("%s [UBoE] Env Value [%u] (%ums).", __func__, envValue, envTimeOut);
@@ -376,16 +385,15 @@ void DevUbConnection::ImportRmtDto()
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    // 获取tp attr，检查是否已经填过相同的tp attr
-    if ((tpProtocol == TpProtocol::UBOE) && GetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
-        HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
-    }
-
-    // 设置tp attr(sip dip等)
-    if ((tpProtocol == TpProtocol::UBOE) && SetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
-        HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
+    if (tpProtocol == TpProtocol::UBOE || tpProtocol == TpProtocol::UBG) {
+        if (GetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
+            HCCL_ERROR("[DevUbConnection::%s] GetTpAttrAsync failed, %s", __func__, Describe().c_str());
+            ThrowAbnormalStatus(std::string(__func__));
+        }
+        if (SetTpAttrAsync(attrBitmap, tpAttr) != HCCL_SUCCESS) {
+            HCCL_ERROR("[DevUbConnection::%s] SetTpAttrAsync failed, %s", __func__, Describe().c_str());
+            ThrowAbnormalStatus(std::string(__func__));
+        }
     }
 
     ImportJetty();
@@ -1139,14 +1147,8 @@ bool DevUbConnection::IpArrayCompare(uint8_t ipArrLeft[16U], uint8_t ipArrRight[
 
 HcclResult DevUbConnection::SetTpAttrAsync(uint32_t attrBitmapCurrent, struct TpAttr& tpAttrCurrent)
 {
-    TpHandle tpHandle = tpInfo.tpHandle;
-    /*  bitmap 至少配置为1FC，转2进制: 0011 1111 1000(前两位retry_times_init+at不用配置、后三位at_times+sl+ttl不用配置)，转10进制:508 
-        0-retry_times_init: 3 bit   1-at: 5 bit             2-sip: 128 bit
-        3-dip: 128 bit              4-sma: 48 bit           5-dma: 48 bit
-        6-vlan_id: 12 bit           7-vlan_en: 1 bit        8-dscp: 6 bit
-        9-at_times: 5 bit           10-sl: 4 bit             11-ttl: 8 bit
-    */
-    uint32_t attrBitmap = 508;
+TpHandle tpHandle = tpInfo.tpHandle;
+    uint32_t attrBitmap = (tpProtocol == TpProtocol::UBG) ? TP_ATTR_BITMAP_UBG : TP_ATTR_BITMAP_UBOE;
     struct TpAttr tpAttr = {0};
 
     // 填充本端IP
