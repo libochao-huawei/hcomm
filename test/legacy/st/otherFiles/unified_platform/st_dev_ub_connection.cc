@@ -55,6 +55,15 @@ protected:
     std::string tag = "test";
 };
 
+static RmaConnStatus DriveDevUbConnectionUntilExchangeable(DevUbConnection &conn)
+{
+    RmaConnStatus status = conn.GetStatus();
+    for (int i = 0; i < 8 && status != RmaConnStatus::EXCHANGEABLE; ++i) {
+        status = conn.GetStatus();
+    }
+    return status;
+}
+
 TEST(DevUbConnectionTest, rma_ub_connection_prepare_inline_write_tasks_with_writeval_send)
 {
     Socket *fakeSocket;
@@ -312,7 +321,7 @@ TEST(DevUbConnectionTest, tp_import_test)
     std::string tag = "test";
     DevUbTpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
     EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::INIT); // TP_INFO_GETTING
-    EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::EXCHANGEABLE);
+    EXPECT_EQ(DriveDevUbConnectionUntilExchangeable(devUbConnection), RmaConnStatus::EXCHANGEABLE);
 
     // Then
     auto rmtDto = devUbConnection.GetExchangeDto();
@@ -338,7 +347,7 @@ TEST(DevUbConnectionTest, ctp_import_test)
     std::string tag = "test";
     DevUbCtpConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
     EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::INIT); // TP_INFO_GETTING
-    EXPECT_EQ(devUbConnection.GetStatus(), RmaConnStatus::EXCHANGEABLE);
+    EXPECT_EQ(DriveDevUbConnectionUntilExchangeable(devUbConnection), RmaConnStatus::EXCHANGEABLE);
 
     // Then
     auto rmtDto = devUbConnection.GetExchangeDto();

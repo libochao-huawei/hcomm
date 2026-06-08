@@ -12,7 +12,7 @@
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 
-#include "env_config.h"
+#include "env_config/env_config.h"
 #include "hccl/hccl_types.h"
 #include "orion_adpt_utils.h"
 #include "tp_manager.h"
