@@ -31,7 +31,8 @@ constexpr u32 HCCL_ALGO_LEVEL_0   = 0; // HCCL 算法层级0
 constexpr u32 HCCL_ALGO_LEVEL_1   = 1; // HCCL 算法层级1
 constexpr u32 HCCL_ALGO_LEVEL_2   = 2; // HCCL 算法层级2
 constexpr u32 HCCL_ALGO_LEVEL_3   = 3; // HCCL 算法层级3
-constexpr u32 HCCL_ALGO_LEVEL_NUM = 4; // HCCL 算法层级最多4级
+constexpr u32 HCCL_ALGO_LEVEL     = 4; // HCCL 算法层级OMNI
+constexpr u32 HCCL_ALGO_LEVEL_NUM = 5; // HCCL 算法层级最多5级
 
 constexpr s32 NOTIFY_MAX_WAIT_TIME = 255 * 68; // 非910A2和910A3场景notify wait最大等待时长，由硬件决定
 constexpr s32 NOTIFY_MAX_WAIT_TIME_910A3 = 2147483647; // 910A2和910A3场景notify wait最大等待时长，由软件实现
@@ -87,7 +88,7 @@ MAKE_ENUM(HcclAlgoType,
           HCCL_ALGO_TYPE_DEFAULT, // 默认算法，配置为此时，使用HCCL内藏算法选择逻辑
           HCCL_ALGO_TYPE_RING, HCCL_ALGO_TYPE_PIPELINE, HCCL_ALGO_TYPE_FULLMESH, HCCL_ALGO_TYPE_HDR,
           HCCL_ALGO_TYPE_PAIRWISE, HCCL_ALGO_TYPE_NHR, HCCL_ALGO_TYPE_NB, HCCL_ALGO_TYPE_NULL, HCCL_ALGO_TYPE_NA,
-          HCCL_ALGO_TYPE_NHR_V1, HCCL_ALGO_TYPE_AHC)
+          HCCL_ALGO_TYPE_NHR_V1, HCCL_ALGO_TYPE_AHC, HCCL_ALGO_TYPE_OMNI)
 
 const std::set<OpType> OP_TYPE_SET = {OpType::ALLREDUCE, OpType::BROADCAST, OpType::ALLGATHER, OpType::REDUCESCATTER, OpType::SEND,
                                OpType::RECV, OpType::BARRIER, OpType::ALLTOALL, OpType::REDUCE, OpType::GATHER, OpType::SCATTER,
