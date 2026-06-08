@@ -238,6 +238,10 @@ void P2PTransport::SendPid()
     std::vector<char> data;
     binaryStream.Dump(data);
     pidMsgSize = data.size();
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("P2PTransport::SendPid socket is nullptr, please check"));
+        return;
+    }
     socket->Send(reinterpret_cast<u8 *>(&data[0]), data.size());
 
     HCCL_INFO("send pid %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), data.size(),
@@ -247,6 +251,10 @@ void P2PTransport::SendPid()
 void P2PTransport::RecvPid()
 {
     std::vector<char> data(pidMsgSize);
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("P2PTransport::RecvPid socket is nullptr, please check"));
+        return;
+    }
     socket->Recv(reinterpret_cast<u8 *>(&data[0]), data.size());
     HCCL_INFO("recv pid %s, size=%llu, data=%s", GetLinkDescInfo().c_str(), data.size(),
                Bytes2hex(data.data(), data.size()).c_str());
@@ -289,6 +297,10 @@ void P2PTransport::SendExchangeData()
     std::vector<char> data;
     binaryStream.Dump(data);
     exchangeDataSize = data.size();
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("P2PTransport::SendExchangeData socket is nullptr, please check"));
+        return;
+    }
     socket->Send(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
     socket->Send(reinterpret_cast<u8 *>(&data[0]), data.size());
     HCCL_INFO("send data %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), data.size(),
@@ -297,6 +309,10 @@ void P2PTransport::SendExchangeData()
 
 void P2PTransport::RecvExchangeData()
 {
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("P2PTransport::RecvExchangeData socket is nullptr, please check"));
+        return;
+    }
     socket->Recv(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
     vector<char> data(exchangeDataSize);
     socket->Recv(reinterpret_cast<u8 *>(&data[0]), data.size());
