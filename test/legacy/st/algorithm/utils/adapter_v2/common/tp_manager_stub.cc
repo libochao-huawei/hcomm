@@ -29,6 +29,9 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
     info.tpHandle = 1;
     info.mappedJettyPriority = static_cast<uint32_t>(param.qos & 0xFU);
     info.hasMappedJettyPriority = true;
+    TpAttrInfo tpAttrInfo{};
+    info.jettyErrTimeout = CalcTaTimeout(tpAttrInfo);
+    info.hasJettyErrTimeout = true;
     tpInfo = info;
     return HCCL_SUCCESS;
 }
