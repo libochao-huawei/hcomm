@@ -237,6 +237,7 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
         std::string socketTag = "AUTOMATIC_SOCKET_TAG";
         bool isServer = (channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER);
         Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag, isServer);
+        Hccl::SocketHandleManager::GetInstance();
         CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
     }
     return HCCL_SUCCESS;
