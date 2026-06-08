@@ -122,3 +122,27 @@ TEST_F(AicpuTsUrmaChannelTest, Ut_StartListen_When_RoleNotServer_Expect_SUCCESS)
     auto ret = ch.StartListen();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+TEST_F(AicpuTsUrmaChannelTest, Ut_SocketNotNullptr_When_Destruct)
+{
+    HcommChannelDesc desc{};
+    desc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUrmaChannel ch(ep, desc);
+
+    ch.socket_ = reinterpret_cast<Socket*>(0x02);
+}
+
+TEST_F(AicpuTsUrmaChannelTest, Ut_SocketNotNullptr_When_Ready)
+{
+    HcommChannelDesc desc{};
+    desc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUrmaChannel ch(ep, desc);
+
+    ch.socket_ = reinterpret_cast<Socket*>(0x02);
+    MOCKER_CPP(&Channel::TransportStatusToChannelStatus).stubs().will(returnValue(ChannelStatus::READY));
+    ch.isFirstPrintChannelInfo_ = false;
+    ch.GetStatus();
+    GlobalMockObject::verify();
+}
