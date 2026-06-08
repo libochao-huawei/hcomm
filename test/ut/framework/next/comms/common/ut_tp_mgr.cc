@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 
+#include "hccl_common.h"
 #include "tp_mgr.h"
 #include "orion_adpt_utils.h"
 #include "rdma_handle_manager.h"

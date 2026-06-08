@@ -10,6 +10,7 @@
 #include "channel_process.h"
 #include "base_config.h"
 #include "config/env_config.h"
+#include "env_config/env_config.h"
 #define private public
 #include "my_rank.h"
 #undef private
