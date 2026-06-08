@@ -20,6 +20,7 @@
 #include <mutex>
 #include "hccp_async_ctx.h"
 #include "hccp_nda.h"
+#include "env_config/env_config.h"
 
 namespace Hccl {
 using namespace std;
@@ -604,7 +605,7 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     IpAddress rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
     /// 与 Next TpMgr 一致：参与 SL→jetty priority 映射（0–7）；默认见 `Hccl::UB_QOS_DEFAULT`
-    uint32_t qos;
+    uint32_t qos{UB_QOS_DEFAULT};
     /// 与 Next GetTpInfoParam::slLevelCount 对齐；非 0 时限制 SL 分组档位数。当前调用方均传 0（预留）。
     uint32_t slLevelCount{0U};
     /// 环回等场景：首 TPID + 掩码内最小 SL（TpManager 策略唯一依据）
@@ -612,8 +613,9 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     /// 与 Next 对齐：CCU 环回调用方标记，仅用于 Describe/排查；策略不读取，行为由 loopFirstTpLowestSl 决定
     bool ccuLoopbackGetTpInfo{false};
 
-    RaUbGetTpInfoParamDef();
-    RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr, TpProtocol tpProtocol);
+    RaUbGetTpInfoParamDef() = default;
+    RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr, TpProtocol tpProtocol)
+        : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol) {}
 
     std::string Describe() const {
         return StringFormat(

@@ -28,17 +28,6 @@ using namespace std;
 
 namespace Hccl {
 
-RaUbGetTpInfoParamDef::RaUbGetTpInfoParamDef()
-    : locAddr{}, rmtAddr{}, tpProtocol(TpProtocol::CTP), qos(UB_QOS_DEFAULT),
-      slLevelCount(0U), loopFirstTpLowestSl(false), ccuLoopbackGetTpInfo(false)
-{}
-
-RaUbGetTpInfoParamDef::RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr,
-    TpProtocol tpProtocol)
-    : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol), qos(UB_QOS_DEFAULT),
-      slLevelCount(0U), loopFirstTpLowestSl(false), ccuLoopbackGetTpInfo(false)
-{}
-
 constexpr u32 ONE_HUNDRED_MICROSECOND_OF_USLEEP = 100;
 constexpr u32 ONE_MILLISECOND_OF_USLEEP         = 1000;
 constexpr unsigned int SOCKET_NUM_ONE           = 1;
