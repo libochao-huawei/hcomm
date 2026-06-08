@@ -152,7 +152,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UBC_TP:
         case COMM_PROTOCOL_UBOE:
-return ProcessUbChannelDesc(channelDesc, channelDescFinal, hcclComm);
+            return ProcessUbChannelDesc(channelDesc, channelDescFinal, hcclComm);
         case COMM_PROTOCOL_UBG:
             break;
         case COMM_PROTOCOL_ROCE:

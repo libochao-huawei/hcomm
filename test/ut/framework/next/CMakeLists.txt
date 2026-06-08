@@ -11,7 +11,7 @@
 # 注意a3与a5测试用例拆分不同可执行文件
 set(src_to_test_list
     main.cc
-hccl_api_base_test.cc
+    hccl_api_base_test.cc
     ut_HcclRankGraph_API.cc
     ut_HcomInitCollComm.cc
     comms/aiv/ut_AivUbMemTransport_API_test.cc
