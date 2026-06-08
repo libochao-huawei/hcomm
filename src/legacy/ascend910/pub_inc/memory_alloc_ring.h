@@ -36,14 +36,15 @@ public:
     {
         // 之前未加锁 多线程访问可能存在double free 另外本类内存管理过于复杂 后续考虑重构
         std::unique_lock<std::mutex> lock(initDesMutex_);
-        if (recordQueue_ != nullptr) {
+        T **rc = recordQueue_;
+        if (rc != nullptr) {
             for (size_t i = 0; i < capacity_; i++) {
-                if (recordQueue_[i] != nullptr) {
-                    delete reinterpret_cast<T *>(recordQueue_[i]);
-                    recordQueue_[i] = nullptr;
+                if (rc[i] != nullptr) {
+                    delete reinterpret_cast<T *>(rc[i]);
+                    rc[i] = nullptr;
                 }
             }
-            delete[] recordQueue_;
+            delete[] rc;
             recordQueue_ = nullptr;
         }
 
@@ -112,7 +113,6 @@ public:
             int value;
             sem_getvalue(&freeAvailable_, &value);
             if ((head_ == tail_) && (static_cast<size_t>(value) == capacity_)) {
-                sem_init(&freeAvailable_, 0, 0);
                 CapacityExpansion();
             }
             lock.unlock();
@@ -139,12 +139,15 @@ public:
 
     HcclResult Free(T *memoryBlock)
     {
-        while (sem_trywait(&freeAvailable_) != 0) {
-            int value;
-            sem_getvalue(&allocAvailable_, &value);
-            if (static_cast<size_t>(value) == capacity_) {
-                HCCL_WARNING("[LocklessRingMemoryAllocate] Free limited!");
-                return HCCL_SUCCESS;
+        {
+            std::unique_lock<std::mutex> lock(expansionMutex_);
+            while (sem_trywait(&freeAvailable_) != 0) {
+                int value;
+                sem_getvalue(&allocAvailable_, &value);
+                if (static_cast<size_t>(value) == capacity_) {
+                    HCCL_WARNING("[LocklessRingMemoryAllocate] Free limited!");
+                    return HCCL_SUCCESS;
+                }
             }
         }
         T **position = nullptr;
@@ -196,7 +199,7 @@ private:
         }
 
         std::atomic<OperateState> *newStatus = new (std::nothrow) std::atomic<OperateState>[newCapacity];
-        if (newStatus == nullptr ) {
+        if (newStatus == nullptr) {
             delete[] newRingQueue;
             delete[] newRecordQueue;
             ResourseClear();
@@ -206,7 +209,7 @@ private:
         for (size_t i = tail_ - capacity_; i < tail_; i++) {
             newRingQueue[newHead] = nullptr;
             newStatus[newHead].store(status_[i % capacity_]);
-            newRecordQueue[newHead] = recordQueue_[newHead];
+            newRecordQueue[newHead] = recordQueue_[i % capacity_];
             newHead++;
         }
 
@@ -214,7 +217,7 @@ private:
             newRingQueue[i] = new (std::nothrow) T;
             if (newRingQueue[i] == nullptr) {
                 for (size_t j = newHead; j < i; j++) {
-                    delete newRingQueue[i];
+                    delete newRingQueue[j];
                 }
                 delete[] newStatus;
                 delete[] newRingQueue;
@@ -226,24 +229,18 @@ private:
             newStatus[i] = OperateState::MEMORY_VALID;
         }
 
-        if (ringQueue_ != nullptr) {
-            delete[] ringQueue_;
-        }
-        if (recordQueue_ != nullptr) {
-            delete[] recordQueue_;
-        }
-        if (status_ != nullptr) {
-            delete[] status_;
-        }
-
-        ringQueue_ = newRingQueue;
-        recordQueue_ = newRecordQueue;
-        status_ = newStatus;
+        size_t oldCapacity = capacity_;
         head_ = newHead;
         tail_ = newCapacity;
         capacity_ = newCapacity;
-        sem_init(&allocAvailable_, 0, newCapacity / EXPANSION_MULTIPLES);
-        sem_init(&freeAvailable_, 0, newCapacity / EXPANSION_MULTIPLES);
+        ringQueue_ = newRingQueue;
+        recordQueue_ = newRecordQueue;
+        status_ = newStatus;
+
+        for (size_t i = 0; i < newCapacity - newHead; i++) {
+            sem_post(&allocAvailable_);
+        }
+
         return HCCL_SUCCESS;
     }
 
