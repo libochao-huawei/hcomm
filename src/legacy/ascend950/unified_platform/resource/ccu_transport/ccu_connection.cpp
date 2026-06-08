@@ -323,12 +323,7 @@ HcclResult CcuConnection::StartImportJettyRequest(uint32_t jettyIndex, RequestHa
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    auto &importCtx = importJettyCtxs[jettyIndex];
-    if (importCtx.inParam.keyLen >= URMA_EID_LEN) {
-        (void)memcpy_s(importCtx.remoteQpKey, importCtx.inParam.keyLen, rmtAddr_.GetEid().raw, URMA_EID_LEN);
-    }
-    importCtx.inParam.key = importCtx.remoteQpKey;
-    auto &importCtxInParam = importCtx.inParam;
+    auto &importCtxInParam = importJettyCtxs[jettyIndex].inParam;
     importCtxInParam.jettyImportCfg = jettyImportCfg;
     importCtxInParam.jettyImportCfg.protocol = tpProtocol;
     TRY_CATCH_RETURN(
