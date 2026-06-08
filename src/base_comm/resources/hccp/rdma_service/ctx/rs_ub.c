@@ -1699,8 +1699,6 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     int ret;
 
     jettyKeyInfo.jettyId = jettyCb->jetty->jetty_id;
-    (void)memcpy_s(jettyKeyInfo.jettyId.eid.raw, sizeof(jettyKeyInfo.jettyId.eid.raw),
-        jettyCb->devCb->eid.raw, sizeof(jettyCb->devCb->eid.raw));
     jettyKeyInfo.transMode = jettyCb->transportMode;
     ret = memcpy_s(jettyInfo->key.value, DEV_QP_KEY_SIZE, &jettyKeyInfo, sizeof(struct RsJettyKeyInfo));
     CHK_PRT_RETURN(ret != 0, hccp_err("memcpy jetty_key_info failed, ret:%d", ret), -ESAFEFUNC);
