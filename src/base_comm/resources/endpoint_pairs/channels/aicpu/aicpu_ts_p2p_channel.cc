@@ -29,7 +29,7 @@ AicpuTsP2pChannel::~AicpuTsP2pChannel()
 {
     if (socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
-        socket_ = nullptr;
+        memTransport_->SetSocket(socket_);
     }
 }
 
@@ -224,6 +224,7 @@ ChannelStatus AicpuTsP2pChannel::GetStatus()
     ChannelStatus out = Channel::TransportStatusToChannelStatus(memTransport_->GetStatus());
     if (out == ChannelStatus::READY && socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+        memTransport_->SetSocket(socket_);
     }
     return out;
 }
