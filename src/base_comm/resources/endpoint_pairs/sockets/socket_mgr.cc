@@ -246,7 +246,6 @@ HcclResult SocketMgr::PutSocket(const Hccl::SocketConfig*& socketConfig, Hccl::S
         }
     }
     HCCL_INFO("[SocketMgr][%s] socket not found in socketInUseMap", __func__);
-    socket = nullptr;
     return HCCL_SUCCESS;
 }
 
