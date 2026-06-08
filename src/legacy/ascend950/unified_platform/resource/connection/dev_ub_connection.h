@@ -123,6 +123,7 @@ private:
     uint64_t  sqBuffVa{0};
 
     RequestHandle  reqHandle{0};
+    bool           jettyCreateIssued{false};
     vector<char_t> reqDataBuffer;
 
     u8             remoteQpKey[HRT_UB_QP_KEY_MAX_LEN] = {0};
