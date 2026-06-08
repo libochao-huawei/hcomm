@@ -237,3 +237,41 @@ TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_GetStreamAttrFail_Expect_Retur
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
     GlobalMockObject::verify();
 }
+
+TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CacheTaskOpInfoSuccess_Expect_ReturnSuccess)
+{
+    rtStream_t stm = reinterpret_cast<rtStream_t>(1);
+    aclrtBinHandle binHandle = reinterpret_cast<aclrtBinHandle>(1);
+    u32 addr = 1;
+    u32 size = 10;
+
+    MOCKER(aclrtBinaryGetFunction)
+        .stubs()
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtLaunchKernelWithHostArgs)
+        .stubs()
+        .will(returnValue(ACL_SUCCESS));
+
+    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE;
+    int mockModel = 0;
+    void *pmockModel = &mockModel;
+    MOCKER(aclmdlRICaptureGetInfo)
+        .stubs()
+        .with(any(), outBoundP(&captureStatus, sizeof(captureStatus)), outBoundP(&pmockModel, sizeof(pmockModel)))
+        .will(returnValue(ACL_SUCCESS));
+
+    aclrtStreamAttrValue value;
+    value.cacheOpInfoSwitch = 1;
+    MOCKER(aclrtGetStreamAttribute)
+        .stubs()
+        .with(any(), any(), outBoundP(&value, sizeof(value)))
+        .will(returnValue(ACL_SUCCESS));
+
+    MOCKER(hrtCacheLastTaskExtendInfo)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
