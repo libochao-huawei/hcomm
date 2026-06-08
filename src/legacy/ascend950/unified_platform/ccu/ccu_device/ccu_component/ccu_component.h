@@ -16,6 +16,7 @@
 #include <unordered_map>
 
 #include "hccl/hccl_types.h"
+#include "types.h"
 
 #include "ccu_channel_mgr.h"
 #include "ccu_res_allocator.h"
