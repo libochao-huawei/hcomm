@@ -16,6 +16,7 @@
 #include "dlhal_function_v2.h"
 #include "read_write_lock.h"
 #include "aicpu_indop_env.h"
+#include "kernel_entrance.h"
 
 namespace hcomm {
 constexpr u32 RT_SDMA_COMPERR = 0x9; // A3 sdma error类型为0x9时，表示写拷贝发生超时代答，或者数据搬移时地址译码错误
@@ -68,6 +69,45 @@ void HcclCommTaskExceptionLite::Call()
     }
 }
 
+
+HcclResult HcclCommTaskExceptionLite::HandleDpuTaskexception(CollCommAicpu *aicpuComm)
+{
+    // 轮询taskexception共享内存
+    auto commId = aicpuComm->GetIdentifier();
+    auto it = g_taskExpDevMemMap.find(commId);
+    if (it == g_taskExpDevMemMap.end()) {
+        HCCL_ERROR("dpu taskexception va not in current map, please check");
+        return HCCL_E_NOT_FOUND;
+    }
+
+    auto taskexceptionVa = it->second;
+    uint16_t flag = 0;
+    errno_t ret = memcpy_s(&flag, sizeof(flag), taskexceptionVa, sizeof(flag)); // 读标志位
+    if (ret != EOK) {
+        HCCL_ERROR("[HcclCommTaskExceptionLite::%s] memcpy_s failed on flag, return[%d].", __func__, ret);
+        return HCCL_E_MEMORY;
+    }
+    if (flag != 0) {
+        // 触发taskexception
+        // 1、取notify，并构造rtLogicCqReport_t
+        CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite());
+        CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite());
+        CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite()->GetCurrDfxOpInfo());
+        auto curDfxOpInfo = aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite()->GetCurrDfxOpInfo();
+        u32 notifyId = curDfxOpInfo->cpuWaitAicpuNotifyId_;
+        rtLogicCqReport_t exceptionInfo{};
+        // 2、调用SendTaskExceptionByMBox触发taskexception回调
+        CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
+        // 3、标志位置0
+        ret = memset_s(taskexceptionVa, sizeof(uint16_t), 0, sizeof(uint16_t)); // 标志位置0
+        if (ret != EOK) {
+            HCCL_ERROR("[HcclCommTaskExceptionLite::%s] memset_s failed on flag, return[%d].", __func__, ret);
+            return HCCL_E_MEMORY;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
 {
     ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
@@ -83,6 +123,8 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
         if (aicpuComm->GetCommmStatus() == HcclCommStatus::HCCL_COMM_STATUS_INVALID) {
             continue;
         }
+
+        CHK_RET(HandleDpuTaskexception(aicpuComm)); // dpu taskexception
 
         ReadWriteLockBase &commThreadMutex = aicpuComm->GetThreadMutex();
         ReadWriteLock threadRwlock(commThreadMutex);
