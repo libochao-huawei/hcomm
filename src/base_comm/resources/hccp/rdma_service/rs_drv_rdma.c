@@ -647,7 +647,6 @@ int RsDrvQueryNotifyAndAllocPd(struct RsRdevCb *rdevCb)
 
 int RsDrvRegNotifyMr(struct RsRdevCb *rdevCb)
 {
-    struct roce_process_sign roceSign = {0};
     int access = DEFAULT_ACCESS_FLAG;
     rdevCb->notifyAccess = access;
     switch (rdevCb->notifyType) {
@@ -659,6 +658,7 @@ int RsDrvRegNotifyMr(struct RsRdevCb *rdevCb)
         }
         case EVENTID: {
 #ifdef CUSTOM_INTERFACE
+            struct roce_process_sign roceSign = {0};
             if (RsIsCustomInterfaceSupported()) {
                 rdevCb->notifyMr = RsIbvExpRegMr(rdevCb->ibPd, (void *)(uintptr_t)rdevCb->notifyVaBase,
                     rdevCb->notifySize, access, roceSign);
