@@ -51,12 +51,12 @@ private:
 
     void                    SetupRankInfoDetectService(shared_ptr<Socket> serverSocket, s32 devLogicId, u32 devPhyId,
                                                        std::string identifier, vector<RaSocketWhitelist> wlistInfo);
-    std::shared_ptr<Socket> ServerInit();
+    HcclResult              ServerInit(std::shared_ptr<Socket> &serverSocketPtr);
     std::shared_ptr<Socket> ClientInit(const HcclRootHandleV2 &rootHandle);
     void                    AddHostSocketWhitelist(SocketHandle &socketHandle, const std::vector<IpAddress> &hostSocketWlist);
     u32                     GetHostListenPort();
     HcclResult              GetRootHandle(HcclRootHandleV2 &rootHandle);
-    SocketHandle            GetHostSocketHandle();
+    HcclResult              GetHostSocketHandle(SocketHandle &socketHandle);
 
     static UniversalConcurrentMap<u32, volatile u32> g_detectServerStatus_;
 };

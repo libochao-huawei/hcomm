@@ -56,7 +56,7 @@ private:
     void SortRankTable();
 
     // 异常流程处理方法
-    HcclResult FailedConnectionAgentIdString(u32 rankSize);
+    void FailedConnectionAgentIdString(u32 rankSize);
 
     // 校验相关方法
     bool RecvAndVerifyRemoteAgentIdAndRankSize(

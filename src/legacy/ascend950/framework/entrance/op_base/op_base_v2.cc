@@ -1656,7 +1656,11 @@ HcclResult RootInfoDetect(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, c
     CHK_RET(rankInfoDetectAgent->SetupAgent(nRanks, rank, rootHandle));
 
     // 等server端执行结束
-    CHK_RET(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_IDLE));
+    HcclResult ret = rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_IDLE);
+
+    // 若探测流程异常返回错误信息
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] RankInfoDetect SetupAgent fail, identifier[%s].",
+        __func__, rootHandle.identifier), HCCL_E_INTERNAL);
 
     // 获取ranktable
     rankInfoDetectAgent->GetRankTable(rankTable);
@@ -1677,7 +1681,8 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
                 HCCL_ERROR_CODE(HCCL_E_PARA), identifier.c_str()), HCCL_E_PARA);
                 
     // rootInfo获取rankTable, 基于rankTable创建通信域
-    std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
+    std::shared_ptr<RankInfoDetect> rankInfoDetectAgent;
+    EXCEPTION_CATCH((rankInfoDetectAgent = std::make_shared<RankInfoDetect>()), return HCCL_E_MEMORY);
     RankTableInfo rankTable{};
     HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
     if (ret != HCCL_SUCCESS) {
@@ -1807,7 +1812,8 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
                 HCCL_ERROR_CODE(HCCL_E_PARA), identifier.c_str()), HCCL_E_PARA);
 
     RankTableInfo rankTable{};
-    std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
+    std::shared_ptr<RankInfoDetect> rankInfoDetectAgent;
+    EXCEPTION_CATCH((rankInfoDetectAgent = std::make_shared<RankInfoDetect>()), return HCCL_E_MEMORY);
     HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),

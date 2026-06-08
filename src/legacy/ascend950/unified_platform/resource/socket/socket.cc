@@ -139,7 +139,7 @@ HcclResult Socket::IRecvWithHeart(void *data, u64 size, u64& compSize) const
     return HrtRaSocketNonBlockRecvHeart(fdHandle, data, size, &compSize);
 }
 
-void Socket::Destroy()
+void Socket::Destroy() noexcept
 {
     isDestroyed = true;
     EXCEPTION_CATCH(StopListen(), return);

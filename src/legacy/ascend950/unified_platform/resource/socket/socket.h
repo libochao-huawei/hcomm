@@ -46,7 +46,7 @@ public:
     {
         return remoteIp;
     }
-    void Destroy();
+    void Destroy() noexcept;
     void Close();
     void StopListen();
 
