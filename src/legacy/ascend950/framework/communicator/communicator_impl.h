@@ -232,7 +232,7 @@ public:
     HcclResult GetLocalCclBuffer(void **addr, uint64_t *size);
     HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
     HcclResult CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated);
-    HcclResult AllocAndRegKFCWorkSpace(uint64_t size);
+    HcclResult AllocAndRegKFCWorkSpace(uint64_t size, const std::string &memTag);
     HcclResult GetKFCWorkSpaceVA(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
     HcclResult DestroyKFCWorkSpaceVA();
 
@@ -484,6 +484,17 @@ private:
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>> tagWorkspaceMap_;
     bool isFirstBarrier = true;
     // Dpu Kernel Launch 申请的共享内存
+    struct DpuShmem{
+        void* hostShareBuf{nullptr};
+        void* va_{nullptr};       // 申请的内存地址，只有申请侧可以使用
+        void* accessVA_{nullptr}; // 注册后映射的地址，都可以使用
+        int64_t connectType_{0};
+    };
+    
+    DpuShmem dpuTaskexception;
+    DpuShmem dpuIns;
+    std::unordered_map<std::string, DpuShmem> tagDpuShmemArgsMap_ = {{"DPUTAG", dpuIns},
+                                                                    {"DPUTASKEXCEPTION", dpuTaskexception}}; // 浅拷贝，需要注意资源释放
     void* hostShareBuf{nullptr};
     void* va_{nullptr};
     void* accessVA_{nullptr};
@@ -564,6 +575,7 @@ private:
     HcclResult DestroyDpuKernelResource();
     HcclResult WaitDpuKernelThreadTerminate();
     HcclResult InitAndLaunchDpuKernel();
+    HcclResult InitAndLaunchAicpuKernel(); // 保存dpu taskexception共享内存到aicpu全局map中
 
     HcclResult Init(const CommParams &commParams, std::unique_ptr<RankGraph> &inputRankGraph, DevId inputDevLogicId);
     HcclResult Init(const CommParams &commParams, std::unique_ptr<RankGraph> &inputRankGraph,

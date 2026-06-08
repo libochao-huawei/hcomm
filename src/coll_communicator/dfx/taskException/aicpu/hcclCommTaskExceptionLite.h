@@ -40,6 +40,7 @@ private:
     uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
     HcclResult PrintTaskContextInfo(CollCommAicpu *aicpuComm, u32 sqId, u32 taskId);
     std::string GetGroupInfo(const Hccl::TaskInfo& taskInfo);
+    HcclResult HandleDpuTaskexception(CollCommAicpu *aicpuComm)
 
     void PrintEid(const Hccl::TaskInfo& taskInfo);
 
