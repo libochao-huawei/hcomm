@@ -48,12 +48,17 @@ CcuConnection::CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
 {
 }
 
+void CcuConnection::InitGetTpInfoParam()
+{
+    getTpInfoParam_ = MakeGetTpInfoParam(locAddr_, rmtAddr_, tpProtocol_, qos_);
+}
+
 CcuRtpConnection::CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
     : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::RTP;
-    getTpInfoParam_ = MakeGetTpInfoParam(locAddr_, rmtAddr_, tpProtocol_, qos_);
+    InitGetTpInfoParam();
 }
 
 CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
@@ -61,7 +66,7 @@ CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtA
     : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::CTP;
-    getTpInfoParam_ = MakeGetTpInfoParam(locAddr_, rmtAddr_, tpProtocol_, qos_);
+    InitGetTpInfoParam();
 }
 
 HcclResult CcuConnection::Init()
