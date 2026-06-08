@@ -14,6 +14,8 @@ set(src_list
     coll_comm_res_c_adpt.cc
     coll_comm_c_adpt.cc
     exchange_info_c_adpt.cc
+    coll_comm_profiling.cc
+    coll_comm_rank_graph_a_adpt.cc
 )
 
 if(TARGET hcomm)
@@ -21,6 +23,15 @@ if(TARGET hcomm)
         ${src_list}
     )
     target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
+if(TARGET ccl_kernel)
+    target_sources(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/coll_comm_rank_graph_a_adpt.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()

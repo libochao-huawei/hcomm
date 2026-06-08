@@ -26,6 +26,8 @@ endif()
 if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/notify_manager.cc
-        # ${CMAKE_CURRENT_SOURCE_DIR}/aicpu_launch_manager.cc
+    )
+    target_include_directories(ccl_kernel PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
