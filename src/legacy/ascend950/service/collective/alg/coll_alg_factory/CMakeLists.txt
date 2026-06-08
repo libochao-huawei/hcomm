@@ -15,5 +15,5 @@ add_subdirectory(alg_topo_match)
 add_subdirectory(utils)
 
 if(PRODUCT_SIDE STREQUAL "host")
-  add_subdirectory(alg_aiv_instruction)
+  #add_subdirectory(alg_aiv_instruction)  # AIV requires device-side compiler, skip on host build
 endif()
