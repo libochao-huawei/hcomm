@@ -6356,7 +6356,7 @@ namespace hccl
             dataType = param.GetDataType();
         }
 
-        if(GetExternalInconsistentCheckSwitch() == InconsistentCheckMode::ON) {
+        if(GetExternalInconsistentCheckSwitch() == InconsistentCheckMode::ON){
             if (param.opType != HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
                 OpInfoDesc opInfo;
                 opInfo.opType = param.opType;
