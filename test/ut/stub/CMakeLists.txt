@@ -383,6 +383,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/coll_communicator/communicator
     ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/device
     ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank
+    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/group
     ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_mems/
     ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/remote/rank_pairs
     ${HCCL_CODE_ROOT}/src/coll_communicator/common/loggers
