@@ -32,13 +32,13 @@ HcclResult AivUbMemTransport::FillTagVec(HcommMemHandle *memHandles, uint32_t bu
         return HCCL_E_PARA;
     }
     for (uint32_t i = 0; i < bufferNum; ++i) {
-        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
-        CHK_PTR_NULL(locMemInfo);
-        auto localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(locMemInfo->bufferHandle);
+        auto localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(memHandles[i]);
         CHK_PTR_NULL(localIpcRmaBuffer);
+        auto buf = localIpcRmaBuffer->GetBuf();
+        CHK_PTR_NULL(buf);
         bufferVec.push_back(localIpcRmaBuffer);
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = locMemInfo->memTag;
+        std::string tag = buf->GetMemTag();
         if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
             HCCL_ERROR("[AivUbMemTransport][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
@@ -161,8 +161,8 @@ HcclResult AivUbMemTransport::SendDataSize()
     HCCL_INFO("[%s] start", __func__);
 
     Hccl::BinaryStream binaryStream;
-    BufferPack(binaryStream, localRmaBufferVec_, localUserMemTag_);
-    
+    CHK_RET(BufferPack(binaryStream, localRmaBufferVec_, localUserMemTag_));
+
     binaryStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
     EXCEPTION_HANDLE_BEGIN
@@ -194,7 +194,7 @@ HcclResult AivUbMemTransport::SendMemInfo()
     return HCCL_SUCCESS;
 }
 
-void AivUbMemTransport::BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
+HcclResult AivUbMemTransport::BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
 {
     u32 vecSize = bufferVec.size();
@@ -210,9 +210,11 @@ void AivUbMemTransport::BufferPack(Hccl::BinaryStream &binaryStream, std::vector
 
     for (uint32_t i = 0; i < vecSize; ++i) {
         std::unique_ptr<Hccl::Serializable> dto = bufferVec[i]->GetExchangeDto();
-        HCCL_INFO("[%s] dto[%s]", __func__, dto->Describe().c_str());
+        CHK_PTR_NULL(dto);
         dto->Serialize(binaryStream);
+        HCCL_INFO("[%s] dto[%s]", __func__, dto->Describe().c_str());
     }
+    return HCCL_SUCCESS;
 }
 
 HcclResult AivUbMemTransport::RecvMemInfo()
@@ -391,7 +393,7 @@ HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
     HCCL_INFO("[AivUbMemTransport][UpdateMemInfo] bufferNum[%zu]", locMemTemp_.size());
     sendData_.clear();
     Hccl::BinaryStream sendStream;
-    BufferPack(sendStream, locMemTemp_, locTagTemp_);
+    CHK_RET(BufferPack(sendStream, locMemTemp_, locTagTemp_));
     sendStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
     EXCEPTION_HANDLE_BEGIN

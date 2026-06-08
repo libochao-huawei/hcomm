@@ -66,6 +66,7 @@
 
 #include "../../../legacy/ascend950/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
 #include "../../../base_comm/resources/endpoint_pairs/channels/aicpu/device/aicpu_channel_process.h"
+#include "../../../legacy/ascend950/unified_platform/resource/buffer/exchange_ipc_buffer_dto.h"
 
 #include "../../../legacy/ascend950/framework/resource_manager/socket/socket_manager.h"
 
@@ -319,6 +320,17 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuffer
 
 LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle)
     : LocalRmaBuffer(buf, RmaType::UB)
+{
+}
+
+LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle,
+    const LocalUbRmaBuffer &parent)
+    : LocalRmaBuffer(buf, RmaType::UB, true),
+      rdmaHandle(rdmaHandle),
+      tokenValue(parent.tokenValue),
+      tokenId(parent.tokenId),
+      tokenIdHandle(parent.tokenIdHandle),
+      reqReg(parent.reqReg)
 {
 }
 
@@ -1286,6 +1298,15 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
 {
 }
 
+LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle, u32 lkey, u32 rkey, MrHandle mrHandle)
+    : LocalRmaBuffer(buf, RmaType::RDMA, true)
+{
+    (void)rdmaHandle;
+    (void)lkey;
+    (void)rkey;
+    (void)mrHandle;
+}
+
 LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
 {
 }
@@ -1410,6 +1431,15 @@ LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf) : LocalRmaBuff
 {
 }
 
+LocalIpcRmaBuffer::LocalIpcRmaBuffer(std::shared_ptr<Buffer> buf, const LocalIpcRmaBuffer& parent)
+    : LocalRmaBuffer(buf, RmaType::IPC, true)
+{
+    (void)memcpy_s(name, RTS_IPC_MEM_NAME_LEN, parent.name, RTS_IPC_MEM_NAME_LEN);
+    ipcPtr   = parent.ipcPtr;
+    ipcOffset = parent.ipcOffset;
+    ipcSize   = parent.ipcSize;
+}
+
 LocalIpcRmaBuffer::~LocalIpcRmaBuffer()
 {
 }
@@ -1421,7 +1451,14 @@ string LocalIpcRmaBuffer::Describe() const
 
 std::unique_ptr<Serializable> LocalIpcRmaBuffer::GetExchangeDto()
 {
-    return nullptr;
+    auto dto = std::make_unique<ExchangeIpcBufferDto>(
+        static_cast<u64>(buf->GetAddr()),
+        static_cast<u64>(buf->GetSize()),
+        ipcOffset,
+        static_cast<u32>(0),
+        buf->GetMemTag().c_str());
+    (void)memcpy_s(dto->name, RTS_IPC_MEM_NAME_LEN, name, RTS_IPC_MEM_NAME_LEN);
+    return std::unique_ptr<Serializable>(dto.release());
 }
 
 void LocalIpcRmaBuffer::Grant(u32 pid)
