@@ -24,6 +24,11 @@ TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam
 
 std::string TaskInfo::Describe() const
 {
+    if (dfxOpInfo_ == nullptr) {
+        return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], "
+            "taskParam:[%s], dftOpInfo:[nullptr], isMaster[%d]]",
+            streamId_, taskId_, remoteRank_, taskParam_.Describe().c_str(), isMaster_);
+    }
     return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], taskParam:[%s], dftOpInfo:[%s], isMaster[%d]]",
                         streamId_, taskId_, remoteRank_, taskParam_.Describe().c_str(), dfxOpInfo_->Describe().c_str(), isMaster_);
 }
@@ -31,7 +36,7 @@ std::string TaskInfo::Describe() const
 string TaskInfo::GetAlgTypeName() const
 {
     if (this->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        HCCL_WARNING("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "NULL";
     }
     return this->dfxOpInfo_->algType_;
@@ -40,7 +45,7 @@ string TaskInfo::GetAlgTypeName() const
 string TaskInfo::GetBaseInfo() const
 {
     if (this->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        HCCL_WARNING("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "";
     }
     return StringFormat("streamID(sqId):[%u], taskID(sqeId):[%u], taskType:[%s], tag:[%s], algType:[%s]",
@@ -115,7 +120,7 @@ string TaskInfo::GetParaNotify() const
 string TaskInfo::GetOpInfo() const
 {
     if (this->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        HCCL_WARNING("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "";
     }
     const auto opInfo = this->dfxOpInfo_;
@@ -215,7 +220,7 @@ string TaskInfo::GetIndopBaseInfo() const
 string TaskInfo::GetIndopDataInfo() const
 {
     if (this->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        HCCL_WARNING("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "";
     }
 

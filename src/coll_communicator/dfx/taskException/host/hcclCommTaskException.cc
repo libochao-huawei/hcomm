@@ -225,13 +225,13 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
             __func__, curTask.get(), ret, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
 
     if (curTask->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[%s]fail, dfxOpInfo is nullptr", __func__);
-        return;
+        HCCL_WARNING("[%s]dfxOpInfo is nullptr. devId[%u], streamId[%u], taskId[%u].",
+            __func__, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
     }
 
-    bool isIndop_ = curTask->dfxOpInfo_->isIndop_;
+    bool isIndop_ = curTask->dfxOpInfo_ != nullptr ? curTask->dfxOpInfo_->isIndop_ : false;
     HCCL_INFO("[%s]isIndop_[%d], taskType[%s]", __func__, isIndop_, curTask->taskParam_.taskType.Describe().c_str());
-    if (!isIndop_) {
+    if (curTask->dfxOpInfo_ != nullptr && !isIndop_) {
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
         return;
     }
@@ -246,7 +246,7 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]TaskInfo dfxOpInfo or communicator is nullptr.", __func__);
         return "";
     }
 
@@ -258,7 +258,7 @@ std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId)
 {
     if (collComm == nullptr || rankid == INVALID_VALUE_RANKID) {
-        HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
+        HCCL_WARNING("[GetAicpuCqeErrRemoteLocalIdByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
         remoteLocalId = INVALID_VALUE_RANKID;
         return;
     }
@@ -285,7 +285,7 @@ void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* coll
 void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
 {
     if (collComm == nullptr || rankid == INVALID_VALUE_RANKID) {
-        HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
+        HCCL_WARNING("[GetAicpuCqeErrNetInstanceByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
         netInstanceId = "";
         return;
     }
@@ -317,6 +317,10 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
 
 void TaskExceptionHost::GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo)
 {
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr){
+        HCCL_WARNING("[%s] dfxOpInfo_ or comm_ is nullptr!", __func__);
+        return;
+    }
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     u32 remoteLocalId = INVALID_VALUE_RANKID;
     GetAicpuCqeErrRemoteLocalIdByRankId(collComm, errorMessage.remoteUserRank, remoteLocalId);
@@ -348,7 +352,8 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
             std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
             std::vector<std::string>({
                 std::to_string(taskInfo.remoteRank_),
-                taskInfo.GetBaseInfo(), (taskInfo.GetParaInfo()),
+                taskInfo.dfxOpInfo_ != nullptr ? taskInfo.GetBaseInfo() : taskInfo.GetIndopBaseInfo(),
+                (taskInfo.GetParaInfo()),
                 ""})
         );
     }
@@ -567,7 +572,12 @@ void TaskExceptionHost::ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, 
         || exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE
         || exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE
         || exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB) {
-        hccl::CollComm *collComm = static_cast<hccl::CollComm*>(exceptionTaskInfo.dfxOpInfo_->comm_);
+        hccl::CollComm *collComm = nullptr;
+        if (exceptionTaskInfo.dfxOpInfo_ != nullptr && exceptionTaskInfo.dfxOpInfo_->comm_ != nullptr) {
+            collComm = static_cast<hccl::CollComm*>(exceptionTaskInfo.dfxOpInfo_->comm_);
+        } else {
+            HCCL_WARNING("[%s] dfxOpInfo_ or comm_ is nullptr!", __func__);
+        }
         std::string localServerId = "";
         GetAicpuCqeErrNetInstanceByRankId(collComm, errorMessage.rankId, localServerId);
         u32 localDeviceId = INVALID_VALUE_RANKID;

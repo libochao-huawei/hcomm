@@ -13,7 +13,6 @@ namespace Hccl {
 
 MirrorTaskManagerLite::MirrorTaskManagerLite()
 {
-    currDfxOpInfo_ = std::make_shared<Hccl::DfxOpInfo>();
 }
 
 void MirrorTaskManagerLite::RegFullyCallBack(std::function<void(const std::string&, u32)> callBack)
@@ -37,6 +36,10 @@ void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
     }
 
     if (taskInfo->dfxOpInfo_ == nullptr) {
+        if (currDfxOpInfo_ == nullptr) {
+            HCCL_WARNING("[MirrorTaskManagerLite][%s] both taskInfo->dfxOpInfo_ and currDfxOpInfo_ are nullptr!", __func__);
+            return;
+        }
         taskInfo->dfxOpInfo_ = currDfxOpInfo_;
     }
 
@@ -66,7 +69,7 @@ bool MirrorTaskManagerLite::IsStaticGraphMode(const CollOperator &collOperator) 
 void MirrorTaskManagerLite::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
 {
     if (dfxOpInfo == nullptr) {
-        HCCL_ERROR("[MirrorTaskManagerLite][SetCurrDfxOpInfo]fail, dfxOpInfo is nullptr");
+        HCCL_WARNING("[%s]dfxOpInfo is nullptr,skip SetCurrDfxOpInfo!", __func__);
         return;
     }
     currDfxOpInfo_     = dfxOpInfo;
