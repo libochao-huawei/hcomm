@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 
-#include "../../../../../src/base_comm/resources/ccu/ccu_device/ccu_res_batch_allocator.h"
+#include "../../../../../src/base_comm/resource/comm_engine/ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_dev_mgr_pub.h"
 #include "ccu_comp.h"
 #include "hccl_common.h"

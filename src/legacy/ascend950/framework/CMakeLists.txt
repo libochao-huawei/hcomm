@@ -17,5 +17,5 @@ add_subdirectory(env_config)
 add_subdirectory(dfx)
 add_subdirectory(device_mode)
 add_subdirectory(entrance)
-add_subdirectory(aiv)
+#add_subdirectory(aiv)  # AIV requires device-side compiler, skip on host build
 add_subdirectory(topo)

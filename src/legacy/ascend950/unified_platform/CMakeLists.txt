@@ -13,4 +13,4 @@ add_subdirectory(ccu)
 add_subdirectory(resource)
 add_subdirectory(common)
 add_subdirectory(external_system)
-add_subdirectory(aiv)
+#add_subdirectory(aiv)  # AIV requires device-side compiler, skip on host build

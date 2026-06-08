@@ -148,16 +148,17 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/ascend910/framework/op_base/src/
 
     # framework/next (拆分到 base_comm 和 coll_communicator)
-    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/local/my_rank
-    ${HCOMM_DIR}/src/coll_communicator/communicator
-    ${HCOMM_DIR}/src/coll_communicator/communicator/device
-    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/remote/rank_pairs
-    ${HCOMM_DIR}/src/base_comm/resources/comm_engine_res/threads
-    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/sockets/
-    ${HCOMM_DIR}/src/base_comm/resources/endpoints/
-    ${HCOMM_DIR}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
-    ${HCOMM_DIR}/src/base_comm/resources/reged_mems
-    ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank
+    ${HCOMM_DIR}/src/coll_communicator_mgr/communicator
+    ${HCOMM_DIR}/src/coll_communicator_mgr/communicator/device
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/remote/rank_pairs
+    ${HCOMM_DIR}/src/base_comm/resource/comm_engine/threads
+    ${HCOMM_DIR}/src/base_comm/resource/comm_engine
+    ${HCOMM_DIR}/src/base_comm/resource/channel/sockets/
+    ${HCOMM_DIR}/src/base_comm/resource/endpoint/
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/endpoint
+    ${HCOMM_DIR}/src/base_comm/resource/comm_mem
+    ${HCOMM_DIR}/src/base_comm/resource/channel/
 
     # platform (legacy/ascend910)
     ${HCOMM_DIR}/src/legacy/ascend910/platform/
@@ -170,9 +171,9 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unfold_cache
 
     # hccp (moved to base_comm/resources)
-    ${HCOMM_DIR}/src/base_comm/resources/hccp
-    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc
-    ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network
+    ${HCOMM_DIR}/src/base_comm/resource/hccp
+    ${HCOMM_DIR}/src/base_comm/resource/hccp/inc
+    ${HCOMM_DIR}/src/base_comm/resource/hccp/inc/network
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/dispatcher_ctx
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/device

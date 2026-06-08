@@ -17,6 +17,12 @@
 #include "mmpa_api.h"
 #include "mem_host_pub.h"
 
+// CANN API compatibility: different versions use different function names
+#ifndef aclrtCacheLastTaskExtendInfo
+#define aclrtCacheLastTaskExtendInfo aclrtCacheLastTaskOpInfo
+#endif
+
+
 
 using namespace std;
 
