@@ -154,8 +154,6 @@ HcclResult CollReduceScatterVDeterExecutor::CalcLevel1CommInfoForMeshTopo(Transp
 
 bool CollReduceScatterVDeterExecutor::IsContainZeroSlice(const OpParam &param)
 {
-    // 对于RSv counts中含0的场景，不进行子图复用
-    bool isContainZero = false;
     const auto curCounts = static_cast<u64*>(param.VDataDes.counts);
     auto it = std::find(curCounts, curCounts + topoAttr_.userRankSize, 0ULL); 
     return (it != curCounts + topoAttr_.userRankSize);
