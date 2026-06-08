@@ -328,7 +328,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
 string TaskExceptionHandler::GetGroupRankInfo(const TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]TaskInfo dfxOpInfo or communicator is nullptr.", __func__);
         return "";
     }
     const CommunicatorImpl* communicator = static_cast<CommunicatorImpl*>(taskInfo.dfxOpInfo_->comm_);
@@ -368,7 +368,8 @@ void TaskExceptionHandler::ProcessException(rtExceptionInfo_t* exceptionInfo, co
     HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, groupRank information is %s.", __func__,
         GetGroupRankInfo(taskInfo).c_str());
     auto count = GetOpCounter(taskInfo);
- 	HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", __func__, static_cast<u32>(count.first), static_cast<u32>(count.second), taskInfo.dfxOpInfo_->opIndex_);
+    u32 opIndex = (taskInfo.dfxOpInfo_ != nullptr) ? taskInfo.dfxOpInfo_->opIndex_ : 0;
+ 	HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", __func__, static_cast<u32>(count.first), static_cast<u32>(count.second), opIndex);
     HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, opData information is %s.", __func__, taskInfo.GetOpInfo().c_str());
 }
 
@@ -533,7 +534,7 @@ vector<CcuTaskParam> TaskExceptionHandler::GetMC2AlgTaskParam(const TaskInfo& ta
         return {};
     }
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]Get MC2 Alg TaskParam failed, communicator is nullptr.", __func__);
+        HCCL_WARNING("[TaskInfo][%s]Get MC2 Alg TaskParam failed, communicator is nullptr.", __func__);
         return {};
     }
     const CommunicatorImpl* communicator = (CommunicatorImpl*)taskInfo.dfxOpInfo_->comm_;
@@ -555,7 +556,8 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
     auto count = GetOpCounter(taskInfo);
- 	HCCL_ERROR("[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(count.first), static_cast<u32>(count.second), taskInfo.dfxOpInfo_->opIndex_);
+    u32 opIndex = (taskInfo.dfxOpInfo_ != nullptr) ? taskInfo.dfxOpInfo_->opIndex_ : 0;
+ 	HCCL_ERROR("[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(count.first), static_cast<u32>(count.second), opIndex);
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
     auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.ccuInfo;
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
@@ -1144,7 +1146,7 @@ RankId TaskExceptionHandler::GetRankIdByChannelId(uint16_t channelId, const Task
         return INVALID_RANKID;
     }
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskException][%s]Get RankId failed, communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]Get RankId failed, dfxOpInfo or communicator is nullptr.", __func__);
         return INVALID_RANKID;
     }
     const CommunicatorImpl* communicator = (CommunicatorImpl*)taskInfo.dfxOpInfo_->comm_;
@@ -1169,7 +1171,7 @@ std::pair<IpAddress, IpAddress> TaskExceptionHandler::GetAddrPairByChannelId(uin
         return dummy;
     }
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskException][%s]Get AddrPair failed, communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]Get AddrPair failed, dfxOpInfo or communicator is nullptr.", __func__);
         return dummy;
     }
     const CommunicatorImpl *communicator    = (CommunicatorImpl *)taskInfo.dfxOpInfo_->comm_;

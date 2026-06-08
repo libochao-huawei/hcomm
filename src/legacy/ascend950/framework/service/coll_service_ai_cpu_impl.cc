@@ -700,12 +700,17 @@ std::vector<char> CollServiceAiCpuImpl::PackOpData(const std::string &opTag, con
 
 void CollServiceAiCpuImpl::SaveDfxTaskInfo(const TaskParam &taskParam, const RankId remoteRankId, const bool isMaster) const
 {
+    auto currDfxOpInfo = comm->GetMirrorTaskManager().GetCurrDfxOpInfo();
+    if (currDfxOpInfo == nullptr) {
+        HCCL_WARNING("[%s] GetCurrDfxOpInfo is nullptr, skip SaveDfxTaskInfo!", __func__);
+        return;
+    }
     u32 taskId;
     u32 streamId;
     HrtGetTaskIdAndStreamID(taskId, streamId);
  
     shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
-        comm->GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
+        currDfxOpInfo, isMaster);
  
     comm->GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }

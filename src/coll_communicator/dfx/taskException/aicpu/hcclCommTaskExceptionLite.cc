@@ -158,27 +158,21 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
         return HCCL_E_PARA;
     }
     if (curTask->dfxOpInfo_ == nullptr) {
-        HCCL_ERROR("[%s]dfxOpInfo is nullptr. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
+        HCCL_WARNING("[%s]dfxOpInfo is nullptr. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
             __func__, devId_, exceptionInfo.sqId, sqeId);
-        return HCCL_E_PARA;
     }
 
     // 每个通信域仅首次上报（N秒快恢时重置）
-    if (!aicpuComm->IsErrorReported()) {
+    if (!aicpuComm->IsErrorReported() && curTask->dfxOpInfo_ != nullptr) {
         // 1) errorMessage上报
         Hccl::ErrorMessageReport errMsgInfo{};
         CHK_RET(GenerateErrorMessageReport(aicpuComm, *curTask, exceptionInfo, errMsgInfo));
         CHK_RET(aicpuComm->SendErrorMessageReportToHost(errMsgInfo));
 
         // 2) send mbox to tsfw
-        if (curTask->dfxOpInfo_ == nullptr) {
-            HCCL_ERROR("[%s]dfxOpInfo is nullptr. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
-                __func__, devId_, exceptionInfo.sqId, sqeId);
-        } else {
-            u32 notifyId = curTask->dfxOpInfo_->cpuWaitAicpuNotifyId_;
-            CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
-            aicpuComm->SetErrorReported(true);
-        }
+        u32 notifyId = curTask->dfxOpInfo_->cpuWaitAicpuNotifyId_;
+        CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
+        aicpuComm->SetErrorReported(true);
     }
 
     // 1. 打印task信息
@@ -206,14 +200,26 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
     errMsgInfo.taskId = taskInfo.taskId_;
     errMsgInfo.rankId = aicpuComm->GetTopoInfo().userRank;
     errMsgInfo.rankSize = aicpuComm->GetTopoInfo().userRankSize;
-    strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, taskInfo.dfxOpInfo_ == nullptr ? "MESH" :
-                                                                                taskInfo.dfxOpInfo_->algType_.c_str());
-    errMsgInfo.opIndex = taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->opIndex_;
-    errMsgInfo.opType = taskInfo.dfxOpInfo_->op_.opType;
-    errMsgInfo.count = taskInfo.dfxOpInfo_->op_.dataCount;
-    errMsgInfo.dataType = taskInfo.dfxOpInfo_->op_.dataType;
-    errMsgInfo.srcAddr = static_cast<u64>(taskInfo.dfxOpInfo_->op_.inputMem->GetAddr());
-    errMsgInfo.dstAddr = static_cast<u64>(taskInfo.dfxOpInfo_->op_.outputMem->GetAddr());
+    if (taskInfo.dfxOpInfo_ == nullptr) {
+        HCCL_WARNING("[%s]dfxOpinfo_ is nullptr, use default values!", __func__);
+        strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, "MESH");
+        errMsgInfo.opIndex = 0;
+        errMsgInfo.opType = 0;
+        errMsgInfo.count = 0;
+        errMsgInfo.dataType = 0;
+        errMsgInfo.srcAddr = 0;
+        errMsgInfo.dstAddr = 0;
+    } else {
+        strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, taskInfo.dfxOpInfo_->algType_.c_str());
+        errMsgInfo.opIndex = taskInfo.dfxOpInfo_->opIndex_;
+        errMsgInfo.opType = taskInfo.dfxOpInfo_->op_.opType;
+        errMsgInfo.count = taskInfo.dfxOpInfo_->op_.dataCount;
+        errMsgInfo.dataType = taskInfo.dfxOpInfo_->op_.dataType;
+        errMsgInfo.srcAddr = taskInfo.dfxOpInfo_->op_.inputMem != nullptr ?
+            static_cast<u64>(taskInfo.dfxOpInfo_->op_.inputMem->GetAddr()) : 0;
+        errMsgInfo.dstAddr = taskInfo.dfxOpInfo_->op_.outputMem != nullptr ?
+            static_cast<u64>(taskInfo.dfxOpInfo_->op_.outputMem->GetAddr()) : 0;
+    }
     errMsgInfo.taskType = taskInfo.taskParam_.taskType;
 
     if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
@@ -235,8 +241,10 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
         errMsgInfo.reduceType = taskInfo.taskParam_.taskPara.Reduce.reduceOp;
     }
 
-    CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag),
-        taskInfo.dfxOpInfo_->algTag_.c_str(), taskInfo.dfxOpInfo_->algTag_.size()));
+    if (taskInfo.dfxOpInfo_ != nullptr) {
+        CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag),
+            taskInfo.dfxOpInfo_->algTag_.c_str(), taskInfo.dfxOpInfo_->algTag_.size()));
+    }
     CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group),
         aicpuComm->GetIdentifier().c_str(), aicpuComm->GetIdentifier().size()));
 
@@ -387,18 +395,19 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
     std::string taskContextInfo = "";
     Hccl::TaskInfo* lastTask = taskContext[0].get();
     for (u32 i = 0; i < taskContext.size(); ++i) {
-        if (taskContext[i] == nullptr || taskContext[i]->dfxOpInfo_ == nullptr) {
-            HCCL_ERROR("[%s]taskContext nullptr, taskContext[%u]=%p", __func__, i, taskContext[i]);
-            continue;
-        }
         std::string conciseInfo = taskContext[i]->GetConciseBaseInfo();
         conciseInfo += ",";
 
         if (taskContextInfo.size() + conciseInfo.size() >= TASK_CONTEXT_INFO_SIZE || // 1. 字符串超过一定长度时，打印一次
-            lastTask->dfxOpInfo_->opIndex_ != taskContext[i]->dfxOpInfo_->opIndex_ ||    // 2. 不同算子，新起一行打印
+            (lastTask->dfxOpInfo_ != nullptr && taskContext[i]->dfxOpInfo_ != nullptr &&
+                lastTask->dfxOpInfo_->opIndex_ != taskContext[i]->dfxOpInfo_->opIndex_) ||    // 2. 不同算子，新起一行打印
             i + 1 == taskContext.size()) {                                           // 3. 遍历到最后一个task，打印一次
             HCCL_ERROR("[TaskException][AICPU]opData information is %s.", lastTask->GetIndopDataInfo().c_str());
-            HCCL_ERROR("[TaskException][AICPU]task sequence is OP(%u): %s", lastTask->dfxOpInfo_->opIndex_, taskContextInfo.c_str());
+            if (lastTask->dfxOpInfo_ != nullptr) {
+                HCCL_ERROR("[TaskException][AICPU]task sequence is OP(%u): %s", lastTask->dfxOpInfo_->opIndex_, taskContextInfo.c_str());
+            } else {
+                HCCL_ERROR("[TaskException][AICPU]task sequence is %s", taskContextInfo.c_str());
+            }
             taskContextInfo = "";
             lastTask = taskContext[i].get();
         }
@@ -411,7 +420,7 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
 std::string HcclCommTaskExceptionLite::GetGroupInfo(const Hccl::TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[%s]TaskInfo communicator is nullptr.", __func__);
+        HCCL_WARNING("[%s]TaskInfo dfxOpInfo or communicator is nullptr.", __func__);
         return "";
     }
     CollCommAicpu* aicpuComm = static_cast<CollCommAicpu*>(taskInfo.dfxOpInfo_->comm_);
