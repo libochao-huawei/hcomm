@@ -28,8 +28,8 @@ constexpr uint8_t  TASK_TERMINATE          = 2;
 constexpr uint8_t  TASK_TERMINATE_RESPONSE = 3;
 constexpr uint8_t  MEMORY_DEVIDE           = 2;
 
-TaskService::TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize)
-    : npu2dpuMem_(deviceMem), shmemSize_(deviceMemSize / MEMORY_DEVIDE), hostMem_(hostMem), hostMemSize_(hostMemSize)
+TaskService::TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize, std::string commId)
+    : npu2dpuMem_(deviceMem), shmemSize_(deviceMemSize / MEMORY_DEVIDE), hostMem_(hostMem), hostMemSize_(hostMemSize), commId_(commId)
 {
     int32_t controlSize = sizeof(uint8_t) + sizeof(char) * TASKTYPE_ADDR_LENGTH + sizeof(uint32_t) + CTRL_HDR_DATA_SIZE_LEN;
     if (shmemSize_ < controlSize) {
@@ -143,21 +143,18 @@ HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *
     }
     uint32_t ctrlHdrLen = CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN + CTRL_HDR_DATA_SIZE_LEN;
     /* ctrlHdr提前从deviceMem copy一定长度，如果长度够，直接从ctrlHdr copy，减少一次aclmemcpy耗时 */
+    uint8_t *dataPtr = nullptr;
     if (hdrLen < ctrlHdrLen + dataLen) {
-        uint8_t *dataPtr = srcPtr + ctrlHdrLen;
-        errno_t ret     = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
-        if (ret != EOK) {
-            HCCL_ERROR("control data memcpy failed: %d", ret);
-            return HCCL_E_INTERNAL;
-        }
+        dataPtr = srcPtr + ctrlHdrLen;
     } else {
-        uint8_t *dataPtr = ctrlHdr + ctrlHdrLen;
-        int ret = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
-        if (ret != EOK) {
-            HCCL_ERROR("control data memcpy failed: %d", ret);
-            return HCCL_E_INTERNAL;
-        }
+        dataPtr = ctrlHdr + ctrlHdrLen;
     }
+    errno_t ret     = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
+    if (ret != EOK) {
+        HCCL_ERROR("control data memcpy failed: %d", ret);
+        return HCCL_E_MEMORY;
+    }
+
     if (itFunc->second(reinterpret_cast<uint64_t>(hostMem_), dataLen) != 0) {
         return HCCL_E_INTERNAL;
     }
