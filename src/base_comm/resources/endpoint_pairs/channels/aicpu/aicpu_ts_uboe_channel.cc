@@ -113,7 +113,7 @@ HcclResult AicpuTsUboeChannel::BuildConnection()
         __func__, locAddr_.Describe().c_str(), rmtAddr_.Describe().c_str());
 
     s32 deviceLogicId;
-    CHK_RET(hrtGetDevice(&deviceLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
     const u8 qosPre = static_cast<u8>(
@@ -240,7 +240,7 @@ HcclResult AicpuTsUboeChannel::BuildSocket()
 HcclResult AicpuTsUboeChannel::Init()
 {
     s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
     CHK_RET(ParseInputParam());
     CHK_RET(BuildSocket());

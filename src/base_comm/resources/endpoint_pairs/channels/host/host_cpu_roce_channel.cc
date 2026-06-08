@@ -242,7 +242,7 @@ HcclResult HostCpuRoceChannel::BuildBuffer()
 HcclResult HostCpuRoceChannel::Init()
 {
     s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
 
     CHK_RET(ParseInputParam());

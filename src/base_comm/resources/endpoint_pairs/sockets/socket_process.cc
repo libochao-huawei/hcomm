@@ -214,7 +214,7 @@ HcclResult SocketProcess::Init()
     }
 
     s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
 
     isInit_.store(true, std::memory_order_release);

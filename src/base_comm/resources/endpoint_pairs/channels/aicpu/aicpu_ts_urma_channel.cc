@@ -111,7 +111,7 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr));
 
     s32 deviceLogicId;
-    CHK_RET(hrtGetDevice(&deviceLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
     const u8 qosPre = static_cast<u8>(
@@ -254,7 +254,7 @@ HcclResult AicpuTsUrmaChannel::Init()
     // TODO: 处理抛异常
     s32 devLogicId;
     CHK_RET(ParseInputParam());
-    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
     CHK_RET(StartListen());
     CHK_RET(BuildSocket());

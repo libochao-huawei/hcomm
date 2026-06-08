@@ -39,9 +39,9 @@ HcclResult CpuUrmaEndpoint::Init()
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
     u32 devPhyId;
     s32 deviceLogicId;
-    HcclResult ret = hrtGetDevice(&deviceLogicId);
+    HcclResult ret = hrtGetDeviceRefresh(&deviceLogicId);
     if(ret != HCCL_SUCCESS){
-        HCCL_ERROR("call hrtGetDevice failed, deviceLogicId[%d]", deviceLogicId);
+        HCCL_ERROR("call hrtGetDeviceRefresh failed, deviceLogicId[%d]", deviceLogicId);
         return ret;
     }
     RaSocketSetWhiteListStatus(1); // PEER模式需要手动开启白名单模式
@@ -72,7 +72,7 @@ HcclResult CpuUrmaEndpoint::ServerSocketListen(const uint32_t port)
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
 
@@ -94,7 +94,7 @@ HcclResult CpuUrmaEndpoint::ServerSocketStopListen(const uint32_t port)
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
@@ -111,7 +111,7 @@ HcclResult CpuUrmaEndpoint::ServerSocketGetListenPort(uint32_t *port)
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, localIpAddr));
 
     s32 deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
     u32 devicePhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(deviceId, devicePhyId));
 
