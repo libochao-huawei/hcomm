@@ -870,6 +870,11 @@ void CcuKernel::Append(std::shared_ptr<CcuRep::CcuRepBase> rep)
 CcuResult CcuKernel::IfBegin(CcuVariableHandle varHandle, uint64_t immediate,
     CcuConditionType condType, const char *label)
 {
+    if (loopBodyDepth_ > 0) {
+        HCCL_ERROR("[%s] CCU_IF is not allowed inside a ccu::Loop body (label='%s')",
+            __func__, label != nullptr ? label : "(null)");
+        return CcuResult::CCU_E_INTERNAL;
+    }
     CcuRep::Variable *variable{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &variable));
 
@@ -913,6 +918,12 @@ CcuResult CcuKernel::IfBegin(CcuVariableHandle varHandle, uint64_t immediate,
 
 CcuResult CcuKernel::IfElse(const char *label)
 {
+    if (loopBodyDepth_ > 0) {
+        HCCL_ERROR("[%s] CCU_ELSE is not allowed inside a ccu::Loop body (label='%s')",
+            __func__, label != nullptr ? label : "(null)");
+        return CcuResult::CCU_E_INTERNAL;
+    }
+
     std::string labelStr(label);
     auto iter = pendingIfCtx_.find(labelStr);
     if (iter == pendingIfCtx_.end()) {
@@ -966,6 +977,12 @@ CcuResult CcuKernel::IfEnd(const char *label)
 CcuResult CcuKernel::WhileBegin(CcuVariableHandle varHandle, uint64_t immediate,
     CcuConditionType condType, const char *label)
 {
+    if (loopBodyDepth_ > 0) {
+        HCCL_ERROR("[%s] CCU_WHILE is not allowed inside a ccu::Loop body (label='%s')",
+            __func__, label != nullptr ? label : "(null)");
+        return CcuResult::CCU_E_INTERNAL;
+    }
+
     CcuRep::Variable *variable{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &variable));
 
@@ -1035,6 +1052,12 @@ CcuResult CcuKernel::WhileEnd(const char *label)
 
 CcuResult CcuKernel::DoWhileBegin(const char *label)
 {
+    if (loopBodyDepth_ > 0) {
+        HCCL_ERROR("[%s] CCU_DO is not allowed inside a ccu::Loop body (label='%s')",
+            __func__, label != nullptr ? label : "(null)");
+        return CcuResult::CCU_E_INTERNAL;
+    }
+
     std::string labelStr(label);
     if (pendingDoWhileCtx_.find(labelStr) != pendingDoWhileCtx_.end()) {
         HCCL_ERROR("[%s] label '%s' already has a pending DoWhileBegin without DoWhileEnd", __func__, label);
@@ -1142,6 +1165,9 @@ void CcuKernel::DoWhileLabelStackPush(const char *label)
 
 const char *CcuKernel::DoWhileLabelStackPopForWhile()
 {
+    if (loopBodyDepth_ > 0) {
+        return nullptr;
+    }
     if (doWhileLabelStack_.empty()) {
         return nullptr;
     }
