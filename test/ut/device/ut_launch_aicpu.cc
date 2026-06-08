@@ -10,6 +10,8 @@
 
 #include <gtest/gtest.h>
 #include <mockcpp/mockcpp.hpp>
+#include <map>
+#include <string>
 
 #ifndef private
 #define private public
@@ -193,6 +195,46 @@ TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CaptureNotSupport_Expect_Retur
     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
+}
+
+namespace hccl {
+extern std::map<std::string, void*> dlAclFuntionPtrMap;
+}
+
+static aclError stubCacheLastTaskExtendInfoSuccess(const char* tag, size_t tagLen)
+{
+    return ACL_SUCCESS;
+}
+
+static aclError stubCacheLastTaskExtendInfoFail(const char* tag, size_t tagLen)
+{
+    return static_cast<aclError>(ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
+}
+
+TEST_F(LaunchAicpuUT, hrtCacheLastTaskExtendInfo_HandleReturnsNull_Expect_ReturnNotSupport)
+{
+    hccl::dlAclFuntionPtrMap.clear();
+    HcclResult ret = hrtCacheLastTaskExtendInfo("test_tag", 8);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    hccl::dlAclFuntionPtrMap.clear();
+}
+
+TEST_F(LaunchAicpuUT, hrtCacheLastTaskExtendInfo_AclCallSucceeds_Expect_ReturnSuccess)
+{
+    hccl::dlAclFuntionPtrMap.clear();
+    hccl::dlAclFuntionPtrMap["aclrtCacheLastTaskExtendInfo"] = (void*)stubCacheLastTaskExtendInfoSuccess;
+    HcclResult ret = hrtCacheLastTaskExtendInfo("test_tag", 8);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    hccl::dlAclFuntionPtrMap.clear();
+}
+
+TEST_F(LaunchAicpuUT, hrtCacheLastTaskExtendInfo_AclCallFails_Expect_ReturnRuntimeError)
+{
+    hccl::dlAclFuntionPtrMap.clear();
+    hccl::dlAclFuntionPtrMap["aclrtCacheLastTaskExtendInfo"] = (void*)stubCacheLastTaskExtendInfoFail;
+    HcclResult ret = hrtCacheLastTaskExtendInfo("test_tag", 8);
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+    hccl::dlAclFuntionPtrMap.clear();
 }
 
 TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CaptureGetInfoFail_Expect_ReturnRuntimeError)
