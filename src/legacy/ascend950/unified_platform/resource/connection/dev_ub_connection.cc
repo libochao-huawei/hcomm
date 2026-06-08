@@ -439,6 +439,10 @@ void DevUbConnection::GenerateLocalPsn()
 
 void DevUbConnection::ImportJetty()
 {
+    if (keySize >= URMA_EID_LEN) {
+        (void)memcpy_s(remoteQpKey, keySize, rmtAddr.GetEid().raw, URMA_EID_LEN);
+    }
+
     HrtRaUbJettyImportedInParam in{};
     in.key            = remoteQpKey;
     in.keyLen         = keySize;
