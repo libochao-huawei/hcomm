@@ -26,8 +26,8 @@ set(src_to_test_list
     ut_aicpu_ts_HcommReadReduceOnThread.cc
     ut_aicpu_ts_HcommChannelFenceOnThread.cc
     ut_launch_context.cc
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu/rtsq_base.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/stream/aicpu/rtsq_base.cc
     ${HCCL_LLT_ROOT}/ut/stub/legacy/llt_stub_ub_transport_lite_impl.cc
 )
 
@@ -55,6 +55,7 @@ target_compile_options(hcomm_utest_api_data_aicpu_ts PRIVATE
 
 target_link_libraries(hcomm_utest_api_data_aicpu_ts PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt

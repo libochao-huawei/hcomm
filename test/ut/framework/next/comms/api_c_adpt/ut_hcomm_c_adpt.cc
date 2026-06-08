@@ -288,6 +288,15 @@ TEST_F(HcommCAdptTest, ut_HcommChannelDescInit_When_Normal_Expect_Success)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+TEST_F(HcommCAdptTest, ut_HcommChannelDescInit_When_Normal_Expect_Version2AndFullSize)
+{
+    HcommChannelDesc channelDesc{};
+    ASSERT_EQ(HcommChannelDescInit(&channelDesc, 1), HCCL_SUCCESS);
+    EXPECT_EQ(channelDesc.header.version, HCOMM_CHANNEL_VERSION);
+    EXPECT_EQ(channelDesc.header.size, sizeof(HcommChannelDesc));
+    EXPECT_GE(sizeof(HcommChannelDesc), HCOMM_CHANNEL_DESC_ABI_V1_SIZE + sizeof(uint32_t));
+}
+
 TEST_F(HcommCAdptTest, ut_HcommChannelCreate_AICPU_Expect_LoadKernel)
 {
     EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
@@ -331,6 +340,39 @@ TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_CCU_Expect_Success)
         .will(returnValue(HCCL_SUCCESS));
     HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CCU, &channelDesc, 1, channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+namespace {
+
+uint32_t gCapturedChannelDescQos = 0U;
+
+HcclResult CaptureCreateChannelsLoop(EndpointHandle, CommEngine, HcommChannelDesc *channelDescs, uint32_t channelNum,
+    ChannelHandle *)
+{
+    if (channelDescs != nullptr && channelNum > 0U) {
+        gCapturedChannelDescQos = channelDescs[0].qos;
+    }
+    return HCCL_SUCCESS;
+}
+
+} // namespace
+
+TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_V1Desc_ClearsQosField)
+{
+    gCapturedChannelDescQos = 0U;
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    HcommChannelDesc channelDesc{};
+    ASSERT_EQ(HcommChannelDescInit(&channelDesc, 1), HCCL_SUCCESS);
+    channelDesc.header.version = HCOMM_CHANNEL_VERSION_ONE;
+    channelDesc.header.size = HCOMM_CHANNEL_DESC_ABI_V1_SIZE;
+    channelDesc.qos = 5U;
+    ChannelHandle channels[1] = {0};
+
+    MOCKER(ChannelProcess::CreateChannelsLoop).stubs().will(invoke(CaptureCreateChannelsLoop));
+
+    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CPU, &channelDesc, 1, channels);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(gCapturedChannelDescQos, 0xFFFFFFFFU);
 }
 
 TEST_F(HcommCAdptTest, ut_HcommResMgrInit_When_Normal_Expect_Success)

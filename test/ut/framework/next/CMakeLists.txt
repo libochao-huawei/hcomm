@@ -18,6 +18,7 @@ set(src_to_test_list
     comms/ccu/ut_CcuTransport_API_test.cc
     comms/comm_engine_res/ccu/ut_ccu_res_container.cc
     comms/common/ut_orion_adpt_utils.cc
+    comms/common/ut_tp_mgr.cc
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_iaicpu_ts_thread_interface.cc
@@ -84,9 +85,9 @@ add_executable(hccl_utest_test_next_resource ${src_to_test_list})
 #头文件搜索路径
 target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels
 )
- 
+
 target_compile_definitions(hccl_utest_test_next_resource PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     google=ascend_private
@@ -105,6 +106,7 @@ target_compile_options(hccl_utest_test_next_resource PRIVATE
 
 target_link_libraries(hccl_utest_test_next_resource PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt
@@ -152,6 +154,7 @@ target_compile_options(hccl_utest_test_next_resource_a3 PRIVATE
 
 target_link_libraries(hccl_utest_test_next_resource_a3 PRIVATE
     $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
     hccl_llt

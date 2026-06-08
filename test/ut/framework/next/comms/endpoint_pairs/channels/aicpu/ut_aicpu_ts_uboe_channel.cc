@@ -12,7 +12,7 @@
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 
-#include "next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_uboe_channel.h"
+#include "aicpu/aicpu_ts_uboe_channel.h"
 
 #define private public
 using namespace hcomm;

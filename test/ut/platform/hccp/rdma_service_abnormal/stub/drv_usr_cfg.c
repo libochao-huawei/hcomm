@@ -9,6 +9,10 @@
  */
 
 #include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <securec.h>
 
 char g_end_ca[] = {"-----BEGIN CERTIFICATE-----\n\
 MIIDizCCAnOgAwIBAgIIffhsme9FaxYwDQYJKoZIhvcNAQELBQAwQjELMAkGA1UE\n\
@@ -224,7 +228,7 @@ int tls_get_user_config(unsigned int save_mode, unsigned int chipId, const char 
 
 void tls_get_enable_info(unsigned int save_mode, unsigned int chipId, unsigned char *buf, unsigned int buf_size)
 {
-    return 0;
+    return;
 }
 
 int halSetUserConfig(unsigned int dev_id, const char *name, unsigned char *buf, unsigned int buf_size)

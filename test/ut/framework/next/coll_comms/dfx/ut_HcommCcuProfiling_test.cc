@@ -38,7 +38,7 @@
 #include "ccuTaskException.h"
 #include "hcclCommTaskException.h"
 #include "ccu_rep_assign_v1.h"
-#include "comms/ccu/ccu_device/ccu_res_specs.h"
+#include "../../../../../src/base_comm/resources/ccu/ccu_device/ccu_res_batch_allocator.h"
 
 namespace hcomm {
 
@@ -239,6 +239,7 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAivKernel_Normal)
     char commName[128] = {};
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
+    UtInitHcclCommConfig(config);
     config.hcclOpExpansionMode = 6; 
     config.hcclRdmaServiceLevel = 0; 
     config.hcclRdmaTrafficClass = 0;
@@ -282,6 +283,7 @@ TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAicpuKernel_Normal)
     char commName[128] = {};
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
+    UtInitHcclCommConfig(config);
     config.hcclOpExpansionMode = 6; 
     config.hcclRdmaServiceLevel = 0; 
     config.hcclRdmaTrafficClass = 0;

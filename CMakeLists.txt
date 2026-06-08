@@ -90,10 +90,18 @@ if(ENABLE_TEST)
     include(cmake/config.cmake)
     include(cmake/function.cmake)
     include(cmake/intf_pub_gccnative.cmake)
+    # 三方件
+    include(cmake/third_party/mockcpp.cmake)
     add_cann_third_party(json)
     add_cann_third_party(gtest)
-    include(cmake/third_party/mockcpp.cmake)
     add_cann_third_party(rdma-core)
+    if(NOT TARGET rdma_core_headers)
+        add_library(rdma_core_headers INTERFACE)
+        target_include_directories(rdma_core_headers INTERFACE
+            ${RDMA_CORE_INCLUDE_DIR}
+        )
+    endif()
+    # 添加子目录
     add_subdirectory(test)
 
 elseif(BUILD_OPEN_PROJECT)
@@ -103,10 +111,16 @@ elseif(BUILD_OPEN_PROJECT)
     include(version.cmake)
     # 三方件
     include(cmake/hcomm_utils.cmake)
-    include(cmake/third_party/openssl.cmake)
     include(cmake/third_party/ubengine.cmake)
-    add_cann_third_party(rdma-core)
     add_cann_third_party(json)
+    add_cann_third_party(openssl)
+    add_cann_third_party(rdma-core)
+    if(NOT TARGET rdma_core_headers)
+        add_library(rdma_core_headers INTERFACE)
+        target_include_directories(rdma_core_headers INTERFACE
+            ${RDMA_CORE_INCLUDE_DIR}
+        )
+    endif()
     # 查找依赖包
     find_cann_package(acl_rt MODULE REQUIRED)
     find_cann_package(asc_devkit MODULE REQUIRED)
@@ -168,7 +182,7 @@ elseif(BUILD_OPEN_PROJECT)
     set(HCCL_HEAD
         include/hccl/hccl_comm.h
         include/hccl/hccl_types.h
-        src/pub_inc/hccn_rping.h
+        src/legacy/ascend910/pub_inc/hccn_rping.h
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_res.h
         include/hccl/hccl_sym_win.h

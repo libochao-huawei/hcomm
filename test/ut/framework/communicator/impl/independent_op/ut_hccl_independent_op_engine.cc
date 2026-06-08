@@ -286,6 +286,7 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadExportToCommEngine_When_Engine_
 
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
     HcclCommConfig config;
+    UtInitHcclCommConfig(config);
     config.hcclOpExpansionMode = 1;           // 非CCU模式，避免拉起CCU平台层
     config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
     config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level

@@ -158,7 +158,6 @@ void* comm_ring_task_handle(void* para)
                                 para_info->inputMem,
                                 para_info->outputMem,
                                 false,
-                                nullptr, 0,
                                 para_info->tag));
     ret = para_info->notifyPool->RegisterOp(para_info->tag);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -502,9 +501,7 @@ TEST_F(CommRingTest, ut_comminter_get_sockets_per_link)
 
     TopoType topoFlag = TopoType::TOPO_TYPE_8P_RING;
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
-    u32 mem[1024] {0};
-    void* transportResourceInfoAddr = mem;
-    CommRing comm_ring(rootInfo, 0, 1, 0, 1, topoFlag, dispatcher, nullptr, netDevCtxMap, exchanger, para_vector, DeviceMem(), DeviceMem(), true, transportResourceInfoAddr, 1024);
+    CommRing comm_ring(rootInfo, 0, 1, 0, 1, topoFlag, dispatcher, nullptr, netDevCtxMap, exchanger, para_vector, DeviceMem(), DeviceMem(), true);
     comm_ring.GetSocketsPerLink();
 
     unsetenv("HCCL_RDMA_QP_PORT_CONFIG_PATH");

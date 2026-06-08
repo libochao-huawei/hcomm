@@ -49,6 +49,17 @@ extern int QpDestroyBatchParamCheck(struct RaCtxHandle *ctxHandle, void *qpHandl
 
 extern struct RaCtxOps gRaHdcCtxOps;
 
+extern int RaRsGetTpInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsCtxQpDestroyBatch(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsGetTpAttr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsSetTpAttr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsCtxGetCrErrInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsCtxQpQueryBatch(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsGetEidByIp(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern int RaRsCtxGetAuxInfo(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+extern void HdcAsyncHandleRecvBroken(struct HdcAsyncInfo *asyncInfo);
+extern int RaAsyncHandlePkt(int handle, void *recvBuf, int len);
+
 int RaHdcProcessMsgStub(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize)
 {
     union OpCtxQpQueryBatchData *opData = (union OpCtxQpQueryBatchData *)data;
@@ -335,20 +346,20 @@ void TcRaCtxQpCreate()
     mocker(RaHdcProcessMsg, 5, 0);
 
     ctxHandle.protocol = PROTOCOL_UDMA;
-    ret = RaCtxQpCreate(&ctxHandle, &attr, &info, &qpHandle);
+    ret = RaCtxQpCreate(&ctxHandle, &attr, &info, (void **)&qpHandle);
     EXPECT_INT_EQ(0, ret);
     ret = RaCtxQpDestroy(qpHandle);
     EXPECT_INT_EQ(0, ret);
 
     attr.ub.mode = JETTY_MODE_CCU_TA_CACHE;
     attr.ub.taCacheMode.lockFlag = 1;
-    ret = RaCtxQpCreate(&ctxHandle, &attr, &info, &qpHandle);
+    ret = RaCtxQpCreate(&ctxHandle, &attr, &info, (void **)&qpHandle);
     EXPECT_INT_EQ(0, ret);
     ret = RaCtxQpDestroy(qpHandle);
     EXPECT_INT_EQ(0, ret);
 
     ctxHandle.protocol = PROTOCOL_RDMA;
-    ret = RaCtxQpCreate(&ctxHandle, &attr, &info, &qpHandle);
+    ret = RaCtxQpCreate(&ctxHandle, &attr, &info, (void **)&qpHandle);
     EXPECT_INT_EQ(0, ret);
 
     ret = RaCtxQpCreate(&ctxHandle, &attr, &info, NULL);
@@ -369,7 +380,7 @@ void TcRaCtxQpImport()
     ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 2, 0);
     ctxHandle.protocol = PROTOCOL_UDMA;
-    ret = RaCtxQpImport(&ctxHandle, &qpInfo, &remQpHandle);
+    ret = RaCtxQpImport(&ctxHandle, &qpInfo, (void **)&remQpHandle);
     EXPECT_INT_EQ(0, ret);
     ret = RaCtxQpUnimport(&ctxHandle, remQpHandle);
     EXPECT_INT_EQ(0, ret);
@@ -418,7 +429,7 @@ void TcRaBatchSendWr()
     wrList[0].rmemHandle = &rmemHandle;
     qpHandle.protocol = PROTOCOL_RDMA;
     wrList[0].rdma.flags = RA_SEND_INLINE;
-    wrList[0].inlineData = &inlineData;
+    wrList[0].inlineData = (uint8_t *)&inlineData;
     mocker(RaHdcProcessMsg, 2, 0);
     ret = RaBatchSendWr(&qpHandle, wrList, opResp, 1, &completeNum);
     EXPECT_INT_EQ(0, ret);
@@ -469,31 +480,31 @@ void TcRaGetTpInfoListAsync()
     unsigned int num = 0;
     int ret = 0;
 
-    ret = RaGetTpInfoListAsync(NULL, &cfg, &infoList, &num, &reqHandle);
+    ret = RaGetTpInfoListAsync(NULL, &cfg, infoList, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaGetTpInfoListAsync(&ctxHandle, NULL, &infoList, &num, &reqHandle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, NULL, infoList, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, NULL, &num, &reqHandle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, NULL, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, NULL, &reqHandle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, infoList, NULL, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, NULL);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, infoList, &num, NULL);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, &reqHandle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, infoList, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
     num = HCCP_MAX_TPID_INFO_NUM + 1;
-    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, &reqHandle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, infoList, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
     num = 1;
     mocker(RaHdcGetTpInfoListAsync, 1, 0);
-    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, &reqHandle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, infoList, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
@@ -510,12 +521,12 @@ void TcRaHdcGetTpInfoListAsync()
     int ret = 0;
 
     mocker(RaHdcSendMsgAsync, 1, -1);
-    ret =  RaHdcGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, &reqHandle);
+    ret =  RaHdcGetTpInfoListAsync(&ctxHandle, &cfg, infoList, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ret =  RaHdcGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, &reqHandle);
+    ret =  RaHdcGetTpInfoListAsync(&ctxHandle, &cfg, infoList, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
@@ -616,10 +627,13 @@ void TcRaRsAsyncHdcSessionConnect()
 
     struct MsgHead *recvMsgHead = (struct MsgHead *)sendRcvBuf;
     sendBuf = (char *)calloc(sizeof(char), recvMsgHead->msgDataLen + sizeof(struct MsgHead));
-    CHK_PRT_RETURN(sendBuf == NULL, hccp_err("calloc fail."), -ENOMEM);
+    if (sendBuf == NULL) {
+        hccp_err("calloc fail.");
+        return;
+    }
 
     mocker(RaHdcAsyncRecvPkt, 1, -1);
-    RaRsAsyncHdcSessionConnect(sendRcvBuf, sendBuf, sndBufLen, &opRet, sendRcvLen);
+    RaRsAsyncHdcSessionConnect(sendRcvBuf, sendBuf, &sndBufLen, &opRet, sendRcvLen);
 
     union OpAsyncHdcCloseData closeData = {0};
     unsigned int closeDataSize = sizeof(union OpAsyncHdcCloseData);
@@ -635,7 +649,7 @@ void TcRaRsAsyncHdcSessionConnect()
     void *sendBuf2 = NULL;
     int sndBufLen2 = 0;
 
-    RaRsAsyncHdcSessionClose(sendRcvBuf2, sendBuf2, sndBufLen2, &opRet2, sendRcvLen2);
+    RaRsAsyncHdcSessionClose(sendRcvBuf2, sendBuf2, &sndBufLen2, &opRet2, sendRcvLen2);
     RaHwAsyncDeinit();
 
     free(sendRcvBuf);
@@ -760,7 +774,7 @@ void TcRaHdcPoolAddTask()
     int (*RaHdcHandleSendPkt)(unsigned int chipId, void *recvBuf, unsigned int recvLen);
 
     mocker_clean();
-    pool.taskQueue = &taskQueue;
+    pool.taskQueue = taskQueue;
     pool.queuePi = 0;
     pool.taskNum = 2;
     pool.queueSize = 5;
@@ -1179,35 +1193,35 @@ void TcRaCtxQpDestroyBatchAsync()
     int ret;
 
     mocker_clean();
-    ret = RaCtxQpDestroyBatchAsync(NULL, qpHandle, &num, &reqHandle);
+    ret = RaCtxQpDestroyBatchAsync(NULL, (void **)qpHandle, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, NULL, &num, &reqHandle);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, NULL, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, NULL, &reqHandle);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, (void **)qpHandle, NULL, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, NULL);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, (void **)qpHandle, &num, NULL);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, (void **)qpHandle, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
     num = HCCP_MAX_QP_DESTROY_BATCH_NUM + 1;
-    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, (void **)qpHandle, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
     num = 1;
     qpHandle[0] = (struct RaCtxQpHandle *)calloc(1, sizeof(struct RaCtxQpHandle));
     mocker(RaHdcCtxQpDestroyBatchAsync, 1, -1);
-    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, (void **)qpHandle, &num, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     qpHandle[0] = (struct RaCtxQpHandle *)calloc(1, sizeof(struct RaCtxQpHandle));
     mocker(RaHdcCtxQpDestroyBatchAsync, 1, 0);
-    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, (void **)qpHandle, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
@@ -1257,23 +1271,23 @@ void TcRaHdcCtxQpDestroyBatchAsync()
     qpHandle[0] = &qpHandleTmp;
 
     mocker(QpDestroyBatchParamCheck, 1, -EINVAL);
-    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
+    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(-EINVAL, ret);
     mocker_clean();
 
     mocker(calloc, 1, NULL);
-    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
+    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 
     mocker(QpDestroyBatchParamCheck, 1, 0);
     mocker(RaHdcSendMsgAsync, 1, -EINVAL);
-    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
+    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(-EINVAL, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
+    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, (void **)&reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
@@ -1328,14 +1342,14 @@ void TcRaCtxQpQueryBatch()
     ret = RaCtxQpQueryBatch(NULL, attr, &num);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaCtxQpQueryBatch(qpHandle, NULL, &num);
+    ret = RaCtxQpQueryBatch((void **)qpHandle, NULL, &num);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaCtxQpQueryBatch(qpHandle, attr, NULL);
+    ret = RaCtxQpQueryBatch((void **)qpHandle, attr, NULL);
     EXPECT_INT_NE(0, ret);
 
     mocker(QpQueryBatchParamCheck, 1, -1);
-    ret = RaCtxQpQueryBatch(qpHandle, attr, &num);
+    ret = RaCtxQpQueryBatch((void **)qpHandle, attr, &num);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
@@ -1346,13 +1360,13 @@ void TcRaCtxQpQueryBatch()
     num = 2;
     mocker(QpQueryBatchParamCheck, 1, 0);
     mocker(RaHdcCtxQpQueryBatch, 1, -1);
-    ret = RaCtxQpQueryBatch(qpHandle, attr, &num);
+    ret = RaCtxQpQueryBatch((void **)qpHandle, attr, &num);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker(QpQueryBatchParamCheck, 1, 0);
     mocker(RaHdcCtxQpQueryBatch, 1, 0);
-    ret = RaCtxQpQueryBatch(qpHandle, attr, &num);
+    ret = RaCtxQpQueryBatch((void **)qpHandle, attr, &num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
@@ -1472,25 +1486,25 @@ void TcRaGetEidByIp()
     unsigned int num = 32;
     int ret = 0;
 
-    ret = RaGetEidByIp(NULL, eid, ip, &num);
+    ret = RaGetEidByIp(NULL, ip, eid, &num);
     EXPECT_INT_EQ(ret, 128103);
 
     num = 33;
-    ret = RaGetEidByIp(&ctxHandle, eid, ip, &num);
+    ret = RaGetEidByIp(&ctxHandle, ip, eid, &num);
     EXPECT_INT_EQ(ret, 128103);
 
     num = 32;
-    ret = RaGetEidByIp(&ctxHandle, eid, ip, &num);
+    ret = RaGetEidByIp(&ctxHandle, ip, eid, &num);
     EXPECT_INT_EQ(ret, 128103);
 
     ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcGetEidByIp, 1, 0);
-    ret = RaGetEidByIp(&ctxHandle, eid, ip, &num);
+    ret = RaGetEidByIp(&ctxHandle, ip, eid, &num);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
     mocker(RaHdcGetEidByIp, 1, -1);
-    ret = RaGetEidByIp(&ctxHandle, eid, ip, &num);
+    ret = RaGetEidByIp(&ctxHandle, ip, eid, &num);
     EXPECT_INT_EQ(ret, 128100);
     mocker_clean();
 }
@@ -1661,25 +1675,25 @@ void TcRaGetTpAttrAsync()
     int ret;
 
     mocker_clean();
-    ret = RaGetTpAttrAsync(NULL, tpHandle, &attrBitmap, &attr, &reqHandle);
+    ret = RaGetTpAttrAsync(NULL, tpHandle, &attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, NULL, &attr, &reqHandle);
+    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, NULL, &attr, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, NULL, &reqHandle);
+    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, NULL, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
     ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, NULL);
     EXPECT_INT_NE(0, ret);
 
     mocker(RaHdcGetTpAttrAsync, 1, -1);
-    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, &reqHandle);
+    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker(RaHdcGetTpAttrAsync, 1, 0);
-    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, &reqHandle);
+    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
@@ -1698,17 +1712,17 @@ void TcRaHdcGetTpAttrAsync()
 
     mocker_clean();
     mocker(calloc, 2, NULL);
-    ret = RaHdcGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, &reqHandle);
+    ret = RaHdcGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, -1);
-    ret = RaHdcGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, &reqHandle);
+    ret = RaHdcGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ret = RaHdcGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, &reqHandle);
+    ret = RaHdcGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
@@ -1769,22 +1783,22 @@ void TcRaSetTpAttrAsync()
     int ret;
 
     mocker_clean();
-    ret = RaSetTpAttrAsync(NULL, tpHandle, attrBitmap, &attr, &reqHandle);
+    ret = RaSetTpAttrAsync(NULL, tpHandle, attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, NULL, &reqHandle);
+    ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, NULL, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
 
     ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, &attr, NULL);
     EXPECT_INT_NE(0, ret);
 
     mocker(RaHdcSetTpAttrAsync, 1, -1);
-    ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, &attr, &reqHandle);
+    ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker(RaHdcSetTpAttrAsync, 1, 0);
-    ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, &attr, &reqHandle);
+    ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
@@ -1799,17 +1813,17 @@ void TcRaHdcSetTpAttrAsync()
 
     mocker_clean();
     mocker(calloc, 2, NULL);
-    int ret = RaHdcSetTpAttrAsync(&ctx, tpHandle, attrBitmap, &attr, &reqHandle);
+    int ret = RaHdcSetTpAttrAsync(&ctx, tpHandle, attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, -1);
-    ret = RaHdcSetTpAttrAsync(&ctx, tpHandle, attrBitmap, &attr, &reqHandle);
+    ret = RaHdcSetTpAttrAsync(&ctx, tpHandle, attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ret = RaHdcSetTpAttrAsync(&ctx, tpHandle, attrBitmap, &attr, &reqHandle);
+    ret = RaHdcSetTpAttrAsync(&ctx, tpHandle, attrBitmap, &attr, (void **)&reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
