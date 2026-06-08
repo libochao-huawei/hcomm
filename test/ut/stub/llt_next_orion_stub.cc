@@ -1450,7 +1450,7 @@ std::unique_ptr<Serializable> LocalIpcRmaBuffer::GetExchangeDto()
         static_cast<u64>(buf->GetSize()),
         ipcOffset,
         static_cast<u32>(0),
-        buf->GetMemTag().c_str());
+        buf->GetMemInfo().c_str());
     (void)memcpy_s(dto->name, RTS_IPC_MEM_NAME_LEN, name, RTS_IPC_MEM_NAME_LEN);
     return std::unique_ptr<Serializable>(dto.release());
 }

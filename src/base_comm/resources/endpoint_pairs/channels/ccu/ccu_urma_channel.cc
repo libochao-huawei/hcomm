@@ -41,20 +41,20 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
         CHK_PTR_NULL(buf);
         HCCL_INFO("[BuildBufferInfos] localRmaBuffer[%s]", localRmaBuffer->Describe().c_str());
 
-        std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = buf->GetMemTag();
+        std::array<char, HCCL_RES_TAG_MAX_LEN> memInfo{};
+        std::string tag = buf->GetMemInfo();
         if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
             HCCL_ERROR("[BuildBufferInfos] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
         }
-        CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
+        CHK_SAFETY_FUNC_RET(memcpy_s(memInfo.data(), memInfo.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
             localRmaBuffer->GetAddr(),
             static_cast<uint32_t>(localRmaBuffer->GetSize()),
             localRmaBuffer->GetTokenId(),
             localRmaBuffer->GetTokenValue(),
             hccl::ConvertHcclToCommMemType(buf->GetMemType()),
-            memTag);
+            memInfo);
     }
     return HCCL_SUCCESS;
 }

@@ -77,13 +77,13 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
             auto buf = localUbRmaBuffer->GetBuf();
             CHK_PTR_NULL(buf);
             HCCL_INFO("[AicpuTsUboeChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], "
-                "memType[%d], memTag[%s].",
+                "memType[%d], memInfo[%s].",
                 __func__, i, static_cast<unsigned long long>(localUbRmaBuffer->GetAddr()),
                 static_cast<unsigned long long>(localUbRmaBuffer->GetSize()), static_cast<int>(buf->GetMemType()),
-                buf->GetMemTag().c_str());
+                buf->GetMemInfo().c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
                 localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                buf->GetMemType(), buf->GetMemTag().c_str())
+                buf->GetMemType(), buf->GetMemInfo().c_str())
             ));
         }
     } else {

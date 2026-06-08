@@ -213,9 +213,9 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
     EXPECT_EQ(aivTransport->localRmaBufferVec_[initialVecSize + 1], mockBuffer2.get());
     EXPECT_EQ(aivTransport->localUserMemTag_.size(), initialTagSize + 2);
     EXPECT_EQ(std::string(aivTransport->localUserMemTag_[initialTagSize].data()),
-        mockBuffer1->GetBuf()->GetMemTag());
+        mockBuffer1->GetBuf()->GetMemInfo());
     EXPECT_EQ(std::string(aivTransport->localUserMemTag_[initialTagSize + 1].data()),
-        mockBuffer2->GetBuf()->GetMemTag());
+        mockBuffer2->GetBuf()->GetMemInfo());
 }
 
 TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_SocketTimeout_Expect_ReturnIsHCCL_E_TIMEOUT)
