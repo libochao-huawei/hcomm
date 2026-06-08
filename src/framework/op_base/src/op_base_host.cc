@@ -186,6 +186,90 @@ HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, Hccl
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
+{
+    // 入参合法性校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(stream);
+    HcclUs startut = TIME_NOW();
+    bool isCapture;
+    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
+    uint64_t modelId = 0xFFFFFFFF;
+    CHK_PRT(GetCaptureInfo(stream, captureStatus, modelId, isCapture));
+    if (!isCapture) {
+        HcclSetIfProfile();
+    }
+    s32 threadID = SalGetTid();
+    ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
+    uint64_t beginTime = hrtMsprofSysCycleTime();
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(HcclBarrierV2(hcclComm->GetCommunicatorV2(), stream));
+        return HCCL_SUCCESS;
+    }());
+
+    // Allreduce入参定义
+    HcclDataType dataType = HCCL_DATA_TYPE_FP32;
+    HcclReduceOp op = HCCL_REDUCE_SUM;
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
+    // 同通信域同算子复用tag
+    const string tag = "AllReduce_" + hcclComm->GetIdentifier();
+
+    /* 接口交互信息日志 */
+    char stackLogBuffer[LOG_TMPBUF_SIZE];
+    if (GetExternalInputHcclEnableEntryLog()) {
+        s32 deviceLogicId = 0;
+        CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
+
+        s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
+                             "tag[%s], sendBuf[%p], recvBuf[%p], count[%d], dataType[%s], op[%s], localRank[%u], streamId[%d], "
+                             "deviceLogicId[%d]",
+                             tag.c_str(), hcclComm->barrierSendBuf, hcclComm->barrierRecvBuf, HCCL_BARRIER_DEFAULT_COUNT,
+                             GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), localRank, streamId, deviceLogicId);
+
+        CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
+        std::string logInfo = "Entry-HcclBarrier:" + std::string(stackLogBuffer) +
+                              ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
+        CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
+    }
+
+    CHK_RET_AND_PRINT_IDE(hcclComm->CreateBarrierMemory(), tag.c_str());
+
+    CHK_RET_AND_PRINT_IDE(PrintMemoryAttr(hcclComm->barrierSendBuf), tag.c_str());
+
+    CHK_RET_AND_PRINT_IDE(PrintMemoryAttr(hcclComm->barrierRecvBuf), tag.c_str());
+
+    CHK_RET_AND_PRINT_IDE(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE), tag.c_str());
+
+    CHK_RET_AND_PRINT_IDE(hcclComm->AllReduceOutPlace(tag, hcclComm->barrierSendBuf, hcclComm->barrierRecvBuf,
+                                                      HCCL_BARRIER_DEFAULT_COUNT, dataType, op, stream, SyncMode::UNLIMITED_TIMEWAITSYNCMODE),
+                          tag.c_str());
+
+    CHK_RET(CallMsprofReportHostApi(hcclComm, HcclCMDType::HCCL_CMD_ALLREDUCE, beginTime, HCCL_BARRIER_DEFAULT_COUNT,
+                                    dataType, tag));
+    if (!isCapture) {
+        HcclResetIfProfile();
+    }
+    ProfilingManagerPub::DeleteThreadCaptureStatus(threadID);
+
+    if (GetExternalInputHcclEnableEntryLog()) {
+        HcclUs endut = TIME_NOW();
+        /* 关键状态记录 */
+        std::string endInfo = "HcclBarrier:success,take time: " +
+                              std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
+        CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
+    }
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclBarrierInner(HcclComm comm, aclrtStream stream)
 {
     // 入参合法性校验
