@@ -85,9 +85,9 @@ typedef enum {
  */
 typedef struct {
     HcommTransferType transType;     ///< 传输类型
-    uint8_t reserved[4];
+    uint8_t reserved[4];             ///< 4字节保留字段
     union {
-        uint8_t raws[56];            ///< 通用数据
+        uint8_t raws[56];            ///< 通用数据,56字节
         struct {
             uint64_t len;
             void *dst;

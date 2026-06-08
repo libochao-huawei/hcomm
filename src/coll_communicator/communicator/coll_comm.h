@@ -111,6 +111,7 @@ private:
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
     HcclResult GetRankIpPortMap();
+    HcclResult ApplyUserCommConfig(HcclCommConfig *config, uint32_t &opExpansionMode);
 
     /* 
      * CollComm初始化方式：
