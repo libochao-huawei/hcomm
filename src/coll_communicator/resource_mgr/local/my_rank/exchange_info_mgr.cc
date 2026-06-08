@@ -99,8 +99,7 @@ HcclResult ExchangeInfoMgr::CheckHcommInfo(
         // ====== 交换CheckFrameV2（定长，批量并发交换）======
         std::vector<CheckFrameV2> remoteFrames;
         u32 checkSocketSize = newSockets.size();
-        if (isFirst)
-        {
+        if (isFirst) {
             remoteFrames.resize(newSockets.size());
             CHK_RET(BatchExchangeFixedData(newSockets, newRemoteRanks, newRoles,
                 reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
