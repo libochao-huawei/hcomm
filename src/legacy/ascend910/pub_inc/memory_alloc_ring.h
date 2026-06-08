@@ -36,15 +36,14 @@ public:
     {
         // 之前未加锁 多线程访问可能存在double free 另外本类内存管理过于复杂 后续考虑重构
         std::unique_lock<std::mutex> lock(initDesMutex_);
-        T **rc = recordQueue_;
-        if (rc != nullptr) {
+        if (recordQueue_ != nullptr) {
             for (size_t i = 0; i < capacity_; i++) {
-                if (rc[i] != nullptr) {
-                    delete reinterpret_cast<T *>(rc[i]);
-                    rc[i] = nullptr;
+                if (recordQueue_[i] != nullptr) {
+                    delete reinterpret_cast<T *>(recordQueue_[i]);
+                    recordQueue_[i] = nullptr;
                 }
             }
-            delete[] rc;
+            delete[] recordQueue_;
             recordQueue_ = nullptr;
         }
 
@@ -229,41 +228,26 @@ private:
             newStatus[i] = OperateState::MEMORY_VALID;
         }
 
-        if (ringQueue_ != nullptr) {	 
-            delete[] ringQueue_; 
-        } 
-        if (recordQueue_ != nullptr) { 
-            delete[] recordQueue_; 
-        } 
-        if (status_ != nullptr) { 
-            delete[] status_; 
+        if (ringQueue_ != nullptr) {
+            delete[] ringQueue_;
+        }
+        if (recordQueue_ != nullptr) {
+            delete[] recordQueue_;
+        }
+        if (status_ != nullptr) {
+            delete[] status_;
         }
 
-        ringQueue_ = newRingQueue; 
-        recordQueue_ = newRecordQueue; 
-        status_ = newStatus;
-
-        head_ = newHead;
-        tail_ = newCapacity;
-        capacity_ = newCapacity;
         ringQueue_ = newRingQueue;
         recordQueue_ = newRecordQueue;
         status_ = newStatus;
-
-        if (oldRingQueue != nullptr) {
-            delete[] oldRingQueue;
-        }
-        if (oldRecordQueue != nullptr) {
-            delete[] oldRecordQueue;
-        }
-        if (oldStatus != nullptr) {
-            delete[] oldStatus;
-        }
+        head_ = newHead;
+        tail_ = newCapacity;
+        capacity_ = newCapacity;
 
         for (size_t i = 0; i < newCapacity - newHead; i++) {
             sem_post(&allocAvailable_);
         }
-
         return HCCL_SUCCESS;
     }
 
