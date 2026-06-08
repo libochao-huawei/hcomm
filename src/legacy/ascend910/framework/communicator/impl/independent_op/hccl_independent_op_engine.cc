@@ -112,7 +112,6 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
             }
         }
         return HCCL_SUCCESS;
-
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();

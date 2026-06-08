@@ -4206,6 +4206,7 @@ void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeConte
     std::string opTag = lastOpInfo->tagBuff;
     u32 lineCount = 0;
     u32 printedCount = 0;
+    u32 extraSlotPerLine = 2;
     std::vector<std::string> currentOpTasks;
     currentOpTasks.push_back("OP(" + std::to_string(opIndex) + ")");
     
@@ -4217,7 +4218,7 @@ void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeConte
         CHK_PRT_RET(newOpInfo == nullptr, HCCL_ERROR("%s fail, opInfo is nullptr", __func__),);
         
         u32 sizeAfterAdd = currentOpTasks.size() + 1;
-        if (sizeAfterAdd >= (maxTasksPerLine + 2) || (i > 0 && (newOpInfo->opIndex != opIndex || newOpInfo->tagBuff != opTag))) {
+        if (sizeAfterAdd >= (maxTasksPerLine + extraSlotPerLine) || (i > 0 && (newOpInfo->opIndex != opIndex || newOpInfo->tagBuff != opTag))) {
             // 打印算子信息（仅第一次）
             if (lineCount == 0) {
                 PrintOpDataInfo(sqIdx, sqeContextBuffer, isMonitor);
