@@ -215,6 +215,7 @@ public:
 
     string GetLinkDescInfo();
     string DescribeSocket() const;
+    void SetSocket(Socket *socket_);
 protected:
     CommonLocRes  commonLocRes{};
     Attribution   attr;
