@@ -47,7 +47,7 @@ protected:
         GlobalMockObject::verify();
         MOCKER_CPP(&TpManager::GetTpInfo).stubs()
             .will(returnValue(HcclResult::HCCL_E_AGAIN))
-            .then(returnValue(HcclResult::HCCL_SUCCESS));
+            .then(invoke(StubGetTpInfoWithJettyTimeout));
         std::cout << "A Test case in DevUbConnection SetUP" << std::endl;
     }
 
@@ -61,6 +61,14 @@ protected:
     u32 listenPort = 100;
     std::string tag = "test";
 };
+
+static HcclResult StubGetTpInfoWithJettyTimeout(TpManager *, const RaUbGetTpInfoParam &, TpInfo &tpInfo, bool)
+{
+    tpInfo.tpHandle = 1ULL;
+    tpInfo.hasJettyErrTimeout = true;
+    tpInfo.jettyErrTimeout = 8U;
+    return HCCL_SUCCESS;
+}
 
 static RmaConnStatus DriveDevUbConnectionUntilExchangeable(DevUbConnection &conn)
 {
