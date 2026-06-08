@@ -145,18 +145,18 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/
-    ${HCOMM_CODE_ROOT}/src/coll_communicator
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/communicator
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/communicator/device
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/remote/rank_pairs
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/profiling
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/profiling/aicpu
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/profiling/host
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/taskException
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/taskException/aicpu
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/dfx/taskException/host
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/communicator
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/communicator/device
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/remote/rank_pairs
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/profiling
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/profiling/aicpu
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/profiling/host
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException/aicpu
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException/host
     ${HCOMM_CODE_FRAMEWORK}/device/framework
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/slaves
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs
@@ -164,9 +164,9 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/sockets/
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoints/
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_mems
-    ${HCOMM_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/endpoints
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_mems
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoints/dfx
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/reged_mems/
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/

@@ -66,7 +66,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
-    ${HCCL_CODE_ROOT}/src/coll_communicator/rank_graphs
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/rank_graphs
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/hcom/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/hcom/gradient_segment
@@ -253,17 +253,17 @@ set(UT_COMMON_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
-    # next (拆分到 base_comm 和 coll_communicator)
+    # next (拆分到 base_comm 和 coll_communicator_mgr)
     ${HCCL_CODE_ROOT}/src/base_comm/
-    ${HCCL_CODE_ROOT}/src/coll_communicator/
-    ${HCCL_CODE_ROOT}/src/coll_communicator/communicator
-    ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/device
-    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/
-    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/remote/rank_pairs/
-    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_engine_reses
-    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
-    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/comm_mems
-    ${HCCL_CODE_ROOT}/src/coll_communicator/resource_mgr/local/my_rank/endpoints
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator/device
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/remote/rank_pairs/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/engine_ctxs
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_mems
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/endpoints
     ${HCCL_CODE_ROOT}/src/base_comm/common/
     ${HCCL_CODE_ROOT}/src/base_comm/common/device
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoints/
@@ -281,18 +281,18 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aicpu/device
     ${HCCL_CODE_ROOT}/src/base_comm/primitives
     ${HCCL_CODE_ROOT}/src/base_comm/primitives/api_c_adpt
-    ${HCCL_CODE_ROOT}/src/coll_communicator/api_c_adpt/
-    ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/ns_recovery
-    ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/ns_recovery/aicpu
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/api_c_adpt/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator/ns_recovery
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator/ns_recovery/aicpu
 
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/interface/
-    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx
-    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/profiling
-    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/profiling/aicpu
-    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/profiling/host
-    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException
-    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException/aicpu
-    ${HCCL_CODE_ROOT}/src/coll_communicator/dfx/taskException/host
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/dfx
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/dfx/profiling
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/dfx/profiling/aicpu
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/dfx/profiling/host
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException/aicpu
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException/host
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/
