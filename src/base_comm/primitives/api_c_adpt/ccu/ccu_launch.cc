@@ -86,17 +86,20 @@ CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle,
+CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle, uint32_t dieId,
     const char *kernelFuncName, const void *kernelFunc,
-    const void *kernelArg, CcuKernelHandle *kernelHandle)
+    const void **kernelArgs, uint32_t argNum,
+    CcuKernelHandle *kernelHandle)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
 
     CCU_CHK_PTR_NULL(kernelFuncName);
     CCU_CHK_PTR_NULL(kernelFunc);
-    CCU_CHK_PTR_NULL(kernelArg);
+    CCU_CHK_PTR_NULL(kernelArgs);
     CCU_CHK_PTR_NULL(kernelHandle);
+
+    (void)dieId; // dieId 当前预留不使用
 
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto *ccuIns = hcomm::CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
@@ -106,6 +109,14 @@ CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle,
     CCU_CHK_PTR_NULL(resPack);
 
     auto ccuKernelFunc = reinterpret_cast<CcuKernelFunc>(kernelFunc);
+
+    if (argNum != 1) {
+        HCCL_ERROR("[%s] failed, argNum[%u] is not expected[1].", __func__, argNum);
+        return CcuResult::CCU_E_PARA;
+    }
+
+    const void *kernelArg = kernelArgs[0];
+    CCU_CHK_PTR_NULL(kernelArg);
     const auto ccuKernelArg = const_cast<CcuKernelArg>(kernelArg);
 
     CcuKernelHandle newHandle{0};
@@ -252,7 +263,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
 }
 
 CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
-    CcuKernelHandle kernelHandle, const void *taskArgs, uint32_t argSize)
+    CcuKernelHandle kernelHandle, const void *taskArgs, uint32_t argNum)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     const auto &startus = TIME_NOW();
@@ -278,7 +289,7 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
 
     CCU_EXCEPTION_HANDLE_BEGIN
     std::vector<hcomm::CcuTaskParam> taskParams{};
-    auto ret = kernel->GeneTaskParams(static_cast<const uint64_t *>(taskArgs), argSize, taskParams);
+    auto ret = kernel->GeneTaskParams(static_cast<const uint64_t *>(taskArgs), argNum, taskParams);
     CHK_PRT_RET(ret != CcuResult::CCU_SUCCESS,
         HCCL_ERROR("[%s] failed, threadHandle[0x%llx] kernelHandle[0x%llx].",
             __func__, threadHandle, kernelHandle),
@@ -295,7 +306,7 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
 
     // CCU 性能分析数据上报
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
-    CCU_CHK_RET(kernel->GetCcuProfilingInfo(static_cast<const uint64_t *>(taskArgs), argSize, allCcuProfilingInfo));
+    CCU_CHK_RET(kernel->GetCcuProfilingInfo(static_cast<const uint64_t *>(taskArgs), argNum, allCcuProfilingInfo));
     CCU_CHK_RET(HcommReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo, taskParam));
     CCU_EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] success, take time [%lld]us.",
