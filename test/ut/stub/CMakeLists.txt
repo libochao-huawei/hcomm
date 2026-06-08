@@ -80,7 +80,6 @@ list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 
 list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/legacy/ascend910/platform/legacy/.*")
 
-list(FILTER COLL_COMMUNICATOR EXCLUDE REGEX ".*src/coll_communicator/rank_graphs/.*")
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/engine_ctxs/.*")
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/notifys/.*")
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/comm_engine_res.cc")
@@ -193,7 +192,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/rank_graph
+    ${HCCL_CODE_ROOT}/src/coll_communicator/rank_graphs
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/hcom/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/hcom/gradient_segment

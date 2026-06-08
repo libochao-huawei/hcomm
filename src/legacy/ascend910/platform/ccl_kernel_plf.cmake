@@ -141,7 +141,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/zero_copy
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/resource_manager
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/rank_graph
+    ${HCOMM_DIR}/src/coll_communicator/rank_graphs
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device

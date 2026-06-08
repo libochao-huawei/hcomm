@@ -32,6 +32,5 @@ endif()
 
 add_subdirectory(channel)
 add_subdirectory(resource)
-add_subdirectory(rank_graph)
 add_subdirectory(device)
 add_subdirectory(diag)
