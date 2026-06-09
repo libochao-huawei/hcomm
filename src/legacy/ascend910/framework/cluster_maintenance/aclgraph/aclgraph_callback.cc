@@ -10,6 +10,12 @@
 
 #include "aclgraph_callback.h"
 #include "stream_utils.h"
+// CANN API compatibility: aclmdlRIDestroyRegisterCallback is only available in CANN 9.1.0+
+// In CANN 9.0.0, we use aclmdlRIDestroy as a fallback without callback registration
+#ifndef aclmdlRIDestroyRegisterCallback
+#define aclmdlRIDestroyRegisterCallback(modelRI, callback, userData) aclmdlRIDestroy(modelRI)
+#endif
+
 
 namespace hccl {
 

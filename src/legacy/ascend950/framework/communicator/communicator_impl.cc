@@ -1408,6 +1408,7 @@ void CommunicatorImpl::InitDataBufferManager()
         HCCL_INFO("[CommunicatorImpl][InitDataBufferManager] aivTagBufSize[%llu]M", aivTagBufSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
         aivTagBuffer = std::move(DevBuffer::CreateHugePageBuf(aivTagBufSize));
         HrtMemset(reinterpret_cast<void*>(aivTagBuffer->GetAddr()), aivTagBuffer->GetSize(), aivTagBuffer->GetSize());
+        CreateCommCclBuf();
     }
     dataBufferManager = std::make_unique<DataBufManager>();
 
