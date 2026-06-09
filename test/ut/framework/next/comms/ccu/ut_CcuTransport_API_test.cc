@@ -119,7 +119,7 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetRemoteMems_When_Normal_Expect_Return
     ASSERT_NE(remoteMems, nullptr);
     ASSERT_NE(memInfos, nullptr);
     ASSERT_NE(memInfos[1], nullptr);
-    EXPECT_EQ(std::string(memInfos[0]), locBuffer1->GetBuf()->GetMemInfo());
+    EXPECT_EQ(std::string(memInfos[1]), locBuffer1->GetBuf()->GetMemInfo());
     EXPECT_EQ(remoteMems[1].type, CommMemType::COMM_MEM_TYPE_DEVICE);
     EXPECT_EQ(remoteMems[1].addr, reinterpret_cast<void *>(0x101));
     EXPECT_EQ(remoteMems[1].size, static_cast<uint64_t>(0x101));
