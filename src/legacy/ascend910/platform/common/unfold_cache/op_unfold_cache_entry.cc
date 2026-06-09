@@ -1231,7 +1231,7 @@ namespace hccl {
 
             // 注意: 正常情况下无需设置placeholder SQE中的src/dst addr
             // (只用于第一次算子执行发生cache miss时, 根据memory range获得对应的RefreshAddrInfo, 后续不再使用)
-            rtStarsPlaceHolderSqe_t * const placeholderSqePtr = (rtStarsPlaceHolderSqe_t * const)sqePtr;
+            rtStarsPlaceHolderSqe_t * const placeholderSqePtr = (rtStarsPlaceHolderSqe_t *)sqePtr;
             if (saveDstAddr) { // PrepareIntraData case下需要保留dst addr (local hccl input)
                 placeholderSqePtr->u.cache_memcpy_task_info.dst_addr_high = dstAddrHigh;
                 placeholderSqePtr->u.cache_memcpy_task_info.dst_addr_low = dstAddrLow;
@@ -1602,7 +1602,7 @@ namespace hccl {
             // 生成NotifyWait
             // 参考aicpu_hccl_sqcqv1.cc中的AddOneNotifyWaitSqeV1
             *sqeTypePtr = SqeType::NOTIFY_SQE;
-            rtStarsNotifySqeV1_t * const notifySqePtr = (rtStarsNotifySqeV1_t * const)sqePtr;
+            rtStarsNotifySqeV1_t * const notifySqePtr = (rtStarsNotifySqeV1_t *)sqePtr;
             notifySqePtr->header.type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
             notifySqePtr->kernel_credit = kernel_credit;
             notifySqePtr->timeout = timeout;
@@ -1632,7 +1632,7 @@ namespace hccl {
             // 生成WriteValue
             // 参考aicpu_hccl_sqcqv1.cc中的AddOneWriteValueRecordSqeV1
             *sqeTypePtr = SqeType::WRITE_VALUE_SQE;
-            rtStarsWriteValueSqe_t * const writeValueSqePtr = (rtStarsWriteValueSqe_t * const)sqePtr;
+            rtStarsWriteValueSqe_t * const writeValueSqePtr = (rtStarsWriteValueSqe_t *)sqePtr;
             writeValueSqePtr->header.type = RT_STARS_SQE_TYPE_WRITE_VALUE;
             writeValueSqePtr->header.rtStreamId = streamId;
             writeValueSqePtr->header.taskId = curTaskId;
@@ -1667,7 +1667,7 @@ namespace hccl {
             // 参考aicpu_hccl_sqcqv1.cc中的AddOneCacheNotifyWaitPlaceholderSqeV1
             *sqeTypePtr = SqeType::CACHE_NOTIFY_PLACEHOLDER_SQE;
             SetCachePlaceholderHeaderForAlltoallv(streamId, curTaskId, sqePtr);
-            rtStarsPlaceHolderSqe_t * const placeholderSqePtr = (rtStarsPlaceHolderSqe_t * const)sqePtr;
+            rtStarsPlaceHolderSqe_t * const placeholderSqePtr = (rtStarsPlaceHolderSqe_t *)sqePtr;
             placeholderSqePtr->u.cache_notify_task_info.is_wait = 1; // NotifyWait
             placeholderSqePtr->u.cache_notify_task_info.kernel_credit = kernel_credit;
             placeholderSqePtr->u.cache_notify_task_info.timeout = timeout;
@@ -1696,7 +1696,7 @@ namespace hccl {
             // 参考aicpu_hccl_sqcqv1.cc中的AddOneCacheWriteValuePlaceholderSqeV1
             *sqeTypePtr = SqeType::CACHE_WRITE_VALUE_PLACEHOLDER_SQE;
             SetCachePlaceholderHeaderForAlltoallv(streamId, curTaskId, sqePtr);
-            rtStarsPlaceHolderSqe_t * const placeholderSqePtr = (rtStarsPlaceHolderSqe_t * const)sqePtr;
+            rtStarsPlaceHolderSqe_t * const placeholderSqePtr = (rtStarsPlaceHolderSqe_t *)sqePtr;
             placeholderSqePtr->u.cache_write_value_task_info.write_addr_low = lowAddr;
             placeholderSqePtr->u.cache_write_value_task_info.write_addr_high = highAddr;
         }
@@ -1731,7 +1731,7 @@ namespace hccl {
             // 参考aicpu_hccl_sqcqv1.cc中的AddOneCacheMemcpyRecordPlaceholderSqeV1
             *sqeTypePtr = SqeType::CACHE_MEMCPY_RECORD_PLACEHOLDER_SQE;
             SetCachePlaceholderHeaderForAlltoallv(streamId, curTaskId, sqePtr);
-            rtStarsPlaceHolderSqe_t * const placeholderSqePtr = (rtStarsPlaceHolderSqe_t * const)sqePtr;
+            rtStarsPlaceHolderSqe_t * const placeholderSqePtr = (rtStarsPlaceHolderSqe_t *)sqePtr;
             placeholderSqePtr->u.cache_memcpy_record_task_info.kernel_credit = kernelCredit;
             placeholderSqePtr->u.cache_memcpy_record_task_info.opcode = opCode;
             placeholderSqePtr->u.cache_memcpy_record_task_info.length = length;
@@ -1773,7 +1773,7 @@ namespace hccl {
             // 生成MemcpyRecord
             // 参考aicpu_hccl_sqcqv1.cc中的AddOneMemcpySqeV1
             *sqeTypePtr = SqeType::MEMCPY_ASYNC_SQE;
-            rtStarsMemcpyAsyncSqe_t * const memcpySqePtr = (rtStarsMemcpyAsyncSqe_t * const)sqePtr;
+            rtStarsMemcpyAsyncSqe_t * const memcpySqePtr = (rtStarsMemcpyAsyncSqe_t *)sqePtr;
             memcpySqePtr->header.type = RT_STARS_SQE_TYPE_SDMA;
             memcpySqePtr->header.rtStreamId = streamId;
             memcpySqePtr->header.taskId = curTaskId;

@@ -66,7 +66,7 @@ public:
         return devAddr;
     }
 
-    inline const HcclNetDevCtx GetNetDevCtx() const
+    inline HcclNetDevCtx GetNetDevCtx() const
     {
         return netDevCtx;
     }

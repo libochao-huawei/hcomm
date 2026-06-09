@@ -109,7 +109,7 @@ private:
         bool isUsedRdma);
 
     // 获取本rank在子通信域(多平面)内当前平面的rank号
-    const u32 GetSubCollectiveRank(const std::vector<RankInfo> &vecPara) const;
+    u32 GetSubCollectiveRank(const std::vector<RankInfo> &vecPara) const;
     bool JudgmentSetHeterogP2p(u32 rank) const;
     void CreateStarLinkPara(std::vector<RankInfo> &linkParas);
     bool IsUseSdidForVnicIp(); // 是否使用sdid作为vnicip

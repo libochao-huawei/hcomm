@@ -130,9 +130,9 @@ const uint8_t& GetExternalInputAicpuCacheEnable();
 
 const bool& GetExternalInputHcclAivMode();
 
-const u32 GetExternalInputQpsPerConnection();
+u32 GetExternalInputQpsPerConnection();
 
-const u32 GetExternalInputMultiQpThreshold();
+u32 GetExternalInputMultiQpThreshold();
 
 const bool& GetRemoteIsHdc();
 

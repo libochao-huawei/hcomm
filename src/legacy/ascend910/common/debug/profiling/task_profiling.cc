@@ -156,8 +156,8 @@ void TaskProfiling::GetTaskData(TaskType taskType, const TaskData &taskData, str
 void TaskProfiling::GetSdmaTaskData(TaskType taskType, const TaskData &taskData,
         struct MsprofHcclInfo &taskInfo) const
 {
-    taskInfo.srcAddr = static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskData.DMA.src));
-    taskInfo.dstAddr = static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskData.DMA.dst));
+    taskInfo.srcAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskData.DMA.src));
+    taskInfo.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskData.DMA.dst));
     taskInfo.dataSize = static_cast<u64>(taskData.DMA.size);
     taskInfo.notifyID = taskData.DMA.notifyID;
     taskInfo.linkType = static_cast<u32>(taskData.DMA.linkType);
@@ -172,8 +172,8 @@ void TaskProfiling::GetSdmaTaskData(TaskType taskType, const TaskData &taskData,
 void TaskProfiling::GetRdmaTaskData(TaskType taskType, const TaskData &taskData,
         struct MsprofHcclInfo &taskInfo) const
 {
-    taskInfo.srcAddr = static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskData.DMA.src));
-    taskInfo.dstAddr = static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskData.DMA.dst));
+    taskInfo.srcAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskData.DMA.src));
+    taskInfo.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskData.DMA.dst));
     taskInfo.dataSize = static_cast<u64>(taskData.DMA.size);
     taskInfo.notifyID = taskData.DMA.notifyID;
     taskInfo.linkType = static_cast<u32>(taskData.DMA.linkType);
@@ -189,8 +189,8 @@ void TaskProfiling::GetRdmaTaskData(TaskType taskType, const TaskData &taskData,
 void TaskProfiling::GetReduceTaskData(TaskType taskType, const TaskData &taskData,
         struct MsprofHcclInfo &taskInfo) const
 {
-    taskInfo.srcAddr = static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskData.DMA.src));
-    taskInfo.dstAddr = static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskData.DMA.dst));
+    taskInfo.srcAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskData.DMA.src));
+    taskInfo.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(taskData.DMA.dst));
     taskInfo.dataSize = static_cast<u64>(taskData.Reduce.size);
     taskInfo.opType = opString[taskData.Reduce.op];
     taskInfo.dataType = dataTypeString[taskData.Reduce.dataType];

@@ -88,7 +88,7 @@ bool ShouldUseBinaryBroadcastOfNB(const u64 dataSize, const u32 rankSize, const 
     const float bandwidth);
 
 // all_reduce_nb_pub.h
-const u64 GetSliceSizeOfNB(const u64 dataSize, const u32 rankSize);
+u64 GetSliceSizeOfNB(const u64 dataSize, const u32 rankSize);
 }  // namespace hccl
 
 #endif /* HCCL_TEMPLATE_UTILS_H */
