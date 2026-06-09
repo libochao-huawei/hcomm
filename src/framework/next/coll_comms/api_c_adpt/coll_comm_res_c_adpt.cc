@@ -316,9 +316,9 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
                 HCCL_ERROR("[HcclChannelAcquire] group[%s] Failed to report kernel for kernelName[%s], tid[%d], ret[%d]", commTag.c_str(), kernelName.c_str(), SalGetTid(), ret), ret);
         }
     } else {
-        hccl::MyRank *myRank = (hccl::MyRank *)hcclComm->GetMyRank();	 
-        if (hcclComm->GetConnectMode() && engine == COMM_ENGINE_CPU && myRank != nullptr) {	 
-            const std::string &commTag = hcclComm->GetIdentifier();	 
+        hccl::MyRank *myRank = (hccl::MyRank *)hcclComm->GetMyRank();
+        if (hcclComm->GetConnectMode() && engine == COMM_ENGINE_CPU && myRank != nullptr) {
+            const std::string &commTag = hcclComm->GetIdentifier();
             ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
         } else {
             auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
