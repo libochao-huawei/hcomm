@@ -232,6 +232,39 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     return HCCL_SUCCESS;
 }
 
+// 仅通信域管理层的host网卡使用，后续需归一到通信域管理层的socket管理模块
+HcclResult SocketMgr::GetHostSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket)
+{
+    CHK_RET(Init());
+    // 1. 先查找
+    auto it = socketMap_.find(socketConfig);
+
+    if (it != socketMap_.end()) {
+        if (socketConfig.hostNic2DeviceNicMode_) {
+            HCCL_INFO("[SocketMgr][%s] destroy a socket[%p] in hostNic2DeviceNicMode", __func__, static_cast<void*>(socket));
+            socket->Destroy();
+            socketMap_.erase(it);
+            socketInUseMap_.erase(socket);
+        } else {
+            socket = it->second.get();
+            return HCCL_SUCCESS;
+        }
+    }
+
+    // 2. 不存在则创建
+    CHK_RET(CreateSocketWithSocketHandle(socketConfig));
+
+    // 3. 再次查找
+    it = socketMap_.find(socketConfig);
+    if (it == socketMap_.end()) {
+        HCCL_ERROR("[SocketMgr][%s] CreateSocket succeeded but socket not found in socketMap",
+                __func__);
+        return HCCL_E_INTERNAL;
+    }
+    socket = it->second.get();
+    return HCCL_SUCCESS;
+}
+
 HcclResult SocketMgr::PutSocket(const Hccl::SocketConfig*& socketConfig, Hccl::Socket*& socket)
 {
     HCCL_INFO("[SocketMgr][%s] start to put a socket", __func__);
