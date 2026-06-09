@@ -322,7 +322,7 @@ HcclResult AicpuTsThread::HostInit()
     CHK_PRT_RET(!uniqueIdStr_.empty(), HCCL_ERROR("[AicpuTsThread][Init]not support init with uniqueId on host"),
         HCCL_E_NOT_SUPPORT);
     s32 deviceLogicId;
-    CHK_RET(hrtGetDevice(&deviceLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devId_));
     CHK_RET(hrtGetDeviceType(devType_));
     if (rtStream_ == nullptr) {
@@ -370,6 +370,7 @@ HcclResult AicpuTsThread::DeviceInit()
     HCCL_INFO("[AicpuTsThread][Init]streamType[%d], notifyLoadType[%d].", streamType_, notifyLoadType_);
     iss.read(reinterpret_cast<char_t *>(&hostPhyId), sizeof(hostPhyId));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(hostPhyId, &devId_));
+    HCCL_INFO("[AicpuTsThread][Init]hostPhyId[%u], localDevId[%u].", hostPhyId, devId_);
     iss.read(reinterpret_cast<char_t *>(&notifyNum_), sizeof(notifyNum_));
 
     HcclStreamParam streamParam;

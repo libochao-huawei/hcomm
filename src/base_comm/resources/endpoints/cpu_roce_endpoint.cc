@@ -49,7 +49,7 @@ HcclResult CpuRoceEndpoint::Init()
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     EXCEPTION_CATCH(Hccl::HccpPeerManager::GetInstance().Init(devId), return HCCL_E_INTERNAL);
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
@@ -74,7 +74,7 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
 
@@ -95,7 +95,7 @@ HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
 
@@ -111,7 +111,7 @@ HcclResult CpuRoceEndpoint::ServerSocketGetListenPort(uint32_t *port)
     std::lock_guard<std::mutex> lock(portMutex_);
     CHK_PTR_NULL(port);
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
 

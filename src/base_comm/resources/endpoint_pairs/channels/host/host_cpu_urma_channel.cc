@@ -129,7 +129,7 @@ HcclResult HostCpuUrmaChannel::BuildConnection()
     CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr));
 
     s32 deviceLogicId;
-    CHK_RET(hrtGetDevice(&deviceLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
     std::unique_ptr<Hccl::HostUbConnection> ubConn = nullptr;
@@ -198,7 +198,7 @@ HcclResult HostCpuUrmaChannel::BuildUbMemTransport()
 HcclResult HostCpuUrmaChannel::Init()
 {
     s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
     CHK_RET(ParseInputParam());
     if (channelDesc_.role != HCOMM_SOCKET_ROLE_CLIENT) {

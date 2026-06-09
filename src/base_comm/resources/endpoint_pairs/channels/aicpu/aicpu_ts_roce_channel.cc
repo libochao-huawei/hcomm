@@ -290,7 +290,7 @@ HcclResult AicpuTsRoceChannel::ConfigureMachineParaForTransport()
     machinePara_.tag = dispatcherCommId_;
     machinePara_.localDeviceId = localEp_.loc.device.devPhyId;
     machinePara_.remoteDeviceId = remoteEp_.loc.device.devPhyId;
-    CHK_RET(hrtGetDevice(&machinePara_.deviceLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&machinePara_.deviceLogicId));
     DevType devType = DevType::DEV_TYPE_COUNT;
     CHK_RET(hrtGetDeviceType(devType));
     machinePara_.deviceType = devType;
