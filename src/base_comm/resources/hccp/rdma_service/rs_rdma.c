@@ -3059,27 +3059,27 @@ RS_ATTRI_VISI_DEF int RsQpCreateWithCQWithAttrs(unsigned int phyId, unsigned int
 
     ret = RsDrvQpCreateWithAttrs(qpCb, qpNorm);
     if (ret) {
-        hccp_err("create drv qp create failed:%d", ret);
+        hccp_err("Create drv qp create failed:%d", ret);
         goto create_qp_err;
     }
 
     ret = ibv_req_notify_cq(qpCb->ibSendCq, 0);
     if (ret) {
-        hccp_err("Couldn't request send CQ notification, ret:%d", ret);
+        hccp_err("Can't request send CQ notification, ret:%d", ret);
         ret = -EOPENSRC;
         goto ret_noritfy_cq;
     }
 
     ret = ibv_req_notify_cq(qpCb->ibRecvCq, 0);
     if (ret) {
-        hccp_err("Couldn't request recv CQ notification, ret:%d", ret);
+        hccp_err("Can't request recv CQ notification, ret:%d", ret);
         ret = -EOPENSRC;
         goto ret_noritfy_cq;
     }
 
     ret = RsQpNotifyMr(rdevCb, qpCb, &qpResp->qpn);
     if (ret) {
-        hccp_err("store qp notify mr failed:%d", ret);
+        hccp_err("Store qp notify mr failed:%d", ret);
         goto ret_noritfy_cq;
     }
 
