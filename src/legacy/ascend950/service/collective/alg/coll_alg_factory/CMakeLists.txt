@@ -13,7 +13,5 @@ add_subdirectory(alg_ccu_context)
 add_subdirectory(alg_executor)
 add_subdirectory(alg_topo_match)
 add_subdirectory(utils)
+add_subdirectory(alg_aiv_instruction)
 
-if(PRODUCT_SIDE STREQUAL "host")
-  add_subdirectory(alg_aiv_instruction)
-endif()

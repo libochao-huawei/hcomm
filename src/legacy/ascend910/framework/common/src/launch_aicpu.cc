@@ -19,6 +19,12 @@
 #include "mem_host_pub.h"
 #include "adapter_rts_common.h"
 
+// CANN API compatibility: different versions use different function names
+#ifndef aclrtCacheLastTaskExtendInfo
+#define aclrtCacheLastTaskExtendInfo aclrtCacheLastTaskOpInfo
+#endif
+
+
 using namespace std;
 
 namespace hccl {

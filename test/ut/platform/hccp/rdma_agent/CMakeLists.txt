@@ -30,44 +30,44 @@ set(rdma_agent_utest_list
     tc_host.c
     tc_ra_nda.c
     ${SRC_DIR}/test/ut/platform/hccp/rdma_agent/stub/dl.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_host.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_common.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_ping.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_ctx.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_rdma.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_init.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_socket.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_tlv.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_nda.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/async/ra_comm.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/async/ra_ctx.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/async/ra_socket.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/ra_adp.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/ra_adp_ping.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/ra_adp_socket.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/tlv/ra_adp_tlv.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/async/ra_adp_pool.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/async/ra_adp_async.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/ctx/ra_adp_ctx.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/ra_hdc.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/ra_hdc_ping.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/ra_hdc_ctx.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/ra_hdc_socket.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/ra_hdc_rdma.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/ra_hdc_tlv.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/async/ra_hdc_async.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/async/ra_hdc_async_ctx.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/async/ra_hdc_async_socket.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/peer/ra_peer.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/peer/ra_peer_socket.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/peer/ra_peer_ctx.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/peer/ra_peer_nda.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/comm/ra_comm.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/comm/ctx/ra_ctx_comm.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/common/dl_hal_function.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/ra_host.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/ra_common.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/ra_ping.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/ra_ctx.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/ra_rdma.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/ra_init.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/ra_socket.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/ra_tlv.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/ra_nda.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/async/ra_comm.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/async/ra_ctx.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client/async/ra_socket.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter/ra_adp.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter/ra_adp_ping.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter/ra_adp_socket.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter/tlv/ra_adp_tlv.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter/async/ra_adp_pool.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter/async/ra_adp_async.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter/ctx/ra_adp_ctx.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/ra_hdc.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/ra_hdc_ping.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/ra_hdc_ctx.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/ra_hdc_socket.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/ra_hdc_rdma.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/ra_hdc_tlv.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/async/ra_hdc_async.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/async/ra_hdc_async_ctx.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/async/ra_hdc_async_socket.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/peer/ra_peer.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/peer/ra_peer_socket.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/peer/ra_peer_ctx.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/peer/ra_peer_nda.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/comm/ra_comm.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/comm/ctx/ra_ctx_comm.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/common/dl_hal_function.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/devdrv_runtime_api.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/ra_hdc_lite.c
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/ra_rdma_lite.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/ra_hdc_lite.c
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/ra_rdma_lite.c
     main.cc
     ut_test.cc
     ${SRC_DIR}/test/ut/platform/hccp/stub/ut_dispatch.cc)
@@ -81,27 +81,27 @@ target_include_directories(rdma_agent_utest PRIVATE
     ${SRC_DIR}/test/ut/platform/hccp/ut_include
     ${SRC_DIR}/test/ut/platform/hccp/stub/
     ${SRC_DIR}/test/ut/depends/include
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/tlv
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/async
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/adapter/ctx
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/hdc/async
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/peer
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/inc
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/comm
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/comm/ctx
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/tlv
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/ctx
-    ${SRC_DIR}/src/base_comm/resources/hccp/common
-    ${SRC_DIR}/src/base_comm/resources/hccp/inc/network
-    ${SRC_DIR}/src/base_comm/resources/hccp/inc/private/network
-    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/inc
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/client
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter/tlv
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter/async
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/adapter/ctx
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/hdc/async
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/peer
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/inc
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/comm
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_agent/comm/ctx
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/tlv
+    ${SRC_DIR}/src/base_comm/resource/hccp/rdma_service/ctx
+    ${SRC_DIR}/src/base_comm/resource/hccp/common
+    ${SRC_DIR}/src/base_comm/resource/hccp/inc/network
+    ${SRC_DIR}/src/base_comm/resource/hccp/inc/private/network
+    ${SRC_DIR}/src/base_comm/resource/hccp/external_depends/inc
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/host_lite
-    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/nda
+    ${SRC_DIR}/src/base_comm/resource/hccp/external_depends/host_lite
+    ${SRC_DIR}/src/base_comm/resource/hccp/external_depends/nda
 )
 
 target_compile_options(rdma_agent_utest PRIVATE

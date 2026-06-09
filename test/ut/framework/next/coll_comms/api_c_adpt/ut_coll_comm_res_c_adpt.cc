@@ -1,4 +1,3 @@
-#include "gtest/gtest.h"
 #include "../../hccl_api_base_test.h"
 #include "hccl/hccl_res.h"
 #include "hccl_common.h"
@@ -10,8 +9,8 @@
 #include "llt_hccl_stub_rank_graph.h"
 #include <string>
 #include "mockcpp/mockcpp.hpp"
-#include "dfx/cluster_monitor/cluster_monitor.h"
-#include "host/host_cpu_roce_channel.h"
+#include "comm_dfx/cluster_monitor/cluster_monitor.h"
+#include "channel/host/host_cpu_roce_channel.h"
 #include "param_check_pub.h"
 
 #define private public
@@ -22,10 +21,11 @@ using namespace hcomm;
 HcclResult ProcessUbChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
     hcclComm *hcclComm);
 
-class HcclChannelDescTest : public testing::Test {
+class HcclChannelDescTest : public BaseInit {
 public:
     void SetUp() override
     {
+        BaseInit::SetUp();
         const char *fakeA5SocName = "Ascend950PR_958b";
         MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
         MOCKER(&HcclCommDfx::ReportKernel).stubs().will(returnValue(HCCL_SUCCESS));
@@ -34,6 +34,7 @@ public:
     }
     void TearDown() override
     {
+        BaseInit::TearDown();
         GlobalMockObject::verify();
     }
 protected: 
@@ -191,6 +192,7 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_IbvPostRecv_Fails_Return_
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
+
 TEST_F(HcclChannelDescTest, Ut_ProcessUbChannelDesc_When_WrongProtocol_Expect_E_PARA)
 {
     HcclChannelDesc in{};
