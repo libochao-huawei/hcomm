@@ -324,7 +324,7 @@ void BkfLogSecondHalf(BkfLog *log, char *modName, uint16_t line, uint8_t lvl, ch
         return;
     }
     usedLen += len;
-    if (usedLen >= sizeof(buf)) {
+    if ((size_t)usedLen >= sizeof(buf)) {
         return;
     }
     va_list args;
