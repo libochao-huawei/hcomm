@@ -49,6 +49,32 @@ enum class HcommChannelKind : uint32_t {
     AIV_URMA = 8U,
 };
 
+inline const char *HcommChannelKindToString(HcommChannelKind kind)
+{
+    switch (kind) {
+        case HcommChannelKind::INVALID:
+            return "INVALID";
+        case HcommChannelKind::AICPU_TS_URMA:
+            return "AICPU_TS_URMA";
+        case HcommChannelKind::AICPU_TS_ROCE:
+            return "AICPU_TS_ROCE";
+        case HcommChannelKind::AICPU_TS_HCCS:
+            return "AICPU_TS_HCCS";
+        case HcommChannelKind::CPU_ROCE:
+            return "CPU_ROCE";
+        case HcommChannelKind::AIV_UB_MEM:
+            return "AIV_UB_MEM";
+        case HcommChannelKind::AICPU_TS_UBOE:
+            return "AICPU_TS_UBOE";
+        case HcommChannelKind::AICPU_TS_ROCE_V2:
+            return "AICPU_TS_ROCE_V2";
+        case HcommChannelKind::AIV_URMA:
+            return "AIV_URMA";
+        default:
+            return "UNKNOWN";
+    }
+}
+
 /**
  * @note 职责：一个EndPointPair上的建立的通信通道的C++抽象接口类声明。
  * 管理该通信通道Channel对上的同步信号Notify、通信队列（如qp、jetty等）等资源管理，负责建立连接，以及注册内存、同步信号等的交换。
