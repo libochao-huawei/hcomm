@@ -338,6 +338,8 @@ uint32_t BkfFsmChgState(BkfFsm *fsm, uint8_t newState)
 
 void BkfFsmStateChgSpy(BkfFsm *fsm, uint8_t newState)
 {
+    (void)fsm;
+    (void)newState;
 }
 
 const char *BkfFsmGetStateStr(BkfFsm *fsm)

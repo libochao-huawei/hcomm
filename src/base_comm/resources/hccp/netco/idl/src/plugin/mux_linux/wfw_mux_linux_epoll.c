@@ -327,6 +327,7 @@ WfwMuxInitArg *WfwMuxLeBuildMuxInitArg(WfwMuxLe *muxLe, WfwMuxInitArg *temp)
 /* on msg  & proc */
 STATIC void WfwMuxLeOnTrigFd(int fd, uint32_t curEvents, WfwMuxLe *muxLe)
 {
+    (void)curEvents;
     WfwMuxBaseProcTrigFdEvent(fd);
     muxLe->stopLoopRun = VOS_TRUE;
 }

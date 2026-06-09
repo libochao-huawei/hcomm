@@ -43,6 +43,10 @@ typedef enum {
 int32_t SendStartUpFinishMsg(const uint32_t deviceId, const TsdWaitType waitType,
                              const uint32_t hostPid, const uint32_t vfId)
 {
+    (void)deviceId;
+    (void)hostPid;
+    (void)vfId;
+    (void)waitType;
     return 0;
 }
 
@@ -61,5 +65,11 @@ int32_t ReportProcessStartUpErrorCode(const uint32_t deviceId, const TsdWaitType
                                       const uint32_t hostPid, const uint32_t vfId,
                                       const char *errCode, const uint32_t errLen)
 {
+    (void)deviceId;
+    (void)errCode;
+    (void)errLen;
+    (void)hostPid;
+    (void)vfId;
+    (void)waitType;
     return 0;
 }

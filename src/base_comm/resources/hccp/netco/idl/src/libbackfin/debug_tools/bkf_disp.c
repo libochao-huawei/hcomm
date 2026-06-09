@@ -405,6 +405,7 @@ STATIC uint32_t BkfDispRegFuncChkParam(BkfDisp *disp, char *funcName, F_BKF_DISP
                                        const char *funcHelpInfo, uint8_t funcLvl, char *funcMayProcObjName,
                                        uint8_t funcParamCnt, BkfDispObj **findDispObj)
 {
+    (void)funcLvl;
     BkfDispObj *dispObj = VOS_NULL;
 
     if (disp == VOS_NULL) {
@@ -570,6 +571,7 @@ STATIC uint32_t BkfDispProcChkParam(BkfDisp *disp, char **inStr, uint8_t inStrCn
 }
 STATIC BkfDispFunc *BkfDispProcParseDispFunc(BkfDisp *disp, char **inStr, uint8_t inStrCnt)
 {
+    (void)inStrCnt;
     char *funcName = VOS_NULL;
     BkfDispFunc *dispFunc = VOS_NULL;
 
@@ -586,6 +588,7 @@ STATIC BkfDispFunc *BkfDispProcParseDispFunc(BkfDisp *disp, char **inStr, uint8_
 STATIC uint32_t BkfDispProcParseFuncOneParam(BkfDisp *disp, BkfDispFunc *dispFunc, uint8_t paramIdx,
                                              char *realParamStr, uintptr_t *realParamVal)
 {
+    (void)disp;
     BkfDispFuncParamType *paramType = VOS_NULL;
     BOOL str2ValSucc = VOS_FALSE;
 
@@ -668,6 +671,7 @@ STATIC BkfDispObj *BkfDispProcParseDispObj(BkfDisp *disp, char **inStr, uint8_t 
 STATIC void BkfDispProcCallFuncForPara(BkfDisp *disp, BkfDispFunc *dispFunc, uintptr_t *realParamVal,
     BkfDispObj *dispObj)
 {
+    (void)disp;
     switch (dispFunc->funcParamCnt) {
         case 0: {
             dispFunc->funcAddr(dispObj->objAddr);
@@ -706,6 +710,7 @@ STATIC void BkfDispProcCallFuncForPara(BkfDisp *disp, BkfDispFunc *dispFunc, uin
 STATIC void BkfDispProcCallFunc(BkfDisp *disp, BkfDispFunc *dispFunc, uintptr_t *realParamVal, uint8_t realParamValCnt,
                                   BkfDispObj *dispObj)
 {
+    (void)realParamValCnt;
     int32_t i;
     BOOL lastCtxNotUse = VOS_FALSE;
     BOOL maybeDeadLoop = VOS_FALSE;
@@ -953,6 +958,7 @@ void BkfDispSaveCtx(BkfDisp *disp, void *ctx1, int32_t ctx1Len, void *ctx2OrNull
 
 STATIC uint32_t BkfDispGetLastCtxChkParam(BkfDisp *disp, void *ctx2OrNull)
 {
+    (void)ctx2OrNull;
     if (disp == VOS_NULL) {
         return BKF_ERR;
     }
@@ -1085,6 +1091,8 @@ STATIC void BkfDispTestNoArgFunc(BkfDisp *disp)
 }
 void BkfDispTestFunc(BkfDisp *disp, char *funcName, char *objName, uint8_t funcParamCnt, ...)
 {
+    (void)funcName;
+    (void)funcParamCnt;
     if ((disp == VOS_NULL) || (objName == VOS_NULL)) {
         return;
     }
@@ -1311,6 +1319,7 @@ STATIC void BkfDispDelFuncAllObjName(BkfDisp *disp, BkfDispFunc *dispFunc)
 
 STATIC BkfDispFuncObjName *BkfDispFindFuncObjName(BkfDisp *disp, BkfDispFunc *dispFunc, char *objName)
 {
+    (void)disp;
     BkfDispFuncObjName *funcObjName = VOS_NULL;
 
     funcObjName = VOS_AVLL_FIND(dispFunc->funcObjNameSet, objName);
@@ -1319,6 +1328,7 @@ STATIC BkfDispFuncObjName *BkfDispFindFuncObjName(BkfDisp *disp, BkfDispFunc *di
 
 STATIC BkfDispFuncObjName *BkfDispFindNextFuncObjName(BkfDisp *disp, BkfDispFunc *dispFunc, char *objName)
 {
+    (void)disp;
     BkfDispFuncObjName *funcObjName = VOS_NULL;
 
     funcObjName = VOS_AVLL_FIND_NEXT(dispFunc->funcObjNameSet, objName);
@@ -1328,6 +1338,7 @@ STATIC BkfDispFuncObjName *BkfDispFindNextFuncObjName(BkfDisp *disp, BkfDispFunc
 STATIC BkfDispFuncObjName *BkfDispGetFirstFuncObjNameOfFunc(BkfDisp *disp, BkfDispFunc *dispFunc,
                                                               void **itorOutOrNull)
 {
+    (void)disp;
     BkfDispFuncObjName *funcObjName = VOS_NULL;
 
     funcObjName = VOS_AVLL_FIRST(dispFunc->funcObjNameSet);
@@ -1340,6 +1351,7 @@ STATIC BkfDispFuncObjName *BkfDispGetFirstFuncObjNameOfFunc(BkfDisp *disp, BkfDi
 
 STATIC BkfDispFuncObjName *BkfDispGetNextFuncObjNameOfFunc(BkfDisp *disp, BkfDispFunc *dispFunc, void **itorInOut)
 {
+    (void)disp;
     BkfDispFuncObjName *funcObjName = VOS_NULL;
 
     funcObjName = (*itorInOut);
@@ -1349,6 +1361,7 @@ STATIC BkfDispFuncObjName *BkfDispGetNextFuncObjNameOfFunc(BkfDisp *disp, BkfDis
 
 STATIC BkfDispFuncObjName *BkfDispGetFirstFuncObjNameOfObj(BkfDisp *disp, BkfDispObj *dispObj, void **itorOutOrNull)
 {
+    (void)disp;
     BkfDlNode *tempNode = VOS_NULL;
     BkfDispFuncObjName *funcObjName = VOS_NULL;
 
@@ -1369,6 +1382,7 @@ STATIC BkfDispFuncObjName *BkfDispGetFirstFuncObjNameOfObj(BkfDisp *disp, BkfDis
 
 STATIC BkfDispFuncObjName *BkfDispGetNextFuncObjNameOfObj(BkfDisp *disp, BkfDispObj *dispObj, void **itorInOut)
 {
+    (void)disp;
     BkfDlNode *tempNode = VOS_NULL;
     BkfDispFuncObjName *funcObjName = VOS_NULL;
 
