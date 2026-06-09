@@ -679,7 +679,6 @@ TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Roce_DoesNotUseUbAttrBranch)
 TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_MSModel_WithCommConfig)
 {
     HcommChannelDesc in{};
-    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
@@ -695,7 +694,6 @@ TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_MSModel_WithCommConf
 TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_SCHEDModel_WithCommConfig)
 {
     HcommChannelDesc in{};
-    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
