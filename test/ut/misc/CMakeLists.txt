@@ -46,6 +46,7 @@ set(hccl_utest_misc_list
     # ut_switch_nic.cc
     ut_switch_nic_fsm.cc
     ut_interface_multithread.cc
+    ut_interface_hccl_verbs.cc
     ut_topoinfo_exchange_agent.cc
     ut_exchange_info.cc
 )
