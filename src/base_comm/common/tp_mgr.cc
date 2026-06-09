@@ -30,25 +30,9 @@ namespace hcomm {
 
 namespace {
 constexpr uint32_t kTpAttrSlAvailableBit = 17U;
-static constexpr uint32_t kTpAttrSlBitmapExtMask = (1U << kTpAttrSlAvailableBit);
 static constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
 static constexpr uint32_t kTpAttrBitmapDscp = (1U << 8U);
 static constexpr uint32_t kTpAttrDscpConfigModeBit = 18U;
-/// 底层未回 bit17（slBitmap 扩展不可用）时：固定选 list[0]，jetty priority 用 2
-static constexpr uint32_t kLegacyMappedJettyPriority = 2U;
-
-static bool IsTpAttrSlBitmapExtSupported(const uint32_t tpAttrBitmap)
-{
-    return (tpAttrBitmap & kTpAttrSlBitmapExtMask) != 0U;
-}
-
-static void FillLegacyTpInfoWithoutSlExt(const struct HccpTpInfo *baseInfoPtr, TpInfo &tmpTpInfo)
-{
-    tmpTpInfo = TpInfo{};
-    tmpTpInfo.tpHandle = baseInfoPtr[0].tpHandle;
-    tmpTpInfo.mappedJettyPriority = kLegacyMappedJettyPriority;
-    tmpTpInfo.hasMappedJettyPriority = true;
-}
 
 static constexpr QosKey QosMapKey(uint32_t qos) noexcept
 {
@@ -889,43 +873,33 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     }
 
     const struct HccpTpInfo *baseInfoPtr = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
-    const bool slBitmapExtSupported = IsTpAttrSlBitmapExtSupported(reqCtx.tpAttrBitmap);
-    HCCL_INFO("[TpMgr][%s] after get_tp_attr: slBitmapExtSupported[%d] slBitmap[0x%x] dscp[%u] dscpConfigMode[%u] "
+    const uint16_t slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
+    const uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
+    HCCL_INFO("[TpMgr][%s] after get_tp_attr: slMask[0x%04x] slAvailableCnt[%u] slBitmap[0x%x] dscp[%u] dscpConfigMode[%u] "
               "tpAttrBitmap[0x%x] param[%s].",
-        __func__, static_cast<int>(slBitmapExtSupported), static_cast<unsigned>(reqCtx.tpAttr.slBitmap),
+        __func__, static_cast<unsigned>(slMask), slAvailableCnt, static_cast<unsigned>(reqCtx.tpAttr.slBitmap),
         static_cast<unsigned>(reqCtx.tpAttr.dscp & 0x3FU),
         static_cast<unsigned>(reqCtx.tpAttr.dscpConfigMode & 1U), reqCtx.tpAttrBitmap, param.Describe().c_str());
+    if (slAvailableCnt == 0U) {
+        HCCL_ERROR("[TpMgr][%s] sl_available mask empty after get_tp_attr, param[%s].", __func__,
+            param.Describe().c_str());
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    uint32_t tpListIndex = 0;
+    uint32_t mappedSl = 0;
+    if (!ApplyTpQosSlPolicy(param, tpInfoNum, slMask, tpListIndex, mappedSl)) {
+        HCCL_ERROR("[TpMgr][%s] ApplyTpQosSlPolicy failed, param[%s] nTp[%u] slAvailableCnt[%u] mask[%u].",
+            __func__, param.Describe().c_str(), tpInfoNum, slAvailableCnt, static_cast<unsigned>(slMask));
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    if (tpListIndex >= tpInfoNum) {
+        HCCL_ERROR("[TpMgr][%s] tpListIndex out of range: tpListIndex[%u] tpInfoNum[%u] mappedSl[%u] param[%s].",
+            __func__, tpListIndex, tpInfoNum, static_cast<unsigned>(mappedSl & 0xFU), param.Describe().c_str());
+        return HcclResult::HCCL_E_INTERNAL;
+    }
 
     TpInfo tmpTpInfo{};
-    if (!slBitmapExtSupported) {
-        FillLegacyTpInfoWithoutSlExt(baseInfoPtr, tmpTpInfo);
-        HCCL_INFO("[TpMgr][%s] slBitmap ext not supported (tpAttrBitmap bit17=0): use first tpHandle[%llu] "
-                  "mappedJettyPriority[%u] param[%s].",
-            __func__, tmpTpInfo.tpHandle, tmpTpInfo.mappedJettyPriority, param.Describe().c_str());
-    } else {
-        const uint16_t slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
-        const uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
-        HCCL_INFO("[TpMgr][%s] slBitmap ext supported: slMask[0x%04x] slAvailableCnt[%u].",
-            __func__, static_cast<unsigned>(slMask), slAvailableCnt);
-        if (slAvailableCnt == 0U) {
-            HCCL_ERROR("[TpMgr][%s] slBitmap ext supported but sl_available mask empty, param[%s].", __func__,
-                param.Describe().c_str());
-            return HcclResult::HCCL_E_INTERNAL;
-        }
-        uint32_t tpListIndex = 0;
-        uint32_t mappedSl = 0;
-        if (!ApplyTpQosSlPolicy(param, tpInfoNum, slMask, tpListIndex, mappedSl)) {
-            HCCL_ERROR("[TpMgr][%s] ApplyTpQosSlPolicy failed, param[%s] nTp[%u] slAvailableCnt[%u] mask[%u].",
-                __func__, param.Describe().c_str(), tpInfoNum, slAvailableCnt, static_cast<unsigned>(slMask));
-            return HcclResult::HCCL_E_INTERNAL;
-        }
-        if (tpListIndex >= tpInfoNum) {
-            HCCL_ERROR("[TpMgr][%s] tpListIndex out of range: tpListIndex[%u] tpInfoNum[%u] mappedSl[%u] param[%s].",
-                __func__, tpListIndex, tpInfoNum, static_cast<unsigned>(mappedSl & 0xFU), param.Describe().c_str());
-            return HcclResult::HCCL_E_INTERNAL;
-        }
-        CHK_RET(BuildTpInfoAndCommitQosAttr(param, reqCtx, baseInfoPtr, tpListIndex, mappedSl, tmpTpInfo));
-    }
+    CHK_RET(BuildTpInfoAndCommitQosAttr(param, reqCtx, baseInfoPtr, tpListIndex, mappedSl, tmpTpInfo));
 
     Hccl::IpAddress locAddr{};
     Hccl::IpAddress rmtAddr{};
