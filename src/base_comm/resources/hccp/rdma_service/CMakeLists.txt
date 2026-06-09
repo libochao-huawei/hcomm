@@ -101,8 +101,6 @@ target_include_directories(rs PRIVATE
     ${TLV_DIR}
     # 第三方库依赖路径
     ${OPENSSL_INCLUDE_DIR}
-    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
-    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/kms
     # rdma头文件
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
