@@ -112,7 +112,10 @@ HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &localFra
     }
 
     // 填充ranktable CRC
-    localFrame.rankTableCrc = rankTableCrcV2_.crc;
+    localFrame.rankTableCrcNum = std::min(static_cast<u32>(rankTableCrcsV2_.size()), MAX_CRC_LEN_V2);
+    for (u32 i = 0; i < localFrame.rankTableCrcNum; i++) {
+        localFrame.rankTableCrcArray[i] = rankTableCrcsV2_[i].crc;
+    }
 
     // 填充子通信域参数CRC
     localFrame.subCommCrcNum = std::min(static_cast<u32>(subCommParaCrcsV2_.size()), MAX_CRC_LEN_V2);
