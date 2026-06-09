@@ -63,7 +63,7 @@ private:
     HcclResult BuildConnection();
     void DestroyConnection();
     HcclResult EnableMemAccess();
-    void DisableMemAccess() const;
+    void DisableMemAccess();
     HcclResult GetFirstIpByPhyId(u32 devicePhyId, u32 superDevId, hccl::HcclIpAddress &ip) const;
     HcclResult SetMachinePara(hccl::MachinePara &machinePara);
     void SetTransportParam(hccl::TransportPara &para) const;

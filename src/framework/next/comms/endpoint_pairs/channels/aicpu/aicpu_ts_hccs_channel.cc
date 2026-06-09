@@ -280,7 +280,7 @@ HcclResult AicpuTsHccsChannel::EnableMemAccess()
     return HCCL_SUCCESS;
 }
 
-void AicpuTsHccsChannel::DisableMemAccess() const
+void AicpuTsHccsChannel::DisableMemAccess()
 {
     if (localEpPtr_ != nullptr) {
         (void)localEpPtr_->MemoryCloseRemoteIpc();
