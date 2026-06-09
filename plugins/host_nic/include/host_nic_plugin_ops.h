@@ -354,4 +354,23 @@ public:
 
 } // namespace hcomm_host_nic
 
+#define HCOMM_HOST_NIC_PLUGIN_EXPORTS(PluginOpsType)                                                      \
+extern "C" const HcommNicPluginInfo *HcommNicPluginGetInfo(void)                                          \
+{                                                                                                         \
+    return &kPluginInfo;                                                                                  \
+}                                                                                                         \
+                                                                                                          \
+extern "C" int32_t HcommNicPluginCreateEndpoint(const void *endpointDescRaw, uint32_t epDescLen,          \
+    void **outCtx, HcommNicEndpointOps **outOps)                                                          \
+{                                                                                                         \
+    return PluginOpsType::CreateEndpointExport(endpointDescRaw, epDescLen, outCtx, outOps, &kEndpointOps);\
+}                                                                                                         \
+                                                                                                          \
+extern "C" int32_t HcommNicPluginCreateChannel(void *epCtx, const void *channelDescRaw, uint32_t chDescLen,\
+    void **outCtx, HcommNicChannelOps **outOps)                                                           \
+{                                                                                                         \
+    return PluginOpsType::CreateChannelExport(epCtx, channelDescRaw, chDescLen, outCtx, outOps,           \
+        &kChannelOps);                                                                                    \
+}
+
 #endif // HCOMM_HOST_NIC_PLUGIN_OPS_H

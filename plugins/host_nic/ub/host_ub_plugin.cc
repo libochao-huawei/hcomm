@@ -48,19 +48,4 @@ HcommNicEndpointOps kEndpointOps = PluginOps::EndpointOps();
 HcommNicChannelOps kChannelOps = PluginOps::ChannelOps();
 } // namespace
 
-extern "C" const HcommNicPluginInfo *HcommNicPluginGetInfo(void)
-{
-    return &kPluginInfo;
-}
-
-extern "C" int32_t HcommNicPluginCreateEndpoint(const void *endpointDescRaw, uint32_t epDescLen, void **outCtx,
-    HcommNicEndpointOps **outOps)
-{
-    return PluginOps::CreateEndpointExport(endpointDescRaw, epDescLen, outCtx, outOps, &kEndpointOps);
-}
-
-extern "C" int32_t HcommNicPluginCreateChannel(void *epCtx, const void *channelDescRaw, uint32_t chDescLen,
-    void **outCtx, HcommNicChannelOps **outOps)
-{
-    return PluginOps::CreateChannelExport(epCtx, channelDescRaw, chDescLen, outCtx, outOps, &kChannelOps);
-}
+HCOMM_HOST_NIC_PLUGIN_EXPORTS(PluginOps)
