@@ -26,8 +26,31 @@
 using namespace std;
 using namespace hccl;
 
+namespace hccl {
+extern std::map<std::string, void*> dlAclFuntionPtrMap;
+}
+
+static aclError stubHrtCacheLastTaskExtendInfoSuccess(const char* tag, size_t tagLen)
+{
+    return ACL_SUCCESS;
+}
+
+static aclError stubHrtCacheLastTaskExtendInfoFail(const char* tag, size_t tagLen)
+{
+    return static_cast<aclError>(2);
+}
+
 class LaunchAicpuUT : public testing::Test {
 protected:
+    void SetUp() override
+    {
+        hccl::dlAclFuntionPtrMap.clear();
+    }
+    void TearDown() override
+    {
+        hccl::dlAclFuntionPtrMap.clear();
+    }
+
     static void SetUpTestCase()
     {
         std::cout << "LaunchAicpuUT SetUP" << std::endl;
@@ -95,10 +118,6 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoNotSupported_Expect_ReturnSucces
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    MOCKER(hrtCacheLastTaskExtendInfo)
-        .stubs()
-        .will(returnValue(HCCL_E_NOT_SUPPORT));
-
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -123,9 +142,7 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoCallSuccess_Expect_ReturnSuccess
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    MOCKER(hrtCacheLastTaskExtendInfo)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    hccl::dlAclFuntionPtrMap["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoSuccess;
 
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -151,9 +168,7 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoCallFailed_Expect_ReturnRuntimeE
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    MOCKER(hrtCacheLastTaskExtendInfo)
-        .stubs()
-        .will(returnValue(HCCL_E_RUNTIME));
+    hccl::dlAclFuntionPtrMap["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoFail;
 
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
@@ -195,46 +210,6 @@ TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CaptureNotSupport_Expect_Retur
     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
-}
-
-namespace hccl {
-extern std::map<std::string, void*> dlAclFuntionPtrMap;
-}
-
-static aclError stubCacheLastTaskExtendInfoSuccess(const char* tag, size_t tagLen)
-{
-    return ACL_SUCCESS;
-}
-
-static aclError stubCacheLastTaskExtendInfoFail(const char* tag, size_t tagLen)
-{
-    return static_cast<aclError>(ACL_ERROR_RT_FEATURE_NOT_SUPPORT);
-}
-
-TEST_F(LaunchAicpuUT, hrtCacheLastTaskExtendInfo_HandleReturnsNull_Expect_ReturnNotSupport)
-{
-    hccl::dlAclFuntionPtrMap.clear();
-    HcclResult ret = hrtCacheLastTaskExtendInfo("test_tag", 8);
-    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
-    hccl::dlAclFuntionPtrMap.clear();
-}
-
-TEST_F(LaunchAicpuUT, hrtCacheLastTaskExtendInfo_AclCallSucceeds_Expect_ReturnSuccess)
-{
-    hccl::dlAclFuntionPtrMap.clear();
-    hccl::dlAclFuntionPtrMap["aclrtCacheLastTaskExtendInfo"] = (void*)stubCacheLastTaskExtendInfoSuccess;
-    HcclResult ret = hrtCacheLastTaskExtendInfo("test_tag", 8);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    hccl::dlAclFuntionPtrMap.clear();
-}
-
-TEST_F(LaunchAicpuUT, hrtCacheLastTaskExtendInfo_AclCallFails_Expect_ReturnRuntimeError)
-{
-    hccl::dlAclFuntionPtrMap.clear();
-    hccl::dlAclFuntionPtrMap["aclrtCacheLastTaskExtendInfo"] = (void*)stubCacheLastTaskExtendInfoFail;
-    HcclResult ret = hrtCacheLastTaskExtendInfo("test_tag", 8);
-    EXPECT_EQ(ret, HCCL_E_RUNTIME);
-    hccl::dlAclFuntionPtrMap.clear();
 }
 
 TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CaptureGetInfoFail_Expect_ReturnRuntimeError)
@@ -309,9 +284,7 @@ TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CacheTaskOpInfoSuccess_Expect_
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    MOCKER(hrtCacheLastTaskExtendInfo)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    hccl::dlAclFuntionPtrMap["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoSuccess;
 
     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);

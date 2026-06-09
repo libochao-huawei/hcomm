@@ -36,11 +36,11 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/aicpu_thread_process.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework/aicpu_one_side_service.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/hccl_aicpu_interface.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/launch_aicpu.cc
 )
 
 add_executable(hccl_utest_device ${hccl_utest_device_src_list})
 
-# 头文件搜索路径
 target_include_directories(hccl_utest_device PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/device/
@@ -59,7 +59,7 @@ target_compile_definitions(hccl_utest_device PRIVATE
     OPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
-target_compile_options(hccl_utest_device   PRIVATE
+target_compile_options(hccl_utest_device PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -81,14 +81,14 @@ target_link_libraries(hccl_utest_device PRIVATE
 )
 add_dependencies(hccl_utest_device hccl_llt)
 
-set(hccl_utest_launch_aicpu_plf_src_list
-    main_simple.cc
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/launch_aicpu.cc
+set(hccl_utest_launch_aicpu_fw_src_list
+    main.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/launch_aicpu.cc
     ut_launch_aicpu.cc
 )
-add_executable(hccl_utest_launch_aicpu_plf ${hccl_utest_launch_aicpu_plf_src_list})
+add_executable(hccl_utest_launch_aicpu_fw ${hccl_utest_launch_aicpu_fw_src_list})
 
-target_include_directories(hccl_utest_launch_aicpu_plf PRIVATE
+target_include_directories(hccl_utest_launch_aicpu_fw PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/device/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine/
@@ -97,7 +97,7 @@ target_include_directories(hccl_utest_launch_aicpu_plf PRIVATE
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/
 )
-target_compile_definitions(hccl_utest_launch_aicpu_plf PRIVATE
+target_compile_definitions(hccl_utest_launch_aicpu_fw PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     HALF_T=float
     google=ascend_private
@@ -106,7 +106,7 @@ target_compile_definitions(hccl_utest_launch_aicpu_plf PRIVATE
     OPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
-target_compile_options(hccl_utest_launch_aicpu_plf PRIVATE
+target_compile_options(hccl_utest_launch_aicpu_fw PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -114,7 +114,7 @@ target_compile_options(hccl_utest_launch_aicpu_plf PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_libraries(hccl_utest_launch_aicpu_plf PRIVATE
+target_link_libraries(hccl_utest_launch_aicpu_fw PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
@@ -126,8 +126,8 @@ target_link_libraries(hccl_utest_launch_aicpu_plf PRIVATE
     -lrt
     -ldl
 )
-add_dependencies(hccl_utest_launch_aicpu_plf hccl_llt)
+add_dependencies(hccl_utest_launch_aicpu_fw hccl_llt)
 
 enable_testing()
 add_test(NAME hccl_utest_device COMMAND hccl_utest_device)
-add_test(NAME hccl_utest_launch_aicpu_plf COMMAND hccl_utest_launch_aicpu_plf)
+add_test(NAME hccl_utest_launch_aicpu_fw COMMAND hccl_utest_launch_aicpu_fw)
