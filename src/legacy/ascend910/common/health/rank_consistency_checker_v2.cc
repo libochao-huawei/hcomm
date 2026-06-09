@@ -27,6 +27,7 @@ RankConsistencyCheckerV2& RankConsistencyCheckerV2::GetInstance(const s32 &devic
 
 HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
 {
+    envVarCrcsV2_.clear();
     std::string buffSizeStr = std::to_string(buffSize);
     u32 crc = 0;
     HcclResult ret = CalcCrc::HcclCalcCrc(buffSizeStr.c_str(), strlen(buffSizeStr.c_str()), crc);
@@ -39,6 +40,7 @@ HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
 
 HcclResult RankConsistencyCheckerV2::RecordRankTableCrcV2(u32 crc)
 {
+    rankTableCrcsV2_.clear();
     rankTableCrcsV2_.emplace_back(std::string("ranktable_content"), crc);
     HCCL_DEBUG("[RankConsistencyCheckerV2::RecordRankTableCrcV2] ranktable crc[0x%08x] recorded.", crc);
     return HCCL_SUCCESS;
@@ -47,6 +49,7 @@ HcclResult RankConsistencyCheckerV2::RecordRankTableCrcV2(u32 crc)
 HcclResult RankConsistencyCheckerV2::RecordSubCommParaV2(const std::string &parentIdentifier, uint32_t rankNum,
     const uint32_t *rankIds, uint64_t subCommId)
 {
+    subCommParaCrcsV2_.clear();
     // 将子通信域四个关键参数计算CRC，带名称存入a5SubCommParaCrcs_
     // 1. 父通信域identifier
     u32 parentCommCrc = 0;
@@ -103,16 +106,13 @@ HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &localFra
         HCCL_ERROR("[RankConsistencyCheckerV2::GenerateCheckFrameV2] memset failed."), HCCL_E_INTERNAL);
 
     // 填充环境变量CRC
-    localFrame.crcNum = std::min(static_cast<u32>(envVarCrcsV2_.size()), MAX_CRC_LEN_V2);
-    for (u32 i = 0; i < localFrame.crcNum; i++) {
-        localFrame.crcArray[i] = envVarCrcsV2_[i].crc;
+    localFrame.envCrcNum = std::min(static_cast<u32>(envVarCrcsV2_.size()), MAX_CRC_LEN_V2);
+    for (u32 i = 0; i < localFrame.envCrcNum; i++) {
+        localFrame.envCrcArray[i] = envVarCrcsV2_[i].crc;
     }
 
     // 填充ranktable CRC
-    localFrame.rankTableCrcNum = std::min(static_cast<u32>(rankTableCrcsV2_.size()), MAX_CRC_LEN_V2);
-    for (u32 i = 0; i < localFrame.rankTableCrcNum; i++) {
-        localFrame.rankTableCrcArray[i] = rankTableCrcsV2_[i].crc;
-    }
+    localFrame.rankTableCrc = rankTableCrcV2_.crc;
 
     // 填充子通信域参数CRC
     localFrame.subCommCrcNum = std::min(static_cast<u32>(subCommParaCrcsV2_.size()), MAX_CRC_LEN_V2);
@@ -127,8 +127,8 @@ HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &localFra
         HCCL_ERROR("[RankConsistencyCheckerV2::GenerateCheckFrameV2] memcpy version failed."), HCCL_E_INTERNAL);
 
     HCCL_INFO("[RankConsistencyCheckerV2::GenerateCheckFrameV2] success, envCrcNum[%u], "
-        "rankTableCrcNum[%u], subCommCrcNum[%u], version[%s].",
-        localFrame.crcNum, localFrame.rankTableCrcNum, localFrame.subCommCrcNum, localFrame.version);
+        "rankTableCrc[%u], subCommCrcNum[%u], version[%s].",
+        localFrame.crcNum, localFrame.rankTableCrc, localFrame.subCommCrcNum, localFrame.version);
     return HCCL_SUCCESS;
 }
 
@@ -140,20 +140,17 @@ HcclResult RankConsistencyCheckerV2::CompareCheckFrameV2(
     // dfx日志处理在下面函数的内部，外部不处理日志
     // 比对环境变量CRC
     isDiff |= CompareCrcArrayV2(
-        local.crcNum, local.crcArray,
-        remote.crcNum, remote.crcArray,
+        local.envCrcArray, remote.envCrcArray,
         envVarCrcsV2_, "env var", "env_var_count");
 
     // 比对ranktable CRC
     isDiff |= CompareCrcArrayV2(
-        local.rankTableCrcNum, local.rankTableCrcArray,
-        remote.rankTableCrcNum, remote.rankTableCrcArray,
+        local.rankTableCrcArray, remote.rankTableCrcArray,
         rankTableCrcsV2_, "ranktable", "ranktable_count");
 
     // 比对子通信域参数CRC
     isDiff |= CompareCrcArrayV2(
-        local.subCommCrcNum, local.subCommCrcArray,
-        remote.subCommCrcNum, remote.subCommCrcArray,
+        local.subCommCrcArray, remote.subCommCrcArray,
         subCommParaCrcsV2_, "sub comm param", "sub_comm_param_count");
         
     CompareVersionV2(local, remote, isDiff);
@@ -176,35 +173,25 @@ bool RankConsistencyCheckerV2::GetInconsistentCheckFirstDone()
 }
 
 // private
-bool RankConsistencyCheckerV2::CompareCrcArrayV2(
-    u32 localNum, const u32 *localArray,
-    u32 remoteNum, const u32 *remoteArray,
+bool RankConsistencyCheckerV2::CompareCrcArrayV2(const u32 &localArray,
+    const u32 *remoteArray,
     const std::vector<CrcEntryV2> &nameSource,
     const std::string &categoryLabel,
     const std::string &countLabel)
 {
     bool isDiff = false;
-    if (localNum != remoteNum) {
-        HCCL_ERROR("[RankConsistencyCheckerV2::CompareCheckFrameV2] %s crcNum mismatch: local[%u], remote[%u].",
-            categoryLabel.c_str(), localNum, remoteNum);
-        RPT_INPUT_ERR(true, "EI0005",
-            std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
-            std::vector<std::string>({"N/A", "N/A", countLabel,
-                std::to_string(localNum), std::to_string(remoteNum)}));
-        isDiff = true;
-    } else {
-        for (u32 i = 0; i < localNum && i < nameSource.size(); i++) {
-            if (localArray[i] != remoteArray[i]) {
-                const std::string &name = nameSource[i].name;
-                HCCL_ERROR("[RankConsistencyCheckerV2::CompareCheckFrameV2] %s mismatch: [%s], local[0x%08x], remote[0x%08x].",
-                      categoryLabel.c_str(), name.c_str(), localArray[i], remoteArray[i]);
-                RPT_INPUT_ERR(true, "EI0005",
-                    std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
-                    std::vector<std::string>({"N/A", "N/A", name, std::to_string(localArray[i]), std::to_string(remoteArray[i])}));
-                isDiff = true;
-            }
+    for (u32 i = 0; i < nameSource.size(); i++) {
+        if (localArray[i] != remoteArray[i]) {
+            const std::string &name = nameSource[i].name;
+            HCCL_ERROR("[RankConsistencyCheckerV2::CompareCheckFrameV2] %s mismatch: [%s], local[0x%08x], remote[0x%08x].",
+                    categoryLabel.c_str(), name.c_str(), localArray[i], remoteArray[i]);
+            RPT_INPUT_ERR(true, "EI0005",
+                std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
+                std::vector<std::string>({"N/A", "N/A", name, std::to_string(localArray[i]), std::to_string(remoteArray[i])}));
+            isDiff = true;
         }
     }
+    
     return isDiff;
 }
 

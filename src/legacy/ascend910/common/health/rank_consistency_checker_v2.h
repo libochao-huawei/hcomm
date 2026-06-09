@@ -27,8 +27,8 @@ struct CrcEntryV2 {
 };
 
 struct CheckFrameV2 {
-    u32 crcNum = 0;                                   // 环境变量CRC个数
-    u32 crcArray[MAX_CRC_LEN_V2] = {0};               // 环境变量CRC数组
+    u32 envCrcNum = 0;                                   // 环境变量CRC个数
+    u32 envCrcArray[MAX_CRC_LEN_V2] = {0};               // 环境变量CRC数组
     u32 subCommCrcNum = 0;                            // 子通信域参数CRC个数
     u32 subCommCrcArray[MAX_CRC_LEN_V2] = {0};        // 子通信域参数CRC数组
     u32 rankTableCrcNum = 0;                          // ranktable CRC个数
@@ -55,8 +55,8 @@ public:
 private:
     HcclResult CalcRawDataCrc(const void *ptr, u64 length, u32 &crc);
     bool CompareCrcArrayV2(
-        u32 localNum, const u32 *localArray,
-        u32 remoteNum, const u32 *remoteArray,
+        const u32 *localArray,
+        const u32 *remoteArray,
         const std::vector<CrcEntryV2> &nameSource,
         const std::string &categoryLabel,
         const std::string &countLabel);
