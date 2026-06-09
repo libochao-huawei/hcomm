@@ -117,7 +117,7 @@ HcclResult RankInfoDetectService::GetConnections()
     // 处理异常流程
     if (expectedSocketNum > 0) {
         // 将建立连接超时的client信息添加到failedAgentIdList_
-        FailedConnectionAgentIdString(expectedSocketNum);
+        FailedConnectionAgentIdString(previousRankNum);
         DisplayConnectedRanks();
         HCCL_INFO("[RankInfoDetectService::%s] end, there exist non-connected ranks.", __func__);
     } else {

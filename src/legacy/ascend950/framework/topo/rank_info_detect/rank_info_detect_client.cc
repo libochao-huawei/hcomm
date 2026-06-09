@@ -359,7 +359,13 @@ HcclResult RankInfoDetectClient::RecvRankTable()
 {
     // 获取rankTable
     vector<char> rankInfoMsg{};
-    CHK_RET(RecvRankTableMsg(rankInfoMsg));
+    HcclResult ret = RecvRankTableMsg(rankInfoMsg);
+    if (ret != HCCL_SUCCESS) {
+        // 可能是server端还在等待失败的rank建链超时，因此sleep后再重试一次，让server端有足够时间广播RankTable
+        HCCL_WARNING("[RankInfoDetectClient::%s] RecvRankTableMsg failed, ret[%d], wait and retry.", __func__, ret);
+        sleep(WAIT_ERROR_BROADCAST_TIME);
+        CHK_RET(RecvRankTableMsg(rankInfoMsg));
+    }
 
     // 解析rankTable
     CHK_RET(ParseRankTable(rankInfoMsg));
