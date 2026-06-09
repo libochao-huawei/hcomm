@@ -30,9 +30,11 @@ namespace Hccl {
 
 // RaGetTpAttrAsync 属性位图常量；匿名命名空间内工具与 TpManager 成员函数共用
 constexpr uint32_t kTpAttrSlAvailableBit = 17U;
+constexpr uint32_t kTpAttrSlBitmapExtMask = (1U << kTpAttrSlAvailableBit);
 constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
 constexpr uint32_t kTpAttrBitmapDscp = (1U << 8U);
 constexpr uint32_t kTpAttrDscpConfigModeBit = 18U;
+constexpr uint32_t kLegacyMappedJettyPriority = 2U;
 
 namespace {
 
@@ -53,6 +55,11 @@ static uint32_t CalSlAvailableCnt(uint32_t mask)
         }
     }
     return c;
+}
+
+static bool IsTpAttrSlBitmapExtSupported(const uint32_t tpAttrBitmap)
+{
+    return (tpAttrBitmap & kTpAttrSlBitmapExtMask) != 0U;
 }
 
 static uint32_t SlValueAtRankInMask16(uint32_t mask, uint32_t rank)
@@ -832,15 +839,28 @@ HcclResult TpManager::MapTpInfoFromTpAttr(const RaUbGetTpInfoParam &param, const
     const uint32_t tpInfoNum = reqCtx.tpInfoNum;
     const struct HccpTpInfo *baseInfoPtr =
         reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+    const bool slBitmapExtSupported = IsTpAttrSlBitmapExtSupported(reqCtx.tpAttrBitmap);
+    HCCL_INFO("[TpManager][%s] after get_tp_attr: slBitmapExtSupported[%d] slBitmap[0x%x] dscp[%u] "
+              "dscpConfigMode[%u] tpAttrBitmap[0x%x] param[%s].",
+        __func__, static_cast<int>(slBitmapExtSupported), static_cast<unsigned>(reqCtx.tpAttr.slBitmap),
+        static_cast<unsigned>(reqCtx.tpAttr.dscp & 0x3FU),
+        static_cast<unsigned>(reqCtx.tpAttr.dscpConfigMode & 1U), reqCtx.tpAttrBitmap, param.Describe().c_str());
+    if (!slBitmapExtSupported) {
+        outTpInfo = ParseTpInfo(baseInfoPtr);
+        outTpInfo.mappedJettyPriority = kLegacyMappedJettyPriority;
+        outTpInfo.hasMappedJettyPriority = true;
+        HCCL_INFO("[TpManager][%s] slBitmap ext not supported (tpAttrBitmap bit17=0): use first tpHandle[%llu] "
+                  "mappedJettyPriority[%u] param[%s].",
+            __func__, outTpInfo.tpHandle, outTpInfo.mappedJettyPriority, param.Describe().c_str());
+        return HcclResult::HCCL_SUCCESS;
+    }
+
     const uint16_t slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
     const uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
-    HCCL_INFO("[TpManager][%s] after get_tp_attr: slMask[0x%04x] slAvailableCnt[%u] slBitmap[0x%x] dscp[%u] "
-              "dscpConfigMode[%u] tpAttrBitmap[0x%x] param[%s].",
-        __func__, static_cast<unsigned>(slMask), slAvailableCnt,
-        static_cast<unsigned>(reqCtx.tpAttr.slBitmap), static_cast<unsigned>(reqCtx.tpAttr.dscp & 0x3FU),
-        static_cast<unsigned>(reqCtx.tpAttr.dscpConfigMode & 1U), reqCtx.tpAttrBitmap, param.Describe().c_str());
+    HCCL_INFO("[TpManager][%s] slBitmap ext supported: slMask[0x%04x] slAvailableCnt[%u].",
+        __func__, static_cast<unsigned>(slMask), slAvailableCnt);
     if (slAvailableCnt == 0U) {
-        HCCL_ERROR("[TpManager][%s] sl_available mask empty after get_tp_attr, param[%s].", __func__,
+        HCCL_ERROR("[TpManager][%s] slBitmap ext supported but sl_available mask empty, param[%s].", __func__,
             param.Describe().c_str());
         return HcclResult::HCCL_E_INTERNAL;
     }
