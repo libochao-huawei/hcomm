@@ -19,7 +19,6 @@
 #include "ccu_rep_loopblock_v1.h"
 #include "ccu_rep_loopcall_v1.h"
 #include "ccu_rep_loop_v1.h"
-#include "ccu_rep_loopgroup_v1.h"
 #include "ccu_rep_loopgroup_bundle_v1.h"
 #include "ccu_rep_setloop_v1.h"
 #include "ccu_datatype_v1.h"
@@ -411,7 +410,6 @@ protected:
         entry.loopParamVar = Variable(nullptr);
         entry.isVarBased = false;
 
-        // 让 LoopBlock translated=true，否则 Bundle.Translate 会 return false
         CcuInstr blockInstr {};
         CcuInstr* blockPtr = &blockInstr;
         uint16_t blockInstrId = 0;
@@ -449,8 +447,6 @@ TEST_F(CcuRepLoopGroupBundleTest, Translate)
     CcuRepLoopGroupBundle bundle(grpCfg, parallelParam, offsetParam);
     bundle.AddLoop(MakeTranslatedLoopEntry());
 
-    // 期望 emit: 1 LoadImd loopParam + 2 LoadImd parallel/offset + 1 LoopGroup
-    //          + 2 Jump (LoadImd + JumpInstr) + 1 LoopInstr + 1 NOP = 8
     constexpr uint16_t kExpectedInstrCount = 8;
     CcuInstr instr[kExpectedInstrCount] = {};
     CcuInstr* instrPtr = instr;
@@ -479,7 +475,6 @@ TEST_F(CcuRepLoopGroupBundleTest, GetStartLoopInstrId)
 
     bundle.Translate(instrPtr, instrId, dep);
 
-    // headerOffset = 1(loopParam) + 2(parallel/offset) = 3；首条 LoopInstr = 10 + 3 + 3 = 16
     EXPECT_EQ(bundle.GetStartLoopInstrId(), 16U);
 }
 

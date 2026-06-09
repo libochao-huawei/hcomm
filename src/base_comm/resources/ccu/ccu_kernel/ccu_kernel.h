@@ -43,7 +43,6 @@
 #include "ccu_rep_funcblock_v1.h"
 #include "ccu_loopblock_v1.h"
 #include "ccu_loopcall_v1.h"
-#include "ccu_loopgroupcall_v1.h"
 #include "ccu_assist_pub.h"
 
 #ifndef CCU_PROFILING // 和hccl仓兼容性使用

@@ -43,25 +43,24 @@ uint16_t CcuRepLoopGroupBundle::LoopGroupInstrOffsetInBundle() const
             varBasedLoopCount++;
         }
     }
-    return (loopCount - varBasedLoopCount)         // config-based loop: 每个 1 条 LoadImd
-         + (varBasedLoopCount * 2)                  // var-based loop: 每个 LoadImd + LoadXX
-         + (isGroupVarBased_ ? 0 : 2);              // group config-based 多 2 条 parallel/offset
+    return (loopCount - varBasedLoopCount)
+         + (varBasedLoopCount * 2)
+         + (isGroupVarBased_ ? 0 : 2);
 }
 
 uint16_t CcuRepLoopGroupBundle::GetStartLoopInstrId() const
 {
-    // Bundle 起始 + 头段 LoadImd 数 + LoopGroupInstr 之后 hideLoop 2 条 + 1 条至首条 LoopInstr
     return instrId + LoopGroupInstrOffsetInBundle() + 3;
 }
 
 uint16_t CcuRepLoopGroupBundle::InstrCount()
 {
     uint16_t loopCount = static_cast<uint16_t>(loops_.size());
-    instrCount = LoopGroupInstrOffsetInBundle()  // 头段 LoadImd
-               + 1                                  // LoopGroupInstr
-               + 2                                  // hideLoop: LoadImd + JumpInstr
-               + loopCount                          // 每个 loop 1 条 LoopInstr
-               + 1;                                 // NOP (JumpLabel)
+    instrCount = LoopGroupInstrOffsetInBundle()
+               + 1
+               + 2
+               + loopCount
+               + 1;
     return instrCount;
 }
 
