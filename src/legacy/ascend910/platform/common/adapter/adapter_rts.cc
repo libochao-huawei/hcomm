@@ -2557,6 +2557,7 @@ HcclResult hrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
 
 HcclResult hrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
 {
+#ifndef HCCD
     auto funcPtr = (aclError(*)(const char*, size_t))g_dlAcl.Handle<ACL_RT_CACHE_LAST_TASK_EXTEND_INFO>();
     if (funcPtr == nullptr) {
         HCCL_INFO("[hrtCacheLastTaskExtendInfo] aclrtCacheLastTaskExtendInfo not supported.");
@@ -2567,6 +2568,10 @@ HcclResult hrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
         HCCL_ERROR("[hrtCacheLastTaskExtendInfo] call aclrtCacheLastTaskExtendInfo fail, return[%d]", ret),
         HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
+#else
+        HCCL_ERROR("[hrtCacheLastTaskExtendInfo]Does not support this interface.");
+        return HCCL_E_NOT_SUPPORT;
+#endif
 }
 
 __attribute__((constructor)) void CallBackInitRts()
