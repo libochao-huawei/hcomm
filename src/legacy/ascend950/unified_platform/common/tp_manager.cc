@@ -35,6 +35,7 @@ constexpr uint32_t kTpAttrSlAvailableBit = 17U;
 constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
 constexpr uint32_t kTpAttrBitmapDscp = (1U << 8U);
 constexpr uint32_t kTpAttrDscpConfigModeBit = 18U;
+constexpr uint32_t kLegacyMappedSl = 2U;
 
 namespace {
 
@@ -60,6 +61,27 @@ static uint32_t BuildBootstrapAttrBitmap(TpProtocol tpProtocol)
         bitmap |= kTpAttrBitmapDscp | (1U << kTpAttrDscpConfigModeBit);
     }
     return bitmap;
+}
+
+static bool IsSlBitmapAttrSupported(const uint32_t bootstrapAttrBitmap)
+{
+    return (bootstrapAttrBitmap & (1U << kTpAttrSlAvailableBit)) != 0U;
+}
+
+static bool UseLegacyTpSlMapping(const uint32_t bootstrapAttrBitmap, const struct TpAttr &linkTpAttr)
+{
+    if (bootstrapAttrBitmap != 0U) {
+        return !IsSlBitmapAttrSupported(bootstrapAttrBitmap);
+    }
+    return hcomm::TpQos::ReadSlMask(linkTpAttr) == 0U;
+}
+
+static void ApplyLegacyTpSlMapping(const struct HccpTpInfo *baseInfoPtr, uint32_t &tpListIndex, uint32_t &mappedSl,
+    uint64_t &selectedTpHandle)
+{
+    tpListIndex = 0U;
+    mappedSl = kLegacyMappedSl;
+    selectedTpHandle = baseInfoPtr[0].tpHandle;
 }
 
 static RdmaHandle ResolveUbRdmaHandle(const uint32_t phyId, const Hccl::IpAddress &locAddr, const bool isSync)
@@ -328,12 +350,26 @@ HcclResult TpManager::SelectTpByQosSl(const RaUbGetTpInfoParam &param, RequestCt
     const uint32_t tpInfoNum = reqCtx.tpInfoNum;
     const struct HccpTpInfo *baseInfoPtr =
         reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+    if (UseLegacyTpSlMapping(reqCtx.bootstrapAttrBitmap, reqCtx.linkTpAttr)) {
+        if (tpInfoNum == 0U) {
+            HCCL_ERROR("[TpManager][%s] legacy sl mapping but tpInfoNum is 0, param[%s].", __func__,
+                param.Describe().c_str());
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        ApplyLegacyTpSlMapping(baseInfoPtr, reqCtx.tpListIndex, reqCtx.mappedSl, reqCtx.selectedTpHandle);
+        HCCL_INFO("[TpManager][%s] legacy underlying: use first tp and SL%u, tpHandle[%llu] param[%s].", __func__,
+            kLegacyMappedSl, reqCtx.selectedTpHandle, param.Describe().c_str());
+        return HcclResult::HCCL_SUCCESS;
+    }
+
     const uint16_t slMask = hcomm::TpQos::ReadSlMask(reqCtx.linkTpAttr);
     const uint32_t slAvailableCnt = hcomm::TpQos::CountSlTiers(slMask);
-    HCCL_INFO("[TpManager][%s] bootstrap attr ok: slMask[0x%04x] slAvailableCnt[%u] param[%s].", __func__,
-        static_cast<unsigned>(slMask), slAvailableCnt, param.Describe().c_str());
+    HCCL_INFO("[TpManager][%s] bootstrap attr ok: slMask[0x%04x] slAvailableCnt[%u] attrBitmap[0x%x] param[%s].",
+        __func__, static_cast<unsigned>(slMask), slAvailableCnt, reqCtx.bootstrapAttrBitmap, param.Describe().c_str());
     if (slAvailableCnt == 0U) {
-        HCCL_ERROR("[TpManager][%s] sl_available mask empty, param[%s].", __func__, param.Describe().c_str());
+        HCCL_ERROR("[TpManager][%s] slBitmap unsupported on new underlying but mask empty, attrBitmap[0x%x] "
+                   "param[%s].",
+            __func__, reqCtx.bootstrapAttrBitmap, param.Describe().c_str());
         return HcclResult::HCCL_E_INTERNAL;
     }
 
@@ -422,7 +458,9 @@ HcclResult TpManager::AdvanceFromWaitAttr(const RaUbGetTpInfoParam &param, Reque
 {
     PutLinkAttrCache(param, reqCtx.linkTpAttr);
     const uint16_t slMask = hcomm::TpQos::ReadSlMask(reqCtx.linkTpAttr);
-    HCCL_INFO("[TpManager][GetTpInfo] bootstrap attr ok, slMask[0x%04x] slBitmap[0x%x] param[%s].",
+    HCCL_INFO("[TpManager][GetTpInfo] bootstrap attr ok, attrBitmap[0x%x] slBitmapSupported[%d] slMask[0x%04x] "
+              "slBitmap[0x%x] param[%s].",
+        reqCtx.bootstrapAttrBitmap, static_cast<int>(IsSlBitmapAttrSupported(reqCtx.bootstrapAttrBitmap)),
         static_cast<unsigned>(slMask), static_cast<unsigned>(reqCtx.linkTpAttr.slBitmap), param.Describe().c_str());
     return SelectTpAndContinueAsync(param, reqCtx, qosMap, it, reqCtxLock, tpInfo);
 }

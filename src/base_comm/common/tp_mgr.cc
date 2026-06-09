@@ -36,6 +36,7 @@ constexpr uint32_t kTpAttrSlAvailableBit = 17U;
 static constexpr uint32_t kTpAttrBitmapSl = (1U << 10U);
 static constexpr uint32_t kTpAttrBitmapDscp = (1U << 8U);
 static constexpr uint32_t kTpAttrDscpConfigModeBit = 18U;
+static constexpr uint32_t kLegacyMappedSl = 2U;
 
 static constexpr QosKey QosMapKey(uint32_t qos) noexcept
 {
@@ -65,6 +66,28 @@ static uint32_t BuildBootstrapAttrBitmap(TpProtocol tpProtocol)
         bitmap |= kTpAttrBitmapDscp | (1U << kTpAttrDscpConfigModeBit);
     }
     return bitmap;
+}
+
+static bool IsSlBitmapAttrSupported(const uint32_t bootstrapAttrBitmap)
+{
+    return (bootstrapAttrBitmap & (1U << kTpAttrSlAvailableBit)) != 0U;
+}
+
+/// GetTpAttr 回写 attrBitmap bit17=0 表示旧底层；linkCache 命中且未刷新 bitmap 时以 slBitmap 为空推断。
+static bool UseLegacyTpSlMapping(const uint32_t bootstrapAttrBitmap, const TpAttr &linkTpAttr)
+{
+    if (bootstrapAttrBitmap != 0U) {
+        return !IsSlBitmapAttrSupported(bootstrapAttrBitmap);
+    }
+    return TpQos::ReadSlMask(linkTpAttr) == 0U;
+}
+
+static void ApplyLegacyTpSlMapping(const struct HccpTpInfo *baseInfoPtr, uint32_t &tpListIndex, uint32_t &mappedSl,
+    TpHandle &selectedTpHandle)
+{
+    tpListIndex = 0U;
+    mappedSl = kLegacyMappedSl;
+    selectedTpHandle = baseInfoPtr[0].tpHandle;
 }
 
 /// RTP/UBOE 需在 selectedTp 上 SetTpAttr；CTP 跳过 Commit。
@@ -365,7 +388,9 @@ HcclResult TpMgr::AdvanceFromWaitAttr(const GetTpInfoParam &param, RequestCtx &r
 {
     PutLinkAttrCache(param, reqCtx.linkTpAttr);
     const uint16_t slMask = TpQos::ReadSlMask(reqCtx.linkTpAttr);
-    HCCL_INFO("[TpMgr][GetTpInfo] bootstrap attr ok, slMask[0x%04x] slBitmap[0x%x] param[%s].",
+    HCCL_INFO("[TpMgr][GetTpInfo] bootstrap attr ok, attrBitmap[0x%x] slBitmapSupported[%d] slMask[0x%04x] "
+              "slBitmap[0x%x] param[%s].",
+        reqCtx.bootstrapAttrBitmap, static_cast<int>(IsSlBitmapAttrSupported(reqCtx.bootstrapAttrBitmap)),
         static_cast<unsigned>(slMask), static_cast<unsigned>(reqCtx.linkTpAttr.slBitmap), param.Describe().c_str());
     return RunMappingAndContinue(param, reqCtx, qosMap, it, reqCtxLock, tpInfo);
 }
@@ -384,36 +409,51 @@ HcclResult TpMgr::RunMappingAndContinue(const GetTpInfoParam &param, RequestCtx 
     const uint32_t tpInfoNum = reqCtx.tpInfoNum;
     const struct HccpTpInfo *baseInfoPtr =
         reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
-    const uint16_t slMask = TpQos::ReadSlMask(reqCtx.linkTpAttr);
-    const uint32_t slAvailableCnt = TpQos::CountSlTiers(slMask);
-    if (slAvailableCnt == 0U) {
-        qosMap.erase(it);
-        reqCtxLock.unlock();
-        HCCL_ERROR("[TpMgr][%s] sl_available mask empty, param[%s].", __func__, param.Describe().c_str());
-        return HcclResult::HCCL_E_INTERNAL;
+    if (UseLegacyTpSlMapping(reqCtx.bootstrapAttrBitmap, reqCtx.linkTpAttr)) {
+        if (tpInfoNum == 0U) {
+            qosMap.erase(it);
+            reqCtxLock.unlock();
+            HCCL_ERROR("[TpMgr][%s] legacy sl mapping but tpInfoNum is 0, param[%s].", __func__,
+                param.Describe().c_str());
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        ApplyLegacyTpSlMapping(baseInfoPtr, reqCtx.tpListIndex, reqCtx.mappedSl, reqCtx.selectedTpHandle);
+        HCCL_INFO("[TpMgr][GetTpInfo] legacy underlying: use first tp and SL%u, tpHandle[%llu] param[%s].",
+            kLegacyMappedSl, reqCtx.selectedTpHandle, param.Describe().c_str());
+    } else {
+        const uint16_t slMask = TpQos::ReadSlMask(reqCtx.linkTpAttr);
+        const uint32_t slAvailableCnt = TpQos::CountSlTiers(slMask);
+        if (slAvailableCnt == 0U) {
+            qosMap.erase(it);
+            reqCtxLock.unlock();
+            HCCL_ERROR("[TpMgr][%s] slBitmap unsupported on new underlying but mask empty, attrBitmap[0x%x] "
+                       "param[%s].",
+                __func__, reqCtx.bootstrapAttrBitmap, param.Describe().c_str());
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        uint32_t tpListIndex = 0U;
+        uint32_t mappedSl = 0U;
+        const TpQosInput qosInput = TpQos::MakeInput(static_cast<uint32_t>(param.tpProtocol), param.qos,
+            param.slLevelCount, param.loopFirstTpLowestSl);
+        if (!TpQos::Map(tpInfoNum, slMask, qosInput, tpListIndex, mappedSl)) {
+            qosMap.erase(it);
+            reqCtxLock.unlock();
+            HCCL_ERROR("[TpMgr][%s] TpQos::Map failed, param[%s].", __func__, param.Describe().c_str());
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        if (tpListIndex >= tpInfoNum) {
+            qosMap.erase(it);
+            reqCtxLock.unlock();
+            HCCL_ERROR("[TpMgr][%s] tpListIndex out of range: tpListIndex[%u] tpInfoNum[%u] param[%s].", __func__,
+                tpListIndex, tpInfoNum, param.Describe().c_str());
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        reqCtx.tpListIndex = tpListIndex;
+        reqCtx.mappedSl = mappedSl;
+        reqCtx.selectedTpHandle = baseInfoPtr[tpListIndex].tpHandle;
     }
-    uint32_t tpListIndex = 0U;
-    uint32_t mappedSl = 0U;
-    const TpQosInput qosInput = TpQos::MakeInput(static_cast<uint32_t>(param.tpProtocol), param.qos,
-        param.slLevelCount, param.loopFirstTpLowestSl);
-    if (!TpQos::Map(tpInfoNum, slMask, qosInput, tpListIndex, mappedSl)) {
-        qosMap.erase(it);
-        reqCtxLock.unlock();
-        HCCL_ERROR("[TpMgr][%s] TpQos::Map failed, param[%s].", __func__, param.Describe().c_str());
-        return HcclResult::HCCL_E_INTERNAL;
-    }
-    if (tpListIndex >= tpInfoNum) {
-        qosMap.erase(it);
-        reqCtxLock.unlock();
-        HCCL_ERROR("[TpMgr][%s] tpListIndex out of range: tpListIndex[%u] tpInfoNum[%u] param[%s].", __func__,
-            tpListIndex, tpInfoNum, param.Describe().c_str());
-        return HcclResult::HCCL_E_INTERNAL;
-    }
-    reqCtx.tpListIndex = tpListIndex;
-    reqCtx.mappedSl = mappedSl;
-    reqCtx.selectedTpHandle = baseInfoPtr[tpListIndex].tpHandle;
     HCCL_INFO("[TpMgr][GetTpInfo] mapping ok: tpListIndex[%u] selectedTpHandle[%llu] mappedSl[%u] qos[%u] param[%s].",
-        tpListIndex, reqCtx.selectedTpHandle, static_cast<unsigned>(mappedSl & 0xFU), param.qos & 0xFFU,
+        reqCtx.tpListIndex, reqCtx.selectedTpHandle, static_cast<unsigned>(reqCtx.mappedSl & 0xFU), param.qos & 0xFFU,
         param.Describe().c_str());
 
     if (!NeedsCommitPhase(param.tpProtocol)) {
@@ -425,7 +465,7 @@ HcclResult TpMgr::RunMappingAndContinue(const GetTpInfoParam &param, RequestCtx 
     HCCL_INFO("[TpMgr][GetTpInfo] RaSetTpAttrAsync commit submitted, reqHandle[%llu] tpHandle[%llu] sl[%u] "
               "protocol[%d] param[%s].",
         static_cast<unsigned long long>(reqCtx.handle), reqCtx.selectedTpHandle,
-        static_cast<unsigned>(mappedSl & 0xFU), static_cast<int>(param.tpProtocol), param.Describe().c_str());
+        static_cast<unsigned>(reqCtx.mappedSl & 0xFU), static_cast<int>(param.tpProtocol), param.Describe().c_str());
     return HcclResult::HCCL_E_AGAIN;
 }
 

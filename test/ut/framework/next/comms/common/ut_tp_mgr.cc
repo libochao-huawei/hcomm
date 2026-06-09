@@ -336,6 +336,45 @@ int StubRaGetTpAttrAsyncSl01(void *ctxHandle, uint64_t tpHandle, uint32_t *attrB
     return 0;
 }
 
+int StubRaGetTpAttrAsyncLegacyUnderlying(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr,
+    void **reqHandle)
+{
+    static char kLegacyUnderlyingReq{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    if (attrBitmap != nullptr) {
+        *attrBitmap &= ~(1U << 17U);
+    }
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+        attr->at = 2U;
+        attr->retryTimesInit = 1U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kLegacyUnderlyingReq;
+    }
+    return 0;
+}
+
+int StubRaGetTpAttrAsyncNewUnderlyingEmptySlBitmap(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap,
+    struct TpAttr *attr, void **reqHandle)
+{
+    static char kNewEmptySlBitmapReq{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    if (attrBitmap != nullptr) {
+        *attrBitmap |= (1U << 17U);
+    }
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+        attr->slBitmap = 0U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kNewEmptySlBitmapReq;
+    }
+    return 0;
+}
+
 } // namespace
 
 class TpMgrTest : public testing::Test {
@@ -650,6 +689,30 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_LoopFirstTpLowestSl_Expect_FirstTp)
     ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
     EXPECT_EQ(tpInfo.tpHandle, 0x100ULL);
     EXPECT_EQ(tpInfo.mappedJettyPriority, 7U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_LegacyUnderlying_Expect_FirstTp_Sl2)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncThree));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncLegacyUnderlying));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.23.1", "10.10.23.2", TpProtocol::RTP, 5U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_EQ(tpInfo.tpHandle, 0x200ULL);
+    EXPECT_EQ(tpInfo.mappedJettyPriority, 2U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_NewUnderlying_EmptySlBitmap_Expect_InternalError)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncThree));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncNewUnderlyingEmptySlBitmap));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.24.1", "10.10.24.2", TpProtocol::RTP, 0U);
+    TpInfo tpInfo{};
+    EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_E_INTERNAL);
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpAttr_And_ReleaseTpAttr_Expect_Success)
