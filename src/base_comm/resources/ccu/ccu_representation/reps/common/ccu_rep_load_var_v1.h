@@ -15,13 +15,14 @@ namespace CcuRep {
 
 class CcuRepLoadVar : public CcuRepBase {
 public:
-    CcuRepLoadVar(const Variable &src, const Variable &var);
+    CcuRepLoadVar(const Variable &src, const Variable &var, uint32_t num = 1);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
 
 private:
     Variable src;
     Variable var;
+    uint32_t num;
     uint16_t mask{1};
 };
 

@@ -169,6 +169,7 @@ elseif(BUILD_OPEN_PROJECT)
         include/hccl/hccl_types.h
         src/legacy/ascend910/pub_inc/hccn_rping.h
         include/hccl/hccl_rank_graph.h
+        include/hccl/hccl_ccu_res.h
         include/hccl/hccl_res.h
         include/hccl/hccl_sym_win.h
     )
@@ -219,46 +220,38 @@ elseif(BUILD_OPEN_PROJECT)
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ ${INSTALL_OPTIONAL}
         COMPONENT hcomm
     )
-    set(HCCL_PKG_CCU_HEAD
-        pkg_inc/hcomm/ccu/ccu_assist_pub.h
-        pkg_inc/hcomm/ccu/ccu_common.h
-        pkg_inc/hcomm/ccu/ccu_condition_v1.h
-        pkg_inc/hcomm/ccu/ccu_kernel_resource.h
-        pkg_inc/hcomm/ccu/ccu_datatype_v1.h
-        pkg_inc/hcomm/ccu/ccu_funccall_v1.h
-        pkg_inc/hcomm/ccu/ccu_instr_info_v1.h
-        pkg_inc/hcomm/ccu/ccu_interface_assist_v1.h
-        pkg_inc/hcomm/ccu/ccu_kernel_arg.h
-        pkg_inc/hcomm/ccu/ccu_kernel_signature.h
-        pkg_inc/hcomm/ccu/ccu_kernel.h
-        pkg_inc/hcomm/ccu/ccu_loopblock_v1.h
-        pkg_inc/hcomm/ccu/ccu_loopcall_v1.h
-        pkg_inc/hcomm/ccu/ccu_loopgroupcall_v1.h
-        pkg_inc/hcomm/ccu/ccu_microcode_v1.h
-        pkg_inc/hcomm/ccu/ccu_operator_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_arg_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_base_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_block_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_context_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_funcblock_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_funccall_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_jump_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_jumplabel_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_loopblock_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_loopcall_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_reference_manager_v1.h
-        pkg_inc/hcomm/ccu/ccu_rep_type_v1.h
-        pkg_inc/hcomm/ccu/ccu_repeat_v1.h
-        pkg_inc/hcomm/ccu/ccu_res_repo.h
-        pkg_inc/hcomm/ccu/ccu_task_arg_v1.h
-        pkg_inc/hcomm/ccu/ccu_task_param_v1.h
-        pkg_inc/hcomm/ccu/hccl_ccu_res.h
+    set(HCCL_INC_CCU_HEAD
+        include/ccu/ccu_address.hpp
+        include/ccu/ccu_array.hpp
+        include/ccu/ccu_buffer.hpp
+        include/ccu/ccu_control_flow_macro.h
+        include/ccu/ccu_event.hpp
+        include/ccu/ccu_func.hpp
+        include/ccu/ccu_launch.h
+        include/ccu/ccu_local_addr.hpp
+        include/ccu/ccu_loop.hpp
+        include/ccu/ccu_primitives.hpp
+        include/ccu/ccu_remote_addr.hpp
+        include/ccu/ccu_res.h
+        include/ccu/ccu_types.h
+        include/ccu/ccu_utils.hpp
+        include/ccu/ccu_variable.hpp
     )
     install(FILES
-        ${HCCL_PKG_CCU_HEAD}
+        ${HCCL_INC_CCU_HEAD}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ccu/ ${INSTALL_OPTIONAL}
+        COMPONENT hcomm
+    )
+
+    set(HCCL_PKG_INC_CCU_HEAD
+        pkg_inc/hcomm/ccu/ccu_primitives_impl.h
+    )
+    install(FILES
+        ${HCCL_PKG_INC_CCU_HEAD}
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ ${INSTALL_OPTIONAL}
         COMPONENT hcomm
     )
+
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h
         pkg_inc/hcomm/hcomm_res_entity_defs.h

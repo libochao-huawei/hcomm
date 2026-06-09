@@ -9,19 +9,21 @@
 
 #include "ccu_rep_base_v1.h"
 #include "ccu_datatype_v1.h"
+#include <cstdint>
 
 namespace hcomm {
 namespace CcuRep {
 
 class CcuRepStore : public CcuRepBase {
 public:
-    CcuRepStore(const Variable &var, uint64_t addr);
+    CcuRepStore(const Variable &var, uint64_t addr, uint32_t num = 1);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
 
 private:
     Variable var;
     uint64_t addr;
+    uint32_t num;
     uint16_t mask{1};
 };
 

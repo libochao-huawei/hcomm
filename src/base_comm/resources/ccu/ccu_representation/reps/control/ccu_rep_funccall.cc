@@ -43,9 +43,6 @@ void CcuRepFuncCall::SetFuncManager(CcuRepReferenceManager *funcManager)
 void CcuRepFuncCall::SetInArg(const Variable &var)
 {
     inArgCount++;
-    if (inArgCount > FUNC_ARG_MAX) {
-        Hccl::THROW<Hccl::CcuApiException>("CcuFunc Max ArgCount = %u", FUNC_ARG_MAX);
-    }
     inArgs.push_back(CcuRepArg(var));
 }
 
@@ -61,9 +58,6 @@ void CcuRepFuncCall::SetOutArg(const Variable &var)
 void CcuRepFuncCall::SetInArg(const std::vector<Variable> &varList)
 {
     inArgCount += varList.size();
-    if (inArgCount > FUNC_ARG_MAX) {
-        Hccl::THROW<Hccl::CcuApiException>("CcuFunc Max ArgCount = %u", FUNC_ARG_MAX);
-    }
     inArgs.push_back(CcuRepArg(varList));
 }
 
@@ -102,16 +96,27 @@ bool CcuRepFuncCall::Translate(CcuInstr *&instr, uint16_t &instrId, const TransD
 
     translated = true;
 
+    std::vector<Variable> formalIns;
+    if (funcBlock != nullptr) {
+        formalIns = funcBlock->GetInArgVars();
+        if (static_cast<uint32_t>(formalIns.size()) != inArgCount) {
+            Hccl::THROW<Hccl::CcuApiException>("FuncCall arg count mismatch: caller = %u, callee formal = %u",
+                                               inArgCount, static_cast<uint32_t>(formalIns.size()));
+        }
+    }
+
+    auto inArgDstId = [&](uint32_t idx) -> uint16_t {
+        return (funcBlock != nullptr) ? formalIns[idx].Id() : funcManager->GetFuncIn()[idx].Id();
+    };
+
     uint32_t iInArg = 0;
     for (uint32_t i = 0; i < inArgs.size(); i++) {
         if (inArgs[i].type == CcuArgType::VARIABLE) {
-            LoadXXInstr(this->instr + iInArg, funcManager->GetFuncIn()[iInArg].Id(), inArgs[i].var.Id(),
-                        dep.reserveXnId);
+            LoadXXInstr(this->instr + iInArg, inArgDstId(iInArg), inArgs[i].var.Id(), dep.reserveXnId);
             iInArg++;
         } else if (inArgs[i].type == CcuArgType::VARIABLE_LIST) {
             for (uint32_t j = 0; j < inArgs[i].varList.size(); j++) {
-                LoadXXInstr(this->instr + iInArg, funcManager->GetFuncIn()[iInArg].Id(), inArgs[i].varList[j].Id(),
-                            dep.reserveXnId);
+                LoadXXInstr(this->instr + iInArg, inArgDstId(iInArg), inArgs[i].varList[j].Id(), dep.reserveXnId);
                 iInArg++;
             }
         }

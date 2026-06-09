@@ -18,7 +18,8 @@
 
 #include "ccu_rep_setloop_v1.h"
 #include "ccu_rep_loop_v1.h"
-#include "ccu_rep_loopgroup_v1.h"
+#include "ccu_rep_loopcall_v1.h"
+#include "ccu_rep_loopgroup_bundle_v1.h"
 
 #include "ccu_rep_loc_record_event.h"
 #include "ccu_rep_loc_wait_event.h"
@@ -47,7 +48,6 @@
 #include "ccu_condition_v1.h"
 #include "ccu_repeat_v1.h"
 #include "ccu_loopblock_v1.h"
-#include "ccu_loopgroupcall_v1.h"
 #include "ccu_funcblock_v1.h"
 #include "ccu_funccall_v1.h"
 
@@ -56,6 +56,7 @@
 #include "ccu_rep_store_v1.h"
 #include "../ccu_device/ccu_res_specs.h"
 #include "ccu_rep_load_var_v1.h"
+#include "ccu_rep_store_var_v1.h"
 
 #include "ccu_datatype_v1.h"
 #include "ccu_microcode_v1.h"

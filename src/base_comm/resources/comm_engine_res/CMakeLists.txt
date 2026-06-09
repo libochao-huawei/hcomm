@@ -18,4 +18,3 @@ if(TARGET hcomm)
 endif()
 
 add_subdirectory(threads)
-add_subdirectory(ccu)

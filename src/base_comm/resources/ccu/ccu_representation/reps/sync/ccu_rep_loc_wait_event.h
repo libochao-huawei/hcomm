@@ -19,15 +19,17 @@ namespace CcuRep {
 
 class CcuRepLocWaitEvent : public CcuRepBase {
 public:
-    CcuRepLocWaitEvent(const CompletedEvent &event, bool isProfiling=true);
+    // mask 由调用方显式传入（与 CompletedEvent 解耦）。
+    CcuRepLocWaitEvent(const CompletedEvent &event, uint32_t mask, bool isProfiling=true);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
-    uint32_t    GetMask() { return event_.mask; };
+    uint32_t    GetMask() { return mask_; };
     uint32_t    GetEventId()  { return event_.Id(); };
 
 private:
     CompletedEvent event_{};
-    bool       isProfiling_{true};
+    uint32_t       mask_{1};
+    bool           isProfiling_{true};
 };
 
 }; // namespace CcuRep
