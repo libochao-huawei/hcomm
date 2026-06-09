@@ -115,7 +115,7 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetRemoteMems_When_Normal_Expect_Return
     u32 memNum;
     ret = ccuTransport->GetRemoteMems(&memNum, &remoteMems, &memInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ASSERT_EQ(memNum, 1U);
+    ASSERT_EQ(memNum, 2U);
     ASSERT_NE(remoteMems, nullptr);
     ASSERT_NE(memInfos, nullptr);
     ASSERT_NE(memInfos[0], nullptr);

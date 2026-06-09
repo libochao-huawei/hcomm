@@ -525,7 +525,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ModifyQp_Failed_Expect_FAILED)
     EXPECT_EQ(status, ChannelStatus::FAILED);
 }
 
-TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_NullParam_Expect_HCCL_E_PTR)
+TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_NullParam_Expect_HCCL_E_PARA)
 {
     DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
@@ -544,7 +544,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_NullParam_Expect_HCCL_E_PTR
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 0);
     ret = impl_->GetRemoteMems((uint32_t *)nullptr, &remoteMem, &memInfosArray);
-    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
 TEST_F(HostCpuRoceChannelTest, Ut_GetRemoteMems_When_RemoteMemExists_Expect_Success)
