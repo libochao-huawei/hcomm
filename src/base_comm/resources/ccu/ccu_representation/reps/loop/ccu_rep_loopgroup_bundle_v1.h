@@ -44,7 +44,12 @@ public:
     uint16_t    InstrCount() override;
     std::string Describe() override;
 
+    uint16_t GetStartLoopInstrId() const;
+    const Variable &GetOffsetParam() const { return offsetVar_; }
+
 private:
+    uint16_t LoopGroupInstrOffsetInBundle() const;
+
     CcuLoopGroupConfig config_;
     Variable parallelVar_;
     Variable offsetVar_;
