@@ -905,6 +905,29 @@ HCCP_ATTRI_VISI_DEF int RaPollTypicalCq(void *cqHandle, unsigned int numEntries,
 
 /**
  * @ingroup librdma
+ * @brief create typical cq
+ * @param rdevHandle [IN] rdma device handle
+ * @param cqDepth [IN] cq depth
+ * @param cqn [OUT] cq number
+ * @param cqHandle [OUT] cq handle
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaTypicalCqCreate(void *rdevHandle, unsigned int cqDepth, unsigned int *cqn, void **cqHandle);
+
+/**
+ * @ingroup librdma
+ * @brief destroy typical cq
+ * @param rdevHandle [IN] rdma device handle
+ * @param cqn [IN] cq number
+ * @param cqHandle [IN] cq handle
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaTypicalCqDestroy(void *rdevHandle, unsigned int cqn, void *cqHandle);
+
+/**
+ * @ingroup librdma
  * @brief get rdma qp context
  * @param rdev_handle [IN] qp_handle
  * @param qp [OUT] rdma qp
