@@ -303,6 +303,7 @@ error:
 
 STATIC char *BkfMemGetStatStr(BkfMemMng *memMng, BkfMemStat *stat, uint8_t *buf, int32_t bufLen)
 {
+    (void)memMng;
     int32_t ret;
 
     ret = snprintf_truncated_s((char *)buf, (uint32_t)bufLen, "stat(%06#x), appReqMemLenLeft(%12" VOS_PRId64 ")"
@@ -389,12 +390,14 @@ char *BkfMemGetNextStatStr(BkfMemMng *memMng, BkfMemStatKey *keyInOut, uint8_t *
 
 void *BkfMemBaseStubInit(char *name)
 {
+    (void)name;
     VOS_NOP();
     return VOS_NULL;
 }
 
 void BkfMemBaseStubUninit(void *cookie)
 {
+    (void)cookie;
     VOS_NOP();
 }
 
@@ -512,6 +515,8 @@ error:
 
 STATIC BOOL BkfMemUpdStatBeforeFree(BkfMemMng *memMng, BkfMemHead *head, const char *str, const uint16_t num)
 {
+    (void)num;
+    (void)str;
     BkfMemStat *stat = VOS_NULL;
     uint32_t len;
 

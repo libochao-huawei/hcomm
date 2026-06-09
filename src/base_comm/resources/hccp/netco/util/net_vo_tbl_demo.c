@@ -18,41 +18,60 @@ extern "C" {
 
 int32_t NetTblDemoKeyCmp(NetTblDemoKey *key1Input, NetTblDemoKey *key2InDs)
 {
+    (void)key1Input;
+    (void)key2InDs;
     return 0;
 }
 
 uint32_t NetTblDemoKeyH2N(NetTblDemoKey *keyH, NetTblDemoKey *keyN)
 {
+    (void)keyH;
+    (void)keyN;
     return 0;
 }
 
 uint32_t NetTblDemoKeyN2H(NetTblDemoKey *keyN, NetTblDemoKey *keyH)
 {
+    (void)keyH;
+    (void)keyN;
     return 0;
 }
 
 char *NetTblDemoKeyGetStr(NetTblDemoKey *key, uint8_t *buf, int32_t bufLen)
 {
+    (void)buf;
+    (void)bufLen;
+    (void)key;
     return "__NetTblDemoKeyGetStr";
 }
 
 uint32_t NetTblDemoH2N(NetTblDemo *kvH, NetTblDemo *kvN)
 {
+    (void)kvH;
+    (void)kvN;
     return 0;
 }
 
 uint32_t NetTblDemoN2H(NetTblDemo *kvN, NetTblDemo *kvH)
 {
+    (void)kvH;
+    (void)kvN;
     return 0;
 }
 
 char *NetTblDemoGetStr(NetTblDemo *kv, uint8_t *buf, int32_t bufLen)
 {
+    (void)buf;
+    (void)bufLen;
+    (void)kv;
     return "__NetTblDemoGetStr";
 }
 
 char *NetTblDemoValGetStr(NetTblDemoVal *val, uint8_t *buf, int32_t bufLen)
 {
+    (void)buf;
+    (void)bufLen;
+    (void)val;
     return "__NetTblDemoValGetStr";
 }
 #ifdef __cplusplus
