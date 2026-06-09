@@ -14,12 +14,85 @@
 #include "unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "unified_platform/ccu/ccu_context/ccu_context_mgr_imp.h"
 
+#include "ccu_comp.h"
+
 namespace Hccl {
 
 void* HccpTlvHdcManager::GetTlvHandle(s32 deviceLogicId)
 {
     (void)deviceLogicId;
-    return nullptr;
+    return (void*)0x12345678;
+}
+
+CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
+{
+    static CcuComponent ccuComponent;
+    return ccuComponent;
+}
+
+CcuComponent::~CcuComponent()
+{
+}
+
+CcuResSpecifications &CcuResSpecifications::GetInstance(const int32_t deviceLogicId)
+{
+    static CcuResSpecifications ccuResSpecification;
+    return ccuResSpecification;
+}
+
+HcclResult CcuResSpecifications::GetGsaNum(const uint8_t dieId, uint32_t &gsaNum) const
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuResSpecifications::GetInstructionNum(const uint8_t dieId, uint32_t &instrNum) const
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuResSpecifications::GetXnNum(const uint8_t dieId, uint32_t &xnNum) const
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuResSpecifications::GetLoopEngineNum(const uint8_t dieId, uint32_t &loopNum) const
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuResSpecifications::GetMissionNum(const uint8_t dieId, uint32_t &missionNum) const
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuResSpecifications::GetMsNum(const uint8_t dieId, uint32_t &msNum) const
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+CtxMgrImp &CtxMgrImp::GetInstance(s32 deviceLogicId)
+{
+    static CtxMgrImp contextManager;
+    return contextManager;
+}
+
+CtxMgrImp::CtxMgrImp()
+{
+}
+
+CtxMgrImp::~CtxMgrImp()
+{
+}
+
+CcuResBatchAllocator &CcuResBatchAllocator::GetInstance(const int32_t deviceLogicId)
+{
+    static CcuResBatchAllocator ccuResBatchAllocator;
+    return ccuResBatchAllocator;
+}
+
+HcclResult CcuResSpecifications::GetCkeNum(const uint8_t dieId, uint32_t &ckeNum) const
+{
+    return HcclResult::HCCL_SUCCESS;
 }
 
 void CcuResSpecifications::Init()
@@ -156,7 +229,7 @@ HcclResult CcuComponent::CleanTaskKillState() const
 
 const std::array<bool, MAX_CCU_IODIE_NUM> &CcuComponent::GetDieEnableFlags() const
 {
-    return {false, false};
+    return dieEnableFlags;
 }
 
 void CcuResBatchAllocator::Init()

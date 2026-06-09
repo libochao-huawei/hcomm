@@ -19,6 +19,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
+    ${HCCL_CODE_ROOT}/include/ccu
 
     # src/pub_inc 目录下头文件 (legacy/ascend910)
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/
@@ -306,16 +307,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/resource/stream
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/interface/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/dfx/aicpu/profiling
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/dfx/
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_representation/reps/common/
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/ccu_component/
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_context/
-    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/pub_inc/ccu/
 
-    # ccu 头文件
+
     ${HCCL_CODE_ROOT}/src/base_comm/resources/adpt/
     ${HCCL_CODE_ROOT}/src/base_comm/common/
     ${HCCL_CODE_ROOT}/src/base_comm/common/device
@@ -330,7 +323,24 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/ccu/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aiv/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_kernel/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_instance/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/interface
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/context
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/common
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/control
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/loop
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/translator
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/arithmetic/
+
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_representation/reps/common/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/ccu_component/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_context/
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/pub_inc/ccu/
 )
 
 add_subdirectory(stub)

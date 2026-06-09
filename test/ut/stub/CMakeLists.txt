@@ -154,7 +154,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/include/hccl/
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
-    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
+    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu 
+    ${HCCL_CODE_ROOT}/include/ccu
     ${HCCL_CODE_ROOT}/externel_depends/tsch
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/pub_inc/
@@ -410,6 +411,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_transport/
  
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_kernel
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_instance
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/interface

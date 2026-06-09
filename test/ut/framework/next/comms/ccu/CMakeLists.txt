@@ -12,8 +12,16 @@ set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
     ut_CcuComponent_test.cc
+    ut_HcommCcuControlApi_test.cc
+
+    mocks/ccu_device_mock_utils.cc
+    mocks/ccu_drv_handle_mock.cc
+    mocks/ccu_dev_mgr_mock.cc
     ut_CcuConn_test.cc
     ut_ccu_microcode.cc
+
+    ccu_kernel_impl/ccu_groupcopy_alg.cc
+    ccu_kernel_impl/ccu_groupcopy_kernel.cc
     ./ccu_representation/interface/ut_ccu_interface_assist.cc
     ./ccu_device/ut_ccu_res_batch_allocator.cc
     ./ccu_device/ccu_comp/ccu_channel/ccu_pfe/ut_ccu_pfe_cfg_mgr.cc

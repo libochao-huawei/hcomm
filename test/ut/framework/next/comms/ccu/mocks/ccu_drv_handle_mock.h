@@ -8,15 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef CCU_DEVICE_MOCK_UTILS_H
-#define CCU_DEVICE_MOCK_UTILS_H
+#ifndef CCU_DRV_HANDLE_MOCK_H
+#define CCU_DRV_HANDLE_MOCK_H
 
-#include "hccl_types.h"
-#include "ccu_dev_mgr_imp.h"
+void MockCcuDrvHandle();
 
-HcclResult MockCcuResourcesDefault(int32_t devLogicId, hcomm::CcuVersion ccuVersion);
-
-// 为 ccu 两个die添加网络通信设备
-void MockCcuNetworkDeviceDefault(int32_t devPhyId);
-
-#endif // CCU_DEVICE_MOCK_UTILS_H
+#endif // CCU_DRV_HANDLE_MOCK_H

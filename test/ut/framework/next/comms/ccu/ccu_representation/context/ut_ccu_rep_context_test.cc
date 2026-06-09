@@ -9,6 +9,8 @@
  */
 
 #include "ccu_rep_context_v1.h"
+#include "ccu_rep_loopgroup_bundle_v1.h"
+#include "ccu_types.h"
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
@@ -165,10 +167,10 @@ TEST_F(CcuRepContextTest, CollectProfilingReps_Assign_VarToVar)
 TEST_F(CcuRepContextTest, CollectProfilingReps_LoopGroup)
 {
     CcuRepContext context;
+    CcuLoopGroupConfig grpCfg{};
     Variable parallelParam(nullptr);
     Variable offsetParam(nullptr);
-    CcuRepLoopGroup loopGroup(parallelParam, offsetParam);
-    auto loopGroupPtr = std::make_shared<CcuRepLoopGroup>(loopGroup);
+    auto loopGroupPtr = std::make_shared<CcuRepLoopGroupBundle>(grpCfg, parallelParam, offsetParam);
     context.CollectProfilingReps(loopGroupPtr);
     EXPECT_EQ(context.GetLGProfilingInfo().lgProfilingReps.size(), 1U);
 }
