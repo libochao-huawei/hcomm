@@ -374,3 +374,16 @@ TEST_M(RdmaAgent, TcRaNdaGetDirectFlag);
 TEST_M(RdmaAgent, TcRaPeerNdaGetDirectFlag);
 TEST_M(RdmaAgent, TcRaNdaQpCreate);
 TEST_M(RdmaAgent, TcRaPeerNdaQpCreate);
+
+/* P2P test cases */
+TEST_M(RdmaAgent, TcHdcLiteTypicalCqStoreFindRemove);
+TEST_M(RdmaAgent, TcHdcTypicalCqCreateDestroy);
+TEST_M(RdmaAgent, TcHdcQpCreateWithCQWithAttrs);
+TEST_M(RdmaAgent, TcHdcQpDestroyWithoutCQ);
+TEST_M(RdmaAgent, TcAdpRaRsTypicalCqCreateDestroy);
+TEST_M(RdmaAgent, TcAdpRaRsLiteCqAttr);
+TEST_M(RdmaAgent, TcAdpRaRsQpCreateWithCQ);
+TEST_M(RdmaAgent, TcAdpRaRsQpDestroyWithoutCQ);
+TEST_M(RdmaAgent, TcHostTypicalCqCreateDestroy);
+TEST_M(RdmaAgent, TcHostQpCreateWithCQWithAttrs);
+TEST_M(RdmaAgent, TcHostQpDestroyWithoutCQ);

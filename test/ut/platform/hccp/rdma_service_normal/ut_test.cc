@@ -276,3 +276,12 @@ TEST_M(RS, TcRsNdaDbMmapHostVa);
 TEST_M(RS, TcRsNdaDbMmapUbRes);
 TEST_M(RS, TcRsNdaCqCreateFailed);
 TEST_M(RS, TcRsNdaCqCreate);
+
+/* P2P typical CQ/QP tests */
+TEST_M(RS, TcRsTypicalCqCreate);
+TEST_M(RS, TcRsTypicalCqDestroy);
+TEST_M(RS, TcRsGetLiteCqAttr);
+TEST_M(RS, TcRsQpDestroyWithoutCQ);
+TEST_M(RS, TcRsQpCreateWithCQWithAttrs);
+TEST_M(RS, TcRsGetLiteQpAttr);
+TEST_M(RS, TcRsDrvTypicalCqCreate);

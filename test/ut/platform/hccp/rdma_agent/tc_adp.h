@@ -83,6 +83,10 @@ void TcRaRsPingDeinit();
 void TcRaRsRemapMr();
 void TcRaRsTestCtxOps();
 void TcRaRsGetTlsEnable0();
+void TcAdpRaRsTypicalCqCreateDestroy(void);
+void TcAdpRaRsLiteCqAttr(void);
+void TcAdpRaRsQpCreateWithCQ(void);
+void TcAdpRaRsQpDestroyWithoutCQ(void);
 
 #ifdef __cplusplus
 }
