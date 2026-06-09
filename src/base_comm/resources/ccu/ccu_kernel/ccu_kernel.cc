@@ -2241,7 +2241,7 @@ HcclResult CcuKernel::CollectLoopGroupProfilingInfo(const uint64_t *taskArgs, ui
 
         if (loopParam != 0) {
             lgProfInfo.ccuProfilingInfos[i].dataSize = loopParam * moConfig_.loopCount * moConfig_.memSlice;
-            lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i].get())->StartInstrId();
+            lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroupBundle*>(lgProfInfo.lgProfilingReps[i].get())->StartInstrId();
             allCcuProfilingInfos_.push_back(lgProfInfo.ccuProfilingInfos[i]);
         }
 
@@ -2252,7 +2252,7 @@ HcclResult CcuKernel::CollectLoopGroupProfilingInfo(const uint64_t *taskArgs, ui
                 groupOpSizeInfo_[i].residualId, residual));
             uint64_t repeatNum = ParseRepeatNumFromParallelParam(parallelParam);
             lgProfInfo.ccuProfilingInfos[i].dataSize = repeatNum * moConfig_.memSlice + residual;
-            lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i + 1].get())->StartInstrId();
+            lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroupBundle*>(lgProfInfo.lgProfilingReps[i + 1].get())->StartInstrId();
             allCcuProfilingInfos_.push_back(lgProfInfo.ccuProfilingInfos[i]);
         }
     }

@@ -44,7 +44,17 @@ public:
     uint16_t    InstrCount() override;
     std::string Describe() override;
 
+    // 等价于老 CcuRepLoopGroup::GetStartLoopInstrId：第一条 LoopInstr 的 instrId
+    // 仅在 Translate 之后、AddLoop 全部完成后调用有意义
+    uint16_t GetStartLoopInstrId() const;
+    const Variable &GetOffsetParam() const { return offsetVar_; }
+
 private:
+    // LoopGroupInstr 在 Bundle 内相对 Bundle 起始的偏移
+    // = (config-based loop 1 条 LoadImd) + (var-based loop 2 条 LoadImd+LoadXX)
+    //   + (group config-based 时 parallel/offset 2 条)
+    uint16_t LoopGroupInstrOffsetInBundle() const;
+
     CcuLoopGroupConfig config_;
     Variable parallelVar_;
     Variable offsetVar_;

@@ -34,24 +34,34 @@ void CcuRepLoopGroupBundle::AddLoop(const LoopEntry &entry)
     loops_.push_back(entry);
 }
 
-uint16_t CcuRepLoopGroupBundle::InstrCount()
+uint16_t CcuRepLoopGroupBundle::LoopGroupInstrOffsetInBundle() const
 {
     uint16_t loopCount = static_cast<uint16_t>(loops_.size());
-
     uint16_t varBasedLoopCount = 0;
     for (const auto &loop : loops_) {
         if (loop.isVarBased) {
             varBasedLoopCount++;
         }
     }
+    return (loopCount - varBasedLoopCount)         // config-based loop: 每个 1 条 LoadImd
+         + (varBasedLoopCount * 2)                  // var-based loop: 每个 LoadImd + LoadXX
+         + (isGroupVarBased_ ? 0 : 2);              // group config-based 多 2 条 parallel/offset
+}
 
-    instrCount = (loopCount - varBasedLoopCount)  // config-based: 1 LoadImd per loop
-               + (varBasedLoopCount * 2)           // var-based: LoadImd + LoadXX per loop
-               + (isGroupVarBased_ ? 0 : 2)
-               + 1                   // LoopGroupInstr
-               + 2                   // Jump (LoadImd + JumpInstr)
-               + loopCount           // LoopInstr per loop
-               + 1;                  // NOP (JumpLabel)
+uint16_t CcuRepLoopGroupBundle::GetStartLoopInstrId() const
+{
+    // Bundle 起始 + 头段 LoadImd 数 + LoopGroupInstr 之后 hideLoop 2 条 + 1 条至首条 LoopInstr
+    return instrId + LoopGroupInstrOffsetInBundle() + 3;
+}
+
+uint16_t CcuRepLoopGroupBundle::InstrCount()
+{
+    uint16_t loopCount = static_cast<uint16_t>(loops_.size());
+    instrCount = LoopGroupInstrOffsetInBundle()  // 头段 LoadImd
+               + 1                                  // LoopGroupInstr
+               + 2                                  // hideLoop: LoadImd + JumpInstr
+               + loopCount                          // 每个 loop 1 条 LoopInstr
+               + 1;                                 // NOP (JumpLabel)
     return instrCount;
 }
 
@@ -87,7 +97,7 @@ bool CcuRepLoopGroupBundle::Translate(CcuInstr *&instr, uint16_t &instrId, const
         LoadImdToXnInstr(instr++, parallelVar_.Id(), parallelImm);
         instrId++;
 
-        uint64_t offsetImm = GetOffsetParam(config_.addrOffset, config_.ccuBufferOffset, config_.eventOffset);
+        uint64_t offsetImm = ::hcomm::CcuRep::GetOffsetParam(config_.addrOffset, config_.ccuBufferOffset, config_.eventOffset);
         LoadImdToXnInstr(instr++, offsetVar_.Id(), offsetImm);
         instrId++;
     }

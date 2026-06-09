@@ -23,7 +23,7 @@
 #include "orion_adpt_utils.h"
 #include "hcomm_adapter_hccp.h"
 #include "adapter_rts_common.h"
-#include "ccu_rep_loopgroup_v1.h"
+#include "ccu_rep_loopgroup_bundle_v1.h"
 #include "ccu_rep_type_v1.h"
 #include "ccu_rep_loc_record_event.h"
 #include "ccu_rep_v1.h"
@@ -849,10 +849,10 @@ HcclResult CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo
     errorMsg.type    = CcuErrorType::LOOP_GROUP;
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
-    const auto  rep              = static_pointer_cast<CcuRep::CcuRepLoopGroup>(repBase);
+    const auto  rep              = static_pointer_cast<CcuRep::CcuRepLoopGroupBundle>(repBase);
     const auto  startLoopInstrId = rep->GetStartLoopInstrId();
     LoopGroupXn loopGroupXn{};
-    loopGroupXn.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetOffestParam().Id());
+    loopGroupXn.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetOffsetParam().Id());
     errorMsg.msg.loopGroup.startLoopInsId = startLoopInstrId;
     errorMsg.msg.loopGroup.loopInsCnt     = static_cast<uint16_t>(loopGroupXn.loopInsCnt);
     errorMsg.msg.loopGroup.expandOffset   = static_cast<uint16_t>(loopGroupXn.expandOffset);
