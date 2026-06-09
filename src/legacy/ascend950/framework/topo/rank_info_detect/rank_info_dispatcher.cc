@@ -240,7 +240,7 @@ HcclResult RankInfoDispather::ProcessSend()
         if (eventsNum == 0 && ret == HCCL_SUCCESS && sendDoneCount_ == rankNum_) {
             HCCL_WARNING("[RankInfoDispather::%s]hrtRaWaitEventHandle is timeout[%d] ms, eventsNum[%u], "
                          "sendDoneCount_[%d]", __func__, epollTimeout, eventsNum, sendDoneCount_.load());
-            break;
+            return HCCL_SUCCESS;
         }
 
         // epoll wait事件失败

@@ -20,7 +20,7 @@
 
 namespace Hccl {
 
-const u32 RANKINFO_DETECT_AGENT_WAIT_ERROR_BROADCAST_TIME = 20;
+const u32 WAIT_ERROR_BROADCAST_TIME = 20;
 
 class RankInfoDetectClient {
 public:

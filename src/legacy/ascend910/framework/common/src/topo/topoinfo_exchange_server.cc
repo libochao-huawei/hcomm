@@ -313,6 +313,7 @@ HcclResult TopoInfoExchangeServer::Connect(std::map<std::string, std::shared_ptr
             HCCL_ERROR("[%s][%s]topo exchange server get socket timeout! timeout[%d s]",
                 LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), GetExternalInputHcclLinkTimeOut());
             DisplayConnectedRank(connectSockets, rankSize);
+            // TODO A3
             return HCCL_E_TIMEOUT;
         }
         auto topoExResTime =  timeout - topoExUsedTime;

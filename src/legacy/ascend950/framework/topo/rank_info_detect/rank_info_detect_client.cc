@@ -71,8 +71,9 @@ HcclResult RankInfoDetectClient::CheckStatus()
                 std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
                     "Timeout was set to %lld seconds. Check whether node rankId[%u] reports an error.",
                     static_cast<long long>(timeout.count()), rankId_)}));
-            // 建链超时后，sleep 20s
+            // 建链超时后，sleep 20s，确保所有节点信息同步完成
             // TODO A5
+            sleep(WAIT_ERROR_BROADCAST_TIME);
             return HCCL_E_TIMEOUT;
         }
 
@@ -340,7 +341,14 @@ HcclResult RankInfoDetectClient::ParseRankTable(vector<char> &rankInfoMsg)
     if (failedAgentIdList.size() > 0) {
         // 建链失败时 root 节点发来的临终遗言
         // TODO A5
-        HCCL_ERROR("[RankInfoDetectClient::%s] failedAgentIdList %s", __func__, failedAgentIdList.c_str());
+        std::string errorMsg = "No rank in the communicator can connect to the root node within the timeout period. "
+            "List of unconnected ranks: " + failedAgentIdList;
+        RPT_INPUT_ERR(true,
+            "EI0015",
+            std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({errorMsg}));
+        HCCL_ERROR("[RankInfoDetectClient::%s] TopoDetect ERROR occur, failedAgentIdList[%s]",
+            __func__, failedAgentIdList.c_str());
     }
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);

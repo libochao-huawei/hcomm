@@ -75,7 +75,6 @@ HcclResult RankInfoDetectService::GetConnections()
                     expectedSocketNum + previousRankNum, previousRankNum)}));
             HCCL_ERROR("[RankInfoDetectService::%s] server get sockets timeout[%lld s]", __func__, timeout);
             // TODO A5
-            sleep(20);
             break;
         }
         std::shared_ptr<Socket> connSocket = std::make_shared<Socket>(
