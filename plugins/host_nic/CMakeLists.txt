@@ -12,7 +12,15 @@ cmake_minimum_required(VERSION 3.16)
 
 project(hcomm_host_nic_plugins LANGUAGES C CXX)
 
+if(NOT DEFINED PRODUCT_SIDE)
+    set(PRODUCT_SIDE "host")
+endif()
+
 set(HCOMM_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../.." CACHE PATH "hcomm repository root")
+set(HCOMM_HOST_NIC_HCOMM_LIBRARY "" CACHE FILEPATH "libhcomm.so path used when building host NIC plugins standalone")
+set(HCOMM_HOST_NIC_HCCL_V2_LIBRARY "" CACHE FILEPATH "libhccl_v2.so path used when building host NIC plugins standalone")
+set(HCOMM_HOST_NIC_HCCL_PLF_LIBRARY "" CACHE FILEPATH "libhccl_plf.so path used when building host NIC plugins standalone")
+set(HCOMM_HOST_NIC_RA_LIBRARY "" CACHE FILEPATH "libra.so path used when building host NIC plugins standalone")
 
 set(HCOMM_HOST_NIC_LEGACY_INCLUDE_LIST)
 file(GLOB_RECURSE HCOMM_HOST_NIC_LEGACY_DIRS LIST_DIRECTORIES TRUE ${HCOMM_SOURCE_DIR}/src/legacy)
@@ -41,6 +49,7 @@ function(hcomm_host_nic_common target_name output_name)
         $<$<CONFIG:Debug>:-g>
     )
     target_compile_definitions(${target_name} PRIVATE
+        $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
         $<$<BOOL:${BUILD_OPEN_PROJECT}>:OPEN_BUILD_PROJECT>
         $<$<BOOL:${BUILD_OPEN_PROJECT}>:LOG_CPP>
     )
@@ -207,6 +216,37 @@ function(hcomm_host_nic_common target_name output_name)
     endif()
 endfunction()
 
+function(hcomm_host_nic_link_dependency target_name dependency_target dependency_library)
+    if(TARGET ${dependency_target})
+        target_link_libraries(${target_name} PRIVATE ${dependency_target})
+    elseif(DEFINED ${dependency_library} AND NOT "${${dependency_library}}" STREQUAL "")
+        target_link_libraries(${target_name} PRIVATE ${${dependency_library}})
+    else()
+        message(WARNING
+            "${target_name} is not linked to ${dependency_target}. "
+            "Configure from the hcomm top-level project or set ${dependency_library} "
+            "to catch unresolved symbols at link time."
+        )
+    endif()
+endfunction()
+
+function(hcomm_host_nic_link_dependencies target_name)
+    foreach(dependency IN LISTS ARGN)
+        if(dependency STREQUAL "hcomm")
+            hcomm_host_nic_link_dependency(${target_name} hcomm HCOMM_HOST_NIC_HCOMM_LIBRARY)
+        elseif(dependency STREQUAL "hccl_v2")
+            hcomm_host_nic_link_dependency(${target_name} hccl_v2 HCOMM_HOST_NIC_HCCL_V2_LIBRARY)
+        elseif(dependency STREQUAL "hccl_plf")
+            hcomm_host_nic_link_dependency(${target_name} hccl_plf HCOMM_HOST_NIC_HCCL_PLF_LIBRARY)
+        elseif(dependency STREQUAL "ra")
+            hcomm_host_nic_link_dependency(${target_name} ra HCOMM_HOST_NIC_RA_LIBRARY)
+        else()
+            message(FATAL_ERROR "Unknown host NIC plugin dependency: ${dependency}")
+        endif()
+    endforeach()
+    target_link_options(${target_name} PRIVATE -Wl,--no-undefined)
+endfunction()
+
 add_library(hcomm_host_roce_plugin SHARED
     plugin_core.cc
     roce/host_roce_plugin.cc
@@ -217,6 +257,7 @@ add_library(hcomm_host_roce_plugin SHARED
     roce/dpu_notify/dpu_notify_manager.cc
 )
 hcomm_host_nic_common(hcomm_host_roce_plugin hcomm_host_roce_plugin)
+hcomm_host_nic_link_dependencies(hcomm_host_roce_plugin hcomm hccl_v2 hccl_plf ra)
 if(TARGET json)
     add_dependencies(hcomm_host_roce_plugin json)
 endif()
@@ -229,6 +270,7 @@ add_library(hcomm_host_ub_plugin SHARED
     ub/host_cpu_urma_channel.cc
 )
 hcomm_host_nic_common(hcomm_host_ub_plugin hcomm_host_ub_plugin)
+hcomm_host_nic_link_dependencies(hcomm_host_ub_plugin hcomm hccl_v2 ra)
 if(TARGET json)
     add_dependencies(hcomm_host_ub_plugin json)
 endif()
