@@ -50,6 +50,8 @@ endif()
 
 target_compile_options(ra_peer PRIVATE
     # -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -std=gnu11
     $<$<CONFIG:Debug>:-g>
 )
