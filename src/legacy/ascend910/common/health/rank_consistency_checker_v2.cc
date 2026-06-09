@@ -131,7 +131,7 @@ HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &localFra
 
     HCCL_INFO("[RankConsistencyCheckerV2::GenerateCheckFrameV2] success, envCrcNum[%u], "
         "rankTableCrcNum[%u], subCommCrcNum[%u], version[%s].",
-        localFrame.crcNum, localFrame.rankTableCrcNum, localFrame.subCommCrcNum, localFrame.version);
+        localFrame.envCrcNum, localFrame.rankTableCrcNum, localFrame.subCommCrcNum, localFrame.version);
     return HCCL_SUCCESS;
 }
 
@@ -176,7 +176,7 @@ bool RankConsistencyCheckerV2::GetInconsistentCheckFirstDone()
 }
 
 // private
-bool RankConsistencyCheckerV2::CompareCrcArrayV2(const u32 &localArray,
+bool RankConsistencyCheckerV2::CompareCrcArrayV2(const u32 *localArray,
     const u32 *remoteArray,
     const std::vector<CrcEntryV2> &nameSource,
     const std::string &categoryLabel,
