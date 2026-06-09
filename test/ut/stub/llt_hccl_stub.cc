@@ -4728,6 +4728,7 @@ std::map<std::string, void*> dlRaFuntionPtrMap = {
     {"RaGetTsqpDepth", (void*)&RaGetTsqpDepth},
     {"RaSetTsqpDepth", (void*)&RaSetTsqpDepth},
     {"RaQpDestroy", (void*)&RaQpDestroy},
+    {"RaQpDestroyWithoutCQ", (void*)&RaQpDestroyWithoutCQ},
     {"RaQpConnectAsync", (void*)&RaQpConnectAsync},
     {"RaGetQpStatus", (void*)&RaGetQpStatus},
     {"RaDeinit", (void*)&RaDeinit},

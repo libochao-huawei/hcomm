@@ -29,6 +29,8 @@ set(rs_ut_normal_list
     tc_ut_rs_ctx.c
     tc_ut_rs_ub.c
     tc_ut_rs_nda.c
+    tc_rs_rdma_p2p.c
+    tc_drv_rdma_p2p.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/crypto/encrypt.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/crypto/kmc_crypt.c
     ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/rs_drv_rdma.c

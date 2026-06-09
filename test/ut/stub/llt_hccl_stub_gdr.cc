@@ -509,6 +509,11 @@ int RaQpDestroy(void* handle)
     return ret;
 }
 
+int RaQpDestroyWithoutCQ(void *handle)
+{
+    return 0;
+}
+
 int RaGetTsqpDepth(void *rdev_handle, unsigned int *temp_depth, unsigned int *qp_num)
 {
     *temp_depth = 1;
