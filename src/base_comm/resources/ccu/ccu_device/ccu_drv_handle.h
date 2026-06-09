@@ -11,7 +11,7 @@
 #ifndef CCU_DRV_HANDLE_H
 #define CCU_DRV_HANDLE_H
 
-#include "hccl_types.h"
+#include "ccu_types.h"
 
 namespace hcomm {
 
@@ -20,10 +20,10 @@ public:
     CcuDrvHandle(const int32_t deviceLogicId) : devLogicId_(deviceLogicId) {};
     ~CcuDrvHandle();
 
-    HcclResult Init();
+    CcuResult Init();
 
 private:
-    HcclResult Deinit();
+    CcuResult Deinit();
 
 private:
     int32_t devLogicId_{0};

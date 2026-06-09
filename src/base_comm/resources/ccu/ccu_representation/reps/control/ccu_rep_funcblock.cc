@@ -58,9 +58,6 @@ uint16_t CcuRepFuncBlock::GetCallLayer() const
 void CcuRepFuncBlock::DefineInArg(const Variable &var)
 {
     inArgCount++;
-    if (inArgCount > FUNC_ARG_MAX) {
-        Hccl::THROW<Hccl::CcuApiException>("CcuFunc Max ArgCount = %u", FUNC_ARG_MAX);
-    }
     inArgs.push_back(CcuRepArg(var));
     HCCL_INFO("Define Input Arg: Index[%u], Type[Variable] Id[%u]", inArgs.size(), var.Id());
 }
@@ -78,9 +75,6 @@ void CcuRepFuncBlock::DefineOutArg(const Variable &var)
 void CcuRepFuncBlock::DefineInArg(const std::vector<Variable> &varList)
 {
     inArgCount += varList.size();
-    if (inArgCount > FUNC_ARG_MAX) {
-        Hccl::THROW<Hccl::CcuApiException>("CcuFunc Max ArgCount = %u", FUNC_ARG_MAX);
-    }
     inArgs.push_back(CcuRepArg(varList));
     HCCL_INFO("Define Input Arg: Index[%u], Type[Variable List]: ", inArgs.size());
     for (uint32_t index = 0; index < varList.size(); index++) {
@@ -101,9 +95,22 @@ void CcuRepFuncBlock::DefineOutArg(const std::vector<Variable> &varList)
     }
 }
 
+std::vector<Variable> CcuRepFuncBlock::GetInArgVars() const
+{
+    std::vector<Variable> vars;
+    for (const auto &arg : inArgs) {
+        if (arg.type == CcuArgType::VARIABLE) {
+            vars.push_back(arg.var);
+        } else if (arg.type == CcuArgType::VARIABLE_LIST) {
+            vars.insert(vars.end(), arg.varList.begin(), arg.varList.end());
+        }
+    }
+    return vars;
+}
+
 uint16_t CcuRepFuncBlock::InstrCount()
 {
-    instrCount = CcuRepBlock::InstrCount() + inArgCount + outArgCount + 2; // FuncBlock需要2外两条指令
+    instrCount = CcuRepBlock::InstrCount() + outArgCount + 2;
     return instrCount;
 }
 
@@ -120,19 +127,6 @@ bool CcuRepFuncBlock::Translate(CcuInstr *&instr, uint16_t &instrId, const Trans
     LoadImdToXnInstr(instr++, dep.reserveXnId, 0);
     instrId++;
 
-    uint32_t iInArg = 0;
-    for (uint32_t i = 0; i < inArgs.size(); i++) {
-        if (inArgs[i].type == CcuArgType::VARIABLE) {
-            LoadXXInstr(instr++, inArgs[i].var.Id(), funcManager->GetFuncIn()[iInArg++].Id(), dep.reserveXnId);
-            instrId++;
-        } else if (inArgs[i].type == CcuArgType::VARIABLE_LIST) {
-            for (uint32_t j = 0; j < inArgs[i].varList.size(); j++) {
-                LoadXXInstr(instr++, inArgs[i].varList[j].Id(), funcManager->GetFuncIn()[iInArg++].Id(),
-                            dep.reserveXnId);
-                instrId++;
-            }
-        }
-    }
 
     // 使用空实现的自定义删除器，避免智能指针析构时释放对象
     auto translator

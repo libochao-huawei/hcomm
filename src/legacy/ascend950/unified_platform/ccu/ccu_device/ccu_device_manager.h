@@ -19,8 +19,7 @@
 #include "orion_adapter_hccp.h"
 #include "local_ub_rma_buffer.h"
 
-// 支持新老ccu混跑新增，引入对外头文件，避免重复定义
-#include "../../../../pkg_inc/hcomm/ccu/ccu_res_repo.h"
+#include "../../../../../base_comm/resources/ccu/pub_inc/ccu_res_repo.h"
 
 namespace Hccl {
 
