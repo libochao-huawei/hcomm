@@ -185,4 +185,11 @@ void TcRsRetryTimeoutExceptionCheck();
 void TcRsSetQpLbValue();
 void TcRsGetQpLbValue();
 void TcRsGetLbMax();
+void TcRsTypicalCqCreate(void);
+void TcRsTypicalCqDestroy(void);
+void TcRsGetLiteCqAttr(void);
+void TcRsQpDestroyWithoutCQ(void);
+void TcRsQpCreateWithCQWithAttrs(void);
+void TcRsGetLiteQpAttr(void);
+void TcRsDrvTypicalCqCreate(void);
 #endif

@@ -33,4 +33,7 @@ extern "C" void TcRaRegisterMr(void);
 extern "C" void TcRaGetLbMax(void);
 extern "C" void TcRaSetQpLbValue(void);
 extern "C" void TcRaGetQpLbValue(void);
+extern "C" void TcHostTypicalCqCreateDestroy(void);
+extern "C" void TcHostQpCreateWithCQWithAttrs(void);
+extern "C" void TcHostQpDestroyWithoutCQ(void);
 #endif
