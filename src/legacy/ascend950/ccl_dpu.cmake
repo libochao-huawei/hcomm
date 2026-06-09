@@ -24,6 +24,8 @@ target_compile_definitions(ccl_dpu PRIVATE
 # 编译选项
 target_compile_options(ccl_dpu PRIVATE
     # -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fno-strict-aliasing
     $<$<CONFIG:Debug>:-g -O0>
     $<$<CONFIG:Release>:-O3>
