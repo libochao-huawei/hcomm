@@ -37,7 +37,7 @@ AicpuTsRoceChannelV2::AicpuTsRoceChannelV2(EndpointHandle endpointHandle, HcommC
 AicpuTsRoceChannelV2::~AicpuTsRoceChannelV2()
 {
     FreeDeviceMemories();
-    if (socket_ != nullptr) {
+    if (channelDesc_.socket == nullptr && socket_ != nullptr) {
         SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
         socket_ = nullptr;
     }
@@ -233,7 +233,7 @@ HcclResult AicpuTsRoceChannelV2::ProcessStatus()
 {
     switch (channelStatus_) {
         case ChannelStatus::READY:
-            if (socket_ != nullptr) {
+            if (channelDesc_.socket == nullptr && socket_ != nullptr) {
                 SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
             }
             return HCCL_SUCCESS;

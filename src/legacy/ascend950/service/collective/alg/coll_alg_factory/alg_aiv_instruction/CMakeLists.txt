@@ -1947,7 +1947,7 @@ else()
     )
  
 endif()
- 
+
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o ${INSTALL_OPTIONAL}
     COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
