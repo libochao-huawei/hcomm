@@ -74,6 +74,7 @@ HcclResult RankInfoDetectService::GetConnections()
                     static_cast<long long>(timeout.count()),
                     expectedSocketNum + previousRankNum, previousRankNum)}));
             HCCL_ERROR("[RankInfoDetectService::%s] server get sockets timeout[%lld s]", __func__, timeout);
+            // 建链超时后，sleep 20s，确保所有节点信息同步完成
             // TODO A5
             sleep(20);
             break;
