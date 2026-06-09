@@ -255,10 +255,10 @@ int RaHdcQpCreateWithCQWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAt
     qpHdc->gidIdx = opData.rxData.gidIdx;
 
     cap.max_inline_data = extAttrs->qpAttr.cap.max_inline_data;
-    cap.max_send_sge = extAttrs->qpAttr.cap.max_send_sge;
-    cap.max_recv_sge = extAttrs->qpAttr.cap.max_recv_sge;
     cap.max_send_wr = extAttrs->qpAttr.cap.max_send_wr;
     cap.max_recv_wr = extAttrs->qpAttr.cap.max_recv_wr;
+    cap.max_send_sge = extAttrs->qpAttr.cap.max_send_sge;
+    cap.max_recv_sge = extAttrs->qpAttr.cap.max_recv_sge;
     ret = RaHdcLiteQpCreateWithCQ(rdmaHandle, qpHdc, &cap,
         RaHdcLiteFindTypicalCq(phyId, sendCqn), RaHdcLiteFindTypicalCq(phyId, recvCqn),
         sendCqn, recvCqn);
@@ -268,9 +268,9 @@ int RaHdcQpCreateWithCQWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAt
         goto out;
     }
 
-    qpHdc->sqSigAll = extAttrs->qpAttr.sq_sig_all;
-    qpHdc->udpSport = extAttrs->udpSport;
     qpHdc->sqDepth = cap.max_send_wr;
+    qpHdc->udpSport = extAttrs->udpSport;
+    qpHdc->sqSigAll = extAttrs->qpAttr.sq_sig_all;
     *qpHandle = qpHdc;
     return 0;
 

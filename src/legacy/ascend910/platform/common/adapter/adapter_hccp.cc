@@ -471,13 +471,13 @@ HcclResult HrtRaSendWrVerbs(QpHandle handle, struct SendWrVerbs *wr, struct Send
             break;
         } else if ((ret == SOCK_ENOENT) || (ret == ROCE_EAGAIN) ||
             (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && ret == ROCE_ENOMEM)) {
-            bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
-            CHK_PRT_RET(bTimeout, HCCL_ERROR("[Send][RaWr]errNo[0x%016llx] ra get send async timeout[%d s]. "\
+            bool bTimeOut = ((std::chrono::steady_clock::now() - startTime) >= timeout);
+            CHK_PRT_RET(bTimeOut, HCCL_ERROR("[HrtRaSendWrVerbs][RaWr]errNo[0x%016llx] ra get send async timeout[%d s]. "\
                 "return[%d], params: send_wrAddr[%p], opRspAddr[%p]",
                 HCCL_ERROR_CODE(HCCL_E_ROCE_TRANSFER), timeout,  ret, wr, opRsp), HCCL_E_ROCE_TRANSFER);
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            HCCL_ERROR("[Send][RaWr]ra send async fail. return[%d], para: send_wrAddr[%p], "\
+            HCCL_ERROR("[HrtRaSendWrVerbs][RaWr]ra send async fail. return[%d], para: send_wrAddr[%p], "\
                 "opRspAddr[%p].", ret, wr, opRsp);
             return HCCL_E_ROCE_TRANSFER;
         }
