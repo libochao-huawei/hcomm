@@ -343,7 +343,7 @@ uint32_t UdfTwlTimerCalcRemainTime(UdfTwlTimerWheelCtrl *wheelCtrl, UdfTwlTimerI
         return UDF_OK;
     }
 
-    bool typeInvalid = ((typeBegin == UDF_ERROR) || (typeEnd == UDF_ERROR) || (typeEnd > UDF_TWL_TIMER_WHEEL_HOUR));
+    bool typeInvalid = ((typeBegin == (uint32_t)UDF_ERROR) || (typeEnd == (uint32_t)UDF_ERROR) || (typeEnd > UDF_TWL_TIMER_WHEEL_HOUR));
     if (typeInvalid) {
         return UDF_ERROR;
     }

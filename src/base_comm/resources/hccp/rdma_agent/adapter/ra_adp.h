@@ -55,9 +55,9 @@ RA_ADP_ATTRI_VISI_DEF int HccpInit(unsigned int chipId, pid_t pid, int hdcType, 
 RA_ADP_ATTRI_VISI_DEF int HccpDeinit(unsigned int chipId);
 
 #define HCCP_CHECK_PARAM_LEN(data_size, head_size, rcv_buf_len) do { \
-    if ((data_size) + (head_size) != (rcv_buf_len)) {         \
+    if ((unsigned int)(data_size) + (unsigned int)(head_size) != (unsigned int)(rcv_buf_len)) {         \
         hccp_err("op data size is invalid. data size:[%d] head size:[%d] recv buff len:[%d]",     \
-                 data_size, head_size, rcv_buf_len);            \
+                 (int)(data_size), (int)(head_size), (int)(rcv_buf_len));            \
         return (-EINVAL);         \
     }           \
 } while (0)
@@ -68,9 +68,9 @@ RA_ADP_ATTRI_VISI_DEF int HccpDeinit(unsigned int chipId);
 } while (0)
 #else
 #define HCCP_CHECK_PARAM_LEN_RET_HOST(data_size, head_size, rcv_buf_len, pResult) do { \
-    if ((data_size) + (head_size) > (rcv_buf_len)) {         \
+    if ((unsigned int)(data_size) + (unsigned int)(head_size) > (unsigned int)(rcv_buf_len)) {         \
         hccp_err("op data size is invalid. data size:[%d] head size:[%d] recv buff len:[%d]",     \
-                 data_size, head_size, rcv_buf_len);            \
+                 (int)(data_size), (int)(head_size), (int)(rcv_buf_len));            \
         *pResult = -EINVAL;                                       \
         return 0;         \
     }           \
