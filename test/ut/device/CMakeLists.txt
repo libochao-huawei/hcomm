@@ -37,6 +37,7 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/framework/aicpu_one_side_service.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/device/hccl_aicpu_interface.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/launch_aicpu.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/adapter/adapter_rts.cc
 )
 
 add_executable(hccl_utest_device ${hccl_utest_device_src_list})
@@ -84,6 +85,7 @@ add_dependencies(hccl_utest_device hccl_llt)
 set(hccl_utest_launch_aicpu_fw_src_list
     main.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/common/src/launch_aicpu.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/adapter/adapter_rts.cc
     ut_launch_aicpu.cc
 )
 add_executable(hccl_utest_launch_aicpu_fw ${hccl_utest_launch_aicpu_fw_src_list})

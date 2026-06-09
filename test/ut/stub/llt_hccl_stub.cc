@@ -4896,11 +4896,6 @@ std::map<std::string, void*> dlurmaFuntionPtrMap = {
 
 std::map<std::string, void*> dlAclFuntionPtrMap;
 
-std::map<std::string, void*>& GetDlAclFuntionPtrMap()
-{
-    return dlAclFuntionPtrMap;
-}
-
 static int dlRaHandle;
 static int dlTdtHandle;
 static int dlHalHandle;
@@ -4996,7 +4991,7 @@ void* __HcclDlsymSub(void* handle, const char* funcName)
     } else if (handle == &dlUrmaHandle) {
         return dlurmaFuntionPtrMap[tempName];
     } else if (handle == &dlAclHandle) {
-        return GetDlAclFuntionPtrMap()[tempName];
+        return dlAclFuntionPtrMap[tempName];
     }
     return nullptr;
 }

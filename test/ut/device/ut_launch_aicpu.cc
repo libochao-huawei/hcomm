@@ -10,8 +10,6 @@
 
 #include <gtest/gtest.h>
 #include <mockcpp/mockcpp.hpp>
-#include <map>
-#include <string>
 
 #ifndef private
 #define private public
@@ -22,35 +20,23 @@
 #undef protected
 
 #include "adapter_rts_common.h"
+#include "hccl_dl.h"
 
 using namespace std;
 using namespace hccl;
 
-namespace hccl {
-std::map<std::string, void*>& GetDlAclFuntionPtrMap();
-}
-
-static aclError stubHrtCacheLastTaskExtendInfoSuccess(const char* tag, size_t tagLen)
+static aclError stubCacheLastTaskExtendInfoSuccess(const char* tag, size_t tagLen)
 {
     return ACL_SUCCESS;
 }
 
-static aclError stubHrtCacheLastTaskExtendInfoFail(const char* tag, size_t tagLen)
+static aclError stubCacheLastTaskExtendInfoFail(const char* tag, size_t tagLen)
 {
     return static_cast<aclError>(2);
 }
 
 class LaunchAicpuUT : public testing::Test {
 protected:
-    void SetUp() override
-    {
-        hccl::GetDlAclFuntionPtrMap().clear();
-    }
-    void TearDown() override
-    {
-        hccl::GetDlAclFuntionPtrMap().clear();
-    }
-
     static void SetUpTestCase()
     {
         std::cout << "LaunchAicpuUT SetUP" << std::endl;
@@ -118,6 +104,10 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoNotSupported_Expect_ReturnSucces
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
+    MOCKER(hrtCacheLastTaskExtendInfo)
+        .stubs()
+        .will(returnValue(HCCL_E_NOT_SUPPORT));
+
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -142,7 +132,9 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoCallSuccess_Expect_ReturnSuccess
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    hccl::GetDlAclFuntionPtrMap()["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoSuccess;
+    MOCKER(hrtCacheLastTaskExtendInfo)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -168,7 +160,9 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoCallFailed_Expect_ReturnRuntimeE
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    hccl::GetDlAclFuntionPtrMap()["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoFail;
+    MOCKER(hrtCacheLastTaskExtendInfo)
+        .stubs()
+        .will(returnValue(HCCL_E_RUNTIME));
 
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
@@ -284,9 +278,44 @@ TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CacheTaskOpInfoSuccess_Expect_
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    hccl::GetDlAclFuntionPtrMap()["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoSuccess;
+    MOCKER(hrtCacheLastTaskExtendInfo)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
+TEST_F(LaunchAicpuUT, hrtCacheLastTaskExtendInfo_DlsymNull_Expect_ReturnNotSupport)
+{
+    MOCKER(HcclDlsym)
+        .stubs()
+        .will(returnValue((void*)nullptr));
+
+    HcclResult ret = hrtCacheLastTaskExtendInfo("test_tag", 8);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    GlobalMockObject::verify();
+}
+
+TEST_F(LaunchAicpuUT, hrtCacheLastTaskExtendInfo_CallSuccess_Expect_ReturnSuccess)
+{
+    MOCKER(HcclDlsym)
+        .stubs()
+        .will(returnValue((void*)stubCacheLastTaskExtendInfoSuccess));
+
+    HcclResult ret = hrtCacheLastTaskExtendInfo("test_tag", 8);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
+TEST_F(LaunchAicpuUT, hrtCacheLastTaskExtendInfo_CallFail_Expect_ReturnRuntimeError)
+{
+    MOCKER(HcclDlsym)
+        .stubs()
+        .will(returnValue((void*)stubCacheLastTaskExtendInfoFail));
+
+    HcclResult ret = hrtCacheLastTaskExtendInfo("test_tag", 8);
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
     GlobalMockObject::verify();
 }
