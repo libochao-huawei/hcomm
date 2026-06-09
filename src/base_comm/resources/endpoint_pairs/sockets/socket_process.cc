@@ -214,8 +214,8 @@ HcclResult SocketProcess::Init()
     }
 
     s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    CHK_RET(hrtGetDeviceRefresh(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_, true));
 
     isInit_.store(true, std::memory_order_release);
     HCCL_RUN_INFO("[SocketProcess][%s] initialized successfully. deviceLogicId: %d, devicePhyId: %u, this: %p",

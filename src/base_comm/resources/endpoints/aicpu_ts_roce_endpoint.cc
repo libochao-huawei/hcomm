@@ -212,9 +212,9 @@ HcclResult AicpuTsRoceEndpoint::Init()
     }
 
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
-    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId, true));
 
     HcclResult ret = AcquireRdmaContext(devPhyId, endpointDesc_);
     if (ret != HCCL_SUCCESS) {

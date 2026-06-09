@@ -17,6 +17,7 @@
 #include "host_socket_handle_manager.h"
 #include "exception_handler.h"
 #include "adapter_rts.h"
+#include "adapter_rts_common.h"
 #include "env_config/env_config.h"
 
 namespace hcomm {
@@ -49,8 +50,8 @@ HcclResult SocketMgr::Init()
     }
     isLoaded_ = true;
     s32 devLogicId;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    CHK_RET(hrtGetDeviceRefresh(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_, true));
     serverListenPort_ = TempServerListenPort;
     return HCCL_SUCCESS;
 }

@@ -106,10 +106,12 @@ static HcclResult PrepareThreadMgrParam(const std::vector<std::shared_ptr<Thread
 
     // 基础通信需要设备信息
     if (config.needDeviceInfo) {
-        CHK_RET(hrtGetDevice(&opParam.deviceLogicId));
+        CHK_RET(hrtGetDeviceRefresh(&opParam.deviceLogicId));
         DevType devType;
         CHK_RET(hrtGetDeviceType(devType));
         opParam.deviceType = static_cast<u32>(devType);
+        HCCL_INFO("[%s] base thread init device info, deviceLogicId[%d], deviceType[%u], threadNum[%u]",
+            __func__, opParam.deviceLogicId, opParam.deviceType, opParam.threadNum);
     }
     return HCCL_SUCCESS;
 }

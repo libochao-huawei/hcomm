@@ -44,7 +44,7 @@ HcclResult EndpointMonitor::RegisterToEndpointMonitor(s32 deviceLogicId, Endpoin
 
     HCCL_INFO("[EndpointMonitor] deviceLogicId[%d] RegisterToEndpointMonitor begin.", deviceLogicId);
     u32 devPhyId{0};
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId), devPhyId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId), devPhyId, true));
 
     {
         std::lock_guard<std::mutex> lock(threadLock_);

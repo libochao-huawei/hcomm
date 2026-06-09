@@ -39,18 +39,14 @@ HcclResult CpuUrmaEndpoint::Init()
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
     u32 devPhyId;
     s32 deviceLogicId;
-    HcclResult ret = hrtGetDevice(&deviceLogicId);
+    HcclResult ret = hrtGetDeviceRefresh(&deviceLogicId);
     if(ret != HCCL_SUCCESS){
-        HCCL_ERROR("call hrtGetDevice failed, deviceLogicId[%d]", deviceLogicId);
+        HCCL_ERROR("call hrtGetDeviceRefresh failed, deviceLogicId[%d]", deviceLogicId);
         return ret;
     }
     RaSocketSetWhiteListStatus(1); // PEER模式需要手动开启白名单模式
     Hccl::HccpPeerManager::GetInstance().Init(deviceLogicId);
-    ret = hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId);
-    if(ret != HCCL_SUCCESS){
-        HCCL_ERROR("call hrtGetDevicePhyIdByIndex failed, deviceLogicId[%d], devPhyId[%u]", deviceLogicId, devPhyId);
-        return ret;
-    }
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId, true));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     ctxHandle_ = static_cast<void *>(
         rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::UB, ipAddr, Hccl::PortDeploymentType::HOST_NET));
@@ -72,9 +68,9 @@ HcclResult CpuUrmaEndpoint::ServerSocketListen(const uint32_t port)
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
-    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId, true));
 
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
@@ -94,9 +90,9 @@ HcclResult CpuUrmaEndpoint::ServerSocketStopListen(const uint32_t port)
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
-    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId, true));
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
@@ -111,9 +107,9 @@ HcclResult CpuUrmaEndpoint::ServerSocketGetListenPort(uint32_t *port)
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, localIpAddr));
 
     s32 deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
     u32 devicePhyId = 0;
-    CHK_RET(hrtGetDevicePhyIdByIndex(deviceId, devicePhyId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(deviceId, devicePhyId, true));
 
     Hccl::DevNetPortType portType = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData portData = Hccl::PortData(devicePhyId, portType, 0, localIpAddr);

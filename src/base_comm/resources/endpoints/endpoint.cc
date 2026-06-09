@@ -108,9 +108,9 @@ HcclResult Endpoint::CheckFeature(const EndpointDesc &endpointDesc, HcommEndpoin
         Hccl::IpAddress ipAddr{};
         CHK_RET(CommAddrToIpAddress(endpointDesc.commAddr, ipAddr));
         s32 devId = 0;
-        CHK_RET(hrtGetDevice(&devId));
+        CHK_RET(hrtGetDeviceRefresh(&devId));
         u32 devPhyId = 0;
-        CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+        CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId, true));
 
         auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
         void *rdmaHandle = static_cast<void *>(
