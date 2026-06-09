@@ -369,3 +369,8 @@ aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
 {
     return ACL_SUCCESS;
 }
+
+HcclResult hrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
+{
+    return HCCL_E_NOT_SUPPORT;
+}
