@@ -653,6 +653,7 @@ BOOL BkfDcDelTupleSeqItor(BkfDc *dc, BkfDcTupleSeqItor *seqItor)
 
 BkfDcTupleSeqItor *BkfDcGetFirstTupleSeqItor(BkfDc *dc, BkfDcTable *table, void **itorOutOrNull)
 {
+    (void)dc;
     BkfDlNode *tempNode = VOS_NULL;
     BkfDcTupleSeqItor *seqItor = VOS_NULL;
 
@@ -673,6 +674,7 @@ BkfDcTupleSeqItor *BkfDcGetFirstTupleSeqItor(BkfDc *dc, BkfDcTable *table, void 
 
 BkfDcTupleSeqItor *BkfDcGetNextTupleSeqItor(BkfDc *dc, BkfDcTable *table, void **itorInOut)
 {
+    (void)dc;
     BkfDlNode *tempNode = VOS_NULL;
     BkfDcTupleSeqItor *seqItor = VOS_NULL;
 
@@ -689,6 +691,7 @@ BkfDcTupleSeqItor *BkfDcGetNextTupleSeqItor(BkfDc *dc, BkfDcTable *table, void *
 
 BkfDcTupleSeqItor *BkfDcGetNextTupleSeqItorBySeqItor(BkfDc *dc, BkfDcTable *table, BkfDcTupleSeqItor *seqItor)
 {
+    (void)dc;
     BkfDlNode *tempNode = VOS_NULL;
     BkfDcTupleSeqItor *nextSeqItor = VOS_NULL;
 
