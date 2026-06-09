@@ -31,6 +31,10 @@ struct RsTlvOps gRaRsTlvOps = {
 
 int RaRsTlvInitV1(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)inBuf;
+    (void)outBuf;
+    (void)outLen;
+    (void)rcvBufLen;
     hccp_warn("Tlv init is not support in this version.");
     *opResult = -ENOTSUPP;
     return 0;
@@ -38,6 +42,7 @@ int RaRsTlvInitV1(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 
 int RaRsTlvInit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpTlvInitData *dataOut = (union OpTlvInitData *)(outBuf + sizeof(struct MsgHead));
     union OpTlvInitData *dataIn = (union OpTlvInitData *)(inBuf + sizeof(struct MsgHead));
 
@@ -54,6 +59,8 @@ int RaRsTlvInit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBu
 
 int RaRsTlvDeinit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpTlvDeinitData *dataIn = (union OpTlvDeinitData *)(inBuf + sizeof(struct MsgHead));
 
     HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTlvDeinitData), sizeof(struct MsgHead), rcvBufLen, opResult);
@@ -68,6 +75,7 @@ int RaRsTlvDeinit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 
 int RaRsTlvRequest(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpTlvRequestData *dataOut = (union OpTlvRequestData *)(outBuf + sizeof(struct MsgHead));
     union OpTlvRequestData *dataIn = (union OpTlvRequestData *)(inBuf + sizeof(struct MsgHead));
 

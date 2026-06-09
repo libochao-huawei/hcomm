@@ -57,6 +57,7 @@ struct RsCtxOps gRaRsCtxOps = {
 
 int RaRsGetDevEidInfoNum(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpGetDevEidInfoNumData *opData = (union OpGetDevEidInfoNumData *)(inBuf +
         sizeof(struct MsgHead));
     unsigned int num = 0;
@@ -74,6 +75,7 @@ int RaRsGetDevEidInfoNum(char *inBuf, char *outBuf, int *outLen, int *opResult, 
 
 int RaRsGetDevEidInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpGetDevEidInfoListData *opData = (union OpGetDevEidInfoListData *)(inBuf +
         sizeof(struct MsgHead));
     struct HccpDevEidInfo infoList[MAX_DEV_INFO_TRANS_NUM] = {0};
@@ -94,6 +96,7 @@ int RaRsGetDevEidInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult,
 
 int RaRsCtxInit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxInitData *opDataOut = (union OpCtxInitData *)(outBuf + sizeof(struct MsgHead));
     union OpCtxInitData *opData = (union OpCtxInitData *)(inBuf + sizeof(struct MsgHead));
 
@@ -110,6 +113,7 @@ int RaRsCtxInit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBu
 
 int RaRsCtxGetAsyncEvents(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxGetAsyncEventsData *opDataOut =
         (union OpCtxGetAsyncEventsData *)(outBuf + sizeof(struct MsgHead));
     union OpCtxGetAsyncEventsData *opData =
@@ -134,6 +138,8 @@ int RaRsCtxGetAsyncEvents(char *inBuf, char *outBuf, int *outLen, int *opResult,
 
 int RaRsCtxDeinit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpCtxDeinitData *opData = (union OpCtxDeinitData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -151,6 +157,7 @@ int RaRsCtxDeinit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 
 int RaRsGetEidByIp(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpGetEidByIpData *opDataOut = (union OpGetEidByIpData *)(outBuf + sizeof(struct MsgHead));
     union OpGetEidByIpData *opData = (union OpGetEidByIpData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
@@ -172,6 +179,7 @@ int RaRsGetEidByIp(char *inBuf, char *outBuf, int *outLen, int *opResult, int rc
 
 int RaRsGetTpInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpGetTpInfoListData *opDataOut = (union OpGetTpInfoListData *)(outBuf + sizeof(struct MsgHead));
     union OpGetTpInfoListData *opData = (union OpGetTpInfoListData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
@@ -194,6 +202,7 @@ int RaRsGetTpInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int
 
 int RaRsGetTpAttr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpGetTpAttrData *opDataOut = (union OpGetTpAttrData *)(outBuf + sizeof(struct MsgHead));
     union OpGetTpAttrData *opData = (union OpGetTpAttrData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
@@ -214,6 +223,8 @@ int RaRsGetTpAttr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 
 int RaRsSetTpAttr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpSetTpAttrData *opData = (union OpSetTpAttrData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -232,6 +243,7 @@ int RaRsSetTpAttr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 
 int RaRsCtxTokenIdAlloc(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpTokenIdAllocData *opDataOut = (union OpTokenIdAllocData *)(outBuf + sizeof(struct MsgHead));
     union OpTokenIdAllocData *opData = (union OpTokenIdAllocData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
@@ -251,6 +263,8 @@ int RaRsCtxTokenIdAlloc(char *inBuf, char *outBuf, int *outLen, int *opResult, i
 
 int RaRsCtxTokenIdFree(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpTokenIdFreeData *opData = (union OpTokenIdFreeData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -268,6 +282,7 @@ int RaRsCtxTokenIdFree(char *inBuf, char *outBuf, int *outLen, int *opResult, in
 
 int RaRsLmemReg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpLmemRegInfoData *opDataOut = (union OpLmemRegInfoData *)(outBuf + sizeof(struct MsgHead));
     union OpLmemRegInfoData *opData = (union OpLmemRegInfoData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
@@ -286,6 +301,8 @@ int RaRsLmemReg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBu
 
 int RaRsLmemUnreg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpLmemUnregInfoData *opData = (union OpLmemUnregInfoData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -304,6 +321,7 @@ int RaRsLmemUnreg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 
 int RaRsRmemImport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpRmemImportInfoData *opDataOut = (union OpRmemImportInfoData *)(outBuf + sizeof(struct MsgHead));
     union OpRmemImportInfoData *opData = (union OpRmemImportInfoData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
@@ -323,6 +341,8 @@ int RaRsRmemImport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rc
 
 int RaRsRmemUnimport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpRmemUnimportInfoData *opData = (union OpRmemUnimportInfoData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -341,6 +361,7 @@ int RaRsRmemUnimport(char *inBuf, char *outBuf, int *outLen, int *opResult, int 
 
 int RaRsCtxChanCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxChanCreateData *opDataOut = (union OpCtxChanCreateData *)(outBuf + sizeof(struct MsgHead));
     union OpCtxChanCreateData *opData = (union OpCtxChanCreateData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
@@ -361,6 +382,8 @@ int RaRsCtxChanCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int
 
 int RaRsCtxChanDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpCtxChanDestroyData *opData = (union OpCtxChanDestroyData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -378,6 +401,7 @@ int RaRsCtxChanDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, in
 
 int RaRsCtxCqCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxCqCreateData *opDataOut = (union OpCtxCqCreateData *)(outBuf + sizeof(struct MsgHead));
     union OpCtxCqCreateData *opData = (union OpCtxCqCreateData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
@@ -396,6 +420,8 @@ int RaRsCtxCqCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int r
 
 int RaRsCtxCqDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpCtxCqDestroyData *opData = (union OpCtxCqDestroyData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -414,6 +440,7 @@ int RaRsCtxCqDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, int 
 
 int RaRsCtxQpCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxQpCreateData *opDataOut = (union OpCtxQpCreateData *)(outBuf + sizeof(struct MsgHead));
     union OpCtxQpCreateData *opData = (union OpCtxQpCreateData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
@@ -432,6 +459,7 @@ int RaRsCtxQpCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int r
 
 int RaRsCtxQpQueryBatch(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxQpQueryBatchData *opData = (union OpCtxQpQueryBatchData *)(inBuf + sizeof(struct MsgHead));
     union OpCtxQpQueryBatchData *opDataOut = (union OpCtxQpQueryBatchData *)(outBuf +
         sizeof(struct MsgHead));
@@ -454,6 +482,8 @@ int RaRsCtxQpQueryBatch(char *inBuf, char *outBuf, int *outLen, int *opResult, i
 
 int RaRsCtxQpDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpCtxQpDestroyData *opData = (union OpCtxQpDestroyData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -472,6 +502,7 @@ int RaRsCtxQpDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, int 
 
 int RaRsCtxQpDestroyBatch(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxQpDestroyBatchData *opDataOut = (union OpCtxQpDestroyBatchData *)(outBuf +
         sizeof(struct MsgHead));
     union OpCtxQpDestroyBatchData *opData = (union OpCtxQpDestroyBatchData *)(inBuf +
@@ -494,6 +525,7 @@ int RaRsCtxQpDestroyBatch(char *inBuf, char *outBuf, int *outLen, int *opResult,
 
 int RaRsCtxQpImport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxQpImportData *opDataOut = (union OpCtxQpImportData *)(outBuf + sizeof(struct MsgHead));
     union OpCtxQpImportData *opData = (union OpCtxQpImportData *)(inBuf + sizeof(struct MsgHead));
     struct RsJettyImportAttr importAttr = {0};
@@ -519,6 +551,8 @@ int RaRsCtxQpImport(char *inBuf, char *outBuf, int *outLen, int *opResult, int r
 
 int RaRsCtxQpUnimport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpCtxQpUnimportData *opData = (union OpCtxQpUnimportData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -537,6 +571,8 @@ int RaRsCtxQpUnimport(char *inBuf, char *outBuf, int *outLen, int *opResult, int
 
 int RaRsCtxQpBind(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpCtxQpBindData *opData = (union OpCtxQpBindData *)(inBuf + sizeof(struct MsgHead));
     struct RsCtxQpInfo remoteQpInfo = {0};
     struct RsCtxQpInfo localQpInfo = {0};
@@ -560,6 +596,8 @@ int RaRsCtxQpBind(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 
 int RaRsCtxQpUnbind(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpCtxQpUnbindData *opData = (union OpCtxQpUnbindData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -577,6 +615,7 @@ int RaRsCtxQpUnbind(char *inBuf, char *outBuf, int *outLen, int *opResult, int r
 
 int RaRsCtxBatchSendWr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxBatchSendWrData *opData = (union OpCtxBatchSendWrData *)(inBuf + sizeof(struct MsgHead));
     union OpCtxBatchSendWrData *opDataOut = (union OpCtxBatchSendWrData *)(outBuf +
         sizeof(struct MsgHead));
@@ -599,6 +638,8 @@ int RaRsCtxBatchSendWr(char *inBuf, char *outBuf, int *outLen, int *opResult, in
 
 int RaRsCtxUpdateCi(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outBuf;
+    (void)outLen;
     union OpCtxUpdateCiData *opData = (union OpCtxUpdateCiData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
 
@@ -616,6 +657,7 @@ int RaRsCtxUpdateCi(char *inBuf, char *outBuf, int *outLen, int *opResult, int r
 
 int RaRsCustomChannel(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCustomChannelData *opDataOut = (union OpCustomChannelData *)(outBuf + sizeof(struct MsgHead));
     union OpCustomChannelData *opData = (union OpCustomChannelData *)(inBuf + sizeof(struct MsgHead));
 
@@ -632,6 +674,7 @@ int RaRsCustomChannel(char *inBuf, char *outBuf, int *outLen, int *opResult, int
 
 int RaRsCtxGetAuxInfo(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxGetAuxInfoData *opDataOut = (union OpCtxGetAuxInfoData *)(outBuf + sizeof(struct MsgHead));
     union OpCtxGetAuxInfoData *opData = (union OpCtxGetAuxInfoData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
@@ -651,6 +694,7 @@ int RaRsCtxGetAuxInfo(char *inBuf, char *outBuf, int *outLen, int *opResult, int
 
 int RaRsCtxGetCrErrInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxGetCrErrInfoListData *opDataOut =
         (union OpCtxGetCrErrInfoListData *)(outBuf + sizeof(struct MsgHead));
     union OpCtxGetCrErrInfoListData *opData =
@@ -675,6 +719,7 @@ int RaRsCtxGetCrErrInfoList(char *inBuf, char *outBuf, int *outLen, int *opResul
 
 int RaRsCtxGetUbContext(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    (void)outLen;
     union OpCtxGetContextData *opDataOut =
         (union OpCtxGetContextData *)(outBuf + sizeof(struct MsgHead));
     union OpCtxGetContextData *opData =

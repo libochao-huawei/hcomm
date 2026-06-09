@@ -114,12 +114,16 @@ void NetCoOutTblUninit(NetCo *co)
 
 uint32_t NetCoTblDemoAddUpd(NetCo *co, NetTblDemo *kv)
 {
+    (void)co;
+    (void)kv;
     VOS_ASSERT(0);
     return BKF_ERR;
 }
 
 void NetCoTblDemoDel(NetCo *co, NetTblDemoKey *key)
 {
+    (void)co;
+    (void)key;
     VOS_ASSERT(0);
 }
 
@@ -574,6 +578,7 @@ STATIC NetCoOutTbl *NetCoOutOnCommInfoTupleUpdCodeChkAndGetTbl(NetCo *co, SimpoB
                                                                   BifrostCncoiComminfoKeyT *tupleKey,
                                                                   void *codeBuf, int32_t bufLen)
 {
+    (void)builder;
     BOOL argIsInvalid = (co == VOS_NULL) || (tupleKey == VOS_NULL) || (codeBuf == VOS_NULL) || (bufLen <= 0);
     if (argIsInvalid) {
         return VOS_NULL;
@@ -604,6 +609,8 @@ STATIC int32_t NetCoOutOnCommInfoTupleUpdCode(NetCo *co, SimpoBuilderT *builder,
                                               BifrostCncoiSliceKeyT *sliceKey, BifrostCncoiComminfoKeyT *tupleKey,
                                               void *notUse, void *codeBuf, int32_t bufLen)
 {
+    (void)notUse;
+    (void)sliceKey;
     NetCoOutTbl *tbl = NetCoOutOnCommInfoTupleUpdCodeChkAndGetTbl(co, builder, tupleKey, codeBuf, bufLen);
     if (tbl == VOS_NULL) {
         return 0;
@@ -715,6 +722,7 @@ STATIC NetCoOutTbl *NetCoOutOnOperTupleUpdCodeChkAndGetTbl(NetCo *co, SimpoBuild
                                                               BifrostCncoiOperatorKeyT *tupleKey,
                                                               void *codeBuf, int32_t bufLen)
 {
+    (void)builder;
     BOOL argIsInvalid = (co == VOS_NULL) || (tupleKey == VOS_NULL) || (codeBuf == VOS_NULL) || (bufLen <= 0);
     if (argIsInvalid) {
         return VOS_NULL;
@@ -745,6 +753,8 @@ STATIC int32_t NetCoOutOnOperTupleUpdCode(NetCo *co, void *builder, BifrostCncoi
                                           BifrostCncoiOperatorKeyT *tupleKey, void *notUse,
                                           void *codeBuf, int32_t bufLen)
 {
+    (void)notUse;
+    (void)sliceKey;
     NetCoOutTbl *tbl = NetCoOutOnOperTupleUpdCodeChkAndGetTbl(co, builder, tupleKey, codeBuf, bufLen);
     if (tbl == VOS_NULL) {
         return 0;
@@ -834,6 +844,7 @@ STATIC NetCoOutTbl *NetCoOutOnAdjTupleUpdCodeChkAndGetTbl(NetCo *co, SimpoBuilde
                                                              BifrostCncoiAdjacencyKeyT *tupleKey,
                                                              void *codeBuf, int32_t bufLen)
 {
+    (void)builder;
     BOOL argIsInvalid = (co == VOS_NULL) || (tupleKey == VOS_NULL) || (codeBuf == VOS_NULL) || (bufLen <= 0);
     if (argIsInvalid) {
         return VOS_NULL;
@@ -864,6 +875,8 @@ STATIC int32_t NetCoOutOnAdjTupleUpdCode(NetCo *co, void *builder, BifrostCncoiS
                                          BifrostCncoiAdjacencyKeyT *tupleKey, void *notUse,
                                          void *codeBuf, int32_t bufLen)
 {
+    (void)notUse;
+    (void)sliceKey;
     NetCoOutTbl *tbl = NetCoOutOnAdjTupleUpdCodeChkAndGetTbl(co, builder, tupleKey, codeBuf, bufLen);
     if (tbl == VOS_NULL) {
         return 0;
@@ -950,6 +963,7 @@ STATIC NetCoOutTbl *NetCoOutOnRankTupleUpdCodeChkAndGetTbl(NetCo *co, SimpoBuild
                                                               BifrostCncoiRankKeyT *tupleKey,
                                                               void *codeBuf, int32_t bufLen)
 {
+    (void)builder;
     BOOL argIsInvalid = (co == VOS_NULL) || (tupleKey == VOS_NULL) || (codeBuf == VOS_NULL) || (bufLen <= 0);
     if (argIsInvalid) {
         return VOS_NULL;
@@ -980,6 +994,8 @@ STATIC int32_t NetCoOutOnRankTupleUpdCode(NetCo *co, void *builder, BifrostCncoi
                                           BifrostCncoiRankKeyT *tupleKey, void *notUse,
                                           void *codeBuf, int32_t bufLen)
 {
+    (void)notUse;
+    (void)sliceKey;
     NetCoOutTbl *tbl = NetCoOutOnRankTupleUpdCodeChkAndGetTbl(co, builder, tupleKey, codeBuf, bufLen);
     if (tbl == VOS_NULL) {
         return 0;
@@ -1080,6 +1096,7 @@ STATIC NetCoOutTbl *NetCoOutOnRankDistTupleUpdCodeChkAndGetTbl(NetCo *co, SimpoB
                                                                   BifrostCncoiRankDistributeKeyT *tupleKey,
                                                                   void *codeBuf, int32_t bufLen)
 {
+    (void)builder;
     BOOL argIsInvalid = (co == VOS_NULL) || (tupleKey == VOS_NULL) || (codeBuf == VOS_NULL) || (bufLen <= 0);
     if (argIsInvalid) {
         return VOS_NULL;
@@ -1110,6 +1127,8 @@ STATIC int32_t NetCoOutOnRankDistTupleUpdCode(NetCo *co, void *builder, BifrostC
                                               BifrostCncoiRankDistributeKeyT *tupleKey, void *notUse,
                                               void *codeBuf, int32_t bufLen)
 {
+    (void)notUse;
+    (void)sliceKey;
     NetCoOutTbl *tbl = NetCoOutOnRankDistTupleUpdCodeChkAndGetTbl(co, builder, tupleKey, codeBuf, bufLen);
     if (tbl == VOS_NULL) {
         return 0;
@@ -1193,6 +1212,7 @@ STATIC NetCoOutTbl *NetCoOutOnRootRankTupleUpdCodeChkAndGetTbl(NetCo *co, SimpoB
                                                                   BifrostCncoiRootRankKeyT *tupleKey,
                                                                   void *codeBuf, int32_t bufLen)
 {
+    (void)builder;
     BOOL argIsInvalid = (co == VOS_NULL) || (tupleKey == VOS_NULL) || (codeBuf == VOS_NULL) || (bufLen <= 0);
     if (argIsInvalid) {
         return VOS_NULL;
@@ -1223,6 +1243,8 @@ STATIC int32_t NetCoOutOnRootRankTupleUpdCode(NetCo *co, void *builder, BifrostC
                                               BifrostCncoiRootRankKeyT *tupleKey, void *notUse,
                                               void *codeBuf, int32_t bufLen)
 {
+    (void)notUse;
+    (void)sliceKey;
     NetCoOutTbl *tbl = NetCoOutOnRootRankTupleUpdCodeChkAndGetTbl(co, builder, tupleKey, codeBuf, bufLen);
     if (tbl == VOS_NULL) {
         return 0;
