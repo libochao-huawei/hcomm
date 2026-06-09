@@ -9,10 +9,9 @@
  */
 #include "endpoint_mgr.h"
 #include "hccl_mem_defs.h"
-#include <mutex>
-#include <unordered_set>
 #include "cpu_roce_endpoint.h"
 #include "hccl/hccl_res.h"
+#include "host_peer_ra_init.h"
 #include "log.h"
 #include "reged_mems/roce_mem.h"
 #include "host_socket_handle_manager.h"
@@ -29,25 +28,6 @@ using std::exception;
 namespace hcomm_host_nic {
 namespace {
 constexpr uint32_t kHostResourceId = 0U;
-
-HcclResult InitHostPeerRaOnce(uint32_t hostResourceId)
-{
-    static std::mutex peerRaMutex;
-    static std::unordered_set<uint32_t> initializedHostResources;
-
-    std::lock_guard<std::mutex> lock(peerRaMutex);
-    if (initializedHostResources.count(hostResourceId) != 0) {
-        return HCCL_SUCCESS;
-    }
-
-    Hccl::HRaInitConfig cfg;
-    cfg.phyId = hostResourceId;
-    cfg.mode = Hccl::HrtNetworkMode::PEER;
-    EXCEPTION_CATCH(Hccl::HrtRaInit(cfg), return HCCL_E_INTERNAL);
-    initializedHostResources.insert(hostResourceId);
-    HCCL_INFO("[CpuRoceEndpoint][%s] host peer RA init success, hostResourceId[%u].", __func__, hostResourceId);
-    return HCCL_SUCCESS;
-}
 }
 
 CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
@@ -74,7 +54,7 @@ HcclResult CpuRoceEndpoint::Init()
     }
     Hccl::IpAddress ipAddr{};
     CHK_RET(hcomm::CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
-    CHK_RET(InitHostPeerRaOnce(kHostResourceId));
+    CHK_RET(InitHostPeerRaOnce(kHostResourceId, "CpuRoceEndpoint"));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     TRY_CATCH_RETURN(ctxHandle_ = static_cast<void *>(
         rdmaHandleMgr.GetByAddr(kHostResourceId, Hccl::LinkProtoType::RDMA, ipAddr,

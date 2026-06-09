@@ -55,6 +55,85 @@ static std::mutex g_BinHandleMtx;
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
 
+namespace {
+HcclResult ValidateEndpointDesc(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
+{
+    CHK_PTR_NULL(endpoint);
+    CHK_PTR_NULL(endpointHandle);
+    if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
+        HCCL_ERROR("[%s] Only support END_POINT_LOCATION_DEVICE AND END_POINT_LOCATION_HOST, but "
+                   "endpoint->loc.locType is %d",
+            __func__,
+            endpoint->loc.locType);
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult TryCreatePluginEndpoint(const EndpointDesc *endpoint, EndpointHandle *endpointHandle, bool &handled)
+{
+    handled = false;
+    const NicPluginEntry *pluginEntry = nullptr;
+    if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        pluginEntry = FindHostNicPlugin(endpoint->protocol);
+    }
+    HCCL_INFO("[NicPluginDebug][%s] locType[%d], protocol[%d], pluginEntry[%p].",
+        __func__, endpoint->loc.locType, endpoint->protocol, pluginEntry);
+
+    if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST || pluginEntry == nullptr) {
+        HCCL_RUN_WARNING("[NicPluginDebug][%s] fallback to builtin Endpoint::CreateEndpoint, locType[%d], "
+            "protocol[%d], pluginEntry[%p].", __func__, endpoint->loc.locType, endpoint->protocol, pluginEntry);
+        return HCCL_SUCCESS;
+    }
+
+    handled = true;
+    HCCL_INFO("[NicPluginDebug][%s] enter plugin endpoint branch, protocol[%d].", __func__, endpoint->protocol);
+    CHK_RET(static_cast<HcclResult>(CreatePluginEndpoint(endpoint, endpointHandle)));
+    HCCL_INFO("[NicPluginDebug][%s] plugin endpoint created, protocol[%d], handle[%p], isPlugin[%d].",
+        __func__, endpoint->protocol, *endpointHandle, IS_PLUGIN_HANDLE(*endpointHandle));
+    return HCCL_SUCCESS;
+}
+
+HcclResult RegisterDeviceEndpointMonitorIfNeeded(const EndpointDesc *endpoint, EndpointHandle handle)
+{
+    if ((endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE) ||
+        ((endpoint->protocol != COMM_PROTOCOL_UBC_CTP) && (endpoint->protocol != COMM_PROTOCOL_UBC_TP))) {
+        return HCCL_SUCCESS;
+    }
+
+    s32 devLogicIdSigned = HcclGetThreadDeviceId();
+    CHK_PRT_RET(devLogicIdSigned < 0,
+        HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
+    EndpointMonitor::GetInstance(devLogicIdSigned).RegisterToEndpointMonitor(devLogicIdSigned, handle);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CreateBuiltinEndpoint(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
+{
+    std::unique_ptr<Endpoint> endpointPtr = nullptr;
+    HcclResult ret = Endpoint::CreateEndpoint(*endpoint, endpointPtr);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("call Endpoint::CreateEndpoint failed");
+        return ret;
+    }
+    CHK_PTR_NULL(endpointPtr);
+    ret = endpointPtr->Init();
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("call endpointPtr->Init failed");
+        return ret;
+    }
+
+    const EndpointHandle handle = reinterpret_cast<EndpointHandle>(endpointPtr.get());
+    CHK_PTR_NULL(handle);
+    EXCEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
+    *endpointHandle = handle;
+    CHK_RET(RegisterDeviceEndpointMonitorIfNeeded(endpoint, handle));
+    HCCL_INFO("[%s] endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] create endpointHandle [%p] done.",
+        __func__, endpoint->protocol, endpoint->loc.locType, handle);
+    return HCCL_SUCCESS;
+}
+}
+
 HcommResult CheckUbAttr(HcommChannelDesc &channelDesc)
 {
     if (channelDesc.remoteEndpoint.protocol != COMM_PROTOCOL_UBC_TP
@@ -292,64 +371,13 @@ HcommResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  //
 HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
 {
     EXCEPTION_HANDLE_BEGIN
-    CHK_PTR_NULL(endpoint);
-    CHK_PTR_NULL(endpointHandle);
-    if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
-        HCCL_ERROR("[%s] Only support END_POINT_LOCATION_DEVICE AND END_POINT_LOCATION_HOST, but "
-                   "endpoint->loc.locType is %d",
-            __func__,
-            endpoint->loc.locType);
-        return HCCL_E_PARA;
-    }
-
-    const NicPluginEntry *pluginEntry = nullptr;
-    if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST) {
-        pluginEntry = FindHostNicPlugin(endpoint->protocol);
-    }
-    HCCL_INFO("[NicPluginDebug][%s] locType[%d], protocol[%d], pluginEntry[%p].",
-        __func__, endpoint->loc.locType, endpoint->protocol, pluginEntry);
-
-    if (endpoint->loc.locType == ENDPOINT_LOC_TYPE_HOST && pluginEntry != nullptr) {
-        HCCL_INFO("[NicPluginDebug][%s] enter plugin endpoint branch, protocol[%d].",
-            __func__, endpoint->protocol);
-        CHK_RET(static_cast<HcclResult>(CreatePluginEndpoint(endpoint, endpointHandle)));
-        HCCL_INFO("[NicPluginDebug][%s] plugin endpoint created, protocol[%d], handle[%p], isPlugin[%d].",
-            __func__, endpoint->protocol, *endpointHandle, IS_PLUGIN_HANDLE(*endpointHandle));
+    CHK_RET(ValidateEndpointDesc(endpoint, endpointHandle));
+    bool pluginHandled = false;
+    CHK_RET(TryCreatePluginEndpoint(endpoint, endpointHandle, pluginHandled));
+    if (pluginHandled) {
         return HCCL_SUCCESS;
     }
-
-    HCCL_RUN_WARNING("[NicPluginDebug][%s] fallback to builtin Endpoint::CreateEndpoint, locType[%d], protocol[%d], "
-        "pluginEntry[%p].", __func__, endpoint->loc.locType, endpoint->protocol, pluginEntry);
-
-    std::unique_ptr<Endpoint> endpointPtr = nullptr;
-
-    HcclResult ret = Endpoint::CreateEndpoint(*endpoint, endpointPtr);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("call Endpoint::CreateEndpoint failed");
-        return ret;
-    }
-    CHK_PTR_NULL(endpointPtr);
-    ret = endpointPtr->Init();
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("call endpointPtr->Init failed");
-        return ret;
-    }
-
-    const EndpointHandle handle = reinterpret_cast<EndpointHandle>(endpointPtr.get());
-    CHK_PTR_NULL(handle);
-    EXCEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
-    *endpointHandle = handle;
-
-    if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
-        && ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP))) {
-        s32 devLogicIdSigned = HcclGetThreadDeviceId();
-        CHK_PRT_RET(devLogicIdSigned < 0,
-            HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
-        EndpointMonitor::GetInstance(devLogicIdSigned).RegisterToEndpointMonitor(devLogicIdSigned, handle);
-    }
-
-    HCCL_INFO("[%s] endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] create endpointHandle [%p] done.", 
-            __func__, endpoint->protocol, endpoint->loc.locType, handle);
+    CHK_RET(CreateBuiltinEndpoint(endpoint, endpointHandle));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }

@@ -218,6 +218,29 @@ void LoadPluginsOnce()
     }
     LoadExplicitPlugins(getenv(HCOMM_NIC_PLUGIN_SO_ENV));
 }
+
+template <typename PluginOps>
+void DestroyPluginCtx(PluginOps *ops, void *pluginCtx)
+{
+    if (ops != nullptr && ops->destroy != nullptr) {
+        ops->destroy(pluginCtx);
+    }
+}
+
+template <typename PluginOps>
+HcommResult InitPluginCtxOrDestroy(PluginOps *ops, void *pluginCtx)
+{
+    CHK_PTR_NULL(pluginCtx);
+    CHK_PTR_NULL(ops);
+    if (ops->init == nullptr) {
+        return HCCL_SUCCESS;
+    }
+    HcommResult ret = ops->init(pluginCtx);
+    if (ret != HCCL_SUCCESS) {
+        DestroyPluginCtx(ops, pluginCtx);
+    }
+    return ret;
+}
 } // namespace
 
 void LoadAllNicPlugins()
@@ -249,22 +272,13 @@ HcommResult CreatePluginEndpoint(const EndpointDesc *endpoint, EndpointHandle *e
     void *pluginCtx = nullptr;
     HcommNicEndpointOps *ops = nullptr;
     CHK_RET(static_cast<HcclResult>(entry->createEndpoint(endpoint, sizeof(*endpoint), &pluginCtx, &ops)));
-    CHK_PTR_NULL(pluginCtx);
-    CHK_PTR_NULL(ops);
-    if (ops->init != nullptr) {
-        HcommResult ret = ops->init(pluginCtx);
-        if (ret != HCCL_SUCCESS) {
-            if (ops->destroy != nullptr) {
-                ops->destroy(pluginCtx);
-            }
-            return ret;
-        }
+    HcommResult ret = InitPluginCtxOrDestroy(ops, pluginCtx);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
     }
     PluginEndpointCtx *ctx = new (std::nothrow) PluginEndpointCtx{ops, pluginCtx, entry};
     if (ctx == nullptr) {
-        if (ops->destroy != nullptr) {
-            ops->destroy(pluginCtx);
-        }
+        DestroyPluginCtx(ops, pluginCtx);
         return HCCL_E_MEMORY;
     }
     *endpointHandle = MAKE_PLUGIN_EP_HANDLE(ctx);
@@ -294,22 +308,13 @@ HcommResult CreatePluginChannel(EndpointHandle endpointHandle, const HcommChanne
     HcommNicChannelOps *ops = nullptr;
     CHK_RET(static_cast<HcclResult>(endpointCtx->entry->createChannel(endpointCtx->ctx, channelDesc,
         sizeof(*channelDesc), &pluginCtx, &ops)));
-    CHK_PTR_NULL(pluginCtx);
-    CHK_PTR_NULL(ops);
-    if (ops->init != nullptr) {
-        HcommResult ret = ops->init(pluginCtx);
-        if (ret != HCCL_SUCCESS) {
-            if (ops->destroy != nullptr) {
-                ops->destroy(pluginCtx);
-            }
-            return ret;
-        }
+    HcommResult ret = InitPluginCtxOrDestroy(ops, pluginCtx);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
     }
     PluginChannelCtx *ctx = new (std::nothrow) PluginChannelCtx{ops, pluginCtx, endpointCtx->entry};
     if (ctx == nullptr) {
-        if (ops->destroy != nullptr) {
-            ops->destroy(pluginCtx);
-        }
+        DestroyPluginCtx(ops, pluginCtx);
         return HCCL_E_MEMORY;
     }
     *channelHandle = MAKE_PLUGIN_CH_HANDLE(ctx);

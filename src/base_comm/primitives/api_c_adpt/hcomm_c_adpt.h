@@ -12,6 +12,7 @@
 #define HCOMM_C_ADPT_H
 
 #include "hcomm_res.h"
+#include "hcomm_nic_plugin.h"
 #include "mem_host_pub.h"
 #include "hccl_diag.h"
 
@@ -41,33 +42,11 @@ typedef CommMem HcommMem;
 
 typedef HcommMemHandle MemHandle;
 
-#ifndef HCOMM_MEM_GRANT_INFO_DEFINED
-#define HCOMM_MEM_GRANT_INFO_DEFINED
-typedef struct {
-    uint32_t sdid;
-    int32_t pid;
-} HcommMemGrantInfo;
-#endif
-
 struct CommMemInfo {
     CommMem mem {};
     void* bufferHandle {nullptr};
     char memTag[HCOMM_RES_TAG_MAX_LEN] = {0};
 };
-
-/**
- * @brief 通信设备Endpoint监听配置结构体
- */
-#ifndef HCOMM_ENDPOINT_LISTEN_CONFIG_DEFINED
-#define HCOMM_ENDPOINT_LISTEN_CONFIG_DEFINED
-typedef struct {
-    union {
-        uint8_t raws[24]; ///< 通用数据区，用于未来扩展，如backlog, timeout等
-        struct {
-        };
-    };
-} HcommEndpointListenConfig;
-#endif
 
 HcommResult HcommResMgrInit(uint32_t devPhyId);
 

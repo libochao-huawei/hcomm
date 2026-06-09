@@ -10,6 +10,10 @@
 
 #include "endpoint.h"
 #include "channel.h"
+#include "host_peer_ra_init.h"
+#include <mutex>
+#include <unordered_set>
+#include "hccp.h"
 #include "log.h"
 
 namespace hcomm_host_nic {
@@ -88,5 +92,25 @@ void Channel::AddPtrArrayDevMem(std::shared_ptr<hccl::DeviceMem> ptrArrayMem)
 void Channel::ReleasePtrArrayDevMems()
 {
     ptrArrayDevMems_.clear();
+}
+
+HcclResult InitHostPeerRaOnce(uint32_t hostResourceId, const char *logPrefix)
+{
+    static std::mutex peerRaMutex;
+    static std::unordered_set<uint32_t> initializedHostResources;
+
+    std::lock_guard<std::mutex> lock(peerRaMutex);
+    if (initializedHostResources.count(hostResourceId) != 0) {
+        return HCCL_SUCCESS;
+    }
+
+    Hccl::HRaInitConfig cfg;
+    cfg.phyId = hostResourceId;
+    cfg.mode = Hccl::HrtNetworkMode::PEER;
+    EXCEPTION_CATCH(Hccl::HrtRaInit(cfg), return HCCL_E_INTERNAL);
+    initializedHostResources.insert(hostResourceId);
+    HCCL_INFO("[%s][%s] host peer RA init success, hostResourceId[%u].",
+        logPrefix == nullptr ? "HostNicEndpoint" : logPrefix, __func__, hostResourceId);
+    return HCCL_SUCCESS;
 }
 } // namespace hcomm_host_nic
