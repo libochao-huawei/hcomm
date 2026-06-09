@@ -488,10 +488,3 @@ TEST_F(CommConfigTest, Check_taskexception_enable)
     hcomm::SetTaskExceptionEnable(taskExceptionEnable);
     EXPECT_EQ(hcomm::GetTaskExceptionEnable(), taskExceptionEnable);
 }
-
-TEST_F(CommConfigTest, Check_notifyWaitTimeout)
-{
-    u32 notifyWaitTimeout = 68;
-    hcomm::SetNotifyWaitTimeout(notifyWaitTimeout);
-    EXPECT_EQ(hcomm::GetNotifyWaitTimeout(), notifyWaitTimeout);
-}

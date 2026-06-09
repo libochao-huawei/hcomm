@@ -86,7 +86,6 @@ HcclResult CollCommAicpu::InitHDCommunicate(CommAicpuParam *commAicpuParam)
 void CollCommAicpu::InitIndopEnv(CommAicpuParam *commAicpuParam)
 {
     hcomm::SetTaskExceptionEnable(commAicpuParam->commConfig.taskExceptionEnable);
-    hcomm::SetNotifyWaitTimeout(commAicpuParam->commConfig.notifyWaitTimeout);
     HCCL_RUN_INFO("[%s]Env: taskExceptionEnable[%d], notifyWaitTimeout[%u]",
         __func__, commAicpuParam->commConfig.taskExceptionEnable, commAicpuParam->commConfig.notifyWaitTimeout);
 }

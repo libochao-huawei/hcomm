@@ -19,6 +19,9 @@
 #include "hccl_api_data.h"
 #include "log.h"
 
+constexpr uint32_t NOTIFY_WAIT_TIMEOUT_DEFAULT = 1800;
+constexpr uint32_t RTSQ_FULL_TIMEOUT_DEFAULT = 1820;
+
 class LaunchContext {
 public:
     LaunchContext();
@@ -43,6 +46,10 @@ public:
         }
     }
 
+    HcclResult SetNotifyWaitTimeOut(uint32_t timeout);
+    HcclResult GetNotifyWaitTimeOut(uint32_t& timeout);
+    HcclResult SetSqFullTimeOut(uint32_t timeout);
+    uint32_t GetSqFullTimeOut();
     inline bool IsBatchLaunchMode() const
     {
         return mode_ == HCOMM_LAUNCH_MODE_BATCH;
@@ -57,6 +64,17 @@ private:
     std::string launchTag_; // 当前tag
     std::unordered_map<std::string, std::unordered_set<ThreadHandle>> launchModeMap_; // 按tag粒度记录当前线程使用的thread
     std::vector<ThreadHandle> threadVec_; // 不区分tag，记录当前线程使用的thread
+
+    struct NotifyWaitTimeoutConfig {
+        uint32_t notifyWaitTimeout = NOTIFY_WAIT_TIMEOUT_DEFAULT;
+        bool isSet = false;
+    } notifyWaitTimeoutConfig_;
+
+    struct SqFullTimeoutConfig {
+        uint32_t sqFullTimeout = RTSQ_FULL_TIMEOUT_DEFAULT;
+        bool isSet = false;
+    } sqFullTimeoutConfig_;
+
     HcommLaunchMode mode_ = HCOMM_LAUNCH_MODE_EAGER;
 };
 

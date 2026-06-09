@@ -501,6 +501,38 @@ extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle chan
  */
 extern int32_t HcommChannelFence(ChannelHandle channel);
 
+/**
+ * @brief 设置通知等待超时时间
+ * @param[in] timeOut 通知等待超时时间(秒)
+ * @return int32_t 执行结果状态码
+ * @note 当前仅支持AICPU模式
+ */
+extern int32_t HcommSetNotifyWaitTimeOut(uint32_t timeOut);
+
+/**
+ * @brief 设置线程资源获取超时时间
+ * @param[in] timeOut 线程资源获取超时时间(秒)
+ * @return int32_t 执行结果状态码
+ * @note 当前仅支持AICPU模式
+ */
+extern int32_t HcommThreadResAcquireTimeOut(uint32_t timeOut);
+
+/**
+ * @brief 等待通知事件
+ * @param[in] thread 线程句柄
+ * @param[in] channel 通道句柄
+ * @param[in] localNotifyIdx 本地通知索引
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommChannelNotifyWaitOnThreadWithDefaultTimeout(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx);
+
+/**
+ * @brief 等待通知事件
+ * @param[in] thread 线程句柄
+ * @param[in] notifyIdx 通知索引
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommThreadNotifyWaitOnThreadWithDefaultTimeout(ThreadHandle thread, uint32_t notifyIdx);
 /** @} */  // 算子编程接口
 #ifdef __cplusplus
 }
