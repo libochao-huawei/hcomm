@@ -4212,6 +4212,45 @@ int RaQpBatchModify(RdmaHandle rdmaHandle, QpHandle qpHandle[], unsigned int num
     return 0;
 }
 
+int RaQpDestroyWithoutCQ(void *handle)
+{
+    return 0;
+}
+
+int RaSendWrVerbs(void *handle, struct SendWrVerbs *wr, struct SendWrRsp *opRsp)
+{
+    return 0;
+}
+
+int RaRecvWrVerbs(void *handle, struct RecvWrVerbs *wr)
+{
+    return 0;
+}
+
+int RaPollTypicalCq(void *cqHandle, unsigned int num, void *wc)
+{
+    return 0;
+}
+
+int RaTypicalCqCreate(void *rdevHandle, unsigned int cqDepth, unsigned int *cqn, void **cqHandle)
+{
+    *cqn = 0;
+    *cqHandle = (void *)0x1;
+    return 0;
+}
+
+int RaTypicalCqDestroy(void *rdevHandle, unsigned int cqn, void *cqHandle)
+{
+    return 0;
+}
+
+int RaQpCreateWithCQWithAttrs(void *rdevHandle, struct QpExtAttrs *extAttrs,
+    unsigned int sendCqn, unsigned int recvCqn, void **qpHandle)
+{
+    *qpHandle = (void *)0x1;
+    return 0;
+}
+
 HcclResult HcclSocketSendBuff(HcclSocket *obj, const void *data, u64 size)
 {
     HCCL_INFO("call HcclSocketSendBuff");
