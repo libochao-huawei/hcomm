@@ -21,6 +21,7 @@
 #include "network_manager_pub.h"
 #include "dlhal_function.h"
 #include "dlra_function.h"
+#include "adapter_rts_common.h"
 
 using namespace hccl;
 
@@ -122,8 +123,8 @@ HcclResult GlobalNetDevMgr::GetDeviceVnicIP(u32 devicePhyId, u32 superDeviceId, 
 {
     s32 localDeviceLogicId;
     u32 localDeviceId;
-    CHK_RET(hrtGetDevice(&localDeviceLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(localDeviceLogicId), localDeviceId));
+    CHK_RET(hrtGetDeviceRefresh(&localDeviceLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(localDeviceLogicId), localDeviceId, true));
 
     // 先创建进程
     bool isHostUseDevNic;

@@ -50,8 +50,8 @@ HcclResult CpuTsThread::Init()
     CHK_RET(hrtGetDeviceType(devType_));
     if (!isDeviceSide_) {
         s32 deviceLogicId;
-        CHK_RET(hrtGetDevice(&deviceLogicId));
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devId_));
+        CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devId_, true));
         if (streamType_ == StreamType::STREAM_TYPE_DEVICE || notifyLoadType_ == NotifyLoadType::DEVICE_NOTIFY) {
             return HCCL_E_NOT_SUPPORT;
         }

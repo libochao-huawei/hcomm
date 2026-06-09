@@ -418,7 +418,7 @@ HcclResult AivUrmaChannel::BuildConnection()
     CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr));
 
     s32 deviceLogicId;
-    CHK_RET(hrtGetDevice(&deviceLogicId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
     std::unique_ptr<Hccl::DevUbConnection> ubConn = nullptr;

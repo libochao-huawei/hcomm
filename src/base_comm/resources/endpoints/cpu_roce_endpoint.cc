@@ -49,10 +49,10 @@ HcclResult CpuRoceEndpoint::Init()
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     EXCEPTION_CATCH(Hccl::HccpPeerManager::GetInstance().Init(devId), return HCCL_E_INTERNAL);
     u32 devPhyId = 0;
-    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId, true));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     TRY_CATCH_RETURN(ctxHandle_ = static_cast<void *>(
         rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET)));
@@ -74,9 +74,9 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
-    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId, true));
 
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
     Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
@@ -95,9 +95,9 @@ HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
-    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId, true));
 
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
     Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
@@ -111,9 +111,9 @@ HcclResult CpuRoceEndpoint::ServerSocketGetListenPort(uint32_t *port)
     std::lock_guard<std::mutex> lock(portMutex_);
     CHK_PTR_NULL(port);
     s32 devId = 0;
-    CHK_RET(hrtGetDevice(&devId));
+    CHK_RET(hrtGetDeviceRefresh(&devId));
     u32 devPhyId = 0;
-    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId, true));
 
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));

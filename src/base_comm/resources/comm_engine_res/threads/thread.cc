@@ -132,7 +132,7 @@ HcclResult ValidateThreadParams(uint32_t threadNum, uint32_t notifyNumPerThread)
 
 HcclResult SaveThreads(const vector<shared_ptr<Thread>> &newThreads) {
     int32_t deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
 
     lock_guard<mutex> lock(g_ThreadMapMtx);
     for (const auto &threadPtr : newThreads) {
@@ -190,7 +190,7 @@ HcclResult FillThreadD2HMap(ThreadHandle *deviceThreadHandles,
     ThreadHandle *hostThreadHandles, uint32_t listNum)
 {
     int32_t deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
 
     lock_guard<mutex> lock(g_ThreadMapMtx);
     for (uint32_t idx = 0; idx < listNum; idx++) {
@@ -244,7 +244,7 @@ static HcclResult FreeThreadHandlesLocked(const ThreadHandle *threads, uint32_t 
     vector<ThreadHandle>& deviceHandles)
 {
     int32_t deviceId = 0;
-    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceId));
 
     lock_guard<mutex> lock(g_ThreadMapMtx);
     for (uint32_t i = 0; i < threadNum; ++i) {

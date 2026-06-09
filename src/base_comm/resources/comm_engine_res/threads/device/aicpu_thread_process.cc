@@ -41,6 +41,9 @@ HcclResult AicpuThreadProcess::InitThreads(ThreadMgrAicpuParam *param)
 
 HcclResult AicpuThreadProcess::AicpuThreadInit(ThreadMgrAicpuParam *param)
 {
+    CHK_PTR_NULL(param);
+    HCCL_INFO("[AicpuThreadProcess][%s] set local device, deviceLogicId[%d], deviceType[%u], threadNum[%u]",
+        __func__, param->deviceLogicId, param->deviceType, param->threadNum);
     CHK_RET(hrtSetWorkModeAicpu(true));
     CHK_RET(hrtSetlocalDevice(param->deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(static_cast<DevType>(param->deviceType)));

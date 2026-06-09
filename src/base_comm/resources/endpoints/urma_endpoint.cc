@@ -51,13 +51,13 @@ HcclResult UrmaEndpoint::Init()
 
     u32 devPhyId;
     s32 deviceLogicId;
-    ret = hrtGetDevice(&deviceLogicId);
+    ret = hrtGetDeviceRefresh(&deviceLogicId);
     if(ret != HCCL_SUCCESS){
-        HCCL_ERROR("call hrtGetDevice failed, deviceLogicId[%d]", deviceLogicId);
+        HCCL_ERROR("call hrtGetDeviceRefresh failed, deviceLogicId[%d]", deviceLogicId);
         return ret;
     }
     Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
-    ret = hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId);
+    ret = hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId, true);
     if(ret!= HCCL_SUCCESS){
         HCCL_ERROR("call hrtGetDevicePhyIdByIndex failed, deviceLogicId[%d], devPhyId[%u]",deviceLogicId, devPhyId);
         return ret;

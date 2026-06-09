@@ -32,8 +32,8 @@ HcclResult UboeEndpoint::Init()
 
     s32 deviceLogicId;
     u32 devPhyId;
-    CHK_RET(hrtGetDevice(&deviceLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId));
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId, true));
     endpointDesc_.loc.device.devPhyId = devPhyId;
 
     Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
