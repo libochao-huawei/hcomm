@@ -215,20 +215,20 @@ HcclResult hcclCreateAscendQPWithCQWithAttr(AscendCQInfo* ascendSendCQInfo, Asce
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclDestroyAscendVerbsQP(AscendVerbsQPInfo* ascendQPInfo)
+HcclResult hcclDestroyAscendVerbsQP(AscendVerbsQPInfo* ascendQPVerbsInfo)
 {
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
-    CHK_PTR_NULL(ascendQPInfo);
+    CHK_PTR_NULL(ascendQPVerbsInfo);
     struct TypicalQp qpInfo;
-    qpInfo.qpn = ascendQPInfo->qpn;
-    qpInfo.gidIdx = ascendQPInfo->gidIdx;
+    qpInfo.qpn = ascendQPVerbsInfo->qpn;
+    qpInfo.gidIdx = ascendQPVerbsInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
-        qpInfo.gid[i] = ascendQPInfo->gid[i];
+        qpInfo.gid[i] = ascendQPVerbsInfo->gid[i];
     }
-    qpInfo.psn = ascendQPInfo->psn;
+    qpInfo.psn = ascendQPVerbsInfo->psn;
     CHK_RET(TypicalQpManager::GetInstance().DestroyQpWithoutCQ(qpInfo));
-    HCCL_INFO("hcclDestroyAscendVerbsQP success! qpn[%u]", ascendQPInfo->qpn);
+    HCCL_INFO("hcclDestroyAscendVerbsQP success! qpn[%u]", ascendQPVerbsInfo->qpn);
     return HCCL_SUCCESS;
 }
 
@@ -294,12 +294,12 @@ HcclResult hcclModifyAscendVerbsQP(AscendVerbsQPInfo* localQPInfo, AscendVerbsQP
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclModifyAscendVerbsQPEx(AscendVerbsQPInfo* localQPInfo, AscendVerbsQPInfo* remoteQPInfo, AscendQPQos* qpQos)
+HcclResult hcclModifyAscendVerbsQPEx(AscendVerbsQPInfo* localQPVerbsInfo, AscendVerbsQPInfo* remoteQPVerbsInfo, AscendQPQos* qpQos)
 {
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
-    CHK_PTR_NULL(localQPInfo);
-    CHK_PTR_NULL(remoteQPInfo);
+    CHK_PTR_NULL(localQPVerbsInfo);
+    CHK_PTR_NULL(remoteQPVerbsInfo);
     CHK_PTR_NULL(qpQos);
     CHK_PRT_RET((qpQos->sl < HCCL_RDMA_SL_MIN || qpQos->sl > HCCL_RDMA_SL_MAX),
         HCCL_ERROR("[hcclModifyAscendVerbsQPEx]The value of sl[%u] is invalid. except: [%u, %u].",
@@ -313,22 +313,22 @@ HcclResult hcclModifyAscendVerbsQPEx(AscendVerbsQPInfo* localQPInfo, AscendVerbs
         qpQos->tc), HCCL_E_PARA);
 
     struct TypicalQp localQp;
-    localQp.qpn = localQPInfo->qpn;
-    localQp.gidIdx = localQPInfo->gidIdx;
+    localQp.qpn = localQPVerbsInfo->qpn;
+    localQp.gidIdx = localQPVerbsInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
-        localQp.gid[i] = localQPInfo->gid[i];
+        localQp.gid[i] = localQPVerbsInfo->gid[i];
     }
-    localQp.psn = localQPInfo->psn;
+    localQp.psn = localQPVerbsInfo->psn;
     localQp.sl = qpQos->sl;
     localQp.tc = qpQos->tc;
 
     struct TypicalQp remoteQp = {};
-    remoteQp.qpn = remoteQPInfo->qpn;
-    remoteQp.gidIdx = remoteQPInfo->gidIdx;
+    remoteQp.qpn = remoteQPVerbsInfo->qpn;
+    remoteQp.gidIdx = remoteQPVerbsInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
-        remoteQp.gid[i] = remoteQPInfo->gid[i];
+        remoteQp.gid[i] = remoteQPVerbsInfo->gid[i];
     }
-    remoteQp.psn = remoteQPInfo->psn;
+    remoteQp.psn = remoteQPVerbsInfo->psn;
     CHK_RET(TypicalQpManager::GetInstance().ModifyQp(localQp, remoteQp));
     return HCCL_SUCCESS;
 }

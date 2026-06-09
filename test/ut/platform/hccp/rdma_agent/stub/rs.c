@@ -696,3 +696,38 @@ int RsGetLbMax(unsigned int phyId, unsigned int rdevIndex, int *lbMax)
 {
 	return 0;
 }
+
+/* P2P stubs */
+int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth, unsigned int *cqn)
+{
+	return 0;
+}
+
+int RsTypicalCqDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn)
+{
+	return 0;
+}
+
+int RsGetLiteCqAttr(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
+	struct rdma_lite_device_cq_attr *deviceCqAttr)
+{
+	return 0;
+}
+
+int RsQpCreateWithCQWithAttrs(unsigned int phyId, unsigned int rdevIndex,
+	unsigned int sendCqn, unsigned int recvCqn,
+	struct RsQpNormWithAttrs *qpNorm, struct RsQpRespWithAttrs *qpResp)
+{
+	return 0;
+}
+
+int RsQpDestroyWithoutCQ(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn)
+{
+	return 0;
+}
+
+int RsGetLiteQpAttr(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
+	struct LiteQpAttrResp *resp)
+{
+	return 0;
+}

@@ -67,6 +67,10 @@ void RcRaHdcLiteQpCreate();
 void TcRaHdcTlvRequest();
 void TcRaHdcGetTlvRecvMsg();
 void TcRaHdcQpCreateWithAttrs();
+void TcHdcLiteTypicalCqStoreFindRemove(void);
+void TcHdcTypicalCqCreateDestroy(void);
+void TcHdcQpCreateWithCQWithAttrs(void);
+void TcHdcQpDestroyWithoutCQ(void);
 #ifdef __cplusplus
 }
 #endif
