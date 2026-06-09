@@ -178,13 +178,18 @@ HcclResult AlltoallvContinuousPipeline::SplitBuffer(const bool enablePingPong)
     // 如果是pingpong模式，需要两倍的大小
     inBufferDataSize_.resize(blockNum);
 
-    const u64 minBufferSize = globalCountsInfoSize + HCCL_MIN_SLICE_ALIGN * blockNum;
+    u64 alignSize = HCCL_MIN_SLICE_ALIGN;
+    const u64 minBufferSize = globalCountsInfoSize + alignSize * blockNum;
     CHK_PRT_RET(bufferSize < minBufferSize,
         HCCL_ERROR("[AlltoallvContinuousPipeline][SplitBuffer]Insufficient buffer size [%llu Byte]; it needs to be "
                    "greater than [%llu Byte].", bufferSize, minBufferSize), HCCL_E_MEMORY);
 
+    if (bufferSize < globalCountsInfoSize + HCCL_MIN_SLICE_ALIGN_910_93 * blockNum) {
+        alignSize = HCCL_MIN_SLICE_ALIGN_910_93;
+    } 
+
     countsPerBlock_ = (((bufferSize - globalCountsInfoSize) / blockNum) /
-        HCCL_MIN_SLICE_ALIGN * HCCL_MIN_SLICE_ALIGN) / unitSize_; // 前面已经可以保证countsPerBlock_大于0，不再检查
+        alignSize * alignSize) / unitSize_; // 前面已经可以保证countsPerBlock_大于0，不再检查
     sizePerBlock_ = countsPerBlock_ * unitSize_;
 
     for (u32 rank = 0; rank < userRankSize_; ++rank) {
@@ -195,8 +200,8 @@ HcclResult AlltoallvContinuousPipeline::SplitBuffer(const bool enablePingPong)
         dataBlockOffsets_.emplace_back(sizePerBlock_ * blockIdx);
     }
 
-    HCCL_INFO("[AlltoallvContinuousPipeline][SplitBuffer] Split buffer done, sizePerBlock[%llu], countsPerBlock[%llu], "
-        "blockNum[%u]", sizePerBlock_, countsPerBlock_, blockNum);
+    HCCL_INFO("[AlltoallvContinuousPipeline][SplitBuffer] Split buffer done, alignSize[%llu], sizePerBlock[%llu], "
+        "countsPerBlock[%llu], blockNum[%u]", alignSize, sizePerBlock_, countsPerBlock_, blockNum);
     return HCCL_SUCCESS;
 }
 
@@ -204,7 +209,8 @@ HcclResult AlltoallvContinuousPipeline::PartitionSubStreamsAndNotifies(const std
     const std::vector<std::shared_ptr<LocalNotify>> &signalMainToSub,
     const std::vector<std::shared_ptr<LocalNotify>> &signalSubToMain)
 {
-    const u32 sdmaConcurrentNum = intraRankSize_ - 1;
+    constexpr u32 DEVICE_EIGHT = 8;
+    const u32 sdmaConcurrentNum = std::min(intraRankSize_ - 1, DEVICE_EIGHT);
     const u32 totalSubstreamSize = rdmaConcurrentNum_ + sdmaConcurrentNum;
     CHK_PRT_RET(subStreams.size() < totalSubstreamSize || signalMainToSub.size() < totalSubstreamSize ||
         signalSubToMain.size() < totalSubstreamSize,
@@ -251,7 +257,7 @@ HcclResult AlltoallvContinuousPipeline::PartitionSubStreamsAndNotifies(const std
 
 inline u32 AlltoallvContinuousPipeline::GetSdmaSubStreamIdx(const u32 remoteRank) const
 {
-    return remoteRank > intraRankId_ ? remoteRank - 1 : remoteRank;
+    return (remoteRank > intraRankId_ ? remoteRank - 1 : remoteRank) % sdmaSubStreams_.size();
 }
 
 inline u64 AlltoallvContinuousPipeline::GetLocalSendCountOfRank(const u32 targetRank) const
