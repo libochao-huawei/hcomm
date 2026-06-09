@@ -2189,9 +2189,8 @@ void Heartbeat::PrintLocalOpDiagInfo()
     }
 
     // 3. 收集所有OpDataInfo，按index排序
-    std::vector<OpDataInfo> allOps;
+    std::vector<std::pair<std::string, OpDataInfo>> allOps;
     for (auto &tagPair : tagOpDataMap) {
-        const std::string &tag = tagPair.first;
         auto &opQueue = tagPair.second;
         if (opQueue == nullptr || opQueue->empty()) {
             continue;
@@ -2201,7 +2200,7 @@ void Heartbeat::PrintLocalOpDiagInfo()
         while (!tmpQueue.empty()) {
             OpDataInfo opData = tmpQueue.front();
             tmpQueue.pop();
-            allOps.push_back(opData);
+            allOps.push_back({tagPair.first, opData});
         }
     }
 
@@ -2212,7 +2211,7 @@ void Heartbeat::PrintLocalOpDiagInfo()
     }
 
     std::sort(allOps.begin(), allOps.end(),
-        [](const OpDataInfo &a, const OpDataInfo &b) { return a.index < b.index; });
+        [](const auto &a, const auto &b) { return a.second.index < b.second.index; });
 
     // 4. 以tailCount为中心，打印附近的op（前后各10个）
     int32_t tailCount = counter.second;
@@ -2225,7 +2224,7 @@ void Heartbeat::PrintLocalOpDiagInfo()
 
     // 找到index最接近tailCount的位置
     auto it = std::lower_bound(allOps.begin(), allOps.end(), static_cast<u32>(tailCount),
-        [](const OpDataInfo &op, u32 val) { return op.index < val; });
+        [](const auto &op, u32 val) { return op.second.index < val; });
 
     // 计算打印范围
     auto printStart = it;
@@ -2238,10 +2237,10 @@ void Heartbeat::PrintLocalOpDiagInfo()
     }
 
     for (auto iter = printStart; iter != printEnd; ++iter) {
-        const OpDataInfo &opData = *iter;
-        HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo]   opIndex[%u]: "
+        const OpDataInfo &opData = iter->second;
+        HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo]   tag[%s] opIndex[%u]: "
             "count[%llu], dataType[%d], reduceType[%d], rootId[%u], src[%p], dst[%p]",
-            opData.index,
+            iter->first.c_str(), opData.index,
             opData.count, static_cast<int>(opData.dataType),
             static_cast<int>(opData.reduceType), opData.rootId, opData.src, opData.dst);
     }
