@@ -182,3 +182,100 @@ TEST_F(SocketManagerTest, test_BatchCreateSockets_with_SocketConfig) {
     socketMgr.BatchCreateSockets(socketConfig);
     socketMgr.GetConnectedSocket(socketConfig);
 }
+
+TEST_F(SocketManagerTest, Ut_HostListenPortDetect_EmptyRankLevelInfos_Expect_NoThrow)
+{
+    // Given: rankInfo with empty rankLevelInfos
+    NewRankInfo rankInfo;
+    rankInfo.rankId = 0;
+    rankInfo.deviceId = 0;
+    rankInfo.localId = 0;
+    // rankLevelInfos is empty by default
+
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+
+    // When & Then: function should iterate zero times and return without error
+    EXPECT_NO_THROW(SocketManager::HostListenPortDetect(rankInfo));
+}
+
+TEST_F(SocketManagerTest, Ut_HostListenPortDetect_NoTopoGraph_Expect_NoThrow)
+{
+    // Given: rankInfo with rankLevelInfos but PhyTopo has no graph built
+    NewRankInfo rankInfo;
+    rankInfo.rankId = 0;
+    rankInfo.deviceId = 0;
+    rankInfo.localId = 0;
+
+    AddressInfo addrInfo;
+    addrInfo.addr = IpAddress("192.168.1.1");
+    addrInfo.socketPort_ = 0;
+    RankLevelInfo levelInfo;
+    levelInfo.netLayer = 0;
+    levelInfo.rankAddrs.push_back(addrInfo);
+    rankInfo.rankLevelInfos.push_back(levelInfo);
+
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+
+    // When: PhyTopo has no built graph, GetTopoGraph returns nullptr
+    // Then: function should skip the nullptr graph, log debug, continue, and return without error
+    EXPECT_NO_THROW(SocketManager::HostListenPortDetect(rankInfo));
+    // hostPort should remain at default since no HOST link was processed
+    EXPECT_EQ(rankInfo.hostPort, DEFAULT_VALUE_TCPPORT);
+}
+
+TEST_F(SocketManagerTest, Ut_HostListenPortDetect_MultipleRankLevelInfos_Expect_NoThrow)
+{
+    // Given: multiple rankLevelInfos, all with no topo graph
+    NewRankInfo rankInfo;
+    rankInfo.rankId = 0;
+    rankInfo.deviceId = 0;
+    rankInfo.localId = 0;
+
+    for (u32 i = 0; i < 3; i++) {
+        AddressInfo addrInfo;
+        addrInfo.addr = IpAddress(StringFormat("192.168.%u.1", i + 1));
+        addrInfo.socketPort_ = 0;
+        RankLevelInfo levelInfo;
+        levelInfo.netLayer = i;
+        levelInfo.rankAddrs.push_back(addrInfo);
+        rankInfo.rankLevelInfos.push_back(levelInfo);
+    }
+
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+
+    // When & Then: iterate all level infos, all graphs nullptr, no throw
+    EXPECT_NO_THROW(SocketManager::HostListenPortDetect(rankInfo));
+    EXPECT_EQ(rankInfo.hostPort, DEFAULT_VALUE_TCPPORT);
+}
+
+TEST_F(SocketManagerTest, Ut_TearDown_HostSocketNull_Expect_EarlyReturn)
+{
+    // Given: hostSocket_ is nullptr (default state, no HostListenPortDetect called)
+
+    // When & Then: TearDown should return immediately without any side effects
+    EXPECT_NO_THROW(SocketManager::TearDown());
+}
+
+TEST_F(SocketManagerTest, Ut_HostListenPortDetect_TearDown_Sequence_Expect_NoThrow)
+{
+    // Given: full sequence HostListenPortDetect → TearDown with no HOST links
+    NewRankInfo rankInfo;
+    rankInfo.rankId = 0;
+    rankInfo.deviceId = 0;
+    rankInfo.localId = 0;
+    AddressInfo addrInfo;
+    addrInfo.addr = IpAddress("10.0.0.1");
+    RankLevelInfo levelInfo;
+    levelInfo.netLayer = 0;
+    levelInfo.rankAddrs.push_back(addrInfo);
+    rankInfo.rankLevelInfos.push_back(levelInfo);
+
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+
+    // When: execute the full sequence
+    EXPECT_NO_THROW(SocketManager::HostListenPortDetect(rankInfo));
+    EXPECT_NO_THROW(SocketManager::TearDown());
+
+    // Then: calling TearDown again should still be safe (idempotent)
+    EXPECT_NO_THROW(SocketManager::TearDown());
+}

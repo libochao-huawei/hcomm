@@ -57,6 +57,8 @@ public:
     void ServerInit(PortData &localPort);
 
     static void ServerInitAll(NewRankInfo &rankInfo);
+    static void HostListenPortDetect(NewRankInfo &rankInfo);
+    static void TearDown();
 
     bool ServerDeInit(PortData &localPort) const;
 
