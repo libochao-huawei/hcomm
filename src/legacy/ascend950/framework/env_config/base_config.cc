@@ -235,7 +235,7 @@ void EnvAlgoConfig::Parse()
         hcclAlgoConfigOss.str().c_str());
 
     bufferSize.Parse();
-    HCCL_RUN_INFO("[HCCL_ENV] HCCL_BUFFSIZE set by %s to [%llu]MB", bufferSize.GetSource(),
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_BUFFSIZE set by %s to [%llu]B", bufferSize.GetSource(),
         GetBuffSize());
 
     hcclAccelerator_.Parse();
