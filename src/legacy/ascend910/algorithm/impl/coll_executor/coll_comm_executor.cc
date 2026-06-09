@@ -1912,25 +1912,25 @@ std::vector<std::vector<Slice> > CollCommExecutor::AnyPathPrepareMultiRingSlice(
     std::vector<u32> rankList;
 
     ringRankList.reserve(ringCount);
-    singleRingSlices.reserve(ringRanks);
     rankList.reserve(ringRanks);
+    singleRingSlices.reserve(ringRanks);
 
     for (u32 ringIndex = 0; ringIndex < ringCount; ringIndex++) {
-        for (u32 segsIndex = 0; segsIndex < ringRanks; segsIndex++) {
+        for (u32 segsIndex = 0; segsIndex < ringRanks; ++segsIndex) {
             u32 deviceIdx = multiRingsOrder[ringIndex][segsIndex];
             std::vector<u32>::iterator iterRank = std::find(nicList.begin(), nicList.end(), deviceIdx);
             if (iterRank != nicList.end()) {
-                rankList.push_back(segsIndex);
                 u32 nicPosition = distance(nicList.begin(), iterRank);
                 for (u32 chunkIdx = 0; chunkIdx < chunkSize; chunkIdx++) {
                     Slice tempSlice = mutliSegsSlices[nicPosition * chunkSize + chunkIdx][ringIndex];
                     singleRingSlices.push_back(tempSlice);
                 }
+                rankList.push_back(segsIndex);
             }
         }
         mutliRingsSlices.push_back(singleRingSlices);
-        ringRankList.push_back(rankList);
         singleRingSlices.clear();
+        ringRankList.push_back(rankList);
         rankList.clear();
     }
 
