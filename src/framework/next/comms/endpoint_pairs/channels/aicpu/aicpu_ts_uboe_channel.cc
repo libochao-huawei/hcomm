@@ -16,6 +16,8 @@
 #include "comm_mems.h"
 #include "user_remote_mem_getter.h"
 
+#include "socket_mgr.h"
+
 // Orion
 #include "coll_alg_param.h"
 #include "topo_common_types.h"

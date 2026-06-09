@@ -12,7 +12,6 @@
 
 #include <atomic>
 #include "../channel.h"
-#include "../../sockets/socket_mgr.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"

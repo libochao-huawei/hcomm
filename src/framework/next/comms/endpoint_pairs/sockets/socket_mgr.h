@@ -18,7 +18,6 @@
 #include "hccl/hccl_res.h"
 #include "../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "socket_config.h"
-#include "orion_adapter_rts.h"
 
 namespace hcomm {
 

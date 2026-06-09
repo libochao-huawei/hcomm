@@ -13,10 +13,7 @@
 #include "../channel.h"
 
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "../../../../../../legacy/framework/resource_manager/socket/socket_manager.h"
-#include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
 #include "../../../../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
-#include "rma_connection.h"
 #include "p2p_transport.h"
 #include "p2p_connection.h"
 #include "ipc_local_notify.h"

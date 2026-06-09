@@ -21,6 +21,7 @@
 #include "p2p_connection.h"
 
 #include "../../sockets/socket_mgr.h"
+#include "../../../../../../legacy/framework/resource_manager/socket/socket_manager.h"
 
 namespace hcomm {
 

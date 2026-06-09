@@ -15,6 +15,8 @@
 #include "exception_handler.h"
 #include "comm_mems.h"
 
+#include "../../sockets/socket_mgr.h"
+
 // Orion
 #include "coll_alg_param.h"
 #include "topo_common_types.h"
