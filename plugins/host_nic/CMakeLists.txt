@@ -168,6 +168,7 @@ function(hcomm_host_nic_common target_name output_name)
         $<$<TARGET_EXISTS:runtime_headers>:runtime_headers>
         $<$<TARGET_EXISTS:acl_rt_headers>:acl_rt_headers>
         $<$<TARGET_EXISTS:ascend_hal_headers>:ascend_hal_headers>
+        $<$<TARGET_EXISTS:rdma_core_headers>:rdma_core_headers>
         -lrt
         -ldl
         -lpthread
