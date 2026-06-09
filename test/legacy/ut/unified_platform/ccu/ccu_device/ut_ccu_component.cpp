@@ -611,16 +611,18 @@ TEST_F(CcuComponentTest, Ut_GetTpInfo_Cached_ReturnsCachedValue)
     cachedTpInfo.tpHandle = 12345ULL;
     cachedTpInfo.mappedJettyPriority = 7U;
     cachedTpInfo.hasMappedJettyPriority = true;
-    cachedTpInfo.jettyErrTimeout = 2U;
-    cachedTpInfo.hasJettyErrTimeout = true;
+    cachedTpInfo.at = 2U;
+    cachedTpInfo.retryTimesInit = 0U;
+    cachedTpInfo.hasLinkAtRetry = true;
     ccuComponent.tpInfoMap[ipAddr] = cachedTpInfo;
 
     TpInfo result = ccuComponent.GetTpInfo(ipAddr);
     EXPECT_EQ(result.tpHandle, 12345ULL);
     EXPECT_EQ(result.mappedJettyPriority, 7U);
     EXPECT_TRUE(result.hasMappedJettyPriority);
-    EXPECT_EQ(result.jettyErrTimeout, 2U);
-    EXPECT_TRUE(result.hasJettyErrTimeout);
+    EXPECT_EQ(result.at, 2U);
+    EXPECT_EQ(result.retryTimesInit, 0U);
+    EXPECT_TRUE(result.hasLinkAtRetry);
 
     GlobalMockObject::verify();
 }
@@ -632,8 +634,9 @@ static HcclResult StubTpManagerGetTpInfoForLoop(TpManager *, const RaUbGetTpInfo
     tpInfo.tpHandle = 999ULL;
     tpInfo.mappedJettyPriority = 4U;
     tpInfo.hasMappedJettyPriority = true;
-    tpInfo.jettyErrTimeout = 1U;
-    tpInfo.hasJettyErrTimeout = true;
+    tpInfo.at = 1U;
+    tpInfo.retryTimesInit = 0U;
+    tpInfo.hasLinkAtRetry = true;
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -701,8 +704,9 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpSlAvailable_Expect_
     tpInfo.tpHandle = 0x555ULL;
     tpInfo.mappedJettyPriority = 7U;
     tpInfo.hasMappedJettyPriority = true;
-    tpInfo.jettyErrTimeout = 1U;
-    tpInfo.hasJettyErrTimeout = true;
+    tpInfo.at = 1U;
+    tpInfo.retryTimesInit = 0U;
+    tpInfo.hasLinkAtRetry = true;
     ccuComponent.tpInfoMap[ipAddr] = tpInfo;
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x222)));
@@ -741,8 +745,9 @@ TEST_F(CcuComponentTest, Ut_CreateAndImportLoopJettys_When_TpHandleZero_Expect_D
     tpInfo.tpHandle = 0ULL;
     tpInfo.mappedJettyPriority = static_cast<uint32_t>(UB_QOS_DEFAULT);
     tpInfo.hasMappedJettyPriority = true;
-    tpInfo.jettyErrTimeout = 1U;
-    tpInfo.hasJettyErrTimeout = true;
+    tpInfo.at = 1U;
+    tpInfo.retryTimesInit = 0U;
+    tpInfo.hasLinkAtRetry = true;
     ccuComponent.tpInfoMap[ipAddr] = tpInfo;
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue(reinterpret_cast<RdmaHandle>(0x555)));

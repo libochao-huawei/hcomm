@@ -456,11 +456,14 @@ static HcclResult ResolveLoopJettyQosAndErrTimeout(const TpInfo &loopTpInfo, con
         errTimeout = static_cast<uint8_t>(Hccl::EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
         return HcclResult::HCCL_SUCCESS;
     }
-    CHK_PRT_RET(!loopTpInfo.hasJettyErrTimeout,
-        HCCL_ERROR("[CcuComponent][CreateAndImportLoopJettys] TpMgr did not provide jettyErrTimeout, "
+    CHK_PRT_RET(!loopTpInfo.hasLinkAtRetry,
+        HCCL_ERROR("[CcuComponent][CreateAndImportLoopJettys] TpMgr did not provide link at/retry for TA timeout, "
             "devLogicId[%d].", devLogicId),
         HcclResult::HCCL_E_INTERNAL);
-    errTimeout = loopTpInfo.jettyErrTimeout;
+    TpAttrInfo linkTimingAttr;
+    linkTimingAttr.tpAttr.at = loopTpInfo.at;
+    linkTimingAttr.tpAttr.retryTimesInit = loopTpInfo.retryTimesInit;
+    errTimeout = TpMgr::CalcTaTimeout(linkTimingAttr);
     return HcclResult::HCCL_SUCCESS;
 }
 

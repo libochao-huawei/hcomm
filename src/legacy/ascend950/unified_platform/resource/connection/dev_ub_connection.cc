@@ -177,13 +177,16 @@ void DevUbConnection::GetTimeOut()
         return;
     }
 
-    if (!tpInfo.hasJettyErrTimeout) {
-        HCCL_ERROR("[DevUbConnection][%s] TpManager did not provide jettyErrTimeout, param protocol[%s].", __func__,
-            tpProtocol.Describe().c_str());
+    if (!tpInfo.hasLinkAtRetry) {
+        HCCL_ERROR("[DevUbConnection][%s] TpManager did not provide link at/retry for TA timeout, param protocol[%s].",
+            __func__, tpProtocol.Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    jettyTimeOut = tpInfo.jettyErrTimeout;
+    TpAttrInfo linkTimingAttr;
+    linkTimingAttr.tpAttr.at = tpInfo.at;
+    linkTimingAttr.tpAttr.retryTimesInit = tpInfo.retryTimesInit;
+    jettyTimeOut = TpManager::CalcTaTimeout(linkTimingAttr);
     HCCL_INFO("[DevUbConnection][%s] jettyTimeOut[%u] (%ums) from tpInfo.", __func__, jettyTimeOut,
         TpManager::TaHwValueToMs(jettyTimeOut));
 }

@@ -361,7 +361,7 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Rtp_WithQos_Expect_Success)
     EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
     EXPECT_NE(tpInfo.tpHandle, 0U);
     EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
-    EXPECT_TRUE(tpInfo.hasJettyErrTimeout);
+    EXPECT_TRUE(tpInfo.hasLinkAtRetry);
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_CacheHit_Expect_Success)

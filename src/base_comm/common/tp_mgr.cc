@@ -438,8 +438,9 @@ HcclResult TpMgr::FinalizeGetTpInfo(RequestCtx reqCtx, const GetTpInfoParam &par
     tmpTpInfo.mappedJettyPriority = reqCtx.mappedSl & 0xFU;
     tmpTpInfo.hasMappedJettyPriority = true;
     if (param.tpProtocol != TpProtocol::CTP) {
-        tmpTpInfo.jettyErrTimeout = CalcTaTimeout(TpAttrInfo(reqCtx.linkTpAttr));
-        tmpTpInfo.hasJettyErrTimeout = true;
+        tmpTpInfo.at = reqCtx.linkTpAttr.at;
+        tmpTpInfo.retryTimesInit = reqCtx.linkTpAttr.retryTimesInit;
+        tmpTpInfo.hasLinkAtRetry = true;
     }
 
     HCCL_INFO("[TpMgr][%s] tp qos mapping ok: tpHandle[%llu] tpListIndex[%u] mappedSl[%u] jettyPriority[%u] qos[%u] "

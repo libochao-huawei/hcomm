@@ -166,10 +166,13 @@ HcclResult CcuConnection::UpdateInitStatus()
             errTimeout_ = static_cast<uint8_t>(Hccl::EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
             HCCL_INFO("[CcuConnection][%s] CTP, env errTimeout[%u].", __func__, errTimeout_);
         } else {
-            CHK_PRT_RET(!tpInfo_.hasJettyErrTimeout,
-                HCCL_ERROR("[CcuConnection][%s] TpMgr did not provide jettyErrTimeout.", __func__),
+            CHK_PRT_RET(!tpInfo_.hasLinkAtRetry,
+                HCCL_ERROR("[CcuConnection][%s] TpMgr did not provide link at/retry for TA timeout.", __func__),
                 HcclResult::HCCL_E_INTERNAL);
-            errTimeout_ = tpInfo_.jettyErrTimeout;
+            TpAttrInfo linkTimingAttr;
+            linkTimingAttr.tpAttr.at = tpInfo_.at;
+            linkTimingAttr.tpAttr.retryTimesInit = tpInfo_.retryTimesInit;
+            errTimeout_ = TpMgr::CalcTaTimeout(linkTimingAttr);
         }
         innerStatus_ = InnerStatus::JETTY_CREATING;
         return HcclResult::HCCL_SUCCESS;
@@ -502,7 +505,7 @@ HcclResult CcuConnection::ReleaseConnRes()
         (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(getTpInfoParam_, tpInfo_);
         tpInfo_.tpHandle = 0;
         tpInfo_.hasMappedJettyPriority = false;
-        tpInfo_.hasJettyErrTimeout = false;
+        tpInfo_.hasLinkAtRetry = false;
     }
     // CcuJetty 生命周期跟随通信域CcuJettyMgr
     // 不需要connection主动销毁

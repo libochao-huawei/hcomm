@@ -275,8 +275,9 @@ HcclResult TpManager::StoreGetTpInfoResult(const RaUbGetTpInfoParam &param, cons
     tmpTpInfo.mappedJettyPriority = reqCtx.mappedSl & 0xFU;
     tmpTpInfo.hasMappedJettyPriority = true;
     if (param.tpProtocol != TpProtocol::CTP) {
-        tmpTpInfo.jettyErrTimeout = CalcTaTimeout(TpAttrInfo(reqCtx.linkTpAttr));
-        tmpTpInfo.hasJettyErrTimeout = true;
+        tmpTpInfo.at = reqCtx.linkTpAttr.at;
+        tmpTpInfo.retryTimesInit = reqCtx.linkTpAttr.retryTimesInit;
+        tmpTpInfo.hasLinkAtRetry = true;
     }
     HCCL_INFO("[TpManager][%s] tp qos mapping ok: tpHandle[%llu] tpListIndex[%u] mappedSl[%u] qos[%u] param[%s].",
         __func__, tmpTpInfo.tpHandle, reqCtx.tpListIndex, static_cast<unsigned>(reqCtx.mappedSl & 0xFU),

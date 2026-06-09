@@ -54,9 +54,11 @@ struct TpInfo {
     TpHandle tpHandle{0};
     uint32_t mappedJettyPriority{0};
     bool hasMappedJettyPriority{false};
-    /// CalcTaTimeout 结果；TP/UBOE 在 GetTpInfo Finalize 时填充，CTP 由调用方按环境配置处理。
-    uint8_t jettyErrTimeout{0};
-    bool hasJettyErrTimeout{false};
+    /// GetTpInfo bootstrap 从 linkTpAttr 读出的 AT 档位与初始重试次数，供 Jetty 侧 CalcTaTimeout 使用。
+    uint8_t at{0};
+    uint8_t retryTimesInit{0};
+    /// true：at/retryTimesInit 已在 GetTpInfo 成功路径写入；仅 RTP/UBOE。CTP 恒为 false，建 Jetty 直接用环境变量 errTimeout。
+    bool hasLinkAtRetry{false};
 
     TpInfo() = default;
     TpInfo(const TpHandle handle)

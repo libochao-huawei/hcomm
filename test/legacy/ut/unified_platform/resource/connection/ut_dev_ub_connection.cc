@@ -32,8 +32,9 @@ using namespace Hccl;
 static HcclResult StubGetTpInfoWithJettyTimeout(TpManager *, const RaUbGetTpInfoParam &, TpInfo &tpInfo, bool)
 {
     tpInfo.tpHandle = 1ULL;
-    tpInfo.hasJettyErrTimeout = true;
-    tpInfo.jettyErrTimeout = 8U;
+    tpInfo.hasLinkAtRetry = true;
+    tpInfo.at = 2U;
+    tpInfo.retryTimesInit = 3U;
     return HCCL_SUCCESS;
 }
 

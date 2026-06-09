@@ -426,10 +426,13 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
     if (LOOP_JETTY_PROTOCOL == TpProtocol::CTP) {
         errTimeout = static_cast<uint8_t>(EnvConfig::GetInstance().GetRdmaConfig().GetUbTimeOut());
     } else {
-        CHK_PRT_RET(!tpInfo.hasJettyErrTimeout,
-            HCCL_ERROR("[CcuComponent][%s] TpManager did not provide jettyErrTimeout.", __func__),
+        CHK_PRT_RET(!tpInfo.hasLinkAtRetry,
+            HCCL_ERROR("[CcuComponent][%s] TpManager did not provide link at/retry for TA timeout.", __func__),
             HcclResult::HCCL_E_INTERNAL);
-        errTimeout = tpInfo.jettyErrTimeout;
+        TpAttrInfo linkTimingAttr;
+        linkTimingAttr.tpAttr.at = tpInfo.at;
+        linkTimingAttr.tpAttr.retryTimesInit = tpInfo.retryTimesInit;
+        errTimeout = TpManager::CalcTaTimeout(linkTimingAttr);
     }
 
     auto &createdVec = createdOutParamMap[dieId];

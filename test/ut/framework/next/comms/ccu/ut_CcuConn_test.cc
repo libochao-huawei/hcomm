@@ -134,8 +134,9 @@ HcclResult StubTpMgrGetTpInfoWithMappedPriority(hcomm::TpMgr *, const hcomm::Get
     tpInfo.tpHandle = 0x4321ULL;
     tpInfo.hasMappedJettyPriority = true;
     tpInfo.mappedJettyPriority = 4U;
-    tpInfo.hasJettyErrTimeout = true;
-    tpInfo.jettyErrTimeout = 16U;
+    tpInfo.hasLinkAtRetry = true;
+    tpInfo.at = 2U;
+    tpInfo.retryTimesInit = 3U;
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -249,8 +250,9 @@ HcclResult StubTpMgrGetTpInfoCaptureParam(hcomm::TpMgr *, const hcomm::GetTpInfo
     tpInfo.tpHandle = 0x4321ULL;
     tpInfo.hasMappedJettyPriority = true;
     tpInfo.mappedJettyPriority = 3U;
-    tpInfo.hasJettyErrTimeout = true;
-    tpInfo.jettyErrTimeout = 8U;
+    tpInfo.hasLinkAtRetry = true;
+    tpInfo.at = 0U;
+    tpInfo.retryTimesInit = 0U;
     return HcclResult::HCCL_SUCCESS;
 }
 
