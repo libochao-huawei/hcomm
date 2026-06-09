@@ -2648,12 +2648,6 @@ HcclResult hrtRaRecvWrlist(QpHandle handle, struct RecvWrlistData *wr, unsigned 
     unsigned int completeNumLocal = 0;
     *completeNum = 0;
     while (true) {
-        if (remainNum < 0) {
-            HCCL_ERROR("[Recv][RaWr]ra wr list Recv async fail. return[%d], remainNum[%u], "\
-                "recvNum[%u].", HCCL_E_ROCE_TRANSFER, remainNum, recvNum);
-            return HCCL_E_ROCE_TRANSFER; // 非-2/-11场景错误，不轮询，直接退出
-        }
-
         if (remainNum == recvNum) {
             break;
         }

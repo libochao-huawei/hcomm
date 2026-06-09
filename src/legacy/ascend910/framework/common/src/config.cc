@@ -509,7 +509,7 @@ HcclResult CheckDeviceNumValid(const std::vector<RankInfo_t> &rankList, u32 devi
 
 HcclResult CheckPortValid(u32 port)
 {
-    if (port < PORT_MIN || port > PORT_MAX) {
+    if (port > PORT_MAX) {
         HCCL_ERROR("[Check][PortValid]errNo[0x%016llx] Port: [%u] not a valid port",
             HCOM_ERROR_CODE(HCCL_E_PARA), port);
         return HCCL_E_PARA;
