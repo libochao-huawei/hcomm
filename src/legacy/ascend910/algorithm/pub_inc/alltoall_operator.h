@@ -52,6 +52,7 @@ public:
     bool IsSatisfyAlltoAllAivCondition(const OpParam& param);
     bool IsSatisfy91093OffloadCondition();
     bool IsSatisfyAlltoallContinuousPipelineCondition(const OpParam& param);
+    bool IsSatisfyA2AFor91093Condition(const OpParam& param);
 
 private:
     bool IsSatisfyAlltoallPipelineCondition();

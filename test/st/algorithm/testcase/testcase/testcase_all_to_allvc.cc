@@ -428,3 +428,27 @@ TEST_F(AllToAllVCTest, alltoallvc_test_910_93_opbase_2superpod_RunAlltoAllDirect
 
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
+
+TEST_F(AllToAllVCTest, RunAlltoAllVPipelineFor91093)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 1, 7);
+    setenv("HCCL_BUFFSIZE", "1", 1);
+ 
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLTOALLVC;
+    checkerOpParam.tag = "AllToAll";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+
+    u32 rankNum = GetRankNumFormTopoMeta(topoMeta);
+    checkerOpParam.All2AllDataDes.sendCountMatrix = GenerateSendCountMatrix(100, rankNum);
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT8;
+ 
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
