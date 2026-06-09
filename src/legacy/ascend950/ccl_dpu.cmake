@@ -72,6 +72,7 @@ target_include_directories(ccl_dpu PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common/error_manager
     ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/unified_platform/pub_inc
+    ${HCCL_CODE_ROOT}/src/common
     ${CMAKE_CURRENT_SOURCE_DIR}/unified_platform/external_system
     ${CMAKE_CURRENT_SOURCE_DIR}/framework/dfx
 )

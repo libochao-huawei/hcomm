@@ -29,3 +29,39 @@ if(TARGET ccl_kernel)
         ${CMAKE_CURRENT_SOURCE_DIR}/launch_device
     )
 endif()
+
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/error_manager/adapter_error_manager.cc   # 相对于 CMakeLists.txt 的路径
+        ${CMAKE_CURRENT_SOURCE_DIR}/error_manager/adapter_error_manager_pub.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/error_manager/adapter_error_manager_pub_extend.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu/launch_aicpu.cc
+    )
+endif()
+
+if(TARGET ccl_kernel_plf)
+    target_sources(ccl_kernel_plf PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/error_manager/adapter_error_manager_pub.cc
+    )
+endif()
+
+if(TARGET ccl_kernel_plf_a)
+    target_sources(ccl_kernel_plf_a PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/error_manager/adapter_error_manager_pub.cc
+    )
+endif()
+
+if(TARGET hccl_v2) 
+    target_sources(hccl_v2 PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/error_manager/adapter_error_manager_pub_extend.cc 
+    ) 
+ endif()
+
+ if(TARGET hcomm)
+    target_sources(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu/launch_aicpu.cc
+    )
+    target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu
+    )
+endif()
