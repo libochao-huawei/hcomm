@@ -8,11 +8,13 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
+set(TP_QOS_SRC ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/common/tp_qos.cc)
+
 set(src_list
     orion_adpt_utils.cc
     hccp_tlv_hdc_mgr.cc
     eid_info_mgr.cc
-    tp_qos.cc
+    ${TP_QOS_SRC}
     tp_mgr.cc
     dlurma_function.cc
     hccl_next_dl.cc
