@@ -17,6 +17,7 @@
 #include "dev_buffer.h"
 
 #include "ccu_log.h"
+#include "ccu_kernel_func.h"
 
 namespace hcomm {
 
@@ -87,19 +88,37 @@ HcclResult CcuKernelMgr::Deinit()
 
 CcuResult CcuKernelMgr::Register(
     CcuResPack &resPack, const char *kernelFuncName,
-    const CcuKernelFunc ccuKernelFunc, const CcuKernelArg kernelArg,
+    const void *kernelFunc, const void **kernelArgs, const uint32_t argNum,
     CcuKernelHandle &kernelHandle)
 {
     // 允许kernelFuncName未空，此时传递默认名称
-    CCU_CHK_PTR_NULL(ccuKernelFunc);
-    CCU_CHK_PTR_NULL(kernelArg);
+    (void)kernelFuncName;
+    CCU_CHK_PTR_NULL(kernelFunc);
 
+    // 当前argNum仅允许 0 或 1
+    if (argNum > 1) {
+        HCCL_ERROR("[%s] failed, argNum[%u] now only support 0 or 1.",
+            __func__, argNum);
+        return CcuResult::CCU_E_PARA;
+    }
+
+    // 注意处理时序，需要先重置后处理rep
     std::unique_lock<std::mutex> lock(kernelMapMutex_);
-    
     currKernel_ = std::make_unique<CcuKernel>(); // 重置待注册kernel
-
     CCU_CHK_RET(currKernel_->SetupProfilingInfo(kernelFuncName));
-    CCU_CHK_RET(ccuKernelFunc(kernelArg)); // 执行算法流程，生成rep和计算资源占用
+
+    if (argNum == 0) {
+        auto ccuKernelFunc = reinterpret_cast<CcuKernelFuncNoArg>(kernelFunc);
+        CCU_CHK_RET(ccuKernelFunc()); // 执行算法流程，生成rep和计算资源占用
+    } else {
+        CCU_CHK_PTR_NULL(kernelArgs);
+        const void *kernelArg = kernelArgs[0];
+        CCU_CHK_PTR_NULL(kernelArg);
+        const auto ccuKernelArg = const_cast<CcuKernelArg>(kernelArg);
+        auto ccuKernelFunc = reinterpret_cast<CcuKernelFuncOneArg>(kernelFunc);
+        CCU_CHK_RET(ccuKernelFunc(ccuKernelArg)); // 执行算法流程，生成rep和计算资源占用
+    }
+
     currKernel_->FlushClosablePendingIfs(); // 处理未闭合的if
     CCU_CHK_RET(currKernel_->SelectDie()); // 先处理rep，后选择die
 

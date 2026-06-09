@@ -32,7 +32,7 @@ public:
     HcclResult Deinit();
 
     CcuResult Register(CcuResPack &resPack, const char *kernelFuncName,
-        const CcuKernelFunc ccuKernelFunc, const CcuKernelArg kernelArg,
+        const void *kernelFunc, const void **kernelArgs, const uint32_t argNum,
         CcuKernelHandle &kernelHandle);
 
     CcuResult Translate(const std::vector<CcuKernelHandle> &kernelHandles);
