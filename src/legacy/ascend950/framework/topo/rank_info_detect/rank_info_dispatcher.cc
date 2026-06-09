@@ -237,11 +237,9 @@ HcclResult RankInfoDispather::ProcessSend()
         ret = HrtRaWaitEventHandle(epollFds_, eventInfos, epollTimeout, sendEvsCount, eventsNum);
 
         // 最后一轮epoll_wait结束, 等待超时，epoll池内无事件
-        if (eventsNum == 0 && ret == HCCL_SUCCESS && sendDoneCount_ == rankNum_) {
+        CHK_PRT_RET_NULL((eventsNum == 0 && ret == HCCL_SUCCESS && sendDoneCount_ == rankNum_),
             HCCL_WARNING("[RankInfoDispather::%s]hrtRaWaitEventHandle is timeout[%d] ms, eventsNum[%u], "
-                         "sendDoneCount_[%d]", __func__, epollTimeout, eventsNum, sendDoneCount_.load());
-            break;
-        }
+                        "sendDoneCount_[%d]", __func__, epollTimeout, eventsNum, sendDoneCount_.load()));
 
         // epoll wait事件失败
         // 可能出现ret==HCCL_SUCCESS但eventsNum==0的情况，属于正常情况，不报错退出，需要继续循环

@@ -71,7 +71,7 @@ HcclResult RankInfoDetectClient::CheckStatus()
                 std::vector<std::string>({StringFormat("Receiving message from the root node timed out "
                     "Timeout was set to %lld seconds. Check whether node rankId[%u] reports an error.",
                     static_cast<long long>(timeout.count()), rankId_)}));
-            // 建链超时后，sleep 20s
+            // 建链超时后，sleep 20s，确保所有节点信息同步完成
             // TODO A5
             return HCCL_E_TIMEOUT;
         }
