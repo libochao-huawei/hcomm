@@ -192,14 +192,14 @@ HcclResult GetCommInfoCtx(const std::string &commName, u8 commType, CommInfoCtx 
         return HCCL_E_INTERNAL;
     }
 
-    const auto commIter = groupIter->second.find(commType);
-    if (commIter == groupIter->second.end()) {
+    const auto committer = groupIter->second.find(commType);
+    if (committer == groupIter->second.end()) {
         HCCL_ERROR("Failed to find type %u in map for group %s.", static_cast<u32>(commType), commName.c_str());
         rwlock.readUnlock();
         return HCCL_E_INTERNAL;
     }
 
-    ctx = commIter->second;
+    ctx = committer->second;
     rwlock.readUnlock();
     return HCCL_SUCCESS;
 }
