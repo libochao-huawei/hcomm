@@ -214,6 +214,21 @@ HCCP_ATTRI_VISI_DEF int RaQpCreateWithAttrs(void *rdevHandle, struct QpExtAttrs 
 
 /**
  * @ingroup librdma
+ * @brief Create qp with pre-existing CQs
+ * @param rdev_handle [IN] rdev_handle
+ * @param ext_attrs [IN] qp ext attrs
+ * @param send_cqn [IN] send cq number
+ * @param recv_cqn [IN] recv cq number
+ * @param qp_handle [OUT] qp handle
+ * @see ra_qp_destroy
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaQpCreateWithCQWithAttrs(void *rdevHandle, struct QpExtAttrs *extAttrs,
+    unsigned int sendCqn, unsigned int recvCqn, void **qpHandle);
+
+/**
+ * @ingroup librdma
  * @brief Create qp handle(only one qp handle)
  * @param rdev_handle [IN] rdev_handle
  * @param attrs [IN] ai qp attrs
@@ -247,6 +262,7 @@ HCCP_ATTRI_VISI_DEF int RaLoopbackQpCreate(void *rdevHandle, struct LoopbackQpPa
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaQpDestroy(void *qpHandle);
+HCCP_ATTRI_VISI_DEF int RaQpDestroyWithoutCQ(void *qpHandle);
 
 /**
  * @ingroup librdma
@@ -474,6 +490,8 @@ HCCP_ATTRI_VISI_DEF int RaSendWr(void *qpHandle, struct SendWr *wr, struct SendW
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
 */
 HCCP_ATTRI_VISI_DEF int RaSendWrV2(void *qpHandle, struct SendWrV2 *wr, struct SendWrRsp *opRsp);
+HCCP_ATTRI_VISI_DEF int RaSendWrVerbs(void *qpHandle, struct SendWrVerbs *wr, struct SendWrRsp *opRsp);
+HCCP_ATTRI_VISI_DEF int RaRecvWrVerbs(void *qpHandle, struct RecvWrVerbs *wr);
 
 /**
  * @ingroup librdma
@@ -882,6 +900,31 @@ HCCP_ATTRI_VISI_DEF int RaRecvWrlist(void *qpHandle, struct RecvWrlistData *wr, 
  * @retval #negative Failure
 */
 HCCP_ATTRI_VISI_DEF int RaPollCq(void *qpHandle, bool isSendCq, unsigned int numEntries, void *wc);
+
+HCCP_ATTRI_VISI_DEF int RaPollTypicalCq(void *cqHandle, unsigned int numEntries, void *wc);
+
+/**
+ * @ingroup librdma
+ * @brief create typical cq
+ * @param rdevHandle [IN] rdma device handle
+ * @param cqDepth [IN] cq depth
+ * @param cqn [OUT] cq number
+ * @param cqHandle [OUT] cq handle
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaTypicalCqCreate(void *rdevHandle, unsigned int cqDepth, unsigned int *cqn, void **cqHandle);
+
+/**
+ * @ingroup librdma
+ * @brief destroy typical cq
+ * @param rdevHandle [IN] rdma device handle
+ * @param cqn [IN] cq number
+ * @param cqHandle [IN] cq handle
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaTypicalCqDestroy(void *rdevHandle, unsigned int cqn, void *cqHandle);
 
 /**
  * @ingroup librdma

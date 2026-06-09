@@ -35,6 +35,9 @@
 
 unsigned int gRsSendWrNum = 0;
 
+STATIC struct RsListHead gRsTypicalCqList;
+STATIC pthread_mutex_t gRsTypicalCqMutex = PTHREAD_MUTEX_INITIALIZER;
+
 STATIC void RsBufPrint(char *addr, int len)
 {
     int i;
@@ -2195,6 +2198,36 @@ RS_ATTRI_VISI_DEF int RsQpDestroy(unsigned int phyId, unsigned int rdevIndex, un
     return ret;
 }
 
+RS_ATTRI_VISI_DEF int RsQpDestroyWithoutCQ(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn)
+{
+    struct RsQpCb *qpCb = NULL;
+    int ret;
+
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret != 0 || qpCb == NULL, hccp_err("get qp cb failed! qpn %u, ret %d", qpn, ret), ret);
+
+    RsQpRelease(qpCb);
+
+    // destroy qp
+    RsDrvQpDestroy(qpCb);
+    RsDeinitMemPool(qpCb);
+
+    qpCb->rdevCb->qpCnt--;
+    ret = RsQpcbDeinit(qpCb->rdevCb, qpCb);
+    if (ret) {
+        hccp_err("rs_qpcb_deinit failed! ret[%d]", ret);
+    }
+
+    pthread_mutex_destroy(&qpCb->cqeErrInfo.mutex);
+    pthread_mutex_destroy(&qpCb->qpMutex);
+    hccp_info("qp %d destroy qp without cq, send wr[%u].", qpn, qpCb->sendWrNum);
+
+    free(qpCb);
+    qpCb = NULL;
+    return ret;
+}
+
 static void RsQpConnectAsyncMr(const struct RsQpCb *qpCb)
 {
     int ret;
@@ -2790,6 +2823,292 @@ rs_cq_create_err:
     return ret;
 }
 
+RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth,
+    unsigned int *cqn)
+{
+    struct RsTypicalCqEntry *entry;
+    struct RsTypicalCqEntry *tmp;
+    int ret;
+    struct RsRdevCb *rdevCb = NULL;
+    struct ibv_cq *ibCq = NULL;
+    struct rdma_lite_device_cq_attr deviceCqAttr;
+
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
+    if (ret) {
+        hccp_err("rs_query_rdev_cb phyId[%u] rdevIndex[%u], ret %d", phyId, rdevIndex, ret);
+        return ret;
+    }
+
+    ret = RsDrvTypicalCqCreate(rdevCb, cqDepth, cqn, &ibCq, &deviceCqAttr);
+    if (ret) {
+        hccp_err("rs_drv_typical_cq_create failed, cqDepth[%u] ret[%d]", cqDepth, ret);
+        return ret;
+    }
+
+    pthread_mutex_lock(&gRsTypicalCqMutex);
+    if (gRsTypicalCqList.next == NULL) {
+        RS_INIT_LIST_HEAD(&gRsTypicalCqList);
+    }
+
+    RS_LIST_GET_HEAD_ENTRY(tmp, entry, &gRsTypicalCqList, list, struct RsTypicalCqEntry);
+    for (; &tmp->list != &gRsTypicalCqList;
+           tmp = entry, entry = list_entry(entry->list.next, struct RsTypicalCqEntry, list)) {
+        if (tmp->phyId == phyId && tmp->rdevIndex == rdevIndex && tmp->cqn == *cqn) {
+            tmp->ibCq = ibCq;
+            tmp->deviceCqAttr = deviceCqAttr;
+            pthread_mutex_unlock(&gRsTypicalCqMutex);
+            hccp_info("RsTypicalCqCreate updated: phyId[%u] rdevIndex[%u] cqn[%u] cqDepth[%u]",
+                phyId, rdevIndex, *cqn, cqDepth);
+            return 0;
+        }
+    }
+
+    entry = malloc(sizeof(struct RsTypicalCqEntry));
+    if (entry == NULL) {
+        pthread_mutex_unlock(&gRsTypicalCqMutex);
+        hccp_err("RsTypicalCqCreate malloc failed, cqn[%u]", *cqn);
+        return -ENOMEM;
+    }
+    entry->phyId = phyId;
+    entry->rdevIndex = rdevIndex;
+    entry->cqn = *cqn;
+    entry->ibCq = ibCq;
+    entry->deviceCqAttr = deviceCqAttr;
+    RsListAddTail(&entry->list, &gRsTypicalCqList);
+    pthread_mutex_unlock(&gRsTypicalCqMutex);
+
+    hccp_info("RsTypicalCqCreate success: phyId[%u] rdevIndex[%u] cqn[%u] cqDepth[%u]",
+        phyId, rdevIndex, *cqn, cqDepth);
+
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsTypicalCqDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn)
+{
+    struct RsTypicalCqEntry *entry;
+    struct RsTypicalCqEntry *tmp;
+    int ret;
+
+    pthread_mutex_lock(&gRsTypicalCqMutex);
+    if (gRsTypicalCqList.next == NULL) {
+        pthread_mutex_unlock(&gRsTypicalCqMutex);
+        hccp_err("rs_typical_cq_destroy: cqn[%u] not found phyId[%u] rdevIndex[%u]", cqn, phyId, rdevIndex);
+        return -EINVAL;
+    }
+
+    RS_LIST_GET_HEAD_ENTRY(tmp, entry, &gRsTypicalCqList, list, struct RsTypicalCqEntry);
+    for (; &tmp->list != &gRsTypicalCqList;
+           tmp = entry, entry = list_entry(entry->list.next, struct RsTypicalCqEntry, list)) {
+        if (tmp->phyId == phyId && tmp->rdevIndex == rdevIndex && tmp->cqn == cqn) {
+            RsListDel(&tmp->list);
+            pthread_mutex_unlock(&gRsTypicalCqMutex);
+
+            if (tmp->ibCq != NULL) {
+                ret = RsIbvDestroyCq(tmp->ibCq);
+                if (ret) {
+                    hccp_err("rs_ibv_destroy_cq failed cqn[%u] ret[%d]", cqn, ret);
+                    free(tmp);
+                    return ret;
+                }
+            }
+            free(tmp);
+            hccp_info("RsTypicalCqDestroy success: phyId[%u] rdevIndex[%u] cqn[%u]",
+                phyId, rdevIndex, cqn);
+            return 0;
+        }
+    }
+    pthread_mutex_unlock(&gRsTypicalCqMutex);
+
+    hccp_err("rs_typical_cq_destroy: cqn[%u] not found phyId[%u] rdevIndex[%u]", cqn, phyId, rdevIndex);
+    return -EINVAL;
+}
+
+RS_ATTRI_VISI_DEF int RsGetLiteCqAttr(unsigned int phyId, unsigned int rdevIndex, unsigned int cqn,
+    struct rdma_lite_device_cq_attr *deviceCqAttr)
+{
+    struct RsTypicalCqEntry *entry;
+    struct RsTypicalCqEntry *tmp;
+    int ret;
+
+    RS_CHECK_POINTER_NULL_RETURN_INT(deviceCqAttr);
+
+    pthread_mutex_lock(&gRsTypicalCqMutex);
+    if (gRsTypicalCqList.next == NULL) {
+        pthread_mutex_unlock(&gRsTypicalCqMutex);
+        hccp_err("rs_get_lite_cq_attr: cqn[%u] not found phyId[%u] rdevIndex[%u]", cqn, phyId, rdevIndex);
+        return -EINVAL;
+    }
+
+    RS_LIST_GET_HEAD_ENTRY(tmp, entry, &gRsTypicalCqList, list, struct RsTypicalCqEntry);
+    for (; &tmp->list != &gRsTypicalCqList;
+           tmp = entry, entry = list_entry(entry->list.next, struct RsTypicalCqEntry, list)) {
+        if (tmp->phyId == phyId && tmp->rdevIndex == rdevIndex && tmp->cqn == cqn) {
+            ret = memcpy_s(deviceCqAttr, sizeof(*deviceCqAttr),
+                &tmp->deviceCqAttr, sizeof(tmp->deviceCqAttr));
+            pthread_mutex_unlock(&gRsTypicalCqMutex);
+            if (ret) {
+                hccp_err("memcpy_s failed, ret:%d", ret);
+                return ret;
+            }
+            hccp_info("RsGetLiteCqAttr success: cqn[%u] depth[%u]", cqn, deviceCqAttr->depth);
+            return 0;
+        }
+    }
+    pthread_mutex_unlock(&gRsTypicalCqMutex);
+
+    hccp_err("rs_get_lite_cq_attr: cqn[%u] not found phyId[%u] rdevIndex[%u]", cqn, phyId, rdevIndex);
+    return -EINVAL;
+}
+
+RS_ATTRI_VISI_DEF int RsQpCreateWithCQWithAttrs(unsigned int phyId, unsigned int rdevIndex,
+    unsigned int sendCqn, unsigned int recvCqn,
+    struct RsQpNormWithAttrs *qpNorm, struct RsQpRespWithAttrs *qpResp)
+{
+    struct RsTypicalCqEntry *entry;
+    struct RsTypicalCqEntry *tmp;
+    struct RsRdevCb *rdevCb = NULL;
+    struct RsQpCb *qpCb = NULL;
+    struct ibv_cq *sendIbCq = NULL;
+    struct ibv_cq *recvIbCq = NULL;
+    struct rdma_lite_device_cq_attr sendDeviceCqAttr;
+    struct rdma_lite_device_cq_attr recvDeviceCqAttr;
+    int qpMode;
+    int ret;
+    bool sendFound = false;
+    bool recvFound = false;
+
+    RS_QP_PARA_CHECK(phyId);
+    CHK_PRT_RETURN(qpResp == NULL, hccp_err("qp_resp is NULL!"), -EINVAL);
+
+    ret = RsQpCheckQpNorm(qpNorm, &qpMode);
+    CHK_PRT_RETURN(ret != 0, hccp_err("check qp mode failed, ret:%d", ret), ret);
+
+    ret = RsQpQueryInfo(phyId, rdevIndex, &rdevCb, qpMode);
+    CHK_PRT_RETURN(ret, hccp_err("query qp info failed:%d", ret), ret);
+
+    pthread_mutex_lock(&gRsTypicalCqMutex);
+    if (gRsTypicalCqList.next != NULL) {
+        RS_LIST_GET_HEAD_ENTRY(tmp, entry, &gRsTypicalCqList, list, struct RsTypicalCqEntry);
+        for (; &tmp->list != &gRsTypicalCqList;
+               tmp = entry, entry = list_entry(entry->list.next, struct RsTypicalCqEntry, list)) {
+            if (tmp->phyId == phyId && tmp->rdevIndex == rdevIndex && tmp->cqn == sendCqn) {
+                sendIbCq = tmp->ibCq;
+                sendDeviceCqAttr = tmp->deviceCqAttr;
+                sendFound = true;
+                break;
+            }
+        }
+    }
+    pthread_mutex_unlock(&gRsTypicalCqMutex);
+    CHK_PRT_RETURN(!sendFound,
+        hccp_err("send cq not found: sendCqn[%u] phyId[%u] rdevIndex[%u]", sendCqn, phyId, rdevIndex),
+        -EINVAL);
+
+    pthread_mutex_lock(&gRsTypicalCqMutex);
+    if (gRsTypicalCqList.next != NULL) {
+        RS_LIST_GET_HEAD_ENTRY(tmp, entry, &gRsTypicalCqList, list, struct RsTypicalCqEntry);
+        for (; &tmp->list != &gRsTypicalCqList;
+               tmp = entry, entry = list_entry(entry->list.next, struct RsTypicalCqEntry, list)) {
+            if (tmp->phyId == phyId && tmp->rdevIndex == rdevIndex && tmp->cqn == recvCqn) {
+                recvIbCq = tmp->ibCq;
+                recvDeviceCqAttr = tmp->deviceCqAttr;
+                recvFound = true;
+                break;
+            }
+        }
+    }
+    pthread_mutex_unlock(&gRsTypicalCqMutex);
+    CHK_PRT_RETURN(!recvFound,
+        hccp_err("recv cq not found: recvCqn[%u] phyId[%u] rdevIndex[%u]", recvCqn, phyId, rdevIndex),
+        -EINVAL);
+
+    ret = RsCallocQpcb(1, &qpCb);
+    CHK_PRT_RETURN(ret, hccp_err("alloc mem for qp_cb failed, ret:%d errno:%d", ret, errno), -ENOMEM);
+
+    ret = pthread_mutex_init(&qpCb->qpMutex, NULL);
+    if (ret) {
+        hccp_err("pthread_mutex_init failed, ret %d", ret);
+        goto qp_mutex_init_err;
+    }
+
+    ret = pthread_mutex_init(&qpCb->cqeErrInfo.mutex, NULL);
+    if (ret) {
+        hccp_err("pthread_mutex_init failed, ret %d", ret);
+        goto cqe_mutex_init_err;
+    }
+
+    ret = RsQpcbInitWithAttrs(rdevCb, qpCb, qpNorm);
+    if (ret) {
+        hccp_err("create qp tx rx failed ret %d", ret);
+        goto rs_qpcb_init_err;
+    }
+
+    ret = RsInitMemPool(qpCb);
+    if (ret) {
+        hccp_err("init mem pool failed ret %d", ret);
+        goto rs_init_mem_err;
+    }
+
+    // Assign pre-existing CQs (instead of RsDrvCreateCqWithAttrs)
+    qpCb->ibSendCq = sendIbCq;
+    qpCb->ibRecvCq = recvIbCq;
+    qpCb->qpResp.sendCqData = sendDeviceCqAttr;
+    qpCb->qpResp.recvCqData = recvDeviceCqAttr;
+    qpCb->sendCqDepth = sendDeviceCqAttr.depth;
+    qpCb->recvCqDepth = recvDeviceCqAttr.depth;
+
+    ret = RsDrvQpCreateWithAttrs(qpCb, qpNorm);
+    if (ret) {
+        hccp_err("Create drv qp create failed:%d", ret);
+        goto create_qp_err;
+    }
+
+    ret = ibv_req_notify_cq(qpCb->ibSendCq, 0);
+    if (ret) {
+        hccp_err("Can't request send CQ notification, ret:%d", ret);
+        ret = -EOPENSRC;
+        goto ret_noritfy_cq;
+    }
+
+    ret = ibv_req_notify_cq(qpCb->ibRecvCq, 0);
+    if (ret) {
+        hccp_err("Can't request recv CQ notification, ret:%d", ret);
+        ret = -EOPENSRC;
+        goto ret_noritfy_cq;
+    }
+
+    ret = RsQpNotifyMr(rdevCb, qpCb, &qpResp->qpn);
+    if (ret) {
+        hccp_err("Store qp notify mr failed:%d", ret);
+        goto ret_noritfy_cq;
+    }
+
+    RsQpPrepareQpResp(qpNorm, qpCb, qpResp);
+
+    return 0;
+
+ret_noritfy_cq:
+    RsDrvQpDestroy(qpCb);
+
+create_qp_err:
+    // Do NOT call RsDrvDestroyCq — CQs are not owned by this QP
+    RsDeinitMemPool(qpCb);
+    (void)RsQpcbDeinit(rdevCb, qpCb);
+
+rs_init_mem_err:
+rs_qpcb_init_err:
+    pthread_mutex_destroy(&qpCb->cqeErrInfo.mutex);
+
+cqe_mutex_init_err:
+    pthread_mutex_destroy(&qpCb->qpMutex);
+
+qp_mutex_init_err:
+    free(qpCb);
+    qpCb = NULL;
+
+    return ret;
+}
+
 RS_ATTRI_VISI_DEF int RsCqDestroy(unsigned int phyId, unsigned int rdevIndex, struct CqAttr *attr)
 {
     int ret;
@@ -3092,6 +3411,30 @@ RS_ATTRI_VISI_DEF int RsGetLiteQpCqAttr(
             ret,
             (unsigned int)sizeof(qpCb->qpResp),
             (unsigned int)sizeof(struct LiteQpCqAttrResp));
+        return ret;
+    }
+
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsGetLiteQpAttr(
+    unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteQpAttrResp *resp)
+{
+    int ret;
+    struct RsQpCb *qpCb = NULL;
+
+    RS_CHECK_POINTER_NULL_RETURN_INT(resp);
+
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret != 0 || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
+
+    ret = memcpy_s(resp, sizeof(struct LiteQpAttrResp), (void *)&qpCb->qpResp.qpData, sizeof(qpCb->qpResp.qpData));
+    if (ret) {
+        hccp_err("memcpy_s failed, ret:%d, src_len:%u, dst_len:%u",
+            ret,
+            (unsigned int)sizeof(qpCb->qpResp.qpData),
+            (unsigned int)sizeof(struct LiteQpAttrResp));
         return ret;
     }
 

@@ -22,6 +22,7 @@ class RdmaResourceManager {
 public:
     static RdmaResourceManager& GetInstance();
     HcclResult Init();
+    void SetDisableLiteThread(bool disable);
     HcclResult DeInit();
     HcclResult GetRdmaHandle(RdmaHandle& rdmaHandle);
     HcclResult GetCqeErrInfo(struct CqeErrInfo *infoList, u32 *num);

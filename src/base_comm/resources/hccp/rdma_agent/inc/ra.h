@@ -169,6 +169,15 @@ struct RaCqHandleExt {
     struct RaRdmaHandle *rdmaHandle;
 };
 
+struct RaTypicalCqHandle {
+    unsigned int cqn;
+    unsigned int phyId;
+    unsigned int rdevIndex;
+    struct RaRdmaHandle *rdmaHandle;
+    struct RaRdmaOps *rdmaOps;
+    struct rdma_lite_cq *liteCq;
+};
+
 struct RaQpHandle {
     unsigned int qpn;
     int qpMode;

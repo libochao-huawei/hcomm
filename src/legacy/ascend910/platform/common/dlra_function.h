@@ -34,6 +34,7 @@ public:
     std::function<int(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle *qpHandle)> dlRaQpCreate;
     std::function<int(void* qpHandle, void** qp, void** sendCq, void** recvCq)> dlRaGetQpContext;
     std::function<int(QpHandle handle)> dlRaQpDestroy;
+    std::function<int(QpHandle handle)> dlRaQpDestroyWithoutCQ;
     std::function<int(QpHandle handle, const SocketHandle sockHandle)> dlRaQpConnectAsync;
     std::function<int(QpHandle handle, int *status)> dlRaGetQpStatus;
     std::function<int(QpHandle handle, struct MrInfoT *info)> dlRaMrReg;
@@ -41,7 +42,10 @@ public:
     std::function<int(QpHandle handle, struct MrInfoT *info)> dlRaMrDereg;
     std::function<int(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp)> dlRaSendWr;
     std::function<int(QpHandle handle, struct SendWrV2 *wr, struct SendWrRsp *opRsp)> dlRaSendWrV2;
+    std::function<int(QpHandle handle, struct SendWrVerbs *wr, struct SendWrRsp *opRsp)> dlRaSendWrVerbs;
+    std::function<int(QpHandle handle, struct RecvWrVerbs *wr)> dlRaRecvWrVerbs;
     std::function<int(QpHandle handle, bool is_send_cq, unsigned int num, void *wc)> dlRaPollCq;
+    std::function<int(void* cqHandle, unsigned int num, void *wc)> dlRaPollTypicalCq;
     std::function<int(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp op_rsp[],
         unsigned int sendNum, unsigned int *completeNum)> dlRaSendWrlist;
     std::function<int(QpHandle handle, struct SendWrlistDataExt wr[], struct SendWrRsp op_rsp[],
@@ -129,6 +133,12 @@ public:
     std::function<int(RdmaHandle rdmaHandle,
         struct TypicalQp *localQpInfo, struct TypicalQp *remoteQpInfo)> dlRaTypicalQpModify;
     std::function<int(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp)> dlRaTypicalSendWr;
+    std::function<int(RdmaHandle rdmaHandle, unsigned int cqDepth,
+        unsigned int *cqn, void **cqHandle)> dlRaTypicalCqCreate;
+    std::function<int(RdmaHandle rdmaHandle, unsigned int cqn, void *cqHandle)> dlRaTypicalCqDestroy;
+    std::function<int(RdmaHandle rdmaHandle, struct QpExtAttrs *ext_attrs,
+        unsigned int sendCqn, unsigned int recvCqn,
+        QpHandle *qpHandle)> dlRaQpCreateWithCQWithAttrs;
  
     std::function<int(RdmaHandle rdmaHandle, struct QpExtAttrs *ext_attrs, struct AiQpInfo *info, \
     QpHandle *qpHandle)> dlRaAiQpCreate;

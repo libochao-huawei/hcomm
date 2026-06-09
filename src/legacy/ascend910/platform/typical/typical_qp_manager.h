@@ -14,6 +14,7 @@
 #include <memory>
 #include "adapter_hccp.h"
 #include "hccl_common.h"
+#include "interface_hccl.h"
 
 namespace hccl {
 
@@ -22,9 +23,16 @@ public:
     static TypicalQpManager& GetInstance();
     HcclResult CreateQp(struct TypicalQp& qpInfo);
     HcclResult CreateQp(struct TypicalQp& qpInfo, const QpConfigInfo& qpConfig);
+    HcclResult CreateQpWithCQ(struct TypicalQp& qpInfo, const QpConfigWithCQInfo& qpConfig);
+    HcclResult ValidateCq(uint32_t cqn);
+    HcclResult GetCqDepth(uint32_t cqn, uint32_t &cqDepth);
+    HcclResult GetCqHandle(uint32_t cqn, void*& cqHandle);
     HcclResult ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo);
     HcclResult DestroyQp(struct TypicalQp& qpInfo);
+    HcclResult DestroyQpWithoutCQ(struct TypicalQp& qpInfo);
     HcclResult GetQpHandleByQpn(u32 qpn, QpHandle& qpHandle);
+    HcclResult CreateCq(AscendCQInfo& cqInfo);
+    HcclResult DestroyCq(uint32_t cqn);
 private:
     TypicalQpManager();
     ~TypicalQpManager();
@@ -40,6 +48,8 @@ private:
     const s32 OPBASE_QP_MODE = 2;  // 单算子模式的QP
     std::map<u32, std::pair<struct TypicalQp, QpHandle>> qpMap_{};
     std::mutex qpMutex_;
+    std::map<u32, std::pair<AscendCQInfo, void*>> cqMap_{};
+    std::mutex cqMutex_;
 };
 } // namespace hccl
 #endif

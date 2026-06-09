@@ -73,6 +73,79 @@ HcclResult TypicalQpManager::CreateQp(struct TypicalQp& qpInfo, const QpConfigIn
     return HCCL_SUCCESS;
 }
 
+HcclResult TypicalQpManager::CreateCq(AscendCQInfo& cqInfo)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    void *cqHandle = nullptr;
+    CHK_RET(RdmaResourceManager::GetInstance().GetRdmaHandle(rdmaHandle_));
+    CHK_PTR_NULL(rdmaHandle_);
+    std::unique_lock<std::mutex> lock(cqMutex_);
+    ret = CreateTypicalCq(rdmaHandle_, cqInfo.cqDepth, cqInfo.cqn, &cqHandle);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[TypicalQpManager][CreateCq] Create cq failed."), HCCL_E_INTERNAL);
+    cqMap_.insert(std::make_pair(cqInfo.cqn, std::make_pair(cqInfo, cqHandle)));
+    return HCCL_SUCCESS;
+}
+
+HcclResult TypicalQpManager::DestroyCq(uint32_t cqn)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    CHK_RET(RdmaResourceManager::GetInstance().GetRdmaHandle(rdmaHandle_));
+    CHK_PTR_NULL(rdmaHandle_);
+    std::unique_lock<std::mutex> lock(cqMutex_);
+    auto it = cqMap_.find(cqn);
+    CHK_PRT_RET((it == cqMap_.end()),
+        HCCL_ERROR("[TypicalQpManager][DestroyCq] cqn[%u] not found.", cqn), HCCL_E_PARA);
+    ret = DestroyTypicalCq(rdmaHandle_, cqn, it->second.second);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[TypicalQpManager][DestroyCq] Destroy cq failed."), HCCL_E_INTERNAL);
+    cqMap_.erase(it);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TypicalQpManager::ValidateCq(uint32_t cqn)
+{
+    std::unique_lock<std::mutex> lock(cqMutex_);
+    auto it = cqMap_.find(cqn);
+    CHK_PRT_RET((it == cqMap_.end()),
+        HCCL_ERROR("[TypicalQpManager][ValidateCq] cqn[%u] not found.", cqn), HCCL_E_PARA);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TypicalQpManager::GetCqDepth(uint32_t cqn, uint32_t &cqDepth)
+{
+    std::unique_lock<std::mutex> lock(cqMutex_);
+    auto it = cqMap_.find(cqn);
+    CHK_PRT_RET((it == cqMap_.end()),
+        HCCL_ERROR("[TypicalQpManager][GetCqDepth] cqn[%u] not found.", cqn), HCCL_E_PARA);
+    cqDepth = it->second.first.cqDepth;
+    return HCCL_SUCCESS;
+}
+
+HcclResult TypicalQpManager::GetCqHandle(uint32_t cqn, void*& cqHandle)
+{
+    std::unique_lock<std::mutex> lock(cqMutex_);
+    auto it = cqMap_.find(cqn);
+    CHK_PRT_RET((it == cqMap_.end()),
+        HCCL_ERROR("[TypicalQpManager][GetCqHandle] cqn[%u] not found.", cqn), HCCL_E_PARA);
+    cqHandle = it->second.second;
+    return HCCL_SUCCESS;
+}
+
+HcclResult TypicalQpManager::CreateQpWithCQ(struct TypicalQp& qpInfo, const QpConfigWithCQInfo& qpConfig)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    QpHandle qpHandle = nullptr;
+    CHK_RET(RdmaResourceManager::GetInstance().GetRdmaHandle(rdmaHandle_));
+    CHK_PTR_NULL(rdmaHandle_);
+    std::unique_lock<std::mutex> lock(qpMutex_);
+    ret = CreateQpWithCQConfig(rdmaHandle_, OPBASE_QP_MODE, qpConfig, qpHandle, qpInfo);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[TypicalQpManager][CreateQpWithCQ] Create qp with cq failed."), HCCL_E_INTERNAL);
+    qpMap_.insert(std::make_pair(qpInfo.qpn, std::make_pair(qpInfo, qpHandle)));
+    return HCCL_SUCCESS;
+}
+
 HcclResult TypicalQpManager::ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo)
 {
     CHK_PRT_RET((localQpInfo.qpn == 0 || remoteQpInfo.qpn == 0),
@@ -98,6 +171,21 @@ HcclResult TypicalQpManager::DestroyQp(struct TypicalQp& qpInfo)
     std::unique_lock<std::mutex> lock(qpMutex_);
     HcclResult ret = HrtRaQpDestroy(qpHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TypicalQpManager][DestroyQp] Destroy qp failed."), HCCL_E_INTERNAL);
+    qpMap_.erase(qpInfo.qpn);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TypicalQpManager::DestroyQpWithoutCQ(struct TypicalQp& qpInfo)
+{
+    CHK_PRT_RET((qpInfo.qpn == 0), HCCL_ERROR("[TypicalQpManager][DestroyQpWithoutCQ] The qpinfo is wrong, qpn is 0."),
+        HCCL_E_PARA);
+    QpHandle qpHandle;
+    CHK_RET(GetQpHandleByQpn(qpInfo.qpn, qpHandle));
+    CHK_PTR_NULL(qpHandle);
+    std::unique_lock<std::mutex> lock(qpMutex_);
+    HcclResult ret = HrtRaQpDestroyWithoutCQ(qpHandle);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[TypicalQpManager][DestroyQpWithoutCQ] Destroy qp without cq failed."), HCCL_E_INTERNAL);
     qpMap_.erase(qpInfo.qpn);
     return HCCL_SUCCESS;
 }

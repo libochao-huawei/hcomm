@@ -4808,6 +4808,13 @@ std::map<std::string, void*> dlRaFuntionPtrMap = {
     {"RaGetTlsEnable", (void*)&RaGetTlsEnable},
     {"RaSaveSnapshot", (void*)&RaSaveSnapshot},
     {"RaRestoreSnapshot", (void*)&RaRestoreSnapshot},
+    {"RaQpDestroyWithoutCQ", (void*)&RaQpDestroyWithoutCQ},
+    {"RaSendWrVerbs", (void*)&RaSendWrVerbs},
+    {"RaRecvWrVerbs", (void*)&RaRecvWrVerbs},
+    {"RaPollTypicalCq", (void*)&RaPollTypicalCq},
+    {"RaTypicalCqCreate", (void*)&RaTypicalCqCreate},
+    {"RaTypicalCqDestroy", (void*)&RaTypicalCqDestroy},
+    {"RaQpCreateWithCQWithAttrs", (void*)&RaQpCreateWithCQWithAttrs},
 };
 
 std::map<std::string, void*> dlTdtFuntionPtrMap = {

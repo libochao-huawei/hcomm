@@ -60,8 +60,14 @@ struct RaRdmaOps {
         struct AiQpInfo *info, void **qpHandle);
     int (*raTypicalQpCreate)(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, struct TypicalQp *qpInfo,
         void **qpHandle);
+    int (*raTypicalCqCreate)(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn,
+        void **cqHandle);
+    int (*raTypicalCqDestroy)(struct RaRdmaHandle *rdmaHandle, unsigned int cqn, void *cqHandle);
+    int (*raQpCreateWithCQWithAttrs)(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs *extAttrs,
+        unsigned int sendCqn, unsigned int recvCqn, void **qpHandle);
     int (*raLoopbackQpCreate)(struct RaRdmaHandle *rdevHandle, struct LoopbackQpPair *qpPair, void **qpHandle);
     int (*raQpDestroy)(struct RaQpHandle *handle);
+    int (*raQpDestroyWithoutCQ)(struct RaQpHandle *handle);
     int (*raTypicalQpModify)(struct RaQpHandle *handle, struct TypicalQp *localQpInfo,
         struct TypicalQp *remoteQpInfo);
     int (*raQpBatchModify)(struct RaRdmaHandle *handle, void *qpHdc[],
@@ -77,6 +83,8 @@ struct RaRdmaOps {
     int (*raDeregisterMr)(struct RaRdmaHandle *handle, void *mrHandle);
     int (*raSendWr)(struct RaQpHandle *handle, struct SendWr *wr, struct SendWrRsp *wrRsp);
     int (*raSendWrV2)(struct RaQpHandle *handle, struct SendWrV2 *wr, struct SendWrRsp *wrRsp);
+    int (*raSendWrVerbs)(struct RaQpHandle *handle, struct SendWrVerbs *wr, struct SendWrRsp *wrRsp);
+    int (*raRecvWrVerbs)(struct RaQpHandle *handle, struct RecvWrVerbs *wr);
     int (*raTypicalSendWr)(struct RaQpHandle *handle, struct SendWr *wr, struct SendWrRsp *wrRsp);
     int (*raSendWrlist)(struct RaQpHandle *handle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
         struct WrlistSendCompleteNum wrlistNum);
@@ -90,6 +98,7 @@ struct RaRdmaOps {
     int (*raRecvWrlist)(struct RaQpHandle *handle, struct RecvWrlistData *wr, unsigned int recvNum,
         unsigned int *completeNum);
     int (*raPollCq)(struct RaQpHandle *handle, bool isSendCq, unsigned int numEntries, void *wc);
+    int (*raPollTypicalCq)(struct RaTypicalCqHandle *cqHandle, unsigned int numEntries, void *wc);
     int (*raGetQpContext)(struct RaQpHandle *handle, void** qp, void** sendCq, void** recvCq);
     int (*raNormalQpCreate)(struct RaRdmaHandle *rdmaHandle, struct ibv_qp_init_attr *qpInitAttr,
         void **qpHandle, void **qp);

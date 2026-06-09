@@ -17,6 +17,7 @@
 #include "hccp_common.h"
 #include "ra.h"
 #include "ra_rs_comm.h"
+#include "ra_hdc_rdma.h"
 
 #define RA_SGLIST_MAX       16
 #define RA_QP_32K_DEPTH         32767
@@ -40,6 +41,14 @@ struct LiteSendWr {
         struct WrAuxInfo aux;
         struct WrExtInfo ext;
     };
+};
+
+struct TypicalLiteCqEntry {
+    unsigned int phyId;
+    unsigned int cqn;
+    struct rdma_lite_cq *liteCq;
+    struct rdma_lite_device_cq_attr deviceCqAttr;
+    struct RaListHead list;
 };
 
 union OpLiteSupportData {
@@ -78,6 +87,30 @@ union OpLiteQpCqAttrData {
     } rxData;
 };
 
+union OpLiteQpAttrData {
+    struct {
+        unsigned int phyId;
+        unsigned int rdevIndex;
+        unsigned int qpn;
+    } txData;
+
+    struct {
+        struct LiteQpAttrResp resp;
+    } rxData;
+};
+
+union OpGetLiteCqAttrData {
+    struct {
+        unsigned int phyId;
+        unsigned int rdevIndex;
+        unsigned int cqn;
+    } txData;
+
+    struct {
+        struct rdma_lite_device_cq_attr deviceCqAttr;
+    } rxData;
+};
+
 union OpLiteMemAttrData {
     struct {
         unsigned int phyId;
@@ -105,12 +138,14 @@ union OpLiteConnectedInfoData {
 int RaHdcLiteQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
     struct rdma_lite_qp_cap *cap);
 void RaHdcLiteQpDestroy(struct RaQpHandle *qpHdc);
+void RaHdcLiteQpDestroyWithoutCQ(struct RaQpHandle *qpHdc);
 int RaHdcLiteInit(struct RaRdmaHandle *rdmaHandle, unsigned int phyId, unsigned int rdevIndex);
 void RaHdcLiteDeinit(struct RaRdmaHandle *rdmaHandle);
 int RaHdcLiteSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct SendWrRsp *opRsp,
     unsigned long long wrId);
 int RaHdcLiteTypicalSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct SendWrRsp *opRsp,
     unsigned long long wrId);
+int RaHdcLiteGetQpAttr(struct RaQpHandle *qpHdc, struct rdma_lite_qp_attr *liteQpAttr);
 int RaHdcLiteGetConnectedInfo(struct RaQpHandle *qpHdc);
 int RaHdcLiteSendWrlist(struct RaQpHandle *qpHdc, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     struct WrlistSendCompleteNum wrlistNum);
@@ -122,6 +157,19 @@ int RaHdcLiteRecvWrlist(struct RaQpHandle *qpHdc, struct RecvWrlistData *wr, uns
     unsigned int *completeNum);
 int RaHdcLitePollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries,
     struct rdma_lite_wc_v2 *liteWc);
+int RaHdcLiteCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth,
+    union OpTypicalCqCreateData *cqData, struct rdma_lite_cq **liteCq);
+void RaHdcLiteStoreTypicalCq(unsigned int phyId, unsigned int cqn, struct rdma_lite_cq *liteCq,
+    struct rdma_lite_device_cq_attr *deviceCqAttr);
+struct rdma_lite_cq *RaHdcLiteFindTypicalCq(unsigned int phyId, unsigned int cqn);
+int RaHdcLiteFindTypicalCqAttr(unsigned int phyId, unsigned int cqn,
+    struct rdma_lite_device_cq_attr **deviceCqAttr);
+void RaHdcLiteRemoveTypicalCq(unsigned int phyId, unsigned int cqn);
+int RaHdcLiteGetCqAttr(struct RaRdmaHandle *rdmaHandle, unsigned int cqn,
+    struct rdma_lite_device_cq_attr *deviceCqAttr);
+int RaHdcLiteQpCreateWithCQ(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
+    struct rdma_lite_qp_cap *cap, struct rdma_lite_cq *sendLiteCq, struct rdma_lite_cq *recvLiteCq,
+    unsigned int sendCqn, unsigned int recvCqn);
 int RaHdcLiteInitCqeErrInfo(unsigned int phyId);
 void RaHdcLiteDeinitCqeErrInfo(unsigned int phyId);
 void RaHdcLiteGetCqeErrInfo(unsigned int phyId, struct CqeErrInfo *info);

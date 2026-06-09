@@ -130,6 +130,22 @@ using QpConfigInfo = struct QpConfigInfoDef {
     uint32_t resv_mem_pool_id;
 };
 
+using QpConfigWithCQInfo = struct QpConfigWithCQInfoDef {
+    uint32_t sq_depth;
+    uint32_t rq_depth;
+    uint32_t scq_depth;
+    uint32_t rcq_depth;
+    uint32_t sendCqn;
+    uint32_t recvCqn;
+    uint32_t use_resv_mem;
+    uint32_t resv_mem_pool_id;
+    int sq_sig_all;
+    uint32_t max_send_sge;
+    uint32_t max_recv_sge;
+    uint32_t max_inline_data;
+};
+
+
 using CqInfo = struct CqInfoDef {
     struct ibv_cq* sq;
     struct ibv_cq* rq;
@@ -188,6 +204,7 @@ HcclResult HrtRaGetQpDepth(RdmaHandle rdmaHandle, unsigned int *tempDepth, unsig
 HcclResult HrtRaSetQpDepth(RdmaHandle rdmaHandle, unsigned int tempDepth, unsigned int *qpNum);
 HcclResult HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle &qpHandle);
 HcclResult HrtRaQpDestroy(QpHandle handle);
+HcclResult HrtRaQpDestroyWithoutCQ(QpHandle handle);
 HcclResult HrtRaQpNonBlockConnectAsync(QpHandle handle, const SocketHandle sockHandle);
 HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle,
     std::function<bool()> needStop = []() { return false; }, u32 timeout = 0);
@@ -198,7 +215,10 @@ HcclResult HrtRaMrDereg(QpHandle handle, struct MrInfoT *mrInfo);
 HcclResult HrtRaSendWr(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp);
 HcclResult HrtRaSendWrV2(QpHandle handle, struct SendWrV2 *wr, struct SendWrRsp *opRsp,
     HcclWorkflowMode workflowMode = HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+HcclResult HrtRaSendWrVerbs(QpHandle handle, struct SendWrVerbs *wr, struct SendWrRsp *opRsp);
+HcclResult HrtRaRecvWrVerbs(QpHandle handle, struct RecvWrVerbs *wr);
 s32 hrtRaPollCq(QpHandle handle, bool is_send_cq, unsigned int num, void *wc);
+s32 HrtRaPollTypicalCq(void* cqHandle, u32 num, void *wc);
 HcclResult HrtRaSendWrlist(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     unsigned int sendNum, unsigned int *completeNum);
 HcclResult HrtRaSendWrlistExt(QpHandle handle, struct SendWrlistDataExt wr[], struct SendWrRsp opRsp[],
@@ -306,6 +326,8 @@ HcclResult hrtRaRecvWrlist(QpHandle handle, struct RecvWrlistData *wr, unsigned 
     unsigned int *completeNum);
 
 HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attrs, QpHandle &qpHandle);
+HcclResult hrtRaQpCreateWithCQWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attrs,
+    unsigned int sendCqn, unsigned int recvCqn, QpHandle &qpHandle);
 HcclResult hrtRaAiQpCreate(u32 phyId, RdmaHandle rdmaHandle, struct QpExtAttrs *attrs,
     struct AiQpInfo *info, QpHandle &qpHandle);
 
@@ -333,7 +355,11 @@ HcclResult HrtRaRemapMr(RdmaHandle rdmaHandle, struct MemRemapInfo info[], unsig
 HcclResult HrtRaGetTlsEnable(struct RaInfo *info, bool *tlsEnable);
 // 目前该接口只支持peer模式，且只适用于终止未建链成功的链路，即未get_socket成功的链路
 HcclResult hrtRaSocketNonBlockBatchAbort(SocketConnectInfoT conn[], u32 num);
+
 HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo);
+HcclResult CreateQpWithCQConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigWithCQInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo);
+HcclResult CreateTypicalCq(RdmaHandle rdmaHandle, u32 cqDepth, u32 &cqn, void **cqHandle);
+HcclResult DestroyTypicalCq(RdmaHandle rdmaHandle, u32 cqn, void *cqHandle);
 HcclResult IsSupportRaSocketAbort(bool& isSupportRaSocketAbort);
 HcclResult hrtRaGetSecRandom(struct RaInfo *info, unsigned int* token);
 HcclResult hrtRaGetDevEidInfoNum(RaInfo info, unsigned int* num);

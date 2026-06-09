@@ -56,6 +56,7 @@ public:
     // port值为无效值0xFFFFFFFF时, 只初始化nic网卡，不启动监听
     HcclResult StartNic(const HcclIpAddress &ipAddr, u32 &port, bool rdmaFlag,
         HcclIpAddress ipAddrBackup = HcclIpAddress(0));
+    void SetDisableLiteThread(bool disable);
     HcclResult StopNic(const HcclIpAddress &ipAddr, u32 port);
     HcclResult StartHostNetAndListen(const HcclIpAddress &ipAddr, SocketHandle &socketHandle, u32 &port, bool rdmaFlag);
     HcclResult StopHostNetAndListen(SocketHandle socketHandle, const HcclIpAddress &ipAddr, u32 port);
@@ -145,6 +146,7 @@ private:
     bool isRaInitRepeated_ = false;
     bool isRaDeInit_ = false;
     bool isEnableHdcAsync_ = false;
+    bool isDisableLiteThread_ = false;
     RaResourceInfo raResourceInfo_;
     Referenced deviceNicInitRef_;
     Referenced hostNicInitRef_;

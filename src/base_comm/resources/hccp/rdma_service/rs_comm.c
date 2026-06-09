@@ -71,6 +71,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_GET_LITE_SUPPORT, 2},
     {RA_RS_GET_LITE_RDEV_CAP, 1},
     {RA_RS_GET_LITE_QP_CQ_ATTR, 1},
+    {RA_RS_GET_LITE_QP_ATTR, 1},
     {RA_RS_GET_LITE_CONNECTED_INFO, 1},
     {RA_RS_GET_LITE_MEM_ATTR, 1},
     {RA_RS_PING_INIT, 1},

@@ -810,7 +810,7 @@ HcclResult NetworkManager::StartNic(const HcclIpAddress &ipAddr, u32 &port, bool
         NetworkMode netMode;
         GetNetworkMode(netMode);
         CHK_RET(GetNotifyType(notifyType_));
-        HcclResult ret = InitRDMA(devicePhyId_, ipAddr, netMode, notifyType_, sock.nicRdmaHandle, false,
+        HcclResult ret = InitRDMA(devicePhyId_, ipAddr, netMode, notifyType_, sock.nicRdmaHandle, isDisableLiteThread_,
             false, ipAddrBackup);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Start][Nic]errNo[0x%016llx] ra nic init rdma failed, devid[%u], return[%d]",
@@ -855,6 +855,11 @@ HcclResult NetworkManager::StartNic(const HcclIpAddress &ipAddr, u32 &port, bool
     int refCount = IPPortListenRefMapDevice_[ipAddr][port].Ref();
     HCCL_INFO("Nic ip[%s] port[%u] refcount is [%d]", ipAddr.GetReadableAddress(), port, refCount);
     return HCCL_SUCCESS;
+}
+
+void NetworkManager::SetDisableLiteThread(bool disable)
+{
+    isDisableLiteThread_ = disable;
 }
 
 HcclResult NetworkManager::CreateNicSocketHandle(const HcclIpAddress &ipAddr)

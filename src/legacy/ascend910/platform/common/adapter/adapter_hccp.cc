@@ -179,6 +179,34 @@ HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     return HCCL_SUCCESS;
 }
 
+HcclResult CreateTypicalCq(RdmaHandle rdmaHandle, u32 cqDepth, u32 &cqn, void **cqHandle)
+{
+    HCCL_DEBUG("CreateTypicalCq cqDepth[%u]", cqDepth);
+
+    s32 ret = DlRaFunction::GetInstance().dlRaTypicalCqCreate(rdmaHandle, cqDepth, &cqn, cqHandle);
+    CHK_PRT_RET(ret != 0 || (*cqHandle == NULL),
+        HCCL_ERROR("[CreateTypicalCq]create typical cq failed. ret[%d]", ret), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult DestroyTypicalCq(RdmaHandle rdmaHandle, u32 cqn, void *cqHandle)
+{
+    HCCL_DEBUG("DestroyTypicalCq cqn[%u]", cqn);
+
+    s32 ret = DlRaFunction::GetInstance().dlRaTypicalCqDestroy(rdmaHandle, cqn, cqHandle);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[DestroyTypicalCq]destroy typical cq failed. ret[%d]", ret), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaQpDestroyWithoutCQ(QpHandle handle)
+{
+    s32 ret = DlRaFunction::GetInstance().dlRaQpDestroyWithoutCQ(handle);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[HrtRaQpDestroyWithoutCQ]destroy qp without cq failed. ret[%d]", ret), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
 HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct TypicalQp* localQpInfo, struct TypicalQp* remoteQpInfo)
 {
     std::string qpInfo = std::string("qpHandle:") + std::to_string(reinterpret_cast<intptr_t>(qpHandle)) + \
@@ -430,6 +458,62 @@ HcclResult HrtRaSendWrV2(QpHandle handle, struct SendWrV2 *wr, struct SendWrRsp 
     return HCCL_SUCCESS;
 }
 
+HcclResult HrtRaSendWrVerbs(QpHandle handle, struct SendWrVerbs *wr, struct SendWrRsp *opRsp)
+{
+    s32 ret = 0;
+    auto startTime = std::chrono::steady_clock::now();
+    auto timeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
+
+    HCCL_DEBUG("ra send wr verbs.");
+    while (true) {
+        ret = DlRaFunction::GetInstance().dlRaSendWrVerbs(handle, wr, opRsp);
+        if (!ret) {
+            break;
+        } else if ((ret == SOCK_ENOENT) || (ret == ROCE_EAGAIN) ||
+            (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && ret == ROCE_ENOMEM)) {
+            bool bTimeOut = ((std::chrono::steady_clock::now() - startTime) >= timeout);
+            CHK_PRT_RET(bTimeOut, HCCL_ERROR("[HrtRaSendWrVerbs][RaWr]errNo[0x%016llx] ra get send async timeout[%d s]. "\
+                "return[%d], params: send_wrAddr[%p], opRspAddr[%p]",
+                HCCL_ERROR_CODE(HCCL_E_ROCE_TRANSFER), timeout,  ret, wr, opRsp), HCCL_E_ROCE_TRANSFER);
+            SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+        } else {
+            HCCL_ERROR("[HrtRaSendWrVerbs][RaWr]ra send async fail. return[%d], para: send_wrAddr[%p], "\
+                "opRspAddr[%p].", ret, wr, opRsp);
+            return HCCL_E_ROCE_TRANSFER;
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaRecvWrVerbs(QpHandle handle, struct RecvWrVerbs *wr)
+{
+    s32 ret = 0;
+    auto startTime = std::chrono::steady_clock::now();
+    auto timeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
+
+    HCCL_DEBUG("ra recv wr verbs.");
+    while (true) {
+        ret = DlRaFunction::GetInstance().dlRaRecvWrVerbs(handle, wr);
+        if (!ret) {
+            break;
+        } else if ((ret == SOCK_ENOENT) || (ret == ROCE_EAGAIN) ||
+            (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && ret == ROCE_ENOMEM)) {
+            bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
+            CHK_PRT_RET(bTimeout, HCCL_ERROR("[Recv][RaWr]errNo[0x%016llx] ra get recv async timeout[%d s]. "\
+                "return[%d], params: recv_wrAddr[%p]",
+                HCCL_ERROR_CODE(HCCL_E_ROCE_TRANSFER), timeout, ret, wr), HCCL_E_ROCE_TRANSFER);
+            SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+        } else {
+            HCCL_ERROR("[Recv][RaWr]ra recv async fail. return[%d], para: recv_wrAddr[%p].",
+                ret, wr);
+            return HCCL_E_ROCE_TRANSFER;
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
 s32 hrtRaPollCq(QpHandle handle, bool is_send_cq, unsigned int num, void *wc)
 {
     CHK_PTR_NULL(handle);
@@ -437,6 +521,15 @@ s32 hrtRaPollCq(QpHandle handle, bool is_send_cq, unsigned int num, void *wc)
 
     u32 ret = DlRaFunction::GetInstance().dlRaPollCq(handle, is_send_cq, num, wc);
     CHK_PRT_RET(static_cast<u32>(ret) > num, HCCL_ERROR("[hrtRaPollCq] PollCq fail. return[%d]", ret), ret);
+    return ret;
+}
+
+s32 HrtRaPollTypicalCq(void* cqHandle, u32 num, void *wc)
+{
+    CHK_PTR_NULL(cqHandle);
+    CHK_PTR_NULL(wc);
+    u32 ret = DlRaFunction::GetInstance().dlRaPollTypicalCq(cqHandle, num, wc);
+    CHK_PRT_RET(static_cast<u32>(ret) > num, HCCL_ERROR("[HrtRaPollTypicalCq] PollCq fail. return[%d]", ret), ret);
     return ret;
 }
 
@@ -2591,6 +2684,25 @@ HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attr
     return HCCL_SUCCESS;
 }
 
+HcclResult hrtRaQpCreateWithCQWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attrs,
+    unsigned int sendCqn, unsigned int recvCqn, QpHandle &qpHandle)
+{
+    s32 ret = DlRaFunction::GetInstance().dlRaQpCreateWithCQWithAttrs(rdmaHandle, attrs, sendCqn, recvCqn, &qpHandle);
+    if (ret != 0 || qpHandle == nullptr) {
+        HCCL_ERROR("[Create][RaQpWithCQ] ra qp create with cq with attrs fail. ret[%d]", ret);
+        return HCCL_E_NETWORK;
+    }
+
+    struct QpAttr attr{};
+    CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
+    s32 deviceId = 0;
+    if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
+        deviceId = -1;
+    }
+    PLF_CONFIG_DEBUG(PLF_RES, "Create QpWithCQ para: deviceId[%d] qpn[%u]", deviceId, attr.qpn);
+    return HCCL_SUCCESS;
+}
+
 HcclResult hrtRaAiQpCreate(u32 phyId, RdmaHandle rdmaHandle, struct QpExtAttrs *attrs,
     struct AiQpInfo *info, QpHandle &qpHandle)
 {
@@ -3000,6 +3112,51 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
     }
     qpInfo.psn = attr.psn;
     HCCL_DEBUG("CreateQpWithDepthConfig qpn[%u], gidIdx[%u], psn[%u]", qpInfo.qpn, qpInfo.gidIdx, qpInfo.psn);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CreateQpWithCQConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigWithCQInfo& qpConfig,
+    QpHandle &qpHandle, struct TypicalQp& qpInfo)
+{
+    HCCL_INFO("CreateQpWithCQ qpMode[%d], sq_depth[%u], rq_depth[%u], scq_depth[%u], rcq_depth[%u], "
+        "sendCqn[%u], recvCqn[%u], use_resv_mem[%u], resv_mem_pool_id[%u], "
+        "sq_sig_all[%d], max_send_sge[%u], max_recv_sge[%u], max_inline_data[%u]",
+        qpMode, qpConfig.sq_depth, qpConfig.rq_depth, qpConfig.scq_depth, qpConfig.rcq_depth,
+        qpConfig.sendCqn, qpConfig.recvCqn, qpConfig.use_resv_mem, qpConfig.resv_mem_pool_id,
+        qpConfig.sq_sig_all, qpConfig.max_send_sge, qpConfig.max_recv_sge, qpConfig.max_inline_data);
+
+    struct QpExtAttrs ext_attrs{};
+    ext_attrs.qpMode = qpMode;
+    ext_attrs.cqAttr.sendCqDepth = qpConfig.scq_depth;
+    ext_attrs.cqAttr.recvCqDepth = qpConfig.rcq_depth;
+    ext_attrs.qpAttr.cap.max_send_wr = qpConfig.sq_depth;
+    ext_attrs.qpAttr.cap.max_recv_wr = qpConfig.rq_depth;
+    ext_attrs.version = QP_CREATE_WITH_ATTR_VERSION;
+    ext_attrs.qpAttr.cap.max_inline_data = qpConfig.max_inline_data;
+    ext_attrs.qpAttr.cap.max_send_sge = qpConfig.max_send_sge;
+    ext_attrs.qpAttr.cap.max_recv_sge = qpConfig.max_recv_sge;
+    ext_attrs.qpAttr.qp_type = IBV_QPT_RC;
+    ext_attrs.qpAttr.sq_sig_all = qpConfig.sq_sig_all;
+    ext_attrs.udpSport = 0x0;
+    ext_attrs.cstmFlag.bs.useResvMem = qpConfig.use_resv_mem;
+    ext_attrs.resvMemPoolId = qpConfig.resv_mem_pool_id;
+
+    CHK_RET(hrtRaQpCreateWithCQWithAttrs(rdmaHandle, &ext_attrs, qpConfig.sendCqn, qpConfig.recvCqn, qpHandle));
+
+    struct QpAttr attr{};
+    HcclResult ret = hrtRaGetQpAttr(qpHandle, &attr);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateQpWithCQConfig] hrtRaGetQpAttr failed, ret[%d].", ret);
+        HrtRaQpDestroy(qpHandle);
+        return ret;
+    }
+    qpInfo.qpn = attr.qpn;
+    qpInfo.gidIdx = attr.gidIdx;
+    for (uint32_t i = 0; i < HCCP_GID_RAW_LEN; i++) {
+        qpInfo.gid[i] = attr.gid[i];
+    }
+    qpInfo.psn = attr.psn;
+    HCCL_DEBUG("CreateQpWithCQConfig qpn[%u], gidIdx[%u], psn[%u]", qpInfo.qpn, qpInfo.gidIdx, qpInfo.psn);
     return HCCL_SUCCESS;
 }
 

@@ -61,6 +61,8 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
     CHK_SMART_PTR_NULL(dlRaQpCreate);
     dlRaQpDestroy = (int(*)(QpHandle))HcclDlsym(handle_, "RaQpDestroy");
     CHK_SMART_PTR_NULL(dlRaQpDestroy);
+    dlRaQpDestroyWithoutCQ = (int(*)(QpHandle))HcclDlsym(handle_, "RaQpDestroyWithoutCQ");
+    CHK_SMART_PTR_NULL(dlRaQpDestroyWithoutCQ);
     dlRaGetQpContext = (int(*)(void*, void**, void**, void**))HcclDlsym(handle_, "RaGetQpContext");
     CHK_SMART_PTR_NULL(dlRaGetQpContext);
     dlRaQpConnectAsync = (int(*)(QpHandle, const SocketHandle))HcclDlsym(handle_, "RaQpConnectAsync");
@@ -88,8 +90,14 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
     CHK_SMART_PTR_NULL(dlRaSendWr);
     dlRaSendWrV2 = (int(*)(QpHandle, struct SendWrV2*, struct SendWrRsp*))HcclDlsym(handle_, "RaSendWrV2");
     CHK_SMART_PTR_NULL(dlRaSendWrV2);
+    dlRaSendWrVerbs = (int(*)(QpHandle, struct SendWrVerbs*, struct SendWrRsp*))HcclDlsym(handle_, "RaSendWrVerbs");
+    CHK_SMART_PTR_NULL(dlRaSendWrVerbs);
+    dlRaRecvWrVerbs = (int(*)(QpHandle, struct RecvWrVerbs*))HcclDlsym(handle_, "RaRecvWrVerbs");
+    CHK_SMART_PTR_NULL(dlRaRecvWrVerbs);
     dlRaPollCq = (int(*)(QpHandle, bool, unsigned int, void *))HcclDlsym(handle_, "RaPollCq");
     CHK_SMART_PTR_NULL(dlRaPollCq);
+    dlRaPollTypicalCq = (int(*)(void*, unsigned int, void*))HcclDlsym(handle_, "RaPollTypicalCq");
+    CHK_SMART_PTR_NULL(dlRaPollTypicalCq);
     dlRaSendWrlist = (int(*)(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp op_rsp[],
         unsigned int sendNum, unsigned int *completeNum))HcclDlsym(handle_, "RaSendWrlist");
     if (dlRaSendWrlist == nullptr) {
@@ -150,6 +158,16 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
     dlRaTypicalSendWr =
         (int(*)(QpHandle, struct SendWr*, struct SendWrRsp*))HcclDlsym(handle_, "RaTypicalSendWr");
     CHK_SMART_PTR_NULL(dlRaTypicalSendWr);
+    dlRaTypicalCqCreate =
+        (int(*)(RdmaHandle, unsigned int, unsigned int*, void**))HcclDlsym(handle_, "RaTypicalCqCreate");
+    CHK_SMART_PTR_NULL(dlRaTypicalCqCreate);
+    dlRaTypicalCqDestroy =
+        (int(*)(RdmaHandle, unsigned int, void*))HcclDlsym(handle_, "RaTypicalCqDestroy");
+    CHK_SMART_PTR_NULL(dlRaTypicalCqDestroy);
+    dlRaQpCreateWithCQWithAttrs =
+        (int(*)(RdmaHandle, struct QpExtAttrs*, unsigned int, unsigned int, QpHandle*))
+        HcclDlsym(handle_, "RaQpCreateWithCQWithAttrs");
+    CHK_SMART_PTR_NULL(dlRaQpCreateWithCQWithAttrs);
     dlRaAiQpCreate = (int (*)(RdmaHandle, struct QpExtAttrs *, struct AiQpInfo *, QpHandle *))HcclDlsym(handle_,
         "RaAiQpCreate");
     CHK_SMART_PTR_NULL(dlRaAiQpCreate);
