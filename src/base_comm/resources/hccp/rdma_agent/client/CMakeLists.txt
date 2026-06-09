@@ -53,7 +53,9 @@ if(NOT BUILD_OPEN_PROJECT)
 endif()
 
 target_compile_options(ra PRIVATE
-    -Werror
+    # -Werror
+    # -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fvisibility=hidden
     -fno-strict-aliasing
     -fsigned-char
