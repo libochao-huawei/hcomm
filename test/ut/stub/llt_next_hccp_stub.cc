@@ -96,7 +96,9 @@ int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, s
     static char kStubRaTpAttrReq{};
     (void)ctxHandle;
     (void)tpHandle;
-    (void)attrBitmap;
+    if (attrBitmap != nullptr) {
+        *attrBitmap |= (1U << 17U);
+    }
     if (attr != nullptr) {
         (void)std::memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = 0x7U;

@@ -84,7 +84,9 @@ int StubRaGetTpAttrAsyncUboeSl789Legacy(void *ctxHandle, uint64_t tpHandle, uint
     static char kLegacyUboeAttrReq{};
     (void)ctxHandle;
     (void)tpHandle;
-    (void)attrBitmap;
+    if (attrBitmap != nullptr) {
+        *attrBitmap |= (1U << 17U);
+    }
     if (attr != nullptr) {
         (void)memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = (1U << 7U) | (1U << 8U) | (1U << 9U);
@@ -131,7 +133,9 @@ int StubRaGetTpAttrAsyncSl01Legacy(void *ctxHandle, uint64_t tpHandle, uint32_t 
     static char kLegacySl01Req{};
     (void)ctxHandle;
     (void)tpHandle;
-    (void)attrBitmap;
+    if (attrBitmap != nullptr) {
+        *attrBitmap |= (1U << 17U);
+    }
     if (attr != nullptr) {
         (void)memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = (1U << 0U) | (1U << 1U);

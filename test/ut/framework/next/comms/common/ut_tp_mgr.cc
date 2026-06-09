@@ -26,6 +26,15 @@ using namespace hcomm;
 
 namespace {
 
+constexpr uint32_t kStubTpAttrSlBitmapExtBit = 17U;
+
+static void StubMarkTpAttrSlBitmapExt(uint32_t *attrBitmap)
+{
+    if (attrBitmap != nullptr) {
+        *attrBitmap |= (1U << kStubTpAttrSlBitmapExtBit);
+    }
+}
+
 class UbTimeoutEnvGuard {
 public:
     explicit UbTimeoutEnvGuard(const char *value)
@@ -121,7 +130,7 @@ int StubRaGetTpAttrAsyncUboe(void *ctxHandle, uint64_t tpHandle, uint32_t *attrB
     static char kUboeTpAttrReq{};
     (void)ctxHandle;
     (void)tpHandle;
-    (void)attrBitmap;
+    StubMarkTpAttrSlBitmapExt(attrBitmap);
     if (attr != nullptr) {
         (void)std::memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = 0x7U;
@@ -159,7 +168,7 @@ int StubRaGetTpAttrAsyncUboeSl789(void *ctxHandle, uint64_t tpHandle, uint32_t *
     static char kUboeTpAttrSl789Req{};
     (void)ctxHandle;
     (void)tpHandle;
-    (void)attrBitmap;
+    StubMarkTpAttrSlBitmapExt(attrBitmap);
     if (attr != nullptr) {
         (void)std::memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = (1U << 7U) | (1U << 8U) | (1U << 9U);
@@ -197,7 +206,7 @@ int StubRaGetTpAttrAsyncSl123(void *ctxHandle, uint64_t tpHandle, uint32_t *attr
     static char kSl123Req{};
     (void)ctxHandle;
     (void)tpHandle;
-    (void)attrBitmap;
+    StubMarkTpAttrSlBitmapExt(attrBitmap);
     if (attr != nullptr) {
         (void)std::memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = (1U << 1U) | (1U << 2U) | (1U << 3U);
@@ -215,7 +224,7 @@ int StubRaGetTpAttrAsyncSingleSlBit(void *ctxHandle, uint64_t tpHandle, uint32_t
     static char kSingleSlReq{};
     (void)ctxHandle;
     (void)tpHandle;
-    (void)attrBitmap;
+    StubMarkTpAttrSlBitmapExt(attrBitmap);
     if (attr != nullptr) {
         (void)std::memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = (1U << 5U);
@@ -233,7 +242,7 @@ int StubRaGetTpAttrAsyncTwoSlBits(void *ctxHandle, uint64_t tpHandle, uint32_t *
     static char kTwoSlReq{};
     (void)ctxHandle;
     (void)tpHandle;
-    (void)attrBitmap;
+    StubMarkTpAttrSlBitmapExt(attrBitmap);
     if (attr != nullptr) {
         (void)std::memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = (1U << 3U) | (1U << 7U);
@@ -285,7 +294,7 @@ int StubRaGetTpAttrAsyncUboeDscpMode0(void *ctxHandle, uint64_t tpHandle, uint32
     static char kUboeDscpMode0Req{};
     (void)ctxHandle;
     (void)tpHandle;
-    (void)attrBitmap;
+    StubMarkTpAttrSlBitmapExt(attrBitmap);
     if (attr != nullptr) {
         (void)std::memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = 0x7U;
@@ -323,7 +332,7 @@ int StubRaGetTpAttrAsyncSl01(void *ctxHandle, uint64_t tpHandle, uint32_t *attrB
     static char kSl01Req{};
     (void)ctxHandle;
     (void)tpHandle;
-    (void)attrBitmap;
+    StubMarkTpAttrSlBitmapExt(attrBitmap);
     if (attr != nullptr) {
         (void)std::memset(attr, 0, sizeof(struct TpAttr));
         attr->slBitmap = (1U << 0U) | (1U << 1U);
@@ -331,6 +340,41 @@ int StubRaGetTpAttrAsyncSl01(void *ctxHandle, uint64_t tpHandle, uint32_t *attrB
     }
     if (reqHandle != nullptr) {
         *reqHandle = &kSl01Req;
+    }
+    return 0;
+}
+
+int StubRaGetTpAttrAsyncLegacyNoBit17(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr,
+    void **reqHandle)
+{
+    static char kLegacyNoBit17Req{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    if (attrBitmap != nullptr) {
+        *attrBitmap = 0U;
+    }
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kLegacyNoBit17Req;
+    }
+    return 0;
+}
+
+int StubRaGetTpAttrAsyncSlBitmapExtEmpty(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr,
+    void **reqHandle)
+{
+    static char kSlBitmapExtEmptyReq{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    StubMarkTpAttrSlBitmapExt(attrBitmap);
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+        attr->slBitmap = 0U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kSlBitmapExtEmptyReq;
     }
     return 0;
 }
@@ -437,6 +481,31 @@ TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_Uboe_EightTp_Sl789_Qos7_Expect_FirstTp_Sl7)
     ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
     EXPECT_EQ(tpInfo.tpHandle, 0x100ULL);
     EXPECT_EQ(tpInfo.mappedJettyPriority, 7U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_TpAttrNoBit17_Expect_FirstTp_JettyPriority2)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncLegacyNoBit17));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.12.1", "10.10.12.2", TpProtocol::UBOE, 7U);
+    TpInfo tpInfo{};
+    ASSERT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_SUCCESS);
+    EXPECT_EQ(tpInfo.tpHandle, 0x100ULL);
+    EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+    EXPECT_EQ(tpInfo.mappedJettyPriority, 2U);
+}
+
+TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_SlBitmapExtEmpty_Expect_InternalError)
+{
+    MOCKER(RaGetTpInfoListAsync).stubs().will(invoke(StubRaGetTpInfoListAsyncUboeEight));
+    MOCKER(RaGetTpAttrAsync).stubs().will(invoke(StubRaGetTpAttrAsyncSlBitmapExtEmpty));
+
+    TpMgr &mgr = TpMgr::GetInstance(0);
+    const GetTpInfoParam param = MakeParam("10.10.12.3", "10.10.12.4", TpProtocol::UBOE, 0U);
+    TpInfo tpInfo{};
+    EXPECT_EQ(PollGetTpInfo(mgr, param, tpInfo), HCCL_E_INTERNAL);
 }
 
 TEST_F(TpMgrTest, Ut_TpMgr_GetTpInfo_DifferentQosKeys_Expect_Both_Success)
