@@ -323,6 +323,7 @@ STATIC void *RsNdaDbMmap(struct doorbell_map_desc *desc)
 
 STATIC int RsNdaDbUnmapHostVa(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_map_desc *desc)
 {
+    (void)ptr;
     uint64_t alignHva = AlignDown(desc->hva, (uint64_t)RA_RS_4K_PAGE_SIZE);
     unsigned int logicId = gRsCb->logicId;
     struct NdaPcieDbCb *ndaDbCb = NULL;
@@ -350,6 +351,7 @@ STATIC int RsNdaDbUnmapHostVa(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_
 
 STATIC int RsNdaDbUnmapUbRes(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_map_desc *desc)
 {
+    (void)ptr;
     struct NdaUbResMapPrivInfo resMapIn = {0};
     struct res_map_info_in resInfoIn = {0};
     unsigned int logicId = gRsCb->logicId;

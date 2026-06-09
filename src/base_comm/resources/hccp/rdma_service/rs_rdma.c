@@ -1433,6 +1433,10 @@ RS_ATTRI_VISI_DEF int RsNotifyCfgGet(unsigned int phyId, unsigned long long *va,
 RS_ATTRI_VISI_DEF int RsSetTsqpDepth(unsigned int phyId, unsigned int rdevIndex, unsigned int tempDepth,
     unsigned int *qpNum)
 {
+    (void)phyId;
+    (void)qpNum;
+    (void)rdevIndex;
+    (void)tempDepth;
 #ifdef CUSTOM_INTERFACE
     struct RsRdevCb *rdevCb = NULL;
     unsigned int sqDepth = 0;
@@ -1470,6 +1474,10 @@ RS_ATTRI_VISI_DEF int RsSetTsqpDepth(unsigned int phyId, unsigned int rdevIndex,
 RS_ATTRI_VISI_DEF int RsGetTsqpDepth(unsigned int phyId, unsigned int rdevIndex, unsigned int *tempDepth,
     unsigned int *qpNum)
 {
+    (void)phyId;
+    (void)qpNum;
+    (void)rdevIndex;
+    (void)tempDepth;
 #ifdef CUSTOM_INTERFACE
     struct RsRdevCb *rdevCb = NULL;
     unsigned int sqDepth = 0;

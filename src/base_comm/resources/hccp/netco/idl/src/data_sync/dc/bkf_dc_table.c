@@ -119,6 +119,7 @@ void BkfDcDelAllTable(BkfDc *dc, BkfDcSlice *slice)
 
 BkfDcTable *BkfDcFindTable(BkfDc *dc, BkfDcSlice *slice, uint16_t tableTypeId)
 {
+    (void)dc;
     uint8_t hashIdx = BKF_DC_GET_TABLE_HASH_IDX(tableTypeId);
     BkfDcTable *table = VOS_NULL;
     BOOL hit = VOS_FALSE;
@@ -138,6 +139,7 @@ BkfDcTable *BkfDcFindTable(BkfDc *dc, BkfDcSlice *slice, uint16_t tableTypeId)
 
 BkfDcTable *BkfDcFindNextTable(BkfDc *dc, BkfDcSlice *slice, uint16_t tableTypeId)
 {
+    (void)dc;
     BkfDcTable *table = VOS_NULL;
 
     table = VOS_AVLL_FIND_NEXT(slice->tableSet, &tableTypeId);
@@ -146,6 +148,7 @@ BkfDcTable *BkfDcFindNextTable(BkfDc *dc, BkfDcSlice *slice, uint16_t tableTypeI
 
 BkfDcTable *BkfDcGetFirstTable(BkfDc *dc, BkfDcSlice *slice, void **itorOutOrNull)
 {
+    (void)dc;
     BkfDcTable *table = VOS_NULL;
 
     table = VOS_AVLL_FIRST(slice->tableSet);
@@ -157,6 +160,7 @@ BkfDcTable *BkfDcGetFirstTable(BkfDc *dc, BkfDcSlice *slice, void **itorOutOrNul
 
 BkfDcTable *BkfDcGetNextTable(BkfDc *dc, BkfDcSlice *slice, void **itorInOut)
 {
+    (void)dc;
     BkfDcTable *table = VOS_NULL;
 
     table = (*itorInOut);
