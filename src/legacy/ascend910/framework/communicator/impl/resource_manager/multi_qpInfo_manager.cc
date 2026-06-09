@@ -238,7 +238,7 @@ HcclResult DevCfgMulQpInfoCache::Init()
     }
     const bool isNotConfig = modeValue.empty() && countValue.empty() && portValue.empty();
     const bool isNumQpConfigSuccess = !modeValue.empty() && modeValue == "multi_qp" && qpCount >= 1 &&
-                                      qpCount <= MULTI_QP_CONFIG_SRC_PORT_ID_MAX && qpPorts.size() == qpCount;
+                                      qpPorts.size() == qpCount;
     constexpr std::size_t afterPortStartIndex = 1;
     if (!(isNotConfig || isNumQpConfigSuccess)) {  // 对于dev multiQp cfg非正常场景
         // 合法 portMode 不应在此解析
@@ -628,7 +628,7 @@ HcclResult EnvPerConnectionQpInfoCache::Init()
 
 bool EnvPerConnectionQpInfoCache::IsAvailable() const
 {
-    return isSetEnvPerConnectionQp_ && cacheInfo_ >= 1 && cacheInfo_ <= MULTI_QP_CONFIG_SRC_PORT_ID_MAX;
+    return isSetEnvPerConnectionQp_ && cacheInfo_ >= 1;
 }
 
 HcclResult EnvPerConnectionQpInfoCache::GetPortsNumByIpPair(PortNum &portNum, const KeyPair &ipPair) const

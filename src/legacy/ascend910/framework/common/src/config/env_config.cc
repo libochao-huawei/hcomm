@@ -316,7 +316,7 @@ HcclResult CheckSocketPortRangeValid(const std::string &envName, const std::vect
             HCCL_E_PARA);
 
         // the socket range should not include the reserved port for auto listening.
-        CHK_PRT_RET(rangeVec[i].min <= HCCL_SOCKET_PORT_RANGE_AUTO && rangeVec[i].max >=  HCCL_SOCKET_PORT_RANGE_AUTO,
+        CHK_PRT_RET(rangeVec[i].min <= HCCL_SOCKET_PORT_RANGE_AUTO,
             HCCL_ERROR("[Check][PortRangeValid] In %s, socket port range [%u, %u] includes "
                 "the reserved port number [%u]. please do not use port [%u] in socket port range.",
                 envName.c_str(), rangeVec[i].min, rangeVec[i].max, HCCL_SOCKET_PORT_RANGE_AUTO,

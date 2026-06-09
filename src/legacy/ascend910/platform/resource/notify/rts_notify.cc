@@ -222,7 +222,7 @@ drvError_t __attribute__((weak)) halResourceIdInfoGet(struct drvResIdKey *key, d
 HcclResult RtsNotify::InitAndVerifySingleSignal()
 {
 #ifdef CCL_KERNEL
-    if (static_cast<u64>(id) == INVALID_U64) {
+    if (id == INVALID_UINT) {
         // 无效值不做校验
         HCCL_DEBUG("[%s]resId[%llu] is invalid, need not check", __func__, static_cast<u64>(id));
         return HCCL_SUCCESS;

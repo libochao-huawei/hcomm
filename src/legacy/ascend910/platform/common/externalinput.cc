@@ -1170,7 +1170,7 @@ HcclResult ParseRDMATrafficClass()
 
     HcclResult ret = SalStrToULong(trafficClassEnv.c_str(), HCCL_BASE_DECIMAL, rdmaTrafficClass);
     // 若转换出错或者设置的RDMATrafficClass不在有效范围内，报错
-    CHK_PRT_RET((ret !=  HCCL_SUCCESS || rdmaTrafficClass < HCCL_RDMA_TC_MIN || rdmaTrafficClass > HCCL_RDMA_TC_MAX),
+    CHK_PRT_RET((ret !=  HCCL_SUCCESS || rdmaTrafficClass > HCCL_RDMA_TC_MAX),
         HCCL_ERROR("[Parse][TrafficClass]HCCL_RDMA_TC[%s] is invalid. except: [%u, %u]",
             trafficClassEnv.c_str(), HCCL_RDMA_TC_MIN, HCCL_RDMA_TC_MAX), HCCL_E_PARA);
     // 设置的RDMATrafficClass需要是4的整数倍, 否则报错
@@ -1205,7 +1205,7 @@ HcclResult ParseRDMAServerLevel()
 
     HcclResult ret = SalStrToULong(serverLevelEnv.c_str(), HCCL_BASE_DECIMAL, rdmaServerLevel);
     // 若转换出错或者设置的RDMAServerLevel不在有效范围内，报错
-    CHK_PRT_RET((ret !=  HCCL_SUCCESS || rdmaServerLevel < HCCL_RDMA_SL_MIN || rdmaServerLevel > HCCL_RDMA_SL_MAX),
+    CHK_PRT_RET((ret !=  HCCL_SUCCESS || rdmaServerLevel > HCCL_RDMA_SL_MAX),
         HCCL_ERROR("[Parse][rdmaServerLevel]HCCL_RDMA_SL[%s] is invalid. except: [%u, %u]",
             serverLevelEnv.c_str(), HCCL_RDMA_SL_MIN, HCCL_RDMA_SL_MAX), HCCL_E_PARA);
     g_externalInput.rdmaServerLevel = rdmaServerLevel;
