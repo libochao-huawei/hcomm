@@ -46,10 +46,13 @@ set(hccl_utest_misc_list
     # ut_switch_nic.cc
     ut_switch_nic_fsm.cc
     ut_interface_multithread.cc
+    ut_interface_hccl_verbs.cc
     ut_topoinfo_exchange_agent.cc
     ut_exchange_info.cc
 )
 add_executable(hccl_utest_misc ${hccl_utest_misc_list})
+
+set_target_properties(hccl_utest_misc PROPERTIES CXX_STANDARD 14)
 
 target_include_directories(hccl_utest_misc PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
