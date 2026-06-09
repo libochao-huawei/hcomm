@@ -90,8 +90,9 @@ static HcclResult PrepareThreadMgrParam(const std::vector<std::shared_ptr<Thread
         if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) {
             std::ostringstream oss;
             oss << "threadParam[" << i << "] raw bytes: ";
+            constexpr u32 HEX_WIDTH = 2;
             for (u32 j = 0; j < THREAD_UNIQUE_ID_MAX_SIZE; ++j) {
-                oss << std::hex << std::setw(2) << std::setfill('0')
+                oss << std::hex << std::setw(HEX_WIDTH) << std::setfill('0')
                     << static_cast<unsigned int>(static_cast<unsigned char>(opParam.threadParam[i][j])) << " ";
             }
             HCCL_INFO("[%s] %s", __func__, oss.str().c_str());

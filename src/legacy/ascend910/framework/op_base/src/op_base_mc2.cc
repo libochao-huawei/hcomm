@@ -189,7 +189,6 @@ HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType s
         CHK_RET(hcclComm->CreateCommResource(tag, aicpuStream, true, opResCtx, algConfig));
     }
     
-
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
