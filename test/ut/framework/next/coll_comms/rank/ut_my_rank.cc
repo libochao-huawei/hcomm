@@ -678,7 +678,7 @@ TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Roce_DoesNotUseUbAttrBranch)
 
 TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_MSModel_WithCommConfig)
 {
-    HcclChannelDesc in{};
+    HcommChannelDesc in{};
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
     myRank.opExpansionMode_ = CCU_MS_MODE;
@@ -689,7 +689,7 @@ TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_MSModel_WithCommConf
 
 TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_SCHEDModel_WithCommConfig)
 {
-    HcclChannelDesc in{};
+    HcommChannelDesc in{};
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
     myRank.opExpansionMode_ = CCU_SCHED_MODE;
