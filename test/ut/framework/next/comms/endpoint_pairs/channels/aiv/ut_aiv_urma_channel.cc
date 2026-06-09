@@ -615,7 +615,7 @@ TEST_F(AivUrmaTransportTest, Ut_ConnVecUnpackProc_WhenConnNumMismatch_Throws)
     EXPECT_THROW(transport->ConnVecUnpackProc(binaryStream), InvalidParamsException);
 }
 
-TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenParamNull_Returns_E_PTR)
+TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenParamNull_Returns_E_PARA)
 {
     auto conn = MakeConn();
     Socket socket(nullptr, IpAddress(), 0, IpAddress(), "ut", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
@@ -624,9 +624,9 @@ TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenParamNull_Returns_E_PTR)
     char **memInfos = nullptr;
     uint32_t memNum = 0;
 
-    EXPECT_EQ(transport->GetRemoteMems(&memNum, nullptr, &memInfos), HCCL_E_PTR);
-    EXPECT_EQ(transport->GetRemoteMems(&memNum, &remoteMem, nullptr), HCCL_E_PTR);
-    EXPECT_EQ(transport->GetRemoteMems(nullptr, &remoteMem, &memInfos), HCCL_E_PTR);
+    EXPECT_EQ(transport->GetRemoteMems(&memNum, nullptr, &memInfos), HCCL_E_PARA);
+    EXPECT_EQ(transport->GetRemoteMems(&memNum, &remoteMem, nullptr), HCCL_E_PARA);
+    EXPECT_EQ(transport->GetRemoteMems(nullptr, &remoteMem, &memInfos), HCCL_E_PARA);
 }
 
 TEST_F(AivUrmaTransportTest, Ut_GetRemoteMems_WhenNoRemoteBuffer_Returns_SUCCESS)
