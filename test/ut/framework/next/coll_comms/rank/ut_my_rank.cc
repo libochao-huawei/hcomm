@@ -680,6 +680,11 @@ TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_MSModel_WithCommConf
 {
     HcommChannelDesc in{};
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
     myRank.opExpansionMode_ = CCU_MS_MODE;
     HcclResult ret = myRank.ConfigSqDepthByExpansionMode(COMM_ENGINE_CCU, in);
@@ -691,6 +696,11 @@ TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_SCHEDModel_WithCommC
 {
     HcommChannelDesc in{};
     ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
     myRank.opExpansionMode_ = CCU_SCHED_MODE;
     HcclResult out = myRank.ConfigSqDepthByExpansionMode(COMM_ENGINE_CCU, in);
