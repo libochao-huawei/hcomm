@@ -9,6 +9,7 @@
 #include "hcomm_c_adpt.h"
 #include "channel_process.h"
 #include "base_config.h"
+#include "ccu_device_res.h"
 #include "config/env_config.h"
 #define private public
 #include "my_rank.h"
@@ -64,7 +65,7 @@ protected:
         MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(HcommCcuInsCreate).stubs().with(any()).will(returnValue(CcuResult::CCU_SUCCESS));
         MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
@@ -238,7 +239,7 @@ TEST_F(MyRankTest, Ut_Init_When_Default_Mode_Expect_Set_By_Env)
 TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
 {
     setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
-    MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_AGAIN));
+    MOCKER(HcommCcuInsCreate).stubs().will(returnValue(CcuResult::CCU_E_DRV_BUSY));
 
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -260,9 +261,9 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
 TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
 {
     setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
-    MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs()
-        .will(returnValue(HCCL_E_UNAVAIL))
-        .then(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommCcuInsCreate).stubs()
+        .will(returnValue(CcuResult::CCU_E_UNAVAIL))
+        .then(returnValue(CcuResult::CCU_SUCCESS));
 
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -284,7 +285,7 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
 TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Aicpu)
 {
     setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
-    MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_UNAVAIL));
+    MOCKER(HcommCcuInsCreate).stubs().will(returnValue(CcuResult::CCU_E_UNAVAIL));
 
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -306,7 +307,7 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Ai
 TEST_F(MyRankTest, Ut_Init_When_Resource_Fail_Expect_Fail)
 {
     setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
-    MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_PARA));
+    MOCKER(HcommCcuInsCreate).stubs().will(returnValue(CcuResult::CCU_E_PARA));
 
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -331,7 +332,6 @@ TEST_F(MyRankTest, St_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
     MOCKER(HcommEndpointStartListen).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MOCKER(HcommChannelDestroy).stubs().with(any(), any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MockerFuncs();
-    
 
     aclrtBinHandle binHandle;
     CommConfig config;
