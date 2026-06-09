@@ -609,7 +609,7 @@ HcclResult AicpuTaskCacheEntry::LaunchWqeTasks_(const size_t arrayIdx)
                 break;
             case WRITE_WITH_NOTIFY_OPCODE: // UdmaSqeWriteWithNotify
                 // write with notify (对于给定slice的最后一个UB chunk)
-                // ubConnLitePtr->ProcessOneWqeWithNotify(&wqeTask.wqeWriteWithNotify, WRITE_WITH_NOTIFY_OPCODE); // TODOSSY
+                ubConnLitePtr->LaunchOneWqeWithNotify(&wqeTask.wqeWriteWithNotify, WRITE_WITH_NOTIFY_OPCODE);
                 break;
         }
     }

@@ -225,20 +225,11 @@ void UbConnLite::LaunchOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode)
     HCCL_INFO("[UbConnLite::%s] end, pi[%u], ci[%u]", __func__, pi, ci);
 }
 
-void UbConnLite::ProcessOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
-                                         const SqeConfigLite &cfg, UdmaSqeWriteWithNotify *sqe,
-                                         const RmtRmaBufSliceLite &notify, u64 notifyData, u32 opCode,
-                                         const StreamLite &stream)
+void UbConnLite::FillOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
+    const SqeConfigLite &cfg, UdmaSqeWriteWithNotify *sqe, const RmtRmaBufSliceLite &notify, u64 notifyData, u32 opCode)
 {
     HCCL_INFO("[UbConnLite::%s] start, locSize[%u], opCode[%u]", __func__, loc.GetSize(), opCode);
 
-    // sqOffset是用于计算Ubjetty中下wqe位置的偏移，小于sqDepth
-    u32 sqOffset = pi % sqDepth_; 
-    if (sqOffset < sqDepth_ && (sqOffset + PI_NUM_TWO) >= sqDepth_) {
-        piDetourCount++;
-    }
-    // pi维护用于传入DB Send用于Rtsq 敲door bell，要求u16数据结构并且自然增长
-    pi = pi + PI_NUM_TWO; 
     // 填充sqe
     sqe->comm.inlineEn = 0;
     FillCommSqe(&(sqe->comm), rmt, cfg, WRITE_WITH_NOTIFY_OPCODE);
@@ -250,7 +241,22 @@ void UbConnLite::ProcessOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRm
     sqe->rsv1 = 0;
     sqe->rsv2 = 0;
 
-    u8 *va = reinterpret_cast<u8 *>((sqVa_) + sqOffset * SQE_SIZE_64);
+    HCCL_INFO("[UbConnLite::%s] end", __func__);
+}
+
+void UbConnLite::LaunchOneWqeWithNotify(UdmaSqeWriteWithNotify *sqe, u32 opCode)
+{
+    HCCL_INFO("[UbConnLite::%s] start, opCode[%u]", __func__, opCode);
+
+    // sqOffset是用于计算Ubjetty中下wqe位置的偏移，小于sqDepth
+    u32 sqOffset = pi % sqDepth_; 
+    if (sqOffset < sqDepth_ && (sqOffset + PI_NUM_TWO) >= sqDepth_) {
+        piDetourCount++;
+    }
+    // pi维护用于传入DB Send用于Rtsq 敲door bell，要求u16数据结构并且自然增长
+    pi = pi + PI_NUM_TWO; 
+
+    u8 *va = reinterpret_cast<u8 *>(sqVa_ + sqOffset * SQE_SIZE_64);
     if (!dwqeCacheLocked_) {
         // 带notify的wqe是96字节, 需要占用两个wqebb, 实际占用128字节
         if (sqOffset == sqDepth_ - 1) {
@@ -428,7 +434,8 @@ void UbConnLite::WriteWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSlic
         },
         [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice) {
             UdmaSqeWriteWithNotify sqe{};
-            ProcessOneWqeWithNotify(locSlice, rmtSlice, cfg, &sqe, notify, notifyData, WRITE_WITH_NOTIFY_OPCODE, stream);
+            FillOneWqeWithNotify(locSlice, rmtSlice, cfg, &sqe, notify, notifyData, WRITE_WITH_NOTIFY_OPCODE);
+            ProcessOneWqeWithNotify(&sqe, WRITE_WITH_NOTIFY_OPCODE, stream);
 
             // 按需更新cache context
             UpdateCacheContext(sqe);
@@ -458,7 +465,8 @@ void UbConnLite::WriteReduceWithNotify(DataType dataType, ReduceOp reduceOp, con
         [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice) {
             UdmaSqeWriteWithNotify sqe{};
             FillCommSqeReduceInfo(sqe.comm, reduceOp, dataType);
-            ProcessOneWqeWithNotify(locSlice, rmtSlice, cfg, &sqe, notify, notifyData, WRITE_WITH_NOTIFY_OPCODE, stream);
+            FillOneWqeWithNotify(locSlice, rmtSlice, cfg, &sqe, notify, notifyData, WRITE_WITH_NOTIFY_OPCODE);
+            ProcessOneWqeWithNotify(&sqe, WRITE_WITH_NOTIFY_OPCODE, stream);
 
             // 按需更新cache context
             UpdateCacheContext(sqe);

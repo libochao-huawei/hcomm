@@ -117,6 +117,7 @@ public:
 
     // 用于aicpu task cache下发刷新后的WQE
     void LaunchOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode);
+    void LaunchOneWqeWithNotify(UdmaSqeWriteWithNotify *sqe, u32 opCode);
 private:
     u16  pi{0};
     u16  ci{0}; 
@@ -133,9 +134,11 @@ private:
     inline void ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const StreamLite &stream) {
         LaunchOneWqe(sqe, opCode);
     }
-    void ProcessOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
-                                 UdmaSqeWriteWithNotify *sqe, const RmtRmaBufSliceLite &notify, u64 notifyData,
-                                 u32 opCode, const StreamLite &stream);
+    void FillOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
+        UdmaSqeWriteWithNotify *sqe, const RmtRmaBufSliceLite &notify, u64 notifyData, u32 opCode);
+    inline void ProcessOneWqeWithNotify(UdmaSqeWriteWithNotify *sqe, u32 opCode, const StreamLite &stream) {
+        LaunchOneWqeWithNotify(sqe, opCode);
+    }
     void FillCommSqeReduceInfo(UdmaSqeCommon &sqeComm, ReduceOp reduceOp, DataType dataType, u32 udfType = 0) const;
     void FillOneSqeWrite(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                          UdmaSqeWrite *sqe, UdmaSqOpcode opCode, u32 cqeEnable = 1);
