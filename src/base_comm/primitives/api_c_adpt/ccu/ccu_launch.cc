@@ -17,6 +17,7 @@
 
 #include "ccu_log.h"
 #include "ccu_types.h"
+#include "ccu_kernel_func.h"
 
 #include "hcom_common.h"
 #include "exception_handler.h"
@@ -94,10 +95,12 @@ CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle, uint32_t dieId,
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
 
-    CCU_CHK_PTR_NULL(kernelFuncName);
     CCU_CHK_PTR_NULL(kernelFunc);
-    CCU_CHK_PTR_NULL(kernelArgs);
     CCU_CHK_PTR_NULL(kernelHandle);
+
+    if (argNum != 0) {
+        CCU_CHK_PTR_NULL(kernelArgs);
+    }
 
     (void)dieId; // dieId 当前预留不使用
 
@@ -108,22 +111,11 @@ CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle, uint32_t dieId,
     auto *resPack = ccuIns->GetResPack();
     CCU_CHK_PTR_NULL(resPack);
 
-    auto ccuKernelFunc = reinterpret_cast<CcuKernelFunc>(kernelFunc);
-
-    if (argNum != 1) {
-        HCCL_ERROR("[%s] failed, argNum[%u] is not expected[1].", __func__, argNum);
-        return CcuResult::CCU_E_PARA;
-    }
-
-    const void *kernelArg = kernelArgs[0];
-    CCU_CHK_PTR_NULL(kernelArg);
-    const auto ccuKernelArg = const_cast<CcuKernelArg>(kernelArg);
-
     CcuKernelHandle newHandle{0};
     CCU_EXCEPTION_HANDLE_BEGIN
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
     CCU_CHK_RET(kernelMgr.Register(*resPack, kernelFuncName,
-        ccuKernelFunc, ccuKernelArg, newHandle));
+        kernelFunc, kernelArgs, argNum, newHandle));
     CCU_CHK_RET(ccuIns->SaveKernel(newHandle));
     CCU_EXCEPTION_HANDLE_END
 
@@ -265,7 +257,8 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
 CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
     CcuKernelHandle kernelHandle, const void *taskArgs, uint32_t argNum)
 {
-    HCCL_RUN_INFO("Entry-%s", __func__);
+    // 性能关键路径，非必要不打印RUN INFO日志
+    HCCL_INFO("Entry-%s", __func__);
     const auto &startus = TIME_NOW();
 
     CHK_PRT_RET(threadHandle == 0,

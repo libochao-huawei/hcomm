@@ -286,7 +286,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
     // 构造CcuKernel实现
-    CcuKernelFunc demoFunc = CcuLoadStoreDemoKernel;
+    auto demoFunc = CcuLoadStoreDemoKernel;
     CcuVarAddKernelArg demoArg{};
     demoArg.numA = 1;
     demoArg.numB = 2;
@@ -365,7 +365,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhile_When_AllFine_Expect_Retu
     constexpr uint32_t dstIp = 0x87654321;
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-    CcuKernelFunc demoFunc = CcuDoWhileWhileDemoKernel;
+    auto demoFunc = CcuDoWhileWhileDemoKernel;
     CcuDoWhileWhileDemoKernelArg demoArg{};
     demoArg.loopCount = 5;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
@@ -426,7 +426,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedIfOuterElse_When_AllFine_E
     constexpr uint32_t dstIp = 0x87654321;
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-    CcuKernelFunc demoFunc = CcuNestedIfOuterElseDemoKernel;
+    auto demoFunc = CcuNestedIfOuterElseDemoKernel;
     CcuNestedIfOuterElseDemoKernelArg demoArg{};
     demoArg.outerVal = 1;
     demoArg.outerExpected = 1;
@@ -490,7 +490,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedIfInnerElse_When_AllFine_E
     constexpr uint32_t dstIp = 0x87654321;
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-    CcuKernelFunc demoFunc = CcuNestedIfInnerElseDemoKernel;
+    auto demoFunc = CcuNestedIfInnerElseDemoKernel;
     CcuNestedIfInnerElseDemoKernelArg demoArg{};
     demoArg.outerVal = 1;
     demoArg.outerExpected = 1;
@@ -554,7 +554,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhileUnified_When_AllFine_Expe
     constexpr uint32_t dstIp = 0x87654321;
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-    CcuKernelFunc demoFunc = CcuDoWhileUnifiedDemoKernel;
+    auto demoFunc = CcuDoWhileUnifiedDemoKernel;
     CcuDoWhileUnifiedDemoKernelArg demoArg{};
     demoArg.loopCount = 5;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
@@ -615,7 +615,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelLoopAdd_When_AllFine_Expect_Retu
     constexpr uint32_t dstIp = 0x87654321;
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-    CcuKernelFunc demoFunc = CcuLoopAddDemoKernel;
+    auto demoFunc = CcuLoopAddDemoKernel;
     CcuLoopAddKernelArg demoArg{};
     demoArg.numA = 7;
     demoArg.numB = 11;
@@ -677,7 +677,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteRead_When_AllFine_Expect_R
     constexpr uint32_t dstIp = 0x87654321;
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-    CcuKernelFunc demoFunc = CcuRemoteReadKernel;
+    auto demoFunc = CcuRemoteReadKernel;
     CcuVarAddKernelArg demoArg{};
     demoArg.channelHandle = handlePair.second;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
@@ -738,7 +738,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRemoteWrite_When_AllFine_Expect_
     constexpr uint32_t dstIp = 0x87654321;
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-    CcuKernelFunc demoFunc = CcuRemoteWriteKernel;
+    auto demoFunc = CcuRemoteWriteKernel;
     CcuVarAddKernelArg demoArg{};
     demoArg.channelHandle = handlePair.second;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
@@ -799,7 +799,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAlloc_When_AllFine_Expect_Return
     constexpr uint32_t dstIp = 0x87654321;
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-    CcuKernelFunc demoFunc = CcuAllocDemoKernel;
+    auto demoFunc = CcuAllocDemoKernel;
     CcuVarAddKernelArg demoArg{};
     demoArg.channelHandle = handlePair.second;
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
@@ -865,7 +865,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
     // 构造CcuKernel实现
-    CcuKernelFunc demoFunc = CcuReduceScatterMesh1dKernel;
+    auto demoFunc = CcuReduceScatterMesh1dKernel;
     ReduceScatterKernelArg demoArg{};
     demoArg.rankSize       = 2;
     demoArg.rankId         = 0;
@@ -947,7 +947,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelNestedInIfIf_When_AllFine_Expect
     constexpr uint32_t dstIp = 0x87654321;
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
-    CcuKernelFunc demoFunc = CcuNestedInIfIfDemoKernel;
+    auto demoFunc = CcuNestedInIfIfDemoKernel;
     CcuNestedInIfIfDemoKernelArg demoArg{};
     demoArg.outerVal = 1;
     demoArg.outerExpected = 1;
@@ -1014,7 +1014,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelAllGatherMesh1dMem2Mem_When_AllF
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
     // 构造 demo 入参：rankSize=2, rankId=0, 1 个 peer 通道。
-    CcuKernelFunc demoFunc = CcuAllGatherMesh1dMem2MemKernel;
+    auto demoFunc = CcuAllGatherMesh1dMem2MemKernel;
     AllGatherKernelArg demoArg{};
     demoArg.rankSize     = 2;
     demoArg.rankId       = 0;
