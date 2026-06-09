@@ -34,7 +34,7 @@ HcclResult RankConsistencyCheckerV2::RecordEnvVarCrcV2(u64 buffSize)
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[RankConsistencyCheckerV2::RecordEnvVarCrcV2] CalcStringCrc failed for HCCL_BUFFSIZE."), ret);
     envVarCrcsV2_.emplace_back(std::string("HCCL_BUFFSIZE"), crc);
-    HCCL_DEBUG("[RankConsistencyCheckerV2::RecordEnvVarCrcV2] HCCL_BUFFSIZE=[%s], crc[0x%08x] recorded.", buffSizeStr.c_str(), crc);
+    HCCL_INFO("[RankConsistencyCheckerV2::RecordEnvVarCrcV2] HCCL_BUFFSIZE=[%s], crc[0x%08x] recorded.", buffSizeStr.c_str(), crc);
     return HCCL_SUCCESS;
 }
 
@@ -42,7 +42,7 @@ HcclResult RankConsistencyCheckerV2::RecordRankTableCrcV2(u32 crc)
 {
     rankTableCrcsV2_.clear();
     rankTableCrcsV2_.emplace_back(std::string("ranktable_content"), crc);
-    HCCL_DEBUG("[RankConsistencyCheckerV2::RecordRankTableCrcV2] ranktable crc[0x%08x] recorded.", crc);
+    HCCL_INFO("[RankConsistencyCheckerV2::RecordRankTableCrcV2] ranktable crc[0x%08x] recorded.", crc);
     return HCCL_SUCCESS;
 }
 
@@ -130,8 +130,8 @@ HcclResult RankConsistencyCheckerV2::GenerateCheckFrameV2(CheckFrameV2 &localFra
         HCCL_ERROR("[RankConsistencyCheckerV2::GenerateCheckFrameV2] memcpy version failed."), HCCL_E_INTERNAL);
 
     HCCL_INFO("[RankConsistencyCheckerV2::GenerateCheckFrameV2] success, envCrcNum[%u], "
-        "rankTableCrc[%u], subCommCrcNum[%u], version[%s].",
-        localFrame.crcNum, localFrame.rankTableCrc, localFrame.subCommCrcNum, localFrame.version);
+        "rankTableCrcNum[%u], subCommCrcNum[%u], version[%s].",
+        localFrame.crcNum, localFrame.rankTableCrcNum, localFrame.subCommCrcNum, localFrame.version);
     return HCCL_SUCCESS;
 }
 
