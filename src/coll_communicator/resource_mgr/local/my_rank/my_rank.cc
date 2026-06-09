@@ -688,7 +688,8 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     }
 
     auto start = std::chrono::steady_clock::now();
-    std::string socketTag = commTag + "_engine_" + std::to_string(engine);
+    std::string socketTag = commTag + "_engine_" + std::to_string(engine) +
+        "_protocol_" + std::to_string(channelDescs[i]->channelProtocol);
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, socketTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
 
