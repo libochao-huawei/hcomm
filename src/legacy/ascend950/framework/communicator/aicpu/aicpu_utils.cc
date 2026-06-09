@@ -479,7 +479,7 @@ HcclResult AicpuUtils::ExecuteOp(CommunicatorImplLite *communicatorImplLite)
     CHK_PTR_NULL(taskMgr);
     auto currDfxOpInfo = taskMgr->GetCurrDfxOpInfo();
     if (currDfxOpInfo == nullptr) {
-        HCCL_WARNING("[%s] currDfxOpInfo is nullptr!", __func__);
+        HCCL_WARNING("[%s] currDfxOpInfo is nullptr, skip profiling report!", __func__);
         return HCCL_E_PTR;
     }
     ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*currDfxOpInfo);

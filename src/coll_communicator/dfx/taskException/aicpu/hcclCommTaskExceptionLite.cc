@@ -176,7 +176,9 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
         } else {
             HCCL_WARNING("[%s]dfxOpInfo_ is nullptr, skip SendTaskExceptionByMBox!", __func__);
         }
-        aicpuComm->SetErrorReported(true);
+        if (curTask->dfxOpInfo_ != nullptr) {
+            aicpuComm->SetErrorReported(true);
+        }
     }
 
     // 1. 打印task信息

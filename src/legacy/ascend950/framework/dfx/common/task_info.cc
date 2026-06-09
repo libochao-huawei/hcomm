@@ -26,10 +26,10 @@ std::string TaskInfo::Describe() const
 {
     if (dfxOpInfo_ == nullptr) {
         return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], "
-            "taskParam:[%s], dftOpInfo:[nullptr], isMaster[%d]]",
+            "taskParam:[%s], dfxOpInfo:[nullptr], isMaster[%d]]",
             streamId_, taskId_, remoteRank_, taskParam_.Describe().c_str(), isMaster_);
     }
-    return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], taskParam:[%s], dftOpInfo:[%s], isMaster[%d]]",
+    return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], taskParam:[%s], dfxOpInfo:[%s], isMaster[%d]]",
                         streamId_, taskId_, remoteRank_, taskParam_.Describe().c_str(), dfxOpInfo_->Describe().c_str(), isMaster_);
 }
 

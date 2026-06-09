@@ -231,7 +231,7 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 
     bool isIndop_ = curTask->dfxOpInfo_ != nullptr ? curTask->dfxOpInfo_->isIndop_ : false;
     HCCL_INFO("[%s]isIndop_[%d], taskType[%s]", __func__, isIndop_, curTask->taskParam_.taskType.Describe().c_str());
-    if (curTask->dfxOpInfo_ != nullptr && !isIndop_) {
+    if (!isIndop_) {
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
         return;
     }

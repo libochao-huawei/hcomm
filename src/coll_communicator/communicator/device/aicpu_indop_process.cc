@@ -325,7 +325,7 @@ HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
     auto currDfxOpInfo = mirrorTaskMgrLite->GetCurrDfxOpInfo();
     if (currDfxOpInfo == nullptr) {
         HCCL_WARNING("[%s] currDfxOpInfo is nullptr!", __func__);
-        return HCCL_E_INTERNAL;
+        return HCCL_E_PTR;
     }
     CHK_RET(AicpuIndopProcess::ReportAllTasks(group));
     EXCEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*currDfxOpInfo),
