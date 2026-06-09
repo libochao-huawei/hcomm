@@ -2063,12 +2063,12 @@ const HcclSocketIfName& GetExternalInputHcclSocketIfName()
     return g_externalInput.hcclSocketIfName;
 }
 
-const u32 GetExternalInputQpsPerConnection()
+u32 GetExternalInputQpsPerConnection()
 {
     return g_externalInput.qpsPerConnection;
 }
 
-const u32 GetExternalInputMultiQpThreshold()
+u32 GetExternalInputMultiQpThreshold()
 {
     return g_externalInput.multiQpThreshold;
 }

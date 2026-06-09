@@ -190,7 +190,7 @@ private:
 
     HcclResult GetIsUsedRdma(const CommParaInfo &commParaInfo, bool &isUsedRdma);
 
-    const u32 GetSubCollectiveRank(const std::vector<u32> &vecPara) const;
+    u32 GetSubCollectiveRank(const std::vector<u32> &vecPara) const;
 
     std::vector<std::vector<std::vector<u32>>> CommPlaneVector_;
     std::vector<bool> isBridgeVector_;
