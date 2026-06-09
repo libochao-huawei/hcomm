@@ -318,6 +318,7 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
             }
             rdmaStatus_ = RdmaStatus::QP_MODIFIED;
             // modify完就不需要再轮询状态了，直接向下走准备Rqe的流程。
+            [[fallthrough]];
         case RdmaStatus::QP_MODIFIED:
             // Prepare Rqes
             if (!isHybridMode_) {
@@ -325,6 +326,7 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
                     CHK_RET(IbvPostRecv());
                 }
             }
+            [[fallthrough]];
         default:
             rdmaStatus_ = RdmaStatus::CONN_OK;
             channelStatus_ = ChannelStatus::READY;

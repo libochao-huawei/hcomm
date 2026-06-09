@@ -893,23 +893,23 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
 
     switch (status) {
         case RpingInitState::HCCL_INIT_SUCCESS: break;
-        case RpingInitState::HCCL_NET_NEED_CLOSE: {
+        case RpingInitState::HCCL_NET_NEED_CLOSE:
             if (netCtx_ != nullptr) {
                 HcclNetCloseDev(netCtx_);
                 netCtx_ = nullptr;
             }
-        }
-        case RpingInitState::HCCL_RAPING_NEED_DEINIT: {
+            [[fallthrough]];
+        case RpingInitState::HCCL_RAPING_NEED_DEINIT:
             if (pingHandle != nullptr) {
                 (void)hrtRaPingDeinit(pingHandle);
             }
-        }
-        case RpingInitState::HCCL_RA_NEED_DEINIT: {
+            [[fallthrough]];
+        case RpingInitState::HCCL_RA_NEED_DEINIT:
             (void)NetworkManager::GetInstance(static_cast<s32>(deviceId)).PingMeshRaPingDeinit();
-        }
-        case RpingInitState::HCCL_TSD_NEED_CLOSE: {
+            [[fallthrough]];
+        case RpingInitState::HCCL_TSD_NEED_CLOSE:
             (void)HccnCloseSubProc(deviceId);
-        }
+            [[fallthrough]];
         default:
             HCCL_ERROR("[HCCN][HccnRpingInit]HccnRpingInit ret[%d], status[%d].", ret, status);
             return ret;

@@ -891,6 +891,7 @@ bool SetAlgTypeLevel1(HcclAlgoType algoConfig, AlgTypeLevel1 &algType, uint32_t 
         case HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH:
         case HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE:
             HCCL_WARNING("level1:fullmesh algo is not supported. the config is ignored.");
+            [[fallthrough]];
         default:
             HCCL_WARNING("algo is not supported. the config is ignored.");
             return false;
