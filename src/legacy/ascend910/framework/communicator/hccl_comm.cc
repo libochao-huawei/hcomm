@@ -208,7 +208,7 @@ HcclResult hcclComm::SetQpQosAttr(u32 trafficClass, u32 serviceLevel)
     }
 
     // 若转换出错或者设置的RDMATrafficClass不在有效范围内，则报错
-    if (trafficClass < EnvConfig::HCCL_RDMA_TC_MIN || trafficClass > EnvConfig::HCCL_RDMA_TC_MAX) {
+    if (trafficClass > EnvConfig::HCCL_RDMA_TC_MAX) {
         HCCL_ERROR("[SetQpQosAttr]rdmaTrafficClass is invalid. except:[%u, %u], actual:[%u]",
             EnvConfig::HCCL_RDMA_TC_MIN, EnvConfig::HCCL_RDMA_TC_MAX, trafficClass);
         return HCCL_E_PARA;
@@ -221,7 +221,7 @@ HcclResult hcclComm::SetQpQosAttr(u32 trafficClass, u32 serviceLevel)
     }
 
     // 校验config中SL是否合法
-    if (serviceLevel < EnvConfig::HCCL_RDMA_SL_MIN || serviceLevel > EnvConfig::HCCL_RDMA_SL_MAX) {
+    if (serviceLevel > EnvConfig::HCCL_RDMA_SL_MAX) {
         HCCL_ERROR("[SetQpQosAttr]rdmaServiceLevel is invalid. except:[%u, %u], actual:[%u]",
             EnvConfig::HCCL_RDMA_SL_MIN, EnvConfig::HCCL_RDMA_SL_MAX, serviceLevel);
         return HCCL_E_PARA;
@@ -1486,7 +1486,7 @@ HcclResult hcclComm::SetHcclQos(u32 hcclQos)
     }
 
     // 若设置的hcclQos不在有效范围内，则使用默认值
-    if (hcclQos < EnvConfig::HCCL_QOS_MIN || hcclQos > EnvConfig::HCCL_QOS_MAX) {
+    if (hcclQos > EnvConfig::HCCL_QOS_MAX) {
         HCCL_INFO("[SetHcclQos]hcclQos is invalid, expect[%u, %u], actual[%u]. "
                   "It will use the default value. QoS[%u]", EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos,
                    EnvConfig::HCCL_QOS_DEFAULT);
