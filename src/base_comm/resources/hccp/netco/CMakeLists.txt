@@ -89,7 +89,9 @@ target_include_directories(net_co PRIVATE
 )
 
 target_compile_options(net_co PRIVATE
-	# -Werror
+	-Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
 	-fno-strict-aliasing
     $<$<CONFIG:Debug>:-g -O0>
     $<$<CONFIG:Release>:-O3>

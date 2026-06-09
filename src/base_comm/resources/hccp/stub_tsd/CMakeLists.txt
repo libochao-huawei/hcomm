@@ -14,6 +14,15 @@ set(stub_tsd_list
 # 创建共享库
 add_library(tsd_eventclient SHARED ${stub_tsd_list})
 
+target_compile_options(tsd_eventclient PRIVATE
+	-Werror
+    -Wno-unused-parameter
+    # -Wno-missing-field-initializers
+	-fno-strict-aliasing
+    $<$<CONFIG:Debug>:-g -O0>
+    $<$<CONFIG:Release>:-O3>
+)
+
 target_link_libraries(tsd_eventclient PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:runtime_headers>
