@@ -19,6 +19,5 @@ namespace hcomm {
 void SetTaskExceptionEnable(bool taskExceptionEnable);
 
 const bool& GetTaskExceptionEnable();
-const u32& GetNotifyWaitTimeout();
 }
 #endif

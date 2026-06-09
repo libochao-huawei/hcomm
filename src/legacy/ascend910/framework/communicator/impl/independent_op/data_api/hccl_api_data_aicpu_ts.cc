@@ -415,7 +415,7 @@ int32_t HcommThreadNotifyWaitOnThreadWithDefaultTimeout(ThreadHandle thread, uin
     uint32_t notifyWaitTimeOut;
     g_threadLaunchCtx.GetNotifyWaitTimeOut(notifyWaitTimeOut);
 
-    HCCL_DEBUG("[%s] Using default timeout: %u ms", __func__, notifyWaitTimeOut);
+    HCCL_DEBUG("[%s] Using default timeout: %u s", __func__, notifyWaitTimeOut);
 
     int32_t ret = HcommThreadNotifyWaitOnThread(thread, notifyIdx, notifyWaitTimeOut);
     if (ret != HCCL_SUCCESS) {
