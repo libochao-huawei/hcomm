@@ -137,7 +137,7 @@ HcclResult TopoinfoRanktableHeterog::ParserClusterInfo(hccl::HcclCommParams &par
             return HCCL_E_PARA;
         }
         // 校验rank id合法性
-        if (rankId >= rankTable.rankList.size() || rankId < 0) {
+        if (rankId >= rankTable.rankList.size()) {
             errormessage = "Value [" + std::to_string(rankId) + "] for rankTable variable [rank_id] is invalid, "\
                 "expected value is a valid rank ID in [0, " + std::to_string(rankTable.rankList.size() - 1) + "].";
             HCCL_ERROR("[%s][%s] [%s]", LOG_KEYWORDS_INIT_GROUP.c_str(),
