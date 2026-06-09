@@ -185,7 +185,7 @@ HcclResult AllReduceNB::RunAllGather(u32 rank, u32 rankSize, const std::vector<L
 }
 
  
-const u64 GetSliceSizeOfNB(const u64 dataSize, const u32 rankSize)
+u64 GetSliceSizeOfNB(const u64 dataSize, const u32 rankSize)
 {
     const u64 sliceSizeCalculated = (dataSize + (rankSize - 1)) / rankSize;
     u64 sliceSizeAligned = 0;
