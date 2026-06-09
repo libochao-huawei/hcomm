@@ -80,6 +80,8 @@ target_include_directories(hccl_v2 PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/algorithm/base/communicator
     # src/platform 头文件 (legacy/ascend910)
     ${HCOMM_DIR}/src/legacy/ascend910/platform/inc/adapter
+    # base_comm 公共模块（tp_qos 等）
+    ${HCOMM_DIR}/src/base_comm/common
     # hccp 头文件 (moved to base_comm/resources)
     ${HCOMM_DIR}/src/base_comm/resources/hccp/inc/network
     ${HCOMM_DIR}/src/base_comm/resources/hccp/orion/hcomm_dev/inc/network

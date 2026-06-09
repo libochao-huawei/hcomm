@@ -16,6 +16,7 @@ if(TARGET hccl_v2)
             hccp_peer_manager.cc
             dev_capability.cc
             dlprof_func.cc
+            ${HCOMM_DIR}/src/base_comm/common/tp_qos.cc
             tp_manager.cc
             inner_net_dev_manager.cc
             inner_net_dev.cc
