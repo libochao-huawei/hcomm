@@ -27,7 +27,7 @@ using namespace std;
 using namespace hccl;
 
 namespace hccl {
-extern std::map<std::string, void*> dlAclFuntionPtrMap;
+std::map<std::string, void*>& GetDlAclFuntionPtrMap();
 }
 
 static aclError stubHrtCacheLastTaskExtendInfoSuccess(const char* tag, size_t tagLen)
@@ -44,11 +44,11 @@ class LaunchAicpuUT : public testing::Test {
 protected:
     void SetUp() override
     {
-        hccl::dlAclFuntionPtrMap.clear();
+        hccl::GetDlAclFuntionPtrMap().clear();
     }
     void TearDown() override
     {
-        hccl::dlAclFuntionPtrMap.clear();
+        hccl::GetDlAclFuntionPtrMap().clear();
     }
 
     static void SetUpTestCase()
@@ -142,7 +142,7 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoCallSuccess_Expect_ReturnSuccess
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    hccl::dlAclFuntionPtrMap["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoSuccess;
+    hccl::GetDlAclFuntionPtrMap()["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoSuccess;
 
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -168,7 +168,7 @@ TEST_F(LaunchAicpuUT, CacheTaskOpInfo_ExtendInfoCallFailed_Expect_ReturnRuntimeE
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    hccl::dlAclFuntionPtrMap["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoFail;
+    hccl::GetDlAclFuntionPtrMap()["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoFail;
 
     HcclResult ret = CacheTaskOpInfo(stream, "test_identify");
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
@@ -284,7 +284,7 @@ TEST_F(LaunchAicpuUT, AicpuAclKernelLaunchV2_When_CacheTaskOpInfoSuccess_Expect_
         .with(any(), any(), outBoundP(&value, sizeof(value)))
         .will(returnValue(ACL_SUCCESS));
 
-    hccl::dlAclFuntionPtrMap["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoSuccess;
+    hccl::GetDlAclFuntionPtrMap()["aclrtCacheLastTaskExtendInfo"] = (void*)stubHrtCacheLastTaskExtendInfoSuccess;
 
     HcclResult ret = AicpuAclKernelLaunchV2(stm, &addr, size, binHandle, "test", true, 0, nullptr, 0, "tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
