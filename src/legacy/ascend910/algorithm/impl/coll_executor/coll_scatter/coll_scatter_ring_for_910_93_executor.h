@@ -20,6 +20,7 @@ public:
     ~CollScatterRingFor91093Executor() override = default;
 
 private:
+    using CollScatterExecutor::KernelRunLevel1;
     /* *************** 资源计算 *************** */
     HcclResult CalcStreamNum(u32& streamNum) override;
     HcclResult CalcLevel0CommInfo(TransportMemType inputType, TransportMemType outputType,
