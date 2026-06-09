@@ -460,18 +460,21 @@ HcclResult HcclCommConn::Connect(HcclAddr &connectAddr)
             if (ret != HCCL_SUCCESS) {
                 break;
             }
+            [[fallthrough]];
         case OpStatus::CONNECT:
             connectState_ = OpStatus::CONNECT;
             ret = hrtRaSocketNonBlockBatchConnect(&connectInfo_, 1);
             if (ret != HCCL_SUCCESS) {
                 break;
             }
+            [[fallthrough]];
         case OpStatus::GETSOCKET:
             connectState_ = OpStatus::GETSOCKET;
             ret = GetSocket(socketInfo_);
             if (ret != HCCL_SUCCESS) {
                 break;
             }
+            [[fallthrough]];
         case OpStatus::BUILDTRANSPORT:
             connectState_ = OpStatus::BUILDTRANSPORT;
             ret = InitTransport(role_, localAddr_, socketInfo_);
