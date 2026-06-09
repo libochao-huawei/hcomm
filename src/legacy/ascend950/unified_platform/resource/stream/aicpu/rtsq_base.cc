@@ -143,7 +143,7 @@ HcclResult RtsqBase::GetStreamIdAndTaskIdBySqIdx(u32 sqIdx, uint16_t& streamId, 
 {
     const u32 rtsqLength = 2048;
     if (sqBaseAddr_ == 0 || sqIdx >= rtsqLength) {
-        HCCL_ERROR("[%s]fail, sqBaseAddr_[0x%llu], sqIdx[%u]", sqBaseAddr_, sqIdx);
+        HCCL_ERROR("[%s]fail, sqBaseAddr_[0x%llu], sqIdx[%u]", __func__, sqBaseAddr_, sqIdx);
         return HCCL_E_PARA;
     }
 
