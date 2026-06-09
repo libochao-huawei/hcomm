@@ -14,13 +14,37 @@
 #include "hccl_comm_pub.h"
 #include "hccl_api_base_test.h"
 #include "ccu_comp.h"
+#include "hcomm_c_adpt.h"
 #define private public
 #include "hcclCommTaskException.h"
 #include "ccuTaskException.h"
+#include "ccu_urma_channel.h"
+#include "urma_endpoint.h"
+#include "ccu_channel_ctx_pool.h"
 #undef private
 
 using namespace hccl;
 using namespace hcomm;
+
+class MockCcuUrmaChannel {
+public:
+    MockCcuUrmaChannel(uint16_t channelId = 101, uint32_t dieId = 0)
+        : channelId_(channelId), dieId_(dieId) {}
+    uint16_t GetChannelId() { return channelId_; }
+    uint32_t GetDieId() { return dieId_; }
+private:
+    uint16_t channelId_;
+    uint32_t dieId_;
+};
+void SetMockCcuUrmaChannel(MockCcuUrmaChannel* channel);
+
+static UrmaEndpoint *g_mockEndpoint = nullptr;
+
+HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint) {
+    if (endpoint == nullptr) return HCCL_E_PTR;
+    *endpoint = g_mockEndpoint;
+    return HCCL_SUCCESS;
+}
 
 class CcuTaskExceptionTest : public BaseInit {
 public:
@@ -1452,4 +1476,84 @@ TEST_F(CcuTaskExceptionTest, Ut_GetChannleIdByCcuErrorInfo)
     CcuErrorInfo loop;
     bufRead.repType = CcuRep::CcuRepType::LOOP;
     EXPECT_EQ(CcuTaskException::GetChannleIdByCcuErrorInfo(loop), 65535);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuJettys_RepTypeNotInChannel) {
+    CcuErrorInfo ccuErrorInfo = {};
+    ccuErrorInfo.repType = CcuRep::CcuRepType::BASE;
+    std::pair<CcuChannelInfo, std::vector<CcuJetty *>> ctx;
+    HcclResult ret = CcuTaskException::GetCcuJettys(ccuErrorInfo, ctx);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuJettys_ChannelHandleNotFound) {
+    CcuErrorInfo ccuErrorInfo = {};
+    ccuErrorInfo.repType = CcuRep::CcuRepType::REM_POST_SEM;
+    ccuErrorInfo.dieId = 0;
+    ccuErrorInfo.msg.waitSignal.channelId[0] = 100;
+
+    std::pair<CcuChannelInfo, std::vector<CcuJetty *>> ctx;
+
+    extern std::unordered_map<uint16_t, uint64_t> g_channelIdToHandle;
+    g_channelIdToHandle.clear();
+
+    HcclResult ret = CcuTaskException::GetCcuJettys(ccuErrorInfo, ctx);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+
+    g_channelIdToHandle.clear();
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuJettys_ChannelPtrNull) {
+    CcuErrorInfo ccuErrorInfo = {};
+    ccuErrorInfo.repType = CcuRep::CcuRepType::REM_POST_SEM;
+    ccuErrorInfo.dieId = 0;
+    ccuErrorInfo.msg.waitSignal.channelId[0] = 1;
+
+    std::pair<CcuChannelInfo, std::vector<CcuJetty *>> ctx;
+
+    extern std::unordered_map<uint16_t, uint64_t> g_channelIdToHandle;
+    g_channelIdToHandle[1] = 0;
+
+    SetMockCcuUrmaChannel(nullptr);
+
+    HcclResult ret = CcuTaskException::GetCcuJettys(ccuErrorInfo, ctx);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    g_channelIdToHandle.clear();
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuJettys_Success) {
+    CcuErrorInfo ccuErrorInfo = {};
+    ccuErrorInfo.repType = CcuRep::CcuRepType::REM_POST_SEM;
+    ccuErrorInfo.dieId = 0;
+    ccuErrorInfo.msg.waitSignal.channelId[0] = 1;
+
+    std::pair<CcuChannelInfo, std::vector<CcuJetty *>> ctx;
+
+    extern std::unordered_map<uint16_t, uint64_t> g_channelIdToHandle;
+    g_channelIdToHandle[1] = 0;
+
+    HcommChannelDesc channelDesc = {};
+    CcuUrmaChannel *realChannel = new CcuUrmaChannel(reinterpret_cast<EndpointHandle>(0x2), channelDesc);
+    SetMockCcuUrmaChannel(reinterpret_cast<MockCcuUrmaChannel *>(realChannel));
+
+    EndpointDesc endpointDesc = {};
+    EndpointDescInit(&endpointDesc, 1);
+    UrmaEndpoint *realEndpoint = new UrmaEndpoint(endpointDesc);
+    CcuChannelCtxPool *testCtxPool = new CcuChannelCtxPool(0);
+    realEndpoint->ccuChannelCtxPool_.reset(testCtxPool);
+    g_mockEndpoint = realEndpoint;
+
+    MOCKER_CPP(&CcuChannelCtxPool::GetCcuChannelCtxById)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = CcuTaskException::GetCcuJettys(ccuErrorInfo, ctx);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    delete realChannel;
+    delete realEndpoint;
+    g_mockEndpoint = nullptr;
+    SetMockCcuUrmaChannel(nullptr);
+    g_channelIdToHandle.clear();
 }
