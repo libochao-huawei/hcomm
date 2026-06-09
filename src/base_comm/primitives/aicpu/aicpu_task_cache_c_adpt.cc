@@ -8,15 +8,23 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "aicpu_task_cache_c_adpt.h"
+#include "hcomm_primitives.h"
 
+#include "dtype_common.h"
 #include "aicpu_task_cache_manager.h"
 #include "log.h"
 
 using namespace hcomm;
 
-HcommResult HcommAicpuTsCacheLookup(const char* tag, bool* isCacheMiss)
+HcommResult HcommAicpuTsTaskCacheLookup(const char* tag, bool* isCacheMiss)
 {
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        HCCL_ERROR("[%s] deviceType[%d] is not support", __func__, deviceType);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
     CHK_PTR_NULL(tag);
     CHK_PTR_NULL(isCacheMiss);
     
@@ -46,6 +54,13 @@ HcommResult HcommAicpuTsCacheLookup(const char* tag, bool* isCacheMiss)
 
 HcommResult HcommAicpuTsTaskCacheSubmit(const char* tag, void** addrs, uint64_t* sizes, uint32_t count)
 {
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        HCCL_ERROR("[%s] deviceType[%d] is not support", __func__, deviceType);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
     CHK_PTR_NULL(tag);
     CHK_PTR_NULL(addrs);
     CHK_PTR_NULL(sizes);
@@ -81,6 +96,13 @@ HcommResult HcommAicpuTsTaskCacheSubmit(const char* tag, void** addrs, uint64_t*
 
 HcommResult HcommAicpuTsTaskCacheClear(const char* tag)
 {
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        HCCL_ERROR("[%s] deviceType[%d] is not support", __func__, deviceType);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
     CHK_PTR_NULL(tag);
 
     // 清除tag对应的cache entry (if any)

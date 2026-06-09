@@ -601,11 +601,11 @@ HcclResult AicpuTaskCacheEntry::LaunchWqeTasks_(const size_t arrayIdx)
         switch (wqeCode) {
             case UdmaSqOpcode::UDMA_OPC_READ: // UdmaSqeWrite
                 // normal read
-                // ubConnLitePtr->ProcessOneWqe(&wqeTask.wqeWrite, UdmaSqOpcode::UDMA_OPC_READ); // TODOSSY
+                ubConnLitePtr->LaunchOneWqe(&wqeTask.wqeWrite, UdmaSqOpcode::UDMA_OPC_READ);
                 break;
             case UdmaSqOpcode::UDMA_OPC_WRITE: // UdmaSqeWrite
                 // inline write, normal write, or write reduce
-                // ubConnLitePtr->ProcessOneWqe(&wqeTask.wqeWrite, UdmaSqOpcode::UDMA_OPC_WRITE); // TODOSSY
+                ubConnLitePtr->LaunchOneWqe(&wqeTask.wqeWrite, UdmaSqOpcode::UDMA_OPC_WRITE);
                 break;
             case WRITE_WITH_NOTIFY_OPCODE: // UdmaSqeWriteWithNotify
                 // write with notify (对于给定slice的最后一个UB chunk)

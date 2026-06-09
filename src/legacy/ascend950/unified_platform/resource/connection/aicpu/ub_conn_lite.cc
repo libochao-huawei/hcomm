@@ -201,7 +201,7 @@ void UbConnLite::FillOneSqeWrite(const RmaBufSliceLite &loc, const RmtRmaBufSlic
     HCCL_INFO("[UbConnLite::%s] end", __func__);
 }
 
-void UbConnLite::ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const StreamLite &stream)
+void UbConnLite::LaunchOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode)
 {
     HCCL_INFO("[UbConnLite::%s] start, opCode[%s]", __func__, opCode.Describe().c_str());
 

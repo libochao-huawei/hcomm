@@ -114,6 +114,9 @@ public:
     inline const std::vector<WqeTask>& GetWqeTasks() const {
         return wqeTasks_;
     }
+
+    // 用于aicpu task cache下发刷新后的WQE
+    void LaunchOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode);
 private:
     u16  pi{0};
     u16  ci{0}; 
@@ -127,7 +130,9 @@ private:
         std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &, u32)> processOneSlice,
         std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &)> processOneSliceWithNotify,
         DataType                                                                 dataType = DataType::INVALID) const;
-    void ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const StreamLite &stream);
+    inline void ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const StreamLite &stream) {
+        LaunchOneWqe(sqe, opCode);
+    }
     void ProcessOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                                  UdmaSqeWriteWithNotify *sqe, const RmtRmaBufSliceLite &notify, u64 notifyData,
                                  u32 opCode, const StreamLite &stream);
