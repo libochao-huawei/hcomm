@@ -58,6 +58,7 @@ set(HCOMM_PUBLIC_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/include
     ${HCOMM_CODE_ROOT}/include/hccl
     ${HCOMM_CODE_ROOT}/src/legacy/ascend910/pub_inc
+    ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager
     ${HCOMM_CODE_ROOT}/src/legacy/ascend910/pub_inc/new
     ${HCOMM_CODE_ROOT}/src/legacy/ascend910/pub_inc/inner
     ${HCOMM_CODE_ROOT}/pub_inc
@@ -132,6 +133,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/inc/host
     ${HCOMM_CODE_FRAMEWORK}/common/src
     ${HCOMM_CODE_FRAMEWORK}/common/src/mgr
+    ${HCOMM_DIR}/src/common
     ${HCOMM_CODE_FRAMEWORK}/common/src/task
     ${HCOMM_CODE_FRAMEWORK}/common/src/topo
     ${HCOMM_CODE_FRAMEWORK}/common/src/config
@@ -221,6 +223,7 @@ set(HCOMM_LEGACY_INCLUDE_LIST
     ${HCOMM_CODE_LEGACY}/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
     ${HCOMM_CODE_LEGACY}/unified_platform/ccu/ccu_context/
     ${HCOMM_CODE_LEGACY}/unified_platform/pub_inc
+    ${HCCL_CODE_ROOT}/src/common
     ${HCOMM_CODE_LEGACY}/unified_platform/pub_inc/ccu/
     ${HCOMM_CODE_LEGACY}/unified_platform/resource
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/transport
