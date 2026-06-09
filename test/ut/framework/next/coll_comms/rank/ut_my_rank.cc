@@ -675,3 +675,25 @@ TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Roce_DoesNotUseUbAttrBranch)
     EXPECT_EQ(out.roceAttr.tc, 8u);
     EXPECT_EQ(out.roceAttr.sl, 4u);
 }
+
+TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_MSModel_WithCommConfig)
+{
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
+    myRank.opExpansionMode_ = CCU_MS_MODE;
+    HcclResult ret = myRank.ConfigSqDepthByExpansionMode(COMM_ENGINE_CCU, in);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(in.ubAttr.sqDepth, 128);
+}
+
+TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_SCHEDModel_WithCommConfig)
+{
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
+    myRank.opExpansionMode_ = CCU_SCHED_MODE;
+    HcclResult out = myRank.ConfigSqDepthByExpansionMode(COMM_ENGINE_CCU, in);
+    EXPECT_EQ(out, HCCL_SUCCESS);
+    EXPECT_EQ(in.ubAttr.sqDepth, 16);
+}
