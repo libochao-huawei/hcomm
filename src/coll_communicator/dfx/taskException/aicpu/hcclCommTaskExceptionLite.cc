@@ -170,13 +170,11 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
         CHK_RET(aicpuComm->SendErrorMessageReportToHost(errMsgInfo));
 
         // 2) send mbox to tsfw
-        if (curTask->dfxOpInfo_ != nullptr) {
+        if (curTask->dfxOpInfo_ == nullptr) {
+            HCCL_WARNING("[%s]dfxOpInfo_ is nullptr, skip SendTaskExceptionByMBox!", __func__);
+        } else {
             u32 notifyId = curTask->dfxOpInfo_->cpuWaitAicpuNotifyId_;
             CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
-        } else {
-            HCCL_WARNING("[%s]dfxOpInfo_ is nullptr, skip SendTaskExceptionByMBox!", __func__);
-        }
-        if (curTask->dfxOpInfo_ != nullptr) {
             aicpuComm->SetErrorReported(true);
         }
     }
