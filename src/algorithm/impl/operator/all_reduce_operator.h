@@ -28,7 +28,7 @@ public:
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
     ~AllReduceOperator();
     HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag);
-    HcclResult GetAllReduceScratchSize(const u32 count, const HcclDataType dataType, u64 &scratchSize);
+    HcclResult GetAllReduceScratchSize(const u64 count, const HcclDataType dataType, u64 &scratchSize);
 
 private:
     HcclResult SelectAlgforMix(const OpParam& param, std::string& algName);

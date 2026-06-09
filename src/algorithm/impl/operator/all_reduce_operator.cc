@@ -94,7 +94,7 @@ HcclResult AllReduceOperator::GetScratchSizeForDeterAllReduce(const u32 count, c
     return HCCL_SUCCESS;
 }
 
-HcclResult AllReduceOperator::GetAllReduceScratchSize(const u32 count, const HcclDataType dataType, u64 &scratchSize)
+HcclResult AllReduceOperator::GetAllReduceScratchSize(const u64 count, const HcclDataType dataType, u64 &scratchSize)
 {
     // 针对 单机、910B、确定性计算、图模式 的特殊优化
     if (algConfigurator_->SupportDeterministicOptim()) {
