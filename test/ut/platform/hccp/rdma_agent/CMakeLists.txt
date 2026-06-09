@@ -29,6 +29,10 @@ set(rdma_agent_utest_list
     tc_hdc.c
     tc_host.c
     tc_ra_nda.c
+    tc_hdc_lite_p2p.c
+    tc_hdc_rdma_p2p.c
+    tc_adp_p2p.c
+    tc_host_p2p.c
     ${SRC_DIR}/test/ut/platform/hccp/rdma_agent/stub/dl.c
     ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_host.c
     ${SRC_DIR}/src/base_comm/resources/hccp/rdma_agent/client/ra_common.c
@@ -126,6 +130,7 @@ target_link_libraries(rdma_agent_utest PRIVATE
     -pthread
     -lgcov
     -ldl
+    -latomic
 )
 
 enable_testing()
