@@ -19,7 +19,6 @@
 #include "log.h"
 #include "exception_util.h"
 #include "data_type.h"
-#include "rank_table_crc_bridge.h"
 
 using namespace std;
 using namespace Hccl;
@@ -480,9 +479,6 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
         HCCL_ERROR("[RankTable]load ranktable failed, file is empty");
         return HCCL_E_PARA;
     }
-    s32 deviceLogicId = 0;
-    aclrtGetDevice(&deviceLogicId);
-    RankTableCrcBridge::GetInstance().RecordRankTableJsonCrc(deviceLogicId, rankTableM);
     return HCCL_SUCCESS;
 }
 

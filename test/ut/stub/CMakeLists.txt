@@ -462,13 +462,14 @@ target_compile_definitions(hccl_llt    PRIVATE
 )
 
 target_compile_options(hccl_llt   PRIVATE
-    -O0 -U_FORTIFY_SOURCE -g
+    -O0 -U_FORTIFY_SOURCE -g --coverage -fprofile-arcs -ftest-coverage
 )
 
 target_link_libraries(hccl_llt  PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     -Wl,--allow-multiple-definition
+    -lgcov
     -lrt
     -ldl
 )

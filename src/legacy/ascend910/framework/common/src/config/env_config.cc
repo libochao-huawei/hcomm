@@ -736,14 +736,12 @@ HcclResult ParseDFSConfig()
     std::string inconsistentCheckSwitch;
     CHK_RET(ParseSingleDFSConfigItem(dfsConfigEnv, INCONSISTENT_CHECK_CONFIG, inconsistentCheckSwitch));
     if (inconsistentCheckSwitch == "off") {
-        g_envConfig.inconsistentCheckSwitch = InconsistentCheckMode::OFF;
+        g_envConfig.inconsistentCheckSwitch = false;
     } else if (inconsistentCheckSwitch == "on") {
-        g_envConfig.inconsistentCheckSwitch = InconsistentCheckMode::ON;
-    }  else if (inconsistentCheckSwitch == "first") {
-        g_envConfig.inconsistentCheckSwitch = InconsistentCheckMode::FIRST;
+        g_envConfig.inconsistentCheckSwitch = true;
     } else {
         HCCL_RUN_WARNING("[ParseDFSConfig] HCCL_DFS_CONFIG-inconsistent_check was configured to [%s], please configured to"\
-            "'on' or 'off' or 'first'", inconsistentCheckSwitch.c_str());
+            "'on' or 'off'", inconsistentCheckSwitch.c_str());
     }
 
     std::string taskMonitorInterval = "";
@@ -838,7 +836,7 @@ const bool& GetExternalInputStuckDetect()
     return g_envConfig.opCounterEnable;
 }
 
-const InconsistentCheckMode& GetExternalInconsistentCheckSwitch()
+const bool& GetExternalInconsistentCheckSwitch()
 {
     return g_envConfig.inconsistentCheckSwitch;
 }

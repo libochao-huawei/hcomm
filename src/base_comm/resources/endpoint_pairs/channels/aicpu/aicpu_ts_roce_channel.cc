@@ -242,6 +242,7 @@ HcclResult AicpuTsRoceChannel::BuildServerDataSocket(AicpuTsRoceEndpoint *roceEp
     uint32_t port, const std::string &socketTag)
 {
     HCCL_INFO("[AicpuTsRoceChannel][server] BuildDataSocket listen and accept");
+    CHK_RET(roceEp->ServerSocketListen(port));
     SocketWlistInfo wlistEntry{};
     wlistEntry.connLimit = 1U;
     const auto bin = remoteIp.GetBinaryAddress();

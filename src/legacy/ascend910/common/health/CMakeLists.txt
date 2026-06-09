@@ -10,7 +10,6 @@
 set(alg_src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/calc_crc.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/rank_consistentcy_checker.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/rank_consistency_checker_v2.cc
 )
 
 if(TARGET hccl_alg)
@@ -23,7 +22,6 @@ if(TARGET ccl_kernel)
     target_sources(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/calc_crc.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/rank_consistentcy_checker.cc
-        ${CMAKE_CURRENT_SOURCE_DIR}/rank_consistency_checker_v2.cc
     )
     target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}

@@ -195,8 +195,6 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/ascend950/framework/resource_manager/socket/
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/external_system/
     ${HCOMM_DIR}/src/legacy/ascend950/unified_platform/common/
-
-    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
 )
 target_include_directories(ccl_kernel_plf PRIVATE
     ${CCL_KERNEL_PLF_INCLUDE_LIST}
@@ -216,8 +214,6 @@ if(BUILD_OPEN_PROJECT)
     set(CCL_KERNEL_PLF_OPEN_INCLUDE_LIST
         # 临时依赖头文件，待删除
         ${HCOMM_DIR}/externel_depends/tsch/
-        # 三方件头文件
-        ${JSON_INCLUDE_DIR}
     )
     target_include_directories(ccl_kernel_plf PRIVATE
         ${CCL_KERNEL_PLF_OPEN_INCLUDE_LIST}
@@ -234,6 +230,8 @@ if(BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:runtime_headers>
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:rdma_core_headers>
+        $<BUILD_INTERFACE:hccl_legacy_headers>
+        $<BUILD_INTERFACE:json>
         -Wl,--no-as-needed
         c_sec
         aicpu_sharder
@@ -325,9 +323,6 @@ else()
         COMPONENT hcomm
     )
 endif()
-
-# 设置依赖
-add_dependencies(ccl_kernel_plf json)
 
 # 设置 ccl_kernel_plf_a 输出文件名
 set_target_properties(ccl_kernel_plf_a

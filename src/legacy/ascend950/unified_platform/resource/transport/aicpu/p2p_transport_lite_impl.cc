@@ -357,23 +357,22 @@ void P2PTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     HCCL_INFO("P2PTransportLiteImpl::Post rmtNotifyAddr[0x%llx], notifyId[%u], taskId[%u]",
         rmtNotifyAddr, rmtNotifyVec[index].id, taskId);
 
-    if (callback_ == nullptr || newCallback_ == nullptr)
-    {
+    if (callback_ || newCallback_) {
+        TaskParam taskParam{};
+        taskParam.taskType                 = TaskParamType::TASK_NOTIFY_RECORD;
+        taskParam.beginTime                = ProfGetCurCpuTimestamp();
+        taskParam.taskPara.Notify.notifyID = rmtNotifyVec[index].id;
+        taskParam.taskPara.Notify.value    = 1;
+        if (callback_) {
+            callback_(stream.GetSqId(), taskId, taskParam);
+        }
+        if (newCallback_) {
+            newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+        }
+    } else {
         HCCL_WARNING("[P2PTransportLiteImpl] callback_ is nullptr.");
-        return;
     }
-
-    TaskParam taskParam{};
-    taskParam.taskType                 = TaskParamType::TASK_NOTIFY_RECORD;
-    taskParam.beginTime                = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.Notify.notifyID = rmtNotifyVec[index].id;
-    taskParam.taskPara.Notify.value    = 1;
-    if (callback_) {
-        callback_(stream.GetSqId(), taskId, taskParam);
-    }
-    if (newCallback_) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
-    }
+    return;
 }
 
 void P2PTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
@@ -388,23 +387,22 @@ void P2PTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, 
     stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
     HCCL_INFO("P2PTransportLiteImpl::WaitWithTimeout notifyId[%u], taskId[%u], timeout[%u]", notifyId, taskId, timeout);
-    if (callback_ == nullptr || newCallback_ == nullptr)
-    {
+    if (callback_ || newCallback_) {
+        TaskParam taskParam{};
+        taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
+        taskParam.beginTime                = ProfGetCurCpuTimestamp();
+        taskParam.taskPara.Notify.notifyID = notifyId;
+        taskParam.taskPara.Notify.value    = 1;
+        if (callback_) {
+            callback_(stream.GetSqId(), taskId, taskParam);
+        }
+        if (newCallback_) {
+            newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+        }
+    } else {
         HCCL_WARNING("[P2PTransportLiteImpl] callback_ is nullptr.");
-        return;
     }
-
-    TaskParam taskParam{};
-    taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
-    taskParam.beginTime                = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.Notify.notifyID = notifyId;
-    taskParam.taskPara.Notify.value    = 1;
-    if (callback_) {
-        callback_(stream.GetSqId(), taskId, taskParam);
-    }
-    if (newCallback_) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
-    }
+    return;
 }
 
 void P2PTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
