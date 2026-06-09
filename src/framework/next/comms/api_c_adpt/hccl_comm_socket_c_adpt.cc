@@ -22,7 +22,7 @@ HcclResult SocketCreate(SocketDesc *socketDesc, SocketHandler *socketHandle)
     return hcomm::SocketProcess::GetInstance(devLogicId).GetSocket(socketDesc, *socketHandle);
 }
 
-HcclResult SocketRelease(SocketHandler *socketHandle)
+// HcclResult SocketRelease(SocketHandler *socketHandle)
 {
     CHK_PTR_NULL(socketHandle);
     s32 devLogicId;
