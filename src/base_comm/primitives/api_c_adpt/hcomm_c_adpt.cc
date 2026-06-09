@@ -40,6 +40,7 @@
 #include "channel_process.h"
 #include "launch_device.h"
 #include "endpoint_monitor.h"
+#include "adapter_rts_common.h"
 
 
 namespace hcomm {
@@ -262,9 +263,8 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
 
     if ((endpoint->loc.locType == ENDPOINT_LOC_TYPE_DEVICE)
         && ((endpoint->protocol == COMM_PROTOCOL_UBC_CTP) || (endpoint->protocol == COMM_PROTOCOL_UBC_TP))) {
-        s32 devLogicIdSigned = HcclGetThreadDeviceId();
-        CHK_PRT_RET(devLogicIdSigned < 0,
-            HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
+        s32 devLogicIdSigned = 0;
+        CHK_RET(hrtGetDeviceRefresh(&devLogicIdSigned));
         EndpointMonitor::GetInstance(devLogicIdSigned).RegisterToEndpointMonitor(devLogicIdSigned, handle);
     }
 
@@ -277,9 +277,8 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
 HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 {
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
-    s32 devLogicIdSigned = HcclGetThreadDeviceId();
-    CHK_PRT_RET(devLogicIdSigned < 0,
-        HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
+    s32 devLogicIdSigned = 0;
+    CHK_RET(hrtGetDeviceRefresh(&devLogicIdSigned));
     EndpointMonitor::GetInstance(devLogicIdSigned).RemoveEpHandleFromEndpointMonitor(endpointHandle);
     auto ret = g_EndpointMap.RemoveEndpoint(endpointHandle);
     CHK_PRT_RET(ret == false, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
