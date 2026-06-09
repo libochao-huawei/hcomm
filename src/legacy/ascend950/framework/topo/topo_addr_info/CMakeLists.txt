@@ -25,7 +25,9 @@ add_library(topoaddrinfo SHARED
 )
 
 target_compile_options(topoaddrinfo PRIVATE
-    # -Werror
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fno-strict-aliasing
     $<$<CONFIG:Debug>:-g -O0>
     $<$<CONFIG:Release>:-O3>

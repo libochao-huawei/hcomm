@@ -64,6 +64,8 @@ endif()
 
 target_compile_options(ra_hdc PRIVATE
     -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fsigned-char
     -fno-strict-aliasing
     -std=gnu11

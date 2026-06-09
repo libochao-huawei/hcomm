@@ -27,7 +27,9 @@ target_compile_definitions(ccl_kernel_plf_a PRIVATE ${CCL_KERNEL_PLF_COMPILE_DEF
 
 # 编译选项
 target_compile_options(ccl_kernel_plf PRIVATE
-    # -Werror
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fno-strict-aliasing
     -D_FORTIFY_SOURCE=2
     $<$<CONFIG:Debug>:-g -O0>
@@ -35,7 +37,9 @@ target_compile_options(ccl_kernel_plf PRIVATE
 )
 # ccl_kernel_plf_a 额外编译选项
 target_compile_options(ccl_kernel_plf_a PRIVATE
-    # -Werror
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fno-strict-aliasing
     -D_FORTIFY_SOURCE=2
     -ftrapv

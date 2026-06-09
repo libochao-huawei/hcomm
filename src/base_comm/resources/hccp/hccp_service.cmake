@@ -38,7 +38,9 @@ target_compile_definitions(hccp_service.bin PRIVATE
 )
 
 target_compile_options(hccp_service.bin PRIVATE
-    # -Werror
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fPIE
     -rdynamic
     -fvisibility=hidden

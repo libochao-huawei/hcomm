@@ -22,7 +22,9 @@ target_compile_definitions(hccd PRIVATE
 
 # 编译选项
 target_compile_options(hccd PRIVATE
-    # -Werror
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fno-strict-aliasing
     $<$<CONFIG:Debug>:-g -O0>
     $<$<CONFIG:Release>:-O3>
