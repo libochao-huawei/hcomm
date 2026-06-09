@@ -1851,3 +1851,15 @@ HcclResult TaskExceptionHandler::TaskExceptionHandler::Run(const StepData &stepD
     (void)stepData;
     return HCCL_SUCCESS;
 }
+
+// [新增] 获取指定device的所有tagOpDataMap快照，用于TaskException诊断打印
+void TaskExceptionHandler::GetAllTagOpData(u32 deviceLogicId,
+    std::map<const std::string, std::shared_ptr<std::queue<OpDataInfo>>> &opDataMap)
+{
+    if (deviceLogicId >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_WARNING("[GetAllTagOpData] invalid deviceLogicId[%u]", deviceLogicId);
+        return;
+    }
+    std::unique_lock<std::mutex> lock(tagOpDataMapMutex[deviceLogicId]);
+    opDataMap = tagOpDataMap[deviceLogicId];
+}

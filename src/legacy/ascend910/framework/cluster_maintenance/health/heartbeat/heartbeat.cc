@@ -2172,41 +2172,78 @@ void Heartbeat::PrintLocalOpDiagInfo()
         return;
     }
 
-    HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] === rank[%s] OpExeCounter: headCount[%d], tailCount[%d] ===",
-        FormatUId(uid_).c_str(), counter.first, counter.second);
-
-    // 2. 直接从已有的opInfoMap_读取算子信息，零额外下发开销
-    // headCount表示已下发的算子数，tailCount表示已完成的算子数
-    // opInfoMap_中每个tag的index是按tag分别递增的，不是全局index
-    // 因此以每个tag的当前最大index为中心，向前打印OP_DIAG_PRINT_NEARBY_COUNT个op
-    std::lock_guard<std::mutex> lock(opInfoMapMutex_);
-
-    HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] === rank[%s] op diag info "
-        "(headCount[%d], tailCount[%d], inFlightCount[%d]) ===",
+    HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] === rank[%s] OpExeCounter: headCount[%d], tailCount[%d], "
+        "inFlightCount[%d] ===",
         FormatUId(uid_).c_str(), counter.first, counter.second, counter.first - counter.second);
 
-    // 遍历opInfoMap_中所有tag，打印每个tag最近下发的OP_DIAG_PRINT_NEARBY_COUNT个op
-    for (auto &tagPair : opInfoMap_) {
+    // 2. 从TaskExceptionHandler::tagOpDataMap获取op信息
+    // tagOpDataMap在InsertOpData时记录，每个tag存queue<OpDataInfo>（最多3000条历史），
+    // 不依赖InconsistentCheck开关，OpDataInfo.index为全局算子序号
+    std::map<const std::string, std::shared_ptr<std::queue<OpDataInfo>>> tagOpDataMap;
+    TaskExceptionHandler::GetAllTagOpData(deviceLogicId_, tagOpDataMap);
+
+    if (tagOpDataMap.empty()) {
+        HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] rank[%s] tagOpDataMap is empty, no op info available",
+            FormatUId(uid_).c_str());
+        return;
+    }
+
+    // 3. 收集所有OpDataInfo，按index排序
+    std::vector<OpDataInfo> allOps;
+    for (auto &tagPair : tagOpDataMap) {
         const std::string &tag = tagPair.first;
-        auto &opList = tagPair.second;
-        if (opList.empty()) {
+        auto &opQueue = tagPair.second;
+        if (opQueue == nullptr || opQueue->empty()) {
             continue;
         }
-
-        // 从最大index（最新下发的op）开始向前打印
-        u64 latestIndex = opList.rbegin()->first;
-        HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] tag[%s] latestOpIndex[%llu], totalOpsInTag[%llu]",
-            tag.c_str(), latestIndex, opList.size());
-
-        auto it = opList.rbegin();
-        for (u32 i = 0; i < OP_DIAG_PRINT_NEARBY_COUNT && it != opList.rend(); i++, ++it) {
-            const OpInfoDesc &opInfo = it->second;
-            HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo]   tag[%s] opIndex[%llu]: "
-                "opType[%d], dataType[%d], reduceOp[%d], root[%u], count[%llu]",
-                tag.c_str(), it->first,
-                static_cast<int>(opInfo.opType), static_cast<int>(opInfo.dataType),
-                static_cast<int>(opInfo.reduceOp), opInfo.root, opInfo.count);
+        // 遍历queue中的所有op（queue只能顺序访问，需要拷贝）
+        auto tmpQueue = *opQueue;
+        while (!tmpQueue.empty()) {
+            OpDataInfo opData = tmpQueue.front();
+            tmpQueue.pop();
+            allOps.push_back(opData);
         }
+    }
+
+    if (allOps.empty()) {
+        HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] rank[%s] no op data found",
+            FormatUId(uid_).c_str());
+        return;
+    }
+
+    std::sort(allOps.begin(), allOps.end(),
+        [](const OpDataInfo &a, const OpDataInfo &b) { return a.index < b.index; });
+
+    // 4. 以tailCount为中心，打印附近的op（前后各10个）
+    int32_t tailCount = counter.second;
+    int32_t headCount = counter.first;
+    constexpr int32_t NEARBY_COUNT = 10;
+
+    HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] === rank[%s] op diag info "
+        "(totalOps[%zu], headCount[%d], tailCount[%d], printRange[opIndex near tailCount]) ===",
+        FormatUId(uid_).c_str(), allOps.size(), headCount, tailCount);
+
+    // 找到index最接近tailCount的位置
+    auto it = std::lower_bound(allOps.begin(), allOps.end(), static_cast<u32>(tailCount),
+        [](const OpDataInfo &op, u32 val) { return op.index < val; });
+
+    // 计算打印范围
+    auto printStart = it;
+    for (int i = 0; i < NEARBY_COUNT && printStart != allOps.begin(); i++) {
+        --printStart;
+    }
+    auto printEnd = it;
+    for (int i = 0; i < NEARBY_COUNT && printEnd != allOps.end(); i++) {
+        ++printEnd;
+    }
+
+    for (auto iter = printStart; iter != printEnd; ++iter) {
+        const OpDataInfo &opData = *iter;
+        HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo]   opIndex[%u]: "
+            "count[%llu], dataType[%d], reduceType[%d], rootId[%u], src[%p], dst[%p]",
+            opData.index,
+            opData.count, static_cast<int>(opData.dataType),
+            static_cast<int>(opData.reduceType), opData.rootId, opData.src, opData.dst);
     }
 
     HCCL_RUN_INFO("[Heartbeat][PrintLocalOpDiagInfo] === rank[%s] op diag info end ===", FormatUId(uid_).c_str());

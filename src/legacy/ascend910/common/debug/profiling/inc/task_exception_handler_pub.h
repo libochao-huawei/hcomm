@@ -196,6 +196,9 @@ private:
     static void PrintGroupErrorMessage(ErrorMessageReport &errorMessage, TaskInfo &exceptionTaskInfo,
         std::string &groupRankContent, std::string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, std::string &stageErrInfo);
+    // [新增] 获取指定device的所有tagOpDataMap快照，用于TaskException诊断打印
+    static void GetAllTagOpData(u32 deviceLogicId,
+        std::map<const std::string, std::shared_ptr<std::queue<OpDataInfo>>> &opDataMap);
     static std::array<std::map<int, std::shared_ptr<std::deque<TaskInfo>>>, \
         MAX_MODULE_DEVICE_NUM> taskMap;
     static std::array<std::mutex, MAX_MODULE_DEVICE_NUM> taskMapMutex;

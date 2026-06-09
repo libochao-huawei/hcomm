@@ -15,6 +15,8 @@
 #include <map>
 #include <deque>
 #include <mutex>
+#include <vector>    // [新增] PrintLocalOpDiagInfo中排序使用
+#include <algorithm> // [新增] PrintLocalOpDiagInfo中排序使用
 
 #include "hccl/hccl_types.h"
 #include "log.h"
@@ -48,9 +50,6 @@ constexpr u32 HBFRAME_SEND_LOOP_MAX_NUM = 120;
 constexpr s32 HCCL_STUCK_DETECT_TIME_MIN = 60; // 卡住检测最短时间
 constexpr s32 HCCL_STUCK_DETECT_TIME_BASE = 3; // 卡住检测时间为execTime/3
 constexpr s32 HCCL_LOST_THRESHOLD = 30; // 心跳丢失阈值为30s
-
-// [新增] 打印异常时，头尾计数附近打印的op个数
-constexpr u32 OP_DIAG_PRINT_NEARBY_COUNT = 10;
 
 using UIDType = struct HcclHeartBeatUid {
     char id[512] = {0}; // ip[IP_ADDRESS_BUFFER_LEN] + ifname[MAX_INTERFACE_NAME_LEN] + devid 最大不超过512字节
