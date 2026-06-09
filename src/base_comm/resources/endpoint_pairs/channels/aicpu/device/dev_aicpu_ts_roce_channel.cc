@@ -46,6 +46,8 @@ namespace {
 constexpr u32 RDMA_QP_MAX_NUM = 32U;
 constexpr u32 HCCL_MULTI_QP_THRESHOLD_DEFAULT = 0U;
 
+constexpr u32 DEFAULT_TIMEOUT_MS = 120000;
+
 HcclResult FillIbverbsDataFromRes(const HcommRoceChannelRes *res, TransportDeviceIbverbsData &ibd)
 {
     std::vector<RoceMemDetails> localMd;
@@ -128,7 +130,7 @@ HcclResult CreateAndInitTsRoceTransport(const HcommDeviceInfo &deviceInfo, Dispa
     machinePara.dctxPtr = dctxPtr;
 
     TransportPara transportPara{};
-    transportPara.timeout = std::chrono::milliseconds(120000);
+    transportPara.timeout = std::chrono::milliseconds(DEFAULT_TIMEOUT_MS);
     transportPara.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
 
     static const std::unique_ptr<NotifyPool> kEmptyNotifyPool;

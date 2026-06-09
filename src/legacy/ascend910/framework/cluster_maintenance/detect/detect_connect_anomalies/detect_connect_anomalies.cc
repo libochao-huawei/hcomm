@@ -153,7 +153,7 @@ HcclResult DetectConnectionAnomalies::Detect()
     std::unique_lock<std::mutex> lock(detectThreadMutex_);
     if (!isInitThread_ && threadExit_) {
         // 初始化线程,轮询ipNictypeQueue_
-        getIpNictypeQueue_.reset(new (std::nothrow) std::thread(&DetectConnectionAnomalies::DetectMonitor, this));
+        getIpNictypeQueue_.reset(new (std::nothrow) std::thread(&DetectConnectionAnomalies::DetectMonitor, std::ref(*this)));
         CHK_SMART_PTR_NULL(getIpNictypeQueue_);
         isInitThread_  = true;
     }
@@ -324,14 +324,14 @@ HcclResult DetectConnectionAnomalies::CreateServers(struct ErrInfo errInfo)
     if (threadExit_) {
         if (!isCreateLink_) {
             detectVnicThread_.reset(new (std::nothrow) std::thread(&DetectConnectionAnomalies::CreateDetectVnicLinks,
-                this, errInfo));
+                std::ref(*this), errInfo));
             CHK_SMART_PTR_NULL(detectVnicThread_);
             isCreateLink_ = true;
         }
         // 多机场景，且vnic失败时, 这里得用nicIp，否则添加白名单无效
         if (isNeedNic_ && !isCreateNicLink_) {
             detectNicThread_.reset(new (std::nothrow) std::thread(&DetectConnectionAnomalies::CreateDetectNicLinks,
-                this, errInfo));
+                std::ref(*this), errInfo));
             CHK_SMART_PTR_NULL(detectNicThread_);
             isCreateNicLink_ = true;
         }
@@ -546,7 +546,7 @@ HcclResult DetectConnectionAnomalies::CreateClient(struct ErrInfo errInfo)
 HcclResult DetectConnectionAnomalies::CreateClients(struct ErrInfo errInfo, std::vector<std::unique_ptr<std::thread>> &linkClientThreads)
 {
     std::unique_ptr<std::thread> linkClientThread;
-    linkClientThread.reset(new (std::nothrow) std::thread(&DetectConnectionAnomalies::CreateClient, this, errInfo));
+    linkClientThread.reset(new (std::nothrow) std::thread(&DetectConnectionAnomalies::CreateClient, std::ref(*this), errInfo));
     CHK_SMART_PTR_NULL(linkClientThread);
     linkClientThreads.emplace_back(std::move(linkClientThread));
     return HCCL_SUCCESS;

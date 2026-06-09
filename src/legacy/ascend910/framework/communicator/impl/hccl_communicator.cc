@@ -677,12 +677,12 @@ bool HcclCommunicator::IsEnableRoce()
         }
     }
 
-    void HcclCommunicator::DestroyAlgResource(AlgResourceResponse &res, bool aclGraphDestroyCb)
+    void HcclCommunicator::DestroyAlgResource(AlgResourceResponse &res, bool aclGraphDestroyCbk)
     {
-        DestroyOpTransportResponse(res.opTransportResponse, aclGraphDestroyCb);
+        DestroyOpTransportResponse(res.opTransportResponse, aclGraphDestroyCbk);
         if (IsEnableBackupLink())
         {
-            DestroyOpTransportResponse(res.opTransportResponseBackUp, aclGraphDestroyCb);
+            DestroyOpTransportResponse(res.opTransportResponseBackUp, aclGraphDestroyCbk);
             HCCL_INFO("[%s]finish DestroyOpTransportResponse", __func__);
         }
     }

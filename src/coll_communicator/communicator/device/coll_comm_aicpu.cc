@@ -86,7 +86,6 @@ HcclResult CollCommAicpu::InitHDCommunicate(CommAicpuParam *commAicpuParam)
 void CollCommAicpu::InitIndopEnv(CommAicpuParam *commAicpuParam)
 {
     hcomm::SetTaskExceptionEnable(commAicpuParam->commConfig.taskExceptionEnable);
-    hcomm::SetNotifyWaitTimeout(commAicpuParam->commConfig.notifyWaitTimeout);
     HCCL_RUN_INFO("[%s]Env: taskExceptionEnable[%d], notifyWaitTimeout[%u]",
         __func__, commAicpuParam->commConfig.taskExceptionEnable, commAicpuParam->commConfig.notifyWaitTimeout);
 }
@@ -232,7 +231,6 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     u32 transType;
     binaryStreamForType >> transType;
     HCCL_INFO("[CollCommAicpu][ParsePackData] transType[%u]", transType);
-    // TODO TransportType
     if (transType == Hccl::TransportType::UB) {
         std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
         EXCEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
@@ -248,7 +246,6 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
         CHK_SMART_PTR_NULL(p2pTransportLiteImpl);
         handle = reinterpret_cast<uint64_t>(p2pTransportLiteImpl.get());
         p2pTransportMap_.insert({handle, std::move(p2pTransportLiteImpl)});
-        // TODO 是否需要缓存用于NsRecovery
     } else if (transType == Hccl::TransportType::ROCE) {
         std::unique_ptr<Hccl::RoceTransportLiteImpl> roceTransportLiteImpl;
         EXCEPTION_CATCH((roceTransportLiteImpl = std::make_unique<Hccl::RoceTransportLiteImpl>(transpUniqueId)),

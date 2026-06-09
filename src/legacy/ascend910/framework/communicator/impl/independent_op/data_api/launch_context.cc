@@ -11,6 +11,7 @@
 #include "new/hccl_primitive_local.h"
 
 constexpr u32 THREAD_VECTOR_DEFAULT_SIZE = 128; // 设置vector初始长度，避免频繁扩容
+constexpr u32 NOTIFY_WAIT_TIMEOUT_OFFSET = 50; // AICPU device侧notify等待超时偏移量
 
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum); // host ffts+或aicpu stars使用"
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使用
@@ -77,6 +78,36 @@ HcclResult LaunchContext::HandleClear()
         return HCCL_SUCCESS;
     }
     return HcclTaskClear(launchTag_);
+}
+
+HcclResult LaunchContext::SetNotifyWaitTimeOut(uint32_t timeout)
+{
+    notifyWaitTimeoutConfig_.notifyWaitTimeout = timeout;
+    notifyWaitTimeoutConfig_.isSet = true;
+    return HCCL_SUCCESS;
+}
+
+HcclResult LaunchContext::GetNotifyWaitTimeOut(uint32_t& timeout)
+{
+    timeout = notifyWaitTimeoutConfig_.notifyWaitTimeout;
+#ifndef CCL_KERNEL_AICPU
+    if (!notifyWaitTimeoutConfig_.isSet) {
+        timeout = timeout + NOTIFY_WAIT_TIMEOUT_OFFSET;
+    }
+#endif
+    return HCCL_SUCCESS;
+}
+
+HcclResult LaunchContext::SetSqFullTimeOut(uint32_t timeout)
+{
+    sqFullTimeoutConfig_.sqFullTimeout = timeout;
+    sqFullTimeoutConfig_.isSet = true;
+    return HCCL_SUCCESS;
+}
+
+uint32_t LaunchContext::GetSqFullTimeOut()
+{
+    return sqFullTimeoutConfig_.sqFullTimeout;
 }
 
 /*

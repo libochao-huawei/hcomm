@@ -35,6 +35,10 @@ bool IsBatchLaunchMode() {
     return g_threadLaunchCtx.IsBatchLaunchMode();
 }
 
+uint32_t GetSqFullTimeOut() {
+    return g_threadLaunchCtx.GetSqFullTimeOut();
+}
+
 static bool ShouldSkipAicpuDfx()
 {
     const bool l0State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State();
@@ -186,9 +190,9 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     return HCCL_SUCCESS;
 }
 
-int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout)
+int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u], timeout[%u].", __func__, thread, notifyIdx, timeout);
+    HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut);
 
     AddThread(thread);
 
@@ -200,15 +204,15 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
         LocalNotify *const notifyPtr = threadPtr->GetNotify(notifyIdx);
         CHK_PTR_NULL(notifyPtr);
         const uint32_t notifyId = notifyPtr->notifyId_;
-        EXCEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId, timeout), ret = HCCL_E_INTERNAL);
+        EXCEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId, timeOut), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
         LocalNotify *notify = GetNotify(thread, notifyIdx);
         CHK_PTR_NULL(notify);
-        ret = HcclLocalNotifyWait(stream, notify, timeout);
+        ret = HcclLocalNotifyWait(stream, notify, timeOut);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeout[%u].", __func__, thread, notifyIdx, timeout), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -235,9 +239,9 @@ int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId
     return HCCL_SUCCESS;
 }
 
-int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeout)
+int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], notifyId[%llu], timeout[%u].", __func__, thread, notifyId, timeout);
+    HCCL_INFO("[%s] START. thread[0x%llx], notifyId[%llu], timeOut[%u].", __func__, thread, notifyId, timeOut);
 
     AddThread(thread);
 
@@ -246,13 +250,13 @@ int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uin
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        EXCEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId, timeout), ret = HCCL_E_INTERNAL);
+        EXCEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId, timeOut), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
-        ret = HcclLocalBareNotifyWait(stream, notifyId, timeout);
+        ret = HcclLocalBareNotifyWait(stream, notifyId, timeOut);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyId[%llu], timeout[%u].", __func__, thread, notifyId, timeout), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyId[%llu], timeOut[%u].", __func__, thread, notifyId, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -369,6 +373,60 @@ inline HcclResult CheckDataTypeAndReduceOp(HcommDataType dataType, HcommReduceOp
 }
 
 } // namespace
+
+// 设置notify wait的等待超时时间，默认单位为秒
+int32_t HcommSetNotifyWaitTimeOut(uint32_t timeOut)
+{
+    HCCL_INFO("[%s] START. timeOut[%u].", __func__, timeOut);
+    return g_threadLaunchCtx.SetNotifyWaitTimeOut(timeOut);
+}
+
+int32_t HcommThreadResAcquireTimeOut(uint32_t timeOut)
+{
+    HCCL_INFO("[%s] START. timeOut[%u].", __func__, timeOut);
+    return g_threadLaunchCtx.SetSqFullTimeOut(timeOut);
+}
+
+int32_t HcommChannelNotifyWaitOnThreadWithDefaultTimeout(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u].",
+        __func__, thread, channel, localNotifyIdx);
+
+    uint32_t notifyWaitTimeOut;
+    g_threadLaunchCtx.GetNotifyWaitTimeOut(notifyWaitTimeOut);
+
+    HCCL_DEBUG("[%s] Using default timeout: %u s", __func__, notifyWaitTimeOut);
+
+    int32_t ret = HcommChannelNotifyWaitOnThread(thread, channel, localNotifyIdx, notifyWaitTimeOut);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] HcommChannelNotifyWaitOnThread FAILED. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], ret[%d]",
+            __func__, thread, channel, localNotifyIdx, ret);
+        return ret;
+    }
+
+    HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommThreadNotifyWaitOnThreadWithDefaultTimeout(ThreadHandle thread, uint32_t notifyIdx)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u].", __func__, thread, notifyIdx);
+
+    uint32_t notifyWaitTimeOut;
+    g_threadLaunchCtx.GetNotifyWaitTimeOut(notifyWaitTimeOut);
+
+    HCCL_DEBUG("[%s] Using default timeout: %u s", __func__, notifyWaitTimeOut);
+
+    int32_t ret = HcommThreadNotifyWaitOnThread(thread, notifyIdx, notifyWaitTimeOut);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] HcommThreadNotifyWaitOnThread FAILED. thread[0x%llx], notifyIdx[%u], ret[%d]",
+            __func__, thread, notifyIdx, ret);
+        return ret;
+    }
+
+    HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
 
 int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
