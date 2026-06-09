@@ -27,10 +27,6 @@
 #include "rdma_handle_manager.h"
 #include "env_config/env_config.h"
 
-using Hccl::HcclException;
-using std::exception;
-using std::string;
-
 namespace hcomm {
 
 namespace {
@@ -541,7 +537,7 @@ bool TpMgr::TryGetLinkAttrCache(const GetTpInfoParam &param, TpAttr &outAttr)
     return true;
 }
 
-/// 缓存 list[0] 链路级 TpAttr，供同 loc×rmt 后续 qos 复用。
+/// 缓存 list[0] 链路级 TpAttr，供同 loc×rmt 后续 qos 复用；随 tpInfo 生命周期释放。
 void TpMgr::PutLinkAttrCache(const GetTpInfoParam &param, const TpAttr &attr)
 {
     Hccl::IpAddress locAddr{};
@@ -552,6 +548,24 @@ void TpMgr::PutLinkAttrCache(const GetTpInfoParam &param, const TpAttr &attr)
     auto &entry = GetLinkAttrMap(param.tpProtocol)[locAddr][rmtAddr];
     entry.tpAttr = attr;
     entry.valid = true;
+}
+
+void TpMgr::ClearLinkAttrCacheLocked(const TpProtocol tpProtocol, const Hccl::IpAddress &locAddr,
+    const Hccl::IpAddress &rmtAddr)
+{
+    auto &linkMap = GetLinkAttrMap(tpProtocol);
+    const auto lit = linkMap.find(locAddr);
+    if (lit == linkMap.end()) {
+        return;
+    }
+    const auto rit = lit->second.find(rmtAddr);
+    if (rit == lit->second.end()) {
+        return;
+    }
+    lit->second.erase(rit);
+    if (lit->second.empty()) {
+        linkMap.erase(lit);
+    }
 }
 
 /// WAIT_LIST 阶段收尾：校验 tp 列表，触发 bootstrap 或直走 Mapping。
@@ -573,12 +587,7 @@ HcclResult TpMgr::AdvanceFromWaitList(const GetTpInfoParam &param, RequestCtx &r
         return RunMappingAndContinue(param, reqCtx, qosMap, it, reqCtxLock, tpInfo);
     }
 
-    try {
-        CHK_RET(StartBootstrapLinkAttr(param, reqCtx));
-    } catch (...) {
-        qosMap.erase(it);
-        throw;
-    }
+    CHK_RET(StartBootstrapLinkAttr(param, reqCtx));
     HCCL_INFO("[TpMgr][GetTpInfo] RaGetTpAttrAsync submitted, devPhyId[%u] reqHandle[%llu] phase[WAIT_ATTR] "
               "bootstrapBitmap[0x%x] param[%s].",
         devPhyId_, static_cast<unsigned long long>(reqCtx.handle), reqCtx.bootstrapAttrBitmap, param.Describe().c_str());
@@ -644,12 +653,7 @@ HcclResult TpMgr::RunMappingAndContinue(const GetTpInfoParam &param, RequestCtx 
         return FinalizeGetTpInfo(std::move(reqCtx), param, qosMap, it, reqCtxLock, tpInfo);
     }
 
-    try {
-        CHK_RET(StartCommitTpAttr(param, reqCtx));
-    } catch (...) {
-        qosMap.erase(it);
-        throw;
-    }
+    CHK_RET(StartCommitTpAttr(param, reqCtx));
     reqCtx.phase = ReqPhase::WAIT_COMMIT;
     HCCL_INFO("[TpMgr][GetTpInfo] RaSetTpAttrAsync commit submitted, reqHandle[%llu] tpHandle[%llu] sl[%u] "
               "protocol[%d] param[%s].",
@@ -794,7 +798,10 @@ HcclResult TpMgr::ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInf
 
     rmtIt->second.erase(qosIt);
     if (rmtIt->second.empty()) {
+        const Hccl::IpAddress locAddr = key.locAddr;
+        const Hccl::IpAddress rmtAddr = key.rmtAddr;
         lit->second.erase(rmtIt);
+        ClearLinkAttrCacheLocked(param.tpProtocol, locAddr, rmtAddr); // linkAttr 随 tpInfo 生命周期释放
     }
     if (lit->second.empty()) {
         infoMap.erase(lit);
@@ -890,6 +897,7 @@ HcclResult TpMgr::StartBootstrapLinkAttr(const GetTpInfoParam &param, RequestCtx
 /// RTP 异步写 SL；UBOE 在同一次 SetTpAttr 中写 SL，且管控未配 dscp 时一并写 DSCP。
 HcclResult TpMgr::StartCommitTpAttr(const GetTpInfoParam &param, RequestCtx &reqCtx) const
 {
+    EXCEPTION_HANDLE_BEGIN
     CtxHandle ctxHandle = nullptr;
     CHK_RET(ResolveCtxHandle(devPhyId_, param.locAddr, ctxHandle));
 
@@ -913,7 +921,9 @@ HcclResult TpMgr::StartCommitTpAttr(const GetTpInfoParam &param, RequestCtx &req
             static_cast<unsigned>(tpAttr.dscp));
     }
 
-    return SubmitSetTpAttr(ctxHandle, reqCtx.selectedTpHandle, attrBitmap, tpAttr, reqCtx.handle);
+    CHK_RET(SubmitSetTpAttr(ctxHandle, reqCtx.selectedTpHandle, attrBitmap, tpAttr, reqCtx.handle));
+    EXCEPTION_HANDLE_END
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult TpMgr::FindAndGetTpAttr(const TpHandle tpHandle, TpAttrInfo &tpAttrInfo)

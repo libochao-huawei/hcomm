@@ -472,6 +472,23 @@ void TpManager::PutLinkAttrCache(const RaUbGetTpInfoParam &param, const TpAttr &
     entry.valid = true;
 }
 
+void TpManager::ClearLinkAttrCacheLocked(const TpProtocol tpProtocol, const IpAddress &locAddr, const IpAddress &rmtAddr)
+{
+    auto &linkMap = GetLinkAttrMap(tpProtocol);
+    const auto lit = linkMap.find(locAddr);
+    if (lit == linkMap.end()) {
+        return;
+    }
+    const auto rit = lit->second.find(rmtAddr);
+    if (rit == lit->second.end()) {
+        return;
+    }
+    lit->second.erase(rit);
+    if (lit->second.empty()) {
+        linkMap.erase(lit);
+    }
+}
+
 HcclResult TpManager::StoreGetTpInfoResult(const RaUbGetTpInfoParam &param, const RequestCtx &reqCtx, TpInfo &tpInfo)
 {
     TpInfo tmpTpInfo{};
@@ -842,7 +859,10 @@ HcclResult TpManager::ReleaseTpInfo(const RaUbGetTpInfoParam &param, const TpInf
 
     rit->second.erase(qit);
     if (rit->second.empty()) {
+        const IpAddress locAddr = param.locAddr;
+        const IpAddress rmtAddr = param.rmtAddr;
         lit->second.erase(rit);
+        ClearLinkAttrCacheLocked(param.tpProtocol, locAddr, rmtAddr); // linkAttr 随 tpInfo 生命周期释放
     }
     if (lit->second.empty()) {
         infoMap.erase(lit);
