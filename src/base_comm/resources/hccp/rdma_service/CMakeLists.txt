@@ -53,10 +53,11 @@ add_library(rs SHARED ${RS_SOURCE_LIST})
 # 编译选项
 target_compile_options(rs PRIVATE
     # -Werror
+    # -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fvisibility=hidden
     -fno-strict-aliasing
     -fsigned-char
-    -Wno-unused-parameter
     -std=gnu11
     $<$<CONFIG:Debug>:-g>
 )

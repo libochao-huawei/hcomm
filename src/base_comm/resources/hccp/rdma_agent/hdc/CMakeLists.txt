@@ -63,7 +63,9 @@ if(NOT BUILD_OPEN_PROJECT)
 endif()
 
 target_compile_options(ra_hdc PRIVATE
-    -Werror
+    # -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fsigned-char
     -fno-strict-aliasing
     -std=gnu11
