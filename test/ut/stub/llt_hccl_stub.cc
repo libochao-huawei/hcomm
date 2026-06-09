@@ -4894,6 +4894,8 @@ std::map<std::string, void*> dlurmaFuntionPtrMap = {
     {"urma_poll_jfc", (void*)&stub_urma_poll_jfc}
 };
 
+std::map<std::string, void*> dlAclFuntionPtrMap;
+
 static int dlRaHandle;
 static int dlTdtHandle;
 static int dlHalHandle;
@@ -4906,6 +4908,7 @@ static int dlHnsRdmav17Handle;
 static int dlHnsRdmav25Handle;
 static int dlHrn0Rdmav17Handle;
 static int dlUrmaHandle;
+static int dlAclHandle;
 void* __HcclDlopenSub(const char *libName, int mode)
 {
     HCCL_INFO("run dlopen(const char*[%s], int[%d])", libName, mode);
@@ -4934,6 +4937,8 @@ void* __HcclDlopenSub(const char *libName, int mode)
         return &dlHrn0Rdmav17Handle;
     } else if (LibName == "liburma.so.0") {
         return &dlUrmaHandle;
+    } else if (LibName == "libascendcl.so") {
+        return &dlAclHandle;
     }
 
     return nullptr;
@@ -4985,6 +4990,8 @@ void* __HcclDlsymSub(void* handle, const char* funcName)
         return dlrdmaFuntionPtrMap[tempName];
     } else if (handle == &dlUrmaHandle) {
         return dlurmaFuntionPtrMap[tempName];
+    } else if (handle == &dlAclHandle) {
+        return dlAclFuntionPtrMap[tempName];
     }
     return nullptr;
 }
