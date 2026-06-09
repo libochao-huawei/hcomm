@@ -356,7 +356,7 @@ TEST_F(AivUrmaChannelTest, Ut_ParseInputParam_WhenExchangeAllMemsOneHandle_Fills
     ASSERT_EQ(ch.bufs_.size(), 1);
     EXPECT_EQ(ch.bufs_[0]->GetAddr(), 0x12340000U);
     EXPECT_EQ(ch.bufs_[0]->GetSize(), 0x2000U);
-    EXPECT_FALSE(ch.bufs_[0]->GetMemTag().empty());
+    EXPECT_FALSE(ch.bufs_[0]->GetMemInfo().empty());
 }
 
 TEST_F(AivUrmaChannelTest, Ut_BuildChannelEntityToDevice_WhenDevPtrNull_Returns_E_PTR)
