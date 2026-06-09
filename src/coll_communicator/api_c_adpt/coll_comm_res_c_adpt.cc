@@ -404,7 +404,10 @@ HcclResult HcclCcuKernelRegister(HcclComm comm,
     CcuKernelHandle newHandle{0};
     // 当前注册内部流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
-    CHK_RET(kernelMgr.Register(std::move(kernel), *resPack, newHandle));
+    HcclResult ret = kernelMgr.Register(std::move(kernel), *resPack, newHandle);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        return ret;
+    }
     EXCEPTION_HANDLE_END
     CHK_RET(ccuContainer->SaveCcuKernel(newHandle));
     *kernelHandle = newHandle;
