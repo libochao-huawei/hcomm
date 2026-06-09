@@ -18,12 +18,13 @@
 #include "hccl_types.h"
 #include "ccu_kernel.h"
 
+#include "ccu_res_pack.h"
 #include "ccu_kernel_mgr.h"
+#include "ccu_res_repo.h"
+#include "ccu_common.h"
 
 #undef private
 #undef protected
-
-using namespace Hccl;
 
 class CcuMgrTest : public testing::Test {
 protected:    
@@ -56,7 +57,7 @@ TEST_F(CcuMgrTest, Ut_CcuRegister_When_resourceNotEnough_Expect_Return_false)
 {
     MOCKER_CPP(&hcomm::CcuKernelMgr::Init).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
-    struct CcuResReq resReq{};
+    hcomm::CcuResReq resReq{};
     for (uint8_t i = 0; i < CCU_MAX_IODIE_NUM; i++) {
         resReq.msReq[i] = 1;
     }
@@ -64,7 +65,7 @@ TEST_F(CcuMgrTest, Ut_CcuRegister_When_resourceNotEnough_Expect_Return_false)
 
     uint32_t devicePhyId = 0;
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devicePhyId);
-    hcomm::CcuKernelArg &arg = *(new hcomm::CcuKernelArg());
+    hcomm::CcuKernelArg arg;
     std::unique_ptr<hcomm::CcuKernel> kernel = std::make_unique<hcomm::CcuKernel>(arg);
     CcuResPack *resPack = new CcuResPack();
     CcuKernelHandle newHandle{0};
