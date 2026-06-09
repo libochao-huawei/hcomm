@@ -162,7 +162,7 @@ private:
     /*
      * GetTpInfo 异步状态机：
      *   WAIT_LIST   → RaGetTpInfoListAsync
-     *   WAIT_ATTR   → RaGetTpAttrAsync(list[0]) + Mapping；linkCache 命中则跳过 Get
+     *   WAIT_ATTR   → RaGetTpAttrAsync(list[0]) + Mapping；linkCache 命中则跳过 Get（同 loc×rmt 有效 tp 存续期间复用）
      *   WAIT_COMMIT → RaSetTpAttrAsync(selectedTp, SL；UBOE 且 dscpConfigMode==0 时 SL+DSCP 同次)；CTP 跳过
      * timeout(at/retry) 仅 bootstrap 读取，供 CalcTaTimeout；不写 SetTpAttr。
      */
@@ -232,6 +232,9 @@ private:
     bool TryGetLinkAttrCache(const GetTpInfoParam &param, TpAttr &outAttr);
     /// 将 list[0] 拉到的链路级 TpAttr 写入 linkAttrCache。
     void PutLinkAttrCache(const GetTpInfoParam &param, const TpAttr &attr);
+    /// loc×rmt 下 tpInfo 全部释放后清除 linkAttr 缓存；调用方须持有 GetInfoCtxMutex。
+    void ClearLinkAttrCacheLocked(TpProtocol tpProtocol, const Hccl::IpAddress &locAddr,
+        const Hccl::IpAddress &rmtAddr);
 
     /// 初始化 reqCtx 并提交 RaGetTpInfoListAsync。
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;

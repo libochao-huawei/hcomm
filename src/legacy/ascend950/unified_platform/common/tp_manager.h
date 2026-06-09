@@ -132,7 +132,7 @@ private:
     /*
      * GetTpInfo 异步状态机（与 TpMgr 对齐）：
      *   WAIT_LIST   → RaUbGetTpInfo(Async)
-     *   WAIT_ATTR   → RaGetTpAttrAsync(list[0])；linkCache 命中则跳过 Get
+     *   WAIT_ATTR   → RaGetTpAttrAsync(list[0])；linkCache 命中则跳过 Get（同 loc×rmt 有效 tp 存续期间复用）
      *   WAIT_COMMIT → HrtRaSetTpAttrAsync(selectedTp, SL；UBOE 且 dscpConfigMode==0 时 SL+DSCP 同次)
      */
     enum class ReqPhase : uint8_t { WAIT_LIST = 0, WAIT_ATTR = 1, WAIT_COMMIT = 2 };
@@ -221,6 +221,8 @@ private:
     HcclResult StartCommitTpAttr(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx) const;
     bool TryGetLinkAttrCache(const RaUbGetTpInfoParam &param, TpAttr &outAttr);
     void PutLinkAttrCache(const RaUbGetTpInfoParam &param, const TpAttr &attr);
+    /// loc×rmt 下 tpInfo 全部释放后清除 linkAttr 缓存；调用方须持有 GetInfoCtxMutex。
+    void ClearLinkAttrCacheLocked(TpProtocol tpProtocol, const IpAddress &locAddr, const IpAddress &rmtAddr);
     HcclResult FindAndGetTpAttr(const TpHandle tpHandle, TpAttrInfo &tpAttrInfo);
     HcclResult StartGetTpAttrRequest(const GetTpAttrParam &param, TpAttrRequestCtx &reqCtx, RdmaHandle rdmaHandle) const;
     HcclResult HandleCompletedTpAttrRequest(const TpAttrRequestCtx reqCtx, const TpHandle tpHandle,
