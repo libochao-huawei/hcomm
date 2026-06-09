@@ -335,6 +335,7 @@ HcclResult OpRetryServerRunning::ParaseErrorCode(RetryContext* retryCtx, HcclAge
         }
         case KfcError::kRdma:
             retryCtx->isRdmaError = true;
+            [[fallthrough]];
         case KfcError::kExecConstraint:
         case KfcError::kSdma: { // 处理ERROR
             nextState = RETRY_STATE_CMD_STOP_AICPU;

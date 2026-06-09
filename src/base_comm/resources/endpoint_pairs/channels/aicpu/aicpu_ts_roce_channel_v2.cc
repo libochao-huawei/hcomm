@@ -264,6 +264,7 @@ HcclResult AicpuTsRoceChannelV2::GetStatus(ChannelStatus &status) {
         case RdmaStatus::DATA_EXCHANGE:
             CHK_RET(ModifyQp());
             rdmaStatus_ = RdmaStatus::QP_MODIFIED;
+            [[fallthrough]];
         case RdmaStatus::QP_MODIFIED:
         default:
             rdmaStatus_ = RdmaStatus::CONN_OK;
