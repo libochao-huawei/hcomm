@@ -84,7 +84,12 @@ HcclResult CcuKernelMgr::Register(std::unique_ptr<CcuKernel> kernel,
 {
     std::unique_lock<std::mutex> lock(kernelMapMutex_);
     
-    CHK_RET(AllocRes(kernel, resPack));
+    HcclResult ret = AllocRes(kernel, resPack);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_WARNING("[%s] AllocRes failed, maybe resource not enough, please check ret[%d]",
+            __func__, ret);
+        return ret;
+    }
 
     kernelId_++;
     kernelMap_[kernelId_] = std::move(kernel);
@@ -174,7 +179,7 @@ static bool CheckResIfAvailable(const CcuResReq &totalRes, const CcuResReq &resR
                 || needResReq.loopEngineReq[i] != 0 || needResReq.blockLoopEngineReq[i] != 0 || needResReq.gsaReq[i] != 0
                 || needResReq.xnReq[i] != 0 || needResReq.continuousXnReq[i] != 0
                 || needResReq.missionReq.req[i] != 0) {
-            HCCL_ERROR("[CcuKernelMgr][%s] dieId[%u] not enough, msReq[%u] blockMsReq[%u] ckeReq[%u]"
+            HCCL_WARNING("[CcuKernelMgr][%s] dieId[%u] not enough, msReq[%u] blockMsReq[%u] ckeReq[%u]"
                 "blockCkeReq[%u] loopEngineReq[%u] blockLoopEngineReq[%u] gsaReq[%u] xnReq[%u]"
                 "continuousXnReq[%u] missionReq[%u].", __func__, i, needResReq.msReq[i],
                 needResReq.blockMsReq[i], needResReq.ckeReq[i], needResReq.blockCkeReq[i],

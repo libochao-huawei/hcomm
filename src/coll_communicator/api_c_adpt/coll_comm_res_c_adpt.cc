@@ -471,7 +471,13 @@ HcclResult HcclCcuKernelRegister(HcclComm comm,
     CcuKernelHandle newHandle{0};
     // 当前注册内部流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
-    CHK_RET(kernelMgr.Register(std::move(kernel), *resPack, newHandle));
+    HcclResult ret = kernelMgr.Register(std::move(kernel), *resPack, newHandle);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        // 注册失败可能是资源不足导致，记录警告日志并返回错误码
+        HCCL_WARNING("[%s] kernel Register failed, maybe resource not enough, please check ret[%d]",
+            __func__, ret);
+        return ret;
+    }
     EXCEPTION_HANDLE_END
     CHK_RET(ccuContainer->SaveCcuKernel(newHandle));
     *kernelHandle = newHandle;
