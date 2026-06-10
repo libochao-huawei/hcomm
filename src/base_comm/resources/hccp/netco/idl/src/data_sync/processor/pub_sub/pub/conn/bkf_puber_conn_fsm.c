@@ -182,7 +182,7 @@ STATIC uint32_t BkfPuberConnTry2SendHelloAck(BkfPuberConn *conn, void *unused1, 
     (void)unused1;
     (void)unused2;
     uint8_t *sendBuf = VOS_NULL;
-    BkfMsgCoder coder = { { 0 }, 0 };
+    BkfMsgCoder coder = { 0 };
     BkfPuberConnInitSendBufAndCoder(conn, &sendBuf, &coder);
     if (sendBuf == VOS_NULL) {
         return BKF_ERR; /* 等待解阻塞 */
@@ -418,7 +418,7 @@ STATIC uint32_t BkfPuberConnDoSchedSess(BkfPuberConn *conn, BOOL isSlowSched, vo
 
     BkfPuberConnMng *connMng = conn->connMng;
     uint8_t *sendBuf = VOS_NULL;
-    BkfMsgCoder coder = { { 0 }, 0 };
+    BkfMsgCoder coder = { 0 };
     do {
         BOOL isFastSchedInTest = !isSlowSched && !BkfPuberMaySchedSess(conn);
         if (isFastSchedInTest) {

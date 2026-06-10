@@ -609,7 +609,7 @@ STATIC void BkfMemDelAllStat(BkfMemMng *memMng)
 STATIC BkfMemStat *BkfMemFindStat(BkfMemMng *memMng, const char *str, const uint16_t num)
 {
     BkfMemStat *stat = VOS_NULL;
-    BkfMemStatKey key = { (char*)str, num };
+    BkfMemStatKey key = { (char*)str, num, {0} };
 
     stat = VOS_AVLL_FIND(memMng->statSet, &key);
     return stat;
@@ -618,7 +618,7 @@ STATIC BkfMemStat *BkfMemFindStat(BkfMemMng *memMng, const char *str, const uint
 STATIC BkfMemStat *BkfMemFindNextStat(BkfMemMng *memMng, const char *str, const uint16_t num)
 {
     BkfMemStat *stat = VOS_NULL;
-    BkfMemStatKey key = { (char*)str, num };
+    BkfMemStatKey key = { (char*)str, num, {0} };
 
     stat = VOS_AVLL_FIND_NEXT(memMng->statSet, &key);
     return stat;

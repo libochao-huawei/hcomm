@@ -290,7 +290,7 @@ uint32_t BkfSuberConnSndHello(BkfSuberConn *conn)
             BkfUrlGetStr(&conn->puberUrl, urlStr, sizeof(urlStr)));
         return BKF_ERR;
     }
-    BkfMsgCoder coder = { { 0 }, 0 };
+    BkfMsgCoder coder = { 0 };
     BkfSuberEnv *env = connMng->env;
     ret = BkfMsgCodeInit(&coder, env->name, sendBuf, env->msgLenMax, env->sliceVTbl.keyLen, env->sliceVTbl.keyCodec,
         env->sliceVTbl.keyGetStrOrNull, connMng->log);
@@ -417,7 +417,7 @@ uint32_t BkfSubConnActSchedSess(BkfSuberConn *conn, BkfMsgDecoder *decoder, void
     }
 
     BkfSuberEnv *env = connMng->env;
-    BkfMsgCoder coder = { { 0 }, 0 };
+    BkfMsgCoder coder = { 0 };
     (void)BkfMsgCodeInit(&coder, env->name, sendBuf, env->msgLenMax, env->sliceVTbl.keyLen, env->sliceVTbl.keyCodec,
         env->sliceVTbl.keyGetStrOrNull, connMng->log);
     /* 驱动处于SUB/UNSUB状态的session进行sub、verify/unsub操作,unsub操作只发送一次 */
