@@ -15,7 +15,7 @@
 #define private public
 #include "hcclCommTaskExceptionLite.h"
 #undef private
-#include "task_scheduler_error.h"
+#include "hcomm_task_scheduler_error.h"
 #include "aicpu_indop_env.h"
 #include "adapter_hal_pub.h"
 #include "dlhal_function_v2.h"
