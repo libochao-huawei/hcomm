@@ -23,7 +23,9 @@
 #include "network_api_exception.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
-#include "orion_adapter_hccp.h"
+#include "adapter_rts.h"
+#include "dev_type.h"
+#include "orion_adapter_rts.h"
 #include "env_config/env_config.h"
 
 namespace hcomm {
@@ -37,6 +39,21 @@ static constexpr uint32_t kTpAttrDscpConfigModeBit = 18U;
 static constexpr QosKey QosMapKey(uint32_t qos) noexcept
 {
     return static_cast<QosKey>(qos & 0xFFU);
+}
+
+// MAINBOARD_PCIE_STD（PCIE 标卡）：跳过 GetTpAttr/SL 策略，固定使用 TP 列表首个 TP；
+// jetty priority（SL）取 2，为标卡 UB 互通方案约定档位，与现网标卡环境对齐。
+static constexpr uint32_t kPcieStdMappedSl = 2U;
+
+static HcclResult IsPcieStdMainboardByPhyId(uint32_t devPhyId, bool &isPcieStd)
+{
+    isPcieStd = false;
+    u32 devLogicId = 0U;
+    CHK_RET(hrtGetDeviceIndexByPhyId(devPhyId, devLogicId));
+    Hccl::HcclMainboardId mainboardId = Hccl::HcclMainboardId::MAINBOARD_OTHERS;
+    CHK_RET(Hccl::HrtGetMainboardId(devLogicId, mainboardId));
+    isPcieStd = (mainboardId == Hccl::HcclMainboardId::MAINBOARD_PCIE_STD);
+    return HcclResult::HCCL_SUCCESS;
 }
 
 struct TpInfoAddrKey {
@@ -470,13 +487,26 @@ HcclResult TpMgr::BeginGetTpInfoListRequest(const GetTpInfoParam &param, ReqQosM
 }
 
 HcclResult TpMgr::AdvanceGetTpInfoWaitList(const GetTpInfoParam &param, RequestCtx &reqCtx, ReqQosMap &qosMap,
-    const ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock)
+    const ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo)
 {
     if (reqCtx.tpInfoNum == 0U) {
         qosMap.erase(it);
         reqCtxLock.unlock();
         HCCL_WARNING("[TpMgr][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__, param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
+    }
+    bool isPcieStd = false;
+    CHK_RET(IsPcieStdMainboardByPhyId(devPhyId_, isPcieStd));
+    if (isPcieStd) {
+        const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+        HCCL_INFO("[TpMgr][%s] pcie std mainboard: skip GetTpAttr, devPhyId[%u] tpInfoNum[%u] mappedSl[%u] "
+                  "tpHandle[%llu] param[%s].",
+            __func__, devPhyId_, reqCtx.tpInfoNum, kPcieStdMappedSl,
+            static_cast<unsigned long long>(list[0].tpHandle), param.Describe().c_str());
+        RequestCtx completedReqCtx = std::move(it->second);
+        qosMap.erase(it);
+        reqCtxLock.unlock();
+        return HandleCompletedRequest(std::move(completedReqCtx), param, tpInfo);
     }
     const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
     HCCL_INFO("[TpMgr][GetTpInfo] list stage ok, devPhyId[%u] tpInfoNum[%u] firstTpHandle[%llu] param[%s].",
@@ -513,7 +543,7 @@ HcclResult TpMgr::PollGetTpInfoReqCtx(std::unique_lock<std::mutex> &reqCtxLock, 
     CHK_RET(ret);
 
     if (reqCtx.phase == ReqPhase::WAIT_LIST) {
-        return AdvanceGetTpInfoWaitList(param, reqCtx, qosMap, it, reqCtxLock);
+        return AdvanceGetTpInfoWaitList(param, reqCtx, qosMap, it, reqCtxLock, tpInfo);
     }
 
     // 先 move 出槽位再 erase，避免 erase 析构槽内对象后再 move（UB / double free）
@@ -841,10 +871,17 @@ HcclResult TpMgr::BuildTpInfoAndCommitQosAttr(const GetTpInfoParam &param, const
     tmpTpInfo.mappedJettyPriority = mappedSl & 0xFU;
     tmpTpInfo.hasMappedJettyPriority = true;
 
-    if (param.tpProtocol == TpProtocol::RTP || param.tpProtocol == TpProtocol::UBOE) {
+    bool isPcieStd = false;
+    CHK_RET(IsPcieStdMainboardByPhyId(devPhyId_, isPcieStd));
+    if (isPcieStd) {
+        HCCL_INFO("[TpMgr][%s] pcie std mainboard: skip SetTpAttr, devPhyId[%u] tpProtocol[%s] tpHandle[%llu] "
+                  "param[%s].",
+            __func__, devPhyId_, param.tpProtocol.Describe().c_str(), tmpTpInfo.tpHandle, param.Describe().c_str());
+    } else if (param.tpProtocol == TpProtocol::RTP || param.tpProtocol == TpProtocol::UBOE) {
         CHK_RET(CommitMappedSlToTpAttr(devPhyId_, param.locAddr, tmpTpInfo.tpHandle, mappedSl));
     }
-    if (param.tpProtocol == TpProtocol::UBOE && reqCtx.tpAttr.dscpConfigMode == 0) {
+    if (!isPcieStd && param.tpProtocol == TpProtocol::UBOE &&
+        reqCtx.tpAttr.dscpConfigMode == 0) {
         const uint8_t dscpBefore = static_cast<uint8_t>(reqCtx.tpAttr.dscp & 0x3FU);
         const uint8_t requestQos = static_cast<uint8_t>(param.qos & 0xFFU);
         const uint16_t slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
@@ -863,6 +900,22 @@ HcclResult TpMgr::BuildTpInfoAndCommitQosAttr(const GetTpInfoParam &param, const
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult TpMgr::CommitTpInfoToCache(const GetTpInfoParam &param, TpInfo tmpTpInfo, TpInfo &tpInfo)
+{
+    Hccl::IpAddress locAddr{};
+    Hccl::IpAddress rmtAddr{};
+    CHK_RET(CommAddrToIpAddress(param.locAddr, locAddr));
+    CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
+    const QosKey qosKey = QosMapKey(param.qos);
+
+    std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
+    auto &infoMap = GetInfoCtxMap(param.tpProtocol);
+    auto &rmtMap = infoMap[locAddr][rmtAddr];
+    rmtMap[qosKey] = TpInfoCtx{std::move(tmpTpInfo), 1U};
+    tpInfo = rmtMap[qosKey].tpInfo;
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam &param, TpInfo &tpInfo)
 {
     const uint32_t tpInfoNum = reqCtx.tpInfoNum;
@@ -873,6 +926,19 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     }
 
     const struct HccpTpInfo *baseInfoPtr = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+    bool isPcieStd = false;
+    CHK_RET(IsPcieStdMainboardByPhyId(devPhyId_, isPcieStd));
+    if (isPcieStd) {
+        TpInfo tmpTpInfo{};
+        tmpTpInfo.tpHandle = baseInfoPtr[0].tpHandle;
+        tmpTpInfo.mappedJettyPriority = kPcieStdMappedSl;
+        tmpTpInfo.hasMappedJettyPriority = true;
+        HCCL_INFO("[TpMgr][%s] pcie std mainboard: skip GetTpAttr/SetTpAttr, devPhyId[%u] tpInfoNum[%u] "
+                  "mappedSl[%u] tpHandle[%llu] param[%s].",
+            __func__, devPhyId_, tpInfoNum, kPcieStdMappedSl, tmpTpInfo.tpHandle, param.Describe().c_str());
+        return CommitTpInfoToCache(param, std::move(tmpTpInfo), tpInfo);
+    }
+
     const uint16_t slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
     const uint32_t slAvailableCnt = CalSlAvailableCnt(slMask);
     HCCL_INFO("[TpMgr][%s] after get_tp_attr: slMask[0x%04x] slAvailableCnt[%u] slBitmap[0x%x] dscp[%u] dscpConfigMode[%u] "
@@ -900,20 +966,7 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
 
     TpInfo tmpTpInfo{};
     CHK_RET(BuildTpInfoAndCommitQosAttr(param, reqCtx, baseInfoPtr, tpListIndex, mappedSl, tmpTpInfo));
-
-    Hccl::IpAddress locAddr{};
-    Hccl::IpAddress rmtAddr{};
-    CHK_RET(CommAddrToIpAddress(param.locAddr, locAddr));
-    CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
-    const QosKey qosKey = QosMapKey(param.qos);
-
-    std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
-    auto &infoMap = GetInfoCtxMap(param.tpProtocol);
-    auto &rmtMap = infoMap[locAddr][rmtAddr];
-    rmtMap[qosKey] = TpInfoCtx{std::move(tmpTpInfo), 1U};
-
-    tpInfo = rmtMap[qosKey].tpInfo;
-    return HcclResult::HCCL_SUCCESS;
+    return CommitTpInfoToCache(param, std::move(tmpTpInfo), tpInfo);
 }
 
 TpMgr::InfoCtxMap &TpMgr::GetInfoCtxMap(const TpProtocol tpProtocol)

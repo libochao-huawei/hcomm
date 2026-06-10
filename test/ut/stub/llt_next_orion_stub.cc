@@ -428,6 +428,13 @@ DevType HrtGetDeviceType()
     return DevType::DEV_TYPE_950;
 }
 
+HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId)
+{
+    (void)deviceLogicId;
+    hcclMainboardId = HcclMainboardId::MAINBOARD_OTHERS;
+    return HcclResult::HCCL_SUCCESS;
+}
+
 RdmaHandle HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in)
 {
     return (RdmaHandle)0x12345678;

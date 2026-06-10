@@ -23,6 +23,7 @@
 #include "hccp.h"
 #include "hccp_async_ctx.h"
 #include "hccp_ctx.h"
+#include "dev_type.h"
 #include "orion_adapter_rts.h"
 #include "rdma_handle_manager.h"
 
@@ -42,6 +43,19 @@ constexpr uint32_t kGetTpAttrVersion = 2U;
 static constexpr QosKey QosMapKey(uint32_t qos) noexcept
 {
     return static_cast<QosKey>(qos & 0xFFU);
+}
+
+// MAINBOARD_PCIE_STD（PCIE 标卡）：跳过 GetTpAttr/SL 策略，固定使用 TP 列表首个 TP；
+// jetty priority（SL）取 2，为标卡 UB 互通方案约定档位，与现网标卡环境对齐。
+static constexpr uint32_t kPcieStdMappedSl = 2U;
+
+static HcclResult IsPcieStdMainboard(uint32_t devLogicId, bool &isPcieStd)
+{
+    isPcieStd = false;
+    HcclMainboardId mainboardId = HcclMainboardId::MAINBOARD_OTHERS;
+    CHK_RET(HrtGetMainboardId(devLogicId, mainboardId));
+    isPcieStd = (mainboardId == HcclMainboardId::MAINBOARD_PCIE_STD);
+    return HcclResult::HCCL_SUCCESS;
 }
 
 static uint32_t CalSlAvailableCnt(uint32_t mask)
@@ -373,9 +387,18 @@ static HcclResult CommitUboeDscpToTpAttr(const uint32_t devPhyId, const IpAddres
     return HrtRaSetTpAttrAsyncSync(ctxHandle, tpHandle, kTpAttrBitmapDscp, tpDscpAttr, "CommitUboeDscpToTpAttr");
 }
 
-static HcclResult CommitTpAttrsAfterSlMapping(const uint32_t devPhyId, const RaUbGetTpInfoParam &param,
-    const TpAttr &tpAttr, uint64_t tpHandle, uint32_t mappedSl, uint32_t nTp, uint16_t slMask)
+static HcclResult CommitTpAttrsAfterSlMapping(const uint32_t devLogicId, const uint32_t devPhyId,
+    const RaUbGetTpInfoParam &param, const TpAttr &tpAttr, uint64_t tpHandle, uint32_t mappedSl, uint32_t nTp,
+    uint16_t slMask)
 {
+    bool isPcieStd = false;
+    CHK_RET(IsPcieStdMainboard(devLogicId, isPcieStd));
+    if (isPcieStd) {
+        HCCL_INFO("[TpManager][%s] pcie std mainboard: skip SetTpAttr, devPhyId[%u] tpProtocol[%s] tpHandle[%llu] "
+                  "param[%s].",
+            __func__, devPhyId, param.tpProtocol.Describe().c_str(), tpHandle, param.Describe().c_str());
+        return HcclResult::HCCL_SUCCESS;
+    }
     // TP / UBOE：将 TP QoS/SL 策略得到的 mapped SL 写回 TP；CTP 不向 TP 写 SL（与 Next TpMgr 一致）
     if (param.tpProtocol == TpProtocol::TP || param.tpProtocol == TpProtocol::UBOE) {
         CHK_RET(CommitMappedSlToTpAttr(devPhyId, param.locAddr, tpHandle, mappedSl));
@@ -476,6 +499,16 @@ HcclResult TpManager::AdvanceDeviceWaitListPhase(const RaUbGetTpInfoParam &param
         HCCL_WARNING("[TpManager][%s] failed to find tp info, tpInfoNum is 0, param[%s].", __func__,
             param.Describe().c_str());
         return HcclResult::HCCL_E_NOT_FOUND;
+    }
+    bool isPcieStd = false;
+    CHK_RET(IsPcieStdMainboard(devLogicId, isPcieStd));
+    if (isPcieStd) {
+        const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+        HCCL_INFO("[TpManager][%s] pcie std mainboard: skip GetTpAttr, devPhyId[%u] tpInfoNum[%u] mappedSl[%u] "
+                  "tpHandle[%llu] param[%s].",
+            __func__, devPhyId, reqCtx.tpInfoNum, kPcieStdMappedSl,
+            static_cast<unsigned long long>(list[0].tpHandle), param.Describe().c_str());
+        return FinishGetTpInfoFromReq(qosReqMap, it, reqCtxLock, param, tpInfo, false);
     }
     if (DeviceSupportsRaGetTpAttrAsync(devPhyId)) {
         const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
@@ -861,8 +894,8 @@ HcclResult TpManager::MapTpInfoFromTpAttr(const RaUbGetTpInfoParam &param, const
     outTpInfo.mappedJettyPriority = mappedSl & 0xFU;
     outTpInfo.hasMappedJettyPriority = true;
 
-    CHK_RET(CommitTpAttrsAfterSlMapping(devPhyId, param, reqCtx.tpAttr, outTpInfo.tpHandle, mappedSl, tpInfoNum,
-        slMask));
+    CHK_RET(CommitTpAttrsAfterSlMapping(devLogicId, devPhyId, param, reqCtx.tpAttr, outTpInfo.tpHandle, mappedSl,
+        tpInfoNum, slMask));
 
     HCCL_INFO("[TpManager][%s] tp qos mapping ok: tpInfoNum[%u] tpHandle[%llu] tpListIndex[%u] "
               "mappedJettyPriority[%u] qos[%u] param[%s].",
@@ -885,7 +918,18 @@ HcclResult TpManager::HandleCompletedRequest(const TpManager::RequestCtx reqCtx,
         __func__, tpInfoNum, static_cast<int>(withSlPolicy), devPhyId, param.Describe().c_str());
 
     TpInfo tmpTpInfo{};
-    if (withSlPolicy) {
+    bool isPcieStd = false;
+    CHK_RET(IsPcieStdMainboard(devLogicId, isPcieStd));
+    if (isPcieStd) {
+        const struct HccpTpInfo *baseInfoPtr =
+            reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
+        tmpTpInfo = ParseTpInfo(baseInfoPtr);
+        tmpTpInfo.mappedJettyPriority = kPcieStdMappedSl;
+        tmpTpInfo.hasMappedJettyPriority = true;
+        HCCL_INFO("[TpManager][%s] pcie std mainboard: skip GetTpAttr/SetTpAttr, devPhyId[%u] tpInfoNum[%u] "
+                  "mappedSl[%u] tpHandle[%llu] param[%s].",
+            __func__, devPhyId, tpInfoNum, kPcieStdMappedSl, tmpTpInfo.tpHandle, param.Describe().c_str());
+    } else if (withSlPolicy) {
         CHK_RET(MapTpInfoFromTpAttr(param, reqCtx, tmpTpInfo));
     } else {
         const struct HccpTpInfo *baseInfoPtr =
