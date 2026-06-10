@@ -180,6 +180,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
 
     # ccu 头文件
     ${HCOMM_CODE_ROOT}/pkg_inc/hcomm/ccu/
+    ${HCOMM_CODE_ROOT}/include/ccu
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/adpt/
     ${HCOMM_CODE_ROOT}/src/base_comm/common/
  
@@ -190,6 +191,8 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_transport/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_kernel/
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_instance/
 
     ${HCOMM_DIR}/src/legacy/ascend910/common
 )

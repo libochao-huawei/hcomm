@@ -18,6 +18,8 @@
 #include "config/env_config.h"
 #include "env_config/env_config.h"
 #include "channel_process.h"
+#include "ccu_device_res.h"
+#include "ccu_log.h"
 #include "dlprof_function.h"
 #include "config_log.h"
 
@@ -124,7 +126,11 @@ MyRank::~MyRank()
     // 析构有时序要求
     rankPairMgr_ = nullptr; // 内部会销毁channel，可能需要返还endpoint与ccu资源
     endpointMgr_ = nullptr; // 内部会销毁endpoint，可能需要返回ccu资源
-    ccuResContainer_ = nullptr;  // 内部清理CCU资源，关闭CCU通道
+    if (ccuInsHandle_ != 0) {  // 内部清理CCU资源，关闭CCU通道
+        (void)HcommCcuInsDestroy(ccuInsHandle_);
+        ccuInsHandle_ = 0;
+    }
+
     commMems_ = nullptr;
     nsRecoveryProcessor_ = nullptr;
 }
@@ -147,20 +153,48 @@ constexpr uint32_t DEFAULT_MODE = 0;
 constexpr uint32_t AICPU_TS_MODE = 2;
 constexpr uint32_t CCU_MS_MODE = 5;
 constexpr uint32_t CCU_SCHED_MODE = 6;
+inline CcuInstanceType OpExpansionModeToCcuInstanceType(uint32_t opExpansionMode)
+{
+    if (opExpansionMode == DEFAULT_MODE ||
+        opExpansionMode == CCU_SCHED_MODE) {
+        return CcuInstanceType::CCU_SCHED;
+    }
+
+    if (opExpansionMode == CCU_MS_MODE) {
+        return CcuInstanceType::CCU_MS;
+    }
+    
+    return CcuInstanceType::CCU_UNUSED;
+}
+
 HcclResult MyRank::TryInitCcuInstance()
 {
-    auto ccuInitRet = ccuResContainer_->ChangeMode(opExpansionMode_);
+    // 以下为ccu新接口流程
+    auto ccuInsType = OpExpansionModeToCcuInstanceType(opExpansionMode_);
+    if (ccuInsType == CcuInstanceType::CCU_UNUSED) {
+        ccuInsHandle_ = 0;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    // ccu驱动未启动时，不能查询die，当前传递默认dieId，触发可用die资源申请
+    CcuResDesc resDesc{};
+    constexpr uint8_t CCU_ALL_IODIE = 2;
+    resDesc.dieId = CCU_ALL_IODIE;
+    resDesc.insType = ccuInsType;
+    constexpr uint32_t descNum = 1;
+    auto ccuInitRet = HcommCcuInsCreate(static_cast<void *>(&resDesc),
+        descNum, &ccuInsHandle_);
     // ccu驱动拉起失败，直接回退至aicpu ts
-    if (ccuInitRet == HcclResult::HCCL_E_AGAIN) {
+    if (ccuInitRet == CcuResult::CCU_E_DRV_BUSY) {
         opExpansionMode_ = AICPU_TS_MODE;
-        ccuResContainer_ = nullptr;
+        ccuInsHandle_ = 0;
         HCCL_RUN_WARNING("[MyRank][%s] failed to init ccu driver, "
             "fallback to aicpu, rankId[%u].", __func__, rankId_);
         return HcclResult::HCCL_SUCCESS;
     }
 
     // ccu通信域数量过多，导致资源不足
-    if (ccuInitRet == HcclResult::HCCL_E_UNAVAIL) {
+    if (CCU_CHK_RES_UNAVAIL(ccuInitRet)) {
         // 如果是ccu ms模式，回退至ccu调度模式重试
         // 复用原有的ccuResContainer，回退到ccu sched时不需要重复拉起ccu驱动
         if (opExpansionMode_ == CCU_MS_MODE) {
@@ -171,18 +205,18 @@ HcclResult MyRank::TryInitCcuInstance()
 
         // 其余模式资源不足回退至aicpu ts
         opExpansionMode_ = AICPU_TS_MODE;
-        ccuResContainer_ = nullptr;
+        ccuInsHandle_ = 0;
         HCCL_RUN_WARNING("[MyRank][%s] ccu resouces are unavailable, "
             "fallback to aicpu, rankId[%u].", __func__, rankId_);
         return HcclResult::HCCL_SUCCESS;
     }
 
     // 预期外返回值属于错误
-    if (ccuInitRet != HcclResult::HCCL_SUCCESS) {
+    if (ccuInitRet != CcuResult::CCU_SUCCESS) {
         HCCL_ERROR("[%s] failed, ret[%d] is not expected.",
             __func__, ccuInitRet);
-        ccuResContainer_ = nullptr;
-        return ccuInitRet;
+        ccuInsHandle_ = 0;
+        return static_cast<HcclResult>(ccuInitRet);
     }
 
     // ccu资源申请成功
@@ -233,11 +267,9 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     // 仅自定义算子ccu流程初始化资源
     const char *opModeEnv = getenv("HCCL_CCU_CUSTOM_OP_MODE");
-    if ((opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) && !ccuResContainer_ && rankNum != 1 &&
+    if ((opModeEnv != nullptr && strcmp(opModeEnv, "1") == 0) && ccuInsHandle_ == 0 && rankNum != 1 &&
         (opExpansionMode_ == CCU_MS_MODE || opExpansionMode_ == CCU_SCHED_MODE)) {
         const uint32_t originOpExpansionMode = opExpansionMode_; // 记录原始加速模式，避免中间执行修改后丢失
-        ccuResContainer_.reset(new (std::nothrow)CcuResContainer());
-        CHK_PTR_NULL(ccuResContainer_);
         auto ret = TryInitCcuInstance();
         if (ret != HcclResult::HCCL_SUCCESS) { // 申请成功与回退成功都属于成功，其他均非预期
             HCCL_ERROR("[MyRank][%s] failed to init ccu instance, op expansion mode[%u].",

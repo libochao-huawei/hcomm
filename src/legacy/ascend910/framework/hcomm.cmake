@@ -44,6 +44,7 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
+    ${HCOMM_DIR}/include/ccu
 
     # src/pub_inc 头文件 (legacy/ascend910)
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc

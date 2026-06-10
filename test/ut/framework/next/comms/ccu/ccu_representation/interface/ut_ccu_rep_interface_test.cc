@@ -14,7 +14,6 @@
 #include "ccu_funccall_v1.h"
 #include "ccu_loopblock_v1.h"
 #include "ccu_loopcall_v1.h"
-#include "ccu_loopgroupcall_v1.h"
 #include "ccu_condition_v1.h"
 #include "ccu_repeat_v1.h"
 #include "ccu_interface_assist_v1.h"
@@ -81,14 +80,6 @@ TEST_F(CcuRepInterfaceTest, CcuBuf_Id)
     buf.SetDieId(2);
     uint16_t expectedId = 4 + (2 << 15);
     EXPECT_EQ(buf.Id(), expectedId);
-}
-
-TEST_F(CcuRepInterfaceTest, CompletedEvent_SetMask)
-{
-    CcuRepContext context;
-    CompletedEvent event(&context);
-    event.SetMask(0xFF);
-    EXPECT_EQ(event.mask, 0xFF);
 }
 
 TEST_F(CcuRepInterfaceTest, LocalNotify_Constructor)
@@ -309,12 +300,6 @@ TEST_F(CcuRepInterfaceTest, LoopCall_OperatorParentheses)
     CcuRepContext context;
     LoopCall loopCall(&context, "testLoopCall");
     loopCall();
-}
-
-TEST_F(CcuRepInterfaceTest, LoopGroupCall_Constructor)
-{
-    CcuRepContext context;
-    LoopGroupCall loopGroupCall(&context, "testLoopGroup");
 }
 
 TEST_F(CcuRepInterfaceTest, Condition_EQ_RelationalOperator)

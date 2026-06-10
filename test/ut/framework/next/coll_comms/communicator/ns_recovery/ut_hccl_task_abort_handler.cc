@@ -15,7 +15,7 @@
 #define private public
 #include "coll_comm.h"
 #include "ns_recovery/task_abort_handler.h"
-#include "ccu_dev_mgr_pub.h"
+#include "ccu_device_pub.h"
 #undef private
 
 using namespace hccl; 

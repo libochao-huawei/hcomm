@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#ifndef CCU_CHANNEL_MOCK_UTILS_H
+#define CCU_CHANNEL_MOCK_UTILS_H
+
 #include <memory>
 
 #define private public
@@ -26,6 +29,8 @@
 #include "ccu_transport_.h"
 #include "ccu_conn.h"
 
+#include "endpoint_monitor.h"
+
 #undef private
 #undef protected
 
@@ -33,6 +38,8 @@ EndpointDesc MockEndpointDesc(const CommAddr &commAddr, uint32_t devPhyId)
 {
     EndpointDesc epDesc{};
     (void)memset_s(&epDesc, sizeof(epDesc), 0, sizeof(epDesc));
+
+    (void)EndpointDescInit(&epDesc, 1);
     
     epDesc.protocol = CommProtocol::COMM_PROTOCOL_UBC_CTP;
     epDesc.commAddr = commAddr;
@@ -50,6 +57,8 @@ HcommChannelDesc MockHcommChannelDesc(const EndpointDesc &destEpDesc,
 {
     HcommChannelDesc channelDesc{};
     (void)memset_s(&channelDesc, sizeof(channelDesc), 0, sizeof(channelDesc));
+
+    (void)HcommChannelDescInit(&channelDesc, 1);
     
     channelDesc.remoteEndpoint = destEpDesc;
     channelDesc.notifyNum = 1;
@@ -87,6 +96,18 @@ std::unique_ptr<Hccl::LocalUbRmaBuffer> MockUbRmaBuffer()
     return make_unique<Hccl::LocalUbRmaBuffer>(localBuffer);
 }
 
+CommMemInfo MockCommMemInfo(Hccl::LocalUbRmaBuffer *bufferPtr)
+{
+    CommMemInfo memInfo{};
+    auto &mem = memInfo.mem;
+    mem.type = CommMemType::COMM_MEM_TYPE_DEVICE;
+    mem.addr = reinterpret_cast<void*>(bufferPtr->GetAddr());
+    mem.size = bufferPtr->GetSize();
+
+    memInfo.bufferHandle = static_cast<void *>(bufferPtr);
+    return memInfo;
+}
+
 HcclResult MockCcuConnectionImportJettys(hcomm::CcuConnection *This)
 {
     This->innerStatus_ = hcomm::CcuConnection::InnerStatus::CONNECTED;
@@ -116,8 +137,14 @@ HcclResult MockCcuTransportGetRmtXn(hcomm::CcuTransport *This, const uint32_t in
 
 void MockCcuChannelGetRes()
 {
+    MOCKER_CPP(&hcomm::EndpointMonitor::RegisterToEndpointMonitor).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&hcomm::CcuConnection::ImportJetty).stubs().will(invoke(MockCcuConnectionImportJettys));
+    MOCKER_CPP(&hcomm::CcuTransport::RecvDataSize).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::CcuTransport::RecvConnAndTransInfo).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::CcuTransport::RecvDataProcess).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&hcomm::CcuTransport::CheckFinish).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&hcomm::CcuTransport::GetRmtCkeByIndex).stubs().will(invoke(MockCcuTransportGetRmtCke));
     MOCKER_CPP(&hcomm::CcuTransport::GetRmtXnByIndex).stubs().will(invoke(MockCcuTransportGetRmtXn));
 }
+
+#endif // CCU_CHANNEL_MOCK_UTILS_H

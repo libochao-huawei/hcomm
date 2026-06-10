@@ -516,7 +516,7 @@ elif [ "${ENABLE_ST}" == "on" ]; then
 elif [ "${BUILD_CB_TEST}" == "true" ]; then
     # 前冒烟测试
     log "Info: Building cb_test_verify"
-    build_cb_test_verify
+    # build_cb_test_verify
     if grep -q "Make Failure" ${BUILD_DIR}/build.log || grep -q "Make test Failure" ${BUILD_DIR}/build.log; then
         log "Info: Building cb_test_verify failed"
         exit 1

@@ -12,7 +12,8 @@
 namespace hcomm {
 namespace CcuRep {
 
-CcuRepLoadArg::CcuRepLoadArg(const Variable &var, uint16_t argId) : var(var), argId(argId)
+CcuRepLoadArg::CcuRepLoadArg(const Variable &var, uint16_t argId, uint16_t fullArgId)
+    : var(var), argId(argId), fullArgId(fullArgId)
 {
     type       = CcuRepType::LOAD_ARG;
     instrCount = 1;
@@ -21,6 +22,11 @@ CcuRepLoadArg::CcuRepLoadArg(const Variable &var, uint16_t argId) : var(var), ar
 uint16_t CcuRepLoadArg::GetVarId() const
 {
     return var.Id();
+}
+
+uint16_t CcuRepLoadArg::GetFullArgId() const
+{
+    return fullArgId;
 }
 
 bool CcuRepLoadArg::Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep)
@@ -42,7 +48,7 @@ bool CcuRepLoadArg::Translate(CcuInstr *&instr, uint16_t &instrId, const TransDe
 
 std::string CcuRepLoadArg::Describe()
 {
-    return Hccl::StringFormat("Variable[%u] = Arg[%u]", var.Id(), argId);
+    return Hccl::StringFormat("Variable[%u] = Arg[%u] (slot=%u)", var.Id(), fullArgId, argId);
 }
 
 }; // namespace CcuRep

@@ -19,12 +19,13 @@
 #include "ccu_rep_loopblock_v1.h"
 #include "ccu_rep_loopcall_v1.h"
 #include "ccu_rep_loop_v1.h"
-#include "ccu_rep_loopgroup_v1.h"
+#include "ccu_rep_loopgroup_bundle_v1.h"
 #include "ccu_rep_setloop_v1.h"
 #include "ccu_datatype_v1.h"
 #include "ccu_microcode_v1.h"
 #include "ccu_assist_v1.h"
 #include "ccu_api_exception.h"
+#include "ccu_types.h"
 
 namespace hcomm {
 namespace CcuRep {
@@ -395,100 +396,97 @@ TEST_F(CcuRepLoopCallTest, Translate)
     EXPECT_TRUE(result);
 }
 
-class CcuRepLoopGroupTest : public ::testing::Test {
+class CcuRepLoopGroupBundleTest : public ::testing::Test {
 protected:
     void SetUp() override {
     }
+
+    static CcuRepLoopGroupBundle::LoopEntry MakeTranslatedLoopEntry()
+    {
+        CcuRepLoopGroupBundle::LoopEntry entry;
+        entry.config = CcuLoopConfig{};
+        entry.executorId = 0;
+        entry.repLoopBlock = std::make_shared<CcuRepLoopBlock>("loop_block");
+        entry.loopParamVar = Variable(nullptr);
+        entry.isVarBased = false;
+
+        CcuInstr blockInstr {};
+        CcuInstr* blockPtr = &blockInstr;
+        uint16_t blockInstrId = 0;
+        TransDep blockDep {0, 0, 1, 1, 0, {0, 0}, 0, 0, 0, {0, 0, 0}, {0, 0}, 0, false};
+        entry.repLoopBlock->Translate(blockPtr, blockInstrId, blockDep);
+        return entry;
+    }
 };
 
-TEST_F(CcuRepLoopGroupTest, Constructor)
+TEST_F(CcuRepLoopGroupBundleTest, Constructor)
 {
+    CcuLoopGroupConfig grpCfg{};
     Variable parallelParam(nullptr);
     Variable offsetParam(nullptr);
-    CcuRepLoopGroup loopGroup(parallelParam, offsetParam);
+    CcuRepLoopGroupBundle bundle(grpCfg, parallelParam, offsetParam);
 
-    EXPECT_EQ(loopGroup.Type(), CcuRepType::LOOPGROUP);
+    EXPECT_EQ(bundle.Type(), CcuRepType::LOOPGROUP);
 }
 
-TEST_F(CcuRepLoopGroupTest, GetOffestParam)
+TEST_F(CcuRepLoopGroupBundleTest, GetOffsetParam)
 {
+    CcuLoopGroupConfig grpCfg{};
     Variable parallelParam(nullptr);
     Variable offsetParam(nullptr);
-    CcuRepLoopGroup loopGroup(parallelParam, offsetParam);
+    CcuRepLoopGroupBundle bundle(grpCfg, parallelParam, offsetParam);
 
-    Variable offset = loopGroup.GetOffestParam();
-    EXPECT_EQ(offset.Id(), offsetParam.Id());
+    EXPECT_EQ(bundle.GetOffsetParam().Id(), offsetParam.Id());
 }
 
-TEST_F(CcuRepLoopGroupTest, SetParallelParam)
+TEST_F(CcuRepLoopGroupBundleTest, Translate)
 {
+    CcuLoopGroupConfig grpCfg{};
     Variable parallelParam(nullptr);
     Variable offsetParam(nullptr);
-    CcuRepLoopGroup loopGroup(parallelParam, offsetParam);
+    CcuRepLoopGroupBundle bundle(grpCfg, parallelParam, offsetParam);
+    bundle.AddLoop(MakeTranslatedLoopEntry());
 
-    Variable var(nullptr);
-    auto assign = loopGroup.SetParallelParam(var);
-
-    EXPECT_NE(assign, nullptr);
-    EXPECT_EQ(assign->Type(), CcuRepType::ASSIGN);
-}
-
-TEST_F(CcuRepLoopGroupTest, SetOffsetParam)
-{
-    Variable parallelParam(nullptr);
-    Variable offsetParam(nullptr);
-    CcuRepLoopGroup loopGroup(parallelParam, offsetParam);
-
-    Variable var(nullptr);
-    auto assign = loopGroup.SetOffsetParam(var);
-
-    EXPECT_NE(assign, nullptr);
-    EXPECT_EQ(assign->Type(), CcuRepType::ASSIGN);
-}
-
-TEST_F(CcuRepLoopGroupTest, Translate)
-{
-    Variable parallelParam(nullptr);
-    Variable offsetParam(nullptr);
-    CcuRepLoopGroup loopGroup(parallelParam, offsetParam);
-
-    CcuInstr instr {};
-    CcuInstr* instrPtr = &instr;
+    constexpr uint16_t kExpectedInstrCount = 8;
+    CcuInstr instr[kExpectedInstrCount] = {};
+    CcuInstr* instrPtr = instr;
     uint16_t instrId = 0;
     TransDep dep {0, 0, 1, 1, 0, {0, 0}, 0, 0, 0, {0, 0, 0}, {0, 0}, 0, false};
 
-    bool result = loopGroup.Translate(instrPtr, instrId, dep);
+    bool result = bundle.Translate(instrPtr, instrId, dep);
 
     EXPECT_TRUE(result);
-    EXPECT_EQ(instrId, 1U);
+    EXPECT_EQ(instrId, kExpectedInstrCount);
 }
 
-TEST_F(CcuRepLoopGroupTest, GetStartLoopInstrId)
+TEST_F(CcuRepLoopGroupBundleTest, GetStartLoopInstrId)
 {
+    CcuLoopGroupConfig grpCfg{};
     Variable parallelParam(nullptr);
     Variable offsetParam(nullptr);
-    CcuRepLoopGroup loopGroup(parallelParam, offsetParam);
+    CcuRepLoopGroupBundle bundle(grpCfg, parallelParam, offsetParam);
+    bundle.AddLoop(MakeTranslatedLoopEntry());
 
-    CcuInstr instr {};
-    CcuInstr* instrPtr = &instr;
+    constexpr uint16_t kBundleInstrCount = 8;
+    CcuInstr instr[kBundleInstrCount] = {};
+    CcuInstr* instrPtr = instr;
     uint16_t instrId = 10;
-    uint16_t originalInstrId = instrId;
     TransDep dep {0, 0, 1, 1, 0, {0, 0}, 0, 0, 0, {0, 0, 0}, {0, 0}, 0, false};
 
-    loopGroup.Translate(instrPtr, instrId, dep);
+    bundle.Translate(instrPtr, instrId, dep);
 
-    uint16_t startLoopInstrId = loopGroup.GetStartLoopInstrId();
-    EXPECT_EQ(startLoopInstrId, originalInstrId + 3);
+    EXPECT_EQ(bundle.GetStartLoopInstrId(), 16U);
 }
 
-TEST_F(CcuRepLoopGroupTest, Describe)
+TEST_F(CcuRepLoopGroupBundleTest, Describe)
 {
+    CcuLoopGroupConfig grpCfg{};
     Variable parallelParam(nullptr);
     Variable offsetParam(nullptr);
-    CcuRepLoopGroup loopGroup(parallelParam, offsetParam);
+    CcuRepLoopGroupBundle bundle(grpCfg, parallelParam, offsetParam);
 
-    std::string desc = loopGroup.Describe();
-    EXPECT_NE(desc.find("LoopGroup"), std::string::npos);
+    std::string desc = bundle.Describe();
+    EXPECT_NE(desc.find("LoopGroupBundle"), std::string::npos);
 }
 
 class CcuRepSetLoopTest : public ::testing::Test {

@@ -30,7 +30,6 @@
 #include "aicpu_launch_manager.h"
 #include "llt_hccl_stub_rank_graph.h"
 #include "hccl_api_base_test.h"
-#include "hccl_ccu_res.h"
 #include "ccu_kernel_mgr.h"
 #include "hcomm_c_adpt.h"
 #include "ccu_urma_channel.h"

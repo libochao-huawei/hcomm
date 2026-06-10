@@ -2,12 +2,9 @@
 #include <mockcpp/mockcpp.hpp>
 
 
-#include "../../../../../../../pkg_inc/hcomm/ccu/ccu_rep_block_v1.h"
 #include "ccu_kernel.h"
 #include "exception_util.h"
 #include "ccu_api_exception.h"
-
-#define privite public
 
 using namespace hcomm;
 

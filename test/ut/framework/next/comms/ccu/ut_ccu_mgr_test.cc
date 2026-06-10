@@ -18,7 +18,7 @@
 #include "hccl_types.h"
 #include "ccu_kernel.h"
 
-#include "src/base_comm/resources/ccu/pub_inc/ccu_res_pack.h"
+#include "src/base_comm/resources/ccu/ccu_instance/ccu_res_pack.h"
 #include "ccu_kernel_mgr.h"
 #include "ccu_res_repo.h"
 #include "ccu_common.h"
