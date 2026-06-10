@@ -26,6 +26,8 @@
 #undef private
 #undef protected
 
+using namespace hcomm;
+
 class CcuMgrTest : public testing::Test {
 protected:    
     static void SetUpTestCase()
@@ -53,6 +55,13 @@ protected:
 
 };
 
+class MockCcuKernelArg : public hcomm::CcuKernelArg {
+public:
+    CcuKernelSignature GetKernelSignature() const override {
+        return CcuKernelSignature{};
+    }
+};
+
 TEST_F(CcuMgrTest, Ut_CcuRegister_When_resourceNotEnough_Expect_Return_false)
 {
     MOCKER_CPP(&hcomm::CcuKernelMgr::Init).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
@@ -65,9 +74,9 @@ TEST_F(CcuMgrTest, Ut_CcuRegister_When_resourceNotEnough_Expect_Return_false)
 
     uint32_t devicePhyId = 0;
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devicePhyId);
-    hcomm::CcuKernelArg arg;
-    std::unique_ptr<hcomm::CcuKernel> kernel = std::make_unique<hcomm::CcuKernel>(arg);
-    CcuResPack *resPack = new CcuResPack();
+    MockCcuKernelArg kernelArg;
+    std::unique_ptr<hcomm::CcuKernel> kernel = std::make_unique<hcomm::CcuKernel>(kernelArg);
+    hcomm::CcuResPack *resPack = new hcomm::CcuResPack();
     CcuKernelHandle newHandle{0};
     HcclResult ret = kernelMgr.Register(std::move(kernel), *resPack, newHandle);
     EXPECT_EQ(ret, HcclResult::HCCL_E_UNAVAIL);
