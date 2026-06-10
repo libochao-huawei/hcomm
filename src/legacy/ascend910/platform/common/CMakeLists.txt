@@ -30,6 +30,7 @@ set(src_list
 if(TARGET hccl_plf)
     target_sources(hccl_plf PRIVATE
         ${src_list}
+        launch_aicpu.cc
     )
 endif()
 

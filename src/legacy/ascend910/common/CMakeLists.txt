@@ -13,8 +13,6 @@ add_subdirectory(debug/config)
 add_subdirectory(stream)
 add_subdirectory(launch_device)
 add_subdirectory(error_code)
-add_subdirectory(error_manager)
-add_subdirectory(launch_aicpu)
 
 if(TARGET hcomm)
     target_include_directories(hcomm PRIVATE
@@ -22,8 +20,6 @@ if(TARGET hcomm)
         ${CMAKE_CURRENT_SOURCE_DIR}/health
         ${CMAKE_CURRENT_SOURCE_DIR}/stream
         ${CMAKE_CURRENT_SOURCE_DIR}/launch_device
-        ${CMAKE_CURRENT_SOURCE_DIR}/error_manager
-        ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu
     )
 endif()
 
