@@ -220,7 +220,7 @@ HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, co
                 singleSubCommTransport.supportDataReceivedAck, singleSubCommTransport.linkMode, 
                 singleSubCommTransport.enableUseOneDoorbell, threadStr,
                 connectSockets, inputMem, outputMem, transportRequest.isUsedRdma, 
-                std::ref(link), isAicpuModeEn, std::ref(subCommLinkPara.linkResult[i]), std::ref(netDevCtx),
+                std::ref(link), isAicpuModeEn, std::ref(subCommLinkPara.linkResult[i]), netDevCtx,
                 transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
                 isIndOp, indOpMem, opType, false));
         CHK_SMART_PTR_NULL(subCommLinkPara.linkThreads[i]); // 异常时其他线程待处理
@@ -593,7 +593,7 @@ HcclResult TransportManager::AllocBatchSendRecvLinks(HcclSendRecvItem *sendRecvI
     struct LinkPoolPara receiverLinkPoolPara(singleSubCommTransport, "receiver", receiverList);
     for (u32 i = 0; i < senderLinkPoolPara.linkThreads.size(); ++i) {
         senderLinkPoolPara.linkThreads[i].reset(new (std::nothrow) std::thread(
-            &TransportManager::CreateBatchSendRecvLinks, std::ref(*this), 
+            &TransportManager::CreateBatchSendRecvLinks, this, 
             tag, std::ref(transMem), std::ref(senderLinkPoolPara),
             isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp
         ));
@@ -774,7 +774,7 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                             singleSubCommTransport.enableUseOneDoorbell, threadStr, connectSockets,
                             inputMem, outputMem, transportRequest.isUsedRdma,
                             std::ref(singleSubCommTransport.links[linkIdx]), isAicpuModeEn,
-                            std::ref(linkResult[threadsRapplyNum]), std::ref(netDevCtx),
+                            std::ref(linkResult[threadsRapplyNum]), netDevCtx,
                             transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
                             isIndOp, indOpMem, opType, chooseAivRoceDirect));
                         CHK_SMART_PTR_NULL(linkThreads[threadsRapplyNum]); // 异常时其他线程待处理
@@ -932,7 +932,7 @@ HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportI
                             reqSingleSubComm.supportDataReceivedAck, reqSingleSubComm.linkMode,
                             reqSingleSubComm.enableUseOneDoorbell, threadStr, connectSockets, inputMem, outputMem,
                             transportRequest.isUsedRdma, std::ref(respSingleSubComm.links[rankIndex]), isAicpuModeEn,
-                            std::ref(linkResult[threadsRapplyNum]), std::ref(netDevCtx),
+                            std::ref(linkResult[threadsRapplyNum]), netDevCtx,
                             transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
                             isIndOp, indOpMem, opType, false));
                         CHK_SMART_PTR_NULL(linkThreads[threadsRapplyNum]); // 异常时其他线程待处理
