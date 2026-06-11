@@ -119,7 +119,7 @@ void AivUrmaTransport::GetSqContext()
 {
     if (transportStatus_ != TransportStatus::READY) {
         MACRO_THROW(InternalException,
-            StringFormat("[AivUrmaTransport::%s]transport status is not ready, please check, __func__"));
+            StringFormat("[AivUrmaTransport::%s]transport status is not ready, please check", __func__));
     }
     EnsureQueueIndexDeviceMem();
 
@@ -145,7 +145,7 @@ void AivUrmaTransport::GetCqContext()
 {
     if (transportStatus_ != TransportStatus::READY) {
         MACRO_THROW(InternalException,
-            StringFormat("[AivUrmaTransport::%s]transport status is not ready, please check, __func__"));
+            StringFormat("[AivUrmaTransport::%s]transport status is not ready, please check", __func__));
     }
     EnsureQueueIndexDeviceMem();
 
@@ -184,7 +184,7 @@ void AivUrmaTransport::GetProtectionInfo()
 {
     if (transportStatus_ != TransportStatus::READY) {
         MACRO_THROW(InternalException,
-            StringFormat("[AivUrmaTransport::%s]transport status is not ready, please check, __func__"));
+            StringFormat("[AivUrmaTransport::%s]transport status is not ready, please check", __func__));
     }
 
     size_t localBufSize = commonLocRes_.bufferVec.size();

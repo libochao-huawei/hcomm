@@ -60,7 +60,7 @@ HcclAiRMAWQ UrmaDirectTransport::GetAiRMAWQ()
 {
     if (baseStatus != TransportStatus::READY) {
         MACRO_THROW(InternalException, StringFormat(
-            "[UrmaDirectTransport::%s]transport status is not ready, please check, __func__"));
+            "[UrmaDirectTransport::%s]transport status is not ready, please check", __func__));
     }
 
     HcclAiRMAWQ wq = {0};
@@ -100,7 +100,7 @@ HcclAiRMACQ UrmaDirectTransport::GetAiRMACQ()
 {
     if (baseStatus != TransportStatus::READY) {
         MACRO_THROW(InternalException, StringFormat(
-            "[UrmaDirectTransport::%s]transport status is not ready, please check, __func__"));
+            "[UrmaDirectTransport::%s]transport status is not ready, please check", __func__));
     }
     size_t connNum = commonLocRes.connVec.size();
     if (connNum != CONN_NUM) {
