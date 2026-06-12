@@ -181,7 +181,7 @@ public:
     std::vector<std::string> PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents);
     void MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec);
     ClusterMonitor() = default;
-    ~ClusterMonitor()= default;
+    ~ClusterMonitor();
 
 private:
     HcclResult GetRemEndpointDescs(HcclComm comm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs,

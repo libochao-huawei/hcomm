@@ -22,6 +22,11 @@
 
 namespace hcomm {
 
+ClusterMonitor::~ClusterMonitor()
+{
+    DeInit();
+}
+
 ClusterUIDType ClusterMonitor::FormatUID(ClusterUIDCxt cxt)
 {
     ClusterUIDType uid{};
@@ -684,8 +689,12 @@ HcclResult ClusterMonitor::RegisterToClusterMonitor(HcclComm comm)
 
 HcclResult ClusterMonitor::DeInit()
 {
-    HCCL_INFO("[%s] heartbeat deinit begin.", __func__);
+    if (isDeInit_) {
+        HCCL_INFO("[%s] already deinit, skip.", __func__);
+        return HCCL_SUCCESS;
+    }
     isDeInit_ = true;
+    HCCL_INFO("[%s] heartbeat deinit begin.", __func__);
     clusterMonitorThreadFlag_ = false;
     linkThreadRunning_ = false;
 
