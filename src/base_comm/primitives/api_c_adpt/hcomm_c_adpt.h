@@ -63,7 +63,7 @@ typedef struct {
     };
 } HcommEndpointListenConfig;
 
-HcommResult HcommResMgrInit();
+HcommResult HcommResMgrInit(uint32_t devPhyId = UINT32_MAX);
 
 HcommResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint);
 

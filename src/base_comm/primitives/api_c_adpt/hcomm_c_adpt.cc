@@ -183,12 +183,14 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
 }
 } // namespace
 
-HcommResult HcommResMgrInit()
+HcommResult HcommResMgrInit(uint32_t devPhyId)
 {
-    int32_t devLogicId = 0;
-    uint32_t devPhyId = 0;
-    CHK_RET(hrtGetDevice(&devLogicId));
-    CHK_RET(hrtGetDevicePhyIdByIndex(devLogicId, devPhyId));
+    // 图模式场景下存在未set device直接get device的情况，需确保流程正常执行
+    if (devPhyId == UINT32_MAX) {
+        int32_t devLogicId = 0;
+        CHK_RET(hrtGetDevice(&devLogicId));
+        CHK_RET(hrtGetDevicePhyIdByIndex(devLogicId, devPhyId));
+    }
     // 临时方案：触发统一平台层单例触发静态对象声明
     // 内部流程触发各种单例声明，保证时序
     EXCEPTION_HANDLE_BEGIN
