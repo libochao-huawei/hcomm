@@ -20,7 +20,7 @@
 #include "hccl_communicator.h"
 #include "hccl_comm_pub.h"
 #include "hccl_independent_common.h"
-#include "profiling/profiling.h"
+#include "coll_comm_profiling.h"
 #include "aicpu_operator_pub.h"
 using namespace hccl;
 constexpr u32 MAX_EXPORT_THREAD_NUM = 40U;

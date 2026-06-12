@@ -56,7 +56,7 @@ endforeach()
 # 将子目录添加到构建过程
 add_subdirectory(legacy)            # 包含 ascend910 和 ascend950
 add_subdirectory(base_comm)         # 基础通信组件
-add_subdirectory(coll_communicator) # 集合通信组件
+add_subdirectory(coll_communicator_mgr) # 集合通信组件
 
 # 定义 aicpu_custom 库，在 device 侧使用
 # 注意：aicpu_custom 依赖 ccl_kernel 的源文件列表，因此需要在其后定义

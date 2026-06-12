@@ -19,7 +19,7 @@
 #include "env_config.h"
 #include "op_base.h"
 #include "aicpu_launch_manager.h"
-#include "engine_aicpu_interface.h"
+#include "aicpu_thread_kernel.h"
 #include "aicpu_communicator.h"
 #include "coll_comm_aicpu_mgr.h"
 #include "coll_comm_aicpu.h"

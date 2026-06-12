@@ -9,7 +9,7 @@
  */
 
 #include "../communicator/hccl_api_base_test.h"
-#include "data_api/hcomm_primitives_inner.h"
+#include "aicpu_ts_sync_data_c_adpt.h"
 
 #include <chrono>
 #include <thread>
