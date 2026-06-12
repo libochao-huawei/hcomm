@@ -294,7 +294,9 @@ void AivUrmaChannel::PutSocketIfNeeded()
         socket_ = nullptr;
         return;
     }
-    (void)SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+    if (channelDesc_.socket == nullptr && socket_ != nullptr) {
+        (void)SocketMgr::GetInstance(devicePhyId_).PutSocket(socketConfig_, socket_);
+    }
     socket_ = nullptr;
 }
 
