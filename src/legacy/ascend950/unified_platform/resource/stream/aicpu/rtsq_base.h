@@ -29,6 +29,8 @@ void __attribute__((weak)) __attribute__((visibility("default"))) GetSqeId(const
 namespace Hccl {
 
 constexpr u32 RTSQ_FULL_TIMEOUT_DEFAULT = 1820;
+constexpr u32 RTSQ_SQE_SIZE = 64;
+constexpr u32 PER_LAUNCH_SQE_CNT = 128;
 
 class RtsqBase {
 public:
@@ -61,6 +63,11 @@ public:
     void SetOpExecStatusCallback(std::function<void()> callback)
     {
         checkOpExecStatusCallback_ = callback;
+    }
+
+    void SetCheckExecStatusCallback(std::function<HcclResult(bool)> callback) // 自定义算子流程注册检查执行状态的回调函数
+    {
+        checkExecStatusCallback_ = callback;
     }
 
     virtual void LaunchTask()
@@ -222,6 +229,8 @@ public:
         return false;
     }
 
+    HcclResult GetStreamIdAndTaskIdBySqIdx(u32 sqIdx, uint16_t& streamId, uint16_t& taskId);
+
 protected:
     u32 devPhyId_{0};
     u32 localDevId_{0};
@@ -237,6 +246,7 @@ protected:
     u32 taskIdEnd_{0}; // 当前流已经申请到的最大taskId
 
     std::function<void()> checkOpExecStatusCallback_{nullptr};
+    std::function<HcclResult(bool)> checkExecStatusCallback_{nullptr}; // 自定义算子流程，检查执行状态
 
     u32 QuerySqDepth();
 

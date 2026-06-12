@@ -20,6 +20,8 @@
 namespace Hccl {
 constexpr u32 DEVICE_MAX_NUM = 32;
 constexpr u32 MAX_CIRCULAR_QUEUE_LENGTH = 2048;
+// aicpu先生成sqe并储存到dfx队列，后下发到rtsq（最多缓存128个sqe），为避免还未下发到rtsq的sqe覆盖dfx队列里对应rtsq队列的sqe数据，延长dfx队列128个sqe
+constexpr u32 MAX_AICPU_CIRCULAR_QUEUE_LENGTH = 2048 + 128;
 
 MAKE_ENUM(QueueType, Circular_Queue, Vector_Queue)
 

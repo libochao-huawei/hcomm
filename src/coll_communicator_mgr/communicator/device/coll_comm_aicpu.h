@@ -38,6 +38,7 @@ using namespace hccl;
 
 class CollCommAicpu {
 public:
+    ~CollCommAicpu();
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
@@ -67,6 +68,8 @@ public:
     hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
     HcclResult Clean();
     HcclResult Resume(HcclChannelUrmaRes *commParam);
+
+    HcclResult CheckIndOpExecStatus(bool timeout);
 
 private:
     // 初始化

@@ -14,12 +14,14 @@
 #include "hccl_comm_pub.h"
 #define private public
 #include "hcclCommTaskExceptionLite.h"
+#include "aicpu_ts_thread.h"
 #undef private
 #include "task_scheduler_error.h"
 #include "aicpu_indop_env.h"
 #include "adapter_hal_pub.h"
 #include "dlhal_function_v2.h"
 #include "hcclCommTaskException.h"
+#include "rtsq_base.h"
 
 using namespace hccl;
 using namespace hcomm;
@@ -90,7 +92,9 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_SwitchSdmaCqeErrCodeToTsErrCode_taskexc
 {
     hcomm::SetTaskExceptionEnable(false);
     rtLogicCqReport_t exceptionInfo;
-    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().ProcessCqe(nullptr, exceptionInfo);
+    dfx::CqeStatus cqeStatus = dfx::CqeStatus::kDefault;
+    std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().ProcessCqe(nullptr, exceptionInfo, cqeStatus, aicpuCommInfo);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::SetTaskExceptionEnable(true);
 }
@@ -265,3 +269,49 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_RegisterGetAicpuTaskExceptionCallBack_W
                  g_communicatorCallbackMapV2[invalidDeviceLogicId].end());
 }
 
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_PrintAllCommTaskException)
+{
+    MOCKER_CPP(&CollCommAicpuMgr::InitAicpuIndOp).stubs().will(returnValue(HCCL_SUCCESS));
+
+    CommAicpuParam commAicpuParam;
+    std::string commName = "taskException_test_group";
+    strncpy(commAicpuParam.hcomId, commName.c_str(), HCOMID_MAX_SIZE - 1);
+    EXPECT_EQ(AicpuIndopProcess::AicpuIndOpCommInit(&commAicpuParam), HCCL_SUCCESS);
+    EXPECT_EQ(hcomm::HcclCommTaskExceptionLite::GetInstance().PrintAllCommTaskException(), HCCL_SUCCESS);
+    EXPECT_EQ(AicpuIndopProcess::AicpuDestroyCommbyGroup(commAicpuParam.hcomId), HCCL_SUCCESS);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_PrintCommTaskException)
+{
+    u32 sqHead = 1;
+    u32 sqTail = 2;
+    MOCKER(QuerySqStatus).stubs().with(any(), any(), outBound(sqHead), outBound(sqTail)).will(returnValue(HCCL_SUCCESS));
+
+    uint16_t streamId = 1;
+    uint16_t taskId = 10;
+    MOCKER_CPP(&Hccl::RtsqBase::GetStreamIdAndTaskIdBySqIdx).stubs().with(any(), outBound(streamId), outBound(taskId)).will(returnValue(HCCL_SUCCESS));
+
+    CollCommAicpu aicpuComm;
+    std::shared_ptr<AicpuTsThread> thread = std::make_shared<AicpuTsThread>("test");
+    hccl::AicpuTsThread::HcclStreamInfo streamParam;
+    streamParam.streamIds = streamId;
+    streamParam.sqIds = 2;
+    streamParam.cqIds = 3;
+    streamParam.logicCqids = 4;
+    EXPECT_EQ(thread->InitStreamLite(streamParam, 0), HCCL_SUCCESS);
+
+    aicpuComm.threads_.push_back(thread);
+    EXPECT_EQ(aicpuComm.dfx_.Init(aicpuComm.devId_, aicpuComm.identifier_), HCCL_SUCCESS);
+    auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
+    aicpuComm.dfx_.mirrorTaskManagerLite_->SetCurrDfxOpInfo(dfxOpInfoOnce);
+
+    Hccl::TaskParam taskParam{};
+    taskParam.taskType = Hccl::TaskParamType::TASK_NOTIFY_RECORD;
+    taskParam.taskPara.Notify.notifyID = 101;
+    taskParam.taskPara.Notify.value = 1;
+
+    auto taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, INVALID_U64, taskParam, dfxOpInfoOnce);
+    MOCKER_CPP(&Hccl::MirrorTaskManagerLite::GetTaskInfo).stubs().will(returnValue(taskInfo));
+
+    EXPECT_EQ(hcomm::HcclCommTaskExceptionLite::GetInstance().PrintCommTaskException(&aicpuComm), HCCL_SUCCESS);
+}

@@ -84,10 +84,7 @@ private:
 
     bool launchFlag_ = false;
 
-    static constexpr u32 rtsqSqeSize     = 64;
-    static constexpr u32 perLaunchSqeCnt = 128; // 最大launch 128个SQE
-
-    u8 locBuf[rtsqSqeSize * perLaunchSqeCnt]{0};
+    u8 locBuf[RTSQ_SQE_SIZE * PER_LAUNCH_SQE_CNT]{0};
 
     u8 *GetCurrSqeBuffer();
 
@@ -98,6 +95,9 @@ private:
     void MakeSureAvailableSpace();
 
     u32 GetTailToHeadDist() const;
+
+    void CheckLaunchTaskStatus(const std::chrono::steady_clock::time_point &startTime,
+        const std::chrono::steady_clock::time_point &curTime);
 };
 
 } // namespace Hccl
