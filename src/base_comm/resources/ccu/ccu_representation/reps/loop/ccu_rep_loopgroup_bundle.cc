@@ -78,11 +78,11 @@ bool CcuRepLoopGroupBundle::Translate(CcuInstr *&instr, uint16_t &instrId, const
     // 1. Assign loopParam for each loop
     for (const auto &loop : loops_) {
         if (!loop.isVarBased) {
-            uint64_t lpImm = GetLoopParam(loop.executorId, loop.config.addrOffset, loop.config.iterNum);
+            uint64_t lpImm = GetLoopParam(loop.executor.Id(), loop.config.addrOffset, loop.config.iterNum);
             LoadImdToXnInstr(instr++, loop.loopParamVar.Id(), lpImm);
             instrId++;
         } else {
-            uint64_t ctxImm = static_cast<uint64_t>(loop.executorId) << 45;
+            uint64_t ctxImm = static_cast<uint64_t>(loop.executor.Id()) << 45;
             LoadImdToXnInstr(instr++, dep.reserveXnId, ctxImm);
             instrId++;
             LoadXXInstr(instr++, loop.loopParamVar.Id(), loop.loopParamVar.Id(), dep.reserveXnId);

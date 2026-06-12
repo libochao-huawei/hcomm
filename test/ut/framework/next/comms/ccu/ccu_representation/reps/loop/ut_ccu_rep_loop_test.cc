@@ -405,7 +405,7 @@ protected:
     {
         CcuRepLoopGroupBundle::LoopEntry entry;
         entry.config = CcuLoopConfig{};
-        entry.executorId = 0;
+        entry.executor = Executor(nullptr);
         entry.repLoopBlock = std::make_shared<CcuRepLoopBlock>("loop_block");
         entry.loopParamVar = Variable(nullptr);
         entry.isVarBased = false;

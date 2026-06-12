@@ -26,7 +26,7 @@ class CcuRepLoopGroupBundle : public CcuRepBase {
 public:
     struct LoopEntry {
         CcuLoopConfig config;
-        uint16_t executorId{0};
+        Executor executor;
         std::shared_ptr<CcuRepLoopBlock> repLoopBlock;
         Variable loopParamVar;
         bool isVarBased{false};

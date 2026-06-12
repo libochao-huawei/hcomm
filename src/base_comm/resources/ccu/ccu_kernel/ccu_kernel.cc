@@ -1866,7 +1866,7 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroup group,
 
     CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
     entry.config = *config;
-    entry.executorId = static_cast<uint16_t>(loopEnginePool[loopIdx].Id());
+    entry.executor = loopEnginePool[loopIdx];
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CreateVariable();
     entry.isVarBased = false;
@@ -1922,7 +1922,7 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
     grpDesc.loopCount++;
 
     CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
-    entry.executorId = static_cast<uint16_t>(loopEnginePool[loopIdx].Id());
+    entry.executor = loopEnginePool[loopIdx];
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CcuRep::Variable(*loopParamVarPtr);
     entry.isVarBased = true;
