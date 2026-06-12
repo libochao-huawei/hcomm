@@ -166,4 +166,16 @@ HcclResult CollExecutorBase::GetHcclOffsetDstRanksMap(std::unordered_map<uint64_
     return HCCL_E_NOT_SUPPORT;
 }
 
+void CollExecutorBase::SetWorkflowMode(HcclWorkflowMode workflowMode)
+{
+    UNUSED_PARAM(workflowMode);
+    HCCL_DEBUG("[CollExecutorBase][SetWorkflowMode] base class default, no effect");
+}
+
+HcclWorkflowMode CollExecutorBase::GetExecutorWorkflowMode() const
+{
+    HCCL_ERROR("[CollExecutorBase][GetExecutorWorkflowMode] base class should not be called");
+    return HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
+}
+
 }

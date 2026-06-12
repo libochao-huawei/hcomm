@@ -866,4 +866,14 @@ HcclResult CollNativeExecutorBase::SetOpCache(const AivOpArgs& opArgs, const Aiv
 
     return HCCL_SUCCESS;
 }
+
+void CollNativeExecutorBase::SetWorkflowMode(HcclWorkflowMode workflowMode)
+{
+    workflowMode_ = workflowMode;
+}
+
+HcclWorkflowMode CollNativeExecutorBase::GetExecutorWorkflowMode() const
+{
+    return workflowMode_;
+}
 }

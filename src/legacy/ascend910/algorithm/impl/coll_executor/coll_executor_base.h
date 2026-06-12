@@ -46,6 +46,9 @@ public:
     virtual HcclResult CalcIncreLinkRequest(const OpParam& param, std::set<u32>& ranksLinked, 
         AlgResourceRequest &resourceRequest, bool& needIncreLink);
 
+    virtual void SetWorkflowMode(HcclWorkflowMode workflowMode);
+    virtual HcclWorkflowMode GetExecutorWorkflowMode() const;
+
     static HcclResult RunTemplate(const std::unique_ptr<AlgTemplateBase> &tempAlg, const SubCommInfo &commInfo);
 
     //batchsendrecv retry使用

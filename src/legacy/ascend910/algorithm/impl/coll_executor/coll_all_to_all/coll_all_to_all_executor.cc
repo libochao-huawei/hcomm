@@ -104,10 +104,23 @@ HcclResult CollAlltoAllExecutor::GetAdjInfo(AlgResourceResponse& algRes, AdjInfo
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAlltoAllExecutor::CalcScratchMemSizeWithForceCheck(const OpParam& param, u64& scratchMemSize)
+// override----------------------资源计算接口----------------------
+HcclResult CollAlltoAllExecutor::CalcResRequest(const OpParam& param, AlgResourceRequest& resourceRequest)
 {
-    // AICPU aicpuUnfold展开模式下强制OP_BASE，Host侧CalcScratchMemSize需同步覆盖
-    // 使scratch计算路径与AICPU侧一致，解决scratch mem size不匹配问题
+    (void)ParseParam(param);
+
+    u64 scratchMemSize = 0U;
+    u32 streamNum = 0U;
+    u32 notifyNum = 0U;
+    u64 aivBufferRequest = 0U;
+    std::vector<LevelNSubCommTransport> opTransport {
+        std::vector<LevelNSubCommTransport>(static_cast<u32>(COMM_LEVEL_RESERVED))
+    };
+
+    // AICPU aicpuUnfold展开模式下临时强制OP_BASE，使整个资源计算路径与AICPU侧一致
+    // CalcScratchMemSize走OP_BASE分支正确计算scratch
+    // CalcCommInfo走OP_BASE分支设outputMemType为CCL_OUTPUT而非SCRATCH
+    // 避免transport因scratch未分配而拿到nullptr
     const bool needForceOpBase = param.aicpuUnfoldMode && !param.isZeroCopy;
     HCCL_INFO("[CollAlltoAllExecutor][CalcResRequest] aicpuUnfoldMode[%d] isZeroCopy[%d] "
         "needForceOpBase[%d] workflowMode[%d] tag[%s]",
@@ -122,33 +135,16 @@ HcclResult CollAlltoAllExecutor::CalcScratchMemSizeWithForceCheck(const OpParam&
     }
 
     CHK_RET(CalcScratchMemSize(scratchMemSize));
-
-    if (needForceOpBase) {
-        HCCL_DEBUG("[CollAlltoAllExecutor][CalcResRequest] restore workflowMode "
-            "after CalcScratchMemSize, scratchMemSize[%llu]", scratchMemSize);
-        workflowMode_ = savedWorkflowMode;
-    }
-    return HCCL_SUCCESS;
-}
-
-// override----------------------资源计算接口----------------------
-HcclResult CollAlltoAllExecutor::CalcResRequest(const OpParam& param, AlgResourceRequest& resourceRequest)
-{
-    (void)ParseParam(param);
-
-    u64 scratchMemSize = 0U;
-    u32 streamNum = 0U;
-    u32 notifyNum = 0U;
-    u64 aivBufferRequest = 0U;
-    std::vector<LevelNSubCommTransport> opTransport {
-        std::vector<LevelNSubCommTransport>(static_cast<u32>(COMM_LEVEL_RESERVED))
-    };
-
-    CHK_RET(CalcScratchMemSizeWithForceCheck(param, scratchMemSize));
     CHK_RET(CalcStreamNum(streamNum));
     CHK_RET(CalcNotifyNum(streamNum, notifyNum));
     CHK_RET(CalcAivBufferRequest(aivBufferRequest));
     CHK_RET(CalcCommInfo(opTransport));
+
+    if (needForceOpBase) {
+        HCCL_DEBUG("[CollAlltoAllExecutor][CalcResRequest] restore workflowMode "
+            "after resource calc, scratchMemSize[%llu]", scratchMemSize);
+        workflowMode_ = savedWorkflowMode;
+    }
 
     CHK_RET(BuildResourceRequest(scratchMemSize, streamNum, notifyNum, aivBufferRequest, opTransport, resourceRequest));
     HCCL_INFO("[CollAlltoAllExecutor][%s] streamNum[%u], notifyNum[%u], sctrachMemSize[%llu], aivBufferRequest[%llu]",

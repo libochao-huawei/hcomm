@@ -461,8 +461,20 @@ HcclResult AlltoAllOperator::SetExcutorExtraInfo(const std::string& algName, con
         CHK_RET(SetExecutorAttr(param));
     }
 
+    // AICPU aicpuUnfold展开模式下临时强制OP_BASE，使UpdateAlltoAllZCopyMode正确判断
+    const bool needForceOpBase = param.aicpuUnfoldMode && !param.isZeroCopy;
+    const HcclWorkflowMode savedWorkflowMode = executor_->GetExecutorWorkflowMode();
+    if (needForceOpBase) {
+        executor_->SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+    }
+
     CollAlltoAllExecutor* alltoAllExecutor = dynamic_cast<CollAlltoAllExecutor *>(executor_.get());
-    return alltoAllExecutor->SetExcutorExtraInfo(allMeshAggregationSendRecvInfo_, cclBufferManager_.GetInCCLbufferSize());
+    HcclResult ret = alltoAllExecutor->SetExcutorExtraInfo(allMeshAggregationSendRecvInfo_, cclBufferManager_.GetInCCLbufferSize());
+
+    if (needForceOpBase) {
+        executor_->SetWorkflowMode(savedWorkflowMode);
+    }
+    return ret;
 }
 
 HcclResult AlltoAllOperator::SetExecutorAttr(const OpParam& param)
