@@ -2,29 +2,26 @@
 
 ## 选择策略
 
-通信算法的选择在很大程度上决定了通信算子的整体性能表现，为应对不同的网络拓扑、通信数据量以及硬件资源，一个通信算子往往具有多种算法实现。在实际分布式集群场景中，需要根据具体场景，综合考量选择拓扑亲和的通信算法，以实现通信效率的最大化。
+AICPU 通信算子应根据实际物理拓扑选择通信算法，例如：
 
-![通信算法选择示意图](figures/aicpu_algo_select.png)
+- 单 Server 多卡 Mesh 拓扑，建议采用 Mesh 算法，利用卡间直连链路并行通信。
+- 多 Server、每个 Server 单卡的拓扑，建议采用 NHR 算法，按跨 Server 链路组织通信。
 
-如上图所示，通信算子支持多种算法实现，开发者可以根据拓扑信息选择最优通信算法：
+AICPU 通信算法选择示意图如下所示：
 
-- Ring算法实现：算法编排在AI CPU侧，适用于Server内物理拓扑为Ring的场景。
-- Mesh算法实现：算法编排在AI CPU侧，适用于Server内物理拓扑为Mesh的场景。
+<img src="figures/algo_select_new.png" alt="AICPU通信算法选择示意图" width="280">
 
 > [!NOTE]说明
 >
->1. 如果通信算子只有一种算法实现，那么可以跳过本节的算法选择步骤。
->2. 本章所述的算法是开发者自行实现的算法，HCCL_ALGO环境变量配置的算法是HCCL内置算法。HCCL内置算法可参考《HCCL集合通信库用户指南》的相关参考 \> 集合通信算法介绍。
+> 1. 算法选择应以运行环境查询到的实际物理拓扑为准，不能只根据 rank 数量判断拓扑。
+> 2. 如果自定义算子只支持一种物理拓扑和一种算法实现，可以跳过算法选择步骤，直接使用该算法。
 
 ## 代码示例
 
-以[选择策略](#选择策略)介绍的算法选择策略为例，对应的算法选择代码片段如下：
-
 ```c
-if (algType == ALG_LEVEL0_NP_DOUBLE_RING || algType == ALG_LEVEL0_NP_SINGLE_RING) {
-    algName = "Ring";  // 根据拓扑信息选择使用Ring算法
-} else if (algType == ALG_LEVEL0_NP_MESH) {
-    algName = "Mesh";  // 根据拓扑信息选择使用Mesh算法
+CommEngine engine;
+if (engine == CommEngine::COMM_ENGINE_AICPU_TS) {
+    algName = "AicpuMesh";  // 选择使用aicpu展开的Mesh算法
 } else {
     return HCCL_E_NOT_SUPPORT;
 }
