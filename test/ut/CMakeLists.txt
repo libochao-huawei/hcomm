@@ -341,7 +341,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/loop
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/translator
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/arithmetic/
-    ${HCCL_CODE_ROOT}/src/coll_communicator/common/loggers/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/common/loggers/
 )
 
 add_subdirectory(stub)
