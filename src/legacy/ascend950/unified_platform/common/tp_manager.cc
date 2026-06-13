@@ -315,8 +315,9 @@ static HcclResult CommitMappedSlToTpAttr(const uint32_t devPhyId, const IpAddres
 
 static bool ParseDscpFromCfgByQos(const std::string &cfg, uint8_t qos, uint8_t &dscpOut)
 {
+    constexpr size_t initialReserveSize = 32;
     std::vector<uint32_t> nums;
-    nums.reserve(32);
+    nums.reserve(initialReserveSize);
     uint32_t cur = 0;
     bool inNum = false;
     for (char ch : cfg) {
@@ -344,7 +345,8 @@ static bool ParseDscpFromCfgByQos(const std::string &cfg, uint8_t qos, uint8_t &
             return true;
         }
     }
-    for (size_t i = 0; i + 1 < nums.size(); i += 2) {
+    constexpr size_t pairStep = 2;
+    for (size_t i = 0; i + 1 < nums.size(); i += pairStep) {
         if (nums[i] == qos && nums[i + 1] <= 63U) {
             dscpOut = static_cast<uint8_t>(nums[i + 1]);
             return true;
@@ -827,7 +829,7 @@ void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
     reqCtx.handle = RaUbGetTpInfoAsync(rdmaHandle, param, reqCtx.dataBuffer, reqCtx.tpInfoNum);
 }
 
-void TpManager::StartGetTpAttrForFirstTpDevice(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx)
+void TpManager::StartGetTpAttrForFirstTpDevice(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx) const
 {
     (void)memset_s(&reqCtx.tpAttr, sizeof(reqCtx.tpAttr), 0, sizeof(reqCtx.tpAttr));
     reqCtx.tpAttrBitmap = (1U << kTpAttrSlAvailableBit) | kTpAttrBitmapSl;
@@ -860,7 +862,7 @@ inline TpInfo ParseTpInfo(const struct HccpTpInfo *infoPtr)
     return tpInfo;
 }
 
-HcclResult TpManager::MapTpInfoFromTpAttr(const RaUbGetTpInfoParam &param, const RequestCtx &reqCtx, TpInfo &outTpInfo)
+HcclResult TpManager::MapTpInfoFromTpAttr(const RaUbGetTpInfoParam &param, const RequestCtx &reqCtx, TpInfo &outTpInfo) const
 {
     const uint32_t tpInfoNum = reqCtx.tpInfoNum;
     const struct HccpTpInfo *baseInfoPtr =

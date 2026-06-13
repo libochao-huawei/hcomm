@@ -20,7 +20,8 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
     : LocalRmaBuffer(buf, RmaType::RDMA), rdmaHandle(rdmaHandle)
 {
     if (rdmaHandle == nullptr || buf == nullptr) {
-        THROW<NullPtrException>("LocalRdmaRmaBuffer's rdmaHandle is NULL");
+        string nullParam = rdmaHandle == nullptr ? "rdmaHandle" : "buf";
+        THROW<NullPtrException>("LocalRdmaRmaBuffer's %s is nullptr", nullParam.c_str());
     }
     const uintptr_t bufAddr = buf->GetAddr();
     size_t bufSize = buf->GetSize();
@@ -50,7 +51,8 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
     : LocalRmaBuffer(buf, RmaType::RDMA, true), rdmaHandle(rdmaHandle), lkey(lkey), rkey(rkey), mrHandle(mrHandle)
 {
     if (rdmaHandle == nullptr || buf == nullptr) {
-        THROW<NullPtrException>("LocalRdmaRmaBuffer alias: rdmaHandle or buf is NULL");
+        string nullParam = rdmaHandle == nullptr ? "rdmaHandle" : "buf";
+        THROW<NullPtrException>("LocalRdmaRmaBuffer alias: %s is nullptr", nullParam.c_str());
     }
     const uintptr_t bufAddr = buf->GetAddr();
     size_t bufSize = buf->GetSize();
@@ -60,7 +62,7 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
         THROW<InvalidParamsException>("[%s] alias failed, param error.", __func__);
     }
     if (mrHandle == nullptr) {
-        THROW<NullPtrException>("LocalRdmaRmaBuffer alias: mrHandle is NULL");
+        THROW<NullPtrException>("LocalRdmaRmaBuffer alias: mrHandle is nullptr");
     }
     HCCL_INFO("LocalRdmaRmaBuffer alias[rdmaHandle=%p, mrHandle=%p, lkey=%u, buf=%s]",
             rdmaHandle, mrHandle, lkey, buf->Describe().c_str());

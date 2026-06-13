@@ -26,7 +26,7 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaH
     : LocalRmaBuffer(buf, RmaType::UB), rdmaHandle(rdmaHandle)
 {
     if (rdmaHandle == nullptr) {
-        THROW<NullPtrException>("LocalUbRmaBuffer's rdmaHandle is NULL");
+        THROW<NullPtrException>("LocalUbRmaBuffer's rdmaHandle is nullptr");
     }
     std::pair<u64, u64> alignBuf = BufAlign(buf->GetAddr(), buf->GetSize());
 
@@ -53,7 +53,7 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaH
       reqReg(parent.reqReg)
 {
     if (rdmaHandle == nullptr) {
-        THROW<NullPtrException>("LocalUbRmaBuffer alias rdmaHandle is NULL");
+        THROW<NullPtrException>("LocalUbRmaBuffer alias rdmaHandle is nullptr");
     }
 
     auto ret = memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, parent.key, HRT_UB_MEM_KEY_MAX_LEN);
@@ -70,7 +70,7 @@ LocalUbRmaBuffer::LocalUbRmaBuffer(std::shared_ptr<Buffer> buf, void *netDevice,
 {
     (void)flag;
     if (netDevice == nullptr) {
-        THROW<NullPtrException>("LocalUbRmaBuffer's netDevice is NULL");
+        THROW<NullPtrException>("LocalUbRmaBuffer's netDevice is nullptr");
     }
     tokenValue = GetUbToken();
     netDev     = reinterpret_cast<HcclNetDevice *>(netDevice);

@@ -159,7 +159,7 @@ void BuildA5SqeCCoreNotifyRecord(u32 streamId, u32 taskId, u64 writeAddr, u64 va
 void BuildA5SqeRdmaDbSend(u32 streamId, u32 taskId, u64 dbAddr, u64 dbValue, uint8_t * const sqeIn)
 {
     (void)streamId;
-    Rt91095StarsWriteValueSqe *sqe = (Rt91095StarsWriteValueSqe *)sqeIn;
+    Rt91095StarsWriteValueSqe *sqe = reinterpret_cast<Rt91095StarsWriteValueSqe *>(sqeIn);
     SetSqeHeaderTaskFields(sqe, taskId);
     sqe->header.type                = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_WRITE_VALUE);
 
@@ -176,7 +176,7 @@ void BuildA5SqeRdmaDbSend(u32 streamId, u32 taskId, u64 dbAddr, u64 dbValue, uin
 
     sqe->va                         = 0U;
 
-    HCCL_INFO("[SQE]RdmaDbSend streamId %u, taskId %u, dbAddr %p, dbValue %llu",
+    HCCL_INFO("[SQE]RdmaDbSend streamId %u, taskId %u, dbAddr 0x%llx, dbValue %llu",
         streamId, taskId, dbAddr, dbValue);
 }
 

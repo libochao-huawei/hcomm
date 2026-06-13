@@ -323,8 +323,9 @@ static HcclResult CommitUboeDscpToTpAttr(const uint32_t devPhyId, const CommAddr
 
 static bool ParseDscpFromCfgByQos(const std::string &cfg, uint8_t qos, uint8_t &dscpOut)
 {
+    constexpr size_t initialReserveSize = 32;
     std::vector<uint32_t> nums;
-    nums.reserve(32);
+    nums.reserve(initialReserveSize);
     uint32_t cur = 0;
     bool inNum = false;
     for (char ch : cfg) {
@@ -355,7 +356,8 @@ static bool ParseDscpFromCfgByQos(const std::string &cfg, uint8_t qos, uint8_t &
         }
     }
 
-    for (size_t i = 0; i + 1 < nums.size(); i += 2) {
+    constexpr size_t pairStep = 2;
+    for (size_t i = 0; i + 1 < nums.size(); i += pairStep) {
         if (nums[i] == qos && nums[i + 1] <= 63U) {
             dscpOut = static_cast<uint8_t>(nums[i + 1]);
             return true;

@@ -527,7 +527,7 @@ void DevUbConnection::Connect()
 {
 }
 
-void DevUbConnection::SetSqContextInfo(SqContext &sq)
+void DevUbConnection::SetSqContextInfo(SqContext &sq) const
 {
     sq.contextInfo.ubJfs.jfsID = jettyId;
     sq.contextInfo.ubJfs.dbVa = dbAddr;
@@ -538,7 +538,7 @@ void DevUbConnection::SetSqContextInfo(SqContext &sq)
         rmtEid.raw, sizeof(sq.contextInfo.ubJfs.remoteEID));
 }
 
-void DevUbConnection::SetCqContextInfo(CqContext &cq)
+void DevUbConnection::SetCqContextInfo(CqContext &cq) const
 {
     cq.contextInfo.ubJfc.jfcID = cqInfo_.id;
     cq.contextInfo.ubJfc.scqVa = cqInfo_.va;

@@ -70,7 +70,7 @@ private:
 
     // ========== 底层 Task 构造接口(rtsq) ==========
     void BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue);
-    void BuildNotifyWaitTask(u32 notifyId, const StreamLite &stream, u32 timeout);
+    void BuildNotifyWaitTask(u32 notifyId, const StreamLite &stream, u32 timeout) const;
 };
 
 } // namespace Hccl

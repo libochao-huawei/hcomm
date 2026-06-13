@@ -12,8 +12,9 @@
 #ifndef RDMA_BASE_VENDOR_OPS_H
 #define RDMA_BASE_VENDOR_OPS_H
 
-#include "rma_conn_lite.h"
 #include <chrono>
+#include "rma_conn_lite.h"
+#include "rdma_conn_lite_v2.h"
 
 namespace Hccl {
 
@@ -73,6 +74,10 @@ public:
 
     HcclResult WriteReduce(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, DataType dataType, ReduceOp reduceOp)
     {
+        (void)loc;
+        (void)rmt;
+        (void)dataType;
+        (void)reduceOp;
         HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support WriteReduce Now.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
@@ -80,6 +85,11 @@ public:
     HcclResult WriteReduceWithNotify(
         const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, DataType dataType, ReduceOp reduceOp, const uint32_t remoteNotifyId)
     {
+        (void)loc;
+        (void)rmt;
+        (void)dataType;
+        (void)reduceOp;
+        (void)remoteNotifyId;
         HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support WriteReduceWithNotify Now.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
@@ -101,17 +111,25 @@ protected:
     // vendor扩展点: 每个原子op一个虚函数
     // 默认 NOT_SUPPORT, 各个vendor 只重写自己支持的
     virtual HcclResult BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt) {
+        (void)loc;
+        (void)rmt;
         HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support Write Now.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
 
     virtual HcclResult BuildNotifyWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify) {
+        (void)locNotify;
+        (void)notify;
         HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support Notify Now.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
 
     virtual HcclResult BuildWriteReduceWqe(const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify,
                                     DataType dataType, ReduceOp reduceOp) {
+        (void)locNotify;
+        (void)notify;
+        (void)dataType;
+        (void)reduceOp;
         HCCL_ERROR("[RdmaBaseOps::%s] This Backend Not support WriteReduce Now.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
@@ -144,7 +162,7 @@ protected:
 
         HCCL_INFO("[RdmaBaseOps::%s] Operate: sqTail = %u", __func__, sqTail_);
         while (!timeOutFlag) {
-            auto status = memcpy_s(&sqTail_, sizeof(uint32_t), (void *)sqContext_->tailAddr, sizeof(uint32_t));
+            auto status = memcpy_s(&sqTail_, sizeof(uint32_t), reinterpret_cast<void *>(sqContext_->tailAddr), sizeof(uint32_t));
             if (UNLIKELY(status != 0)) {
                 THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] read sq tail failed, ret = %d", __func__, status));
             }
@@ -166,7 +184,7 @@ protected:
     // 将PI更新到硬件可见地址
     HcclResult UpdateSqPI() {
         // 更新Sq PI指针
-        auto status = memcpy_s((void *)sqContext_->headAddr, sizeof(uint32_t), &sqHead_, sizeof(uint32_t));
+        auto status = memcpy_s(reinterpret_cast<void *>(sqContext_->headAddr), sizeof(uint32_t), &sqHead_, sizeof(uint32_t));
         if (UNLIKELY(status != 0)) {
             THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] write head failed, ret = %d", __func__, status));
         }

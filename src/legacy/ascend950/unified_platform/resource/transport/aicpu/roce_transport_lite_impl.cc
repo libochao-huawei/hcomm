@@ -196,6 +196,7 @@ RmaBufSliceLite RoceTransportLiteImpl::GetRmaBufSlicelite(const RmaBufferLite &l
 
 RmaBufSliceLite RoceTransportLiteImpl::GetNotifySlicelite(u32 index) const
 {
+    (void)index;
     return RmaBufSliceLite(
         notifyValueBuffer_->GetAddr(), 
         notifyValueBuffer_->GetSize(), 
@@ -346,9 +347,8 @@ void RoceTransportLiteImpl::BuildRdmaDbSendTask(const StreamLite &stream, u64 re
 }
 
 // 下发Rtsq sqe, NotifyWait
-void RoceTransportLiteImpl::BuildNotifyWaitTask(u32 notifyId, const StreamLite &stream, u32 timeout)
+void RoceTransportLiteImpl::BuildNotifyWaitTask(u32 notifyId, const StreamLite &stream, u32 timeout) const
 {
     stream.GetRtsq()->NotifyWait(notifyId, timeout);
 }
-
 } // namespace Hccl

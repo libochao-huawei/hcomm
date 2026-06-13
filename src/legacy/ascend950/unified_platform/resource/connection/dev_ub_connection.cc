@@ -30,7 +30,7 @@ constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传�
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                  const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                 const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, const u8 qos)
+                                 const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, u8 qos)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
       opMode(opMode), jfcMode(jfcMode), locIpv4Addr(locIpv4Addr), rmtIpv4Addr(rmtIpv4Addr),
       rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid()), qos_(qos), devUsed_(devUsed)
@@ -69,7 +69,7 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                      const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                     const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, const u8 qos)
+                                     const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, u8 qos)
     : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr, qos)
 {
     tpProtocol = TpProtocol::TP;
@@ -77,7 +77,7 @@ DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddres
 
 DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                        const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                       const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, const u8 qos)
+                                       const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, u8 qos)
     : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr, qos)
 {
     tpProtocol = TpProtocol::CTP;
@@ -85,7 +85,7 @@ DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddr
 
 DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                          const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, const u8 qos)
+                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, u8 qos)
     : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr, qos)
 {
     tpProtocol = TpProtocol::UBOE;
@@ -120,7 +120,7 @@ std::vector<char> DevUbConnection::GetUniqueId() const
     return result;
 }
 
-void DevUbConnection::SetCqInfo(HcclAiRMACQ &cq)
+void DevUbConnection::SetCqInfo(HcclAiRMACQ &cq) const
 {
     cq.jfcId = cqInfo_.id;
     cq.cqVA = cqInfo_.va;
@@ -129,7 +129,7 @@ void DevUbConnection::SetCqInfo(HcclAiRMACQ &cq)
     cq.dbAddr = cqInfo_.swdbAddr;
 }
 
-void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
+void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq) const
 {
     wq.jettyId = jettyId;
     wq.dbAddr = dbAddr;
@@ -139,7 +139,7 @@ void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
     memcpy_s(wq.rmtEid, sizeof(wq.rmtEid), rmtEid.raw, sizeof(wq.rmtEid));
 }
 
-void DevUbConnection::SetSqContextInfo(SqContext &sq)
+void DevUbConnection::SetSqContextInfo(SqContext &sq) const
 {
     sq.contextInfo.ubJfs.jfsID = jettyId;
     sq.contextInfo.ubJfs.dbVa = dbAddr;
@@ -150,7 +150,7 @@ void DevUbConnection::SetSqContextInfo(SqContext &sq)
         sizeof(sq.contextInfo.ubJfs.remoteEID));
 }
  
-void DevUbConnection::SetCqContextInfo(CqContext &cq)
+void DevUbConnection::SetCqContextInfo(CqContext &cq) const
 {
     cq.contextInfo.ubJfc.jfcID = cqInfo_.id;
     cq.contextInfo.ubJfc.scqVa = cqInfo_.va;
@@ -220,7 +220,7 @@ void DevUbConnection::GetTimeOut() // 直接基于环境变量控制
             envTimeOut, tpTimeOut, envValue, envTimeOut);
     }
 
-    HCCL_INFO("%s final TA Timeout [%u] (%ums).", __func__, jettyTimeOut);
+    HCCL_INFO("%s final TA Timeout [%u] (%ums).", __func__, jettyTimeOut, envTimeOut);
 }
 
 void DevUbConnection::AdvanceUbConnAfterTpInfoReady()
@@ -1090,19 +1090,21 @@ bool IfNeedUpdatingUbCi(const std::vector<DevUbConnection *> &ubConns)
         u32 sqDepth = ubConn->GetSqDepth();
         // 考虑pi翻转场景
         u32 extra = pi >= ci ? 0 : sqDepth;
+        constexpr u32 thresholdDivisor = 2;
 
         if (static_cast<double>(pi + extra - ci)
-            >= static_cast<double>(sqDepth) / 2) { // 当pi和ci差距大于sqDepth/2时，更新ci
+            >= static_cast<double>(sqDepth) / thresholdDivisor) { // 当pi和ci差距大于sqDepth/2时，更新ci
             return true;
         }
     }
     return false;
 }
 
-HcclResult DevUbConnection::Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U])
+HcclResult DevUbConnection::Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U]) const
 {
-    if (ipv4Str == NULL || ipArr == NULL) {
-        HCCL_ERROR("[DevUbConnection::%s] ipv4Str or ipArr is null", __func__);
+    if (ipv4Str == nullptr || ipArr == nullptr) {
+        string nullParam = ipv4Str == nullptr ? "ipv4Str" : "ipArr";
+        HCCL_ERROR("[DevUbConnection::%s] %s is nullptr", __func__, nullParam.c_str());
         return HCCL_E_PARA;
     }
 
@@ -1114,20 +1116,24 @@ HcclResult DevUbConnection::Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U
         return HCCL_E_PARA;
     }
 
+    constexpr uint32_t ipAddrLen = 16;
     // 将ipArr清零
-    memset_s(&ipArr[0], 16, 0, 16);
+    (void)memset_s(&ipArr[0], ipAddrLen, 0, ipAddrLen);
 
+    constexpr uint32_t bitsPerByte = 8;
+    constexpr uint32_t bits2Bytes = 16;
+    constexpr uint32_t bits3Bytes = 24;
     uint32_t ipNet = addr.s_addr;   // 网络字节序的 IP 整数
     // 拆分网络序整数为4个字节，写入 ipArr 前4位（大端序）
     // ipArr[15] = 最高位字节（如 192.168.100.2 的 2）
-    ipArr[12] = ipNet & 0xFF;           // 192
-    ipArr[13] = (ipNet >> 8) & 0xFF;    // 168
-    ipArr[14] = (ipNet >> 16) & 0xFF;   // 100
-    ipArr[15] = (ipNet >> 24) & 0xFF;   // 2
+    ipArr[12] = ipNet & 0xFF;                     // 192
+    ipArr[13] = (ipNet >> bitsPerByte) & 0xFF;    // 168
+    ipArr[14] = (ipNet >> bits2Bytes) & 0xFF;     // 100
+    ipArr[15] = (ipNet >> bits3Bytes) & 0xFF;     // 2
     return HCCL_SUCCESS;
 }
 
-bool DevUbConnection::IpArrayCompare(uint8_t ipArrLeft[16U], uint8_t ipArrRight[16U])
+bool DevUbConnection::IpArrayCompare(uint8_t ipArrLeft[16U], uint8_t ipArrRight[16U]) const
 {
     for (unsigned int i = 0; i < 16U; i++) {
         if (ipArrLeft[i] != ipArrRight[i]) {
