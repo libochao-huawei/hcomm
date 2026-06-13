@@ -35,8 +35,6 @@ public:
 
     SocketHandle Get(u32 devicePhyId, const PortData &localPort);
 
-    void DeInit(u32 devPhyId);
-
     ~SocketHandleManager();
 
 private:

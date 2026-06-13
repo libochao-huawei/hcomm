@@ -24,7 +24,7 @@ HccpHdcManager &HccpHdcManager::GetInstance()
 
 void HccpHdcManager::Init(u32 deviceLogicId)
 {
-    std::unique_lock<std::recursive_mutex> lock(managerMutex);
+    std::unique_lock<std::mutex> lock(managerMutex);
     if (instances.count(deviceLogicId) != 0) {
         return;
     }
@@ -39,34 +39,9 @@ void HccpHdcManager::Init(u32 deviceLogicId)
     instances.insert(deviceLogicId);
 }
 
-void HccpHdcManager::DeInit(u32 deviceLogicId)
-{
-    std::lock_guard<std::recursive_mutex> lock(managerMutex);
-    if (destroyed) {
-        HCCL_WARNING("[HccpHdcManager::%s] HccpHdcManager has been destroyed", __func__);
-        return;
-    }
-    if (instances.count(deviceLogicId) == 0) {
-        HCCL_WARNING("[HccpHdcManager::%s] deviceLogicId[%d] not ra init", __func__, deviceLogicId);
-        return;
-    }
-    instances.erase(deviceLogicId);
-
-    HRaInitConfig cfg;
-    cfg.phyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    cfg.mode = HrtNetworkMode::HDC;
-    DECTOR_TRY_CATCH("HccpHdcManager", HrtRaDeInit(cfg));
-    HCCL_INFO("[HccpHdcManager::%s] devLogicId [%d] ra deinit success.", __func__, deviceLogicId);
-}
-
 void HccpHdcManager::DestroyAll()
 {
-    std::lock_guard<std::recursive_mutex> lock(managerMutex);
-    if (destroyed) {
-        return;
-    }
-    destroyed = true;
-    
+    std::unique_lock<std::mutex> lock(managerMutex);
     for (auto deviceLogicId : instances) {
         HCCL_INFO("HccpHdcManager deinit");
 

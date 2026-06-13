@@ -28,11 +28,6 @@ struct LinkProtoTypelHash {
     }
 };
 
-struct HandleInfo {
-    RdmaHandle handle;
-    u32 protoIndex;
-};
-
 class RdmaHandleManager {
 public:
     static RdmaHandleManager &GetInstance();
@@ -52,13 +47,11 @@ public:
     RdmaHandleManager(const RdmaHandleManager &rdmaHandleManager) = delete;
     RdmaHandleManager &operator=(const RdmaHandleManager &rdmaHandleManager) = delete;
     void DestroyAll();
-    void DeInit(u32 devPhyId);
 
     HcclResult GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr);
     void UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress, u32 devPhyId);
 private:
     std::mutex managerMutex;
-    bool destroyed{false};
 
     // key: devicePhyId, ConnectProtoType, portAddr, 目前仅限于device侧
     std::vector<std::vector<std::unordered_map<IpAddress, RdmaHandle>>> rdmaHandleMap;
@@ -79,13 +72,6 @@ private:
 
     RdmaHandle Create(u32 devPhyId, const PortData &localPort);
     RdmaHandle Create(u32 devPhyId, const LinkProtoType &localProtocolType, const IpAddress &localIp, PortDeploymentType type);
-
-    void CollectHandlesToCleanup(u32 devPhyId, std::vector<HandleInfo> &handlesToCleanup);
-    void CleanupJfcHandles(RdmaHandle handle);
-    void CleanupRdmaHandleEntry(RdmaHandle handle);
-    void CleanupUbHandleEntry(RdmaHandle handle);
-    void CleanupAuxiliaryMaps(RdmaHandle handle);
-    void CleanupSingleHandle(const HandleInfo &info);
 };
 
 } // namespace Hccl
