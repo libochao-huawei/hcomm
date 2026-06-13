@@ -40,6 +40,7 @@
 #include "channel_process.h"
 #include "launch_device.h"
 #include "endpoint_monitor.h"
+#include "adapter_rts_common.h"
 
 
 namespace hcomm {
@@ -50,6 +51,34 @@ static std::mutex g_BinHandleMtx;
 
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
+
+namespace {
+HcclResult RefreshCurrentDeviceContext()
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    u32 devicePhyId = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId), devicePhyId, true));
+    HCCL_INFO("[RefreshCurrentDeviceContext] deviceLogicId[%d], devicePhyId[%u].", deviceLogicId, devicePhyId);
+    return HCCL_SUCCESS;
+}
+
+HcclResult RefreshEndpointContext(const EndpointDesc &endpointDesc)
+{
+    if (endpointDesc.loc.locType != ENDPOINT_LOC_TYPE_DEVICE) {
+        return HCCL_SUCCESS;
+    }
+    return RefreshCurrentDeviceContext();
+}
+
+HcclResult RefreshCommEngineContext(CommEngine engine)
+{
+    if (engine != COMM_ENGINE_AICPU && engine != COMM_ENGINE_AICPU_TS) {
+        return HCCL_SUCCESS;
+    }
+    return RefreshCurrentDeviceContext();
+}
+}
 
 HcommResult CheckUbAttr(HcommChannelDesc &channelDesc)
 {
@@ -247,6 +276,7 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
             endpoint->loc.locType);
         return HCCL_E_PARA;
     }
+    CHK_RET(RefreshEndpointContext(*endpoint));
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
@@ -285,6 +315,10 @@ HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 {
     (void)HcommResMgrInit();
     HCCL_INFO("[%s] START. endpointHandle[0x%llx].",__func__, endpointHandle);
+    auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    if (endpoint != nullptr) {
+        CHK_RET(RefreshEndpointContext(endpoint->GetEndpointDesc()));
+    }
     s32 devLogicIdSigned = HcclGetThreadDeviceId();
     CHK_PRT_RET(devLogicIdSigned < 0,
         HCCL_ERROR("[%s] HcclGetThreadDeviceId failed, ret[%d]", __func__, devLogicIdSigned), HCCL_E_INTERNAL);
@@ -324,6 +358,7 @@ HcommResult HcommEndpointGetListenPort(EndpointHandle endpointHandle, uint32_t *
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
+    CHK_RET(RefreshEndpointContext(endpoint->GetEndpointDesc()));
     return endpoint->ServerSocketGetListenPort(port);
 }
 
@@ -339,6 +374,7 @@ HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
+    CHK_RET(RefreshEndpointContext(endpoint->GetEndpointDesc()));
     CHK_RET(endpoint->RegisterMemory(*mem, memTag, reinterpret_cast<void **>(memHandle)));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
@@ -353,6 +389,7 @@ HcommResult HcommMemUnreg(EndpointHandle endpointHandle, HcommMemHandle memHandl
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
+    CHK_RET(RefreshEndpointContext(endpoint->GetEndpointDesc()));
     CHK_RET(endpoint->UnregisterMemory(memHandle));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
@@ -369,6 +406,7 @@ HcommResult HcommMemExport(EndpointHandle endpointHandle, HcommMemHandle memHand
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
+    CHK_RET(RefreshEndpointContext(endpoint->GetEndpointDesc()));
     CHK_RET(endpoint->MemoryExport(memHandle, memDesc, memDescLen));
     return HCCL_SUCCESS;
 }
@@ -382,6 +420,7 @@ HcommResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, u
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
+    CHK_RET(RefreshEndpointContext(endpoint->GetEndpointDesc()));
     CHK_PTR_NULL(outMem);
     CommMem importedMem{};
     CHK_RET(endpoint->MemoryImport(memDesc, descLen, &importedMem));
@@ -397,6 +436,7 @@ HcommResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc,
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
+    CHK_RET(RefreshEndpointContext(endpoint->GetEndpointDesc()));
     CHK_RET(endpoint->MemoryUnimport(memDesc, descLen));
     return HCCL_SUCCESS;
 }
@@ -463,7 +503,10 @@ HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
         __func__, channelNum), HCCL_E_PARA);
     HCCL_INFO("[%s] START. endpointHandle[0x%llx], engine[%d], channelNum[%u].",
         __func__, endpointHandle, engine, channelNum);
-
+    auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    if (endpoint != nullptr) {
+        CHK_RET(RefreshEndpointContext(endpoint->GetEndpointDesc()));
+    }
     (void)HcommResMgrInit();
     std::vector<HcommChannelDesc> channelDescFinals;
     CHK_RET(static_cast<HcclResult>(NormalizeHcommChannelDescs(channelDescs, channelNum, channelDescFinals)));
@@ -542,6 +585,7 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32
     }
     HCCL_INFO("[%s] ThreadAcquire begin. engine[%d], threadNum[%u], notifyPerThread[%u], threads[%p]",
         __func__, engine, threadNum, notifyNum, threads);
+    CHK_RET(RefreshCommEngineContext(engine));
 
     // 1. 参数校验
     CHK_RET(hccl::ValidateThreadParams(threadNum, notifyNum));
