@@ -34,6 +34,7 @@
 #include "ccu_kernel_mgr.h"
 #include "ccu_instance_mgr.h"
 #include "../endpoint_pairs/sockets/socket_process.h"
+#include "dpu_notify/dpu_notify_manager.h"
 #include "server_socket_mgr.h"
 #include "server_socket_manager.h"
 #include "adapter_rts_common.h"
@@ -54,6 +55,7 @@ HcommResMgr& HcommResMgr::GetInstance(const uint32_t devicePhyId)
         // 临时方案：只声明单例对象做生命周期控制，不执行业务动作
         // 未来需要将各种单例转为该数据结构的成员变量
         // devicePhyId 目前不影响流程，只是触发静态对象声明
+        DpuNotifyManager::GetInstance();
         Hccl::HccpHdcManager::GetInstance();
         Hccl::HccpPeerManager::GetInstance();
         Hccl::HccpTlvHdcManager::GetInstance();
