@@ -75,6 +75,7 @@ private:
     static ProfilingHandlerLite instance_;
     bool                        enableHcclL0_{false};
     bool                        enableHcclL1_{false};
+    bool                        isOpbase_{false};
 };
 } // namespace Hccl
 

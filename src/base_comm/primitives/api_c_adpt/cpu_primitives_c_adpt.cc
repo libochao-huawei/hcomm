@@ -793,6 +793,9 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
     Hccl::MirrorTaskManager* mirrorTaskManage = hcclCommDfx->GetMirrorTaskManager();
     CHK_PTR_NULL(mirrorTaskManage);
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    bool isOpBase = dfxOpInfoOnce->op_.opMode == Hccl::OpMode::OPBASE;
+    Hccl::ProfilingHandler::GetInstance().SetIsOpbase(isOpBase);
+    HCCL_INFO("[%s] Register DfxOpInfo success, commId[%s], opMode[%d], isOpBase[%d].", __func__, collComm->GetCommId().c_str(), dfxOpInfoOnce->op_.opMode, isOpBase);
     HCCL_INFO("[%s]success, DfxOpInfo: %s", __func__, dfxOpInfoOnce->Describe().c_str());
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;

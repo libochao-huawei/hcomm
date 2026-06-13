@@ -147,7 +147,9 @@ public:
     bool GetHcclNodeState() const;
     bool GetHcclL0State() const;
     bool GetHcclL1State() const;
-    int32_t CommandHandle(uint32_t rtType, void *data, uint32_t len) const; 
+    inline void SetIsOpbase(bool val) { isOpbase_ = val; }
+    inline bool GetIsOpbase() const { return isOpbase_; }
+    int32_t CommandHandle(uint32_t rtType, void *data, uint32_t len) const;
     void Init();
     void ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
                                 const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm);
@@ -206,6 +208,7 @@ private:
     bool                    enableHcclNode_{false};
     bool                    enableHcclL0_{false};
     bool                    enableHcclL1_{false};
+    bool                    isOpbase_{false};
 
     std::vector<TaskInfo>           cacheTaskInfos_{};
     std::queue<MsprofApi>           cachedTaskApiInfo_{};
