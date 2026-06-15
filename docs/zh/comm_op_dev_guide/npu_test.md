@@ -65,9 +65,9 @@ int Sample(void *arg)
     // 构造输入数据
     void *hostBuf = nullptr;
     ACLCHECK(aclrtMallocHost(&hostBuf, mallocSize));
-    // TODO：将输入数据写入 hostBuf 中
+    // TODO：将输入数据写入hostBuf中
 
-    // 将输入数据拷贝至 Device 侧
+    // 将输入数据拷贝至Device侧
     ACLCHECK(aclrtMalloc(&sendBuf, mallocSize, ACL_MEM_MALLOC_HUGE_ONLY));
     ACLCHECK(aclrtMemcpy(sendBuf, mallocSize, hostBuf, mallocSize, ACL_MEMCPY_HOST_TO_DEVICE));
     ACLCHECK(aclrtFreeHost(hostBuf));
@@ -78,20 +78,20 @@ int Sample(void *arg)
     // 阻塞等待任务流中的集合通信任务执行完成
     ACLCHECK(aclrtSynchronizeStream(stream));
 
-    // 将 Device 侧集合通信任务结果拷贝到 Host
+    // 将Device侧集合通信任务结果拷贝到Host
     void *resultHostBuf;
     ACLCHECK(aclrtMallocHost(&resultHostBuf, mallocSize));
     ACLCHECK(aclrtMemcpy(resultHostBuf, mallocSize, recvBuf, mallocSize, ACL_MEMCPY_DEVICE_TO_HOST));
-    // TODO：校验 resultHostBuf 中的结果数据
+    // TODO：校验resultHostBuf中的结果数据
     ACLCHECK(aclrtFreeHost(resultHostBuf));
 
     // 释放资源
     HCCLCHECK(HcclCommDestroy(hcclComm));  // 销毁通信域
     if (sendBuf) {
-        ACLCHECK(aclrtFree(sendBuf));      // 释放 Device 侧内存
+        ACLCHECK(aclrtFree(sendBuf));      // 释放Device侧内存
     }
     if (recvBuf) {
-        ACLCHECK(aclrtFree(recvBuf));      // 释放 Device 侧内存
+        ACLCHECK(aclrtFree(recvBuf));      // 释放Device侧内存
     }
     ACLCHECK(aclrtDestroyStream(stream));  // 销毁任务流
     ACLCHECK(aclrtResetDevice(device));    // 重置设备
@@ -109,7 +109,7 @@ int main()
 
     int32_t rootRank = 0;
     ACLCHECK(aclrtSetDevice(rootRank));
-    // 生成 Root 节点信息，各线程使用同一份 RootInfo
+    // 生成Root节点信息，各线程使用同一份RootInfo
     void *rootInfoBuf = nullptr;
     ACLCHECK(aclrtMallocHost(&rootInfoBuf, sizeof(HcclRootInfo)));
     HcclRootInfo *rootInfo = (HcclRootInfo *)rootInfoBuf;
@@ -129,7 +129,7 @@ int main()
     }
 
     // 释放资源
-    ACLCHECK(aclrtFreeHost(rootInfoBuf));  // 释放 Host 内存
+    ACLCHECK(aclrtFreeHost(rootInfoBuf));  // 释放Host内存
     ACLCHECK(aclFinalize());               // 设备去初始化
     return 0;
 }

@@ -253,7 +253,7 @@ typedef struct HcclCommConfigDef {
 
   若HcclCommConfig和环境变量均未配置，则使用下列表格中列出的默认值。
 
-**表 1**  配置优先级说明详表
+**表1**  配置优先级说明详表
 
 | 配置项 | 配置优先级 |
 | --- | --- |

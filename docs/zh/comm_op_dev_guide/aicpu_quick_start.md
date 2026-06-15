@@ -1,4 +1,4 @@
-# 快速上手
+# AI CPU算子
 
 本节以AI CPU的点对点通信算子为例，介绍使用HCCL通信编程接口开发通信算子的整体流程，帮助用户快速了解通信算子的开发步骤。
 
@@ -27,7 +27,7 @@
   - Receive算子调用HcommChannelNotifyRecordOnThread\(\)接口告知远端已经读取完成。
   - Send算子调用HcommChannelNotifyWaitOnThread\(\)接口等待远端读取完成。
 
-**图 1**  Send/Receive算子测试样例示意图  
+**图1**  Send/Receive算子测试样例示意图  
 ![Send-Receive算子测试样例示意图](figures/send_receive_sample.png "")
 
 同时，该样例中还包含了测试程序，其中创建1个通信域，rank为偶数的通信成员负责发送数据，rank为奇数的通信成员负责接收数据，发送数据为偶数rank的编号。包含以下功能点：
