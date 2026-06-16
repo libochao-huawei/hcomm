@@ -174,7 +174,7 @@ TEST_F(TransportIbverbs_UT, test_TransportIbverb_Drain_will_return_SUCCESS)
     MOCKER_CPP(&DispatcherPub::SignalWait,
         HcclResult(DispatcherPub:: *)(HcclRtNotify, HcclRtStream, u32, u32, s32, u32, bool))
     .stubs()
-    .with(any())
+    .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::RdmaSend, HcclResult(DispatcherPub::*)(u32, u64, hccl::Stream &,
     RdmaTaskInfo &)).stubs().will(returnValue(HCCL_SUCCESS));

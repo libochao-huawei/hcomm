@@ -66,11 +66,11 @@ TEST_F(RmtDataBufferMgrTest, get_GetBuffer_opbase_success)
 
     // Mocker掉MemTransportLiteMgr::GetOpbase，使其返回一个非空的MemTransportLite指针
     MemTransportLite *fakeTransportPtr = reinterpret_cast<MemTransportLite *>(0x1000);
-    MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).will(returnValue(fakeTransportPtr));
+    MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(mockcpp::any()).will(returnValue(fakeTransportPtr));
 
     // Mocker掉MemTransportLite::GetRmtBuffer，使其返回一个预设的Buffer对象
     Buffer expectedBuffer(0x300, 200);
-    MOCKER_CPP(&MemTransportLite::GetRmtBuffer).stubs().with(any()).will(returnValue(expectedBuffer));
+    MOCKER_CPP(&MemTransportLite::GetRmtBuffer).stubs().with(mockcpp::any()).will(returnValue(expectedBuffer));
 
     // 构造RmtDataBufferMgr并调用GetBuffer，验证返回结果与预设的Buffer对象相同
     RmtDataBufferMgr rmtDataBufferMgr(memTransportLiteMgr, algInfo);
