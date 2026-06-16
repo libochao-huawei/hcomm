@@ -22,6 +22,7 @@
 #undef private
 
 using namespace Hccl;
+
 class RmtDataBufferMgrTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -56,132 +57,33 @@ protected:
     CollAlgInfo *algInfo;
     std::string tag = "tag";
     OpMode mode{OpMode::OPBASE};
-
-    std::vector<char> GetNotifyUniqueId(u32 notifyId, u32 devPhyId)
-    {
-        BinaryStream binaryStream;
-        binaryStream << notifyId;
-        binaryStream << devPhyId;
-        std::vector<char> result;
-        binaryStream.Dump(result);
-        return result;
-    }
-
-    std::vector<char> GetRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue)
-    {
-        BinaryStream binaryStream;
-        binaryStream << addr;
-        binaryStream << size;
-        binaryStream << tokenId;
-        binaryStream << tokenValue;
-        std::vector<char> result;
-        binaryStream.Dump(result);
-        return result;
-    }
-
-    std::vector<char> GetConnUniqueId()
-    {
-        u32  dieId           = 0;
-        u32  funcId          = 0;
-        u32  jettyId         = 0;
-        u32  jfcPollMode     = 0;     // 待修改，0代表STARS POLL，1代表software Poll
-        bool dwqeCacheLocked = false; // 待修改，该jetty是否支持dwqeCachedLocked，默认不支持
-        u64  dbAddr          = 0x100;
-        u64  sqVa            = 0x100;
-        u32  sqDepth         = 100;
-        u32  tpn             = 100;
-        Eid  rmtEid;
-
-        BinaryStream binaryStream;
-        binaryStream << dieId;
-        binaryStream << funcId;
-        binaryStream << jettyId;
-
-
-        binaryStream << jfcPollMode;
-        binaryStream << dwqeCacheLocked;
-        binaryStream << dbAddr;
-        binaryStream << sqVa;
-        binaryStream << sqDepth;
-        binaryStream << tpn;
-        binaryStream << rmtEid.raw;
-
-        std::vector<char> result;
-        binaryStream.Dump(result);
-        return result;
-    }
-
-    std::vector<char> BuildUbTransportLiteUniqueId()
-    {
-        auto locNotify0 = GetNotifyUniqueId(1, 1);
-        auto locNotify1 = GetNotifyUniqueId(2, 2);
-        auto rmtNotify0 = GetRmtBufferUniqueId(1, 1, 1, 1);
-        auto rmtNotify1 = GetRmtBufferUniqueId(2, 2, 2, 2);
-
-        u32 notifyNum = 2;
-
-        auto rmtBuffer0 = GetRmtBufferUniqueId(300, 200, 3, 3);
-        auto rmtBuffer1 = GetRmtBufferUniqueId(300, 200, 4, 4);
-        u32 buffeNum = 2;
-
-        auto conn0 = GetConnUniqueId();
-        u32  connNum = 1;
-            
-        BinaryStream binaryStream;
-
-        u32 type = (u32)TransportType::UB;
-        binaryStream << type;
-        binaryStream << notifyNum;
-        binaryStream << buffeNum;
-        binaryStream << connNum;
-
-        std::vector<char> data0;
-        data0.insert(data0.end(), locNotify0.begin(), locNotify0.end());
-        data0.insert(data0.end(), locNotify1.begin(), locNotify1.end());
-        std::cout << "size0=" << data0.size() << endl;
-        binaryStream << data0;
-
-        std::vector<char> data1;
-        data1.insert(data1.end(), rmtNotify0.begin(), rmtNotify0.end());
-        data1.insert(data1.end(), rmtNotify1.begin(), rmtNotify1.end());
-        std::cout << "size1=" << data1.size() << endl;
-        binaryStream << data1;
-
-        std::vector<char> data2;
-        data2.insert(data2.end(), rmtBuffer0.begin(), rmtBuffer0.end());
-        data2.insert(data2.end(), rmtBuffer1.begin(), rmtBuffer1.end());
-        std::cout << "size2=" << data2.size() << endl;
-        binaryStream << data2;
-
-        std::vector<char> data4;
-        data4.insert(data4.end(), conn0.begin(), conn0.end());
-        binaryStream << data4;
-
-        std::vector<char> liteData;
-        binaryStream.Dump(liteData);
-        return liteData;
-    }
 };
 
+// 测试在opBase场景下，GetBuffer能够正确调用MemTransportLite的GetRmtBuffer并返回正确结果
 TEST_F(RmtDataBufferMgrTest, get_GetBuffer_opbase_success)
 {
-    std::vector<char> liteData = BuildUbTransportLiteUniqueId();
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
-    MirrorTaskManagerLite mirrorTaskMgrLite;
-    auto transportCallbackLite = MemTransportCallbackLite(linkData, mirrorTaskMgrLite);
-    std::unique_ptr<MemTransportLite> transportLite = std::make_unique<MemTransportLite>(liteData, transportCallbackLite);
-    memTransportLiteMgr->opBaseTranspMap[linkData] = std::move(transportLite);
+
+    // Mocker掉MemTransportLiteMgr::GetOpbase，使其返回一个非空的MemTransportLite指针
+    MemTransportLite *fakeTransportPtr = reinterpret_cast<MemTransportLite *>(0x1000);
+    MOCKER_CPP(&MemTransportLiteMgr::GetOpbase).stubs().with(any()).will(returnValue(fakeTransportPtr));
+
+    // Mocker掉MemTransportLite::GetRmtBuffer，使其返回一个预设的Buffer对象
+    Buffer expectedBuffer(0x300, 200);
+    MOCKER_CPP(&MemTransportLite::GetRmtBuffer).stubs().with(any()).will(returnValue(expectedBuffer));
+
+    // 构造RmtDataBufferMgr并调用GetBuffer，验证返回结果与预设的Buffer对象相同
     RmtDataBufferMgr rmtDataBufferMgr(memTransportLiteMgr, algInfo);
+    DataBuffer result = rmtDataBufferMgr.GetBuffer(linkData, BufferType::INPUT);
+    EXPECT_EQ(result.GetAddr(), 0x300);
+    EXPECT_EQ(result.GetSize(), static_cast<size_t>(200));
 }
 
 TEST_F(RmtDataBufferMgrTest, get_GetBuffer_opbase_fail)
 {
-    std::vector<char> liteData = BuildUbTransportLiteUniqueId();
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
-    MirrorTaskManagerLite mirrorTaskMgrLite;
-    auto transportCallbackLite = MemTransportCallbackLite(linkData, mirrorTaskMgrLite);
-    std::unique_ptr<MemTransportLite> transportLite = std::make_unique<MemTransportLite>(liteData, transportCallbackLite);
-    
+
+    // Mocker掉MemTransportLiteMgr::GetOpbase，使其返回一个空指针，模拟未找到对应的MemTransportLite的情况
     RmtDataBufferMgr rmtDataBufferMgr(memTransportLiteMgr, algInfo);
     EXPECT_THROW(rmtDataBufferMgr.GetBuffer(linkData, BufferType::INPUT), NullPtrException);
 }

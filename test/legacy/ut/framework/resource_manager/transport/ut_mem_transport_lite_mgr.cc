@@ -18,8 +18,10 @@
 #include "mem_transport_lite_mgr.h"
 #include "mem_transport_manager.h"
 #include "ub_mem_transport.h"
+#include "ub_conn_lite_mgr.h"
 #include "p2p_transport.h"
 #include "ub_local_notify.h"
+#include "binary_stream.h"
 #include "local_ub_rma_buffer.h"
 #undef private
 
@@ -60,105 +62,14 @@ protected:
         std::cout << "A Test case in MemTransportLiteMgrTest TearDown" << std::endl;
     }
 
-    std::vector<char> GetNotifyUniqueId(u32 notifyId, u32 devPhyId)
+    std::vector<char> BuildMinimalUbTransportLiteUniqueId()
     {
         BinaryStream binaryStream;
-        binaryStream << notifyId;
-        binaryStream << devPhyId;
-        std::vector<char> result;
-        binaryStream.Dump(result);
-        return result;
-    }
-
-    std::vector<char> GetRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue)
-    {
-        BinaryStream binaryStream;
-        binaryStream << addr;
-        binaryStream << size;
-        binaryStream << tokenId;
-        binaryStream << tokenValue;
-        std::vector<char> result;
-        binaryStream.Dump(result);
-        return result;
-    }
-
-    std::vector<char> GetConnUniqueId()
-    {
-        u32  dieId           = 0;
-        u32  funcId          = 0;
-        u32  jettyId         = 0;
-        u32  jfcPollMode     = 0;     // 待修改，0代表STARS POLL，1代表software Poll
-        bool dwqeCacheLocked = false; // 待修改，该jetty是否支持dwqeCachedLocked，默认不支持
-        u64  dbAddr          = 0x100;
-        u64  sqVa            = 0x100;
-        u32  sqDepth         = 100;
-        u32  tpn             = 100;
-        Eid  rmtEid;
-
-        BinaryStream binaryStream;
-        binaryStream << dieId;
-        binaryStream << funcId;
-        binaryStream << jettyId;
-
-        binaryStream << jfcPollMode;
-        binaryStream << dwqeCacheLocked;
-        binaryStream << dbAddr;
-        binaryStream << sqVa;
-        binaryStream << sqDepth;
-        binaryStream << tpn;
-        binaryStream << rmtEid.raw;
-
-        std::vector<char> result;
-        binaryStream.Dump(result);
-        return result;
-    }
-
-    std::vector<char> BuildUbTransportLiteUniqueId()
-    {
-        auto locNotify0 = GetNotifyUniqueId(1, 1);
-        auto locNotify1 = GetNotifyUniqueId(2, 2);
-
-        auto rmtNotify0 = GetRmtBufferUniqueId(1, 1, 1, 1);
-        auto rmtNotify1 = GetRmtBufferUniqueId(2, 2, 2, 2);
-
-        u32 notifyNum = 2;
-
-        auto rmtBuffer0 = GetRmtBufferUniqueId(300, 200, 3, 3);
-        auto rmtBuffer1 = GetRmtBufferUniqueId(300, 200, 4, 4);
-        u32  bufferBum  = 2;
-
-        auto conn0   = GetConnUniqueId();
-        u32  connNum = 1;
-
-        BinaryStream binaryStream;
-        u32          type = (u32)TransportType::UB;
+        u32 type = (u32)TransportType::UB;
         binaryStream << type;
-        binaryStream << notifyNum;
-        binaryStream << bufferBum;
-        binaryStream << connNum;
-
-        std::vector<char> data0;
-        data0.insert(data0.end(), locNotify0.begin(), locNotify0.end());
-        data0.insert(data0.end(), locNotify1.begin(), locNotify1.end());
-        std::cout << "size0=" << data0.size() << endl;
-        binaryStream << data0;
-
-        std::vector<char> data1;
-        data1.insert(data1.end(), rmtNotify0.begin(), rmtNotify0.end());
-        data1.insert(data1.end(), rmtNotify1.begin(), rmtNotify1.end());
-        std::cout << "size1=" << data1.size() << endl;
-        binaryStream << data1;
-
-        std::vector<char> data2;
-        data2.insert(data2.end(), rmtBuffer0.begin(), rmtBuffer0.end());
-        data2.insert(data2.end(), rmtBuffer1.begin(), rmtBuffer1.end());
-        std::cout << "size2=" << data2.size() << endl;
-        binaryStream << data2;
-
-        std::vector<char> data4;
-        data4.insert(data4.end(), conn0.begin(), conn0.end());
-        binaryStream << data4;
-
+        binaryStream << (u32)0; // notifyNum=0, skip ParseLocNotifyVec
+        binaryStream << (u32)0; // bufferNum=0, skip ParseRmtBufferVec
+        binaryStream << (u32)0; // connNum=0, skip ParseConnVec
         std::vector<char> liteData;
         binaryStream.Dump(liteData);
         return liteData;
@@ -177,7 +88,10 @@ TEST_F(MemTransportLiteMgrTest, test_get_and_reset)
 
 TEST_F(MemTransportLiteMgrTest, test_parse_opbase_packed_data)
 {
-    std::vector<char> transportUniqueId = BuildUbTransportLiteUniqueId();
+    RmaConnLite rmaConnLite;
+    RmaConnLite *connLite = &rmaConnLite;
+    MOCKER_CPP(&UbConnLiteMgr::Get).stubs().will(returnValue(connLite));
+    std::vector<char> transportUniqueId = BuildMinimalUbTransportLiteUniqueId();
 
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
     std::vector<char> linkUniqueId = linkData.GetUniqueId();
@@ -199,7 +113,10 @@ TEST_F(MemTransportLiteMgrTest, test_parse_opbase_packed_data)
 
 TEST_F(MemTransportLiteMgrTest, test_parse_offload_packed_data)
 {
-    std::vector<char> transportUniqueId = BuildUbTransportLiteUniqueId();
+    RmaConnLite rmaConnLite;
+    RmaConnLite *connLite = &rmaConnLite;
+    MOCKER_CPP(&UbConnLiteMgr::Get).stubs().will(returnValue(connLite));
+    std::vector<char> transportUniqueId = BuildMinimalUbTransportLiteUniqueId();
 
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
     std::vector<char> linkUniqueId = linkData.GetUniqueId();
@@ -222,7 +139,10 @@ TEST_F(MemTransportLiteMgrTest, test_parse_offload_packed_data)
 
 TEST_F(MemTransportLiteMgrTest, test_parse_all_packed_data)
 {
-    std::vector<char> transportUniqueId = BuildUbTransportLiteUniqueId();
+    RmaConnLite rmaConnLite;
+    RmaConnLite *connLite = &rmaConnLite;
+    MOCKER_CPP(&UbConnLiteMgr::Get).stubs().will(returnValue(connLite));
+    std::vector<char> transportUniqueId = BuildMinimalUbTransportLiteUniqueId();
 
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
     std::vector<char> linkUniqueId = linkData.GetUniqueId();
