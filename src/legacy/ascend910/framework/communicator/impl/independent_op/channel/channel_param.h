@@ -103,7 +103,7 @@ struct HcommRoceChannelRes {
     HcclSignalInfo localDataSignal{}; // 本端dataNotify signal
 };
 
-// for A2/A3 endpoint with tranport
+// for A2/A3 endpoint with transport
 struct HcclChannelHccsRes {
     char channelTag[TAG_MAX_LENGTH];    // channelTag 最大长度待修改
     HcclChannelP2p channelP2p;  // P2p资源
