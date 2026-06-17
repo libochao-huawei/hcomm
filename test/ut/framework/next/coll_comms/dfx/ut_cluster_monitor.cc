@@ -39,6 +39,7 @@ public:
 };
 
 ClusterMonitor ClusterMonitorTest::g_monitor;
+std::map<uint32_t, std::vector<UIDContext>> g_uidCtxs;
 
 TEST_F(ClusterMonitorTest, Ut_CreateMonitorLinksAsync_When_NormalInput_Expect_CreateLinks)
 {
@@ -120,7 +121,7 @@ TEST_F(ClusterMonitorTest, Ut_CreateMonitorLinksAsync_When_NormalInput_Expect_Cr
     ClusterUIDType uid2;
     ret = memcpy_s(uid2.id, sizeof(uid2.id), "test_uid2", sizeof("test_uid2") + 1);
     EXPECT_EQ(ret, EOK);
-    
+
     g_monitor.commIdMap_["comm1"].insert(std::make_pair(uid, false));
     g_monitor.commIdMap_["comm1"].insert(std::make_pair(uid1, false));
     g_monitor.commIdMap_["comm1"].insert(std::make_pair(uid2, false));
@@ -470,8 +471,9 @@ TEST_F(ClusterMonitorTest, Ut_RegisterToClusterMonitor_When_Normal_Expect_Succes
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
     config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
-    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level 
-    unsetenv("HCCL_DFS_CONFIG");    
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
+    config.hcclQos = 0xFFFFFFFF;
+    unsetenv("HCCL_DFS_CONFIG");
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
     HcclComm comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -498,7 +500,8 @@ TEST_F(ClusterMonitorTest, Ut_UnRegisterToClusterMonitor_When_Normal_Expect_Succ
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
     config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
-    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level 
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
+    config.hcclQos = 0xFFFFFFFF;
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
     HcclComm comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -512,4 +515,260 @@ TEST_F(ClusterMonitorTest, Ut_UnRegisterToClusterMonitor_When_Normal_Expect_Succ
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+TEST_F(ClusterMonitorTest, Ut_GetConnectRank_When_Normal_Expect_Success)
+{
+    std::map<ClusterUIDType, ClusterMonitorSocketCtx> needConnectRank;
+    std::vector<uint32_t> netLayersVector;
+    int ret;
+    g_monitor.myRankLocalId_ = 0;
+    netLayersVector.push_back(0); // 添加netLayer 0
+    netLayersVector.push_back(1); // 添加netLayer 1
+    netLayersVector.push_back(2); // 添加netLayer 2
+    ClusterUIDType uid1;
+    ret = memcpy_s(uid1.id, sizeof(uid1.id), "remoteInstance0/0", sizeof("remoteInstance0/0") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType uid2;
+    ret = memcpy_s(uid2.id, sizeof(uid2.id), "remoteInstance0/1", sizeof("remoteInstance0/1") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType uid3;
+    ret = memcpy_s(uid3.id, sizeof(uid3.id), "remoteInstance0/2", sizeof("remoteInstance0/2") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType uid4;
+    ret = memcpy_s(uid4.id, sizeof(uid4.id), "remoteInstance0/3", sizeof("remoteInstance0/3") + 1);
+    EXPECT_EQ(ret, EOK);
+    g_uidCtxs[0] = {UIDContext(uid1, 0, 0, 0, "remoteInstance0"), UIDContext(uid2, 0, 1, 1, "remoteInstance1")};
+    g_uidCtxs[1] = {UIDContext(uid3, 1, 2, 0, "remoteInstance2"), UIDContext(uid4, 1, 3, 1, "remoteInstance3")};
+    g_uidCtxs[2] = {UIDContext(uid3, 2, 4, 0, "remoteInstance4"), UIDContext(uid4, 2, 5, 1, "remoteInstance5")};
+    MOCKER_CPP(&ClusterMonitor::GetSamePlaneRank).stubs().will(returnValue(HCCL_SUCCESS));
+    ret = g_monitor.GetConnectRank(nullptr, needConnectRank, g_uidCtxs, netLayersVector);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
 
+static Hccl::LocalId GetLocalIdStub(Hccl::RankGraph* self, Hccl::RankId rankId)
+{
+    if (rankId == 0) {
+        return 0;
+    }
+    return 1;
+}
+
+static Hccl::NetInstance* GetNetInstanceByRankIdStub(Hccl::RankGraph* self, u32 netLayer, Hccl::RankId rankId)
+{
+    static Hccl::InnerNetInstance netInstance0(0, "netInstance0");
+    static Hccl::InnerNetInstance netInstance1(0, "netInstance1");
+    if (rankId == 0) {
+        return &netInstance0;
+    }
+    return &netInstance1;
+}
+
+static HcclResult HcclRankGraphGetRanksByLayerStub(HcclComm comm, uint32_t netLayer, uint32_t** ranks, uint32_t* rankNum)
+{
+    *ranks = (uint32_t*)malloc(sizeof(uint32_t) * 2);
+    (*ranks)[0] = 0;
+    (*ranks)[1] = 1;
+    *rankNum = 2;
+    return HCCL_SUCCESS;
+}
+
+static HcclResult HcclRankGraphGetLayersStub(HcclComm comm, uint32_t** netLayers, uint32_t* netLayerNum)
+{
+    *netLayers = (uint32_t*)malloc(sizeof(uint32_t) * 1);
+    (*netLayers)[0] = 0;
+    *netLayerNum = 1;
+    return HCCL_SUCCESS;
+}
+
+TEST_F(ClusterMonitorTest, Ut_GetRemEndpointDescs_When_Normal_Expect_Success)
+{
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(DevType::DEV_TYPE_950)).will(returnValue(HCCL_SUCCESS));
+
+    bool isDeviceSide = false;
+    MOCKER(GetRunSideIsDevice).stubs().with(outBound(isDeviceSide)).will(returnValue(HCCL_SUCCESS));
+    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+    setenv("HCCL_RDMA_RETRY_CNT", "7", 1);
+    setenv("HCCL_RDMA_TIMEOUT", "20", 1);
+    setenv("HCCL_RDMA_TC", "120", 1);
+    setenv("HCCL_RDMA_SL", "2", 1);
+    setenv("HCCL_DFS_CONFIG", "clusterHeartBeatEnable:on", 1);
+
+    hccl::RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    void* stubPtr = rankGraphV2.get();
+    MOCKER_CPP(&Hccl::HcclCommunicator::GetRankGraphV2)
+        .stubs()
+        .with(outBound(stubPtr))
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(HcclRankGraphGetLayers)
+        .stubs()
+        .will(invoke(HcclRankGraphGetLayersStub));
+
+    MOCKER(HcclRankGraphGetRanksByLayer)
+        .stubs()
+        .will(invoke(HcclRankGraphGetRanksByLayerStub));
+
+    MOCKER_CPP((&Hccl::RankGraph::GetLocalId))
+        .stubs()
+        .will(invoke(GetLocalIdStub));
+
+    MOCKER_CPP((Hccl::NetInstance* (Hccl::RankGraph::*)(u32, Hccl::RankId))(&Hccl::RankGraph::GetNetInstanceByRankId))
+        .stubs()
+        .will(invoke(GetNetInstanceByRankIdStub));
+
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, const_cast<char*>("commTest"));
+    void* commV2 = (void*)0x2000;
+    uint32_t rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;
+    char commName[128] = {};
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1;
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF;
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF;
+    config.hcclQos = 0xFFFFFFFF;
+    unsetenv("HCCL_DFS_CONFIG");
+    hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+
+    HcclComm comm = static_cast<HcclComm>(hcclCommPtr.get());
+    std::map<uint32_t, std::vector<UIDContext>> uidCtxs;
+    std::vector<uint32_t> netLayersVector;
+
+    HcclResult ret = g_monitor.GetRemEndpointDescs(comm, uidCtxs, netLayersVector);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(netLayersVector.size(), 1);
+    EXPECT_EQ(netLayersVector[0], 0);
+}
+
+TEST_F(ClusterMonitorTest, Ut_GetSamePlaneRank_When_Size2_Expect_InsertClusterMonitorCxt)
+{
+    std::map<ClusterUIDType, ClusterMonitorSocketCtx> needConnectRank;
+    ClusterUIDType uid1;
+    int ret = memcpy_s(uid1.id, sizeof(uid1.id), "remoteInstance0/0", sizeof("remoteInstance0/0") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType uid2;
+    ret = memcpy_s(uid2.id, sizeof(uid2.id), "remoteInstance0/1", sizeof("remoteInstance0/1") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType myUid;
+    ret = memcpy_s(myUid.id, sizeof(myUid.id), "myInstance/0", sizeof("myInstance/0") + 1);
+    EXPECT_EQ(ret, EOK);
+
+    g_monitor.myRankUID_ = myUid;
+    g_monitor.myRankLocalId_ = 0;
+    g_monitor.myRankNetInstId_ = "myInstance";
+
+    std::vector<UIDContext> singlePlaneCtx;
+    singlePlaneCtx.push_back(UIDContext(myUid, 0, 0, 0, "myInstance"));
+    singlePlaneCtx.push_back(UIDContext(uid1, 0, 1, 1, "remoteInstance0"));
+
+    MOCKER_CPP(&ClusterMonitor::InsertClusterMonitorCxt).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclResult result = g_monitor.GetSamePlaneRank(nullptr, singlePlaneCtx, needConnectRank);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+}
+
+TEST_F(ClusterMonitorTest, Ut_GetSamePlaneRank_When_Size3_Expect_InsertClusterMonitorCxtTwice)
+{
+    std::map<ClusterUIDType, ClusterMonitorSocketCtx> needConnectRank;
+    ClusterUIDType uid1;
+    int ret = memcpy_s(uid1.id, sizeof(uid1.id), "remoteInstance0/0", sizeof("remoteInstance0/0") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType uid2;
+    ret = memcpy_s(uid2.id, sizeof(uid2.id), "remoteInstance0/1", sizeof("remoteInstance0/1") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType uid3;
+    ret = memcpy_s(uid3.id, sizeof(uid3.id), "remoteInstance0/2", sizeof("remoteInstance0/2") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType myUid;
+    ret = memcpy_s(myUid.id, sizeof(myUid.id), "myInstance/0", sizeof("myInstance/0") + 1);
+    EXPECT_EQ(ret, EOK);
+
+    g_monitor.myRankUID_ = myUid;
+    g_monitor.myRankLocalId_ = 0;
+    g_monitor.myRankNetInstId_ = "myInstance";
+
+    std::vector<UIDContext> singlePlaneCtx;
+    singlePlaneCtx.push_back(UIDContext(myUid, 0, 0, 0, "myInstance"));
+    singlePlaneCtx.push_back(UIDContext(uid1, 0, 1, 1, "remoteInstance0"));
+    singlePlaneCtx.push_back(UIDContext(uid2, 0, 2, 2, "remoteInstance1"));
+
+    MOCKER_CPP(&ClusterMonitor::InsertClusterMonitorCxt).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclResult result = g_monitor.GetSamePlaneRank(nullptr, singlePlaneCtx, needConnectRank);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+}
+
+TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCxt_When_NewConn_Expect_InsertToMap)
+{
+    ClusterUIDType myUid;
+    int ret = memcpy_s(myUid.id, sizeof(myUid.id), "myInstance/0", sizeof("myInstance/0") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType remoteUid;
+    ret = memcpy_s(remoteUid.id, sizeof(remoteUid.id), "remoteInstance/1", sizeof("remoteInstance/1") + 1);
+    EXPECT_EQ(ret, EOK);
+
+    g_monitor.myRankUID_ = myUid;
+    g_monitor.myRankLocalId_ = 0;
+    g_monitor.myRankNetInstId_ = "myInstance";
+
+    UIDContext remoteCtx(remoteUid, 0, 1, 1, "remoteInstance");
+
+    std::map<ClusterUIDType, ClusterMonitorSocketCtx> needConnectRank;
+
+    SocketDesc socketDesc{};
+    socketDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_CLIENT;
+    socketDesc.listenPort = 8080;
+    struct in_addr localAddr;
+    struct in_addr remoteAddr;
+    inet_pton(AF_INET, "127.0.0.1", &localAddr);
+    inet_pton(AF_INET, "192.186.0.1", &remoteAddr);
+    socketDesc.localEndpoint.commAddr.addr = localAddr;
+    socketDesc.localEndpoint.commAddr.type = CommAddrType::COMM_ADDR_TYPE_IP_V4;
+    socketDesc.remoteEndpoint.commAddr.addr = remoteAddr;
+    socketDesc.remoteEndpoint.commAddr.type = CommAddrType::COMM_ADDR_TYPE_IP_V4;
+    std::string tag = "test_tag";
+    memcpy_s(socketDesc.tag, sizeof(socketDesc.tag), tag.c_str(), tag.size());
+
+    ClusterMonitorSocketCtx ctx(socketDesc, true);
+    needConnectRank.insert(std::make_pair(remoteUid, ctx));
+
+    EXPECT_EQ(needConnectRank.size(), 1);
+    EXPECT_EQ(needConnectRank[remoteUid].newConn, true);
+}
+
+TEST_F(ClusterMonitorTest, Ut_GetConnectRank_When_HighLayerCommLinks_Expect_SortExecuted)
+{
+    std::map<ClusterUIDType, ClusterMonitorSocketCtx> needConnectRank;
+    std::vector<uint32_t> netLayersVector;
+    int ret;
+    g_monitor.myRankLocalId_ = 0;
+
+    netLayersVector.push_back(0);
+    netLayersVector.push_back(1);
+
+    ClusterUIDType uid1;
+    ret = memcpy_s(uid1.id, sizeof(uid1.id), "remoteInstanceA/0", sizeof("remoteInstanceA/0") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType uid2;
+    ret = memcpy_s(uid2.id, sizeof(uid2.id), "remoteInstanceB/0", sizeof("remoteInstanceB/0") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType uid3;
+    ret = memcpy_s(uid3.id, sizeof(uid3.id), "remoteInstanceC/0", sizeof("remoteInstanceC/0") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType uid4;
+    ret = memcpy_s(uid4.id, sizeof(uid4.id), "remoteInstanceD/1", sizeof("remoteInstanceD/1") + 1);
+    EXPECT_EQ(ret, EOK);
+    ClusterUIDType uid5;
+    ret = memcpy_s(uid5.id, sizeof(uid5.id), "remoteInstanceE/1", sizeof("remoteInstanceE/1") + 1);
+    EXPECT_EQ(ret, EOK);
+
+    g_uidCtxs[0] = {UIDContext(uid1, 0, 0, 0, "remoteInstanceA"), UIDContext(uid2, 0, 1, 1, "remoteInstanceB")};
+    g_uidCtxs[1] = {UIDContext(uid3, 1, 2, 0, "remoteInstanceC"), UIDContext(uid4, 1, 3, 1, "remoteInstanceD"), UIDContext(uid5, 1, 4, 0, "remoteInstanceE")};
+
+    MOCKER_CPP(&ClusterMonitor::GetSamePlaneRank).stubs().will(returnValue(HCCL_SUCCESS));
+
+    ret = g_monitor.GetConnectRank(nullptr, needConnectRank, g_uidCtxs, netLayersVector);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
