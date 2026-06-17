@@ -93,6 +93,4 @@ HcclResult CommEngineResMgr::HcclThreadResGetInfo(ThreadHandle thread, ThreadRes
     CHK_SMART_PTR_NULL(threadMgr_);
     return threadMgr_->HcclThreadResGetInfo(thread, resType, infoLen, info);
 }
-
-
 }

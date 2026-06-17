@@ -698,7 +698,7 @@ HcclResult HcclSocketManager::ConstructSockets(const std::string &commTag, bool 
     for (u32 i = 0; i < socketsPerLink; i++) {
         std::string socketTag = MakeUniqueConnTag(commTag, isInterLink, clientRank, i);
         std::shared_ptr<HcclSocket> tempSocket;
-        if (connectMode) {
+        if (connectMode > 0) {
             EXCEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(commTag,
                 netDevCtx, remoteIp, remotePort, localRole)), return HCCL_E_PTR);
         } else {

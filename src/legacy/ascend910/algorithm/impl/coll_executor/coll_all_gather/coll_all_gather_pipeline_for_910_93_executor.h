@@ -39,7 +39,7 @@ private:
     u64 CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize) override;
     HcclResult RunLoop(OpParam &param);
     HcclResult RunL2Stage(const OpParam &param, ExecMem &execMem, u64 loopIdx, u64 memIdx, u64 bufferSliceNum);
-    HcclResult RunL1L0Stage(const OpParam &param, ExecMem &lastExecMem, u64 loopIdx, u64 memIdx, u64 bufferSliceNum);
+    HcclResult RunL1L0Stage(const OpParam &param, ExecMem &lastExecMem, u64 loopIdx, u64 memIdx);
 
     // 层级算法调用方法（从模板移动到执行器）
     HcclResult KernelRunInterSuperPod(const OpParam &param, ExecMem &execMem, u64 baseOffset); // 跨超

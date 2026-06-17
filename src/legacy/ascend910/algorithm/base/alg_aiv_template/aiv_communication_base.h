@@ -46,6 +46,7 @@ static const struct FunLevelKType kernel_name##_kernel_type_section __attribute_
     func(uint64_t); \
     func(double)
     
+constexpr uint32_t ALIGNAS_LEN = 4; //对齐长度
 constexpr uint32_t MAX_RANK_SIZE = 16; // server内最大卡数
 constexpr uint32_t MAX_RANK_SIZE_A3 = 768; // 超节点内最大卡数
 constexpr uint32_t MAX_TARGET_NUM = 20; // 最大轮数
@@ -286,17 +287,17 @@ struct SkArgsStruct {
     uint32_t root;
     int32_t tag;
     uint32_t numBlocks;
-    alignas(4) bool isOpBase;
+    alignas(ALIGNAS_LEN) bool isOpBase;
     uint64_t bufferSize;
     int32_t aivRdmaStep;
-    alignas(4) bool useAivRdmaSmall;
+    alignas(ALIGNAS_LEN) bool useAivRdmaSmall;
     int32_t serverNum;
     uint32_t devType;
     GM_ADDR headCountMem;
     GM_ADDR tailCountMem;
     GM_ADDR addOneMem;
     uint32_t counterMemSize;
-    alignas(4) bool isEnableCounter;
+    alignas(ALIGNAS_LEN) bool isEnableCounter;
     uint32_t deterministic;
     uint64_t rmaInfo;
 };

@@ -152,10 +152,10 @@ HcclResult CollAllGatherPipelineFor91093Executor::Orchestrate(
 
     // 计算通信域信息和内存类型
     unitSize_ = SIZE_TABLE[param.DataDes.dataType];
-    cclInputSizeHalved_ = algResResp_->cclInputMem.size() / 2;
+    cclInputSizeHalved_ = algResResp_->cclInputMem.size() / PIPELINE_NUM;
     cclInputAMem_ = algResResp_->cclInputMem.range(0, cclInputSizeHalved_);
     cclInputBMem_ = algResResp_->cclInputMem.range(cclInputSizeHalved_, cclInputSizeHalved_);
-    cclOutputSizeHalved_ = algResResp_->cclOutputMem.size() / 2;
+    cclOutputSizeHalved_ = algResResp_->cclOutputMem.size() / PIPELINE_NUM;
     cclOutputAMem_ = algResResp_->cclOutputMem.range(0, cclOutputSizeHalved_);
     cclOutputBMem_ = algResResp_->cclOutputMem.range(cclOutputSizeHalved_, cclOutputSizeHalved_);
 
@@ -200,7 +200,7 @@ HcclResult CollAllGatherPipelineFor91093Executor::RunL2Stage(
 }
 
 HcclResult CollAllGatherPipelineFor91093Executor::RunL1L0Stage(
-    const OpParam &param, ExecMem &lastExecMem, u64 loopIdx, u64 memIdx, u64 bufferSliceNum)
+    const OpParam &param, ExecMem &lastExecMem, u64 loopIdx, u64 memIdx)
 {
     // 第一轮等待L2处理完
     if (loopIdx < 1) {
@@ -253,7 +253,7 @@ HcclResult CollAllGatherPipelineFor91093Executor::RunLoop(OpParam &param)
         execMem.outputPtr = userOutputPtr;
 
         CHK_RET(RunL2Stage(param, execMem, loopIdx, memIdx, bufferSliceNum));
-        CHK_RET(RunL1L0Stage(param, lastExecMem, loopIdx, 1 - memIdx, bufferSliceNum));
+        CHK_RET(RunL1L0Stage(param, lastExecMem, loopIdx, 1 - memIdx));
 
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
 
@@ -267,7 +267,7 @@ HcclResult CollAllGatherPipelineFor91093Executor::RunLoop(OpParam &param)
     // 只有 L1L0 阶段实际运行的 buffer 才需要等待
     // 当 bufferSliceNum >= 2 时两路都用到，否则只用了一路
     CHK_RET(LocalNotify::Wait(mainStreamL2_, dispatcher_, notifyL1L0ToL2A_, INVALID_VALUE_STAGE));
-    if (bufferSliceNum >= 2) {
+    if (bufferSliceNum >= PIPELINE_NUM) {
         CHK_RET(LocalNotify::Wait(mainStreamL2_, dispatcher_, notifyL1L0ToL2B_, INVALID_VALUE_STAGE));
     }
 

@@ -1080,7 +1080,7 @@ HcclResult TopoInfoExtractor::GetIsUsedRdmaMap(std::unordered_map<u32, bool> &is
             CHK_PRT_RET(it == deviceLinkTypeMap_.end(),
                 HCCL_ERROR("can't find devicePhyId[%d] in deviceLinkTypeMap_", dstRank.devicePhyId),
                 HCCL_E_NOT_FOUND);
-            isConnectedWithPcie |= (it->second == LinkTypeInServer::PXI_TYPE);
+            isConnectedWithPcie = (it->second == LinkTypeInServer::PXI_TYPE) ? true : false;
         }
         // 使能RDMA的场景: 1.跨超节点  2.跨server且不使能HCCS  3.PCIE连接且使能RDMA开关
         bool isUsedRdma = (isInterSuperPod) ||

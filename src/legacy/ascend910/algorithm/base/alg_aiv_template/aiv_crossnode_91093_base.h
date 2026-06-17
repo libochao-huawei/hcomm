@@ -42,7 +42,7 @@ struct SkArgsStructA3 {
     uint32_t root;
     int32_t tag;
     uint32_t numBlocks;
-    alignas(4) bool isOpBase;
+    alignas(ALIGNAS_LEN) bool isOpBase;
     int32_t step;
     uint32_t deterministic;
 };
