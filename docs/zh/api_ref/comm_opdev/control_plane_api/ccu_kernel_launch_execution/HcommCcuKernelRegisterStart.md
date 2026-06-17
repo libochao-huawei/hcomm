@@ -21,6 +21,7 @@
 ## 函数原型
 
 //ccu_launch.h
+
 ```c
 CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle);
 ```
@@ -48,15 +49,15 @@ CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle);
 ## 调用示例
 
 ```c
-// insHandle 由 Hccl通信域中获取
+// insHandle 由Hccl通信域中获取
 CcuInsHandle insHandle = 0;
-// ... 此处省略 HcommCcuInsCreate 调用 ...
+// ... 此处省略HcommCcuInsCreate 调用 ...
 
-// 开始一轮 Kernel 注册
+// 开始一轮Kernel 注册
 CcuResult ret = HcommCcuKernelRegisterStart(insHandle);
 if (ret != CCU_SUCCESS) {
     printf("HcommCcuKernelRegisterStart failed, ret = %d\n", ret);
     return ret;
 }
-// 后续调用 HcommCcuKernelRegister 注册一个或多个 Kernel
+// 后续调用HcommCcuKernelRegister 注册一个或多个Kernel
 ```

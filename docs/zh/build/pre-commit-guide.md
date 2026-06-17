@@ -49,7 +49,7 @@ pre-commit install
 
 安装成功后会显示：
 
-```
+```bash
 pre-commit installed at .git/hooks/pre-commit
 ```
 

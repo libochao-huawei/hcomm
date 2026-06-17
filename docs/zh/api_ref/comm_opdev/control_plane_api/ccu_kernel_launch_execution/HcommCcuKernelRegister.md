@@ -21,6 +21,7 @@
 ## 函数原型
 
 //ccu_launch.h
+
 ```c
 CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle, uint32_t dieId,
     const char *kernelFuncName, const void *kernelFunc,
@@ -63,16 +64,16 @@ CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle, uint32_t dieId,
 ## 调用示例
 
 ```c
-// 用户自定义 Kernel 入参结构体
+// 用户自定义Kernel 入参结构体
 typedef struct {
     uint32_t loopCount;
 } MyKernelArg;
 
-// 用户自定义 Kernel 函数，函数体内调用 Ccu* 系列接口
+// 用户自定义Kernel 函数，函数体内调用Ccu* 系列接口
 CcuResult MyKernel(CcuKernelArg arg)
 {
     MyKernelArg *myArg = (MyKernelArg *)arg;
-    // 在此调用 ccu数据面编程接口，例如LoadArg 等
+    // 在此调用ccu数据面编程接口，例如LoadArg 等
     // ...
     return CCU_SUCCESS;
 }
@@ -82,12 +83,12 @@ CcuInsHandle insHandle = 0;
 uint32_t dieId = 0;                     // 预留参数，当前实现未使用
 MyKernelArg arg = { .loopCount = 10 };
 const void *kernelArgs[] = { &arg };    // 入参指针数组
-uint32_t argNum = 1;                    // 当前仅支持 0 或 1
+uint32_t argNum = 1;                    // 当前仅支持0 或1
 CcuKernelHandle kernelHandle = 0;
 
 CcuResult ret = HcommCcuKernelRegister(
     insHandle,
-    dieId,                          // 预留 die id，传 0 即可
+    dieId,                          // 预留die id，传0 即可
     "MyKernel",                     // Kernel 名称，用于调试，可为空
     (const void *)MyKernel,         // Kernel 函数指针
     kernelArgs,                     // Kernel 入参指针数组

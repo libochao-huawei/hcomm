@@ -19,6 +19,7 @@
 ## 函数原型
 
 //ccu_launch.h
+
 ```c
 CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle);
 ```
@@ -45,7 +46,7 @@ CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle);
 - 应在[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)和至少一次[HcommCcuKernelRegister](HcommCcuKernelRegister.md)之后调用，且应先于[HcommCcuKernelLaunch](HcommCcuKernelLaunch.md)。
 
 > [!NOTE]说明
-> 须按 [HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md) → [HcommCcuKernelRegister](HcommCcuKernelRegister.md) → 本接口的顺序调用。若未注册任何 Kernel 就调用本接口，本轮不会产生任何可启动的 Kernel，请调用方自行保证调用顺序。
+> 须按 [HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md) → [HcommCcuKernelRegister](HcommCcuKernelRegister.md) → 本接口的顺序调用。若未注册任何Kernel 就调用本接口，本轮不会产生任何可启动的Kernel，请调用方自行保证调用顺序。
 
 - 本接口调用成功后，本轮注册的Kernel即可独立启动。若需注册新一轮Kernel，须重新调用[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)开始新一轮流程。
 - 本接口只能在主机侧调用，不能在Kernel函数体内调用。
@@ -53,7 +54,7 @@ CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle);
 ## 调用示例
 
 ```c
-// insHandle 从通信域中获取，且已完成 RegisterStart 与 Register
+// insHandle 从通信域中获取，且已完成RegisterStart 与Register
 CcuInsHandle insHandle = 0;
 // ... 此处省略HcommCcuKernelRegisterStart、HcommCcuKernelRegister 调用 ...
 
@@ -63,5 +64,5 @@ if (ret != CCU_SUCCESS) {
     printf("HcommCcuKernelRegisterEnd failed, ret = %d\n", ret);
     return ret;
 }
-// 本轮注册的所有 Kernel 均已就绪，可调用 HcommCcuKernelLaunch 启动
+// 本轮注册的所有Kernel 均已就绪，可调用HcommCcuKernelLaunch 启动
 ```

@@ -19,6 +19,7 @@
 ## 函数原型
 
 //ccu_launch.h
+
 ```c
 CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
     CcuKernelHandle kernelHandle, const void *taskArgs, uint32_t argNum);
@@ -54,8 +55,8 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
 ## 调用示例
 
 ```c
-// threadHandle 由 HcclThreadAcquireWithStream 返回
-// kernelHandle 由 HcommCcuKernelRegister 返回，且已完成 RegisterEnd
+// threadHandle 由HcclThreadAcquireWithStream 返回
+// kernelHandle 由HcommCcuKernelRegister 返回，且已完成RegisterEnd
 ThreadHandle threadHandle = 0;
 CcuKernelHandle kernelHandle = 0;
 // ... 此处省略前序调用 ...
@@ -68,7 +69,7 @@ if (ret != CCU_SUCCESS) {
     return ret;
 }
 
-// 同一 Kernel 可重复启动，每次可传入不同的 taskArgs
+// 同一Kernel 可重复启动，每次可传入不同的taskArgs
 taskArgs[0] = 300;
 taskArgs[1] = 400;
 ret = HcommCcuKernelLaunch(threadHandle, kernelHandle, taskArgs, 2);

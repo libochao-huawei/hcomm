@@ -1,4 +1,4 @@
-# CCU Kernel生命周期与内存Token管理
+# 简介
 
 本节包含CCU Kernel主机侧生命周期管理接口及内存Token查询接口。
 

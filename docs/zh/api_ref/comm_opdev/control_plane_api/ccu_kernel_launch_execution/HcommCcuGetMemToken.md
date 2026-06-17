@@ -21,6 +21,7 @@
 ## 函数原型
 
 //ccu_res.h
+
 ```c
 CcuResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenInfo);
 ```
@@ -55,7 +56,7 @@ CcuResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenInfo
 ## 调用示例
 
 ```c
-// srcVa 为已注册的 HBM 内存起始地址，size 为该内存区域的字节大小
+// srcVa 为已注册的HBM 内存起始地址，size 为该内存区域的字节大小
 uint64_t srcVa = /* 已注册内存的虚拟地址 */;
 uint64_t size  = /* 内存区域字节大小 */;
 
@@ -66,6 +67,6 @@ if (ret != CCU_SUCCESS) {
     return ret;
 }
 
-// 将 tokenInfo 通过 kernelArg 或 taskArgs 传入 Kernel
-// Kernel 内部将其赋值给 LocalAddr.token 或 RemoteAddr.token
+// 将tokenInfo 通过kernelArg 或taskArgs 传入Kernel
+// Kernel 内部将其赋值给LocalAddr.token 或RemoteAddr.token
 ```

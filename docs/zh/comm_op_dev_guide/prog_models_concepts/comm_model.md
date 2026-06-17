@@ -22,7 +22,7 @@
 
 ## 网络语义通信模型
 
-在网络语义通信模型中，用户使用Channel读写远端通信对象内存或与远端通信对象进行同步，详见[通信操作](../../api_ref/comm_opdev/data_plan_api/cpu-cpu_ts-aicpu_ts/communication_operations/README.md)接口介绍。
+在网络语义通信模型中，用户使用Channel读写远端通信对象内存或与远端通信对象进行同步，详见[通信操作](../../api_ref/comm_opdev/data_plane_api/cpu-cpu_ts-aicpu_ts/README.md)接口介绍。
 
 **图2**  网络语义通信模型  
 ![](figures/semantic_communication.png "网络语义通信模型")
@@ -38,12 +38,12 @@
 - Channel关联一个或多个QP（Queue Pair）实例，与远端Channel关联的QP实例存在对应关系，Channel建立时对应QP会建链。
 - Channel包含多个Notify实例，用于通信对象之间的同步操作。Notify是用于同步操作的抽象概念，在不同通信引擎下可能由不同实体实现。
   - 创建Channel时可以指定Channel包含的Notify实例数量。
-  - 本端可以通过Channel向远端对象对应Channel中的某个Notify（使用序号指定）发送同步信号，详见[数据面接口](../../api_ref/comm_opdev/data_plan_api/README.md)章节。
+  - 本端可以通过Channel向远端对象对应Channel中的某个Notify（使用序号指定）发送同步信号，详见[数据面接口](../../api_ref/comm_opdev/README.md)章节。
   - 本端可以基于Channel的某个Notify，等待来自远端通信对象的同步信号，等到同步信号后才可以执行后续操作。
 
 ## 内存语义通信模型
 
-在内存语义通信模型中，远端对象的通信内存可以映射到本地进程地址空间中，通信算子开发者可以使用本地操作接口实现节点间的数据搬运或同步，详见[本地操作](../../api_ref/comm_opdev/data_plan_api/cpu-cpu_ts-aicpu_ts/local_operations/README.md)接口。
+在内存语义通信模型中，远端对象的通信内存可以映射到本地进程地址空间中，通信算子开发者可以使用本地操作接口实现节点间的数据搬运或同步，详见[本地操作](../../api_ref/comm_opdev/data_plane_api/cpu-cpu_ts-aicpu_ts/README.md)接口。
 
 下图展示了HCCL的内存语义通信模型：
 

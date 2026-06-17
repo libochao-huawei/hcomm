@@ -39,6 +39,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChanne
 2. 当前CommEngine配置为CCU时，不支持交换额外自定义内存，仅支持交换通信域的HcclBuffer。
 
 3. 当前各CommEngine支持的接口协议：
+
   - COMM_ENGINE_CPU
     - COMM_PROTOCOL_ROCE
     - COMM_PROTOCOL_UBC_CTP

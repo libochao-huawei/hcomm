@@ -28,7 +28,7 @@
   - Send算子调用HcommChannelNotifyWaitOnThread\(\)接口等待远端读取完成。
 
 **图1**  Send/Receive算子测试样例示意图  
-![Send-Receive算子测试样例示意图](figures/send_receive_sample.png "")
+![Send-Receive算子测试样例示意图](./figures/send_receive_sample.png)
 
 同时，该样例中还包含了测试程序，其中创建1个通信域，rank为偶数的通信成员负责发送数据，rank为奇数的通信成员负责接收数据，发送数据为偶数rank的编号。包含以下功能点：
 
@@ -76,7 +76,7 @@ bash build.sh --vendor=cust --ops=p2p --custom_ops_path=./examples/04_custom_ops
 
     > [!NOTE]说明
     > - 关闭驱动安全验签机制存在一定的安全风险，需要用户自行确保自定义通信算子的安全可靠，防止恶意攻击行为。
-    > - 更多命令可参考Ascend HDK配套版本的《  [npu-smi 命令参考](https://support.huawei.com/enterprise/zh/ascend-computing/ascend-hdk-pid-252764743?category=reference-guides&subcategory=command-reference)》中“AI CPU算子验签”相关章节。
+    > - 更多命令可参考Ascend HDK配套版本的《[npu-smi 命令参考](https://support.huawei.com/enterprise/zh/ascend-computing/ascend-hdk-pid-252764743?category=reference-guides&subcategory=command-reference)》中“AI CPU算子验签”相关章节。
 
 2. 修改AI CPU白名单。
 
