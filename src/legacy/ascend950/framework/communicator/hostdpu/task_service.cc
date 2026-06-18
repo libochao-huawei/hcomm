@@ -85,7 +85,7 @@ HcclResult TaskService::ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t &fla
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const
+HcclResult TaskService::ReadTaskType(uint8_t *ctrlHdr, [[maybe_unused]] uint64_t hdrLen, uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const
 {
     CHK_PTR_NULL(srcTaskTypePtr);
     // 读 taskType
@@ -172,7 +172,7 @@ HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::SynchronizeControlInfo(uint8_t *ctrlHdr, uint64_t hdrLen)
+HcclResult TaskService::SynchronizeControlInfo([[maybe_unused]] uint8_t *ctrlHdr, uint64_t hdrLen)
 {
     CHK_PTR_NULL(npu2dpuMem_);
     CHK_PTR_NULL(dpu2npuMem_);

@@ -14,7 +14,6 @@
 #include <sstream>
 #include "sal.h"
 #include "json_parser.h"
-#include "invalid_params_exception.h"
 #include "orion_adapter_rts.h"
 #include "exception_util.h"
 #include "log.h"

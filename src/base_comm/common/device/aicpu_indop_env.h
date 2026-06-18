@@ -11,7 +11,6 @@
 #ifndef __AICPU_INDOP_ENV_H__
 #define __AICPU_INDOP_ENV_H__
 
-#include "hccl_types.h"
 #include "log.h"
 
 namespace hcomm {

@@ -15,7 +15,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "hccl/hccl_res.h"
 #include "../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
 #include "virtual_topo.h"
 #include "socket_config.h"

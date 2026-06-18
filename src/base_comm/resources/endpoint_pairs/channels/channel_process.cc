@@ -189,7 +189,7 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
 }
 
 HcclResult ChannelProcess::ConnectChannels(ChannelHandle* targetChannels, uint32_t channelNum,
-    CommEngine engine)
+    [[maybe_unused]] CommEngine engine)
 {
     CHK_PTR_NULL(targetChannels);
     CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]", __func__, channelNum), HCCL_E_PARA);

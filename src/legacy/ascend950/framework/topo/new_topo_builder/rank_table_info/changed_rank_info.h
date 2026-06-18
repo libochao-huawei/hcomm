@@ -16,9 +16,7 @@
 #include <unordered_map>
 #include "nlohmann/json.hpp"
 #include "new_rank_info.h"
-#include "invalid_params_exception.h"
 #include "orion_adapter_rts.h"
-#include "exception_util.h"
 
 namespace Hccl {
 class ChangedRankInfo {

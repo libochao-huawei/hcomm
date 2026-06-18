@@ -15,7 +15,6 @@
 #include <set>
 #include <mutex>
 #include <unordered_map>
-#include <functional>
 #include <memory>
 
 #include "../../unified_platform/resource/socket/socket.h"

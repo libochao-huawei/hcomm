@@ -25,7 +25,7 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
     const std::vector<HcommChannelDesc> &hcommDescs,
     uint32_t channelNum,
     CollCommConfigConsistency &collCommConfigConsistency,
-    const std::string &commTag)
+    [[maybe_unused]] const std::string &commTag)
 {
     std::vector<Hccl::Socket*> sockets;
     std::vector<u32> remoteRanks;

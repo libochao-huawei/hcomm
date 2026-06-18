@@ -9,7 +9,6 @@
 #include "ccu_kernel_resource.h"
 #include "ccu_interface_assist_v1.h"
 
-#include "exception_util.h"
 #include "ccu_api_exception.h"
 
 namespace hcomm {

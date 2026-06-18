@@ -437,7 +437,7 @@ inline void PrintGroupErrorLog(const std::string &stageErrInfo, const std::strin
     HCCL_ERROR("%sTask run failed, groupRank information is %s.", stageErrInfo.c_str(), groupRankContent.c_str());
 }
 
-void TaskExceptionHost::PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo,
+void TaskExceptionHost::PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, [[maybe_unused]] Hccl::TaskInfo &exceptionTaskInfo,
     std::string &groupRankContent, std::string &stageErrInfo)
 {
     groupRankContent += "group:[";
@@ -545,7 +545,7 @@ void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessage
     return;
 }
 
-void TaskExceptionHost::ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &groupRankContent,
+void TaskExceptionHost::ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, [[maybe_unused]] const std::string &groupRankContent,
     const Hccl::ErrorMessageReport &errorMessage, rtExceptionInfo_t *exceptionInfo)
 {
     HCCL_RUN_INFO("[ReportErrorMsg] start, taskType[%d]", exceptionTaskInfo.taskParam_.taskType);

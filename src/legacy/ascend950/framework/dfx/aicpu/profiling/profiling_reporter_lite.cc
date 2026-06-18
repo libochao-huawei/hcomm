@@ -11,7 +11,7 @@
  
 namespace Hccl {
 ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManagerLite *mirrorTaskMgrLite,
-                                             ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
+                                             ProfilingHandlerLite *profilingHandlerLite, [[maybe_unused]] bool isIndop)
 {
     if (UNLIKELY(mirrorTaskMgrLite == nullptr || profilingHandlerLite == nullptr)) {
         THROW<InternalException>("[ProfilingHandler] ProfilingReporterLite is nullptr.");
