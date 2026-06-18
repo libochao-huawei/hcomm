@@ -75,7 +75,8 @@ set(rdma_agent_utest_list
 add_executable(rdma_agent_utest ${rdma_agent_utest_list})
 
 set_property(TARGET rdma_agent_utest PROPERTY C_STANDARD 11)
-target_include_directories(rdma_agent_utest PRIVATE
+target_include_directories(rdma_agent_utest BEFORE PRIVATE
+    ${SHADOW_OUT_DIR}
     ${SRC_DIR}/test/ut/platform/hccp/rdma_service_normal/include
     ${SRC_DIR}/test/ut/platform/hccp/rdma_agent/stub
     ${SRC_DIR}/test/ut/platform/hccp/ut_include

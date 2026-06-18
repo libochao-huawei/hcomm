@@ -1,0 +1,16 @@
+/*
+ * Shadow header for rs_inner.h — LLT time constant override.
+ * GENERATED FILE — edit rs_inner.h.in or parent CMakeLists.txt, not this file.
+ */
+#ifndef SHADOW_RS_INNER_H
+#define SHADOW_RS_INNER_H
+
+#include_next "rs_inner.h"
+
+#undef RS_USLEEP_TIME
+#define RS_USLEEP_TIME @UT_RS_USLEEP_TIME@
+
+#undef RS_TRY_TIME
+#define RS_TRY_TIME @UT_RS_TRY_TIME@
+
+#endif

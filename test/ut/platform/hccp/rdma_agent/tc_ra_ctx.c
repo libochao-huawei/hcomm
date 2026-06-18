@@ -600,6 +600,7 @@ void TcRaRsGetTpInfoList()
 
 void TcRaRsAsyncHdcSessionConnect()
 {
+    mocker_clean();
     RaHwAsyncInit(0, 0);
     union OpAsyncHdcConnectData connectData = {0};
     connectData.txData.phyId = 0;

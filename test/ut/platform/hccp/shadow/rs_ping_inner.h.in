@@ -1,0 +1,13 @@
+/*
+ * Shadow header for rs_ping_inner.h — LLT time constant override.
+ * GENERATED FILE — edit rs_ping_inner.h.in or parent CMakeLists.txt, not this file.
+ */
+#ifndef SHADOW_RS_PING_INNER_H
+#define SHADOW_RS_PING_INNER_H
+
+#include_next "rs_ping_inner.h"
+
+#undef RS_PING_PERIOD_TIME_USEC
+#define RS_PING_PERIOD_TIME_USEC @UT_RS_PING_PERIOD_TIME_USEC@
+
+#endif

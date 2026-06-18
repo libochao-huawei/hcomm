@@ -25,7 +25,8 @@ set(hccp_utest_list
 add_executable(hccp_utest ${hccp_utest_list})
 
 set_property(TARGET hccp_utest PROPERTY C_STANDARD 11)
-target_include_directories(hccp_utest PRIVATE
+target_include_directories(hccp_utest BEFORE PRIVATE
+    ${SHADOW_OUT_DIR}
     stub
     ${SRC_DIR}/test/ut/platform/hccp/ut_include
     ${SRC_DIR}/test/stub/depends/include

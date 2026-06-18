@@ -1,0 +1,22 @@
+/*
+ * Shadow header for ra_rs_comm.h — LLT time constant override.
+ * GENERATED FILE — edit ra_rs_comm.h.in or parent CMakeLists.txt, not this file.
+ *
+ * Mechanism: #include_next loads the original header first (production values),
+ * then we #undef + #define to inject accelerated test values.
+ */
+#ifndef SHADOW_RA_RS_COMM_H
+#define SHADOW_RA_RS_COMM_H
+
+#include_next "ra_rs_comm.h"
+
+#undef RA_THREAD_TRY_TIME
+#define RA_THREAD_TRY_TIME @UT_RA_THREAD_TRY_TIME@
+
+#undef RA_THREAD_SLEEP_TIME
+#define RA_THREAD_SLEEP_TIME @UT_RA_THREAD_SLEEP_TIME@
+
+#undef HDC_USLEEP_TIME
+#define HDC_USLEEP_TIME @UT_HDC_USLEEP_TIME@
+
+#endif

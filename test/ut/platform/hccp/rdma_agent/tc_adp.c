@@ -52,6 +52,7 @@ int StubRecvHandleSendPkt(HDC_SESSION session, unsigned int *closeSession)
     return 0;
 }
 
+extern struct RaHdcInitPara gHdcInitPara;
 static char* gTestMsg[MAX_TEST_MESSAGE] = {0};
 static int gMsgCount = 0;
 static int gCurrentMsgIndex = 0;
@@ -59,9 +60,32 @@ static int gAcceptTimes = 0;
 static HDC_SESSION gTestSession;
 static pid_t gHostTgid = 0;
 
+static void WaitForHccpReady(void)
+{
+    int timeout;
+
+    /* Phase 1: wait for Thread B to start AND consume at least one message.
+     * threadStatus == RUNNING: set by RaPthread under mutex (ra_adp.c:1850)
+     * gCurrentMsgIndex > 0: monotonically increasing progress, cannot be missed
+     * Combined guarantee: session accepted, Thread B running, message processing started */
+    timeout = 500;
+    while ((gHdcInitPara.threadStatus != THREAD_RUNNING || gCurrentMsgIndex == 0)
+           && --timeout > 0) {
+        usleep(1000);
+    }
+
+    /* Phase 2: wait for CLOSE message to be fully processed.
+     * connectStatus set back to HDC_UNCONNECTED after CLOSE handler completes (ra_adp.c:1812)
+     * CLOSE is the last message (FIFO), so all prior messages are also done */
+    timeout = 500;
+    while (gHdcInitPara.connectStatus != HDC_UNCONNECTED && --timeout > 0) {
+        usleep(1000);
+    }
+}
+
 DLLEXPORT drvError_t StubGetMsgBuffer(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen)
 {
-    usleep(10*1000);
+    usleep(1000);
     *pBuf = gTestMsg[gCurrentMsgIndex++];
     struct MsgHead* tmsg = (struct MsgHead*)*pBuf;
     *pLen = tmsg->msgDataLen + sizeof(struct MsgHead);
@@ -130,9 +154,21 @@ void TcCommonTest()
     AddTestMsg(RA_RS_HDC_SESSION_CLOSE, sizeof(union OpHdcCloseData));
     int ret = HccpInit(devid, gHostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     EXPECT_INT_EQ(ret , 0);
-    sleep(1);
+
+    WaitForHccpReady();
+
+    // Wait for T_accept (RaHwHdcInit) thread to fully exit before deinit.
+    // hdcFlag lifecycle: 1=thread running (ra_adp.c:2034), 0=thread exited (ra_adp.c:2051).
+    // Symmetric with RaHwInit waiting for hdcFlag==1 (ra_adp.c:2139-2142).
+    int hdcFlagTimeout = 500;
+    while (gHdcInitPara.hdcFlag != 0 && --hdcFlagTimeout > 0) {
+        usleep(1000);
+    }
+    EXPECT_INT_EQ(gHdcInitPara.hdcFlag, 0);
+
     ret = HccpDeinit(devid);
     EXPECT_INT_EQ(ret, 0);
+
     MsgClear();
     mocker_clean();
 }
@@ -149,12 +185,14 @@ void TcHccpInitFail()
     mocker_clean();
     mocker((stub_fn_t)sched_setaffinity, 10, 0);
     mocker((stub_fn_t)pthread_create, 1, -1);
+    mocker((stub_fn_t)usleep, 6000, 0);
     ret = HccpInit(devid, hostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     ret = HccpDeinit(devid);
     EXPECT_INT_EQ(ret, 0);
 
     mocker_clean();
     mocker((stub_fn_t)pthread_create, 10, 0);
+    mocker((stub_fn_t)usleep, 6000, 0);
     ret = HccpInit(devid, hostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     EXPECT_INT_NE(ret, 0);
     ret = HccpDeinit(devid);
@@ -220,7 +258,6 @@ void TcSocketConnect()
     mocker((stub_fn_t)RsSocketBatchConnect, 1, -1);
     AddTestMsg(RA_RS_SOCKET_CONN, sizeof(union OpSocketConnectData));
     TcCommonTest();
-
 }
 
 void TcSocketClose()
@@ -229,7 +266,6 @@ void TcSocketClose()
     mocker((stub_fn_t)RsSocketBatchClose, 1, 0);
     AddTestMsg(RA_RS_SOCKET_CLOSE, sizeof(union OpSocketCloseData));
     TcCommonTest();
-
 }
 
 void TcSocketAbort()
@@ -607,9 +643,10 @@ void TcSocketWhiteListDel()
 void TcGetIfaddrs()
 {
     TcAdpEnvInit();
-    mocker((stub_fn_t)RsGetIfaddrs, 1, 0);
+    mocker((stub_fn_t)RsGetIfaddrs, 2, 0);
     char* databuf = AddTestMsg(RA_RS_GET_IFADDRS, sizeof(union OpIfaddrData));
     union OpIfaddrData *ifaddrData = (union OpIfaddrData *)(databuf + sizeof(struct MsgHead));
+    ifaddrData->txData.num = 1;
 
     databuf = AddTestMsg(RA_RS_GET_IFADDRS, sizeof(union OpIfaddrData));
     ifaddrData = (union OpIfaddrData *)(databuf + sizeof(struct MsgHead));

@@ -66,7 +66,8 @@ set(rs_ut_abnormal_list
 add_executable(rs_ut_abnormal ${rs_ut_abnormal_list})
 
 set_property(TARGET rs_ut_abnormal PROPERTY C_STANDARD 11)
-target_include_directories(rs_ut_abnormal PRIVATE
+target_include_directories(rs_ut_abnormal BEFORE PRIVATE
+    ${SHADOW_OUT_DIR}
     ${SRC_DIR}/test/ut/platform/hccp/ut_include
     ${SRC_DIR}/test/ut/platform/hccp/rdma_service_normal/include
     ${SRC_DIR}/test/ut/platform/hccp/rdma_service_abnormal/stub
