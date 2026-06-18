@@ -1309,10 +1309,12 @@ HcclResult HostCpuRoceChannel::Resume()
     return HCCL_SUCCESS;
 }
 
+constexpr u32 DEFAULT_LOCAL_NOTIFY_ACCESS    = 7;
+constexpr u32 DEFAULT_LOCAL_NOTIFY_SIZE      = 4;
 HcclResult HostCpuRoceChannel::CreateNotifyHybird(hccl::MemType notifyType, uint32_t notifyId)
 {
-    localNotifyAccess_ = 7;
-    localNotifySize_ = 4;
+    localNotifyAccess_ = DEFAULT_LOCAL_NOTIFY_ACCESS;
+    localNotifySize_ = DEFAULT_LOCAL_NOTIFY_SIZE;
 
     int8_t *ptr = new (std::nothrow) int8_t[localNotifySize_];
     CHK_PTR_NULL(ptr);
@@ -1432,12 +1434,13 @@ HcclResult HostCpuRoceChannel::ExchangeCapability()
     return HCCL_SUCCESS;
 }
 
+constexpr u32 DEFAULT_MRINFO_ACCESS = 7;
 HcclResult HostCpuRoceChannel::RegisterUserMemHybird()
 {
     struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = reinterpret_cast<void *>(localRmaBuffers_[0]->GetAddr());
     mrInfo.size = localRmaBuffers_[0]->GetSize();
-    mrInfo.access = 7;
+    mrInfo.access = DEFAULT_MRINFO_ACCESS;
     auto qpInfo = connections_[0]->GetQpInfo();
     CHK_RET(HrtRaMrReg(qpInfo.qpHandle, &mrInfo));
 
@@ -1450,17 +1453,22 @@ HcclResult HostCpuRoceChannel::RegisterUserMemHybird()
     return HCCL_SUCCESS;
 }
 
+constexpr u32 BUFFER_NUM = 2;  // output、input buffer
+constexpr u32 NOTIFY_NUM = 3;  // 3个Notify
 HcclResult HostCpuRoceChannel::BuildExchangeDataLengthHybird()
 {
     exchangeDataTotalSize_ = 0;
     exchangeDataTotalSize_ += sizeof(u32); // qp数量
-    exchangeDataTotalSize_ += sizeof(hccl::MemMsg) * 2; // output、input buffer
-    exchangeDataTotalSize_ += sizeof(hccl::MemMsg) * 3; // 3个Notify
+    exchangeDataTotalSize_ += sizeof(hccl::MemMsg) * BUFFER_NUM; // output、input buffer
+    exchangeDataTotalSize_ += sizeof(hccl::MemMsg) * NOTIFY_NUM; // 3个Notify
     exchangeDataTotalSize_ += sizeof(u8); // atomic value
     HCCL_INFO("[BuildExchangeDataLengthHybird]ExchangeDataSize:%ld", exchangeDataTotalSize_);
     return HCCL_SUCCESS;
 }
 
+constexpr u32 DATA_NOTIFY_ID = 1;      // DATA_NOTIFY_MEM类型使用的notifyId
+constexpr u32 ACK_NOTIFY_ID = 0;       // ACK_NOTIFY_MEM类型使用的notifyId
+constexpr u32 DATA_ACK_NOTIFY_ID = 2;  // DATA_ACK_NOTIFY_MEM类型使用的notifyId
 HcclResult HostCpuRoceChannel::BuildExchangeDataHybird()
 {
     CHK_RET(BuildExchangeDataLengthHybird());
@@ -1483,9 +1491,9 @@ HcclResult HostCpuRoceChannel::BuildExchangeDataHybird()
     size -= sizeof (hccl::MemMsg);
 
     CHK_RET(CreateNotifyValueBufferHybird());
-    CHK_RET(CreateNotifyBufferHybird(hccl::DATA_NOTIFY_MEM, 1, data, size));
-    CHK_RET(CreateNotifyBufferHybird(hccl::ACK_NOTIFY_MEM, 0, data, size));
-    CHK_RET(CreateNotifyBufferHybird(hccl::DATA_ACK_NOTIFY_MEM, 2, data, size));
+    CHK_RET(CreateNotifyBufferHybird(hccl::DATA_NOTIFY_MEM, DATA_NOTIFY_ID, data, size));
+    CHK_RET(CreateNotifyBufferHybird(hccl::ACK_NOTIFY_MEM, ACK_NOTIFY_ID, data, size));
+    CHK_RET(CreateNotifyBufferHybird(hccl::DATA_ACK_NOTIFY_MEM, DATA_ACK_NOTIFY_ID, data, size));
 
     u8 atomicWrite = 1;
     CHK_SAFETY_FUNC_RET(memcpy_s(data, size, reinterpret_cast<void *>(&atomicWrite), sizeof(u8)));
@@ -1540,6 +1548,7 @@ HcclResult HostCpuRoceChannel::ParseRecvExchangeDataHybird()
     return HCCL_SUCCESS;
 }
 
+constexpr u32 GET_QP_SLEEP_TIME = 1000;
 HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needStop)
 {
     auto qpInfo = connections_[0]->GetQpInfo();
@@ -1571,7 +1580,7 @@ HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needS
             HCCL_INFO("In link ibv, QP get status success.");
             break;
         } else {
-            SaluSleep(1000);
+            SaluSleep(GET_QP_SLEEP_TIME);
         }
     }
     if (!hasSocket) {
@@ -1600,6 +1609,7 @@ HcclResult HostCpuRoceChannel::ExchangeDataHybird()
     return HCCL_SUCCESS;
 }
 
+constexpr u32 WQE_NUM_STEP = 2;  // 增加步长
 HcclResult HostCpuRoceChannel::WriteWithNotifyHybrid(
     void *dst, const void *src, uint64_t len, uint32_t remoteNotifyIdx)
 {
@@ -1669,7 +1679,7 @@ HcclResult HostCpuRoceChannel::WriteWithNotifyHybrid(
         HCCL_ERROR("[Hybrid] ibv_post_send failed, ret=%d", ret),
         HCCL_E_NETWORK);
 
-    wqeNums_[0] += 2;
+    wqeNums_[0] += WQE_NUM_STEP;
 
     HCCL_INFO("[Hybrid] WriteWithNotifyHybrid success");
     return HCCL_SUCCESS;

@@ -27,7 +27,7 @@ AicpuTsHccsEndpoint::AicpuTsHccsEndpoint(const EndpointDesc &endpointDesc)
 AicpuTsHccsEndpoint::~AicpuTsHccsEndpoint()
 {
     try {
-        (void)ServerSocketStopListen(serverPort_);
+        (void)ServerSocketStopListenImpl(serverPort_);
     }  catch (...) { }
     
 
@@ -76,7 +76,7 @@ HcclResult AicpuTsHccsEndpoint::ServerSocketListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsHccsEndpoint::ServerSocketStopListen(const uint32_t port)
+inline HcclResult AicpuTsHccsEndpoint::ServerSocketStopListenImpl(const uint32_t port)
 {
     if (serverListened_) {
         CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerDeInit(port));
@@ -84,6 +84,11 @@ HcclResult AicpuTsHccsEndpoint::ServerSocketStopListen(const uint32_t port)
     }
 
     return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsHccsEndpoint::ServerSocketStopListen(const uint32_t port)
+{
+    return ServerSocketStopListenImpl(port);
 }
 
 HcclResult AicpuTsHccsEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)

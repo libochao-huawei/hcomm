@@ -33,7 +33,7 @@ CpuRoceEndpoint::~CpuRoceEndpoint() noexcept
 {
     std::lock_guard<std::mutex> lock(portMutex_);
     if (dynamicPort_ != HCCL_INVALID_PORT) {
-        ServerSocketStopListen(dynamicPort_);
+        ServerSocketStopListenImpl(dynamicPort_);
     }
     dynamicPort_ = HCCL_INVALID_PORT;
 }
@@ -89,7 +89,7 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
-HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
+inline HcclResult CpuRoceEndpoint::ServerSocketStopListenImpl(const uint32_t port)
 {
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
@@ -104,6 +104,11 @@ HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
     CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::HOST_NIC_TYPE, port));
 
     return HCCL_SUCCESS;
+}
+ 	 
+HcclResult CpuRoceEndpoint::ServerSocketStopListen(const uint32_t port)
+{
+    return ServerSocketStopListenImpl(port);
 }
 
 HcclResult CpuRoceEndpoint::ServerSocketGetListenPort(uint32_t *port)
