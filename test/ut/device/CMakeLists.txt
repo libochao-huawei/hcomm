@@ -19,6 +19,7 @@ set(hccl_utest_device_src_list
     ut_hccl_aicpu_utils.cc
     ut_ranktable_concise_device.cc
     ut_launch_aicpu.cc
+    ut_hccl_aicpu_interface.cc
 
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/stream/stream_utils_aicpu.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/common/debug/profiling/plugin_runner_device.cc
