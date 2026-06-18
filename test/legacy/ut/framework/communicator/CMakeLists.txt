@@ -25,7 +25,8 @@ target_sources(hccl_v2_utest
         ut_aicpu_mc2_handler.cc
         ut_hccl_mc2_ex.cc
         ut_task_service.cc
-        
+        ut_flush_handle.cc
+
         ${HCCL_V2_CODE_ROOT}/framework/fault_recovery/snap_shot_parse.cc
         ${HCCL_V2_CODE_ROOT}/common/checkcrc.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/one_sided_component/one_sided_component_lite.cpp
