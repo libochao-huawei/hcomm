@@ -13,6 +13,8 @@
 #include "hccp.h"
 
 namespace hcomm {
+constexpr uint32_t DEFAULT_CQN = 0;
+constexpr int8_t DB_MODE_HW = 0;
 
 DevRdmaConnectionV2::DevRdmaConnectionV2(Hccl::Socket *socket, RdmaHandle rdmaHandle):
     socket_(socket), rdmaHandle_(rdmaHandle) {}
@@ -50,7 +52,7 @@ std::string DevRdmaConnectionV2::Describe() const
 }
 
 static void *NdaAlloc(size_t size) {
-    return Hccl::HrtMalloc(size, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+    return Hccl::HrtMalloc(size, static_cast<int>(ACL_MEM_MALLOC_HUGE_ONLY));
 }
 
 static void NdaFree(void *ptr) {
@@ -302,7 +304,7 @@ HcclResult DevRdmaConnectionV2::BuildSqContext(SqContext* context)
     }
     context->contextInfo.roceSq.dbVa = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase);
     context->contextInfo.roceSq.sl = qpInfo_.serviceLevel;
-    context->contextInfo.roceSq.dbMode = 0;
+    context->contextInfo.roceSq.dbMode = DB_MODE_HW;
 
     HCCL_INFO(
         "[DevRdmaConnectionV2][%s] type=%u, QPN=%u, SQ_VA=0x%llx, WQE_SIZE=%u, "
@@ -324,7 +326,7 @@ HcclResult DevRdmaConnectionV2::BuildCqContext(CqContext* context)
     }
 
     context->type = CQ_CONTEXT_TYPE_ROCE;
-    context->contextInfo.roceCq.cqn = 0;
+    context->contextInfo.roceCq.cqn = DEFAULT_CQN;
     context->contextInfo.roceCq.cqVa = ndaCqInfo_.cqInfo.qBuf.base;
     context->contextInfo.roceCq.cqeSize = ndaCqInfo_.cqInfo.qBuf.entrySize;
     context->contextInfo.roceCq.cqDepth = ndaCqInfo_.cqInfo.qBuf.entryCnt;
@@ -336,7 +338,7 @@ HcclResult DevRdmaConnectionV2::BuildCqContext(CqContext* context)
         context->contextInfo.roceCq.tailAddr = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
     }
     context->contextInfo.roceCq.dbVa = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbHwVa.iovBase);
-    context->contextInfo.roceCq.dbMode = 0;
+    context->contextInfo.roceCq.dbMode = DB_MODE_HW;
 
     HCCL_INFO(
         "[DevRdmaConnectionV2][%s] type=%u, CQN=%u, CQ_VA=0x%llx, CQE_SIZE=%u, CQ_DEPTH=%u, "
@@ -365,11 +367,16 @@ std::vector<char> DevRdmaConnectionV2::GetSqUniqueId() const
     binaryStream << ndaQpInfo_.sqInfo.qBuf.base;
     binaryStream << ndaQpInfo_.sqInfo.qBuf.entrySize;
     binaryStream << ndaQpInfo_.sqInfo.qBuf.entryCnt;
-    binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrPiVa.iovBase);
-    binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase);
+    if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
+        binaryStream << reinterpret_cast<uint64_t >(SqPiMem_.ptr());
+        binaryStream << reinterpret_cast<uint64_t >(SqCiMem_.ptr());
+    } else {
+        binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrPiVa.iovBase);
+        binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase);
+    }
     binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase);
+    binaryStream << DB_MODE_HW;
     binaryStream << qpInfo_.serviceLevel;
-    binaryStream << 0;
 
     std::vector<char> result;
     binaryStream.Dump(result);
@@ -380,14 +387,19 @@ std::vector<char> DevRdmaConnectionV2::GetCqUniqueId() const
 {
     HCCL_DEBUG("start packing cq uniqueId");
     Hccl::BinaryStream binaryStream;
-    binaryStream << 0;
+    binaryStream << DEFAULT_CQN;
     binaryStream << ndaCqInfo_.cqInfo.qBuf.base;
     binaryStream << ndaCqInfo_.cqInfo.qBuf.entrySize;
     binaryStream << ndaCqInfo_.cqInfo.qBuf.entryCnt;
-    binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrPiVa.iovBase);
-    binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
+    if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
+        binaryStream << reinterpret_cast<uint64_t >(CqPiMem_.ptr());
+        binaryStream << reinterpret_cast<uint64_t >(CqCiMem_.ptr());
+    } else {
+        binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrPiVa.iovBase);
+        binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
+    }
     binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbHwVa.iovBase);
-    binaryStream << 0;
+    binaryStream << DB_MODE_HW;
 
     std::vector<char> result;
     binaryStream.Dump(result);

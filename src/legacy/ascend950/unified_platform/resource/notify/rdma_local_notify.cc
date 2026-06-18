@@ -36,7 +36,7 @@ RdmaLocalNotify::RdmaLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
     mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;
     s32 ret = RaRegisterMr(rdmaHandle, &mrInfo, &mrHandle);
     if (ret != 0 || mrHandle == nullptr) {
-        HCCL_ERROR("[RdmaLocalNotify] RaRegisterMr failed, call interface error[%d]", ret);
+        HCCL_ERROR("[RdmaLocalNotify] RaRegisterMr failed, call interface error[%d] mrHandle[%p]", ret, mrHandle);
         THROW<InternalException>("[%s] failed, call interface error[%d].", __func__, ret);
     }
     lkey = mrInfo.lkey;

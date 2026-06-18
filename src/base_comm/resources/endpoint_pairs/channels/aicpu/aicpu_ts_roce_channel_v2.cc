@@ -261,7 +261,8 @@ HcclResult AicpuTsRoceChannelV2::BuildSocket()
         HCCL_INFO("[AicpuTsRoceChannelV2::%s] channelDesc port is 0, use default port [%u]", __func__, port);
     }
     std::string socketTag = "AUTOMATIC_SOCKET_TAG";
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
+    bool isServer = (channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER);
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag, isServer);
     CHK_RET(SocketMgr::GetInstance(devicePhyId_).GetSocket(socketConfig, socket_));
     HCCL_INFO("[AicpuTsRoceChannelV2::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
@@ -357,7 +358,8 @@ HcclResult AicpuTsRoceChannelV2::BuildNotifyValueBuffer()
     if (engine_ == COMM_ENGINE_AIV) {
         return HCCL_SUCCESS;
     }
-    
+
+    Hccl::DevCapability::GetInstance().Init(Hccl::DevType::DEV_TYPE_950);
     u32 notifysize = Hccl::DevCapability::GetInstance().GetNotifySize();
     EXCEPTION_CATCH((notifyValueMem_ = std::make_shared<Hccl::DevBuffer>(notifysize)),
         return HCCL_E_PTR);
@@ -377,7 +379,7 @@ HcclResult AicpuTsRoceChannelV2::Init()
     devicePhyId_ = Hccl::HrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId));
 
     CHK_RET(ParseInputParam());
-    if (channelDesc_.exchangeAllMems) {
+    if (channelDesc_.exchangeAllMems && channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER) {
         CHK_RET(StartListen());
     }
     CHK_RET(BuildSocket());
