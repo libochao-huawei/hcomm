@@ -185,7 +185,7 @@ void TcHostAbnormalQpModeTest()
     struct rdev rdevInfo = {0};
     rdevInfo.family = AF_INET;
     struct RaRdmaHandle *rdmaHandle = NULL;
-    void* qpHandle;
+    void* qpHandle = NULL;
     RaRdevInit(NETWORK_OFFLINE, NOTIFY, rdevInfo, (void **)&rdmaHandle);
 
     ret = RaQpCreate(rdmaHandle, 0, 3, &qpHandle);
@@ -230,7 +230,7 @@ void TcRaPeerRdevInit01()
 {
 	int ret;
     struct rdev rdevInfo = {0};
-    struct RaRdmaHandle rdmaHandle;
+    struct RaRdmaHandle rdmaHandle = {0};
     unsigned int *rdevIndex = (unsigned int *)malloc(sizeof(unsigned int));
 	mocker(HostNotifyBaseAddrInit, 1, 0);
 	mocker(RsRdevInit, 1, 0);
@@ -244,7 +244,7 @@ void TcRaPeerRdevInit02()
 {
 	int ret;
     struct rdev rdevInfo = {0};
-    struct RaRdmaHandle rdmaHandle;
+    struct RaRdmaHandle rdmaHandle = {0};
     unsigned int *rdevIndex = (unsigned int *)malloc(sizeof(unsigned int));
 	mocker(HostNotifyBaseAddrInit, 1, 1);
     ret = RaPeerRdevInit(&rdmaHandle, NOTIFY, rdevInfo, rdevIndex);
@@ -257,7 +257,7 @@ void TcRaPeerRdevInit03()
 {
 	int ret;
     struct rdev rdevInfo = {0};
-    struct RaRdmaHandle rdmaHandle;
+    struct RaRdmaHandle rdmaHandle = {0};
     unsigned int *rdevIndex = (unsigned int *)malloc(sizeof(unsigned int));
 	mocker(HostNotifyBaseAddrInit, 1, 0);
 	mocker(RsRdevInit, 1, 1);
@@ -272,7 +272,7 @@ void TcRaPeerRdevInit04()
 {
 	int ret;
     struct rdev rdevInfo = {0};
-    struct RaRdmaHandle rdmaHandle;
+    struct RaRdmaHandle rdmaHandle = {0};
     unsigned int *rdevIndex = (unsigned int *)malloc(sizeof(unsigned int));
 	mocker(HostNotifyBaseAddrInit, 1, 0);
 	mocker(RsRdevInit, 1, 1);
@@ -326,7 +326,7 @@ void TcRaPeerRdevDeinit03()
 
 void TcRaPeerSocketBatchConnect()
 {
-    unsigned int devId;
+    unsigned int devId = 0;
     struct SocketConnectInfoT conn[4] = {0};
     mocker(RaGetSocketConnectInfo, 20, 1);
     RaPeerSocketBatchConnect(devId, conn, 5);
@@ -335,7 +335,7 @@ void TcRaPeerSocketBatchConnect()
 
 void TcRaPeerSocketBatchAbort()
 {
-    unsigned int devId;
+    unsigned int devId = 0;
     struct SocketConnectInfoT conn[4] = {0};
     int ret = 0;
 
@@ -363,7 +363,7 @@ void TcRaPeerSocketBatchAbort()
 
 void TcRaPeerSocketListenStart01()
 {
-    unsigned int devId;
+    unsigned int devId = 0;
     struct SocketListenInfoT conn[5] = {0};
     mocker(RaGetSocketListenInfo, 10, 1);
     RaPeerSocketListenStart(devId, conn, 5);
@@ -372,7 +372,7 @@ void TcRaPeerSocketListenStart01()
 
 void TcRaPeerSocketListenStart02()
 {
-    unsigned int devId;
+    unsigned int devId = 0;
     struct SocketListenInfoT conn[5] = {0};
     mocker(RaGetSocketListenInfo, 10, 0);
     mocker(RsSocketListenStart, 10, 0);
@@ -382,7 +382,7 @@ void TcRaPeerSocketListenStart02()
 
 void TcRaPeerSocketListenStop()
 {
-    unsigned int devId;
+    unsigned int devId = 0;
     struct SocketListenInfoT conn[5] = {0};
     mocker(RaGetSocketListenInfo, 10, 1);
     RaPeerSocketListenStop(devId, conn, 5);
@@ -399,14 +399,14 @@ void TcRaPeerSetRsConnParam()
 void TcRaInetPton01()
 {
     char netAddr[5] = {0};
-    union HccpIpAddr ip;
+    union HccpIpAddr ip = {0};
     RaInetPton(0, ip, netAddr, 32);
 }
 
 void TcRaInetPton02()
 {
     char netAddr[5] = {0};
-    union HccpIpAddr ip;
+    union HccpIpAddr ip = {0};
     RaInetPton(2, ip, netAddr, 0);
 }
 
@@ -458,13 +458,13 @@ void TcRaSocketInitV1()
 
 void TcRaSendWrlist()
 {
-    struct RaQpHandle qpHandle;
-    struct RaRdmaOps rdmaOps;
+    struct RaQpHandle qpHandle = {0};
+    struct RaRdmaOps rdmaOps = {0};
     qpHandle.rdmaOps = &rdmaOps;
     unsigned int sendNum = 1;
     unsigned int completeNum = 0;
-    struct SendWrlistData wrlist[1];
-    struct SendWrRsp opRsp[1];
+    struct SendWrlistData wrlist[1] = {{0}};
+    struct SendWrRsp opRsp[1] = {{0}};
     RaSendWrlist(NULL, NULL, NULL, sendNum, &completeNum);
     qpHandle.rdmaOps = NULL;
     RaSendWrlist(&qpHandle, wrlist, opRsp, sendNum, &completeNum);
@@ -474,7 +474,7 @@ void TcRaSendWrlist()
 
 void TcRaRdevInit()
 {
-    struct rdev rdevInfo;
+    struct rdev rdevInfo = {0};
     void* rdmaHandle = NULL;
     rdevInfo.phyId = 0;
     RaRdevInit(2, NOTIFY, rdevInfo, &rdmaHandle);
@@ -510,8 +510,8 @@ void TcRaRdevGetPortStatus()
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int rcvBufLen = 300;
 
     char inBuf[512];
@@ -539,8 +539,8 @@ void TcRaHdcRdevDeinit()
 
 void TcRaHdcSocketWhiteListAdd()
 {
-    struct rdev rdevInfo = {};
-    struct SocketWlistInfoT whiteList[1];
+    struct rdev rdevInfo = {0};
+    struct SocketWlistInfoT whiteList[1] = {{0}};
     mocker(HdcSendRecvPkt, 20, 1);
     RaHdcSocketWhiteListAdd(rdevInfo, whiteList, 1);
     mocker_clean();
@@ -571,7 +571,7 @@ void TcRaHdcSocketWhiteListDel()
 
 void TcRaHdcSocketAcceptCreditAdd()
 {
-    struct SocketListenInfoT conn[1];
+    struct SocketListenInfoT conn[1] = {{0}};
     struct RaSocketHandle socketHandle = {0};
     conn[0].socketHandle = &socketHandle;
 
@@ -590,7 +590,7 @@ void TcRaHdcSocketAcceptCreditAdd()
 void TcRaHdcRdevInit()
 {
     struct rdev rdevInfo = {0};
-    unsigned int rdevIndex;
+    unsigned int rdevIndex = 0;
     int ret;
     struct RaRdmaHandle rdmaHandle = { 0 };
     mocker(DlDrvDeviceGetIndexByPhyId, 20, 0);
@@ -621,7 +621,7 @@ void TcRaHdcRdevInit()
 
 void TcRaHdcInitApart()
 {
-    unsigned int phyId;
+    unsigned int phyId = 0;
     mocker(DlDrvDeviceGetIndexByPhyId, 20, 0);
     mocker(pthread_mutex_init, 20, 1);
     int ret = RaHdcInitApart(1, &phyId);
@@ -905,12 +905,12 @@ void TcRaPeerSendWrlist001()
 
 void TcRaGetQpContext()
 {
-    struct RaQpHandle RaQpHandle;
+    struct RaQpHandle RaQpHandle = {0};
     void *qpHandle = (void *)&RaQpHandle;
     void *qp = NULL;
     void *sendCq= NULL;
     void *recvCq = NULL;
-    struct RaRdmaOps ops;
+    struct RaRdmaOps ops = {0};
     RaQpHandle.rdmaOps = NULL;
     RaGetQpContext(qpHandle, &qp, &sendCq, &recvCq);
     RaGetQpContext(NULL, &qp, &sendCq, &recvCq);
@@ -921,10 +921,10 @@ void TcRaGetQpContext()
 
 void TcRaCreateCq()
 {
-    struct ibv_cq *ibSendCq;
-    struct ibv_cq *ibRecvCq;
-    void* context;
-    struct CqAttr attr;
+    struct ibv_cq *ibSendCq = NULL;
+    struct ibv_cq *ibRecvCq = NULL;
+    void* context = NULL;
+    struct CqAttr attr = {0};
     attr.qpContext = &context;
     attr.ibSendCq = &ibSendCq;
     attr.ibRecvCq = &ibRecvCq;
@@ -933,7 +933,7 @@ void TcRaCreateCq()
     attr.sendCqEventId = 1;
     attr.recvCqEventId = 2;
 
-    struct RaRdmaHandle RaRdmaHandle;
+    struct RaRdmaHandle RaRdmaHandle = {0};
     void *rdmaHandle = (void *)&RaRdmaHandle;
     RaRdmaHandle.rdevIndex = 0;
     RaRdmaHandle.rdevInfo.phyId = 32767;
@@ -941,7 +941,7 @@ void TcRaCreateCq()
     RaCqCreate(rdmaHandle, &attr);
     RaCqDestroy(rdmaHandle, &attr);
 
-    struct RaRdmaOps ops;
+    struct RaRdmaOps ops = {0};
     ops.raCqCreate = RaPeerCqCreate;
     ops.raCqDestroy = RaPeerCqDestroy;
     RaRdmaHandle.rdmaOps = &ops;
@@ -961,10 +961,10 @@ void TcRaCreateCq()
 
 void TcRaCreateNotmalQp()
 {
-    struct ibv_cq *ibSendCq;
-    struct ibv_cq *ibRecvCq;
-    void* context;
-    struct ibv_qp_init_attr qpInitAttr;
+    struct ibv_cq *ibSendCq = NULL;
+    struct ibv_cq *ibRecvCq = NULL;
+    void* context = NULL;
+    struct ibv_qp_init_attr qpInitAttr = {0};
     qpInitAttr.qp_context = context;
     qpInitAttr.send_cq = ibSendCq;
     qpInitAttr.recv_cq = ibRecvCq;
@@ -975,15 +975,15 @@ void TcRaCreateNotmalQp()
     qpInitAttr.cap.max_recv_wr = 4096;
     qpInitAttr.cap.max_recv_sge = 1;
 	struct ibv_qp* qp;
-    struct RaQpHandle RaQpHandle;
+    struct RaQpHandle RaQpHandle = {0};
     void *qpHandle = &RaQpHandle;
 
-    struct RaRdmaHandle RaRdmaHandle;
+    struct RaRdmaHandle RaRdmaHandle = {0};
     void *rdmaHandle = (void *)&RaRdmaHandle;
     RaRdmaHandle.rdevIndex = 0;
     RaRdmaHandle.rdevInfo.phyId = 32767;
     RaRdmaHandle.rdmaOps = NULL;
-    struct RaRdmaOps ops;
+    struct RaRdmaOps ops = {0};
     RaRdmaHandle.rdmaOps = &ops;
     ops.raNormalQpCreate = NULL;
     ops.raNormalQpDestroy = NULL;
@@ -1017,7 +1017,7 @@ void TcRaCreateNotmalQp()
 
 void TcRaCreateCompChannel()
 {
-    struct RaRdmaHandle RaRdmaHandle;
+    struct RaRdmaHandle RaRdmaHandle = {0};
     void *rdmaHandle = (void *)&RaRdmaHandle;
     RaRdmaHandle.rdevIndex = 0;
     RaRdmaHandle.rdevInfo.phyId = 32767;
@@ -1031,7 +1031,7 @@ void TcRaCreateCompChannel()
     RaCreateCompChannel(rdmaHandle, &compChannel);
     RaDestroyCompChannel(rdmaHandle, compChannel);
 
-    struct RaRdmaOps ops;
+    struct RaRdmaOps ops = {0};
     ops.raCreateCompChannel = RaPeerCreateCompChannel;
     ops.raDestroyCompChannel = RaPeerDestroyCompChannel;
     RaRdmaHandle.rdmaOps = &ops;
@@ -1067,8 +1067,8 @@ void TcRaGetCqeErrInfo()
 
 void TcRaRdevGetCqeErrInfoList()
 {
-    struct RaRdmaHandle raRdmaHandle;
-    struct CqeErrInfo info[128] = {0};
+    struct RaRdmaHandle raRdmaHandle = {0};
+    struct CqeErrInfo info[128] = {{0}};
     unsigned int num = 128;
     int ret;
 
@@ -1094,8 +1094,8 @@ void TcRaRdevGetCqeErrInfoList()
 void TcRaRsGetIfnum()
 {
     int ret;
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int rcvBufLen = 300;
 
     char inBuf[512];
@@ -1109,7 +1109,7 @@ void TcRaRsGetIfnum()
 
 void TcRaCreateSrq()
 {
-    struct RaRdmaHandle RaRdmaHandle;
+    struct RaRdmaHandle RaRdmaHandle = {0};
     void *rdmaHandle = (void *)&RaRdmaHandle;
     RaRdmaHandle.rdevIndex = 0;
     RaRdmaHandle.rdevInfo.phyId = 32767;
@@ -1122,7 +1122,7 @@ void TcRaCreateSrq()
     RaCreateSrq(rdmaHandle, &attr);
     RaDestroySrq(rdmaHandle, &attr);
 
-    struct RaRdmaOps ops;
+    struct RaRdmaOps ops = {0};
     ops.raCreateSrq = RaPeerCreateSrq;
     ops.raDestroySrq = RaPeerDestroySrq;
     RaRdmaHandle.rdmaOps = &ops;
@@ -1148,8 +1148,8 @@ void TcRaRsSocketPortIsUse()
 
     char* inBuf = calloc(1, size);
     char* outBuf = calloc(1, size);
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
 
     memcpy(inBuf + sizeof(struct MsgHead), &socketConnectData, sizeof(union OpSocketConnectData));
     memcpy(outBuf + sizeof(struct MsgHead), &socketConnectData, sizeof(union OpSocketConnectData));
@@ -1203,8 +1203,8 @@ void TcRaRsGetVnicIpInfosV1()
 
     char* inBuf = calloc(1, size);
     char* outBuf = calloc(1, size);
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
 
     memcpy(inBuf + sizeof(struct MsgHead), &vnicInfos, sizeof(union OpGetVnicIpInfosDataV1));
     memcpy(outBuf + sizeof(struct MsgHead), &vnicInfos, sizeof(union OpGetVnicIpInfosDataV1));
@@ -1228,8 +1228,8 @@ void TcRaRsGetVnicIpInfos()
 
     char* inBuf = calloc(1, size);
     char* outBuf = calloc(1, size);
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
 
     memcpy(inBuf + sizeof(struct MsgHead), &vnicInfos, sizeof(union OpGetVnicIpInfosData));
     memcpy(outBuf + sizeof(struct MsgHead), &vnicInfos, sizeof(union OpGetVnicIpInfosData));
@@ -1244,8 +1244,8 @@ void TcRaRsGetVnicIpInfos()
 void TcRaRsTypicalMrReg()
 {
     int ret;
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int rcvBufLen = 300;
 
     char inBuf[512];
@@ -1265,8 +1265,8 @@ void TcRaRsTypicalMrReg()
 void TcRaRsTypicalQpCreate()
 {
     int ret;
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int rcvBufLen = 300;
 
     char inBuf[512];
@@ -1295,7 +1295,7 @@ void TcRaHdcRecvHandleSendPktUnsuccess()
 void TcRaGetTlsEnable()
 {
     struct RaInfo info = {0};
-    bool tlsEnable;
+    bool tlsEnable = false;
     int ret;
 
     info.mode = NETWORK_PEER_ONLINE;
@@ -1343,8 +1343,8 @@ void TcRaRsGetSecRandom()
 
     char* inBuf = calloc(1, size);
     char* outBuf = calloc(1, size);
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int ret;
 
     memcpy(inBuf + sizeof(struct MsgHead), &opData , sizeof(union OpGetSecRandomData));
@@ -1365,8 +1365,8 @@ void TcRaRsGetTlsEnable()
 
     char* inBuf = calloc(1, size);
     char* outBuf = calloc(1, size);
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int ret;
 
     memcpy(inBuf + sizeof(struct MsgHead), &opData , sizeof(union OpGetTlsEnableData));
@@ -1417,8 +1417,8 @@ void TcRaRsGetHccnCfg()
 
     char* inBuf = calloc(1, size);
     char* outBuf = calloc(1, size);
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int ret;
 
     memcpy(inBuf + sizeof(struct MsgHead), &opData , sizeof(union OpGetHccnCfgData));
@@ -1434,7 +1434,7 @@ void TcRaRsGetHccnCfg()
 
 void TcRaSaveSnapshotInput()
 {
-    enum SaveSnapshotAction action;
+    enum SaveSnapshotAction action = 0;
     struct RaInfo *info = NULL;
     int ret;
 

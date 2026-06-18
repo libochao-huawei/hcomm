@@ -114,7 +114,7 @@ void TcRsNslbInit()
 {
     unsigned int bufferSize = 0;
     unsigned int phyId = 0;
-    int ret;
+    int ret = 0;
 
     mocker_invoke(RsGetRsCb, StubRsGetRsCbV2, 10);
     mocker(calloc, 10, NULL);
@@ -132,7 +132,7 @@ void TcRsNslbInit()
 void TcRsNslbDeinit()
 {
     unsigned int phyId = 0;
-    int ret;
+    int ret = 0;
 
     mocker_invoke(RsGetTlvCb, StubRsGetNslbCbDeinit, 10);
     ret = RsTlvDeinit(phyId);
@@ -149,9 +149,9 @@ void TcRsNslbRequest()
 {
     struct TlvRequestMsgHead head = {0};
     unsigned int bufferSize = 0;
-    char *dataOut;
-    char *dataIn;
-    int ret;
+    char *dataOut = NULL;
+    char *dataIn = NULL;
+    int ret = 0;
 
     head.phyId = 0;
     head.type = 0;
@@ -187,11 +187,11 @@ void TcRsNslbRequest()
 
 void TcRsTlvAssembleSendData()
 {
-    struct TlvRequestMsgHead head;
-    struct TlvBufInfo bufInfo;
-    bool sendFinish;
+    struct TlvRequestMsgHead head = {0};
+    struct TlvBufInfo bufInfo = {0};
+    bool sendFinish = false;
     char data[16] = {0};
-    int ret;
+    int ret = 0;
 
     bufInfo.bufferSize = RS_TLV_BUFFER_SIZE;
     bufInfo.buf = (char *)calloc(RS_TLV_BUFFER_SIZE, sizeof(char));
@@ -235,9 +235,9 @@ void TcRsTlvAssembleSendData()
 
 void TcRsEpollNslbEventHandle()
 {
-    struct epoll_event testEvents;
+    struct epoll_event testEvents = {0};
     struct rs_cb testRsCb = {0};
-    int ret;
+    int ret = 0;
 
     testRsCb.tlvCb.nslbCb.initFlag = true;
     testEvents.events = 0;
@@ -261,8 +261,8 @@ void TcRsEpollNslbEventHandle()
 void TcRsGetTlvCb()
 {
     struct RsTlvCb *tlvCb = NULL;
-    uint32_t phyId;
-    int ret;
+    uint32_t phyId = 0;
+    int ret = 0;
 
     mocker_invoke(RsGetRsCb, StubRsGetRsCbV2, 10);
     ret = RsGetTlvCb(phyId, &tlvCb);
@@ -275,9 +275,9 @@ void TcRsNslbApiInit()
     NetCoIpPortArg arg = {0};
     unsigned int dataLen = 0;
     unsigned int type = 0;
-    void *stubCo;
-    char *data;
-    int ret;
+    void *stubCo = NULL;
+    char *data = NULL;
+    int ret = 0;
 
     RsNetcoInit(0, arg);
 
@@ -293,7 +293,7 @@ void TcRsCcuRequest()
     char dataOut[MAX_TLV_MSG_DATA_LEN];
     char dataIn[MAX_TLV_MSG_DATA_LEN];
     unsigned int bufferSize = 0;
-    int ret;
+    int ret = 0;
 
     head.type = MSG_TYPE_CCU_INIT;
     mocker(RsCcuInit, 10, -1);

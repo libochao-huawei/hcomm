@@ -670,7 +670,7 @@ extern int RaRsSendWrListExtV2(char *inBuf, char *outBuf, int *outLen, int *opRe
 extern int RaRsSendWrListExt(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 void TcSetNotifyCfg()
 {
-    int result;
+    int result = 0;
     mocker_clean();
     unsigned int size = sizeof(union OpNotifyCfgSetData) + sizeof(struct MsgHead);
     char *inBuf = calloc(1, size);
@@ -689,7 +689,7 @@ void TcSetNotifyCfg()
 
 void TcGetNotifyCfg()
 {
-    int result;
+    int result = 0;
     mocker_clean();
     unsigned int size = sizeof(union OpNotifyCfgGetData) + sizeof(struct MsgHead);
     char *inBuf = calloc(1, size);
@@ -730,8 +730,8 @@ void TcRaRsSendWrListV2()
     char* inBuf = (char*)(&sendWrlist);
     char* outBuf = (char*)(&sendWrlistOut);
 
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int rcvBufLen = 0;
 
     RaRsSendWrListV2(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
@@ -757,8 +757,8 @@ void TcRaRsSendWrList()
     char* inBuf = (char*)(&sendWrlist);
     char* outBuf = (char*)(&sendWrlistOut);
 
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int rcvBufLen = 0;
 
     RaRsSendWrList(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
@@ -789,8 +789,8 @@ void TcRaRsSendWrListExtV2()
     char* inBuf = (char*)(&sendWrlist);
     char* outBuf = (char*)(&sendWrlistOut);
 
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int rcvBufLen = 0;
 
     RaRsSendWrListExtV2(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
@@ -819,8 +819,8 @@ void TcRaRsSendWrListExt()
     char* inBuf = (char*)(&sendWrlist);
     char* outBuf = (char*)(&sendWrlistOut);
 
-    int outLen;
-    int opResult;
+    int outLen = 0;
+    int opResult = 0;
     int rcvBufLen = 0;
 
     RaRsSendWrListExt(inBuf, outBuf, &outLen, &opResult, rcvBufLen);

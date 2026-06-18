@@ -110,7 +110,7 @@ void TcHost()
     rdevInfo.phyId = 0;
     rdevInfo.family = AF_INET;
     rdevInfo.localIp.addr.s_addr = 0;
-    struct MrInfoT mrInfo;
+    struct MrInfoT mrInfo = {0};
     mocker((stub_fn_t)HdcSendRecvPkt, 200, 0);
     mocker_invoke(RaHdcGetInterfaceVersion, RaGetInterfaceVersionStub, 200);
     gInterfaceVersion = 2;
@@ -243,7 +243,7 @@ void TcHost()
     int devid = 0;
     int raCaseOther = 2;
     unsigned int remoteIp[1] = {0};
-    struct SocketWlistInfoT whiteList[1];
+    struct SocketWlistInfoT whiteList[1] = {{0}};
     int flag = 0;
     int port = 0;
     int timeout = 0;
@@ -262,10 +262,10 @@ void TcHost()
     unsigned long pa = 1;
     unsigned long long va = 1;
     int sockFd = 1;
-    struct RaRdmaOps rdmaOps;
+    struct RaRdmaOps rdmaOps = {0};
 
     struct SocketHdcInfo *hdcSocketHandle = calloc(1, sizeof(struct SocketHdcInfo));
-    struct SocketConnectInfoT conn[1];
+    struct SocketConnectInfoT conn[1] = {{0}};
     conn[0].socketHandle = NULL;
     RaSocketBatchConnect(conn, 1);
     RaSocketBatchClose((struct SocketCloseInfoT *)conn, 1);
@@ -453,12 +453,12 @@ void TcHost()
     struct RaQpHandle *qpHandleWithAttr = NULL;
     struct RaQpHandle *typicalQpHandle = NULL;
     struct RaQpHandle *aiQpHandle = NULL;
-    struct AiQpInfo info;
+    struct AiQpInfo info = {0};
     ret = RaQpCreateWithAttrs(rdmaHandle, NULL, (void **)&qpHandleWithAttr);
     EXPECT_INT_NE(0, ret);
     ret = RaAiQpCreate(rdmaHandle, NULL, &info, (void **)&aiQpHandle);
     EXPECT_INT_NE(0, ret);
-    struct QpExtAttrs extAttrs;
+    struct QpExtAttrs extAttrs = {0};
     extAttrs.version = 0;
     ret = RaQpCreateWithAttrs(rdmaHandle, &extAttrs, (void **)&qpHandleWithAttr);
     EXPECT_INT_NE(0, ret);
@@ -551,7 +551,7 @@ void TcHost()
 
     ret = RaGetNotifyBaseAddr(rdmaHandle, &va, &size);
     EXPECT_INT_EQ(0, ret);
-    struct MrInfoT mrInfo2;
+    struct MrInfoT mrInfo2 = {0};
     ret = RaGetNotifyMrInfo(rdmaHandle, &mrInfo2);
     EXPECT_INT_EQ(0, ret);
 
@@ -930,11 +930,11 @@ void TcRaRecvWrlist(void)
 
 void TcHostRaSendWrlistExt()
 {
-    struct RaQpHandle qpHandle;
+    struct RaQpHandle qpHandle = {0};
     qpHandle.rdmaOps = NULL;
 
-    struct SendWrlistDataExt wr[1];
-    struct SendWrRsp opRsp[1];
+    struct SendWrlistDataExt wr[1] = {{0}};
+    struct SendWrRsp opRsp[1] = {{0}};
 
     unsigned int completeNum;
 
@@ -950,11 +950,11 @@ int RaSendNormalWrlistStub(struct RaQpHandle *qpHandle, struct WrInfo wr[], stru
 void TcHostRaSendNormalWrlist()
 {
     struct RaRdmaOps rdmaOps = {0};
-    struct RaQpHandle qpHandle;
-    struct SendWrRsp opRsp[1];
+    struct RaQpHandle qpHandle = {0};
+    struct SendWrRsp opRsp[1] = {{0}};
     qpHandle.rdmaOps = NULL;
     unsigned int completeNum;
-    struct WrInfo wr[1];
+    struct WrInfo wr[1] = {{0}};
     int ret = 0;
 
     ret = RaSendNormalWrlist(&qpHandle, wr, opRsp, 1, &completeNum);
@@ -982,7 +982,7 @@ void TcRaSetQpAttrQos()
 {
     int ret;
     struct QosAttr attr = {0};
-    struct RaQpHandle qpHandle;
+    struct RaQpHandle qpHandle = {0};
     qpHandle.rdmaOps = NULL;
 
     ret = RaSetQpAttrQos(NULL, &attr);
@@ -1022,7 +1022,7 @@ void TcRaSetQpAttrTimeout()
 {
    int ret;
     unsigned int timeout = 0;
-    struct RaQpHandle qpHandle;
+    struct RaQpHandle qpHandle = {0};
     qpHandle.rdmaOps = NULL;
 
     ret = RaSetQpAttrTimeout(NULL, &timeout);
@@ -1061,7 +1061,7 @@ void TcRaSetQpAttrRetryCnt()
 {
     int ret;
     unsigned int retryCnt = 0;
-    struct RaQpHandle qpHandle;
+    struct RaQpHandle qpHandle = {0};
     qpHandle.rdmaOps = NULL;
 
     ret = RaSetQpAttrRetryCnt(NULL, &retryCnt);
@@ -1247,7 +1247,7 @@ int RaSocketBatchAbortStub(unsigned int phyId, struct SocketConnectInfoT conn[],
 void TcRaSocketBatchAbort(void)
 {
     int ret;
-    unsigned int phyId;
+    unsigned int phyId = 0;
     struct SocketConnectInfoT conn = {0};
     struct RaSocketHandle socketHandle = {0};
     struct RaSocketOps socketOps = {0};

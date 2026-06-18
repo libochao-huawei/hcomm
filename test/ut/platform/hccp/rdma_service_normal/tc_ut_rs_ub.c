@@ -132,11 +132,11 @@ void RsUbFreeJettyCbBatchStub(struct JettyDestroyBatchInfo *batchInfo,
 
 void TcRsUbGetRdevCb()
 {
-    struct RsUbDevCb *rdevCbOut;
+    struct RsUbDevCb *rdevCbOut = NULL;
     struct RsUbDevCb rdevCb = {0};
     unsigned int rdevIndex = 0;
-    struct rs_cb rsCb;
-    int ret;
+    struct rs_cb rsCb = {0};
+    int ret = 0;
 
     RS_INIT_LIST_HEAD(&rsCb.udevList);
     RsListAddTail(&rdevCb.list, &rsCb.udevList);
@@ -153,7 +153,7 @@ void TcRsUbGetRdevCb()
 
 void TcRsUrmaApiInitAbnormal()
 {
-    int ret;
+    int ret = 0;
 
     mocker(RsOpenUrmaSo, 100, 0);
     mocker(RsUrmaDeviceApiInit, 100, -1);
@@ -207,7 +207,7 @@ void TcRsUbV2()
     struct rs_cb rscb = {0};
     unsigned long long tokenIdAddr = 0;
     unsigned int tokenIdNum = 0;
-    unsigned int devIndex;
+    unsigned int devIndex = 0;
     int ret = 0;
 
     struct MemRegAttrT lmemAttr = {0};
@@ -270,9 +270,9 @@ urma_device_t **TcRsUrmaGetDeviceListStub(int *numDevices)
 
 void TcRsUbGetDevEidInfoNum()
 {
-    int ret;
-    unsigned int phyId;
-    unsigned int num;
+    int ret = 0;
+    unsigned int phyId = 0;
+    unsigned int num = 0;
 
     phyId = RS_MAX_DEV_NUM;
     ret = RsUbGetDevEidInfoNum(phyId, &num);
@@ -320,10 +320,10 @@ urma_eid_info_t *RsUrmaGetEidListStub2(urma_device_t *dev, uint32_t *cnt)
 
 void TcRsUbGetDevEidInfoList()
 {
-    int ret;
-    unsigned int phyId;
-    unsigned int startIndex;
-    unsigned int count;
+    int ret = 0;
+    unsigned int phyId = 0;
+    unsigned int startIndex = 0;
+    unsigned int count = 0;
     struct HccpDevEidInfo infoList[1] = {0};
 
     phyId = 0;
@@ -397,11 +397,11 @@ void TcRsUbGetDevEidInfoList()
 
 struct rs_cb *TcRsUbV2Init(int mode, unsigned int *devIndex)
 {
-    int ret;
+    int ret = 0;
     struct DevBaseAttr attr = {0};
     struct RsInitConfig cfg = {0};
     struct CtxInitAttr info = {0};
-    struct rs_cb *rsCb;
+    struct rs_cb *rsCb = NULL;
     cfg.hccpMode = mode;
 
     ret = RsInit(&cfg);
@@ -418,7 +418,7 @@ struct rs_cb *TcRsUbV2Init(int mode, unsigned int *devIndex)
 
 void TcRsUbV2Deinit(struct rs_cb *rsCb, int mode, unsigned int devIndex)
 {
-    int ret;
+    int ret = 0;
     struct RsInitConfig cfg = {0};
     cfg.hccpMode = mode;
     struct RsUbDevCb *devCb = NULL;
@@ -445,9 +445,9 @@ void TcRsUbCtxTokenIdAlloc1()
     unsigned long long addr = 0;
     unsigned int devIndex = 0;
     unsigned int tokenId = 0;
-    struct rs_cb *tcRsCb;
+    struct rs_cb *tcRsCb = NULL;
     struct RsUbDevCb *devCb = NULL;
-    int ret;
+    int ret = 0;
 
     tcRsCb = TcRsUbV2Init(NETWORK_OFFLINE, &devIndex);
 
@@ -468,9 +468,9 @@ void TcRsUbCtxTokenIdAlloc2()
     unsigned long long addr = 0;
     unsigned int devIndex = 0;
     unsigned int tokenId = 0;
-    struct rs_cb *tcRsCb;
+    struct rs_cb *tcRsCb = NULL;
     struct RsUbDevCb *devCb = NULL;
-    int ret;
+    int ret = 0;
 
     tcRsCb = TcRsUbV2Init(NETWORK_OFFLINE, &devIndex);
 
@@ -491,9 +491,9 @@ void TcRsUbCtxTokenIdAlloc3()
     unsigned int devIndex = 0;
     unsigned int tokenId = 0;
     unsigned int tokenId1 = 0;
-    struct rs_cb *tcRsCb;
+    struct rs_cb *tcRsCb = NULL;
     struct RsUbDevCb *devCb = NULL;
-    int ret;
+    int ret = 0;
 
     tcRsCb = TcRsUbV2Init(NETWORK_OFFLINE, &devIndex);
 
@@ -517,13 +517,13 @@ void TcRsUbCtxTokenIdAlloc3()
 
 void TcRsUbCtxJfceCreate()
 {
-    union DataPlaneCstmFlag dataPlaneFlag;
+    union DataPlaneCstmFlag dataPlaneFlag = {0};
     struct RsUbDevCb *devCb = NULL;
     unsigned long long addr = 0;
     unsigned int devIndex = 0;
-    struct rs_cb *tcRsCb;
+    struct rs_cb *tcRsCb = NULL;
     int fd = 0;
-    int ret;
+    int ret = 0;
 
     mocker_clean();
     tcRsCb = TcRsUbV2Init(NETWORK_OFFLINE, &devIndex);
@@ -543,9 +543,9 @@ void TcRsUbCtxJfceCreate()
 
 void TcRsUbCtxJfcCreate()
 {
-    int ret;
+    int ret = 0;
     unsigned int devIndex = 0;
-    struct rs_cb *tcRsCb;
+    struct rs_cb *tcRsCb = NULL;
     struct CtxCqAttr attr = {0};
     struct CtxCqInfo info = {0};
     struct RsUbDevCb *devCb = NULL;
@@ -596,7 +596,7 @@ void TcRsUbCtxJfcCreateNormal()
     urma_jfc_cfg_t jfcCfg = {0};
     urma_jfc_t *outJfc = NULL;
     urma_jfce_t jfce = {0};
-    int ret;
+    int ret = 0;
 
     gJfceCb.jfceAddr = 1;
     jfcCfg.jfce = (urma_jfce_t *)(uintptr_t)gJfceCb.jfceAddr;
@@ -628,9 +628,9 @@ void TcRsUbCtxJfcCreateNormal()
 
 void TcRsUbCtxJettyCreate()
 {
-    int ret;
+    int ret = 0;
     unsigned int devIndex = 0;
-    struct rs_cb *tcRsCb;
+    struct rs_cb *tcRsCb = NULL;
     struct CtxQpAttr qpAttr = {0};
     struct QpCreateInfo qpInfo = {0};
     struct CtxCqAttr cqAttr = {0};
@@ -699,9 +699,9 @@ void TcRsUbCtxJettyCreate()
 
 void TcRsUbCtxJettyImport()
 {
-    int ret;
+    int ret = 0;
     unsigned int devIndex = 0;
-    struct rs_cb *tcRsCb;
+    struct rs_cb *tcRsCb = NULL;
     struct RsUbDevCb *devCb = NULL;
     struct CtxQpAttr qpAttr = {0};
     struct QpCreateInfo qpInfo = {0};
@@ -739,9 +739,9 @@ void TcRsUbCtxJettyImport()
 
 void TcRsUbCtxJettyBind()
 {
-    int ret;
+    int ret = 0;
     unsigned int devIndex = 0;
-    struct rs_cb *tcRsCb;
+    struct rs_cb *tcRsCb = NULL;
     struct RsUbDevCb *devCb = NULL;
     struct CtxQpAttr qpAttr = {0};
     struct QpCreateInfo qpInfo = {0};
@@ -833,9 +833,9 @@ void TcRsUbCtxJettyBind()
 
 void TcRsUbCtxBatchSendWr()
 {
-    int ret;
+    int ret = 0;
     unsigned int devIndex = 0;
-    struct rs_cb *tcRsCb;
+    struct rs_cb *tcRsCb = NULL;
     struct CtxQpAttr qpAttr = {0};
     struct QpCreateInfo qpInfo = {0};
     struct CtxCqAttr cqAttr = {0};
@@ -948,9 +948,9 @@ void TcRsUbCtxBatchSendWr()
 
 void TcRsUbFreeCbList()
 {
-    int ret;
+    int ret = 0;
     unsigned int devIndex = 0;
-    struct rs_cb *tcRsCb;
+    struct rs_cb *tcRsCb = NULL;
     struct CtxQpAttr qpAttr = {0};
     struct QpCreateInfo qpInfo = {0};
     struct CtxCqAttr cqAttr = {0};
@@ -967,7 +967,7 @@ void TcRsUbFreeCbList()
     unsigned int tokenId = 0;
     unsigned int completeNum = 0;
     struct RsUbDevCb *devCb = NULL;
-    union DataPlaneCstmFlag dataPlaneFlag;
+    union DataPlaneCstmFlag dataPlaneFlag = {0};
     int fd = 0;
 
     tcRsCb = TcRsUbV2Init(NETWORK_OFFLINE, &devIndex);
@@ -1038,7 +1038,7 @@ void TcRsUbCtxRmemImport()
     struct MemImportAttrT rmemAttr = {0};
     struct MemImportInfoT rmemInfo = {0};
     struct RsUbDevCb devCb = {0};
-    int ret;
+    int ret = 0;
 
     mocker(RsUbGetDevCb, 2, 0);
     mocker(memcpy_s, 2, -1);
@@ -1132,7 +1132,7 @@ void TcRsUbCtxExtJettyDelete()
 
 void TcRsUbCtxChanCreate()
 {
-    union DataPlaneCstmFlag dataPlaneFlag;
+    union DataPlaneCstmFlag dataPlaneFlag = {0};
     struct RsUbDevCb devCb = {0};
     unsigned long long addr = 0;
     struct rs_cb rsCb = {0};
@@ -1313,7 +1313,7 @@ void TcRsUbCtxJettyDestroyBatch()
     struct RsUbDevCb devCb = {0};
     unsigned int jettyIds[1] = {0};
     unsigned int num = 0;
-    int ret;
+    int ret = 0;
 
     ret = RsUbCtxJettyDestroyBatch(&devCb, jettyIds, &num);
     EXPECT_INT_EQ(-EINVAL, ret);
@@ -1399,11 +1399,11 @@ void TcRsUbCtxJettyDestroyBatch()
 
 void TcRsUbCtxQueryJettyBatch()
 {
-    struct RsUbDevCb devCb;
+    struct RsUbDevCb devCb = {0};
     unsigned int jettyIds[] = {1, 2, 3};
-    struct JettyAttr attr[3];
+    struct JettyAttr attr[3] = {{0}};
     unsigned int num = 3;
-    int ret;
+    int ret = 0;
 
     mocker(RsUbGetJettyCb, 1, -1);
     ret = RsUbCtxQueryJettyBatch(&devCb, jettyIds, attr, &num);
@@ -1524,7 +1524,7 @@ void TcRsUbGetTpAttr()
     unsigned int attrBitmap = 0b101010;
     uint64_t tpHandle = 12345;
     struct TpAttr attr = {0};
-    int ret;
+    int ret = 0;
 
     mocker(RsUrmaGetTpAttr, 1, -1);
     ret = RsUbGetTpAttr(&devCb, &attrBitmap, tpHandle, &attr);
@@ -1537,11 +1537,11 @@ void TcRsUbGetTpAttr()
 
 void TcRsUbSetTpAttr()
 {
-    struct RsUbDevCb devCb;
+    struct RsUbDevCb devCb = {0};
     unsigned int attrBitmap = 0b101010;
     uint64_t tpHandle = 12345;
-    struct TpAttr attr;
-    int ret;
+    struct TpAttr attr = {0};
+    int ret = 0;
 
     mocker(RsUrmaSetTpAttr, 1, -1);
     ret = RsUbSetTpAttr(&devCb, attrBitmap, tpHandle, &attr);

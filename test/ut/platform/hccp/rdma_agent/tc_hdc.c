@@ -229,7 +229,7 @@ void TcHdcDeinitFail()
 
 void TcHdcSocketBatchConnect()
 {
-    struct SocketConnectInfoT conn[1];
+    struct SocketConnectInfoT conn[1] = {{0}};
     mocker_clean();
     TcHdcTestEnvInit();
 
@@ -356,7 +356,7 @@ void TcHdcSocketBatchAbort()
 
 void TcHdcSocketListenStop()
 {
-    struct SocketListenInfoT conn[1];
+    struct SocketListenInfoT conn[1] = {{0}};
     struct RaSocketHandle socketHandle = {0};
     conn[0].socketHandle = &socketHandle;
 
@@ -422,7 +422,7 @@ void TcHdcGetSockets()
 
 void TcHdcSocketSend()
 {
-    struct SocketHdcInfo socketInfo;
+    struct SocketHdcInfo socketInfo = {0};
     char sendBuf[16] = {0};
 
     mocker_clean();
@@ -465,7 +465,7 @@ void TcHdcSocketSend()
 
 void TcHdcSocketRecv()
 {
-    struct SocketHdcInfo socketInfo;
+    struct SocketHdcInfo socketInfo = {0};
     char sendBuf[16] = {0};
 
     mocker_clean();
@@ -532,7 +532,7 @@ void TcHdcGetQpStatus()
     TcHdcTestEnvDeinit();
 
     mocker_clean();
-    struct RaQpHandle testQpHandle;
+    struct RaQpHandle testQpHandle = {0};
     testQpHandle.phyId = gDevid;
     mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcGetQpStatus(&testQpHandle, &status);
@@ -580,7 +580,7 @@ void TcHdcMrDereg()
 
     mocker_clean();
     mocker((stub_fn_t)calloc, 1, NULL);
-    struct RaQpHandle testQpHandle;
+    struct RaQpHandle testQpHandle = {0};
     ret = RaHdcMrDereg(&testQpHandle, (struct MrInfoT *)qpReg);
     EXPECT_INT_NE(ret, 0);
 }
@@ -616,14 +616,14 @@ int StubRaHdcProcessMsgWrlist3(unsigned int opcode, int deviceId, char *data, un
 void TcHdcSendWrlistV2()
 {
     mocker_clean();
-    struct SendWrlistData wrlist[1];
-    struct SendWrRsp opRsp[1];
-    struct WrlistSendCompleteNum wrlistNum;
+    struct SendWrlistData wrlist[1] = {{0}};
+    struct SendWrRsp opRsp[1] = {{0}};
+    struct WrlistSendCompleteNum wrlistNum = {0};
     unsigned int completeNum = 0;
     wrlistNum.sendNum = 1;
     wrlistNum.completeNum = &completeNum;
 
-    struct RaQpHandle handle;
+    struct RaQpHandle handle = {0};
     handle.qpMode = 1;
 
     mocker_invoke((stub_fn_t)RaHdcProcessMsg, (stub_fn_t)StubRaHdcProcessMsgWrlist, 1);
@@ -678,14 +678,14 @@ void TcHdcSendWrlistV2()
 void TcHdcSendWrlist()
 {
     mocker_clean();
-    struct SendWrlistData wrlist[1];
-    struct SendWrRsp opRsp[1];
-    struct WrlistSendCompleteNum wrlistNum;
+    struct SendWrlistData wrlist[1] = {{0}};
+    struct SendWrRsp opRsp[1] = {{0}};
+    struct WrlistSendCompleteNum wrlistNum = {0};
     unsigned int completeNum = 0;
     wrlistNum.sendNum = 1;
     wrlistNum.completeNum = &completeNum;
 
-    struct RaQpHandle handle;
+    struct RaQpHandle handle = {0};
     handle.qpMode = 1;
 
     mocker_invoke((stub_fn_t)RaHdcProcessMsg, (stub_fn_t)StubRaHdcProcessMsgWrlist, 1);
@@ -799,7 +799,7 @@ void TcHdcSendWr()
     mocker((stub_fn_t)halHdcRecv, 10, 0);
     TcHdcTestEnvDeinit();
 
-    struct RaQpHandle testQpHandle;
+    struct RaQpHandle testQpHandle = {0};
     mocker_clean();
     mocker((stub_fn_t)memcpy_s, 1, -1);
     ret = RaHdcSendWr(&testQpHandle, &wr, &rsp);
@@ -829,7 +829,7 @@ void TcHdcGetNotifyBaseAddr()
     EXPECT_INT_EQ(ret, 0);
     TcHdcTestEnvDeinit();
 
-    struct RaQpHandle testQpHandle;
+    struct RaQpHandle testQpHandle = {0};
     mocker_clean();
     mocker((stub_fn_t)calloc, 1, NULL);
     ret = RaHdcGetNotifyBaseAddr((struct RaRdmaHandle *)&testQpHandle, &va, &size);
@@ -1257,7 +1257,7 @@ void TcHdcMessageProcessFail()
 
 void TcHdcSocketRecvFail()
 {
-    struct SocketHdcInfo socketInfo;
+    struct SocketHdcInfo socketInfo = {0};
     char sendBuf[16] = {0};
 
     mocker_clean();
@@ -1289,18 +1289,18 @@ extern void RaHdcSendWrlistExtInit(union OpSendWrlistDataExt *sendWrlist, struct
 void TcRaHdcSendWrlistExtInitV2()
 {
     union OpSendWrlistDataExtV2 sendWrlist;
-    struct RaQpHandle qpHdc;
+    struct RaQpHandle qpHdc = {0};
     unsigned int completeCnt;
-    struct WrlistSendCompleteNum wrlistNum;
+    struct WrlistSendCompleteNum wrlistNum = {0};
     RaHdcSendWrlistExtInitV2(&sendWrlist, &qpHdc, completeCnt, wrlistNum);
 }
 
 void TcRaHdcSendWrlistExtInit()
 {
     union OpSendWrlistDataExt sendWrlist;
-    struct RaQpHandle qpHdc;
+    struct RaQpHandle qpHdc = {0};
     unsigned int completeCnt;
-    struct WrlistSendCompleteNum wrlistNum;
+    struct WrlistSendCompleteNum wrlistNum = {0};
     RaHdcSendWrlistExtInit(&sendWrlist, &qpHdc, completeCnt, wrlistNum);
 
     TcRaHdcSendWrlistExtInitV2();
@@ -1310,16 +1310,16 @@ void TcRaHdcSendWrlistExtV2()
 {
     mocker_clean();
 
-    struct RaQpHandle qpHandle;
+    struct RaQpHandle qpHandle = {0};
     int ret;
-    struct SendWrlistDataExt wr[1];
-    struct SendWrRsp opRsp[1];
-    struct WrlistSendCompleteNum wrlistNum;
+    struct SendWrlistDataExt wr[1] = {{0}};
+    struct SendWrRsp opRsp[1] = {{0}};
+    struct WrlistSendCompleteNum wrlistNum = {0};
     unsigned int completeNum = 0;
     wrlistNum.sendNum = 1;
     wrlistNum.completeNum = &completeNum;
 
-    struct RaQpHandle handle;
+    struct RaQpHandle handle = {0};
     handle.qpMode = 1;
 
     mocker_invoke((stub_fn_t)RaHdcProcessMsg, (stub_fn_t)StubRaHdcProcessMsgWrlist, 1);
@@ -1350,16 +1350,16 @@ void TcRaHdcSendWrlistExt()
 {
     mocker_clean();
 
-    struct RaQpHandle qpHandle;
+    struct RaQpHandle qpHandle = {0};
     int ret;
-    struct SendWrlistDataExt wr[1];
-    struct SendWrRsp opRsp[1];
-    struct WrlistSendCompleteNum wrlistNum;
+    struct SendWrlistDataExt wr[1] = {{0}};
+    struct SendWrRsp opRsp[1] = {{0}};
+    struct WrlistSendCompleteNum wrlistNum = {0};
     unsigned int completeNum = 0;
     wrlistNum.sendNum = 1;
     wrlistNum.completeNum = &completeNum;
 
-    struct RaQpHandle handle;
+    struct RaQpHandle handle = {0};
     handle.qpMode = 1;
 
     mocker_invoke((stub_fn_t)RaHdcProcessMsg, (stub_fn_t)StubRaHdcProcessMsgWrlist, 1);
@@ -1376,9 +1376,9 @@ void TcRaHdcSendWrlistExt()
 
 void TcRaHdcSendNormalWrlist()
 {
-    struct RaQpHandle qpHandle;
-    struct WrInfo wr[1];
-    struct SendWrRsp opRsp[1];
+    struct RaQpHandle qpHandle = {0};
+    struct WrInfo wr[1] = {{0}};
+    struct SendWrRsp opRsp[1] = {{0}};
     struct WrlistSendCompleteNum wrlistNum = { 0 };
     unsigned int completeNum = 0;
     wrlistNum.sendNum = 1;
@@ -1421,7 +1421,7 @@ void TcRaHdcSetQpAttrQos()
 
     mocker_clean();
     mocker((stub_fn_t)calloc, 1, NULL);
-    struct RaQpHandle testQpHandle;
+    struct RaQpHandle testQpHandle = {0};
     ret = RaHdcSetQpAttrQos(&testQpHandle, &attr);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
@@ -1447,7 +1447,7 @@ void TcRaHdcSetQpAttrTimeout()
 
     mocker_clean();
     mocker((stub_fn_t)calloc, 1, NULL);
-    struct RaQpHandle testQpHandle;
+    struct RaQpHandle testQpHandle = {0};
     ret = RaHdcSetQpAttrTimeout(&testQpHandle, &timeout);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
@@ -1473,7 +1473,7 @@ void TcRaHdcSetQpAttrRetryCnt()
 
     mocker_clean();
     mocker((stub_fn_t)calloc, 1, NULL);
-    struct RaQpHandle testQpHandle;
+    struct RaQpHandle testQpHandle = {0};
     ret = RaHdcSetQpAttrRetryCnt(&testQpHandle, &retryCnt);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
@@ -1488,7 +1488,7 @@ void TcRaHdcGetCqeErrInfo()
     ret = RaHdcGetCqeErrInfo(0, &info);
     EXPECT_INT_EQ(ret, 0);
 
-    struct RaQpHandle qpHdc;
+    struct RaQpHandle qpHdc = {0};
     qpHdc.phyId = 0;
     RaHdcLiteSaveCqeErrInfo(&qpHdc, 0x12);
     ret = RaHdcGetCqeErrInfo(0, &info);
@@ -1654,7 +1654,7 @@ void TcRaHdcQpCreateOp()
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
-    struct RaQpHandle qpHdc;
+    struct RaQpHandle qpHdc = {0};
     qpHdc.supportLite = 1;
     qpHdc.qpMode = 2;
     cap.max_inline_data = QP_DEFAULT_MAX_CAP_INLINE_DATA;
@@ -1699,7 +1699,7 @@ void TcRaHdcGetQpStatusOp()
 
     mocker_clean();
 
-    struct RaQpHandle qpHdc;
+    struct RaQpHandle qpHdc = {0};
     qpHdc.supportLite = 1;
     qpHdc.qpMode = 2;
     mocker((stub_fn_t)RaHdcProcessMsg, 10, -1);
@@ -1767,7 +1767,7 @@ void TcHdcSendWrOp()
     EXPECT_INT_EQ(ret, 0);
 
     unsigned int completeNum = 0;
-    struct WrlistSendCompleteNum wrlistNum;
+    struct WrlistSendCompleteNum wrlistNum = {0};
     wrlistNum.sendNum = 2;
     wrlistNum.completeNum = &completeNum;
     struct SendWrlistData wrlist[wrlistNum.sendNum];
@@ -1873,7 +1873,7 @@ void TcHdcLiteSendWrOp()
     EXPECT_INT_EQ(ret, 0);
 
     unsigned int completeNum = 0;
-    struct WrlistSendCompleteNum wrlistNum;
+    struct WrlistSendCompleteNum wrlistNum = {0};
     wrlistNum.sendNum = 2;
     wrlistNum.completeNum = &completeNum;
     struct SendWrlistData wrlist[wrlistNum.sendNum];

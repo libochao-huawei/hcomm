@@ -152,7 +152,7 @@ void TcRsPingInitDeinitUrma()
     struct PingInitInfo info = {0};
     struct RaRsDevInfo rdev = {0};
     unsigned int rdevIndex = 0;
-    int ret;
+    int ret = 0;
 
     mocker_invoke(RsGetRsCb, RsGetRsCbUrmaStub, 20);
     mocker(rsGetLocalDevIDByHostDevID, 20, 0);
@@ -184,7 +184,7 @@ void TcRsPingTargetAddDelUrma()
     struct PingTargetInfo  target = {0};
     struct RaRsDevInfo rdev = {0};
     unsigned int num = 1;
-    int ret;
+    int ret = 0;
 
     gTmpPingCb.taskStatus = RS_PING_TASK_RESET;
     RS_INIT_LIST_HEAD(&gTmpPingCb.pingList);
@@ -225,7 +225,7 @@ void TcRsPingUrmaPostSend()
     urma_jetty_t clientJetty = {0};
     void *addr = malloc(256);
     urma_sge_t sge = {0};
-    int ret;
+    int ret = 0;
 
     target.payloadBuffer = malloc(1);
     target.payloadSize = 1;
@@ -246,9 +246,9 @@ void TcRsPingUrmaPostSend()
 void TcRsPingClientPollCqUrma()
 {
     struct RsPingCtxCb pingCb = {0};
-    struct timeval timestamp2;
-    int polledCnt;
-    int ret;
+    struct timeval timestamp2 = {0};
+    int polledCnt = 0;
+    int ret = 0;
 
     mocker_clean();
     ret = RsPingUrmaPollRcq(&pingCb, &polledCnt, &timestamp2);
@@ -304,7 +304,7 @@ void TcRsPingUrmaPollScq()
 {
     struct RsPingTargetInfo  target = {0};
     struct RsPingCtxCb pingCb = {0};
-    int ret;
+    int ret = 0;
 
     ret = RsPingUrmaPollScq(&pingCb, &target);
     EXPECT_INT_EQ(ret, -61);
@@ -366,7 +366,7 @@ void TcRsEpollEventPingHandleUrma()
     urma_jfce_t pingJfce = {0};
     urma_jfce_t pongJfce = {0};
     struct rs_cb rscb = {0};
-    int ret;
+    int ret = 0;
 
     pongJfce.fd = 1;
     rscb.pingCb.initCnt = 1;
@@ -394,7 +394,7 @@ void TcRsPingGetResultsUrma()
     struct PingResultInfo result = {0};
     struct RaRsDevInfo rdev = {0};
     unsigned int num = 1;
-    int ret;
+    int ret = 0;
 
     gTmpPingCb.taskStatus = RS_PING_TASK_RESET;
     mocker_invoke(RsGetPingCb, RsGetPingCbUrmaStub, 1);
@@ -415,11 +415,11 @@ void TcRsPingGetResultsUrma()
 void TcRsPingServerPostSendUrma()
 {
     struct RsPingCtxCb pingCb = {0};
-    struct timeval timestamp2;
+    struct timeval timestamp2 = {0};
     void *sendAddr = malloc(TEST_SGE_LIST_LEN);
     void *recvAddr = malloc(TEST_SGE_LIST_LEN);
     urma_cr_t cr = {0};
-    int ret;
+    int ret = 0;
 
     cr.user_ctx = 1;
     mocker(RsPingCommonPollSendJfc, 1, 0);
@@ -472,7 +472,7 @@ void TcRsPongJettyFindAllocTargetNode()
     struct RsPongTargetInfo *node = NULL;
     struct RsPingCtxCb pingCb = {0};
     struct PingQpInfo target = {0};
-    int ret;
+    int ret = 0;
 
     mocker_invoke(RsPongJettyFindTargetNode, RsPongJettyFindTargetNodeStub2, 1);
     mocker(RsPingCommonImportJetty, 1, -1);
@@ -493,7 +493,7 @@ void TcRsPongJettyFindAllocTargetNode()
 void TcRsPingCommonPollSendJfc()
 {
     struct RsPingLocalQpCb qpCb = {0};
-    int ret;
+    int ret = 0;
 
     mocker(RsUrmaPollJfc, 1, -1);
     ret = RsPingCommonPollSendJfc((struct RsPingLocalJettyCb *)&qpCb);
@@ -512,7 +512,7 @@ void TcRsPongJettyFindTargetNode()
     struct RsPongTargetInfo *node = NULL;
     struct RsPingCtxCb pingCb = {0};
     struct PingQpInfo target = {0};
-    int ret;
+    int ret = 0;
 
     RS_INIT_LIST_HEAD(&pingCb.pongList);
     ret = RsPongJettyFindTargetNode(&pingCb, &target, &node);
@@ -529,7 +529,7 @@ void TcRsPongJettyResolveResponsePacket()
     struct timeval timestamp4 = {0};
     void *recvAddr = calloc(1, TEST_SGE_LIST_LEN);
     uint32_t sgeIdx = 0;
-    int ret;
+    int ret = 0;
 
     pingCb.pongJetty.recvSegCb.sgeList  = calloc(1, sizeof(urma_sge_t));
     pingCb.pongJetty.recvSegCb.sgeList ->addr = (uintptr_t)recvAddr;
@@ -576,7 +576,7 @@ void TcRsPingCommonImportJetty()
     urma_target_jetty_t *importTjetty = NULL;
     struct PingQpInfo target = {0};
     urma_context_t urmaCtx = {0};
-    int ret;
+    int ret = 0;
 
     mocker(RsGetJettyInfo, 1, 0);
     ret = RsPingCommonImportJetty(&urmaCtx, &target, &importTjetty);
@@ -597,7 +597,7 @@ void TcRsPingCommonJfrPostRecv()
 {
     struct RsPingLocalJettyCb jettyCb = {0};
     urma_sge_t sge = {0};
-    int ret;
+    int ret = 0;
 
     jettyCb.recvSegCb.sgeNum = 1;
     jettyCb.recvSegCb.sgeList  = &sge;

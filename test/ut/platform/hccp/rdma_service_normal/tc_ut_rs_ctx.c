@@ -226,7 +226,7 @@ void TcRsCtxRmemUnimport()
 
 void TcRsCtxChanCreate()
 {
-    union DataPlaneCstmFlag dataPlaneFlag;
+    union DataPlaneCstmFlag dataPlaneFlag = {0};
     struct RaRsDevInfo devInfo = {0};
     unsigned long long addr = 0;
     int ret = 0;
@@ -511,7 +511,7 @@ void TcRsCtxEsched()
 
 void TcDlCcuApiInit()
 {
-    int ret;
+    int ret = 0;
 
     ret = RsCcuDeviceApiInit();
     EXPECT_INT_EQ(ret, 0);
@@ -548,7 +548,7 @@ void TcRsCtxQpDestroyBatch()
     struct RaRsDevInfo devInfo = {0};
     unsigned int ids[] = {1, 2, 3};
     unsigned int num = 3;
-    int ret;
+    int ret = 0;
 
     ret = RsCtxQpDestroyBatch(NULL, ids, &num);
     EXPECT_INT_EQ(-EINVAL, ret);
@@ -576,10 +576,10 @@ void TcRsCtxQpDestroyBatch()
 void TcRsCtxQpQueryBatch()
 {
     struct RaRsDevInfo devInfo = {0};
-    struct JettyAttr attr[10];
+    struct JettyAttr attr[10] = {{0}};
     unsigned int ids[10];
-    unsigned int num;
-    int ret;
+    unsigned int num = 0;
+    int ret = 0;
 
     ret = RsCtxQpQueryBatch(NULL, ids, attr, &num);
     EXPECT_INT_EQ(-EINVAL, ret);
@@ -652,7 +652,7 @@ void TcRsNetFreeJettyId()
 
 void TcRsNetGetCqeBaseAddr()
 {
-    unsigned long long cqeBaseAddr;
+    unsigned long long cqeBaseAddr = 0;
     int ret = 0;
 
     ret = RsNetGetCqeBaseAddr(0, &cqeBaseAddr);
@@ -661,7 +661,7 @@ void TcRsNetGetCqeBaseAddr()
 
 void TcRsCcuGetCqeBaseAddr()
 {
-    unsigned long long cqeBaseAddr;
+    unsigned long long cqeBaseAddr = 0;
     int ret = 0;
 
     ret = RsCcuGetCqeBaseAddr(0, &cqeBaseAddr);
@@ -671,8 +671,8 @@ void TcRsCcuGetCqeBaseAddr()
 void TcRsCtxGetAuxInfo()
 {
     struct RaRsDevInfo devInfo = {0};
-    struct HccpAuxInfoIn infoIn;
-    struct HccpAuxInfoOut infoOut;
+    struct HccpAuxInfoIn infoIn = {0};
+    struct HccpAuxInfoOut infoOut = {0};
     int ret = 0;
 
     (void)memset_s(&infoOut, sizeof(struct HccpAuxInfoOut), 0, sizeof(struct HccpAuxInfoOut));
@@ -717,10 +717,10 @@ void TcRsCtxGetAuxInfo()
 void TcRsGetTpAttr()
 {
     struct RaRsDevInfo devInfo = {0};
-    unsigned int attrBitmap;
-    struct TpAttr attr;
-    uint64_t tpHandle;
-    int ret;
+    unsigned int attrBitmap = 0;
+    struct TpAttr attr = {0};
+    uint64_t tpHandle = 0;
+    int ret = 0;
 
     ret = RsGetTpAttr(NULL, &attrBitmap, tpHandle, &attr);
     EXPECT_INT_EQ(-EINVAL, ret);
@@ -748,10 +748,10 @@ void TcRsGetTpAttr()
 void TcRsSetTpAttr()
 {
     struct RaRsDevInfo devInfo = {0};
-    unsigned int attrBitmap;
-    struct TpAttr attr;
-    uint64_t tpHandle;
-    int ret;
+    unsigned int attrBitmap = 0;
+    struct TpAttr attr = {0};
+    uint64_t tpHandle = 0;
+    int ret = 0;
 
     ret = RsSetTpAttr(NULL, attrBitmap, tpHandle, &attr);
     EXPECT_INT_EQ(-EINVAL, ret);

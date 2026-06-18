@@ -57,13 +57,13 @@ void TcPeer()
     unsigned long pa = 0;
     unsigned long long va = 0;
     struct QpPeerInfo *qpInfo = NULL;
-    struct SocketConnectInfoT conn[1];
+    struct SocketConnectInfoT conn[1] = {{0}};
     struct SocketListenInfoT listen[1];
-    struct SocketInfoT info[1];
+    struct SocketInfoT info[1] = {{0}};
     struct SocketCloseInfoT close[1] = {0};
     int sockFd = 1;
-    void *qpHandle;
-    void *qpHandleWithAttr;
+    void *qpHandle = NULL;
+    void *qpHandleWithAttr = NULL;
     int status = 0;
     struct RaInitConfig config = {
         .phyId = devId,
@@ -71,7 +71,7 @@ void TcPeer()
         .hdcType = 0,
     };
     config.phyId = 0;
-    int ipAddr;
+    int ipAddr = 0;
     unsigned int hostTgid = 0;
     int qpMode = 0;
     struct rdev rdevInfo = {0};
@@ -87,13 +87,13 @@ void TcPeer()
     };
     struct RaRdmaHandle *rdmaHandle = &rdmaHandleTmp;
     struct RaSocketHandle *socketHandle = &socketHandleTmp;
-    struct SocketFdData rsConn[] = {0};
+    struct SocketFdData rsConn[] = {{0}};
 
     listen[0].socketHandle = socketHandle;
     conn[0].socketHandle = socketHandle;
     close[0].socketHandle = socketHandle;
     info[0].socketHandle = socketHandle;
-    struct QpExtAttrs extAttrs;
+    struct QpExtAttrs extAttrs = {0};
     extAttrs.version = QP_CREATE_WITH_ATTR_VERSION;
     extAttrs.qpMode = RA_RS_NOR_QP_MODE;
 
@@ -194,7 +194,7 @@ void TcPeer()
     ret = RaPeerGetQpStatus(qpHandle, &status);
     EXPECT_INT_EQ(0, ret);
 
-    struct MrInfoT mrInfo;
+    struct MrInfoT mrInfo = {0};
     mrInfo.addr = addr;
     mrInfo.size = size;
     mrInfo.access = access;
@@ -240,7 +240,7 @@ void TcPeer()
     ret = RaPeerRecvWrlist(qpHandle, &revWr, recvNum, &revCompleteNum);
     EXPECT_INT_EQ(0, ret);
 
-    unsigned long long notifySize;
+    unsigned long long notifySize = 0;
     ret = RaPeerGetNotifyBaseAddr(qpHandle, &va, &notifySize);
     EXPECT_INT_EQ(0, ret);
 
@@ -470,10 +470,10 @@ void TcPeer()
 
 void TcPeerFail()
 {
-    struct RaSocketHandle socketHandle;
+    struct RaSocketHandle socketHandle = {0};
     socketHandle.rdevInfo.phyId = 0;
     socketHandle.rdevInfo.family = 0;
-    struct SocketConnectInfoT conn[1];
+    struct SocketConnectInfoT conn[1] = {{0}};
     conn[0].socketHandle = &socketHandle;
     conn[0].port = 0;
     struct SocketConnectInfo rsConn[1] = {0};
@@ -529,9 +529,9 @@ void TcPeerFail()
     ret = RaPeerSocketRecv(0, &peerSocketHandle, NULL, 0);
     EXPECT_INT_EQ(0, ret);
 
-    struct rdev rdevInfo;
+    struct rdev rdevInfo = {0};
 	rdevInfo.phyId = 0;
-    struct SocketWlistInfoT whiteList[1];
+    struct SocketWlistInfoT whiteList[1] = {{0}};
     mocker((stub_fn_t)inet_ntoa, 10, NULL);
     RaPeerSocketWhiteListAdd(rdevInfo, whiteList, 1);
     RaPeerSocketWhiteListDel(rdevInfo, whiteList, 1);
@@ -617,13 +617,13 @@ void TcRaPeerEpollCtlDel()
 void TcRaPeerCqCreate()
 {
     int ret;
-    struct RaRdmaHandle rdmaHandle;
+    struct RaRdmaHandle rdmaHandle = {0};
     rdmaHandle.rdevInfo.phyId = 0;
     rdmaHandle.rdevIndex = 0;
 
-    struct ibv_cq *ibSendCq;
-    struct ibv_cq *ibRecvCq;
-    struct CqAttr attr;
+    struct ibv_cq *ibSendCq = NULL;
+    struct ibv_cq *ibRecvCq = NULL;
+    struct CqAttr attr = {0};
     attr.ibSendCq = &ibSendCq;
     attr.ibRecvCq = &ibRecvCq;
     attr.sendCqDepth = 16384;
@@ -655,8 +655,8 @@ void TcRaPeerNormalQpCreate()
 {
     int ret;
     struct RaQpHandle *qpHandle;
-    struct ibv_qp_init_attr qpInitAttr;
-    struct RaRdmaHandle rdmaHandle;
+    struct ibv_qp_init_attr qpInitAttr = {0};
+    struct RaRdmaHandle rdmaHandle = {0};
     rdmaHandle.rdevInfo.phyId = 0;
     rdmaHandle.rdevIndex = 0;
     void** qp = NULL;
@@ -742,7 +742,7 @@ void TcRaLoopbackQpCreate()
     EXPECT_INT_EQ((intptr_t)rdmaHandle, (intptr_t)rdmaHandle2);
     mocker_clean();
 
-    struct LoopbackQpPair qpPair;
+    struct LoopbackQpPair qpPair = {0};
     void *qpHandle = NULL;
 
     ret = RaLoopbackQpCreate(NULL, NULL, NULL);
@@ -784,7 +784,7 @@ void TcRaPeerLoopbackQpCreate()
         .rdevInfo = rdevInfo,
         .rdevIndex = 0,
     };
-    struct LoopbackQpPair qpPair;
+    struct LoopbackQpPair qpPair = {0};
     void *qpHandle = NULL;
     int ret = 0;
 

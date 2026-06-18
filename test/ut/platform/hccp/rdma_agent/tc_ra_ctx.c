@@ -572,8 +572,8 @@ void TcRaRsGetTpInfoList()
     union OpGetTpInfoListData dataIn;
     union OpGetTpInfoListData dataOut;
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpGetTpInfoListData));
@@ -1302,8 +1302,8 @@ void TcRaRsCtxQpDestroyBatch()
     union OpCtxQpDestroyBatchData dataIn;
     union OpCtxQpDestroyBatchData dataOut;
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxQpDestroyBatchData));
@@ -1452,8 +1452,8 @@ void TcRaRsCtxQpQueryBatch()
     union OpCtxQpQueryBatchData dataIn;
     union OpCtxQpQueryBatchData dataOut;
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxQpQueryBatchData));
@@ -1536,8 +1536,8 @@ void TcRaRsGetEidByIp()
     union OpGetEidByIpData dataIn = {0};
 
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpGetEidByIpData));
@@ -1638,8 +1638,8 @@ void TcRaRsCtxGetAuxInfo()
     union OpCtxGetAuxInfoData dataIn = {0};
 
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxGetAuxInfoData));
@@ -1747,8 +1747,8 @@ void TcRaRsGetTpAttr()
     union OpGetTpAttrData dataIn;
     union OpGetTpAttrData dataOut;
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpGetTpAttrData));
@@ -1836,8 +1836,8 @@ void TcRaRsSetTpAttr()
     union OpSetTpAttrData dataIn;
     union OpSetTpAttrData dataOut;
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpSetTpAttrData));
@@ -1924,8 +1924,8 @@ void TcRaRsCtxGetCrErrInfoList()
     union OpCtxGetCrErrInfoListData dataIn = {0};
 
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxGetCrErrInfoListData));

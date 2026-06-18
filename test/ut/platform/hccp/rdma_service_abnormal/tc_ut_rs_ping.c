@@ -103,9 +103,9 @@ int RsPingRoceFindTargetNodeStub1(struct RsPingCtxCb *pingCb, struct PingQpInfo 
 
 void TcRsPingHandleInit()
 {
-    unsigned int chipId;
-    int hdcType;
-    int ret;
+    unsigned int chipId = 0;
+    int hdcType = 0;
+    int ret = 0;
 
     chipId = 0;
     hdcType = HDC_SERVICE_TYPE_RDMA;
@@ -127,8 +127,8 @@ void TcRsPingHandleInit()
 
 void TcRsPingHandleDeinit()
 {
-    unsigned int chipId;
-    int ret;
+    unsigned int chipId = 0;
+    int ret = 0;
 
     chipId = 0;
     mocker(RsDev2rscb, 1, -1);
@@ -154,7 +154,7 @@ void TcRsPingInit()
     struct PingInitAttr attr = { 0 };
     struct PingInitInfo info = { 0 };
     unsigned int rdevIndex = 0;
-    int ret;
+    int ret = 0;
 
     ret = RsPingInit(&attr, &info, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
@@ -197,7 +197,7 @@ void TcRsPingTargetAdd()
 {
     struct PingTargetInfo  target = { 0 };
     struct RaRsDevInfo rdev = { 0 };
-    int ret;
+    int ret = 0;
 
     ret = RsPingTargetAdd(&rdev, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
@@ -238,7 +238,7 @@ void TcRsPingTaskStart()
     struct RsPingTargetInfo  tmpTarget = {0};
     struct RaRsDevInfo rdev = { 0 };
     struct PingTaskAttr attr = { 0 };
-    int ret;
+    int ret = 0;
 
     ret = RsPingTaskStart(&rdev, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
@@ -279,7 +279,7 @@ void TcRsPingGetResults()
     struct PingResultInfo result = { 0 };
     struct RaRsDevInfo rdev = { 0 };
     unsigned int num = 1;
-    int ret;
+    int ret = 0;
 
     ret = RsPingGetResults(NULL, &target, &num, &result);
     EXPECT_INT_EQ(ret, -EINVAL);
@@ -309,7 +309,7 @@ void TcRsPingGetResults()
 void TcRsPingTaskStop()
 {
     struct RaRsDevInfo rdev = { 0 };
-    int ret;
+    int ret = 0;
 
     ret = RsPingTaskStop(NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
@@ -325,7 +325,7 @@ void TcRsPingTargetDel()
     struct PingTargetCommInfo target = { 0 };
     struct RaRsDevInfo rdev = { 0 };
     unsigned int num = 1;
-    int ret;
+    int ret = 0;
 
     ret = RsPingTargetDel(&rdev, &target, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
@@ -352,7 +352,7 @@ void TcRsPingTargetDel()
 void TcRsPingDeinit()
 {
     struct RaRsDevInfo rdev = { 0 };
-    int ret;
+    int ret = 0;
 
     ret = RsPingDeinit(NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
@@ -372,12 +372,12 @@ void TcRsPingDeinit()
 void TcRsPingUrmaCheckFd()
 {
     urma_jfce_t jf = {0};
-    struct RsPingCtxCb pingCb;
+    struct RsPingCtxCb pingCb = {0};
     pingCb.pingJetty.jfce = &jf;
     pingCb.pingJetty.jfce->fd = 1;
     pingCb.pongJetty.jfce = &jf;
     pingCb.pongJetty.jfce->fd = 1;
-    int ret;
+    int ret = 0;
 
     ret = RsPingUrmaCheckFd(&pingCb, 1);
     EXPECT_INT_EQ(ret, 1);

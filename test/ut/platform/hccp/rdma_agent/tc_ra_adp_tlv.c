@@ -23,8 +23,8 @@ void TcRaRsTlvInit()
     union OpTlvInitData dataIn;
     union OpTlvInitData dataOut;
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvInitData));
@@ -59,8 +59,8 @@ void TcRaRsTlvDeinit()
     union OpTlvDeinitData dataIn;
     union OpTlvDeinitData dataOut;
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvDeinitData));
@@ -90,8 +90,8 @@ void TcRaRsTlvRequest()
     union OpTlvRequestData dataIn;
     union OpTlvRequestData dataOut;
     int rcvBufLen = 0;
-    int opResult;
-    int outLen;
+    int opResult = 0;
+    int outLen = 0;
     int ret;
 
     char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvRequestData));

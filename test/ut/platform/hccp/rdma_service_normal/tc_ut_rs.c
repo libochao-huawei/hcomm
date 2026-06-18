@@ -218,11 +218,11 @@ int RsQueryRdevCbStub(unsigned int phyId, unsigned int rdevIndex, struct RsRdevC
 
 void TcRsAbnormal()
 {
-	int ret;
-	struct rs_cb *rsCb;
-	uint32_t qpn;
-	struct RsQpCb *qpCb;
-	struct RsQpCb qpCbTmp;
+	int ret = 0;
+	struct rs_cb *rsCb = NULL;
+	uint32_t qpn = 0;
+	struct RsQpCb *qpCb = NULL;
+	struct RsQpCb qpCbTmp = {0};
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 	rs_ut_msg("\n+++++++++ABNORMAL TC Start++++++++\n");
@@ -265,7 +265,7 @@ int DlHalQueryDevPidSharemem(struct halQueryDevpidInfo info, pid_t *devPid)
 extern int SprintfS(char *strDest, size_t destMax, const char *format, ...);
 void TcRsInit()
 {
-	int ret;
+	int ret = 0;
 	struct RsInitConfig cfg = {0};
 
 	rs_ut_msg("\n%s+++++++++ABNORMAL TC Start++++++++\n", __func__);
@@ -297,10 +297,10 @@ void TcRsInit()
 
 void TcRsDeinit()
 {
-	int ret;
+	int ret = 0;
 	uint32_t chipId = 0;
-	struct rs_cb *rsCb;
-	int eventfdTmp;
+	struct rs_cb *rsCb = NULL;
+	int eventfdTmp = 0;
 	struct RsInitConfig cfg = {0};
 
 	/* +++++Resource Prepare+++++ */
@@ -336,12 +336,12 @@ void TcRsDeinit()
 /* FREE server/client conn_info, listen_info AUTOMATICALLY */
 void TcRsDeinit2()
 {
-	int ret;
-	int i;
+	int ret = 0;
+	int i = 0;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList = {0};
    	whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
     whiteList.connLimit = 1;
 
@@ -395,8 +395,8 @@ void TcRsDeinit2()
 
 void TcRsSocketInit()
 {
-	int ret;
-	int i;
+	int ret = 0;
+	int i = 0;
 	unsigned int vnicIp[8] = {0};
 
 	ret = RsSocketInit(NULL, 0);
@@ -410,8 +410,8 @@ void TcRsSocketInit()
 
 void TcRsSocketDeinit1()
 {
-	int ret;
-	int i;
+	int ret = 0;
+	int i = 0;
 	struct RsInitConfig cfg = {0};
 	struct rs_cb *rsCb = NULL;
 	struct rdev rdevInfo = {0};
@@ -439,8 +439,8 @@ void TcRsSocketDeinit1()
 
 void TcRsSocketDeinit2()
 {
-	int ret;
-	int i;
+	int ret = 0;
+	int i = 0;
 	struct RsInitConfig cfg = {0};
 	struct rs_cb *rsCb = NULL;
 	struct rdev rdevInfo = {0};
@@ -470,7 +470,7 @@ void TcRsSocketDeinit2()
 
 void TcRsSocketListenIpv6()
 {
-	int ret;
+	int ret = 0;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 
@@ -501,9 +501,9 @@ void TcRsSocketListenIpv6()
 
 void TcRsSocketListen()
 {
-	int ret;
+	int ret = 0;
 	struct RsInitConfig cfg = {0};
-	struct SocketListenInfo listen[2];
+	struct SocketListenInfo listen[2] = {{0}};
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
@@ -544,14 +544,14 @@ void TcRsSocketListen()
 
 void TcRsSocketConnect()
 {
-	int ret;
-	int i;
+	int ret = 0;
+	int i = 0;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
 	struct RsSocketCloseInfoT sockClose[2] = {0};
 	struct SocketFdData socketInfo[3] = {0};
-    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList = {0};
 	whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
     whiteList.connLimit = 1;
 	int tryNum = 10;
@@ -677,14 +677,14 @@ void TcRsSocketConnect()
 
 void TcRsGetSockets()
 {
-	int ret;
-	int i;
+	int ret = 0;
+	int i = 0;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
 	struct RsSocketCloseInfoT sockClose[2] = {0};
 	struct SocketFdData socketInfo[3] = {0};
-    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList = {0};
    	whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
     whiteList.connLimit = 1;
 	int tryNum = 10;
@@ -791,7 +791,7 @@ void TcRsGetSockets()
 	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
 	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
 	socketInfo[i].status = RS_SOCK_STATUS_OK;
-	struct RsConnInfo connTmp;
+	struct RsConnInfo connTmp = {0};
 	connTmp.state = RS_CONN_STATE_VALID_SYNC;
 	RsFindSockets(&connTmp, &socketInfo[i], 1, RS_CONN_ROLE_CLIENT);
 	sockClose[i].fd = socketInfo[i].fd;
@@ -809,11 +809,11 @@ void TcRsGetSockets()
 
 void TcRsSetTsqpDepth()
 {
-	int ret;
+	int ret = 0;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 	unsigned int tempDepth = 8;
-	unsigned int qpNum;
+	unsigned int qpNum = 0;
 	struct rdev rdevInfo = {0};
 	rdevInfo.phyId = 0;
 	rdevInfo.family = AF_INET;
@@ -841,11 +841,11 @@ void TcRsSetTsqpDepth()
 
 void TcRsGetTsqpDepth()
 {
-	int ret;
+	int ret = 0;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 	unsigned int tempDepth = 8;
-	unsigned int qpNum;
+	unsigned int qpNum = 0;
 	struct rdev rdevInfo = {0};
 	rdevInfo.phyId = 0;
 	rdevInfo.family = AF_INET;
@@ -881,20 +881,20 @@ extern int ibv_query_port(struct ibv_context *context, uint8_t portNum,
 		   struct ibv_port_attr *portAttr);
 void TcRsQpCreate()
 {
-	int ret;
+	int ret = 0;
 	uint32_t phyId = 0;
 	unsigned int rdevIndex = 0;
 	int flag = 0; /* RC */
 	struct RsQpResp resp = {0};
 	struct RsQpResp resp2 = {0};
-	int i;
+	int i = 0;
 	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
 	struct RsSocketCloseInfoT sockClose[2] = {0};
 	struct SocketFdData socketInfo[3] = {0};
-    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList = {0};
  	struct RsQpNorm qpNorm = {0};
 
 	qpNorm.flag = flag;
@@ -983,7 +983,7 @@ void TcRsQpCreate()
 	EXPECT_INT_EQ(ret, 0);
 	EXPECT_INT_EQ(supportLite, 1);
 
-	struct LiteRdevCapResp rdevResp;
+	struct LiteRdevCapResp rdevResp = {0};
 	ret = RsGetLiteRdevCap(rdevInfo.phyId, rdevIndex, &rdevResp);
 	EXPECT_INT_EQ(ret, 0);
 
@@ -991,11 +991,11 @@ void TcRsQpCreate()
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreate: qpn %d, ret:%d\n", resp.qpn, ret);
 
-	struct LiteQpCqAttrResp qpResp;
+	struct LiteQpCqAttrResp qpResp = {0};
 	ret = RsGetLiteQpCqAttr(phyId, rdevIndex, resp.qpn, &qpResp);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct LiteMemAttrResp memResp;
+	struct LiteMemAttrResp memResp = {0};
 	ret = RsGetLiteMemAttr(rdevInfo.phyId, rdevIndex, resp.qpn, &memResp);
 	EXPECT_INT_EQ(ret, 0);
 
@@ -1023,10 +1023,10 @@ void TcRsQpCreate()
 	ret = RsQpConnectAsync(phyId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
-	struct RsQpCb *qpCb;
+	struct RsQpCb *qpCb = NULL;
 	ret = RsQpn2qpcb(phyId, rdevIndex, resp.qpn, &qpCb);
 	EXPECT_INT_EQ(ret, 0);
-	struct LiteConnectedInfoResp connectedResp;
+	struct LiteConnectedInfoResp connectedResp = {0};
 	qpCb->state = RS_QP_STATUS_CONNECTED;
 	ret = RsGetLiteConnectedInfo(phyId, rdevIndex, resp.qpn, &connectedResp);
 	EXPECT_INT_EQ(ret, 0);
@@ -1052,8 +1052,8 @@ void TcRsQpCreate()
 	EXPECT_INT_NE(ret, 0);
 
 	/* qp number out of boundry */
-	struct rs_cb *rsCb;
-	struct RsRdevCb *rdevCb;
+	struct rs_cb *rsCb = NULL;
+	struct RsRdevCb *rdevCb = NULL;
 	struct RsAcceptInfo acceptTmp = {0};
 	struct RsAcceptInfo *accept = &acceptTmp;
 	uint32_t chipId = 0;
@@ -1170,18 +1170,18 @@ void QpExtAttrs(int qpMode, struct QpExtAttrs *extAttrs)
 
 void TcRsQpCreateWithAttrsV1()
 {
-	int ret;
+	int ret = 0;
 	uint32_t phyId = 0;
 	unsigned int rdevIndex = 0;
 	uint32_t qpn, qpn1, qpn2;
-	int i;
+	int i = 0;
 	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
 	struct RsSocketCloseInfoT sockClose[2] = {0};
 	struct SocketFdData socketInfo[3] = {0};
-    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList = {0};
  	struct RsQpNormWithAttrs  qpNorm = {0};
 	struct RsQpRespWithAttrs qpRespCreate = {0};
 
@@ -1255,7 +1255,7 @@ void TcRsQpCreateWithAttrsV1()
 	EXPECT_INT_EQ(ret, 0);
 	EXPECT_INT_EQ(supportLite, 1);
 
-	struct LiteRdevCapResp rdevResp;
+	struct LiteRdevCapResp rdevResp = {0};
 	ret = RsGetLiteRdevCap(rdevInfo.phyId, rdevIndex, &rdevResp);
 	EXPECT_INT_EQ(ret, 0);
 
@@ -1266,11 +1266,11 @@ void TcRsQpCreateWithAttrsV1()
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreateWithAttrs: qpn %d, ret:%d\n", qpn, ret);
 
-	struct LiteQpCqAttrResp qpResp;
+	struct LiteQpCqAttrResp qpResp = {0};
 	ret = RsGetLiteQpCqAttr(phyId, rdevIndex, qpn, &qpResp);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct LiteMemAttrResp memResp;
+	struct LiteMemAttrResp memResp = {0};
 	ret = RsGetLiteMemAttr(rdevInfo.phyId, rdevIndex, qpn, &memResp);
 	EXPECT_INT_EQ(ret, 0);
 
@@ -1298,10 +1298,10 @@ void TcRsQpCreateWithAttrsV1()
 	ret = RsQpConnectAsync(phyId, rdevIndex, qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
-	struct RsQpCb *qpCb;
+	struct RsQpCb *qpCb = NULL;
 	ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
 	EXPECT_INT_EQ(ret, 0);
-	struct LiteConnectedInfoResp connectedResp;
+	struct LiteConnectedInfoResp connectedResp = {0};
 	qpCb->state = RS_QP_STATUS_CONNECTED;
 	ret = RsGetLiteConnectedInfo(phyId, rdevIndex, qpn, &connectedResp);
 	EXPECT_INT_EQ(ret, 0);
@@ -1328,8 +1328,8 @@ void TcRsQpCreateWithAttrsV1()
 	EXPECT_INT_NE(ret, 0);
 
 	/* qp number out of boundry */
-	struct rs_cb *rsCb;
-	struct RsRdevCb *rdevCb;
+	struct rs_cb *rsCb = NULL;
+	struct RsRdevCb *rdevCb = NULL;
 	struct RsAcceptInfo acceptTmp = {0};
 	struct RsAcceptInfo *accept = &acceptTmp;
 	uint32_t chipId = 0;
@@ -1398,7 +1398,7 @@ void TcRsQpCreateWithAttrsV1()
 		rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 		ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 		EXPECT_INT_EQ(ret, 0);
-        int qpn1910;
+        int qpn1910 = 0;
 		ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qpNorm, &qpRespCreate);
 		qpn1910 = qpRespCreate.qpn;
         EXPECT_INT_EQ(ret, 0);
@@ -1418,21 +1418,21 @@ void TcRsQpCreateWithAttrsV1()
 
 void TcRsMrSync()
 {
-	int ret;
+	int ret = 0;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
 	int flag = 0; /* RC */
 	int qpMode = 1;
 	struct RsQpResp resp = {0};
 	struct RsQpResp resp2 = {0};
-	int i;
+	int i = 0;
 	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
 	struct RsSocketCloseInfoT sockClose[2] = {0};
 	struct SocketFdData socketInfo[3] = {0};
-    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList = {0};
     whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
     whiteList.connLimit = 1;
 
@@ -1575,8 +1575,8 @@ void TcRsMrSync()
 /* create 2 socket & 2 qp, and connect them */
 static int TcRsSockQpCreateNormal(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2)
 {
-	int ret;
-	int i;
+	int ret = 0;
+	int i = 0;
 	int tryNum = 10;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
@@ -1586,7 +1586,7 @@ static int TcRsSockQpCreateNormal(int *fd, uint32_t *qpn, int *fd2, uint32_t *qp
 	struct SocketListenInfo listen[1] = {0};
 	struct SocketConnectInfo conn[2] = {0};
 	struct SocketFdData socketInfo[3] = {0};
-    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList = {0};
 	struct RsQpResp resp = {0};
 	struct RsQpResp resp2 = {0};
     whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
@@ -1690,8 +1690,8 @@ static int TcRsSockQpCreateNormal(int *fd, uint32_t *qpn, int *fd2, uint32_t *qp
 /* create 2 socket & 2 qp, and connect them */
 static int TcRsSockQpCreate(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2)
 {
-	int ret;
-	int i;
+	int ret = 0;
+	int i = 0;
 	int tryNum = 10;
 	uint32_t phyId = 0;
 	int flag = 0; /* RC */
@@ -1700,7 +1700,7 @@ static int TcRsSockQpCreate(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2)
 	struct SocketListenInfo listen[1] = {0};
 	struct SocketConnectInfo conn[2] = {0};
 	struct SocketFdData socketInfo[3] = {0};
-    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList = {0};
 	struct RsQpResp resp = {0};
 	struct RsQpResp resp2 = {0};
     whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
@@ -1803,7 +1803,7 @@ static int TcRsSockQpCreate(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2)
 
 static int TcRsSockQpDestroy(int fd, uint32_t qpn, int fd2, uint32_t qpn2)
 {
-	int ret;
+	int ret = 0;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
 	struct RsInitConfig cfg = {0};
@@ -1856,7 +1856,7 @@ static int TcRsSockQpDestroy(int fd, uint32_t qpn, int fd2, uint32_t qpn2)
 
 void TcRsMrCreate()
 {
-	int ret;
+	int ret = 0;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
 	int flag = 0; /* RC */
@@ -1937,7 +1937,7 @@ int StubRsGetMrcbA(struct RsQpCb *qpCb, uint64_t addr, struct RsMrCb **mrCb,
 
 void TcRsMrAbnormal()
 {
-	int ret;
+	int ret = 0;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
 	int flag = 0; /* RC */
@@ -1988,13 +1988,13 @@ void TcRsMrAbnormal()
 
 void TcRsAbnormal2()
 {
-		int ret;
+		int ret = 0;
 	int flag = 0; /* RC */
 	uint32_t qpn, qpn2;
 	int fd, fd2;
 	struct rs_cb *rsCb, *rsCb2;
 	char cmd, cmd2;
-	struct epoll_event events;
+	struct epoll_event events = {0};
 
 	/* +++++Resource Prepare+++++ */
 	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
@@ -2024,10 +2024,10 @@ void TcRsAbnormal2()
 struct RsQpCb *qpCb2;
 void TcRsCqHandle()
 {
-	int ret;
+	int ret = 0;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	struct RsQpCb qpCb4;
+	struct RsQpCb qpCb4 = {0};
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 
@@ -2080,10 +2080,10 @@ void TcRsCqHandle()
 
 void TcRsEpollHandle()
 {
-	int ret;
+	int ret = 0;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	struct epoll_event events3;
+	struct epoll_event events3 = {0};
 
 	/* +++++Resource Prepare+++++ */
 	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
@@ -2106,15 +2106,15 @@ int stub_halGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, 
 
 void TcRsSocketOps()
 {
-	int ret;
-	int i;
+	int ret = 0;
+	int i = 0;
 	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
 	struct RsSocketCloseInfoT sockClose[2] = {0};
 	struct SocketFdData socketInfo[3] = {0};
-	struct SocketWlistInfoT whiteList;
+	struct SocketWlistInfoT whiteList = {0};
 	whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
 	whiteList.connLimit = 1;
 
@@ -2313,7 +2313,7 @@ void TcRsSocketOps()
 
 int ReplaceRsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct RsQpCb **qpCb)
 {
-    static struct RsQpCb aQpCb;
+    static struct RsQpCb aQpCb = {0};
 
     *qpCb = &aQpCb;
     aQpCb.state = 1;
@@ -2322,16 +2322,16 @@ int ReplaceRsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, 
 
 void TcRsGetQpStatus()
 {
-	int ret;
+	int ret = 0;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	struct RsQpStatusInfo status;
+	struct RsQpStatusInfo status = {0};
 
-	struct RsQpCb qpCb;
-	struct rs_cb rsCb;
-	struct RsRdevCb rdevCb;
+	struct RsQpCb qpCb = {0};
+	struct rs_cb rsCb = {0};
+	struct RsRdevCb rdevCb = {0};
 	qpCb.rdevCb = &rdevCb;
 
 	mocker((stub_fn_t)ibv_query_port, 1, 1);
@@ -2359,7 +2359,7 @@ void TcRsGetQpStatus()
 
 void TcRsGetNotifyBa()
 {
-	int ret;
+	int ret = 0;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
 	unsigned int phyId = 0;
@@ -2389,7 +2389,7 @@ void TcRsSetupSharemem()
 {
 	struct RsRdevCb rdevCb = {0};
 	struct rs_cb rsCb = {0};
-	int ret;
+	int ret = 0;
 
 	DlHalInit();
 
@@ -2432,11 +2432,11 @@ void TcRsSetupSharemem()
 
 void TcRsPostRecv()
 {
-	int ret;
+	int ret = 0;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	uint32_t size;
-	int tryNum;
+	uint32_t size = 0;
+	int tryNum = 0;
 	void *addr, *addr2;
 	struct RdmaMrRegInfo mrRegInfo = {0};
 	unsigned int phyId = 0;
@@ -2499,18 +2499,18 @@ void TcRsPostRecv()
 
 void TcRsSendWrlistExp()
 {
-	int ret;
+	int ret = 0;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	uint32_t index;
-	struct SgList list;
-	struct WrInfo wrlist[1];
-	int tryNum;
+	uint32_t index = 0;
+	struct SgList list = {0};
+	struct WrInfo wrlist[1] = {{0}};
+	int tryNum = 0;
 	void *addr, *addr2;
-	struct SendWrRsp rsWrInfo[1];
+	struct SendWrRsp rsWrInfo[1] = {{0}};
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
-	struct RsWrlistBaseInfo baseInfo;
+	struct RsWrlistBaseInfo baseInfo = {0};
 	unsigned int sendNum = 1;
 	unsigned int completeNum = 0;
 	/* +++++Resource Prepare+++++ */
@@ -2632,18 +2632,18 @@ void TcRsSendWrlistExp()
 
 void TcRsSendWrlistNormal()
 {
-	int ret;
+	int ret = 0;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	uint32_t index;
-	struct SgList list;
-	struct WrInfo wrlist[1];
-	int tryNum;
+	uint32_t index = 0;
+	struct SgList list = {0};
+	struct WrInfo wrlist[1] = {{0}};
+	int tryNum = 0;
 	void *addr, *addr2;
-	struct SendWrRsp rsWrInfo[1];
+	struct SendWrRsp rsWrInfo[1] = {{0}};
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
-	struct RsWrlistBaseInfo baseInfo;
+	struct RsWrlistBaseInfo baseInfo = {0};
 	unsigned int sendNum = 1;
 	unsigned int completeNum = 0;
 	/* +++++Resource Prepare+++++ */
@@ -2771,15 +2771,15 @@ void TcRsSendWrlistNormal()
 
 void TcRsSendWr()
 {
-	int ret;
+	int ret = 0;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	uint32_t index;
-	struct SgList list[2];
-	struct SendWr wr;
-	int tryNum;
+	uint32_t index = 0;
+	struct SgList list[2] = {{0}};
+	struct SendWr wr = {0};
+	int tryNum = 0;
 	void *addr, *addr2;
-	struct wr_exp_rsp rsWrInfo;
+	struct wr_exp_rsp rsWrInfo = {0};
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 	struct RdmaMrRegInfo mrRegInfo = {0};
@@ -2907,10 +2907,10 @@ void TcRsSendWr()
 
 void TcRsDfx()
 {
-	int ret;
+	int ret = 0;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	struct RsQpCb qpCb4;
+	struct RsQpCb qpCb4 = {0};
 
 	/* +++++Resource Prepare+++++ */
 	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
@@ -2924,20 +2924,20 @@ void TcRsDfx()
 
 void TcRsWhiteList()
 {
-	int ret;
+	int ret = 0;
 	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
-	struct SocketListenInfo listen;
-	struct SocketConnectInfo conn;
-	struct SocketConnectInfo conn1;
+	struct SocketListenInfo listen = {0};
+	struct SocketConnectInfo conn = {0};
+	struct SocketConnectInfo conn1 = {0};
 
-	struct RsSocketCloseInfoT sockClose;
-	struct RsSocketCloseInfoT sockClose1;
+	struct RsSocketCloseInfoT sockClose = {0};
+	struct RsSocketCloseInfoT sockClose1 = {0};
 
-	struct SocketFdData socketInfo;
-	struct SocketFdData socketInfo1;
-    struct SocketWlistInfoT whiteList;
-    struct SocketWlistInfoT whiteList1;
+	struct SocketFdData socketInfo = {0};
+	struct SocketFdData socketInfo1 = {0};
+    struct SocketWlistInfoT whiteList = {0};
+    struct SocketWlistInfoT whiteList1 = {0};
     u32 serverIp = inet_addr("127.0.0.1");
 
 	/* +++++Resource Prepare+++++ */
@@ -3015,18 +3015,18 @@ void TcRsWhiteList()
 
 void TcRsSslTest1()
 {
-    int ret;
+    int ret = 0;
 	int tryNum = 10;
     uint32_t devId = 0;
     int flag = 0; /* RC */
     uint32_t qpn, qpn2;
-    int i;
+    int i = 0;
     struct RsInitConfig cfg = {0};
     struct SocketListenInfo listen[2] = {0};
     struct SocketConnectInfo conn[2] = {0};
     struct RsSocketCloseInfoT sockClose[2] = {0};
    struct SocketFdData socketInfo[3] = {0};
-    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList = {0};
     whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
     whiteList.connLimit = 1;
 	uint32_t sslEnable = 1;
@@ -3171,7 +3171,7 @@ extern int RsFillIfnum(unsigned int phyId, bool isAll, unsigned int *num, unsign
 
 void TcRsGetInterfaceVersion()
 {
-	int version;
+	int version = 0;
 	int ret = RsGetInterfaceVersion(0, NULL);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
@@ -3206,7 +3206,7 @@ void TcRsGetIfaddrs()
 	DlHalInit();
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
-	int ret;
+	int ret = 0;
 	int phyId = 0;
 	unsigned int ifaddrNum = 4;
 	struct IfaddrInfo ifaddrInfos[4] = {0};
@@ -3354,7 +3354,7 @@ void TcRsGetIfaddrsV2()
 	DlHalInit();
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
-	int ret;
+	int ret = 0;
 	int phyId = 0;
 	unsigned int ifaddrNum = 4;
 	struct InterfaceInfo interfaceInfos[4] = {0};
@@ -3420,7 +3420,7 @@ void TcRsGetIfaddrsV2()
 
 void TcRsPeerGetIfaddrs()
 {
-	int ret;
+	int ret = 0;
 	int phyId = 0;
 	unsigned int ifaddrNum = 1000;
 	unsigned int ifNum = 1000;
@@ -3446,7 +3446,7 @@ void TcRsGetIfnum()
 	DlHalInit();
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
-	int ret;
+	int ret = 0;
 	int phyId = 0;
 	unsigned int ifnum = 0;
 	bool isAll = false;
@@ -3480,7 +3480,7 @@ void TcRsGetIfnum()
 
 void TcRsGetCurTime()
 {
-	struct timeval time;
+	struct timeval time = {0};
 	mocker(gettimeofday, 20, 1);
 	mocker(memset_s, 20, 1);
 	RsGetCurTime(&time);
@@ -3490,7 +3490,7 @@ void TcRsGetCurTime()
 
 void tc_RsRdev2rdevCb()
 {
-	struct RsRdevCb *rdevCb;
+	struct RsRdevCb *rdevCb = NULL;
 	mocker(RsDev2rscb, 20, 0);
 	mocker(RsGetRdevCb, 20, 1);
 	RsRdev2rdevCb(1, 1, &rdevCb);
@@ -3500,8 +3500,8 @@ void tc_RsRdev2rdevCb()
 
 void TcRsCompareIpGid()
 {
-	struct rdev rdevInfo;
-	union ibv_gid gid;
+	struct rdev rdevInfo = {0};
+	union ibv_gid gid = {0};
 	rdevInfo.family = 10;
 	int ret = RsCompareIpGid(rdevInfo,  &gid);
 	EXPECT_INT_EQ(ret, -ENODEV);
@@ -3515,12 +3515,12 @@ void TcRsCompareIpGid()
 
 void TcRsQueryGid()
 {
-	struct ibv_context ibCtxTmp;
-	struct RsRdevCb rdevCb;
-	struct rdev rdevInfo;
+	struct ibv_context ibCtxTmp = {0};
+	struct RsRdevCb rdevCb = {0};
+	struct rdev rdevInfo = {0};
 	uint8_t ibPort = 1;
-	int gidIdx;
-	int ret;
+	int gidIdx = 0;
+	int ret = 0;
 
 	mocker(ibv_query_port, 20, 1);
 	ret = RsQueryGid(rdevInfo, &ibCtxTmp, ibPort, &gidIdx);
@@ -3549,7 +3549,7 @@ void TcRsGetHostRdevIndex()
 	struct rdev rdevInfo = {0};
 	struct rs_cb rsCb = {0};
 	int rdevIndex = 0;
-	int ret;
+	int ret = 0;
 
 	rdevCb.devList = ibv_get_device_list(&(rdevCb.devNum));
 	rdevCb.rsCb = &rsCb;
@@ -3567,7 +3567,7 @@ void TcRsGetIbCtxAndRdevIndex()
 	struct rdev rdevInfo = {0};
 	int rdevIndex = 0;
 	struct RsRdevCb rdevCb = {0};
-	int ret;
+	int ret = 0;
 
 	rdevCb.devList = ibv_get_device_list(&(rdevCb.devNum));
 	mocker(ibv_open_device, 20, NULL);
@@ -3592,7 +3592,7 @@ void TcRsRdevCbInit()
 	struct rdev rdevInfo = {0};
 	struct rs_cb rsCb = {0};
 	struct RsRdevCb rdevCb = {0};
-	int rdevIndex;
+	int rdevIndex = 0;
 	mocker(RsInetNtop, 20, 0);
 	mocker(pthread_mutex_init, 20, 1);
 	int ret = RsRdevCbInit(rdevInfo, &rdevCb, &rsCb, &rdevIndex);
@@ -3644,9 +3644,9 @@ void TcRsRdevCbInit()
 
 void TcRsRdevInit()
 {
-	struct rdev rdevInfo;
-	int rdevIndex;
-	int ret;
+	struct rdev rdevInfo = {0};
+	int rdevIndex = 0;
+	int ret = 0;
 	mocker(RsGetRsCb, 20, 0);
 	mocker_clean();
 
@@ -3701,7 +3701,7 @@ void TcRsDrvConnect()
 
 void TcRsListenInvalidPort()
 {
-	int ret;
+	int ret = 0;
 	struct SocketListenInfo listen[2] = {0};
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 0;
@@ -3718,14 +3718,14 @@ void TcRsListenInvalidPort()
 
 void TcRsQpn2qpcb()
 {
-	struct RsQpCb *qpCb;
+	struct RsQpCb *qpCb = NULL;
 	RsQpn2qpcb(1, 1, 1, &qpCb);
 	return;
 }
 
 void TcRsSslDeinit()
 {
-	struct rs_cb rscb;
+	struct rs_cb rscb = {0};
 	rscb.sslEnable = 1;
 	rscb.skidSubjectCb = malloc(sizeof(struct RsCertSkidSubjectCb));
 	mocker(SSL_CTX_free, 20, 1);
@@ -3737,7 +3737,7 @@ void TcRsSslDeinit()
 
 void Tcrs_tls_inner_enable()
 {
-	struct rs_cb rscb;
+	struct rs_cb rscb = {0};
 	rscb.sslEnable = 1;
 	mocker(rs_ssl_inner_init, 20, 1);
 	int ret = rs_tls_inner_enable(&rscb, 1);
@@ -3829,9 +3829,9 @@ void TcRsSslCaKyInit()
 void Tcrs_ssl_crl_init()
 {
 	SSL_CTX sslCtx;
-	struct rs_cb rscb;
-	struct tls_cert_mng_info mngInfo;
-	int ret;
+	struct rs_cb rscb = {0};
+	struct tls_cert_mng_info mngInfo = {0};
+	int ret = 0;
 
 	mocker(rs_ssl_get_crl_data, 20, 0);
 	mocker(SSL_CTX_get_cert_store, 20, NULL);
@@ -3863,9 +3863,9 @@ void Tcrs_ssl_crl_init()
 void Tcrs_check_pridata()
 {
 	SSL_CTX sslCtx;
-	struct rs_cb rscb;
-	struct tls_cert_mng_info mngInfo;
-	int ret;
+	struct rs_cb rscb = {0};
+	struct tls_cert_mng_info mngInfo = {0};
+	int ret = 0;
 	mocker(rs_get_pk, 20, 0);
 	mocker(SSL_CTX_use_PrivateKey, 20, 0);
 	rs_check_pridata(&sslCtx, &rscb, &mngInfo);
@@ -3888,9 +3888,9 @@ void Tcrs_check_pridata()
 void Tcrs_ssl_load_ca()
 {
 	SSL_CTX sslCtx;
-	struct rs_cb rscb;
-	struct tls_cert_mng_info mngInfo;
-	int ret;
+	struct rs_cb rscb = {0};
+	struct tls_cert_mng_info mngInfo = {0};
+	int ret = 0;
 
 	mocker(NetCommGetSelfHome, 20, 1);
 	ret = rs_ssl_load_ca(&sslCtx, &rscb, &mngInfo);
@@ -3925,9 +3925,9 @@ void Tcrs_ssl_load_ca()
 
 void Tcrs_ssl_get_ca_data()
 {
-	int ret;
-	char endFile;
-	char caFile;
+	int ret = 0;
+	char endFile = 0;
+	char caFile = 0;
 	struct rs_cb rscb = {0};
 	struct tls_cert_mng_info mngInfo = {0};
 
@@ -3959,11 +3959,11 @@ void Tcrs_ssl_get_ca_data()
 
 void Tcrs_ssl_get_crl_data1()
 {
-	struct rs_cb rscb;
+	struct rs_cb rscb = {0};
 	FILE *fp = NULL;
-	struct tls_cert_mng_info mngInfo;
+	struct tls_cert_mng_info mngInfo = {0};
 	X509_CRL *crl = NULL;
-	int ret;
+	int ret = 0;
 	mocker(tls_get_user_config, 20, -2);
 	ret = rs_ssl_get_crl_data(&rscb, fp, &mngInfo, &crl);
 	EXPECT_INT_EQ(-ENODEV, ret);
@@ -3972,11 +3972,11 @@ void Tcrs_ssl_get_crl_data1()
 
 void Tcrs_ssl_get_ca_data1()
 {
-	struct rs_cb rscb;
-	char endFile;
-	char caFile;
-	struct tls_cert_mng_info mngInfo;
-	int ret;
+	struct rs_cb rscb = {0};
+	char endFile = 0;
+	char caFile = 0;
+	struct tls_cert_mng_info mngInfo = {0};
+	int ret = 0;
 	mocker(tls_get_user_config, 20, -2);
 	ret = rs_ssl_get_ca_data(&rscb, &endFile, &caFile, &mngInfo);
 	EXPECT_INT_EQ(-EACCES, ret);
@@ -3986,12 +3986,12 @@ void Tcrs_ssl_get_ca_data1()
 
 void Tcrs_ssl_put_certs()
 {
-	int ret;
-	struct rs_cb rscb;
-	struct CertFile fileName;
-	struct tls_cert_mng_info mngInfo;
-	struct RsCerts certs;
-	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM];
+	int ret = 0;
+	struct rs_cb rscb = {0};
+	struct CertFile fileName = {0};
+	struct tls_cert_mng_info mngInfo = {0};
+	struct RsCerts certs = {0};
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
 
 	mocker(rs_ssl_check_mng_and_cert_chain, 20, -1);
 	ret = rs_ssl_put_certs(&rscb, &mngInfo, &certs, newCerts, &fileName);
@@ -4015,7 +4015,7 @@ void Tcrs_ssl_put_certs()
 
 void Tcrs_ssl_check_cert_chain()
 {
-	int ret;
+	int ret = 0;
 	struct tls_cert_mng_info mngInfo = {0};
 	struct RsCerts certs = {0};
 	struct tls_ca_new_certs newCerts = {{0}};
@@ -4045,9 +4045,9 @@ void Tcrs_ssl_check_cert_chain()
 
 void Tcrs_ssl_skid_get_from_chain()
 {
-	struct tls_cert_mng_info mngInfo;
-	struct RsCerts certs;
-	struct rs_cb rscb;
+	struct tls_cert_mng_info mngInfo = {0};
+	struct RsCerts certs = {0};
+	struct rs_cb rscb = {0};
 	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
 	rscb.skidSubjectCb = NULL;
 
@@ -4073,7 +4073,7 @@ void Tcrs_ssl_skid_get_from_chain()
 
 void Tcrs_ssl_verify_cert_chain()
 {
-	int ret;
+	int ret = 0;
 	X509_STORE_CTX ctx;
 	X509_STORE store;
 	struct RsCerts certs = {0};
@@ -4098,8 +4098,8 @@ void Tcrs_ssl_verify_cert_chain()
 void Tctls_get_cert_chain()
 {
 	X509_STORE store;
-	struct RsCerts certs;
-	struct tls_cert_mng_info mngInfo;
+	struct RsCerts certs = {0};
+	struct tls_cert_mng_info mngInfo = {0};
 	mngInfo.cert_count = 2;
 	mocker(tls_load_cert, 20, 0);
 
@@ -4116,7 +4116,7 @@ void Tctls_get_cert_chain()
 
 void Tcrs_ssl_get_leaf_cert()
 {
-	struct RsCerts certs;
+	struct RsCerts certs = {0};
 	X509 *leafCert;
 	mocker(tls_load_cert, 20, NULL);
 	int ret = rs_ssl_get_leaf_cert(&certs, &leafCert);
@@ -4127,7 +4127,7 @@ void Tcrs_ssl_get_leaf_cert()
 
 void Tctls_load_cert()
 {
-	char inbuf;
+	char inbuf = 0;
 	mocker(BIO_new_mem_buf, 20, NULL);
 	X509 *ret = tls_load_cert(&inbuf, 1, 1);
 	EXPECT_ADDR_EQ(NULL, ret);
@@ -4179,7 +4179,7 @@ void Tcrs_ssl_err_string()
 void TcRsServerSendWlistCheckResult()
 {
 	struct RsConnInfo conn = {0};
-	int ret;
+	int ret = 0;
 
 	gRsCb = calloc(1, sizeof(struct rs_cb));
 
@@ -4194,7 +4194,7 @@ void TcRsServerSendWlistCheckResult()
 
 void TcRsDrvSslBindFd()
 {
-	struct RsConnInfo conn;
+	struct RsConnInfo conn = {0};
 	RsDrvSslBindFd(&conn, 1);
 	return;
 }
@@ -4215,7 +4215,7 @@ void TcRsGetVnicIp()
 {
 	unsigned int phyId = 0;
 	unsigned int vnicIp = 0;
-	int ret;
+	int ret = 0;
 
 	ret = RsGetVnicIp(phyId, &vnicIp);
 	EXPECT_INT_EQ(0, ret);
@@ -4232,7 +4232,7 @@ void TcRsNotifyCfgSet()
 	unsigned int devId = 0;
 	unsigned long long va = 0x10000;
 	unsigned long long size = 8192;
-	int ret;
+	int ret = 0;
 	mocker(rsGetLocalDevIDByHostDevID, 1, 0);
 	mocker_invoke(RsDev2rscb, RsDev2rscb_stub, 1);
 	ret = RsNotifyCfgSet(devId, va, size);
@@ -4257,7 +4257,7 @@ void TcRsNotifyCfgGet()
 	unsigned int devId = 0;
 	unsigned long long va = 0;
 	unsigned long long size = 0;
-	int ret;
+	int ret = 0;
 	mocker(rsGetLocalDevIDByHostDevID, 1, 0);
 	mocker_invoke(RsDev2rscb, RsDev2rscb_stub, 1);
 	ret = RsNotifyCfgGet(devId, &va, &size);
@@ -4285,7 +4285,7 @@ void TcRsDrvQpNormalFail()
 {
 	struct RsQpCb qpCb = {0};
 	struct ibv_qp ibQp = {0};
-	int ret;
+	int ret = 0;
 	qpCb.ibQp = &ibQp;
 
 	mocker(memset_s, 1, -1);
@@ -4338,7 +4338,7 @@ void tc_RsApiInit()
 
 void TcRsRecvWrlist()
 {
-	int ret;
+	int ret = 0;
 	struct RsWrlistBaseInfo baseInfo = {0};
 	struct RecvWrlistData wr = {0};
     unsigned int recvNum = 0;
@@ -4363,7 +4363,7 @@ void TcRsRecvWrlist()
 
 void TcRsDrvPostRecv()
 {
-	int ret;
+	int ret = 0;
 	struct RsQpCb qpCb = {0};
 	struct ibv_qp ibQp = {0};
 	struct RecvWrlistData wr = {0};
@@ -4400,7 +4400,7 @@ void TcRsDrvPostRecv()
 
 void TcRsDrvRegNotifyMr()
 {
-	int ret;
+	int ret = 0;
 	struct RsRdevCb rdevCb = {0};
 	rdevCb.notifyType = NO_USE;
 
@@ -4421,7 +4421,7 @@ void TcRsDrvRegNotifyMr()
 
 void TcRsDrvQueryNotifyAndAllocPd()
 {
-	int ret;
+	int ret = 0;
 	struct RsRdevCb rdevCb = {0};
 	rdevCb.notifyType = NOTIFY;
 	rdevCb.backupInfo.backupFlag = true;
@@ -4436,7 +4436,7 @@ void TcRsDrvQueryNotifyAndAllocPd()
 
 void TcRsSendNormalWrlist()
 {
-	int ret;
+	int ret = 0;
 	struct RsQpCb qpCb = {0};
 	struct WrInfo wrList = {0};
 	unsigned int sendNum = 1;
@@ -4482,7 +4482,7 @@ void TcRsDrvNormalQpCreateInit()
 	struct ibv_port_attr attr = {0};
 	struct rs_cb rsCb = {0};
 	struct RsRdevCb rdevCb = {0};
-	int ret;
+	int ret = 0;
 	qpCb.rdevCb = &rdevCb;
 	qpCb.rdevCb->rsCb = &rsCb;
 	qpCb.rdevCb->rsCb->hccpMode == NETWORK_PEER_ONLINE;
@@ -4502,7 +4502,7 @@ void TcRsDrvNormalQpCreateInit()
 
 void TcRsRegisterMr()
 {
-	int ret;
+	int ret = 0;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 	unsigned int qpn = 0;
@@ -4571,9 +4571,9 @@ void TcRsRegisterMr()
 
 void TcRsEpollCtlAdd()
 {
-    struct SocketPeerInfo fdHandle[1];
+    struct SocketPeerInfo fdHandle[1] = {{0}};
     struct RsConnCb connCb = {0};
-    int ret;
+    int ret = 0;
     struct RsListHead list = {0};
 
     fdHandle[0].phyId = 0;
@@ -4603,9 +4603,9 @@ void TcRsEpollCtlAdd()
 
 void TcRsEpollCtlAdd01()
 {
-    struct SocketPeerInfo fdHandle[1];
+    struct SocketPeerInfo fdHandle[1] = {{0}};
     struct RsConnCb connCb = {0};
-    int ret;
+    int ret = 0;
     struct RsListHead list = {0};
 
     fdHandle[0].phyId = 0;
@@ -4627,9 +4627,9 @@ void TcRsEpollCtlAdd01()
 
 void TcRsEpollCtlAdd02()
 {
-    struct SocketPeerInfo fdHandle[1];
+    struct SocketPeerInfo fdHandle[1] = {{0}};
     struct RsConnCb connCb = {0};
-    int ret;
+    int ret = 0;
     struct RsListHead list = {0};
 
     fdHandle[0].phyId = 0;
@@ -4655,9 +4655,9 @@ void TcRsEpollCtlAdd02()
 
 void TcRsEpollCtlAdd03()
 {
-    struct SocketPeerInfo fdHandle[1];
+    struct SocketPeerInfo fdHandle[1] = {{0}};
     struct RsConnCb connCb = {0};
-    int ret;
+    int ret = 0;
 
     fdHandle[0].phyId = 0;
     fdHandle[0].fd = 0;
@@ -4680,9 +4680,9 @@ void TcRsEpollCtlAdd03()
 
 void TcRsEpollCtlMod()
 {
-    struct SocketPeerInfo fdHandle[1];
+    struct SocketPeerInfo fdHandle[1] = {{0}};
     struct RsConnCb connCb = {0};
-    int ret;
+    int ret = 0;
     struct RsListHead list = {0};
 
     fdHandle[0].phyId = 0;
@@ -4707,9 +4707,9 @@ void TcRsEpollCtlMod()
 
 void TcRsEpollCtlMod01()
 {
-    struct SocketPeerInfo fdHandle[1];
+    struct SocketPeerInfo fdHandle[1] = {{0}};
     struct RsConnCb connCb = {0};
-    int ret;
+    int ret = 0;
     struct RsListHead list = {0};
 
     fdHandle[0].phyId = 0;
@@ -4731,9 +4731,9 @@ void TcRsEpollCtlMod01()
 
 void TcRsEpollCtlMod02()
 {
-    struct SocketPeerInfo fdHandle[1];
+    struct SocketPeerInfo fdHandle[1] = {{0}};
     struct RsConnCb connCb = {0};
-    int ret;
+    int ret = 0;
     struct RsListHead list = {0};
 
     fdHandle[0].phyId = 0;
@@ -4757,8 +4757,8 @@ void TcRsEpollCtlMod02()
 
 void TcRsEpollCtlMod03()
 {
-    struct SocketPeerInfo fdHandle[1];
-    int ret;
+    struct SocketPeerInfo fdHandle[1] = {{0}};
+    int ret = 0;
 
     fdHandle[0].phyId = 0;
     fdHandle[0].fd = 0;
@@ -4786,7 +4786,7 @@ void TcRsEpollCtlMod03()
 
 void TcRsEpollCtlDel()
 {
-    int ret;
+    int ret = 0;
     struct RsListHead list = {0};
 
     RS_INIT_LIST_HEAD(&list);
@@ -4805,7 +4805,7 @@ void TcRsEpollCtlDel()
 
 void TcRsEpollCtlDel01()
 {
-    int ret;
+    int ret = 0;
     struct RsListHead list = {0};
 
     RS_INIT_LIST_HEAD(&list);
@@ -4841,7 +4841,7 @@ void TcRsSetTcpRecvCallback()
 
 void TcRsEpollEventInHandle()
 {
-    int ret;
+    int ret = 0;
     struct rs_cb rsCb = {0};
     struct epoll_event events = {0};
     rsCb.sslEnable = 1;
@@ -4872,10 +4872,10 @@ int *stub__errno_location()
 
 void TcRsSocketListenBindListen()
 {
-    int ret;
-    struct RsConnCb connCb;
-    struct SocketListenInfo conn;
-    struct RsListenInfo listenInfo;
+    int ret = 0;
+    struct RsConnCb connCb = {0};
+    struct SocketListenInfo conn = {0};
+    struct RsListenInfo listenInfo = {0};
     conn.localIp.addr.s_addr = 1;
 
 	ret = RsSocketListenBindListen(-1, &connCb, &conn, &listenInfo, 0);
@@ -4920,7 +4920,7 @@ void TcRsSocketListenBindListen()
 
 void TcRsEpollEventInHandle01()
 {
-    int ret;
+    int ret = 0;
     struct rs_cb rsCb = {0};
     struct epoll_event events = {0};
     rsCb.sslEnable = 0;
@@ -4936,9 +4936,9 @@ void TcRsEpollEventInHandle01()
 
 void TcRsEpollTcpRecv()
 {
-    int ret;
+    int ret = 0;
     struct rs_cb rsCb = {0};
-    struct SocketPeerInfo fdHandle[1];
+    struct SocketPeerInfo fdHandle[1] = {{0}};
     int callback = 0;
 
     fdHandle[0].phyId = 0;
@@ -4962,7 +4962,7 @@ void TcRsEpollTcpRecv()
 
 void TcRsEpollEventSslAcceptInHandle()
 {
-    int ret;
+    int ret = 0;
     struct RsListHead list = {0};
     struct rs_cb *rsCb = NULL;
     struct RsConnCb connCb = {0};
@@ -5007,9 +5007,9 @@ void TcRsSendExpWrlist()
 {
 	DlHalInit();
 	struct RsQpCb qpCb = {0};
-	struct WrInfo wrlist[1];
+	struct WrInfo wrlist[1] = {{0}};
 	unsigned int sendNum = 1;
-	struct SendWrRsp rsWrInfo[1];
+	struct SendWrRsp rsWrInfo[1] = {{0}};
 	unsigned int completeNum = 0;
 	struct DbInfo db = {0};
 	struct ibv_qp ibQp = {0};
@@ -5017,7 +5017,7 @@ void TcRsSendExpWrlist()
 	struct SendWrRsp wrRsp = {0};
 	struct wr_exp_rsp expRsp = {0};
 
-	int ret;
+	int ret = 0;
 
 	gMrCb = malloc(sizeof(struct RsMrCb));
 	gIbMr = malloc(sizeof(struct ibv_mr));
@@ -5073,14 +5073,14 @@ int StubIbvGetCqEvent(struct ibv_comp_channel *channel, struct ibv_cq **cq, void
 
 void TcRsDrvPollCqHandle()
 {
-	int ret;
+	int ret = 0;
 	uint32_t devId = 0;
 	uint32_t qpMode = 1;
 	unsigned int rdevIndex = 0;
 	int flag = 0; /* RC */
 	struct RsQpResp resp = {0};
 	struct RsQpResp resp2 = {0};
-	int i;
+	int i = 0;
 	struct RsInitConfig cfg = {0};
     struct RsQpCb *qpCb = NULL;
 	struct ibv_cq *ibSendCqT, *ibRecvCqT;
@@ -5160,7 +5160,7 @@ void TcRsDrvPollCqHandle()
 
 void TcRsQpCreateWithAttrsV2()
 {
-	int ret;
+	int ret = 0;
 	uint32_t phyId = 0;
 	unsigned int rdevIndex = 0;
 	struct RsQpNormWithAttrs  qpNorm = {0};
@@ -5193,20 +5193,20 @@ void TcRsQpCreateWithAttrs()
 
 void TcRsNormalQpCreate()
 {
-	int ret;
+	int ret = 0;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
 	int flag = 0; /* RC */
 	int qpMode = 1;
 	uint32_t qpn, qpn2, qpn3;
-	int i;
+	int i = 0;
 	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
 	struct RsSocketCloseInfoT sockClose[2] = {0};
 	struct SocketFdData socketInfo[3] = {0};
-    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList = {0};
     whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
     whiteList.connLimit = 1;
 
@@ -5259,10 +5259,10 @@ void TcRsNormalQpCreate()
 	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-    struct ibv_cq *ibSendCq;
-    struct ibv_cq *ibRecvCq;
-    void* context;
-    struct CqAttr attr;
+    struct ibv_cq *ibSendCq = NULL;
+    struct ibv_cq *ibRecvCq = NULL;
+    void *context = NULL;
+    struct CqAttr attr = {0};
     attr.qpContext = &context;
     attr.ibSendCq = &ibSendCq;
     attr.ibRecvCq = &ibRecvCq;
@@ -5277,7 +5277,7 @@ void TcRsNormalQpCreate()
 	struct RsQpResp qpResp = {0};
 	struct RsQpResp qpResp2 = {0};
 
-    struct ibv_qp_init_attr qpInitAttr;
+    struct ibv_qp_init_attr qpInitAttr = {0};
     qpInitAttr.qp_context = context;
     qpInitAttr.send_cq = ibSendCq;
     qpInitAttr.recv_cq = ibRecvCq;
@@ -5287,7 +5287,7 @@ void TcRsNormalQpCreate()
     qpInitAttr.cap.max_send_sge = 4096;
     qpInitAttr.cap.max_recv_wr = 4096;
     qpInitAttr.cap.max_recv_sge = 1;
-    struct ibv_qp* qp;
+    struct ibv_qp *qp = NULL;
 
     mocker((stub_fn_t)RsDrvNormalQpCreate, 10, -ENOMEM);
     ret = RsNormalQpCreate(phyId, rdevIndex, &qpInitAttr, &qpResp, (void **)&qp);
@@ -5334,10 +5334,10 @@ void TcRsNormalQpCreate()
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
 		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-    struct ibv_cq *ibSendCq2;
-    struct ibv_cq *ibRecvCq2;
-    void* context2;
-    struct CqAttr attr2;
+    struct ibv_cq *ibSendCq2 = NULL;
+    struct ibv_cq *ibRecvCq2 = NULL;
+    void *context2 = NULL;
+    struct CqAttr attr2 = {0};
     attr2.qpContext = &context2;
     attr2.ibSendCq = &ibSendCq2;
     attr2.ibRecvCq = &ibRecvCq2;
@@ -5350,7 +5350,7 @@ void TcRsNormalQpCreate()
     ret = RsCqCreate(phyId, rdevIndex, &attr2);
     EXPECT_INT_EQ(ret, 0);
 
-    struct ibv_qp_init_attr qpInitAttr2;
+    struct ibv_qp_init_attr qpInitAttr2 = {0};
     qpInitAttr2.qp_context = context2;
     qpInitAttr2.send_cq = ibSendCq2;
     qpInitAttr2.recv_cq = ibRecvCq2;
@@ -5360,7 +5360,7 @@ void TcRsNormalQpCreate()
     qpInitAttr2.cap.max_send_sge = 4096;
     qpInitAttr2.cap.max_recv_wr = 4096;
     qpInitAttr2.cap.max_recv_sge = 1;
-	struct ibv_qp* qp2;
+	struct ibv_qp *qp2 = NULL;
     ret = RsNormalQpCreate(phyId, rdevIndex, &qpInitAttr2, &qpResp2, (void **)&qp2);
     EXPECT_INT_EQ(0, ret);
 
@@ -5370,10 +5370,10 @@ void TcRsNormalQpCreate()
 
 	rs_ut_msg("___________________after qp2 connect async:\n");
 
-	struct ibv_cq *ibSendCq3;
-    struct ibv_cq *ibRecvCq3;
-    void* context3;
-    struct CqAttr attr3;
+	struct ibv_cq *ibSendCq3 = NULL;
+    struct ibv_cq *ibRecvCq3 = NULL;
+    void *context3 = NULL;
+    struct CqAttr attr3 = {0};
     attr3.qpContext = &context3;
     attr3.ibSendCq = &ibSendCq3;
     attr3.ibRecvCq = &ibSendCq3;
@@ -5387,10 +5387,10 @@ void TcRsNormalQpCreate()
     ret = RsCqCreate(phyId, rdevIndex, &attr3);
     EXPECT_INT_EQ(ret, 0);
 
-	struct ibv_cq *ibSendCq4;
-    struct ibv_cq *ibRecvCq4;
-    void* context4;
-    struct CqAttr attr4;
+	struct ibv_cq *ibSendCq4 = NULL;
+    struct ibv_cq *ibRecvCq4 = NULL;
+    void *context4 = NULL;
+    struct CqAttr attr4 = {0};
     attr4.qpContext = &context4;
     attr4.ibSendCq = &ibSendCq4;
     attr4.ibRecvCq = &ibSendCq4;
@@ -5449,9 +5449,9 @@ void TcRsNormalQpCreate()
 
 void TcRsQueryEvent()
 {
-	int ret;
+	int ret = 0;
 	int eventId = 1;
-	struct event_summary *sendEvent;
+	struct event_summary *sendEvent = NULL;
 
     mocker((stub_fn_t)calloc, 10, NULL);
 	ret = RsQueryEvent(eventId, &sendEvent);
@@ -5461,9 +5461,9 @@ void TcRsQueryEvent()
 
 void TcRsCreateCq()
 {
-	int ret;
+	int ret = 0;
 
-	struct RsRdevCb rdevCb;
+	struct RsRdevCb rdevCb = {0};
 	struct RsCqContext cqContext = {0};
 	struct CqAttr attr = {0};
 	cqContext.rdevCb = &rdevCb;
@@ -5495,9 +5495,9 @@ void TcRsCreateCq()
 
 void TcRsCreateNormalQp()
 {
-	int ret;
-	struct RsQpCb qpCb;
-	struct ibv_qp_init_attr qpInitAttr;
+	int ret = 0;
+	struct RsQpCb qpCb = {0};
+	struct ibv_qp_init_attr qpInitAttr = {0};
 
     mocker((stub_fn_t)RsIbvCreateQp, 10, NULL);
 	ret = RsDrvNormalQpCreate(&qpCb, &qpInitAttr);
@@ -5522,7 +5522,7 @@ void TcRsCreateNormalQp()
 
 void TcRsCreateCompChannel()
 {
-	int ret;
+	int ret = 0;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 
@@ -5589,10 +5589,10 @@ void TcRsCreateCompChannel()
 
 void TcRsGetCqeErrInfo()
 {
-	int ret;
+	int ret = 0;
     struct RsCqeErrInfo *errInfo = &gRsCqeErr;
     struct CqeErrInfo *tempInfo = &errInfo->info;
-    struct CqeErrInfo cqeInfo;
+    struct CqeErrInfo cqeInfo = {0};
 
 	tempInfo->status = 0;
     mocker((stub_fn_t)pthread_mutex_lock, 1, 0);
@@ -5631,8 +5631,8 @@ void TcRsGetCqeErrInfo()
 void TcRsGetCqeErrInfoNum()
 {
     unsigned int num = 0;
-    unsigned int phyId;
-    int ret;
+    unsigned int phyId = 0;
+    int ret = 0;
 
     mocker((stub_fn_t)rsGetLocalDevIDByHostDevID, 10, 0);
     mocker((stub_fn_t)RsRdev2rdevCb, 10, 0);
@@ -5661,8 +5661,8 @@ void TcRsGetCqeErrInfoList()
     struct CqeErrInfo info = {0};
     struct RsQpCb qpCb = {0};
     unsigned int num = 1;
-    unsigned int phyId;
-    int ret;
+    unsigned int phyId = 0;
+    int ret = 0;
 
     mocker((stub_fn_t)rsGetLocalDevIDByHostDevID, 10, 0);
     mocker((stub_fn_t)RsRdev2rdevCb, 10, 0);
@@ -5693,10 +5693,10 @@ void TcRsGetCqeErrInfoList()
 
 void TcRsSaveCqeErrInfo()
 {
-	int ret;
+	int ret = 0;
     struct RsCqeErrInfo *errInfo = &gRsCqeErr;
     struct CqeErrInfo *tempInfo = &errInfo->info;
-	struct RsQpCb qpCb;
+	struct RsQpCb qpCb = {0};
 
 	tempInfo->status = 0;
     RsDrvSaveCqeErrInfo(0x15, &qpCb);
@@ -5727,7 +5727,7 @@ void TcRsCqeCallbackProcess()
 
 void TcRsCreateSrq()
 {
-	int ret;
+	int ret = 0;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 
@@ -5802,10 +5802,10 @@ void TcRsCreateSrq()
 	ret =  RsCreateSrq(phyId, rdevIndex, &attr);
 	EXPECT_INT_EQ(0, ret);
 
-	struct ibv_cq *ibSendCq;
-    struct ibv_cq *ibRecvCq3;
-    void* context2;
-    struct CqAttr attr2;
+	struct ibv_cq *ibSendCq = NULL;
+    struct ibv_cq *ibRecvCq3 = NULL;
+    void *context2 = NULL;
+    struct CqAttr attr2 = {0};
     attr2.qpContext = &context2;
     attr2.ibSendCq = &ibSendCq;
     attr2.ibRecvCq = &ibRecvCq;
@@ -5840,8 +5840,8 @@ void TcRsCreateSrq()
 
 void TcRsGetIpv6ScopeId()
 {
-	int ret;
-	struct in6_addr localIp;
+	int ret = 0;
+	struct in6_addr localIp = {0};
 
 	ret = RsGetIpv6ScopeId(localIp);
 	EXPECT_INT_EQ(-EINVAL, ret);
@@ -5853,8 +5853,8 @@ void TcRsGetIpv6ScopeId()
 
 void TcRsCreateEventHandle()
 {
-	int ret;
-	int fd;
+	int ret = 0;
+	int fd = 0;
 
 	ret = RsCreateEventHandle(NULL);
 	EXPECT_INT_EQ(-EINVAL, ret);
@@ -5867,9 +5867,9 @@ void TcRsCreateEventHandle()
 
 void TcRsCtlEventHandle()
 {
-	struct SocketPeerInfo fdHandle[1];
-	int ret;
-	int fd;
+	struct SocketPeerInfo fdHandle[1] = {{0}};
+	int ret = 0;
+	int fd = 0;
 
 	ret = RsCtlEventHandle(-1, NULL, 0, 100);
 	EXPECT_INT_EQ(-EINVAL, ret);
@@ -5895,10 +5895,10 @@ void TcRsCtlEventHandle()
 
 void TcRsWaitEventHandle()
 {
-	struct SocketEventInfoT eventInfo;
+	struct SocketEventInfoT eventInfo = {0};
 	unsigned int eventsNum = 0;
-	int ret;
-	int fd;
+	int ret = 0;
+	int fd = 0;
 
 	ret = RsWaitEventHandle(-1, NULL, -2, -1, NULL);
 	EXPECT_INT_EQ(-EINVAL, ret);
@@ -5920,7 +5920,7 @@ void TcRsWaitEventHandle()
 
 void TcRsDestroyEventHandle()
 {
-	int ret;
+	int ret = 0;
 
 	ret = RsDestroyEventHandle(NULL);
 	EXPECT_INT_EQ(-EINVAL, ret);
@@ -5928,7 +5928,7 @@ void TcRsDestroyEventHandle()
 
 void TcRsEpollCreateEpollfd()
 {
-	int ret;
+	int ret = 0;
 
 	ret = RsEpollCreateEpollfd(NULL);
 	EXPECT_INT_EQ(-EINVAL, ret);
@@ -5936,8 +5936,8 @@ void TcRsEpollCreateEpollfd()
 
 void TcRsEpollDestroyFd()
 {
-	int fd;
-	int ret;
+	int fd = 0;
+	int ret = 0;
 
 	ret = RsEpollDestroyFd(NULL);
 	EXPECT_INT_EQ(-EINVAL, ret);
@@ -5951,8 +5951,8 @@ void TcRsEpollDestroyFd()
 
 void TcRsEpollWaitHandle()
 {
-	int fd;
-	int ret;
+	int fd = 0;
+	int ret = 0;
 
 	ret = RsEpollWaitHandle(-1, NULL, 0, -1, 0);
 	EXPECT_INT_EQ(-EINVAL, ret);
@@ -5961,7 +5961,7 @@ void TcRsEpollWaitHandle()
 void TcSslverify_callback()
 {
 	X509_STORE_CTX ctx;
-	int ret;
+	int ret = 0;
 
 	mocker((stub_fn_t)X509_STORE_CTX_get_error, 10, X509_V_ERR_CERT_HAS_EXPIRED);
 	ret = verify_callback(0, &ctx);
@@ -5972,7 +5972,7 @@ void TcSslverify_callback()
 void Tcrs_ssl_verify_cert()
 {
 	X509_STORE_CTX ctx;
-	int ret;
+	int ret = 0;
 
 	mocker((stub_fn_t)X509_verify_cert, 10, 0);
 	mocker((stub_fn_t)X509_STORE_CTX_get_error, 10, X509_V_ERR_CERT_HAS_EXPIRED);
@@ -5993,7 +5993,7 @@ void TcRsMemPool()
     struct RsRdevCb rdevCb = {0};
     struct RsQpCb qpCb = {0};
     struct rs_cb rsCb = {0};
-    int ret;
+    int ret = 0;
 
     qpCb.qpMode = RA_RS_OP_QP_MODE;
     qpCb.memAlign = LITE_ALIGN_4KB;
@@ -6016,7 +6016,7 @@ void TcRsMemPool()
 
 void TcRsGetVnicIpInfo()
 {
-	int ret;
+	int ret = 0;
 	unsigned int ids[1] = {0};
 	struct IpInfo info[1] = {0};
 
@@ -6045,10 +6045,10 @@ void TcRsGetVnicIpInfo()
 
 void TcRsTypicalRegisterMr()
 {
-	int ret;
+	int ret = 0;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
-	void *addr;
+	void *addr = NULL;
 	struct RdmaMrRegInfo mrRegInfo = {0};
 	struct ibv_mr *raRsMrHandle = NULL;
 	struct RsInitConfig cfg = {0};
@@ -6101,10 +6101,10 @@ int stub_RsIbvQueryQp_init(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attr
 
 void TcRsTypicalQpModify()
 {
-	int ret;
+	int ret = 0;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
-	void *addr;
+	void *addr = NULL;
 	struct RdmaMrRegInfo mrRegInfo = {0};
 	struct ibv_mr *raRsMrHandle = NULL;
 	struct RsInitConfig cfg = {0};
@@ -6126,7 +6126,7 @@ void TcRsTypicalQpModify()
 
 	struct TypicalQp localQpInfo = {0};
 	struct TypicalQp remoteQpInfo = {0};
-	unsigned int udpSport;
+	unsigned int udpSport = 0;
 
 	struct RsQpNorm qpNorm = {0};
 	struct RsQpResp resp = {0};
@@ -6188,7 +6188,7 @@ void TcRsTypicalQpModify()
 }
 
 void Tcrs_ssl_get_cert() {
-	int ret;
+	int ret = 0;
 	struct tls_cert_mng_info mngInfo = {0};
 	struct rs_cb rscb = {0};
     struct RsCertSkidSubjectCb skidSubjectCb = {0};
@@ -6246,7 +6246,7 @@ void Tcrs_ssl_get_cert() {
 
 void tc_rs_ssl_X509_store_init()
 {
-	int ret;
+	int ret = 0;
 	X509_STORE_CTX ctx = {0};
 	X509_STORE store = {0};
 	struct tls_cert_mng_info mngInfo = {0};
@@ -6281,7 +6281,7 @@ void tc_rs_ssl_X509_store_init()
 
 void Tcrs_ssl_skids_subjects_get()
 {
-	int ret;
+	int ret = 0;
 	struct tls_cert_mng_info mngInfo = {0};
 	struct RsCerts certs = {0};
 	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
@@ -6305,7 +6305,7 @@ void Tcrs_ssl_skids_subjects_get()
 
 void Tcrs_ssl_put_cert_ca_pem()
 {
-	int ret;
+	int ret = 0;
 	char caFile[20];
 	struct tls_cert_mng_info mngInfo = {0};
 	struct RsCerts certs = {0};
@@ -6338,7 +6338,7 @@ void Tcrs_ssl_put_cert_ca_pem()
 
 void Tcrs_ssl_put_cert_end_pem()
 {
-	int ret;
+	int ret = 0;
 	char endFile[20];
 	struct RsCerts certs = {0};
 	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
@@ -6369,7 +6369,7 @@ void Tcrs_ssl_put_cert_end_pem()
 
 void Tcrs_ssl_check_mng_and_cert_chain()
 {
-	int ret;
+	int ret = 0;
 	struct rs_cb rscb = {0};
 	struct RsCerts certs = {0};
 	struct tls_cert_mng_info mngInfo = {0};
@@ -6405,7 +6405,7 @@ void Tcrs_ssl_check_mng_and_cert_chain()
 
 void Tcrs_remove_certs()
 {
-	int ret;
+	int ret = 0;
 	char endFile[20];
 	char caFile[20];
 
@@ -6419,7 +6419,7 @@ void Tcrs_remove_certs()
 
 void tc_rs_ssl_X509_store_add_cert()
 {
-	int ret;
+	int ret = 0;
 	char certInfo[20];
 	X509_STORE store;
 
@@ -6586,7 +6586,7 @@ void TcRsRemapMr()
     struct MemRemapInfo memList[1] = {0};
     struct RsMrCb mrCb = {0};
     struct ibv_mr ibMr = {0};
-    int ret;
+    int ret = 0;
 
     mocker_clean();
     RS_INIT_LIST_HEAD(&gRdevCb.typicalMrList);
@@ -6651,9 +6651,9 @@ void tc_RsRoceGetApiVersion()
 
 void TcRsGetTlsEnable()
 {
-    unsigned int phyId;
-    bool tlsEnable;
-    int ret;
+    unsigned int phyId = 0;
+    bool tlsEnable = false;
+    int ret = 0;
 
     mocker(RsGetRsCb, 1, 1);
     ret = RsGetTlsEnable(phyId, &tlsEnable);
@@ -6702,7 +6702,7 @@ void TcRsGetHccnCfg()
 	char value[2048] = {0};
 	unsigned int valueLen = 2048;
 
-    int ret;
+    int ret = 0;
 
 	ret = RsGetHccnCfg(0, HCCN_CFG_UDP_PORT_MODE, value, &valueLen);
     EXPECT_INT_EQ(0, ret);
