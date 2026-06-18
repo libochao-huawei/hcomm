@@ -41,7 +41,7 @@ private:
     HcclResult ReportErrMsg(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
     HcclResult GenerateErrorMessageReport(CollCommAicpu *aicpuComm, const Hccl::TaskInfo& taskInfo,
         const rtLogicCqReport_t &exceptionInfo, Hccl::ErrorMessageReport &errMsgInfo);
-    void GetErrMsgInfo(const Hccl::TaskInfo& taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
+    void GenerateTaskErrMsg(const Hccl::TaskInfo& taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
         const rtLogicCqReport_t &exceptionInfo);
     HcclResult SendTaskExceptionByMBox(const u32 notifyId, const u32 tsId, const rtLogicCqReport_t &exceptionInfo);
     uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode);
