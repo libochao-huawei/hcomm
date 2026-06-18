@@ -18,13 +18,6 @@ typedef struct {
     uint32_t dataOffset;
 } rtPlaceHolderInfo_t;
 
-typedef struct tagRtDevBinary {
-    uint32_t magic;
-    uint32_t version;
-    const void *data;
-    uint64_t length;
-} rtDevBinary_t;
-
 typedef enum tagRtStreamCaptureStatus {
     RT_STREAM_CAPTURE_STATUS_NONE   = 0,
     RT_STREAM_CAPTURE_STATUS_ACTIVE = 1,
