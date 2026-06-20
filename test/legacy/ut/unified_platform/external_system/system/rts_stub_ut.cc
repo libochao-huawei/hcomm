@@ -597,7 +597,12 @@ aclError aclrtGetLogicDevIdByUserDevId(const int32_t userDevid, int32_t *const l
 
 aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
 {
-    return ACL_SUCCESS;
+	return ACL_SUCCESS;
+}
+
+aclError aclrtRegDeviceStateCallback(const char *regName, aclrtDeviceStateCallback callback, void *args)
+{
+	return ACL_SUCCESS;
 }
 
 namespace aicpu {
