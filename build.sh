@@ -17,7 +17,6 @@ BUILD_OUTPUT_DIR=${CURRENT_DIR}/build_out
 LOGS_PATH="${CURRENT_DIR}/logs"
 USER_ID=$(id -u)
 CPU_NUM=$(cat /proc/cpuinfo | grep "^processor" | wc -l)
-JOB_NUM="-j${CPU_NUM}"
 ASAN="false"
 COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
@@ -68,18 +67,6 @@ function clean()
     fi
 }
 
-function cmake_config()
-{
-    log "Info: cmake config ${CUSTOM_OPTION} $*"
-    cmake .. ${CUSTOM_OPTION} "$@"
-}
-
-function build()
-{
-    log "Info: build target:$@ JOB_NUM:${JOB_NUM}"
-    cmake --build . --target "$@" ${JOB_NUM} #--verbose
-}
-
 function build_cb_test_verify(){
     cd ${CURRENT_DIR}/examples/
     bash build.sh
@@ -92,6 +79,8 @@ function run_ctest() {
         return 0
     fi
 
+    log "Info: Running ut with ${CPU_NUM} parallel jobs"
+
     local suite_name="$1"   # "ut" or "st"
     local log_dir="${LOGS_PATH}/${suite_name}"
     local ctest_log="${log_dir}/run.log"
@@ -100,7 +89,7 @@ function run_ctest() {
     mk_dir "${log_dir}"
 
     # CTest 执行用例
-    ctest ${JOB_NUM} \
+    ctest -j ${CPU_NUM} \
           --verbose \
           --build-nocmake \
           --timeout 1000 \
@@ -120,25 +109,24 @@ function run_ctest() {
 }
 
 function build_st() {
-    log "Info: build_st"
+    log "Info: Building st with ${CPU_NUM} parallel jobs"
     mk_dir "${BUILD_ST_DIR}"
     cd "${BUILD_ST_DIR}"
 
     # 配置 ST 用例代码
     local st_tasks=$(printf '%s;' "${ST_TASKS[@]}" | sed 's/;$//')
     log "Info: build_st: ST_TASKS=${st_tasks}"
-    cmake_config -DPRODUCT_SIDE=host \
-                 -DENABLE_GCOV=${ENABLE_GCOV} \
-                 -DENABLE_TEST=${ENABLE_TEST} \
-                 -DENABLE_ST=${ENABLE_ST} \
-                 -DST_TASKS=${st_tasks}
+
+    cmake -S ../ -B . \
+        ${CUSTOM_OPTION} \
+        -DST_TASKS=${st_tasks}
     if [ $? -ne 0 ]; then
         log "Error: build_st: cmake config failed"
         exit 1
     fi
 
     # 编译 ST 用例代码
-    cmake --build . ${JOB_NUM}
+    cmake --build . -j ${CPU_NUM}
     if [ $? -ne 0 ]; then
         log "Error: build_st: cmake build failed"
         exit 1
@@ -162,7 +150,7 @@ function mk_dir() {
 }
 
 function build_ut() {
-    log "Info: build_ut"
+    log "Info: Building ut with ${CPU_NUM} parallel jobs"
     mk_dir "${BUILD_UT_DIR}"
     cd "${BUILD_UT_DIR}"
 
@@ -170,17 +158,15 @@ function build_ut() {
     unset LD_LIBRARY_PATH
 
     # 配置 UT 用例代码
-    cmake_config -DPRODUCT_SIDE=host \
-                 -DENABLE_TEST=${ENABLE_TEST} \
-                 -DENABLE_UT=${ENABLE_UT} \
-                 -DENABLE_GCOV=${ENABLE_GCOV}
+    cmake -S ../ -B . \
+        ${CUSTOM_OPTION}
     if [ $? -ne 0 ]; then
         log "Error: build_ut: cmake config failed"
         exit 1
     fi
 
     # 编译 UT 用例代码
-    cmake --build . ${JOB_NUM}
+    cmake --build . -j ${CPU_NUM}
     if [ $? -ne 0 ]; then
         log "Error: build_ut: cmake build failed"
         exit 1
@@ -197,41 +183,63 @@ function build_ut() {
 }
 
 function make_ut_gov() {
-# Detect lcov version and set appropriate ignore errors flags
-    detect_lcov_flags() {
-        LCOV_VERSION=$(lcov --version 2>/dev/null | head -n1 | sed 's/.*LCOV version //' | cut -d. -f1)
-        if [[ "${LCOV_VERSION}" -ge 2 ]]; then
-            LCOV_CAPTURE_IGNORE_FLAGS="--ignore-errors mismatch,corrupt,empty,inconsistent,negative,unused"
-            LCOV_FILTER_IGNORE_FLAGS="--ignore-errors unused"
-            LCOV_RUNTIME_CONFIGURATION_FLAGS="-rc geninfo_unexecuted_blocks=1"
-        else
-            LCOV_CAPTURE_IGNORE_FLAGS=""
-            LCOV_FILTER_IGNORE_FLAGS=""
-            LCOV_RUNTIME_CONFIGURATION_FLAGS=""
+    # 生成 UT 覆盖率报告
+    if [[ "X$ENABLE_UT" = "Xon" && "X$ENABLE_GCOV" = "Xon" ]]; then
+        log "Info: Generating coverage statistics, please wait..."
+        rm -rf ${CURRENT_DIR}/cov
+        mk_dir ${CURRENT_DIR}/cov
+        cd ${CURRENT_DIR}/cov
+
+        # 解析 lcov 版本号
+        local major_version
+        if ! major_version=$(set -o pipefail; lcov --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)*' | head -1 | cut -d. -f1); then
+            log "Error: Failed to parse lcov major version number, please check 'lcov --version'" >&2
+            exit 1
         fi
-    }
 
-  if [[ "X$ENABLE_UT" = "Xon" && "X$ENABLE_GCOV" = "Xon" ]]; then
-    detect_lcov_flags
-    echo "Generated coverage statistics, please wait..."
-    cd ${CURRENT_DIR}
-    rm -rf ${CURRENT_DIR}/cov
-    mkdir -p ${CURRENT_DIR}/cov
+        # 适配 lcov 2.x 版本，支持并行处理覆盖率报告
+        if [[ "${major_version}" -ge 2 ]]; then
+            log "Info: Detected lcov version 2.x, running with ${CPU_NUM} parallel jobs"
+            LCOV_IGNORE_ERRORS="mismatch,corrupt,empty,inconsistent,negative,unused"
+            LCOV_RC_PARAM=""
+            LCOV_PARALLEL="-j ${CPU_NUM}"
+            GENHTML_IGNORE_ERRORS="inconsistent,corrupt"
+        else
+            LCOV_IGNORE_ERRORS=""
+            LCOV_RC_PARAM=""
+            LCOV_PARALLEL=""
+            GENHTML_IGNORE_ERRORS=""
+        fi
 
-    lcov -c ${LCOV_CAPTURE_IGNORE_FLAGS} \
-         -d ${BUILD_UT_DIR}/test/ut/ \
-         -d ${BUILD_UT_DIR}/test/legacy/ut/ \
-         -o cov/coverage.info \
-         ${LCOV_RUNTIME_CONFIGURATION_FLAGS}
-    lcov ${LCOV_FILTER_IGNORE_FLAGS} -r cov/coverage.info */src/base_comm/resources/hccp/external_depends/* -o cov/coverage.info
-    lcov ${LCOV_FILTER_IGNORE_FLAGS} -e cov/coverage.info */src/legacy/ascend910/algorithm/* */src/legacy/ascend910/common/* */src/legacy/ascend910/hccd/* */src/legacy/ascend950* */src/legacy/ascend910/framework/* */src/legacy/ascend910/platform/* */src/legacy/ascend910/pub_inc/* */src/base_comm/* */src/coll_communicator_mgr/* -o cov/coverage.info
+        # 捕获覆盖率数据
+        lcov -c \
+             ${LCOV_PARALLEL} \
+             -d ${BUILD_UT_DIR}/test/ut/ \
+             -d ${BUILD_UT_DIR}/test/legacy/ut/ \
+             --ignore-errors ${LCOV_IGNORE_ERRORS} ${LCOV_RC_PARAM} \
+             -o coverage.info
+        # 排除路径
+        lcov -r coverage.info \
+ 	            */src/base_comm/resources/hccp/external_depends/* \
+             ${LCOV_PARALLEL} \
+ 	         --ignore-errors ${LCOV_IGNORE_ERRORS} \
+ 	         -o coverage.info
+        # 提取目标路径
+        lcov -e coverage.info \
+                */src/* \
+             ${LCOV_PARALLEL} \
+             --ignore-errors ${LCOV_IGNORE_ERRORS} \
+             -o coverage.info
 
-    cd ${CURRENT_DIR}/cov
-    genhtml coverage.info
+        # 生成覆盖率报告，html格式
+        genhtml coverage.info ${LCOV_PARALLEL} --ignore-errors ${GENHTML_IGNORE_ERRORS}
+        log "Info: coverage statistics generated successfully"
   fi
 }
 
 function build_hcomm() {
+    log "Info: Building hcomm with ${CPU_NUM} parallel jobs"
+
     # 设置 hcc 编译器工具链
     export TOOLCHAIN_DIR="${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc"
 
@@ -247,14 +255,14 @@ function build_hcomm() {
     fi
 
     # 编译
-    cmake --build . ${JOB_NUM}
+    cmake --build . -j ${CPU_NUM}
     if [ $? -ne 0 ]; then
         log "Error: cmake build failed"
         return 1
     fi
 
     # 打包
-    make package ${JOB_NUM}
+    make package -j ${CPU_NUM}
     if [ $? -ne 0 ]; then
         log "Error: make package failed"
         return 1
@@ -298,8 +306,13 @@ while [[ $# -gt 0 ]]; do
         exit 0
         ;;
     -j*)
-        JOB_NUM="$1"
-        shift
+        if [[ "$1" == "-j" ]]; then
+            CPU_NUM="$2"
+            shift 2
+        else
+            CPU_NUM="${1#-j}"
+            shift
+        fi
         ;;
     --build-type=*)
         OPTARG=$1
@@ -500,6 +513,11 @@ CUSTOM_OPTION="${CUSTOM_OPTION} -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT}"
 CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_SIGN=${ENABLE_SIGN}"
 CUSTOM_OPTION="${CUSTOM_OPTION} -DVERSION_INFO=${VERSION_INFO}"
 CUSTOM_OPTION="${CUSTOM_OPTION} -DPRODUCT=ascend"
+
+CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_TEST=${ENABLE_TEST}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_UT=${ENABLE_UT}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_ST=${ENABLE_ST}"
+CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=${ENABLE_GCOV}"
 
 set_env
 
