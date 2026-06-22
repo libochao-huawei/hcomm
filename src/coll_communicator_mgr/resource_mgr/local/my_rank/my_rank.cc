@@ -408,7 +408,7 @@ HcclResult MyRank::BatchGetSocketsForChannels(const HcclChannelDesc* channelDesc
         auto ret = endpointPair->GetConnectedSocket(rankId_, remoteRank, socketTagAddProto, reuseIdx, listenPort, socket, devicePhyId, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d], reuseIdx[%u], tag[%s]",
-                __func__, i, remoteRank, channelDescs[i].localEndpoint.protocol, reuseIdx, socketTag.c_str()),
+                __func__, i, remoteRank, channelDescs[i].localEndpoint.protocol, reuseIdx, socketTagAddProto.c_str()),
             ret);
         CHK_PTR_NULL(socket);
 

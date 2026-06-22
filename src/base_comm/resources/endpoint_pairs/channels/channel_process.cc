@@ -24,6 +24,9 @@
 #include "aicpu_ts_p2p_channel.h"
 #include "aiv_urma_channel.h"
 #include "mem_device_pub.h"
+#include "sal_pub.h"
+
+constexpr u32 MAX_MILLISECOND_OF_USLEEP = 1000;
 
 namespace hcomm {
 
@@ -182,6 +185,8 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
         statusList[i] = status;
     }
     if (readyCount != listNum) {
+        // 防止get sockets冲高CtrlCPU, 最大值取决于HCCP异步框架处理队列深度
+ 	    SaluSleep(std::min(listNum - readyCount, MAX_MILLISECOND_OF_USLEEP) * ONE_MILLISECOND_OF_USLEEP);
         return HCCL_E_AGAIN;
     }
     EXCEPTION_HANDLE_END
