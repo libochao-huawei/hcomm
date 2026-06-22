@@ -188,7 +188,7 @@ private:
     HcclResult GetRemEndpointDescs(HcclComm comm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs,
         std::vector<uint32_t> &netLayersVector);
     void GetRemEndpointDescsPerLayer(uint32_t netLayer, HcclComm comm, Hccl::RankGraph *rankGraph,
-        hccl::CollComm* collComm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs);
+        hccl::CollComm* collComm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs, std::set<uint32_t> &rankIdsSet);
     
     HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info);
 

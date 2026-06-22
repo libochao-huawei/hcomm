@@ -18,6 +18,8 @@
 #include "hccl_types.h"
 #define private public
 #include "dfx/cluster_monitor/cluster_monitor.h"
+#include "hccl_comm_pub.h"
+#include "rank_graph_v2.h"
 #undef private
 #include "hccl_comm_socket_c_adpt.h"
 #include "base_config.h"
@@ -771,4 +773,92 @@ TEST_F(ClusterMonitorTest, Ut_GetConnectRank_When_HighLayerCommLinks_Expect_Sort
 
     ret = g_monitor.GetConnectRank(nullptr, needConnectRank, g_uidCtxs, netLayersVector);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+struct InsertTestCtx {
+    std::shared_ptr<Hccl::RankGraph> rankGraphData;
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr;
+};
+
+static InsertTestCtx CreateHcclCommForInsertTest()
+{
+    InsertTestCtx ctx;
+    hccl::RankGraphStub rankGraphStub;
+    ctx.rankGraphData = rankGraphStub.Create2PGraph();
+
+    hccl::RankGraphV2* rankGraphV2 = new hccl::RankGraphV2(ctx.rankGraphData.get());
+
+    hccl::ManagerCallbacks callbacks;
+    callbacks.getAicpuCommState = []() { return false; };
+    callbacks.setAicpuCommState = [](bool) {};
+    callbacks.kernelLaunchAicpuCommInit = []() { return HCCL_SUCCESS; };
+
+    auto collComm = std::make_unique<hccl::CollComm>(
+        nullptr, 1, "test_comm", callbacks, hccl::CollCommInitMode::simpleMode);
+    collComm->rankgraph_ = rankGraphV2;
+
+    ctx.hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, "test_comm");
+    ctx.hcclCommPtr->collComm_ = std::move(collComm);
+
+    return ctx;
+}
+
+TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCxt_When_GetLinksFailed_Expect_WarningAndSuccess)
+{
+    auto ctx = CreateHcclCommForInsertTest();
+    ASSERT_NE(ctx.hcclCommPtr, nullptr);
+    HcclComm comm = static_cast<HcclComm>(ctx.hcclCommPtr.get());
+
+    ClusterUIDType myUid;
+    int ret = memcpy_s(myUid.id, sizeof(myUid.id), "myInstance/1", sizeof("myInstance/1"));
+    EXPECT_EQ(ret, EOK);
+    g_monitor.myRankUID_ = myUid;
+    g_monitor.myRankLocalId_ = 1;
+    g_monitor.myRankNetInstId_ = "myInstance";
+
+    ClusterUIDType remoteUid;
+    ret = memcpy_s(remoteUid.id, sizeof(remoteUid.id), "remoteInstance/0", sizeof("remoteInstance/0"));
+    EXPECT_EQ(ret, EOK);
+    UIDContext remoteCtx(remoteUid, 0, 0, 0, "remoteInstance");
+
+    std::map<ClusterUIDType, ClusterMonitorSocketCtx> needConnectRank;
+
+    MOCKER(HcclRankGraphGetLinks)
+        .stubs()
+        .will(returnValue(HCCL_E_INTERNAL));
+
+    HcclResult result = g_monitor.InsertClusterMonitorCxt(comm, remoteCtx, needConnectRank);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCxt_When_GetLinksSuccess_ZeroLinks_Expect_Success)
+{
+    auto ctx = CreateHcclCommForInsertTest();
+    ASSERT_NE(ctx.hcclCommPtr, nullptr);
+    HcclComm comm = static_cast<HcclComm>(ctx.hcclCommPtr.get());
+
+    ClusterUIDType myUid;
+    int ret = memcpy_s(myUid.id, sizeof(myUid.id), "myInstance/1", sizeof("myInstance/1"));
+    EXPECT_EQ(ret, EOK);
+    g_monitor.myRankUID_ = myUid;
+    g_monitor.myRankLocalId_ = 1;
+    g_monitor.myRankNetInstId_ = "myInstance";
+
+    ClusterUIDType remoteUid;
+    ret = memcpy_s(remoteUid.id, sizeof(remoteUid.id), "remoteInstance/0", sizeof("remoteInstance/0"));
+    EXPECT_EQ(ret, EOK);
+    UIDContext remoteCtx(remoteUid, 0, 0, 0, "remoteInstance");
+
+    std::map<ClusterUIDType, ClusterMonitorSocketCtx> needConnectRank;
+
+    MOCKER(HcclRankGraphGetLinks)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    HcclResult result = g_monitor.InsertClusterMonitorCxt(comm, remoteCtx, needConnectRank);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
 }

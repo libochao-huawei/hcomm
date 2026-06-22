@@ -43,12 +43,11 @@ std::string ClusterMonitor::GetUID(const ClusterUIDType &uid) const
 }
 
 void ClusterMonitor::GetRemEndpointDescsPerLayer(uint32_t netLayer, HcclComm comm, Hccl::RankGraph *rankGraph,
-    hccl::CollComm* collComm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs)
+    hccl::CollComm* collComm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs, std::set<uint32_t> &rankIdsSet)
 {
     uint32_t *ranksPerLayer = nullptr;
     uint32_t rankNum = 0;
     auto myRankId = collComm->GetMyRankId();
-    std::set<uint32_t> rankIdsSet; // 存放通信域的唯一标识ranks，防止在netLayer>=1的时候，查到了netLayer=0已经存放的ranks
     HcclRankGraphGetRanksByLayer(comm, netLayer, &ranksPerLayer, &rankNum); // 获取每层netLayer的所有rank
     for (uint32_t rankIdx = 0; rankIdx < rankNum; rankIdx++) {
         uint32_t rankId = ranksPerLayer[rankIdx];
@@ -105,9 +104,9 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm, std::map<uint32_t,
     }
     netLayersVector.assign(netLayers, netLayers + netLayerNum);
     std::sort(netLayersVector.begin(), netLayersVector.end());
-
+    std::set<uint32_t> rankIdsSet; // 存放通信域的唯一标识ranks，防止在netLayer>=1的时候，查到了netLayer=0已经存放的ranks
     for (auto netLayer : netLayersVector) {
-        GetRemEndpointDescsPerLayer(netLayer, comm, rankGraph, collComm, uidCtxs);
+        GetRemEndpointDescsPerLayer(netLayer, comm, rankGraph, collComm, uidCtxs, rankIdsSet);
     }
 
     return HCCL_SUCCESS;
@@ -157,7 +156,11 @@ HcclResult ClusterMonitor::InsertClusterMonitorCxt(HcclComm comm, UIDContext rem
     }
     CommLink *links = nullptr;
     uint32_t linkNum = 0;
-    CHK_RET(HcclRankGraphGetLinks(comm, netLayer, myRankId, remoteRank, &links, &linkNum));
+    HcclResult result = HcclRankGraphGetLinks(comm, netLayer, myRankId, remoteRank, &links, &linkNum);
+    if (result != HCCL_SUCCESS) {
+        HCCL_WARNING("[%s] Get links between myRank[%u] and remoteRank[%u] failed, ret:%d", __func__, myRankId, remoteRank, result);
+        return HCCL_SUCCESS;
+    }
     if (linkNum == 0) { // 如果没有查询到任何链接，不报错，不把该link加入needConnectRank，直接返回成功
         HCCL_INFO("[%s] no link between myRank[%u] and remoteRank[%u]", __func__, myRankId, remoteRank);
         return HCCL_SUCCESS;
