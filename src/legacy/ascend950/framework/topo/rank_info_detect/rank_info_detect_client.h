@@ -37,7 +37,7 @@ public:
     }
     ~RankInfoDetectClient();
 
-    void Setup(RankTableInfo &rankTable, u32 hostPort);
+    void Setup(RankTableInfo &rankTable);
 
 private:
     u32                             devPhyId_{0};
@@ -67,6 +67,7 @@ private:
         const std::string &tlsInconsistentTlsType, const std::string &tlsEnableRankStr,
         const std::string &tlsDisableRankStr, const std::string &tlsUnknownRankStr) const;
     void TearDown();
+    void HostListenPortDetect(NewRankInfo &rankInfo);
 };
 
 } // namespace Hccl
