@@ -283,7 +283,8 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_logic_id failed, ret[%d]", ret), ret);
 
     productType = RsGetProductType(rscb->logicId);
-    CHK_PRT_RETURN(productType == PRODUCT_TYPE_INVALID, hccp_err("rs get product type failed", ret), -EINVAL);
+    CHK_PRT_RETURN(productType == PRODUCT_TYPE_INVALID, hccp_err("RsGetProductType failed, logicId:%u", rscb->logicId),
+        -EINVAL);
 #ifdef CUSTOM_INTERFACE
     if (RsIsUdmaSupported() || RsIsRdmaSupported()) {
         ret = RsGetChipProtocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);

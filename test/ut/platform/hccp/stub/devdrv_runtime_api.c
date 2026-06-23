@@ -281,6 +281,12 @@ drvError_t drvGetDevIDByLocalDevID(uint32_t localDevId, uint32_t *devId)
 	return 0;
 }
 
+drvError_t halGetPhyDevIdByudevId(uint32_t udevId, uint32_t *phyDevId)
+{
+	*phyDevId = udevId;
+	return 0;
+}
+
 DV_ONLINE DVresult halMemBindSibling(int hostPid, int aicpuPid, unsigned int vfid, unsigned int dev_id,
 	unsigned int flag)
 {
@@ -332,6 +338,7 @@ struct {
     {"drvGetDevIDByLocalDevID", drvGetDevIDByLocalDevID},
     {"drvDeviceGetIndexByPhyId", drvDeviceGetIndexByPhyId},
     {"drvDeviceGetPhyIdByIndex", drvDeviceGetPhyIdByIndex},
+    {"halGetPhyDevIdByudevId", halGetPhyDevIdByudevId},
     {"halHdcGetSessionAttr", halHdcGetSessionAttr},
     {"drvHdcGetCapacity", drvHdcGetCapacity},
     {"drvHdcClientCreate", drvHdcClientCreate},
