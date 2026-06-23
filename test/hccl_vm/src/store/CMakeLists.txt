@@ -1,0 +1,71 @@
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+
+file(GLOB_RECURSE HCCL_SOURCES "*.cc")
+
+# 添加共享库
+add_library(store SHARED ${HCCL_SOURCES})
+target_compile_options(store PRIVATE
+    -fPIC
+    -g
+    -O0
+    -D_GLIBCXX_USE_CXX11_ABI=0
+)
+
+# 设置头文件包含路径（改为绝对路径，基于项目根目录）
+target_include_directories(store PRIVATE
+    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hcomm/ccu
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/runnerdb
+    ${PROJECT_SOURCE_DIR}/include/store
+    ${PROJECT_SOURCE_DIR}/include
+
+    ${HCCL_VM_SRC}
+    ${HCCL_VM_SRC}/store
+    ${THRID_PARTY_DIR}/nlohmann_json
+
+    ## cann包头文件
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
+    ${ASCEND_CANN_PACKAGE_PATH}/include
+    ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
+    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/toolchain
+
+    # cann包头文件
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts
+)
+
+target_link_libraries(store PRIVATE
+    log
+    loader
+    runnerdb
+    rt
+)
+
+install(TARGETS store
+    DESTINATION "."
+    # 文件的权限 (755)
+    PERMISSIONS 
+        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
+        GROUP_READ GROUP_EXECUTE 
+        WORLD_READ WORLD_EXECUTE
+)
+
+install(TARGETS store
+    DESTINATION "plugin/validate/runner"
+    # 文件的权限 (755)
+    PERMISSIONS 
+        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
+        GROUP_READ GROUP_EXECUTE 
+        WORLD_READ WORLD_EXECUTE
+)
