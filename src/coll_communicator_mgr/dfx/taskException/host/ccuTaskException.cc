@@ -234,8 +234,8 @@ HcclResult CcuTaskException::InitChannelMap(s32 deviceId, u64 ccuKernelHandle)
     CHK_PRT_RET(kernel == nullptr, HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]",
         __func__, deviceId, ccuKernelHandle), HCCL_E_PARA);
 
-    const std::unordered_set<ChannelHandle> ccuChannels = kernel->GetChannels();
-    for (auto it : ccuChannels) {
+    const auto& ccuChannels = kernel->GetChannels();
+    for (const auto& it : ccuChannels) {
         void *channelPtr = nullptr;
         CHK_RET(static_cast<HcclResult>(HcommChannelGet(it, &channelPtr)));
         auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));

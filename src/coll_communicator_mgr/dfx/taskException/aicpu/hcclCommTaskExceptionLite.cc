@@ -306,7 +306,6 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
     errMsgInfo.dstAddr = taskInfo.dfxOpInfo_->op_.outputMem == nullptr ? 0 :
         static_cast<u64>(taskInfo.dfxOpInfo_->op_.outputMem->GetAddr());
     errMsgInfo.taskType = taskInfo.taskParam_.taskType;
-    errMsgInfo.reduceType = taskInfo.taskParam_.taskPara.Reduce.reduceOp;
 
     errMsgInfo.rtCqErrorType = exceptionInfo.errorType;
     errMsgInfo.rtCqErrorCode = exceptionInfo.errorCode;
@@ -326,50 +325,88 @@ void HcclCommTaskExceptionLite::GenerateTaskErrMsg(const Hccl::TaskInfo& taskInf
     switch (taskInfo.taskParam_.taskType) {
         case Hccl::TaskParamType::TASK_NOTIFY_WAIT:
         case Hccl::TaskParamType::TASK_NOTIFY_RECORD:
-            errMsgInfo.notifyId = taskInfo.taskParam_.taskPara.Notify.notifyID;
-            errMsgInfo.notifyValue = taskInfo.taskParam_.taskPara.Notify.value;
+            FillNotifyErrMsg(taskInfo, errMsgInfo);
             break;
         case Hccl::TaskParamType::TASK_UB_REDUCE_INLINE:
         case Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY:
+            FillReduceErrMsg(taskInfo, errMsgInfo, exceptionInfo);
+            break;
         case Hccl::TaskParamType::TASK_REDUCE_INLINE:
-            errMsgInfo.notifyId = taskInfo.taskParam_.taskPara.Reduce.notifyID;
-            errMsgInfo.notifyValue = taskInfo.taskParam_.taskPara.Reduce.notifyValue;
-            errMsgInfo.locEid = taskInfo.taskParam_.taskPara.Reduce.locEid;
-            errMsgInfo.rmtEid = taskInfo.taskParam_.taskPara.Reduce.rmtEid;
-            errMsgInfo.ubCqeStatus = exceptionInfo.errorCode & 0xFF;
-            errMsgInfo.linkType = taskInfo.taskParam_.taskPara.Reduce.linkType;
-            errMsgInfo.size = taskInfo.taskParam_.taskPara.Reduce.size;
-            errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.Reduce.src);
-            errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.Reduce.dst);
-            HCCL_ERROR("[TaskException][AICPU]ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ",
-                errMsgInfo.ubCqeStatus, errMsgInfo.locEid.Describe().c_str(), errMsgInfo.rmtEid.Describe().c_str());
+            FillReduceInlineErrMsg(taskInfo, errMsgInfo);
             break;
         case Hccl::TaskParamType::TASK_UB_INLINE_WRITE:
         case Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY:
+            FillDmaErrMsg(taskInfo, errMsgInfo, exceptionInfo);
+            break;
         case Hccl::TaskParamType::TASK_UB:
-            errMsgInfo.notifyId = taskInfo.taskParam_.taskPara.DMA.notifyID;
-            errMsgInfo.notifyValue = taskInfo.taskParam_.taskPara.DMA.notifyValue;
-            errMsgInfo.locEid = taskInfo.taskParam_.taskPara.DMA.locEid;
-            errMsgInfo.rmtEid = taskInfo.taskParam_.taskPara.DMA.rmtEid;
-            errMsgInfo.ubCqeStatus = exceptionInfo.errorCode & 0xFF;
-            errMsgInfo.linkType = taskInfo.taskParam_.taskPara.DMA.linkType;
-            errMsgInfo.size = taskInfo.taskParam_.taskPara.DMA.size;
-            errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.DMA.src);
-            errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.DMA.dst);
-            HCCL_ERROR("[TaskException][AICPU]ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ",
-                errMsgInfo.ubCqeStatus, errMsgInfo.locEid.Describe().c_str(), errMsgInfo.rmtEid.Describe().c_str());
+            FillUbErrMsg(taskInfo, errMsgInfo, exceptionInfo);
             break;
         case Hccl::TaskParamType::TASK_SDMA:
-            errMsgInfo.notifyId = taskInfo.taskParam_.taskPara.DMA.notifyID;
-            errMsgInfo.notifyValue = taskInfo.taskParam_.taskPara.DMA.notifyValue;
-            errMsgInfo.linkType = taskInfo.taskParam_.taskPara.DMA.linkType;
-            errMsgInfo.size = taskInfo.taskParam_.taskPara.DMA.size;
-            errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.DMA.src);
-            errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.DMA.dst);
+            FillSdmaErrMsg(taskInfo, errMsgInfo);
+            break;
         default:
             HCCL_ERROR("[TaskException][AICPU]%s taskType[%d] is not support", __func__, taskInfo.taskParam_.taskType);
             return;
     }
+}
+
+void HcclCommTaskExceptionLite::FillNotifyErrMsg(const Hccl::TaskInfo& taskInfo, Hccl::ErrorMessageReport &errMsgInfo)
+{
+    errMsgInfo.notifyId = taskInfo.taskParam_.taskPara.Notify.notifyID;
+    errMsgInfo.notifyValue = taskInfo.taskParam_.taskPara.Notify.value;
+}
+
+void HcclCommTaskExceptionLite::FillReduceErrMsg(const Hccl::TaskInfo& taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
+    const rtLogicCqReport_t &exceptionInfo)
+{
+    errMsgInfo.reduceType = taskInfo.taskParam_.taskPara.Reduce.reduceOp;
+    errMsgInfo.notifyId = taskInfo.taskParam_.taskPara.Reduce.notifyID;
+    errMsgInfo.notifyValue = taskInfo.taskParam_.taskPara.Reduce.notifyValue;
+    errMsgInfo.locEid = taskInfo.taskParam_.taskPara.Reduce.locEid;
+    errMsgInfo.rmtEid = taskInfo.taskParam_.taskPara.Reduce.rmtEid;
+    errMsgInfo.ubCqeStatus = exceptionInfo.errorCode & 0xFF;
+    errMsgInfo.linkType = taskInfo.taskParam_.taskPara.Reduce.linkType;
+    errMsgInfo.size = taskInfo.taskParam_.taskPara.Reduce.size;
+    errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.Reduce.src);
+    errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.Reduce.dst);
+    HCCL_ERROR("[TaskException][AICPU]ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ",
+        errMsgInfo.ubCqeStatus, errMsgInfo.locEid.Describe().c_str(), errMsgInfo.rmtEid.Describe().c_str());
+}
+
+void HcclCommTaskExceptionLite::FillDmaErrMsg(const Hccl::TaskInfo& taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
+    const rtLogicCqReport_t &exceptionInfo)
+{
+    errMsgInfo.notifyId = taskInfo.taskParam_.taskPara.DMA.notifyID;
+    errMsgInfo.notifyValue = taskInfo.taskParam_.taskPara.DMA.notifyValue;
+    FillUbErrMsg(taskInfo, errMsgInfo, exceptionInfo);
+}
+
+void HcclCommTaskExceptionLite::FillSdmaErrMsg(const Hccl::TaskInfo& taskInfo, Hccl::ErrorMessageReport &errMsgInfo)
+{
+    errMsgInfo.linkType = taskInfo.taskParam_.taskPara.DMA.linkType;
+    errMsgInfo.size = taskInfo.taskParam_.taskPara.DMA.size;
+    errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.DMA.src);
+    errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.DMA.dst);
+}
+
+void HcclCommTaskExceptionLite::FillUbErrMsg(const Hccl::TaskInfo& taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
+    const rtLogicCqReport_t &exceptionInfo)
+{
+    errMsgInfo.locEid = taskInfo.taskParam_.taskPara.DMA.locEid;
+    errMsgInfo.rmtEid = taskInfo.taskParam_.taskPara.DMA.rmtEid;
+    errMsgInfo.ubCqeStatus = exceptionInfo.errorCode & 0xFF;
+    errMsgInfo.linkType = taskInfo.taskParam_.taskPara.DMA.linkType;
+    errMsgInfo.size = taskInfo.taskParam_.taskPara.DMA.size;
+    errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.DMA.src);
+    errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.DMA.dst);
+    HCCL_ERROR("[TaskException][AICPU]ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ",
+        errMsgInfo.ubCqeStatus, errMsgInfo.locEid.Describe().c_str(), errMsgInfo.rmtEid.Describe().c_str());
+}
+
+void HcclCommTaskExceptionLite::FillReduceInlineErrMsg(const Hccl::TaskInfo& taskInfo,
+    Hccl::ErrorMessageReport &errMsgInfo)
+{
+    errMsgInfo.reduceType = taskInfo.taskParam_.taskPara.Reduce.reduceOp;
 }
 
 HcclResult HcclCommTaskExceptionLite::SendTaskExceptionByMBox(const u32 notifyId, const u32 tsId,
