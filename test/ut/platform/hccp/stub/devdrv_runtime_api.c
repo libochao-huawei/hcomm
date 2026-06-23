@@ -290,7 +290,18 @@ DV_ONLINE DVresult halMemBindSibling(int hostPid, int aicpuPid, unsigned int vfi
 DLLEXPORT drvError_t drvQueryProcessHostPid(int pid, unsigned int *chip_id, unsigned int *vfid,
     unsigned int *host_pid, unsigned int *cp_type)
 {
-	*host_pid = getpid();
+	if (chip_id != NULL) {
+		*chip_id = 0;
+	}
+	if (vfid != NULL) {
+		*vfid = 0;
+	}
+	if (host_pid != NULL) {
+		*host_pid = getpid();
+	}
+	if (cp_type != NULL) {
+		*cp_type = 0;
+	}
 	return 0;
 }
 
