@@ -9,7 +9,6 @@
  */
 #include "task_abort_handler.h"
 #include <algorithm>
-#include "pthread.h"
 #include "log.h"
 #include "coll_comm.h"
 #include "ccu_comp.h"

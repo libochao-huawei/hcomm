@@ -10,7 +10,10 @@
 #ifndef RANK_PAIR_H
 #define RANK_PAIR_H
 
+#include <cstdint>
+#include <functional>
 #include <memory>
+#include <utility>
 #include <vector>
 #include "hcomm_res_defs.h"
 #include "endpoint_pair_mgr.h"

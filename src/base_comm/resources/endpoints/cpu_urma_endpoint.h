@@ -10,14 +10,15 @@
 #ifndef CPU_URMA_ENDPOINT_H
 #define CPU_URMA_ENDPOINT_H
 
+#include <cstdint>
 #include <memory>
-#include <vector>
+#include <mutex>
 #include <string>
+#include <unordered_map>
+
 #include "endpoint.h"
 #include "ccu_channel_ctx_pool.h"
-#include "socket/socket.h"
 #include "externalinput_pub.h"
-#include <mutex>
 
 namespace hcomm {
 class CpuUrmaEndpoint : public Endpoint {

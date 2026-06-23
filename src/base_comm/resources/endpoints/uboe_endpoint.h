@@ -10,12 +10,11 @@
 #ifndef UBOE_ENDPOINT_H
 #define UBOE_ENDPOINT_H
 
+#include <cstdint>
 #include <memory>
-#include <vector>
 #include <string>
 #include "endpoint.h"
 #include "ccu_channel_ctx_pool.h"
-#include "socket/socket.h"
 
 namespace hcomm {
 /**

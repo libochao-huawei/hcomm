@@ -10,6 +10,13 @@
 #ifndef MY_RANK_H
 #define MY_RANK_H
 
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #include "hcomm_res_defs.h"
 #include "mem_host_pub.h"
 #include "rank_pair_mgr.h"

@@ -11,6 +11,7 @@
 #ifndef HCCLV2_SOCKET_AGENT_H
 #define HCCLV2_SOCKET_AGENT_H
 
+#include <cstdint>
 #include "socket.h"
 
 namespace Hccl {

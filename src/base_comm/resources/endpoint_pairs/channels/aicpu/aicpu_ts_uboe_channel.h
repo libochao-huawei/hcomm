@@ -10,6 +10,12 @@
 #ifndef AICPU_TS_UBOE_CHANNEL_H
 #define AICPU_TS_UBOE_CHANNEL_H
 
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <vector>
+
 #include "channel.h"
 #include "socket_mgr.h"
 

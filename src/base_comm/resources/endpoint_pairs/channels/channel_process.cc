@@ -166,7 +166,7 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
         int32_t status = 0;
 
         // 单锁：D2H 映射 + 查 map + 锁内调用 GetStatus()
-        HcclResult ret = WithChannelByHandleLocked(inHandle, [&](Channel &channel) -> HcclResult {
+        HcclResult ret = WithChannelByHandleLocked(inHandle, [&status](Channel &channel) -> HcclResult {
             status = channel.GetStatus();  // 锁内调用，防止 destroy 并发释放
             return HcclResult::HCCL_SUCCESS;
         });
@@ -635,7 +635,7 @@ HcclResult ChannelProcess::SaveAivChannels(ChannelHandle* targetChannels, Channe
 
 HcclResult ChannelProcess::ChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum)
 {
-    return WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
+    return WithChannelByHandleLocked(channelHandle, [&notifyNum](Channel &channel) -> HcclResult {
         // 锁内调用，避免 destroy 并发释放
         channel.GetNotifyNum(notifyNum);
         return HcclResult::HCCL_SUCCESS;
@@ -648,7 +648,7 @@ HcclResult ChannelProcess::ChannelGetRemoteMems(ChannelHandle channelHandle, uin
     CHK_PTR_NULL(memNum);
     CHK_PTR_NULL(memInfos);
 
-    return WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
+    return WithChannelByHandleLocked(channelHandle, [&memNum, &remoteMem, &memInfos](Channel &channel) -> HcclResult {
         // 锁内调用，避免 destroy 并发释放
         return channel.GetRemoteMems(memNum, remoteMem, memInfos);
     });
@@ -777,7 +777,7 @@ HcclResult ChannelProcess::ChannelClean(const ChannelHandle *channelList, uint32
     for (uint32_t i = 0; i < listNum; ++i) {
         const ChannelHandle inHandle = channelList[i];
         // 单锁：D2H 映射 + 查 map + 锁内调用 Clean()
-        HcclResult ret = WithChannelByHandleLocked(inHandle, [&](Channel &channel) -> HcclResult {
+        HcclResult ret = WithChannelByHandleLocked(inHandle, [](Channel &channel) -> HcclResult {
             return channel.Clean();  
         });
         if (ret != HcclResult::HCCL_SUCCESS) {
@@ -793,7 +793,7 @@ HcclResult ChannelProcess::ChannelResumeConcurrency(const ChannelHandle *channel
 {
     for (uint32_t i = 0; i < channelNum; ++i) {
         const ChannelHandle inHandle = channelList[i];
-        HcclResult ret = WithChannelByHandleLocked(inHandle, [&](Channel &channel) -> HcclResult {
+        HcclResult ret = WithChannelByHandleLocked(inHandle, [](Channel &channel) -> HcclResult {
             return channel.Resume();
         });
         if (ret != HcclResult::HCCL_SUCCESS) {

@@ -11,6 +11,11 @@
 #ifndef CCU_RES_SPECS_H
 #define CCU_RES_SPECS_H
 
+#include <array>
+#include <cstdint>
+#include <string>
+#include <utility>
+
 #include "ccu_dev_mgr_imp.h"
 
 namespace hcomm {

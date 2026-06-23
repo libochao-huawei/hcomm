@@ -11,6 +11,9 @@
 #define AICPU_TS_URMA_CHANNEL_H
 
 #include <atomic>
+#include <cstdint>
+#include <memory>
+#include <vector>
 #include "../channel.h"
 #include "../../sockets/socket_mgr.h"
 

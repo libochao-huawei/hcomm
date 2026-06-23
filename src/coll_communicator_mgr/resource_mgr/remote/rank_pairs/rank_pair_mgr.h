@@ -10,8 +10,9 @@
 #ifndef RANK_PAIR_MGR_H
 #define RANK_PAIR_MGR_H
 
-#include <unordered_map>
+#include <memory>
 #include <mutex>
+#include <unordered_map>
 #include "rank_pair.h"
 
 namespace hccl {

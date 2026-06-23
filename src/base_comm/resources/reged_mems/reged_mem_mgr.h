@@ -11,7 +11,9 @@
 #define REGED_MEM_MGR_H
 
 #include <algorithm>
+#include <cstdint>
 #include <memory>
+#include <vector>
 #include "hcomm_c_adpt.h"
 #include "log.h"
 #include "buffer_key.h"

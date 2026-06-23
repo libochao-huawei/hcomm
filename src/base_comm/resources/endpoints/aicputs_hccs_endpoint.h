@@ -10,9 +10,10 @@
 #ifndef AICPUTS_HCCS_ENDPOINT_H
 #define AICPUTS_HCCS_ENDPOINT_H
 
+#include <cstdint>
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 #include "endpoint.h"
 #include "hccl_ip_address.h"
 #include "remote_ipc_rma_buffer.h"

@@ -12,6 +12,7 @@
 #define CCU_PFE_CFG_MGR_H
 
 #include <array>
+#include <cstdint>
 #include <vector>
 #include "hccl_types.h"
 #include "ccu_dev_mgr_imp.h"

@@ -512,7 +512,7 @@ void AicpuTsUboeChannel::HandleProcessData()
 
 void AicpuTsUboeChannel::ProcessUboeState()
 {
-    auto SetState = [&](UboeStatus next, ChannelStatus ch) { uboeStatus = next; channelStatus = ch; };
+    auto SetState = [this](UboeStatus next, ChannelStatus ch) { this->uboeStatus = next; this->channelStatus = ch; };
 
     switch (uboeStatus) {
         case UboeStatus::INIT:

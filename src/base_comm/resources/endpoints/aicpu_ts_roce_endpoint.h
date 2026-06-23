@@ -11,11 +11,12 @@
 #define AICPUTS_ROCE_ENDPOINT_H
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <mutex>
-#include <vector>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include "hccl_mem_defs.h"
 #include "endpoint.h"
 #include "hccl_socket.h"

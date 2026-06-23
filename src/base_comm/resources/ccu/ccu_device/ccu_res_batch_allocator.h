@@ -11,10 +11,12 @@
 #ifndef CCU_RES_BATCH_ALLOCATOR_H
 #define CCU_RES_BATCH_ALLOCATOR_H
 
-#include <mutex>
-#include <vector>
+#include <array>
+#include <cstdint>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
+#include <vector>
 
 #include "ccu_res_specs.h"
 #include "ccu_dev_mgr_imp.h"

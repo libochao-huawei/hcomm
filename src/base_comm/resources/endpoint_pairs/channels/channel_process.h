@@ -13,8 +13,13 @@
 #include "hcomm_c_adpt.h"
 #include "channel.h"
 #include "mem_host_pub.h"
+#include <cstdint>
+#include <functional>
+#include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace hcomm {
 

@@ -10,12 +10,16 @@
 #ifndef AICPU_TS_P2P_CHANNEL_H
 #define AICPU_TS_P2P_CHANNEL_H
 
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "../channel.h"
 #include "../../sockets/socket_mgr.h"
 
 #include "../../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
 #include "../../../../../../src/legacy/ascend950/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
-#include "rma_connection.h"
 #include "p2p_transport.h"
 #include "p2p_connection.h"
 #include "ipc_local_notify.h"

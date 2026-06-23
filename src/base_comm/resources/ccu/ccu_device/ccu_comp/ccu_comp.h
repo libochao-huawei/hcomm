@@ -11,9 +11,13 @@
 #ifndef CCU_COMP_H
 #define CCU_COMP_H
 
+#include <array>
+#include <cstdint>
 #include <memory>
-#include <vector>
+#include <mutex>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "hccl_types.h"
 
