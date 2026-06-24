@@ -2954,7 +2954,7 @@ HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, u
                     HcclComm comm, aclrtStream stream)
 {
     // 入参合法性校验
-    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclSendInner success"), HCCL_SUCCESS);
+    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclSendInner success."), HCCL_SUCCESS);
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(sendBuf);
     CHK_PTR_NULL(stream);
@@ -3055,7 +3055,7 @@ HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, u
                     HcclComm comm, aclrtStream stream)
 {
     // 入参合法性校验
-    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclRecvInner success"), HCCL_SUCCESS);
+    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclRecvInner success."), HCCL_SUCCESS);
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(recvBuf);
     CHK_PTR_NULL(stream);
