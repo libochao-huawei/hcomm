@@ -231,7 +231,7 @@ HcclResult FlushHandle::FreeLocalMemory()
         } else {
             free(localMem);
         }
-    } catch (HcclException & e) {
+    } catch (HcclException &e) {
         HCCL_ERROR("[%s] Exception occurred: %s", __func__, e.what());
         return e.GetErrorCode();
     } catch (...) {

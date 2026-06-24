@@ -27,3 +27,6 @@ src/base_comm/resources/endpoint_pairs/channels/channel.cc
 src/base_comm/common/orion_adpt_utils.cc
 src/coll_communicator_mgr/dfx/taskException/host/hcclCommTaskException.cc
 src/common/launch_aicpu/launch_aicpu.cc
+src/legacy/ascend950/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
+src/legacy/ascend950/framework/communicator/communicator_impl.cc
+src/legacy/ascend950/framework/communicator/hostdpu/flush_handle.cc
