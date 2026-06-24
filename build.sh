@@ -79,8 +79,6 @@ function run_ctest() {
         return 0
     fi
 
-    log "Info: Running ut with ${CPU_NUM} parallel jobs"
-
     local suite_name="$1"   # "ut" or "st"
     local log_dir="${LOGS_PATH}/${suite_name}"
     local ctest_log="${log_dir}/run.log"
@@ -88,23 +86,21 @@ function run_ctest() {
     # 创建日志目录
     mk_dir "${log_dir}"
 
-    # CTest 执行用例
+    # CTest 执行用例（超时时间：300s）
+    log "Info: Running ${suite_name} testcases with ${CPU_NUM} parallel jobs"
     ctest -j ${CPU_NUM} \
           --verbose \
           --build-nocmake \
-          --timeout 1000 \
+          --timeout 300 \
           --output-on-failure \
           --stop-on-failure \
           --test-output-size-failed 10000000 \
           2>&1 | tee "${ctest_log}"
 
-    # 超时时间：200s
     local ctest_ret=${PIPESTATUS[0]}
-    if [ "${ctest_ret}" -eq 137 ]; then
-        log "Error: ctest timeout: execute more than 200s killed"
-        exit 1
+    if [ "${ctest_ret}" -ne 0 ]; then
+        log "Error: Testcases failed"
     fi
-
     return ${ctest_ret}
 }
 
