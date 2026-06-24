@@ -38,7 +38,7 @@ STATIC int HccpParseLogicId(const char *input, struct HccpInitParam *param)
 
     ret = DlDrvDeviceGetPhyIdByIndex(param->logicId, &(param->chipId));
     CHK_PRT_RETURN(ret != 0 || param->chipId > HCCP_MAX_CHIP_ID,
-        hccp_err("get chip id failed, ret:%d, chipId:%u > %U", ret, param->chipId, HCCP_MAX_CHIP_ID), -EINVAL);
+        hccp_err("get chip id failed, ret:%d, chipId:%u > %u", ret, param->chipId, HCCP_MAX_CHIP_ID), -EINVAL);
 
     hccp_info("logic_id from TSD is [%d], chipId[%u]", param->logicId, param->chipId);
     return 0;

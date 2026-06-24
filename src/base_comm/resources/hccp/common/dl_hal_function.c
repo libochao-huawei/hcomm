@@ -338,6 +338,7 @@ int DlDrvDeviceGetPhyIdByIndex(unsigned int devIndex, unsigned int *phyId)
 int DlHalGetPhyDevIdByudevId(unsigned int udevId, unsigned int *phyDevId)
 {
     CHK_PRT_RETURN(gHalApiHandle == NULL, roce_err("gHalApiHandle is NULL"), -EINVAL);
+    CHK_PRT_RETURN(phyDevId == NULL, roce_err("phyDevId is NULL"), -EINVAL);
     // use udevId as phyDevId for API compatibility issue(abnormal in mdev scenario)
     *phyDevId = udevId;
     CHK_PRT_RETURN(gHalOps.dlHalGetPhyDevIdByudevId == NULL, roce_warn("dlHalGetPhyDevIdByudevId is NULL"), 0);
