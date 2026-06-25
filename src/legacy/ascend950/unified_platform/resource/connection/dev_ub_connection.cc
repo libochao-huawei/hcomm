@@ -335,12 +335,6 @@ std::unique_ptr<Serializable> DevUbConnection::GetExchangeDto()
     std::unique_ptr<ExchangeUbConnDto> dto
         = make_unique<ExchangeUbConnDto>(tokenValue, keySize, jettyImportCfg.localTpHandle, jettyImportCfg.localPsn);
     (void)memcpy_s(dto->qpKey, HRT_UB_QP_KEY_MAX_LEN, localQpKey, HRT_UB_QP_KEY_MAX_LEN);
-    if (keySize >= URMA_EID_LEN) {
-        (void)memcpy_s(dto->qpKey, keySize, locAddr.GetEid().raw, URMA_EID_LEN);
-    }
-    (void)memcpy_s(dto->eid, sizeof(dto->eid), locAddr.GetEid().raw, URMA_EID_LEN);
-    HCCL_INFO("[DevUbConnection][%s] exchange jetty key eid patched to link locEid[%s].", __func__,
-        locAddr.GetEid().Describe().c_str());
     return std::unique_ptr<Serializable>(dto.release());
 }
 
@@ -445,9 +439,11 @@ void DevUbConnection::CreateJetty(const bool devUsed)
         HCCL_INFO("[DevUbConnection][%s] HrtJettyMode is DEV_USED.", __func__);
     }
 
-    req.qos = qos_;
+    if (tpInfo.hasMappedJettyPriority) {
+        req.qos = static_cast<u8>(tpInfo.mappedJettyPriority & 0xFU);
+    }
     HCCL_INFO("[DevUbConnection][%s] jetty create qos[%u] (maps to attr.ub.priority lower 4 bits).", __func__,
-        static_cast<unsigned int>(qos_));
+        static_cast<unsigned int>(req.qos));
 
     reqHandle = RaUbCreateJettyAsync(rdmaHandle, req, reqDataBuffer, jettyHandlePtr);
 }
@@ -481,7 +477,7 @@ bool DevUbConnection::GetTpInfo()
     p.locAddr = locAddr;
     p.rmtAddr = rmtAddr;
     p.tpProtocol = tpProtocol;
-    p.qos = qos_;
+    p.qos = static_cast<uint32_t>(qos_);
     p.slLevelCount = 0;
     p.loopFirstTpLowestSl = false;
 
@@ -489,13 +485,6 @@ bool DevUbConnection::GetTpInfo()
 
     switch (ret) {
         case HcclResult::HCCL_SUCCESS:
-            if (!tpMgrReleaseQosCaptured_) {
-                tpMgrReleaseQos_ = p.qos;
-                tpMgrReleaseQosCaptured_ = true;
-            }
-            if (tpInfo.hasMappedJettyPriority) {
-                qos_ = static_cast<u8>(tpInfo.mappedJettyPriority & 0xFU);
-            }
             GenerateLocalPsn();
             return true;
         case HcclResult::HCCL_E_AGAIN:
@@ -504,6 +493,7 @@ bool DevUbConnection::GetTpInfo()
         default:
             HCCL_ERROR("[DevUbConnection][%s] failed, hccl result[%d]", __func__, ret);
             ThrowAbnormalStatus(std::string(__func__));
+            break;
     }
     return true;
 }
@@ -515,12 +505,6 @@ void DevUbConnection::GenerateLocalPsn()
 
 void DevUbConnection::ImportJetty()
 {
-    if (keySize >= URMA_EID_LEN) {
-        (void)memcpy_s(remoteQpKey, keySize, rmtAddr.GetEid().raw, URMA_EID_LEN);
-    }
-    HCCL_INFO("[DevUbConnection][%s] import jetty key eid patched to link rmtEid[%s].", __func__,
-        rmtAddr.GetEid().Describe().c_str());
-
     HrtRaUbJettyImportedInParam in{};
     in.key            = remoteQpKey;
     in.keyLen         = keySize;
@@ -547,15 +531,7 @@ void DevUbConnection::SetImportInfo()
 
 void DevUbConnection::ReleaseTp()
 {
-    if (tpInfo.tpHandle != 0) {
-        RaUbGetTpInfoParam relParam(locAddr, rmtAddr, tpProtocol);
-        if (tpMgrReleaseQosCaptured_) {
-            relParam.qos = tpMgrReleaseQos_;
-        }
-        (void)TpManager::GetInstance(devLogicId).ReleaseTpInfo(relParam, tpInfo);
-        tpInfo.tpHandle = 0;
-        tpMgrReleaseQosCaptured_ = false;
-    }
+    ReleaseUbConnectionTp(devLogicId, locAddr, rmtAddr, tpProtocol, tpInfo, static_cast<uint32_t>(qos_));
 }
 
 void DevUbConnection::ReleaseResource()
@@ -1182,6 +1158,7 @@ HcclResult DevUbConnection::GetTpAttrAsync(uint32_t& attrBitmap, struct TpAttr& 
     TpHandle tpHandle = tpInfo.tpHandle;
 
     u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    // HrtRaGetTpAttrAsync 封装内已同步等待，返回 SUCCESS 时 tpAttr 已填充
     CHK_RET(HrtRaGetTpAttrAsync(devicePhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
     HCCL_INFO("[DevUbConnection::%s] locIpv4Addr[%s], rmtIpv4Addr[%s], locAddr[%s], rmtAddr[%s]",
         __func__, locIpv4Addr.Describe().c_str(), rmtIpv4Addr.Describe().c_str(),
