@@ -47,13 +47,14 @@ HcclResult EndpointPair::GetHostSocketWithRank(const uint32_t myRank, const uint
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData, reuseIdx));
     std::string linkTag = socketTag;
+    if (linkData.GetReuseIdx() != "0") {
+        linkTag += ("_" + linkData.GetReuseIdx());
+    }
 
-    if (localEndpointDesc_.loc.locType != remoteEndpointDesc_.loc.locType) {
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_910B && localEndpointDesc_.loc.locType != remoteEndpointDesc_.loc.locType) {
         connectMode = 1;
-    } else {
-        if (linkData.GetReuseIdx() != "0") {
-            linkTag += ("_" + linkData.GetReuseIdx());
-        }
     }
 
     /* A2: host nic(cpu roce channel) -- device nic(transport ibv)时，两边ip地址格式不一样，判断大小算法不匹配
@@ -149,7 +150,7 @@ HcclResult EndpointPair::ServerInit(const uint32_t myRank, const uint32_t rmtRan
     CHK_RET(EnsureSocketMgrCompat(myRank, socketTag));
     Hccl::SocketConfig socketConfig = BuildSocketConfig(linkData, socketTag);
     // 调用sock的server监听接口
-    socketMgrCompat_->ServerListen(socketConfig); 
+    socketMgrCompat_->ServerListen(socketConfig);
     EXCEPTION_HANDLE_END
 
     return HCCL_SUCCESS;

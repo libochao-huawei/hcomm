@@ -695,3 +695,130 @@ TEST_F(MyRankTest, Ut_ConfigSqDepthByExpansionMode_When_CCU_SCHEDModel_WithCommC
     EXPECT_EQ(out, HCCL_SUCCESS);
     EXPECT_EQ(in.ubAttr.sqDepth, 16);
 }
+
+// LLT测试：验证socketTag格式正确构建（commTag_engine_X格式）
+// 测试流程：MyRank::BatchCreateSockets中socketTag = commTag + "_engine_" + std::to_string(engine)
+//         -> EndpointPair::GetSocket -> SocketConfig解析commTag
+// 使用UB_MEM协议和DEVICE endpoint，验证socketTag格式是否正确
+TEST_F(MyRankTest, LLT_SocketTagFormat_CommTagEngine_Success)
+{
+    setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
+    uint32_t devPort = 60001;
+    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::IRankGraph::GetDeviceId).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MockerFuncs();
+    MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommCollectiveChannelCreate)
+        .stubs()
+        .will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER(HcommChannelUpdateMemInfo)
+        .stubs()
+        .will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER(hcomm::ChannelProcess::ChannelGetStatus)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
+
+    HcclMem cclBuffer;
+    CreateCclBuffer(cclBuffer);
+    EXPECT_EQ(myRank.Init(cclBuffer, 2, 2), HCCL_SUCCESS);
+
+    // 设置DEVICE侧endpoint，使用UB_MEM协议（与通过测试一致）
+    EndpointDesc localEp;
+    CreateEndpointDesc(localEp, COMM_PROTOCOL_UB_MEM, "1.0.0.0");
+    EndpointDesc rmtEp;
+    CreateEndpointDesc(rmtEp, COMM_PROTOCOL_UB_MEM, "2.0.0.0");
+
+    HcclChannelDesc channelDesc[1];
+    channelDesc[0].channelProtocol = COMM_PROTOCOL_UB_MEM;
+    channelDesc[0].remoteRank = 1;
+    channelDesc[0].notifyNum = 2;
+    channelDesc[0].localEndpoint = localEp;
+    channelDesc[0].remoteEndpoint = rmtEp;
+
+    std::vector<HcommChannelDesc> hcommDesc(1);
+    for (u32 i = 0; i < 1; ++i) {
+        hcommDesc[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDesc[i], myRank.config_);
+    }
+
+    std::vector<ChannelHandle> hostChannelHandles(1);
+    ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
+
+    // 验证: socketTag = "testCommTag_engine_5" (engine=5对应COMM_ENGINE_AIV)
+    // BatchCreateSockets内部会将socketTag传递给SocketConfig进行解析
+    EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 1, "testCommTag_engine_5", hcommDesc), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AIV, channelDesc, 1, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.newChannels_.size(), 1);
+
+    unsetenv("HCCL_DFS_CONFIG");
+}
+
+// LLT测试：验证带下划线的commTag能正确构建socketTag并解析
+// 测试流程同上，使用UB_MEM协议和DEVICE endpoint
+TEST_F(MyRankTest, LLT_SocketTagFormat_CommTagWithUnderscore_Success)
+{
+    setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
+    uint32_t devPort = 60001;
+    MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::IRankGraph::GetDeviceId).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MockerFuncs();
+    MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcommCollectiveChannelCreate)
+        .stubs()
+        .will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER(HcommChannelUpdateMemInfo)
+        .stubs()
+        .will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER(hcomm::ChannelProcess::ChannelGetStatus)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
+
+    HcclMem cclBuffer;
+    CreateCclBuffer(cclBuffer);
+    EXPECT_EQ(myRank.Init(cclBuffer, 2, 2), HCCL_SUCCESS);
+
+    // 设置DEVICE侧endpoint，使用UB_MEM协议
+    EndpointDesc localEp;
+    CreateEndpointDesc(localEp, COMM_PROTOCOL_UB_MEM, "1.0.0.0");
+    EndpointDesc rmtEp;
+    CreateEndpointDesc(rmtEp, COMM_PROTOCOL_UB_MEM, "2.0.0.0");
+
+    HcclChannelDesc channelDesc[1];
+    channelDesc[0].channelProtocol = COMM_PROTOCOL_UB_MEM;
+    channelDesc[0].remoteRank = 1;
+    channelDesc[0].notifyNum = 2;
+    channelDesc[0].localEndpoint = localEp;
+    channelDesc[0].remoteEndpoint = rmtEp;
+
+    std::vector<HcommChannelDesc> hcommDesc(1);
+    for (u32 i = 0; i < 1; ++i) {
+        hcommDesc[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDesc[i], myRank.config_);
+    }
+
+    std::vector<ChannelHandle> hostChannelHandles(1);
+    ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
+
+    // 验证: socketTag = "my_comm_tag_engine_2" 格式（带下划线的commTag）
+    EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 1, "my_comm_tag_engine_2", hcommDesc), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 1, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.newChannels_.size(), 1);
+
+    unsetenv("HCCL_DFS_CONFIG");
+}

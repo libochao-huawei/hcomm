@@ -556,13 +556,12 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         }
 
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
-        bool isNewChannel = endpointPair->IsChannelNotExist(engine, reuseIdx);
-
         u32 idx = reuseIdx;
-        /* hostNIC -- DeviceNic（transport不复用link/Channel） */
+        /* hostNIC -- DeviceNic（transport不复用link/Channel），此流程也是新创建channel，需要计入isNewChannel */
         if (localEndpointDesc.loc.locType != remoteEndpointDesc.loc.locType) {
             idx = UNREUSE_CHANNEL_IDX;
         }
+        bool isNewChannel = (endpointPair->IsChannelNotExist(engine, reuseIdx) || (idx == UNREUSE_CHANNEL_IDX));
 
         // CreateChannel 返回 HCCL_E_UNAVAIL 表示资源不足创建失败
         ret = endpointPair->CreateChannel(epHandle, engine, idx, &hcommDescs[i], channelHandles + i);

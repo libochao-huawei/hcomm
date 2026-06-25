@@ -14,6 +14,7 @@
 #include "types.h"
 #include "virtual_topo.h"
 #include "hash_utils.h"
+#include "log.h"
 
 namespace Hccl {
 MAKE_ENUM(SocketRole, SERVER, CLIENT)
@@ -68,12 +69,23 @@ public:
         if (!hostNic2DeviceNicMode) {
             return;
         }
+        // Parse commTag from tag prefix: tag format is "commTag_engine_X" or "commTag_engine_X_protocol_Y"
+        std::string commTag = tag;
+        size_t enginePos = commTag.find("_engine_");
+        if (enginePos != std::string::npos) {
+            commTag = commTag.substr(0, enginePos);
+        } else {
+            HCCL_RUN_INFO("[SocketConfig] socketTag[%s] does not contain \"_engine_\" pattern, using original tag as commTag",
+                tag.c_str());
+        }
         remoteRank = rmtRank;
         role = myRank < rmtRank ? SocketRole::SERVER : SocketRole::CLIENT;
         if (role == SocketRole::SERVER) { // server: tag_local_remote
-            hccpTag = tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr();
+            hccpTag = commTag + "_" + to_string(myRank) + "_" + to_string(rmtRank) + "_" +
+                link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr();
         } else { // client: tag_remote_local
-            hccpTag = tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr();
+            hccpTag = commTag + "_" + to_string(rmtRank) + "_" + to_string(myRank) + "_" +
+                link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr();
         }
         hostNic2DeviceNicMode_ = hostNic2DeviceNicMode;
     }
