@@ -15,6 +15,7 @@
 namespace hcomm {
 constexpr uint32_t DEFAULT_CQN = 0;
 constexpr int8_t DB_MODE_HW = 0;
+constexpr int8_t DB_MODE_SW = 1;
 
 DevRdmaConnectionV2::DevRdmaConnectionV2(Hccl::Socket *socket, RdmaHandle rdmaHandle):
     socket_(socket), rdmaHandle_(rdmaHandle) {}
@@ -145,15 +146,13 @@ HcclResult DevRdmaConnectionV2::CreateQp()
 
     CHK_RET(Hccl::HrtRaNdaQpCreate(rdmaHandle_, &ndaOps_, dmaMode_, &ndaCqInfo_, &ndaQpInfo_, &qpHandle_));
 
-    if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
-        SqPiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
-        SqCiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
-        CqPiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
-        CqCiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
-        CHK_PRT_RET(!SqPiMem_ || !SqCiMem_ || !CqPiMem_ || !CqCiMem_,
-            HCCL_ERROR("%s DeviceMem::alloc for SqPi_ or SqCi_ or CqPi_ or CqCi_ failed, size=%zu", __func__, sizeof(void*)),
-            HCCL_E_MEMORY);
-    }
+    SqPiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
+    SqCiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
+    CqPiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
+    CqCiMem_ = hccl::DeviceMem::alloc(sizeof(void*));
+    CHK_PRT_RET(!SqPiMem_ || !SqCiMem_ || !CqPiMem_ || !CqCiMem_,
+        HCCL_ERROR("%s DeviceMem::alloc for SqPi_ or SqCi_ or CqPi_ or CqCi_ failed, size=%zu", __func__, sizeof(void*)),
+        HCCL_E_MEMORY);
 
     rdmaConnStatus_ = RdmaConnStatus::QP_CREATED;
     return HCCL_SUCCESS;
@@ -295,13 +294,8 @@ HcclResult DevRdmaConnectionV2::BuildSqContext(SqContext* context)
     context->contextInfo.roceSq.sqVa = ndaQpInfo_.sqInfo.qBuf.base;
     context->contextInfo.roceSq.wqeSize = ndaQpInfo_.sqInfo.qBuf.entrySize;
     context->contextInfo.roceSq.depth = ndaQpInfo_.sqInfo.qBuf.entryCnt;
-    if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
-        context->contextInfo.roceSq.headAddr = reinterpret_cast<uint64_t >(SqPiMem_.ptr());
-        context->contextInfo.roceSq.tailAddr = reinterpret_cast<uint64_t >(SqCiMem_.ptr());
-    } else {
-        context->contextInfo.roceSq.headAddr = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrPiVa.iovBase);
-        context->contextInfo.roceSq.tailAddr = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase);
-    }
+    context->contextInfo.roceSq.headAddr = reinterpret_cast<uint64_t >(SqPiMem_.ptr());
+    context->contextInfo.roceSq.tailAddr = reinterpret_cast<uint64_t >(SqCiMem_.ptr());
     context->contextInfo.roceSq.dbVa = reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase);
     context->contextInfo.roceSq.sl = qpInfo_.serviceLevel;
     context->contextInfo.roceSq.dbMode = DB_MODE_HW;
@@ -330,15 +324,10 @@ HcclResult DevRdmaConnectionV2::BuildCqContext(CqContext* context)
     context->contextInfo.roceCq.cqVa = ndaCqInfo_.cqInfo.qBuf.base;
     context->contextInfo.roceCq.cqeSize = ndaCqInfo_.cqInfo.qBuf.entrySize;
     context->contextInfo.roceCq.cqDepth = ndaCqInfo_.cqInfo.qBuf.entryCnt;
-    if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
-        context->contextInfo.roceCq.headAddr = reinterpret_cast<uint64_t >(CqPiMem_.ptr());
-        context->contextInfo.roceCq.tailAddr = reinterpret_cast<uint64_t >(CqCiMem_.ptr());
-    } else {
-        context->contextInfo.roceCq.headAddr = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrPiVa.iovBase);
-        context->contextInfo.roceCq.tailAddr = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
-    }
-    context->contextInfo.roceCq.dbVa = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbHwVa.iovBase);
-    context->contextInfo.roceCq.dbMode = DB_MODE_HW;
+    context->contextInfo.roceCq.headAddr = reinterpret_cast<uint64_t >(CqPiMem_.ptr());
+    context->contextInfo.roceCq.tailAddr = reinterpret_cast<uint64_t >(CqCiMem_.ptr());
+    context->contextInfo.roceCq.dbVa = reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
+    context->contextInfo.roceCq.dbMode = DB_MODE_SW;
 
     HCCL_INFO(
         "[DevRdmaConnectionV2][%s] type=%u, CQN=%u, CQ_VA=0x%llx, CQE_SIZE=%u, CQ_DEPTH=%u, "
@@ -367,13 +356,8 @@ std::vector<char> DevRdmaConnectionV2::GetSqUniqueId() const
     binaryStream << ndaQpInfo_.sqInfo.qBuf.base;
     binaryStream << ndaQpInfo_.sqInfo.qBuf.entrySize;
     binaryStream << ndaQpInfo_.sqInfo.qBuf.entryCnt;
-    if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
-        binaryStream << reinterpret_cast<uint64_t >(SqPiMem_.ptr());
-        binaryStream << reinterpret_cast<uint64_t >(SqCiMem_.ptr());
-    } else {
-        binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrPiVa.iovBase);
-        binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbrCiVa.iovBase);
-    }
+    binaryStream << reinterpret_cast<uint64_t >(SqPiMem_.ptr());
+    binaryStream << reinterpret_cast<uint64_t >(SqCiMem_.ptr());
     binaryStream << reinterpret_cast<uint64_t >(ndaQpInfo_.sqInfo.dbHwVa.iovBase);
     binaryStream << DB_MODE_HW;
     binaryStream << qpInfo_.serviceLevel;
@@ -391,15 +375,10 @@ std::vector<char> DevRdmaConnectionV2::GetCqUniqueId() const
     binaryStream << ndaCqInfo_.cqInfo.qBuf.base;
     binaryStream << ndaCqInfo_.cqInfo.qBuf.entrySize;
     binaryStream << ndaCqInfo_.cqInfo.qBuf.entryCnt;
-    if (dmaMode_ == QBUF_DMA_MODE_DEFAULT) {
-        binaryStream << reinterpret_cast<uint64_t >(CqPiMem_.ptr());
-        binaryStream << reinterpret_cast<uint64_t >(CqCiMem_.ptr());
-    } else {
-        binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrPiVa.iovBase);
-        binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
-    }
-    binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbHwVa.iovBase);
-    binaryStream << DB_MODE_HW;
+    binaryStream << reinterpret_cast<uint64_t >(CqPiMem_.ptr());
+    binaryStream << reinterpret_cast<uint64_t >(CqCiMem_.ptr());
+    binaryStream << reinterpret_cast<uint64_t >(ndaCqInfo_.cqInfo.dbrCiVa.iovBase);
+    binaryStream << DB_MODE_SW;
 
     std::vector<char> result;
     binaryStream.Dump(result);

@@ -68,6 +68,7 @@ protected:
         MOCKER(Hccl::HrtRaNdaCqDestroy).stubs().with(mockcpp::any(), mockcpp::any()).will(returnValue(HCCL_SUCCESS));
         MOCKER(Hccl::HrtRaQpDestroy).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
         MOCKER(RaGetQpAttr).stubs().with(mockcpp::any(), mockcpp::any()).will(returnValue(0));
+        MOCKER_CPP(&AicpuTsRoceChannelV2::BuildNotifyValueBuffer).stubs().will(returnValue(HCCL_SUCCESS));
         
         EndpointDesc endpointDesc{};
         endpointDesc.protocol = COMM_PROTOCOL_ROCE;
@@ -685,6 +686,8 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetNotifyValueBufferUniqueIds_Expect_No
     channelDesc.memHandleNum = 1;
     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
     channel->Init();
+    // BuildNotifyValueBuffer is mocked in SetUp, so create notifyValueBuffer_ here
+    channel->notifyValueBuffer_ = std::make_unique<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, (void *)0x1000000);
     auto result = channel->GetNotifyValueBufferUniqueIds();
     EXPECT_GT(result.size(), 0u);
     std::cout << "End Ut_When_GetNotifyValueBufferUniqueIds_Expect_NotEmpty" << std::endl;
@@ -769,6 +772,8 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUniqueId_Expect_NotEmpty)
     channel->Init();
     channel->channelStatus_ = ChannelStatus::READY;
     channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    // BuildNotifyValueBuffer is mocked in SetUp, so create notifyValueBuffer_ here
+    channel->notifyValueBuffer_ = std::make_unique<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, (void *)0x1000000);
     auto result = channel->GetUniqueId();
     EXPECT_GT(result.size(), 0u);
     std::cout << "End Ut_When_GetUniqueId_Expect_NotEmpty" << std::endl;
@@ -808,6 +813,8 @@ TEST_F(AicpuTsRoceChannelV2Test, Ut_When_H2DResPack_Expect_Success)
     channel->Init();
     channel->channelStatus_ = ChannelStatus::READY;
     channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    // BuildNotifyValueBuffer is mocked in SetUp, so create notifyValueBuffer_ here
+    channel->notifyValueBuffer_ = std::make_unique<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, (void *)0x1000000);
     std::vector<char> buffer;
     HcclResult ret = channel->H2DResPack(buffer);
     EXPECT_EQ(ret, HCCL_SUCCESS);

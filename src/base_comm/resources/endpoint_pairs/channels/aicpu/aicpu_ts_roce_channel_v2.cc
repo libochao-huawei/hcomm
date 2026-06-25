@@ -361,6 +361,7 @@ HcclResult AicpuTsRoceChannelV2::BuildNotifyValueBuffer()
 
     Hccl::DevCapability::GetInstance().Init(Hccl::DevType::DEV_TYPE_950);
     u32 notifysize = Hccl::DevCapability::GetInstance().GetNotifySize();
+    notifysize = 4096; // 临时规避，待ubdevmem适配后修改
     EXCEPTION_CATCH((notifyValueMem_ = std::make_shared<Hccl::DevBuffer>(notifysize)),
         return HCCL_E_PTR);
     HCCL_DEBUG("create notify value buffer[%p], size[%u]", notifyValueMem_.get(), notifysize);
