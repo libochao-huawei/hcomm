@@ -441,7 +441,7 @@ inline void PrintGroupErrorLog(const std::string &stageErrInfo, const std::strin
     HCCL_ERROR("%sTask run failed, groupRank information is %s.", stageErrInfo.c_str(), groupRankContent.c_str());
 }
 
-void TaskExceptionHost::PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, [[maybe_unused]] Hccl::TaskInfo &exceptionTaskInfo,
+void TaskExceptionHost::PrintGroupErrorMessage(const Hccl::ErrorMessageReport &errorMessage, [[maybe_unused]] Hccl::TaskInfo &exceptionTaskInfo,
     std::string &groupRankContent, std::string &stageErrInfo)
 {
     groupRankContent += "group:[";
@@ -516,7 +516,7 @@ inline std::string GetOpTypeEnumStr(u32 opType)
  	return hcclOpType.Describe();
 }
 
-void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage,
+void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, const Hccl::ErrorMessageReport &errorMessage,
     std::string &stageErrInfo)
 {
     std::stringstream opDataStr;
@@ -645,6 +645,39 @@ void GetTaskParam(Hccl::TaskParam &taskParam, const Hccl::ErrorMessageReport &er
     }
 }
 
+void TaskExceptionHost::HandleAicpuErrorReport(rtExceptionInfo_t *exceptionInfo,
+ 	const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo &taskInfo)
+{
+    std::string groupRankContent;
+    u32 streamId = static_cast<u32>(errorMessage.streamId);
+    std::string tag = std::string(errorMessage.tag);
+    Hccl::TaskParam taskParam{};
+    taskParam.taskType = errorMessage.taskType;
+    GetTaskParam(taskParam, errorMessage);
+    std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo = std::make_shared<Hccl::DfxOpInfo>();
+    dfxOpInfo->tag_ = tag;
+    dfxOpInfo->algType_ = errorMessage.algType;
+    dfxOpInfo->comm_ = taskInfo.dfxOpInfo_ != nullptr ? taskInfo.dfxOpInfo_->comm_ : nullptr;
+    Hccl::TaskInfo exceptionTaskInfo(streamId, errorMessage.taskId, errorMessage.remoteUserRank, taskParam, dfxOpInfo);
+    auto logKeywordL2 = exceptionTaskInfo.taskParam_.taskType ==
+        Hccl::TaskParamType::TASK_NOTIFY_WAIT ? Hccl::LOG_KEYWORDS_TIMEOUT : Hccl::LOG_KEYWORDS_RUN_FAILED;
+    auto stageErrInfo = "[" + Hccl::LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + Hccl::LOG_KEYWORDS_AICPU + "]";
+    HCCL_ERROR("%sTask from HCCL run failed.", stageErrInfo.c_str());
+    // 防止tag字符串过长， 信息分开打印
+    PrintBaseErrorLog(stageErrInfo, exceptionTaskInfo.GetIndopBaseInfo());
+    PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo());
+    PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
+    PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
+    HCCL_ERROR("errorMessage taskType[%s], rtCqErrorType[%u], rtCqErrorCode[%u]. ",
+        errorMessage.taskType.Describe().c_str(), (u32)errorMessage.rtCqErrorType, errorMessage.rtCqErrorCode);
+
+    // 打印UB DFX寄存器信息
+    PrintUbDfxInfo(exceptionInfo, errorMessage);
+    ReportErrorMsg(exceptionTaskInfo, groupRankContent, errorMessage, exceptionInfo);
+    if (errorMessage.ubCqeStatus != 0) {
+        GetAicpuCqeErrInfo(exceptionInfo, errorMessage, taskInfo);
+    }
+}
 
 void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo,
     const Hccl::TaskInfo& taskInfo, bool &isExistAicpuError)
@@ -664,35 +697,7 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo,
         errorMessage = (g_communicatorCallbackMapV2[exceptionInfo->deviceid])[exceptionInfo->streamid]();
         if (strlen(errorMessage.tag) > 0) {
             isExistAicpuError = true;
-            std::string groupRankContent;
-            u32 streamId = static_cast<u32>(errorMessage.streamId);
-            std::string tag = std::string(errorMessage.tag);
-            Hccl::TaskParam taskParam{};
-            taskParam.taskType = errorMessage.taskType;
-            GetTaskParam(taskParam, errorMessage);
-            std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo = std::make_shared<Hccl::DfxOpInfo>();
-            dfxOpInfo->tag_ = tag;
-            dfxOpInfo->algType_ = errorMessage.algType;
-            dfxOpInfo->comm_ = taskInfo.dfxOpInfo_ != nullptr ? taskInfo.dfxOpInfo_->comm_ : nullptr;
-            Hccl::TaskInfo exceptionTaskInfo(streamId, errorMessage.taskId, errorMessage.remoteUserRank, taskParam, dfxOpInfo);
-            auto logKeywordL2 = exceptionTaskInfo.taskParam_.taskType ==
-                Hccl::TaskParamType::TASK_NOTIFY_WAIT ? Hccl::LOG_KEYWORDS_TIMEOUT : Hccl::LOG_KEYWORDS_RUN_FAILED;
-            auto stageErrInfo = "[" + Hccl::LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + Hccl::LOG_KEYWORDS_AICPU + "]";
-            HCCL_ERROR("%sTask from HCCL run failed.", stageErrInfo.c_str());
-            // 防止tag字符串过长， 信息分开打印
-            PrintBaseErrorLog(stageErrInfo, exceptionTaskInfo.GetIndopBaseInfo());
-            PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo());
-            PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
-            PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
-            HCCL_ERROR("errorMessage taskType[%s], rtCqErrorType[%u], rtCqErrorCode[%u]. ",
-                errorMessage.taskType.Describe().c_str(), (u32)errorMessage.rtCqErrorType, errorMessage.rtCqErrorCode);
-
-            // 打印UB DFX寄存器信息
-            PrintUbDfxInfo(exceptionInfo, errorMessage);
-            ReportErrorMsg(exceptionTaskInfo, groupRankContent, errorMessage, exceptionInfo);
-            if (errorMessage.ubCqeStatus != 0) {
-                GetAicpuCqeErrInfo(exceptionInfo, errorMessage, taskInfo);
-            }
+            HandleAicpuErrorReport(exceptionInfo, errorMessage, taskInfo);
             lock.lock();
             g_commHadCallbackArrayV2[exceptionInfo->deviceid] = true;
         } else {

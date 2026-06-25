@@ -644,7 +644,7 @@ TEST_F(ClusterMonitorTest, Ut_GetRemEndpointDescs_When_Normal_Expect_Success)
     EXPECT_EQ(netLayersVector[0], 0);
 }
 
-TEST_F(ClusterMonitorTest, Ut_GetSamePlaneRank_When_Size2_Expect_InsertClusterMonitorCxt)
+TEST_F(ClusterMonitorTest, Ut_GetSamePlaneRank_When_Size2_Expect_InsertClusterMonitorCtx)
 {
     std::map<ClusterUIDType, ClusterMonitorSocketCtx> needConnectRank;
     ClusterUIDType uid1;
@@ -665,13 +665,13 @@ TEST_F(ClusterMonitorTest, Ut_GetSamePlaneRank_When_Size2_Expect_InsertClusterMo
     singlePlaneCtx.push_back(UIDContext(myUid, 0, 0, 0, "myInstance"));
     singlePlaneCtx.push_back(UIDContext(uid1, 0, 1, 1, "remoteInstance0"));
 
-    MOCKER_CPP(&ClusterMonitor::InsertClusterMonitorCxt).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&ClusterMonitor::InsertClusterMonitorCtx).stubs().will(returnValue(HCCL_SUCCESS));
 
     HcclResult result = g_monitor.GetSamePlaneRank(nullptr, singlePlaneCtx, needConnectRank);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
-TEST_F(ClusterMonitorTest, Ut_GetSamePlaneRank_When_Size3_Expect_InsertClusterMonitorCxtTwice)
+TEST_F(ClusterMonitorTest, Ut_GetSamePlaneRank_When_Size3_Expect_InsertClusterMonitorCtxTwice)
 {
     std::map<ClusterUIDType, ClusterMonitorSocketCtx> needConnectRank;
     ClusterUIDType uid1;
@@ -696,13 +696,13 @@ TEST_F(ClusterMonitorTest, Ut_GetSamePlaneRank_When_Size3_Expect_InsertClusterMo
     singlePlaneCtx.push_back(UIDContext(uid1, 0, 1, 1, "remoteInstance0"));
     singlePlaneCtx.push_back(UIDContext(uid2, 0, 2, 2, "remoteInstance1"));
 
-    MOCKER_CPP(&ClusterMonitor::InsertClusterMonitorCxt).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&ClusterMonitor::InsertClusterMonitorCtx).stubs().will(returnValue(HCCL_SUCCESS));
 
     HcclResult result = g_monitor.GetSamePlaneRank(nullptr, singlePlaneCtx, needConnectRank);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
-TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCxt_When_NewConn_Expect_InsertToMap)
+TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCtx_When_NewConn_Expect_InsertToMap)
 {
     ClusterUIDType myUid;
     int ret = memcpy_s(myUid.id, sizeof(myUid.id), "myInstance/0", sizeof("myInstance/0") + 1);
@@ -803,7 +803,7 @@ static InsertTestCtx CreateHcclCommForInsertTest()
     return ctx;
 }
 
-TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCxt_When_GetLinksFailed_Expect_WarningAndSuccess)
+TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCtx_When_GetLinksFailed_Expect_WarningAndSuccess)
 {
     auto ctx = CreateHcclCommForInsertTest();
     ASSERT_NE(ctx.hcclCommPtr, nullptr);
@@ -827,13 +827,13 @@ TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCxt_When_GetLinksFailed_Expect
         .stubs()
         .will(returnValue(HCCL_E_INTERNAL));
 
-    HcclResult result = g_monitor.InsertClusterMonitorCxt(comm, remoteCtx, needConnectRank);
+    HcclResult result = g_monitor.InsertClusterMonitorCtx(comm, remoteCtx, needConnectRank);
     EXPECT_EQ(result, HCCL_SUCCESS);
 
     GlobalMockObject::verify();
 }
 
-TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCxt_When_GetLinksSuccess_ZeroLinks_Expect_Success)
+TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCtx_When_GetLinksSuccess_ZeroLinks_Expect_Success)
 {
     auto ctx = CreateHcclCommForInsertTest();
     ASSERT_NE(ctx.hcclCommPtr, nullptr);
@@ -857,7 +857,7 @@ TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCxt_When_GetLinksSuccess_ZeroL
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
 
-    HcclResult result = g_monitor.InsertClusterMonitorCxt(comm, remoteCtx, needConnectRank);
+    HcclResult result = g_monitor.InsertClusterMonitorCtx(comm, remoteCtx, needConnectRank);
     EXPECT_EQ(result, HCCL_SUCCESS);
 
     GlobalMockObject::verify();

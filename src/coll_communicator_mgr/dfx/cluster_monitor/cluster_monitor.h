@@ -162,7 +162,8 @@ public:
     ClusterUIDType FormatUID(ClusterUIDCxt ctxt);
     std::string GetUID(const ClusterUIDType &uid) const;
     std::string FormatConnTag(HcommSocketRole role, std::pair<ClusterUIDType, ClusterUIDType> uidPair);
-    HcclResult InsertClusterMonitorCxt(HcclComm comm, UIDContext remoteCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
+    HcclResult InsertClusterMonitorCtx(HcclComm comm, UIDContext remoteCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
+    HcclResult GetSocketDescFromRankInfo(HcclComm comm, uint32_t remoteRank, uint32_t netLayer, const ClusterUIDType &remoteUID, SocketDesc &socketDesc);
     HcclResult GetSamePlaneRank(HcclComm comm, std::vector<UIDContext> singlePlaneCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
     HcclResult GetConnectRank(HcclComm comm, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank, std::map<uint32_t,
         std::vector<UIDContext>> uidctxs, std::vector<uint32_t> &netLayersVector);
@@ -189,8 +190,11 @@ private:
         std::vector<uint32_t> &netLayersVector);
     void GetRemEndpointDescsPerLayer(uint32_t netLayer, HcclComm comm, Hccl::RankGraph *rankGraph,
         hccl::CollComm* collComm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs, std::set<uint32_t> &rankIdsSet);
-    
+
+    HcclResult ProcessConnectRanks(const std::string &commId, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
     HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info);
+    HcclResult OnConnectionEstablished(const std::string &commId, const ClusterUIDType &rem, ClusterMonitorSocketCtx &needConnectRank);
+    HcclResult SendFrameFromBuffer(ClusterUIDType &dst, ClusterMonitorFrame &cmFrame);
 
     void CreateLinkWithRemotePonit(std::string group, ClusterUIDType rem, ClusterMonitorSocketCtx needConnectRank);
     
