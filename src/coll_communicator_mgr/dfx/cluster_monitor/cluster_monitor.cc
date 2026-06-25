@@ -261,7 +261,7 @@ HcclResult ClusterMonitor::GetConnectRank(HcclComm comm,
     // 从layer=1开始，将commLinks存入vector中，找到所有与当前localId相同的节点
     std::vector<UIDContext> highLayerCommLinks;
     for (uint32_t netLayer : netLayersVector) {
-        for (auto it = uidCtxs[netLayersVector[netLayer]].begin(); it != uidCtxs[netLayersVector[netLayer]].end(); ++it) {
+        for (auto it = uidCtxs[netLayer].begin(); it != uidCtxs[netLayer].end(); ++it) {
             if (it->localId == this->myRankLocalId_) {
                 // 在跨server、跨pod、跨超节点的场景，统一拿到local，打平处理为同一个平面，类似layer=0的情况
                 // 由于A5上的devPhyId在64卡的场景下8个[0,7]，所以使用localId
