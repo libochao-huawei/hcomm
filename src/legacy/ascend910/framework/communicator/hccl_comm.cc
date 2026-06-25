@@ -1533,4 +1533,9 @@ aclrtBinHandle hcclComm::GetBinHandle()
     return binHandle_;
 }
 
+aclrtBinHandle hcclComm::GetBinHcclHandle()
+{
+    return binHcclHandle_;
+}
+
 }  // namespace hccl
