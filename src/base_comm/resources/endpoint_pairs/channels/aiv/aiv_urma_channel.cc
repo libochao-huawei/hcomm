@@ -31,7 +31,6 @@
 #include <cstring>
 
 namespace hcomm {
-constexpr uint32_t QUEUE_NUM_MAX = 20;
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 
 namespace {

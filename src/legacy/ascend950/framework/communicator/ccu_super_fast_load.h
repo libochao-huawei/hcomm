@@ -31,10 +31,7 @@
 namespace Hccl {
 using CcuParamsMappingKeyType = std::uint32_t;
 constexpr std::size_t CCU_SFL_PARAM_KEY_LEN = 3;
-constexpr std::size_t CCU_SFL_KEY_COUNT_PLACE = 2;
-constexpr u32 SFL_TOKEN_VALUE_INDEX = 2;
 using CcuSFLMappingKey = std::array<CcuParamsMappingKeyType, CCU_SFL_PARAM_KEY_LEN>;
-constexpr int kValidStates = AcceleratorState::CCU_MS | AcceleratorState::CCU_SCHED;
 struct CachedCCUParams {
 public:
     rtCcuTaskInfo_t *ccuParams{nullptr};

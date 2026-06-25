@@ -41,7 +41,6 @@
 using namespace std;
 using namespace Hccl;
 std::map<std::string, Hccl::HcclCommunicator *> g_hcclCommunicators[MAX_MODULE_DEVICE_NUM + 1];
-constexpr u32 HCCL_COMM_DEFAULT_BUFFERSIZE = 200;
 constexpr u32 MAX_CCU_MC2_SERVER_NUM       = 20;
 
 static OpType GetOpTypeV2(std::string opTypeName) {

@@ -125,7 +125,6 @@ void RankTableInfo::Check()
     }
 }
 
-constexpr int HCCL_DECIMAL = 10;
 void RankTableInfo::Deserialize(const nlohmann::json &rankTableInfoJson, bool isCheck)
 {
     std::string msgVersion   = "error occurs when parser object of propName \"version\"";

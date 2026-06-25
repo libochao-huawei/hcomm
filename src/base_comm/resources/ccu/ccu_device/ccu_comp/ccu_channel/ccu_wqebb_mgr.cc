@@ -14,7 +14,6 @@
 
 namespace hcomm {
 
-constexpr uint32_t UINT32_BITS = 32;
 // 计算 num 的以 2 为底的对数后移位，相当于向上最接近的 2 的整数次幂
 static uint32_t RoundUpToNextPowerOfTwo(uint32_t num)
 {

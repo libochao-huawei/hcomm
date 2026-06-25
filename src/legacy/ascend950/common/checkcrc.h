@@ -19,7 +19,6 @@ namespace Hccl {
 constexpr int CRC_TABLE_LENTH = 256;
 constexpr u32 CRC_DEFAULT_VALUE = 0xEDB88320;
 constexpr u32 CRC_CALC_8 = 8;
-constexpr u32 CRC_CALC_10 = 10;
 
 class CheckCrc {
 public:

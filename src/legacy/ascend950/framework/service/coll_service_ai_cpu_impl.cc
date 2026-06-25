@@ -236,12 +236,6 @@ void InitAicpuLocBufLite(HcclAicpuLocBufLite &lite, u64 addr, u64 size, const st
     HCCL_INFO("InitAicpuLocBufLite %s, addr=0x%llx, size=0x%llx", desc.c_str(), addr, size);
 }
 
-// 默认限制400M
-constexpr u32 MAX_TEMP_MEM_SIZE          = 400 * 1024 * 1024;
-constexpr u32 KERNEL_PARAM_ALG_NAME_SIZE = 32;
-constexpr u32 KERNEL_PARAM_ADDR_OFFSET   = 5 * sizeof(void *);
-constexpr u32 KERNEL_PARAM_DATA_OFFSET   = 6 * sizeof(void *);
-
 void CollServiceAiCpuImpl::SetOpbaseBufferParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm, CollOperator &op) const
 {
     auto buffer                          = comm->GetCclBuffer();

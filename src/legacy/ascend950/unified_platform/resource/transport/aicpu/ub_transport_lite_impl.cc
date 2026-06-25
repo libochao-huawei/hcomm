@@ -19,7 +19,6 @@
 #include "profiling_handler_lite.h"
 
 namespace Hccl {
-constexpr u32 UB_WQE_BB_SIZE       = 64;  // 一个WQE BB是64Byte
 constexpr u32 UB_WQE_MAX_SIZE      = 128; // 针对WriteWithNotify类型WQE，最大是128Byte
 constexpr u32 UB_INLINE_WRITE_SIZE = 4;
 constexpr u32 UB_RELAX_ORDER       = 0X01; // Relax Order表示当前SQE与后续Strong Order SQE有保序要求

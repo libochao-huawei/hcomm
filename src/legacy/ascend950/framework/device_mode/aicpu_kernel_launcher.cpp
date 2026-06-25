@@ -25,8 +25,6 @@ template <class T, class U> u16 CalcFieldOffset(T *target, U *base)
     return static_cast<u16>(reinterpret_cast<const char *>(target) - reinterpret_cast<const char *>(base));
 }
 
-constexpr u32 KERNEL_PARAM_ADDR_OFFSET = 5 * sizeof(void *);
-constexpr u32 KERNEL_PARAM_DATA_OFFSET = 6 * sizeof(void *);
 
 void AicpuKernelLauncher::AicpuKernelLaunch(const Stream &stream, const string &algName) const
 {

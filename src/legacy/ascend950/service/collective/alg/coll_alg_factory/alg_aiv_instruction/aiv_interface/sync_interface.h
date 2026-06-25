@@ -15,7 +15,6 @@
 using namespace AscendC;
  
 constexpr uint64_t UB_FLAG_PAD_COUNT = 8;
-constexpr uint64_t UB_ADDRESS_PAD_COUNT = 4;
  
 // 在gm上设置同步信号的值
 __aicore__ inline void SetSignalValue(__gm__ int32_t* gmSignalAddr, LocalTensor<int32_t>& localTensor, int32_t value)

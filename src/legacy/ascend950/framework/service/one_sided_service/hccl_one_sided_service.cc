@@ -41,8 +41,6 @@ template <class T, class U> u16 CalcFieldOffset(T *target, U *base)
                             - static_cast<const char *>(static_cast<void *>(base)));
 }
 
-constexpr u32 KERNEL_PARAM_ADDR_OFFSET = 5 * sizeof(void *);
-constexpr u32 KERNEL_PARAM_DATA_OFFSET = 6 * sizeof(void *);
 
 HcclOneSidedService::HcclOneSidedService(CommunicatorImpl &comm) : comm_(&comm)
 {

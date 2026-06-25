@@ -31,15 +31,12 @@ constexpr u32 HCCL_LOG_DEBUG    = 0x0;
 constexpr u32 HCCL_LOG_INFO     = 0x1;
 constexpr u32 HCCL_LOG_WARN     = 0x2;
 constexpr u32 HCCL_LOG_ERROR    = 0x3;
-constexpr u32 HCCL_LOG_NULL     = 0x4;
 constexpr u32 HCCL_LOG_OPLOG    = 0x6;
 constexpr u32 HCCL_LOG_RUN_INFO = 0xff;
 
 enum class HcclSubModuleID {
     LOG_SUB_MODULE_ID_HCCL      = 0,
     LOG_SUB_MODULE_ID_HCOM      = 1,
-    LOG_SUB_MODULE_ID_CLTM      = 2,
-    LOG_SUB_MODULE_ID_CUSTOM_OP = 3
 };
 
 /* 设置日志的commid和rankid */

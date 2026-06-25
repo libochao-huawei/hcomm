@@ -22,7 +22,6 @@
 namespace Hccl {
 
 constexpr uint32_t MC2_RES_CTX_MAX       = 3;
-constexpr uint8_t  MC2_DEBUG_ONLY_AICPU  = 4;
 constexpr uint32_t CCU_PARAM_NUM_PER_DIE = 32;
 constexpr uint32_t CCU_PARAM_NUM_MAX     = CCU_PARAM_NUM_PER_DIE * 2;
 constexpr uint32_t CCU_ONE_PARAM_SIZE    = 8;

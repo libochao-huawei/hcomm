@@ -38,14 +38,10 @@ constexpr uint8_t  CCU_PER_DIE_JETTY_RESERVED_NUM = 128; // ccu 每个IO die默�
 constexpr uint64_t CCU_RESOURCE_INS_RESERVE_SIZE = 0x100000;  // INS预留空间1M
 constexpr uint64_t CCU_V1_RESOURCE_GSA_RESERVE_SIZE = 0x8000; // v1 GSA预留空间32K
 constexpr uint16_t CCU_RESOURCE_XN_PER_SIZE    = 8;
-constexpr uint16_t CCU_RESOURCE_INSTR_PER_SIZE = 32;
 
 constexpr uint32_t MOVE_16_BITS = 16;
-constexpr uint32_t MOVE_20_BITS = 20;
 constexpr uint32_t MOVE_24_BITS = 24;
 
-constexpr uint32_t INVALID_VALUE = 0;
-constexpr uint64_t INVALID_ADDR  = 0;
 
 // CcuBlockResStrategy 定义了资源管理块资源类型的块大小
 struct CcuBlockResStrategy {

@@ -11,7 +11,6 @@
 #define HCCLV2_INNER_NET_DEVICE_MANAGER_H
 
 #include <mutex>
-#include <vector>
 #include <unordered_map>
 #include "port.h"
 #include "orion_adapter_hccp.h"
@@ -38,19 +37,6 @@ public:
     // 删除设备（减少引用计数，计数为0时删除）
     HcclResult RemoveDevice(const NetDevInfo &info);
 
-    // 查询设备
-    InnerNetDev *GetDevice(const NetDevInfo &info);
-
-    // 获取引用计数
-    uint32_t GetDeviceCount(const NetDevInfo &info) const;
-
-    // 修改设备（替换已有设备，保持引用计数）
-    bool ReplaceDevice(const NetDevInfo &info, std::unique_ptr<InnerNetDev> newDevice);
-
-    RdmaHandle GetRdmaHandleByIP(uint32_t devPhyId, const IpAddress &ip);
-
-    void Cleanup();
-
 private:
     // 私有构造函数和析构函数
     InnerNetDevManager() = default;
@@ -58,7 +44,6 @@ private:
 
     std::unordered_map<NetDevInfo, unique_ptr<InnerNetDev>> netDevMap_;
     std::unordered_map<NetDevInfo, uint32_t>                netDevCnt_;    
-    std::vector<HcclNetDevice*>                pltNetDevVec_;
 };
 
 } // namespace Hccl

@@ -38,7 +38,6 @@ protected:
         // 清空单例状态
         Hccl::InnerNetDevManager::GetInstance().netDevMap_.clear();
         Hccl::InnerNetDevManager::GetInstance().netDevCnt_.clear();
-        Hccl::InnerNetDevManager::GetInstance().pltNetDevVec_.clear();
         std::cout << "A Test case in InnerNetDevTest SetUP" << std::endl;
     }
 
@@ -47,7 +46,6 @@ protected:
         // 每次测试后重置状态
         Hccl::InnerNetDevManager::GetInstance().netDevMap_.clear();
         Hccl::InnerNetDevManager::GetInstance().netDevCnt_.clear();
-        Hccl::InnerNetDevManager::GetInstance().pltNetDevVec_.clear();        
         GlobalMockObject::verify();
         std::cout << "A Test case in InnerNetDevTest TearDown" << std::endl;
     }
@@ -69,7 +67,6 @@ TEST_F(InnerNetDevManagerTest, AddDevice_ShouldReturnSuccess_WhenDeviceCreated)
 
     EXPECT_EQ(result, HCCL_SUCCESS);
     EXPECT_NE(hcclNetDev, nullptr);
-    EXPECT_EQ(Hccl::InnerNetDevManager::GetInstance().GetDeviceCount(info), 1);
     delete hcclNetDev;
 }
 
@@ -103,7 +100,6 @@ TEST_F(InnerNetDevManagerTest, RemoveDevice_ShouldReturnSuccess_WhenDeviceExists
     HcclResult result = Hccl::InnerNetDevManager::GetInstance().DeleteDevice(hcclNetDev);
 
     EXPECT_EQ(result, HCCL_SUCCESS);
-    EXPECT_EQ(Hccl::InnerNetDevManager::GetInstance().GetDeviceCount(info), 0);
 }
 
 /**
@@ -119,96 +115,4 @@ TEST_F(InnerNetDevManagerTest, RemoveDevice_ShouldReturnError_WhenDeviceDoesNotE
     HcclResult result = Hccl::InnerNetDevManager::GetInstance().RemoveDevice(info);
 
     EXPECT_EQ(result, HCCL_E_PTR);
-}
-
-/**
-* @tc.name  : GetDevice_ShouldReturnNewDevice_WhenDeviceDoesNotExist
-* @tc.number: InnerNetDevManager_Test_005
-* @tc.desc  : 测试 GetDevice 在设备不存在时创建新设备
-*/
-TEST_F(InnerNetDevManagerTest, GetDevice_ShouldReturnNewDevice_WhenDeviceDoesNotExist)
-{
-    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
-    Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
-    InnerNetDev* dev = Hccl::InnerNetDevManager::GetInstance().GetDevice(info);
-
-    EXPECT_NE(dev, nullptr);
-    EXPECT_EQ(Hccl::InnerNetDevManager::GetInstance().GetDeviceCount(info), 1);
-}
-
-/**
-* @tc.name  : GetDevice_ShouldReturnExistingDevice_WhenDeviceExists
-* @tc.number: InnerNetDevManager_Test_006
-* @tc.desc  : 测试 GetDevice 在设备存在时返回已有设备
-*/
-TEST_F(InnerNetDevManagerTest, GetDevice_ShouldReturnExistingDevice_WhenDeviceExists)
-{
-    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
-    Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
-    
-    Hccl::HcclNetDevice* hcclNetDev = nullptr;
-    Hccl::InnerNetDevManager::GetInstance().AddDevice(info, hcclNetDev);
-    InnerNetDev* dev1 = Hccl::InnerNetDevManager::GetInstance().GetDevice(info);
-    InnerNetDev* dev2 = Hccl::InnerNetDevManager::GetInstance().GetDevice(info);
-
-    EXPECT_EQ(dev1, dev2);
-    EXPECT_EQ(Hccl::InnerNetDevManager::GetInstance().GetDeviceCount(info), 1);
-    Hccl::InnerNetDevManager::GetInstance().Cleanup();
-}
-
-/**
-* @tc.name  : ReplaceDevice_ShouldReturnTrue_WhenDeviceReplaced
-* @tc.number: InnerNetDevManager_Test_007
-* @tc.desc  : 测试 ReplaceDevice 成功替换设备
-*/
-TEST_F(InnerNetDevManagerTest, ReplaceDevice_ShouldReturnTrue_WhenDeviceReplaced)
-{
-    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
-    Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
-    
-    Hccl::HcclNetDevice* hcclNetDev = nullptr;
-    Hccl::InnerNetDevManager::GetInstance().AddDevice(info, hcclNetDev);
-    std::unique_ptr<InnerNetDev> newDev = std::make_unique<InnerNetDev>(info);
-    bool result = Hccl::InnerNetDevManager::GetInstance().ReplaceDevice(info, std::move(newDev));
-
-    EXPECT_TRUE(result);
-    delete hcclNetDev;
-}
-
-/**
-* @tc.name  : ReplaceDevice_ShouldReturnFalse_WhenDeviceDoesNotExist
-* @tc.number: InnerNetDevManager_Test_008
-* @tc.desc  : 测试 ReplaceDevice 设备不存在时返回 false
-*/
-TEST_F(InnerNetDevManagerTest, ReplaceDevice_ShouldReturnFalse_WhenDeviceDoesNotExist)
-{
-    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
-    Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
-    std::unique_ptr<InnerNetDev> newDev = std::make_unique<InnerNetDev>(info);
-    bool result = Hccl::InnerNetDevManager::GetInstance().ReplaceDevice(info, std::move(newDev));
-
-    EXPECT_FALSE(result);
-}
-
-/**
-* @tc.name  : GetRdmaHandleByIP_ShouldReturnHandle_WhenDeviceExists
-* @tc.number: InnerNetDevManager_Test_009
-* @tc.desc  : 测试 GetRdmaHandleByIP 成功获取 RdmaHandle
-*/
-TEST_F(InnerNetDevManagerTest, GetRdmaHandleByIP_ShouldReturnHandle_WhenDeviceExists)
-{
-    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x123);
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(rdmaHandle));
-    Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
-    
-    
-    Hccl::HcclNetDevice* hcclNetDev = nullptr;
-    Hccl::InnerNetDevManager::GetInstance().AddDevice(info, hcclNetDev);
-    RdmaHandle handle = Hccl::InnerNetDevManager::GetInstance().GetRdmaHandleByIP(10, info.addr);
-
-    delete hcclNetDev;
 }

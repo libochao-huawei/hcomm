@@ -39,7 +39,6 @@ void ChangedRankInfo::Dump() const
     }
 }
 
-constexpr int HCCL_DECIMAL = 10;
 void ChangedRankInfo::Deserialize(const nlohmann::json &changedRankInfoJson)
 {
     std::string msgVersion   = "[ChangedRankInfo] error occurs when parser object of propName \"version\"";

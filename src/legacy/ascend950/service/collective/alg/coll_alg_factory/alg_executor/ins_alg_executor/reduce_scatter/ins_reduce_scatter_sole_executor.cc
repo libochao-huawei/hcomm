@@ -35,7 +35,6 @@ InsReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::~InsReduceScatterSol
 {
 }
 
-constexpr uint64_t REDUCE_SCATTER_SCRATCH_SIZE = 200*1024*1024; // Byte, scratchBufferSize
 
 template <typename AlgTopoMatch, typename InsAlgTemplate>
 HcclResult InsReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffload(const RankGraph *rankGraph,

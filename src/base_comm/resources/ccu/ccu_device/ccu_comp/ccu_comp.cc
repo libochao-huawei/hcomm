@@ -53,8 +53,6 @@ constexpr uint32_t LOOP_CHANNEL_USE_SQSIZE = 16;
 
 // 环回获取TP信息超时等待10s
 constexpr uint32_t LOOP_CHANNEL_WAIT_TIMEOUT_MS = 10000;
-// 环回获取TP信息间隔100us
-constexpr u32 ONE_HUNDRED_MICROSEC_OF_USLEEP = 100;
 
 // 环境是ARM+X86时，配置 die0 的 MS 交织粒度为 1<<6 = 64
 constexpr uint32_t MSID_CONFIG_ARMX86_MAINBOARD = 6;

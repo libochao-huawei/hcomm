@@ -1342,7 +1342,6 @@ extern "C" {
 #endif // __cplusplus
 HcclResult HcomGetL0TopoTypeExV2(const char *group, CommTopo *topoType, uint32_t flag)
 {
-#define IS_SET_DEVICE_MASK 0xfffffffe
     CHK_PTR_NULL(topoType);
     CHK_PTR_NULL(group);
 
@@ -1358,7 +1357,6 @@ HcclResult HcomGetL0TopoTypeExV2(const char *group, CommTopo *topoType, uint32_t
 
 HcclResult HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t flag)
 {
-#define IS_SET_DEVICE_MASK 0xfffffffe
     CHK_PTR_NULL(rankSize);
     CHK_PTR_NULL(group);
 

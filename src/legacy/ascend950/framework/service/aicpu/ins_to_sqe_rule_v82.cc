@@ -28,8 +28,6 @@
 
 namespace Hccl {
 
-constexpr u32 DATA_SIZE         = 64;
-constexpr u32 INLINE_WRITE_SIZE = 4;
 constexpr u32 BASE_BIT = 1; // 用于左移设置二进制数的特定位
 
 template <typename INS_TYPE> MemTransportLite &GetTransportLite(const INS_TYPE &ins, ResMgrFetcher *resMgrFetcher)

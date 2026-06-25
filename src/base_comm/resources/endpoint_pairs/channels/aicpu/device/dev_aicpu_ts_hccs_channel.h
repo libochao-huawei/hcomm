@@ -18,7 +18,6 @@
 #include "dev_aicpu_ts_channel.h"
 
 namespace hccl {
-#define COMM_ID_LEN_MAX 128
 class DevAicpuTsHccsChannel : public DevAicpuTsChannel  {
 public:
     DevAicpuTsHccsChannel() = default;

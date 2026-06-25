@@ -23,7 +23,6 @@ using namespace std;
  
 namespace Hccl {
 constexpr u32 SIG_MOVE_LEFT_BITS = 20;
-constexpr u32 AIV_BUFFER_PING_PONG_FACTOR = 2;
 constexpr u32 MAX_BIN_FILE_SIZE = 100 * 1024 * 1024;
 constexpr s32 RESET_TAIL_SYNC_TAG = 2;
 constexpr uint64_t MIN_NPU_TIMEOUT = 1;

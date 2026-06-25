@@ -13,7 +13,6 @@
 #include <mockcpp/mockcpp.hpp>
 #include "hccl_net_dev_v2.h"
 #include "orion_adapter_hccp.h"
-#include "inner_net_dev_manager.h"
 #include "hccl_net_dev_defs.h"
 
 // Test suite class
@@ -38,10 +37,6 @@ protected:
     {
         GlobalMockObject::verify();
         std::cout << "A Test case in HcclNetDevV2Test TearDown" << std::endl;
-
-        // 无论测试是否通过，强制清理管理器中所有设备
-        auto& manager = Hccl::InnerNetDevManager::GetInstance();
-        manager.Cleanup(); // 确保调用了正确的清理函数
     }
 };
 

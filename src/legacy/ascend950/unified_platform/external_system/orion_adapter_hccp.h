@@ -41,8 +41,6 @@ constexpr u32 SOCKET_CONNECTED       = 1;
 constexpr u32 SOCKET_CONNECT_TIMEOUT = 2;
 constexpr u32 SOCKET_CONNECTING      = 3;
 
-constexpr u32 UB_WQE_SIZE_64  = 64;
-constexpr u32 UB_WQE_SIZE_128 = 128;
 
 // QP CQ default attr
 constexpr u32 DEFAULT_OPBASE_MAX_SEND_WR = 32768;

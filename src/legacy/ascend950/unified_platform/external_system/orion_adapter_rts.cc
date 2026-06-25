@@ -22,7 +22,6 @@
 using namespace std;
 namespace Hccl {
 
-static constexpr int32_t RT_NOT_SUPPORT = 207000;
 HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode);
 constexpr u32 TOKEN_ID_RIGHT_SHIF = 8; // URMA_TOKEN_ID_RIGHT_SHIF，因URMA配置原因需要右移8位
 namespace {

@@ -14,7 +14,6 @@
 #include "coll_alg_params.h"
 
 namespace Hccl {
-constexpr u64 RS_2D_SMALL_DATA_SIZE = 1024 * 1024;
 constexpr u64 RS_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 RS_AICPU_1D_MAX_DATA_SIZE = 32 * 1024 * 1024;
 

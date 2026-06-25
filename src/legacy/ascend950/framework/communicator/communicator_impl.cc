@@ -980,8 +980,6 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
     return HcclResult::HCCL_SUCCESS;
 }
 
-constexpr u32 CCL_COMM_DEFAULT_BUFFER_SIZE    = 200;
-constexpr u64 CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024);
 void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize, bool isHcomSelectAlg) const
 {
     u64 sendCount = 0;
