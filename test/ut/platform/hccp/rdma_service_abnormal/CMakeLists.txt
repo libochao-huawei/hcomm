@@ -83,6 +83,7 @@ target_include_directories(rs_ut_abnormal BEFORE PRIVATE
     ${SRC_DIR}/src/base_comm/resources/hccp/common
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/net_adapt
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/inc
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/driver/
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/ubengine
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/ccu

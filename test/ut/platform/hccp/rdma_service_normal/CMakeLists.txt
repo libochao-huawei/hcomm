@@ -76,6 +76,8 @@ add_executable(rs_ut_normal ${rs_ut_normal_list})
 set_property(TARGET rs_ut_normal PROPERTY C_STANDARD 11)
 target_include_directories(rs_ut_normal BEFORE PRIVATE
     ${SHADOW_OUT_DIR}
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/driver/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/test/stub/depends/include
     ${SRC_DIR}/test/ut/platform/hccp/stub/roce_user
     ${SRC_DIR}/test/ut/platform/hccp/stub/
@@ -90,7 +92,6 @@ target_include_directories(rs_ut_normal BEFORE PRIVATE
     ${SRC_DIR}/src/base_comm/resources/hccp/inc/private/network
     ${SRC_DIR}/src/base_comm/resources/hccp/inc/network
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/inc
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/ubengine
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/net_adapt
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/ccu

@@ -100,6 +100,7 @@ target_include_directories(rdma_agent_utest BEFORE PRIVATE
     ${SRC_DIR}/src/base_comm/resources/hccp/inc/network
     ${SRC_DIR}/src/base_comm/resources/hccp/inc/private/network
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/inc
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/driver/
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/host_lite
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/nda
