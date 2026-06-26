@@ -44,7 +44,7 @@ private:
     HcclResult Disconnect(std::map<std::string, std::shared_ptr<HcclSocket>> &connectSockets);
     HcclResult DeleteSocketWhiteList(u32 port, const std::vector<HcclIpAddress> &whitelist);
     HcclResult StopNetwork(const std::vector<HcclIpAddress> &whitelist,
-        HcclIpAddress &hostIP, u32 hostPort);
+        u32 hostPort);
     HcclResult StopSocketListen(const std::vector<HcclIpAddress> &whitelist,
         u32 hostPort);
     HcclResult RecvGroupLeaderInfo(

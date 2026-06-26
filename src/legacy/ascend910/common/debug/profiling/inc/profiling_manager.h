@@ -222,11 +222,11 @@ public:
         HCCL_INFO("[Check][Param]EsStopSubscribe.");
     }
 
-    bool GetFftsLaunchApiState()
+    bool GetFftsLaunchApiState() const
     {
         return isFftsLaunchSubscribe_;
     }
-    bool GetAdditionInfoState()
+    bool GetAdditionInfoState() const
     {
         return isAdditionInfoSubscribe_;
     }

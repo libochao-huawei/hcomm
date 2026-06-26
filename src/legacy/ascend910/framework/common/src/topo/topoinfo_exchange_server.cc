@@ -126,7 +126,7 @@ HcclResult TopoInfoExchangeServer::Setup()
     } while (0);
     if (error != HCCL_SUCCESS) {
         CHK_RET(Disconnect(connectSockets_));
-        CHK_RET(StopNetwork(whitelist_, hostIP_, hostPort_));
+        CHK_RET(StopNetwork(whitelist_, hostPort_));
     }
 
     HCCL_INFO("cluster topo exchange server completed, exit[%u].", error);
@@ -270,7 +270,7 @@ HcclResult TopoInfoExchangeServer::SetupGroupLeader()
 
     if (error != HCCL_SUCCESS) {
         CHK_RET(Disconnect(connectSockets_));
-        CHK_RET(StopNetwork(whitelist_, hostIP_, hostPort_));
+        CHK_RET(StopNetwork(whitelist_, hostPort_));
     }
 
     HCCL_INFO("cluster topo exchange server completed, exit[%u].", error);
@@ -281,7 +281,7 @@ HcclResult TopoInfoExchangeServer::SetupGroupLeader()
 HcclResult TopoInfoExchangeServer::Teardown()
 {
     CHK_RET(Disconnect(connectSockets_));
-    CHK_RET(StopNetwork(whitelist_, hostIP_, hostPort_));
+    CHK_RET(StopNetwork(whitelist_, hostPort_));
     return HCCL_SUCCESS;
 }
 
@@ -576,7 +576,7 @@ HcclResult TopoInfoExchangeServer::StopSocketListen(const std::vector<HcclIpAddr
 }
 
 HcclResult TopoInfoExchangeServer::StopNetwork(const std::vector<HcclIpAddress> &whitelist,
-    HcclIpAddress &hostIP, u32 hostPort)
+    u32 hostPort)
 {
     std::unique_lock<std::mutex> lock(lock_);
     CHK_RET(StopSocketListen(whitelist, hostPort));

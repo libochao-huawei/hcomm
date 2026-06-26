@@ -278,7 +278,7 @@ TEST_F(TopoExchangeDispatcherTest, ut_Teardown)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = topoServer.StopSocketListen(whitelist, hostPort);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = topoServer.StopNetwork(whitelist, hostIP, hostPort);
+    ret = topoServer.StopNetwork(whitelist, hostPort);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }

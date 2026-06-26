@@ -30,7 +30,7 @@ public:
 
     RemoteIpcRmaBuffer(const RemoteIpcRmaBuffer &that) = delete;
     RemoteIpcRmaBuffer &operator=(const RemoteIpcRmaBuffer &that) = delete;
-    bool IsOpened() {return isOpened_;}
+    bool IsOpened() const {return isOpened_;}
 private:
     std::unique_ptr<RemoteIpcRmaBufferImpl> pimpl_;
     bool isOpened_{false};
