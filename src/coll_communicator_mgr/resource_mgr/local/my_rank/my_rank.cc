@@ -401,8 +401,8 @@ HcclResult MyRank::BatchGetSocketsForChannels(const HcclChannelDesc* channelDesc
         uint32_t remoteDevicePhyId;
         rankGraph_->GetDeviceId(rankId_, &devicePhyId);
         rankGraph_->GetDeviceId(remoteRank, &remoteDevicePhyId);
-        HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", rankId_, devicePhyId);
-        HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", remoteRank, remoteDevicePhyId);
+        HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u] remoteRank[%u] remoteDevicePhyId[%u]",
+                 rankId_, devicePhyId, remoteRank, remoteDevicePhyId);
         Hccl::Socket* socket = nullptr;
         const std::string socketTagAddProto = AddProtocolToSocketTag(socketTag, &channelDescs[i]);
         auto ret = endpointPair->GetConnectedSocket(rankId_, remoteRank, socketTagAddProto, reuseIdx, listenPort, socket, devicePhyId, remoteDevicePhyId);
