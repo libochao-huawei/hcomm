@@ -833,6 +833,65 @@ TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCtx_When_GetLinksFailed_Expect
     GlobalMockObject::verify();
 }
 
+static int g_salSleepCallCount = 0;
+static int g_socketGetStatusCallCount = 0;
+
+static void SalSleepStub(u32 sec)
+{
+    g_salSleepCallCount++;
+}
+
+static HcclResult SocketGetStatusStub(SocketHandler socketHandle, SocketStates* status)
+{
+    g_socketGetStatusCallCount++;
+    if (g_socketGetStatusCallCount <= 3) {
+        *status = SocketStates::SOCKET_CONNECTING;
+        return HCCL_SUCCESS;
+    }
+    return HCCL_E_INTERNAL;
+}
+
+TEST_F(ClusterMonitorTest, Ut_CreateLinkWithRemotePonit_When_SocketConnecting_Expect_SalSleepCalled)
+{
+    g_salSleepCallCount = 0;
+    g_socketGetStatusCallCount = 0;
+
+    g_monitor.linkThreadRunning_ = true;
+    g_monitor.deviceLogicId_ = 0;
+
+    std::string localInstId = "localInstance";
+    std::string remInstId = "remoteInstance";
+    ClusterUIDCxt localUidCxt(localInstId, 0);
+    ClusterUIDType localUid = g_monitor.FormatUID(localUidCxt);
+    g_monitor.myRankUID_ = localUid;
+    g_monitor.myRankNetInstId_ = "localInstance";
+    g_monitor.myRankLocalId_ = 0;
+
+    ClusterUIDCxt remUidCxt(remInstId, 1);
+    ClusterUIDType remUid = g_monitor.FormatUID(remUidCxt);
+    std::string commId = "comm_sleep_test";
+
+    ClusterMonitorSocketCtx needConnectRank;
+    needConnectRank.socketHandler = (void*)0x1000;
+    needConnectRank.newConn = true;
+
+    MOCKER(SocketGetStatus).stubs().will(invoke(SocketGetStatusStub));
+    MOCKER(SalSleep).stubs().will(invoke(SalSleepStub));
+    MOCKER(SocketDestroy).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&ClusterMonitor::CreateTransportHandle).stubs().will(returnValue(HCCL_SUCCESS));
+
+    std::thread testThread([&]() {
+        g_monitor.CreateLinkWithRemotePonit(commId, remUid, needConnectRank);
+    });
+    testThread.join();
+
+    EXPECT_GT(g_salSleepCallCount, 0);
+    EXPECT_EQ(g_salSleepCallCount, 3);
+    EXPECT_EQ(g_socketGetStatusCallCount, 4);
+
+    GlobalMockObject::verify();
+}
+
 TEST_F(ClusterMonitorTest, Ut_InsertClusterMonitorCtx_When_GetLinksSuccess_ZeroLinks_Expect_Success)
 {
     auto ctx = CreateHcclCommForInsertTest();
