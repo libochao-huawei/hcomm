@@ -182,6 +182,7 @@ HcclResult HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb);
 HcclResult HcclTaskRegisterProfV2(HcclComm comm, Hccl::ProfCallbackTemplate profCallback);
 HcclResult HcclGetDpuSteamIdV2(HcclComm comm, u32 &dpuStreamId);
 HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag);
+HcclResult HcclCheckTaskServiceExist(const std::string &commId, s32 deviceId);
 
 HcclResult HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);
 
@@ -194,7 +195,9 @@ HcclResult HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size
 HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr);
 
 uint32_t HcclGetCommConfigCapabilityV2();
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
+
 #endif  // OP_BASE_V2_H

@@ -486,7 +486,7 @@ TEST_F(RankInfoDetectClientTest, Ut_HostListenPortDetect_BasePort_Expect_HostPor
     EXPECT_EQ(rankInfo.hostPort, 50000u);
 
     // Cleanup: TearDown resets hostSocket_
-    SocketManager::TearDown(0);
+    rankInfoDetectClient_->SocketTearDown(0);
     PhyTopo::GetInstance()->Clear();  // 清理上一次测试的拓扑状态
 }
 
@@ -520,4 +520,12 @@ TEST_F(RankInfoDetectClientTest, Ut_HostListenPortDetect_NoHostLink_Expect_HostP
     // Then: hostPort should remain at default since no HOST RDMA link found
     EXPECT_EQ(rankInfo.hostPort, DEFAULT_VALUE_TCPPORT);
     PhyTopo::GetInstance()->Clear();  // 清理上一次测试的拓扑状态
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_TearDown_HostSocketNull_Expect_EarlyReturn)
+{
+    // Given: hostSocket_ is nullptr (default state, no HostListenPortDetect called)
+
+    // When & Then: TearDown should return immediately without any side effects
+    EXPECT_NO_THROW(rankInfoDetectClient_->SocketTearDown(0));
 }

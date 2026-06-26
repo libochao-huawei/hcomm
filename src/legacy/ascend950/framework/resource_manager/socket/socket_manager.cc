@@ -25,8 +25,6 @@
 
 namespace Hccl {
 std::mutex SocketManager::socketLock;
-std::mutex SocketManager::hostSocketLock_;
-shared_ptr<Socket> SocketManager::hostSocket_ = nullptr;
 
 void SocketManager::PrepareLinkAndServerInit(const SocketConfig &socketConfig)
 {
@@ -302,52 +300,6 @@ void SocketManager::ServerInitAll(NewRankInfo &rankInfo)
             }
         }
     }
-}
-
-void SocketManager::SetupHostListenPort(u32 devLogicId, u32 devPhyId, const IpAddress &hostIp, uint32_t &hostPort)
-{
-    std::lock_guard<std::mutex> lock(hostSocketLock_);
-    u32 listenPort = HCCL_INVALID_PORT;
-    auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
-    u32 basePort = EnvConfig::GetInstance().GetHostNicConfig().GetIfBasePort();
-    if (portRange.empty() && basePort != HCCL_INVALID_PORT) {
-        listenPort = basePort + devPhyId;
-        HCCL_INFO("[SocketManager::%s] BasePort is configured, listenPort[%u].", __func__, listenPort);
-        hostPort = listenPort;
-        return;
-    }
-
-    if (portRange.empty()) {
-        constexpr u32 HOST_CONTROL_BASE_PORT = 60000;    // 控制面起始port
-        HCCL_INFO("[SocketManager::%s] No port configuration, using default port range[%u, %u]", __func__,
-            HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + 15);
-        SocketPortRange defaultRange = {HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + 15};
-        portRange.push_back(defaultRange);
-    }
-
-    SocketHandle hostSocketHandle = HostSocketHandleManager::GetInstance().Create(devPhyId, hostIp);
-    hostSocket_ = std::make_shared<Socket>(hostSocketHandle, hostIp, HCCL_INVALID_PORT, hostIp,
-        "hostport_preempt", SocketRole::SERVER, NicType::HOST_NIC_TYPE);
-    PreemptPortManager::GetInstance(devLogicId).ListenPreempt(hostSocket_, portRange, listenPort);
-    HCCL_INFO("[SocketManager::%s] preempt hostPort[%u] success.", __func__, listenPort);
-    hostPort = listenPort;
-}
-
-void SocketManager::TearDown(u32 devPhyId)
-{
-    std::lock_guard<std::mutex> lock(hostSocketLock_);
-    if (hostSocket_ == nullptr) {
-        return;
-    }
-    const IpAddress& hostIp = hostSocket_->GetLocalIp();
-    auto devLogicId = HrtGetDevice();
-    if (EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange().size() > 0 || 
-        EnvConfig::GetInstance().GetHostNicConfig().GetIfBasePort() == HCCL_INVALID_PORT) {
-        // 若开启抢占监听端口
-        PreemptPortManager::GetInstance(devLogicId).Release(hostSocket_);
-    }
-    hostSocket_ = nullptr;
-    HostSocketHandleManager::GetInstance().Destroy(devPhyId, hostIp);
 }
 
 bool SocketManager::ServerDeInit(PortData &localPort) const

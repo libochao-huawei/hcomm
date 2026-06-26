@@ -185,14 +185,6 @@ TEST_F(SocketManagerTest, test_BatchCreateSockets_with_SocketConfig) {
     socketMgr.GetConnectedSocket(socketConfig);
 }
 
-TEST_F(SocketManagerTest, Ut_TearDown_HostSocketNull_Expect_EarlyReturn)
-{
-    // Given: hostSocket_ is nullptr (default state, no HostListenPortDetect called)
-
-    // When & Then: TearDown should return immediately without any side effects
-    EXPECT_NO_THROW(SocketManager::TearDown(0));
-}
-
 TEST_F(SocketManagerTest, test_CheckServerPortListening_When_Port_Inconsistent_Expected_False) {
     SocketManager socketMgr(localRank, devicePhyId, devicePhyId, "tmp");
     auto link = links[0];
