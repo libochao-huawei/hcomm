@@ -22,6 +22,7 @@
   - [HcommChannelFenceOnThread](./communication_operations/HcommChannelFenceOnThread.md)
   - [HcommFenceOnThread](./communication_operations/HcommFenceOnThread.md)
   - [HcommBatchTransferOnThread](./communication_operations/HcommBatchTransferOnThread.md)
+  - [HcommChannelDrainOnThread](./communication_operations/HcommChannelDrainOnThread.md)
 - [其他](./others/_dump_node.md)
   - [HcommBatchModeStart](./others/HcommBatchModeStart.md)
   - [HcommBatchModeEnd](./others/HcommBatchModeEnd.md)
