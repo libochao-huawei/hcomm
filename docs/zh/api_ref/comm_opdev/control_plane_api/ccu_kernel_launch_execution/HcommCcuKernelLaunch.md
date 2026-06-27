@@ -29,7 +29,7 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
 
 | 参数名 | 输入/输出 | 描述 |
 | --- | --- | --- |
-| threadHandle | 输入 | 通信线程句柄，须通过[Hcc lThreadAcquireWithStream](../comms_domain_resource_mgmt/HcclThreadAcquireWithStream.md)获取的有效句柄。取值不能为0。 |
+| threadHandle | 输入 | 通信线程句柄，须通过[HcclThreadAcquireWithStream](../comms_domain_resource_mgmt/HcclThreadAcquireWithStream.md)获取的有效句柄。取值不能为0。 |
 | kernelHandle | 输入 | Kernel句柄，须是通过[HcommCcuKernelRegister](HcommCcuKernelRegister.md)获取的有效句柄。取值不能为0。 |
 | taskArgs | 输入 | 指向`uint64_t`数组的指针，数组元素按`CcuLoadArg`中的`argId`索引取值，为Kernel提供运行期可变参数。若Kernel内未使用`CcuLoadArg`，可传入空指针。 |
 | argNum | 输入 | `taskArgs`数组的元素个数，单位为`uint64_t`元素个数，不是字节数。取值须等于Kernel注册阶段内使用过的不同`argId`总数；若Kernel内未使用`CcuLoadArg`，取值为0。 |
