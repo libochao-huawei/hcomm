@@ -190,7 +190,7 @@ private:
     HcclResult SyncGetFirstTpAttrForSlPolicy(const RaUbGetTpInfoParam &param, uint64_t firstTpHandle, TpAttr &tpAttr,
         uint32_t &attrBitmap) const;
     HcclResult AdvanceDeviceWaitListPhase(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, ReqQosMap &qosReqMap,
-        ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
+        const ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock, TpInfo &tpInfo);
     HcclResult FinishGetTpInfoFromReq(RequestCtx completedReqCtx, const RaUbGetTpInfoParam &param, TpInfo &tpInfo,
         const bool withSlPolicy);
     void StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param, RequestCtx &reqCtx, bool isSync) const;

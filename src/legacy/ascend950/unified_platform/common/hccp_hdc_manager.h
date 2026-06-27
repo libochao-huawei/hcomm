@@ -35,7 +35,7 @@ private:
     std::atomic<bool>          destroyed{false};
     HccpHdcManager() = default;
     void DestroyAll();
-    void UnregisterDeviceResetCallback();
+    void UnregisterDeviceResetCallback() const;
 };
 } // namespace Hccl
 #endif // HCCLV2_HCCP_HDC_MANAGER_H
