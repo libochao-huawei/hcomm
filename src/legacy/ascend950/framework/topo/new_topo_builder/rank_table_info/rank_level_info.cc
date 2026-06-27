@@ -70,10 +70,13 @@ void RankLevelInfo::Deserialize(const nlohmann::json &rankLevelInfoJson)
     for (auto& rankAddr : rankAddrs) {
         IpAddress ipAddress = rankAddr.addr;
         for (auto& port : rankAddr.ports) {
-            if (portAddrMap.find(port) != portAddrMap.end() && !(portAddrMap[port] == ipAddress)) {
-                 THROW<InvalidParamsException>(StringFormat("port [%s] is associated with multiple addresses ", port.c_str()));
+            if (portAddrMap.find(port) != portAddrMap.end()) {
+                portAddrMap[port].push_back(ipAddress);
+            } else {
+                std::vector<IpAddress> ipAddrList;
+                ipAddrList.push_back(ipAddress);
+                portAddrMap[port] = ipAddrList;
             }
-            portAddrMap[port] = ipAddress;
         }
     }
 }
@@ -102,7 +105,13 @@ RankLevelInfo::RankLevelInfo(BinaryStream &binStream)
     for (auto& rankAddr : rankAddrs) {
         IpAddress ipAddress = rankAddr.addr;
         for (auto& port : rankAddr.ports) {
-            portAddrMap[port] = ipAddress;
+            if (portAddrMap.find(port) != portAddrMap.end()) {
+                portAddrMap[port].push_back(ipAddress);
+            } else {
+                std::vector<IpAddress> ipAddrList;
+                ipAddrList.push_back(ipAddress);
+                portAddrMap[port] = ipAddrList;
+            }
         }
     }
 }

@@ -103,8 +103,8 @@ void AddDetourLink(NetInstance *innerNetInst, const DetourData &data,
             
             // 取出对应的端口，然后去ranktableInfo中查对应端口的地址信息
             // todo 逻辑判断一下只取第一个端口是否正确？ 
-            IpAddress src2detAddr = data.srcNetInstPeer->GetPortAddrMapLayer0()[*src2detPorts.begin()];
-            IpAddress det2dstAddr = data.dstNetInstPeer->GetPortAddrMapLayer0()[*det2dstPorts.begin()];
+            IpAddress src2detAddr = data.srcNetInstPeer->GetPortAddrMapLayer0()[*src2detPorts.begin()][0];
+            IpAddress det2dstAddr = data.dstNetInstPeer->GetPortAddrMapLayer0()[*det2dstPorts.begin()][0];
 
             // 构造InterFace对象用于后续生成Link
             shared_ptr<NetInstance::ConnInterface> sourceIface = make_shared<NetInstance::ConnInterface>(src2detAddr, 

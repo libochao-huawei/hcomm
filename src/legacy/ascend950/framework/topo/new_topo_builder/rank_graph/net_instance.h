@@ -108,8 +108,8 @@ public:
         u32           GetHostPort() const;
         std::set<u32> GetLevels() const;
         NetInstancePtr   GetNetInstance(u32 level) const;
-        std::map<std::string, IpAddress> GetPortAddrMapLayer0() const;
-        void SetPortPortAddrMapLayer0(std::map<std::string, IpAddress> portAddrMap);
+        std::map<std::string, std::vector<IpAddress>> GetPortAddrMapLayer0() const;
+        void SetPortPortAddrMapLayer0(std::map<std::string, std::vector<IpAddress>> portAddrMap);
         std::string   Describe() const override;
     private:
         RankId                   rankId_;
@@ -119,7 +119,7 @@ public:
         u32                      devicePort_;
         u32                      hostPort_;
         std::set<u32>            netLayers_;
-        std::map<std::string, IpAddress> portAddrMapLayer0_{}; // layer0 层端口与IpAddress的映射。
+        std::map<std::string, std::vector<IpAddress>> portAddrMapLayer0_{}; // layer0 层端口与IpAddress的映射。
         std::vector<NetInstancePtr> netInsts_; // 下标为level，约束：level从0递增
     };
 

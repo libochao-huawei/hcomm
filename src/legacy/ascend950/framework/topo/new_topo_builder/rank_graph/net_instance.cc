@@ -208,7 +208,7 @@ string NetInstance::Describe() const
                         netType.Describe().c_str(), rankIds.size());
 }
 
-void CheckPortGroupSize(u32 netLayer, NetInstance::Link& srcLink, NetInstance::Link& dstLink)
+bool CheckPortGroupSize(u32 netLayer, NetInstance::Link& srcLink, NetInstance::Link& dstLink)
 {
     auto srcConnIface = srcLink.GetSourceIface();
     auto targetConnIface = dstLink.GetTargetIface();
@@ -221,10 +221,12 @@ void CheckPortGroupSize(u32 netLayer, NetInstance::Link& srcLink, NetInstance::L
         auto remoteAddr = targetConnIface->GetAddr();
         auto localRankId = std::dynamic_pointer_cast<NetInstance::Peer>(srcPeer)->GetRankId();
         auto remoteRankId = std::dynamic_pointer_cast<NetInstance::Peer>(targetPeer)->GetRankId();
-        THROW<InvalidParamsException>(StringFormat("[GetPaths][CheckPortGroupSize] portGroupSize is not equal => src[%u], target[%u]."
+        HCCL_WARNING("[GetPaths][CheckPortGroupSize] portGroupSize is not equal => src[%u], target[%u]."
                 "LocatedInfo: NetLayer[%u], localRank[%u], rmtRank[%u], localAddr[%s], rmtAddr[%s]", srcPortGroupSize, tgtPortGroupSize,
-                netLayer, localRankId, remoteRankId, localAddr.Describe().c_str(), remoteAddr.Describe().c_str()));
+                netLayer, localRankId, remoteRankId, localAddr.Describe().c_str(), remoteAddr.Describe().c_str());
+        return false;
     }
+    return true;
 }
 
 vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, const RankId dstRankId) const
@@ -270,7 +272,9 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         if (!srcToFabricLinks.empty() && !fabricToDstLinks.empty()) {
             for (auto& srcLink : srcToFabricLinks) {
                 for (auto& dstLink : fabricToDstLinks) {
-                    CheckPortGroupSize(netLayer, srcLink, dstLink);
+                    if (!CheckPortGroupSize(netLayer, srcLink, dstLink)) {
+                        continue;
+                    }
                     NetInstance::Path path;
                     path.links = {srcLink, dstLink};
                     paths.emplace_back(path);
@@ -318,7 +322,9 @@ vector<NetInstance::Path> ClosNetInstance::GetPaths(const RankId srcRankId, cons
         });
 
         if (!srcToFabricLink.IsEmpty() && !fabricToDstLink.IsEmpty()) {
-            CheckPortGroupSize(netLayer, srcToFabricLink, fabricToDstLink);
+            if (!CheckPortGroupSize(netLayer, srcToFabricLink, fabricToDstLink)) {
+                continue;
+            }
             NetInstance::Path path;
             path.links = {srcToFabricLink, fabricToDstLink};
             paths.emplace_back(path);
@@ -470,12 +476,12 @@ void NetInstance::Peer::AddNetInstance(const std::shared_ptr<NetInstance> &netIn
     netLayers_.insert(netInst->GetNetLayer());
 }
 
-void NetInstance::Peer::SetPortPortAddrMapLayer0(std::map<std::string, IpAddress> portAddrMap)
+void NetInstance::Peer::SetPortPortAddrMapLayer0(std::map<std::string, std::vector<IpAddress>> portAddrMap)
 {
     portAddrMapLayer0_ = std::move(portAddrMap);
 }
 
-std::map<std::string, IpAddress> NetInstance::Peer::GetPortAddrMapLayer0() const
+std::map<std::string, std::vector<IpAddress>> NetInstance::Peer::GetPortAddrMapLayer0() const
 {
     return portAddrMapLayer0_;
 }

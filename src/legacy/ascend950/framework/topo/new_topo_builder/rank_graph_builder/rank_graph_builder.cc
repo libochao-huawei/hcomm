@@ -510,7 +510,7 @@ void RankGraphBuilder::UpdateTopoInstForMyRankOnly()
 }
 
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
-        std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, const std::map<std::string, IpAddress>& portAddrMap, 
+        std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, const std::map<std::string, std::vector<IpAddress>>& portAddrMap, 
         const TopoType topoType, const u32 topoInstId, u32 localDeviceId) {
     std::vector<std::shared_ptr<NetInstance::ConnInterface>> netConnIFaces;
     std::set<string> phyPorts = phyConnIFace->GetPorts();
@@ -533,14 +533,17 @@ std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTo
                 HCCL_WARNING("[RankGraphBuilder][ConstructConnIFromPhyTopoConnIAndPortMap] topo use port [%s] not find addrs in ranktable.", port.c_str());
                 continue;
             }
-            auto it = addr2Ports.find(itPort->second);
-            if (it == addr2Ports.end()) {
-                std::set<std::string> newPorts;
-                newPorts.insert(port);
-                addr2Ports[itPort->second] = newPorts;
-            } else {
-                it->second.insert("8080");
+            for (auto addr : itPort->second) {
+                auto it = addr2Ports.find(addr);
+                if (it == addr2Ports.end()) {
+                    std::set<std::string> newPorts;
+                    newPorts.insert(port);
+                    addr2Ports[addr] = newPorts;
+                } else {
+                    it->second.insert("8080");
+                }
             }
+
         }
     }
 

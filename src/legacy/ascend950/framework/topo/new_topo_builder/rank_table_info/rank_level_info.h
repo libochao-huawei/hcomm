@@ -38,7 +38,7 @@ public:
     std::string              netAttr;
     std::vector<AddressInfo> rankAddrs;
     std::string              Describe() const;
-    std::map<std::string, IpAddress> portAddrMap;
+    std::map<std::string, std::vector<IpAddress>> portAddrMap;
     void                     Deserialize(const nlohmann::json &rankLevelInfoJson);
     explicit                 RankLevelInfo(BinaryStream &binaStream);
     void                     GetBinStream(BinaryStream& binaStream) const;
