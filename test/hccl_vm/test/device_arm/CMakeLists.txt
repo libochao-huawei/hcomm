@@ -21,7 +21,7 @@ set(COMMON_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external
     ${CMAKE_SOURCE_DIR}/third_party/CLI11
     ${CMAKE_BINARY_DIR}/_deps/yaml-cpp-src/include
-    ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
+    ${CMAKE_SOURCE_DIR}/third_party
     $ENV{HCCL_CODE_HOME}/src/ops/op_common/inc
     $ENV{HCCL_CODE_HOME}/src/common
     $ENV{HCCL_CODE_HOME}/src/common/hcomm_dlsym

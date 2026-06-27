@@ -16,9 +16,9 @@ constexpr uint32_t UNIQUEID_HEADER_OFFSET = 152;
 constexpr uint32_t UNIQUEID_HEADER_SIZE = 20;
 constexpr uint32_t COMMON_DATA_SIZE = 8;
 constexpr uint32_t NOTIFY_ID_SIZE = 8;
-constexpr uint32_t NOTIFY_BUFFER_SIZE = 24;
-constexpr uint32_t LOCAL_BUFFER_SIZE = 24;
-constexpr uint32_t REMOTE_BUFFER_SIZE = 24;
+constexpr uint32_t NOTIFY_BUFFER_SIZE = 28;
+constexpr uint32_t LOCAL_BUFFER_SIZE = 28;
+constexpr uint32_t REMOTE_BUFFER_SIZE = 28;
 constexpr uint32_t HCOMID_MAX_SIZE = 128;
 
 struct HDCommunicateParams {

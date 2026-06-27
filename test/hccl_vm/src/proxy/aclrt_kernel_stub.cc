@@ -7,7 +7,10 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
+#include <errno.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <atomic>
 #include <atomic>
 #include <chrono>
@@ -35,6 +38,31 @@ struct ArgsBuffer {
 };
 
 pid_t g_devicePid = 0;
+
+static bool CheckDeviceProcStatus()
+{
+    if (g_devicePid == 0) {
+        return false;
+    }
+    int status = 0;
+    pid_t result = waitpid(g_devicePid, &status, WNOHANG);
+    if (result == 0) {
+        return true;
+    }
+    if (result == g_devicePid) {
+        if (WIFSIGNALED(status)) {
+            HCCL_VM_ERROR("device process[{}] killed by signal {}", g_devicePid, WTERMSIG(status));
+        } else {
+            HCCL_VM_ERROR("device process[{}] exited with status {}", g_devicePid, WEXITSTATUS(status));
+        }
+    } else {
+        HCCL_VM_ERROR("waitpid failed for pid {}, errno: {} ({})", g_devicePid, errno, strerror(errno));
+    }
+    FlushLog();
+    exit(EXIT_FAILURE);
+    g_devicePid = 0;
+    return false;
+}
 
 namespace sim {
 constexpr size_t MAX_ARGS_BUFF_SIZE = 64 * 1024U;
@@ -396,18 +424,23 @@ void ForkAndStartAicpuProcess(int32_t rankId, uint8_t* devState)
         exit(EXIT_FAILURE);
     }
 
+    const char* installDir = getenv("HCCL_VM_INSTALL_DIR");
+    std::string args = std::to_string(rankId);
+    std::string devicePath = installDir ? std::string(installDir) + "/bin/device" : "./bin/device";
+    std::string libPath = installDir ? std::string(installDir) + "/lib/aarch64" : "./lib/aarch64";
+    std::string preloadPath = libPath + "/libhccl-device-proxy.so";
     if (pid == 0) {
-        std::string args = std::to_string(rankId);
-        HCCL_VM_INFO("rankId[{}] aicpu process start.", rankId);
+        g_logger = nullptr;
         setenv("QEMU_LD_PREFIX", "/usr/aarch64-linux-gnu", 1);
-        setenv("LD_PRELOAD", "./device/lib/libhccl-device-proxy.so", 1);
-        setenv("LD_LIBRARY_PATH", "./device/lib64:./device/lib", 1);
-        execlp("qemu-aarch64-static", "qemu-aarch64-static", "./device/bin/device", args.c_str(), nullptr);
+        setenv("LD_PRELOAD", preloadPath.c_str(), 1);
+        setenv("LD_LIBRARY_PATH", libPath.c_str(), 1);
+        execlp("qemu-aarch64-static", "qemu-aarch64-static", devicePath.c_str(), args.c_str(), nullptr);
         HCCL_VM_ERROR("[ForkAndStartAicpuProcess] execlp aicpu process failed.");
         exit(EXIT_FAILURE);
     } else {
         g_devicePid = pid;  // 记录device进程id用于host结束时杀掉device进程
         while (*devState == DEVICE_RUN) {
+            CheckDeviceProcStatus();
             sleep(1);
         }
     }
@@ -456,6 +489,7 @@ void LaunchAICPUKernelFunc(std::string kernelName, aclrtArgsHandle argsHandle)
     std::atomic_thread_fence(std::memory_order_release);  // 内存屏障强制内存操作的顺序性
     aicpuData->task[rankId].devState = DEVICE_RUN;
     while (aicpuData->task[rankId].devState == DEVICE_RUN) {
+        CheckDeviceProcStatus();
         sleep(1);
     }
 }

@@ -51,8 +51,8 @@ warn_msg() {
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BASE_DIR="${SCRIPT_DIR}"
-OUTPUT_DIR="${BASE_DIR}/cluster_model/network/cluster"
+BASE_DIR="$(dirname "${SCRIPT_DIR}")"
+OUTPUT_DIR="${BASE_DIR}/config/network/cluster"
 
 show_usage() {
     cat << EOF

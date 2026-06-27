@@ -147,6 +147,18 @@ set_target_properties(test_aclrt_stub PROPERTIES
 )
 target_link_libraries(test_aclrt_stub gtest_main)
 
+# test_aclrt_memory_stub —— 主机侧大块引流/上界/FreeHost 行为单测
+# InsertTaskToCollection 由 link_libraries 的 store 库提供，无需额外编 device_arm 源。
+add_executable(test_aclrt_memory_stub aclrt_memory_stub_test.cc)
+target_sources(test_aclrt_memory_stub PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/proxy/aclrt_memory_stub.cc
+    ${CMAKE_SOURCE_DIR}/src/proxy/hccl_proxy_common.cc
+)
+set_target_properties(test_aclrt_memory_stub PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/output/bin"
+)
+target_link_libraries(test_aclrt_memory_stub gtest_main)
+
 add_executable(test_hccl_comm_stub hccl_comm_stub_test.cc)
 target_sources(test_hccl_comm_stub PRIVATE
     ${CMAKE_SOURCE_DIR}/src/proxy/hccl_comm_stub.cc

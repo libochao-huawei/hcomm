@@ -255,10 +255,7 @@ int main(int argc, char* argv[])
     (void) argc;
     (void) argv;
     init_lock();
-    LogConfig config;
-    config.fileBaseName = "runner";
-    config.consoleLevel = 6;
-    config.fileLevel = 2;
+    LogConfig config = LoadLogConfig("runner");
     InitLogger(config);
     HcclSim::StorageManager& storage = HcclSim::StorageManager::GetInstance();
     storage.SetDataId("runner");

@@ -519,15 +519,24 @@ HcclResult CheckTwoSliceOverlap(const TaskNode *node, const MemSlice &lhs, const
     }
     if (lhs.len > std::numeric_limits<uint64_t>::max() - lhs.offset ||
         rhs.len > std::numeric_limits<uint64_t>::max() - rhs.offset) {
-        HCCL_VM_ERROR("[TaskGraphSingleTaskCheckV3] Memory slice overflow, node={}, lhs={}, rhs={}",
+        HCCL_VM_ERROR("[TaskGraphSingleTaskCheckV3] Memory slice overflow, node={}, sliceA={}, sliceB={}",
             node->Describe(), DescribeMemSlice(lhs), DescribeMemSlice(rhs));
         return HCCL_E_PARA;
+    }
+
+    if (node->HasCcuTrace()) {
+        // CCU mode下，允许src == dst
+        if (lhs.rankId == rhs.rankId && IsSameMemoryType(lhs, rhs) && lhs.offset == rhs.offset && lhs.len == rhs.len) {
+            HCCL_VM_WARN("[TaskGraphSingleTaskCheckV3] MemSlice are same (src == dst), which may affect performance, {}, node={}, sliceA={}, sliceB={}",
+                DescribePosition(node->GetPosition()), node->Describe(), DescribeMemSlice(lhs), DescribeMemSlice(rhs));
+            return HCCL_SUCCESS;
+        }
     }
 
     const bool conflictCase1 = lhs.offset >= rhs.offset && lhs.offset < (rhs.offset + rhs.len);
     const bool conflictCase2 = rhs.offset >= lhs.offset && rhs.offset < (lhs.offset + lhs.len);
     if (conflictCase1 || conflictCase2) {
-        HCCL_VM_ERROR("[TaskGraphSingleTaskCheckV3] Slice conflict, {}, node={}, lhs={}, rhs={}",
+        HCCL_VM_ERROR("[TaskGraphSingleTaskCheckV3] Slice conflict, {}, node={}, sliceA={}, sliceB={}",
             DescribePosition(node->GetPosition()), node->Describe(), DescribeMemSlice(lhs), DescribeMemSlice(rhs));
         return HCCL_E_INTERNAL;
     }

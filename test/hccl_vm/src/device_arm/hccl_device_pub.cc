@@ -210,7 +210,7 @@ void SignalHandler(int signum)
     }
     
     printf("========================================\n");
-    printf("Resolve: aarch64-linux-gnu-addr2line -e ./device/bin/device -C -f <addr>\n");
+    printf("Resolve: aarch64-linux-gnu-addr2line -e ./bin/device -C -f <addr>\n");
     printf("========================================\n\n");
 
     // 4. 刷新缓冲区，确保信息在进程退出前输出

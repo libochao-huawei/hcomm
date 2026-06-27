@@ -119,7 +119,7 @@ aclError aclrtRecordNotify(aclrtNotify notify, aclrtStream stream)
     HCCL_VM_DEBUG("[aclstub][aclrtRecordNotify] Get notify task, id={:d}, streamId={:d}", notifyId, streamId);
     auto ret = InsertTaskToCollection(&taskMetaData, &index);
     if (ret != HcclSim::HcclVmResult::HCCL_SIM_SUCCESS) {
-        HCCL_VM_ERROR("[{}] InsertTaskToCollection fail", __func__);
+        HCCL_VM_ERROR("[aclstub] InsertTaskToCollection fail");
         return ACL_ERROR_INTERNAL_ERROR;
     }
 
@@ -156,7 +156,7 @@ aclError aclrtWaitAndResetNotify(aclrtNotify notify, aclrtStream stream, uint32_
     HCCL_VM_DEBUG("[aclstub][aclrtWaitAndResetNotify] Get notify task, id={:d}, streamId={:d}", notifyId, streamId);
     auto ret = InsertTaskToCollection(&taskMetaData, &index);
     if (ret != HcclSim::HcclVmResult::HCCL_SIM_SUCCESS) {
-        HCCL_VM_ERROR("[{}] InsertTaskToCollection fail", __func__);
+        HCCL_VM_ERROR("[aclstub] InsertTaskToCollection fail");
         return ACL_ERROR_INTERNAL_ERROR;
     }
 

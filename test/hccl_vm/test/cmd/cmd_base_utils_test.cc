@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <sys/mman.h>   // shm_unlink
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -23,6 +24,7 @@
 #include "cmd_base_utils_internal.h"
 #include "cmd_cluster_model_utils.h"
 #include "store_sim_memory_manager.h"
+#include "store_sim_comm_pool_policy.h"
 
 using namespace HcclSim;
 
@@ -1461,30 +1463,46 @@ class InitHvmEnvTest : public testing::Test {
 protected:
     void SetUp() override {
         sim::MemoryManager::GetInstance().FreeMemByName("HcclAicpuData");
+        shm_unlink("HcclAicpuData");
+        // 逐用例清掉 HcclCommPool 残留。
+        sim::MemoryManager::GetInstance().FreeMemByName(sim::CommPoolPolicy::kPoolName);
+        shm_unlink(sim::CommPoolPolicy::kPoolName);
         unsetenv("HCCL_OP_EXPANSION_MODE");
         unsetenv("HCCL_VM_INSTALL_DIR");
     }
     void TearDown() override {
         sim::MemoryManager::GetInstance().FreeMemByName("HcclAicpuData");
+        sim::MemoryManager::GetInstance().FreeMemByName(sim::CommPoolPolicy::kPoolName);
         unsetenv("HCCL_OP_EXPANSION_MODE");
         unsetenv("HCCL_VM_INSTALL_DIR");
     }
 };
 
 TEST_F(InitHvmEnvTest, InitializesSharedMemoryWithoutAivValidation) {
-    HcclVmResult ret = InitHvmEnv("/nonexistent/path/for/ut", 2);
+    HcclVmResult ret = InitHvmEnv("/nonexistent/path/for/ut", 2, false);
     EXPECT_EQ(ret, HCCL_SIM_HOST_SUCCESS_CMD);
 
     void *shm = sim::MemoryManager::GetInstance().AcquireMemByName("HcclAicpuData");
     ASSERT_NE(shm, nullptr);
     sim::MemoryManager::GetInstance().ReleaseMemByName("HcclAicpuData");
+
+    // clean 模式不建复用区 HcclCommPool。
+    EXPECT_EQ(sim::MemoryManager::GetInstance().AcquireMemByName(sim::CommPoolPolicy::kPoolName), nullptr);
 }
 
 TEST_F(InitHvmEnvTest, FailsInAivModeWithoutInstallDir) {
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
 
-    HcclVmResult ret = InitHvmEnv("/nonexistent/path/for/ut", 2);
+    HcclVmResult ret = InitHvmEnv("/nonexistent/path/for/ut", 2, false);
     EXPECT_EQ(ret, HCCL_SIM_HOST_ERROR_CMD);
+}
+
+TEST_F(InitHvmEnvTest, FailsWhenCommPoolNameAlreadyExists) {
+    // 仅校验模式下池名被预先占用时，InitHvmEnv 建池失败、返回错误，且不创建 HcclAicpuData。
+    ASSERT_NE(sim::MemoryManager::GetInstance().AllocMemByName(
+        sim::CommPoolPolicy::kPoolName, 4096), nullptr);
+    EXPECT_EQ(InitHvmEnv("/nonexistent/path/for/ut", 2, true), HCCL_SIM_HOST_ERROR_CMD);
+    EXPECT_EQ(sim::MemoryManager::GetInstance().AcquireMemByName("HcclAicpuData"), nullptr);
 }
 
 // ==================== IsAivExpansionModeEnabled Tests ====================

@@ -72,7 +72,7 @@ void RemoveFromLDPreload(const std::string& targetValue);
 void ShowModel();
 
 // init hvm env
-HcclVmResult InitHvmEnv(const std::string& configClusterDir, uint32_t level);
+HcclVmResult InitHvmEnv(const std::string& configClusterDir, uint32_t level, bool checkOnlyMode);
 HcclVmResult InitHvmCommEnv(const TopoMeta& topoMeta, const std::string& configFileName, uint32_t level);
 HcclVmResult HcclVmExit();
 HcclVmResult CopyFile(const std::string& clusterDir);

@@ -252,7 +252,7 @@ int RaSocketBatchConnect(struct SocketConnectInfoT conn[], unsigned int num)
         HCCL_VM_INFO("[RASOCKET] dev:{} sock:{} connect dev:{} ip addr:{} tag:{}", localSock->device_id, localFd, remoteDevId, ipAddr, conn[i].tag);
         uint32_t count = 0;
         while (true) {
-            if (count++ >= 120) {
+            if (count++ >= 600) { // 超时60s
                 HCCL_VM_ERROR("[RASOCKET] can not get break dev:{} sock:{} connect dev:{} ip addr:{} tag:{}", localSock->device_id, localFd, remoteDevId, ipAddr, conn[i].tag);
                 break;
             }
@@ -261,7 +261,7 @@ int RaSocketBatchConnect(struct SocketConnectInfoT conn[], unsigned int num)
                     return socket.device_id == remoteDevId && socket.endpoint_id == remoteEndPointId;
                 });
             if (!remoteSockRes.second) {
-                if (count % 10 == 0) {
+                if (count % 100 == 0) {
                     HCCL_VM_WARN("[RASOCKET] can not find remote dev:{}, endpoint:{}", remoteDevId, remoteEndPointId);
                 }
 
@@ -344,12 +344,16 @@ int RaGetSockets(unsigned int role, struct SocketInfoT conn[], unsigned int num,
 
         uint32_t count = 0;
         bool found = false;
-        while (count++ < 60) {
+        while (count++ < 180) {
             auto remoteSockRes = RunnerDB::GetOneByPred<sim::RaSocket>(
                 [remoteDevId, remoteEndpointId](const sim::RaSocket &socket) {
                     return socket.device_id == remoteDevId && socket.endpoint_id == remoteEndpointId;
                 });
             if (!remoteSockRes.second) {
+                if (count % 60 == 0) {
+                    HCCL_VM_WARN("[RASOCKET] waiting for remote socket dev:{}, endpoint:{}, attempt:{}/180",
+                                 remoteDevId, remoteEndpointId, count);
+                }
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 continue;
             }
@@ -364,6 +368,10 @@ int RaGetSockets(unsigned int role, struct SocketInfoT conn[], unsigned int num,
                 });
 
             if (!pairRes.second) {
+                if (count % 60 == 0) {
+                    HCCL_VM_WARN("[RASOCKET] waiting for socket pair local:{:d} peer:{:d} tag_hash:{:d}, attempt:{}/180",
+                                 loadFd, peerFd, tagHash, count);
+                }
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 continue;
             }

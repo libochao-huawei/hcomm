@@ -15,6 +15,8 @@
 
 #include "sim_common_defs.h"
 #include "sim_log.h"
+#include "sim_common_api.h"
+#include "sim_yaml_config.h"
 #include "db_sim_op_db_ops.h"
 
 namespace loader {
@@ -35,8 +37,9 @@ HcclResult Loader::LoadOpTaskFile(const std::string dbPath)
         targetPath = dbPath;
         HCCL_VM_INFO("[Loader] Loading from specific backup path: {}", targetPath);
     } else {
-        targetPath = "./../../../hccl_vm_data.db";
-        HCCL_VM_INFO("[Loader] Loading using default configuration path: {}", targetPath);
+        targetPath = InstallPath::ResolveToInstallRoot("data/hccl_vm_data.db");
+        std::string absPath = std::filesystem::absolute(targetPath).string();
+        HCCL_VM_INFO("[Loader] Loading using default configuration path: {}", absPath);
     }
 
     config.dbPath = targetPath;

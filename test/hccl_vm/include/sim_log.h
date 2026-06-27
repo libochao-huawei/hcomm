@@ -16,6 +16,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <sys/types.h>
 
 #include "spdlog/spdlog.h"
 
@@ -75,6 +76,7 @@ struct LogConfig
     bool enableCompress{false};
 };
 
+LogConfig LoadLogConfig(const std::string& process_name);
 void InitLogger(const LogConfig& config);
 void FlushLog();
 void DeInitLogger();

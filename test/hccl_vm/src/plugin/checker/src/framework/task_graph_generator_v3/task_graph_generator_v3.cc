@@ -517,14 +517,27 @@ HcclResult TaskGraphGeneratorV3::ExpandAivSubGraphs()
     stats.pipeBarrierMergeCount = result.pipeBarrierMergeCount;
     stats.syncAllMergeCount = result.syncAllMergeCount;
     stats.sendRecvEdgeCount = result.sendRecvEdgeCount;
+    stats.taskJsonTotalTaskCount = result.taskJsonTotalTaskCount;
+    stats.dagNodeCountBeforeCpGmMerge = result.dagNodeCountBeforeCpGmMerge;
+    stats.dagNodeCountAfterCpGmMerge = result.dagNodeCountAfterCpGmMerge;
+    stats.cpGmLoopMergeCount = result.cpGmLoopMergeCount;
+    stats.cpGmMergedIterationCount = result.cpGmMergedIterationCount;
+    stats.cpGmMergedOriginalNodeCount = result.cpGmMergedOriginalNodeCount;
+    stats.cpGmGeneratedNodeCount = result.cpGmGeneratedNodeCount;
+    stats.cpGmInactiveNodeCount = result.cpGmInactiveNodeCount;
     stats.totalExpandNs = result.expandNs;
     aivExpandStats_ = stats;
     HCCL_VM_INFO("[TaskGraphGeneratorV3][ExpandAivSubGraphs] AIV subgraph expansion finished, aivGraphCount={}, "
         "internalNodeCount={}, setWaitEdgeCount={}, pipeBarrierMergeCount={}, syncAllMergeCount={}, "
-        "sendRecvEdgeCount={}, ubBufferSize={}, flagBufferSize={}, expandTotalMs={}", stats.graphCount,
-        stats.internalNodeCount,
+        "sendRecvEdgeCount={}, taskJsonTotalTaskCount={}, dagNodeCountBeforeCpGmMerge={}, "
+        "dagNodeCountAfterCpGmMerge={}, cpGmLoopMergeCount={}, cpGmMergedIterationCount={}, "
+        "cpGmMergedOriginalNodeCount={}, cpGmGeneratedNodeCount={}, cpGmInactiveNodeCount={}, "
+        "ubBufferSize={}, flagBufferSize={}, expandTotalMs={}", stats.graphCount, stats.internalNodeCount,
         stats.setWaitEdgeCount, stats.pipeBarrierMergeCount, stats.syncAllMergeCount, stats.sendRecvEdgeCount,
-        g_checkerAivUbBufferSize, g_checkerAivFlagBufferSize, stats.totalExpandNs / 1000000ULL);
+        stats.taskJsonTotalTaskCount, stats.dagNodeCountBeforeCpGmMerge, stats.dagNodeCountAfterCpGmMerge,
+        stats.cpGmLoopMergeCount, stats.cpGmMergedIterationCount, stats.cpGmMergedOriginalNodeCount,
+        stats.cpGmGeneratedNodeCount, stats.cpGmInactiveNodeCount, g_checkerAivUbBufferSize,
+        g_checkerAivFlagBufferSize, stats.totalExpandNs / 1000000ULL);
     return HCCL_SUCCESS;
 }
 

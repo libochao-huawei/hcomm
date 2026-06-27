@@ -53,6 +53,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/include/store
     ${CMAKE_SOURCE_DIR}/include/runnerdb
     ${CMAKE_BINARY_DIR}/_deps/yaml-cpp-src/include
+    ${CMAKE_SOURCE_DIR}/third_party/yaml-cpp/include
     ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
 )
 

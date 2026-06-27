@@ -26,7 +26,7 @@ add_subdirectory(checker)
 #)
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/insight"
-    DESTINATION "plugin/visualize"
+    DESTINATION "plugin/visualization"
     # 文件的权限 (755)
     FILE_PERMISSIONS
         OWNER_READ OWNER_WRITE OWNER_EXECUTE 

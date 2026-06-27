@@ -11,8 +11,15 @@
 #include "sim_log.h"
 
 #include <cstdint>
+#include <cstdlib>
 #include <fstream>
+#include <map>
+#include <string>
+#include <unistd.h>
+#include <errno.h>
 
+#include "sim_common_api.h"
+#include "sim_yaml_config.h"
 #include "spdlog/details/os-inl.h"
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -47,13 +54,11 @@ std::shared_ptr<spdlog::sinks::rotating_file_sink_mt> InitFileSink(const LogConf
             << config.fileSuffix;
         const std::string newPath = oss.str();
         if (spdlog::details::os::rename(filePath, newPath) != 0) {
-            std::cout << "[ERROR] Fail to rename rotating log file: " << newPath << std::endl;
+            std::cout << "[ERROR] Fail to rename rotating log file: " << filePath << " -> " << newPath << " current pid " << getpid() << " errno: " << errno << std::endl;
             return;
         }
-
     };
 
-    // log file name
     std::ostringstream logFileName;
     logFileName << config.filePath << "/" << config.fileBaseName << "_" << std::to_string(getpid()) << config.fileSuffix;
 
@@ -62,6 +67,81 @@ std::shared_ptr<spdlog::sinks::rotating_file_sink_mt> InitFileSink(const LogConf
     sink->set_level(static_cast<spdlog::level::level_enum>(config.fileLevel));
     sink->set_pattern("[%Y-%m-%d %H:%M:%S.%f][%l][PID:%P][TID:%t][%s:%#][%!] %v");
     return sink;
+}
+
+static std::string GetLogYamlConfigPath()
+{
+    const char* env = std::getenv("HCCL_VM_LOG_CONFIG_PATH");
+    if (env && *env) {
+        return env;
+    }
+    return InstallPath::ResolveToInstallRoot("config/log_config.yaml");
+}
+
+LogConfig LoadLogConfig(const std::string& process_name)
+{
+    LogConfig cfg;
+
+    static const std::map<std::string, std::string> yaml_node_map = {
+        {"device_aarch64", "proxy"}
+    };
+    std::string node_name = process_name;
+    auto it = yaml_node_map.find(process_name);
+    if (it != yaml_node_map.end()) {
+        node_name = it->second;
+    }
+
+    std::map<std::string, std::string> fields;
+    if (LoadYamlStringMap(GetLogYamlConfigPath(), node_name, fields)) {
+        auto it_console  = fields.find("console_level");
+        auto it_file     = fields.find("file_level");
+        auto it_max_size = fields.find("max_file_size");
+        auto it_max_num  = fields.find("max_files");
+        auto it_path     = fields.find("file_path");
+        auto it_suffix   = fields.find("file_suffix");
+        auto it_compress = fields.find("enable_compress");
+
+        if (it_console  != fields.end()) {
+            cfg.consoleLevel   = std::stoi(it_console->second);
+        }
+        if (it_file     != fields.end()) {
+            cfg.fileLevel      = std::stoi(it_file->second);
+        }
+        if (it_max_size != fields.end()) {
+            cfg.maxFileSize    = static_cast<size_t>(std::stoull(it_max_size->second));
+        }
+        if (it_max_num  != fields.end()) {
+            cfg.maxFiles       = static_cast<size_t>(std::stoull(it_max_num->second));
+        }
+        if (it_path     != fields.end()) {
+            cfg.filePath = InstallPath::ResolveToInstallRoot(it_path->second);
+        }
+        if (it_suffix   != fields.end()) {
+            cfg.fileSuffix     = it_suffix->second;
+        }
+        if (it_compress != fields.end()) {
+            cfg.enableCompress = (it_compress->second == "true" || it_compress->second == "1");
+        }
+    } else {
+        if (process_name == "proxy") {
+            cfg.filePath = InstallPath::ResolveToInstallRoot("logs/proxy");
+        } else if (process_name == "device_aarch64") {
+            cfg.filePath = InstallPath::ResolveToInstallRoot("logs/proxy");
+        } else if (process_name == "runner") {
+            cfg.filePath = InstallPath::ResolveToInstallRoot("logs/runner");
+        } else if (process_name == "checker") {
+            cfg.filePath = InstallPath::ResolveToInstallRoot("logs/checker");
+        } else if (process_name == "hccl_vm") {
+            cfg.filePath = InstallPath::ResolveToInstallRoot("logs");
+        }
+    }
+
+    if (process_name == "device_aarch64") {
+        cfg.fileBaseName = "proxy_" + std::to_string(getppid());
+    } else {
+        cfg.fileBaseName = process_name;
+    }
+    return cfg;
 }
 
 void InitLogger(const LogConfig& config)

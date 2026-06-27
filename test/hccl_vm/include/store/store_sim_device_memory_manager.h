@@ -51,7 +51,7 @@ public:
 
     // 获取host地址
     void* GetHostPtrByDevPtr(void* devPtr);
-    
+
 private:
     // 私有构造函数
     DeviceMemoryManager();

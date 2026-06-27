@@ -19,7 +19,9 @@
 
 void envInit()
 {
-    int ret3 = system("sudo rm -fr ./hccl_vm_data.db ./hccl_vm_data.db-wal ./hccl_vm_data.db-shm 2>/dev/null");
+    setenv("HCCL_VM_INSTALL_ROOT", GetBinLocation().c_str(), 1);
+    std::string dbPrefix = GetBinLocation() + "/data/hccl_vm_data.db";
+    int ret3 = system(("sudo rm -fr " + dbPrefix + " " + dbPrefix + "-wal " + dbPrefix + "-shm 2>/dev/null").c_str());
     int ret1 = system("sudo rm -fr /dev/shm/* 2>/dev/null");
     int ret2 = system("sudo rm -fr /tmp/hccl_sim.db* 2>/dev/null");
     if (ret1 != 0 || ret2 != 0) {
@@ -31,15 +33,13 @@ void envInit()
 
 int main(int argc, char *argv[])
 {
-    LogConfig config;
-    config.fileBaseName = "hccl_vm";
-    InitLogger(config);
-
     const char* envCheck = std::getenv(HVM_BASH_ENV_KEY.c_str());
 
     if (envCheck != nullptr) {
         StartHostClient(argc, argv);
     } else {
+        LogConfig config = LoadLogConfig("hccl_vm");
+        InitLogger(config);
         envInit();
         std::string cmd = ArgvToString(argc, argv);
         if (argc == 1) {

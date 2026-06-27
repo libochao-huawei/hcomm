@@ -44,14 +44,14 @@ extern "C" {
 int RaIsFirstUsed(int insId)
 {
     (void) insId;
-    HCCL_VM_ERROR("[HCCP] [{}] stub", __func__);
+    HCCL_VM_ERROR("[HCCP] stub");
     return 0;
 }
 
 int RaIsLastUsed(int insId)
 {
     (void) insId;
-    HCCL_VM_ERROR("[HCCP] [{}] stub", __func__);
+    HCCL_VM_ERROR("[HCCP] stub");
     return 0;
 }
 
@@ -59,7 +59,7 @@ int ibv_get_cq_event_stub(struct ibv_comp_channel *channel, struct ibv_cq **cq, 
 {
     (void) cq;
     (void) cq_context;
-    HCCL_VM_TRACE("[{}] Stub", __func__);
+    HCCL_VM_TRACE("[HCCP] Stub");
     if (!channel) {
         return -1;
     }
@@ -70,7 +70,7 @@ void ibv_ack_cq_events_stub(struct ibv_cq *cq, unsigned int nevents)
 {
     (void) cq;
     (void) nevents;
-    HCCL_VM_TRACE("[{}] Stub", __func__);
+    HCCL_VM_TRACE("[HCCP] Stub");
     return;
 }
 
@@ -80,7 +80,7 @@ void ibv_query_qp_stub(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attr_mas
     (void) attr;
     (void) attr_mask;
     (void) init_attr;
-    HCCL_VM_TRACE("[{}] Stub", __func__);
+    HCCL_VM_TRACE("[HCCP] Stub");
     return;
 }
 

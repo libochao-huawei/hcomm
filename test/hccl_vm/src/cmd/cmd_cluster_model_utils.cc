@@ -38,7 +38,7 @@ bool SetEnvValue(const char* key, const std::string& value)
 bool ParseYamlTopoImpl(const std::string& fileName, TopoMeta& topo)
 {
     try {
-        std::string filePath = GetBinLocation() + "/cluster_model/topo_meta/" + fileName + ".yaml";
+        std::string filePath = GetBinLocation() + "/config/topo_meta/" + fileName + ".yaml";
         YAML::Node root = YAML::LoadFile(filePath);
 
         if (!root["meta"]) {

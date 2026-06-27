@@ -9,6 +9,7 @@
  */
 
 #include <cstdint>
+#include <set>
 #include <iostream>
 #include <runnerdb/db_sim_runner_common.h>
 
@@ -350,12 +351,47 @@ uint32_t GetCubeCoreCount(uint64_t deviceId)
     return vectorCoreCount;
 }
 
-bool GetRankIdByMPI(uint32_t &rankId)
+std::set<uint64_t> GetUsedServerNum()
+{
+    try {
+        auto allRanks = RunnerDB::GetByPred<sim::Rank>([](const sim::Rank& d) {
+            return d.state == 1;
+        });
+        std::set<uint64_t> usedServerIds;
+        for (auto &rank : allRanks) {
+            auto deviceKey = rank.device_id;
+            auto ret = RunnerDB::GetOneByPred<sim::Device>([deviceKey](const sim::Device &d) {
+                return d.id == deviceKey;
+            });
+            if (!ret.second) {
+                continue;
+            }
+            auto serverId = ret.first.server_id;
+            usedServerIds.insert(serverId);
+        }
+        return usedServerIds;
+    } catch (const std::exception &e) {
+        HCCL_VM_ERROR("[GetUsedServerNum] exception: {}", e.what());
+        return {};
+    }
+}
+
+bool GetRankIdByMPI(uint32_t &rankId, uint64_t &serverId)
 {
     const char *ompiRankStr = std::getenv("OMPI_COMM_WORLD_RANK");
     const char *mpichRankStr = std::getenv("PMI_RANK");
     if (ompiRankStr == nullptr && mpichRankStr == nullptr) {
-        HCCL_VM_ERROR("[HVM] env OMPI_COMM_WORLD_RANK or PMI_RANK are not found.");
+        // 单server用例，默认serverId为1
+        auto usedServerIds = GetUsedServerNum();
+        if (usedServerIds.size() == 1) {
+            if (*usedServerIds.begin() != 1) {
+                HCCL_VM_ERROR("[HVM] env OMPI_COMM_WORLD_RANK or PMI_RANK are not found, serverId is not 1.");
+                return false;
+            }
+            serverId = 1;
+            return true;
+        }
+        HCCL_VM_ERROR("[HVM] env OMPI_COMM_WORLD_RANK or PMI_RANK are not found, usedServerIds size is not 1.");
         return false;
     } else if (ompiRankStr != nullptr) {
         rankId = static_cast<uint32_t>(atoi(ompiRankStr));

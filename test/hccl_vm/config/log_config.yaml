@@ -1,0 +1,39 @@
+hccl_vm:
+    console_level: 2
+    file_level: 1
+    max_file_size: 52428800
+    max_files: 65535
+    file_path: logs
+    file_base_name: app_log
+    file_suffix: .log
+    enable_compress: false
+
+proxy:
+    console_level: 2
+    file_level: 1
+    max_file_size: 52428800
+    max_files: 65535
+    file_path: logs/proxy
+    file_base_name: app_log
+    file_suffix: .log
+    enable_compress: false
+
+runner:
+    console_level: 6
+    file_level: 2
+    max_file_size: 52428800
+    max_files: 65535
+    file_path: logs/runner
+    file_base_name: app_log
+    file_suffix: .log
+    enable_compress: false
+
+checker:
+    console_level: 2
+    file_level: 0
+    max_file_size: 52428800
+    max_files: 65535
+    file_path: logs/checker
+    file_base_name: app_log
+    file_suffix: .log
+    enable_compress: false

@@ -28,7 +28,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/include/runnerdb
     ${CMAKE_SOURCE_DIR}/third_party/CLI11
     ${CMAKE_BINARY_DIR}/_deps/yaml-cpp-src/include
-    ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
+    ${CMAKE_SOURCE_DIR}/third_party
     ${CMAKE_SOURCE_DIR}/third_party
     ${CMAKE_SOURCE_DIR}/third_party/spdlog
     ${CMAKE_SOURCE_DIR}/third_party/spdlog/include

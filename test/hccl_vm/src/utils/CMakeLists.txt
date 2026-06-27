@@ -6,21 +6,27 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-# --- log library (from sim_log.cc) ---
-add_library(log SHARED sim_log.cc)
+# --- log library (sim_log.cc + sim_yaml_config.cc + sim_common.cpp) ---
+add_library(log STATIC sim_log.cc sim_yaml_config.cc sim_common_api.cc)
 
 target_include_directories(log PUBLIC
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/third_party
+        ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
+        ${CMAKE_SOURCE_DIR}/third_party/yaml-cpp/include
 )
 
 target_include_directories(log PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
+        ${YAMLCPP_INCLUDE_DIR}
 )
 
+target_compile_definitions(log PRIVATE HAVE_YAML_CPP)
+
 target_compile_options(log PRIVATE
+        -fPIC
         -std=c++14
         -Werror
         -fno-common
@@ -31,32 +37,14 @@ target_compile_options(log PRIVATE
         -D_GLIBCXX_USE_CXX11_ABI=0
 )
 
-install(TARGETS log
-        DESTINATION "."
-        PERMISSIONS
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE
-        GROUP_READ GROUP_EXECUTE
-        WORLD_READ WORLD_EXECUTE
-)
+target_link_libraries(log PRIVATE yaml-cpp::yaml-cpp)
 
-install(TARGETS log
-        DESTINATION "plugin/validate/runner"
-        PERMISSIONS
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE
-        GROUP_READ GROUP_EXECUTE
-        WORLD_READ WORLD_EXECUTE
-)
-
-install(TARGETS log
-        DESTINATION "plugin/validate/checker"
-        PERMISSIONS
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE
-        GROUP_READ GROUP_EXECUTE
-        WORLD_READ WORLD_EXECUTE
-)
+if(TARGET third_party_yaml_cpp)
+    add_dependencies(log third_party_yaml_cpp)
+endif()
 
 # --- loader library (from sim_loader.cc, migrated from src/loader) ---
-add_library(loader SHARED sim_loader.cc)
+add_library(loader STATIC sim_loader.cc)
 
 target_compile_options(loader PRIVATE
     -fPIC
@@ -94,28 +82,4 @@ target_link_libraries(loader PRIVATE
     log
     runnerdb
     rt
-)
-
-install(TARGETS loader
-    DESTINATION "."
-    PERMISSIONS
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE
-        GROUP_READ GROUP_EXECUTE
-        WORLD_READ WORLD_EXECUTE
-)
-
-install(TARGETS loader
-    DESTINATION "plugin/validate/checker"
-    PERMISSIONS
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE
-        GROUP_READ GROUP_EXECUTE
-        WORLD_READ WORLD_EXECUTE
-)
-
-install(TARGETS loader
-    DESTINATION "plugin/validate/runner"
-    PERMISSIONS
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE
-        GROUP_READ GROUP_EXECUTE
-        WORLD_READ WORLD_EXECUTE
 )

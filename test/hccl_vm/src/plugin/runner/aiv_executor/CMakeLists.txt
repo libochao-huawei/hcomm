@@ -46,7 +46,6 @@ target_include_directories(aiv_executor
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
 
-        ${THRID_PARTY_DIR}
         ${THRID_PARTY_DIR}/nlohmann_json
         ${THRID_PARTY_DIR}/dbg_macro   # for debug
 )

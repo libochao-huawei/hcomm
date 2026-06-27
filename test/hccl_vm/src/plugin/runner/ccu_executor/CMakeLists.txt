@@ -8,8 +8,9 @@
 
 file(GLOB_RECURSE HCCL_SOURCES "*.cc")
 
-# 添加共享库
-add_library(ccu_executor SHARED ${HCCL_SOURCES})
+# 添加静态库
+add_library(ccu_executor STATIC ${HCCL_SOURCES})
+
 target_compile_options(ccu_executor PRIVATE
     -fPIC
     -g
@@ -40,13 +41,4 @@ target_include_directories(ccu_executor PRIVATE
 target_link_libraries(ccu_executor PRIVATE
     log
     rt
-)
-
-install(TARGETS ccu_executor
-    DESTINATION "plugin/validate/runner"
-    # 文件的权限 (755)
-    PERMISSIONS 
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-        GROUP_READ GROUP_EXECUTE 
-        WORLD_READ WORLD_EXECUTE
 )

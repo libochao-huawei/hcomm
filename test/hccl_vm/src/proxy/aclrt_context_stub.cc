@@ -34,7 +34,7 @@ aclError aclrtCreateContext(aclrtContext *context, int32_t deviceId)
         return d.logic_id  == (uint32_t)deviceId;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find device: {:d}", __func__, deviceId);
+        HCCL_VM_ERROR("cannot find device: {:d}", deviceId);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
     // 找不到context，则默认新增一个context
@@ -61,7 +61,7 @@ aclError aclrtDestroyContext(aclrtContext context)
         return stm.ctx_id  == ctxId && stm.is_primary_default == 1;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find stream by ctx: {:d}", __func__, ctxId);
+        HCCL_VM_ERROR("cannot find stream by ctx: {:d}", ctxId);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
@@ -98,7 +98,7 @@ aclError aclrtCtxGetCurrentDefaultStream(aclrtStream *stream)
         return stm.ctx_id  == curCtxId && stm.is_primary_default == 1;
     });
     if (!stm.second) {
-        HCCL_VM_ERROR("[{}] cannot find stream by ctx: {:d}", __func__, curCtxId);
+        HCCL_VM_ERROR("cannot find stream by ctx: {:d}", curCtxId);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
@@ -117,7 +117,7 @@ aclError aclrtGetPrimaryCtxState(int32_t deviceId, uint32_t *flags, int32_t *act
     auto currCtx = RunnerDB::GetById<sim::Context>(runner.current_ctx_id);
     if (!currCtx.has_value()) {
         // not find
-        HCCL_VM_ERROR("[{}] can not get currContext: {:d}", __func__, runner.current_ctx_id);
+        HCCL_VM_ERROR("can not get currContext: {:d}", runner.current_ctx_id);
         return ACL_ERROR_INVALID_PARAM;
     }
 

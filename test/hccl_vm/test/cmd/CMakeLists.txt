@@ -69,6 +69,7 @@ target_link_libraries(test_cmd_base_utils PRIVATE
     cmd
     store
     runnerdb
+    topo
     log
     yaml-cpp
     z
@@ -116,6 +117,7 @@ target_link_libraries(test_cmd_table_utils PRIVATE
     cmd
     store
     runnerdb
+    topo
     log
     yaml-cpp
     z
@@ -155,6 +157,7 @@ target_link_libraries(test_cmd_cluster_model_utils PRIVATE
     cmd
     store
     runnerdb
+    topo
     log
     yaml-cpp
     z

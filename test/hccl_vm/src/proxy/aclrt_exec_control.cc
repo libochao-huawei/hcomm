@@ -31,7 +31,7 @@ aclError aclrtLaunchCallback(aclrtCallback fn, void *userData, aclrtCallbackBloc
     (void) userData;
     (void) blockType;
     (void) stream;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
@@ -39,14 +39,14 @@ aclError aclrtSubscribeReport(uint64_t threadId, aclrtStream stream)
 {
     (void) threadId;
     (void) stream;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
 aclError aclrtProcessReport(int32_t timeout)
 {
     (void) timeout;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
@@ -54,7 +54,7 @@ aclError aclrtUnSubscribeReport(uint64_t threadId, aclrtStream stream)
 {
     (void) threadId;
     (void) stream;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
@@ -62,14 +62,14 @@ aclError aclrtSubscribeHostFunc(uint64_t hostFuncThreadId, aclrtStream exeStream
 {
     (void) hostFuncThreadId;
     (void) exeStream;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
 aclError aclrtProcessHostFunc(int32_t timeout)
 {
     (void) timeout;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
@@ -77,21 +77,21 @@ aclError aclrtUnSubscribeHostFunc(uint64_t hostFuncThreadId, aclrtStream exeStre
 {
     (void) hostFuncThreadId;
     (void) exeStream;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
 aclError aclrtGetOpTimeoutInterval(uint64_t *interval)
 {
     (void) interval;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
 aclError aclrtSetOpExecuteTimeOut(uint32_t timeout)
 {
     (void) timeout;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
@@ -99,21 +99,21 @@ aclError aclrtSetOpExecuteTimeOutV2(uint64_t timeout,  uint64_t *actualTimeout)
 {
     (void) timeout;
     (void) actualTimeout;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
 aclError aclrtSetOpExecuteTimeOutWithMs(uint32_t timeout)
 {
     (void) timeout;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
 aclError aclrtGetThreadLastTaskId(uint32_t *taskId)
 {
     (void) taskId;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 
@@ -122,7 +122,7 @@ aclError aclrtLaunchHostFunc(aclrtStream stream, aclrtHostFunc fn, void *args)
     (void) stream;
     (void) fn;
     (void) args;
-    HCCL_VM_TRACE("[{}] not supported", __func__);
+    HCCL_VM_TRACE("not supported");
     return ACL_SUCCESS;
 }
 #ifdef __cplusplus

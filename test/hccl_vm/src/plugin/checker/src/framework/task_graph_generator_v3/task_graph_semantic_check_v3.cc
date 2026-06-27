@@ -16,6 +16,7 @@
 #include <queue>
 #include <set>
 #include <sstream>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -54,6 +55,7 @@ struct SliceOpPairV3 {
     SliceOpV3 op{SliceOpV3::OVERRIDE};
     HcclReduceOp reduceType{HCCL_REDUCE_RESERVED};
     u64 index{0};
+    bool useBatchIndex{false};
 
     std::string Describe() const
     {
@@ -65,6 +67,7 @@ struct SliceOpPairV3 {
            << ", launch=" << position.launchIdx << ", block=" << position.blockId
            << ", pipe=" << position.pipe << ", taskId=" << position.taskId
            << ", index=" << index << ", op=" << static_cast<uint32_t>(op)
+           << ", useBatchIndex=" << useBatchIndex
            << ", reduceType=" << static_cast<uint32_t>(reduceType) << "}";
         return os.str();
     }
@@ -92,7 +95,9 @@ struct MsKey {
 struct AivMemoryKey {
     RankId rankId{INVALID_RANK_ID};
     MemType memType{MemType::INVALID};
-    u64 aivUbIdx{0};
+    u64 aivUBIdx{0};
+    u64 batchIndex{0};
+    bool isBatchUB{false};
 
     bool operator<(const AivMemoryKey &rhs) const
     {
@@ -102,7 +107,13 @@ struct AivMemoryKey {
         if (memType != rhs.memType) {
             return static_cast<uint32_t>(memType) < static_cast<uint32_t>(rhs.memType);
         }
-        return aivUbIdx < rhs.aivUbIdx;
+        if (aivUBIdx != rhs.aivUBIdx) {
+            return aivUBIdx < rhs.aivUBIdx;
+        }
+        if (batchIndex != rhs.batchIndex) {
+            return batchIndex < rhs.batchIndex;
+        }
+        return isBatchUB < rhs.isBatchUB;
     }
 };
 
@@ -126,7 +137,7 @@ struct SemanticState {
     u64 outputSize{0};
     std::map<RankId, InternalRankMemorySemantics> mem;
     std::map<MsKey, InternalBufferSemanticMap> ms;
-    std::map<AivMemoryKey, InternalBufferSemanticMap> scopedMem;
+    std::map<AivMemoryKey, InternalBufferSemanticMap> AivDevMem;
 };
 
 BufferType ConvertMemTypeToBufferType(MemType memType)
@@ -195,33 +206,33 @@ u64 MakeAivUbIdx(const TaskPosition &position)
     return (position.launchIdx << 32U) | static_cast<u64>(position.blockId);
 }
 
-u64 GetSemanticIndex(const MemSlice &slice, const TaskPosition &position, u64 fallbackIndex)
+AivMemoryKey MakeAivMemoryKey(RankId rankId, MemType memType, const TaskPosition &position, u64 batchIndex,
+    bool isBatchUB)
 {
-    if (slice.memType == MemType::UB_AIV) {
-        return MakeAivUbIdx(position);
+    if (memType == MemType::FLAG_AIV) {
+        return AivMemoryKey{rankId, memType, 0U, 0U, false};
     }
-    if (slice.memType == MemType::FLAG_AIV) {
-        return 0;
-    }
-    return fallbackIndex;
+    const bool effectiveIsBatchUB = memType == MemType::UB_AIV && isBatchUB;
+    return AivMemoryKey{rankId, memType, MakeAivUbIdx(position), effectiveIsBatchUB ? batchIndex : 0U,
+        effectiveIsBatchUB};
 }
 
 // 普通内存直接按 rank/bufferType 取语义表；MS 则额外按 batch 下标拆桶，
 // 从而把“同一个 ms 在不同 batch item 复用”的语义分开记录。
 InternalBufferSemanticMap &GetBufferSemanticMap(SemanticState &state, RankId rankId, MemType memType, u64 offset,
-    u64 index)
+    const TaskPosition &position, u64 index, bool useBatchIndex)
 {
     if (memType == MemType::MS_CCU) {
         return state.ms[MakeMsKey(rankId, offset, index)];
     }
     if (memType == MemType::UB_AIV || memType == MemType::FLAG_AIV) {
-        return state.scopedMem[AivMemoryKey{rankId, memType, index}];
+        return state.AivDevMem[MakeAivMemoryKey(rankId, memType, position, index, useBatchIndex)];
     }
     return state.mem[rankId][ConvertMemTypeToBufferType(memType)];
 }
 
 const InternalBufferSemanticMap &GetBufferSemanticMap(const SemanticState &state, RankId rankId, MemType memType,
-    u64 offset, u64 index)
+    u64 offset, const TaskPosition &position, u64 index, bool useBatchIndex)
 {
     static const InternalBufferSemanticMap empty;
     if (memType == MemType::MS_CCU) {
@@ -229,8 +240,8 @@ const InternalBufferSemanticMap &GetBufferSemanticMap(const SemanticState &state
         return iter == state.ms.end() ? empty : iter->second;
     }
     if (memType == MemType::UB_AIV || memType == MemType::FLAG_AIV) {
-        const auto iter = state.scopedMem.find(AivMemoryKey{rankId, memType, index});
-        return iter == state.scopedMem.end() ? empty : iter->second;
+        const auto iter = state.AivDevMem.find(MakeAivMemoryKey(rankId, memType, position, index, useBatchIndex));
+        return iter == state.AivDevMem.end() ? empty : iter->second;
     }
     const auto rankIter = state.mem.find(rankId);
     if (rankIter == state.mem.end()) {
@@ -556,8 +567,8 @@ void ApplyOverrideSemantics(const SliceOpPairV3 &pair, SemanticState &state,
     const std::vector<const BufferSemantic *> &srcSemantics)
 {
     InternalBufferSemanticMap &dstSemantics =
-        GetBufferSemanticMap(state, pair.dstRank, pair.dst.memType, pair.dst.offset,
-            GetSemanticIndex(pair.dst, pair.position, pair.index));
+        GetBufferSemanticMap(state, pair.dstRank, pair.dst.memType, pair.dst.offset, pair.position, pair.index,
+            pair.useBatchIndex);
     const u64 dstStartAddr = pair.dst.offset;
     const u64 dstEndAddr = dstStartAddr + pair.dst.len;
     SplitBufferSemantic(dstSemantics, dstStartAddr);
@@ -623,8 +634,8 @@ HcclResult ApplyReduceSemantic(const SliceOpPairV3 &pair, SemanticState &state, 
     const u64 dstEndAddr = ApplyOffsetDelta(srcEndAddr, dstSrcOffset);
 
     InternalBufferSemanticMap &dstSemantics =
-        GetBufferSemanticMap(state, pair.dstRank, pair.dst.memType, pair.dst.offset,
-            GetSemanticIndex(pair.dst, pair.position, pair.index));
+        GetBufferSemanticMap(state, pair.dstRank, pair.dst.memType, pair.dst.offset, pair.position, pair.index,
+            pair.useBatchIndex);
     SplitBufferSemantic(dstSemantics, dstStartAddr);
     SplitBufferSemantic(dstSemantics, dstEndAddr);
 
@@ -691,7 +702,7 @@ HcclResult LoadSliceOpPairSrcSemantics(const SliceOpPairV3 &pair, const Semantic
     }
 
     const InternalBufferSemanticMap &srcSemanticsMap = GetBufferSemanticMap(state, pair.srcRank, pair.src.memType,
-        pair.src.offset, GetSemanticIndex(pair.src, pair.position, pair.index));
+        pair.src.offset, pair.position, pair.index, pair.useBatchIndex);
     std::vector<const BufferSemantic *> srcViews;
     CollectOverlappingBufferSemantics(srcSemanticsMap, pair.src.offset, pair.src.offset + pair.src.len, srcViews);
 
@@ -787,7 +798,7 @@ void GetSliceOpPairs(const TaskNode *node, std::vector<SliceOpPairV3> &pairs)
         for (size_t index = 0; index < count; ++index) {
             pairs.push_back(SliceOpPairV3{srcs[index].rankId, dsts[index].rankId, srcs[index], dsts[index],
                 node->GetPosition(), SliceOpV3::OVERRIDE, HCCL_REDUCE_RESERVED,
-                static_cast<u64>(index)});
+                static_cast<u64>(index), true});
         }
         return;
     }
@@ -811,6 +822,7 @@ void GetSliceOpPairs(const TaskNode *node, std::vector<SliceOpPairV3> &pairs)
                 pair.op = SliceOpV3::REDUCE;
                 pair.reduceType = static_cast<HcclReduceOp>(task->GetReduceOp());
                 pair.index = static_cast<u64>(index);
+                pair.useBatchIndex = true;
                 pairs.push_back(std::move(pair));
             }
         }

@@ -17,7 +17,7 @@
 #include "sim_log.h"
 
 constexpr uint64_t BUFFER_OUT_ADDR_OFFSET = 16 * 1024;
-constexpr uint64_t FLAG_ADDR_OFFSET = 40 * 1024;
+constexpr uint64_t FLAG1_OFFSET = 1 * 1024 * 1024;
 
 void aiv_env_init(uint32_t rankId,
     size_t blockNum,
@@ -85,7 +85,7 @@ void aiv_env_init(uint32_t rankId,
         static_cast<const uint8_t *>(buffIn) + BUFFER_OUT_ADDR_OFFSET);
     for (uint32_t i = 0; i < rankSize; ++i) {
         const uint64_t cclBuffer = cclBufferTable[i];
-        const uint64_t flagBuffer = flagBufferTable[i] + FLAG_ADDR_OFFSET;
+        const uint64_t flagBuffer = flagBufferTable[i] + FLAG1_OFFSET;
         const std::string cclMemDesc = AivSim::Mem{cclBuffer, cclBufferSize}.Describe();
         const std::string flagMemDesc = AivSim::Mem{flagBuffer, flagBufferSize}.Describe();
         HCCL_VM_DEBUG(

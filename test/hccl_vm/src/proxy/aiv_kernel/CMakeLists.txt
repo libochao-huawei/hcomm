@@ -46,8 +46,7 @@ add_library(hccl_aiv_kernel SHARED
 target_link_libraries(hccl_aiv_kernel PRIVATE log)
 
 install(TARGETS hccl_aiv_kernel
-        DESTINATION "."
-        # 文件的权限 (755)
+        DESTINATION "lib/x86_64"
         PERMISSIONS
         OWNER_READ OWNER_WRITE OWNER_EXECUTE
         GROUP_READ GROUP_EXECUTE

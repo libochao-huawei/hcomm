@@ -17,7 +17,7 @@ target_include_directories(test_device_vir PRIVATE
     ${CMAKE_SOURCE_DIR}/include/runnerdb
     ${CMAKE_SOURCE_DIR}/third_party/CLI11
     ${CMAKE_BINARY_DIR}/_deps/yaml-cpp-src/include
-    ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
+    ${CMAKE_SOURCE_DIR}/third_party
 )
 
 target_link_libraries(test_device_vir PRIVATE

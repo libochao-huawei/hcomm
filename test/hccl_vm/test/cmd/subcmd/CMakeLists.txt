@@ -20,7 +20,7 @@ set(SUBCMD_OBJS
 set(SUBCMD_LIBS
     gtest_main gtest
     ${SUBCMD_OBJS}
-    common cmd store runnerdb log yaml-cpp sqlite3 dl rt
+    common cmd store runnerdb topo log yaml-cpp sqlite3 dl rt
     z
 )
 

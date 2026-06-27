@@ -395,7 +395,8 @@ std::map<uint32_t, HcclDataType> DavidUbDataTypeMap = {
     {0x4, HcclDataType::HCCL_DATA_TYPE_UINT16},
     {0x5, HcclDataType::HCCL_DATA_TYPE_UINT32},
     {0x6, HcclDataType::HCCL_DATA_TYPE_FP16},
-    {0x7, HcclDataType::HCCL_DATA_TYPE_FP32}
+    {0x7, HcclDataType::HCCL_DATA_TYPE_FP32},
+    {0x8, HcclDataType::HCCL_DATA_TYPE_BFP16}
 };
 
 HcclDataType ParseUbDataTypeDavid(uint32_t type)

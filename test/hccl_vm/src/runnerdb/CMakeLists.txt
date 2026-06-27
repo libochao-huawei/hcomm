@@ -8,7 +8,7 @@
 
 add_subdirectory(modeldb)
 
-add_library(runnerdb SHARED)
+add_library(runnerdb STATIC)
 
 target_sources(runnerdb PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/tracedb/db_sim_runner_db.cc
@@ -25,9 +25,11 @@ target_include_directories(runnerdb PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
 )
 target_include_directories(runnerdb PRIVATE
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/include/runnerdb
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include/runnerdb
 )
+
+target_link_libraries(runnerdb PUBLIC log modeldb)
 
 target_include_directories(runnerdb PRIVATE
         # hccl_proxy依赖的Checker L2其他模块的头文件
@@ -43,6 +45,7 @@ target_include_directories(runnerdb PRIVATE
 )
 
 target_compile_options(runnerdb PRIVATE
+        -fPIC
         -Werror
         -fno-common
         -fno-strict-aliasing
@@ -54,36 +57,5 @@ target_compile_options(runnerdb PRIVATE
 
 find_package(SQLite3 REQUIRED)
 
-target_link_libraries(runnerdb PRIVATE
-        log
-        modeldb
-        SQLite::SQLite3
-        sqlite3
-)
+target_link_libraries(runnerdb PUBLIC SQLite::SQLite3)
 
-install(TARGETS runnerdb
-    DESTINATION "."
-    # 文件的权限 (755)
-    PERMISSIONS 
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-        GROUP_READ GROUP_EXECUTE 
-        WORLD_READ WORLD_EXECUTE
-)
-
-install(TARGETS runnerdb
-    DESTINATION "plugin/validate/runner"
-    # 文件的权限 (755)
-    PERMISSIONS 
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-        GROUP_READ GROUP_EXECUTE 
-        WORLD_READ WORLD_EXECUTE
-)
-
-install(TARGETS runnerdb
-    DESTINATION "plugin/validate/checker"
-    # 文件的权限 (755)
-    PERMISSIONS 
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-        GROUP_READ GROUP_EXECUTE 
-        WORLD_READ WORLD_EXECUTE
-)

@@ -34,6 +34,8 @@ extern "C" {
 
 aclError aclrtCreateStreamWithConfig(aclrtStream *stream, uint32_t priority, uint32_t flag)
 {
+    (void) flag;
+    (void) priority;
     sim::Runner runner;
     if (!sim::GetCurrRunnerTls(0, runner)) {
         return ACL_ERROR_INVALID_PARAM;
@@ -200,6 +202,7 @@ aclError aclrtStreamQuery(aclrtStream stream, aclrtStreamStatus *status)
 
 aclError aclrtGetStreamAvailableNum(uint32_t *streamCount)
 {
+    (void) streamCount;
     sim::Runner runner;
     if (!sim::GetCurrRunnerTls(0, runner)) {
         return ACL_ERROR_INVALID_PARAM;

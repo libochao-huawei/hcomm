@@ -28,7 +28,7 @@ target_include_directories(cmd PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include/topo
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include/store
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/nlohmann_json
 
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
@@ -54,11 +54,10 @@ target_link_libraries(cmd PRIVATE
         runnerdb
         store
         topo
+        CLI11::CLI11
+        yaml-cpp::yaml-cpp
+        JSON::JSON
 )
-
-target_link_libraries(cmd PRIVATE CLI11::CLI11)
-target_link_libraries(cmd PRIVATE yaml-cpp::yaml-cpp)
-target_link_libraries(cmd PRIVATE JSON::JSON)
 
 if(TARGET third_party_yaml_cpp)
     add_dependencies(cmd third_party_yaml_cpp)

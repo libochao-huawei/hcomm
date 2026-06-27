@@ -71,13 +71,22 @@ target_include_directories(hccl-vm PUBLIC
 
 target_link_libraries(hccl-vm
     PRIVATE
-    common
-    runnerdb
-    store
-    log
+    -Wl,--whole-archive
     cmd
+    common
+    store
+    topo
+    loader
+    runnerdb
     modeldb
+    log
+    -Wl,--no-whole-archive
+    dl
+    rt
     sqlite3
+    yaml-cpp::yaml-cpp
+    CLI11::CLI11
+    JSON::JSON
 )
 
 target_compile_options(hccl-vm PRIVATE
@@ -107,7 +116,7 @@ if(TARGET third_party_yaml_cpp)
 endif()
 
 install(TARGETS hccl-vm
-    DESTINATION "."
+    DESTINATION "bin"
     # 文件的权限 (755)
     PERMISSIONS 
         OWNER_READ OWNER_WRITE OWNER_EXECUTE 

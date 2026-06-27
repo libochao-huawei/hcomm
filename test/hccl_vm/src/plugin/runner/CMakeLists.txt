@@ -28,6 +28,7 @@ file(GLOB_RECURSE VR_LIB_SOURCES
  # 添加插件库
 add_executable(runner ${VR_LIB_SOURCES})
 
+
 target_compile_options(runner PRIVATE
     -g
     -O0
@@ -56,17 +57,23 @@ target_include_directories(runner PRIVATE
 )
 
 target_link_libraries(runner PRIVATE
+    -Wl,--whole-archive
     aiv_executor
     store
+    loader
     runnerdb
+    modeldb
     ccu_executor
     log
+    -Wl,--no-whole-archive
     rt
     JSON::JSON
-    loader
+    
+    yaml-cpp::yaml-cpp
+    sqlite3
 )
 install(TARGETS runner
-    DESTINATION "plugin/validate/runner"
+    DESTINATION "plugin/runner"
     # 文件的权限 (755)
     PERMISSIONS 
         OWNER_READ OWNER_WRITE OWNER_EXECUTE 
@@ -75,7 +82,7 @@ install(TARGETS runner
  )
 
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../manifest.json"
-    DESTINATION "plugin/validate/runner"
+    DESTINATION "plugin/runner"
     # 文件的权限 (755)
     PERMISSIONS
         OWNER_READ OWNER_WRITE OWNER_EXECUTE

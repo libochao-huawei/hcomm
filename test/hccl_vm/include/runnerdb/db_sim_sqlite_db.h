@@ -89,6 +89,7 @@ private:
     sim::SqliteTable<sim::RaJetty> m_raJettyTbl;
     sim::SqliteTable<sim::RaJfc> m_raJfcTbl;
     sim::SqliteTable<sim::RaCr> m_raCrTbl;
+    sim::SqliteTable<sim::RunModeConfig> m_runModeConfigTbl;
 
     std::mutex m_lazyMutex;
     std::unordered_map<std::type_index, sim::TableBase*> m_tableMap;
@@ -154,6 +155,7 @@ public:
         , m_raJettyTbl(m_db.GetDb(), "RaJetty")
         , m_raJfcTbl(m_db.GetDb(), "RaJfc")
         , m_raCrTbl(m_db.GetDb(), "RaCr")
+        , m_runModeConfigTbl(m_db.GetDb(), "RunModeConfig")
     {
         RegisterTable(m_serverTbl, "Server");
         RegisterTable(m_hostTbl, "Host");
@@ -206,6 +208,7 @@ public:
         RegisterTable(m_raJettyTbl, "RaJetty");
         RegisterTable(m_raJfcTbl, "RaJfc");
         RegisterTable(m_raCrTbl, "RaCr");
+        RegisterTable(m_runModeConfigTbl, "RunModeConfig");
     }
 
     SimRunnerSqliteDB(const SimRunnerSqliteDB&) = delete;

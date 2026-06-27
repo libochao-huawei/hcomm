@@ -27,6 +27,7 @@ private:
     
     std::string configClusterName;
     std::vector<std::string> leftargvs;
+    bool checkOnlyMode = false;
 };
 }
 

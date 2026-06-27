@@ -30,7 +30,7 @@ include_directories(
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
     ${HOME}
     ${CMAKE_BINARY_DIR}/_deps/yaml-cpp-src/include
-    ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
+    ${CMAKE_SOURCE_DIR}/third_party
 )
 
 link_directories(

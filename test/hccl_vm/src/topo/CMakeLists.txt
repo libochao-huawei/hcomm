@@ -6,7 +6,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-add_library(topo SHARED "")
+add_library(topo STATIC "")
 
 target_sources(topo PRIVATE
     topo_cluster_ir.cc
@@ -16,7 +16,6 @@ target_sources(topo PRIVATE
 )
 
 target_include_directories(topo PRIVATE
-    ${THRID_PARTY_DIR}
     ${THRID_PARTY_DIR}/nlohmann_json
     ${HCOMM_VM_ROOT_PATH}/include
     ${HCOMM_VM_ROOT_PATH}/include
@@ -30,6 +29,7 @@ target_include_directories(topo PRIVATE
 )
 
 target_compile_options(topo PRIVATE
+        -fPIC
         -Werror
         -fno-common
         -fno-strict-aliasing
@@ -39,16 +39,4 @@ target_compile_options(topo PRIVATE
         -D_GLIBCXX_USE_CXX11_ABI=0
 )
 
-target_link_libraries(topo PRIVATE
-        runnerdb
-        log
-)
-
-install(TARGETS topo
-    DESTINATION "."
-    # 文件的权限 (755)
-    PERMISSIONS 
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-        GROUP_READ GROUP_EXECUTE 
-        WORLD_READ WORLD_EXECUTE
-)
+target_link_libraries(topo PRIVATE log)

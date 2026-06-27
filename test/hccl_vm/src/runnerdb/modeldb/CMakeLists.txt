@@ -15,12 +15,14 @@ target_sources(modeldb PRIVATE
 )
 
 target_include_directories(modeldb PRIVATE
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/include/runnerdb
-    ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include/runnerdb
 )
 
+target_link_libraries(modeldb PRIVATE log)
+
 target_compile_options(modeldb PRIVATE
+    -fPIC
     -Werror
     -fno-common
     -fno-strict-aliasing
@@ -32,15 +34,5 @@ target_compile_options(modeldb PRIVATE
 
 find_package(SQLite3 REQUIRED)
 
-target_link_libraries(modeldb PRIVATE
-    log
-    SQLite::SQLite3
-)
+target_link_libraries(modeldb PUBLIC SQLite::SQLite3)
 
-install(TARGETS modeldb
-    DESTINATION "."
-    PERMISSIONS
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE
-        GROUP_READ GROUP_EXECUTE
-        WORLD_READ WORLD_EXECUTE
-)

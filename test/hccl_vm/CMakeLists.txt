@@ -85,19 +85,46 @@ include(cmake/third_party/cli11.cmake)
 include(cmake/third_party/spdlog.cmake)
 include(cmake/third_party/sqlite3.cmake)
 
+include_directories(
+    ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
+    ${CMAKE_SOURCE_DIR}/third_party
+    ${CMAKE_SOURCE_DIR}/third_party/yaml-cpp/include
+)
+
 function(config_hcclvm_install)
     install(DIRECTORY DESTINATION "data")
-    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/asset/"
-        DESTINATION "."
-        # 文件的权限 (755)
-        FILE_PERMISSIONS
-            OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-            GROUP_READ GROUP_EXECUTE 
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/config/"
+        DESTINATION "config")
+    install(FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/asset/allocate_eid.sh"
+        "${CMAKE_CURRENT_SOURCE_DIR}/asset/generate_cluster_topo.sh"
+        "${CMAKE_CURRENT_SOURCE_DIR}/asset/generate_server_topo.sh"
+        "${CMAKE_CURRENT_SOURCE_DIR}/asset/hccl_config.sh"
+        DESTINATION "script"
+        PERMISSIONS
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
             WORLD_READ WORLD_EXECUTE
-        # 目录的权限 (755)
+    )
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/asset/cluster_model/config/cluster"
+        DESTINATION "config"
         DIRECTORY_PERMISSIONS
-            OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-            GROUP_READ GROUP_EXECUTE 
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
+            WORLD_READ WORLD_EXECUTE
+    )
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/asset/cluster_model/config/server_or_pod"
+        DESTINATION "config"
+        DIRECTORY_PERMISSIONS
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
+            WORLD_READ WORLD_EXECUTE
+    )
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/asset/cluster_model/topo_meta"
+        DESTINATION "config"
+        DIRECTORY_PERMISSIONS
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
             WORLD_READ WORLD_EXECUTE
     )
 endfunction()
@@ -116,7 +143,7 @@ include(CPack)
 if(BUILD_DEVICE_ARM)
     message(STATUS "BUILD_DEVICE_ARM start")
     set(DEVICE_ARM_BUILD_DIR ${CMAKE_SOURCE_DIR}/build_device)
-    set(DEVICE_ARM_INSTALL_DIR ${CMAKE_SOURCE_DIR}/hccl_vm_install/device)
+    set(DEVICE_ARM_INSTALL_DIR ${CMAKE_SOURCE_DIR}/hccl_vm_install)
     include(ExternalProject)
     ExternalProject_Add(device_arm_external
         SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/device_arm

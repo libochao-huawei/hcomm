@@ -18,10 +18,16 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <filesystem>
+#include <system_error>
+
+namespace fs = std::filesystem;
 
 #include "topo_cluster_dumper.h"
 #include "sim_common_macro.h"
 #include "sim_log.h"
+#include "sim_common_api.h"
+#include "sim_yaml_config.h"
 #include "sim_ip_address.h"
 #include "db_sim_runner_ops.h"
 
@@ -107,7 +113,8 @@ HcclVmResult AscendClusterTopoParser::InitClusterTopo(const std::string &cluster
     HCCL_VM_DEBUG("Total device count: {}", network_.GetTotalDeviceCount());
     HCCL_VM_DEBUG("Total link count: {}", network_.GetTotalLinkCount());
 
-    ClusterTopoDumper::DumpToFile(network_, outputFile_);
+    fs::create_directories(fs::path(InstallPath::ResolveToInstallRoot("data")));
+    ClusterTopoDumper::DumpToFile(network_, InstallPath::ResolveToInstallRoot("data/" + outputFile_));
 
     // 3. 初始化IR数据，保存至DB层
     if (InitClusterStaticTopoData() != HcclVmResult::HCCL_SIM_SUCCESS) {
@@ -307,10 +314,8 @@ HcclVmResult AscendClusterTopoParser::BuildLevelList(const Server &server, int s
                 rankAddrList.push_back(addrEntry);
             }
 
-            if (!rankAddrList.empty()) {
-                levelEntry["rank_addr_list"] = rankAddrList;
-                levelList.push_back(levelEntry);
-            }
+            levelEntry["rank_addr_list"] = rankAddrList;
+            levelList.push_back(levelEntry);
         }
 
         // Process PEER2NET from rootinfo portGroups
@@ -411,7 +416,16 @@ HcclVmResult AscendClusterTopoParser::CreateRankTableFile(const TopoMeta &topoMe
         }
     }
 
-    std::string outputPath = "ranktable.json";
+    std::error_code ec;
+    fs::path exePath = fs::read_symlink("/proc/self/exe", ec);
+    fs::path binDir = ec ? fs::current_path() : exePath.parent_path();
+    if (binDir.filename() == "bin") {
+        binDir = binDir.parent_path();
+    }
+    fs::path dataDir = binDir / "data";
+    std::error_code ec2;
+    fs::create_directories(dataDir, ec2);
+    std::string outputPath = (dataDir / "ranktable.json").string();
     std::ofstream ofs(outputPath);
     if (!ofs.is_open()) {
         HCCL_VM_ERROR("[{}] failed to open ranktable.json for writing", __func__);

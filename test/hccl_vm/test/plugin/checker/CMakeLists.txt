@@ -108,6 +108,9 @@ target_include_directories(test_checker BEFORE PRIVATE
     ${CHECKER_HDR}/internal
     ${CHECKER_HDR}/external
     ${CHECKER_HDR}/external/nlohmann
+    ${THRID_PARTY_DIR}/nlohmann_json
+    ${THRID_PARTY_DIR}
+    ${THRID_PARTY_DIR}/yaml-cpp/include
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc
@@ -178,6 +181,9 @@ target_include_directories(test_storage_manager_checker BEFORE PRIVATE
     ${CHECKER_HDR}/internal
     ${CHECKER_HDR}/external
     ${CHECKER_HDR}/external/nlohmann
+    ${THRID_PARTY_DIR}/nlohmann_json
+    ${THRID_PARTY_DIR}
+    ${THRID_PARTY_DIR}/yaml-cpp/include
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc
@@ -230,6 +236,9 @@ target_include_directories(test_task_utils BEFORE PRIVATE
     ${CHECKER_HDR}/internal
     ${CHECKER_HDR}/external
     ${CHECKER_HDR}/external/nlohmann
+    ${THRID_PARTY_DIR}/nlohmann_json
+    ${THRID_PARTY_DIR}
+    ${THRID_PARTY_DIR}/yaml-cpp/include
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hccl

@@ -11,6 +11,8 @@ cmake_minimum_required(VERSION 3.10)
 message(STATUS "TOP_DIR: ${TOP_DIR}")
 message(STATUS "ASCEND_CANN_PACKAGE_PATH: ${ASCEND_CANN_PACKAGE_PATH}")
 
+find_package(SQLite3 REQUIRED)
+
 add_library(hccl_proxy_level2 SHARED "")
 
 target_include_directories(hccl_proxy_level2 PRIVATE
@@ -121,18 +123,22 @@ target_compile_options(hccl_proxy_level2 PRIVATE
 )
 
 target_link_libraries(hccl_proxy_level2 PRIVATE
-        dl
-        rt
+        -Wl,--whole-archive
         log
         runnerdb
+        modeldb
         store
         cmd
+        -Wl,--no-whole-archive
+        dl
+        rt
+        SQLite::SQLite3
         JSON::JSON
         ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/lib64/libc_sec.a
 )
 
 install(TARGETS hccl_proxy_level2
-    DESTINATION "."
+    DESTINATION "lib/x86_64"
     # 文件的权限 (755)
     PERMISSIONS
         OWNER_READ OWNER_WRITE OWNER_EXECUTE

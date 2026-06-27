@@ -468,7 +468,7 @@ HcclResult TransformTransLocMemToLocMemInstr(const CcuRep::CcuInstr *instr, CcuG
     CHK_RET(StorageManager::GetInstance().GetSlice(srcAddr, len, srcSlice));
     CHK_RET(StorageManager::GetInstance().GetSlice(dstAddr, len, dstSlice));
 
-    HCCL_VM_DEBUG("zhf-locmem2locmem: rankId={}, src={}, dst={}, size={}",
+    HCCL_VM_DEBUG("locmem2locmem: rankId={}, src={}, dst={}, size={}",
         rankId, srcSlice.Describe(), dstSlice.Describe(), len);
 
     AddLocalCopy(rankId, queId, curCcuTask, srcSlice, dstSlice);

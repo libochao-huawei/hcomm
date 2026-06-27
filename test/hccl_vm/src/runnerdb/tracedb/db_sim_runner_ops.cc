@@ -74,7 +74,7 @@ bool GetCurrRunnerTls(uint64_t serverKey, Runner &runner)
 {
     if (g_runner.id == 0 && serverKey == 0)
     {
-        HCCL_VM_ERROR("[{}] can not get runner by server key: {:d}", __func__, serverKey);
+        HCCL_VM_ERROR("can not get runner by server key: {:d}", serverKey);
         return false;
     }
     if (g_runner.id == 0) {

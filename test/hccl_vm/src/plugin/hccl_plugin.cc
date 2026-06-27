@@ -74,10 +74,10 @@ HcclVmResult HcclPlugin::Start()
 {
     std::string entryCmd = m_manifest.value(HcclPlugin::Manifest::pluginEntry, "");
     if (entryCmd.empty()) {
-        HCCL_VM_INFO("[HcclPlugin::{}] Empty Entry Command", __func__);
+        HCCL_VM_INFO("Empty Entry Command");
         return HcclVmResult::HCCL_SIM_E_PARA;
     }
-    HCCL_VM_INFO("[HcclPlugin::{}] Starting plugin [{}]", __func__, GetTag());
+    HCCL_VM_INFO("Starting plugin [{}]", GetTag());
     int32_t fds[2];
     if (pipe(fds) == -1) {
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
@@ -127,14 +127,14 @@ HcclVmResult HcclPlugin::Start()
 
         if (res == 0) {
             // 情况 A: 子进程正常运行中（这是我们预期的）
-            HCCL_VM_INFO("[HcclPlugin::{}] Plugin [{}] started", __func__, GetTag());
+            HCCL_VM_INFO("Plugin [{}] started", GetTag());
             return HcclVmResult::HCCL_SIM_SUCCESS;
         } else if (res == m_pid) {
             // 情况 B: 子进程已经退出，通常是 execvp 失败
             // 检查退出码，如果是通过 _exit(EXIT_FAILURE) 退出的
             if (WIFEXITED(status)) {
                 int exitCode = WEXITSTATUS(status);
-                HCCL_VM_ERROR("[HcclPlugin::{}] Plugin [{}] failed to start with code [{}].", __func__, GetTag(), exitCode);
+                HCCL_VM_ERROR("Plugin [{}] failed to start with code [{}].", GetTag(), exitCode);
             }
 
             // 清理现场，防止后续逻辑误以为子进程还在
@@ -211,13 +211,13 @@ HcclVmResult HcclPlugin::Stop()
 
     // 4. 超时后不强制 kill，而是输出告警信息
     if (!exited) {
-        HCCL_VM_ERROR("[HcclPlugin::{}] Plugin [{}] detected as not exiting normally.", __func__, GetTag());
-        HCCL_VM_ERROR("[HcclPlugin::{}] [ACTION REQUIRED] Please manually check or terminate PID: {:d}", __func__, m_pid);
+        HCCL_VM_ERROR("Plugin [{}] detected as not exiting normally.", GetTag());
+        HCCL_VM_ERROR("[ACTION REQUIRED] Please manually check or terminate PID: {:d}", m_pid);
         
         // 既然无法回收，我们将该 PID 记录在日志后放弃管理
         // 防止析构函数再次产生误判
     } else {
-        HCCL_VM_INFO("[HcclPlugin::{}] [{}] exited successfully.", __func__, GetTag());
+        HCCL_VM_INFO("Plugin [{}] exited successfully.", GetTag());
     }
 
     m_pid = -1;

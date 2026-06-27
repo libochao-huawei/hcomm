@@ -30,6 +30,7 @@
 #include <stdexcept>
 #include <string>
 #include <sys/file.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <thread>
@@ -41,10 +42,13 @@
 #include "cmd_base.h"
 #include "cmd_base_utils_internal.h"
 #include "store_dump_shm_data.h"
+#include "store_sim_comm_pool_policy.h"
+#include "store_sim_run_mode.h"
 #include "sim_data_dump.h"
 #include "sim_log.h"
 #include "runnerdb/modeldb/db_hccl_op_db_ops.h"
 #include "store_sim_memory_manager.h"
+#include "store_sim_device_memory_manager.h"
 #include "sim_process_syncer.h"
 #include "db_sim_runner_common.h"
 #include "db_sim_runner_db.h"
@@ -327,7 +331,11 @@ std::string GetBinLocation() {
     if (ec) { 
         throw std::runtime_error("read_symlink failed: " + ec.message()); 
     } 
-    return exePath.parent_path().string(); 
+    fs::path binDir = exePath.parent_path();
+    if (binDir.filename() == "bin") {
+        return binDir.parent_path().string();
+    }
+    return binDir.string();
 } 
 
 std::string ArgvToString(int argc, char *argv[]) { 
@@ -396,7 +404,7 @@ std::string FileInModelDir(const std::string& fileName) {
         } 
         return ""; 
     } 
-    std::string filePath = GetBinLocation() + "/cluster_model/topo_meta/" + fileName + ".yaml"; 
+    std::string filePath = GetBinLocation() + "/config/topo_meta/" + fileName + ".yaml"; 
     auto fileExistd = [&]()->bool { 
         std::ifstream f(filePath.c_str()); 
         return f.good(); 
@@ -415,12 +423,12 @@ std::string GenerateClusterTopo(const std::string& topoFileName) {
         topoName.erase(topoName.find(".yaml"), 5); 
     } 
 
-    std::string generateShellPath = GetBinLocation() + "/generate_cluster_topo.sh"; 
+    std::string generateShellPath = GetBinLocation() + "/script/generate_cluster_topo.sh"; 
     if (!fs::exists(generateShellPath)) { 
         HCCL_VM_ERROR("[HVM] generate_cluster_topo.sh not found: {}", generateShellPath); 
         return "[HVM] generate_cluster_topo.sh not found: " + generateShellPath; 
     } 
-    std::string clusterConfigFilePath = GetBinLocation() + "/cluster_model/config/cluster/" + topoName + ".yaml"; 
+    std::string clusterConfigFilePath = GetBinLocation() + "/config/cluster/" + topoName + ".yaml"; 
     if (!fs::exists(clusterConfigFilePath)) { 
         HCCL_VM_ERROR("[HVM] cluster config file not found: {}", clusterConfigFilePath); 
         return "[HVM] cluster config file not found: " + clusterConfigFilePath; 
@@ -465,12 +473,21 @@ void ShowModel() {
     return; 
 } 
 
-HcclVmResult InitHvmEnv(const std::string& configClusterDir, uint32_t level) 
-{ 
-    HCCL_VM_INFO("Enter InitHvmEnv: {}", configClusterDir); 
-    // 启动仿真环境 
-    // 创建用于Host-Device通信的共享内存 
-    void *shmptr =sim::MemoryManager::GetInstance().AllocMemByName("HcclAicpuData", sizeof(HcclAicpuData));  
+HcclVmResult InitHvmEnv(const std::string& configClusterDir, uint32_t level, bool checkOnlyMode)
+{
+    HCCL_VM_INFO("Enter InitHvmEnv: {}", configClusterDir);
+    // 启动仿真环境
+    // 创建用于Host-Device通信的共享内存
+    // 仅校验模式才创建大块复用区 HcclCommPool，须在其它共享内存创建前，仅一次。
+    if (checkOnlyMode) {
+        void* commPool = sim::MemoryManager::GetInstance().AllocMemByName(
+            sim::CommPoolPolicy::kPoolName, sim::CommPoolPolicy::kPoolSize);
+        if (commPool == nullptr) {
+            HCCL_VM_ERROR("[HVM] create HcclCommPool fail");
+            return HcclVmResult::HCCL_SIM_HOST_ERROR_CMD;
+        }
+    }
+    void *shmptr =sim::MemoryManager::GetInstance().AllocMemByName("HcclAicpuData", sizeof(HcclAicpuData));
     if (shmptr == nullptr) {  
         HCCL_VM_ERROR("[HVM] Alloc Shared Memory fail ");  
         return HcclVmResult::HCCL_SIM_HOST_ERROR_CMD;  
@@ -498,7 +515,7 @@ HcclVmResult InitHvmCommEnv(const TopoMeta& topoMeta, const std::string& configF
 { 
     // 通信域已初始化，则无需重复初始化 
     if (AscendClusterTopoParser::GetInstance().GetClusterStatus() == HvmClusterStatus::COMM_DOMAIN_INIT_DONE) { 
-        HCCL_VM_ERROR("[{}] communication domain already initialized", __func__); 
+        HCCL_VM_ERROR("communication domain already initialized"); 
         return HcclVmResult::HCCL_SIM_E_INTERNAL; 
     } 
     HcclVmResult ret; 
@@ -508,7 +525,7 @@ HcclVmResult InitHvmCommEnv(const TopoMeta& topoMeta, const std::string& configF
         ret = AscendClusterTopoParser::GetInstance().InitCommunicationDomain(topoMeta, false); 
     } else { 
         HCCL_VM_INFO("mock-comm cmd config rank table file, config by ranktable.json"); 
-        std::string clusterInfo = GetBinLocation() + "/ranktable.json"; 
+        std::string clusterInfo = GetBinLocation() + "/data/ranktable.json"; 
         std::ifstream f(clusterInfo.c_str()); 
         if (!f.good()) { 
             HCCL_VM_ERROR("ranktable.json file not found: {}", clusterInfo); 
@@ -539,14 +556,20 @@ HcclVmResult HcclVmExit()
     const fs::path backupDir = fs::path(g_binDir) / "data" / MakeDataBackupTimestamp();
     BackupAivTaskFiles(backupDir);
 
-    HCCL_VM_INFO("start Destroy ALL Resources."); 
-    int ret1 = system("sudo rm -fr /dev/shm/* 2>/dev/null"); 
+    HCCL_VM_INFO("start Destroy ALL Resources.");
+    // 仅校验模式才解除主进程对复用区 HcclCommPool 的映射，普通模式从未建池。
+    // 这里只解主进程自己这一份，共享内存文件何时真正删除由跨进程引用计数决定，
+    // rank 还在用时不会删；异常退出未走到这里的，由下面的 rm 兜底删除。
+    if (sim::IsCheckOnlyMode()) {
+        sim::MemoryManager::GetInstance().FreeMemByName(sim::CommPoolPolicy::kPoolName);
+    }
+    int ret1 = system("sudo rm -fr /dev/shm/* 2>/dev/null");
     ret1 |= system("sudo rm -fr /tmp/hccl_sim.db* 2>/dev/null"); 
     return ret; 
 } 
 
-HcclVmResult InstallUserPlugin(std::string argStr) { 
-    // 处理插件tag和路径 
+HcclVmResult InstallUserPlugin(std::string argStr) {
+    // 处理插件tag和路径
     HcclVmResult ret {HcclVmResult::HCCL_SIM_HOST_ERROR_CMD}; 
     if (argStr.empty() || argStr[0] != '@') { 
         HCCL_VM_ERROR("[HVM] plugin tag should start with '@', invalid tag: {}", argStr); 
@@ -556,14 +579,19 @@ HcclVmResult InstallUserPlugin(std::string argStr) {
 
     // 注册插件 
     HcclPluginManager &pluginManager = HcclPluginManager::GetInstance(); 
-    ret = pluginManager.RegisterPlugin(argStr); 
-    if (ret != HcclVmResult::HCCL_SIM_SUCCESS) { 
-        HCCL_VM_ERROR("[HVM] Install plugin [{}] failed", argStr); 
-        return ret; 
-    } 
+    ret = pluginManager.RegisterPlugin(argStr);
+    if (ret != HcclVmResult::HCCL_SIM_SUCCESS) {
+        HCCL_VM_ERROR("[HVM] Install plugin [{}] failed", argStr);
+        return ret;
+    }
 
-    return HcclVmResult::HCCL_SIM_HOST_SUCCESS_CMD; 
-} 
+    // 装 Runner 时若仅校验模式开着，复用池仍在、大块仍会引流，可能覆盖 Runner 真实数据，告警提示。
+    if (argStr == "runner" && sim::IsCheckOnlyMode()) {
+        HCCL_VM_WARN("[HVM] check-only mode on while runner installed; big-block contents are not guaranteed");
+    }
+
+    return HcclVmResult::HCCL_SIM_HOST_SUCCESS_CMD;
+}
 
 HcclVmResult RunUserPlugin(std::string argStr) { 
     nlohmann::json j; 
@@ -598,17 +626,18 @@ HcclVmResult UninstallUserPlugin(std::string argStr) {
     lastTag.erase(lastTag.begin()); 
     pluginTags.push_back(lastTag); 
 
-    HcclPluginManager &pluginManager = HcclPluginManager::GetInstance(); 
-    auto rets = pluginManager.StopPlugins(pluginTags); 
-    for (int i = 0; i < pluginTags.size(); ++i) { 
-        if (rets[i] != HcclVmResult::HCCL_SIM_SUCCESS) { 
-            HCCL_VM_ERROR("[HVM] plugin Uninstall fail : {}", pluginTags[i]); 
-            return rets[i]; 
-        } 
-    } 
+    HcclPluginManager &pluginManager = HcclPluginManager::GetInstance();
+    auto rets = pluginManager.StopPlugins(pluginTags);
 
-    return HcclVmResult::HCCL_SIM_HOST_SUCCESS_CMD; 
-} 
+    for (int i = 0; i < pluginTags.size(); ++i) {
+        if (rets[i] != HcclVmResult::HCCL_SIM_SUCCESS) {
+            HCCL_VM_ERROR("[HVM] plugin Uninstall fail : {}", pluginTags[i]);
+            return rets[i];
+        }
+    }
+
+    return HcclVmResult::HCCL_SIM_HOST_SUCCESS_CMD;
+}
 
 void ShowUserPlugin() { 
     std::vector<std::string> listPlugins{}; 
@@ -654,8 +683,8 @@ HcclVmResult StartHvmCmd() {
 
     // Child Process(Bash) 
     // 劫持库存在性判断 
-    std::string hcclVmbin = g_binDir + "/hccl-vm"; 
-    std::string proxyPath = g_binDir + "/libhccl_proxy_level" + std::to_string(g_hcclVmLevel) + ".so"; 
+    std::string hcclVmbin = g_binDir + "/bin/hccl-vm";
+    std::string proxyPath = g_binDir + "/lib/x86_64/libhccl_proxy_level" + std::to_string(g_hcclVmLevel) + ".so";
     if (!fs::exists(proxyPath)) { 
         HCCL_VM_ERROR("[HVM] [ERROR] proxy hacking .so not found {}, please check your proxy hacking .so:" 
             "1. Whether the hook library has been successfully built and installed. 2. Whether the simulation level matches the proxy hook library version. Current simulation level: {}, Default simulation level: 2" 
@@ -711,14 +740,14 @@ HcclVmResult StartHvmCmd() {
     } else if (pid == 0) { 
         setenv(HVM_BASH_ENV_KEY.c_str(), g_binDir.c_str(), 1); 
         setenv("LD_PRELOAD", proxyPath.c_str(), 1); 
+        setenv("HCCL_VM_INSTALL_ROOT", g_binDir.c_str(), 1); 
         execv("/bin/bash", bashArgv); 
-        perror("bash execv failed"); 
         exit(1); 
     } else { 
         // Parent Process (Host) 
         // 等待 bash 结束 (阻塞等待，保持Host存活) 
         int status; 
-        waitpid(pid, &status, 0); 
+        waitpid(pid, &status, 0);
         auto ret = HcclVmExit(); 
         HCCL_VM_INFO("[HVM] Shell exited. Host shutting down."); 
     } 
@@ -1088,7 +1117,7 @@ HcclVmResult ClearDbTables()
     const fs::path backupDir = fs::path(g_binDir) / "data" / MakeDataBackupTimestamp();
     BackupBinFiles(backupDir);
     BackupAivTaskFiles(backupDir);
-    BackupDatabase("./hccl_vm_data.db"); 
+    BackupDatabase(g_binDir + "/data/hccl_vm_data.db"); 
 
     // 1. 清空 OpDbOps (SQLite) 中的静态表数据 
     std::vector<std::string> staticTables = { 
@@ -1135,7 +1164,7 @@ HcclVmResult ClearDbTables()
     RunnerDB::DeleteAll<sim::RaSocket>();
     RunnerDB::DeleteAll<sim::RaSocketPair>();
 
-    CleanShmFilesByPrefix({"DEV", "ra_socket_"});
+    CleanShmFilesByPrefix({"DEV", "ra_sock_"});
 
     sim::ProcessSyncer syncer; 
     syncer.Reset(); 
@@ -1162,7 +1191,8 @@ HcclVmResult HcclVmResetCommDomain()
 HcclVmResult CopyFile(const std::string& clusterDir) {
     // 1. 拼接源文件和目标文件路径
     auto srcPath = clusterDir + "/superpod0/server0/topo.json";
-    auto destPath = GetBinLocation() + "/topo.json";
+    fs::create_directories(fs::path(GetBinLocation() + "/data"));
+    auto destPath = GetBinLocation() + "/data/topo.json";
 
     // 显式提示：文件已存在，将覆盖
     if (fs::exists(destPath)) {

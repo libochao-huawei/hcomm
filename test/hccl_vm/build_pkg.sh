@@ -166,7 +166,7 @@ echo "正在拷贝驱动依赖库文件..."
 
 # 1.定义源路径和目标路径
 SOURCE_DIR="$ASCEND_INSTALL_PATH/cann/x86_64-linux/devlib/device"
-TARGET_DIR="$HCCL_VM_PATH/hccl_vm_install/device/lib64"
+TARGET_DIR="$HCCL_VM_PATH/hccl_vm_install/lib/aarch64"
 
 # 2.检查目标目录是否存在，不存在则创建
 if [ ! -d "$TARGET_DIR" ]; then

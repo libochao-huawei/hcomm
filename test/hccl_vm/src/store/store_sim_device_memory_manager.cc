@@ -19,7 +19,9 @@
 
 #include "sim_log.h"
 #include "store_sim_memory_manager.h"
+#include "store_sim_comm_pool_policy.h"
 #include "sim_models.h"
+#include "store_sim_run_mode.h"
 
 namespace sim
 {
@@ -71,31 +73,62 @@ namespace sim
         HCCL_VM_INFO("dev:{:d} free vir mem:{:p}", devPhyId, virAddr);
     }
 
-    // 分配物理内存
+    // 分配物理内存：大块（仅校验模式开）引流到复用区，否则按名独立分配
     void* DeviceMemoryManager::AllocPhyMem(const char* name, uint64_t deviceId, size_t size)
     {
-        HCCL_VM_INFO("dev:{:d} alloc phy mem:{}", deviceId, name);
+        if (name == nullptr) {
+            return nullptr;
+        }
+        HCCL_VM_INFO("dev:{:d} alloc phy mem:{}, size:{}", deviceId, name, size);
+        bool checkOnlyMode = IsCheckOnlyMode();
+        // 超过复用区上界直接报错，不回退真实分配（避免巨块吃满 /dev/shm）。
+        if (CommPoolPolicy::ExceedsCeiling(size, checkOnlyMode)) {
+            HCCL_VM_ERROR("dev:{:d} alloc phy mem:{} size:{} exceeds pool ceiling:{}, reject",
+                          deviceId, name, size, CommPoolPolicy::kPoolSize);
+            return nullptr;
+        }
+        if (CommPoolPolicy::ShouldRedirect(size, checkOnlyMode)) {
+            return MemoryManager::GetInstance().AcquireMemByName(CommPoolPolicy::kPoolName);
+        }
         return MemoryManager::GetInstance().AllocMemByName(name, size);
     }
 
-    // 释放物理内存
+    // 释放物理内存（非复用区）：是否在复用区由调用方按 size 判断后分流，这里只做真正的释放。
     void DeviceMemoryManager::FreePhyMem(const char* name, uint64_t deviceId)
     {
+        if (name == nullptr) {
+            return;
+        }
         HCCL_VM_INFO("dev:{:d} free phy mem:{}", deviceId, name);
         MemoryManager::GetInstance().FreeMemByName(name);
     }
-    
-    // 获取物理内存
+
+    // 获取物理内存：大块（仅校验模式开）引流到复用区，否则按名独立分配
     void* DeviceMemoryManager::AcquirePhyMem(const char* name, uint64_t deviceId, size_t size)
     {
-        (void) size;
-        HCCL_VM_INFO("dev:{:d} acquire phy mem:{}", deviceId, name);
-        return MemoryManager::GetInstance().AcquireMemByName(name); 
+        if (name == nullptr) {
+            return nullptr;
+        }
+        HCCL_VM_INFO("dev:{:d} acquire phy mem:{}, size:{}", deviceId, name, size);
+        bool checkOnlyMode = IsCheckOnlyMode();
+        // 超过复用区上界直接报错，不回退真实分配。
+        if (CommPoolPolicy::ExceedsCeiling(size, checkOnlyMode)) {
+            HCCL_VM_ERROR("dev:{:d} acquire phy mem:{} size:{} exceeds pool ceiling:{}, reject",
+                          deviceId, name, size, CommPoolPolicy::kPoolSize);
+            return nullptr;
+        }
+        if (CommPoolPolicy::ShouldRedirect(size, checkOnlyMode)) {
+            return MemoryManager::GetInstance().AcquireMemByName(CommPoolPolicy::kPoolName);
+        }
+        return MemoryManager::GetInstance().AcquireMemByName(name);
     }
 
-    // 释放物理内存
+    // 释放物理内存（非复用区）：是否在复用区由调用方按 size 判断后分流，这里只做真正的释放。
     int DeviceMemoryManager::ReleasePhyMem(const char* name, uint64_t deviceId)
     {
+        if (name == nullptr) {
+            return 0;
+        }
         HCCL_VM_INFO("dev:{:d} release phy mem:{}", deviceId, name);
         MemoryManager::GetInstance().ReleaseMemByName(name);
         return 0;

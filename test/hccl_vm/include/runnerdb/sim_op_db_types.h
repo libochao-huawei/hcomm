@@ -20,7 +20,7 @@ enum class DbType {
 };
 struct DBConfig {
     DbType type = DbType::SQLITE3;
-    std::string dbPath = "./hccl_vm_data.db";
+    std::string dbPath = "data/hccl_vm_data.db";
     std::string host;
     uint16_t port = 0;
     std::string user;

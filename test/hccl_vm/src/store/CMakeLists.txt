@@ -8,8 +8,8 @@
 
 file(GLOB_RECURSE HCCL_SOURCES "*.cc")
 
-# 添加共享库
-add_library(store SHARED ${HCCL_SOURCES})
+# 添加静态库
+add_library(store STATIC ${HCCL_SOURCES})
 target_compile_options(store PRIVATE
     -fPIC
     -g
@@ -46,27 +46,4 @@ target_include_directories(store PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts
 )
 
-target_link_libraries(store PRIVATE
-    log
-    loader
-    runnerdb
-    rt
-)
-
-install(TARGETS store
-    DESTINATION "."
-    # 文件的权限 (755)
-    PERMISSIONS 
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-        GROUP_READ GROUP_EXECUTE 
-        WORLD_READ WORLD_EXECUTE
-)
-
-install(TARGETS store
-    DESTINATION "plugin/validate/runner"
-    # 文件的权限 (755)
-    PERMISSIONS 
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-        GROUP_READ GROUP_EXECUTE 
-        WORLD_READ WORLD_EXECUTE
-)
+target_link_libraries(store PUBLIC log loader)

@@ -7,7 +7,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-# CheckerL2 UT 测试执行脚本
+# HCCL_VM UT 测试执行脚本
 # 流程: 第一步-CMake配置+编译 -> 第二步-生成可执行文件 -> 第三步-执行用例 -> 第四步-生成lcov覆盖率报告
 # 用法:
 #   ./run_ut.sh                          全量编译+执行所有测试
@@ -287,16 +287,6 @@ run_one_binary() {
 
     local filter_info=""
     [ -n "$gtest_filter" ] && filter_info=" 过滤: $gtest_filter"
-
-    if [ "$bin_name" = "test_cmd_base_utils" ]; then
-        local sudo_exclude="-HcclVmExitTest.ExitWithoutInit"
-        if [ -n "$gtest_filter" ]; then
-            gtest_filter="${gtest_filter}:${sudo_exclude}"
-        else
-            gtest_filter="${sudo_exclude}"
-        fi
-        filter_info=" 过滤: $gtest_filter (排除sudo测试)"
-    fi
 
     echo -e "${BLUE}--- 执行: $bin_name${filter_info} ---${NC}"
     log_run "执行: $bin_name${filter_info}"
@@ -578,7 +568,7 @@ step_gen_coverage() {
         --output-file "$cov_info_filtered" 2>&1 | tee -a "$RUN_LOG"
 
     echo -e "${YELLOW}3. 生成HTML报告...${NC}"
-    genhtml "$cov_info_filtered" --output-directory "$COV_DIR/html" --title "CheckerL2 UT Coverage" --legend --num-spaces 4 2>&1 | tee -a "$RUN_LOG"
+    genhtml "$cov_info_filtered" --output-directory "$COV_DIR/html" --title "HCCL_VM UT Coverage" --legend --num-spaces 4 2>&1 | tee -a "$RUN_LOG"
 
     local lcov_summary=$(lcov --summary "$cov_info_filtered" 2>&1)
     G_LINE_RATE=$(echo "$lcov_summary" | grep "lines" | grep -oP '\d+\.\d+%' | head -1)
@@ -627,7 +617,7 @@ list_all_tests() {
 
 # ==================== 帮助 ====================
 print_help() {
-    echo "CheckerL2 UT 测试执行脚本"
+    echo "HCCL_VM UT 测试执行脚本"
     echo ""
     echo "流程: 第一步-CMake配置+编译 -> 第二步-生成可执行文件 -> 第三步-执行用例+显示结果"
     echo ""
@@ -689,7 +679,7 @@ main() {
         fi
     done
 
-    echo -e "${CYAN}CheckerL2 UT 测试执行脚本${NC}"
+    echo -e "${CYAN}HCCL_VM UT 测试执行脚本${NC}"
     echo -e "日志目录: ${YELLOW}$LOG_DIR/$TIMESTAMP/${NC}"
     if [ "$ENABLE_COVERAGE" -eq 1 ]; then
         echo -e "${YELLOW}覆盖率模式: 已启用 (--cov)${NC}"

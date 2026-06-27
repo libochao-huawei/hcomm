@@ -24,6 +24,8 @@
 #include "dtype_common.h"
 #include "store_sim_store_pub.h"
 #include "sim_log.h"
+#include "sim_common_api.h"
+#include "sim_yaml_config.h"
 #include "hccp_common.h"
 #include "hccp_ctx.h"
 #include "sim_ip_address.h"
@@ -119,7 +121,9 @@ void DumpCcuSqeToFile(uint32_t startId, uint32_t instrCnt, uint32_t argSize, uin
 namespace fs = std::filesystem;
 
 bool write_or_overwrite_in_cwd(const std::string& filename, const std::string &data) {
-    fs::path target = fs::current_path() / filename;
+    fs::path target = fs::path(filename).is_absolute()
+        ? fs::path(filename)
+        : fs::current_path() / filename;
 
     std::error_code ec;
     bool exists = fs::exists(target, ec);
@@ -199,6 +203,7 @@ int LoadMicrocodeInstructionStub(uint32_t devId, uint8_t dieId, const channel_in
         return -1;
     }
 
+    fs::create_directories(fs::path(InstallPath::ResolveToInstallRoot("data")));
     std::ostringstream fileName;
     fileName << "mc_instr_info_rank_" << rankId<<"_die_"<<static_cast<uint32_t>(dieId)<<".txt";
     std::ostringstream mcData;
@@ -212,7 +217,7 @@ int LoadMicrocodeInstructionStub(uint32_t devId, uint8_t dieId, const channel_in
         return HCCL_E_NOT_SUPPORT;
     }
 
-    auto status = write_or_overwrite_in_cwd(fileName.str(), mcData.str());
+    auto status = write_or_overwrite_in_cwd(InstallPath::ResolveToInstallRoot("data/" + fileName.str()), mcData.str());
 
     sim::CcuInstrTab instr{};
     instr.id = 0;
@@ -523,6 +528,7 @@ int rtCCULaunch(rtCcuTaskInfo_t *taskInfo, rtStream_t const stream)
 
     memcpy(&taskMetaData.taskData.ccu, taskInfo, sizeof(rtCcuTaskInfo_t));
 
+    fs::create_directories(fs::path(InstallPath::ResolveToInstallRoot("data")));
     std::ostringstream fileName;
     fileName << "sqe_info_rank_" << curRank << "_die_" << static_cast<uint32_t>(taskInfo->dieId) << "_mission_"
              << static_cast<uint32_t>(taskInfo->missionId) << "_startId_" << taskInfo->instStartId << ".txt";
@@ -531,7 +537,7 @@ int rtCCULaunch(rtCcuTaskInfo_t *taskInfo, rtStream_t const stream)
     for (uint32_t idx = 0; idx < taskInfo->argSize; idx++) {
         sqeData << "[SQE Arg][" << idx << "]: " << taskInfo->args[idx] << "\n";
     }
-    auto status = write_or_overwrite_in_cwd(fileName.str(), sqeData.str());
+    auto status = write_or_overwrite_in_cwd(InstallPath::ResolveToInstallRoot("data/" + fileName.str()), sqeData.str());
 
     uint32_t index{0};
     auto ret = InsertTaskToCollection(&taskMetaData, &index);

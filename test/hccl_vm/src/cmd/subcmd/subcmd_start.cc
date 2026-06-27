@@ -12,8 +12,10 @@
 #include <string>
 
 #include "cmd_base_utils.h"
+#include "db_sim_runner_db.h"
 #include "sim_common_defs.h"
 #include "sim_log.h"
+#include "sim_models.h"
 #include "subcmd_start.h"
 
 namespace HcclSim {
@@ -22,7 +24,9 @@ void StartCommand::Setup(CLI::App& app) {
 
     sub_start->add_option("configCluster", configClusterName, "加载昇腾集群组网配置目录")->required()->check(GenerateClusterTopo);
     sub_start->add_option("--level", g_hcclVmLevel, "设置模拟等级, 当前支持等级为 1 和 2, 默认模拟等级 2 ");
-    
+    sub_start->add_flag("--check-only", checkOnlyMode,
+        "仅校验模式:大块(200MB-4GB)内存申请复用同一块 4GB 共享区,内容不保证正确,换取内存节省");
+
     sub_start->callback([this]() { Execute(); });
 }
 
@@ -36,16 +40,22 @@ void StartCommand::Execute() {
     }
 
     HCCL_VM_INFO("[HVM] Initializing: Model={}, Level={}", configClusterName, g_hcclVmLevel);
-    auto clusterDir = GetBinLocation() + "/cluster_model/network/cluster/" + configClusterName;
+    auto clusterDir = GetBinLocation() + "/config/network/cluster/" + configClusterName;
 
     // 拷贝topo.json文件到执行目录
     auto ret = CopyFile(clusterDir);
     if (ret != HcclVmResult::HCCL_SIM_SUCCESS) {
-        HCCL_VM_ERROR("[{}] copy topo.json file failed", __func__);
+        HCCL_VM_ERROR("copy topo.json file failed");
         return;
     }
 
-    ret = InitHvmEnv(clusterDir, g_hcclVmLevel);
+    sim::RunModeConfig runMode{};
+    runMode.mode = checkOnlyMode ? 1 : 0;
+    RunnerDB::DeleteAll<sim::RunModeConfig>();
+    RunnerDB::Add<sim::RunModeConfig>(runMode);
+    HCCL_VM_INFO("[HVM] run mode: {}", checkOnlyMode ? "check-only" : "normal");
+
+    ret = InitHvmEnv(clusterDir, g_hcclVmLevel, checkOnlyMode);
     if (ret != HcclVmResult::HCCL_SIM_HOST_SUCCESS_CMD) {
         HCCL_VM_ERROR("[HVM] Failed to initialize simulation environment. Cleaning up environment.");
         auto cleanRet = HcclVmExit();

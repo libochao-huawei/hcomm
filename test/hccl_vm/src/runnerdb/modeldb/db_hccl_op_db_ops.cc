@@ -11,12 +11,15 @@
 #include "db_hccl_op_db_ops.h"
 
 #include <cstdint>
+#include <filesystem>
 #include <unistd.h>
 
 #include "sim_common_macro.h"
 #include "db_hccl_db_factory.h"
 #include "db_hccl_db_sqlite.h"
 #include "sim_log.h"
+#include "sim_common_api.h"
+#include "sim_yaml_config.h"
 
 namespace HcclSim {
 namespace DB {
@@ -29,7 +32,7 @@ OpDbOps::OpDbOps()
 {
     sim::DBConfig config;
     config.type = sim::DbType::SQLITE3;
-    config.dbPath = "./hccl_vm_data.db";
+    config.dbPath = InstallPath::ResolveToInstallRoot("data/hccl_vm_data.db");
 
     auto db = HcclSim::DB::HcclDBFactory::Instance().CreateDB(config.type);
     if (!db || db->Connect(config) != HcclSim::HCCL_SIM_SUCCESS) {

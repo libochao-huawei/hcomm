@@ -13,8 +13,12 @@ target_sources(hccl-device-proxy PRIVATE
     ascend_hal_stub.cc
     device_sqe_parse_stub.cc
     ${HCCL_VM_SRC}/utils/sim_log.cc
+    ${HCCL_VM_SRC}/utils/sim_yaml_config.cc
+    ${HCCL_VM_SRC}/utils/sim_common_api.cc
     ${HCCL_VM_SRC}/proxy/log_stub.cc
 )
+
+target_compile_definitions(hccl-device-proxy PRIVATE NO_YAML_CONFIG)
 
 target_include_directories(hccl-device-proxy PRIVATE
     ${HCCL_VM_SRC}/utils
@@ -38,8 +42,8 @@ target_include_directories(hccl-device-proxy PRIVATE
 
 install(TARGETS hccl-device-proxy
     RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib/aarch64
+    ARCHIVE DESTINATION lib/aarch64
 )
 
 add_library(slog SHARED slog_stub.cc)
@@ -49,8 +53,8 @@ target_compile_options(slog PRIVATE
 )
 install(TARGETS slog
     RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib/aarch64
+    ARCHIVE DESTINATION lib/aarch64
 )
 
 add_library(aicpu_sharder SHARED depends_stub.cc)
@@ -60,6 +64,6 @@ target_compile_options(aicpu_sharder PRIVATE
 )
 install(TARGETS aicpu_sharder
     RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib/aarch64
+    ARCHIVE DESTINATION lib/aarch64
 )

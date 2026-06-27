@@ -551,7 +551,7 @@ const searchResults = computed(() => {
       rank: Number.isInteger(node.rankId) ? node.rankId : '--',
       queue: Number.isInteger(node.queueId) ? node.queueId : '--',
       pos: Number.isInteger(node.pos) ? node.pos : Number.isInteger(node.slotIndex) ? node.slotIndex : '--',
-      location: formatSearchLocation(node),
+      formatLoc: formatSearchLocation(node),
       notifyId: resolveSearchFieldDisplayValue(node, 'notifyId'),
     }))
 })
@@ -1633,7 +1633,7 @@ onBeforeUnmount(() => {
                         <div class="memview-sidebar-search-card__grid">
                           <div class="memview-sidebar-search-card__field memview-sidebar-search-card__field--wide">
                             <span>rank / queue / pos</span>
-                            <strong>{{ result.location }}</strong>
+                            <strong>{{ result.formatLoc }}</strong>
                           </div>
                           <div
                             v-if="searchField === 'notifyId'"

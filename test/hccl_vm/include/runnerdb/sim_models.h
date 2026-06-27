@@ -27,6 +27,11 @@ typedef struct {
 } Server;
 
 typedef struct {
+    uint64_t id;    // PK
+    uint8_t mode;   // 0=normal,1=check-only
+} RunModeConfig;
+
+typedef struct {
     uint64_t id;  // PK
     uint64_t server_id;
     char ip_addr[40]; // ip地址

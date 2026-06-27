@@ -46,6 +46,7 @@ target_include_directories(checker PUBLIC
 
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/runnerdb
+    ${CMAKE_SOURCE_DIR}/third_party
     ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
 )
 
@@ -54,15 +55,16 @@ target_sources(checker PRIVATE
 )
 
 target_link_libraries(checker PRIVATE 
-   ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/lib64/libc_sec.so
-    pthread
     log
     loader
-)
-
-set_target_properties(checker PROPERTIES
-    INSTALL_RPATH "$ORIGIN"
-    BUILD_WITH_INSTALL_RPATH TRUE
+    runnerdb
+    modeldb
+    store
+    common
+    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/lib64/libc_sec.so
+    pthread
+    yaml-cpp::yaml-cpp
+    sqlite3
 )
 
 set_target_properties(checker PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -81,7 +83,7 @@ target_compile_options(checker PRIVATE
 )
 
 install(TARGETS checker
-    DESTINATION "plugin/validate/checker"
+    DESTINATION "plugin/checker"
     # 文件的权限 (755)
     PERMISSIONS
         OWNER_READ OWNER_WRITE OWNER_EXECUTE
@@ -90,7 +92,7 @@ install(TARGETS checker
  )
 
 install(FILES "manifest.json"
-    DESTINATION "plugin/validate/checker"
+    DESTINATION "plugin/checker"
     # 文件的权限 (755)
     PERMISSIONS
         OWNER_READ OWNER_WRITE OWNER_EXECUTE

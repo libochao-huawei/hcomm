@@ -26,7 +26,7 @@ namespace sim {
 
 int main(int argc, char *argv[])
 {
-    LogConfig config;
+    LogConfig config = LoadLogConfig("device_aarch64");
     InitLogger(config);
 
     RegisterSignalHandler();

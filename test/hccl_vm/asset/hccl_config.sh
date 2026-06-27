@@ -41,14 +41,20 @@ rm -f "all_rank_input_output.txt"
 # 设置CANN环境变量
 source /home/teamserver/workspace/Ascend/cann/set_env.sh
 
-# 设置 HCCL-VM 安装路径
-export HCCL_VM_INSTALL_DIR=$(pwd)
+# 设置 HCCL-VM 安装路径，基于脚本自身位置推断（兼容 bin/ 与 script/ 子目录）
+_INSTALL_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+case "$(basename "${_INSTALL_SCRIPT_DIR}")" in
+    bin|script)
+        export HCCL_VM_INSTALL_DIR="$(dirname "${_INSTALL_SCRIPT_DIR}")"
+        ;;
+    *)
+        export HCCL_VM_INSTALL_DIR="${_INSTALL_SCRIPT_DIR}"
+        ;;
+esac
+unset _INSTALL_SCRIPT_DIR
 
-# 配置LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$ASCEND_HOME_PATH/lib64:$ASCEND_HOME_PATH/devlib:$LD_LIBRARY_PATH
-
-# 设置 ranktable.json文件路径
-export RANK_TABLE_FILE=${HCCL_VM_INSTALL_DIR}/ranktable.json
+# 设置 ranktable.json文件路径 (与 mock-comm 生成路径保持一致)
+export RANK_TABLE_FILE=${HCCL_VM_INSTALL_DIR}/data/ranktable.json
 
 # 设置日志级别
 export ASCEND_GLOBAL_LOG_LEVEL=1

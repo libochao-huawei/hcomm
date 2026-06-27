@@ -67,21 +67,35 @@ aclError aclrtSetDevice(int32_t deviceId)
     try {
         HCCL_VM_DEBUG("[aclrtSetDevice] start set device {:d}", deviceId);
         uint32_t rankId;
-        if (!sim::GetRankIdByMPI(rankId)) {
-            HCCL_VM_ERROR("[aclrtSetDevice] cannot get rank id by MPI.");
+        uint64_t serverId = 0;
+        if (!sim::GetRankIdByMPI(rankId, serverId)) {
+            HCCL_VM_ERROR("[aclrtSetDevice] cannot get rank id by MPI, serverId is {:d}", serverId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         sim::Device device{};
-        auto devRet = sim::GetDeviceByRankId(rankId, device);
-        if (devRet != ACL_SUCCESS) {
-            HCCL_VM_ERROR("[aclrtSetDevice] cannot find device by rank id {:d}", rankId);
-            return devRet;
+        if (serverId == 0) {
+            auto devRet = sim::GetDeviceByRankId(rankId, device);
+            if (devRet != ACL_SUCCESS) {
+                HCCL_VM_ERROR("[aclrtSetDevice] cannot find device by rank id {:d}", rankId);
+                return devRet;
+            }
+            serverId = device.server_id;
+            HCCL_VM_DEBUG("[aclrtSetDevice] device logic id: {:d}, rank id: {:d}, device key: {:d}", device.logic_id, rankId, device.id);
+        } else {
+            auto ret = RunnerDB::GetOneByPred<sim::Device>([serverId, deviceId](const sim::Device &d) {
+                return d.server_id == serverId && d.logic_id  == (uint32_t)deviceId;
+            });
+            if (!ret.second) {
+                HCCL_VM_ERROR("[aclrtSetDevice] cannot find device by logic id {:d} in server id {:d}", deviceId, serverId);
+                return ACL_ERROR_INVALID_PARAM;
+            }
+            device = ret.first;
+            HCCL_VM_DEBUG("[aclrtSetDevice] device logic id: {:d}, server id: {:d}, device key: {:d}", device.logic_id, serverId, device.id);
         }
-        HCCL_VM_DEBUG("[aclrtSetDevice] device logic id: {:d}, rank id: {:d}, device key: {:d}", device.logic_id, rankId, device.id);
 
         sim::Runner runner{};
-        if (!sim::GetCurrRunnerTls(device.server_id, runner)) {
+        if (!sim::GetCurrRunnerTls(serverId, runner)) {
             return ACL_ERROR_INVALID_PARAM;
         }
         auto curRunnerId = runner.id;
@@ -327,30 +341,12 @@ aclError aclrtQueryDeviceStatus(int32_t deviceId, aclrtDeviceStatus *deviceStatu
 const char *aclrtGetSocName()
 {
     try {
-        sim::Runner runner{};
-        if (!sim::GetCurrRunnerTls(0, runner)) {
-            return "invalid param";
-        }
-        auto hostId = runner.host_id;
-        if (hostId == 0) {
-            HCCL_VM_ERROR("[aclrtGetSocName] wrong host id: {:d}", hostId);
-            return "invalid param";
-        }
-
-        auto host = RunnerDB::GetOneByPred<sim::Host>([hostId](const sim::Host& h) {
-            return h.id == hostId;
-        });
-        if (!host.second) {
-            HCCL_VM_ERROR("[aclrtResetDevice] can not find host by key {:d}", hostId);
-            return "";
-        }
-
-        auto serverId = host.first.server_id;
-        auto devRes = RunnerDB::GetOneByPred<sim::Device>([serverId](const sim::Device& d) {
-            return d.server_id == serverId;
+        // GetSocName接口根据获取server内任意一个device的soc_version
+        auto devRes = RunnerDB::GetOneByPred<sim::Device>([](const sim::Device& d) {
+            return d.server_id == 1;
         });
         if (!devRes.second) {
-            HCCL_VM_ERROR("[aclrtResetDevice] can not find device by server id {:d}", serverId);
+            HCCL_VM_ERROR("[aclrtGetSocName] can not find device by server id 1");
             return "";
         }
 
@@ -706,7 +702,7 @@ aclError aclrtDevicePeerAccessStatus(int32_t deviceId, int32_t peerDeviceId, int
 aclError aclInit(const char *configPath)
 {
     (void) configPath;
-    HCCL_VM_DEBUG("[{0}] Success", __func__);
+    HCCL_VM_DEBUG("aclInit Success");
     return ACL_SUCCESS;
 }
 
@@ -715,7 +711,7 @@ aclError aclFinalize()
     if (g_devicePid != 0) {
         kill(g_devicePid, SIGKILL);
     }
-    HCCL_VM_DEBUG("[{0}] Success", __func__);
+    HCCL_VM_DEBUG("aclFinalize Success");
     return ACL_SUCCESS;
 }
 

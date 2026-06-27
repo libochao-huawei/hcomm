@@ -49,8 +49,8 @@ target_include_directories(sqlite3 PRIVATE
 )
 install(TARGETS sqlite3
     RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib/aarch64
+    ARCHIVE DESTINATION lib/aarch64
 )
 
 add_executable(device
@@ -62,6 +62,8 @@ add_executable(device
     ${HCCL_VM_SRC}/store/store_sim_shm_ops.cc
     ${HCCL_VM_SRC}/runnerdb/tracedb/db_sim_sqlite_db.cc
     ${HCCL_VM_SRC}/utils/sim_log.cc
+    ${HCCL_VM_SRC}/utils/sim_yaml_config.cc
+    ${HCCL_VM_SRC}/utils/sim_common_api.cc
     ${HCCL_VM_SRC}/proxy/log_stub.cc
     ${HCCL_VM_SRC}/runnerdb/tracedb/db_sim_op_db_ops.cc
     ${HCCL_VM_SRC}/runnerdb/modeldb/db_hccl_op_db_ops.cc
@@ -127,6 +129,7 @@ target_compile_options(device PRIVATE
     -g
     -D_GLIBCXX_USE_CXX11_ABI=0
     -DCANN_VERSION_NUM=${HCCL_CANN_VERSION_NUM}
+    -DNO_YAML_CONFIG
 )
 
 target_link_options(device PUBLIC "-Wl,--export-dynamic")
@@ -135,8 +138,8 @@ add_dependencies(device sqlite3)
 
 install(TARGETS device
     RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib/aarch64
+    ARCHIVE DESTINATION lib/aarch64
 )
 
 

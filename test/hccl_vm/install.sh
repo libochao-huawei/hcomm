@@ -298,12 +298,12 @@ run_test() {
         sudo bash -c "cat > /etc/hccl_rootinfo.json << EOF
 {
     \"version\": \"2.0\",
-    \"topo_file_path\": \"${CHECKER_PATH}/hccl_vm_install/topo.json\"
+    \"topo_file_path\": \"${CHECKER_PATH}/hccl_vm_install/data/topo.json\"
 }
 EOF"
     else
         info "更新hccl_rootinfo.json文件..."
-        sudo sed -i -E 's|"topo_file_path"\s*:\s*".*"|"topo_file_path": "${CHECKER_PATH}/hccl_vm_install/topo.json"|g' /etc/hccl_rootinfo.json
+        sudo sed -i -E 's|"topo_file_path"\s*:\s*".*"|"topo_file_path": "${CHECKER_PATH}/hccl_vm_install/data/topo.json"|g' /etc/hccl_rootinfo.json
     fi
     
     # 配置环境变量

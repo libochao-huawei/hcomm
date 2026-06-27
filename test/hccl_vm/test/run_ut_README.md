@@ -1,8 +1,8 @@
-# CheckerL2 UT 测试执行脚本
+# HCCL_VM  UT 测试执行脚本
 
 ## 概述
 
-`run_ut.sh` 是 CheckerL2 项目的单元测试执行脚本，用于自动化编译和执行测试用例。
+`run_ut.sh` 是 HCCL_VM 项目中的单元测试执行脚本，用于自动化编译和执行测试用例。
 
 ## 三步流程
 
@@ -18,7 +18,7 @@
 ## 用法
 
 ```bash
-cd /home/q30033976/checker_0506/CheckerL2/test
+cd {HCCL_VM路径}/test
 
 # 基本用法
 ./run_ut.sh                           # 全量编译+执行所有测试
@@ -139,7 +139,7 @@ cd /home/q30033976/checker_0506/CheckerL2/test
 每次执行都会在 `ut_logs/<时间戳>/` 下生成日志文件：
 
 ```text
-/home/q30033976/checker_0506/CheckerL2/ut_logs/20260425_142048/
+{HCCL_VM路径}/ut_logs/20260425_142048/
 ├── build.log      # 编译详细日志 (cmake + make 输出)
 ├── run.log        # 执行详细日志 (每个测试的完整输出)
 └── summary.log    # 汇总日志 (每个测试的执行结果)
@@ -256,7 +256,7 @@ source /home/myuser/workspace/Ascend/cann/set_env.sh
 A: 目前脚本设计为编译+执行一体化，如需只编译，请直接使用 cmake 和 make 命令：
 
 ```bash
-cd /home/q30033976/checker_0506/CheckerL2/build
+cd {HCCL_VM路径}/build
 cmake .. && make -j8 test_checker
 ```
 

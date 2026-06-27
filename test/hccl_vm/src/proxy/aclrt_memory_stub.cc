@@ -20,13 +20,37 @@
 #include "store_sim_store_pub.h"
 #include "sim_log.h"
 #include "rt_external_mem.h"
+#include "store_sim_comm_pool_policy.h"
 #include "store_sim_device_memory_manager.h"
+#include "store_sim_memory_manager.h"
+#include "store_sim_run_mode.h"
 #include "sim_models.h"
 #include "db_sim_runner_ops.h"
 
+// rank 进程加载本库时先于 main 预热仅校验模式缓存，使后续引流判定拿到确定值。
+// 只读 DB、不打日志（此刻日志组件可能尚未初始化）。
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
+
+// 主机侧大块复用区句柄（懒加载缓存，与设备侧共用同一块 HcclCommPool）
+static std::atomic<void*> g_commPoolBase{nullptr};
+
+// 记下复用区在本进程的地址，首个大块申请时由 CAS 保证只有一个线程写入。
+// 首次记录时多 acquire 一次复用区且进程内不释放，使复用区在进程退出前保持映射、地址不变，
+// 后续用地址判断一块内存是否在复用区时地址不会失效。
+static void CacheCommPoolBase(void* base)
+{
+    if (base == nullptr) {
+        return;
+    }
+    void* expected = nullptr;
+    // 写入用 release、IsInCommPool 读取用 acquire 配对，保证其它线程读到的地址是有效的。
+    if (g_commPoolBase.compare_exchange_strong(expected, base,
+                                               std::memory_order_release, std::memory_order_relaxed)) {
+        sim::MemoryManager::GetInstance().AcquireMemByName(sim::CommPoolPolicy::kPoolName);
+    }
+}
 
 std::string GenDevMemName(int deviceId)
 {
@@ -101,10 +125,42 @@ void* GetRealPtrByAddr(const void* virPtr)
     return hostPtr;
 }
 
+// 判断一个真实内存地址是否落在复用区内，主机侧和设备侧共用。
+// 设备侧传进来的是设备指针对应的真实地址（用 GetHostPtrByDevPtr 取得）。
+// 地址在 [基址, 基址+kPoolSize) 范围内，说明这块内存是引流到复用区的大块。
+static bool IsInCommPool(const void* ptr)
+{
+    void* base = g_commPoolBase.load(std::memory_order_acquire);
+    return base != nullptr &&
+           ptr >= base &&
+           ptr < static_cast<char *>(base) + sim::CommPoolPolicy::kPoolSize;
+}
+
 aclError aclrtMallocHost(void **hostPtr, size_t size)
 {
-    *hostPtr = malloc(size);
-    HCCL_VM_INFO("[MEM] malloc host addr:{:p}, size:{:d}", *hostPtr, size);
+    bool checkOnlyMode = sim::IsCheckOnlyMode();
+    // 超过复用区上界直接报错，不回退真实分配。
+    if (sim::CommPoolPolicy::ExceedsCeiling(size, checkOnlyMode)) {
+        HCCL_VM_ERROR("[MEM] malloc host size:{:d} exceeds pool ceiling, reject", size);
+        return ACL_ERROR_INTERNAL_ERROR;
+    }
+    // 仅校验模式下大块引流到共享复用区 HcclCommPool
+    if (sim::CommPoolPolicy::ShouldRedirect(size, checkOnlyMode)) {
+        void* base = g_commPoolBase.load(std::memory_order_acquire);
+        if (base == nullptr) {
+            base = sim::MemoryManager::GetInstance().AcquireMemByName(sim::CommPoolPolicy::kPoolName);
+            if (base == nullptr) {
+                HCCL_VM_ERROR("[MEM] malloc host acquire HcclCommPool failed, size:{:d}", size);
+                return ACL_ERROR_INTERNAL_ERROR;
+            }
+            CacheCommPoolBase(base);
+        }
+        *hostPtr = base;
+        HCCL_VM_INFO("[MEM] malloc host (SHM) addr:{:p}, size:{:d}", *hostPtr, size);
+    } else {
+        *hostPtr = malloc(size);
+        HCCL_VM_INFO("[MEM] malloc host addr:{:p}, size:{:d}", *hostPtr, size);
+    }
     return ACL_SUCCESS;
 }
 
@@ -117,6 +173,11 @@ aclError aclrtMallocHostWithCfg(void **ptr, uint64_t size, aclrtMallocConfig *cf
 aclError aclrtFreeHost(void *hostPtr)
 {
     HCCL_VM_INFO("[MEM] free host addr:{:p}", hostPtr);
+    // 池内地址：空操作（复用区生命周期由主进程管理，不在此 free）
+    if (IsInCommPool(hostPtr)) {
+        HCCL_VM_INFO("[MEM] free host (SHM noop) addr:{:p}", hostPtr);
+        return ACL_SUCCESS;
+    }
     free(hostPtr);
     return ACL_SUCCESS;
 }
@@ -155,6 +216,10 @@ aclError aclrtMalloc(void **devPtr, size_t size, aclrtMemMallocPolicy policy)
         sim::DeviceMemoryManager::GetInstance().FreeVirMem(rankId, devPtr);
         HCCL_VM_ERROR("can not alloc phy mem deviceId:{:d}, size:{:d}", deviceId, size);
         return ACL_ERROR_INTERNAL_ERROR;
+    }
+    // 大块引流到复用区时缓存池基址，供 IsInCommPool 判定（与主机侧共用同一基址）。
+    if (sim::CommPoolPolicy::ShouldRedirect(size, sim::IsCheckOnlyMode())) {
+        CacheCommPoolBase(hostPtr);
     }
 
     // 记录物理内存信息到数据库
@@ -247,12 +312,20 @@ aclError aclrtFree(void* devPtr)
 
     auto devPhyId = dev->physical_id;
 
+    // 先取这块内存的真实地址，判断它是否在复用区（必须在 Unmap 之前取）。
+    // 第二次释放时映射已删、取不到地址，就按非复用区处理，天然幂等。
+    void* backing = sim::DeviceMemoryManager::GetInstance().GetHostPtrByDevPtr(devPtr);
+
     // 去缓存设备地址到host地址
     sim::DeviceMemoryManager::GetInstance().UnmapDevPtrHostPtr(devPtr);
 
     // 删除内存
     sim::DeviceMemoryManager::GetInstance().FreeVirMem(devPhyId, devPtr);
-    sim::DeviceMemoryManager::GetInstance().FreePhyMem(phyMemRes->name, deviceId);
+    if (IsInCommPool(backing)) {
+        sim::MemoryManager::GetInstance().ReleaseMemByName(sim::CommPoolPolicy::kPoolName);
+    } else {
+        sim::DeviceMemoryManager::GetInstance().FreePhyMem(phyMemRes->name, deviceId);
+    }
 
     // 更新数据库记录，标记为已释放
     RunnerDB::Update<sim::PhyMemBlock>(phyMemId, [](sim::PhyMemBlock &memBlock) { memBlock.is_freed = 1; });
@@ -278,8 +351,18 @@ aclError aclrtMemset(void *devPtr, size_t maxCount, int32_t value, size_t count)
         return ACL_ERROR_INTERNAL_ERROR;
     }
 
-    memset(hostPtr + offset, value, count);
-    sim::DeviceMemoryManager::GetInstance().ReleasePhyMem(phyMem.name, phyMem.device_id);
+    // 目的设备块按 size 判是否在复用区，与申请一致，命中则跳过实际写入并按池释放。
+    bool pooled = sim::CommPoolPolicy::ShouldRedirect(phyMem.size, sim::IsCheckOnlyMode());
+    if (pooled) {
+        HCCL_VM_INFO("[MEM] memset skip (pool) ptr:{:p}, size:{:d}, count:{:d}", devPtr, phyMem.size, count);
+    } else {
+        memset(hostPtr + offset, value, count);
+    }
+    if (pooled) {
+        sim::MemoryManager::GetInstance().ReleaseMemByName(sim::CommPoolPolicy::kPoolName);
+    } else {
+        sim::DeviceMemoryManager::GetInstance().ReleasePhyMem(phyMem.name, phyMem.device_id);
+    }
     HCCL_VM_INFO("[MEM] dev mem memset ptr:{:p}, memName:{}, count: {:d}", devPtr, phyMem.name, count);
     return ACL_SUCCESS;
 }
@@ -316,7 +399,12 @@ aclError aclrtMemcpy(void *dst, size_t destMax, const void *src, size_t count, a
             HCCL_VM_WARN("[aclrtMemcpy D2D] only support self D2D memcpy");
             return ACL_ERROR_RT_FEATURE_NOT_SUPPORT;
         }
-        memcpy(dstAddr, srcAddr, count);
+        // 目的地址在复用区（dst 是引流过来的大块）：跳过实际拷贝。
+        if (IsInCommPool(dstAddr)) {
+            HCCL_VM_INFO("[MEM] memcpy D2D skip (dst big->pool) count:{:d}", count);
+        } else {
+            memcpy(dstAddr, srcAddr, count);
+        }
         return ACL_SUCCESS;
     } else {
         HCCL_VM_INFO("src:{:p} to dst:{:p}, size:{:d} type: {:d} not support", src, dst, count, (int)kind);
@@ -337,13 +425,28 @@ aclError aclrtMemcpy(void *dst, size_t destMax, const void *src, size_t count, a
         return ACL_ERROR_INTERNAL_ERROR;
     }
 
+    // 目的设备块按 size 判是否在复用区，与申请一致，命中则跳过实际拷贝并按池释放。
+    // D2H 的目的是主机缓冲，仍按地址判断主机缓冲是否在复用区。
+    bool devPooled = sim::CommPoolPolicy::ShouldRedirect(phyMem.size, sim::IsCheckOnlyMode());
     if (kind == ACL_MEMCPY_HOST_TO_DEVICE) {
-        memcpy(hostDevPtr + offset, hostPtr, count);
+        if (devPooled) {
+            HCCL_VM_INFO("[MEM] memcpy H2D skip (dst big->pool) count:{:d}", count);
+        } else {
+            memcpy(hostDevPtr + offset, hostPtr, count);
+        }
     } else if (kind == ACL_MEMCPY_DEVICE_TO_HOST) {
-        memcpy(hostPtr, hostDevPtr + offset, count);
+        if (IsInCommPool(hostPtr)) {
+            HCCL_VM_INFO("[MEM] memcpy D2H skip (dst host pool) count:{:d}", count);
+        } else {
+            memcpy(hostPtr, hostDevPtr + offset, count);
+        }
     }
 
-    sim::DeviceMemoryManager::GetInstance().ReleasePhyMem(phyMem.name, phyMem.device_id);
+    if (devPooled) {
+        sim::MemoryManager::GetInstance().ReleaseMemByName(sim::CommPoolPolicy::kPoolName);
+    } else {
+        sim::DeviceMemoryManager::GetInstance().ReleasePhyMem(phyMem.name, phyMem.device_id);
+    }
 
     return ACL_SUCCESS;
 }
@@ -411,13 +514,28 @@ aclError aclrtMemcpyAsync(void *dst, size_t destMax, const void *src, size_t cou
         return ACL_ERROR_INTERNAL_ERROR;
     }
 
+    // 目的设备块按 size 判是否在复用区，与申请一致，命中则跳过实际拷贝并按池释放。
+    // D2H 的目的是主机缓冲，仍按地址判断主机缓冲是否在复用区。
+    bool devPooled = sim::CommPoolPolicy::ShouldRedirect(phyMem.size, sim::IsCheckOnlyMode());
     if (kind == ACL_MEMCPY_HOST_TO_DEVICE) {
-        memcpy(hostDevPtr + offset, hostPtr, count);
+        if (devPooled) {
+            HCCL_VM_INFO("[MEM] memcpy H2D skip (dst big->pool) count:{:d}", count);
+        } else {
+            memcpy(hostDevPtr + offset, hostPtr, count);
+        }
     } else if (kind == ACL_MEMCPY_DEVICE_TO_HOST) {
-        memcpy(hostPtr, hostDevPtr + offset, count);
+        if (IsInCommPool(hostPtr)) {
+            HCCL_VM_INFO("[MEM] memcpy D2H skip (dst host pool) count:{:d}", count);
+        } else {
+            memcpy(hostPtr, hostDevPtr + offset, count);
+        }
     }
 
-    sim::DeviceMemoryManager::GetInstance().ReleasePhyMem(phyMem.name, phyMem.device_id);
+    if (devPooled) {
+        sim::MemoryManager::GetInstance().ReleaseMemByName(sim::CommPoolPolicy::kPoolName);
+    } else {
+        sim::DeviceMemoryManager::GetInstance().ReleasePhyMem(phyMem.name, phyMem.device_id);
+    }
 
     return ACL_SUCCESS;
 }
@@ -529,6 +647,10 @@ aclError aclrtMallocPhysical(aclrtDrvMemHandle *handle, size_t size, const aclrt
         HCCL_VM_ERROR("can not alloc phy mem deviceId:{:d}, size:{:d}", deviceId, size);
         return ACL_ERROR_INTERNAL_ERROR;
     }
+    // 大块物理内存同样引流到复用区，缓存池基址，使其被 map 后的 memcpy/memset 能按地址判定。
+    if (sim::CommPoolPolicy::ShouldRedirect(size, sim::IsCheckOnlyMode())) {
+        CacheCommPoolBase(hostPtr);
+    }
 
     // 记录物理内存信息到数据库
     sim::PhyMemBlock phyMem{};
@@ -552,8 +674,12 @@ aclError aclrtFreePhysical(aclrtDrvMemHandle handle)
         return ACL_ERROR_INTERNAL_ERROR;
     };
 
-    // 删除内存
-    sim::DeviceMemoryManager::GetInstance().FreePhyMem(phyMemRes->name, phyMemRes->device_id);
+    // 物理内存无 devPtr→host 映射，按 size 判定是否走了复用区（与申请同一判据）
+    if (sim::CommPoolPolicy::ShouldRedirect(phyMemRes->size, sim::IsCheckOnlyMode())) {
+        sim::MemoryManager::GetInstance().ReleaseMemByName(sim::CommPoolPolicy::kPoolName);
+    } else {
+        sim::DeviceMemoryManager::GetInstance().FreePhyMem(phyMemRes->name, phyMemRes->device_id);
+    }
     // 删除数据库记录
     RunnerDB::Delete<sim::PhyMemBlock>(phyMemId);
     HCCL_VM_INFO("free phy mem, id:{:d}", phyMemId);
@@ -1083,7 +1209,7 @@ aclError aclrtReduceAsync(void *dst, const void *src, uint64_t count, aclrtReduc
     HCCL_VM_DEBUG("[aclstub][aclrtReduceAsync] Get reduce task, streamId={:d}", streamId);
     auto ret = InsertTaskToCollection(&taskMetaData, &index);
     if (ret != HcclSim::HcclVmResult::HCCL_SIM_SUCCESS) {
-        HCCL_VM_ERROR("[{}] InsertTaskToCollection fail", __func__);
+        HCCL_VM_ERROR("[aclstub] InsertTaskToCollection fail");
         return ACL_ERROR_INTERNAL_ERROR;
     }
 

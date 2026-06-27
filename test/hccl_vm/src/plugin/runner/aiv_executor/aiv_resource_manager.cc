@@ -23,9 +23,9 @@ namespace {
 constexpr uint8_t INPUT_BUFFER_TYPE = 0;
 constexpr uint8_t OUTPUT_BUFFER_TYPE = 1;
 constexpr uint8_t CCL_BUFFER_TYPE = 2;
-constexpr uint64_t AIV_COMM_INFO_SIZE = 33ULL * 1024ULL * 1024ULL;
-constexpr uint64_t AIV_FLAG_ADDR_OFFSET = 40ULL * 1024ULL;
-constexpr uint64_t AIV_FLAG_BUFFER_SIZE = AIV_COMM_INFO_SIZE - AIV_FLAG_ADDR_OFFSET;
+constexpr uint64_t AIV_COMM_INFO_SIZE = 65ULL * 1024ULL * 1024ULL;
+constexpr uint64_t AIV_FLAG1_OFFSET = 1ULL * 1024ULL * 1024ULL;
+constexpr uint64_t AIV_FLAG_BUFFER_SIZE = AIV_COMM_INFO_SIZE - AIV_FLAG1_OFFSET;
 
 const char *GetBufferTypeName(uint8_t bufferType)
 {

@@ -121,6 +121,7 @@ drvError_t drvGetPlatformInfo(uint32_t *info)
 
 drvError_t drvGetDevNum(uint32_t *num_dev)
 {
+    (void) num_dev;
     sim::Runner runner;
     if (!sim::GetCurrRunnerTls(0, runner)) {
         return DRV_ERROR_NO_DEVICE;

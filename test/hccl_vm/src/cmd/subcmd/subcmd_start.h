@@ -26,6 +26,7 @@ private:
     void Execute();
     
     std::string configClusterName;
+    bool checkOnlyMode = false;
 };
 }
 

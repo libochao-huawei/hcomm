@@ -33,6 +33,14 @@ struct AivGraphGenerateOutputV3 {
     size_t pipeBarrierMergeCount{0};
     size_t syncAllMergeCount{0};
     size_t sendRecvEdgeCount{0};
+    size_t taskJsonTotalTaskCount{0};
+    size_t dagNodeCountBeforeCpGmMerge{0};
+    size_t dagNodeCountAfterCpGmMerge{0};
+    size_t cpGmLoopMergeCount{0};
+    size_t cpGmMergedIterationCount{0};
+    size_t cpGmMergedOriginalNodeCount{0};
+    size_t cpGmGeneratedNodeCount{0};
+    size_t cpGmInactiveNodeCount{0};
     uint64_t expandNs{0};
 };
 

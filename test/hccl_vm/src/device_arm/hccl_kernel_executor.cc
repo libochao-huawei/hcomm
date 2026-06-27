@@ -126,9 +126,9 @@ bool InitKernelFuncHandle()
     if (gLibsLoaded) {
         return true;
     }
-    std::string libDir = "./device/lib/";  // device编译产物install路径
+    const char* installDir = getenv("HCCL_VM_INSTALL_DIR");
+    std::string libDir = installDir ? std::string(installDir) + "/lib/aarch64/" : "./lib/aarch64/";
     gSlogHandle = LoadLibrary(libDir, "libslog.so");
-    libDir = "./device/lib64/";  // device依赖库路径
     gCsecHandle = LoadLibrary(libDir, "libc_sec.so");
     gHcclKerHandle = LoadLibrary(libDir, "libscatter_aicpu_kernel.so");
     gHcommHandle = LoadLibrary(libDir, "libccl_kernel.so");

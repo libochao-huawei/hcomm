@@ -35,14 +35,10 @@ int32_t CheckLogLevel(int32_t moduleId, int32_t logLevel)
 void DlogPrintStub(int level, const char *msgBuffer)
 {
     std::call_once(log_initialized_flag, []() {
-        LogConfig config;
-        config.fileBaseName = "hccl_proxy";
-        // auto* proxyConfig = SHMManager::GetProxyConfig();
-        // if (proxyConfig != nullptr) {
-        //     config.consoleLevel = proxyConfig->consoleLogLevel;
-        //     config.fileLevel = proxyConfig->fileLogLevel;
-        // }
-        config.filePath = "logs/proxy";
+        if (g_logger != nullptr) {
+            return;
+        }
+        LogConfig config = LoadLogConfig("proxy");
         InitLogger(config);
     });
 

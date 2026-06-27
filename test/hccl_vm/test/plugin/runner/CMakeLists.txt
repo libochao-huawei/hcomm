@@ -131,6 +131,10 @@ target_sources(test_aiv_task_json PRIVATE
 set_target_properties(test_aiv_task_json PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/output/bin"
 )
+target_include_directories(test_aiv_task_json PRIVATE
+    ${THRID_PARTY_DIR}/nlohmann_json
+    ${THRID_PARTY_DIR}
+)
 target_link_libraries(test_aiv_task_json log pthread)
 
 add_executable(test_aiv_task_snapshot_loader aiv_task_snapshot_loader_test.cc ../main.cc)
@@ -142,6 +146,11 @@ target_sources(test_aiv_task_snapshot_loader PRIVATE
 )
 set_target_properties(test_aiv_task_snapshot_loader PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/output/bin"
+)
+target_include_directories(test_aiv_task_snapshot_loader PRIVATE
+    ${THRID_PARTY_DIR}/nlohmann_json
+    ${THRID_PARTY_DIR}
+    ${CMAKE_SOURCE_DIR}/src/plugin/runner/aiv_executor
 )
 target_link_libraries(test_aiv_task_snapshot_loader log pthread)
 

@@ -20,6 +20,8 @@
 #include "store_binary_data_operator.h"
 #include "sim_common_defs.h"
 #include "sim_log.h"
+#include "sim_common_api.h"
+#include "sim_yaml_config.h"
 #include "sim_ip_address.h"
 #include "sim_loader.h"
 #include "sim_models.h"
@@ -197,9 +199,41 @@ HcclVmResult CreateChannelInfo(HcclVmSynData &hvmSynData)
         chData.dstDieId  = static_cast<uint8_t>(ch.dstDieId);
         chData.srcRank   = ch.srcRankId;
         chData.dstRank   = ch.dstRankId;
+
         std::memcpy(chData.leid, ch.leid, sizeof(chData.leid));
         std::memcpy(chData.reid, ch.reid, sizeof(chData.reid));
-        chData.protocol  = ch.protocol;
+
+        uint8_t* leidPtr = chData.leid;
+        auto lEpRet = RunnerDB::GetOneByPred<sim::EndPoint>([leidPtr](const sim::EndPoint &ep) {
+            return memcmp(ep.eid, leidPtr, sizeof(ep.eid)) == 0;
+        });
+        if (!lEpRet.second) {
+            std::cout<<"cannot find EndPoint by ip addr:"<<leidPtr<< std::endl;
+            return HcclVmResult::HCCL_SIM_E_NOT_FOUND;
+        }
+
+        uint8_t* reidPtr = chData.reid;
+        auto rEpRet = RunnerDB::GetOneByPred<sim::EndPoint>([reidPtr](const sim::EndPoint &ep) {
+            return memcmp(ep.eid, reidPtr, sizeof(ep.eid)) == 0;
+        });
+        if (!rEpRet.second) {
+            std::cout<<"cannot find EndPoint by ip addr:"<<reidPtr<< std::endl;
+            return HcclVmResult::HCCL_SIM_E_NOT_FOUND;
+        }
+
+        auto localEpId = lEpRet.first.id;
+        auto remoteEpId = rEpRet.first.id;
+
+        auto pairOpt = RunnerDB::GetOneByPred<sim::EndPointPair>([localEpId, remoteEpId](const sim::EndPointPair &pair) {
+            return ((pair.local_enpoint_id == localEpId) && (pair.remote_enpoint_id == remoteEpId));
+        });
+
+        if (!pairOpt.second) {
+            std::cout<<"cannot find EndPointPair by local:"<<localEpId<<" remote:"<<remoteEpId<< std::endl;
+            return HcclVmResult::HCCL_SIM_E_NOT_FOUND;
+        }
+
+        chData.protocol  = pairOpt.first.tp_type;
         chData.jettyNum  = ch.jettyNum;
         // ChannelData.jettyId[32] 仅容纳前 32 个，与 CcuChannelTab.jettyId[64] 差异
         uint32_t copyNum = std::min(static_cast<uint32_t>(chData.jettyNum),
@@ -208,7 +242,7 @@ HcclVmResult CreateChannelInfo(HcclVmSynData &hvmSynData)
 
         std::cout << "[CreateChannelInfo] channelId=" << chData.channelId
                   << ", srcRank=" << chData.srcRank << ", dstRank=" << chData.dstRank
-                  << ", jettyNum=" << chData.jettyNum << std::endl;
+                  << ", jettyNum=" << chData.jettyNum << "protocol:"<< chData.protocol << std::endl;
 
         hvmSynData.channel_info.data.push_back(chData);
     }
@@ -259,7 +293,10 @@ HcclVmResult CreateJettyInfo(HcclVmSynData &hvmSynData)
         }
 
         uint64_t raCtxHandle = raCtx.first.id;
-        auto raJettys = RunnerDB::GetByPred<sim::RaJetty>([raCtxHandle](const sim::RaJetty& jetty) { return jetty.ctx_handle == raCtxHandle; });
+        auto raJettys = RunnerDB::GetByPred<sim::RaJetty>([raCtxHandle](const sim::RaJetty& jetty) { return jetty.ctx_handle == raCtxHandle && jetty.mode == 3; });
+        if (raJettys.empty()) {
+            continue;
+        }
         channelData.jettyNum = raJettys.size();
         for (int i = 0; i < channelData.jettyNum; i++) {
             channelData.jettyId[i] = raJettys[i].jetty_id;
@@ -383,9 +420,8 @@ HcclVmResult DumpHcclVmSynthesisData(const std::string &dataId)
     char fileName[256];
     snprintf(fileName, sizeof(fileName), HCCLVM_SYN_DATA_FILE.c_str(), dataId.c_str());
 
-    // 假设 FindRootPath() 已经实现并返回插件根目录
-    std::string rootPath = GetBinLocation();
-    std::string fullPath = rootPath + DATA_FILE_PATH + fileName;
+    fs::create_directories(fs::path(InstallPath::ResolveToInstallRoot("data")));
+    std::string fullPath = InstallPath::ResolveToInstallRoot("data" + std::string(fileName));
 
     //  构造hccl vm synthesis数据
     HcclVmSynData hvmSynData;
@@ -471,13 +507,11 @@ HcclVmResult DumpHcclVmInstrData(const std::string &dataId)
     char fileName[256];
     snprintf(fileName, sizeof(fileName), HCCLVM_INSTR_DATA_FILE.c_str(), dataId.c_str());
     
-    // 假设 FindRootPath() 已经实现并返回插件根目录
-    std::string rootPath = GetBinLocation();
-    std::string fullPath = rootPath + DATA_FILE_PATH + fileName;
-
+    fs::create_directories(fs::path(InstallPath::ResolveToInstallRoot("data")));
+    std::string fullPath = InstallPath::ResolveToInstallRoot("data" + std::string(fileName));
     FILE *fp = fopen(fullPath.c_str(), "wb");
     if (!fp) {
-        std::cout << "[ERROR][DumpHcclVmInstrData] Open file failed: "<<rootPath << std::endl;
+        std::cout << "[ERROR][DumpHcclVmInstrData] Open file failed: "<<fullPath << std::endl;
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
 
@@ -563,13 +597,12 @@ HcclVmResult DumpHcclVmTask(const std::string &dataId)
     char fileName[256];
     snprintf(fileName, sizeof(fileName), HCCLVM_TASK_DATA_FILE.c_str(), dataId.c_str());
     
-    // 假设 FindRootPath() 已经实现并返回插件根目录
-    std::string rootPath = GetBinLocation();
-    std::string fullPath = rootPath + DATA_FILE_PATH + fileName;
+    fs::create_directories(fs::path(InstallPath::ResolveToInstallRoot("data")));
+    std::string fullPath = InstallPath::ResolveToInstallRoot("data" + std::string(fileName));
 
     FILE *fp = fopen(fullPath.c_str(), "wb");
     if (!fp) {
-        std::cout << "[ERROR][DumpHcclVmTask] Open file failed: "<<rootPath << std::endl;
+        std::cout << "[ERROR][DumpHcclVmTask] Open file failed: "<<fullPath << std::endl;
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
 

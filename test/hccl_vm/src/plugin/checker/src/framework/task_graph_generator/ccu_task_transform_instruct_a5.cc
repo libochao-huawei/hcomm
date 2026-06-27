@@ -59,7 +59,7 @@ constexpr uint16_t MIN_CODE = 0x2;
 constexpr uint64_t UB_MAX_SIZE = 256 * 1024 * 1024;
 } // namespace
 
-// zhf-todo: 后续从共享内存/文件中获取channel映射表。
+// todo: 后续从共享内存/文件中获取channel映射表。
 extern std::map<RankId, std::map<u32, ChannelsPerDie>> g_allRankChannelInfo;
 
 static std::map<uint16_t, uint16_t> ccuReduceTypeMap = {

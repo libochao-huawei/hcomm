@@ -332,9 +332,9 @@ void SetNodeQueueIdV3(TaskNode *node, QueueId queueId)
         return;
     }
 
-    TaskLocation location = node->GetLocation();
-    location.queueId = queueId;
-    node->SetLocation(location);
+    TaskLocation taskLoc = node->GetLocation();
+    taskLoc.queueId = queueId;
+    node->SetLocation(taskLoc);
 
     if (!node->HasCcuTrace()) {
         return;

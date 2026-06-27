@@ -546,10 +546,7 @@ void ProcessCommand(const std::string& line) {
 }
 
 int main() {
-    LogConfig config;
-    config.fileBaseName = "checker";
-    config.consoleLevel = 2;
-    config.fileLevel = 0;
+    LogConfig config = LoadLogConfig("checker");
     InitLogger(config);
 
     HCCL_VM_INFO("[Checker] Plugin process active. Listening for commands...");

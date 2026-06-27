@@ -54,10 +54,10 @@ warn_msg() {
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BASE_DIR="${SCRIPT_DIR}"
+BASE_DIR="$(dirname "${SCRIPT_DIR}")"
 
-SERVER_CONFIG_DIR="${BASE_DIR}/cluster_model/config/server_or_pod"
-DEFAULT_OUTPUT_DIR="${BASE_DIR}/cluster_model/network/server_or_pod"
+SERVER_CONFIG_DIR="${BASE_DIR}/config/server_or_pod"
+DEFAULT_OUTPUT_DIR="${BASE_DIR}/config/network/server_or_pod"
 
 resolve_path() {
     local input="$1"

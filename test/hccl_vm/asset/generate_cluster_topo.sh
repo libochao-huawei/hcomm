@@ -46,15 +46,15 @@ warn_msg() {
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BASE_DIR="${SCRIPT_DIR}"
+BASE_DIR="$(dirname "${SCRIPT_DIR}")"
 
-CLUSTER_CONFIG_DIR="${BASE_DIR}/cluster_model/config/cluster"
-SUPERPOD_CONFIG_DIR="${BASE_DIR}/cluster_model/config/super_pod"
-SERVER_CONFIG_DIR="${BASE_DIR}/cluster_model/config/server_or_pod"
+CLUSTER_CONFIG_DIR="${BASE_DIR}/config/cluster"
+SUPERPOD_CONFIG_DIR="${BASE_DIR}/config/super_pod"
+SERVER_CONFIG_DIR="${BASE_DIR}/config/server_or_pod"
 SERVER_TOPO_BANK_DIR="${BASE_DIR}/topo_bank/server_topo_bank"
-GENERATE_TOPO_SCRIPT="${BASE_DIR}/generate_server_topo.sh"
-ALLOCATE_EID_SCRIPT="${BASE_DIR}/allocate_eid.sh"
-DEFAULT_OUTPUT_DIR="${BASE_DIR}/cluster_model/network/cluster"
+GENERATE_TOPO_SCRIPT="${SCRIPT_DIR}/generate_server_topo.sh"
+ALLOCATE_EID_SCRIPT="${SCRIPT_DIR}/allocate_eid.sh"
+DEFAULT_OUTPUT_DIR="${BASE_DIR}/config/network/cluster"
 
 resolve_path() {
     local input="$1"

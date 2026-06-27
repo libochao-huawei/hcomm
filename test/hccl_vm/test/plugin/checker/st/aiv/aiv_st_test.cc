@@ -39,13 +39,20 @@ using Json = nlohmann::json;
 namespace V3 = HcclSim::TaskGraphGeneratorV3;
 
 constexpr uint32_t TASK_MEM_COPY = 0;
+constexpr uint32_t TASK_REDUCE = 1;
+constexpr uint32_t TASK_SET_FLAG = 2;
+constexpr uint32_t TASK_WAIT_FLAG = 3;
 constexpr uint32_t TASK_PIPE_BARRIER = 4;
 constexpr uint32_t TASK_SYNC_ALL = 5;
 constexpr uint32_t TASK_SEND_FLAG = 6;
 constexpr uint32_t TASK_RECV_FLAG = 7;
+constexpr uint32_t BUFFER_OUTPUT = 1;
 constexpr uint32_t BUFFER_INPUT = 0;
 constexpr uint32_t BUFFER_CCL = 2;
 constexpr uint32_t BUFFER_UB = 3;
+constexpr uint32_t BUFFER_FLAG = 4;
+constexpr uint32_t PIPE_MTE2 = 1;
+constexpr uint32_t PIPE_MTE3 = 2;
 constexpr uint32_t PIPE_ALL = 3;
 constexpr uint64_t DEFAULT_BUFFER_SIZE = 1ULL << 20;
 
@@ -158,6 +165,29 @@ Json MemCopy(uint32_t taskId, uint32_t rank, uint32_t block, uint32_t pipe, uint
     return RuntimeTask(TASK_MEM_COPY, "MemCopy", taskId, rank, block, pipe,
         Json{{"srcRank", srcRank}, {"dstRank", dstRank}, {"src", Slice(srcType, srcOffset, size)},
             {"dst", Slice(dstType, dstOffset, size)}});
+}
+
+Json Reduce(uint32_t taskId, uint32_t rank, uint32_t block, uint32_t pipe, uint32_t srcRank, uint32_t dstRank,
+    uint32_t srcType, uint64_t srcOffset, uint32_t dstType, uint64_t dstOffset, uint64_t size = 64,
+    uint32_t dataType = 0, uint32_t reduceOp = 0)
+{
+    return RuntimeTask(TASK_REDUCE, "Reduce", taskId, rank, block, pipe,
+        Json{{"srcRank", srcRank}, {"dstRank", dstRank}, {"src", Slice(srcType, srcOffset, size)},
+            {"dst", Slice(dstType, dstOffset, size)}, {"dataType", dataType}, {"reduceOp", reduceOp}});
+}
+
+Json SetFlag(uint32_t taskId, uint32_t rank, uint32_t block, uint32_t pipe, uint32_t srcPipe, uint32_t dstPipe,
+    int32_t eventId)
+{
+    return RuntimeTask(TASK_SET_FLAG, "SetFlag", taskId, rank, block, pipe,
+        Json{{"srcPipe", srcPipe}, {"dstPipe", dstPipe}, {"eventId", eventId}});
+}
+
+Json WaitFlag(uint32_t taskId, uint32_t rank, uint32_t block, uint32_t pipe, uint32_t srcPipe, uint32_t dstPipe,
+    int32_t eventId)
+{
+    return RuntimeTask(TASK_WAIT_FLAG, "WaitFlag", taskId, rank, block, pipe,
+        Json{{"srcPipe", srcPipe}, {"dstPipe", dstPipe}, {"eventId", eventId}});
 }
 
 Json NormalTask(uint32_t taskId, uint32_t rank, uint32_t block, uint32_t pipe)
@@ -374,6 +404,58 @@ Json SendRecvSnapshot(uint32_t rank, uint32_t rankSize, uint64_t launch)
             {NormalTask(12, rank, 0, 2)})});
 }
 
+Json CpGm2GMSnapshot(uint32_t rank, uint32_t rankSize, uint64_t launch, uint32_t iterationCount, bool reduceOut,
+    bool flagMem = false, bool externalGap = false)
+{
+    std::vector<Json> mte2;
+    std::vector<Json> mte3;
+    const uint64_t sliceSize = 64;
+    const uint32_t extSrcType = flagMem ? BUFFER_FLAG : BUFFER_INPUT;
+    const uint32_t extDstType = flagMem ? BUFFER_FLAG : BUFFER_OUTPUT;
+    for (uint32_t index = 0; index < iterationCount; ++index) {
+        const uint32_t base = 100 + index * 6;
+        const uint64_t offset = static_cast<uint64_t>(index) * (sliceSize + (externalGap ? sliceSize : 0));
+        mte2.push_back(MemCopy(base + 0, rank, 0, PIPE_MTE2, rank, rank, extSrcType, offset, BUFFER_UB, 0,
+            sliceSize));
+        mte2.push_back(SetFlag(base + 1, rank, 0, PIPE_MTE2, PIPE_MTE2, PIPE_MTE3, 0));
+        mte2.push_back(WaitFlag(base + 5, rank, 0, PIPE_MTE2, PIPE_MTE3, PIPE_MTE2, 1));
+
+        mte3.push_back(WaitFlag(base + 2, rank, 0, PIPE_MTE3, PIPE_MTE2, PIPE_MTE3, 0));
+        if (reduceOut) {
+            mte3.push_back(Reduce(base + 3, rank, 0, PIPE_MTE3, rank, rank, BUFFER_UB, 0, extDstType, offset,
+                sliceSize));
+        } else {
+            mte3.push_back(MemCopy(base + 3, rank, 0, PIPE_MTE3, rank, rank, BUFFER_UB, 0, extDstType, offset,
+                sliceSize));
+        }
+        mte3.push_back(SetFlag(base + 4, rank, 0, PIPE_MTE3, PIPE_MTE3, PIPE_MTE2, 1));
+    }
+    return Snapshot(rank, rankSize, launch, {Block(0, {}, std::move(mte2), std::move(mte3))});
+}
+
+Json CpGm2GMPipeBoundarySnapshot(uint32_t rank, uint32_t rankSize, uint64_t launch)
+{
+    std::vector<Json> mte2{NormalTask(90, rank, 0, PIPE_MTE2)};
+    std::vector<Json> mte3{NormalTask(91, rank, 0, PIPE_MTE3)};
+    const uint64_t sliceSize = 64;
+    for (uint32_t index = 0; index < 2; ++index) {
+        const uint32_t base = 100 + index * 6;
+        const uint64_t offset = static_cast<uint64_t>(index) * sliceSize;
+        mte2.push_back(MemCopy(base + 0, rank, 0, PIPE_MTE2, rank, rank, BUFFER_INPUT, offset, BUFFER_UB, 0,
+            sliceSize));
+        mte2.push_back(SetFlag(base + 1, rank, 0, PIPE_MTE2, PIPE_MTE2, PIPE_MTE3, 0));
+        mte2.push_back(WaitFlag(base + 5, rank, 0, PIPE_MTE2, PIPE_MTE3, PIPE_MTE2, 1));
+
+        mte3.push_back(WaitFlag(base + 2, rank, 0, PIPE_MTE3, PIPE_MTE2, PIPE_MTE3, 0));
+        mte3.push_back(MemCopy(base + 3, rank, 0, PIPE_MTE3, rank, rank, BUFFER_UB, 0, BUFFER_OUTPUT, offset,
+            sliceSize));
+        mte3.push_back(SetFlag(base + 4, rank, 0, PIPE_MTE3, PIPE_MTE3, PIPE_MTE2, 1));
+    }
+    mte2.push_back(NormalTask(1000, rank, 0, PIPE_MTE2));
+    mte3.push_back(NormalTask(1001, rank, 0, PIPE_MTE3));
+    return Snapshot(rank, rankSize, launch, {Block(0, {}, std::move(mte2), std::move(mte3))});
+}
+
 struct CaseConfig {
     std::string name;
     uint32_t rankSize{2};
@@ -492,6 +574,49 @@ size_t CountDirectEdges(const V3::TaskGraphGeneratorV3 &graph, V3::TaskType pare
             if (child != nullptr && child->GetType() == childType) {
                 ++count;
             }
+        }
+    }
+    return count;
+}
+
+std::vector<const V3::TaskNode *> CollectNodesByType(const V3::TaskGraphGeneratorV3 &graph, V3::TaskType type)
+{
+    std::vector<const V3::TaskNode *> result;
+    for (const auto &node : graph.GetNodes()) {
+        if (node != nullptr && node->GetType() == type) {
+            result.push_back(node.get());
+        }
+    }
+    return result;
+}
+
+const V3::TaskNode *FindNodeByTaskId(const V3::TaskGraphGeneratorV3 &graph, uint32_t rank, uint32_t pipe,
+    uint32_t taskId)
+{
+    for (const auto &node : graph.GetNodes()) {
+        if (node == nullptr) {
+            continue;
+        }
+        const V3::TaskPosition &position = node->GetPosition();
+        if (position.rankId == rank && position.launchIdx == 0 && position.blockId == 0 && position.pipe == pipe &&
+            position.taskId == taskId) {
+            return node.get();
+        }
+    }
+    return nullptr;
+}
+
+size_t CountLinkedNodesByTypeAndPipe(const std::vector<V3::TaskNode *> &nodes, V3::TaskType type, uint32_t pipe,
+    uint32_t minTaskId)
+{
+    size_t count = 0;
+    for (const V3::TaskNode *node : nodes) {
+        if (node == nullptr) {
+            continue;
+        }
+        const V3::TaskPosition &position = node->GetPosition();
+        if (node->GetType() == type && position.pipe == pipe && position.taskId > minTaskId) {
+            ++count;
         }
     }
     return count;
@@ -738,4 +863,83 @@ TEST_F(AivStTest, AIV_ST_4P_009_CclCrossRankParallelWriteNoConflict)
         }}, true);
     ASSERT_EQ(result.genRet, HCCL_SUCCESS);
     EXPECT_EQ(result.memRet, HCCL_SUCCESS);
+}
+
+TEST_F(AivStTest, AIV_ST_2P_014_CpGm2GMMemCopyLoopMergePositive)
+{
+    RunResult result = RunAivCase({"AIV_ST_2P_014", 2, {0},
+        [](uint32_t rank, uint64_t launch) { return CpGm2GMSnapshot(rank, 2, launch, 3, false); }}, true);
+    ASSERT_EQ(result.genRet, HCCL_SUCCESS);
+    EXPECT_EQ(result.memRet, HCCL_SUCCESS);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmLoopMergeCount, 2U);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmMergedIterationCount, 6U);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmMergedOriginalNodeCount, 36U);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmGeneratedNodeCount, 12U);
+    EXPECT_LT(result.graph->GetAivExpandStats().dagNodeCountAfterCpGmMerge,
+        result.graph->GetAivExpandStats().dagNodeCountBeforeCpGmMerge);
+    EXPECT_EQ(CollectNodesByType(*result.graph, V3::TaskType::BATCH_TRANS_MEM).size(), 4U);
+}
+
+TEST_F(AivStTest, AIV_ST_2P_015_CpGm2GMReduceLoopMergePositive)
+{
+    RunResult result = RunAivCase({"AIV_ST_2P_015", 2, {0},
+        [](uint32_t rank, uint64_t launch) { return CpGm2GMSnapshot(rank, 2, launch, 2, true); }}, true);
+    ASSERT_EQ(result.genRet, HCCL_SUCCESS);
+    EXPECT_EQ(result.memRet, HCCL_SUCCESS);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmLoopMergeCount, 2U);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmMergedIterationCount, 4U);
+    EXPECT_EQ(CollectNodesByType(*result.graph, V3::TaskType::BATCH_TRANS_MEM).size(), 2U);
+    EXPECT_EQ(CollectNodesByType(*result.graph, V3::TaskType::BATCH_REDUCE).size(), 2U);
+}
+
+TEST_F(AivStTest, AIV_ST_2P_016_CpGm2GMSingleIterationNoMerge)
+{
+    RunResult result = RunAivCase({"AIV_ST_2P_016", 2, {0},
+        [](uint32_t rank, uint64_t launch) { return CpGm2GMSnapshot(rank, 2, launch, 1, false); }});
+    ASSERT_EQ(result.genRet, HCCL_SUCCESS);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmLoopMergeCount, 0U);
+    EXPECT_EQ(CollectNodesByType(*result.graph, V3::TaskType::BATCH_TRANS_MEM).size(), 0U);
+}
+
+TEST_F(AivStTest, AIV_ST_2P_017_CpGm2GMFlagMemLoopMergePositive)
+{
+    RunResult result = RunAivCase({"AIV_ST_2P_017", 2, {0},
+        [](uint32_t rank, uint64_t launch) { return CpGm2GMSnapshot(rank, 2, launch, 3, false, true); }});
+    ASSERT_EQ(result.genRet, HCCL_SUCCESS);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmLoopMergeCount, 2U);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmMergedIterationCount, 6U);
+    EXPECT_EQ(CollectNodesByType(*result.graph, V3::TaskType::BATCH_TRANS_MEM).size(), 4U);
+}
+
+TEST_F(AivStTest, AIV_ST_2P_018_CpGm2GMExternalGapNoMerge)
+{
+    RunResult result = RunAivCase({"AIV_ST_2P_018", 2, {0},
+        [](uint32_t rank, uint64_t launch) { return CpGm2GMSnapshot(rank, 2, launch, 2, false, false, true); }});
+    ASSERT_EQ(result.genRet, HCCL_SUCCESS);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmLoopMergeCount, 0U);
+    EXPECT_EQ(CollectNodesByType(*result.graph, V3::TaskType::BATCH_TRANS_MEM).size(), 0U);
+}
+
+TEST_F(AivStTest, AIV_ST_2P_019_CpGm2GMMte3BoundaryKeepPipe)
+{
+    RunResult result = RunAivCase({"AIV_ST_2P_019", 2, {0},
+        [](uint32_t rank, uint64_t launch) { return CpGm2GMPipeBoundarySnapshot(rank, 2, launch); }});
+    ASSERT_EQ(result.genRet, HCCL_SUCCESS);
+    EXPECT_EQ(result.graph->GetAivExpandStats().cpGmLoopMergeCount, 2U);
+
+    constexpr uint32_t minSyntheticTaskId = 1001;
+    for (uint32_t rank = 0; rank < 2; ++rank) {
+        const V3::TaskNode *mte3Before = FindNodeByTaskId(*result.graph, rank, PIPE_MTE3, 91);
+        const V3::TaskNode *mte3After = FindNodeByTaskId(*result.graph, rank, PIPE_MTE3, 1001);
+        ASSERT_NE(mte3Before, nullptr);
+        ASSERT_NE(mte3After, nullptr);
+        EXPECT_EQ(CountLinkedNodesByTypeAndPipe(mte3Before->GetChildren(), V3::TaskType::AIV_WAIT_FLAG, PIPE_MTE3,
+            minSyntheticTaskId), 1U);
+        EXPECT_EQ(CountLinkedNodesByTypeAndPipe(mte3Before->GetChildren(), V3::TaskType::BATCH_TRANS_MEM, PIPE_MTE2,
+            minSyntheticTaskId), 0U);
+        EXPECT_EQ(CountLinkedNodesByTypeAndPipe(mte3After->GetParents(), V3::TaskType::AIV_SET_FLAG, PIPE_MTE3,
+            minSyntheticTaskId), 1U);
+        EXPECT_EQ(CountLinkedNodesByTypeAndPipe(mte3After->GetParents(), V3::TaskType::AIV_WAIT_FLAG, PIPE_MTE2,
+            minSyntheticTaskId), 0U);
+    }
 }

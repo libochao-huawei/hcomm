@@ -8,9 +8,10 @@
 
 file(GLOB_RECURSE HCCL_SOURCES "*.cc")
 
-add_library(common SHARED ${HCCL_SOURCES})
+add_library(common STATIC ${HCCL_SOURCES})
 
 target_compile_options(common PRIVATE
+    -fPIC
     -Werror
     -fno-common
     -fno-strict-aliasing
@@ -54,28 +55,4 @@ target_include_directories(common PRIVATE
 target_link_libraries(common PRIVATE
     log
     runnerdb
-)
-
-install(TARGETS common
-    DESTINATION "."
-    PERMISSIONS 
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-        GROUP_READ GROUP_EXECUTE 
-        WORLD_READ WORLD_EXECUTE
-)
-
-install(TARGETS common
-    DESTINATION "plugin/validate/runner"
-    PERMISSIONS 
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-        GROUP_READ GROUP_EXECUTE 
-        WORLD_READ WORLD_EXECUTE
-)
-
-install(TARGETS common
-    DESTINATION "plugin/validate/checker"
-    PERMISSIONS 
-        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
-        GROUP_READ GROUP_EXECUTE 
-        WORLD_READ WORLD_EXECUTE
 )

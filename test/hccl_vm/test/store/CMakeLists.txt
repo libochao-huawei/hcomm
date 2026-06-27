@@ -32,7 +32,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/runnerdb
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/third_party
+    ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
     ${CMAKE_BINARY_DIR}/_deps/yaml-cpp-src/include
     ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
     ${CMAKE_SOURCE_DIR}/src
@@ -142,7 +142,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/runnerdb
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/third_party
+    ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
     ${CMAKE_BINARY_DIR}/_deps/yaml-cpp-src/include
     ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
 )
@@ -167,5 +167,17 @@ set_target_properties(test_hccl_shm_pub PROPERTIES
 add_executable(test_sim_shm_ops_static sim_shm_ops_static_test.cc)
 target_link_libraries(test_sim_shm_ops_static PRIVATE pthread rt log)
 set_target_properties(test_sim_shm_ops_static PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/output/bin"
+)
+
+add_executable(test_sim_run_mode sim_run_mode_test.cc)
+target_link_libraries(test_sim_run_mode PRIVATE pthread rt store runnerdb SQLite::SQLite3 log)
+set_target_properties(test_sim_run_mode PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/output/bin"
+)
+
+add_executable(test_sim_check_only_off sim_check_only_off_test.cc)
+target_link_libraries(test_sim_check_only_off PRIVATE pthread rt store runnerdb SQLite::SQLite3 log)
+set_target_properties(test_sim_check_only_off PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/output/bin"
 )
