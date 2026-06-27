@@ -2582,3 +2582,23 @@ __attribute__((constructor)) void CallBackInitRts()
     HCCL_RUN_INFO("[adapter_rts.cc][CallBackInitRts] g_deviceType [%d] g_deviceLogicId [%d] g_devicePhyId [%d]",
         g_deviceType, g_deviceLogicId, g_devicePhyId);
 }
+
+HcclResult hrtMemcpyEx(void *dst, uint64_t destMax, void *src, uint64_t count, rtMemcpyKind_t kind)
+{
+#ifndef HCCD
+    CHK_PTR_NULL(dst);
+    CHK_PTR_NULL(src);
+    CHK_PRT_RET(count > destMax, HCCL_ERROR("[hrtMemcpyEx] count[%llu] exceeds destMax[%llu].",
+        count, destMax), HCCL_E_PARA);
+    rtError_t ret = rtMemcpyEx(dst, destMax, src, count, kind);
+    HCCL_DEBUG("[hrtMemcpyEx] Call rtMemcpyEx, ret[%d], dstAddr[%p], destMax[%llu], srcAddr[%p], count[%llu], "
+        "rtKind[%d]", ret, dst, destMax, src, count, kind);
+    CHK_PRT_RET(ret != RT_ERROR_NONE,
+        HCCL_ERROR("[hrtMemcpyEx] rtMemcpyEx failed, return[%d], dstAddr[%p], destMax[%llu], srcAddr[%p], count[%llu], "
+        "rtKind[%d].", ret, dst, destMax, src, count, kind), HCCL_E_RUNTIME);
+    return HCCL_SUCCESS;
+#else
+    HCCL_ERROR("[hrtMemcpyEx] Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+#endif
+}
