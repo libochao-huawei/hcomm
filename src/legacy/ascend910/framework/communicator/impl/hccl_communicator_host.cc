@@ -2656,8 +2656,10 @@ namespace hccl
     HcclResult HcclCommunicator::AllGather(const std::string &tag, void *inputPtr, void *outputPtr, u64 inputCount,
                                            HcclDataType dataType, HcclRtStream stream, HcomCollOpInfo *opInfo)
     {
+        bool isCapture = StreamIsCapture(stream);
+
         bool aicpuUnfoldMode = false;
-        if (EnableAicpuUnfold() && (userRankSize_ != 1)) {
+        if (EnableAicpuUnfold(isCapture) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -2666,8 +2668,6 @@ namespace hccl
                        HCCL_ERROR_CODE(HCCL_E_UNAVAIL));
             return HCCL_E_UNAVAIL;
         }
-
-        bool isCapture = StreamIsCapture(stream);
 
         Stream streamObj(stream);
         CHK_RET(callbackTask_->CallbackRegStream(stream));
@@ -2835,12 +2835,12 @@ namespace hccl
             return HCCL_E_UNAVAIL;
         }
 
+        bool isCapture = StreamIsCapture(stream);
+
         bool aicpuUnfoldMode = false;
-        if (EnableAicpuUnfold() && (userRankSize_ != 1)) {
+        if (EnableAicpuUnfold(isCapture) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
-
-        bool isCapture = StreamIsCapture(stream);
 
         Stream streamObj(stream);
         CHK_RET(callbackTask_->CallbackRegStream(stream));
@@ -3193,7 +3193,7 @@ namespace hccl
         opParam.All2AllDataDes.rdispls = const_cast<void *>(rdispls);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
-        opParam.aicpuUnfoldMode = EnableAicpuUnfold();
+        opParam.aicpuUnfoldMode = EnableAicpuUnfold(isCapture);
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3254,7 +3254,7 @@ namespace hccl
         opParam.All2AllDataDes.rdispls = const_cast<void *>(rdispls);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
-        opParam.aicpuUnfoldMode = EnableAicpuUnfold();
+        opParam.aicpuUnfoldMode = EnableAicpuUnfold(isCapture);
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3313,7 +3313,7 @@ namespace hccl
         opParam.All2AllDataDes.sendCountMatrix = const_cast<void *>(sendCountMatrix);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLVC;
-        opParam.aicpuUnfoldMode = EnableAicpuUnfold();
+        opParam.aicpuUnfoldMode = EnableAicpuUnfold(isCapture);
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3370,7 +3370,7 @@ namespace hccl
         opParam.All2AllDataDes.sendCountMatrix = const_cast<void *>(sendCountMatrix);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLVC;
-        opParam.aicpuUnfoldMode = EnableAicpuUnfold();
+        opParam.aicpuUnfoldMode = EnableAicpuUnfold(isCapture);
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3425,7 +3425,7 @@ namespace hccl
         opParam.aicpuUnfoldMode = false;
         opParam.aicpuCacheEnable = 0;
         opParam.isCapture = isCapture;
-        if (EnableAicpuUnfold()) {
+        if (EnableAicpuUnfold(isCapture)) {
             opParam.aicpuUnfoldMode = true;
             opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         }
@@ -9368,9 +9368,15 @@ namespace hccl
         return symmetricMemory_->FindSymmetricWindow(ptr, size, winHandle, reinterpret_cast<u64*>(offset));
     }
 
-    bool HcclCommunicator::EnableAicpuUnfold()
+    bool HcclCommunicator::EnableAicpuUnfold(bool isCapture)
     {
         if (deviceType_ != DevType::DEV_TYPE_910_93 && deviceType_ != DevType::DEV_TYPE_910B) {
+            return false;
+        }
+        // 910B在acl graph场景(isCapture)不启用aicpu展开
+        if (deviceType_ == DevType::DEV_TYPE_910B && isCapture) {
+            HCCL_INFO("[%s] deviceType[%d] isCapture[1], aicpuUnfoldConfig[%u] 910B does not support aicpuUnfold in acl graph mode",
+                __func__, deviceType_, GetAicpuUnfoldConfig());
             return false;
         }
         HCCL_INFO("[%s] aicpuUnfoldConfig[%u]", __func__, GetAicpuUnfoldConfig());
