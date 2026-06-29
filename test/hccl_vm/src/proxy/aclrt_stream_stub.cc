@@ -28,11 +28,11 @@
 
 static const uint32_t WAIT_FALG_TIMEOUT = 600;
 
-#define STREAM_STUB_ERROR(format, ...) HCCL_VM_ERROR("[STREAM]" format, ##__VA_ARGS__)
-#define STREAM_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[STREAM]" format, ##__VA_ARGS__)
-#define STREAM_STUB_INFO(format, ...)  HCCL_VM_INFO("[STREAM]" format, ##__VA_ARGS__)
-#define STREAM_STUB_WARN(format, ...)  HCCL_VM_WARN("[STREAM]" format, ##__VA_ARGS__)
-#define STREAM_STUB_TRACE(format, ...) HCCL_VM_TRACE("[STREAM]" format, ##__VA_ARGS__)
+#define STREAM_STUB_ERROR(format, ...) HCCL_VM_ERROR("[STREAM_STUB]" format, ##__VA_ARGS__)
+#define STREAM_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[STREAM_STUB]" format, ##__VA_ARGS__)
+#define STREAM_STUB_INFO(format, ...)  HCCL_VM_INFO("[STREAM_STUB]" format, ##__VA_ARGS__)
+#define STREAM_STUB_WARN(format, ...)  HCCL_VM_WARN("[STREAM_STUB]" format, ##__VA_ARGS__)
+#define STREAM_STUB_TRACE(format, ...) HCCL_VM_TRACE("[STREAM_STUB]" format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {

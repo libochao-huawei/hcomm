@@ -16,6 +16,12 @@
 #include "sim_log.h"
 #include "db_sim_runner_db.h"
 
+#define PROXY_STUB_ERROR(format, ...) HCCL_VM_ERROR("[PROXY_STUB]" format, ##__VA_ARGS__)
+#define PROXY_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[PROXY_STUB]" format, ##__VA_ARGS__)
+#define PROXY_STUB_INFO(format, ...)  HCCL_VM_INFO("[PROXY_STUB]" format, ##__VA_ARGS__)
+#define PROXY_STUB_WARN(format, ...)  HCCL_VM_WARN("[PROXY_STUB]" format, ##__VA_ARGS__)
+#define PROXY_STUB_TRACE(format, ...) HCCL_VM_TRACE("[PROXY_STUB]" format, ##__VA_ARGS__)
+
 namespace sim {
 const std::map<HcclDataType, u32> DATA_TYPE_SIZE_MAP = {
     {HcclDataType::HCCL_DATA_TYPE_INT8, sizeof(s8)},
@@ -41,7 +47,7 @@ int GetDataTypeSize(HcclDataType dataType, uint32_t &size)
 {
     auto iter = DATA_TYPE_SIZE_MAP.find(dataType);
     if (iter == DATA_TYPE_SIZE_MAP.end()) {
-        HCCL_VM_ERROR("[GetDataTypeSize] not support data type: {}", static_cast<uint32_t>(dataType));
+        PROXY_STUB_ERROR("not support data type: {}", static_cast<uint32_t>(dataType));
         return 1;
     }
     size = iter->second;
@@ -57,7 +63,7 @@ bool IsDeviceAddress(void *addr)
                     (devPtr < (virMem.start_ptr + virMem.size)) &&
                     (virMem.src_type == (uint8_t)sim::VIR_MEM_TYPE_DEV)); });
     if (!virMemRes.second) {
-        HCCL_VM_INFO("can not find this buff offset ptr:{:p} in VirtualMemBlock.", addr);
+        PROXY_STUB_INFO("this buff offset ptr not found:{:p} in VirtualMemBlock.", addr);
         return false;
     }
 

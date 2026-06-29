@@ -21,11 +21,11 @@
 #include "sim_log.h"
 #include "db_sim_runner_ops.h"
 
-#define EXC_STUB_TRACE(format, ...)  HCCL_VM_TRACE("[EXCEPTION]" format, ##__VA_ARGS__)
-#define EXC_STUB_DEBUG(format, ...)  HCCL_VM_DEBUG("[EXCEPTION]" format, ##__VA_ARGS__)
-#define EXC_STUB_INFO(format, ...)   HCCL_VM_INFO("[EXCEPTION]" format, ##__VA_ARGS__)
-#define EXC_STUB_WARN(format, ...)   HCCL_VM_WARN("[EXCEPTION]" format, ##__VA_ARGS__)
-#define EXC_STUB_ERROR(format, ...)  HCCL_VM_ERROR("[EXCEPTION]" format, ##__VA_ARGS__)
+#define EXC_STUB_TRACE(format, ...)  HCCL_VM_TRACE("[EXCEPTION_STUB]" format, ##__VA_ARGS__)
+#define EXC_STUB_DEBUG(format, ...)  HCCL_VM_DEBUG("[EXCEPTION_STUB]" format, ##__VA_ARGS__)
+#define EXC_STUB_INFO(format, ...)   HCCL_VM_INFO("[EXCEPTION_STUB]" format, ##__VA_ARGS__)
+#define EXC_STUB_WARN(format, ...)   HCCL_VM_WARN("[EXCEPTION_STUB]" format, ##__VA_ARGS__)
+#define EXC_STUB_ERROR(format, ...)  HCCL_VM_ERROR("[EXCEPTION_STUB]" format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {

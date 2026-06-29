@@ -27,6 +27,12 @@
 #include "db_sim_runner_common.h"
 #include "db_sim_runner_ops.h"
 
+#define NEW_STUB_ERROR(format, ...) HCCL_VM_ERROR("[NEW_STUB]" format, ##__VA_ARGS__)
+#define NEW_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[NEW_STUB]" format, ##__VA_ARGS__)
+#define NEW_STUB_INFO(format, ...)  HCCL_VM_INFO("[NEW_STUB]" format, ##__VA_ARGS__)
+#define NEW_STUB_WARN(format, ...)  HCCL_VM_WARN("[NEW_STUB]" format, ##__VA_ARGS__)
+#define NEW_STUB_TRACE(format, ...) HCCL_VM_TRACE("[NEW_STUB]" format, ##__VA_ARGS__)
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -37,16 +43,16 @@ HcclResult hrtGetDeviceType(DevType &devType)
     auto device = RunnerDB::GetById<sim::Device>(devKey);
     if (!device.has_value()) {
         // not find
-        HCCL_VM_ERROR("[aclstub] can not get current device type: {:d}", devKey);
+        NEW_STUB_ERROR("current device type not found: {:d}", devKey);
         return HCCL_E_NOT_FOUND;
     }
     if (strcmp(device->soc_version, "Ascend950") == 0) {
         devType = DevType::DEV_TYPE_950;
     } else {
-        HCCL_VM_ERROR("[aclstub] not support device soc version: {:s}", device->soc_version);
+        NEW_STUB_ERROR("not support device soc version: {:s}", device->soc_version);
         return HCCL_E_NOT_SUPPORT;
     }
-    HCCL_VM_TRACE("[aclstub] Get current device type: {}", static_cast<int>(devType));
+    NEW_STUB_TRACE("Get current device type: {}", static_cast<int>(devType));
     return HCCL_SUCCESS;
 }
 

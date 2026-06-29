@@ -37,28 +37,13 @@
 #include "store_sim_run_mode.h"
 #include "db_sim_op_db_ops.h"
 #include "db_sim_runner_ops.h"
- 
-void print_stacktrace() {
-    const int max_frames = 64;
-    void* buffer[max_frames];
- 
-    int nptrs = backtrace(buffer, max_frames);
-    char** strings = backtrace_symbols(buffer, nptrs);
- 
-    if (strings == nullptr) {
-        perror("backtrace_symbols");
-        return;
-    }
- 
-    fprintf(stderr, "==== Stack trace ====\n");
-    for (int i = 0; i < nptrs; i++) {
-        fprintf(stderr, "%s\n", strings[i]);
-    }
-    fprintf(stderr, "=====================\n");
- 
-    free(strings);
-}
- 
+
+#define OP_STUB_ERROR(format, ...)  HCCL_VM_ERROR("[OP_STUB]" format, ##__VA_ARGS__)
+#define OP_STUB_DEBUG(format, ...)  HCCL_VM_DEBUG("[OP_STUB]" format, ##__VA_ARGS__)
+#define OP_STUB_INFO(format, ...)   HCCL_VM_INFO("[OP_STUB]" format, ##__VA_ARGS__)
+#define OP_STUB_WARN(format, ...)   HCCL_VM_WARN("[OP_STUB]" format, ##__VA_ARGS__)
+#define OP_STUB_TRACE(format, ...)  HCCL_VM_TRACE("[OP_STUB]" format, ##__VA_ARGS__)
+
 extern "C" uint8_t GetOpExpansionMode();
 
 namespace {
@@ -153,7 +138,7 @@ namespace {
 
         int ret = sim::InsertOpDetailAndMem(opDetailTab, opMemInfoTab);
         if (ret != 0) {
-            HCCL_VM_ERROR("[RecordOpDbInfo] insert op detail+mem failed");
+            OP_STUB_ERROR("insert op detail+mem failed");
             return -1;
         }
         return 0;
@@ -172,7 +157,7 @@ uint8_t GetOpExpansionMode()
     sim::SimOpExpansionMode mode = sim::SimOpExpansionMode::SIM_OP_EXPANSION_MODE_RESERVED;
     const char *expanEnv = std::getenv("HCCL_OP_EXPANSION_MODE");
     if (expanEnv == nullptr) {
-        HCCL_VM_INFO("[STUB] HCCL_OP_EXPANSION_MODE env is not set, use default value: [{}]\n", static_cast<uint8_t>(mode));
+        OP_STUB_INFO("HCCL_OP_EXPANSION_MODE env is not set, use default value: [{}]", static_cast<uint8_t>(mode));
         return static_cast<uint8_t>(mode);
     }
 
@@ -185,22 +170,22 @@ uint8_t GetOpExpansionMode()
         mode = sim::SimOpExpansionMode::SIM_OP_EXPANSION_MODE_CCU;
     }
 
-    HCCL_VM_INFO("[STUB] HCCL_OP_EXPANSION_MODE = [{}]\n", expanEnv);
+    OP_STUB_INFO("HCCL_OP_EXPANSION_MODE = [{}]", expanEnv);
     return static_cast<uint8_t>(mode);
 }
  
 HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType sendType, const void *recvBuf,
     uint64_t recvCount, HcclDataType recvType, HcclComm comm, aclrtStream stream)
 {
-    HCCL_VM_INFO("[STUB] HcclAlltoAll called with parameters:\n");
-    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
-    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
-    HCCL_VM_INFO("[STUB]  sendCount = {}\n", sendCount);
-    HCCL_VM_INFO("[STUB]  recvCount = {}\n", recvCount);
-    HCCL_VM_INFO("[STUB]  sendType = {}\n", static_cast<int>(sendType));
-    HCCL_VM_INFO("[STUB]  recvType = {}\n", static_cast<int>(recvType));
-    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
-    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
+    OP_STUB_INFO("HcclAlltoAll called with parameters:");
+    OP_STUB_INFO("sendBuf = {:p}", sendBuf);
+    OP_STUB_INFO("recvBuf = {:p}", recvBuf);
+    OP_STUB_INFO("sendCount = {}", sendCount);
+    OP_STUB_INFO("recvCount = {}", recvCount);
+    OP_STUB_INFO("sendType = {}", static_cast<int>(sendType));
+    OP_STUB_INFO("recvType = {}", static_cast<int>(recvType));
+    OP_STUB_INFO("comm = {:p}", comm);
+    OP_STUB_INFO("stream = {:p}", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -229,10 +214,10 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
     if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_ALLTOALL, curRank, reinterpret_cast<uint64_t>(stream),
                    sendBuf, inputSize, recvBuf, outputSize, alltoallDetails,
                    0, rankSize, curRank, curRank, alltoallExtInfo) != 0) {
-        HCCL_VM_ERROR("[STUB] record op db info failed");
+        OP_STUB_ERROR("record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
-    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
+    OP_STUB_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
 
     using HcclAlltoAllFunc = HcclResult (*)(
         const void *, uint64_t, HcclDataType, const void *, uint64_t, HcclDataType, HcclComm, aclrtStream);
@@ -240,7 +225,7 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
     if (hcclAlltoAllFunc != nullptr) {
         return hcclAlltoAllFunc(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, comm, stream);
     } else {
-        HCCL_VM_ERROR("[STUB] dlsym failed");
+        OP_STUB_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -249,13 +234,13 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
                          const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
                          HcclComm comm, aclrtStream stream)
 {
-    HCCL_VM_INFO("[STUB] HcclAlltoAllV called with parameters:\n");
-    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
-    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
-    HCCL_VM_INFO("[STUB]  sendType = {}\n", static_cast<int>(sendType));
-    HCCL_VM_INFO("[STUB]  recvType = {}\n", static_cast<int>(recvType));
-    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
-    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
+    OP_STUB_INFO("HcclAlltoAllV called with parameters:");
+    OP_STUB_INFO("sendBuf = {:p}", sendBuf);
+    OP_STUB_INFO("recvBuf = {:p}", recvBuf);
+    OP_STUB_INFO("sendType = {}", static_cast<int>(sendType));
+    OP_STUB_INFO("recvType = {}", static_cast<int>(recvType));
+    OP_STUB_INFO("comm = {:p}", comm);
+    OP_STUB_INFO("stream = {:p}", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -300,11 +285,11 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_ALLTOALLV, curRank, reinterpret_cast<uint64_t>(stream),
                    sendBuf, inputSize, recvBuf, outputSize, alltoallvDetails,
                    0, rankSize, curRank, curRank, alltoallvExtInfo) != 0) {
-        HCCL_VM_ERROR("[STUB] record op db info failed");
+        OP_STUB_ERROR("record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
 
-    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
+    OP_STUB_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
  
     using HcclAlltoAllVFunc = HcclResult (*)(const void *,
         const void *,
@@ -321,7 +306,7 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
         return hcclAlltoAllVFunc(
             sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType, comm, stream);
     } else {
-        HCCL_VM_ERROR("[STUB] dlsym failed");
+        OP_STUB_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -329,13 +314,13 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
 HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
     HcclComm comm, aclrtStream stream)
 {
-    HCCL_VM_INFO("[STUB] HcclAllGather called with parameters:\n");
-    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
-    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
-    HCCL_VM_INFO("[STUB]  sendCount = {}\n", sendCount);
-    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
-    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
-    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
+    OP_STUB_INFO("HcclAllGather called with parameters:");
+    OP_STUB_INFO("sendBuf = {:p}", sendBuf);
+    OP_STUB_INFO("recvBuf = {:p}", recvBuf);
+    OP_STUB_INFO("sendCount = {}", sendCount);
+    OP_STUB_INFO("dataType = {}", static_cast<int>(dataType));
+    OP_STUB_INFO("comm = {:p}", comm);
+    OP_STUB_INFO("stream = {:p}", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -354,18 +339,18 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
     if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_ALLGATHER, curRank, reinterpret_cast<uint64_t>(stream),
                    sendBuf, inputSize, recvBuf, outputSize, allGatherDetails,
                    0, rankSize, curRank, curRank) != 0) {
-        HCCL_VM_ERROR("[HcclAllGather] record op db info failed");
+        OP_STUB_ERROR("record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
     
-    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
+    OP_STUB_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
  
     using HcclAllGatherFunc = HcclResult (*)(void *, void *, uint64_t, HcclDataType, HcclComm, aclrtStream);
     HcclAllGatherFunc hcclAllGatherFunc = reinterpret_cast<HcclAllGatherFunc>(dlsym(RTLD_NEXT, __func__));
     if (hcclAllGatherFunc != nullptr) {
         return hcclAllGatherFunc(sendBuf, recvBuf, sendCount, dataType, comm, stream);
     } else {
-        HCCL_VM_ERROR("[STUB] dlsym failed");
+        OP_STUB_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -373,13 +358,13 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
 HcclResult HcclBroadcast(
     void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm, aclrtStream stream)
 {
-    HCCL_VM_INFO("[STUB] HcclBroadcast called with parameters:\n");
-    HCCL_VM_INFO("[STUB]  buf = {:p}\n", buf);
-    HCCL_VM_INFO("[STUB]  count = {}\n", count);
-    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
-    HCCL_VM_INFO("[STUB]  root = {}\n", root);
-    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
-    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
+    OP_STUB_INFO("HcclBroadcast called with parameters:");
+    OP_STUB_INFO("buf = {:p}", buf);
+    OP_STUB_INFO("count = {}", count);
+    OP_STUB_INFO("dataType = {}", static_cast<int>(dataType));
+    OP_STUB_INFO("root = {}", root);
+    OP_STUB_INFO("comm = {:p}", comm);
+    OP_STUB_INFO("stream = {:p}", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -397,18 +382,18 @@ HcclResult HcclBroadcast(
     if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_BROADCAST, curRank, reinterpret_cast<uint64_t>(stream),
                    buf, size, buf, size, broadcastDetails,
                    root, rankSize, curRank, curRank) != 0) {
-        HCCL_VM_ERROR("[HcclBroadcast] record op db info failed");
+        OP_STUB_ERROR("record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
 
-    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
+    OP_STUB_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
  
     using HcclBroadcastFunc = HcclResult (*)(void *, uint64_t, HcclDataType, uint32_t, HcclComm, aclrtStream);
     HcclBroadcastFunc hcclBroadcastFunc = reinterpret_cast<HcclBroadcastFunc>(dlsym(RTLD_NEXT, __func__));
     if (hcclBroadcastFunc != nullptr) {
         return hcclBroadcastFunc(buf, count, dataType, root, comm, stream);
     } else {
-        HCCL_VM_ERROR("[STUB] dlsym failed");
+        OP_STUB_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -416,14 +401,14 @@ HcclResult HcclBroadcast(
 HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
     HcclComm comm, aclrtStream stream)
 {
-    HCCL_VM_INFO("[STUB] HcclAllReduce called with parameters:\n");
-    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
-    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
-    HCCL_VM_INFO("[STUB]  count = {}\n", count);
-    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
-    HCCL_VM_INFO("[STUB]  op = {}\n", static_cast<int>(op));
-    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
-    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
+    OP_STUB_INFO("HcclAllReduce called with parameters:");
+    OP_STUB_INFO("sendBuf = {:p}", sendBuf);
+    OP_STUB_INFO("recvBuf = {:p}", recvBuf);
+    OP_STUB_INFO("count = {}", count);
+    OP_STUB_INFO("dataType = {}", static_cast<int>(dataType));
+    OP_STUB_INFO("op = {}", static_cast<int>(op));
+    OP_STUB_INFO("comm = {:p}", comm);
+    OP_STUB_INFO("stream = {:p}", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -440,17 +425,17 @@ HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataT
     if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_ALLREDUCE, curRank, reinterpret_cast<uint64_t>(stream),
                    sendBuf, size, recvBuf, size, allReduceDetails,
                    0, rankSize, curRank, curRank) != 0) {
-        HCCL_VM_ERROR("[HcclAllReduce] record op db info failed");
+        OP_STUB_ERROR("record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
-    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
+    OP_STUB_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
 
     using HcclAddreduceFunc = HcclResult (*)(void *, void *, uint64_t, HcclDataType, HcclReduceOp, HcclComm, aclrtStream);
     HcclAddreduceFunc hcclAddreduceFunc = reinterpret_cast<HcclAddreduceFunc>(dlsym(RTLD_NEXT, __func__));
     if (hcclAddreduceFunc != nullptr) {
         return hcclAddreduceFunc(sendBuf, recvBuf, count, dataType, op, comm, stream);
     } else {
-        HCCL_VM_ERROR("[STUB] dlsym failed");
+        OP_STUB_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -458,14 +443,14 @@ HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataT
 HcclResult HcclScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, uint32_t root,
     HcclComm comm, aclrtStream stream)
 {
-    HCCL_VM_INFO("[STUB] HcclScatter called with parameters:\n");
-    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
-    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
-    HCCL_VM_INFO("[STUB]  recvCount = {}\n", recvCount);
-    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
-    HCCL_VM_INFO("[STUB]  root = {}\n", root);
-    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
-    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
+    OP_STUB_INFO("HcclScatter called with parameters:");
+    OP_STUB_INFO("sendBuf = {:p}", sendBuf);
+    OP_STUB_INFO("recvBuf = {:p}", recvBuf);
+    OP_STUB_INFO("recvCount = {}", recvCount);
+    OP_STUB_INFO("dataType = {}", static_cast<int>(dataType));
+    OP_STUB_INFO("root = {}", root);
+    OP_STUB_INFO("comm = {:p}", comm);
+    OP_STUB_INFO("stream = {:p}", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -488,25 +473,25 @@ HcclResult HcclScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDat
     if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_SCATTER, curRank, reinterpret_cast<uint64_t>(stream),
                    inputPtr, inputValueSize, recvBuf, outputValueSize, scatterDetails,
                    root, rankSize, curRank, curRank) != 0) {
-        HCCL_VM_ERROR("[HcclScatter] record op db info failed");
+        OP_STUB_ERROR("record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
     
-    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
+    OP_STUB_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
  
     using HcclScatterFunc = HcclResult (*)(void *, void *, uint64_t, HcclDataType, uint32_t, HcclComm, aclrtStream);
     HcclScatterFunc hcclScatterFunc = reinterpret_cast<HcclScatterFunc>(dlsym(RTLD_NEXT, __func__));
     if (hcclScatterFunc != nullptr) {
         return hcclScatterFunc(sendBuf, recvBuf, recvCount, dataType, root, comm, stream);
     } else {
-        HCCL_VM_ERROR("[STUB] dlsym failed");
+        OP_STUB_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
  
 HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size)
 {
-    HCCL_VM_INFO("[STUB] HcclGetHcclBufferNew called with parameters: buffer= {:p}, {}\n", *buffer, *size);
+    OP_STUB_INFO("HcclGetHcclBufferNew called with parameters: buffer= {:p}, {}", *buffer, *size);
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
  
     using HcclGetHcclBufferFunc = HcclResult (*)(HcclComm, void**, uint64_t*);
@@ -514,10 +499,10 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size)
     if (hcclGetHcclBufferFunc != nullptr) {
         auto ret = hcclGetHcclBufferFunc(comm, buffer, size);
         sim::UpdateOpMemCclBuffer(reinterpret_cast<uint64_t>(*buffer), *size);
-        HCCL_VM_INFO("[STUB] get rank{} ccl buffer= {:p}, {}\n", curRank, *buffer, *size);
+        OP_STUB_INFO("get rank{} ccl buffer= {:p}, {}", curRank, *buffer, *size);
         return ret;
     } else {
-        HCCL_VM_ERROR("[STUB] dlsym failed");
+        OP_STUB_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -525,15 +510,15 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size)
 HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
     uint32_t root, HcclComm comm, aclrtStream stream)
 {
-    HCCL_VM_INFO("[STUB] HcclReduce called with parameters:\n");
-    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
-    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
-    HCCL_VM_INFO("[STUB]  count = {}\n", count);
-    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
-    HCCL_VM_INFO("[STUB]  reduce op = {}\n", static_cast<int>(op));
-    HCCL_VM_INFO("[STUB]  root = {}\n", root);
-    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
-    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
+    OP_STUB_INFO("HcclReduce called with parameters:");
+    OP_STUB_INFO("sendBuf = {:p}", sendBuf);
+    OP_STUB_INFO("recvBuf = {:p}", recvBuf);
+    OP_STUB_INFO("count = {}", count);
+    OP_STUB_INFO("dataType = {}", static_cast<int>(dataType));
+    OP_STUB_INFO("reduce op = {}", static_cast<int>(op));
+    OP_STUB_INFO("root = {}", root);
+    OP_STUB_INFO("comm = {:p}", comm);
+    OP_STUB_INFO("stream = {:p}", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -551,11 +536,11 @@ HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType
     if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_REDUCE, curRank, reinterpret_cast<uint64_t>(stream),
                    sendBuf, size, recvBuf, size, reduceDetails,
                    root, rankSize, curRank, curRank) != 0) {
-        HCCL_VM_ERROR("[HcclReduce] record op db info failed");
+        OP_STUB_ERROR("record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
 
-    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
+    OP_STUB_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
  
     using HcclReduceFunc =
         HcclResult (*)(void *, void *, uint64_t, HcclDataType, HcclReduceOp, uint32_t, HcclComm, aclrtStream);
@@ -563,7 +548,7 @@ HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType
     if (hcclReduceFunc != nullptr) {
         return hcclReduceFunc(sendBuf, recvBuf, count, dataType, op, root, comm, stream);
     } else {
-        HCCL_VM_ERROR("[STUB] dlsym failed");
+        OP_STUB_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -571,14 +556,14 @@ HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType
 HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op,
     HcclComm comm, aclrtStream stream)
 {
-    HCCL_VM_INFO("[STUB] HcclReduceScatter called with parameters:\n");
-    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
-    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
-    HCCL_VM_INFO("[STUB]  recvCount = {}\n", recvCount);
-    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
-    HCCL_VM_INFO("[STUB]  reduce op = {}\n", static_cast<int>(op));
-    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
-    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
+    OP_STUB_INFO("HcclReduceScatter called with parameters:");
+    OP_STUB_INFO("sendBuf = {:p}", sendBuf);
+    OP_STUB_INFO("recvBuf = {:p}", recvBuf);
+    OP_STUB_INFO("recvCount = {}", recvCount);
+    OP_STUB_INFO("dataType = {}", static_cast<int>(dataType));
+    OP_STUB_INFO("reduce op = {}", static_cast<int>(op));
+    OP_STUB_INFO("comm = {:p}", comm);
+    OP_STUB_INFO("stream = {:p}", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -596,18 +581,18 @@ HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, H
     if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_REDUCE_SCATTER, curRank, reinterpret_cast<uint64_t>(stream),
                    sendBuf, inputSize, recvBuf, outputSize, reduceScatterDetails,
                    0, rankSize, curRank, curRank) != 0) {
-        HCCL_VM_ERROR("[HcclReduceScatter] record op db info failed");
+        OP_STUB_ERROR("record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
 
-    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
+    OP_STUB_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
 
     using HcclReduceScatterFunc = HcclResult (*)(void *, void *, uint64_t, HcclDataType, HcclReduceOp, HcclComm, aclrtStream);
     auto hcclReduceScatterFunc = reinterpret_cast<HcclReduceScatterFunc>(dlsym(RTLD_NEXT, __func__));
     if (hcclReduceScatterFunc != nullptr) {
         return hcclReduceScatterFunc(sendBuf, recvBuf, recvCount, dataType, op, comm, stream);
     } else {
-        HCCL_VM_ERROR("[STUB] dlsym failed");
+        OP_STUB_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -973,7 +958,7 @@ static void DumpAivExtraArgs(const ExtraArgs &extraArgs)
         oss << "  extraArgs.recvDispls[" << i << "] = "
             << static_cast<unsigned long long>(extraArgs.recvDispls[i]) << '\n';
     }
-    HCCL_VM_DEBUG("{}", oss.str());
+    OP_STUB_DEBUG("{}", oss.str());
 }
 
 static void DumpAivTopo(const uint64_t topo[AIV_STUB_TOPO_LEN])
@@ -983,7 +968,7 @@ static void DumpAivTopo(const uint64_t topo[AIV_STUB_TOPO_LEN])
     for (uint32_t i = 0; i < static_cast<uint32_t>(AIV_STUB_TOPO_LEN); ++i) {
         oss << "  opArgs.topo_[" << i << "] = " << static_cast<unsigned long long>(topo[i]) << '\n';
     }
-    HCCL_VM_DEBUG("{}", oss.str());
+    OP_STUB_DEBUG("{}", oss.str());
 }
 
 static void DumpFlagSlots(std::ostringstream &oss, const uint8_t *flagBase, uint64_t byteOffset, uint32_t slotCount,
@@ -1014,7 +999,7 @@ static void DumpBuffersInParsedDeviceView(const void *buffersInDev, uint32_t ran
     oss << "  [buffersIn-parse] aivCommInfoPtr base(dev) = " << buffersInDev << '\n';
     if (buffersInDev == nullptr) {
         oss << "  [buffersIn-parse] buffersIn is null, skip device-side parse dump.\n";
-        HCCL_VM_DEBUG("{}", oss.str());
+        OP_STUB_DEBUG("{}", oss.str());
         return;
     }
 
@@ -1023,7 +1008,7 @@ static void DumpBuffersInParsedDeviceView(const void *buffersInDev, uint32_t ran
     oss << "  [buffersIn-parse] aivCommInfoPtr base(host) = " << static_cast<const void *>(buffersInHost) << '\n';
     if (buffersInHost == nullptr) {
         oss << "  [buffersIn-parse] failed to translate device ptr to host ptr.\n";
-        HCCL_VM_DEBUG("{}", oss.str());
+        OP_STUB_DEBUG("{}", oss.str());
         return;
     }
 
@@ -1124,7 +1109,7 @@ static void DumpBuffersInParsedDeviceView(const void *buffersInDev, uint32_t ran
         oss << "      EMPTY_CLEAR[" << i << "] = " << emptyClearTable[i] << '\n';
     }
 
-    HCCL_VM_DEBUG("{}", oss.str());
+    OP_STUB_DEBUG("{}", oss.str());
     ReleaseHostPtr(buffersInHandle);
 }
 
@@ -1134,7 +1119,7 @@ static void DumpLaunchKernelCfg(const aclrtLaunchKernelCfg *cfg)
     oss << "[virtual-aiv-aclrtLaunchKernelWithHostArgs] cfg:\n";
     oss << "  cfg = " << cfg << '\n';
     if (cfg == nullptr) {
-        HCCL_VM_DEBUG("{}", oss.str());
+        OP_STUB_DEBUG("{}", oss.str());
         return;
     }
 
@@ -1178,7 +1163,7 @@ static void DumpLaunchKernelCfg(const aclrtLaunchKernelCfg *cfg)
                 break;
         }
     }
-    HCCL_VM_DEBUG("{}", oss.str());
+    OP_STUB_DEBUG("{}", oss.str());
 }
 
 static void DumpPlaceHolderArray(const aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
@@ -1188,7 +1173,7 @@ static void DumpPlaceHolderArray(const aclrtPlaceHolderInfo *placeHolderArray, s
     oss << "  placeHolderArray = " << placeHolderArray << '\n';
     oss << "  placeHolderNum = " << placeHolderNum << '\n';
     if (placeHolderArray == nullptr) {
-        HCCL_VM_DEBUG("{}", oss.str());
+        OP_STUB_DEBUG("{}", oss.str());
         return;
     }
 
@@ -1196,7 +1181,7 @@ static void DumpPlaceHolderArray(const aclrtPlaceHolderInfo *placeHolderArray, s
         oss << "    placeHolderArray[" << i << "].addrOffset = " << placeHolderArray[i].addrOffset << '\n';
         oss << "    placeHolderArray[" << i << "].dataOffset = " << placeHolderArray[i].dataOffset << '\n';
     }
-    HCCL_VM_DEBUG("{}", oss.str());
+    OP_STUB_DEBUG("{}", oss.str());
 }
 
 static bool IsAivExtraArgsCmdType(HcclCMDType cmdType)
@@ -1269,13 +1254,13 @@ static bool ParseAivHostLaunchArgs(
 {
     parsedArgs = {};
     if (hostArgs == nullptr) {
-        HCCL_VM_ERROR("[virtual-aiv-aclrtLaunchKernelWithHostArgs] hostArgs is null, can not virtual execute kernel.");
+        OP_STUB_ERROR("[virtual-aiv-aclrtLaunchKernelWithHostArgs] hostArgs is null, can not virtual execute kernel.");
         return false;
     }
 
     if (IsAivExtraArgsCmdType(cmdType)) {
         if (argsSize < sizeof(AivExtraKernelArgs)) {
-            HCCL_VM_ERROR(
+            OP_STUB_ERROR(
                 "[virtual-aiv-aclrtLaunchKernelWithHostArgs] argsSize({}) < sizeof(AivExtraKernelArgs)({}) "
                 "for cmdType={}, stop virtual execution.",
                 argsSize,
@@ -1291,7 +1276,7 @@ static bool ParseAivHostLaunchArgs(
     }
 
     if (argsSize < sizeof(AivKernelArgs)) {
-        HCCL_VM_ERROR(
+        OP_STUB_ERROR(
             "[virtual-aiv-aclrtLaunchKernelWithHostArgs] argsSize({}) < sizeof(AivKernelArgs)({}) "
             "for cmdType={}, stop virtual execution.",
             argsSize,
@@ -1315,7 +1300,7 @@ static void DumpHostLaunchArgs(const AivHostLaunchArgs *hostArgs, size_t argsSiz
     oss << "  sizeof(AivExtraKernelArgs) = " << sizeof(AivExtraKernelArgs) << '\n';
     oss << "  sizeof(AivHostLaunchArgs normalized) = " << sizeof(AivHostLaunchArgs) << '\n';
     if (hostArgs == nullptr) {
-        HCCL_VM_DEBUG("{}", oss.str());
+        OP_STUB_DEBUG("{}", oss.str());
         return;
     }
 
@@ -1346,7 +1331,7 @@ static void DumpHostLaunchArgs(const AivHostLaunchArgs *hostArgs, size_t argsSiz
     oss << "  hostArgs.counterMemSize = " << hostArgs->counterMemSize << '\n';
     oss << "  hostArgs.isEnableCounter = " << static_cast<int>(hostArgs->isEnableCounter) << '\n';
     oss << "  hostArgs.hasExtraArgs = " << static_cast<int>(hostArgs->hasExtraArgs) << '\n';
-    HCCL_VM_DEBUG("{}", oss.str());
+    OP_STUB_DEBUG("{}", oss.str());
     if (hostArgs->hasExtraArgs) {
         DumpAivExtraArgs(hostArgs->extraArgs);
     }
@@ -1474,7 +1459,7 @@ static std::string InferKernelNameFromFuncHandle(aclrtFuncHandle funcHandle)
     oss << "[virtual-aiv-aclrtLaunchKernelWithHostArgs] InferKernelNameFromFuncHandle:\n";
     oss << "  funcHandle = " << funcHandle << '\n';
     if (funcHandle == nullptr) {
-        HCCL_VM_DEBUG("{}", oss.str());
+        OP_STUB_DEBUG("{}", oss.str());
         return {};
     }
 
@@ -1505,7 +1490,7 @@ static std::string InferKernelNameFromFuncHandle(aclrtFuncHandle funcHandle)
         resolvedKernelName = std::string(funcNameBuffer);
     }
     oss << "  resolvedKernelName = " << (resolvedKernelName.empty() ? "<empty>" : resolvedKernelName.c_str()) << '\n';
-    HCCL_VM_DEBUG("{}", oss.str());
+    OP_STUB_DEBUG("{}", oss.str());
     return resolvedKernelName;
 }
 
@@ -1514,7 +1499,7 @@ static std::string GetAivLibraryPath(const std::string &soName, const std::strin
     const char *kernelNameCStr = kernelName.empty() ? "<empty>" : kernelName.c_str();
     const char *installDirEnv = std::getenv("HCCL_VM_INSTALL_DIR");
     if (installDirEnv == nullptr || installDirEnv[0] == '\0') {
-        HCCL_VM_ERROR("[virtual-aiv] env HCCL_VM_INSTALL_DIR is not set, can not locate {} for kernel {}",
+        OP_STUB_ERROR("[virtual-aiv] env HCCL_VM_INSTALL_DIR is not set, can not locate {} for kernel {}",
             soName, kernelNameCStr);
         return {};
     }
@@ -1524,11 +1509,11 @@ static std::string GetAivLibraryPath(const std::string &soName, const std::strin
     const fs::path soPath = installDir / "lib" / "x86_64" / soName;
     if (!fs::exists(soPath, ec)) {
         if (ec) {
-            HCCL_VM_ERROR("[virtual-aiv] failed to stat aiv library path, kernel={}, HCCL_VM_INSTALL_DIR={}, so={}, err={}",
+            OP_STUB_ERROR("[virtual-aiv] failed to stat aiv library path, kernel={}, HCCL_VM_INSTALL_DIR={}, so={}, err={}",
                 kernelNameCStr, installDir.string(), soPath.string(), ec.message());
             return {};
         }
-        HCCL_VM_ERROR("[virtual-aiv] missing aiv stub shared library, kernel={}, HCCL_VM_INSTALL_DIR={}, expectedSo={}",
+        OP_STUB_ERROR("[virtual-aiv] missing aiv stub shared library, kernel={}, HCCL_VM_INSTALL_DIR={}, expectedSo={}",
             kernelNameCStr, installDir.string(), soPath.string());
         return {};
     }
@@ -1542,7 +1527,7 @@ static ResolvedKernelLaunchArgs PrepareResolvedKernelLaunchArgs(const AivHostLau
     resolvedArgs.args = rawArgs;
     resolvedArgs.buffersInHandle = ResolveHostPtr(rawArgs.buffersIn);
     if (resolvedArgs.buffersInHandle.hostPtr == nullptr && rawArgs.buffersIn != nullptr) {
-        HCCL_VM_ERROR(
+        OP_STUB_ERROR(
             "[virtual-aiv-VirtualExecuteAivKernel] buffersIn translation failed, translated host ptr is null, "
             "raw={:p}",
             rawArgs.buffersIn);
@@ -1620,13 +1605,13 @@ static OpMemInfoLookupStatus LookupOpMemInfoByVirtualAddr(
         baseAddr = opMemInfo.cclAddr;
         size = opMemInfo.cclSize;
     } else {
-        HCCL_VM_ERROR("[virtual-aiv] unsupported opMemInfo buffer type, rankId={}, baseAddr=0x{:x}, bufType={}",
+        OP_STUB_ERROR("[virtual-aiv] unsupported opMemInfo buffer type, rankId={}, baseAddr=0x{:x}, bufType={}",
             rankId, queryVirtualAddr, static_cast<uint32_t>(bufType));
         return OpMemInfoLookupStatus::INVALID;
     }
 
     if (!TryMatchOpMemInfoRange(queryVirtualAddr, baseAddr, size, matchInfo)) {
-        HCCL_VM_DEBUG(
+        OP_STUB_DEBUG(
             "[virtual-aiv] queryAddr=0x{:x} did not match opMemInfo range. "
             "rankId={}, bufType={}, opMemBase=0x{:x}, opMemSize={}",
             queryVirtualAddr,
@@ -1653,7 +1638,7 @@ static void InitCclOpMemInfoCache(uint32_t rankSize)
     for (uint32_t rankId = 0; rankId < rankSize; ++rankId) {
         sim::OpMemInfoTab opMemInfo {};
         if (sim::QueryCurrentOpMemInfoByRank(rankId, opMemInfo) != 0) {
-            HCCL_VM_ERROR("[virtual-aiv] failed to cache CCL opMemInfo, rankId={}", rankId);
+            OP_STUB_ERROR("[virtual-aiv] failed to cache CCL opMemInfo, rankId={}", rankId);
             continue;
         }
 
@@ -1663,7 +1648,7 @@ static void InitCclOpMemInfoCache(uint32_t rankSize)
         entry.opMemId = opMemInfo.id;
         entry.opDetailId = opMemInfo.opDetailId;
         entry.valid = opMemInfo.cclAddr != 0 && opMemInfo.cclSize != 0;
-        HCCL_VM_INFO(
+        OP_STUB_INFO(
             "[virtual-aiv] cache CCL opMemInfo, rankId={}, opMemId={}, opDetailId={}, cclAddr=0x{:x}, cclSize={}",
             rankId,
             entry.opMemId,
@@ -1687,7 +1672,7 @@ static OpMemInfoLookupStatus LookupCachedCclOpMemInfoByVirtualAddr(
     InitCclOpMemInfoCache(rankSize);
 
     if (rankId >= g_cclOpMemInfoCache.entries.size()) {
-        HCCL_VM_ERROR(
+        OP_STUB_ERROR(
             "[virtual-aiv] cached CCL opMemInfo rank out of range, rankId={}, cachedRankSize={}, currentRankSize={}",
             rankId,
             g_cclOpMemInfoCache.rankSize,
@@ -1696,7 +1681,7 @@ static OpMemInfoLookupStatus LookupCachedCclOpMemInfoByVirtualAddr(
     }
 
     if (g_cclOpMemInfoCache.rankSize != rankSize) {
-        HCCL_VM_ERROR(
+        OP_STUB_ERROR(
             "[virtual-aiv] cached CCL opMemInfo rankSize mismatch, cachedRankSize={}, currentRankSize={}",
             g_cclOpMemInfoCache.rankSize,
             rankSize);
@@ -1705,7 +1690,7 @@ static OpMemInfoLookupStatus LookupCachedCclOpMemInfoByVirtualAddr(
 
     const auto &entry = g_cclOpMemInfoCache.entries[rankId];
     if (!entry.valid) {
-        HCCL_VM_ERROR(
+        OP_STUB_ERROR(
             "[virtual-aiv] cached CCL opMemInfo is invalid, rankId={}, opMemId={}, opDetailId={}, "
             "cclAddr=0x{:x}, cclSize={}",
             rankId,
@@ -1717,7 +1702,7 @@ static OpMemInfoLookupStatus LookupCachedCclOpMemInfoByVirtualAddr(
     }
 
     if (!TryMatchOpMemInfoRange(queryVirtualAddr, entry.cclAddr, entry.cclSize, matchInfo)) {
-        HCCL_VM_DEBUG(
+        OP_STUB_DEBUG(
             "[virtual-aiv] queryAddr=0x{:x} did not match cached CCL opMemInfo range. "
             "rankId={}, opMemId={}, opDetailId={}, cclAddr=0x{:x}, cclSize={}",
             queryVirtualAddr,
@@ -1749,12 +1734,12 @@ static void ResolveVirtualAivBufferSizes(const std::string &kernelName,
         resolvedArgs.args.rank, inputAddr, BufferType::INPUT, inputMatchInfo);
     if (inputStatus == OpMemInfoLookupStatus::MISSING) {
         if (IsAivScatterKernel(kernelName) && resolvedArgs.args.rank != resolvedArgs.args.root) {
-            HCCL_VM_INFO("[virtual-aiv] skip missing input opMemInfo for kernel {}, rank={}, root={}, baseAddr=0x{:x}",
+            OP_STUB_INFO("[virtual-aiv] skip missing input opMemInfo for kernel {}, rank={}, root={}, baseAddr=0x{:x}",
                 kernelName, resolvedArgs.args.rank, resolvedArgs.args.root, inputAddr);
             resolvedArgs.args.input = 0;
             inputSize = 0;
         } else {
-            HCCL_VM_ERROR(
+            OP_STUB_ERROR(
                 "[virtual-aiv] expected exactly one opMemInfo range, rankId={}, baseAddr=0x{:x}, bufType={}, matchedCount={}",
                 resolvedArgs.args.rank,
                 inputAddr,
@@ -1775,12 +1760,12 @@ static void ResolveVirtualAivBufferSizes(const std::string &kernelName,
         resolvedArgs.args.rank, outputAddr, BufferType::OUTPUT, outputMatchInfo);
     if (outputStatus == OpMemInfoLookupStatus::MISSING) {
         if (IsAivBroadcastKernel(kernelName)) {
-            HCCL_VM_INFO("[virtual-aiv] skip missing output opMemInfo for kernel {}, rank={}, baseAddr=0x{:x}",
+            OP_STUB_INFO("[virtual-aiv] skip missing output opMemInfo for kernel {}, rank={}, baseAddr=0x{:x}",
                 kernelName, resolvedArgs.args.rank, outputAddr);
             resolvedArgs.args.output = 0;
             outputSize = 0;
         } else {
-            HCCL_VM_ERROR(
+            OP_STUB_ERROR(
                 "[virtual-aiv] expected exactly one opMemInfo range, rankId={}, baseAddr=0x{:x}, bufType={}, matchedCount={}",
                 resolvedArgs.args.rank,
                 outputAddr,
@@ -1814,7 +1799,7 @@ static void ResolveVirtualAivBufferSizes(const std::string &kernelName,
                     resolvedArgs.args.rankSize,
                     cclMatchInfo);
             if (finalCclBufferStatus == OpMemInfoLookupStatus::MISSING) {
-                HCCL_VM_ERROR(
+                OP_STUB_ERROR(
                     "[virtual-aiv] expected exactly one opMemInfo range, rankId={}, baseAddr=0x{:x}, bufType={}, matchedCount={}",
                     i,
                     cclBufferAddr,
@@ -1937,7 +1922,7 @@ static void DumpVirtualKernelFuncArgs(
     } else {
         oss << "    kernelFunc.extraArgs <- not present in aclrtLaunchKernelWithHostArgs host args\n";
     }
-    HCCL_VM_DEBUG("{}", oss.str());
+    OP_STUB_DEBUG("{}", oss.str());
 }
 
 struct VirtualAivLibrary {
@@ -1966,7 +1951,7 @@ static VirtualAivLibrary LoadVirtualAivLibrary(const std::string &soName, const 
     VirtualAivLibrary lib {};
     lib.soName = soName;
     if (lib.soName.empty()) {
-        HCCL_VM_ERROR("[virtual-aiv] empty soName for kernel {}",
+        OP_STUB_ERROR("[virtual-aiv] empty soName for kernel {}",
             kernelName.empty() ? "<empty>" : kernelName.c_str());
         return lib;
     }
@@ -1980,7 +1965,7 @@ static VirtualAivLibrary LoadVirtualAivLibrary(const std::string &soName, const 
     lib.handle = dlopen(lib.soPath.c_str(), RTLD_NOW | RTLD_LOCAL);
     const char *dlopenErr = dlerror();
     if (lib.handle == nullptr || dlopenErr != nullptr) {
-        HCCL_VM_ERROR("[virtual-aiv] dlopen {} failed, err = {}",
+        OP_STUB_ERROR("[virtual-aiv] dlopen {} failed, err = {}",
             lib.soPath, dlopenErr == nullptr ? "unknown" : dlopenErr);
         CloseVirtualAivLibrary(lib);
         return lib;
@@ -1990,7 +1975,7 @@ static VirtualAivLibrary LoadVirtualAivLibrary(const std::string &soName, const 
     lib.envInit = reinterpret_cast<AivEnvInitFunc>(dlsym(lib.handle, AIV_STUB_ENV_INIT_SYMBOL));
     const char *envInitErr = dlerror();
     if (lib.envInit == nullptr || envInitErr != nullptr) {
-        HCCL_VM_ERROR("[virtual-aiv] dlsym {} from {} failed, err = {}",
+        OP_STUB_ERROR("[virtual-aiv] dlsym {} from {} failed, err = {}",
             AIV_STUB_ENV_INIT_SYMBOL, lib.soPath, envInitErr == nullptr ? "unknown" : envInitErr);
         lib.envInit = nullptr;
     }
@@ -2000,7 +1985,7 @@ static VirtualAivLibrary LoadVirtualAivLibrary(const std::string &soName, const 
         reinterpret_cast<AivSetBlockIdxFunc>(dlsym(lib.handle, AIV_STUB_SET_BLOCK_IDX_SYMBOL));
     const char *setBlockIdxErr = dlerror();
     if (lib.setBlockIdx == nullptr || setBlockIdxErr != nullptr) {
-        HCCL_VM_ERROR("[virtual-aiv] dlsym {} from {} failed, err = {}",
+        OP_STUB_ERROR("[virtual-aiv] dlsym {} from {} failed, err = {}",
             AIV_STUB_SET_BLOCK_IDX_SYMBOL, lib.soPath, setBlockIdxErr == nullptr ? "unknown" : setBlockIdxErr);
         lib.setBlockIdx = nullptr;
     }
@@ -2009,7 +1994,7 @@ static VirtualAivLibrary LoadVirtualAivLibrary(const std::string &soName, const 
     lib.dumpTasks = reinterpret_cast<AivDumpTasksFunc>(dlsym(lib.handle, AIV_STUB_DUMP_TASKS_SYMBOL));
     const char *dumpTasksErr = dlerror();
     if (lib.dumpTasks == nullptr || dumpTasksErr != nullptr) {
-        HCCL_VM_ERROR("[virtual-aiv] dlsym {} from {} failed, err = {}",
+        OP_STUB_ERROR("[virtual-aiv] dlsym {} from {} failed, err = {}",
             AIV_STUB_DUMP_TASKS_SYMBOL, lib.soPath, dumpTasksErr == nullptr ? "unknown" : dumpTasksErr);
         lib.dumpTasks = nullptr;
     }
@@ -2029,7 +2014,7 @@ static aclError VirtualExecuteAivKernel(
         return ACL_ERROR_RT_FEATURE_NOT_SUPPORT;
     }
     if (kernelName.empty()) {
-        HCCL_VM_ERROR("[virtual-aiv-VirtualExecuteAivKernel] empty kernelName, can not virtual execute AIV kernel.");
+        OP_STUB_ERROR("[virtual-aiv-VirtualExecuteAivKernel] empty kernelName, can not virtual execute AIV kernel.");
         CloseVirtualAivLibrary(lib);
         return ACL_ERROR_INVALID_PARAM;
     }
@@ -2038,7 +2023,7 @@ static aclError VirtualExecuteAivKernel(
     void *kernelSymbol = dlsym(lib.handle, kernelName.c_str());
     const char *kernelErr = dlerror();
     if (kernelSymbol == nullptr || kernelErr != nullptr) {
-        HCCL_VM_ERROR("[virtual-aiv] dlsym {} from {} failed, err = {}",
+        OP_STUB_ERROR("[virtual-aiv] dlsym {} from {} failed, err = {}",
             kernelName, lib.soPath, kernelErr == nullptr ? "unknown" : kernelErr);
         CloseVirtualAivLibrary(lib);
         return ACL_ERROR_RT_FEATURE_NOT_SUPPORT;
@@ -2064,7 +2049,7 @@ static aclError VirtualExecuteAivKernel(
     if (inputSize == INVALID_MEMORY_LAYOUT_SIZE ||
         outputSize == INVALID_MEMORY_LAYOUT_SIZE ||
         cclBufferSize == INVALID_MEMORY_LAYOUT_SIZE) {
-        HCCL_VM_ERROR("[virtual-aiv] failed to resolve opMemInfo size for kernel {}, rank={}",
+        OP_STUB_ERROR("[virtual-aiv] failed to resolve opMemInfo size for kernel {}, rank={}",
             kernelName,
             resolvedArgs.args.rank);
         ReleaseHostPtr(resolvedArgs.buffersInHandle);
@@ -2086,7 +2071,7 @@ static aclError VirtualExecuteAivKernel(
     }
     std::memcpy(curOpParam.kernelName, kernelName.data(), kernelNameCopyLen);
     curOpParam.kernelName[kernelNameCopyLen] = '\0';
-    HCCL_VM_DEBUG(
+    OP_STUB_DEBUG(
         "[virtual-aiv-VirtualExecuteAivKernel] aiv_env_init and curOp:\n"
         "  rank = {}\n"
         "  blockNum = {}\n"
@@ -2144,14 +2129,14 @@ static aclError VirtualExecuteAivKernel(
         curOpParam);
 
     if (numBlocks == 0) {
-        HCCL_VM_DEBUG("[virtual-aiv-VirtualExecuteAivKernel] numBlocks is 0, skip kernel invocation.");
+        OP_STUB_DEBUG("[virtual-aiv-VirtualExecuteAivKernel] numBlocks is 0, skip kernel invocation.");
         ReleaseHostPtr(resolvedArgs.buffersInHandle);
         CloseVirtualAivLibrary(lib);
         return ACL_SUCCESS;
     }
 
     for (uint32_t blockIdx = 0; blockIdx < numBlocks; ++blockIdx) {
-        HCCL_VM_DEBUG(
+        OP_STUB_DEBUG(
             "[virtual-aiv-VirtualExecuteAivKernel] launch kernel {}, blockIdx={} <- "
             "aclrtLaunchKernelWithHostArgs(numBlocks) loop index; shared kernelFunc args are printed above",
             kernelName,
@@ -2229,7 +2214,7 @@ static aclError VirtualExecuteAivKernel(
 
 HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs)
 {
-    HCCL_VM_DEBUG(
+    OP_STUB_DEBUG(
         "[virtual-aiv-ExecuteKernelLaunch] called with parameters:\n"
         "  cmdType = {}\n"
         "  comm = {}\n"
@@ -2298,7 +2283,7 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs)
     if (IsAivExtraArgsCmdType(opArgs.cmdType)) {
         DumpAivExtraArgs(opArgs.extraArgs);
     } else {
-        HCCL_VM_DEBUG("[virtual-aiv-ExecuteKernelLaunch] extraArgs are not used for cmdType={}.",
+        OP_STUB_DEBUG("[virtual-aiv-ExecuteKernelLaunch] extraArgs are not used for cmdType={}.",
             static_cast<int>(opArgs.cmdType));
     }
     DumpAivTopo(opArgs.topo_);
@@ -2318,7 +2303,7 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs)
     uint32_t unusedIndex = 0;
     auto insertRet = InsertTaskToCollection(&taskMetaData, &unusedIndex);
     if (insertRet != HcclVmResult::HCCL_SIM_SUCCESS) {
-        HCCL_VM_ERROR("[virtual-aiv-ExecuteKernelLaunch] failed to insert AIV launch task, ret={}, rankId={}",
+        OP_STUB_ERROR("[virtual-aiv-ExecuteKernelLaunch] failed to insert AIV launch task, ret={}, rankId={}",
             static_cast<uint32_t>(insertRet),
             taskMetaData.rankId);
         return HcclResult::HCCL_E_INTERNAL;
@@ -2328,7 +2313,7 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs)
     g_currentAivCmdType = opArgs.cmdType;
     g_currentAivArgsType = opArgs.argsType;
     g_currentAivLaunchIndex = launchIndex;
-    HCCL_VM_INFO("[virtual-aiv-ExecuteKernelLaunch] inserted AIV launch task, rankId={}, launchIndex={}, streamId={}",
+    OP_STUB_INFO("[virtual-aiv-ExecuteKernelLaunch] inserted AIV launch task, rankId={}, launchIndex={}, streamId={}",
         taskMetaData.rankId,
         launchIndex,
         taskMetaData.streamId);
@@ -2344,7 +2329,7 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs)
         g_currentAivCmdType = prevCmdType;
         g_currentAivArgsType = prevArgsType;
         g_currentAivLaunchIndex = INVALID_AIV_LAUNCH_INDEX;
-        HCCL_VM_ERROR("[virtual-aiv-ExecuteKernelLaunch] dlsym {} failed, err = {}", executeKernelLaunchSymbol,
+        OP_STUB_ERROR("[virtual-aiv-ExecuteKernelLaunch] dlsym {} failed, err = {}", executeKernelLaunchSymbol,
             dlsymErr == nullptr ? "unknown" : dlsymErr);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
@@ -2353,7 +2338,7 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs)
     g_currentAivCmdType = prevCmdType;
     g_currentAivArgsType = prevArgsType;
     g_currentAivLaunchIndex = INVALID_AIV_LAUNCH_INDEX;
-    HCCL_VM_INFO("[virtual-aiv-ExecuteKernelLaunch] returned {}", static_cast<int>(ret));
+    OP_STUB_INFO("[virtual-aiv-ExecuteKernelLaunch] returned {}", static_cast<int>(ret));
     return ret;
 }
 }
@@ -2363,7 +2348,7 @@ extern "C" aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, ui
     aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
 {
     (void) cfg;
-    HCCL_VM_DEBUG(
+    OP_STUB_DEBUG(
         "[virtual-aiv-aclrtLaunchKernelWithHostArgs] called with parameters:\n"
         "  funcHandle = {:p}\n"
         "  numBlocks = {}\n"
@@ -2404,7 +2389,7 @@ extern "C" aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, ui
 
     std::string kernelName = inferredKernelName;
     if (!kernelName.empty()) {
-        HCCL_VM_INFO(
+        OP_STUB_INFO(
             "[virtual-aiv-aclrtLaunchKernelWithHostArgs] use inferred kernelName from funcHandle = {} "
             "(cmdType={}, dataType={}, argsType={}, fallbackKernelName={})",
             kernelName,
@@ -2414,14 +2399,14 @@ extern "C" aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, ui
             fallbackKernelName.empty() ? "<empty>" : fallbackKernelName.c_str());
     } else {
         if (isUnsupportedFallbackCmdType) {
-            HCCL_VM_ERROR(
+            OP_STUB_ERROR(
                 "[virtual-aiv-aclrtLaunchKernelWithHostArgs] cmdType={} fallback AIV kernel is not supported currently.",
                 static_cast<int>(ops_hccl::g_currentAivCmdType));
             return ACL_ERROR_RT_FEATURE_NOT_SUPPORT;
         }
         kernelName = fallbackKernelName;
         if (!kernelName.empty()) {
-            HCCL_VM_INFO(
+            OP_STUB_INFO(
                 "[virtual-aiv-aclrtLaunchKernelWithHostArgs] fallback kernelName by cmdType/dataType/argsType = {} "
                 "(cmdType={}, dataType={}, argsType={}, inferredKernelName=<empty>)",
                 kernelName,
@@ -2432,7 +2417,7 @@ extern "C" aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, ui
     }
 
     if (kernelName.empty()) {
-        HCCL_VM_ERROR(
+        OP_STUB_ERROR(
             "[virtual-aiv-aclrtLaunchKernelWithHostArgs] failed to resolve kernelName from funcHandle/hostArgs, "
             "cmdType={}, dataType={}, argsType={}, can not virtual execute kernel.",
             static_cast<int>(ops_hccl::g_currentAivCmdType),
@@ -2442,7 +2427,7 @@ extern "C" aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, ui
     }
 
     const std::string soName = ops_hccl::AIV_STUB_SO_NAME;
-    HCCL_VM_INFO(
+    OP_STUB_INFO(
         "[virtual-aiv-aclrtLaunchKernelWithHostArgs] resolved kernelName = {}, soName = {}, cmdType = {}, "
         "argsType = {}",
         kernelName,
@@ -2452,12 +2437,12 @@ extern "C" aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, ui
 
     const uint32_t launchIndex = g_currentAivLaunchIndex;
     if (launchIndex == INVALID_AIV_LAUNCH_INDEX) {
-        HCCL_VM_ERROR(
+        OP_STUB_ERROR(
             "[virtual-aiv-aclrtLaunchKernelWithHostArgs] invalid launchIndex={}, can not virtual execute kernel.",
             launchIndex);
         return ACL_ERROR_INTERNAL_ERROR;
     }
     aclError ret = ops_hccl::VirtualExecuteAivKernel(kernelName, soName, numBlocks, parsedHostArgs, launchIndex);
-    HCCL_VM_INFO("[virtual-aiv-aclrtLaunchKernelWithHostArgs] virtual execute ret = {}", static_cast<int>(ret));
+    OP_STUB_INFO("[virtual-aiv-aclrtLaunchKernelWithHostArgs] virtual execute ret = {}", static_cast<int>(ret));
     return ret;
 }

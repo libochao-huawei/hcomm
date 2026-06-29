@@ -16,11 +16,17 @@
 #include "hccl/dtype_common.h"
 #include "sim_log.h"
 
+#define SCATTER_STUB_ERROR(format, ...) HCCL_VM_ERROR("[SCATTER_STUB]" format, ##_VA_ARGS__)
+#define SCATTER_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[SCATTER_STUB]" format, ##_VA_ARGS__)
+#define SCATTER_STUB_INFO(format, ...)  HCCL_VM_INFO("[SCATTER_STUB]" format, ##__VA_ARGS__)
+#define SCATTER_STUB_WARN(format, ...)  HCCL_VM_WARN("[SCATTER_STUB]" format, ##__VA_ARGS__)
+#define SCATTER_STUB_TRACE(format, ...) HCCL_VM_TRACE("[SCATTER_STUB]" format, ##__VA_ARGS__)
+
 namespace ops_hccl {
 bool RunIndependentOpExpansion(DevType deviceType)
 {
     (void) deviceType;
-    HCCL_VM_TRACE("[{}] return true", __func__);
+    SCATTER_STUB_INFO("return true");
     return true;
 }
 
@@ -29,7 +35,7 @@ bool IsAiCpuMode(DevType deviceType, u32 rankSize)
     (void) deviceType;
     (void) rankSize;
     const char* env = getenv("HCCL_OP_EXPANSION_MODE");
-    HCCL_VM_INFO("[{}] env = {}", __func__, env);
+    SCATTER_STUB_INFO("env = {}", env);
     // 判断是否是AI_CPU
     if (env != nullptr && strcmp(env, "AI_CPU") == 0) {
         return true;

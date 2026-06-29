@@ -21,11 +21,11 @@
 #include "sim_log.h"
 #include "db_sim_runner_ops.h"
 
-#define CTX_STUB_ERROR(format, ...) HCCL_VM_ERROR("[CTX]" format, ##__VA_ARGS__)
-#define CTX_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[CTX]" format, ##__VA_ARGS__)
-#define CTX_STUB_INFO(format, ...)  HCCL_VM_INFO("[CTX]" format, ##__VA_ARGS__)
-#define CTX_STUB_WARN(format, ...)  HCCL_VM_WARN("[CTX]" format, ##__VA_ARGS__)
-#define CTX_STUB_TRACE(format, ...) HCCL_VM_TRACE("[CTX]" format, ##__VA_ARGS__)
+#define CTX_STUB_ERROR(format, ...) HCCL_VM_ERROR("[CTX_STUB]" format, ##__VA_ARGS__)
+#define CTX_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[CTX_STUB]" format, ##__VA_ARGS__)
+#define CTX_STUB_INFO(format, ...)  HCCL_VM_INFO("[CTX_STUB]" format, ##__VA_ARGS__)
+#define CTX_STUB_WARN(format, ...)  HCCL_VM_WARN("[CTX_STUB]" format, ##__VA_ARGS__)
+#define CTX_STUB_TRACE(format, ...) HCCL_VM_TRACE("[CTX_STUB]" format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {

@@ -38,11 +38,11 @@
 #include "db_sim_runner_common.h"
 #include "db_sim_runner_ops.h"
 
-#define HCCP_STUB_ERROR(format, ...) HCCL_VM_ERROR("[HCCP]" format, ##__VA_ARGS__)
-#define HCCP_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[HCCP]" format, ##__VA_ARGS__)
-#define HCCP_STUB_INFO(format, ...)  HCCL_VM_INFO("[HCCP]" format, ##__VA_ARGS__)
-#define HCCP_STUB_WARN(format, ...)  HCCL_VM_WARN("[HCCP]" format, ##__VA_ARGS__)
-#define HCCP_STUB_TRACE(format, ...) HCCL_VM_TRACE("[HCCP]" format, ##__VA_ARGS__)
+#define HCCP_STUB_ERROR(format, ...) HCCL_VM_ERROR("[HCCP_STUB]" format, ##__VA_ARGS__)
+#define HCCP_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[HCCP_STUB]" format, ##__VA_ARGS__)
+#define HCCP_STUB_INFO(format, ...)  HCCL_VM_INFO("[HCCP_STUB]" format, ##__VA_ARGS__)
+#define HCCP_STUB_WARN(format, ...)  HCCL_VM_WARN("[HCCP_STUB]" format, ##__VA_ARGS__)
+#define HCCP_STUB_TRACE(format, ...) HCCL_VM_TRACE("[HCCP_STUB]" format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {

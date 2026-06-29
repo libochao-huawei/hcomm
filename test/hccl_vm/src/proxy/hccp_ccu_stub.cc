@@ -15,7 +15,6 @@
 #include <iostream>
 #include <unistd.h>
 #include <vector>
-
 #include "sim_ccu_channel_ctx.h"
 #include "ccu_common.h"
 #include "sim_ccu_jetty_ctx.h"
@@ -35,6 +34,12 @@
 #include "db_sim_runner_ops.h"
 #include "sim_common_defs.h"
 
+#define CCU_STUB_ERROR(format, ...) HCCL_VM_ERROR("[CCU_STUB]" format, ##__VA_ARGS__)
+#define CCU_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[CCU_STUB]" format, ##__VA_ARGS__)
+#define CCU_STUB_INFO(format, ...) HCCL_VM_INFO("[CCU_STUB]" format, ##__VA_ARGS__)
+#define CCU_STUB_WARN(format, ...) HCCL_VM_WARN("[CCU_STUB]" format, ##__VA_ARGS__)
+#define CCU_STUB_TRACE(format, ...) HCCL_VM_TRACE("[CCU_STUB]" format, ##__VA_ARGS__)
+
 extern uint64_t g_cur_server_key;
 extern thread_local std::string g_currentOpFastLaunchTag;
 
@@ -46,7 +51,7 @@ extern "C" {
 
 int GetEnableCcuDie(channel_info_out *output, uint8_t dieId)
 {
-    HCCL_VM_INFO("[GetEnableCcuDie] dieId= {}.", dieId);
+    CCU_STUB_INFO("dieId:{}.", dieId);
     output->data.data_info.data_array[0].dieinfo.enable_flag = 1;
     return 0;
 }
@@ -85,13 +90,13 @@ int SetCcuResourceBasicInfo(channel_info_out* output, uint8_t dieId, uint32_t de
 {
     sim::Device device{};
     if (GetDeviceByPhysicalId(devId, device) != ACL_SUCCESS) {
-        HCCL_VM_ERROR("[LoadMicrocodeInstruction] get device by logic id {} failed.", devId);
+        CCU_STUB_ERROR("get device by logic id {} failed.", devId);
         return -1;
     }
     if (strcmp(device.soc_version, "Ascend950") == 0) {
         SetCcuV1ResourceBasicInfo(output, dieId, devId);
     } else {
-        HCCL_VM_ERROR("[SetCcuResourceBasicInfo] unknown device version: {} for devId: {}", device.soc_version, devId);
+        CCU_STUB_ERROR("unknown device version: {} for devId: {}", device.soc_version, devId);
         return -1;
     }
     return 0;
@@ -155,25 +160,25 @@ bool write_or_overwrite_in_cwd(const std::string& filename, const std::string &d
 // input->op == Hccl::CcuOpcodeType::CCU_U_OP_SET_INSTRUCTION
 int LoadMicrocodeInstructionStub(uint32_t devId, uint8_t dieId, const channel_info_in *input)
 {
-    HCCL_VM_INFO("enter LoadMicrocodeInstruction .....");
+    CCU_STUB_INFO("enter LoadMicrocodeInstruction .....");
     if (dieId >= DIE_NUM) {
-        HCCL_VM_ERROR("[LoadMicrocodeInstruction] wrong param of die id: {}", dieId);
+        CCU_STUB_ERROR("wrong param of die id: {}", dieId);
         return -1;
     }
 
     sim::Device device{};
     if (GetDeviceByPhysicalId(devId, device) != ACL_SUCCESS) {
-        HCCL_VM_ERROR("[LoadMicrocodeInstruction] get device by logic id {} failed.", devId);
+        CCU_STUB_ERROR("get device by logic id {} failed.", devId);
         return -1;
     }
     sim::Ccu ccu{};
     if (GetCcuFromDeviceByDieId(device.id, dieId, ccu) != ACL_SUCCESS) {
-        HCCL_VM_ERROR("[LoadMicrocodeInstruction] get ccu from device by die id {} failed.", dieId);
+        CCU_STUB_ERROR("get ccu from device by die id {} failed.", dieId);
         return -1;
     }
     sim::CcuResource ccuRes;
     if (GetCcuResourceByCcu(ccu.id, ccuRes) != ACL_SUCCESS) {
-        HCCL_VM_ERROR("[LoadMicrocodeInstruction] get ccu resource by ccu {} failed.", ccu.id);
+        CCU_STUB_ERROR("get ccu resource by ccu {} failed.", ccu.id);
         return -1;
     }
 
@@ -182,7 +187,7 @@ int LoadMicrocodeInstructionStub(uint32_t devId, uint8_t dieId, const channel_in
         return r.device_id == devKey;
     });
     if (!rank.second) {
-        HCCL_VM_ERROR("[LoadMicrocodeInstruction] can not find any rank");
+        CCU_STUB_ERROR("can not find any rank");
         return -1;
     }
     auto rankId = rank.first.rank_id;
@@ -195,11 +200,11 @@ int LoadMicrocodeInstructionStub(uint32_t devId, uint8_t dieId, const channel_in
     auto ccuDataTmp = (ccu_data_type_union)(input->data.data_info.data_array[0]);
     auto instructionData = reinterpret_cast<hcomm::CcuRep::CcuInstr*>(GetRealPtrByAddr((void *)ccuDataTmp.insinfo.resourceAddr));
     if (instructionData == nullptr) {
-        HCCL_VM_ERROR("[LoadMicrocodeInstruction] get ccu instruction data by resourceAddr failed  addr:0x{:x}", ccuDataTmp.insinfo.resourceAddr);
+        CCU_STUB_ERROR("get ccu instruction data by resourceAddr failed  addr:0x{:x}", ccuDataTmp.insinfo.resourceAddr);
         return -1;
     }
     if (sim::UpdateAndInsertByCcuId(ccuId, devKey, rankId, dieId, instrCnt, instrOffset, instrInfoSize, instructionData) != 0) {
-        HCCL_VM_ERROR("[LoadMicrocodeInstruction] update ccu failed");
+        CCU_STUB_ERROR("update ccu failed");
         return -1;
     }
 
@@ -213,7 +218,7 @@ int LoadMicrocodeInstructionStub(uint32_t devId, uint8_t dieId, const channel_in
             mcData << "[InstrData][ " + std::to_string(startId + idx) + "]" + hcomm::CcuRep::ParseInstr(&instructionData[idx]) + "\n";
         }
     } else {
-        HCCL_VM_ERROR("[{}] not support device soc version: {:s}", __func__, device.soc_version);
+        CCU_STUB_ERROR("not support device soc version: {:s}", device.soc_version);
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -226,7 +231,7 @@ int LoadMicrocodeInstructionStub(uint32_t devId, uint8_t dieId, const channel_in
     instr.startId = startId;
     instr.instrInfoSize = instrInfoSize;
     if(sim::InsertCcuInstr(instr) != 0) {
-        HCCL_VM_ERROR("[LoadMicrocodeInstruction] insert instr failed");
+        CCU_STUB_ERROR("insert instr failed");
         return -1;
     }
     return 0;
@@ -249,20 +254,20 @@ int GetLocalEndPointByJetty(uint64_t jettyId, uint16_t dieId, sim::EndPoint &end
         return jetty.jetty_id == jettyId && jetty.pid == getpid() && jetty.dieId == dieId;
     });
     if (!localJetty.second) {
-        HCCL_VM_ERROR("can not find jetty {} die:{} in local jetty map", jettyId);
+        CCU_STUB_ERROR("can not find jetty {} die:{} in local jetty map", jettyId);
         return -1;
     }
 
     auto ctxRes = RunnerDB::GetById<sim::RaContext>(localJetty.first.ctx_handle);
     if (!ctxRes.has_value()) {
-        HCCL_VM_ERROR("can not find context {} in local context map", localJetty.first.ctx_handle);
+        CCU_STUB_ERROR("can not find context {} in local context map", localJetty.first.ctx_handle);
         return -1;
     }
 
     auto localEp = ctxRes->endpoint_id;
     auto endPointOpt = RunnerDB::GetById<sim::EndPoint>(localEp);
     if (!endPointOpt.has_value()) {
-        HCCL_VM_ERROR("can not find endpoint:{:d}", localEp);
+        CCU_STUB_ERROR("can not find endpoint:{:d}", localEp);
         return -1;
     }
     endPoint = *endPointOpt;
@@ -274,7 +279,7 @@ int ConfigChannelInfo(channel_info_in *input, uint32_t deviceId)
 {
     sim::Device locDevice{};
     if (GetDeviceByPhysicalId(deviceId, locDevice) != ACL_SUCCESS) {
-        HCCL_VM_ERROR("[ConfigChannelInfo] get device by physic id {} failed.", deviceId);
+        CCU_STUB_ERROR("get device by physic id {} failed.", deviceId);
         return -1;
     }
     uint8_t dieId = input->data.data_info.udie_idx;
@@ -295,11 +300,11 @@ int ConfigChannelInfo(channel_info_in *input, uint32_t deviceId)
 
     sim::EndPoint rmtEndPoint{};
     if (GetEndPointByIpAddr(ipAddr, rmtEndPoint) != 0) {
-        HCCL_VM_ERROR("Get remote endpoint failed. ip:{}, eid:{}", ipAddr.c_str(), addr.EidToHexString());
+        CCU_STUB_ERROR("Get remote endpoint failed. ip:{}, eid:{}", ipAddr.c_str(), addr.EidToHexString());
         return -1;
     }
 
-    HCCL_VM_INFO(
+    CCU_STUB_INFO(
         "channel info: loc phyId: {:d}, loc devKey: {:d}, loc dieId: {:d}, chId: {:d}, rmt devKey: {:d}, rmt dieId: {:d}, rmt ip: {}",
         deviceId,
         locDevice.id,
@@ -314,7 +319,7 @@ int ConfigChannelInfo(channel_info_in *input, uint32_t deviceId)
         return r.device_id == locDevKey;
     });
     if (!locRank.second) {
-        HCCL_VM_ERROR("[ConfigChannelInfo] can not find loc rank by device key: {}", locDevKey);
+        CCU_STUB_ERROR("can not find loc rank by device key: {}", locDevKey);
         return -1;
     }
 
@@ -323,7 +328,7 @@ int ConfigChannelInfo(channel_info_in *input, uint32_t deviceId)
         return r.device_id == rmtDevKey;
     });
     if (!rmtRank.second) {
-        HCCL_VM_ERROR("[ConfigChannelInfo] can not find rmt rank by device key: {}", rmtDevKey);
+        CCU_STUB_ERROR("can not find rmt rank by device key: {}", rmtDevKey);
         return -1;
     }
     uint16_t srcJettyId {0};
@@ -338,11 +343,11 @@ int ConfigChannelInfo(channel_info_in *input, uint32_t deviceId)
     // 根据endPointPair获取src eid
     sim::EndPoint localEndPoint{};
     if (GetLocalEndPointByJetty(srcJettyId, srcDieId, localEndPoint) != 0) {
-        HCCL_VM_ERROR("can not find local endPoint by jettyId: {}", srcJettyId);
+        CCU_STUB_ERROR("can not find local endPoint by jettyId: {}", srcJettyId);
         return -1;
     }
 
-    HCCL_VM_INFO("[CHANNEL] add chn:{:d}, srcJetty:{:d},jettyNum:{:d}, srcAddr:{}, dstAddr:{}, {:d}<-->{:d}",
+    CCU_STUB_INFO("[CHANNEL] add chn:{:d}, srcJetty:{:d},jettyNum:{:d}, srcAddr:{}, dstAddr:{}, {:d}<-->{:d}",
                  chId, srcJettyId, jettyNum, localEndPoint.ip_addr, rmtEndPoint.ip_addr, localEndPoint.id, rmtEndPoint.id);
 
     sim::CcuChannelTab ccuChannelTab{};
@@ -361,7 +366,7 @@ int ConfigChannelInfo(channel_info_in *input, uint32_t deviceId)
     }
     auto ret = sim::InsertCcuChannel(ccuChannelTab); 
     if (ret != 0) {
-        HCCL_VM_ERROR("[ConfigChannelInfo] insert ccu channel table failed for channel id: {}", chId);
+        CCU_STUB_ERROR("insert ccu channel table failed for channel id: {}", chId);
         return -1;
     }
 
@@ -370,7 +375,7 @@ int ConfigChannelInfo(channel_info_in *input, uint32_t deviceId)
 
 int ConfigJettyInfo(channel_info_in *input, uint32_t deviceId)
 {
-    HCCL_VM_INFO("[ConfigJettyInfo] Enter into config jetty info...");
+    CCU_STUB_INFO("Enter into config jetty info...");
     uint8_t dieId      = input->data.data_info.udie_idx;
     uint32_t jettyNum  = input->data.data_info.data_array_size;
     uint32_t startJettyCtxId = input->offset_start;
@@ -383,22 +388,22 @@ int ConfigJettyInfo(channel_info_in *input, uint32_t deviceId)
     }
 
     for (auto &tmp : jettyCtxData) {
-        HCCL_VM_DEBUG("[{}] doorbellAddr: [3]0x{:04x}, [2]0x{:04x}, [1]0x{:04x}, [0]0x{:04x}", __func__,
+        CCU_STUB_DEBUG("doorbellAddr: [3]0x{:04x}, [2]0x{:04x}, [1]0x{:04x}, [0]0x{:04x}",
             tmp.doorbellAddr[3],  // 3: doorbell ��ַ����
             tmp.doorbellAddr[2],  // 2: doorbell ��ַ����
             tmp.doorbellAddr[1],
             tmp.doorbellAddr[0]);
 
         // ��ȫ���⣺��ֹ��ӡtoken�����Ϣ
-        HCCL_VM_DEBUG("[{}] pfeIdx: 0x{:04x}, ioDieId: 0x{:04x}, doorbellAddrType: 0x{:04x}, tokenValueIsValid: 0x{:04x}", __func__,
+        CCU_STUB_DEBUG("pfeIdx: 0x{:04x}, ioDieId: 0x{:04x}, doorbellAddrType: 0x{:04x}, tokenValueIsValid: 0x{:04x}",
             static_cast<uint16_t>(tmp.pfeIdx),
             static_cast<uint16_t>(tmp.ioDieId),
             static_cast<uint16_t>(tmp.doorbellAddrType),
             static_cast<uint16_t>(tmp.tokenValueIsValid));
 
-        HCCL_VM_DEBUG("[{}] sqeBasicBlockLeftShifts: 0x{:04x}, pi: 0x{:04x}, ci: 0x{:04x}, "
+        CCU_STUB_DEBUG("sqeBasicBlockLeftShifts: 0x{:04x}, pi: 0x{:04x}, ci: 0x{:04x}, "
             "maxCi: 0x{:04x}, oooCqeCnt: 0x{:04x}, startWqeBasicBlockIdxLow: 0x{:04x}, "
-            "startWqeBasicBlockIdxHigh: 0x{:04x}, doorbellSendState: 0x{:04x}", __func__,
+            "startWqeBasicBlockIdxHigh: 0x{:04x}, doorbellSendState: 0x{:04x}",
             static_cast<uint16_t>(tmp.sqeBasicBlockLeftShifts),
             tmp.pi,
             tmp.ci,
@@ -416,13 +421,13 @@ int GetCcuVersion(channel_info_out* output, uint32_t deviceId)
 {
     sim::Device locDevice{};
     if (GetDeviceByPhysicalId(deviceId, locDevice) != ACL_SUCCESS) {
-        HCCL_VM_ERROR("[GetCcuVersion] get device by physic id {} failed.", deviceId);
+        CCU_STUB_ERROR("get device by physic id {} failed.", deviceId);
         return -1;
     }
     if (strcmp(locDevice.soc_version, "Ascend950") == 0) {
         output->data.data_info.data_array[0].version = static_cast<ccu_version_e>(CcuVersion::CCU_V1);
     } else {
-        HCCL_VM_ERROR("[GetCcuVersion] unknown soc version: {}", locDevice.soc_version);
+        CCU_STUB_ERROR("unknown soc version: {}", locDevice.soc_version);
         return -1;
     }
     return 0;
@@ -464,7 +469,7 @@ int RaCtxGetAsyncEvents(void *ctxHandle, struct AsyncEvent events[], unsigned in
 
 int RaGetEidByIp(void *ctxHandle, struct IpInfo ip[], union HccpEid eid[], unsigned int *num)
 {
-    HCCL_VM_ERROR("[RaGetEidByIp]Not support for now.");
+    CCU_STUB_ERROR("not support for now.");
     return -1;
 }
 
@@ -472,7 +477,7 @@ int GetAllUsedEndPoint(uint32_t phyDevId, std::vector<sim::EndPoint> &endPoints)
 {
     sim::Device device{};
     if (GetDeviceByPhysicalId(phyDevId, device) != 0) {
-        HCCL_VM_ERROR("can not find device by id:{:d}", phyDevId);
+        CCU_STUB_ERROR("can not find device by id:{:d}", phyDevId);
         return -1;
     }
 
@@ -489,7 +494,7 @@ int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
     if (GetAllUsedEndPoint(info.phyId, endPoints) != 0) {
         return -1;
     }
-    HCCL_VM_INFO("return success {:d}", endPoints.size());
+    CCU_STUB_INFO("return success {:d}", endPoints.size());
     *num = endPoints.size();
     return 0;
 }
@@ -498,7 +503,7 @@ int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEidInfo infoList[], un
 {
     std::vector<sim::EndPoint> endPoints;
     if (GetAllUsedEndPoint(info.phyId, endPoints) != 0) {
-        HCCL_VM_ERROR("get all EndPoint failed phyId:{:d}", info.phyId);
+        CCU_STUB_ERROR("get all EndPoint failed phyId:{:d}", info.phyId);
         return -1;
     }
 
@@ -542,7 +547,7 @@ int rtCCULaunch(rtCcuTaskInfo_t *taskInfo, rtStream_t const stream)
     uint32_t index{0};
     auto ret = InsertTaskToCollection(&taskMetaData, &index);
     if (ret != HcclSim::HcclVmResult::HCCL_SIM_SUCCESS) {
-        HCCL_VM_ERROR("[{}] InsertTaskToCollection fail", __func__);
+        CCU_STUB_ERROR("insert task fail");
         return ACL_ERROR_INTERNAL_ERROR;
     }
 

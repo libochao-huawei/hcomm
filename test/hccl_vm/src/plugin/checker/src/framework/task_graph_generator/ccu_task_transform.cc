@@ -252,7 +252,7 @@ void PrintCcuSingleQue(TaskNodePtr head, u32 rankId, u32 queueIdx)
             isVisitedNode.insert(child);
         }
     }
-    HCCL_VM_INFO("]\n");
+    HCCL_VM_INFO("]");
 
     while(!candNode.empty()) {
         TaskNodePtr curNode = candNode.front();
@@ -304,18 +304,18 @@ void PrintCcuGraph(TaskNodePtr dummyStart)
             continue;
         }
 
-        HCCL_VM_INFO("=======================================================\n");
+        HCCL_VM_INFO("=======================================================");
         HCCL_VM_INFO("rank id is {:d}", curNode->rankIdx);
 
         TaskStubCcuGraph *curCcuTask = dynamic_cast<TaskStubCcuGraph *>(curNode->task);
         for (auto& child : curCcuTask->ccuHeadTaskNode->children) {
             u32 queueIdx = child->queIdx;
-            HCCL_VM_INFO("-------------------------------------------------------\n");
+            HCCL_VM_INFO("-------------------------------------------------------");
             HCCL_VM_INFO("stream/queue id is {:d}", queueIdx);
             PrintCcuSingleQue(child, curNode->rankIdx, queueIdx);
         }
     }
-    HCCL_VM_INFO("-------------------------------------------------------\n");
+    HCCL_VM_INFO("-------------------------------------------------------");
 }
 
 void PrintSQEGraph(TaskNodePtr dummyStart)
@@ -329,7 +329,7 @@ void PrintSQEGraph(TaskNodePtr dummyStart)
         candNode.push_back(child);
     }
 
-    HCCL_VM_INFO("---------------------------YY----------------------------\n");
+    HCCL_VM_INFO("---------------------------YY----------------------------");
     while(!candNode.empty()) {
         TaskNodePtr curNode = candNode.front();
         candNode.pop_front();
@@ -349,7 +349,7 @@ void PrintSQEGraph(TaskNodePtr dummyStart)
             HCCL_VM_INFO("child: {}, {}", (void*)child, child->task->Describe().c_str());
         }
     }
-    HCCL_VM_INFO("---------------------------YY----------------------------\n");
+    HCCL_VM_INFO("---------------------------YY----------------------------");
     return;
 }
 

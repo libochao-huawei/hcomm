@@ -33,10 +33,10 @@ constexpr uint32_t RA_SOCKET_BUF_SIZE = (64 * 1024);
 
 constexpr const char* RA_SOCK_BUF_PREFIX = "ra_sock_";
 
-#define RA_SOCK_STUB_ERROR(format, ...) HCCL_VM_ERROR("[RASOCKET]" format, ##__VA_ARGS__)
-#define RA_SOCK_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[RASOCKET]" format, ##__VA_ARGS__)
-#define RA_SOCK_STUB_INFO(format, ...)  HCCL_VM_INFO("[RASOCKET]" format, ##__VA_ARGS__)
-#define RA_SOCK_STUB_WARN(format, ...)  HCCL_VM_WARN("[RASOCKET]" format, ##__VA_ARGS__)
+#define RA_SOCK_STUB_ERROR(format, ...) HCCL_VM_ERROR("[RASOCKET_STUB]" format, ##__VA_ARGS__)
+#define RA_SOCK_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[RASOCKET_STUB]" format, ##__VA_ARGS__)
+#define RA_SOCK_STUB_INFO(format, ...)  HCCL_VM_INFO("[RASOCKET_STUB]" format, ##__VA_ARGS__)
+#define RA_SOCK_STUB_WARN(format, ...)  HCCL_VM_WARN("[RASOCKET_STUB]" format, ##__VA_ARGS__)
 
 #define RS_FD_CLIENT 0x01U
 #define RS_FD_SERVER 0x00U

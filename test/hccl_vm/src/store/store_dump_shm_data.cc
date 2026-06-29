@@ -158,7 +158,7 @@ HcclVmResult DumpDataToFile(const std::string &dataId)
 
 HcclVmResult CreateMemoryInfo(HcclVmSynData &hvmSynData, const sim::OpMemInfoTab &memInfo, uint32_t rankId)
 {
-    HCCL_VM_INFO("[STUB] Enter into create memory info...\n");
+    HCCL_VM_INFO("[STUB] Enter into create memory info...");
     auto addBuf = [&](uint8_t bufType, uint64_t addr, uint64_t size) {
         if (addr != 0 && size > 0) {
             MemLayoutData memLayoutData{};
@@ -182,7 +182,7 @@ HcclVmResult CreateMemoryInfo(HcclVmSynData &hvmSynData, const sim::OpMemInfoTab
 
 HcclVmResult CreateChannelInfo(HcclVmSynData &hvmSynData)
 {
-    HCCL_VM_INFO("[STUB] Enter into create channel info...\n");
+    HCCL_VM_INFO("[STUB] Enter into create channel info...");
 
     std::vector<sim::CcuChannelTab> channels;
     loader::Loader dataLoader;
@@ -251,7 +251,7 @@ HcclVmResult CreateChannelInfo(HcclVmSynData &hvmSynData)
 
 HcclVmResult CreateJettyInfo(HcclVmSynData &hvmSynData)
 {
-    HCCL_VM_INFO("[STUB] Enter into create jetty info...\n");
+    HCCL_VM_INFO("[STUB] Enter into create jetty info...");
     auto endpointPairs = RunnerDB::GetByPred<sim::EndPointPair>([](auto &&) { return true; });
     hvmSynData.channel_info.count = endpointPairs.size();
     for (auto &endpoint : endpointPairs) {

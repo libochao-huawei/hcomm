@@ -25,7 +25,7 @@ uint32_t TsdCapabilityGet(const uint32_t logicDeviceId, const int32_t type, cons
     (void) logicDeviceId;
     (void) type;
     (void) ptr;
-    HCCL_VM_ERROR("[TSD] [{}] stub", __func__);
+    HCCL_VM_INFO("[TSD_STUB]stub");
     return 0;
 }
 #ifdef __cplusplus

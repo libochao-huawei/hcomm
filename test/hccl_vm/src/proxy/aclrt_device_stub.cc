@@ -30,11 +30,11 @@ uint64_t g_host_id;
 extern uint64_t g_cur_server_key;
 
 extern pid_t g_devicePid;
-#define DEVICE_STUB_ERROR(format, ...) HCCL_VM_ERROR("[DEVICE]" format, ##__VA_ARGS__)
-#define DEVICE_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[DEVICE]" format, ##__VA_ARGS__)
-#define DEVICE_STUB_INFO(format, ...)  HCCL_VM_INFO("[DEVICE]" format, ##__VA_ARGS__)
-#define DEVICE_STUB_WARN(format, ...)  HCCL_VM_WARN("[DEVICE]" format, ##__VA_ARGS__)
-#define DEVICE_STUB_TRACE(format, ...) HCCL_VM_TRACE("[DEVICE]" format, ##__VA_ARGS__)
+#define DEVICE_STUB_ERROR(format, ...) HCCL_VM_ERROR("[DEVICE_STUB]" format, ##__VA_ARGS__)
+#define DEVICE_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[DEVICE_STUB]" format, ##__VA_ARGS__)
+#define DEVICE_STUB_INFO(format, ...)  HCCL_VM_INFO("[DEVICE_STUB]" format, ##__VA_ARGS__)
+#define DEVICE_STUB_WARN(format, ...)  HCCL_VM_WARN("[DEVICE_STUB]" format, ##__VA_ARGS__)
+#define DEVICE_STUB_TRACE(format, ...) HCCL_VM_TRACE("[DEVICE_STUB]" format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {

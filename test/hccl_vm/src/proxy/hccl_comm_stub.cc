@@ -24,12 +24,16 @@
 #include "runtime/base.h"
 #include "db_sim_runner_common.h"
 #include "db_sim_runner_ops.h"
-#include "db_sim_runner_ops.h"
+
+#define COMM_STUB_ERROR(format, ...)    HCCL_VM_ERROR("[COMM_STUB]" format, ##__VA_ARGS__)
+#define COM_STUB_DEBUG(format, ...)     HCCL_VM_DEBUG("[COMM_STUB]" format, ##__VA_ARGS__)
+#define COMM_STUB_INFO(format, ...)     HCCL_VM_INFO("[COMM_STUB]" format, ##__VA_ARGS__)
+#define COM_STUB_WARN(format, ...)      HCCL_VM_WARN("[COMM_STUB]" format, ##__VA_ARGS__)
+#define COM_STUB_TRACE(format, ...)     HCCL_VM_TRACE("[COMM_STUB]" format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
-
 extern HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo);
 extern HcclResult HcclCommInitRootInfo(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank, HcclComm *comm);
 extern HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank,
@@ -41,7 +45,6 @@ extern HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_
 HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo)
 {
     (void) rootInfo;
-    HCCL_VM_DEBUG("HcclGetRootInfo stub ...");
     return HCCL_SUCCESS;
 }
 
@@ -49,11 +52,10 @@ HcclResult HcclCommInitRootInfo(uint32_t nRanks, const HcclRootInfo *rootInfo, u
 {
     (void) nRanks;
     (void) rootInfo;
-    HCCL_VM_DEBUG("HcclCommInitRootInfo stub  ...");
     // 解析ranktable文件，初始化通信域相关数据库表项
     const char* clusterInfo = std::getenv("RANK_TABLE_FILE");
     if (!clusterInfo) {
-        HCCL_VM_ERROR("RANK_TABLE_FILE env not set, please check your config.");
+        COMM_STUB_ERROR("RANK_TABLE_FILE env not set, please check your config.");
         return HcclResult::HCCL_E_INTERNAL;
     }
 
@@ -65,7 +67,6 @@ HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo *rootI
 {
     (void) nRanks;
     (void) rootInfo;
-    HCCL_VM_DEBUG("HcclCommInitRootInfoConfig stub  ...");
     const char* clusterInfo = getenv("RANK_TABLE_FILE");
     HcclCommConfig *cfg = const_cast<HcclCommConfig *>(config);
     return HcclCommInitClusterInfoConfig(clusterInfo, rank, cfg, comm);

@@ -818,6 +818,27 @@ void RunnerListen() {
         if (allStatus.size() != allRank.size() || allRank.empty()) { 
             std::this_thread::sleep_for(std::chrono::milliseconds(10)); 
             continue; 
+        }
+        auto ret = HcclVmResult::HCCL_SIM_SUCCESS; 
+        // 单算子场景才dump数据 
+        if (syncer.getCurrentRound() == 0) { 
+            if (IsBinDumpDisabled()) { 
+                HCCL_VM_INFO("skip dumping bin files (HCCL_VM_SKIP_BIN_DUMP=1)"); 
+            } else { 
+                ret = DumpDataToFile("runner"); 
+                if (ret == HcclVmResult::HCCL_SIM_E_SKIP) { 
+                    HCCL_VM_INFO("skip dumping data (multi-op scenario)"); 
+                } else if (ret != HcclVmResult::HCCL_SIM_SUCCESS) { 
+                    HCCL_VM_ERROR("dump data to file failed. ret: {:d}", static_cast<int>(ret)); 
+                    return; 
+                } 
+            } 
+        } else if(syncer.getCurrentRound() >= 1){ 
+            HCCL_VM_INFO("skip dumping data for round {:d}", syncer.getCurrentRound()); 
+            std::string dataDir = g_binDir + "/data/"; 
+            std::remove((dataDir + "runner_hcclvm_instr_data.bin").c_str()); 
+            std::remove((dataDir + "runner_hcclvm_syn_data.bin").c_str()); 
+            std::remove((dataDir + "runner_hcclvm_task_data.bin").c_str()); 
         } 
 
         bool isRunnerRunning = true;
@@ -848,33 +869,12 @@ void RunnerListen() {
 
         HCCL_VM_INFO("{:d} rank ready, start runner...", allStatus.size()); 
         // 2. AIV 模式校验各 rank task json，其他模式保持原 runner dump 流程 
-        auto ret = HcclVmResult::HCCL_SIM_SUCCESS; 
         if (IsAivExpansionModeEnabled()) { 
             ret = ValidateAivTaskJsonByRank(allRank); 
             if (ret != HcclVmResult::HCCL_SIM_HOST_SUCCESS_CMD) { 
                 HCCL_VM_ERROR("validate aiv task json failed. ret: {:d}", static_cast<int>(ret)); 
                 return; 
             } 
-        } 
-        // 单算子场景才dump数据 
-        if (syncer.getCurrentRound() == 0) { 
-            if (IsBinDumpDisabled()) { 
-                HCCL_VM_INFO("skip dumping bin files (HCCL_VM_SKIP_BIN_DUMP=1)"); 
-            } else { 
-                ret = DumpDataToFile("runner"); 
-                if (ret == HcclVmResult::HCCL_SIM_E_SKIP) { 
-                    HCCL_VM_INFO("skip dumping data (multi-op scenario)"); 
-                } else if (ret != HcclVmResult::HCCL_SIM_SUCCESS) { 
-                    HCCL_VM_ERROR("dump data to file failed. ret: {:d}", static_cast<int>(ret)); 
-                    return; 
-                } 
-            } 
-        } else if(syncer.getCurrentRound() >= 1){ 
-            HCCL_VM_INFO("skip dumping data for round {:d}", syncer.getCurrentRound()); 
-            std::string dataDir = g_binDir + "/data/"; 
-            std::remove((dataDir + "runner_hcclvm_instr_data.bin").c_str()); 
-            std::remove((dataDir + "runner_hcclvm_syn_data.bin").c_str()); 
-            std::remove((dataDir + "runner_hcclvm_task_data.bin").c_str()); 
         } 
         
         // 3. 清除DeviceStatus表项 

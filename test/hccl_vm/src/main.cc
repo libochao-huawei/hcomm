@@ -25,7 +25,7 @@ void envInit()
     int ret1 = system("sudo rm -fr /dev/shm/* 2>/dev/null");
     int ret2 = system("sudo rm -fr /tmp/hccl_sim.db* 2>/dev/null");
     if (ret1 != 0 || ret2 != 0) {
-        HCCL_VM_ERROR("envInit failed\n");
+        HCCL_VM_ERROR("envInit failed");
     }
     sim::InitOpDataDb();
     HCCL_VM_INFO("envInit success");

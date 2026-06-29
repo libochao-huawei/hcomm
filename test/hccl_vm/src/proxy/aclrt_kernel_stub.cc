@@ -29,6 +29,12 @@
 #include "db_sim_runner_ops.h"
 #include "sim_common_api.h"
 
+#define KERNEL_STUB_ERROR(format, ...) HCCL_VM_ERROR("[KERNEL_STUB]" format, ##__VA_ARGS__)
+#define KERNEL_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[KERNEL_STUB]" format, ##__VA_ARGS__)
+#define KERNEL_STUB_INFO(format, ...)  HCCL_VM_INFO("[KERNEL_STUB]" format, ##__VA_ARGS__)
+#define KERNEL_STUB_WARN(format, ...)  HCCL_VM_WARN("[KERNEL_STUB]" format, ##__VA_ARGS__)
+#define KERNEL_STUB_TRACE(format, ...) HCCL_VM_TRACE("[KERNEL_STUB]" format, ##__VA_ARGS__)
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -52,12 +58,12 @@ static bool CheckDeviceProcStatus()
     }
     if (result == g_devicePid) {
         if (WIFSIGNALED(status)) {
-            HCCL_VM_ERROR("device process[{}] killed by signal {}", g_devicePid, WTERMSIG(status));
+            KERNEL_STUB_ERROR("device process[{}] killed by signal {}", g_devicePid, WTERMSIG(status));
         } else {
-            HCCL_VM_ERROR("device process[{}] exited with status {}", g_devicePid, WEXITSTATUS(status));
+            KERNEL_STUB_ERROR("device process[{}] exited with status {}", g_devicePid, WEXITSTATUS(status));
         }
     } else {
-        HCCL_VM_ERROR("waitpid failed for pid {}, errno: {} ({})", g_devicePid, errno, strerror(errno));
+        KERNEL_STUB_ERROR("waitpid failed for pid {}, errno: {} ({})", g_devicePid, errno, strerror(errno));
     }
     FlushLog();
     exit(EXIT_FAILURE);
@@ -158,14 +164,14 @@ aclrtBinary aclrtCreateBinary(const void *data, size_t dataLen)
  
     auto res = sim::g_kernelBinary.insert(binPtr);
     if (!res.second) {
-        HCCL_VM_ERROR("failed");
+        KERNEL_STUB_ERROR("failed");
         return 0;
     }
 
     binPtr->data = reinterpret_cast<void *>(new char[dataLen]);
     memcpy(binPtr->data, data, dataLen);
     binPtr->dataLen = dataLen;
-    HCCL_VM_INFO("[KERNEL] stub dataLen{:d} binary{:p}", dataLen, (aclrtBinary)(binPtr));
+    KERNEL_STUB_INFO("stub dataLen{:d} binary{:p}", dataLen, (aclrtBinary)(binPtr));
     return (aclrtBinary)(binPtr);
 }
 
@@ -173,12 +179,12 @@ aclError aclrtDestroyBinary(aclrtBinary binary)
 {
     sim::DevBinary* binPtr = (sim::DevBinary*)binary;
     if (auto search = sim::g_kernelBinary.find(binPtr); search == sim::g_kernelBinary.end()){
-        HCCL_VM_ERROR("[aclrtDestroyBinary] can not find this binary");
+        KERNEL_STUB_ERROR("can not find this binary");
         return ACL_ERROR_RT_FEATURE_NOT_SUPPORT;
     }
     sim::g_kernelBinary.erase(binPtr);
 
-    HCCL_VM_INFO("[KERNEL] stub  binPtr{:p}", binary);
+    KERNEL_STUB_INFO("stub  binPtr{:p}", binary);
     delete binPtr;
     return ACL_SUCCESS;
 }
@@ -188,14 +194,14 @@ aclError aclrtBinaryLoad(const aclrtBinary binary, aclrtBinHandle *binHandle)
     sim::DevBinary* binPtr = (sim::DevBinary*)binary;
     // 需要解析binary
     *binHandle = (aclrtBinHandle)&(binPtr->prog);
-    HCCL_VM_INFO("[KERNEL] stub  binHandle:{:p}", *binHandle);
+    KERNEL_STUB_INFO("stub  binHandle:{:p}", *binHandle);
     return ACL_SUCCESS;
 }
 
 aclError aclrtBinaryUnLoad(aclrtBinHandle binHandle)
 {
     (void) binHandle;
-    HCCL_VM_INFO("[KERNEL] stub not support.");
+    KERNEL_STUB_INFO("stub not support.");
     return ACL_SUCCESS;
 }
 
@@ -208,12 +214,12 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions *op
 
     auto res = sim::g_kernelBinary.insert(binPtr);
     if (!res.second) {
-        HCCL_VM_ERROR("[aclrtBinaryLoadFromFile] file:{} insert failed", binPath);
+        KERNEL_STUB_ERROR("file:{} insert failed", binPath);
         return ACL_ERROR_RT_FEATURE_NOT_SUPPORT;
     }
 
     *binHandle = (aclrtBinHandle)&(binPtr->prog);
-    HCCL_VM_INFO("[KERNEL] stub  binPath:{} binHandle{:p}", binPath, *binHandle);
+    KERNEL_STUB_INFO("stub  binPath:{} binHandle{:p}", binPath, *binHandle);
     return ACL_SUCCESS;
 }
 
@@ -223,7 +229,7 @@ aclError aclrtBinaryLoadFromData(const void *data, size_t length, const aclrtBin
     (void) length;
     (void) options;
     (void) binHandle;
-    HCCL_VM_INFO("not support.");
+    KERNEL_STUB_INFO("not support.");
     return ACL_SUCCESS;
 }
 
@@ -234,14 +240,14 @@ aclError aclrtBinaryGetFunction(const aclrtBinHandle binHandle, const char *kern
     std::string funcName(kernelName);
     auto funcIter = prog->funcs.find(funcName);
     if (funcIter == prog->funcs.end()) {
-        HCCL_VM_WARN("kernelName:{} not register insert it", kernelName);
+        KERNEL_STUB_WARN("kernelName:{} not register insert it", kernelName);
 
         sim::FuncHandle* func = new sim::FuncHandle;
         func->funcName = funcName;
         func->kernelName = kernelName;
         auto res = prog->funcs.insert(std::pair<std::string, sim::FuncHandle*>(func->funcName, func));
         if (!res.second) {
-            HCCL_VM_ERROR("[aclrtRegisterCpuFunc] func:{} kernelName:{} insert failed", funcName, kernelName);
+            KERNEL_STUB_ERROR("func:{} kernelName:{} insert failed", funcName, kernelName);
             return ACL_ERROR_RT_FEATURE_NOT_SUPPORT;
         }
         *funcHandle = reinterpret_cast<aclrtFuncHandle>(func);
@@ -249,7 +255,7 @@ aclError aclrtBinaryGetFunction(const aclrtBinHandle binHandle, const char *kern
         *funcHandle = reinterpret_cast<aclrtFuncHandle>(funcIter->second);
     }
 
-    HCCL_VM_INFO("[KERNEL] stub  funcHandle:{:p}", *funcHandle);
+    KERNEL_STUB_INFO("stub  funcHandle:{:p}", *funcHandle);
     return ACL_SUCCESS;
 }
 
@@ -258,7 +264,7 @@ aclError aclrtBinaryGetFunctionByEntry(aclrtBinHandle binHandle, uint64_t funcEn
     (void) binHandle;
     (void) funcEntry;
     (void) funcHandle;
-    HCCL_VM_INFO("[KERNEL] stub not support.");
+    KERNEL_STUB_INFO("stub not support.");
     return ACL_SUCCESS;
 }
 
@@ -267,7 +273,7 @@ aclError aclrtGetFunctionAddr(aclrtFuncHandle funcHandle, void **aicAddr, void *
     (void) funcHandle;
     (void) aicAddr;
     (void) aivAddr;
-    HCCL_VM_INFO("stub not support.");
+    KERNEL_STUB_INFO("stub not support.");
     return ACL_SUCCESS;
 }
 
@@ -277,7 +283,7 @@ aclError aclrtGetFunctionName(aclrtFuncHandle funcHandle, uint32_t maxLen, char 
     sim::FuncHandle* funcHandlePtr = (sim::FuncHandle *)(uintptr_t)funcHandle;
 
     memcpy(name, funcHandlePtr->funcName.data(), funcHandlePtr->funcName.length());
-    HCCL_VM_INFO("[KERNEL] stub  funcName{}", funcHandlePtr->funcName.data());
+    KERNEL_STUB_INFO("stub  funcName{}", funcHandlePtr->funcName.data());
     return ACL_SUCCESS;
 }
 
@@ -290,11 +296,11 @@ aclError aclrtRegisterCpuFunc(const aclrtBinHandle handle, const char *funcName,
     func->kernelName = kernelName;
     auto res = prog->funcs.insert(std::pair<std::string, sim::FuncHandle*>(func->funcName, func));
     if (!res.second) {
-        HCCL_VM_ERROR("func:{} kernelName:{} insert failed", funcName, kernelName);
+        KERNEL_STUB_ERROR("func:{} kernelName:{} insert failed", funcName, kernelName);
         return ACL_ERROR_RT_FEATURE_NOT_SUPPORT;
     }
     *funcHandle = reinterpret_cast<aclrtFuncHandle>(func);
-    HCCL_VM_INFO("[KERNEL] stub  funcHandle:{:p}", *funcHandle);
+    KERNEL_STUB_INFO("stub  funcHandle:{:p}", *funcHandle);
     return ACL_SUCCESS;
 }
 
@@ -306,14 +312,14 @@ aclError aclrtKernelArgsInit(aclrtFuncHandle funcHandle, aclrtArgsHandle *argsHa
 
     auto iter = func->funArgs.rbegin();
     *argsHandle = (aclrtArgsHandle)args;
-    HCCL_VM_INFO("[KERNEL] FuncHandle:{:p} ArgsHandle:{:p} ", funcHandle, *argsHandle);
+    KERNEL_STUB_INFO("FuncHandle:{:p} ArgsHandle:{:p} ", funcHandle, *argsHandle);
     return ACL_SUCCESS;
 }
 
 aclError aclrtKernelArgsInitByUserMem(aclrtFuncHandle funcHandle, aclrtArgsHandle argsHandle, void *userHostMem, size_t actualArgsSize)
 {
     (void) funcHandle;
-    HCCL_VM_INFO("[KERNEL] stub  argsHandle:{:p} userHostMem:{:p},actualArgsSize:{:d}", argsHandle, userHostMem, actualArgsSize);
+    KERNEL_STUB_INFO("stub  argsHandle:{:p} userHostMem:{:p},actualArgsSize:{:d}", argsHandle, userHostMem, actualArgsSize);
     sim::FuncArgs* args = (sim::FuncArgs*)argsHandle;
     args->ResetArgsBuff();
     args->argsBuff = (uint8_t*)userHostMem;
@@ -325,7 +331,7 @@ aclError aclrtKernelArgsInitByUserMem(aclrtFuncHandle funcHandle, aclrtArgsHandl
 aclError aclrtKernelArgsGetMemSize(aclrtFuncHandle funcHandle, size_t userArgsSize, size_t *actualArgsSize)
 {
     (void) funcHandle;
-    HCCL_VM_INFO("[KERNEL] userArgsSize {:d}.", userArgsSize);
+    KERNEL_STUB_INFO("userArgsSize {:d}.", userArgsSize);
     // 
     *actualArgsSize = userArgsSize;
     return ACL_SUCCESS;
@@ -333,7 +339,7 @@ aclError aclrtKernelArgsGetMemSize(aclrtFuncHandle funcHandle, size_t userArgsSi
 
 aclError aclrtKernelArgsGetHandleMemSize(aclrtFuncHandle funcHandle, size_t *memSize)
 {
-    HCCL_VM_INFO("[KERNEL] funcHandle:{:p} userArgsSize 64k", funcHandle);
+    KERNEL_STUB_INFO("funcHandle:{:p} userArgsSize 64k", funcHandle);
     // 句柄 + 参数的内存大小
     *memSize = sim::MAX_ARGS_BUFF_SIZE;
     return ACL_SUCCESS;
@@ -343,7 +349,7 @@ aclError aclrtKernelArgsAppend(aclrtArgsHandle argsHandle, void *param, size_t p
     aclrtParamHandle *paramHandle)
 {
     sim::FuncArgs* args = (sim::FuncArgs*)(uintptr_t)argsHandle;
-    HCCL_VM_INFO("[KERNEL] stub  argsHandle:{:p} paramSize:{:d}", argsHandle, paramSize);
+    KERNEL_STUB_INFO("stub  argsHandle:{:p} paramSize:{:d}", argsHandle, paramSize);
     sim::FuncArgsDetail* argsDetail = new sim::FuncArgsDetail;
     argsDetail->argsData = args->argsBuff + args->useOffset;
     argsDetail->argsDataSize = paramSize;
@@ -352,7 +358,7 @@ aclError aclrtKernelArgsAppend(aclrtArgsHandle argsHandle, void *param, size_t p
     args->useOffset += paramSize;
     args->argDetail.push_back(argsDetail);
     *paramHandle = (aclrtParamHandle)argsDetail;
-    HCCL_VM_INFO("[KERNEL] argsHandle:{:p} paramHandle:{:p} ", argsHandle, *paramHandle);
+    KERNEL_STUB_INFO("argsHandle:{:p} paramHandle:{:p} ", argsHandle, *paramHandle);
     return ACL_SUCCESS;
 }
 
@@ -365,43 +371,43 @@ aclError aclrtKernelArgsAppendPlaceHolder(aclrtArgsHandle argsHandle, aclrtParam
 
     args->argDetail.push_back(argsDetail);
     *paramHandle = (aclrtParamHandle)argsDetail;
-    HCCL_VM_INFO("[KERNEL] paramHandle:{:p} ", *paramHandle);
+    KERNEL_STUB_INFO("paramHandle:{:p} ", *paramHandle);
     return ACL_SUCCESS;
 }
 
 aclError aclrtKernelArgsGetPlaceHolderBuffer(aclrtArgsHandle argsHandle, aclrtParamHandle paramHandle, size_t dataSize, void **bufferAddr)
 {
-    HCCL_VM_INFO("[KERNEL] argsHandle:{:p} ParamHandle:{:p} dataSize:{:d}", argsHandle, paramHandle, dataSize);
+    KERNEL_STUB_INFO("argsHandle:{:p} ParamHandle:{:p} dataSize:{:d}", argsHandle, paramHandle, dataSize);
     sim::FuncArgs* args = (sim::FuncArgs*)(uintptr_t)argsHandle;
 
     sim::FuncArgsDetail* detail = (sim::FuncArgsDetail*)(uintptr_t)paramHandle;
     detail->argsData = args->argsBuff + args->useOffset;
     detail->argsDataSize = dataSize;
     *bufferAddr = reinterpret_cast<void *>(detail->argsData);
-    HCCL_VM_INFO("[KERNEL] paramHandle:{:p} ", *bufferAddr);
+    KERNEL_STUB_INFO("paramHandle:{:p} ", *bufferAddr);
     return ACL_SUCCESS;
 }
 
 aclError aclrtKernelArgsParaUpdate(aclrtArgsHandle argsHandle, aclrtParamHandle paramHandle, void *param, size_t paramSize)
 {
-    HCCL_VM_INFO("[KERNEL] argsHandle:{:p} ParamHandle:{:p} paramSize:{:d}", argsHandle, paramHandle, paramSize);
+    KERNEL_STUB_INFO("argsHandle:{:p} ParamHandle:{:p} paramSize:{:d}", argsHandle, paramHandle, paramSize);
     sim::FuncArgs* args = (sim::FuncArgs*)(uintptr_t)argsHandle;
 
     sim::FuncArgsDetail* detail = (sim::FuncArgsDetail*)(uintptr_t)paramHandle;
     if (detail->isHold || detail->argsDataSize != paramSize) {
-        HCCL_VM_ERROR("invalid param handle type:{:d}", detail->isHold);
+        KERNEL_STUB_ERROR("invalid param handle type:{:d}", detail->isHold);
         return ACL_ERROR_INTERNAL_ERROR;
     }
 
     memcpy(detail->argsData, param, paramSize);
-    HCCL_VM_INFO("[KERNEL] argsData:{:p} ", reinterpret_cast<void *>(detail->argsData));
+    KERNEL_STUB_INFO("argsData:{:p} ", reinterpret_cast<void *>(detail->argsData));
     return ACL_SUCCESS;
 }
 
 aclError aclrtKernelArgsFinalize(aclrtArgsHandle argsHandle)
 {
     (void) argsHandle;
-    HCCL_VM_INFO("[KERNEL]stub not support.");
+    KERNEL_STUB_INFO("stub not support.");
     return ACL_SUCCESS;
 }
 
@@ -412,7 +418,7 @@ aclError aclrtLaunchKernel(aclrtFuncHandle funcHandle, uint32_t blockDim, const 
     (void) argsData;
     (void) argsSize;
     (void) stream;
-    HCCL_VM_INFO("[KERNEL] stub not support.");
+    KERNEL_STUB_INFO("stub not support.");
     
     return ACL_SUCCESS;
 }
@@ -421,7 +427,7 @@ void ForkAndStartAicpuProcess(int32_t rankId, uint8_t* devState)
 {
     pid_t pid = fork();
     if (pid == -1) {
-        HCCL_VM_ERROR("[ForkAndStartAicpuProcess] fork aicpu process failed.");
+        KERNEL_STUB_ERROR("fork aicpu process failed.");
         exit(EXIT_FAILURE);
     }
 
@@ -436,7 +442,7 @@ void ForkAndStartAicpuProcess(int32_t rankId, uint8_t* devState)
         setenv("LD_PRELOAD", preloadPath.c_str(), 1);
         setenv("LD_LIBRARY_PATH", libPath.c_str(), 1);
         execlp("qemu-aarch64-static", "qemu-aarch64-static", devicePath.c_str(), args.c_str(), nullptr);
-        HCCL_VM_ERROR("[ForkAndStartAicpuProcess] execlp aicpu process failed.");
+        KERNEL_STUB_ERROR("execlp aicpu process failed.");
         exit(EXIT_FAILURE);
     } else {
         g_devicePid = pid;  // 记录device进程id用于host结束时杀掉device进程
@@ -450,20 +456,20 @@ void ForkAndStartAicpuProcess(int32_t rankId, uint8_t* devState)
 void LaunchAICPUKernelFunc(std::string kernelName, aclrtArgsHandle argsHandle)
 {
     uint32_t rankId = (uint32_t)sim::GetCurrRankId();
-    HCCL_VM_INFO("[LaunchAICPUKernelFunc] rankId:{}, kernelName:{}.", rankId, kernelName);
+    KERNEL_STUB_INFO("rankId:{}, kernelName:{}.", rankId, kernelName);
     sim::FuncArgs* args = (sim::FuncArgs*)argsHandle;
     uint64_t size = args->useOffset;
     void *ptr = nullptr;
     aclrtMalloc(&ptr, size, aclrtMemMallocPolicy::ACL_MEM_MALLOC_NORMAL_ONLY);
     if (ptr == nullptr) {
-        HCCL_VM_ERROR("[LaunchAICPUKernelFunc] malloc device memory failed, size:{}", size);
+        KERNEL_STUB_ERROR("malloc device memory failed, size:{}", size);
         return;
     }
 
     aclrtMemcpy(ptr, size, args->argsBuff, size, aclrtMemcpyKind::ACL_MEMCPY_HOST_TO_DEVICE);
     void *shmptr = sim::MemoryManager::GetInstance().AcquireMemByName("HcclAicpuData");
     if (shmptr == nullptr) {
-        HCCL_VM_ERROR("[LaunchAICPUKernelFunc] acquire shm failed.");
+        KERNEL_STUB_ERROR("acquire shm failed.");
         return;
     }
 
@@ -477,7 +483,7 @@ void LaunchAICPUKernelFunc(std::string kernelName, aclrtArgsHandle argsHandle)
         const char *expanEnv = std::getenv("HCCL_OP_EXPANSION_MODE");
         bool ccuEnabled = expanEnv && (std::string(expanEnv) == "CCU_SCHED" || std::string(expanEnv) == "CCU_MS");
         if (ccuEnabled) {
-            HCCL_VM_INFO("[LaunchAICPUKernelFunc] Switch the expansion mode[CCU -> AICPU].");
+            KERNEL_STUB_INFO("Switch the expansion mode[CCU -> AICPU].");
             constexpr uint8_t kAicpuMode = static_cast<uint8_t>(sim::SimOpExpansionMode::SIM_OP_EXPANSION_MODE_AICPU);
             sim::UpdateOpExpansionMode(kAicpuMode);
         }
@@ -501,15 +507,15 @@ aclError aclrtLaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t blockD
     (void) cfg;
     (void) reserve;
     sim::FuncHandle* func = (sim::FuncHandle*)(uintptr_t)funcHandle;
-    HCCL_VM_INFO("[aclrtLaunchKernelWithConfig] funcName:{}, kernelName:{}, func:{:p} stream:{:p} args:{:p}", func->funcName, func->kernelName, (void*)funcHandle, (void*)stream, (void*)argsHandle);
+    KERNEL_STUB_INFO("funcName:{}, kernelName:{}, func:{:p} stream:{:p} args:{:p}", func->funcName, func->kernelName, (void*)funcHandle, (void*)stream, (void*)argsHandle);
     if (argsHandle == nullptr || stream == nullptr) {
-        HCCL_VM_ERROR("[ERROR] [aclrtLaunchKernelWithConfig] invalid input argsHandle or stream");
+        KERNEL_STUB_ERROR("invalid input argsHandle or stream");
         return ACL_ERROR_INVALID_PARAM;
     }
 
     // AICPU或CCU退化为AICPU模式时调用
     LaunchAICPUKernelFunc(func->kernelName, argsHandle);
-    HCCL_VM_INFO("[aclrtLaunchKernelWithConfig] kernel:{} execute finished.", func->kernelName);
+    KERNEL_STUB_INFO("kernel:{} execute finished.", func->kernelName);
 
     return ACL_SUCCESS;
 }
