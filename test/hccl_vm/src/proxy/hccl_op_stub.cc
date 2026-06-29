@@ -172,7 +172,7 @@ uint8_t GetOpExpansionMode()
     sim::SimOpExpansionMode mode = sim::SimOpExpansionMode::SIM_OP_EXPANSION_MODE_RESERVED;
     const char *expanEnv = std::getenv("HCCL_OP_EXPANSION_MODE");
     if (expanEnv == nullptr) {
-        printf("[GetOpExpansionMode] HCCL_OP_EXPANSION_MODE env is not set, use default value: %d\n", mode);
+        HCCL_VM_INFO("[STUB] HCCL_OP_EXPANSION_MODE env is not set, use default value: [{}]\n", static_cast<uint8_t>(mode));
         return static_cast<uint8_t>(mode);
     }
 
@@ -185,22 +185,22 @@ uint8_t GetOpExpansionMode()
         mode = sim::SimOpExpansionMode::SIM_OP_EXPANSION_MODE_CCU;
     }
 
-    printf("[GetOpExpansionMode] HCCL_OP_EXPANSION_MODE = %s\n", expanEnv);
+    HCCL_VM_INFO("[STUB] HCCL_OP_EXPANSION_MODE = [{}]\n", expanEnv);
     return static_cast<uint8_t>(mode);
 }
  
 HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType sendType, const void *recvBuf,
     uint64_t recvCount, HcclDataType recvType, HcclComm comm, aclrtStream stream)
 {
-    printf("HcclAlltoAll called with parameters:\n");
-    printf("  sendBuf = %p\n", sendBuf);
-    printf("  recvBuf = %p\n", recvBuf);
-    printf("  sendCount = %lu\n", sendCount);
-    printf("  recvCount = %lu\n", recvCount);
-    printf("  sendType = %d\n", sendType);
-    printf("  recvType = %d\n", recvType);
-    printf("  comm = %p\n", comm);
-    printf("  stream = %p\n", stream);
+    HCCL_VM_INFO("[STUB] HcclAlltoAll called with parameters:\n");
+    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
+    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
+    HCCL_VM_INFO("[STUB]  sendCount = {}\n", sendCount);
+    HCCL_VM_INFO("[STUB]  recvCount = {}\n", recvCount);
+    HCCL_VM_INFO("[STUB]  sendType = {}\n", static_cast<int>(sendType));
+    HCCL_VM_INFO("[STUB]  recvType = {}\n", static_cast<int>(recvType));
+    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
+    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -229,10 +229,10 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
     if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_ALLTOALL, curRank, reinterpret_cast<uint64_t>(stream),
                    sendBuf, inputSize, recvBuf, outputSize, alltoallDetails,
                    0, rankSize, curRank, curRank, alltoallExtInfo) != 0) {
-        HCCL_VM_ERROR("[HcclAlltoAll] record op db info failed");
+        HCCL_VM_ERROR("[STUB] record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
-    printf("HcclAlltoAll get op info: allRank= %u, curRank= %u.\n", rankSize, curRank);
+    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
 
     using HcclAlltoAllFunc = HcclResult (*)(
         const void *, uint64_t, HcclDataType, const void *, uint64_t, HcclDataType, HcclComm, aclrtStream);
@@ -240,7 +240,7 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
     if (hcclAlltoAllFunc != nullptr) {
         return hcclAlltoAllFunc(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, comm, stream);
     } else {
-        printf("[ERROR] dlsym %s failed\n", __func__);
+        HCCL_VM_ERROR("[STUB] dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -249,13 +249,13 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
                          const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
                          HcclComm comm, aclrtStream stream)
 {
-    printf("HcclAlltoAllV called with parameters:\n");
-    printf("  sendBuf = %p\n", sendBuf);
-    printf("  recvBuf = %p\n", recvBuf);
-    printf("  sendType = %d\n", sendType);
-    printf("  recvType = %d\n", recvType);
-    printf("  comm = %p\n", comm);
-    printf("  stream = %p\n", stream);
+    HCCL_VM_INFO("[STUB] HcclAlltoAllV called with parameters:\n");
+    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
+    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
+    HCCL_VM_INFO("[STUB]  sendType = {}\n", static_cast<int>(sendType));
+    HCCL_VM_INFO("[STUB]  recvType = {}\n", static_cast<int>(recvType));
+    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
+    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -300,11 +300,11 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_ALLTOALLV, curRank, reinterpret_cast<uint64_t>(stream),
                    sendBuf, inputSize, recvBuf, outputSize, alltoallvDetails,
                    0, rankSize, curRank, curRank, alltoallvExtInfo) != 0) {
-        HCCL_VM_ERROR("[HcclAlltoAllV] record op db info failed");
+        HCCL_VM_ERROR("[STUB] record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
 
-    printf("HcclAlltoAllV get op info: allRank= %u, curRank= %u.\n", rankSize, curRank);
+    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
  
     using HcclAlltoAllVFunc = HcclResult (*)(const void *,
         const void *,
@@ -321,7 +321,7 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
         return hcclAlltoAllVFunc(
             sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType, comm, stream);
     } else {
-        printf("[ERROR] dlsym %s failed\n", __func__);
+        HCCL_VM_ERROR("[STUB] dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -329,13 +329,13 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
 HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
     HcclComm comm, aclrtStream stream)
 {
-    printf("HcclAllGather called with parameters:\n");
-    printf("  sendBuf = %p\n", sendBuf);
-    printf("  recvBuf = %p\n", recvBuf);
-    printf("  sendCount = %lu\n", sendCount);
-    printf("  dataType = %d\n", dataType);
-    printf("  comm = %p\n", comm);
-    printf("  stream = %p\n", stream);
+    HCCL_VM_INFO("[STUB] HcclAllGather called with parameters:\n");
+    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
+    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
+    HCCL_VM_INFO("[STUB]  sendCount = {}\n", sendCount);
+    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
+    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
+    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -358,14 +358,14 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
         return HcclResult::HCCL_E_PARA;
     }
     
-    printf("HcclAllGather get op info: allRank= %u, curRank= %u.\n", rankSize, curRank);
+    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
  
     using HcclAllGatherFunc = HcclResult (*)(void *, void *, uint64_t, HcclDataType, HcclComm, aclrtStream);
     HcclAllGatherFunc hcclAllGatherFunc = reinterpret_cast<HcclAllGatherFunc>(dlsym(RTLD_NEXT, __func__));
     if (hcclAllGatherFunc != nullptr) {
         return hcclAllGatherFunc(sendBuf, recvBuf, sendCount, dataType, comm, stream);
     } else {
-        printf("[ERROR] dlsym %s failed\n", __func__);
+        HCCL_VM_ERROR("[STUB] dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -373,13 +373,13 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
 HcclResult HcclBroadcast(
     void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm, aclrtStream stream)
 {
-    printf("HcclBroadcast called with parameters:\n");
-    printf("  buf = %p\n", buf);
-    printf("  count = %lu\n", count);
-    printf("  dataType = %d\n", dataType);
-    printf("  root = %u\n", root);
-    printf("  comm = %p\n", comm);
-    printf("  stream = %p\n", stream);
+    HCCL_VM_INFO("[STUB] HcclBroadcast called with parameters:\n");
+    HCCL_VM_INFO("[STUB]  buf = {:p}\n", buf);
+    HCCL_VM_INFO("[STUB]  count = {}\n", count);
+    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
+    HCCL_VM_INFO("[STUB]  root = {}\n", root);
+    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
+    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -401,14 +401,14 @@ HcclResult HcclBroadcast(
         return HcclResult::HCCL_E_PARA;
     }
 
-    printf("HcclBroadcast get op info: allRank= %u, curRank= %u.\n", rankSize, curRank);
+    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
  
     using HcclBroadcastFunc = HcclResult (*)(void *, uint64_t, HcclDataType, uint32_t, HcclComm, aclrtStream);
     HcclBroadcastFunc hcclBroadcastFunc = reinterpret_cast<HcclBroadcastFunc>(dlsym(RTLD_NEXT, __func__));
     if (hcclBroadcastFunc != nullptr) {
         return hcclBroadcastFunc(buf, count, dataType, root, comm, stream);
     } else {
-        printf("[ERROR] dlsym %s failed\n", __func__);
+        HCCL_VM_ERROR("[STUB] dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -416,14 +416,14 @@ HcclResult HcclBroadcast(
 HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
     HcclComm comm, aclrtStream stream)
 {
-    printf("HcclAllReduce called with parameters:\n");
-    printf("  sendBuf = %p\n", sendBuf);
-    printf("  recvBuf = %p\n", recvBuf);
-    printf("  count = %lu\n", count);
-    printf("  dataType = %d\n", dataType);
-    printf("  op = %d\n", op);
-    printf("  comm = %p\n", comm);
-    printf("  stream = %p\n", stream);
+    HCCL_VM_INFO("[STUB] HcclAllReduce called with parameters:\n");
+    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
+    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
+    HCCL_VM_INFO("[STUB]  count = {}\n", count);
+    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
+    HCCL_VM_INFO("[STUB]  op = {}\n", static_cast<int>(op));
+    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
+    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -443,14 +443,14 @@ HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataT
         HCCL_VM_ERROR("[HcclAllReduce] record op db info failed");
         return HcclResult::HCCL_E_PARA;
     }
-    printf("HcclAllReduce get op info: allRank= %u, curRank= %u.\n", rankSize, curRank);
+    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
 
     using HcclAddreduceFunc = HcclResult (*)(void *, void *, uint64_t, HcclDataType, HcclReduceOp, HcclComm, aclrtStream);
     HcclAddreduceFunc hcclAddreduceFunc = reinterpret_cast<HcclAddreduceFunc>(dlsym(RTLD_NEXT, __func__));
     if (hcclAddreduceFunc != nullptr) {
         return hcclAddreduceFunc(sendBuf, recvBuf, count, dataType, op, comm, stream);
     } else {
-        printf("[ERROR] dlsym %s failed\n", __func__);
+        HCCL_VM_ERROR("[STUB] dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -458,14 +458,14 @@ HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataT
 HcclResult HcclScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, uint32_t root,
     HcclComm comm, aclrtStream stream)
 {
-    printf("HcclScatter called with parameters:\n");
-    printf("  sendBuf = %p\n", sendBuf);
-    printf("  recvBuf = %p\n", recvBuf);
-    printf("  recvCount = %lu\n", recvCount);
-    printf("  dataType = %d\n", dataType);
-    printf("  root = %u\n", root);
-    printf("  comm = %p\n", comm);
-    printf("  stream = %p\n", stream);
+    HCCL_VM_INFO("[STUB] HcclScatter called with parameters:\n");
+    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
+    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
+    HCCL_VM_INFO("[STUB]  recvCount = {}\n", recvCount);
+    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
+    HCCL_VM_INFO("[STUB]  root = {}\n", root);
+    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
+    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -492,21 +492,21 @@ HcclResult HcclScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDat
         return HcclResult::HCCL_E_PARA;
     }
     
-    printf("HcclScatter get op info: allRank= %u, curRank= %u.\n", rankSize, curRank);
+    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
  
     using HcclScatterFunc = HcclResult (*)(void *, void *, uint64_t, HcclDataType, uint32_t, HcclComm, aclrtStream);
     HcclScatterFunc hcclScatterFunc = reinterpret_cast<HcclScatterFunc>(dlsym(RTLD_NEXT, __func__));
     if (hcclScatterFunc != nullptr) {
         return hcclScatterFunc(sendBuf, recvBuf, recvCount, dataType, root, comm, stream);
     } else {
-        printf("[ERROR] dlsym %s failed\n", __func__);
+        HCCL_VM_ERROR("[STUB] dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
  
 HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size)
 {
-    printf("HcclGetHcclBufferNew called with parameters: buffer= %p, %lu\n", *buffer, *size);
+    HCCL_VM_INFO("[STUB] HcclGetHcclBufferNew called with parameters: buffer= {:p}, {}\n", *buffer, *size);
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
  
     using HcclGetHcclBufferFunc = HcclResult (*)(HcclComm, void**, uint64_t*);
@@ -514,10 +514,10 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size)
     if (hcclGetHcclBufferFunc != nullptr) {
         auto ret = hcclGetHcclBufferFunc(comm, buffer, size);
         sim::UpdateOpMemCclBuffer(reinterpret_cast<uint64_t>(*buffer), *size);
-        printf("HcclGetHcclBufferNew get rank%u ccl buffer= %p, %lx\n", curRank, *buffer, *size);
+        HCCL_VM_INFO("[STUB] get rank{} ccl buffer= {:p}, {}\n", curRank, *buffer, *size);
         return ret;
     } else {
-        printf("[ERROR] dlsym %s failed\n", __func__);
+        HCCL_VM_ERROR("[STUB] dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -525,15 +525,15 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size)
 HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
     uint32_t root, HcclComm comm, aclrtStream stream)
 {
-    printf("HcclReduce called with parameters:\n");
-    printf("  sendBuf = %p\n", sendBuf);
-    printf("  recvBuf = %p\n", recvBuf);
-    printf("  count = %lu\n", count);
-    printf("  dataType = %d\n", dataType);
-    printf("  reduce op = %u\n", static_cast<int>(op));
-    printf("  root = %d\n", root);
-    printf("  comm = %p\n", comm);
-    printf("  stream = %p\n", stream);
+    HCCL_VM_INFO("[STUB] HcclReduce called with parameters:\n");
+    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
+    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
+    HCCL_VM_INFO("[STUB]  count = {}\n", count);
+    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
+    HCCL_VM_INFO("[STUB]  reduce op = {}\n", static_cast<int>(op));
+    HCCL_VM_INFO("[STUB]  root = {}\n", root);
+    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
+    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -555,7 +555,7 @@ HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType
         return HcclResult::HCCL_E_PARA;
     }
 
-    printf("HcclReduce get op info: allRank= %u, curRank= %u.\n", rankSize, curRank);
+    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
  
     using HcclReduceFunc =
         HcclResult (*)(void *, void *, uint64_t, HcclDataType, HcclReduceOp, uint32_t, HcclComm, aclrtStream);
@@ -563,7 +563,7 @@ HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType
     if (hcclReduceFunc != nullptr) {
         return hcclReduceFunc(sendBuf, recvBuf, count, dataType, op, root, comm, stream);
     } else {
-        printf("[ERROR] dlsym %s failed\n", __func__);
+        HCCL_VM_ERROR("[STUB] dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
@@ -571,14 +571,14 @@ HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType
 HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op,
     HcclComm comm, aclrtStream stream)
 {
-    printf("HcclReduceScatter called with parameters:\n");
-    printf("  sendBuf = %p\n", sendBuf);
-    printf("  recvBuf = %p\n", recvBuf);
-    printf("  recvCount = %lu\n", recvCount);
-    printf("  dataType = %d\n", dataType);
-    printf("  reduce op = %u\n", static_cast<int>(op));
-    printf("  comm = %p\n", comm);
-    printf("  stream = %p\n", stream);
+    HCCL_VM_INFO("[STUB] HcclReduceScatter called with parameters:\n");
+    HCCL_VM_INFO("[STUB]  sendBuf = {:p}\n", sendBuf);
+    HCCL_VM_INFO("[STUB]  recvBuf = {:p}\n", recvBuf);
+    HCCL_VM_INFO("[STUB]  recvCount = {}\n", recvCount);
+    HCCL_VM_INFO("[STUB]  dataType = {}\n", static_cast<int>(dataType));
+    HCCL_VM_INFO("[STUB]  reduce op = {}\n", static_cast<int>(op));
+    HCCL_VM_INFO("[STUB]  comm = {:p}\n", comm);
+    HCCL_VM_INFO("[STUB]  stream = {:p}\n", stream);
  
     uint32_t curRank = (uint32_t)sim::GetCurrRankId();
     uint32_t rankSize = sim::GetRankSize();
@@ -600,14 +600,14 @@ HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, H
         return HcclResult::HCCL_E_PARA;
     }
 
-    printf("HcclReduceScatter get op info: allRank= %u, curRank= %u.\n", rankSize, curRank);
+    HCCL_VM_INFO("[STUB] get op info: allRank= {}, curRank= {}.\n", rankSize, curRank);
 
     using HcclReduceScatterFunc = HcclResult (*)(void *, void *, uint64_t, HcclDataType, HcclReduceOp, HcclComm, aclrtStream);
     auto hcclReduceScatterFunc = reinterpret_cast<HcclReduceScatterFunc>(dlsym(RTLD_NEXT, __func__));
     if (hcclReduceScatterFunc != nullptr) {
         return hcclReduceScatterFunc(sendBuf, recvBuf, recvCount, dataType, op, comm, stream);
     } else {
-        printf("[ERROR] dlsym %s failed\n", __func__);
+        HCCL_VM_ERROR("[STUB] dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }

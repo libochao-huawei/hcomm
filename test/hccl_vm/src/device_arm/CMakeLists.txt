@@ -40,17 +40,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_subdirectory(proxy)
 
-add_library(sqlite3 SHARED "")
+add_library(sqlite3 STATIC "")
 target_sources(sqlite3 PRIVATE
     ${THRID_PARTY_DIR}/sqlite/sqlite3.c
 )
 target_include_directories(sqlite3 PRIVATE
     ${THRID_PARTY_DIR}/sqlite
-)
-install(TARGETS sqlite3
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib/aarch64
-    ARCHIVE DESTINATION lib/aarch64
 )
 
 add_executable(device

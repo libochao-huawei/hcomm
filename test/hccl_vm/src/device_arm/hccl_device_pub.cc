@@ -186,9 +186,9 @@ void SignalHandler(int signum)
     int count = backtrace(stack_pointers, MAX_STACK_FRAMES);
     
     // 2. 打印基本错误信息
-    printf("\n========================================\n");
-    printf("  ERROR CRASH DETECTED! Signal: %d\n", signum);
-    printf("========================================\n");
+    HCCL_VM_INFO("\n========================================\n");
+    HCCL_VM_INFO("  ERROR CRASH DETECTED! Signal: {}\n", signum);
+    HCCL_VM_INFO("========================================\n");
     
     // 3. 将地址转换为符号信息（函数名+ELF内偏移，供addr2line解析行号）
     for (int i = 0; i < count; ++i) {
@@ -209,9 +209,9 @@ void SignalHandler(int signum)
         }
     }
     
-    printf("========================================\n");
-    printf("Resolve: aarch64-linux-gnu-addr2line -e ./bin/device -C -f <addr>\n");
-    printf("========================================\n\n");
+    HCCL_VM_INFO("========================================\n");
+    HCCL_VM_INFO("Resolve: aarch64-linux-gnu-addr2line -e ./bin/device -C -f <addr>\n");
+    HCCL_VM_INFO("========================================\n\n");
 
     // 4. 刷新缓冲区，确保信息在进程退出前输出
     fflush(stdout);

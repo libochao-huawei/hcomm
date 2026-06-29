@@ -6,9 +6,9 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-add_library(hccl-device-proxy SHARED "")
+add_library(hccl_device_proxy SHARED "")
 
-target_sources(hccl-device-proxy PRIVATE
+target_sources(hccl_device_proxy PRIVATE
     aicpu_stub.cc
     ascend_hal_stub.cc
     device_sqe_parse_stub.cc
@@ -18,9 +18,9 @@ target_sources(hccl-device-proxy PRIVATE
     ${HCCL_VM_SRC}/proxy/log_stub.cc
 )
 
-target_compile_definitions(hccl-device-proxy PRIVATE NO_YAML_CONFIG)
+target_compile_definitions(hccl_device_proxy PRIVATE NO_YAML_CONFIG)
 
-target_include_directories(hccl-device-proxy PRIVATE
+target_include_directories(hccl_device_proxy PRIVATE
     ${HCCL_VM_SRC}/utils
     ${HCCL_VM_INCLUDE}
     ${HCCL_VM_INCLUDE}/store
@@ -40,7 +40,7 @@ target_include_directories(hccl-device-proxy PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/profiling
 )
 
-install(TARGETS hccl-device-proxy
+install(TARGETS hccl_device_proxy
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib/aarch64
     ARCHIVE DESTINATION lib/aarch64

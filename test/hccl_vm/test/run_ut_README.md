@@ -222,12 +222,12 @@ export HCCL_CODE_HOME=/home/q30033976/checker/hccl        # hccl源码路径（A
 source /home/q30033976/checker/Ascend/cann/set_env.sh     # CANN安装路径下的环境脚本
 ```
 
-**示例**：假设您的工作目录为 `/home/myuser/workspace`，则修改为：
+**示例**：假设您的工作目录为 `/home/workspace`，则修改为：
 
 ```bash
-export HCOMM_CODE_HOME=/home/myuser/workspace/hcomm
-export HCCL_CODE_HOME=/home/myuser/workspace/hccl
-source /home/myuser/workspace/Ascend/cann/set_env.sh
+export HCOMM_CODE_HOME=/home/workspace/hcomm
+export HCCL_CODE_HOME=/home/workspace/hccl
+source /home/workspace/Ascend/cann/set_env.sh
 ```
 
 脚本会自动加载这些环境变量，未修改将导致编译失败。

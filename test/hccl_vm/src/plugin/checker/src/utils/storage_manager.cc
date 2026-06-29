@@ -340,16 +340,6 @@ HcclResult StorageManager::GetSlice(uint64_t addr, uint64_t len, DataSlice& data
 {
     dataSlice.SetSize(len);
 
-    // for (auto &rankMem : m_mem_layout) {
-    //     // 2. 遍历该 Rank 下的所有 Buffer 类型 (INPUT, OUTPUT, CCL...)
-    //     // typeEntry.first 是 BufferType, typeEntry.second 是 addrMap
-    //     for (auto const& typeEntry : rankMem.second) {
-    //         for (auto &xx: typeEntry.second) {
-    //             std::cout<<"[GetSlice] memlayout: rank"<<rankMem.first<<", "<<xx.first<<", size="<<xx.second.size<<std::endl;
-    //         }
-    //     }
-    // }
-
     for (auto &rankMem : m_mem_layout) {
         // 2. 遍历该 Rank 下的所有 Buffer 类型 (INPUT, OUTPUT, CCL...)
         // typeEntry.first 是 BufferType, typeEntry.second 是 addrMap
@@ -359,12 +349,10 @@ HcclResult StorageManager::GetSlice(uint64_t addr, uint64_t len, DataSlice& data
             // 3. 使用 upper_bound 在当前类型的地址图中快速查找
             // 找到第一个起始地址大于 addr 的块，那么目标块就是它的前一个
             auto it = addrMap.upper_bound(addr);
-            // std::cout<<"[FIND MEM] start "<<rankMem.first<<", "<<addr<<std::endl;
             if (it != addrMap.begin()) {
                 --it;
                 const MemBlock& block = it->second;
 
-                // std::cout<<"[FIND MEM] inner 1: "<<block.startAddr<<", "<<block.size<<", "<<block.startAddr + block.size<<std::endl;
                 // 4. 边界检查：确认物理地址 addr 是否落在该块 [start, start + size) 内
                 if (addr >= block.startAddr && addr < (block.startAddr + block.size)) {
                     // 校验区间完整性（可选）：确保整个 size 都在这个块内
@@ -373,7 +361,6 @@ HcclResult StorageManager::GetSlice(uint64_t addr, uint64_t len, DataSlice& data
                     dataSlice.SetBufferType(block.bufferType);
                     // 核心转换公式：逻辑基址 + (物理地址 - 物理块基址)
                     dataSlice.SetOffset(block.globalOffset + (addr - block.startAddr));
-                    // std::cout<<"[GetSlice] found ...."<<rankMem.first<<std::endl;
                     if (rank != nullptr) {
                         *rank = rankMem.first;
                     }

@@ -487,7 +487,7 @@ HcclResult HcclVmFlagDataRead(FILE *fp, HcclVmFlagData &flagData, uint32_t magic
 {
     auto ret = FileHeaderRead(fp, flagData.header, magic);
     if (ret != HcclResult::HCCL_SUCCESS) {
-        std::cout << "[FlagDataRead] Read file header failed. " << std::endl;
+        HCCL_VM_ERROR("[HcclVmFlagDataRead] Read file header failed. ");
         return HcclResult::HCCL_E_INTERNAL;
     }
 

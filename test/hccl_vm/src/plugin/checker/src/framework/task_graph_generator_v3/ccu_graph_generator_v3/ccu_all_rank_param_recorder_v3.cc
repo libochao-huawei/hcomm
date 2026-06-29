@@ -75,7 +75,6 @@ const CcuPostNodeMetaV3 *AllRankParamRecorder::GetPostNodeMeta(const TaskNode *n
 
 HcclResult AllRankParamRecorder::SetXn(uint32_t rankId, uint32_t dieId, uint16_t xnId, uint64_t xnValue)
 {
-    // std::cout<<"[INFO][SetXn] Set xn, rankId= "<<rankId<<", dieId= "<<static_cast<int>(dieId)<<", xnId= "<<xnId<<", xnValue= "<<xnValue<<std::endl;
     curXn[rankId][dieId][xnId] = xnValue;
     return HCCL_SUCCESS;
 }
@@ -83,7 +82,6 @@ HcclResult AllRankParamRecorder::SetXn(uint32_t rankId, uint32_t dieId, uint16_t
 HcclResult AllRankParamRecorder::SetGSA(uint32_t rankId, uint32_t dieId, uint16_t gsaId, uint64_t gsaValue)
 {
     curGSA[rankId][dieId][gsaId] = gsaValue;
-    // std::cout<<"[INFO][SetGsa] Set gsa, rankId= "<<rankId<<", dieId= "<<dieId<<", gsaId= "<<gsaId<<", value="<<gsaValue<<std::endl;
     return HCCL_SUCCESS;
 }
 
@@ -99,7 +97,6 @@ HcclResult AllRankParamRecorder::GetXn(uint32_t rankId, uint32_t dieId, uint16_t
         if (curXn[rankId].find(dieId) != curXn[rankId].end()) {
             if (curXn[rankId][dieId].find(xnId) != curXn[rankId][dieId].end()) {
                 xnValue = curXn[rankId][dieId][xnId];
-                // std::cout<<"[INFO][GetXn] Get xn, rankId= "<<rankId<<", dieId= "<<dieId<<", xnId= "<<xnId<<", value="<<std::hex<<xnValue<<std::endl;
                 return HCCL_SUCCESS;
             }
         }
@@ -114,7 +111,6 @@ HcclResult  AllRankParamRecorder::GetGSA(uint32_t rankId, uint32_t dieId, uint16
         if (curGSA[rankId].find(dieId) != curGSA[rankId].end()) {
             if (curGSA[rankId][dieId].find(gsaId) != curGSA[rankId][dieId].end()) {
                 gsaValue = curGSA[rankId][dieId][gsaId];
-                // std::cout<<"[INFO][GetGSA] Get gsa, rankId= "<<rankId<<", dieId= "<<dieId<<", gsaId= "<<gsaId<<", value="<<std::hex<<gsaValue<<std::endl;
                 return HCCL_SUCCESS;
             }
         }

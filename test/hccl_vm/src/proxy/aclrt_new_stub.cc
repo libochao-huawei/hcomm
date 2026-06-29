@@ -93,7 +93,6 @@ rtError_t rtGetDevResAddress(rtDevResInfo *const resInfo, rtDevResAddrInfo *cons
         // 非NotifyRecord场景暂不处理
         return RT_ERROR_NONE;
     }
-    // std::cout<<"[ERROR][rtGetDevResAddress] Not support...."<<std::endl;
 
     uint32_t notifyId = resInfo->resId;
     uint32_t len = 8;

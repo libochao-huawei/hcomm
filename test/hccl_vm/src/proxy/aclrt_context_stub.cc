@@ -21,6 +21,12 @@
 #include "sim_log.h"
 #include "db_sim_runner_ops.h"
 
+#define CTX_STUB_ERROR(format, ...) HCCL_VM_ERROR("[CTX]" format, ##__VA_ARGS__)
+#define CTX_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[CTX]" format, ##__VA_ARGS__)
+#define CTX_STUB_INFO(format, ...)  HCCL_VM_INFO("[CTX]" format, ##__VA_ARGS__)
+#define CTX_STUB_WARN(format, ...)  HCCL_VM_WARN("[CTX]" format, ##__VA_ARGS__)
+#define CTX_STUB_TRACE(format, ...) HCCL_VM_TRACE("[CTX]" format, ##__VA_ARGS__)
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -34,7 +40,7 @@ aclError aclrtCreateContext(aclrtContext *context, int32_t deviceId)
         return d.logic_id  == (uint32_t)deviceId;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("cannot find device: {:d}", deviceId);
+        CTX_STUB_ERROR("device not found:{:d}", deviceId);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
     // 找不到context，则默认新增一个context
@@ -61,7 +67,7 @@ aclError aclrtDestroyContext(aclrtContext context)
         return stm.ctx_id  == ctxId && stm.is_primary_default == 1;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("cannot find stream by ctx: {:d}", ctxId);
+        CTX_STUB_ERROR("stream not found ctxId:{:d}", ctxId);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
@@ -98,7 +104,7 @@ aclError aclrtCtxGetCurrentDefaultStream(aclrtStream *stream)
         return stm.ctx_id  == curCtxId && stm.is_primary_default == 1;
     });
     if (!stm.second) {
-        HCCL_VM_ERROR("cannot find stream by ctx: {:d}", curCtxId);
+        CTX_STUB_ERROR("stream not found ctxId:{:d}", curCtxId);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
@@ -117,7 +123,7 @@ aclError aclrtGetPrimaryCtxState(int32_t deviceId, uint32_t *flags, int32_t *act
     auto currCtx = RunnerDB::GetById<sim::Context>(runner.current_ctx_id);
     if (!currCtx.has_value()) {
         // not find
-        HCCL_VM_ERROR("can not get currContext: {:d}", runner.current_ctx_id);
+        CTX_STUB_ERROR("ctx not found:{:d}", runner.current_ctx_id);
         return ACL_ERROR_INVALID_PARAM;
     }
 

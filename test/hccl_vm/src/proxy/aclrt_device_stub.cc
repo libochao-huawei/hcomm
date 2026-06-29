@@ -30,6 +30,11 @@ uint64_t g_host_id;
 extern uint64_t g_cur_server_key;
 
 extern pid_t g_devicePid;
+#define DEVICE_STUB_ERROR(format, ...) HCCL_VM_ERROR("[DEVICE]" format, ##__VA_ARGS__)
+#define DEVICE_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[DEVICE]" format, ##__VA_ARGS__)
+#define DEVICE_STUB_INFO(format, ...)  HCCL_VM_INFO("[DEVICE]" format, ##__VA_ARGS__)
+#define DEVICE_STUB_WARN(format, ...)  HCCL_VM_WARN("[DEVICE]" format, ##__VA_ARGS__)
+#define DEVICE_STUB_TRACE(format, ...) HCCL_VM_TRACE("[DEVICE]" format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,13 +56,13 @@ HcclResult hrtGetDeviceIndexByPhyId(uint32_t devicePhyId, uint32_t &deviceLogicI
             return d.server_id == g_cur_server_key && d.physical_id  == (uint32_t)devicePhyId;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[hrtGetDeviceIndexByPhyId] cannot find device by physical id {:d}", devicePhyId);
+            DEVICE_STUB_ERROR("device not found by phyId:{:d}", devicePhyId);
             return HcclResult::HCCL_E_NOT_FOUND;
         }
         deviceLogicId = ret.first.logic_id;
         return HCCL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[hrtGetDeviceIndexByPhyId] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return HcclResult::HCCL_E_INTERNAL;
     }
 }
@@ -65,11 +70,11 @@ HcclResult hrtGetDeviceIndexByPhyId(uint32_t devicePhyId, uint32_t &deviceLogicI
 aclError aclrtSetDevice(int32_t deviceId)
 {
     try {
-        HCCL_VM_DEBUG("[aclrtSetDevice] start set device {:d}", deviceId);
+        DEVICE_STUB_DEBUG("set id:{:d}", deviceId);
         uint32_t rankId;
         uint64_t serverId = 0;
         if (!sim::GetRankIdByMPI(rankId, serverId)) {
-            HCCL_VM_ERROR("[aclrtSetDevice] cannot get rank id by MPI, serverId is {:d}", serverId);
+            DEVICE_STUB_ERROR("get rankId by MPI fail serverId:{:d}", serverId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -77,21 +82,21 @@ aclError aclrtSetDevice(int32_t deviceId)
         if (serverId == 0) {
             auto devRet = sim::GetDeviceByRankId(rankId, device);
             if (devRet != ACL_SUCCESS) {
-                HCCL_VM_ERROR("[aclrtSetDevice] cannot find device by rank id {:d}", rankId);
+                DEVICE_STUB_ERROR("device not found by rankId:{:d}", rankId);
                 return devRet;
             }
             serverId = device.server_id;
-            HCCL_VM_DEBUG("[aclrtSetDevice] device logic id: {:d}, rank id: {:d}, device key: {:d}", device.logic_id, rankId, device.id);
+            DEVICE_STUB_DEBUG("logicId:{:d} rankId:{:d} key:{:d}", device.logic_id, rankId, device.id);
         } else {
             auto ret = RunnerDB::GetOneByPred<sim::Device>([serverId, deviceId](const sim::Device &d) {
                 return d.server_id == serverId && d.logic_id  == (uint32_t)deviceId;
             });
             if (!ret.second) {
-                HCCL_VM_ERROR("[aclrtSetDevice] cannot find device by logic id {:d} in server id {:d}", deviceId, serverId);
+                DEVICE_STUB_ERROR("device not found logicId:{:d} serverId:{:d}", deviceId, serverId);
                 return ACL_ERROR_INVALID_PARAM;
             }
             device = ret.first;
-            HCCL_VM_DEBUG("[aclrtSetDevice] device logic id: {:d}, server id: {:d}, device key: {:d}", device.logic_id, serverId, device.id);
+            DEVICE_STUB_DEBUG("logicId:{:d} serverId:{:d} key:{:d}", device.logic_id, serverId, device.id);
         }
 
         sim::Runner runner{};
@@ -127,7 +132,7 @@ aclError aclrtSetDevice(int32_t deviceId)
         sim::SetCurrCtxTls(currCtxId);
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtSetDevice] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -135,7 +140,7 @@ aclError aclrtSetDevice(int32_t deviceId)
 aclError aclrtResetDevice(int32_t deviceId)
 {
     try {
-        HCCL_VM_INFO("[aclrtResetDevice] Enter. deviceId= {:d}", deviceId);
+        DEVICE_STUB_INFO("deviceId:{:d}", deviceId);
         sim::Runner runner{};
         if (!sim::GetCurrRunnerTls(0, runner)) {
             return ACL_ERROR_INVALID_PARAM;
@@ -146,7 +151,7 @@ aclError aclrtResetDevice(int32_t deviceId)
         }
         auto currCtx = RunnerDB::GetById<sim::Context>(curCtxId);
         if (!currCtx.has_value()) {
-            HCCL_VM_ERROR("[aclrtResetDevice] can not find current context:{:d}", runner.current_ctx_id);
+            DEVICE_STUB_ERROR("ctx not found:{:d}", runner.current_ctx_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -154,7 +159,7 @@ aclError aclrtResetDevice(int32_t deviceId)
             return stream.ctx_id == curCtxId && stream.is_primary_default == 1;
         });
         if (!streamRet.second) {
-            HCCL_VM_ERROR("[aclrtResetDevice] can not find stream of context {:d}", curCtxId);
+            DEVICE_STUB_ERROR("stream not found ctxId:{:d}", curCtxId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -169,7 +174,7 @@ aclError aclrtResetDevice(int32_t deviceId)
         sim::SetCurrCtxTls(curCtxId);
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtResetDevice] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -177,7 +182,7 @@ aclError aclrtResetDevice(int32_t deviceId)
 aclError aclrtResetDeviceForce(int32_t deviceId)
 {
     try {
-        HCCL_VM_DEBUG("[aclrtResetDeviceForce] can not find stream of deviceId {:d}", deviceId);
+        DEVICE_STUB_DEBUG("stream not found deviceId:{:d}", deviceId);
         sim::Runner runner{};
         if (!sim::GetCurrRunnerTls(0, runner)) {
             return ACL_ERROR_INVALID_PARAM;
@@ -188,7 +193,7 @@ aclError aclrtResetDeviceForce(int32_t deviceId)
         }
         auto currCtx = RunnerDB::GetById<sim::Context>(curCtxId);
         if (!currCtx.has_value()) {
-            HCCL_VM_ERROR("[aclrtResetDevice] can not find current context:{:d}", runner.current_ctx_id);
+            DEVICE_STUB_ERROR("ctx not found:{:d}", runner.current_ctx_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -196,7 +201,7 @@ aclError aclrtResetDeviceForce(int32_t deviceId)
             return stream.ctx_id == curCtxId && stream.is_primary_default == 1;
         });
         if (!streamRet.second) {
-            HCCL_VM_ERROR("[aclrtResetDevice] can not find stream of context {:d}", curCtxId);
+            DEVICE_STUB_ERROR("stream not found ctxId:{:d}", curCtxId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -206,7 +211,7 @@ aclError aclrtResetDeviceForce(int32_t deviceId)
         sim::SetCurrCtxTls(curCtxId);
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtResetDeviceForce] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -220,20 +225,20 @@ aclError aclrtGetDevice(int32_t* device)
         }
         auto currCtx = RunnerDB::GetById<sim::Context>(runner.current_ctx_id);
         if (!currCtx.has_value()) {
-            HCCL_VM_ERROR("[aclrtGetDevice] can not find current context:{:d}", runner.current_ctx_id);
+            DEVICE_STUB_ERROR("ctx not found:{:d}", runner.current_ctx_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         auto devRes = RunnerDB::GetById<sim::Device>(currCtx->device_id);
         if (!devRes.has_value()) {
-            HCCL_VM_ERROR("[aclrtGetDevice] can not find current device id:{:d}", currCtx->device_id);
+            DEVICE_STUB_ERROR("device not found:{:d}", currCtx->device_id);
             return ACL_ERROR_INVALID_PARAM;
         }
         *device = devRes->logic_id;
-        HCCL_VM_DEBUG("[aclstub][aclrtGetDevice]device: {:d}", devRes->logic_id);
+        DEVICE_STUB_DEBUG("id:{:d}", devRes->logic_id);
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtGetDevice] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -257,13 +262,13 @@ aclError aclrtSetTsDevice(aclrtTsId tsId)
         }
         auto currCtx = RunnerDB::GetById<sim::Context>(runner.current_ctx_id);
         if (!currCtx.has_value()) {
-            HCCL_VM_ERROR("[aclrtSetTsDevice] can not find current context:{:d}", runner.current_ctx_id);
+            DEVICE_STUB_ERROR("ctx not found:{:d}", runner.current_ctx_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         auto devRes = RunnerDB::GetById<sim::Device>(currCtx->device_id);
         if (!devRes.has_value()) {
-            HCCL_VM_ERROR("[aclrtSetTsDevice] can not find current device id:{:d}", currCtx->device_id);
+            DEVICE_STUB_ERROR("device not found:{:d}", currCtx->device_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -274,7 +279,7 @@ aclError aclrtSetTsDevice(aclrtTsId tsId)
 
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtSetTsDevice] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -287,13 +292,13 @@ aclError aclrtGetDeviceCount(uint32_t *count)
         });
 
         if (devs.empty()) {
-            HCCL_VM_ERROR("[aclstub][aclrtGetDeviceCount]devices failed");
+            DEVICE_STUB_ERROR("devices not found");
             return ACL_ERROR_INVALID_PARAM;
         }
         *count = devs.size();
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtGetDeviceCount] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -305,7 +310,7 @@ aclError aclrtGetDeviceUtilizationRate(int32_t deviceId, aclrtUtilizationInfo *u
             return d.logic_id == deviceId;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[aclrtGetDeviceUtilizationRate] cannot find device by physical id {:d}", deviceId);
+            DEVICE_STUB_ERROR("device not found by phyId:{:d}", deviceId);
             return 0;
         }
 
@@ -315,7 +320,7 @@ aclError aclrtGetDeviceUtilizationRate(int32_t deviceId, aclrtUtilizationInfo *u
         utilizationInfo->memoryUtilization  = 20;
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtGetDeviceUtilizationRate] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -327,13 +332,13 @@ aclError aclrtQueryDeviceStatus(int32_t deviceId, aclrtDeviceStatus *deviceStatu
             return d.logic_id  == (uint32_t)deviceId;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[aclrtQueryDeviceStatus] cannot find device by logic id {:d}", deviceId);
+            DEVICE_STUB_ERROR("device not found logicId:{:d}", deviceId);
             return HcclResult::HCCL_E_NOT_FOUND;
         }
         *deviceStatus = (aclrtDeviceStatus)ret.first.status;
         return HcclVmResult::HCCL_SIM_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtQueryDeviceStatus] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -346,17 +351,17 @@ const char *aclrtGetSocName()
             return d.server_id == 1;
         });
         if (!devRes.second) {
-            HCCL_VM_ERROR("[aclrtGetSocName] can not find device by server id 1");
+            DEVICE_STUB_ERROR("device not found serverId:1");
             return "";
         }
 
         thread_local static char SocName[128] = {0};
         memcpy(SocName, devRes.first.soc_version, strlen(devRes.first.soc_version));
         SocName[strlen(devRes.first.soc_version)] = '\0';
-        HCCL_VM_DEBUG("[aclstub][aclrtGetSocName]device: {}", devRes.first.soc_version);
+        DEVICE_STUB_DEBUG("soc:{}", devRes.first.soc_version);
         return SocName;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtGetSocName] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         static thread_local char s_errMsg[] = "";
         return s_errMsg;
     }
@@ -371,7 +376,7 @@ aclError aclrtSetDeviceSatMode(aclrtFloatOverflowMode mode)
         }
         auto currCtx = RunnerDB::GetById<sim::Context>(runner.current_ctx_id);
         if (!currCtx.has_value()) {
-            HCCL_VM_ERROR("[aclrtGetDevice] can not find current context:{:d}", runner.current_ctx_id);
+            DEVICE_STUB_ERROR("ctx not found:{:d}", runner.current_ctx_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -379,7 +384,7 @@ aclError aclrtSetDeviceSatMode(aclrtFloatOverflowMode mode)
         RunnerDB::Update<sim::Device>(curDevId, [curDevId, mode](sim::Device &dev) { dev.overflow_mode = mode; });
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtSetDeviceSatMode] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -393,19 +398,19 @@ aclError aclrtGetDeviceSatMode(aclrtFloatOverflowMode *mode)
         }
         auto currCtx = RunnerDB::GetById<sim::Context>(runner.current_ctx_id);
         if (!currCtx.has_value()) {
-            HCCL_VM_ERROR("[aclrtGetDeviceSatMode] can not find current context:{:d}", runner.current_ctx_id);
+            DEVICE_STUB_ERROR("ctx not found:{:d}", runner.current_ctx_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         auto dev = RunnerDB::GetById<sim::Device>(currCtx->device_id);
         if (!dev.has_value()) {
-            HCCL_VM_ERROR("[aclrtGetDeviceSatMode] can not find current device:{:d}", currCtx->device_id);
+            DEVICE_STUB_ERROR("device not found:{:d}", currCtx->device_id);
             return ACL_ERROR_INVALID_PARAM;
         }
         *mode = (aclrtFloatOverflowMode)dev->overflow_mode;
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtGetDeviceSatMode] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -417,7 +422,7 @@ aclError aclrtDeviceCanAccessPeer(int32_t *canAccessPeer, int32_t deviceId, int3
             return d.logic_id == deviceId;
         });
         if (!dev1.second) {
-            HCCL_VM_ERROR("[aclrtDeviceCanAccessPeer] cannot find device by logic id {:d}", deviceId);
+            DEVICE_STUB_ERROR("device not found logicId:{:d}", deviceId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -425,7 +430,7 @@ aclError aclrtDeviceCanAccessPeer(int32_t *canAccessPeer, int32_t deviceId, int3
             return d.logic_id == peerDeviceId;
         });
         if (!dev2.second) {
-            HCCL_VM_ERROR("[aclrtDeviceCanAccessPeer] cannot find device by logic id {:d}", peerDeviceId);
+            DEVICE_STUB_ERROR("device not found logicId:{:d}", peerDeviceId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -436,14 +441,14 @@ aclError aclrtDeviceCanAccessPeer(int32_t *canAccessPeer, int32_t deviceId, int3
             return devConn.src_dev_id  == dev1Id && devConn.dst_dev_id  == dev2Id;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[aclrtDeviceCanAccessPeer] get device connection failed srcdev:{:d} dstdev:{:d}", dev1Id, dev2Id);
+            DEVICE_STUB_ERROR("connection not found src:{:d} dst:{:d}", dev1Id, dev2Id);
             return HcclResult::HCCL_E_NOT_FOUND;
         }
 
         *canAccessPeer = (int32_t)ret.first.access_by_remote;
         return HcclVmResult::HCCL_SIM_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtDeviceCanAccessPeer] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -458,18 +463,18 @@ aclError aclrtDeviceEnablePeerAccess(int32_t peerDeviceId, uint32_t flags)
         }
         auto currCtx = RunnerDB::GetById<sim::Context>(runner.current_ctx_id);
         if (!currCtx.has_value()) {
-            HCCL_VM_ERROR("[aclrtDeviceEnablePeerAccess] can not find current context:{:d}", runner.current_ctx_id);
+            DEVICE_STUB_ERROR("ctx not found:{:d}", runner.current_ctx_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         auto dev1 = RunnerDB::GetById<sim::Device>(currCtx->device_id);
         if (!dev1.has_value()) {
-            HCCL_VM_ERROR("[aclrtDeviceEnablePeerAccess] can not find current device id:{:d}", currCtx->device_id);
+            DEVICE_STUB_ERROR("device not found:{:d}", currCtx->device_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         if (dev1->logic_id == peerDeviceId) {
-            HCCL_VM_ERROR("[aclrtDeviceEnablePeerAccess] invalid device id:{:d}", peerDeviceId);
+            DEVICE_STUB_ERROR("invalid peerId:{:d}", peerDeviceId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -477,7 +482,7 @@ aclError aclrtDeviceEnablePeerAccess(int32_t peerDeviceId, uint32_t flags)
             return d.logic_id == peerDeviceId;
         });
         if (!dev2.second) {
-            HCCL_VM_ERROR("[aclrtDeviceEnablePeerAccess] cannot find device by logic id {:d}", peerDeviceId);
+            DEVICE_STUB_ERROR("device not found logicId:{:d}", peerDeviceId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -487,14 +492,14 @@ aclError aclrtDeviceEnablePeerAccess(int32_t peerDeviceId, uint32_t flags)
             return devConn.src_dev_id  == dev1Id && devConn.dst_dev_id  == dev2Id;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[aclrtDeviceCanAccessPeer] get device connection failed srcdev:{:d} dstdev:{:d}", dev1Id, dev2Id);
+            DEVICE_STUB_ERROR("connection not found src:{:d} dst:{:d}", dev1Id, dev2Id);
             return HcclResult::HCCL_E_NOT_FOUND;
         }
 
         RunnerDB::Update<sim::DeviceConnection>(ret.first.id, [](sim::DeviceConnection &devConn) { devConn.access_by_remote = 1;});
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtDeviceEnablePeerAccess] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -508,18 +513,18 @@ aclError aclrtDeviceDisablePeerAccess(int32_t peerDeviceId)
         }
         auto currCtx = RunnerDB::GetById<sim::Context>(runner.current_ctx_id);
         if (!currCtx.has_value()) {
-            HCCL_VM_ERROR("[aclrtDeviceEnablePeerAccess] can not find current context:{:d}", runner.current_ctx_id);
+            DEVICE_STUB_ERROR("ctx not found:{:d}", runner.current_ctx_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         auto dev1 = RunnerDB::GetById<sim::Device>(currCtx->device_id);
         if (!dev1.has_value()) {
-            HCCL_VM_ERROR("[aclrtDeviceEnablePeerAccess] can not find current device id:{:d}", currCtx->device_id);
+            DEVICE_STUB_ERROR("device not found:{:d}", currCtx->device_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         if (dev1->logic_id == peerDeviceId) {
-            HCCL_VM_ERROR("[aclrtDeviceEnablePeerAccess] invalid device id:{:d}", peerDeviceId);
+            DEVICE_STUB_ERROR("invalid peerId:{:d}", peerDeviceId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -527,7 +532,7 @@ aclError aclrtDeviceDisablePeerAccess(int32_t peerDeviceId)
             return d.logic_id == peerDeviceId;
         });
         if (!dev2.second) {
-            HCCL_VM_ERROR("[aclrtDeviceEnablePeerAccess] cannot find device by logic id {:d}", peerDeviceId);
+            DEVICE_STUB_ERROR("device not found logicId:{:d}", peerDeviceId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -537,14 +542,14 @@ aclError aclrtDeviceDisablePeerAccess(int32_t peerDeviceId)
             return devConn.src_dev_id  == dev1Id && devConn.dst_dev_id  == dev2Id;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[aclrtDeviceCanAccessPeer] get device connection failed srcdev:{:d} dstdev:{:d}", dev1Id, dev2Id);
+            DEVICE_STUB_ERROR("connection not found src:{:d} dst:{:d}", dev1Id, dev2Id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         RunnerDB::Update<sim::DeviceConnection>(ret.first.id, [](sim::DeviceConnection &devConn) { devConn.access_by_remote = 0;});
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtDeviceDisablePeerAccess] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -556,13 +561,13 @@ aclError aclrtGetOverflowStatus(void *outputAddr, size_t outputSize, aclrtStream
         uint64_t streamIdx = (uint64_t)(uintptr_t)stream;
         auto stmRes = RunnerDB::GetById<sim::Stream>(streamIdx);
         if (!stmRes.has_value()) {
-            HCCL_VM_ERROR("can not get stream:{:d}", streamIdx);
+            DEVICE_STUB_ERROR("stream not found:{:d}", streamIdx);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         auto ctxRes = RunnerDB::GetById<sim::Context>(stmRes->ctx_id);
         if (!ctxRes.has_value()) {
-            HCCL_VM_ERROR("can not get context:{:d}", stmRes->ctx_id);
+            DEVICE_STUB_ERROR("ctx not found:{:d}", stmRes->ctx_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -571,7 +576,7 @@ aclError aclrtGetOverflowStatus(void *outputAddr, size_t outputSize, aclrtStream
             return dev.device_id  == deviceIdx;
         });
         if (!devStatusRes.second) {
-            HCCL_VM_ERROR("[aclrtGetOverflowStatus] get device :{:d} failed", deviceIdx);
+            DEVICE_STUB_ERROR("device not found:{:d}", deviceIdx);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -580,7 +585,7 @@ aclError aclrtGetOverflowStatus(void *outputAddr, size_t outputSize, aclrtStream
 
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtGetOverflowStatus] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -591,13 +596,13 @@ aclError aclrtResetOverflowStatus(aclrtStream stream)
         uint64_t streamIdx = (uint64_t)(uintptr_t)stream;
         auto stmRes = RunnerDB::GetById<sim::Stream>(streamIdx);
         if (!stmRes.has_value()) {
-            HCCL_VM_ERROR("can not get stream:{:d}", streamIdx);
+            DEVICE_STUB_ERROR("stream not found:{:d}", streamIdx);
             return ACL_ERROR_INVALID_PARAM;
         }
 
         auto ctxRes = RunnerDB::GetById<sim::Context>(stmRes->ctx_id);
         if (!ctxRes.has_value()) {
-            HCCL_VM_ERROR("can not get Context:{:d}", stmRes->ctx_id);
+            DEVICE_STUB_ERROR("ctx not found:{:d}", stmRes->ctx_id);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -605,13 +610,13 @@ aclError aclrtResetOverflowStatus(aclrtStream stream)
         auto devStatusRes = RunnerDB::GetOneByPred<sim::DeviceStatus>(
             [deviceIdx](const sim::DeviceStatus &dev) { return dev.device_id == deviceIdx; });
         if (!devStatusRes.second) {
-            HCCL_VM_ERROR("[aclrtResetOverflowStatus] get device :{:d} failed", deviceIdx);
+            DEVICE_STUB_ERROR("device not found:{:d}", deviceIdx);
             return ACL_ERROR_INVALID_PARAM;
         }
         RunnerDB::Update<sim::DeviceStatus>(devStatusRes.first.id, [](sim::DeviceStatus &devStatus) { devStatus.overflow_status = 0;});
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtResetOverflowStatus] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -663,7 +668,7 @@ aclError aclrtGetDevicesTopo(uint32_t deviceId, uint32_t otherDeviceId, uint64_t
             return d.logic_id == deviceId;
         });
         if (!dev1.second) {
-            HCCL_VM_ERROR("[aclrtGetDevicesTopo] cannot find device by logic id {:d}", deviceId);
+            DEVICE_STUB_ERROR("device not found logicId:{:d}", deviceId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -671,7 +676,7 @@ aclError aclrtGetDevicesTopo(uint32_t deviceId, uint32_t otherDeviceId, uint64_t
             return d.logic_id == otherDeviceId;
         });
         if (!dev2.second) {
-            HCCL_VM_ERROR("[aclrtGetDevicesTopo] cannot find device by logic id {:d}", otherDeviceId);
+            DEVICE_STUB_ERROR("device not found logicId:{:d}", otherDeviceId);
             return ACL_ERROR_INVALID_PARAM;
         }
 
@@ -682,14 +687,14 @@ aclError aclrtGetDevicesTopo(uint32_t deviceId, uint32_t otherDeviceId, uint64_t
             return devConn.src_dev_id  == dev1Id && devConn.dst_dev_id  == dev2Id;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[aclrtGetDevicesTopo] get device connection failed srcdev:{:d} dstdev:{:d}", dev1Id, dev2Id);
+            DEVICE_STUB_ERROR("connection not found src:{:d} dst:{:d}", dev1Id, dev2Id);
             return HcclResult::HCCL_E_NOT_FOUND;
         }
 
         *value = (uint64_t)ret.first.link_type;
         return HcclVmResult::HCCL_SIM_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[aclrtGetDevicesTopo] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -702,7 +707,6 @@ aclError aclrtDevicePeerAccessStatus(int32_t deviceId, int32_t peerDeviceId, int
 aclError aclInit(const char *configPath)
 {
     (void) configPath;
-    HCCL_VM_DEBUG("aclInit Success");
     return ACL_SUCCESS;
 }
 
@@ -711,13 +715,11 @@ aclError aclFinalize()
     if (g_devicePid != 0) {
         kill(g_devicePid, SIGKILL);
     }
-    HCCL_VM_DEBUG("aclFinalize Success");
     return ACL_SUCCESS;
 }
 
 aclError aclrtGetPhyDevIdByLogicDevId(int32_t logicDevId, int32_t *const phyDevId)
 {
-    HCCL_VM_DEBUG("[aclstub][aclrtGetPhyDevIdByLogicDevId]Success");
     sim::Device device{};
     auto devRet = sim::GetDeviceByLogicId((uint32_t)logicDevId, device);
     if (devRet != ACL_SUCCESS) {
@@ -725,13 +727,12 @@ aclError aclrtGetPhyDevIdByLogicDevId(int32_t logicDevId, int32_t *const phyDevI
     }
 
     *phyDevId = (int32_t)device.physical_id;
-    HCCL_VM_DEBUG("[aclstub][aclrtGetPhyDevIdByLogicDevId] result. server: {:d}, logicId: {:d}, phyId: {:d} ",g_cur_server_key, logicDevId, *phyDevId);
+    DEVICE_STUB_DEBUG("server:{:d} logicId:{:d} phyId:{:d}",g_cur_server_key, logicDevId, *phyDevId);
     return ACL_SUCCESS;
 }
 
 aclError aclrtGetLogicDevIdByPhyDevId(const int32_t phyDevId, int32_t *const logicDevId)
 {
-    HCCL_VM_DEBUG("[aclstub][aclrtGetLogicDevIdByPhyDevId]Success");
     sim::Device device{};
     auto devRet = sim::GetDeviceByPhysicalId((uint32_t)phyDevId, device);
     if (devRet != ACL_SUCCESS) {
@@ -777,13 +778,13 @@ rtError_t rtGetDeviceIndexByPhyId(uint32_t phyId, uint32_t *devIndex)
             return d.physical_id  == phyId;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[rtGetDeviceIndexByPhyId] cannot find device by physical id {:d}", phyId);
+            DEVICE_STUB_ERROR("device not found by phyId:{:d}", phyId);
             return HcclResult::HCCL_E_NOT_FOUND;
         }
         *devIndex = ret.first.logic_id;
         return ACL_SUCCESS;
     } catch (const std::exception &e) {
-        HCCL_VM_ERROR("[rtGetDeviceIndexByPhyId] exception: {}", e.what());
+        DEVICE_STUB_ERROR("exception:{}", e.what());
         return ACL_ERROR_INTERNAL_ERROR;
     }
 }
@@ -798,7 +799,6 @@ rtError_t rtGetPairPhyDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t i
     (void) devId;
     (void) otherDevId;
     (void) infoType;
-    HCCL_VM_DEBUG("[aclstub][rtGetPairPhyDevicesInfo]Success");
     *val = 1;
     return ACL_SUCCESS;
 }
@@ -812,7 +812,6 @@ struct rtDevResInfo;
 rtError_t rtReleaseDevResAddress(rtDevResInfo * const resInfo)
 {
     (void) resInfo;
-    HCCL_VM_DEBUG("[aclstub][rtReleaseDevResAddress]Success");
     return ACL_SUCCESS;
 }
 

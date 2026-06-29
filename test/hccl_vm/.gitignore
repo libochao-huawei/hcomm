@@ -17,3 +17,4 @@
 /coverage_report/
 /ut_logs/
 /third_party/
+*:Zone.Identifier

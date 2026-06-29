@@ -27,6 +27,7 @@
 #include "store_sim_memory_manager.h"
 #include "db_sim_op_db_ops.h"
 #include "db_sim_runner_ops.h"
+#include "sim_common_api.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -424,11 +425,11 @@ void ForkAndStartAicpuProcess(int32_t rankId, uint8_t* devState)
         exit(EXIT_FAILURE);
     }
 
-    const char* installDir = getenv("HCCL_VM_INSTALL_DIR");
+    std::string installDir = InstallPath::GetHcclVmInstallAbsPath();
     std::string args = std::to_string(rankId);
-    std::string devicePath = installDir ? std::string(installDir) + "/bin/device" : "./bin/device";
-    std::string libPath = installDir ? std::string(installDir) + "/lib/aarch64" : "./lib/aarch64";
-    std::string preloadPath = libPath + "/libhccl-device-proxy.so";
+    std::string devicePath = installDir + "/bin/device";
+    std::string libPath = installDir + "/lib/aarch64";
+    std::string preloadPath = libPath + "/libhccl_device_proxy.so";
     if (pid == 0) {
         g_logger = nullptr;
         setenv("QEMU_LD_PREFIX", "/usr/aarch64-linux-gnu", 1);

@@ -32,21 +32,21 @@ void PrintTaskMetaData(const HcclTaskMetaData &taskMeta)
     pid_t pid = getpid();
     switch (taskMeta.taskType) {
         case HccLTaskMetaType::MEM_CPY:
-            printf("[HcclTaskMetaData]pid[%u]: rankId[%u], streamId[%lu], taskType[MEM_CPY], srcOffset[%lu], dstOffset[%lu], len[%lu], srcRankId[%u], dstRankId[%u]\n",
+            HCCL_VM_INFO("pid[{}]: rankId[{}], streamId[{}], taskType[MEM_CPY], srcOffset[{}], dstOffset[{}], len[{}], srcRankId[{}], dstRankId[{}]\n",
                    pid, taskMeta.rankId, taskMeta.streamId, taskMeta.taskData.transMem.srcOffset, taskMeta.taskData.transMem.dstOffset, taskMeta.taskData.transMem.len,
                    taskMeta.taskData.transMem.srcRankId, taskMeta.taskData.transMem.dstRankId);
             break;
         case HccLTaskMetaType::REDUCE: 
-            printf("[HcclTaskMetaData]pid[%u]: rankId[%u], streamId[%lu], taskType[REDUCE], srcOffset[%lu], dstOffset[%lu], len[%lu], srcRankId[%u], dstRankId[%u], reduceOp[%u], dataType[%u]\n",
+            HCCL_VM_INFO("pid[{}]: rankId[{}], streamId[{}], taskType[REDUCE], srcOffset[{}], dstOffset[{}], len[{}], srcRankId[{}], dstRankId[{}], reduceOp[{}], dataType[{}]\n",
                    pid, taskMeta.rankId, taskMeta.streamId, taskMeta.taskData.reduce.srcOffset, taskMeta.taskData.reduce.dstOffset, taskMeta.taskData.reduce.dataCount,
                    taskMeta.taskData.reduce.srcRankId, taskMeta.taskData.reduce.dstRankId, taskMeta.taskData.reduce.reduceOp, taskMeta.taskData.reduce.dataType);
             break;
         case HccLTaskMetaType::NOTIFY_WAIT:
-            printf("[HcclTaskMetaData]pid[%u]: rankId[%u], streamId[%lu], taskType[NOTIFY_WAIT], notifyId[%lu], srcRankId[%u], dstRankId[%u]\n",
+            HCCL_VM_INFO("pid[{}]: rankId[{}], streamId[{}], taskType[NOTIFY_WAIT], notifyId[{}], srcRankId[{}], dstRankId[{}]\n",
                    pid, taskMeta.rankId, taskMeta.streamId, taskMeta.taskData.notify.notifyId, taskMeta.taskData.notify.srcRankId, taskMeta.taskData.notify.dstRankId);
             break;
         case HccLTaskMetaType::NOTIFY_RECORD:
-            printf("[HcclTaskMetaData]pid[%u]: rankId[%u], streamId[%lu], taskType[NOTIFY_RECORD], notifyId[%lu], srcRankId[%u], dstRankId[%u]\n",
+            HCCL_VM_INFO("pid[{}]: rankId[{}], streamId[{}], taskType[NOTIFY_RECORD], notifyId[{}], srcRankId[{}], dstRankId[{}]\n",
                    pid, taskMeta.rankId, taskMeta.streamId, taskMeta.taskData.notify.notifyId, taskMeta.taskData.notify.srcRankId, taskMeta.taskData.notify.dstRankId);
             break;
         default:

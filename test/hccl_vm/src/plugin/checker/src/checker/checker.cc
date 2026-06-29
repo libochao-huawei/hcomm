@@ -1644,7 +1644,6 @@ HcclResult Checker::GenAndCheckGraph(AllRankTaskQueues &allRankTaskQueues, TaskC
         HCCL_VM_INFO("=======================================================");
         HCCL_VM_INFO("rankId is : {:d}", rankIdx);
         const SingleTaskQueue& taskQueue = iter.second;
-        // printf("streamNum : %ld \n", taskQueue.size());
         for (int i = 0; i < taskQueue.size(); i++) {
             if (taskQueue[i].size() == 0) {
                 continue;

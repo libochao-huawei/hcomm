@@ -9,9 +9,7 @@
  */
 
 #include "db_hccl_db_sqlite.h"
-
 #include <cstdint>
-
 #include "sim_common_macro.h"
 #include "sim_log.h"
 
@@ -80,7 +78,7 @@ HcclVmResult HcclDBSqlite::Execute(const std::string& sql, const std::vector<Val
     int ret = sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr);
     if (ret != SQLITE_OK) {
         m_lastError = sqlite3_errmsg(m_db);
-        HCCL_VM_ERROR("Prepare failed: {} sql:{}", m_lastError, sql);
+        HCCL_VM_ERROR("Prepare failed: {}, sql: {}", m_lastError, sql);
         return HCCL_SIM_E_INTERNAL;
     }
 

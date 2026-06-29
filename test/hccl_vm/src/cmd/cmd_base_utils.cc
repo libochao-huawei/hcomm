@@ -336,7 +336,7 @@ std::string GetBinLocation() {
         return binDir.parent_path().string();
     }
     return binDir.string();
-} 
+}
 
 std::string ArgvToString(int argc, char *argv[]) { 
     std::string cmd; 
@@ -453,18 +453,18 @@ void ShowModel() {
         return; 
     } 
     bool hasFiles = false; 
-    std::cout << "model : " << std::endl; 
+    HCCL_VM_INFO("model : ");
     for (const auto& entry : fs::directory_iterator(modelPath)) { 
         // 过滤：只关心"常规文件"，忽略子文件夹 
         if (entry.is_regular_file()) { 
             hasFiles = true; 
             fs::path filePath = entry.path(); 
-            std::cout << "  " << filePath.stem().string() << "  [description] : "; 
+            HCCL_VM_INFO("  {}  [description] : ", filePath.stem().string());
             YAML::Node root = YAML::LoadFile(filePath); 
             uint32_t podNum = root["meta"]["podNum"].as<uint32_t>(); 
             uint32_t serNum = root["meta"]["serNum"].as<uint32_t>(); 
             uint32_t rankNum = root["meta"]["rankNum"].as<uint32_t>(); 
-            std::cout << "PodNum: " << podNum << ", SerNum: " << serNum << ", RankNum: " << rankNum << std::endl; 
+            HCCL_VM_INFO("podNum: {}, serNum: {}, rankNum: {}", podNum, serNum, rankNum);
         } 
     } 
     if (!hasFiles) { 
@@ -503,10 +503,10 @@ HcclVmResult InitHvmEnv(const std::string& configClusterDir, uint32_t level, boo
         HCCL_VM_ERROR("[HVM] default plugin install fail, please check your plugin path"); 
     } 
 
-    std::cout << "======================================"<< std::endl; 
+    HCCL_VM_INFO("===================================="); 
     ShowUserPlugin(); 
 
-    std::cout << "======================================="<< std::endl; 
+    HCCL_VM_INFO("======================================"); 
 
     return HcclVmResult::HCCL_SIM_HOST_SUCCESS_CMD; 
 } 
@@ -648,7 +648,7 @@ void ShowUserPlugin() {
         HCCL_VM_INFO("[HVM] no plugin installed in hccl_vm"); 
     } else { 
         for (auto &plugin : listPlugins) { 
-            std::cout << plugin << std::endl; 
+            HCCL_VM_INFO("{}", plugin);
         } 
     } 
     return; 

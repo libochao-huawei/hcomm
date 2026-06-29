@@ -61,7 +61,7 @@ void RunCommand::Execute(CLI::App& app) {
     }
     CstyleCmd syscmd(leftargvs);
     HCCL_VM_INFO("[HVM] one_shot mode, executing: {}", syscmd.cmd());
-    std::string proxyPath = GetBinLocation() + "/lib/x86_64/libhccl_proxy_level2.so";
+    std::string proxyPath = GetBinLocation() + "/lib/" + GetArchStr() + "/libhccl_proxy_level2.so";
     setenv("LD_PRELOAD", proxyPath.c_str(), 1);
     int sysRet = std::system(syscmd.cmd().c_str()); // system() 会阻塞当前进程直到子命令结束
     if (sysRet != 0) {

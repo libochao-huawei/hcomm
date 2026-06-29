@@ -127,7 +127,7 @@ bool InitKernelFuncHandle()
         return true;
     }
     const char* installDir = getenv("HCCL_VM_INSTALL_DIR");
-    std::string libDir = installDir ? std::string(installDir) + "/lib/aarch64/" : "./lib/aarch64/";
+    std::string libDir = installDir ? std::string(installDir) + "/lib/" + GetArchStr() + "/" : "./lib/" + GetArchStr() + "/";
     gSlogHandle = LoadLibrary(libDir, "libslog.so");
     gCsecHandle = LoadLibrary(libDir, "libc_sec.so");
     gHcclKerHandle = LoadLibrary(libDir, "libscatter_aicpu_kernel.so");
