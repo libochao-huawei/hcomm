@@ -16,21 +16,11 @@
 #include "independent_op.h"
 #include <string>
 #include "param_check_pub.h"
-#include "enum_utils.h"
+#include "comm_engine_utils.h"
 
 using namespace hccl;
 
 const char *COMM_RESERVE_CTX_TAG = "";
-
-const std::unordered_map<CommEngine, std::string> COMMENGINE_STATUS_STR_MAP {
-    {CommEngine::COMM_ENGINE_RESERVED, "COMM_ENGINE_RESERVED"},
-    {CommEngine::COMM_ENGINE_CPU, "COMM_ENGINE_CPU"},
-    {CommEngine::COMM_ENGINE_CPU_TS, "COMM_ENGINE_CPU_TS"},
-    {CommEngine::COMM_ENGINE_AICPU, "COMM_ENGINE_AICPU"},
-    {CommEngine::COMM_ENGINE_AICPU_TS, "COMM_ENGINE_AICPU_TS"},
-    {CommEngine::COMM_ENGINE_AIV, "COMM_ENGINE_AIV"},
-    {CommEngine::COMM_ENGINE_CCU, "COMM_ENGINE_CCU"}
-};
 
 HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine engine, uint64_t size, void **ctx)
 {
