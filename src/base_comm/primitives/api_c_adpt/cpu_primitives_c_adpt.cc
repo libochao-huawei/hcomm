@@ -774,11 +774,6 @@ static HcclResult RegAicpuTaskException(HcclDfxOpInfo* dfxOpInfo, hccl::CollComm
 HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 {
     EXCEPTION_HANDLE_BEGIN
-    bool l0State = Hccl::ProfilingHandler::GetInstance().GetHcclL0State();
-    bool l1State = Hccl::ProfilingHandler::GetInstance().GetHcclL1State();
-    if (l0State == false || l1State == false) {
-        HCCL_INFO("[%s] profiling State is down l0State %d l1State %d", __func__, l0State, l1State);
-    }
     HcclComm commHandle = nullptr;
     CHK_RET(HcomGetCommHandleByGroup(commId, &commHandle));
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(commHandle);
@@ -816,9 +811,7 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
     CHK_RET(hcclCommDfx->UpdateProfStat());
-    Hccl::MirrorTaskManager* mirrorTaskManage = hcclCommDfx->GetMirrorTaskManager();
-    CHK_PTR_NULL(mirrorTaskManage);
-    mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    CHK_RET(hcclCommDfx->SetCurrDfxOpInfo(dfxOpInfoOnce));
     bool isOpBase = dfxOpInfoOnce->op_.opMode == Hccl::OpMode::OPBASE;
     Hccl::ProfilingHandler::GetInstance().SetIsOpbase(isOpBase);
     HCCL_INFO("[%s] Register DfxOpInfo success, commId[%s], opMode[%d], isOpBase[%d].", __func__, collComm->GetCommId().c_str(), dfxOpInfoOnce->op_.opMode, isOpBase);
