@@ -191,7 +191,7 @@ private:
     }
 };
 
-inline const std::map<HcclCMDType, std::pair<Hccl::OpType, std::string>> CMD_OP_TYPE_INFO_MAP = {
+const std::map<HcclCMDType, std::pair<Hccl::OpType, std::string>> CMD_OP_TYPE_INFO_MAP = {
     {HcclCMDType::HCCL_CMD_ALLREDUCE, {Hccl::OpType::ALLREDUCE, "OpType::ALLREDUCE"}},
     {HcclCMDType::HCCL_CMD_ALLGATHER, {Hccl::OpType::ALLGATHER, "OpType::ALLGATHER"}},
     {HcclCMDType::HCCL_CMD_REDUCE_SCATTER, {Hccl::OpType::REDUCESCATTER, "OpType::REDUCESCATTER"}},
