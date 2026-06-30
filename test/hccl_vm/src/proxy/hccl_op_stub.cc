@@ -610,9 +610,10 @@ HcclResult _Z18GetRunSideIsDeviceRb(bool &isDeviceSide)
 extern "C" bool GetPtrNameByVirPtr(void *virPtr, uint32_t &offset, sim::PhyMemBlock &phyMem);
 
 namespace ops_hccl {
-constexpr uint32_t AIV_STUB_MAX_RANK_SIZE = 128;
+constexpr uint32_t AIV_STUB_MAX_RANK_SIZE = 512;
+constexpr uint32_t AIV_STUB_MAX_RANK_SIZE_V = 64;
 constexpr uint32_t AIV_STUB_MAX_NUM_BLOCKS = 48;
-constexpr int32_t AIV_STUB_TOPO_LEN = 128;
+constexpr int32_t AIV_STUB_TOPO_LEN = AIV_STUB_MAX_RANK_SIZE;
 constexpr uint64_t AIV_STUB_GM_IN_TABLE_OFFSET = 0;
 constexpr uint64_t AIV_STUB_GM_OUT_TABLE_OFFSET = 16 * 1024;
 constexpr uint64_t AIV_STUB_TOPO_OFFSET = 32 * 1024;
@@ -639,10 +640,10 @@ HcclCMDType g_currentAivCmdType = HcclCMDType::HCCL_CMD_MAX;
 KernelArgsType g_currentAivArgsType = KernelArgsType::ARGS_TYPE_SERVER;
 
 struct ExtraArgs {
-    uint64_t sendCounts[AIV_STUB_MAX_RANK_SIZE] = {};
-    uint64_t sendDispls[AIV_STUB_MAX_RANK_SIZE] = {};
-    uint64_t recvCounts[AIV_STUB_MAX_RANK_SIZE] = {};
-    uint64_t recvDispls[AIV_STUB_MAX_RANK_SIZE] = {};
+    uint64_t sendCounts[AIV_STUB_MAX_RANK_SIZE_V] = {};
+    uint64_t sendDispls[AIV_STUB_MAX_RANK_SIZE_V] = {};
+    uint64_t recvCounts[AIV_STUB_MAX_RANK_SIZE_V] = {};
+    uint64_t recvDispls[AIV_STUB_MAX_RANK_SIZE_V] = {};
 };
 
 struct OpCounterInfo {
@@ -871,6 +872,7 @@ struct ResolvedKernelLaunchArgs {
 };
 
 struct OpMemInfoMatchInfo {
+    uint64_t baseAddr = 0;
     uint64_t offsetInLayout = 0;
     uint64_t totalSize = 0;
 };
@@ -942,19 +944,19 @@ static void DumpAivExtraArgs(const ExtraArgs &extraArgs)
 {
     std::ostringstream oss;
     oss << "[virtual-aiv-ExecuteKernelLaunch] extraArgs:\n";
-    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE; ++i) {
+    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE_V; ++i) {
         oss << "  extraArgs.sendCounts[" << i << "] = "
             << static_cast<unsigned long long>(extraArgs.sendCounts[i]) << '\n';
     }
-    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE; ++i) {
+    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE_V; ++i) {
         oss << "  extraArgs.sendDispls[" << i << "] = "
             << static_cast<unsigned long long>(extraArgs.sendDispls[i]) << '\n';
     }
-    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE; ++i) {
+    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE_V; ++i) {
         oss << "  extraArgs.recvCounts[" << i << "] = "
             << static_cast<unsigned long long>(extraArgs.recvCounts[i]) << '\n';
     }
-    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE; ++i) {
+    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE_V; ++i) {
         oss << "  extraArgs.recvDispls[" << i << "] = "
             << static_cast<unsigned long long>(extraArgs.recvDispls[i]) << '\n';
     }
@@ -1557,6 +1559,7 @@ static bool TryMatchOpMemInfoRange(
         return false;
     }
 
+    matchInfo.baseAddr = baseAddr;
     matchInfo.offsetInLayout = offsetInLayout;
     matchInfo.totalSize = size;
     return true;
@@ -1717,6 +1720,61 @@ static OpMemInfoLookupStatus LookupCachedCclOpMemInfoByVirtualAddr(
     return OpMemInfoLookupStatus::RESOLVED;
 }
 
+static void BackfillCurrentAivOpMemCclBuffer(const ResolvedKernelLaunchArgs &resolvedArgs)
+{
+    if (resolvedArgs.args.buffersIn == nullptr) {
+        return;
+    }
+
+    const uint32_t rank = resolvedArgs.args.rank;
+    const uint32_t rankSize = resolvedArgs.args.rankSize;
+    if (rankSize == 0 || rank >= rankSize) {
+        HCCL_VM_WARN(
+            "[virtual-aiv] skip backfilling current opMem CCL buffer, invalid rank/rankSize, rank={}, rankSize={}",
+            rank,
+            rankSize);
+        return;
+    }
+
+    const auto *ipcBufferGlobal = static_cast<const uint64_t *>(resolvedArgs.args.buffersIn);
+    const uint64_t cclBufferAddr = ipcBufferGlobal[rank];
+    if (cclBufferAddr == 0) {
+        HCCL_VM_DEBUG("[virtual-aiv] skip backfilling current opMem CCL buffer, rank={}, cclBufferAddr is 0",
+            rank);
+        return;
+    }
+
+    OpMemInfoMatchInfo cclMatchInfo {};
+    const OpMemInfoLookupStatus cclStatus =
+        LookupCachedCclOpMemInfoByVirtualAddr(rank, cclBufferAddr, rankSize, cclMatchInfo);
+    if (cclStatus != OpMemInfoLookupStatus::RESOLVED || cclMatchInfo.baseAddr == 0 || cclMatchInfo.totalSize == 0) {
+        HCCL_VM_WARN(
+            "[virtual-aiv] skip backfilling current opMem CCL buffer, failed to resolve cached CCL, "
+            "rank={}, rankSize={}, cclBufferAddr=0x{:x}, status={}, resolvedBase=0x{:x}, resolvedSize={}",
+            rank,
+            rankSize,
+            cclBufferAddr,
+            static_cast<int>(cclStatus),
+            cclMatchInfo.baseAddr,
+            cclMatchInfo.totalSize);
+        return;
+    }
+
+    if (sim::UpdateOpMemCclBuffer(cclMatchInfo.baseAddr, cclMatchInfo.totalSize) != 0) {
+        HCCL_VM_ERROR(
+            "[virtual-aiv] failed to backfill current opMem CCL buffer, rank={}, cclAddr=0x{:x}, cclSize={}",
+            rank,
+            cclMatchInfo.baseAddr,
+            cclMatchInfo.totalSize);
+        return;
+    }
+
+    HCCL_VM_INFO("[virtual-aiv] backfill current opMem CCL buffer, rank={}, cclAddr=0x{:x}, cclSize={}",
+        rank,
+        cclMatchInfo.baseAddr,
+        cclMatchInfo.totalSize);
+}
+
 static void ResolveVirtualAivBufferSizes(const std::string &kernelName,
     ResolvedKernelLaunchArgs &resolvedArgs,
     uint64_t &inputSize,
@@ -1821,22 +1879,22 @@ static void ResolveVirtualAivBufferSizes(const std::string &kernelName,
 static void DumpVirtualKernelExtraArgsWithSource(std::ostringstream &oss, const ExtraArgs &extraArgs)
 {
     oss << "    kernelFunc.extraArgs <- aclrtLaunchKernelWithHostArgs(hostArgs->extraArgs)\n";
-    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE; ++i) {
+    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE_V; ++i) {
         oss << "      kernelFunc.extraArgs.sendCounts[" << i << "] = "
             << static_cast<unsigned long long>(extraArgs.sendCounts[i])
             << " <- hostArgs->extraArgs.sendCounts[" << i << "]\n";
     }
-    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE; ++i) {
+    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE_V; ++i) {
         oss << "      kernelFunc.extraArgs.sendDispls[" << i << "] = "
             << static_cast<unsigned long long>(extraArgs.sendDispls[i])
             << " <- hostArgs->extraArgs.sendDispls[" << i << "]\n";
     }
-    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE; ++i) {
+    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE_V; ++i) {
         oss << "      kernelFunc.extraArgs.recvCounts[" << i << "] = "
             << static_cast<unsigned long long>(extraArgs.recvCounts[i])
             << " <- hostArgs->extraArgs.recvCounts[" << i << "]\n";
     }
-    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE; ++i) {
+    for (uint32_t i = 0; i < AIV_STUB_MAX_RANK_SIZE_V; ++i) {
         oss << "      kernelFunc.extraArgs.recvDispls[" << i << "] = "
             << static_cast<unsigned long long>(extraArgs.recvDispls[i])
             << " <- hostArgs->extraArgs.recvDispls[" << i << "]\n";
@@ -2056,6 +2114,7 @@ static aclError VirtualExecuteAivKernel(
         CloseVirtualAivLibrary(lib);
         return ACL_ERROR_INVALID_PARAM;
     }
+    BackfillCurrentAivOpMemCclBuffer(resolvedArgs);
 
     AivSim::AivOpParam curOpParam {};
     curOpParam.dataType = resolvedArgs.args.dataType;
