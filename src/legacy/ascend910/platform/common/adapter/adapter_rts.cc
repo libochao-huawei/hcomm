@@ -147,18 +147,22 @@ HcclResult hrtGetDeviceCount(u32 *count)
     // 参数有效性检查
     CHK_PTR_NULL(count);
 
+    aclError ret = aclrtGetDeviceCount(count);
+
+    HCCL_DEBUG("Call rtGetDeviceCount, return value[%d], para: count[%u].", ret, *count);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[hrtGetDeviceCount]errNo[0x%016llx] aclGet device count fail, "\
+        "return[%d], para:count[%u]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, *count), HCCL_E_RUNTIME);
+
+    if (*count == 0) {
+        return HCCL_SUCCESS;
+    }
+
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
     if (deviceType == DevType::DEV_TYPE_NOSOC) {
         *count = 0;
         return HCCL_SUCCESS;
     }
-
-    aclError ret = aclrtGetDeviceCount(count);
-
-    HCCL_DEBUG("Call rtGetDeviceCount, return value[%d], para: count[%u].", ret, *count);
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[hrtGetDeviceCount]errNo[0x%016llx] aclGet device count fail, "\
-        "return[%d], para:count[%u]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, *count), HCCL_E_RUNTIME);
 
     return HCCL_SUCCESS;
 #else
