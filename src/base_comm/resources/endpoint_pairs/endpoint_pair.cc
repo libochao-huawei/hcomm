@@ -196,17 +196,17 @@ HcclResult EndpointPair::DestroyChannel(CommEngine engine, u32 reuseIdx)
 {
     if (IsChannelNotExist(engine, reuseIdx)) {
         HCCL_WARNING("EndpointPair::DestroyChannel: engine[%s] reuseIdx[%u], channelHandle size[%u],"
-                     "channel not found, skip destroy channel", GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), reuseIdx, channelHandles_[engine].size());
+                     "channel not found, skip destroy channel", GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), reuseIdx, channelHandles_[engine].size());
         return HCCL_SUCCESS;
     }
     HCCL_INFO("EndpointPair::DestroyChannel: engine[%s] reuseIdx[%u], channelHandle size[%u],"
-              "start destroy channel", GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), reuseIdx, channelHandles_[engine].size());
+              "start destroy channel", GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), reuseIdx, channelHandles_[engine].size());
     ChannelHandle channelHandle = channelHandles_[engine][reuseIdx];
     CHK_RET(static_cast<HcclResult>(HcommChannelDestroy(&channelHandle, 1)));
     // 去掉channelHandles_中reuseIdx位置的channelHandle
     channelHandles_[engine].erase(channelHandles_[engine].begin() + reuseIdx);
     HCCL_INFO("EndpointPair::DestroyChannel: engine[%s] reuseIdx[%u] destroy channel success,"
-              "channelHandle size[%u]", GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), reuseIdx, channelHandles_[engine].size());
+              "channelHandle size[%u]", GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), reuseIdx, channelHandles_[engine].size());
     return HCCL_SUCCESS;
 }
 

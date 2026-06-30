@@ -589,7 +589,7 @@ HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHa
     } else if (engine == COMM_ENGINE_AIV) {
         CHK_RET(SaveAivChannels(targetChannels, userChannels, channelDescs, channelNum));
     } else {
-        HCCL_INFO("[%s] engine[%s] no need to KernelLaunch.", __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str());
+        HCCL_INFO("[%s] engine[%s] no need to KernelLaunch.", __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
         for (uint32_t i = 0; i < channelNum; i++) {
             userChannels[i] = targetChannels[i];
         }

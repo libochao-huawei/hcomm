@@ -31,12 +31,12 @@ HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread,
 {
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(!IsValidCommEngine(engine), 
-        HCCL_ERROR("[%s] commEngine[%s] is invalid", __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str()), HCCL_E_PARA);
+        HCCL_ERROR("[%s] commEngine[%s] is invalid", __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str()), HCCL_E_PARA);
     CHK_PRT_RET(notifyNum == nullptr,  HCCL_ERROR("[%s] notifyNum is null", __func__), HCCL_E_PTR);
 
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
-    HCCL_RUN_INFO("Entry-%s:comm[%s] engine[%s]", __func__, commId.c_str(), GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str());
+    HCCL_RUN_INFO("Entry-%s:comm[%s] engine[%s]", __func__, commId.c_str(), GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
         hccl::CollComm* collComm = hcclComm->GetCollComm();
@@ -51,10 +51,10 @@ HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread,
     }
     
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HcclGetNotifyNumInThread] Failed to get notifyNum for engine[%s] ret[%d]", GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), ret);
+        HCCL_ERROR("[HcclGetNotifyNumInThread] Failed to get notifyNum for engine[%s] ret[%d]", GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), ret);
         return ret;
     }
-    HCCL_INFO("[HcclGetNotifyNumInThread] threads for engine[%s], notifyNum[%u]", GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), *notifyNum);
+    HCCL_INFO("[HcclGetNotifyNumInThread] threads for engine[%s], notifyNum[%u]", GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), *notifyNum);
     return HCCL_SUCCESS;
 }
 
@@ -127,7 +127,7 @@ HcclResult HcclThreadAcquireWithConfig(HcclComm comm, CommEngine engine, uint32_
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
     HCCL_RUN_INFO("Entry-%s:comm[%s] engine[%s] ThreadNum[%u].",
-        __func__, commId.c_str(), GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), threadNum);
+        __func__, commId.c_str(), GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), threadNum);
 
     HcclResult ret = HCCL_SUCCESS;
     std::vector<uint32_t> threadId;
@@ -139,7 +139,7 @@ HcclResult HcclThreadAcquireWithConfig(HcclComm comm, CommEngine engine, uint32_
         ret = engineResMgr->HcclThreadAcquireV2(engine, threadNum, type, config, threads, threadId);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] failed to create threads for engine[%s], threadsNum[%u], ret[%d].",
-                __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), threadNum, ret);
+                __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), threadNum, ret);
             return ret;
         }
         CHK_RET(HcclThreadAcquireWithConfigDfx(collComm, commId, engine, beginTime, threadNum, threads, threadId));
@@ -159,7 +159,7 @@ HcclResult HcclThreadAcquireWithConfig(HcclComm comm, CommEngine engine, uint32_
     }
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to create threads for engine[%s], threadNum[%u], ret[%d].",
-            __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), threadNum, ret);
+            __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), threadNum, ret);
         return ret;
     }
 
@@ -240,7 +240,7 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
     }
 
     HCCL_INFO("[%s] Allocated %u threads for engine[%s], notifyPerThread[%u]", __func__,
-              threadNum, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), notifyNumPerThread);
+              threadNum, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), notifyNumPerThread);
     return HCCL_SUCCESS;
 }
 
@@ -286,7 +286,7 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
     HCCL_INFO("Entry-%s:comm[%s] engine[%s] notifyNum[%u] stream[%p]",
-        __func__, commId.c_str(), GetEnumToString(COMMENGINE_STATUS_STR_MAP, newEngine).c_str(), notifyNum, stream);
+        __func__, commId.c_str(), GetEnumToString(GetCommEngineStatusStrMap(), newEngine).c_str(), notifyNum, stream);
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
         hccl::CollComm* collComm = hcclComm->GetCollComm();
@@ -303,12 +303,12 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
 
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclThreadAcquireWithStream] Failed to create thread for engine[%s], ret[%d]",
-            GetEnumToString(COMMENGINE_STATUS_STR_MAP, newEngine).c_str(), ret);
+            GetEnumToString(GetCommEngineStatusStrMap(), newEngine).c_str(), ret);
         return ret;
     }
 
     HCCL_INFO("[HcclThreadAcquireWithStream] Allocated thread for engine[%s], stream[%p], notifyNum[%u]",
-              GetEnumToString(COMMENGINE_STATUS_STR_MAP, newEngine).c_str(), stream, notifyNum);
+              GetEnumToString(GetCommEngineStatusStrMap(), newEngine).c_str(), stream, notifyNum);
     return HCCL_SUCCESS;
 }
 
@@ -317,7 +317,7 @@ HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, ::NotifyType no
 {
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PARA);
     CHK_PRT_RET(!IsValidCommEngine(commEngine), 
-        HCCL_ERROR("[%s] commEngine[%s] is invalid", __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, commEngine).c_str()), HCCL_E_PARA);
+        HCCL_ERROR("[%s] commEngine[%s] is invalid", __func__, GetEnumToString(GetCommEngineStatusStrMap(), commEngine).c_str()), HCCL_E_PARA);
     CHK_PRT_RET(!IsValidNotify(notifyType), 
         HCCL_ERROR("[%s] notifyType[%u] is invalid", __func__, notifyType), HCCL_E_PARA);
     CHK_PRT_RET(notifyNum > NOTIFY_MAX_NUM || notifyNum == 0, 
@@ -328,12 +328,12 @@ HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, ::NotifyType no
     if (commEngine == CommEngine::COMM_ENGINE_CPU || commEngine == CommEngine::COMM_ENGINE_CPU_TS
         || commEngine == CommEngine::COMM_ENGINE_CCU) {
         if (notifyType != ::NOTIFY_TYPE_RTS_NOTIFY) {
-            HCCL_ERROR("[%s] commEngine[%s] and notifyType[%u] are mismatch",  __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, commEngine).c_str(), notifyType);
+            HCCL_ERROR("[%s] commEngine[%s] and notifyType[%u] are mismatch",  __func__, GetEnumToString(GetCommEngineStatusStrMap(), commEngine).c_str(), notifyType);
             return HCCL_E_PARA;
         }
     } else {
         if (notifyType != ::NOTIFY_TYPE_DEVICE_MEM) {
-            HCCL_ERROR("[%s] commEngine[%s] and notifyType[%u] are mismatch",  __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, commEngine).c_str(), notifyType);
+            HCCL_ERROR("[%s] commEngine[%s] and notifyType[%u] are mismatch",  __func__, GetEnumToString(GetCommEngineStatusStrMap(), commEngine).c_str(), notifyType);
             return HCCL_E_PARA;
         }
     }
@@ -341,7 +341,7 @@ HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, ::NotifyType no
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
     HCCL_RUN_INFO("Entry-%s:comm[%s] commEngine[%s] notifyType[%u] notifyNum[%p]",
-        __func__, commId.c_str(), GetEnumToString(COMMENGINE_STATUS_STR_MAP, commEngine).c_str(), notifyType, notifyNum);
+        __func__, commId.c_str(), GetEnumToString(GetCommEngineStatusStrMap(), commEngine).c_str(), notifyType, notifyNum);
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
         hccl::CollComm* collComm = hcclComm->GetCollComm();
@@ -356,12 +356,12 @@ HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, ::NotifyType no
     }
 
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to create notify for commEngine[%s]",  __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, commEngine).c_str());
+        HCCL_ERROR("[%s] Failed to create notify for commEngine[%s]",  __func__, GetEnumToString(GetCommEngineStatusStrMap(), commEngine).c_str());
         return ret;
     }
  
     HCCL_RUN_INFO("[%s] Allocated notify for commEngine[%s], notifyType[%u], notifyNum[%u]", __func__,
-        GetEnumToString(COMMENGINE_STATUS_STR_MAP, commEngine).c_str(), notifyType, notifyNum);
+        GetEnumToString(GetCommEngineStatusStrMap(), commEngine).c_str(), notifyType, notifyNum);
     return HCCL_SUCCESS;
 }
  
@@ -404,7 +404,7 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     CHK_PTR_NULL(threads);
     CHK_PTR_NULL(exportedThreads);
     CHK_PRT_RET(!IsValidCommEngine(dstCommEngine),
-                HCCL_ERROR("[%s] commEngine[%s] is invalid", __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, dstCommEngine).c_str()), HCCL_E_PARA);
+                HCCL_ERROR("[%s] commEngine[%s] is invalid", __func__, GetEnumToString(GetCommEngineStatusStrMap(), dstCommEngine).c_str()), HCCL_E_PARA);
     if (threadNum == 0 || threadNum > MAX_EXPORT_THREAD_NUM) {
         HCCL_ERROR("[%s] threadNum[%u] is 0 or greater than %u", __func__, threadNum, MAX_EXPORT_THREAD_NUM);
         return HCCL_E_PARA;
@@ -413,7 +413,7 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     std::string commId = hcclComm->GetIdentifier();
     HCCL_INFO("Entry-[%s]:comm[%s], threadNum[%u], commEngine[%s], threadsPtr[%p], exportedThreadsPtr[%p]", 
-             __func__, commId.c_str(), threadNum, GetEnumToString(COMMENGINE_STATUS_STR_MAP, dstCommEngine).c_str(), threads, exportedThreads);
+             __func__, commId.c_str(), threadNum, GetEnumToString(GetCommEngineStatusStrMap(), dstCommEngine).c_str(), threads, exportedThreads);
     HcclResult ret;
     if (hcclComm->IsCommunicatorV2()) {
         hccl::CollComm* collComm = hcclComm->GetCollComm();
@@ -427,7 +427,7 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] Thread export failed. Export threadNum[%u], commEngine[%s], threadsPtr[%p], exportedThreadsPtr[%p]",
-         __func__, threadNum, GetEnumToString(COMMENGINE_STATUS_STR_MAP, dstCommEngine).c_str(), threads, exportedThreads), ret);
+         __func__, threadNum, GetEnumToString(GetCommEngineStatusStrMap(), dstCommEngine).c_str(), threads, exportedThreads), ret);
     HCCL_INFO("[%s]:comm[%s] export success. ", __func__, commId.c_str());
     return HCCL_SUCCESS;
 }

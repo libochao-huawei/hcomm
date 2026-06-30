@@ -69,7 +69,7 @@ HcclResult CommHostEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &typ
             type =  NotifyLoadType::HOST_NOTIFY;
             break;
         default:
-            HCCL_ERROR("[ThreadMgr] Unsupported comm engine type: %s", GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str());
+            HCCL_ERROR("[ThreadMgr] Unsupported comm engine type: %s", GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
             return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -88,7 +88,7 @@ HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type)
             type =  NotifyLoadType::DEVICE_NOTIFY;
             break;
         default:
-            HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %s", GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str());
+            HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %s", GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
             return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -109,7 +109,7 @@ HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type)
         // 暂不支持AIV
         case COMM_ENGINE_AIV:
         default:
-            HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %s", GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str());
+            HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %s", GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
             return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -206,7 +206,7 @@ HcclResult CreateAndInitThreads(const ThreadCreateParams& params,
 {
     HCCL_INFO("[%s] Creating threads with params: engine[%s], threadNum[%u], "
               "notifyNumPerThread[%u], notifyLoadType[%u], streamType[%u]",
-              __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, params.engine).c_str(), params.threadNum, params.notifyNumPerThread,
+              __func__, GetEnumToString(GetCommEngineStatusStrMap(), params.engine).c_str(), params.threadNum, params.notifyNumPerThread,
               static_cast<int32_t>(params.notifyLoadType), 
               static_cast<int32_t>(params.streamType));
     outThreads.reserve(params.threadNum);
@@ -267,7 +267,7 @@ HcclResult StoreThreadHandles(vector<shared_ptr<Thread>>& newThreads,
 
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[StoreThreadHandles] AiCpuKernelLaunch failed, engine[%s], return[%d].", 
-                      GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), ret), ret);
+                      GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), ret), ret);
 
         // 保存并映射AICPU线程句柄
         for (size_t i = 0; i < newThreads.size(); ++i) {
@@ -275,13 +275,13 @@ HcclResult StoreThreadHandles(vector<shared_ptr<Thread>>& newThreads,
             ThreadHandle hostHandle = reinterpret_cast<ThreadHandle>(newThreads[i].get());
             CHK_RET(FillThreadD2HMap(&aicpuHandle[i], &hostHandle, 1));
             HCCL_INFO("[StoreThreadHandles] AICPU engine[%s] threadArray[%zu] = [%lu]", 
-                      GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), i, threads[i]);
+                      GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), i, threads[i]);
         }
     } else {
         for (size_t i = 0; i < newThreads.size(); ++i) {
             threads[i] = reinterpret_cast<ThreadHandle>(newThreads[i].get());
             HCCL_INFO("[StoreThreadHandles] Host engine[%s] threadArray[%zu] = [%lu]", 
-                      GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), i, threads[i]);
+                      GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), i, threads[i]);
         }
     }
     return HCCL_SUCCESS;
@@ -358,7 +358,7 @@ HcclResult Thread::AddThreadHandleToMap(CommEngine commEngine, ThreadHandle thre
 {
     if (threadHandleMap_.find(commEngine) != threadHandleMap_.end() && threadHandleMap_[commEngine] != threadHandle) {
         HCCL_ERROR("[Thread][%s]Mapping already exists:commEngine[%s], threadHandle[%lu], new threadHandle[%lu]",
-                   __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, commEngine).c_str(), threadHandleMap_[commEngine], threadHandle);
+                   __func__, GetEnumToString(GetCommEngineStatusStrMap(), commEngine).c_str(), threadHandleMap_[commEngine], threadHandle);
     }
 
     threadHandleMap_[commEngine] = threadHandle;

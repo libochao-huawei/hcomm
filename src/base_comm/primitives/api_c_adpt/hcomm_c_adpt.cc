@@ -235,7 +235,7 @@ HcommResult HcommResMgrInit(uint32_t devPhyId)
 
 static HcclResult EnsureKernelBinLoaded(CommEngine engine) {
     if (engine != COMM_ENGINE_AICPU && engine != COMM_ENGINE_AICPU_TS) {
-        HCCL_INFO("[%s] engine[%s] kernel loading not required", __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str());
+        HCCL_INFO("[%s] engine[%s] kernel loading not required", __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
         return HCCL_SUCCESS;
     }
     std::lock_guard<std::mutex> lock(hcomm::g_BinHandleMtx);
@@ -481,7 +481,7 @@ HcommResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngi
     CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]",
         __func__, channelNum), HCCL_E_PARA);
     HCCL_INFO("[%s] START. endpointHandle[0x%llx], engine[%s], channelNum[%u].",
-        __func__, endpointHandle, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), channelNum);
+        __func__, endpointHandle, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), channelNum);
 
     std::vector<HcommChannelDesc> channelDescFinals;
     CHK_RET(static_cast<HcclResult>(NormalizeHcommChannelDescs(channelDescs, channelNum, channelDescFinals)));
@@ -504,7 +504,7 @@ HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
     CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]",
         __func__, channelNum), HCCL_E_PARA);
     HCCL_INFO("[%s] START. endpointHandle[0x%llx], engine[%s], channelNum[%u].",
-        __func__, endpointHandle, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), channelNum);
+        __func__, endpointHandle, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), channelNum);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     if (endpoint != nullptr) {
         CHK_RET(RefreshEndpointContext(endpoint->GetEndpointDesc()));
@@ -580,7 +580,7 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32
             __func__, threadNum, notifyNum);
     }
     HCCL_INFO("[%s] ThreadAcquire begin. engine[%s], threadNum[%u], notifyPerThread[%u], threads[%p]",
-        __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), threadNum, notifyNum, threads);
+        __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), threadNum, notifyNum, threads);
     CHK_RET(RefreshCommEngineContext(engine));
 
     // 1. 参数校验
@@ -605,7 +605,7 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32
     CHK_RET(hccl::StoreThreadHandles(newThreads, threads, engine, g_BinHandle));
 
     HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%s] threadNum[%u], notifyPerThread[%u]",
-              GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), threadNum, notifyNum);
+              GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), threadNum, notifyNum);
     return HCCL_SUCCESS;
 }
 
@@ -691,7 +691,7 @@ HcommResult HcommThreadAllocWithStream(CommEngine engine,
     hcomm::g_ThreadMap.emplace(*thread , handle);
  
     HCCL_INFO("[ThreadMgr]  ThreadAcquireWithStream done: engine[%s] stream[%p],"
-        "notifyNum[%u]", GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), stream, notifyNum);
+        "notifyNum[%u]", GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), stream, notifyNum);
     return HCCL_SUCCESS;
 }
 
@@ -713,7 +713,7 @@ HcommResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
         || engine == COMM_ENGINE_AIV) {
         CHK_RET(hrtMalloc(ctx, size));
     } else {
-        HCCL_ERROR("[%s] not support engine type[%s]", __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str());
+        HCCL_ERROR("[%s] not support engine type[%s]", __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -729,7 +729,7 @@ HcommResult HcommEngineCtxDestroy(CommEngine engine, void *ctx)
         || engine == COMM_ENGINE_AIV) {
         CHK_RET(hrtFree(ctx));
     } else {
-        HCCL_ERROR("[%s] invalid engine[%s]", __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str());
+        HCCL_ERROR("[%s] invalid engine[%s]", __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -748,10 +748,10 @@ HcommResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcC
         || engine == COMM_ENGINE_CCU) {
         CHK_SAFETY_FUNC_RET(memcpy_s(reinterpret_cast<uint8_t*>(dstCtx), size, srcCtx, size));
     } else {
-        HCCL_ERROR("[%s]copy engine ctx failed, Unsupported engine[%s]", __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str());
+        HCCL_ERROR("[%s]copy engine ctx failed, Unsupported engine[%s]", __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
         return HCCL_E_PARA;
     }
-    HCCL_INFO("[%s]copy engine ctx success, engine[%s]", __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str());
+    HCCL_INFO("[%s]copy engine ctx success, engine[%s]", __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
     return HCCL_SUCCESS;
 }
 

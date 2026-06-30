@@ -75,7 +75,7 @@ HcclResult Channel::CreateChannel(
                     new (std::nothrow) AicpuTsHccsChannel(endpointHandle, channelDesc));
             } else {
                 HCCL_ERROR("[Channel][%s] invalid protocol for engine %s, protocol=%d",
-                    __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), channelDesc.remoteEndpoint.protocol);
+                    __func__, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), channelDesc.remoteEndpoint.protocol);
                 return HCCL_E_NOT_SUPPORT;
             }
             break;

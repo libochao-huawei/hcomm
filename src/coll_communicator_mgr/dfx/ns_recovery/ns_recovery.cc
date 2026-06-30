@@ -29,7 +29,7 @@ void NsRecoveryProcessor::AddNsRecoveryData(const CommEngine& engine, const Chan
     const ChannelHandle *const hostChannelHandleList, uint32_t channelNum, const std::string &commTag)
 {
     HCCL_INFO("[NsRecovery][AddData] AddNsRecoveryData for engine[%s], channelNum[%u], commTag[%s]", 
-        GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), channelNum, commTag.c_str());
+        GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), channelNum, commTag.c_str());
     std::vector<ChannelHandle> deviceList;
     std::vector<ChannelHandle> hostList;
     for (uint32_t index = 0; index < channelNum; ++index) {

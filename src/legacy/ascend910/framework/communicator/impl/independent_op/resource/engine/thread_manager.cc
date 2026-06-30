@@ -53,7 +53,7 @@ HcclResult ThreadMgr::CheckNotifyNum(CommEngine engine, uint32_t threadNum, uint
     }
 
     HCCL_INFO("[ThreadMgr][%s] Hcom[%s] HcclThreadAcquire quota: engine[%s], "
-        "remainNotifyQuota[%u]", __func__, commId_.c_str(), GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), remainNotifyQuota);
+        "remainNotifyQuota[%u]", __func__, commId_.c_str(), GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), remainNotifyQuota);
     return HCCL_SUCCESS;
 }
 
@@ -68,7 +68,7 @@ HcclResult ThreadMgr::CheckThreadNum(CommEngine engine, uint32_t threadNum, uint
     }
 
     HCCL_INFO("[ThreadMgr][%s] Hcom[%s] HcclThreadAcquire quota: engine[%s] threadNum[%llu].",
-        __func__, commId_.c_str(), GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), remainQuota);
+        __func__, commId_.c_str(), GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), remainQuota);
     return CheckNotifyNum(engine, threadNum, notifyNumPerThread);
 }
 
@@ -238,7 +238,7 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
     std::lock_guard<std::mutex> engineToThreadMtx(engineToThreadMutex_);
     HCCL_INFO("[ThreadMgr][%s] Hcom[%s] HcclThreadAcquire begin, max: engine[%s] threadNum[%u],"
         "notifyPerThread[%u], need: threadNum[%u], threadType[%d]",
-        __func__, commId_.c_str(), GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), threadNum_, notifyNumPerThread_, threadNum, static_cast<int32_t>(type));
+        __func__, commId_.c_str(), GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), threadNum_, notifyNumPerThread_, threadNum, static_cast<int32_t>(type));
 
     // 1、thread上的notify数量不够，需要给thread补充notify
     auto it = engineToThreadsMap_.find(std::make_pair(engine, type));
@@ -271,7 +271,7 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
     }
 
     HCCL_INFO("[ThreadMgr][%s] Hcom[%s] HcclThreadAcquire done: engine[%s] threadNum[%u]%s",
-        __func__, commId_.c_str(), GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), threadNum,
+        __func__, commId_.c_str(), GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), threadNum,
         (engine == COMM_ENGINE_AICPU) ? " (AICPU token ready)" : "");
     return HCCL_SUCCESS;
 }
@@ -379,7 +379,7 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum, T
     CHK_RET(StoreThreadsAndBuildHandleMap(engine, newThreads, hostHandle));
 
     HCCL_INFO("[ThreadMgr][HcclThreadAcquire] Hcom[%s] HcclThreadAcquire done: engine[%s] threadNum[%u]%s",
-        commId_.c_str(), GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), threadNum, (engine == COMM_ENGINE_AICPU) ? " (AICPU token ready)" : "");
+        commId_.c_str(), GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), threadNum, (engine == COMM_ENGINE_AICPU) ? " (AICPU token ready)" : "");
     return HCCL_SUCCESS;
 }
 
@@ -422,7 +422,7 @@ HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
     std::lock_guard<std::mutex> threadhandleToThreadMtx(threadhandleToThreadMutex_);
     threadMap_[*thread] = mainThread_[stream];
     HCCL_INFO("[ThreadMgr] Hcom[%s] HcclThreadAcquireWithStream done: engine[%s] stream[%p],"
-        "notifyNum[%u]", commId_.c_str(), GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), stream, notifyNum);
+        "notifyNum[%u]", commId_.c_str(), GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), stream, notifyNum);
     return HCCL_SUCCESS;
 }
 
@@ -522,7 +522,7 @@ HcclResult ThreadMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const Thr
         break;
     case COMM_ENGINE_AIV:
     default:
-        HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %s", GetEnumToString(COMMENGINE_STATUS_STR_MAP, dstCommEngine).c_str());
+        HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %s", GetEnumToString(GetCommEngineStatusStrMap(), dstCommEngine).c_str());
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;

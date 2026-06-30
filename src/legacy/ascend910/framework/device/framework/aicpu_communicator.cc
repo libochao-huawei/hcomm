@@ -5424,7 +5424,7 @@ HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *comm
     CHK_PTR_NULL(commParam);
     if (commParam->engine != COMM_ENGINE_AICPU &&
         commParam->engine != COMM_ENGINE_AICPU_TS) {
-        HCCL_ERROR("[HcclCommAicpu][%s] engine type[%s] is not supported", __func__, GetEnumToString(COMMENGINE_STATUS_STR_MAP, commParam->engine).c_str());
+        HCCL_ERROR("[HcclCommAicpu][%s] engine type[%s] is not supported", __func__, GetEnumToString(GetCommEngineStatusStrMap(), commParam->engine).c_str());
         return HCCL_E_PARA;
     }
 

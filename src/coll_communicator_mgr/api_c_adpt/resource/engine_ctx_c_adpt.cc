@@ -48,9 +48,9 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
             ret = engineCtxs->CreateCommEngineCtx(ctxTagTmp, engine, size, ctx);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[%s] Failed to create CommEngineCtx with ctxTag[%s], engine[%s], ctx size[%llu], ret[%d]",
-                __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), size, ret), ret);
+                __func__, ctxTagTmp, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), size, ret), ret);
             HCCL_RUN_INFO("HcclEngineCtxCreate success, ctxTag[%s], engine[%s], size[%llu], ctx[%p], group[%s]", ctxTagTmp, 
-                GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), size, *ctx, hcclComm->GetIdentifier().c_str());
+                GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), size, *ctx, hcclComm->GetIdentifier().c_str());
             return HCCL_SUCCESS;
         }());
 #endif
@@ -60,12 +60,12 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
     HcclResult ret = contextMgr.CreateCommEngineCtx(ctxTagTmp, engine, size, ctx);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to create CommEngineCtx with ctxTag[%s], engine[%s], ctx size[%llu], ret[%d]",
-            __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), size, ret);
+            __func__, ctxTagTmp, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), size, ret);
         return ret;
     }
 
     HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%s], size[%llu], ctx[%p], group[%s]", __func__, ctxTagTmp,
-        GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), size, *ctx, hcclComm->GetIdentifier().c_str());
+        GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), size, *ctx, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -95,7 +95,7 @@ HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine
             ret = engineCtxs->GetCommEngineCtx(ctxTagTmp, engine, ctx, size);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_WARNING("[%s] Failed to get CommEngineCtx with ctxTag[%s], engine[%s], ret[%d]", __func__, ctxTagTmp, 
-                GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), ret), ret);
+                GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), ret), ret);
             return HCCL_SUCCESS;
         }());
 #endif
@@ -105,12 +105,12 @@ HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine
     HcclResult ret = contextMgr.GetCommEngineCtx(std::string(ctxTagTmp), engine, ctx, size);
     if (ret != HCCL_SUCCESS) {
         HCCL_WARNING("[%s] Failed to get CommEngineCtx with ctxTag[%s], engine[%s], ret[%d]", __func__, ctxTagTmp,
-            GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), ret);
+            GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), ret);
         return ret;
     }
 
     HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%s], ctx[%p], size[%llu], group[%s]", __func__, ctxTagTmp,
-        GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), *ctx, *size, hcclComm->GetIdentifier().c_str());
+        GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), *ctx, *size, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -141,9 +141,9 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
             ret = engineCtxs->CopyCommEngineCtx(ctxTagTmp, engine, srcCtx, size, dstCtxOffset);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_WARNING("[%s] Failed to copy CommEngineCtx with ctxTag[%s], engine[%s], size[%llu], dstCtxOffset[%llu],"
-                " ret[%d]", __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), size, dstCtxOffset, ret), ret);
+                " ret[%d]", __func__, ctxTagTmp, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), size, dstCtxOffset, ret), ret);
             HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%s], srcCtx[%p], size[%llu], dstCtxOffset[%llu], group[%s]", 
-                __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), srcCtx, size, dstCtxOffset, hcclComm->GetIdentifier().c_str());
+                __func__, ctxTagTmp, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), srcCtx, size, dstCtxOffset, hcclComm->GetIdentifier().c_str());
             return HCCL_SUCCESS;
         }());
 #endif
@@ -153,12 +153,12 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
     HcclResult ret = contextMgr.CopyCommEngineCtx(std::string(ctxTagTmp), engine, srcCtx, size, dstCtxOffset);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to copy CommEngineCtx with ctxTag[%s], engine[%s], size[%llu], dstCtxOffset[%llu],"
-            " ret[%d]", __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), size, dstCtxOffset, ret);
+            " ret[%d]", __func__, ctxTagTmp, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), size, dstCtxOffset, ret);
         return ret;
     }
 
     HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%s], srcCtx[%p], size[%llu], dstCtxOffset[%llu], group[%s]", 
-        __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), srcCtx, size, dstCtxOffset, hcclComm->GetIdentifier().c_str());
+        __func__, ctxTagTmp, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), srcCtx, size, dstCtxOffset, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -185,9 +185,9 @@ HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine en
             ret = engineCtxs->DestroyEngineCtx(ctxTagTmp, engine);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[%s] Failed to destroy CommEngineCtx, ctxTag[%s], engine[%s], ret[%d]",
-                __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), ret), ret);
+                __func__, ctxTagTmp, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), ret), ret);
             HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%s], group[%s]", 
-                __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), hcclComm->GetIdentifier().c_str());
+                __func__, ctxTagTmp, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), hcclComm->GetIdentifier().c_str());
             return HCCL_SUCCESS;
         }());
 #endif
@@ -197,10 +197,10 @@ HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine en
     HcclResult ret = contextMgr.DestroyCommEngineCtx(ctxTagTmp, engine);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to destroy CommEngineCtx, ctxTag[%s], engine[%s], ret[%d]",
-           __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), ret);
+           __func__, ctxTagTmp, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), ret);
         return ret;
     }
     HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%s], group[%s]", 
-        __func__, ctxTagTmp, GetEnumToString(COMMENGINE_STATUS_STR_MAP, engine).c_str(), hcclComm->GetIdentifier().c_str());
+        __func__, ctxTagTmp, GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str(), hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
