@@ -27,7 +27,7 @@ public:
     // 当前仅支持交换hccl buffer
     CcuUrmaChannel(const EndpointHandle locEndpointHandle,
         const HcommChannelDesc &channelDesc);
-    ~CcuUrmaChannel() = default;
+    ~CcuUrmaChannel() override = default;
 
     HcclResult Init() override;
     ChannelStatus GetStatus() override;
