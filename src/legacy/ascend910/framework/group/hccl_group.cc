@@ -310,3 +310,8 @@ HcclResult HcclLegacyGroupEnd()
     HCCL_INFO("[GroupEnd] to the end");
     return HCCL_SUCCESS;
 }
+
+HcclResult HcclLegacyAsyncJobLaunch()
+{
+    return asyncJobLaunch();
+}
