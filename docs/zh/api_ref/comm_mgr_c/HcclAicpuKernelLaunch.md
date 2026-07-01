@@ -85,6 +85,7 @@ funcInfo.argSize = argsSize;
 AicpuTimeout timeout = DeriveAicpuTimeout(param.opConfig.execTimeout);
 u16 kernelLaunchTimeout = IsHcommDefaultTimeoutSupported() ? timeout.kernelLaunchTimeout :
 ToKernelLaunchTimeout(AddAicpuTimeoutOffset(param.opConfig.execTimeout, KERNEL_TIMEOUT_OFFSET));
+HcclKernelLaunchCfg kernelLaunchCfg;
 kernelLaunchCfg.timeOut = kernelLaunchTimeout;
 
 // 运行AICPU核函数
