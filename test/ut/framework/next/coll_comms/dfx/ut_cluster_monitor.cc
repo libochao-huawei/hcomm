@@ -178,6 +178,30 @@ TEST_F(ClusterMonitorTest, Ut_SendMonitorFrame_When_NormalInput_Expect_SendFrame
     }
 }
 
+TEST_F(ClusterMonitorTest, Ut_SendMonitorFrame_When_SendFrameFromBufferFail_Expect_ReturnError)
+{
+    for (auto iter = g_monitor.uid2SocketRefMap_.begin(); iter != g_monitor.uid2SocketRefMap_.end(); iter++) {
+        ClusterUIDType rem = iter->first;
+        ClusterMonitorFrame bufferedFrame(rem, g_monitor.myRankUID_, g_monitor.myRankUID_,
+            g_monitor.myRankUID_, ClusterMonitorStatus::CLUSTER_MONITOR_STUCK);
+        g_monitor.uid2SocketRefMap_[rem].sendBuffer.push(bufferedFrame);
+        g_monitor.uid2SocketRefMap_[rem].restSize = sizeof(ClusterMonitorFrame);
+
+        MOCKER(SocketSendNb)
+            .stubs()
+            .will(returnValue(HCCL_E_INTERNAL));
+
+        HcclResult ret = g_monitor.SendFrame(rem, g_monitor.myRankUID_, g_monitor.myRankUID_,
+            ClusterMonitorStatus::CLUSTER_MONITOR_STUCK);
+        EXPECT_NE(ret, HCCL_SUCCESS);
+
+        GlobalMockObject::verify();
+        std::queue<ClusterMonitorFrame> emptyQueue;
+        g_monitor.uid2SocketRefMap_[rem].sendBuffer.swap(emptyQueue);
+        g_monitor.uid2SocketRefMap_[rem].restSize = 0;
+    }
+}
+
 TEST_F(ClusterMonitorTest, Ut_RecvMonitorFrame_When_NormalInput_Expect_RecvFrame)
 {
     MOCKER_CPP(&ClusterMonitor::ParseFrame)

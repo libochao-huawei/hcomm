@@ -463,7 +463,8 @@ HcclResult ClusterMonitor::SendFrame(
 {
     ClusterMonitorFrame cmFrame(myRankUID_, dst, crimer, informer, status);
     if (uid2SocketRefMap_[dst].sendBuffer.size() > 0) {
-        CHK_RET(SendFrameFromBuffer(dst, cmFrame));
+        HcclResult ret = SendFrameFromBuffer(dst, cmFrame);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_WARNING("[SendFrameFromBuffer] failed, ret[%d]", ret), ret);
     } else {
         u64 compSize = 0;
         u64 expectSize = sizeof(ClusterMonitorFrame);
