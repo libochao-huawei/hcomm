@@ -1,7 +1,7 @@
 # CCU
 
 - [CCU接口简介](./README.md)
-- [资源创建与操作](./resource_allocation_operation/_dummy_node.md)
+- [资源创建与操作](./resource_allocation_operation/_dump_node.md)
   - [简介](./resource_allocation_operation/README.md)
   - [Variable](./resource_allocation_operation/Variable.md)
   - [Address](./resource_allocation_operation/Address.md)
@@ -11,12 +11,12 @@
   - [RemoteAddr](./resource_allocation_operation/RemoteAddr.md)
   - [Array](./resource_allocation_operation/Array.md)
   - [GetResByChannel](./resource_allocation_operation/GetResByChannel.md)
-- [参数加载/存储](./arg_load_store/_dummy_node.md)
+- [参数加载/存储](./arg_load_store/_dump_node.md)
   - [简介](./arg_load_store/README.md)
   - [LoadArg](./arg_load_store/LoadArg.md)
   - [Load](./arg_load_store/Load.md)
   - [Store](./arg_load_store/Store.md)
-- [数据搬运](./data_movement/_dummy_node.md)
+- [数据搬运](./data_movement/_dump_node.md)
   - [简介](./data_movement/README.md)
   - [LocalCopy](./data_movement/LocalCopy.md)
   - [LocalReduce](./data_movement/LocalReduce.md)

@@ -38,15 +38,15 @@ CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle);
 | --- | --- |
 | `CCU_SUCCESS` | 操作成功。 |
 | `CCU_E_PTR` | `insHandle`为0或无效，未找到对应实例。 |
-| `CCU_E_INTERNAL` | 内部错误，翻译失败或设备内存拷贝失败。 |
+| `CCU_E_INTERNAL` | 内部错误，翻译失败或设备内存拷贝失败；或时序错误：未先调用[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)就调用本接口。 |
 | `CCU_E_UNAVAIL` | 硬件资源不足，无法完成本轮Kernel的资源分配与翻译。 |
 
 ## 约束说明
 
-- 应在[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)和至少一次[HcommCcuKernelRegister](HcommCcuKernelRegister.md)之后调用，且应先于[HcommCcuKernelLaunch](HcommCcuKernelLaunch.md)。
+- 应在[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)和至少一次[HcommCcuKernelRegister](HcommCcuKernelRegister.md)之后调用，且应先于[HcommCcuKernelLaunch](HcommCcuKernelLaunch.md)；若未先调用[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)，本接口返回`CCU_E_INTERNAL`。
 
 > [!NOTE]说明
-> 须按 [HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md) → [HcommCcuKernelRegister](HcommCcuKernelRegister.md) → 本接口的顺序调用。若未注册任何Kernel 就调用本接口，本轮不会产生任何可启动的Kernel，请调用方自行保证调用顺序。
+> 须按 [HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md) → [HcommCcuKernelRegister](HcommCcuKernelRegister.md) → 本接口的顺序调用。未先调用[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)就调用本接口会返回`CCU_E_INTERNAL`。
 
 - 本接口调用成功后，本轮注册的Kernel即可独立启动。若需注册新一轮Kernel，须重新调用[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)开始新一轮流程。
 - 本接口只能在主机侧调用，不能在Kernel函数体内调用。

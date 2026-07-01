@@ -40,10 +40,12 @@ CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle);
 | --- | --- |
 | `CCU_SUCCESS` | 操作成功。 |
 | `CCU_E_PTR` | `insHandle`为0或无效，未找到对应实例。 |
+| `CCU_E_INTERNAL` | 时序错误：上一轮注册流程尚未调用[HcommCcuKernelRegisterEnd](HcommCcuKernelRegisterEnd.md)结束，就再次调用本接口开始新一轮注册。 |
 
 ## 约束说明
 
 - CcuInsHandle 必须在Hccl通信域中先获取，且必须先于[HcommCcuKernelRegister](HcommCcuKernelRegister.md)。
+- 本接口与[HcommCcuKernelRegisterEnd](HcommCcuKernelRegisterEnd.md)须成对调用：开始新一轮注册前，上一轮必须已通过[HcommCcuKernelRegisterEnd](HcommCcuKernelRegisterEnd.md)结束，否则本接口返回`CCU_E_INTERNAL`。
 - 本接口只能在主机侧调用，不能在Kernel函数体内调用。
 
 ## 调用示例

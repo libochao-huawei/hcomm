@@ -50,15 +50,15 @@ CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle, uint32_t dieId,
 | `CCU_E_PTR` | `insHandle`为0或无效，或`kernelFunc`为空指针，或`argNum`不为`0`时`kernelArgs`（含`kernelArgs[0]`）为空指针。 |
 | `CCU_E_PARA` | `argNum`大于`1`（当前仅支持`0`或`1`）。 |
 | `CCU_E_UNAVAIL` | 硬件资源不足，本Kernel申请的资源超出CCU实例的可用配额。 |
-| `CCU_E_INTERNAL` | 内部错误，或Kernel函数抛出未捕获异常。 |
+| `CCU_E_INTERNAL` | 内部错误，或Kernel函数抛出未捕获异常；或时序错误：未先调用[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)开始一轮注册就调用本接口。 |
 
 ## 约束说明
 
-- 必须在[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)之后、[HcommCcuKernelRegisterEnd](HcommCcuKernelRegisterEnd.md)之前调用。
+- 必须在[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)之后、[HcommCcuKernelRegisterEnd](HcommCcuKernelRegisterEnd.md)之前调用；若未先调用[HcommCcuKernelRegisterStart](HcommCcuKernelRegisterStart.md)，本接口返回`CCU_E_INTERNAL`。
 - 同一实例的同一轮注册内可多次调用本接口，每次调用注册一个独立的Kernel。
 - `argNum`当前仅支持`0`或`1`；为`1`时仅`kernelArgs[0]`生效，其余元素被忽略。
 - `kernelArgs[0]`指向的标量在注册阶段即被读取，并固化为立即数。若某个标量的值需在每次启动时动态指定，须通过`taskArgs`数组与Kernel内的`CcuLoadArg`接口传入，而不是通过`kernelArgs`。
-- `dieId`为预留参数，当前实现未使用；。
+- `dieId`为预留参数，当前实现未使用。
 - 本接口只能在主机侧调用，不能嵌套调用（即Kernel函数体内不能再次调用本接口）。
 
 ## 调用示例
@@ -72,6 +72,7 @@ typedef struct {
 // 用户自定义Kernel 函数，函数体内调用Ccu* 系列接口
 CcuResult MyKernel(CcuKernelArg arg)
 {
+    // CcuKernelArg即void*（见 ccu_types.h），用户可自定义入参结构体并通过kernelArgs传入
     MyKernelArg *myArg = (MyKernelArg *)arg;
     // 在此调用ccu数据面编程接口，例如LoadArg 等
     // ...

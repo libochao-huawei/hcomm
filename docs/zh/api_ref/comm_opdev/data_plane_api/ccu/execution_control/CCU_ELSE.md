@@ -25,9 +25,9 @@
 
 ```cpp
 CCU_IF(condExpr) {
-    // then 分支body
+    // then 分支 body
 } CCU_ELSE {
-    // else 分支body
+    // else 分支 body
 }
 ```
 
@@ -43,6 +43,7 @@ CCU_IF(condExpr) {
 
 ## 约束说明
 
+- `CCU_IF`只支持匹配一个`CCU_ELSE`，当前不支持单if多else的用法。
 - `CCU_ELSE`必须紧跟在`CCU_IF { body }`之后，不可独立出现，不可出现在其他位置。
 - `CCU_IF { body } CCU_ELSE { else-body }`之间不允许插入其他CCU API调用。
 

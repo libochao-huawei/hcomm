@@ -14,10 +14,10 @@
 
 ## 功能说明
 
-在CCU kernel内发出同die内跨core同步信号的生产者侧接口，以字符串tag标识配对：相同tag的生产/消费两侧自动绑定到同一同步资源。
+在CCU kernel内发出同die内跨kernel同步信号的生产者侧接口，以字符串tag标识配对：相同tag的生产/消费两侧自动绑定到同一同步资源。
 
 > [!NOTE]说明
-> 本接口在C++层实现为`AscendC::ccu::EventRecord(const char* notifyTag, uint16_t mask)`重载，与`EventRecord(Event, mask)`共用同一函数名，通过入参类型区分。适用于同一die内不同执行core之间的顺序同步（同device跨core），不适用于跨die或跨rank场景，跨die场景请使用[NotifyRecord](NotifyRecord.md)。
+> 本接口在C++层实现为`AscendC::ccu::EventRecord(const char* notifyTag, uint16_t mask)`重载，与`EventRecord(Event, mask)`共用同一函数名，通过入参类型区分。适用于同一die内不同kernel之间的顺序同步（同device跨kernel），不适用于跨die或跨rank场景，跨die场景请使用[NotifyRecord](NotifyRecord.md)。
 
 ## 函数原型
 
@@ -62,22 +62,22 @@ CcuResult EventRecord(const char *notifyTag, uint16_t mask = 1);
 ```cpp
 using namespace AscendC::ccu;
 
-// 场景：同die内，core 0完成阶段1操作后通知core 1继续
-// core 0 的CCU kernel函数体内
+// 场景：同die内，PhaseProducerKernel完成阶段1操作后通知PhaseConsumerKernel继续
+// 注册到 core 0 的CCU kernel函数体内
 CcuResult PhaseProducerKernel(CcuKernelArg arg) {
     // ... 执行阶段1操作 ...
 
-    // 通知同die内的core 1，阶段1已完成（即LocalNotifyRecord语义）
+    // 通知同die内的PhaseConsumerKernel，阶段1已完成（即LocalNotifyRecord语义）
     EventRecord("phase1_done", 0x1);
     return CCU_SUCCESS;
 }
 
-// core 1 的CCU kernel函数体内
+// 注册到 core 1 的CCU kernel函数体内
 CcuResult PhaseConsumerKernel(CcuKernelArg arg) {
-    // 等待core 0发出的阶段1完成信号
+    // 等待PhaseProducerKernel发出的阶段1完成信号
     EventWait("phase1_done", 0x1);
 
-    // 此后可安全使用core 0阶段1的结果
+    // 此后可安全使用PhaseProducerKernel阶段1的结果
     return CCU_SUCCESS;
 }
 ```

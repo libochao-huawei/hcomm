@@ -22,14 +22,14 @@
 
 ```cpp
 CCU_IF(condExpr) {
-    // then 分支body
+    // then 分支 body
 }
 
-// 可选：紧跟CCU_ELSE
+// 可选：紧跟 CCU_ELSE
 CCU_IF(condExpr) {
-    // then 分支body
+    // then 分支 body
 } CCU_ELSE {
-    // else 分支body
+    // else 分支 body
 }
 ```
 
@@ -39,36 +39,14 @@ CCU_IF(condExpr) {
 | --- | --- |
 | condExpr | 条件表达式，类型为`AscendC::ccu::CondExpr`。通过`ccu::Variable`的`operator==(uint64_t)`或`operator!=(uint64_t)`产生，例如`v == 0`或`v != limit`。条件在运行期由CCU硬件计算。 |
 
-### CondExpr
-
-`CondExpr`为条件表达式辅助类型，定义如下：
-
-```cpp
-namespace AscendC {
-namespace ccu {
-struct CondExpr {
-    Variable *var;      // 被比较的Variable
-    uint64_t imm;       // 比较的立即数
-    CcuConditionType cond; // CCU_CONDITION_EQ 或CCU_CONDITION_NE
-};
-} // namespace ccu
-} // namespace AscendC
-```
-
-由`ccu::Variable`运算符生成，不需要手动构造：
-
-```cpp
-ccu::Variable v;
-v == 0;   // 产生CondExpr{&v, 0, CCU_CONDITION_EQ}
-v != 10;  // 产生CondExpr{&v, 10, CCU_CONDITION_NE}
-```
-
 ## 返回值
 
 `CCU_IF`为预处理器宏，本身不返回[CcuResult](../../../datatype_definition/CcuResult.md)。宏展开后若发生内部错误（如label重复、句柄无效），可能产生`CCU_E_PARA`/`CCU_E_NOT_FOUND`，此时宏不抛异常、也不阻断注册：失败时body会被跳过，但注册仍然成功。这与"`CCU_ELSE`无法配对时body被跳过"属于同一类情况——错误不通过返回值反馈，调试时需留意。
 
 ## 约束说明
 
+- `CCU_IF（condExpr）`后必须紧跟{}包裹的then代码块
+- A5代际的`CCU_IF`当前的`condExpr`只支持==和！=两种判断模式
 - `CCU_IF`可以单独使用（无`CCU_ELSE`），也可以配合`CCU_ELSE`使用，两种写法均合法。
 - 支持嵌套：`CCU_IF`内部可以再嵌套`CCU_IF`。
 - `CCU_IF`不建议在硬件Loop（`ccu::Loop`）的body lambda内部使用——硬件Loop body内不支持软件分支；框架不强制校验，但行为未定义。

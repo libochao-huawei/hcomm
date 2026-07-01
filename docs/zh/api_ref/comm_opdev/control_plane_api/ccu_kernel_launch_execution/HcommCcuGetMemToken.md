@@ -43,7 +43,7 @@ CcuResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenInfo
 | `CCU_SUCCESS` | 操作成功。 |
 | `CCU_E_PTR` | 空指针错误，`tokenInfo`为空指针。 |
 | `CCU_E_PARA` | 参数错误，`srcVa`为0或`size`为0。 |
-| `CCU_E_DRV_*` | 驱动层错误，错误码范围为[4097, 4224]。 |
+| `CCU_E_DRV_*` | 驱动层错误，当前可能返回4097（`CCU_E_DRV_INIT_FAILED`）或4098（`CCU_E_DRV_BUSY`）；驱动层错误码段定义为 [`CCU_E_DRV_START`=4096, `CCU_E_DRV_END`=4224]，详见[CcuResult](../../datatype_definition/CcuResult.md)。 |
 
 ## 约束说明
 
@@ -56,7 +56,7 @@ CcuResult HcommCcuGetMemToken(uint64_t srcVa, uint64_t size, uint64_t *tokenInfo
 ## 调用示例
 
 ```c
-// srcVa 为已注册的HBM 内存起始地址，size 为该内存区域的字节大小
+// srcVa为已注册的HBM内存起始地址，size为该内存区域的字节大小
 uint64_t srcVa = /* 已注册内存的虚拟地址 */;
 uint64_t size  = /* 内存区域字节大小 */;
 
@@ -67,6 +67,6 @@ if (ret != CCU_SUCCESS) {
     return ret;
 }
 
-// 将tokenInfo 通过kernelArg 或taskArgs 传入Kernel
-// Kernel 内部将其赋值给LocalAddr.token 或RemoteAddr.token
+// 将tokenInfo通过kernelArg或taskArgs传入Kernel
+// Kernel内部将其赋值给LocalAddr.token或RemoteAddr.token
 ```

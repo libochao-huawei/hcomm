@@ -14,10 +14,10 @@
 
 ## 功能说明
 
-在CCU kernel内阻塞等待同die内跨core同步信号的消费者侧接口，以字符串tag标识配对。硬件执行到此处会阻塞，直到对应bit被置位后继续。
+在CCU kernel内阻塞等待同die内跨kernel同步信号的消费者侧接口，以字符串tag标识配对。硬件执行到此处会阻塞，直到对应bit被置位后继续。
 
 > [!NOTE]说明
-> 本接口在C++层实现为`AscendC::ccu::EventWait(const char* notifyTag, uint16_t mask)`重载，与`EventWait(Event, mask)`共用同一函数名，通过入参类型区分。适用于同一die内不同执行core之间的顺序同步，不适用于跨die或跨rank场景，跨die场景请使用[NotifyWait](NotifyWait.md)。
+> 本接口在C++层实现为`AscendC::ccu::EventWait(const char* notifyTag, uint16_t mask)`重载，与`EventWait(Event, mask)`共用同一函数名，通过入参类型区分。适用于同一die内不同kernel之间的顺序同步，不适用于跨die或跨rank场景，跨die场景请使用[NotifyWait](NotifyWait.md)。
 
 ## 函数原型
 
@@ -60,13 +60,13 @@ CcuResult EventWait(const char *notifyTag, uint16_t mask = 1);
 ```cpp
 using namespace AscendC::ccu;
 
-// 场景：同die内，core 1等待core 0完成阶段1后才开始阶段2
-// core 1 的CCU kernel函数体内
+// 场景：同die内，PhaseConsumerKernel等待PhaseProducerKernel完成阶段1后才开始阶段2
+// 注册到 core 1 的CCU kernel函数体内
 CcuResult PhaseConsumerKernel(CcuKernelArg arg) {
-    // 等待core 0发出"phase1_done"信号的bit0（即LocalNotifyWait语义）
+    // 等待PhaseProducerKernel发出"phase1_done"信号的bit0（即LocalNotifyWait语义）
     EventWait("phase1_done", 0x1);
 
-    // 此后可安全使用core 0阶段1的结果
+    // 此后可安全使用PhaseProducerKernel阶段1的结果
     // ... 执行阶段2操作 ...
     return CCU_SUCCESS;
 }

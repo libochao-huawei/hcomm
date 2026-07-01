@@ -90,7 +90,7 @@ public:
 - 析构不释放硬件资源，不应在kernel之外保存或比较`handle`值，翻译完成后句柄即失效。
 - 当前仅支持加法运算，不支持减法、乘法、除法。
 - 立即数不可直接参与算术（`v + 1`不合法），须先赋给一个Variable（`one = 1;`）后再参与运算（`v = v + one;`）。
-- C++ 构造只申请虚拟句柄，恒成功不抛异常；`XN` 物理资源不足时，由 `HcommCcuKernelRegister` 阶段返回 `CCU_E_UNAVAIL`，不是在构造时抛出。
+- 构造仅申请虚拟句柄（不消耗物理 XN），**在 kernel 注册阶段内构造恒成功**；若在注册阶段之外构造（不在 `HcommCcuKernelRegister` 调用的 kernel 函数体内），底层 `CcuVariableAlloc` 找不到当前 kernel，会抛出携带 `CCU_E_PTR` 的 `CcuException`。XN 物理资源不足由 `HcommCcuKernelRegister` 阶段返回 `CCU_E_UNAVAIL`，不在构造时触发。该约束与上文"只能在kernel注册阶段构造Variable"前后呼应——后者讲规则，前者讲违反规则的后果（抛 `CCU_E_PTR`）。
 
 ## 调用示例
 

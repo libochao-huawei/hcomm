@@ -49,16 +49,16 @@ CcuResult LoadArg(Variable v, uint32_t argId);
 | `CCU_E_NOT_FOUND` | 传入的`v`句柄未在当前kernel注册。 |
 
 > [!NOTE]说明
-> 本接口不会返回 `CCU_E_PARA`。argId 相关的所有约束错误（重复、跳号、与 `argSize` 不匹配）不在本接口处返回，而是在 `HcommCcuKernelLaunch` 阶段统一校验后返回 `CCU_E_INTERNAL`，详见下节"约束说明"。
+> 本接口不会返回 `CCU_E_PARA`。argId 相关的所有约束错误（重复、跳号、与 `argNum` 不匹配）不在本接口处返回，而是在 `HcommCcuKernelLaunch` 阶段统一校验后返回 `CCU_E_INTERNAL`，详见下节"约束说明"。
 
 ## 约束说明
 
 > [!CAUTION]注意
-> 同一kernel内所有 `LoadArg` 调用使用的不同 `argId` 总数，必须与 `HcommCcuKernelLaunch` 的 `argSize` 参数严格相等；且 `argId` 必须覆盖 `0..argSize-1` 全部值。两条都在 `HcommCcuKernelLaunch` 阶段统一校验，违反时返回 `CCU_E_INTERNAL`。
+> 同一kernel内所有 `LoadArg` 调用使用的不同 `argId` 总数，必须与 `HcommCcuKernelLaunch` 的 `argNum` 参数严格相等；且 `argId` 必须覆盖 `0..argNum-1` 全部值。两条都在 `HcommCcuKernelLaunch` 阶段统一校验，违反时返回 `CCU_E_INTERNAL`。
 
 - `argId` 须从0 连续编号（0、1、2、…），不可跳过或乱序——Launch 阶段强校验。
-- 同一kernel 内不同 `LoadArg` 调用的 `argId` 不可重复——本接口处不会拦截重复，但重复会使有效 `argId` 总数小于 `argSize`，在 `HcommCcuKernelLaunch` 阶段报 `CCU_E_INTERNAL`。两个Variable 绑同一 `argId` 是危险错误，请自行避免。
-- `argSize` 的单位是 `uint64_t` 元素个数，而非字节数。例如有3 个 `LoadArg` 调用（argId 为0、1、2），则 `HcommCcuKernelLaunch` 的 `argSize` 须传 `3`，`taskArgs` 须有至少3 个元素。
+- 同一kernel 内不同 `LoadArg` 调用的 `argId` 不可重复——本接口处不会拦截重复，但重复会使有效 `argId` 总数小于 `argNum`，在 `HcommCcuKernelLaunch` 阶段报 `CCU_E_INTERNAL`。两个Variable 绑同一 `argId` 是危险错误，请自行避免。
+- `argNum` 的单位是 `uint64_t` 元素个数，而非字节数。例如有3 个 `LoadArg` 调用（argId 为0、1、2），则 `HcommCcuKernelLaunch` 的 `argNum` 须传 `3`，`taskArgs` 须有至少3 个元素。
 - `LoadArg` 不在调用处生效：翻译时所有 `LoadArg` 会被提到kernel 最前面执行，只负责给 `v` 设"进入body 时的初值"。因此若body 里又对同一个 `v` 用立即数（`v = 1024;`）或 `Load` 赋值，这些赋值都排在 `LoadArg` 之后，会覆盖掉注入的初值。混用同一个 `v` 时须先把注入值读走、再重新赋值，否则注入值还没用上就被覆盖，`LoadArg` 等于没生效（作用在不同Variable 上，如 `LoadArg(addrVar, 0); Load(addrVar, v);`，不受此影响）。
 
 ## 调用示例
@@ -80,5 +80,5 @@ CcuResult MyKernel(CcuKernelArg arg) {
 
 // host侧对应的Launch调用（示意）：
 // uint64_t taskArgs[] = {100, 4096};   // n=100轮，offset=4096字节
-// HcommCcuKernelLaunch(..., taskArgs, /*argSize=*/2);
+// HcommCcuKernelLaunch(..., taskArgs, /*argNum=*/2);
 ```
