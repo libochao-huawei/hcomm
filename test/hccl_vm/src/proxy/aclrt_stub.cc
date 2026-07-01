@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+// 日志染色: 模块 tag (须在 include sim_log.h 之前)
+#define HCCL_VM_MODULE "ACLRT_STUB"
+
 #include <atomic>
 #include <cstdint>
 #include <iostream>
@@ -19,11 +22,6 @@
 #include "runtime/base.h"
 #include "db_sim_runner_ops.h"
 
-#define ACLRT_STUB_ERROR(format, ...) HCCL_VM_ERROR("[ACLRT_STUB]" format, ##__VA_ARGS__)
-#define ACLRT_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[ACLRT_STUB]" format, ##__VA_ARGS__)
-#define ACLRT_STUB_INFO(format, ...)  HCCL_VM_INFO("[ACLRT_STUB]" format, ##__VA_ARGS__)
-#define ACLRT_STUB_WARN(format, ...)  HCCL_VM_WARN("[ACLRT_STUB]" format, ##__VA_ARGS__)
-#define ACLRT_STUB_TRACE(format, ...) HCCL_VM_TRACE("[ACLRT_STUB]" format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +31,7 @@ aclError aclsysGetVersionStr(char *pkgName, char *versionStr)
 {
     (void) pkgName;
     memcpy(versionStr, "9.0.0", sizeof("9.0.0"));
-    ACLRT_STUB_DEBUG("get version:{}", versionStr);
+    HCCL_VM_DEBUG("get version:{}", versionStr);
     return ACL_SUCCESS;
 }
 

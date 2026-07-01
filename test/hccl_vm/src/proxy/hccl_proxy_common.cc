@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+// 日志染色: 模块 tag (须在 include sim_log.h 之前)
+#define HCCL_VM_MODULE "PROXY_STUB"
+
 #include <cstdint>
 #include <iostream>
 #include <map>
@@ -16,11 +19,6 @@
 #include "sim_log.h"
 #include "db_sim_runner_db.h"
 
-#define PROXY_STUB_ERROR(format, ...) HCCL_VM_ERROR("[PROXY_STUB]" format, ##__VA_ARGS__)
-#define PROXY_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[PROXY_STUB]" format, ##__VA_ARGS__)
-#define PROXY_STUB_INFO(format, ...)  HCCL_VM_INFO("[PROXY_STUB]" format, ##__VA_ARGS__)
-#define PROXY_STUB_WARN(format, ...)  HCCL_VM_WARN("[PROXY_STUB]" format, ##__VA_ARGS__)
-#define PROXY_STUB_TRACE(format, ...) HCCL_VM_TRACE("[PROXY_STUB]" format, ##__VA_ARGS__)
 
 namespace sim {
 const std::map<HcclDataType, u32> DATA_TYPE_SIZE_MAP = {
@@ -47,7 +45,7 @@ int GetDataTypeSize(HcclDataType dataType, uint32_t &size)
 {
     auto iter = DATA_TYPE_SIZE_MAP.find(dataType);
     if (iter == DATA_TYPE_SIZE_MAP.end()) {
-        PROXY_STUB_ERROR("not support data type: {}", static_cast<uint32_t>(dataType));
+        HCCL_VM_ERROR("not support data type: {}", static_cast<uint32_t>(dataType));
         return 1;
     }
     size = iter->second;
@@ -63,7 +61,7 @@ bool IsDeviceAddress(void *addr)
                     (devPtr < (virMem.start_ptr + virMem.size)) &&
                     (virMem.src_type == (uint8_t)sim::VIR_MEM_TYPE_DEV)); });
     if (!virMemRes.second) {
-        PROXY_STUB_INFO("this buff offset ptr not found:{:p} in VirtualMemBlock.", addr);
+        HCCL_VM_INFO("this buff offset ptr not found:{:p} in VirtualMemBlock.", addr);
         return false;
     }
 

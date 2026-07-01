@@ -118,7 +118,7 @@ void GenWaitNode(TaskStubCcuGraph *curCcuTask, uint32_t queId, uint16_t waitCKEI
 HcclResult ProcessWaitMask(RankId rankId, uint32_t dieId, TaskStubCcuGraph *curCcuTask, uint32_t queId,
     uint16_t waitCKEId, uint16_t waitCKEMask, bool& isContinue)
 {
-    HCCL_VM_DEBUG("[ProcessWaitMask] Enter...rank {:d}, die{:d}, que{:d}, waitCke{:d}, waitMask{:d}",
+    HCCL_VM_DEBUG("Enter...rank {:d}, die{:d}, que{:d}, waitCke{:d}, waitMask{:d}",
         rankId, static_cast<uint32_t>(dieId), queId, waitCKEId, waitCKEMask);
     if (waitCKEMask != 0x0000) {
         uint16_t ckeValue = 0;
@@ -126,7 +126,7 @@ HcclResult ProcessWaitMask(RankId rankId, uint32_t dieId, TaskStubCcuGraph *curC
         // 条件不满足，继续等待
         if ((ckeValue & waitCKEMask) != waitCKEMask) {
             isContinue = 0;
-            HCCL_VM_DEBUG("[ProcessWaitMask] Does not meet the condition, continue: ckeId: {:d}, ckeValue: {:d}, mask: {:x}", waitCKEId, ckeValue, waitCKEMask);
+            HCCL_VM_DEBUG("Does not meet the condition, continue: ckeId: {:d}, ckeValue: {:d}, mask: {:x}", waitCKEId, ckeValue, waitCKEMask);
             return HCCL_SUCCESS;
         } else {
             GenWaitNode(curCcuTask, queId, waitCKEId, waitCKEMask);
@@ -216,7 +216,7 @@ HcclResult TransformInstrQue(TaskNodePtr node, TaskStubCcuGraph *curCcuTask, uin
         AddCcuSubGraphEnd(node, curCcuTask);
     }
 
-    HCCL_VM_DEBUG("[TransformInstrQue] end...");
+    HCCL_VM_DEBUG("end...");
     return HCCL_SUCCESS;
 }
 
@@ -360,7 +360,7 @@ HcclResult GenCcuGraph(TaskNode* dummyStart) {
     AllRankParamRecorder::Global()->InitParam();
     HcclSim::StorageManager::GetInstance().InitCcuInfo(AllRankParamRecorder::Global()->devType_,
         AllRankParamRecorder::Global()->ccu_resource_base_addr_);
-    HCCL_VM_INFO("[GenCcuGraph] dummyStart children size: {}", dummyStart->children.size());
+    HCCL_VM_INFO("dummyStart children size: {}", dummyStart->children.size());
 
     bool isPrintCcuGraph = std::getenv("CCU_TASK_PRINT");
     completedNodes.insert(dummyStart);
@@ -370,7 +370,7 @@ HcclResult GenCcuGraph(TaskNode* dummyStart) {
         candNode.push_back(child);
     }
 
-    HCCL_VM_INFO("[GenCcuGraph] start......{}", candNode.size());
+    HCCL_VM_INFO("start......{}", candNode.size());
     u32 unmatchedCnt = 0;
     while(!candNode.empty()) {
         // 先判断是否存在死锁的情况

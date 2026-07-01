@@ -10,23 +10,21 @@
 
 // 为确保Scatter正常执行打的临时桩，需要适时移除
 
+// 日志染色: 模块 tag (须在 include sim_log.h 之前)
+#define HCCL_VM_MODULE "SCATTER_STUB"
+
 #include <cstdio>
 #include <cstring>
 
 #include "hccl/dtype_common.h"
 #include "sim_log.h"
 
-#define SCATTER_STUB_ERROR(format, ...) HCCL_VM_ERROR("[SCATTER_STUB]" format, ##_VA_ARGS__)
-#define SCATTER_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[SCATTER_STUB]" format, ##_VA_ARGS__)
-#define SCATTER_STUB_INFO(format, ...)  HCCL_VM_INFO("[SCATTER_STUB]" format, ##__VA_ARGS__)
-#define SCATTER_STUB_WARN(format, ...)  HCCL_VM_WARN("[SCATTER_STUB]" format, ##__VA_ARGS__)
-#define SCATTER_STUB_TRACE(format, ...) HCCL_VM_TRACE("[SCATTER_STUB]" format, ##__VA_ARGS__)
 
 namespace ops_hccl {
 bool RunIndependentOpExpansion(DevType deviceType)
 {
     (void) deviceType;
-    SCATTER_STUB_INFO("return true");
+    HCCL_VM_INFO("return true");
     return true;
 }
 
@@ -35,7 +33,7 @@ bool IsAiCpuMode(DevType deviceType, u32 rankSize)
     (void) deviceType;
     (void) rankSize;
     const char* env = getenv("HCCL_OP_EXPANSION_MODE");
-    SCATTER_STUB_INFO("env = {}", env);
+    HCCL_VM_INFO("env = {}", env);
     // 判断是否是AI_CPU
     if (env != nullptr && strcmp(env, "AI_CPU") == 0) {
         return true;

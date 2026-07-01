@@ -12,6 +12,7 @@ target_sources(hccl_device_proxy PRIVATE
     aicpu_stub.cc
     ascend_hal_stub.cc
     device_sqe_parse_stub.cc
+    aprofiling_stub.cc
     ${HCCL_VM_SRC}/utils/sim_log.cc
     ${HCCL_VM_SRC}/utils/sim_yaml_config.cc
     ${HCCL_VM_SRC}/utils/sim_common_api.cc

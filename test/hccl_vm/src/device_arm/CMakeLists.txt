@@ -138,3 +138,6 @@ install(TARGETS device
 )
 
 
+
+# 日志染色: 模块 tag
+target_compile_definitions(device PRIVATE HCCL_VM_MODULE="DEVICE")

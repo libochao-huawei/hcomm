@@ -53,7 +53,7 @@ std::string GenDataId()
     int32_t retryCount = 10;
     while (true) {
         if (retryCount == 0) {
-            HCCL_VM_ERROR("[GenDataId] failed to gen dataId.");
+            HCCL_VM_ERROR("failed to gen dataId.");
             break;
         }
         retryCount--;
@@ -100,7 +100,7 @@ HcclVmResult DumpHcclVmFlagData(HcclSim::HcclVmFlagData &flagData)
 
     auto ret = HcclVmFlagDataWrite(fp, flagData);
     if (ret != HcclVmResult::HCCL_SIM_SUCCESS) {
-        HCCL_VM_ERROR("[DumpHcclVmFlagData] HcclVmFlagDataWrite failed. ");
+        HCCL_VM_ERROR("HcclVmFlagDataWrite failed. ");
         fclose(fp);
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
@@ -123,7 +123,7 @@ HcclVmResult GetHcclVmFlagData(HcclSim::HcclVmFlagData &waitFlag)
 
     auto ret = HcclVmFlagDataRead(fp, waitFlag, HCCLVM_FLAG_FILE_MAGIC);
     if (ret != HcclVmResult::HCCL_SIM_SUCCESS) {
-        HCCL_VM_ERROR("[GetHcclVmFlagData] HcclVmFlagDataRead failed. ");
+        HCCL_VM_ERROR("HcclVmFlagDataRead failed. ");
         fclose(fp);
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
@@ -158,7 +158,7 @@ HcclVmResult DumpDataToFile(const std::string &dataId)
 
 HcclVmResult CreateMemoryInfo(HcclVmSynData &hvmSynData, const sim::OpMemInfoTab &memInfo, uint32_t rankId)
 {
-    HCCL_VM_INFO("[STUB] Enter into create memory info...");
+    HCCL_VM_INFO("Enter into create memory info...");
     auto addBuf = [&](uint8_t bufType, uint64_t addr, uint64_t size) {
         if (addr != 0 && size > 0) {
             MemLayoutData memLayoutData{};
@@ -175,14 +175,14 @@ HcclVmResult CreateMemoryInfo(HcclVmSynData &hvmSynData, const sim::OpMemInfoTab
     addBuf(static_cast<uint8_t>(BufferType::CCL), memInfo.cclAddr, memInfo.cclSize);
 
     hvmSynData.memory_info.count = hvmSynData.memory_info.data.size();
-    HCCL_VM_INFO("{}", hvmSynData.memory_info.count, hvmSynData.memory_info.data.size());
+    HCCL_VM_INFO("memory_info count={}, dataSize={}", hvmSynData.memory_info.count, hvmSynData.memory_info.data.size());
 
     return HcclVmResult::HCCL_SIM_SUCCESS;
 }
 
 HcclVmResult CreateChannelInfo(HcclVmSynData &hvmSynData)
 {
-    HCCL_VM_INFO("[STUB] Enter into create channel info...");
+    HCCL_VM_INFO("Enter into create channel info...");
 
     std::vector<sim::CcuChannelTab> channels;
     loader::Loader dataLoader;
@@ -251,7 +251,7 @@ HcclVmResult CreateChannelInfo(HcclVmSynData &hvmSynData)
 
 HcclVmResult CreateJettyInfo(HcclVmSynData &hvmSynData)
 {
-    HCCL_VM_INFO("[STUB] Enter into create jetty info...");
+    HCCL_VM_INFO("Enter into create jetty info...");
     auto endpointPairs = RunnerDB::GetByPred<sim::EndPointPair>([](auto &&) { return true; });
     hvmSynData.channel_info.count = endpointPairs.size();
     for (auto &endpoint : endpointPairs) {
@@ -334,7 +334,7 @@ HcclVmResult CreateJettyInfo(HcclVmSynData &hvmSynData)
 
 HcclVmResult CreateSimSynData(HcclVmSynData &hvmSynData)
 {
-    HCCL_VM_INFO("[CreateSimSynData] Start get simulator synthesis data...");
+    HCCL_VM_INFO("Start get simulator synthesis data...");
     // header
     hvmSynData.header.magic = HCCLVM_SYN_FILE_MAGIC;
     hvmSynData.header.version = 1;
@@ -345,7 +345,7 @@ HcclVmResult CreateSimSynData(HcclVmSynData &hvmSynData)
     constexpr uint32_t kDumpSyncIter = 0;  // 仅在 round 0 时 dump，syncIter 固定为 0
     loader::Loader dataLoader;
     if (dataLoader.LoadCompositeOpDetailBySyncIter(kDumpSyncIter, compositeDataMap) != HcclResult::HCCL_SUCCESS) {
-        HCCL_VM_ERROR("LoadCompositeOpDetailBySyncIter({}, {}) failed.", kDumpSyncIter);
+        HCCL_VM_ERROR("LoadCompositeOpDetailBySyncIter({}) failed.", kDumpSyncIter);
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
     if (compositeDataMap.count(0) == 0 || compositeDataMap[0].empty()) {
@@ -415,7 +415,7 @@ HcclVmResult CreateSimSynData(HcclVmSynData &hvmSynData)
 
 HcclVmResult DumpHcclVmSynthesisData(const std::string &dataId)
 {
-    HCCL_VM_INFO("[DumpHcclVmSynthesisData] Start dumping hccl vm synthesis data...");
+    HCCL_VM_INFO("Start dumping hccl vm synthesis data...");
     // 1. 构造完整路径
     char fileName[256];
     snprintf(fileName, sizeof(fileName), HCCLVM_SYN_DATA_FILE.c_str(), dataId.c_str());
@@ -436,7 +436,7 @@ HcclVmResult DumpHcclVmSynthesisData(const std::string &dataId)
 
     FILE *fp = fopen(fullPath.c_str(), "wb");
     if (!fp) {
-        HCCL_VM_ERROR("Open file failed: {}", fullPath, strerror(errno));
+        HCCL_VM_ERROR("Open file failed: {}, err: {}", fullPath, strerror(errno));
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
 
@@ -511,7 +511,7 @@ HcclVmResult DumpHcclVmInstrData(const std::string &dataId)
     std::string fullPath = InstallPath::ResolveToInstallRoot("data" + std::string(fileName));
     FILE *fp = fopen(fullPath.c_str(), "wb");
     if (!fp) {
-        HCCL_VM_ERROR("Open file failed: {}", fullPath, strerror(errno));
+        HCCL_VM_ERROR("Open file failed: {}, err: {}", fullPath, strerror(errno));
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
 
@@ -601,7 +601,7 @@ HcclVmResult DumpHcclVmTask(const std::string &dataId)
 
     FILE *fp = fopen(fullPath.c_str(), "wb");
     if (!fp) {
-        HCCL_VM_ERROR("Open file failed: {}", fullPath, strerror(errno));
+        HCCL_VM_ERROR("Open file failed: {}, err: {}", fullPath, strerror(errno));
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
 

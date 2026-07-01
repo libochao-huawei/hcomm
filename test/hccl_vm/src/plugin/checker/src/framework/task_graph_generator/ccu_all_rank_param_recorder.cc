@@ -105,7 +105,7 @@ HcclResult AllRankParamRecorder::CheckAllPostMatch()
             for (const auto& regPair: diePair.second) {
                 uint16_t regId = regPair.first;
                 for (auto& post : seenPost[rank][dieId][regId]) {
-                    HCCL_WARNING("unmatched LocalPost/Post: {}", post->task->Describe().c_str());
+                    HCCL_WARNING("unmatched LocalPost/Post: %s", post->task->Describe().c_str());
                 }
             }
         }

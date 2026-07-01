@@ -46,3 +46,6 @@ target_include_directories(store PRIVATE
 )
 
 target_link_libraries(store PUBLIC log loader)
+
+# 日志染色: 模块 tag
+target_compile_definitions(store PRIVATE HCCL_VM_MODULE="STORE")

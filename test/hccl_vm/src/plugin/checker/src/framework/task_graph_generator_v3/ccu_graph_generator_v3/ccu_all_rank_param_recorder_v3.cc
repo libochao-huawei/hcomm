@@ -10,6 +10,8 @@
 
 #include "ccu_all_rank_param_recorder_v3.h"
 #include <sys/types.h>
+#include "sim_log.h"
+#include "utils/error_codes.h"
 
 namespace HcclSim {
 namespace TaskGraphGeneratorV3 {
@@ -46,22 +48,22 @@ void AllRankParamRecorder::RegisterPostNode(TaskNode *node, const CcuPostNodeMet
     postNodeMeta[node] = meta;
 }
 
-uint32_t AllRankParamRecorder::GetPostTopicId(const TaskNode *node) const
+uint32_t AllRankParamRecorder::GetPostRemainingCkeMask(const TaskNode *node) const
 {
     auto it = postNodeMeta.find(node);
     if (it == postNodeMeta.end()) {
         return 0;
     }
-    return it->second.topicId;
+    return it->second.remainingCkeMask;
 }
 
-void AllRankParamRecorder::SetPostTopicId(TaskNode *node, uint32_t topicId)
+void AllRankParamRecorder::SetPostRemainingCkeMask(TaskNode *node, uint32_t remainingCkeMask)
 {
     auto it = postNodeMeta.find(node);
     if (it == postNodeMeta.end()) {
         return;
     }
-    it->second.topicId = static_cast<uint16_t>(topicId);
+    it->second.remainingCkeMask = static_cast<uint16_t>(remainingCkeMask);
 }
 
 const CcuPostNodeMetaV3 *AllRankParamRecorder::GetPostNodeMeta(const TaskNode *node) const
@@ -101,7 +103,7 @@ HcclResult AllRankParamRecorder::GetXn(uint32_t rankId, uint32_t dieId, uint16_t
             }
         }
     }
-    HCCL_ERROR("[GetXn]curXn is not be initialized, rankId[%u], dieId[%u], xnId[%hu]", rankId, dieId, xnId);
+    xnValue = 0;
     return HCCL_E_PARA;
 }
 
@@ -115,7 +117,7 @@ HcclResult  AllRankParamRecorder::GetGSA(uint32_t rankId, uint32_t dieId, uint16
             }
         }
     }
-    HCCL_ERROR("[GetGSA]curGSA is not be initialized, rankId[%u], dieId[%u], gsaId[%hu]", rankId, dieId, gsaId);
+    gsaValue = 0;
     return HCCL_E_PARA;
 }
 
@@ -184,14 +186,21 @@ HcclResult AllRankParamRecorder::CheckAllPostMatch()
                 for (const auto *post : regPair.second) {
                     const auto *meta = GetPostNodeMeta(post);
                     if (meta != nullptr) {
-                        HCCL_WARNING("unmatched LocalPost/Post: node={:p}, waitRank={}, dieId={}, ckeId={}, "
-                            "recordRank={}, topicId=0x{:x}, isLocal={}", static_cast<const void *>(post),
-                            meta->waitRankId, meta->dieId, meta->ckeId, meta->recordRankId, meta->topicId,
-                            meta->isLocal);
+                        HCCL_VM_WARN("{} Found CCU post/local-post tasks that were never consumed by "
+                            "any Wait task, firstUnconsumedPostNode={}, unconsumedPostCount={}, waitRankId={}, "
+                            "dieId={}, "
+                            "ckeId={}, recordRankId={}, remainingCkeMask=0x{:x}, isLocal={}",
+                            MakeErrorCodeText(ErrorCode::GRAPH_UNMATCHED).c_str(),
+                            post == nullptr ? "node=null" : post->Describe().c_str(), regPair.second.size(),
+                            meta->waitRankId, meta->dieId, meta->ckeId,
+                            meta->recordRankId, meta->remainingCkeMask, meta->isLocal);
                         continue;
                     }
-                    HCCL_WARNING("unmatched LocalPost/Post: node={:p}, waitRank={}, dieId={}, ckeId={}",
-                        static_cast<const void *>(post), rank, dieId, regId);
+                    HCCL_VM_WARN("{} Found CCU post/local-post tasks that were never consumed by any "
+                        "Wait task, firstUnconsumedPostNode={}, unconsumedPostCount={}, waitRankId={}, dieId={}, "
+                        "ckeId={}", MakeErrorCodeText(ErrorCode::GRAPH_UNMATCHED).c_str(),
+                        post == nullptr ? "node=null" : post->Describe().c_str(), regPair.second.size(), rank,
+                        dieId, regId);
                 }
             }
         }
@@ -202,9 +211,7 @@ HcclResult AllRankParamRecorder::CheckAllPostMatch()
 
 HcclResult AllRankParamRecorder::SetHBM(uint32_t rankId, uint32_t dieId, uint64_t hbmAddr,
     const std::vector<uint64_t>& data) {
-    // 合法性校验
-    if (data.size() % 8 != 0){
-        HCCL_ERROR("hbm data size is not 8 bytes aligned");
+    if (data.size() % 8 != 0) {
         return HCCL_E_PARA;
     }
     curHBM[rankId][dieId][hbmAddr] = data;
@@ -220,7 +227,7 @@ HcclResult AllRankParamRecorder::GetHBM(uint32_t rankId, uint32_t dieId, uint64_
             }
         }
     }
-    HCCL_ERROR("[GetGSA]curGSA is not be initialized, rankId[%u], dieId[%u], hbmAddr[%llu]", rankId, dieId, hbmAddr);
+    data.clear();
     return HCCL_E_PARA;
 }
 

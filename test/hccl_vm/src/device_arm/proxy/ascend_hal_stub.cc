@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+// 日志染色: 模块 tag (须在 include sim_log.h 之前)
+#define HCCL_VM_MODULE "STUB"
+
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -21,6 +24,7 @@
 #include "db_sim_runner_common.h"
 #include "sim_log.h"
 
+
 using namespace HcclSim;
 
 #ifdef __cplusplus
@@ -30,14 +34,14 @@ extern "C" {
 drvError_t halEschedAttachDevice(unsigned int devId)
 {
     (void) devId;
-    HCCL_VM_INFO("[STUB]AttachDevice is empty.");
+    HCCL_VM_INFO("AttachDevice is empty.");
     return DRV_ERROR_NONE;
 }
 
 drvError_t halEschedDettachDevice(unsigned int devId) 
 {
     (void) devId;
-    HCCL_VM_INFO("[STUB]DettachDevice is empty.");
+    HCCL_VM_INFO("DettachDevice is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -46,7 +50,7 @@ drvError_t halEschedCreateGrpEx(uint32_t devId, struct esched_grp_para *grpPara,
     (void) devId;
     (void) grpPara;
     (void) grpId;
-    HCCL_VM_INFO("[STUB]CreateGrpEx is empty.");
+    HCCL_VM_INFO("CreateGrpEx is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -57,7 +61,7 @@ drvError_t halEschedSubscribeEvent(unsigned int devId, unsigned int grpId,
     (void) grpId;
     (void) threadId;
     (void) eventBitmap;
-    HCCL_VM_INFO("[STUB]SubscribeEvent is empty.");
+    HCCL_VM_INFO("SubscribeEvent is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -68,7 +72,7 @@ drvError_t halEschedQueryInfo(unsigned int devId, ESCHED_QUERY_TYPE type, struct
     (void) type;
     (void) inPut;
     (void) outPut;
-    HCCL_VM_INFO("[STUB]QueryInfo is empty.");
+    HCCL_VM_INFO("QueryInfo is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -80,7 +84,7 @@ drvError_t halEschedWaitEvent(unsigned int devId, unsigned int grpId,
     (void) threadId;
     (void) timeout;
     (void) event;
-    HCCL_VM_INFO("[STUB]WaitEvent is empty.");
+    HCCL_VM_INFO("WaitEvent is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -91,14 +95,14 @@ drvError_t halEschedRegisterAckFunc(unsigned int grpId, EVENT_ID eventId,
     (void) grpId;
     (void) eventId;
     (void) ackFunc;
-    HCCL_VM_INFO("[STUB]RegisterAckFunc is empty.");
+    HCCL_VM_INFO("RegisterAckFunc is empty.");
     return DRV_ERROR_NONE;
 }
 
 drvError_t drvGetDevNum(uint32_t *num_dev)
 {
     *num_dev = 1;
-    HCCL_VM_INFO("[STUB]drvGetDevNum:{}", *num_dev);
+    HCCL_VM_INFO("drvGetDevNum:{}", *num_dev);
     return DRV_ERROR_NONE;
 }
 
@@ -106,11 +110,11 @@ drvError_t halGetChipInfo(unsigned int devId, halChipInfo *chipInfo)
 {
     sim::Device locDevice{};
     if (sim::GetDeviceByPhysicalId(devId, locDevice) != ACL_SUCCESS) {
-        HCCL_VM_ERROR("[STUB]halGetChipInfo get device by physic id {} failed.", devId);
+        HCCL_VM_ERROR("halGetChipInfo get device by physic id {} failed.", devId);
         return DRV_ERROR_INNER_ERR;
     }
     strncpy((char *)chipInfo->name, locDevice.soc_version, MAX_CHIP_NAME - 1);
-    HCCL_VM_INFO("[STUB]GetChipInfo is empty.");
+    HCCL_VM_INFO("GetChipInfo is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -121,7 +125,7 @@ drvError_t halHostRegister(void *src_ptr, UINT64 size, UINT32 flag, UINT32 devid
     (void) flag;
     (void) devid;
     (void) dst_ptr;
-    HCCL_VM_INFO("[STUB]HostRegister is empty.");
+    HCCL_VM_INFO("HostRegister is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -129,7 +133,7 @@ drvError_t halHostUnregister(void *src_ptr, UINT32 devid)
 {
     (void) src_ptr;
     (void) devid;
-    HCCL_VM_INFO("[STUB]HostUnregister is empty.");
+    HCCL_VM_INFO("HostUnregister is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -141,14 +145,14 @@ drvError_t halMemCtl(int type, void *param_value, size_t param_value_size, void 
     (void) param_value_size;
     (void) out_value;
     (void) out_size_ret;
-    HCCL_VM_INFO("[STUB]MemCtl is empty.");
+    HCCL_VM_INFO("MemCtl is empty.");
     return DRV_ERROR_NONE;
 }
 
 drvError_t drvGetPlatformInfo(uint32_t *info)
 {
     *info = 1;
-    HCCL_VM_INFO("[STUB]drvGetPlatformInfo:{}", *info);
+    HCCL_VM_INFO("drvGetPlatformInfo:{}", *info);
     return DRV_ERROR_NONE;
 }
 
@@ -160,7 +164,7 @@ drvError_t drvQueryProcessHostPid(int pid, unsigned int *chip_id, unsigned int *
     (void) vfid;
     (void) host_pid;
     (void) cp_type;
-    HCCL_VM_INFO("[STUB]QueryProcessHostPid is empty.");
+    HCCL_VM_INFO("QueryProcessHostPid is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -182,21 +186,21 @@ drvError_t halEschedSubmitEvent(unsigned int devId, struct event_summary *event)
 {
     (void) devId;
     (void) event;
-    HCCL_VM_INFO("[STUB]SubmitEvent is empty.");
+    HCCL_VM_INFO("SubmitEvent is empty.");
     return DRV_ERROR_NONE;
 }
 
 drvError_t halBindCgroup(BIND_CGROUP_TYPE bindType)
 {
     (void) bindType;
-    HCCL_VM_INFO("[STUB]BindCgroup is empty.");
+    HCCL_VM_INFO("BindCgroup is empty.");
     return DRV_ERROR_NONE;
 }
 
 drvError_t halGetAPIVersion(int *halAPIVersion)
 {
     (void) halAPIVersion;
-    HCCL_VM_INFO("[STUB]GetAPIVersion is empty.");
+    HCCL_VM_INFO("GetAPIVersion is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -205,7 +209,7 @@ drvError_t halSensorNodeRegister(uint32_t devId, struct halSensorNodeCfg *cfg, u
     (void) devId;
     (void) cfg;
     (void) handle;
-    HCCL_VM_INFO("[STUB]RegisterSensorNode is empty.");
+    HCCL_VM_INFO("RegisterSensorNode is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -213,7 +217,7 @@ drvError_t halSensorNodeUnregister(uint32_t devId, uint64_t handle)
 {
     (void) devId;
     (void) handle;
-    HCCL_VM_INFO("[STUB]UnregisterSensorNode is empty.");
+    HCCL_VM_INFO("UnregisterSensorNode is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -223,7 +227,7 @@ drvError_t halSensorNodeUpdateState(uint32_t devId, uint64_t handle, int val, ha
     (void) handle;
     (void) val;
     (void) assertion;
-    HCCL_VM_INFO("[STUB]UpdateSensorNodeState is empty.");
+    HCCL_VM_INFO("UpdateSensorNodeState is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -251,28 +255,28 @@ int halGrpQuery(GroupQueryCmdType cmd, void *inBuff, unsigned int inLen, void *o
     (void) inLen;
     (void) outBuff;
     (void) outLen;
-    HCCL_VM_INFO("[STUB]GrpQuery is empty.");
+    HCCL_VM_INFO("GrpQuery is empty.");
     return 0;
 }
 
 pid_t drvDeviceGetBareTgid(void)
 {
     pid_t pid = getpid();
-    HCCL_VM_INFO("[STUB]drvDeviceGetBareTgid] pid:%u", pid);
+    HCCL_VM_INFO("drvDeviceGetBareTgid] pid:{}", pid);
     return pid;
 }
 
 drvError_t halResourceIdCheck(struct drvResIdKey *info)
 {
     (void) info;
-    HCCL_VM_INFO("[STUB]ResourceIdCheck is empty.");
+    HCCL_VM_INFO("ResourceIdCheck is empty.");
     return DRV_ERROR_NONE;
 }
 
 drvError_t halSqCqQuery(uint32_t devId, struct halSqCqQueryInfo *info)
 {
     (void) devId;
-    HCCL_VM_INFO("[STUB]SqCqQuery is empty.");
+    HCCL_VM_INFO("SqCqQuery is empty.");
     if (info == nullptr) {
         return DRV_ERROR_INNER_ERR;
     }
@@ -304,7 +308,7 @@ drvError_t halSqCqQuery(uint32_t devId, struct halSqCqQueryInfo *info)
 
 drvError_t halSqCqConfig(uint32_t devId, struct halSqCqConfigInfo *info)
 {
-    HCCL_VM_INFO("[STUB] devId[{}] is empty.", devId);
+    HCCL_VM_INFO("devId[{}] is empty.", devId);
     if (info->prop == DRV_SQCQ_PROP_SQ_TAIL) {
         ParseA5SqeFromSqBuffer(devId, info);
     }
@@ -315,7 +319,7 @@ drvError_t halShrIdInfoGet(const char *name, struct shrIdGetInfo *info)
 {
     (void) name;
     (void) info;
-    HCCL_VM_INFO("[STUB] is empty.");
+    HCCL_VM_INFO("is empty.");
     return DRV_ERROR_NONE;
 }
 
@@ -327,21 +331,21 @@ drvError_t halTsdrvCtl(uint32_t devId, int cmd, void *param, size_t paramSize, v
     (void) paramSize;
     (void) out;
     (void) outSize;
-    HCCL_VM_INFO("[STUB] is empty.");
+    HCCL_VM_INFO("is empty.");
     return DRV_ERROR_NONE;
 }
 
 drvError_t halResourceIdRestore(struct drvResIdKey *info)
 {
     (void) info;
-    HCCL_VM_INFO("[STUB] is empty.");
+    HCCL_VM_INFO("is empty.");
     return DRV_ERROR_NONE;
 }
 
 drvError_t drvGetLocalDevIDByHostDevID(uint32_t host_dev_id, uint32_t *local_dev_id)
 {
     *local_dev_id = host_dev_id;
-    HCCL_VM_INFO("[STUB] host_dev_id:{}, local_dev_id:{}", host_dev_id, *local_dev_id);
+    HCCL_VM_INFO("host_dev_id:{}, local_dev_id:{}", host_dev_id, *local_dev_id);
     return DRV_ERROR_NONE;
 }
 

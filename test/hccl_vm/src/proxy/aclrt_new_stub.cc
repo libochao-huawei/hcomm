@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+// 日志染色: 模块 tag (须在 include sim_log.h 之前)
+#define HCCL_VM_MODULE "NEW_STUB"
+
 #include <atomic>
 #include <cstdint>
 #include <iostream>
@@ -27,11 +30,6 @@
 #include "db_sim_runner_common.h"
 #include "db_sim_runner_ops.h"
 
-#define NEW_STUB_ERROR(format, ...) HCCL_VM_ERROR("[NEW_STUB]" format, ##__VA_ARGS__)
-#define NEW_STUB_DEBUG(format, ...) HCCL_VM_DEBUG("[NEW_STUB]" format, ##__VA_ARGS__)
-#define NEW_STUB_INFO(format, ...)  HCCL_VM_INFO("[NEW_STUB]" format, ##__VA_ARGS__)
-#define NEW_STUB_WARN(format, ...)  HCCL_VM_WARN("[NEW_STUB]" format, ##__VA_ARGS__)
-#define NEW_STUB_TRACE(format, ...) HCCL_VM_TRACE("[NEW_STUB]" format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,16 +41,16 @@ HcclResult hrtGetDeviceType(DevType &devType)
     auto device = RunnerDB::GetById<sim::Device>(devKey);
     if (!device.has_value()) {
         // not find
-        NEW_STUB_ERROR("current device type not found: {:d}", devKey);
+        HCCL_VM_ERROR("current device type not found: {:d}", devKey);
         return HCCL_E_NOT_FOUND;
     }
     if (strcmp(device->soc_version, "Ascend950") == 0) {
         devType = DevType::DEV_TYPE_950;
     } else {
-        NEW_STUB_ERROR("not support device soc version: {:s}", device->soc_version);
+        HCCL_VM_ERROR("not support device soc version: {:s}", device->soc_version);
         return HCCL_E_NOT_SUPPORT;
     }
-    NEW_STUB_TRACE("Get current device type: {}", static_cast<int>(devType));
+    HCCL_VM_TRACE("Get current device type: {}", static_cast<int>(devType));
     return HCCL_SUCCESS;
 }
 
