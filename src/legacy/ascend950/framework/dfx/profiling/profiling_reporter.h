@@ -20,10 +20,9 @@ class ProfilingReporter {
 public:
     ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler *profilingHandler);
     virtual ~ProfilingReporter();
-    HcclResult Init();
+    void Init() const;
     void ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const;
     void ReportAllTasks(bool cachedReq);
-    void SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo);
     void UpdateProfStat();
     void CallReportMc2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
                                 const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm) const;
@@ -32,16 +31,15 @@ public:
         RankId myRank, u32 rankSize, RankId rankInParentComm) const;
 private:
     void ReportCallBackAllTasks(bool cachedReq = false);
-    void ReportAllTasksLog() const;
  
 private:
     MirrorTaskManager                              *mirrorTaskMgr_{nullptr};
     bool                                            enableHcclL1_{false};
-    using lastPosesMap = std::unordered_map<u32, std::shared_ptr<Queue<std::unique_ptr<TaskInfo>>::Iterator>>;
+    /* lastposes是更新单前轮次profiling上报的最后位置记录 */
+    /* lastposes按设备粒度进行维护 */
+    using lastPosesMap = std::unordered_map<u32,  std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>>;
     static std::array<lastPosesMap, REPORTER_MAX_MODULE_DEVICE_NUM> allLastPoses_;
     ProfilingHandler*                               profilingHandler_{nullptr};
-    s32 deviceLogicId_;
-    bool initializedFlag_{false};
 };
 } // namespace Hccl
  

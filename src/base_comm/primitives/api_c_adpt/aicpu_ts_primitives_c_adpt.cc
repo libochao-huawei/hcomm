@@ -39,10 +39,17 @@ uint32_t GetSqFullTimeOut() {
     return g_threadLaunchCtx.GetSqFullTimeOut();
 }
 
-
-inline bool GetProfilingEnable() {
-    return Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State() ||
-           Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
+static bool ShouldSkipAicpuDfx()
+{
+    const bool l0State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State();
+    const bool l1State = Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State();
+    const bool taskExceptionEnable = hcomm::GetTaskExceptionEnable();
+    if (!(l0State || l1State || taskExceptionEnable)) {
+        HCCL_INFO("[%s] l0State[%d], l1State[%d], taskExceptionEnable[%d], skip aicpu dfx",
+            __func__, l0State, l1State, taskExceptionEnable);
+        return true;
+    }
+    return false;
 }
 
 void AddThread(ThreadHandle thread) {
@@ -76,7 +83,7 @@ HcclResult HcommThreadGetNotifyId(ThreadHandle thread, uint32_t notifyIdx, uint3
 
 HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
 {
-    if (!GetProfilingEnable() && !hcomm::GetTaskExceptionEnable()) {
+    if (ShouldSkipAicpuDfx()) {
         return HCCL_SUCCESS;
     }
     CHK_PTR_NULL(commId);
@@ -943,18 +950,20 @@ int32_t HcommAcquireComm(const char* commId)
 }
 
 int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
+    HCCL_INFO("[HcommChannelRegisterDfx] Init begin");
     auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
     CHK_PTR_NULL(transportLitePtr);
     CHK_RET(transportLitePtr->SetAddTaskInfoCallback(callback));
-    HCCL_INFO("[HcommChannelRegisterDfx] ChannelHandle[0x%llx] Init success", channel);
+    HCCL_INFO("[HcommChannelRegisterDfx] Init success");
     return HCCL_SUCCESS;
 }
 
 int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
+    HCCL_INFO("[HcommThreadRegisterDfx] Init begin");
     Thread *threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     CHK_RET(threadPtr->SetAddTaskInfoCallback(callback));
-    HCCL_INFO("[HcommThreadRegisterDfx] ThreadHandle[0x%llx] Init success", thread);
+    HCCL_INFO("[HcommThreadRegisterDfx] Init success");
     return HCCL_SUCCESS;
 }
 
@@ -1081,9 +1090,10 @@ int32_t HcommChannelDrainOnThread(ThreadHandle thread, ChannelHandle channel)
 #endif  // __cplusplus
 
 HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
-    if (!GetProfilingEnable()) {
+    if (ShouldSkipAicpuDfx()) {
         return HCCL_SUCCESS;
     }
+    HCCL_INFO("[%s] START.", __func__);
     CHK_PTR_NULL(groupname);
 
     DevType deviceType;
@@ -1092,13 +1102,13 @@ HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
         return HCCL_SUCCESS;
     }
 
-    CHK_RET(AicpuIndopProcess::ProfilingReportDeviceOp());
+    CHK_RET(AicpuIndopProcess::ProfilingReportDeviceOp(groupname));
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* groupname)
 {
-    if (!GetProfilingEnable()) {
+    if (ShouldSkipAicpuDfx()) {
         return HCCL_SUCCESS;
     }
 
@@ -1108,22 +1118,24 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
         return HCCL_SUCCESS;
     }
     CHK_PTR_NULL(groupname);
+    HCCL_INFO("[%s] START, thread [%llu], groupname[%s].", __func__, thread, groupname);
     CHK_RET(AicpuIndopProcess::UpdateTask(groupname));
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
     CHK_PTR_NULL(streamLitePtr);
     Hccl::FlagTaskInfo flagTaskInfo;
+    flagTaskInfo.streamId = streamLitePtr->GetSqId();
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::HEAD;
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
-    HCCL_INFO("[%s] END, thread [%llu], groupname[%s], taskId[%u].", __func__, thread, groupname, flagTaskInfo.taskId);
+    HCCL_INFO("[%s] SUCCESS. TaskInfo taskId:[%u] streamId:[%u].", __func__, flagTaskInfo.taskId, flagTaskInfo.streamId);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname)
 {
-    if (!GetProfilingEnable()) {
+    if (ShouldSkipAicpuDfx()) {
         return HCCL_SUCCESS;
     }
     CHK_PTR_NULL(groupname);
@@ -1141,9 +1153,11 @@ HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupn
     CHK_PRT_RET(streamLitePtr == nullptr, HCCL_ERROR("[%s] streamLitePtr is null", __func__), HCCL_E_PTR);
     //FlagTaskInfo Report
     Hccl::FlagTaskInfo flagTaskInfo;
+    flagTaskInfo.streamId = streamLitePtr->GetSqId();
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::TAIL;
     
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
+    HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }

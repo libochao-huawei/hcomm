@@ -91,6 +91,7 @@ protected:
         comm.currentCollOperator = std::make_unique<CollOperator>();
         comm.currentCollOperator->opMode = OpMode::OPBASE;
         comm.currentCollOperator->opType = OpType::DEBUGCASE;
+        comm.currentCollOperator->debugCase = 0;
         comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
         comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
         s32 rankId = 0;
@@ -111,7 +112,7 @@ protected:
         op.outputMem = DevBuffer::Create(0x100, 10);
         op.opMode = OpMode::OFFLOAD;
         op.opType = OpType::DEBUGCASE;
-        
+        op.debugCase = 0;
         op.opTag = "testTag";
         op.scratchMem = buffer;
         op.staticAddr = false;
@@ -153,6 +154,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
     comm.InitHDCommunicate();
     HcclKernelLaunchParam param;
     comm.currentCollOperator->opType = OpType::BATCHSENDRECV;
+    comm.currentCollOperator->debugCase = 0;
     comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
     s32 rankId = 0;
@@ -267,6 +269,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_BATCHSENDRECV_Expect_OK)
     comm.rankSize = 4;
     comm.currentCollOperator->opMode = OpMode::OFFLOAD;
     comm.currentCollOperator->opType = OpType::BATCHSENDRECV;
+    comm.currentCollOperator->debugCase = 0;
     comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->scratchMem = DevBuffer::Create(0x100, 10);
@@ -314,6 +317,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLVC_Expect_Success
     comm.rankSize = 4;
     comm.currentCollOperator->opMode = OpMode::OFFLOAD;
     comm.currentCollOperator->opType = OpType::ALLTOALLVC;
+    comm.currentCollOperator->debugCase = 0;
     comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->scratchMem = DevBuffer::Create(0x100, 10);
@@ -361,6 +365,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_InitAicpuLocBufLite_When_Before_SetHcclKerne
     comm.InitHDCommunicate();
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     comm.currentCollOperator->opType = OpType::DEBUGCASE;
+    comm.currentCollOperator->debugCase = 0;
     comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->scratchMem = DevBuffer::Create(0x100, 10);
@@ -447,6 +452,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_RecoverTransport_When_Normal_Expect_Success)
 
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     comm.currentCollOperator->opType = OpType::DEBUGCASE;
+    comm.currentCollOperator->debugCase = 0;
 
     CollServiceAiCpuImpl service(&comm);
 
@@ -574,7 +580,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
     RtsNotify notify1(false);
     MOCKER_CPP(&HostDeviceSyncNotifyManager::GetHostWaitNotify).stubs().with().will(returnValue(&notify));
     MOCKER_CPP(&HostDeviceSyncNotifyManager::GetDeviceWaitNotify).stubs().with().will(returnValue(&notify1));
-    MOCKER_CPP(static_cast<void (Hccl::MirrorTaskManager::*)(std::unique_ptr<Hccl::TaskInfo>&&)>(&Hccl::MirrorTaskManager::AddTaskInfo)).stubs().with(mockcpp::any()).will(ignoreReturnValue());
+    MOCKER_CPP(&Hccl::MirrorTaskManager::AddTaskInfo).stubs().with(mockcpp::any()).will(ignoreReturnValue());
 
     EXPECT_NO_THROW(service.Resume());
 
@@ -637,6 +643,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Normal_Expect_Succe
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     comm.currentCollOperator->opType = OpType::DEBUGCASE;
+    comm.currentCollOperator->debugCase = 0;
     comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
     s32 rankId = 0;
@@ -730,6 +737,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Loop_Expect_Success
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     comm.currentCollOperator->opType = OpType::DEBUGCASE;
+    comm.currentCollOperator->debugCase = 0;
     comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
     s32 rankId = 0;
@@ -889,6 +897,7 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     comm.currentCollOperator->opType = OpType::DEBUGCASE;
+    comm.currentCollOperator->debugCase = 0;
     comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
     s32 rankId = 0;
@@ -917,7 +926,7 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     op.outputMem = DevBuffer::Create(0x100, 10);
     op.opMode = OpMode::OFFLOAD;
     op.opType = OpType::DEBUGCASE;
-    
+    op.debugCase = 0;
     op.opTag = "testTag";
     op.scratchMem = buffer;
     op.staticAddr = false;

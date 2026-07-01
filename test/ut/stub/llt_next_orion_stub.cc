@@ -1529,7 +1529,7 @@ void TpManager::Init()
 }
 
 TaskInfo::TaskInfo(
-    u32 streamId, u32 taskId, u32 remoteRank, const TaskParam& taskParam, const std::shared_ptr<DfxOpInfo>& dfxOpInfo, bool isMaster)
+    u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam, std::shared_ptr<DfxOpInfo> dfxOpInfo, bool isMaster)
     : streamId_(streamId),
       taskId_(taskId),
       remoteRank_(remoteRank),
@@ -1552,11 +1552,6 @@ std::string TaskInfo::GetBaseInfo() const
 std::string TaskInfo::GetConciseBaseInfo() const
 {
     return "";
-}
-
-u32 TaskInfo::GetRemoteRankId() const
-{
-    return 0;
 }
 
 GlobalMirrorTasks GlobalMirrorTasks::ins_;
@@ -1582,13 +1577,13 @@ u32 GlobalMirrorTasks::DevSize() const
 
 TaskInfoQueue &GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType type)
 {
-    static CircularQueue<std::unique_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
+    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
     return queue;
 }
 
 TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
 {
-    static CircularQueue<std::unique_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
+    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
     return &queue;
 }
 
@@ -1608,13 +1603,13 @@ TaskInfoQueueMap::iterator GlobalMirrorTasks::End(u32 devId)
     return map.end();
 }
 
-TaskInfo* GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
+std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
 {
     return nullptr;
 }
 
 HcclResult GlobalMirrorTasks::FindTaskInfo(
-    u32 devId, u32 streamId, u32 taskId, TaskInfo*& curTask) const
+    u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const
 {
     return HCCL_E_NOT_FOUND;
 }
@@ -1626,18 +1621,16 @@ MirrorTaskManager::MirrorTaskManager(u32 devId, GlobalMirrorTasks *globalMirrorT
 {
 }
 
+void MirrorTaskManager::RegFullyCallBack(std::function<void(const std::string &, u32)> callBack)
+{
+}
+
 void MirrorTaskManager::RegFullyCallBack(std::function<void()> callBack)
 {
 }
 
-void MirrorTaskManager::AddTaskInfo(std::unique_ptr<TaskInfo> &&taskInfo)
+void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
 {
-}
-
-HcclResult MirrorTaskManager::AddTaskInfo(u32 streamId, u32 taskId, u32 remoteRankId,
-    const TaskParam &taskParam, std::shared_ptr<DfxOpInfo> dfxOpInfo, bool isMaster)
-{
-    return HCCL_SUCCESS;
 }
 
 bool MirrorTaskManager::IsStaticGraphMode(const CollOperator &collOperator) const
@@ -1651,22 +1644,22 @@ void MirrorTaskManager::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
 
 std::shared_ptr<DfxOpInfo> MirrorTaskManager::GetCurrDfxOpInfo() const
 {
-    return std::make_shared<DfxOpInfo>();
+    return nullptr;
 }
 
 TaskInfoQueue *MirrorTaskManager::GetQueue(u32 streamId) const
 {
 }
 
-std::unordered_map<u32, MirrorStreamQueueEntry>::iterator MirrorTaskManager::Begin()
+std::unordered_map<u32, TaskInfoQueue *>::iterator MirrorTaskManager::Begin()
 {
-    static std::unordered_map<u32, MirrorStreamQueueEntry> queueMap;
+    static std::unordered_map<u32, TaskInfoQueue *> queueMap;
     return queueMap.begin();
 }
 
-std::unordered_map<u32, MirrorStreamQueueEntry>::iterator MirrorTaskManager::End()
+std::unordered_map<u32, TaskInfoQueue *>::iterator MirrorTaskManager::End()
 {
-    static std::unordered_map<u32, MirrorStreamQueueEntry> queueMap;
+    static std::unordered_map<u32, TaskInfoQueue *> queueMap;
     return queueMap.end();
 }
 
@@ -1678,31 +1671,25 @@ MirrorTaskManagerLite::MirrorTaskManagerLite()
 {
 }
 
+void MirrorTaskManagerLite::RegFullyCallBack(std::function<void(const std::string &, u32)> callBack)
+{
+}
+
 void MirrorTaskManagerLite::RegFullyCallBack(std::function<void()> callBack)
 {
 }
 
-void MirrorTaskManagerLite::RegGetRemoteRankCallBack(std::function<u32(u64)> callBack)
+void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
 {
 }
 
-HcclResult MirrorTaskManagerLite::AddTaskInfo(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
+bool MirrorTaskManagerLite::IsStaticGraphMode(const CollOperator &collOperator) const
 {
-    return HCCL_SUCCESS;
+    return false;
 }
 
-void MirrorTaskManagerLite::AddTaskInfo(std::unique_ptr<TaskInfo> &&taskInfo)
+void MirrorTaskManagerLite::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
 {
-}
-
-HcclResult MirrorTaskManagerLite::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
-{
-    return HCCL_SUCCESS;
-}
-
-TaskInfo* MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
-{
-    return nullptr;
 }
 
 std::shared_ptr<DfxOpInfo> MirrorTaskManagerLite::GetCurrDfxOpInfo() const
@@ -1751,9 +1738,8 @@ ProfilingHandler &ProfilingHandler::GetInstance()
     return instance;
 }
 
-HcclResult ProfilingHandler::Init()
+void ProfilingHandler::Init()
 {
-    return HCCL_SUCCESS;
 }
 
 // 回调注册
@@ -1785,7 +1771,7 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
 {
 }
 
-void ProfilingHandler::CallAdditionInfo(MsprofAdditionalInfo &reporterData) const
+void ProfilingHandler::CallAdditionInfo(HCCLReportData &hcclReportData, void *data, u32 len, ProfTaskType taskType) const
 {
 }
 
@@ -1793,7 +1779,7 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
 {
 }
 
-void ProfilingHandler::DumpHCCLReportData(const TaskInfo &taskInfo, const MsprofAdditionalInfo &reporterData) const
+void ProfilingHandler::DumpHCCLReportData(const TaskInfo &taskInfo, const HCCLReportData &hcclReportData) const
 {
 }
 
@@ -1837,7 +1823,7 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     (void)cachedReq;
 }
 
-void ProfilingHandler::ReportAdditionInfo(MsprofAdditionalInfo& reporterData) const
+void ProfilingHandler::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void *data, uint32_t len) const
 {
 }
 
@@ -1954,25 +1940,24 @@ ProfilingHandlerLite &ProfilingHandlerLite::GetInstance()
     return instance;
 }
 
-HcclResult ProfilingHandlerLite::Init()
+void ProfilingHandlerLite::Init() const
 {
-    return HCCL_SUCCESS;
 }
 
 void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
 {
 }
 
-void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo *> &taskInfo) const
+void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const
 {
 }
 
-void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo *it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const
+void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const
 {
 }
 
 void ProfilingHandlerLite::DumpTaskDetails(
-    const MsprofAicpuHcclTaskInfo &taskDetailsInfos, const TaskInfo *taskInfo) const
+    const MsprofAicpuHcclTaskInfo &taskDetailsInfos, const TaskInfo &taskInfo) const
 {
 }
 
@@ -1980,7 +1965,7 @@ void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo
 {
 }
 
-void ProfilingHandlerLite::ReportAdditionInfo(const MsprofAdditionalInfo& reporterData) const
+void ProfilingHandlerLite::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, const void *data, int len) const
 {
 }
 
@@ -2016,10 +2001,6 @@ uint64_t ProfilingHandlerLite::GetProfHashId(const char *name, uint32_t len) con
     return 0;
 }
 
-void ProfilingHandlerLite::SetCachedGroupName(const std::string &groupName, u32 rankSize)
-{
-}
-
 ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler *profilingHandler)
     : mirrorTaskMgr_(mirrorTaskMgr),
       profilingHandler_(profilingHandler)
@@ -2030,12 +2011,7 @@ ProfilingReporter::~ProfilingReporter()
 {
 }
 
-HcclResult ProfilingReporter::Init()
-{
-    return HCCL_SUCCESS;
-}
-
-void ProfilingReporter::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
+void ProfilingReporter::Init() const
 {
 }
 
@@ -2080,9 +2056,8 @@ ProfilingReporterLite::~ProfilingReporterLite()
 {
 }
 
-HcclResult ProfilingReporterLite::Init()
+void ProfilingReporterLite::Init() const
 {
-    return HCCL_SUCCESS;
 }
 
 void ProfilingReporterLite::ReportAllTasks()
@@ -2314,6 +2289,11 @@ string RdmaLocalNotify::Describe() const
 }
 
 std::unique_ptr<Serializable> RdmaLocalNotify::GetExchangeDto()
+{
+    return nullptr;
+}
+
+std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
 {
     return nullptr;
 }

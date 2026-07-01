@@ -111,7 +111,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, const std::strin
             InitCommonData(commParams, config);
             InitHccpHdc();    // tsdOpen + rainit
             InitRankGraph(ranktableM);
-            CHK_RET(InitCommResource(commParams));
+            InitCommResource(commParams);
         } catch (HcclException &e) {
             HCCL_ERROR(e.what());
             PrintBackTrace(e);
@@ -129,7 +129,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, const std::strin
     return HcclResult::HCCL_E_INTERNAL;
 }
 
-HcclResult CommunicatorImpl::InitCommResource(const CommParams &commParams)
+void CommunicatorImpl::InitCommResource(const CommParams &commParams)
 {
     HrtSetDevice(devLogicId);
     if (IsNeedDpu()) {
@@ -153,7 +153,7 @@ HcclResult CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitTraceManager();
     DlProfFunction::GetInstance().DlProfFunctionInit();
     InitMirrorTaskManager();
-    CHK_RET(InitProfilingReporter());
+    InitProfilingReporter();
     InitTaskExceptionHandler();
     InitHDCommunicate();
     notifyTimeoutCfg.Init();
@@ -162,7 +162,6 @@ HcclResult CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitOneSidedService();
     RegisterKernel();
     InitDpuKernel();
-    return HCCL_SUCCESS;
 }
 
 void CommunicatorImpl::InitDpuKernel() {
@@ -207,7 +206,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, const RankTableI
             InitCommonData(commParams, config);
             InitHccpHdc();    // tsdOpen + rainit
             InitRankGraph(ranktable);
-            CHK_RET(InitCommResource(commParams));
+            InitCommResource(commParams);
         } catch (HcclException &e) {
             HCCL_ERROR(e.what());
             PrintBackTrace(e);
@@ -255,7 +254,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitTraceManager();
             InitHDCommunicate();
             InitMirrorTaskManager();
-            CHK_RET(InitProfilingReporter());
+            InitProfilingReporter();
             InitTaskExceptionHandler();
             RegisterKernel();
             InitDpuKernel();
@@ -309,7 +308,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitCollService();
             DlProfFunction::GetInstance().DlProfFunctionInit();
             InitMirrorTaskManager();
-            CHK_RET(InitProfilingReporter());
+            InitProfilingReporter();
             InitTaskExceptionHandler();
             RegisterKernel();
             InitDpuKernel();
@@ -465,17 +464,17 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
 }
 
 static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, bool isMaster,
-    const u32 remoteRankId = INVALID_VALUE_RANKID)
+    const RankId remoteRankId = INVALID_RANKID)
 {
     u32 taskId;
     u32 streamId;
     HrtGetTaskIdAndStreamID(taskId, streamId);
  
-    std::unique_ptr<TaskInfo> taskInfo = std::make_unique<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
+    shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
         comm.GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
  
     HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
-    comm.GetMirrorTaskManager().AddTaskInfo(std::move(taskInfo));
+    comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
 
 void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const
@@ -540,6 +539,8 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
         cntNotify1ToN->PostValue(value, mStream);
     }
     if (taskExceptionEnv || enableProfilingEnv) {
+        params.taskParams[0].taskPara.Ccu.costumArgs[0] = ccuParams[0].args[0];
+        params.taskParams[0].taskPara.Ccu.costumArgs[1] = ccuParams[0].args[1];
         params.taskParams[0].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         SuperFastLoad(ccuParams, mStream, vector_zero_count);
         params.taskParams[0].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -1162,6 +1163,7 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
     currentCollOperator->reduceOp  = opParams.reduceOp;
     currentCollOperator->root      = opParams.root;
     currentCollOperator->outputDataType = opParams.outputDataType;
+    currentCollOperator->debugCase = opParams.debugCase;
     currentCollOperator->sendRecvRemoteRank = opParams.dstRank;
     if (opParams.opType == OpType::ALLTOALL || opParams.opType == OpType::ALLTOALLV || opParams.opType == OpType::ALLTOALLVC) {
         ConvertCollOperatorA2A(opParams, isLaunch, isHcomSelectAlg);
@@ -2195,7 +2197,7 @@ HcclResult CommunicatorImpl::RecoverComm(SnapShotComm &snapShotComm, u32 stepPar
             InitTraceManager();
             DlProfFunction::GetInstance().DlProfFunctionInit();
             InitMirrorTaskManager();
-            CHK_RET(InitProfilingReporter());
+            InitProfilingReporter();
             InitTaskExceptionHandler();
             InitHDCommunicate();
             notifyTimeoutCfg.Init();
@@ -2259,7 +2261,7 @@ HcclResult CommunicatorImpl::RecoverComm(const SnapShotSubComm &snapShotSubComm,
             InitTraceManager();
             DlProfFunction::GetInstance().DlProfFunctionInit();
             InitMirrorTaskManager();
-            CHK_RET(InitProfilingReporter());
+            InitProfilingReporter();
             InitTaskExceptionHandler();
             InitHDCommunicate();
             RecoverTransportData(snapShotSubComm.submittedOpCnt, snapShotSubComm.levelRankPairs, inputStep, snapShotSubComm.linkGroupPair);
@@ -2556,13 +2558,10 @@ HcclResult CommunicatorImpl::NotifyAicpuDestroyComm()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CommunicatorImpl::InitProfilingReporter()
+void CommunicatorImpl::InitProfilingReporter()
 {
     profilingReporter = std::make_unique<ProfilingReporter>(mirrorTaskManager.get(),
         &ProfilingHandler::GetInstance());
-    CHK_RET(ProfilingHandler::GetInstance().Init());
-    CHK_RET(profilingReporter->Init());
-    return HCCL_SUCCESS;
 }
 
 ProfilingReporter &CommunicatorImpl::GetProfilingReporter() const
@@ -2974,11 +2973,7 @@ HcclResult CommunicatorImpl::HcomSelectAlg(const CollOpParams& opParams, int32_t
 
 void CommunicatorImpl::ReportHcclMC2Info(const Stream &kfcStream, Stream &stream, const std::vector<Stream*> &aicpuStreams)
 {
-    HcclResult hcclRet = InitProfilingReporter();
-    if (hcclRet != HCCL_SUCCESS) {
-        HCCL_ERROR("[ReportHcclMC2Info]InitProfilingReporter failed, ret[%d]", static_cast<s32>(hcclRet));
-        return;
-    }
+    InitProfilingReporter();
     profilingReporter->CallReportMc2CommInfo(kfcStream, stream, aicpuStreams, id, myRank, rankSize, rankInParentComm);
 }
 

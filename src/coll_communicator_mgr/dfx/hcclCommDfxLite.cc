@@ -17,62 +17,49 @@ HcclCommDfxLite::HcclCommDfxLite() {
 }
 
 // HcclCommDfxLite初始化流程 - 修改为返回HcclResult类型
-HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag, u32 rankSize) {
-    if (initializedFlag_) {
-        return HCCL_SUCCESS;
-    }
+HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     HCCL_INFO("[HcclCommDfxLite][Init] Init begin deviceId[%u], commTag[%s]", deviceId, commTag.c_str());
     deviceId_ = deviceId;
     commTag_ = commTag;
-    rankSize_ = rankSize;
     /*1. 如果mirrorTaskManagerLite_为空，则创建新的MirrorTaskManager
     注意：实际实现中应该避免这种情况，CommunicatorImplLite应该传入已经存在的MirrorTaskManager*/
     EXCEPTION_CATCH(mirrorTaskManagerLite_ = std::make_unique<Hccl::MirrorTaskManagerLite>(), return HCCL_E_PTR);
-    auto getChannelRemoteRankId = [this](u64 handle) { return this->GetChannelRemoteRankId(handle); };
-    mirrorTaskManagerLite_->RegGetRemoteRankCallBack(getChannelRemoteRankId);
 
     // 2. 创建Profiling管理类
     EXCEPTION_CATCH(profilingImpl_ = std::make_unique<HcclCommProfilingLite>(deviceId_, mirrorTaskManagerLite_.get()), return HCCL_E_PTR);
-    CHK_RET(profilingImpl_->Init());
 
     // 3. 注册回调到单例
     addTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
-        return this->mirrorTaskManagerLite_->AddTaskInfo(streamId, taskId, taskParam, handle);
+        return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
     };
-
-    Hccl::ProfilingHandlerLite::GetInstance().SetCachedGroupName(commTag_, rankSize_);
-    initializedFlag_ = true;
+    HCCL_INFO("[HcclCommDfxLite][Init] Init success");
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
-// HcclCommDfxLite接口实现 - 修改为返回HcclResult类型
-HcclResult HcclCommDfxLite::SetCurrDfxOpInfo(std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfo)
+HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
 {
-    auto it = Hccl::CMD_OP_TYPE_INFO_MAP.find(static_cast<HcclCMDType>(dfxOpInfo->op_.oldOpType));
-    if (it == Hccl::CMD_OP_TYPE_INFO_MAP.end()) {
-        HCCL_WARNING("[%s] dfxOpInfo.opType[%u] not supported.", __func__, dfxOpInfo->op_.oldOpType);
-    } else {
-        dfxOpInfo->op_.opType = it->second.first;
-        dfxOpInfo->tag_ = it->second.second;
+    CHK_SMART_PTR_NULL(mirrorTaskManagerLite_);
+    u32 remoteRankId = INVALID_UINT;
+    if (handle != INVALID_U64) {
+        CHK_RET(GetChannelRemoteRankId(handle, remoteRankId));
     }
-    dfxOpInfo->op_.dataType = Hccl::HcclDataTypeToDataType(
-        static_cast<HcclDataType>(dfxOpInfo->op_.oldDataType));
-
-    // 如果是a5老流程  还是从通信域里面取
-    if ((Hccl::ProfilingHandlerLite::GetInstance().GetProfL1State()
-        || Hccl::ProfilingHandlerLite::GetInstance().GetProfL0State() ) && !dfxOpInfo->isIndop_) {
-        Hccl::ProfilingHandlerLite::GetInstance().SetCachedGroupName(dfxOpInfo->groupName_.c_str(), dfxOpInfo->rankSize_);
-    }
-    CHK_RET(mirrorTaskManagerLite_->SetCurrDfxOpInfo(std::move(dfxOpInfo)));
+    std::shared_ptr<Hccl::TaskInfo> taskInfo{nullptr};
+    EXCEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
+        remoteRankId, taskParam, mirrorTaskManagerLite_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
+    EXCEPTION_CATCH(mirrorTaskManagerLite_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
+    HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
 }
 
+// HcclCommDfxLite接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::ReportAllTasks() {
+    CHK_SMART_PTR_NULL(profilingImpl_);
     profilingImpl_->ReportAllTasks();
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommDfxLite::UpdateProfStat() {
+    CHK_SMART_PTR_NULL(profilingImpl_);
     profilingImpl_->UpdateProfStat();
     return HCCL_SUCCESS;
 }
@@ -82,16 +69,14 @@ void HcclCommDfxLite::AddChannelRemoteRankId(u64 handle, u32 remoteRankId) {
     channelRemoteRankIdLite_[handle] = remoteRankId;
 }
 
-u32 HcclCommDfxLite::GetChannelRemoteRankId(u64 handle) {
-    if (handle == INVALID_U64) {
-        return INVALID_UINT;
-    }
+HcclResult HcclCommDfxLite::GetChannelRemoteRankId(u64 handle, u32& remoteRankId) {
     auto it = channelRemoteRankIdLite_.find(handle);
     if (UNLIKELY(it == channelRemoteRankIdLite_.end())) {
         HCCL_ERROR("[%s]handle[%lu] not found, commTag[%s]", __func__, handle, commTag_.c_str());
-        return INVALID_UINT;
+        return HCCL_E_PARA;
     }
-    return it->second;
+    remoteRankId = it->second;
+    return HCCL_SUCCESS;
 }
 
 Hccl::MirrorTaskManagerLite* HcclCommDfxLite::GetMirrorTaskManagerLite() const {

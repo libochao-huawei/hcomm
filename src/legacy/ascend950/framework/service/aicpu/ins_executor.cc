@@ -60,8 +60,8 @@ void InsExecutor::AddOpCounter(const StreamLite &stream, bool isHead) const
     taskParam.taskPara.Reduce.linkType = DfxLinkType::ONCHIP;
     taskParam.taskPara.Reduce.reduceOp = HcclReduceOp::HCCL_REDUCE_SUM;
     taskParam.taskPara.Reduce.dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
-    auto taskInfo = std::make_unique<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(std::move(taskInfo));
+    auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
+    resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)
@@ -93,8 +93,8 @@ void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)
         taskParam.beginTime                = ProfGetCurCpuTimestamp();
         taskParam.taskPara.Notify.notifyID = deviceWaitNotifyId;
         taskParam.taskPara.Notify.value    = 1;
-        auto taskInfo = std::make_unique<TaskInfo>(masterStream->GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-        resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(std::move(taskInfo));
+        auto taskInfo = std::make_shared<TaskInfo>(masterStream->GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
+        resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
     }
     AddOpCounter(*masterStream, true);
 
@@ -114,8 +114,8 @@ void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)
         taskParam.beginTime                = ProfGetCurCpuTimestamp();
         taskParam.taskPara.Notify.notifyID = hostWaitNotifyId;
         taskParam.taskPara.Notify.value    = 1;
-        auto taskInfo = std::make_unique<TaskInfo>(masterStream->GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-        resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(std::move(taskInfo));
+        auto taskInfo = std::make_shared<TaskInfo>(masterStream->GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
+        resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
     }
     masterStream->GetRtsq()->LaunchTask();
 }
@@ -123,9 +123,10 @@ void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)
 void InsExecutor::ReportMainStreamTask(const StreamLite &stream, MainStreamTaskType type) const
 {
     FlagTaskInfo flagTaskInfo;
+    flagTaskInfo.streamId = stream.GetId();
     flagTaskInfo.taskId   = stream.GetRtsq()->GetTaskId();
     flagTaskInfo.type     = type;
-    HCCL_INFO("[%s] TaskInfo taskId %u", __func__, flagTaskInfo.taskId);
+    HCCL_INFO("[%s] TaskInfo yaskId %u streamId %u", __func__, flagTaskInfo.taskId, flagTaskInfo.streamId);
     ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
 }
 

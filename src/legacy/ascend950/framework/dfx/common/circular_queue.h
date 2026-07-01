@@ -14,11 +14,12 @@
 #include <vector>
 namespace Hccl {
 
-template <typename T> class CircularQueue : public QueueWithSize<T> {
+template <typename T> class CircularQueue : public Queue<T> {
 private:
     std::vector<T> elems_;
     size_t         head_;
     size_t         tail_;
+    size_t         size_;
     size_t         capacity_;
 
 public:
@@ -106,7 +107,7 @@ public:
     };
 
     explicit CircularQueue(size_t capacity)
-        : elems_(capacity + 1), head_(0), tail_(0), capacity_(capacity + 1)
+        : elems_(capacity + 1), head_(0), tail_(0), size_(0), capacity_(capacity + 1)
     {
         if (capacity_ == 0) {
             THROW<InternalException>(StringFormat("CircularQueue capacity cannot be zero"));
@@ -118,52 +119,54 @@ public:
         HCCL_INFO("[CircularQueue]Destroy");
     }
 
-    void Append(T &&value) override
+    void Append(const T &value) override
     {
         if (IsFull()) {
             head_ = (head_ + 1) % capacity_;
-            this->size_--;
+            size_--;
         }
-        elems_[tail_] = std::move(value);
+        elems_[tail_] = value;
         tail_         = (tail_ + 1) % capacity_;
-        this->size_++;
-    }
-
-    T& GetAndUpdate() override
-    {
-        if (IsFull()) {
-            head_ = (head_ + 1) % capacity_;
-            this->size_--;
-        }
-        auto curTail = tail_;
-        tail_ = (tail_ + 1) % capacity_;
-        this->size_++;
-        return elems_[curTail];
+        size_++;
+        HCCL_INFO("[CircularQueue][Append] head_[%u] tail_[%u] size_[%u] capacity_[%u]", head_, tail_, size_,
+                   capacity_);
     }
 
     void PopFront() override
     {
-        if (this->IsEmpty()) {
+        if (IsEmpty()) {
             THROW<InternalException>(StringFormat("CircularQueue<T>::PopFront Queue is empty!"));
         }
         head_ = (head_ + 1) % capacity_;
-        this->size_--;
+        size_--;
+        HCCL_INFO("[CircularQueue][PopFront] head_[%u] tail_[%u] size_[%u] capacity_[%u]", head_, tail_, size_,
+                   capacity_);
     }
 
     void Traverse(std::function<void(const T &)> action) override
     {
         size_t i     = head_;
         size_t count = 0;
-        while (count < this->size_) {
+        while (count < size_) {
             action(elems_[i]);
             i = (i + 1) % capacity_;
             count++;
         }
     }
 
+    size_t Size() const override
+    {
+        return size_;
+    }
+
+    bool IsEmpty() const override
+    {
+        return size_ == 0;
+    }
+
     bool IsFull() const override
     {
-        return this->size_ == Capacity();
+        return size_ == Capacity();
     }
 
     size_t Capacity() const override
@@ -175,7 +178,7 @@ public:
     {
         size_t i     = head_;
         size_t count = 0;
-        while (count < this->size_) {
+        while (count < size_) {
             if (cond(elems_[i])) {
                 return std::make_shared<Iterator>(elems_.begin() + i, this);
             }
@@ -187,7 +190,7 @@ public:
 
     std::shared_ptr<typename Queue<T>::Iterator> Begin() override
     {
-        if (this->IsEmpty()) {
+        if (IsEmpty()) {
             HCCL_WARNING("[CircularQueue][Begin] Queue is empty!");
             return std::make_shared<Iterator>(elems_.begin() + tail_, this);
         }
@@ -196,7 +199,7 @@ public:
 
     std::shared_ptr<typename Queue<T>::Iterator> Tail() override
     {
-        if (this->IsEmpty()) {
+        if (IsEmpty()) {
             HCCL_WARNING("[CircularQueue][Tail] Queue is empty!");
             return std::make_shared<Iterator>(elems_.begin() + tail_, this);
         }
