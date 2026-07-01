@@ -28,3 +28,8 @@ src/base_comm/common/orion_adpt_utils.cc
 src/coll_communicator_mgr/dfx/taskException/host/hcclCommTaskException.cc
 src/common/launch_aicpu/launch_aicpu.cc
 src/legacy/ascend910/framework/op_base/src/op_base.cc
+src/legacy/ascend910/algorithm/impl/hccl_alg_device.cc
+src/legacy/ascend910/algorithm/impl/hccl_alg.cc
+src/legacy/ascend910/algorithm/impl/operator/all_reduce_operator.cc
+src/legacy/ascend910/framework/communicator/hccl_comm.cc
+src/legacy/ascend910/framework/hcom/hcom.cc

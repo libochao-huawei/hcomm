@@ -54,6 +54,7 @@
 #include "hcom_private.h"
 #include "profiler_base_pub.h"
 #include "param_check_pub_v2.h"
+#include "op_base.h"
 
 using namespace std;
 using namespace hccl;
@@ -12742,4 +12743,301 @@ TEST_F(HcomTest, ut_HcomGetSplitStrategy_When_ParamIsNullptr_Expect_ReturnIsHCCL
     ret = HcomGetSplitStrategy(group.c_str(), feature, &ptr, &ptr, nullptr,
         GradSplitForceMode::FORCE_NONE, OriginalGraphShapeType::KNOWN_SHAPE);
     EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+// ============================================================================================
+// GetAllReduceScratchSize 相关 UT（u32->u64 count 参数拓宽验证）
+// 对应业务代码：src/legacy/ascend910/framework/hcom/hcom.cc
+//   - HcclCommGraphGetAllReduceScratchSize(s64, const u64, const HcclDataType, u64 &)
+//   - HcomGetAllReduceScratchSize(const char *, const u64, const HcclDataType, u64 &)
+// ============================================================================================
+namespace {
+// 超过 UINT32_MAX 的 count 值：验证 u64 拓宽生效（u32 参数会截断为 0）
+constexpr u64 U64_COUNT_EXCEED_U32 = 0x100000000ULL;
+// 哨兵值：大 count 分支不写 outScratchSize 时保留此值，可检测 u32 截断为 0 的情况
+constexpr u64 SENTINEL_SCRATCH = 7777ULL;
+// mock 委托函数回写的任意值，用于验证出参是否正确传递
+constexpr u64 EXPECTED_DELEGATE_OUT = 12345ULL;
+// FP32 每个元素占 4 字节（SIZE_TABLE）；小数据 scratch = unitSize * count * (DEVICE_EIGHT - 1) = 4 * count * 7
+constexpr u64 FP32_UNIT_SIZE = 4ULL;
+constexpr u64 DEVICE_EIGHT_MINUS_ONE = 7ULL;
+
+// 获取全局 HcomInfo 上下文引用
+HcomInfo &GetScratchHcomInfo()
+{
+    return HcomGetCtxHomInfo();
+}
+
+// 清空 HcomInfo 中的 pComm 和 group 映射，保证用例间无状态污染
+void ClearScratchHcomInfo()
+{
+    HcomInfo &info = GetScratchHcomInfo();
+    info.pComm.reset();
+    info.hcomGroupMap.clear();
+}
+
+// 设置全局 pComm 为默认构造的 hcclComm 对象
+void SetScratchPComm()
+{
+    GetScratchHcomInfo().pComm.reset(new (std::nothrow) hccl::hcclComm());
+}
+
+// 在 hcomGroupMap 中插入一个子 group，withComm 控制是否带有效的 pSubComm
+void SetScratchSubGroup(const std::string &group, bool withComm)
+{
+    HcclGroupParams params {};
+    if (withComm) {
+        params.pSubComm.reset(new (std::nothrow) hccl::hcclComm());
+    }
+    GetScratchHcomInfo().hcomGroupMap[group] = params;
+}
+
+// mock HcomCheckGroupName 返回成功
+void MockCheckGroupNameOk()
+{
+    MOCKER(HcomCheckGroupName).stubs().will(returnValue(HCCL_SUCCESS));
+}
+
+// mock HcomCheckGroupName 返回参数错误
+void MockCheckGroupNameFail()
+{
+    MOCKER(HcomCheckGroupName).stubs().will(returnValue(HCCL_E_PARA));
+}
+
+// mock HcclGetCommHandle 返回失败
+void MockGetCommHandleFail()
+{
+    MOCKER(HcclGetCommHandle).stubs().will(returnValue(HCCL_E_PARA));
+}
+
+// mock hcclComm::GetAllReduceScratchSize（const 成员函数），使委托路径返回受控结果并通过出参回写 outVal
+void MockHcclCommScratchSize(HcclResult ret, u64 outVal)
+{
+    MOCKER_CPP(&hccl::hcclComm::GetAllReduceScratchSize,
+               HcclResult (hccl::hcclComm::*)(const u64, const HcclDataType, u64 &) const)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), outBound(outVal))
+        .will(returnValue(ret));
+}
+} // namespace
+
+// --------------------------------------------------------------------------------------------
+// HcclCommGraphGetAllReduceScratchSize：opBaseHcom 为 0 时 CHK_PTR_NULL 返回 HCCL_E_PTR；
+// 否则委托 hcclComm->GetAllReduceScratchSize(count, dataType, outScratchSize)
+// --------------------------------------------------------------------------------------------
+class HcclCommGraphGetAllReduceScratchSizeTest : public testing::Test {
+protected:
+    void SetUp() override
+    {
+        ClearScratchHcomInfo();
+        // 在 SetUp 中构造 hcclComm，生命周期受 fixture 控制，避免 static 局部对象永不析构的问题
+        comm_ = std::make_unique<hccl::hcclComm>();
+    }
+
+    void TearDown() override
+    {
+        // 在 TearDown 中释放 hcclComm，确保资源及时回收
+        comm_.reset();
+        ClearScratchHcomInfo();
+        GlobalMockObject::verify();
+    }
+
+    // 返回非空 opBaseHcom 指针，底层由成员 comm_ 支撑。被测函数的委托方法已被 mock，对象不会真正执行设备操作
+    s64 MakeOpHandle() const
+    {
+        return reinterpret_cast<s64>(comm_.get());
+    }
+
+private:
+    // fixture 成员，构造与析构时机由 SetUp/TearDown 显式控制
+    std::unique_ptr<hccl::hcclComm> comm_;
+};
+
+// 参数验证：opBaseHcom 为 0（空指针）时，必须在委托前被 CHK_PTR_NULL 拒绝
+TEST_F(HcclCommGraphGetAllReduceScratchSizeTest,
+       Ut_HcclCommGraphGetAllReduceScratchSize_When_OpBaseHcomZero_Expect_ReturnPtrError)
+{
+    const u64 count = 100;
+    u64 outScratchSize = 0;
+    HcclResult ret = HcclCommGraphGetAllReduceScratchSize(0, count, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_E_PTR) << "空 opBaseHcom 必须通过 CHK_PTR_NULL 返回 HCCL_E_PTR";
+}
+
+// 正常路径：有效句柄 + 正常 count -> 委托成功且出参正确传递
+TEST_F(HcclCommGraphGetAllReduceScratchSizeTest,
+       Ut_HcclCommGraphGetAllReduceScratchSize_When_ValidHandleNormalCount_Expect_DelegateSuccess)
+{
+    MockHcclCommScratchSize(HCCL_SUCCESS, EXPECTED_DELEGATE_OUT);
+    u64 outScratchSize = 0;
+    HcclResult ret = HcclCommGraphGetAllReduceScratchSize(MakeOpHandle(), 100, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS) << "有效句柄必须透传委托的成功返回值";
+    EXPECT_EQ(outScratchSize, EXPECTED_DELEGATE_OUT) << "outScratchSize 必须从委托函数正确传递";
+}
+
+// 边界条件：count 超过 UINT32_MAX 必须作为完整 u64 被接受（本次 u32->u64 修改的核心验证点）
+TEST_F(HcclCommGraphGetAllReduceScratchSizeTest,
+       Ut_HcclCommGraphGetAllReduceScratchSize_When_CountExceedsU32Max_Expect_DelegateAcceptsFullU64)
+{
+    MockHcclCommScratchSize(HCCL_SUCCESS, EXPECTED_DELEGATE_OUT);
+    u64 outScratchSize = 0;
+    HcclResult ret =
+        HcclCommGraphGetAllReduceScratchSize(MakeOpHandle(), U64_COUNT_EXCEED_U32, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS) << "超过 UINT32_MAX 的 u64 count 不应破坏委托调用";
+    EXPECT_EQ(outScratchSize, EXPECTED_DELEGATE_OUT) << "大 u64 count 下 outScratchSize 必须正确传递";
+}
+
+// 边界条件：count == 0 时仍应成功委托
+TEST_F(HcclCommGraphGetAllReduceScratchSizeTest,
+       Ut_HcclCommGraphGetAllReduceScratchSize_When_CountIsZero_Expect_DelegateSuccess)
+{
+    MockHcclCommScratchSize(HCCL_SUCCESS, EXPECTED_DELEGATE_OUT);
+    u64 outScratchSize = 0;
+    HcclResult ret = HcclCommGraphGetAllReduceScratchSize(MakeOpHandle(), 0, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS) << "count 为 0 时必须透传委托的成功返回值";
+}
+
+// 异常路径：委托函数返回错误时，错误码必须原样透传
+TEST_F(HcclCommGraphGetAllReduceScratchSizeTest,
+       Ut_HcclCommGraphGetAllReduceScratchSize_When_DelegateReturnsError_Expect_ErrorPropagated)
+{
+    MockHcclCommScratchSize(HCCL_E_PARA, 0);
+    u64 outScratchSize = 0;
+    HcclResult ret = HcclCommGraphGetAllReduceScratchSize(MakeOpHandle(), 100, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_E_PARA) << "委托函数的错误必须原样透传给调用方";
+}
+
+// --------------------------------------------------------------------------------------------
+// HcomGetAllReduceScratchSize 分支说明：
+//   A  pComm != nullptr
+//      A1  strGroup == HCCL_WORLD_GROUP          -> 委托
+//      A2  子 group
+//          A2a 在映射表中
+//              A2a-i  pSubComm == nullptr        -> HCCL_E_PTR
+//              A2a-ii pSubComm != nullptr        -> 委托
+//          A2b 不在映射表                          -> 小数据计算 scratch = memSize*(8-1); 返回 SUCCESS
+//   B  else if group==nullptr || HcclGetCommHandle 失败 -> outScratchSize=0; 返回 SUCCESS
+// --------------------------------------------------------------------------------------------
+class HcomGetAllReduceScratchSizeTest : public testing::Test {
+protected:
+    void SetUp() override
+    {
+        ClearScratchHcomInfo();
+    }
+
+    void TearDown() override
+    {
+        ClearScratchHcomInfo();
+        GlobalMockObject::verify();
+    }
+};
+
+// 分支 B（参数验证）：pComm 为空且 group 为 nullptr -> 返回成功，outScratchSize 置 0，不查找通信域
+TEST_F(HcomGetAllReduceScratchSizeTest,
+       Ut_HcomGetAllReduceScratchSize_When_PCommNullGroupNull_Expect_SuccessZeroOut)
+{
+    u64 outScratchSize = SENTINEL_SCRATCH;
+    HcclResult ret = HcomGetAllReduceScratchSize(nullptr, 100, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS) << "group 为空且无 pComm 时必须返回成功";
+    EXPECT_EQ(outScratchSize, 0ULL) << "未初始化分支必须将 outScratchSize 重置为 0";
+}
+
+// 分支 B（异常）：pComm 为空、group 非空但 HcclGetCommHandle 失败 -> 返回成功，outScratchSize 置 0
+TEST_F(HcomGetAllReduceScratchSizeTest,
+       Ut_HcomGetAllReduceScratchSize_When_PCommNullHandleFails_Expect_SuccessZeroOut)
+{
+    MockGetCommHandleFail();
+    u64 outScratchSize = SENTINEL_SCRATCH;
+    HcclResult ret = HcomGetAllReduceScratchSize("any_group", 100, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS) << "通信域句柄查找失败时必须回退为成功并置零 scratch";
+    EXPECT_EQ(outScratchSize, 0ULL) << "未调用初始化时 outScratchSize 必须重置为 0";
+}
+
+// 分支 A1（正常）：pComm 已设置、world group（group=nullptr）-> 委托成功且出参正确传递
+TEST_F(HcomGetAllReduceScratchSizeTest,
+       Ut_HcomGetAllReduceScratchSize_When_PCommSetWorldGroup_Expect_DelegateSuccess)
+{
+    SetScratchPComm();
+    MockCheckGroupNameOk();
+    MockHcclCommScratchSize(HCCL_SUCCESS, EXPECTED_DELEGATE_OUT);
+    u64 outScratchSize = 0;
+    HcclResult ret = HcomGetAllReduceScratchSize(nullptr, 100, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS) << "world group 必须委托到 hcclComm->GetAllReduceScratchSize";
+    EXPECT_EQ(outScratchSize, EXPECTED_DELEGATE_OUT) << "outScratchSize 必须从委托函数正确传递";
+}
+
+// 分支 A2a-ii（正常）：pComm 已设置、子 group 在映射表中且 pSubComm 有效 -> 委托成功
+TEST_F(HcomGetAllReduceScratchSizeTest,
+       Ut_HcomGetAllReduceScratchSize_When_PCommSetSubGroupInMap_Expect_DelegateSuccess)
+{
+    SetScratchPComm();
+    SetScratchSubGroup("sub_group", true);
+    MockCheckGroupNameOk();
+    MockHcclCommScratchSize(HCCL_SUCCESS, EXPECTED_DELEGATE_OUT);
+    u64 outScratchSize = 0;
+    HcclResult ret = HcomGetAllReduceScratchSize("sub_group", 100, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS) << "映射表中的子 group 必须通过 pSubComm 委托";
+    EXPECT_EQ(outScratchSize, EXPECTED_DELEGATE_OUT) << "outScratchSize 必须从委托函数正确传递";
+}
+
+// 分支 A2a-i（异常）：pComm 已设置、子 group 在映射表中但 pSubComm 为空 -> 返回 HCCL_E_PTR
+TEST_F(HcomGetAllReduceScratchSizeTest,
+       Ut_HcomGetAllReduceScratchSize_When_PCommSetSubGroupInMapNullSubComm_Expect_PtrError)
+{
+    SetScratchPComm();
+    SetScratchSubGroup("sub_group", false);
+    MockCheckGroupNameOk();
+    u64 outScratchSize = 0;
+    HcclResult ret = HcomGetAllReduceScratchSize("sub_group", 100, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_E_PTR) << "映射表中 pSubComm 为空时必须返回 HCCL_E_PTR";
+}
+
+// 分支 A2b（正常）：pComm 已设置、子 group 不在映射表中、小数据 -> 计算 scratch = unitSize * count * 7
+TEST_F(HcomGetAllReduceScratchSizeTest,
+       Ut_HcomGetAllReduceScratchSize_When_PCommSetSubGroupNotInMapSmallData_Expect_ComputedScratch)
+{
+    SetScratchPComm();
+    MockCheckGroupNameOk();
+    const u64 count = 100;
+    u64 outScratchSize = 0;
+    HcclResult ret = HcomGetAllReduceScratchSize("missing_group", count, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS) << "不在映射表中的子 group 必须计算 scratch 并返回成功";
+    const u64 expected = FP32_UNIT_SIZE * count * DEVICE_EIGHT_MINUS_ONE;
+    EXPECT_EQ(outScratchSize, expected) << "小数据 scratch 必须为 memSize * (DEVICE_EIGHT - 1)";
+}
+
+// 分支 A2b（边界，u32->u64 修复验证）：count > UINT32_MAX 时 memSize 保持为大值，跳过小数据分支，outScratchSize 不被改写。
+// 若参数仍为 u32，count 会被截断为 0，memSize 算成 0，错误进入小数据分支并将 outScratchSize 覆盖为 0
+TEST_F(HcomGetAllReduceScratchSizeTest,
+       Ut_HcomGetAllReduceScratchSize_When_PCommSetSubGroupNotInMapLargeU64Count_Expect_OutUnchanged)
+{
+    SetScratchPComm();
+    MockCheckGroupNameOk();
+    u64 outScratchSize = SENTINEL_SCRATCH;
+    HcclResult ret =
+        HcomGetAllReduceScratchSize("missing_group", U64_COUNT_EXCEED_U32, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS) << "大 u64 count 不应破坏不在映射表中的分支";
+    EXPECT_EQ(outScratchSize, SENTINEL_SCRATCH) << "大 u64 count 必须跳过小数据分支（无截断）";
+}
+
+// 分支 A2b（边界）：count == 0 -> memSize 为 0，小数据分支 -> scratch 为 0
+TEST_F(HcomGetAllReduceScratchSizeTest,
+       Ut_HcomGetAllReduceScratchSize_When_PCommSetSubGroupNotInMapZeroCount_Expect_ZeroScratch)
+{
+    SetScratchPComm();
+    MockCheckGroupNameOk();
+    u64 outScratchSize = SENTINEL_SCRATCH;
+    HcclResult ret = HcomGetAllReduceScratchSize("missing_group", 0, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS) << "count 为 0 时必须计算 scratch 并返回成功";
+    EXPECT_EQ(outScratchSize, 0ULL) << "count 为 0 时小数据分支必须产生 0 scratch";
+}
+
+// 参数验证 / 异常：HcomCheckGroupName 失败时，错误码必须通过 CHK_RET 透传
+TEST_F(HcomGetAllReduceScratchSizeTest,
+       Ut_HcomGetAllReduceScratchSize_When_CheckGroupNameFails_Expect_ErrorPropagated)
+{
+    SetScratchPComm();
+    MockCheckGroupNameFail();
+    u64 outScratchSize = 0;
+    HcclResult ret = HcomGetAllReduceScratchSize("any_group", 100, HCCL_DATA_TYPE_FP32, outScratchSize);
+    EXPECT_EQ(ret, HCCL_E_PARA) << "HcomCheckGroupName 失败时错误码必须透传";
 }
