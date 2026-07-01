@@ -164,7 +164,7 @@ HcclOpInfoCtx &GetHcclOpInfoCtx(void)
         auto &opHcomInfo = GetOpHcomInfo(i);
         if (opHcomInfo.isUsed) {
             g_hcclDeviceId = i;
-            HCCL_INFO("[GetHcclOpInfoCtx] Not set device, Used g_hcclDeviceId[%d] ", i);
+            HCCL_INFO("[GetHcclOpInfoCtx] Not set device, Used g_hcclDeviceId[%u] ", i);
             return opHcomInfo;
         }
     }
