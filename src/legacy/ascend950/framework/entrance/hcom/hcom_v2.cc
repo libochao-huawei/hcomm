@@ -1379,6 +1379,7 @@ HcclResult HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rt
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
     CHK_RET(hcclComm->Mc2AiCpuStreamAllocAndGetV2(aiCpuStream));
+    CHK_PTR_NULL(*aiCpuStream);
     return HCCL_SUCCESS;
 }
 

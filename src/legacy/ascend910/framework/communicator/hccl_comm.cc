@@ -1252,6 +1252,7 @@ HcclResult hcclComm::Mc2AiCpuStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpu
     HCCL_INFO("HCCL_KEY_INFO: Mc2AiCpuStreamAllocAndGet streamMode[%u]", streamMode);
 
     CHK_RET(communicator_->Mc2AiCpuStreamAllocAndGet(streamMode, aiCpuStream));
+    CHK_PTR_NULL(aiCpuStream);
 
     return HCCL_SUCCESS;
 }
