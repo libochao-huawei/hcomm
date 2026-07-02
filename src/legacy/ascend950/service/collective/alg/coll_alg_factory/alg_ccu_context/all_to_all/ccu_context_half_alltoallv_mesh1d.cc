@@ -90,7 +90,6 @@ CcuContextHalfAllToAllVMesh1D::CcuContextHalfAllToAllVMesh1D(
     locMiSignal1_ = CreateMaskSignal();
     ExchangeCtxResource();
 
-    AllocGoResource(LOC_CPY_LOOP_NUM);  // 只用8个loop做本地搬运，每个loop搬4K
     return;
 }
 
@@ -197,73 +196,6 @@ void CcuContextHalfAllToAllVMesh1D::PostSync()
     return;
 }
 
-void CcuContextHalfAllToAllVMesh1D::CreateLocalCopyLoop()
-{
-    std::string opStr = "halfa2av_localcpy_loopgroup";
-    for (uint32_t index = 0; index < 2; index++) { // 需要2个Loop
-        CcuRep::Memory              src = CreateMemory();
-        CcuRep::Memory              dst = CreateMemory();
-        CcuRep::Variable            len = CreateVariable();
-        CcuRep::LoopBlock           lb(this, "halfa2av_localcpy_loop_" + std::to_string(index));
-        lb(src, dst, len);
-
-        CcuRep::CcuBuffer  buf = moRes.ccuBuffer[index * moConfig.msInterleave];
-        CcuRep::MaskSignal sem = moRes.maskSignal[index];
-
-        LocalCopy(buf, src, len, sem);
-        LocalWait(sem);
-        LocalCopy(dst, buf, len, sem);
-        LocalWait(sem);
-    }
-    return;
-}
-
-void CcuContextHalfAllToAllVMesh1D::LocalCopyByLoopGroup(CcuRep::Memory dst, CcuRep::Memory src, GroupOpSize &goPara)
-{
-    std::string opStr = "halfa2av_localcpy_loopgroup";
-    CreateLocalCopyLoop();
-
-    {
-        CcuRep::Condition cond(this, goPara.loopParam != 0);
-
-        CcuRep::Variable loopParam = CreateVariable();
-        loopParam = CcuRep::GetLoopParam(0, moConfig.memSlice * moConfig.loopCount, 0);
-        loopParam += goPara.loopParam;
-
-        CcuRep::Variable sliceSize = CreateVariable();
-        sliceSize = moConfig.memSlice;
-        auto lc   = Loop("halfa2av_localcpy_loop_0")(src, dst, sliceSize);
-
-        CcuRep::Variable paraCfg = CreateVariable();
-        paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);
-        CcuRep::Variable offsetCfg = CreateVariable();
-        offsetCfg = CcuRep::GetOffsetParam(moConfig.memSlice, moConfig.msInterleave, 1);
-        LoopGroup({lc}, {loopParam}, paraCfg, offsetCfg);
-    }
-
-    {
-        CcuRep::Condition cond(this, goPara.parallelParam != 0);
-
-        src.addr += goPara.addrOffset;
-        dst.addr += goPara.addrOffset;
-        auto lc0 = Loop("halfa2av_localcpy_loop_0")(src, dst, goPara.residual);
-
-        src.addr += goPara.residual;
-        dst.addr += goPara.residual;
-        CcuRep::Variable sliceSize = CreateVariable();
-        sliceSize = moConfig.memSlice;
-        auto lc1  = Loop("halfa2av_localcpy_loop_1")(src, dst, sliceSize);
-
-        CcuRep::Variable loopCfg0 = CreateVariable();
-        loopCfg0 = CcuRep::GetLoopParam(0, 0, 1);
-        CcuRep::Variable loopCfg1 = CreateVariable();
-        loopCfg1 = CcuRep::GetLoopParam(0, 0, 1);
-        CcuRep::Variable offsetCfg = CreateVariable();
-        offsetCfg = CcuRep::GetOffsetParam(moConfig.memSlice, moConfig.msInterleave, 1);
-        LoopGroup({lc0, lc1}, {loopCfg0, loopCfg1}, goPara.parallelParam, offsetCfg);
-    }
-}
-
 void CcuContextHalfAllToAllVMesh1D::Algorithm()
 {
     HCCL_INFO("[CcuContextHalfAllToAllVMesh1D] AllgatherMesh1D Algorithm Begins.");
@@ -307,7 +239,7 @@ void CcuContextHalfAllToAllVMesh1D::Algorithm()
     }
 
     if (missionId_ == 0) {
-        LocalCopyByLoopGroup(lgDst, lgSrc, goSize_);
+        GroupCopy(lgDst, lgSrc, goSize_);
     }
     for (uint16_t sId = 0; sId < signalNum_; sId++) {
         uint32_t waitBit;
