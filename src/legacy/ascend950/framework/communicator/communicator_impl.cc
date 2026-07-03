@@ -3900,9 +3900,6 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
     }
     HCCL_INFO("[CommunicatorImpl::%s] hcclAccelerator[%s].", __func__, hcclAccelerator.Describe().c_str());
     switch (hcclAccelerator) {
-        case HcclAccelerator::DEFAULT:
-            acceleratorState = AcceleratorState::CCU_SCHED; // 默认按照CCU_SCHED
-            break;
         case HcclAccelerator::CCU_SCHED:
             acceleratorState = AcceleratorState::CCU_SCHED;
             break;
