@@ -9,7 +9,6 @@
  */
 
 #include "rts_1ton_cnt_notify.h"
-#include "dev_capability.h"
 #include "exception_util.h"
 #include "task.h"
 

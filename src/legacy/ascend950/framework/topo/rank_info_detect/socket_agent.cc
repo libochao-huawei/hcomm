@@ -13,7 +13,6 @@
 #include "socket_exception.h"
 #include "root_handle_v2.h"
 #include "null_ptr_exception.h"
-#include "socket_agent.h"
 
 namespace Hccl {
 

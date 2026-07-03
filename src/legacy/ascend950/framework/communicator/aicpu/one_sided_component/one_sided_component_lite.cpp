@@ -13,7 +13,6 @@
 #include <string>
 #include <map>
 #include "log.h"
-#include "execute_selector.h"
 
 namespace Hccl {
 HcclResult OneSidedComponentLite::Orchestrate(const HcclAicpuOpLite &op, InsQuePtr queue)

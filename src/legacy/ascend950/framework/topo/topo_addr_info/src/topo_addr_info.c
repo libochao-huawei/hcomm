@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include <sys/stat.h>
-#include "securec.h"
 #include "hal.h"
 #include "topo.h"
 #include "product_card.h"

@@ -10,7 +10,6 @@
 
 #include "hccl_one_sided_conn.h"
 #include "connections_builder.h"
-#include "rdma_handle_manager.h"
 #include "hccl_net_dev.h"
 #include "hccl_mem.h"
 #include "communicator_impl.h"

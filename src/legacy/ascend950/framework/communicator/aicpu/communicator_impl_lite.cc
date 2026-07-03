@@ -9,7 +9,6 @@
  */
 
 #include "communicator_impl_lite.h"
-#include "aicpu_daemon_service.h"
 #include "aicpu_res_package_helper.h"
 #include "alg_topo_package_helper.h"
 #include "sal.h"

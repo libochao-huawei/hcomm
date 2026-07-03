@@ -16,7 +16,6 @@
 #include "ccu_context_reduce_scatter_v_mesh1d.h"
 
 #include "log.h"
-#include "ccu_assist.h"
 #include "ccu_rank_group.h"
 #include "ccu_ctx_creator_registry.h"
 #include "alg_data_trans_wrapper.h"

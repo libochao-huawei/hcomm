@@ -16,9 +16,6 @@
 #include <unordered_map>
 #include "json_parser.h"
 #include "invalid_params_exception.h"
-#include "types.h"
-#include "const_val.h"
-#include "dev_type.h"
 #include "exception_util.h"
 #include "adapter_error_manager_pub.h"
 

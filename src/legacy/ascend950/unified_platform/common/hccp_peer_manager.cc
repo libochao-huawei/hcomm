@@ -9,7 +9,6 @@
  */
 
 #include "hccp_peer_manager.h"
-#include "orion_adapter_tsd.h"
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
 

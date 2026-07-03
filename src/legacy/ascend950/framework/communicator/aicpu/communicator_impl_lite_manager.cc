@@ -10,8 +10,6 @@
 
 #include "communicator_impl_lite_manager.h"
 #include "aicpu_daemon_service.h"
-#include "aicpu_res_package_helper.h"
-#include "alg_topo_package_helper.h"
 #include "aicpu_comm_destroy_func.h"
 #include "ns_recovery_handler_func.h"
 #include "task_exception_func.h"

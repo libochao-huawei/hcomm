@@ -10,8 +10,6 @@
 
 #include "base_selector.h"
 
-#include "virtual_topo.h"
-#include "coll_operator.h"
 
 #include <numeric>
 

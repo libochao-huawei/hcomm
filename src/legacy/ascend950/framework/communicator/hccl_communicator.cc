@@ -12,7 +12,6 @@
 #include <memory>
 #include <utility>
 #include "communicator_impl.h"
-#include "env_config.h"
 #include "snap_shot_parse.h"
 #include "task_abort_handler.h"
 #include "ccu_dev_mgr.h"

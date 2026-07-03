@@ -10,7 +10,6 @@
 
 #include "hccl_mem.h"
 #include "hccl_mem_v2.h"
-#include "log.h"
 
 HcclResult HcclMemReg(HcclNetDev netDev, const HcclMem *mem, HcclBuf *buf)
 {

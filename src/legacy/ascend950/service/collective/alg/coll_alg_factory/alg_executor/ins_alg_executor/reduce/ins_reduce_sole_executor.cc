@@ -14,8 +14,6 @@
 #ifndef CCL_KERNEL_AICPU
 #include "ccu_temp_reduce_mesh_2D.h"
 #endif
-#include "ins_temp_reduce_mesh_1D.h"
-#include "topo_match_mesh.h"
 #include "topo_match_concurr_mesh.h"
 #include "alg_data_trans_wrapper.h"
 

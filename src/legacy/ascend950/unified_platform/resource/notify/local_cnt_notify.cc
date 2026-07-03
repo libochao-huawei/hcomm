@@ -10,8 +10,6 @@
 
 #include "local_cnt_notify.h"
 
-#include "hccp_ctx.h"
-#include "rma_type.h"
 #include "exchange_ub_buffer_dto.h"
 #include "rdma_handle_manager.h"
 #include "local_ub_rma_buffer.h"

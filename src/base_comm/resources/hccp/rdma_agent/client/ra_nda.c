@@ -10,12 +10,9 @@
 
 #include <stdlib.h>
 #include <errno.h>
-#include "securec.h"
 #include "hccp_nda.h"
-#include "ra.h"
 #include "ra_peer_nda.h"
 #include "ra_rs_comm.h"
-#include "ra_client_host.h"
 
 HCCP_ATTRI_VISI_DEF int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
 {

@@ -9,9 +9,7 @@
  */
 #include "base_config.h"
 #include <fstream>
-#include "sal.h"
 #include "log.h"
-#include "orion_adapter_rts.h"
 
 namespace Hccl {
 

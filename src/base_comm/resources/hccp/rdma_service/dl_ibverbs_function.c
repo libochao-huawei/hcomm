@@ -9,7 +9,6 @@
  */
 
 #include <pthread.h>
-#include "errno.h"
 #include "ra_rs_err.h"
 #include "dl_nda_function.h"
 #include "dl_ibverbs_function.h"

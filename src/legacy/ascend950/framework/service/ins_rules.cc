@@ -9,7 +9,6 @@
  */
 
 #include "ins_rules.h"
-#include "rma_connection.h"
 #include "null_ptr_exception.h"
 #include "not_support_exception.h"
 #include "queue_wait_group_cnt_notify_manager.h"
@@ -21,7 +20,6 @@
 #include "coll_service_device_mode.h"
 #include "dlprof_function.h"
 #include "hccl_aiv_utils.h"
-#include "sal.h"
 #include "ccu_ins_group.h"
 
 namespace Hccl {

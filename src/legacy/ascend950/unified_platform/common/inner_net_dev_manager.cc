@@ -9,7 +9,6 @@
  */
 #include "inner_net_dev_manager.h"
 #include "log.h"
-#include "hccl_net_dev_v2.h"
 
 namespace Hccl {
 InnerNetDevManager &InnerNetDevManager::GetInstance()

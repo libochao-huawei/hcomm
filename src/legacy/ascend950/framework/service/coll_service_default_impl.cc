@@ -12,12 +12,9 @@
 #include <sstream>
 #include <string>
 #include <chrono>
-#include "coll_alg_component_builder.h"
 #include "connections_builder.h"
 #include "communicator_impl.h"
-#include "env_config.h"
 #include "dev_ub_connection.h"
-#include "topo_common_types.h"
 #include "stl_util.h"
 #include "exception_util.h"
 

@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "securec.h"
 #include "hccp_ping.h"
 #include "ra.h"
 #include "ra_client_host.h"

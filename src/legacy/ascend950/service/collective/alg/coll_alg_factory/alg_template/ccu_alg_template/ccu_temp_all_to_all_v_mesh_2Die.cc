@@ -15,11 +15,9 @@
 #include <iostream>
 
 #include "log.h"
-#include "env_config.h"
 #include "ccu_rank_group.h"
 #include "ccu_ctx_creator_registry.h"
 #include "ccu_ins_group.h"
-#include "ccu_assist.h"
 #include "ccu_context_all_to_all_v_mesh2die.h"
 
 namespace Hccl {

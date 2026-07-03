@@ -9,8 +9,6 @@
  */
 
 #include "socket_handle_manager.h"
-#include "orion_adapter_rts.h"
-#include "hccp_hdc_manager.h"
 #include "internal_exception.h"
 
 namespace Hccl {

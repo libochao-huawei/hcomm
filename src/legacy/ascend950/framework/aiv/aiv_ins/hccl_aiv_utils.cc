@@ -13,7 +13,6 @@
 #include <iostream>
 #include <fstream>
 #include "mmpa_api.h"
-#include "orion_adapter_rts.h"
 #include "acl/acl_rt.h"
 #include "env_config.h"
 #include "hccl_aiv_utils.h"

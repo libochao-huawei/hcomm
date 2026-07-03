@@ -19,7 +19,6 @@
 #include "ra_rs_err.h"
 #include "rs_rdma_inner.h"
 #include "rs_inner.h"
-#include "rs_socket.h"
 #include "verbs_exp.h"
 #include "dl_hal_function.h"
 #include "dl_ibverbs_function.h"

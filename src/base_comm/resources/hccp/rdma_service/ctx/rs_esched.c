@@ -10,7 +10,6 @@
 
 #include <sys/prctl.h>
 #include <pthread.h>
-#include "securec.h"
 #include "user_log.h"
 #include "dl_hal_function.h"
 #include "hccp_msg.h"

@@ -10,7 +10,6 @@
 
 #include "ins_temp_all_reduce_mesh_1D_two_shot_mesh_chunk.h"
 
-#include "aicpu_ins.h"
 #include "log.h"
 #include "alg_data_trans_wrapper.h"
 

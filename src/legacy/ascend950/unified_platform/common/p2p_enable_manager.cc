@@ -10,7 +10,6 @@
 
 #include "p2p_enable_manager.h"
 #include "log.h"
-#include "runtime_api_exception.h"
 #include "env_config.h"
 
 namespace Hccl {

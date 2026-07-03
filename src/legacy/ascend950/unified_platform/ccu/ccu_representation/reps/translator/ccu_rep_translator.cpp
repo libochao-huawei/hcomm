@@ -11,8 +11,6 @@
 #include "ccu_rep_translator.h"
 #include "exception_util.h"
 #include "ccu_api_exception.h"
-#include "ccu_rep_postsharedvar.h"
-#include "ccu_rep_postsharedsem.h"
 #include "ccu_rep_loopcall.h"
 #include "ccu_rep_funccall.h"
 #include "ccu_rep_type.h"

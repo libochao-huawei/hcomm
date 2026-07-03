@@ -13,7 +13,6 @@
 #include "user_log.h"
 #include "dl_urma_function.h"
 #include "hccp_ctx.h"
-#include "hccp_async_ctx.h"
 #include "ra_rs_err.h"
 #include "rs_ctx_inner.h"
 #include "rs_ub_tp.h"

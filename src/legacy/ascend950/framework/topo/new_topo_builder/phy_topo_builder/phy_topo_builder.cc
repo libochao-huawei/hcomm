@@ -10,7 +10,6 @@
 
 #include "phy_topo_builder.h"
 #include "log.h"
-#include "types.h"
 #include "json_parser.h"
 #include "exception_util.h"
 #include "null_ptr_exception.h"

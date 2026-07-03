@@ -10,9 +10,6 @@
 
 #include <vector>
  
-#include "ccu_assist.h"
-#include "ccu_loopcall.h"
-#include "ccu_ctx.h"
 #include "ccu_datatype.h"
 #include "ccu_context_alg_base.h"
  

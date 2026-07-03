@@ -8,9 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "flush_manager.h"
-#include "hccp.h"
-#include "orion_adapter_rts.h"
-#include "sal.h"
 
 namespace Hccl {
 

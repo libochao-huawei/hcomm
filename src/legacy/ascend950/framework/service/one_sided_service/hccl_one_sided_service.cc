@@ -12,13 +12,10 @@
 #include "hccl_one_sided_service.h"
 #include "communicator_impl.h"
 #include "virtual_topo.h"
-#include "rdma_handle_manager.h"
 #include "alg_topo_package_helper.h"
 #include "aicpu_res_package_helper.h"
 #include "hccl_mem.h"
-#include "aicpu/launch_device.h"
 #include "exception_util.h"
-#include "runtime_api_exception.h"
 #include "env_config.h"
 
 namespace Hccl {

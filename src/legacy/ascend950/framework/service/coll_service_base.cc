@@ -9,9 +9,7 @@
  */
 
 #include "coll_service_base.h"
-#include "exception_util.h"
 #include "communicator_impl.h"
-#include "exception_util.h"
 #include "env_config.h"
 #include "dlprof_function.h"
 namespace Hccl {

@@ -10,7 +10,6 @@
 
 #include "aicpu_comm_destroy_func.h"
 #include "kfc.h"
-#include "aicpu_daemon_service.h"
 #include "communicator_impl_lite.h"
 #include "communicator_impl_lite_manager.h"
 

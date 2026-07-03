@@ -11,7 +11,6 @@
 #include "ccu_channel_mgr_v1.h"
 
 #include <vector>
-#include "ccu_res_specs.h"
 #include "orion_adapter_hccp.h"
 
 namespace Hccl {

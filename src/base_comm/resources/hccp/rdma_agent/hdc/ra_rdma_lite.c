@@ -10,7 +10,6 @@
 
 #include <dlfcn.h>
 #include <pthread.h>
-#include "errno.h"
 #include "ra.h"
 #include "ra_rs_err.h"
 #include "ra_rdma_lite.h"

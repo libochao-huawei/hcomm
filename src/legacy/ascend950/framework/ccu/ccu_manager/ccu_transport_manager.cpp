@@ -12,7 +12,6 @@
 
 #include <chrono>
 
-#include "recover_info.h"
 #include "coll_operator.h"
 #include "exception_util.h"
 #include "socket_manager.h"

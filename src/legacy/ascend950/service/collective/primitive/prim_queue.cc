@@ -9,7 +9,6 @@
  */
 
 #include "prim_queue.h"
-#include "iostream"
 
 namespace Hccl {
 

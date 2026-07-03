@@ -12,7 +12,6 @@
 #include "hccl_aiv_utils.h"
 #include <algorithm>
 #include <unordered_set>
-#include "mc2_context.h"
 #include "coll_service_device_mode.h"
 #include "aiv_ins.h"
 

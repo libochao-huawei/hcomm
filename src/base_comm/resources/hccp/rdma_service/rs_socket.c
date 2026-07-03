@@ -32,7 +32,6 @@
 #include "rs_epoll.h"
 #include "rs_common_inner.h"
 #include "rs_inner.h"
-#include "ascend_hal.h"
 #include "dl_hal_function.h"
 #include "rs_drv_socket.h"
 #include "rs_socket.h"

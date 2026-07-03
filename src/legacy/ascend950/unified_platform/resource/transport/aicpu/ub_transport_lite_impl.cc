@@ -10,7 +10,6 @@
 
 #include "ub_transport_lite_impl.h"
 #include "binary_stream.h"
-#include "ub_conn_lite.h"
 #include "ub_conn_lite_mgr.h"
 #include "exception_util.h"
 #include "internal_exception.h"

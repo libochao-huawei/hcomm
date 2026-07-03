@@ -20,7 +20,6 @@
 #include "preempt_port_manager.h"
 #include "timeout_exception.h"
 #include "p2p_enable_manager.h"
-#include "rank_table_info.h"
 #include "phy_topo_builder.h"
 
 namespace Hccl {

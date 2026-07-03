@@ -18,7 +18,6 @@
 #include "ccu_temp_half_alltoallv_mesh_1D.h"
 #include "alg_data_trans_wrapper.h"
 #include "ccu_instruction_half_alltoallv_mesh1d.h"
-#include "ccu_assist.h"
 #include "ccu_rank_group.h"
 #include "ccu_ctx_creator_registry.h"
 #include "ccu_context_half_alltoallv_mesh1d.h"

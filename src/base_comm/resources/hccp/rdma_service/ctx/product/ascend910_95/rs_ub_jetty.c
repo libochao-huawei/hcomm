@@ -16,15 +16,12 @@
 #include <dlfcn.h>
 #include <urma_opcode.h>
 #include <udma_u_ctl.h>
-#include "securec.h"
 #include "user_log.h"
 #include "dl_urma_function.h"
 #include "dl_net_function.h"
 #include "ra_rs_err.h"
-#include "ra_rs_ctx.h"
 #include "rs_inner.h"
 #include "rs_ctx_inner.h"
-#include "rs_ctx.h"
 #include "rs_ub.h"
 #include "rs_ub_jetty.h"
 

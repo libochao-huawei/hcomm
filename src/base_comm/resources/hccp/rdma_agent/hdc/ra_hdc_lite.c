@@ -20,7 +20,6 @@
 #include "ra_hdc.h"
 #include "securec.h"
 #include "ra.h"
-#include "ra_comm.h"
 #include "ra_rdma_lite.h"
 #include "dl_hal_function.h"
 #include "ra_rs_comm.h"

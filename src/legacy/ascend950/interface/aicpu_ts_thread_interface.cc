@@ -14,7 +14,6 @@
 #include <limits>
 
 #include "stream_lite.h"
-#include "rtsq_a5.h"
 #include "sqe_build_a5.h"
 
 namespace Hccl {

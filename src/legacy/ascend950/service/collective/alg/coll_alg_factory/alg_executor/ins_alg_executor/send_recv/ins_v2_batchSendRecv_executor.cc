@@ -11,7 +11,6 @@
 #include "log.h"
 
 #include "ins_coll_alg_registry.h"
-#include "dev_capability.h"
 #include "ins_v2_batchSendRecv_executor.h"
 #include "alg_data_trans_wrapper.h"
 

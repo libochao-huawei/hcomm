@@ -8,9 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "data_buf_manager.h"
-#include "orion_adapter_rts.h"
 #include "log.h"
-#include "internal_exception.h"
 #include "exception_util.h"
 namespace Hccl {
 

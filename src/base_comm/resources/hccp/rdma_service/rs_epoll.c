@@ -33,7 +33,6 @@
 #ifdef CONFIG_TLV
 #include "rs_adp_nslb.h"
 #endif
-#include "rs_ub.h"
 #include "rs_ub_dfx.h"
 #include "rs_epoll.h"
 

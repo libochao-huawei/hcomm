@@ -13,7 +13,6 @@
 #include <string.h>
 #include <dlfcn.h>
 #include "securec.h"
-#include "dl_hal_function.h"
 #include "hccp.h"
 #include "ra_client_host.h"
 #include "ra.h"

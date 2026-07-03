@@ -10,7 +10,6 @@
 
 #include "coll_alg_component_builder.h"
 #include "rank_gph.h"
-#include "coll_operator.h"
 #include "host/coll_alg_component.h"
 
 namespace Hccl {

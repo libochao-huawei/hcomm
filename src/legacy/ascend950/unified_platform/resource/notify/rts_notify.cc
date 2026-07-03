@@ -10,7 +10,6 @@
 #include "rts_notify.h"
 #include "log.h"
 #include "dev_capability.h"
-#include "not_support_exception.h"
 #include "binary_stream.h"
 namespace Hccl {
 

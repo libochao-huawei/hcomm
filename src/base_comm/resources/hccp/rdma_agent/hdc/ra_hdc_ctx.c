@@ -15,11 +15,8 @@
 #include <errno.h>
 #include "securec.h"
 #include "user_log.h"
-#include "dl_hal_function.h"
-#include "hccp.h"
 #include "hccp_ctx.h"
 #include "ra.h"
-#include "ra_comm.h"
 #include "ra_ctx.h"
 #include "ra_ctx_comm.h"
 #include "ra_rs_err.h"

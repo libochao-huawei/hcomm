@@ -9,9 +9,7 @@
  */
 
 #include "remote_rma_buffer.h"
-#include "not_support_exception.h"
 #include "null_ptr_exception.h"
-#include "invalid_params_exception.h"
 #include "exchange_ub_buffer_dto.h"
 #include "exchange_ipc_buffer_dto.h"
 #include "exchange_rdma_buffer_dto.h"

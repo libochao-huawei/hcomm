@@ -10,7 +10,6 @@
 
 #include "ns_recovery_handler_func.h"
 #include "kfc.h"
-#include "ascend_hal.h"
 #include "drv_api_exception.h"
 #include "exception_util.h"
 #include "internal_exception.h"

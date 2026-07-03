@@ -18,9 +18,7 @@
 #include "null_ptr_exception.h"
 #include "exception_util.h"
 #include "socket_manager.h"
-#include "rma_conn_exception.h"
 #include "timeout_exception.h"
-#include "hccp.h"
 namespace Hccl {
 
 RmaConnManager::RmaConnManager(const CommunicatorImpl &comm)

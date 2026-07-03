@@ -20,9 +20,13 @@
 #include "exception_util.h"
 #include "ccu_api_exception.h"
 #include "orion_adapter_hccp.h"
-#include "instruction.h"
 #include "ccu_assist.h"
 #include "dev_buffer.h"
+
+#ifdef HCCL_ALG_ANALYZER_DAVID
+#include "instruction.h"
+#endif
+
 namespace Hccl {
 CtxMgrImp::CtxMgrImp()
 {

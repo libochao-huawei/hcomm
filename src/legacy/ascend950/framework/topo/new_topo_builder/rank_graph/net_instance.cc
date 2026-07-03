@@ -9,7 +9,6 @@
  */
 
 #include "net_instance.h"
-#include "iterator.h"
 #include "exception_util.h"
 #include "not_support_exception.h"
 #include "invalid_params_exception.h"

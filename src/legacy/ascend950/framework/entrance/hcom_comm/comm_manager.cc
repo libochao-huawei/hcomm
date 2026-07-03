@@ -36,7 +36,6 @@
 #include "socket_handle_manager.h"
 #include "host_socket_handle_manager.h"
 
-#include "env_config.h"
 #include "ccu_context_mgr_imp.h"
 #include "ccu_res_batch_allocator.h"
 #include "ccu_component.h"

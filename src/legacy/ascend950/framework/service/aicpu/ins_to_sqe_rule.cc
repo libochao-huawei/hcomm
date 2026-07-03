@@ -9,7 +9,6 @@
  */
 
 #include <regex>
-#include "drv_api_exception.h"
 #include "ins_to_sqe_rule.h"
 
 namespace Hccl {

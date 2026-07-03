@@ -18,7 +18,6 @@
 #include "topo_match_mesh.h"
 #include "topo_match_concurr_mesh.h"
 #include "alg_data_trans_wrapper.h"
-#include "ins_temp_broadcast_mesh_1D_two_shot.h"
 
 namespace Hccl {
 template <typename AlgTopoMatch, typename InsAlgTemplate>

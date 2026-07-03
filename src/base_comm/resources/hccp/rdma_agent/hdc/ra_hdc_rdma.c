@@ -17,8 +17,6 @@
 #include "ra_hdc.h"
 #include "securec.h"
 #include "ra.h"
-#include "hccp.h"
-#include "ra_comm.h"
 #include "ra_rs_comm.h"
 #include "ra_rs_err.h"
 #include "dl_hal_function.h"

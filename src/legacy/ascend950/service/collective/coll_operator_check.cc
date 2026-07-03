@@ -10,7 +10,6 @@
 
 #include "coll_operator_check.h"
 #include "exception_util.h"
-#include "not_support_exception.h"
 #include "adapter_error_manager_pub.h"
 
 namespace Hccl {

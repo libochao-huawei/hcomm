@@ -12,7 +12,6 @@
 #include "log.h"
 #include "ins_coll_alg_registry.h"
 #include "topo_match_mesh.h"
-#include "topo_match_concurr_mesh.h"
 #ifndef CCL_KERNEL_AICPU
 #include "aiv_temp_all_to_all_v_mesh_1D.h"
 #endif

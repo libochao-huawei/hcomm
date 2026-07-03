@@ -11,16 +11,13 @@
 #include <shared_mutex>
 #include "inc/aicpu_utils.h"
 #include "log.h"
-#include "hccl_mem_defs.h"
 #include "aicpu_comm_destroy_func.h"
 #include "communicator_impl_lite_manager.h"
 #include "ub_conn_lite_mgr.h"
 #include "aicpu_daemon_service.h"
 #include "task_exception_func.h"
-#include "ns_recovery_handler_func.h"
 #include "task_exception_handler_lite.h"
 #include "coll_operator.h"
-#include "rtsq_a5.h"
 using namespace Hccl;
 
 AicpuUtils::AicpuUtils()

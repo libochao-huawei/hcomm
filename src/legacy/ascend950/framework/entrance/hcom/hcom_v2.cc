@@ -20,14 +20,9 @@
 #include "comm_manager.h"
 #include "hcom_v2.h"
 #include "param_check_v2.h"
-#include "log.h"
 #include "hccl_common_v2.h"
 #include "types.h"
 #include "comm_topo_desc.h"
-#include "stream.h"
-#include "log.h"
-#include "env_config.h"
-#include "stream_utils.h"
 
 using namespace std;
 using namespace Hccl;

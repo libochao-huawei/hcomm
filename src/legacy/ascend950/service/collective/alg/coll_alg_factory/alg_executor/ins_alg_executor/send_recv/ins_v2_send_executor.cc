@@ -11,10 +11,8 @@
 #include "log.h"
 
 #include "ins_coll_alg_registry.h"
-#include "dev_capability.h"
 #include "ins_v2_send_executor.h"
 #include "alg_data_trans_wrapper.h"
-#include "topo_match_mesh.h"
 
 #include "hccl_aiv_utils.h"
 #include "aiv_ins.h"

@@ -12,13 +12,10 @@
 
 #include <cstdlib>
 #include "hccp_ctx.h"
-#include "buffer.h"
 #include "exception_util.h"
 #include "orion_adapter_rts.h"
 #include "internal_exception.h"
-#include "local_ub_rma_buffer.h"
 #include "rdma_handle_manager.h"
-#include "local_ub_rma_buffer.h"
 
 namespace Hccl {
 

@@ -15,9 +15,7 @@
 #include <string>
 #include <unordered_map>
 #include "json_parser.h"
-#include "types.h"
 #include "const_val.h"
-#include "dev_type.h"
 #include "exception_util.h"
 
 namespace Hccl {

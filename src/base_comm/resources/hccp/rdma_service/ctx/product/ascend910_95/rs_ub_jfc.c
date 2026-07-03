@@ -14,7 +14,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <dlfcn.h>
-#include "securec.h"
 #include "urma_opcode.h"
 #include "user_log.h"
 #include "dl_hal_function.h"
@@ -22,10 +21,8 @@
 #include "dl_net_function.h"
 #include "dl_ccu_function.h"
 #include "ra_rs_err.h"
-#include "ra_rs_ctx.h"
 #include "rs_inner.h"
 #include "rs_ctx_inner.h"
-#include "rs_ctx.h"
 #include "rs_ub_jfc.h"
 
 struct ExtJfcAttr {

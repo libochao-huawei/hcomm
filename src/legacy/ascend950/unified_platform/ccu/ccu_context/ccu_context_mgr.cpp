@@ -10,7 +10,6 @@
 #include "ccu_ctx_mgr.h"
 #include "ins_exe_que.h"
 #include "ccu_context_mgr_imp.h"
-#include "ccu_device_manager.h"
 #include "hccl_common_v2.h"
 #include "exception_util.h"
 

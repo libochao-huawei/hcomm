@@ -11,7 +11,6 @@
 #include "scatter_auto_selector.h"
 #include "selector_registry.h"
 #include "coll_operator.h"
-#include "coll_alg_params.h"
 
 namespace Hccl {
 SelectorStatus ScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,

@@ -8,11 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "securec.h"
 #include "ra_rs_ctx.h"
 #include "ra_peer.h"
 #include "rs_ctx.h"
-#include "ra_comm.h"
 #include "ra_ctx_comm.h"
 #include "ra_peer_ctx.h"
 

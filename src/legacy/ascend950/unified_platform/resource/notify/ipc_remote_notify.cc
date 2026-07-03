@@ -8,8 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "ipc_remote_notify.h"
-#include "not_support_exception.h"
-#include "invalid_params_exception.h"
 #include "exchange_ipc_notify_dto.h"
 #include "dev_capability.h"
 namespace Hccl {

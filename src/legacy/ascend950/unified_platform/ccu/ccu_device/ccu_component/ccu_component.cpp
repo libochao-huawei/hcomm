@@ -12,14 +12,12 @@
 
 #include "ccu_component.h"
 
-#include "sal.h"
 #include "exception_util.h"
 #include "hccl_common_v2.h"
 #include "ccu_api_exception.h"
 #include "orion_adapter_rts.h"
 #include "internal_exception.h"
 #include "rdma_handle_manager.h"
-#include "env_config/env_config.h"
 
 #include "ccu_eid_info.h"
 #include "ccu_res_specs.h"

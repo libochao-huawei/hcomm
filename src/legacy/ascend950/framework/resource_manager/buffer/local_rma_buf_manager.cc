@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "local_rma_buf_manager.h"
-#include "net_device.h"
 #include "internal_exception.h"
 #include "rdma_handle_manager.h"
 #include "local_ipc_rma_buffer.h"
@@ -19,7 +18,6 @@
 #include "stl_util.h"
 #include "exception_util.h"
 #include "communicator_impl.h"
-#include "hccl_net_dev.h"
 
 namespace Hccl {
 

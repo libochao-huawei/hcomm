@@ -11,8 +11,6 @@
 
 #include "hccl_common_v2.h"
 #include "orion_adapter_rts.h"
-#include "network_api_exception.h"
-#include "ccu_device_manager.h"
 
 namespace Hccl {
 

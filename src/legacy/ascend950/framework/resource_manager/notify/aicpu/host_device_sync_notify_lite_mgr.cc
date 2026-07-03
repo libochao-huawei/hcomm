@@ -9,10 +9,6 @@
  */
 #include "host_device_sync_notify_lite_mgr.h"
 #include "binary_stream.h"
-#include "connected_link_mgr.h"
-#include "log.h"
-#include "internal_exception.h"
-#include "stl_util.h"
 
 namespace Hccl {
 

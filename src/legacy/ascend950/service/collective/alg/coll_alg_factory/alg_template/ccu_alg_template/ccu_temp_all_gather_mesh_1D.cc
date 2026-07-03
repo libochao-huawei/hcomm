@@ -13,9 +13,7 @@
 
 #include "log.h"
 
-#include "alg_data_trans_wrapper.h"
 #include "ccu_instruction_all_gather_mesh1d.h"
-#include "ccu_assist.h"
 #include "ccu_rank_group.h"
 #include "ccu_ctx_creator_registry.h"
 #include "ccu_context_all_gather_mesh1d.h"

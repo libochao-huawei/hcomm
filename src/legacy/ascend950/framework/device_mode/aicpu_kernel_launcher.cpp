@@ -14,9 +14,7 @@
 #include "coll_service_device_mode.h"
 #include "aicpu_ins_preprocessor.h"
 #include "coll_service_ai_cpu_impl.h"
-#include "aicpu/launch_device.h"
 #include "exception_util.h"
-#include "runtime_api_exception.h"
 
 namespace Hccl {
 

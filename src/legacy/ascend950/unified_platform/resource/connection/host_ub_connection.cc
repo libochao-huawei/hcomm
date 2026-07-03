@@ -12,7 +12,6 @@
 
 #include <cstdlib>
 
-#include "hccp_ctx.h"
 #include "exception_util.h"
 #include "rma_conn_exception.h"
 #include "rdma_handle_manager.h"

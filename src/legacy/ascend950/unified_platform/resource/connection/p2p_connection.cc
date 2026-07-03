@@ -10,12 +10,8 @@
 #include "p2p_connection.h"
 #include "socket.h"
 #include "log.h"
-#include "orion_adapter_rts.h"
-#include "ip_address.h"
 #include "exception_util.h"
 #include "rma_conn_exception.h"
-#include "p2p_enable_manager.h"
-#include "dev_capability.h"
 
 namespace Hccl {
 

@@ -10,16 +10,12 @@
 
 #include "checkcrc.h"
 #include "log.h"
-#include "sal.h"
 #include <string>
 #include <cstdlib>
 #include <iostream>
 #include <ios>
 #include <fstream>
-#include "orion_adapter_rts.h"
 #include "const_val.h"
-#include "invalid_params_exception.h"
-#include "exception_util.h"
 
 namespace Hccl {
 constexpr s32 FILE_MAX_LENGTH = 40 * 1024 * 1024; // file max length 40*1024*1024=40M.

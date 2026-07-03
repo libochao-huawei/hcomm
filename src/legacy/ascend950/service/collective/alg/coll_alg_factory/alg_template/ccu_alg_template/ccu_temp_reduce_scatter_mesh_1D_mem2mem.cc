@@ -13,14 +13,11 @@
 
 #include "log.h"
 
-#include "alg_data_trans_wrapper.h"
 #include "ccu_instruction_reduce_scatter_mesh1d_mem2mem.h"
-#include "ccu_assist.h"
 #include "ccu_rank_group.h"
 #include "ccu_ctx_creator_registry.h"
 #include "ccu_context_reduce_scatter_mesh1d_mem2mem.h"
 #include "ccu_temp_reduce_scatter_mesh_1D_mem2mem.h"
-#include "ccu_ins_group.h"
 
 namespace Hccl {
     static CcuInstRegister<CcuContextReduceScatterMeshMem2Mem1D> g_registrarReduceScatter(

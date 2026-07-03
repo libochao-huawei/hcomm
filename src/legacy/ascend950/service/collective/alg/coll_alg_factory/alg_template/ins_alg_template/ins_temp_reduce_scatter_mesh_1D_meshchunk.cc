@@ -11,7 +11,6 @@
 #include "ins_temp_reduce_scatter_mesh_1D_meshchunk.h"
 #include "log.h"
 #include "alg_data_trans_wrapper.h"
-#include "ins_coll_alg_base.h"
 
 namespace Hccl {
 InsTempReduceScatterMesh1DMeshChunk::InsTempReduceScatterMesh1DMeshChunk(const RankId virtualRank, const u32 tempRankSize,

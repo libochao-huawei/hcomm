@@ -11,7 +11,6 @@
 #include "reduce_scatter_auto_selector.h"
 #include "selector_registry.h"
 #include "coll_operator.h"
-#include "coll_alg_params.h"
 
 namespace Hccl {
 constexpr u64 RS_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;

@@ -12,7 +12,6 @@
 #include "rdma_handle_manager.h"
 #include "communicator_impl.h"
 #include "invalid_params_exception.h"
-#include "notify_count.h"
 
 #include "ipc_local_notify.h"
 #include "rdma_local_notify.h"

@@ -10,7 +10,6 @@
 
 #include "user_log.h"
 #include "dl_ccu_function.h"
-#include "ra_rs_ctx.h"
 #include "rs_ccu.h"
 
 int RsCtxCcuCustomChannel(const struct channel_info_in *in, struct channel_info_out *out)

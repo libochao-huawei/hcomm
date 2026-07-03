@@ -13,7 +13,6 @@
 #include <map>
 
 #include "log.h"
-#include "execute_selector.h"
 #include "coll_alg_component_lite.h"
 
 namespace Hccl {

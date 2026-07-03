@@ -9,11 +9,8 @@
  */
 
 #include "hccp_tlv_hdc_manager.h"
-#include "orion_adapter_tsd.h"
 #include "orion_adapter_rts.h"
 #include "socket_handle_manager.h"
-#include "rdma_handle_manager.h"
-#include "hccp_tlv.h"
 
 namespace Hccl {
 

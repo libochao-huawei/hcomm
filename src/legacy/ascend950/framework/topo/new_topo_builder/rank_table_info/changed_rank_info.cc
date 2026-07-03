@@ -12,9 +12,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <sstream>
-#include "sal.h"
 #include "json_parser.h"
-#include "orion_adapter_rts.h"
 #include "exception_util.h"
 #include "log.h"
 

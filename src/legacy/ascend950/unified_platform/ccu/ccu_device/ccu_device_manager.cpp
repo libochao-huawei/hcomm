@@ -12,7 +12,6 @@
 
 #include "hccl_common_v2.h"
 #include "rdma_handle_manager.h"
-#include "network_api_exception.h"
 
 #include "ccu_component.h"
 #include "ccu_res_specs.h"

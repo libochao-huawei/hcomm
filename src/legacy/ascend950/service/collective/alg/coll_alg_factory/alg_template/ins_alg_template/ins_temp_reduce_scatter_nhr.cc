@@ -9,8 +9,6 @@
  */
 
 #include "ins_temp_reduce_scatter_nhr.h"
-#include "buffer.h"
-#include "aicpu_ins.h"
 #include "log.h"
 #include "alg_data_trans_wrapper.h"
 

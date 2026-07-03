@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "rtsq_base.h"
-#include "ascend_hal.h"
 #include "log.h"
 #include "drv_api_exception.h"
 #include "exception_util.h"

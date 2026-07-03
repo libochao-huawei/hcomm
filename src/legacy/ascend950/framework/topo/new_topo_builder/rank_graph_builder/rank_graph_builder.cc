@@ -12,8 +12,6 @@
 #include <array>
 #include "rank_graph_builder.h"
 #include "detour_service.h"
-#include "env_func.h"
-#include "env_config.h"
 #include "json_parser.h"
 #include "phy_topo_builder.h"
 

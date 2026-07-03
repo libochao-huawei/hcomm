@@ -14,8 +14,6 @@
 #include "urma_direct_transport.h"
 #include "p2p_transport.h"
 #include "cnt_notify_res_helper.h"
-#include "notify_count.h"
-#include "recover_info.h"
 #include "timeout_exception.h"
 namespace Hccl {
 MemTransportManager::MemTransportManager(const CommunicatorImpl &communicator) : comm(&communicator)

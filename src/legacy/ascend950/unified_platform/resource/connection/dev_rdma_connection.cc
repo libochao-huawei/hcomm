@@ -9,13 +9,7 @@
  */
 #include "dev_rdma_connection.h"
 #include "not_support_exception.h"
-#include "invalid_params_exception.h"
-#include "orion_adapter_hccp.h"
 #include "orion_adapter_rts.h"
-#include "exception_util.h"
-#include "dev_capability.h"
-#include "orion_adapter_hccp.h"
-#include "hccp.h"
 namespace Hccl {
 
 DevRdmaConnection::DevRdmaConnection(Socket *socket, RdmaHandle rdmaHandle, OpMode opMode)

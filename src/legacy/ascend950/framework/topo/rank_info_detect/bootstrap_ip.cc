@@ -14,8 +14,6 @@
 #include "whitelist.h"
 #include "env_config.h"
 #include "exception_util.h"
-#include "invalid_params_exception.h"
-#include "host_ip_not_found_exception.h"
 #include "adapter_error_manager_pub.h"
 
 namespace Hccl {

@@ -10,7 +10,6 @@
 
 #include <string.h>
 #include "securec.h"
-#include "dl_hal_function.h"
 #include "ra_hdc.h"
 #include "ra_hdc_tlv.h"
 #include "ra_rs_err.h"

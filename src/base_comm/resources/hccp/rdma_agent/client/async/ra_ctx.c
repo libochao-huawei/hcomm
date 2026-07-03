@@ -9,13 +9,10 @@
  */
 
 #include <stdlib.h>
-#include "securec.h"
 #include "user_log.h"
 #include "hccp_ctx.h"
 #include "hccp_async_ctx.h"
-#include "ra_async.h"
 #include "ra_hdc_async_ctx.h"
-#include "ra_hdc_async.h"
 #include "ra_ctx.h"
 
 HCCP_ATTRI_VISI_DEF int RaGetEidByIpAsync(void *ctxHandle, struct IpInfo ip[], union HccpEid eid[],

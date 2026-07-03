@@ -10,7 +10,6 @@
 #include "recover_info.h"
 #include "string_util.h"
 #include "invalid_params_exception.h"
-#include "hccl_types.h"
 
 namespace Hccl {
  

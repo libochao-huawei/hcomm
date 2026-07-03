@@ -12,7 +12,6 @@
 #include "hccp_common.h"
 #include "hccp_async.h"
 #include "ra.h"
-#include "ra_hdc.h"
 #include "ra_hdc_async_socket.h"
 #include "ra_client_host.h"
 

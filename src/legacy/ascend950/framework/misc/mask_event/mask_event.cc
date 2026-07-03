@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "mask_event.h"
-#include "log.h"
 #include "exception_util.h"
 
 namespace Hccl {

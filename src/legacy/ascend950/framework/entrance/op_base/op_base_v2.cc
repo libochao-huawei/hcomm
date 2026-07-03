@@ -18,7 +18,6 @@
 #include <adapter_error_manager_pub.h>
 
 #include "hccl/base.h"
-#include "hccl/hccl_res.h"
 #include "mc2_type.h"
 #include "param_check_v2.h"
 #include "orion_adapter_rts.h"
@@ -26,14 +25,11 @@
 #include "hccl_common_v2.h"
 #include "log.h"
 #include "sal.h"
-#include "diff_rank_updater.h"
 #include "communicator_callback.h"
 #include "root_handle_v2.h"
 #include "rank_info_detect.h"
-#include "stream.h"
 #include "env_config.h"
 #include "stream_utils.h"
-#include "socket_manager.h"
 
 
 #include "hostdpu/dpu_kernel_entrance.h"

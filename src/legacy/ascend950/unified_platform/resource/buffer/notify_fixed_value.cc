@@ -11,7 +11,6 @@
 #include "dev_capability.h"
 #include "orion_adapter_rts.h"
 #include "rdma_handle_manager.h"
-#include "log.h"
 #include "exception_util.h"
 #include "resources_not_exist_exception.h"
 #include "local_ub_rma_buffer.h"

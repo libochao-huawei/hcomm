@@ -9,7 +9,6 @@
  */
 
 #include "tokenInfo_manager.h"
-#include "orion_adapter_rts.h"
 
 namespace Hccl {
 

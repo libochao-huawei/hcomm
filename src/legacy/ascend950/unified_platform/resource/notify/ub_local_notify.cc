@@ -10,7 +10,6 @@
 
 #include "ub_local_notify.h"
 
-#include "hccp_ctx.h"
 #include "dev_capability.h"
 #include "not_support_exception.h"
 #include "exchange_ub_buffer_dto.h"

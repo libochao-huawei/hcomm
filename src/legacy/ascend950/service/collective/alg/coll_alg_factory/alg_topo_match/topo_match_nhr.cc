@@ -9,7 +9,6 @@
  */
 
 #include "topo_match_nhr.h"
-#include "net_instance.h"
 
 namespace Hccl {
 TopoMatchNHR::TopoMatchNHR(const RankId vRank, const u32 rankSize, const RankGraph *rankGraph,

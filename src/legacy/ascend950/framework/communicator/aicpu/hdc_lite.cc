@@ -11,8 +11,6 @@
 #include "hdc_lite.h"
 #include <chrono>
 #include "log.h"
-#include "internal_exception.h"
-#include "exception_util.h"
 
 namespace Hccl {
 constexpr u32 HCCL_HDC_CONTROL_WORDS = 2;

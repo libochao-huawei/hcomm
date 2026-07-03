@@ -17,12 +17,9 @@
 #include "ra_hdc.h"
 #include "securec.h"
 #include "ra.h"
-#include "hccp.h"
 #include "ra_comm.h"
 #include "ra_rs_err.h"
 #include "dl_hal_function.h"
-#include "ra_rdma_lite.h"
-#include "ra_hdc_lite.h"
 #include "ra_hdc_socket.h"
 
 int RaHdcSocketBatchConnect(unsigned int phyId, struct SocketConnectInfoT conn[], unsigned int num)

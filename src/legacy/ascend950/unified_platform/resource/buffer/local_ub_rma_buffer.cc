@@ -10,13 +10,10 @@
 
 #include "local_ub_rma_buffer.h"
 
-#include "sal.h"
-#include "rma_buffer.h"
 #include "null_ptr_exception.h"
 #include "invalid_params_exception.h"
 #include "exchange_ub_buffer_dto.h"
 #include "rdma_handle_manager.h"
-#include "inner_net_dev_manager.h"
 
 namespace Hccl {
 

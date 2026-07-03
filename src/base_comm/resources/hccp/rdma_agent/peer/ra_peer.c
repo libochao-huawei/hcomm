@@ -22,7 +22,6 @@
 #include "rs.h"
 #include "ra_peer_nda.h"
 #include "ra_peer.h"
-#include "rs_common_inner.h"
 
 #define PAGE_SHIFT              12
 int gNotifyFd = -1;

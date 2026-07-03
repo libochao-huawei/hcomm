@@ -11,7 +11,6 @@
 #include "ins_to_sqe_rule.h"
 #include "null_ptr_exception.h"
 #include "ins_executor.h"
-#include "hccl_sqe_v82.h"
 #include "sal.h"
 #include "communicator_impl_lite_manager.h"
 

@@ -14,12 +14,8 @@
 #include "socket_handle_manager.h"
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
-#include "hccp_hdc_manager.h"
-#include "null_ptr_exception.h"
-#include "network_api_exception.h"
 #include "log.h"
 #include "tokenInfo_manager.h"
-#include "hccp.h"
 
 namespace Hccl {
 

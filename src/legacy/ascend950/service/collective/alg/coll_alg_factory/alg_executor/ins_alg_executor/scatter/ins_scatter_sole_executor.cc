@@ -11,11 +11,8 @@
 #include "log.h"
 #include "ins_coll_alg_registry.h"
 #ifndef CCL_KERNEL_AICPU
-#include "ccu_temp_scatter_mesh_1D.h"
 #include "ccu_temp_scatter_mesh_2D.h"
 #endif
-#include "topo_match_mesh.h"
-#include "topo_match_nhr.h"
 #include "topo_match_concurr_mesh.h"
 #include "ins_scatter_sole_executor.h"
 

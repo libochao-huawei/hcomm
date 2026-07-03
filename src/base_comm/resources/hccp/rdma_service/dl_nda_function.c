@@ -9,9 +9,7 @@
  */
 
 #include <pthread.h>
-#include "errno.h"
 #include "hccp_dl.h"
-#include "ra_rs_err.h"
 #include "dl_nda_function.h"
 
 void *gRoceNdaApiHandle = NULL;

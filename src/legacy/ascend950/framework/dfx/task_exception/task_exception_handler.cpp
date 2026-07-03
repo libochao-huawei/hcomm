@@ -14,7 +14,6 @@
 #include "communicator_impl.h"
 #include "coll_service_device_mode.h"
 #include "mc2_global_mirror_tasks.h"
-#include "ccu_device_manager.h"
 #include "ccu_dev_mgr.h"
 #include "acl/acl_rt.h"
 #include "orion_adapter_hccp.h"

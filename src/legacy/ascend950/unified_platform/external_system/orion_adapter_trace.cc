@@ -9,7 +9,6 @@
  */
 
 #include "log.h"
-#include "string_util.h"
 #include "atrace_pub.h"
 #include "orion_adapter_trace.h"
 using namespace std;

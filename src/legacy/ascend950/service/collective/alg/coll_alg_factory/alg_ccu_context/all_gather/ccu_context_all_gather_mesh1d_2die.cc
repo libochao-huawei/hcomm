@@ -10,7 +10,6 @@
 
 #include "ccu_context_all_gather_mesh1d_2die.h"
 #include "ccu_instruction_all_gather_mesh1d_2die.h"
-#include "ccu_loopcall.h"
 #include "ccu_datatype.h"
 
 namespace Hccl {

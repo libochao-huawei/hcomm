@@ -11,18 +11,7 @@
 #include <shared_mutex>
 #include "inc/aicpu_mc2_handler.h"
 #include "inc/aicpu_utils.h"
-#include "hccl_mem_defs.h"
-#include "aicpu_comm_destroy_func.h"
 #include "communicator_impl_lite_manager.h"
-#include "ub_conn_lite_mgr.h"
-#include "aicpu_daemon_service.h"
-#include "task_exception_func.h"
-#include "ns_recovery_handler_func.h"
-#include "task_exception_handler_lite.h"
-#include "coll_operator.h"
-#include "rtsq_a5.h"
-#include "reduce_op.h"
-#include "hcom_v2.h"
 #include "log.h"
 
 namespace Hccl {

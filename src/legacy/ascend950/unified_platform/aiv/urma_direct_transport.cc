@@ -12,8 +12,6 @@
 #include "exchange_ub_buffer_dto.h"
 #include "exchange_ub_conn_dto.h"
 #include "local_ub_rma_buffer.h"
-#include "sal.h"
-#include "dlprof_func.h"
 #include "orion_adapter_hccp.h"
 
 namespace Hccl {

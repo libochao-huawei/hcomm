@@ -9,17 +9,13 @@
  */
 
 #include "coll_service_device_mode.h"
-#include "env_config.h"
 #include "exception_util.h"
 #include "communicator_impl.h"
-#include "not_support_exception.h"
-#include "coll_alg_component_builder.h"
 #include "ccu_dev_mgr.h"
 #include "types.h"
 #include "aiv_ins.h"
 #include "stream_utils.h"
 #include "orion_adapter_rts.h"
-#include "rt_external_kernel.h"
 
 namespace Hccl {
 

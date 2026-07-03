@@ -9,7 +9,6 @@
  */
 
 #include "auto_selector_base.h"
-#include "selector_registry.h"
 #include "coll_operator.h"
 #include "coll_alg_params.h"
 

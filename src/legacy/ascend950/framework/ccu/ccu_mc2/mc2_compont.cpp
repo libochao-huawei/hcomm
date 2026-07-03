@@ -10,14 +10,12 @@
 #include <algorithm>
 #include <unordered_set>
 #include "mc2_compont.h"
-#include "env_config.h"
 #include "ccu_assist.h"
 #include "mc2_context.h"
 #include "ccu_task_arg_mc2.h"
 #include "coll_service_device_mode.h"
 #include "mc2_global_mirror_tasks.h"
 #include "op_params_checker.h"
-#include "host_buffer.h"
 
 namespace Hccl {
 

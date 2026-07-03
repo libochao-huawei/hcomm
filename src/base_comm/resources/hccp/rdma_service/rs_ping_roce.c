@@ -19,7 +19,6 @@
 #include "rs_inner.h"
 #include "rs_epoll.h"
 #include "rs_drv_socket.h"
-#include "rs_socket.h"
 #include "rs_drv_rdma.h"
 #include "rs_ping_inner.h"
 #ifndef HNS_ROCE_LLT

@@ -12,7 +12,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "securec.h"
-#include "eid_util.h"
 #include "hal.h"
 
 #define MAX_PORTS_STR_LEN (512)

@@ -8,8 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ascend_hal.h"
-#include "ccu_u_api.h"
 #include "securec.h"
 #include "dl_hal_function.h"
 #include "dl_ibverbs_function.h"

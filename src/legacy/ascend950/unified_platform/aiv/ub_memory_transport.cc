@@ -8,12 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "ub_memory_transport.h"
-#include "sal.h"
-#include "network_api_exception.h"
 #include "exchange_ipc_buffer_dto.h"
-#include "orion_adapter_hccp.h"
-#include "env_config.h"
-#include "hccp_async.h"
 #include "coll_operator_check.h"
 
 namespace Hccl {

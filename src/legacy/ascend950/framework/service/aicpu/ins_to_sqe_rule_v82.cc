@@ -10,19 +10,13 @@
 
 #include <regex>
 #include "ins_to_sqe_rule.h"
-#include "drv_api_exception.h"
-#include "hccl_sqe_v82.h"
-#include "ub_conn_lite.h"
 #include "null_ptr_exception.h"
-#include "exception_util.h"
 #include "internal_exception.h"
 #include "invalid_params_exception.h"
-#include "exception_util.h"
 #include "mem_transport_lite.h"
 #include "sal.h"
 #include "task_info.h"
 #include "lite_res_mgr_fetcher.h"
-#include "kernel_param_lite.h"
 #include "timeout_exception.h"
 #include "not_support_exception.h"
 

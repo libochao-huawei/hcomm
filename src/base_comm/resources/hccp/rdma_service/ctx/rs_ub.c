@@ -18,7 +18,6 @@
 #include <udma_u_ctl.h>
 #include "securec.h"
 #include "user_log.h"
-#include "dl_hal_function.h"
 #include "dl_urma_function.h"
 #include "ra_rs_err.h"
 #include "ra_rs_ctx.h"

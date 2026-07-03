@@ -13,7 +13,6 @@
 #include <climits>
 
 #include "ccu_res_specs.h"
-#include "internal_exception.h"
 
 namespace Hccl {
 

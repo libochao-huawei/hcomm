@@ -16,7 +16,6 @@
 #include "ccu_temp_scatter_mesh_2D.h"
 #include "alg_data_trans_wrapper.h"
 #include "ccu_instruction_scatter_mesh2d.h"
-#include "ccu_assist.h"
 #include "ccu_ins_group.h"
 #include "ccu_rank_group.h"
 #include "ccu_ctx_creator_registry.h"

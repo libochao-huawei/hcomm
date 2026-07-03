@@ -10,7 +10,6 @@
 #include "flush_handle.h"
 #include <stdlib.h>
 #include "hccp.h"
-#include "infiniband/verbs.h"
 #include "orion_adapter_rts.h"
 
 namespace Hccl {

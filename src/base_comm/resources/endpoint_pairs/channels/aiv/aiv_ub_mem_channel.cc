@@ -12,9 +12,6 @@
 #include "endpoint.h"
 #include "orion_adpt_utils.h"
 
-// #include "exception_handler.h"
-// #include "aiv_ub_transport.h"
-// #include "dev_buffer.h"
 
 namespace hcomm {
 

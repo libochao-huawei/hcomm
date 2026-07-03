@@ -11,7 +11,6 @@
 
 #include "local_rdma_rma_buffer.h"
 #include "hccp.h"
-#include "rma_buffer.h"
 #include "exchange_rdma_buffer_dto.h"
 
 namespace Hccl {

@@ -10,15 +10,11 @@
 
 #include "securec.h"
 #include "user_log.h"
-#include "dl_hal_function.h"
 #include "hccp_common.h"
 #include "hccp_ctx.h"
-#include "ra_client_host.h"
 #include "ra.h"
-#include "ra_hdc.h"
 #include "ra_hdc_ctx.h"
 #include "ra_peer_ctx.h"
-#include "ra_rs_ctx.h"
 #include "ra_ctx.h"
 
 struct RaCtxOps gRaHdcCtxOps = {

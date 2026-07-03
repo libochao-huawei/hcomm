@@ -10,15 +10,11 @@
 #include <chrono>
 #include <unordered_map>
 #include "rtsq_a5.h"
-#include "ascend_hal.h"
 #include "log.h"
-#include "drv_api_exception.h"
 #include "exception_util.h"
 #include "internal_exception.h"
-#include "sqe_v82.h"
 #include "sqe_build_a5.h"
 #include "sqe.h"
-#include "communicator_impl_lite_manager.h"
 #ifdef CCL_KERNEL_AICPU
 #include "aicpu_ts_primitives_c_adpt.h"
 #include "aicpu_indop_env.h"

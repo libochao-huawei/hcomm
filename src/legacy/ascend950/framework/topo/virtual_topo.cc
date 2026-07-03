@@ -12,11 +12,6 @@
 #include <algorithm>
 #include <string>
 #include <unordered_map>
-#include "types.h"
-#include "const_val.h"
-#include "dev_type.h"
-#include "const_val.h"
-#include "not_support_exception.h"
 #include "internal_exception.h"
 #include "orion_adapter_hccp.h"
 

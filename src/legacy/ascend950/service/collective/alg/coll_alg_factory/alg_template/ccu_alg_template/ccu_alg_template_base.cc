@@ -10,7 +10,6 @@
 
 #include "ccu_alg_template_base.h"
 #include "ccu_context_utils.h"
-#include "env_config.h"
 #include "ccu_assist.h"
 #include "log.h"
 

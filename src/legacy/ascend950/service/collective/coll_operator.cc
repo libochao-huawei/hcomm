@@ -15,7 +15,6 @@
 #include <functional>
 #include "op_type.h"
 #include "string_util.h"
-#include "not_support_exception.h"
 #include "binary_stream.h"
 namespace Hccl {
 constexpr u32 MAX_OP_TAG_LEN           = 191; // 最大的tag 长度

@@ -11,7 +11,6 @@
 #include "alltoall_auto_selector.h"
 #include "selector_registry.h"
 #include "coll_operator.h"
-#include "coll_alg_params.h"
 
 namespace Hccl {
 SelectorStatus AlltoAllAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,

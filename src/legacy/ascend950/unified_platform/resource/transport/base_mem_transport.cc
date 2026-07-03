@@ -9,8 +9,6 @@
  */
 #include "base_mem_transport.h"
 #include "internal_exception.h"
-#include "timeout_exception.h"
-#include "socket_exception.h"
 #include "coll_operator_check.h"
 
 namespace Hccl {
