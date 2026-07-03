@@ -158,8 +158,6 @@ cd /home/workspace/hcomm/test/hccl_vm/hccl_vm_install/bin
 
 #### 3.2.4 AIV模式
 
-**当前仅支持Runner插件**。
-
 1. 环境变量配置。
 
 ```bash
@@ -187,11 +185,14 @@ cd /home/workspace/hcomm/test/hccl_vm/hccl_vm_install/bin
 (hvm)$> hccl-vm mock-comm 112
 (hvm)$> mpirun --allow-run-as-root --oversubscribe -np 2 ${ASCEND_HOME_PATH}/tools/hccl_test/bin/reduce_scatter_test -b 64 -e 64 -d int32 -o sum -w 0 -n 1 -c 1 > log.txt
 
+# 执行checker校验
+(hvm)$> hccl-vm plugin run @checker
+
 # 退出工具终端
 (hvm)$> exit
 ```
 
-3. 验证hccl_test用例运行结果 [Runner结果查看](#491-runner插件结果)
+3. 验证hccl_test用例运行结果 [Runner结果查看](#491-runner插件结果) [Checker结果查看](#492-checker插件结果)
 
 ### 3.3 Pytorch用例示例
 

@@ -265,9 +265,9 @@ void CmdTableShow(std::string &tableName)
             });
     } else if (tableName == "IpcMemRecord") {
         auto tables = RunnerDB::GetByPred<sim::IpcMemRecord>([](const sim::IpcMemRecord &) { return true; });
-        PrintTable<sim::IpcMemRecord>("| id | vir_mem_id | create_pid |", tables, [](const sim::IpcMemRecord &tmp) {
+        PrintTable<sim::IpcMemRecord>("| id | vir_mem_id | offset | create_pid |", tables, [](const sim::IpcMemRecord &tmp) {
             return "| " + std::to_string(tmp.id) + " | " + std::to_string(tmp.vir_mem_id) + " | " +
-                std::to_string(tmp.create_pid) + " |";
+                std::to_string(tmp.offset) + " | " + std::to_string(tmp.create_pid) + " |";
         });
     } else if (tableName == "IpcMemWhiteList") {
         auto tables = RunnerDB::GetByPred<sim::IpcMemWhiteList>([](const sim::IpcMemWhiteList &) { return true; });
