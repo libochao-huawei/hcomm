@@ -52,10 +52,8 @@ HcclResult SocketMgr::Init()
     if (isLoaded_ && isHostOnlyInit_ == noDevice) {
         return HCCL_SUCCESS;
     }
-    // deviceCount > 0 时保留 GetInstance(phyId) 传入的 devicePhyId_，避免公共 Init 覆盖调用方的真实物理 ID。
-    if (noDevice) {
-        devicePhyId_ = kHostResourceId;
-    }
+    // 覆盖 GetInstance 和 EndpointPair 直接构造 SocketMgr 两种路径，保持 devicePhyId_ 与 runtime 当前设备一致。
+    devicePhyId_ = noDevice ? kHostResourceId : runtimeDevicePhyId;
     isLoaded_ = true;
     isHostOnlyInit_ = noDevice;
     serverListenPort_ = TempServerListenPort;
