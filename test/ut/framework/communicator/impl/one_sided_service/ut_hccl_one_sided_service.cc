@@ -88,7 +88,7 @@ TEST_F(OneSidedUt, Prepare_When_PrepareFullMeshFail_With_NullptrConn_Expect_Skip
     CommConfig commConfig;
     unique_ptr<HcclOneSidedService> service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool, commConfig);
 
-    MOCKER_CPP(&HcclOneSidedService::PrepareFullMesh)
+    MOCKER_CPP(&HcclOneSidedService::CreateLinkFullmesh)
     .stubs()
     .will(returnValue(HCCL_E_INTERNAL));
     MOCKER_CPP(&HcclOneSidedConn::CleanSocketResource)
