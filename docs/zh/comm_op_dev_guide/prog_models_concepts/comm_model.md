@@ -62,7 +62,7 @@
 
 CCU通信模型与网络语义通信模型类似，区别是支持将本地CcuBuffer数据写到通信对端内存，或读取通信对端内存到本地CcuBuffer。
 
-CcuBuffer概念见[资源抽象](./CCU_models_conceptes.md#资源抽象)。
+CcuBuffer概念见[资源抽象](./CCU_models_concepts.md#资源抽象)。
 
 **图5**  CCU通信模型  
 ![](figures/CCU_communication_model.png "CCU通信模型")

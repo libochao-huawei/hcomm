@@ -10,7 +10,7 @@
   - [通信模型](./prog_models_concepts/comm_model.md)
   - [并发模型](./prog_models_concepts/concurrency_model.md)
   - [拓扑模型](./prog_models_concepts/topology_model.md)
-  - [CCU编程模型与概念](./prog_models_concepts/CCU_models_conceptes.md)
+  - [CCU编程模型与概念](./prog_models_concepts/CCU_models_concepts.md)
 
 - [通信算子开发](comm_op_dev.md)
   - [AI CPU算子开发](./aicpu_comm_op_dev/README.md)
