@@ -572,7 +572,6 @@ HcclVmResult HcclVmExit()
         sim::MemoryManager::GetInstance().FreeMemByName(sim::CommPoolPolicy::kPoolName);
     }
     int ret1 = system("sudo rm -fr /dev/shm/* 2>/dev/null");
-    ret1 |= system("sudo rm -fr /tmp/hccl_sim.db* 2>/dev/null"); 
 
     return ret; 
 } 

@@ -26,11 +26,11 @@ template <typename T>
 static void PrintTable(const std::string &header, const std::vector<T> &rows,
                     std::function<std::string(const T &)> formatter)
 {
-    HCCL_VM_INFO("{}", header);
+    std::cout << header << std::endl;
     for (const auto &row : rows) {
-        HCCL_VM_INFO("{}", formatter(row));
+        std::cout << formatter(row) << std::endl;
     }
-    return;
+    std::cout << std::endl;
 }
 
 void CmdTableShow(std::string &tableName)
