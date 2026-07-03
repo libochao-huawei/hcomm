@@ -63,21 +63,26 @@ endif()
 
 #编译选项
 target_compile_options(ra_adp PRIVATE
-    -Werror -fvisibility=hidden -fsigned-char -fno-common -fno-strict-aliasing -std=gnu11
-    -fstack-protector-strong
-    $<$<CONFIG:Debug>:-g>
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
+    -fvisibility=hidden
+    -fsigned-char
+    -fno-common
+    -fno-strict-aliasing
+    -std=gnu11
+    $<$<CONFIG:Debug>:-Og -g>
 )
 
 target_link_options(ra_adp PRIVATE
     -Wl,-Bsymbolic
-    -rdynamic
     -Wl,--no-undefined
-    -Wl,-z,now
-    $<$<CONFIG:Release>:-s>
+    -rdynamic
 )
 
 #链接动态库
 target_link_libraries(ra_adp PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:rdma_core_headers>
     -Wl,--no-as-needed

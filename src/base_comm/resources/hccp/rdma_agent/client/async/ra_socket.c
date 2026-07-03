@@ -21,7 +21,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchConnectAsync(struct SocketConnectInfoT conn
     struct RaSocketHandle *socketHandle = NULL;
     char remoteIp[MAX_IP_LEN] = {0};
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i = 0;
     int ret = 0;
 
@@ -67,7 +67,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStartAsync(struct SocketListenInfoT conn[]
 {
     struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i = 0;
     int ret = 0;
 
@@ -104,7 +104,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStopAsync(struct SocketListenInfoT conn[],
 {
     struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i = 0;
     int ret = 0;
 
@@ -139,7 +139,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchCloseAsync(struct SocketCloseInfoT conn[], 
 {
     struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i = 0;
     int ret = 0;
 

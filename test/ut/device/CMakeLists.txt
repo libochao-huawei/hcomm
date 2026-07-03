@@ -70,7 +70,7 @@ target_compile_options(hccl_utest_device PRIVATE
 )
 
 target_link_libraries(hccl_utest_device PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
@@ -118,7 +118,7 @@ target_compile_options(hccl_utest_launch_aicpu_fw PRIVATE
 )
 
 target_link_libraries(hccl_utest_launch_aicpu_fw PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread

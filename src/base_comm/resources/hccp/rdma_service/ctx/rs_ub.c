@@ -2236,7 +2236,7 @@ STATIC int RsUbCtxBatchSendWrExt(struct RsCtxJettyCb *jettyCb, struct BatchSendW
     urma_user_ctl_out_t out = {0};
     urma_user_ctl_in_t in = {0};
     unsigned int i;
-    int ret;
+    int ret = 0;
 
     for (i = 0; i < sendNum; i++) {
         ret = RsUbCtxInitJfsWr(jettyCb, &ubWr, &wrData[i], &lsge[0], &rsge[0]);

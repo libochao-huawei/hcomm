@@ -120,42 +120,42 @@ constexpr u32 RDMA_INVALID_QP_INDEX = 0xFFFF;
 
 // RDMA Write With Reduce DataType and OpType
 // reduceType: 0x0:int8 0x1:int16 0x2:int32 0x6:fp16 0x7:fp32 0x8:bf16
-enum class RdmaReduceDataType {
+enum class RdmaReduceDataType : uint8_t {
     RDMA_REDUCE_DATA_INT8 = 0,
     RDMA_REDUCE_DATA_INT16 = 1,
     RDMA_REDUCE_DATA_INT32 = 2,
     RDMA_REDUCE_DATA_FP16 = 6,
     RDMA_REDUCE_DATA_FP32 = 7,
     RDMA_REDUCE_DATA_BF16 = 8,
-    RDMA_REDUCE_DATA_INVALID = 2147483647
+    RDMA_REDUCE_DATA_INVALID = 255
 };
 // reduce_op: 0x0:max 0x1:min 0x2:sum
-enum class RdmaReduceOpType {
+enum class RdmaReduceOpType : uint8_t {
     RDMA_REDUCE_OP_MAX = 0,
     RDMA_REDUCE_OP_MIN = 1,
     RDMA_REDUCE_OP_SUM = 2,
-    RDMA_REDUCE_OP_INVALID = 2147483647
+    RDMA_REDUCE_OP_INVALID = 255
 };
 
-constexpr u32 RDMA_REDUCE_DATA_TYPE_TABLE[HCCL_DATA_TYPE_RESERVED] = {
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INT8),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INT16),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INT32),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_FP16),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_FP32),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
-    static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_BF16)
+constexpr uint8_t RDMA_REDUCE_DATA_TYPE_TABLE[HCCL_DATA_TYPE_RESERVED] = {
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INT8),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INT16),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INT32),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_FP16),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_FP32),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID),
+    static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_BF16)
 };
-constexpr u32 RDMA_REDUCE_OP_TYPE_TABLE[HCCL_REDUCE_RESERVED] = {
-    static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_SUM),
-    static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID),
-    static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_MAX),
-    static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_MIN)
+constexpr uint8_t RDMA_REDUCE_OP_TYPE_TABLE[HCCL_REDUCE_RESERVED] = {
+    static_cast<uint8_t>(RdmaReduceOpType::RDMA_REDUCE_OP_SUM),
+    static_cast<uint8_t>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID),
+    static_cast<uint8_t>(RdmaReduceOpType::RDMA_REDUCE_OP_MAX),
+    static_cast<uint8_t>(RdmaReduceOpType::RDMA_REDUCE_OP_MIN)
 };
 }
 

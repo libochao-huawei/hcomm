@@ -20,32 +20,28 @@ add_library(ccl_dpu SHARED
 target_compile_definitions(ccl_dpu PRIVATE
     HCCD
     OPEN_BUILD_PROJECT
-    $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
 )
 
 # 编译选项
 target_compile_options(ccl_dpu PRIVATE
     -Werror
-    -Wall
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fno-common
     -fno-strict-aliasing
-    -pipe
-    -O3
-    -std=c++17
-    -fstack-protector-all
-    $<$<CONFIG:Debug>:-g>
+    $<$<CONFIG:Debug>:-Og -g>
+    $<$<CONFIG:Release>:-O3>
 )
 
 # 链接选项
 target_link_options(ccl_dpu PRIVATE
-    -Wl,-z,relro,-z,now,-z,noexecstack
     -Wl,-Bsymbolic
     -Wl,--exclude-libs,ALL
-    $<$<CONFIG:Release>:-s>
 )
 
 # 链接库
 target_link_libraries(ccl_dpu
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:atrace_headers>
     $<BUILD_INTERFACE:runtime_headers>
     $<BUILD_INTERFACE:slog_headers>

@@ -11,36 +11,20 @@
 # 定义 hccl_v2 动态链接库，在 host 侧使用
 add_library(hccl_v2 SHARED)
 
-# 宏定义
-target_compile_definitions(hccl_v2 PRIVATE
-    $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
-)
-
 # 编译选项
 target_compile_options(hccl_v2 PRIVATE
     -Werror
-    -Wfloat-equal
-    -Wall
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -fno-common
     -fno-strict-aliasing
-    -pipe
-    -O3
-    -std=c++17
-    -fstack-protector-all
-    $<$<CONFIG:Debug>:-g>
-)
-
-# 链接选项
-target_link_options(hccl_v2 PRIVATE
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-    -Wl,--build-id=none
-    $<$<CONFIG:Release>:-s>
+    $<$<CONFIG:Debug>:-Og -g>
+    $<$<CONFIG:Release>:-O3>
 )
 
 # 链接库
 target_link_libraries(hccl_v2 PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:acl_rt_headers>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:atrace_headers>

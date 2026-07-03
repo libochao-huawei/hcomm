@@ -305,9 +305,9 @@ string TaskInfo::GetParaDMA()
     string retStr;
     stringstream paraStr;
     paraStr << "src:" << "[0x"
-            << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskPara.DMA.src)) << "], dst:"
+            << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.DMA.src)) << "], dst:"
             << "[0x"
-            << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskPara.DMA.dst)) << "], size:"
+            << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.DMA.dst)) << "], size:"
             << "[0x" << std::hex << static_cast<u64>(taskPara.DMA.size) << "], notify id:"
             << "[0x" << std::hex << std::setw(16) // 16字符长度对齐
             << std::setfill('0') << taskPara.DMA.notifyID << "], link type:["
@@ -336,9 +336,9 @@ string TaskInfo::GetParaReduce()
     string retStr;
     stringstream paraStr;
     paraStr << "src:" << "[0x"
-            << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskPara.Reduce.src)) << "], dst:"
+            << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.Reduce.src)) << "], dst:"
             << "[0x"
-            << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskPara.Reduce.dst)) << "], size:"
+            << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.Reduce.dst)) << "], size:"
             << "[0x"
             << std::hex << static_cast<u64>(taskPara.Reduce.size * ProfilerBase::sizeOf[taskPara.Reduce.dataType])
             << "], op:[" << GetReduceOpString(taskPara.Reduce.op) << "], data type:["
@@ -360,7 +360,7 @@ string TaskInfo::GetParaAiv()
             << "numBlocks:[" << taskPara.Aiv.numBlocks << "], "
             << "rankSize:[" << taskPara.Aiv.rankSize << "], "
             << "aivRdmaStep:[" << taskPara.Aiv.aivRdmaStep <<"], "
-            << "flagMem:[0x" << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskPara.Aiv.flagMem)) <<"], "
+            << "flagMem:[0x" << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.Aiv.flagMem)) <<"], "
             << "isOpbase:[" << taskPara.Aiv.isOpbase
             << "]";
 
@@ -451,9 +451,9 @@ string CtxInfo::GetCtxParaDMA()
     string retStr;
     stringstream paraStr;
     paraStr << "src:" << "[0x"
-            << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(ctxPara.DMA.src)) << "], dst:"
+            << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(ctxPara.DMA.src)) << "], dst:"
             << "[0x"
-            << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(ctxPara.DMA.dst)) << "], size:"
+            << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(ctxPara.DMA.dst)) << "], size:"
             << "[0x" << std::hex << static_cast<u64>(ctxPara.DMA.size) << "], notify id:"
             << "[0x" << std::hex << std::setw(16) // 16字符长度对齐
             << std::setfill('0') << ctxPara.DMA.notifyID << "], link type:["
@@ -482,9 +482,9 @@ string CtxInfo::GetCtxParaReduce()
     string retStr;
     stringstream paraStr;
     paraStr << "src:" << "[0x"
-            << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(ctxPara.Reduce.src)) << "], dst:"
+            << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(ctxPara.Reduce.src)) << "], dst:"
             << "[0x"
-            << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(ctxPara.Reduce.dst)) << "], size:"
+            << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(ctxPara.Reduce.dst)) << "], size:"
             << "[0x"
             << std::hex << static_cast<u64>(ctxPara.Reduce.size * ProfilerBase::sizeOf[ctxPara.Reduce.dataType])
             << "], op:[" << GetReduceOpString(ctxPara.Reduce.op) << "], data type:["
@@ -710,8 +710,8 @@ void TaskExceptionHandler::PrintOpDataInfo(OpDataInfo &opDataInfo, bool isFftsPl
 {
     stringstream opDataStr;
     opDataStr << "src" << "[0x"
-            << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(opDataInfo.src)) << "], dst[0x"
-            << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(opDataInfo.dst)) << "], ";
+            << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(opDataInfo.src)) << "], dst[0x"
+            << std::hex << static_cast<u64>(reinterpret_cast<uintptr_t>(opDataInfo.dst)) << "], ";
 
     string opStr;
     if (opDataInfo.reduceType != HcclReduceOp::HCCL_REDUCE_RESERVED) {

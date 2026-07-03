@@ -737,7 +737,7 @@ HcclResult AicpuAllreduce::RunAllReduceRingAlg(
     const u32 subStream = prevRank;
     u32 curSliceIdx = ctx_->rankId;
     Slice *localSlice = &orderedRingSlices[curSliceIdx];
-    Slice *remoteSlice;
+    Slice *remoteSlice = nullptr;
     // 第一轮：主流准备前2片数据
     CHK_RET(TaskOrchestrator::SelfCpySnd2Win(
         sendBuffer, localSlice->size, localSlice->offset, localSlice->offset, HCCL_REDUCE_RESERVED, dataType));

@@ -1023,8 +1023,8 @@ HcclResult TransportIbverbs::TxWithReduce(UserMemType dstMemType, u64 dstOffset,
     struct WrAuxInfo aux = {0};
     aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
     aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
-    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
-        aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
+    if (aux.dataType == static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
+        aux.reduceType == static_cast<uint8_t>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
         HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]",
             GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str());
         return HCCL_E_INTERNAL;
@@ -1045,8 +1045,8 @@ HcclResult TransportIbverbs::TxWithReduce(const std::vector<TxMemoryInfo> &txWit
     struct WrAuxInfo aux = {0};
     aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
     aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
-    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
-        aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
+    if (aux.dataType == static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
+        aux.reduceType == static_cast<uint8_t>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
         HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]",
             GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str());
         return HCCL_E_INTERNAL;
@@ -2608,8 +2608,8 @@ HcclResult TransportIbverbs::WriteReduceAsync(struct Transport::Buffer &remoteBu
     struct WrAuxInfo aux = {0};
     aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
     aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
-    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
-        aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
+    if (aux.dataType == static_cast<uint8_t>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
+        aux.reduceType == static_cast<uint8_t>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
         HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]",
             GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str());
         return HCCL_E_INTERNAL;

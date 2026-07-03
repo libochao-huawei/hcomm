@@ -59,12 +59,7 @@ struct TransportResourceInfo {
     bool isGlobalMrmanagerInit;
     u32 hdcHostWqeBatchNum;
     bool isRawConn{false};
-    TransportResourceInfo() : mrManager(nullptr), pMsgInfosMem(nullptr), pReqInfosMem(nullptr),
-        memBlocksManager(nullptr), pRecvWrInfosMem(nullptr), flag(QP_FLAG_RC), lkey(DEFAULT_LKEY_VALUE),
-        qpMode(NORMAL_QP_MODE), deviceLogicId(DEFAULT_DEVICE_LOGIC_ID), isHdcMode(false),
-        memBlockNum(MEM_BLOCK_NUM), remoteIsHdc(false), isESMode(false), isGlobalMrmanagerInit(false),
-        hdcHostWqeBatchNum(DEFAULT_BATCH_NUM)
-    {}
+    TransportResourceInfo() = delete;
     TransportResourceInfo(const std::unique_ptr<MrManager> &mrManager,
         const std::unique_ptr<LocklessRingMemoryAllocate<HcclMessageInfo>> &pMsgInfosMem,
         const std::unique_ptr<LocklessRingMemoryAllocate<HcclRequestInfo>> &pReqInfosMem,

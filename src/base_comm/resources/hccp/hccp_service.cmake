@@ -37,19 +37,27 @@ target_compile_definitions(hccp_service.bin PRIVATE
 )
 
 target_compile_options(hccp_service.bin PRIVATE
-    -Werror -Wall -fPIC -fPIE -rdynamic -fvisibility=hidden -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11
-    -fstack-protector-strong
-    $<$<CONFIG:Debug>:-g>
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
+    -fPIE
+    -rdynamic
+    -fvisibility=hidden
+    -fsigned-char
+    -fno-common
+    -fno-strict-aliasing
+    -std=gnu11
+    $<$<CONFIG:Debug>:-Og -g>
 )
 
 target_link_options(hccp_service.bin PRIVATE
-    -Wl,-Bsymbolic -Wl,--no-undefined -rdynamic
-    -Wl,-z,now
-    -pie
-    $<$<CONFIG:Release>:-s>
+    -Wl,-Bsymbolic
+    -Wl,--no-undefined
+    -rdynamic
 )
 
 target_link_libraries(hccp_service.bin PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:runtime_headers>
     $<BUILD_INTERFACE:rdma_core_headers>

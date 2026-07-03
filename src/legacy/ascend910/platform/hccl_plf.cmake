@@ -17,30 +17,18 @@ target_compile_definitions(hccl_plf PRIVATE
     USE_AICORE_REDUCESUM
     USE_AICORE_GATHERV2
     USE_AICORE_GATHERV2_INFER
-    $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
 )
 
 # 编译选项
 target_compile_options(hccl_plf PRIVATE
     -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -Wno-deprecated-declarations
-    -Wall
     -fno-common
     -fno-strict-aliasing
-    -pipe
-    -O3
-    -std=c++17
-    -fstack-protector-all
-    $<$<CONFIG:Debug>:-g>
-)
-
-# 链接选项
-target_link_options(hccl_plf PRIVATE
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-    -Wl,--build-id=none
-    $<$<CONFIG:Release>:-s>
+    $<$<CONFIG:Debug>:-Og -g>
+    $<$<CONFIG:Release>:-O3>
 )
 
 # 头文件搜索路径
@@ -115,6 +103,7 @@ if(BUILD_OPEN_PROJECT)
 
     target_link_libraries(hccl_plf
     PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:ascend_hal_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:mmpa_headers>
@@ -155,7 +144,7 @@ else()
 
     target_link_libraries(hccl_plf
     PRIVATE
-        $<BUILD_INTERFACE:intf_pub_cxx14>
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:hccl_headers>
         -Wl,--no-as-needed
         c_sec

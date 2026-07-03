@@ -36,5 +36,6 @@ target_compile_options(hccl_st_fwk PRIVATE
 )
 
 target_link_libraries(hccl_st_fwk PRIVATE
+    $<BUILD_INTERFACE:intf_llt_pub>
     c_sec_static
 )

@@ -66,22 +66,22 @@ public:
         return transportInfo_;
     }
 
-    inline const u32 UserRank() const
+    inline u32 UserRank() const
     {
         return userRank_;
     }
 
-    inline const u32 UserRankSize() const
+    inline u32 UserRankSize() const
     {
         return userRankSize_;
     }
 
-    inline const u32 Rank() const
+    inline u32 Rank() const
     {
         return rank_;
     }
 
-    inline const u32 RankSize() const
+    inline u32 RankSize() const
     {
         return rankSize_;
     }

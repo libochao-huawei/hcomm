@@ -727,7 +727,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchClose(struct SocketCloseInfoT conn[], unsig
 {
     struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i;
     int ret;
 
@@ -765,7 +765,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchAbort(struct SocketConnectInfoT conn[], uns
     struct RaSocketHandle *socketHandle = NULL;
     char remoteIp[MAX_IP_LEN] = {0};
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i;
     int ret;
 
@@ -806,7 +806,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStart(struct SocketListenInfoT conn[], uns
 {
     struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i;
     int ret;
 
@@ -842,7 +842,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStop(struct SocketListenInfoT conn[], unsi
 {
     struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i;
     int ret;
 
@@ -882,7 +882,7 @@ HCCP_ATTRI_VISI_DEF int RaGetSockets(unsigned int role, struct SocketInfoT conn[
     char localIp[MAX_IP_LEN] = {0};
     char remoteIp[MAX_IP_LEN] = {0};
     int ret;
-    unsigned int phyId;
+    unsigned int phyId = 0;
 
     CHK_PRT_RETURN(conn == NULL || connectedNum == NULL || num == 0 || num > MAX_SOCKET_NUM,
         hccp_err("[get][ra_socket]conn or connected_num is NULL or num[%u] is zero or num greater than %d", num,

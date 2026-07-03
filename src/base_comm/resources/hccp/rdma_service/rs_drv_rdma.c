@@ -648,6 +648,7 @@ int RsDrvRegNotifyMr(struct RsRdevCb *rdevCb)
 {
     struct roce_process_sign roceSign = {0};
     int access = DEFAULT_ACCESS_FLAG;
+    (void)roceSign;
     rdevCb->notifyAccess = access;
     switch (rdevCb->notifyType) {
         case NO_USE: return 0;

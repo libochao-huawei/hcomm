@@ -638,7 +638,7 @@ HcclResult ProfilingManager::CallMsprofReportAdditionInfoForEsLookup(EsLoopUpPar
     hcclReportData.profInfo.itemId = hrtMsprofGetHashId(nameInfo.c_str(), nameInfo.length());
     std::string cclTag = std::to_string(para.tag);
     hcclReportData.profInfo.cclTag = hrtMsprofGetHashId(cclTag.c_str(), cclTag.length());
-    hcclReportData.profInfo.groupName = static_cast<const u64>(reinterpret_cast<const uintptr_t>("unknown"));
+    hcclReportData.profInfo.groupName = static_cast<u64>(reinterpret_cast<uintptr_t>("unknown"));
     hcclReportData.profInfo.rankSize = 0;
     hcclReportData.profInfo.workFlowMode = static_cast<u32>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     hcclReportData.profInfo.planeID = 0;
@@ -646,8 +646,8 @@ HcclResult ProfilingManager::CallMsprofReportAdditionInfoForEsLookup(EsLoopUpPar
     hcclReportData.profInfo.stage = 0;
     hcclReportData.profInfo.role = static_cast<uint32_t>(TaskRole::DST);
     hcclReportData.profInfo.durationEstimated = 0;
-    hcclReportData.profInfo.srcAddr = static_cast<const u64>(reinterpret_cast<const uintptr_t>(para.srcAddr));
-    hcclReportData.profInfo.dstAddr = static_cast<const u64>(reinterpret_cast<const uintptr_t>(para.dstAddr));
+    hcclReportData.profInfo.srcAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(para.srcAddr));
+    hcclReportData.profInfo.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(para.dstAddr));
     hcclReportData.profInfo.dataSize = static_cast<u32>(para.dataSize);
     hcclReportData.profInfo.opType = 0;
     hcclReportData.profInfo.dataType = HCCL_DATA_TYPE_FP32;
@@ -821,7 +821,7 @@ HcclResult ProfilingManager::CallMsprofReportAdditionInfoForEsUpdate(const EsUpd
     hcclReportData.profInfo.itemId = hrtMsprofGetHashId(nameInfo.c_str(), nameInfo.length());
     std::string cclTag = std::to_string(para.tag);
     hcclReportData.profInfo.cclTag = hrtMsprofGetHashId(cclTag.c_str(), cclTag.length());
-    hcclReportData.profInfo.groupName = static_cast<const u64>(reinterpret_cast<const uintptr_t>(para.groupName));
+    hcclReportData.profInfo.groupName = static_cast<u64>(reinterpret_cast<uintptr_t>(para.groupName));
     hcclReportData.profInfo.localRank = INVALID_VALUE_RANKID;
     hcclReportData.profInfo.remoteRank = INVALID_VALUE_RANKID;
     hcclReportData.profInfo.rankSize = PARSE_RANK_SIZE(0);
@@ -831,8 +831,8 @@ HcclResult ProfilingManager::CallMsprofReportAdditionInfoForEsUpdate(const EsUpd
     hcclReportData.profInfo.stage = 0;
     hcclReportData.profInfo.role = static_cast<uint32_t>(TaskRole::DST);
     hcclReportData.profInfo.durationEstimated = 0;
-    hcclReportData.profInfo.srcAddr = static_cast<const u64>(reinterpret_cast<const uintptr_t>(para.srcAddr));
-    hcclReportData.profInfo.dstAddr = static_cast<const u64>(reinterpret_cast<const uintptr_t>(para.dstAddr));
+    hcclReportData.profInfo.srcAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(para.srcAddr));
+    hcclReportData.profInfo.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(para.dstAddr));
     hcclReportData.profInfo.dataSize = static_cast<u32>(para.dataSize);
     hcclReportData.profInfo.opType = 0;
     hcclReportData.profInfo.dataType = HCCL_DATA_TYPE_FP32;

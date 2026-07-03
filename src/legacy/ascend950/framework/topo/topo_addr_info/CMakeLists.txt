@@ -25,22 +25,13 @@ add_library(topoaddrinfo SHARED
 )
 
 target_compile_options(topoaddrinfo PRIVATE
-     -Werror
-     -Wfloat-equal
-     -Wall
-     -fno-common
-     -fno-strict-aliasing
-     -pipe
-     -O3
-     -fstack-protector-all
-     $<$<CONFIG:Debug>:-g>
-)
- 
-target_link_options(topoaddrinfo PRIVATE
-     -Wl,-z,relro
-     -Wl,-z,now
-     -Wl,-z,noexecstack
-     -s
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
+    -fno-common
+    -fno-strict-aliasing
+    $<$<CONFIG:Debug>:-Og -g>
+    $<$<CONFIG:Release>:-O3>
 )
 
 target_include_directories(topoaddrinfo PRIVATE
@@ -52,6 +43,7 @@ target_include_directories(topoaddrinfo PRIVATE
 )
 
 target_link_libraries(topoaddrinfo PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:runtime_headers>
     dl

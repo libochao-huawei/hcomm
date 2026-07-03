@@ -23,23 +23,13 @@ target_compile_definitions(hccd PRIVATE
 # 编译选项
 target_compile_options(hccd PRIVATE
     -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
     -Wno-deprecated-declarations
-    -Wall
     -fno-common
-    -fstack-protector-strong
     -fno-strict-aliasing
-    -pipe
-    -O3
-    -std=c++17
-    $<$<CONFIG:Debug>:-g>
-)
-
-# 链接选项
-target_link_options(hccd PRIVATE
-    -Wl,-z,relro
-    -Wl,-z,now
-    -Wl,-z,noexecstack
-    $<$<CONFIG:Release>:-s>
+    $<$<CONFIG:Debug>:-Og -g>
+    $<$<CONFIG:Release>:-O3>
 )
 
 # 源文件列表
@@ -179,6 +169,7 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_link_libraries(hccd
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:ascend_hal_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:mmpa_headers>
@@ -215,7 +206,7 @@ else()
     )
 
     target_link_libraries(hccd
-        $<BUILD_INTERFACE:intf_pub_cxx14>
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:hccl_headers>
         -Wl,--no-as-needed
         c_sec

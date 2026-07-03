@@ -54,17 +54,19 @@ if(NOT BUILD_OPEN_PROJECT)
 endif()
 
 target_compile_options(ra PRIVATE
-    -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -std=gnu11 -Wextra
-    -fstack-protector-strong
-    $<$<CONFIG:Debug>:-g>
-)
-
-target_link_options(ra PRIVATE
-    -Wl,-z,now
-    $<$<CONFIG:Release>:-s>
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
+    -fvisibility=hidden
+    -fsigned-char
+    -fno-common
+    -fno-strict-aliasing
+    -std=gnu11
+    $<$<CONFIG:Debug>:-Og -g>
 )
 
 target_link_libraries(ra PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:msprof_headers>
     $<BUILD_INTERFACE:slog_headers>

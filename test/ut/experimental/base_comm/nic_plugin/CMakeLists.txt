@@ -32,7 +32,7 @@ target_compile_options(hccl_ut_experimental_nic_plugin PRIVATE
 )
 
 target_link_libraries(hccl_ut_experimental_nic_plugin PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     -pthread
     -lrt
 )

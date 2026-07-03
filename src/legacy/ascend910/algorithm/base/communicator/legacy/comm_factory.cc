@@ -688,7 +688,7 @@ u32 CommFactory::GetSubRootForScatter(const u32 root)
     return subRoot;
 }
 
-const u32 CommFactory::GetSubCollectiveRank(const std::vector<RankInfo> &vecPara) const
+u32 CommFactory::GetSubCollectiveRank(const std::vector<RankInfo> &vecPara) const
 {
     // 在vecPara数据中，查询本user rank，查询到的vec下标就是rank值
     u32 tmpRank = INVALID_VALUE_RANKID;

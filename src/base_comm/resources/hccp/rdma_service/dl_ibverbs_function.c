@@ -292,6 +292,7 @@ STATIC int RsIbverbsApiInit(void)
     return 0;
 }
 
+#ifdef CUSTOM_INTERFACE
 STATIC int RsOpenRoceUserSo(enum SoType *type)
 {
     pthread_mutex_lock(&gRoceUserApiLock);
@@ -327,6 +328,7 @@ out:
     pthread_mutex_unlock(&gRoceUserApiLock);
     return 0;
 }
+#endif
 
 STATIC void RsCloseRoceUserSo(void)
 {
@@ -349,6 +351,7 @@ out:
     return;
 }
 
+#ifdef CUSTOM_INTERFACE
 STATIC int RsRoceUserIbvApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
@@ -381,7 +384,9 @@ STATIC int RsRoceUserIbvApiInit(void)
 #endif
     return 0;
 }
+#endif
 
+#ifdef CUSTOM_INTERFACE
 STATIC int RsRoceUserDrvApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
@@ -426,7 +431,9 @@ STATIC int RsRoceUserDrvApiInit(void)
 #endif
     return 0;
 }
+#endif
 
+#ifdef CUSTOM_INTERFACE
 STATIC int RsRoceUserApiInit(void)
 {
     enum SoType type = SO_TYPE_INVALID;
@@ -467,6 +474,7 @@ close_roce_user_so:
 #endif
     return ret;
 }
+#endif
 
 STATIC int RsHrnIbvApiInit(void)
 {

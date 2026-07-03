@@ -52,17 +52,21 @@ add_library(rs SHARED ${RS_SOURCE_LIST})
 
 # 编译选项
 target_compile_options(rs PRIVATE
-    -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal
-    -Wextra -Wno-unused-parameter -std=gnu11
-    -fstack-protector-strong
-    $<$<CONFIG:Debug>:-g>
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
+    -fvisibility=hidden
+    -fsigned-char
+    -fno-common
+    -fno-strict-aliasing
+    -std=gnu11
+    $<$<CONFIG:Debug>:-Og -g>
 )
 
 # 链接选项
 target_link_options(rs PRIVATE
-    -Wl,-Bsymbolic -Wl,--exclude-libs,ALL
-    -Wl,-z,now
-    $<$<CONFIG:Release>:-s>
+    -Wl,-Bsymbolic
+    -Wl,--exclude-libs,ALL
 )
 
 # 宏定义
@@ -76,6 +80,7 @@ target_compile_definitions(rs PRIVATE
 
 # 链接库
 target_link_libraries(rs PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:msprof_headers>
     $<BUILD_INTERFACE:slog_headers>

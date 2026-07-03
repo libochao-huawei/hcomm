@@ -622,7 +622,7 @@ HcclResult TpMgr::GetTpTotalTimeout(const TpAttrInfo &tpAttrInfo, uint32_t &tpTi
     uint8_t rawRetryTimes = tpAttrInfo.tpAttr.retryTimesInit;
 
     uint8_t finalAtGear = rawAtGear;
-    if (rawAtGear < AT_GEAR_MIN || rawAtGear > AT_GEAR_MAX) {
+    if (rawAtGear > AT_GEAR_MAX) {
         finalAtGear = AT_GEAR_DEFAULT;
         HCCL_WARNING("%s Invalid at gear[%u], expect [%u, %u], use default gear[%u].",
             __func__, rawAtGear, AT_GEAR_MIN, AT_GEAR_MAX, finalAtGear);

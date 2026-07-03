@@ -345,7 +345,7 @@ bool TopoMatcher::CheckSdmaWithRohTopo(const std::vector<u32> &nicList, std::vec
     return true;
 }
 
-const u32 TopoMatcher::GetSubCollectiveRank(const std::vector<u32> &vecPara) const
+u32 TopoMatcher::GetSubCollectiveRank(const std::vector<u32> &vecPara) const
 {
     // 在vecPara数据中，查询本user rank，查询到的vec下标就是rank值
     u32 tmpRank = INVALID_VALUE_RANKID;

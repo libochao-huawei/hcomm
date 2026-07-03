@@ -812,8 +812,8 @@ RS_ATTRI_VISI_DEF int RsSocketAcceptCreditAdd(struct SocketListenInfo conn[], ui
     struct RsIpAddrInfo ipInfo = {0};
     struct RsConnCb *connCb = NULL;
     unsigned int tmpCreditLimit;
+    int ret = 0;
     uint32_t i;
-    int ret;
 
     RS_SOCKET_PARA_CHECK(num, conn);
     for (i = 0; i < num; i++) {
@@ -2295,7 +2295,7 @@ STATIC int RsFillIfnum(unsigned int phyId, bool isAll, unsigned int *num, unsign
 {
     struct ifaddrs *ifaddr = NULL;
     struct ifaddrs *ifa = NULL;
-    enum RsHardwareType type;
+    enum RsHardwareType type = RS_HARDWARE_UNKNOWN;
     int family, ret;
     *num = 0;
 

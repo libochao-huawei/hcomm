@@ -25,7 +25,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_tmp.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sync_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_tmp.o 
             -DASCENDC_DUMP=${ASCENDC_DUMP} -DTILING_KEY_VAR=0 --cce-aicore-arch=dav-c220-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             "-I$<JOIN:$<TARGET_PROPERTY:kernel_tiling_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -41,7 +41,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk1.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sync_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk1.o 
             -DASCENDC_DUMP=${ASCENDC_DUMP} -DTILING_KEY_VAR=0 -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DBUILD_SK_FUNC -DSK_FUNC_ID=1 --cce-aicore-arch=dav-c220-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             "-I$<JOIN:$<TARGET_PROPERTY:kernel_tiling_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -57,7 +57,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk2.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sync_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk2.o 
             -DASCENDC_DUMP=${ASCENDC_DUMP} -DTILING_KEY_VAR=0 -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DBUILD_SK_FUNC -DSK_FUNC_ID=2 --cce-aicore-arch=dav-c220-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             "-I$<JOIN:$<TARGET_PROPERTY:kernel_tiling_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -73,7 +73,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk3.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sync_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk3.o 
             -DASCENDC_DUMP=${ASCENDC_DUMP} -DTILING_KEY_VAR=0 -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DBUILD_SK_FUNC -DSK_FUNC_ID=3 --cce-aicore-arch=dav-c220-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             "-I$<JOIN:$<TARGET_PROPERTY:kernel_tiling_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -89,7 +89,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk4.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sync_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk4.o 
             -DASCENDC_DUMP=${ASCENDC_DUMP} -DTILING_KEY_VAR=0 -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DBUILD_SK_FUNC -DSK_FUNC_ID=4 --cce-aicore-arch=dav-c220-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             "-I$<JOIN:$<TARGET_PROPERTY:kernel_tiling_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -115,7 +115,7 @@ else()
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_tmp.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sync_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_tmp.o
             -DASCENDC_DUMP=${ASCENDC_DUMP} -DTILING_KEY_VAR=0 --cce-aicore-arch=dav-c220-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             "-I$<JOIN:$<TARGET_PROPERTY:kernel_tiling_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -133,7 +133,7 @@ else()
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk1.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sync_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk1.o
             -DASCENDC_DUMP=${ASCENDC_DUMP} -DTILING_KEY_VAR=0 -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DBUILD_SK_FUNC -DSK_FUNC_ID=1 --cce-aicore-arch=dav-c220-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             "-I$<JOIN:$<TARGET_PROPERTY:kernel_tiling_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -151,7 +151,7 @@ else()
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk2.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sync_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk2.o
             -DASCENDC_DUMP=${ASCENDC_DUMP} -DTILING_KEY_VAR=0 -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DBUILD_SK_FUNC -DSK_FUNC_ID=2 --cce-aicore-arch=dav-c220-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             "-I$<JOIN:$<TARGET_PROPERTY:kernel_tiling_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -169,7 +169,7 @@ else()
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk3.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sync_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk3.o
             -DASCENDC_DUMP=${ASCENDC_DUMP} -DTILING_KEY_VAR=0 -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DBUILD_SK_FUNC -DSK_FUNC_ID=3 --cce-aicore-arch=dav-c220-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             "-I$<JOIN:$<TARGET_PROPERTY:kernel_tiling_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
@@ -187,7 +187,7 @@ else()
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk4.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_sync_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_sync_op_sk4.o
             -DASCENDC_DUMP=${ASCENDC_DUMP} -DTILING_KEY_VAR=0 -D__ASCENDC_ENABLE_SUPER_KERNEL__ -DBUILD_SK_FUNC -DSK_FUNC_ID=4 --cce-aicore-arch=dav-c220-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
+            --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             "-I$<JOIN:$<TARGET_PROPERTY:asc_kernel_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"
             "-I$<JOIN:$<TARGET_PROPERTY:kernel_tiling_headers,INTERFACE_INCLUDE_DIRECTORIES>,;-I>"

@@ -25,18 +25,30 @@ set(CCL_KERNEL_PLF_COMPILE_DEFINITIONS
 target_compile_definitions(ccl_kernel_plf PRIVATE ${CCL_KERNEL_PLF_COMPILE_DEFINITIONS})
 target_compile_definitions(ccl_kernel_plf_a PRIVATE ${CCL_KERNEL_PLF_COMPILE_DEFINITIONS})
 
-# 编译选项
-set(CCL_KERNEL_PLF_COMPILE_OPTIONS
-    -Werror
-    -Wno-deprecated-declarations
-    -Wall
-    -fno-common
-    -fno-strict-aliasing
-    -pipe
-    -std=c++17
-    -D_FORTIFY_SOURCE=2 -O2
-    -fstack-protector-all
-)
+
+if(BUILD_OPEN_PROJECT)
+    # 编译选项
+    set(CCL_KERNEL_PLF_COMPILE_OPTIONS
+        -Werror
+        -Wno-unused-parameter
+        -Wno-missing-field-initializers
+        -Wno-deprecated-declarations
+        -fno-common
+        -fno-strict-aliasing
+        $<$<CONFIG:Debug>:-Og -g>
+        $<$<CONFIG:Release>:-O2 -D_FORTIFY_SOURCE=2>
+    )
+else()
+    # 编译选项
+    set(CCL_KERNEL_PLF_COMPILE_OPTIONS
+        -Werror
+        -Wno-deprecated-declarations
+        -fno-common
+        -fno-strict-aliasing
+        -O2
+        -D_FORTIFY_SOURCE=2
+    )
+endif()
 target_compile_options(ccl_kernel_plf PRIVATE
     ${CCL_KERNEL_PLF_COMPILE_OPTIONS}
 )
@@ -44,18 +56,24 @@ target_compile_options(ccl_kernel_plf PRIVATE
 target_compile_options(ccl_kernel_plf_a PRIVATE
     ${CCL_KERNEL_PLF_COMPILE_OPTIONS}
     -ftrapv
-    -fPIC
 )
 
-# 链接选项
-set(CCL_KERNEL_PLF_LINK_OPTIONS
-    -Wl,-z,relro,-z,now,-z,noexecstack
-    -Wl,-Bsymbolic
-    -Wl,--exclude-libs,ALL
-)
+if(BUILD_OPEN_PROJECT)
+    # 链接选项
+    set(CCL_KERNEL_PLF_LINK_OPTIONS
+        -Wl,-Bsymbolic
+        -Wl,--exclude-libs,ALL
+    )
+else()
+    # 链接选项
+    set(CCL_KERNEL_PLF_LINK_OPTIONS
+        -Wl,-Bsymbolic
+        -Wl,--exclude-libs,ALL
+        -s
+    )
+endif()
 target_link_options(ccl_kernel_plf PRIVATE
     ${CCL_KERNEL_PLF_LINK_OPTIONS}
-    -s
 )
 target_link_options(ccl_kernel_plf_a PRIVATE
     ${CCL_KERNEL_PLF_LINK_OPTIONS}
@@ -231,6 +249,7 @@ if(BUILD_OPEN_PROJECT)
 
     # 链接库
     set(CCL_KERNEL_PLF_LINK_LIBS
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:ascend_hal_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:mmpa_headers>
@@ -295,7 +314,7 @@ else()
 
     # 链接库
     set(CCL_KERNEL_PLF_LINK_LIBS
-        $<BUILD_INTERFACE:intf_pub_cxx14>
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>

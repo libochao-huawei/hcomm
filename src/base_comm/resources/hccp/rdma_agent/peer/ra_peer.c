@@ -913,7 +913,7 @@ STATIC void RaInitWrlistBaseInfo(struct RsWrlistBaseInfo *baseInfo, struct RaQpH
 int RaPeerSendWrlist(struct RaQpHandle *qpHandle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     struct WrlistSendCompleteNum wrlistNum)
 {
-    int ret;
+    int ret = 0;
     unsigned int completeCnt = 0;
     unsigned int sendCnt = 0;
     struct RsWrlistBaseInfo baseInfo;

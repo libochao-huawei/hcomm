@@ -373,8 +373,9 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
 
 STATIC void RsEpollEventHandleOne(struct rs_cb *rsCb, struct epoll_event *events)
 {
-    int ret;
+    int ret = 0;
 
+    (void)ret;
     RS_CHECK_POINTER_NULL_RETURN_VOID(events);	 
     RS_CHECK_POINTER_NULL_RETURN_VOID(rsCb);
 

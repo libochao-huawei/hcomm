@@ -2404,6 +2404,8 @@ RS_ATTRI_VISI_DEF int RsTypicalQpModify(unsigned int phyId, unsigned int rdevInd
     struct RsQpCb *qpCb = NULL;
     int ret;
 
+    (void)qpAttrMask;
+    (void)qpAttrVal;
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("[modify]phyId:%u >= [%d], is invalid", phyId, RS_MAX_DEV_NUM),
         -EINVAL);
 
@@ -2590,6 +2592,8 @@ RS_ATTRI_VISI_DEF int RsGetQpStatus(unsigned int phyId, unsigned int rdevIndex, 
     struct RsQpCb *qpCb = NULL;
     int ret;
 
+    (void)qpAttrMask;
+    (void)qpAttrVal;
     CHK_PRT_RETURN(qpInfo == NULL, hccp_err("param error, qpInfo is NULL"), -EINVAL);
 
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phyId:%u >= [%d], is invalid",

@@ -5195,12 +5195,6 @@ rtError_t rtGetDevArgsAddr(rtStream_t stm, rtArgsEx_t *argsInfo, void **devArgsA
     return RT_ERROR_NONE;
 }
 HcclIpAddress invalidIp;
-TransportHeterogStub::TransportHeterogStub() : TransportHeterog("12315", invalidIp, invalidIp, 0, 0, TransportResourceInfo())
-{
-}
-TransportShmEventStub::TransportShmEventStub() : TransportHeterog("12315", invalidIp, invalidIp, 0, 0, TransportResourceInfo())
-{
-}
 
 HcclResult GetSocketRole(std::vector<u32> &userRanks, u32 srcRank, u32 destRank, HcclSocketRole &role)
 {

@@ -20,7 +20,7 @@ HCCP_ATTRI_VISI_DEF int RaGetClientSocketErrInfo(struct SocketConnectInfoT conn[
     struct RaSocketHandle *socketHandle = NULL;
     char remoteIp[MAX_IP_LEN] = {0};
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i;
     int ret;
 
@@ -60,7 +60,7 @@ HCCP_ATTRI_VISI_DEF int RaGetServerSocketErrInfo(struct SocketListenInfoT conn[]
 {
     struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i;
     int ret;
 
@@ -96,7 +96,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketAcceptCreditAdd(struct SocketListenInfoT conn[],
 {
     struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
-    unsigned int phyId;
+    unsigned int phyId = 0;
     unsigned int i;
     int ret;
 

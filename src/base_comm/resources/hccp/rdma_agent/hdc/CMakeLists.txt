@@ -63,17 +63,18 @@ if(NOT BUILD_OPEN_PROJECT)
 endif()
 
 target_compile_options(ra_hdc PRIVATE
-    -Werror -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11 -Wextra
-    -fstack-protector-strong
-    $<$<CONFIG:Debug>:-g>
-)
-
-target_link_options(ra_hdc PRIVATE
-    -Wl,-z,now
-    $<$<CONFIG:Release>:-s>
+    -Werror
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
+    -fsigned-char
+    -fno-common
+    -fno-strict-aliasing
+    -std=gnu11
+    $<$<CONFIG:Debug>:-Og -g>
 )
 
 target_link_libraries(ra_hdc PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:msprof_headers>
     $<BUILD_INTERFACE:slog_headers>

@@ -250,6 +250,7 @@ STATIC int RsGetChipLogicId(unsigned int chipId, enum NetworkMode hccpMode, unsi
     return 0;
 }
 
+#ifdef CUSTOM_INTERFACE
 STATIC int RsInitNetAdapt(struct rs_cb *rscb) {
     int ret = 0;
 
@@ -263,7 +264,9 @@ STATIC int RsInitNetAdapt(struct rs_cb *rscb) {
 
     return ret;
 }
+#endif
 
+#ifdef CUSTOM_INTERFACE
 STATIC void RsDeInitNetAdapt(struct rs_cb *rscb) {
     if (rscb->protocol != PROTOCOL_UDMA) {
         return;
@@ -271,6 +274,7 @@ STATIC void RsDeInitNetAdapt(struct rs_cb *rscb) {
 
     RsNetAdaptUninit();
 }
+#endif
 
 STATIC int RsInitRscbCfg(struct rs_cb *rscb)
 {

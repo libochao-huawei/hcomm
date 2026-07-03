@@ -140,9 +140,6 @@ __attribute__((constructor)) void CallBackInitRts();
 namespace hccl {
 class TransportHeterogStub : public TransportHeterog {
 public:
-// TransportHeterogStub() : TransportHeterog("12315", invalidIp, invalidIp, 0, 0, TransportResourceInfo())
-// {
-// }
 explicit TransportHeterogStub();
 ~TransportHeterogStub() = default;
 virtual HcclResult Init() override
@@ -222,9 +219,6 @@ HcclRequestInfo request_;
 
 class TransportShmEventStub : public TransportHeterog {
 public:
-// TransportShmEventStub() : TransportHeterog("12315", invalidIp, invalidIp, 0, 0, TransportResourceInfo())
-// {
-// }
 explicit TransportShmEventStub();
 ~TransportShmEventStub()
 {

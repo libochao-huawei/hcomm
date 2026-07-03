@@ -90,26 +90,22 @@ target_include_directories(net_co PRIVATE
 
 target_compile_options(net_co PRIVATE
 	-Werror
-	-Wfloat-equal
-	-Wall
-	-fno-common
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
+    -fno-common
 	-fno-strict-aliasing
-	-pipe
-	-O3
-	-fstack-protector-strong
-	$<$<CONFIG:Debug>:-g>
+    $<$<CONFIG:Debug>:-Og -g>
+    $<$<CONFIG:Release>:-O3>
 )
 
 target_link_options(net_co PRIVATE
     -Wl,-Bsymbolic
     -rdynamic
-    -s
-    -Wl,-z,relro,-z,now
-    -Wl,-z,noexecstack
 )
 
 #链接动态库
 target_link_libraries(net_co PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     $<BUILD_INTERFACE:ascend_hal_headers>
     $<BUILD_INTERFACE:msprof_headers>
     $<BUILD_INTERFACE:slog_headers>

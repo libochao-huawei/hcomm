@@ -494,7 +494,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunch(void *args)
         }
         ctx->workSpaceAddr = newAddr;
     }
-    tilingData->commAlg = (ctx->devType == DevType::DEV_TYPE_910B) ? COMM_ALG_FULL_MESH : tilingData->commAlg;
+    tilingData->commAlg = (ctx->devType == DevType::DEV_TYPE_910B) ? static_cast<u8>(COMM_ALG_FULL_MESH) : tilingData->commAlg;
     ctx->commAlg = tilingData->commAlg;
     ctx->skipLocalDataCopy = tilingData->hasCommOut ? false : true;
     ctx->curTurnCnt = 0;

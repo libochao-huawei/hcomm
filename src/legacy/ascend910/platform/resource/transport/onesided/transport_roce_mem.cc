@@ -299,20 +299,16 @@ HcclResult TransportRoceMem::GetRdmaHandle()
 HcclResult TransportRoceMem::CheckRdmaVal(void)
 {
     DevType devType;
-    const u32 HCCL_RDMA_SL_MIN = 0;
-    const u32 HCCL_RDMA_SL_MAX = 7;
-    const u32 HCCL_RDMA_TC_MIN = 0;
     const u32 HCCL_RDMA_TC_MAX = 255;
+    const u32 HCCL_RDMA_SL_MAX = 7;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_910B || devType == DevType::DEV_TYPE_910_93) {
-        if ((trafficClass_ != HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET) &&
-        ((trafficClass_ < HCCL_RDMA_TC_MIN) || (trafficClass_ > HCCL_RDMA_TC_MAX))) {
+        if ((trafficClass_ != HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET) && (trafficClass_ > HCCL_RDMA_TC_MAX)) {
             HCCL_ERROR("[TransportRoceMem][CheckRdmaVal]trafficClass is invalid, trafficClass:%u", trafficClass_);
             return HCCL_E_PARA;
         }
  
-        if ((serviceLevel_ != HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) &&
-        ((serviceLevel_ < HCCL_RDMA_SL_MIN) || (serviceLevel_ > HCCL_RDMA_SL_MAX))) {
+        if ((serviceLevel_ != HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) && (serviceLevel_ > HCCL_RDMA_SL_MAX)) {
             HCCL_ERROR("[TransportRoceMem][CheckRdmaVal]serviceLevel is invalid, serviceLevel:%u", serviceLevel_);
             return HCCL_E_PARA;
         }

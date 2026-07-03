@@ -250,10 +250,10 @@ HcclResult hcclModifyAscendQPEx(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQ
     CHK_PTR_NULL(localQPInfo);
     CHK_PTR_NULL(remoteQPInfo);
     CHK_PTR_NULL(qpQos);
-    CHK_PRT_RET((qpQos->sl < HCCL_RDMA_SL_MIN || qpQos->sl > HCCL_RDMA_SL_MAX),
+    CHK_PRT_RET((qpQos->sl > HCCL_RDMA_SL_MAX),
         HCCL_ERROR("[hcclModifyAscendQPEx]The value of sl[%u] is invalid. except: [%u, %u].",
         qpQos->sl, HCCL_RDMA_SL_MIN, HCCL_RDMA_SL_MAX), HCCL_E_PARA);
-    CHK_PRT_RET((qpQos->tc < HCCL_RDMA_TC_MIN || qpQos->tc > HCCL_RDMA_TC_MAX),
+    CHK_PRT_RET((qpQos->tc > HCCL_RDMA_TC_MAX),
         HCCL_ERROR("[hcclModifyAscendQPEx]The value of tc[%u] is invalid. except: [%u, %u].",
         qpQos->tc, HCCL_RDMA_TC_MIN, HCCL_RDMA_TC_MAX), HCCL_E_PARA);
 
@@ -301,10 +301,10 @@ HcclResult hcclModifyAscendVerbsQPEx(AscendVerbsQPInfo* localQPVerbsInfo, Ascend
     CHK_PTR_NULL(localQPVerbsInfo);
     CHK_PTR_NULL(remoteQPVerbsInfo);
     CHK_PTR_NULL(qpQos);
-    CHK_PRT_RET((qpQos->sl < HCCL_RDMA_SL_MIN || qpQos->sl > HCCL_RDMA_SL_MAX),
+    CHK_PRT_RET((qpQos->sl > HCCL_RDMA_SL_MAX),
         HCCL_ERROR("[hcclModifyAscendVerbsQPEx]The value of sl[%u] is invalid. except: [%u, %u].",
         qpQos->sl, HCCL_RDMA_SL_MIN, HCCL_RDMA_SL_MAX), HCCL_E_PARA);
-    CHK_PRT_RET((qpQos->tc < HCCL_RDMA_TC_MIN || qpQos->tc > HCCL_RDMA_TC_MAX),
+    CHK_PRT_RET((qpQos->tc > HCCL_RDMA_TC_MAX),
         HCCL_ERROR("[hcclModifyAscendVerbsQPEx]The value of tc[%u] is invalid. except: [%u, %u].",
         qpQos->tc, HCCL_RDMA_TC_MIN, HCCL_RDMA_TC_MAX), HCCL_E_PARA);
 
