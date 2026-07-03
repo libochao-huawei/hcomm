@@ -15,5 +15,6 @@ add_subdirectory(one_sided_service)
 if(TARGET hccl_v2)
     target_sources(hccl_v2 PRIVATE
         param_check_v2.cc
+        rank_table_crc_bridge.cc
     )
 endif()

@@ -31,6 +31,8 @@
 #include "../resource_mgr/local/my_rank/comm_engine_reses/kernel_launch/hccl_kernel_launch_aicpu.h"
 #include "param_check_basic_v2.h"
 #include "comm_engine_utils.h"
+#include "rank_consistency_checker_v2.h"
+#include "rank_table_crc_bridge.h"
 
 using namespace hccl;
 /**
@@ -472,6 +474,20 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         const std::string &commTag = hcclComm->GetIdentifier();
         hccl::MyRank* myRank = collComm->GetMyRank();
         CHK_PTR_NULL(myRank);
+
+        s32 deviceLogicId = 0;
+        (void)hrtGetDeviceRefresh(&deviceLogicId);
+        u32 rankTableCrc = RankTableCrcBridge::GetInstance().ConsumeRankTableJsonCrc(deviceLogicId);
+        if (rankTableCrc != 0) {
+            CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordRankTableCrcV2(rankTableCrc));
+        }
+        char hcommPkgName[] = "hcomm";
+        int hcommVersion = 0;
+        aclError aclRet = aclsysGetVersionNum(hcommPkgName, &hcommVersion);
+        CHK_PRT_RET(aclRet != ACL_SUCCESS,
+            HCCL_ERROR("[HcclChannelAcquire] aclsysGetVersionNum failed, aclRet[%d].", aclRet), HCCL_E_INTERNAL);
+        std::string curVersion = std::to_string(hcommVersion);
+        CHK_RET(RankConsistencyCheckerV2::GetInstance(deviceLogicId).RecordCannVersionV2(curVersion));
  
         const uint32_t opExpansionMode = myRank->GetOpExpansionMode();
         if (!CheckCommEngine(engine, opExpansionMode)) {

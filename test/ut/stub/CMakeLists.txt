@@ -130,6 +130,8 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/resource_manager/socket/socket_handle_manager.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/common/hccp_hdc_manager.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/common/tp_qos.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/communicator/rank_consistency_checker_v2.cc
+    ${HCCL_CODE_ROOT}/src/legacy/ascend950/common/checkcrc.cc
 )
 
 set(hccl_list

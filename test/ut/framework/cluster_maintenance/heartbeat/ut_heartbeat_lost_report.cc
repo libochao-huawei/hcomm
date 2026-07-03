@@ -28,9 +28,9 @@ using namespace hccl;
 
 static bool g_recvCalled = false;
 
-static bool StubGetExternalInconsistentCheckSwitch()
+static InconsistentCheckMode StubGetExternalInconsistentCheckSwitch()
 {
-    return false;
+    return InconsistentCheckMode::OFF;
 }
 
 static HcclResult StubRecvFrame(Heartbeat *, UIDType &)

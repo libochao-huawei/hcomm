@@ -712,6 +712,12 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     std::string socketTag = commTag + "_engine_" + std::to_string(engine);
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, socketTag, hcommDescs));
     CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
+    // 借用hcommDescs.socket，完成一致性校验必要的数据交换
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType != DevType::DEV_TYPE_910B) {
+        CHK_RET(exchangeInfoMgr_.BatchExchangeAndCheckConsistency(channelDescs, hcommDescs, channelNum, newChannels_, collCommConfigConsistency_));;
+    }
 
     if (!newChannels_.empty()) {
         CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
@@ -720,13 +726,6 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         HCCL_RUN_INFO("[MyRank][CreateChannels] CreateChannels Time Elapsed [%llu]us, channelNum [%u]", duration, channelNum);
     }
 
-    // 借用hcommDescs.socket，完成一致性校验必要的数据交换
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType != DevType::DEV_TYPE_910B) {
-        CHK_RET(exchangeInfoMgr_.BatchExchangeAndCheckConsistency(channelDescs, hcommDescs, channelNum,
-            collCommConfigConsistency_, commTag));
-    }
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
         u32 remoteRank = channelDescs[i].remoteRank;

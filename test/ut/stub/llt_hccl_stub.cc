@@ -5557,3 +5557,33 @@ aclError aclrtCacheLastTaskExtendInfo(const char *tag, size_t tagLen)
 {
     return ACL_SUCCESS;
 }
+
+namespace Hccl {
+int HcclCheckLogLevel(int logLevel)
+{
+    return 1;
+}
+
+void CallDlogMemError(int level, std::string file, int line)
+{
+    (void)level;
+    (void)file;
+    (void)line;
+}
+
+void CallDlogPrintError(int level, std::string file, int line)
+{
+    (void)level;
+    (void)file;
+    (void)line;
+}
+
+void CallDlog(int level, int sysCallBack, const char *buffer, std::string file, int line)
+{
+    (void)level;
+    (void)sysCallBack;
+    (void)buffer;
+    (void)file;
+    (void)line;
+}
+}

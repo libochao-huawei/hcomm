@@ -35,6 +35,23 @@ int CheckLogLevel(int moduleId, int logLevel)
     return 1;
 }
 
+int HcclCheckLogLevel(int moduleId, int logLevel)
+{
+    (void)moduleId;
+    (void)logLevel;
+    return 1;
+}
+
+bool IsErrorToWarn()
+{
+    return false;
+}
+
+void SetErrWarnSwitch(bool flag)
+{
+    (void)flag;
+}
+
 void DlogRecord(int moduleId, int level, const char *fmt, ...)
 {
     (void)moduleId;
