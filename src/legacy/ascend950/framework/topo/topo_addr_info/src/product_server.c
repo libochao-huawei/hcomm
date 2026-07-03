@@ -25,7 +25,7 @@
 #define IP_ADDR_LEN (32)
 
 /* 用于识别FE*/
-#define MAX_UE_ID_IN_LEVEL (2)
+#define MAX_UE_ID_IN_LEVEL (4)
 #define MAX_LEVEL_NUM (4)
 
 enum UbEntityType {
@@ -33,6 +33,7 @@ enum UbEntityType {
     UE_TYPE_CLOS = 1,
     UE_TYPE_UBOE = 2,
     UE_TYPE_UBG = 3,
+    UE_TYPE_CLOS_PORTS = 4,
 };
 
 typedef struct stUEInfo {
@@ -84,10 +85,11 @@ static const NetInfo g_netInfoList[] = {
             {
                 .level = 0,
                 .netType = NET_TYPE_TOPO_FILE_DESC,
-                .ueNum = 2,
+                .ueNum = 3,
                 .instanceIdFunc = GetNetInstanceIdForOS,
                 .ueList = {
                     {.dieId = UDIE_1, .feId = 3, .type =UE_TYPE_MESH}, 
+                    {.dieId = UDIE_1, .feId = 2, .type =UE_TYPE_CLOS_PORTS},
                     {.dieId = UDIE_1, .feId = 2, .type =UE_TYPE_CLOS}
                 }
             },
@@ -229,13 +231,14 @@ const NetInfo *GetNetInfo(unsigned int mainBoardId)
 }
 
 /*
- * @brief 处理mesh entity的地址, 讲UBEntity中的地址加到layer中
+ * @brief 处理mesh entity的地址, 将UBEntity中的地址加到layer中
+ * 将UB entity中的所有地址按每个端口填入
  * @param layer: 网络层
  * @param ue: ue entity
  * @param spod_info: spod信息
  * @return int: 0 成功
  */
-static int LayerAddMesh(const UBEntity *ue, NetLayer *layer)
+static int LayerAddMesh(const UBEntity *ue, NetLayer *layer, int type)
 {
     for (unsigned int j = 0; j < ue->eidNum; ++j) {
         if (UrmaEidIsPortGroup(&ue->eidList[j].eid)) {
@@ -250,7 +253,11 @@ static int LayerAddMesh(const UBEntity *ue, NetLayer *layer)
         int dieId = UrmaEidGetDieId(&ue->eidList[j].eid);
         // topo中端口从0开始编，CNA中需要规避全0，从1开始
         sprintf_s(port, MAX_PORT_LEN, "%d/%d", dieId, portId);
-        sprintf_s(planeId, sizeof(planeId), "plane_%d", dieId);
+        if (type == UE_TYPE_MESH) {
+            sprintf_s(planeId, sizeof(planeId), "plane_%d", dieId);
+        } else if (type == UE_TYPE_CLOS_PORTS) {
+            sprintf_s(planeId, sizeof(planeId), "plane_clos_%d_%d", dieId, portId);
+        }
         AddrAddPort(&addr, port);
         AddrSetPlaneId(&addr, planeId);
         NetLayerAddAddr(layer, &addr);
@@ -389,8 +396,8 @@ static int ProcessLayer(int npuId, NetLayer *layer, UEList *ueList, const LevelI
         if (ue == NULL) {
             continue;
         }
-        if (type == UE_TYPE_MESH) {
-            ret = LayerAddMesh(ue, layer);
+        if (type == UE_TYPE_MESH || type == UE_TYPE_CLOS_PORTS) {
+            ret = LayerAddMesh(ue, layer, type);
         } else if (type == UE_TYPE_CLOS) {
             ret = LayerAddClos(ue, layer);
         } else if (type == UE_TYPE_UBOE) {
