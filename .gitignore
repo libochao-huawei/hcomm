@@ -36,6 +36,8 @@ __pycache__/
 .claude/
 .opencode/
 CLAUDE.md
+# 个人临时偏好，不入库
+AGENTS.local.md
 
 # Logs
 /logs/
