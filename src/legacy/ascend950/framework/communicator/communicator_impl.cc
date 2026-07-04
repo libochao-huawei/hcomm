@@ -1748,12 +1748,6 @@ bool CommunicatorImpl::GetCommCcuFeatureFlag() const
 
 HcclResult CommunicatorImpl::AllocCommResource(void *mc2Tiling, void **commContext)
 {
-    bool isAiv = (GetCommExecuteConfig().accState == AcceleratorState::AIV || GetCommExecuteConfig().accState == AcceleratorState::AIV_ONLY);
-    if (!GetCommCcuFeatureFlag() && !isAiv) { // 通信域粒度
-        HCCL_ERROR("CommunicatorImpl::AllocCommResource: Comm accelerator is [%s] not support AllocCommResource",
-                   GetCommExecuteConfig().accState.Describe().c_str());
-        return HCCL_E_NOT_SUPPORT;
-    }
     try {
         AcceleratorState acceleratorState;
         CHK_RET(GetTilingAccelerator(mc2Tiling, acceleratorState));
