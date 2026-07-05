@@ -33,10 +33,10 @@ __pycache__/
 *.pyd
 
 # Agent
+.omo/
 .claude/
 .opencode/
 CLAUDE.md
-# 个人临时偏好，不入库
 AGENTS.local.md
 
 # Logs

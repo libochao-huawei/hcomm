@@ -10,6 +10,8 @@
 #include "exchange_info_mgr.h"
 #include "env_config/env_config.h"
 #include "rank_consistency_checker_v2.h"
+#include "hcomm_res_defs.h"
+#include "comm_engine_utils.h"
 
 namespace hccl {
 ExchangeInfoMgr::ExchangeInfoMgr()
@@ -26,7 +28,8 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
     const std::vector<HcommChannelDesc> &hcommDescs,
     uint32_t channelNum,
     const std::vector<std::pair<u32, u32>> &newChannels,
-    CollCommConfigConsistency &collCommConfigConsistency)
+    CollCommConfigConsistency &collCommConfigConsistency,
+    CommEngine engine)
 {
     std::vector<Hccl::Socket*> sockets;
     std::vector<u32> remoteRanks;
@@ -50,10 +53,22 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
         roles.push_back(hcommDescs[i].role);
     }
 
-    // 校验HComm信息
-    CHK_RET(CheckHcommInfo(channelDescs, hcommDescs, sockets, remoteRanks, roles, newChannels));
-    // 交换HCCL算子信息 ======
-    CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, collCommConfigConsistency));
+    bool isHostLoc = (channelDescs[0].localEndpoint.loc.locType == ENDPOINT_LOC_TYPE_HOST);
+    HCCL_INFO("[BatchExchangeAndCheckConsistency] isHostLoc[%d], engine[%s]", isHostLoc,
+        GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
+
+    // host 网卡使用 Socket 同步收发接口
+    if (isHostLoc && engine == COMM_ENGINE_CPU) {
+        // 校验HComm信息
+        CHK_RET(CheckHcommInfo(channelDescs, hcommDescs, sockets, remoteRanks, roles, newChannels, false));
+        // 交换HCCL算子信息
+        CHK_RET(ExchangeUserInfo(sockets, remoteRanks, roles, collCommConfigConsistency));
+    } else {
+        // 校验HComm信息
+        CHK_RET(CheckHcommInfo(channelDescs, hcommDescs, sockets, remoteRanks, roles, newChannels, true));
+        // 交换HCCL算子信息
+        CHK_RET(ExchangeUserInfoAsync(sockets, remoteRanks, roles, collCommConfigConsistency));
+    }
     CHK_RET(collCommConfigConsistency.ResetExchangeInfo());
 
     return HCCL_SUCCESS;
@@ -65,7 +80,8 @@ HcclResult ExchangeInfoMgr::CheckHcommInfo(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
-    const std::vector<std::pair<u32, u32>> &newChannels)
+    const std::vector<std::pair<u32, u32>> &newChannels,
+    bool isAsync)
 {
     s32 deviceLogicId = 0;
     (void)hrtGetDeviceRefresh(&deviceLogicId);
@@ -105,13 +121,13 @@ HcclResult ExchangeInfoMgr::CheckHcommInfo(
             remoteFrames.resize(newSockets.size());
             CHK_RET(BatchExchangeFixedData(newSockets, newRemoteRanks, newRoles,
                 reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
-                reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
+                reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2), isAsync));
         } else {
             checkSocketSize = sockets.size();
             remoteFrames.resize(sockets.size());
             CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles,
                 reinterpret_cast<const u8*>(&localFrame), static_cast<u32>(frameLenV2),
-                reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2)));
+                reinterpret_cast<u8*>(remoteFrames.data()), static_cast<u32>(frameLenV2), isAsync));
         }
        
         // ====== 逐个比对CheckFrameV2（精确报错：环境变量名/子通信域参数名等）======
@@ -128,18 +144,63 @@ HcclResult ExchangeInfoMgr::ExchangeUserInfo(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
+    hccl::CollCommConfigConsistency &collCommConfigConsistency)
+{
+    (void)roles;
+
+    u32 localExchangeInfoLen = collCommConfigConsistency.GetExchangeInfoLen();
+    if (localExchangeInfoLen == 0) {
+        HCCL_INFO("[ExchangeUserInfo] localExchangeInfoLen is 0.");
+        return HCCL_SUCCESS;
+    }
+
+    // 交换infoLen
+    std::vector<u32> remoteExchangeInfoLens(sockets.size(), 0);
+    u8 *recvData = reinterpret_cast<u8*>(remoteExchangeInfoLens.data());
+    const u8 *sendData = reinterpret_cast<const u8*>(&localExchangeInfoLen);
+    u32 len = sizeof(u32);
+    for (u32 i = 0; i < sockets.size(); i++) {
+        sockets[i]->Send(sendData, len);
+        sockets[i]->Recv(recvData + i * len, len);
+    }
+
+    // 交换info数据（长度可能不同，需逐个收发）
+    std::vector<std::vector<u8>> remoteUserDatas(sockets.size());
+    for (u32 i = 0; i < sockets.size(); i++) {
+        std::vector<u8> exchangeBuf;
+        collCommConfigConsistency.GetExchangeInfoBuf(exchangeBuf);
+        remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
+        sockets[i]->Send(exchangeBuf.data(), localExchangeInfoLen);
+        sockets[i]->Recv(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
+    }
+
+    // 存储对端交换信息
+    for (u32 i = 0; i < sockets.size(); i++) {
+        if (remoteExchangeInfoLens[i] > 0 && !remoteUserDatas[i].empty()) {
+            CHK_RET(collCommConfigConsistency.StoreRemoteExchangeInfo(remoteRanks[i], remoteUserDatas[i]));
+        }
+    }
+
+    HCCL_INFO("[ExchangeUserInfo] suc.");
+    return HCCL_SUCCESS;
+}
+
+HcclResult ExchangeInfoMgr::ExchangeUserInfoAsync(
+    const std::vector<Hccl::Socket*> &sockets,
+    const std::vector<u32> &remoteRanks,
+    const std::vector<HcommSocketRole> &roles,
     CollCommConfigConsistency &collCommConfigConsistency)
 {
     u32 localExchangeInfoLen = collCommConfigConsistency.GetExchangeInfoLen();
     if (localExchangeInfoLen == 0) {
-        HCCL_INFO("[ExchangeUserInfo] localExchangeInfoLen is 0.");
+        HCCL_INFO("[ExchangeUserInfoAsync] localExchangeInfoLen is 0.");
         return HCCL_SUCCESS;
     }
     // 交换infoLen
     std::vector<u32> remoteExchangeInfoLens(sockets.size(), 0);
     CHK_RET(BatchExchangeFixedData(sockets, remoteRanks, roles,
         reinterpret_cast<const u8*>(&localExchangeInfoLen), sizeof(u32),
-        reinterpret_cast<u8*>(remoteExchangeInfoLens.data()), sizeof(u32)));
+        reinterpret_cast<u8*>(remoteExchangeInfoLens.data()), sizeof(u32), true));
 
     // 交换info数据（长度可能不同，需逐个收发）
     std::vector<std::vector<u8>> remoteUserDatas(sockets.size());
@@ -178,7 +239,7 @@ HcclResult ExchangeInfoMgr::ExchangeUserInfo(
         }
     }
 
-    HCCL_INFO("[ExchangeUserInfo] suc.");
+    HCCL_INFO("[ExchangeUserInfoAsync] suc.");
     return HCCL_SUCCESS;
 }
 
@@ -188,8 +249,19 @@ HcclResult ExchangeInfoMgr::BatchExchangeFixedData(
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
     const u8 *sendData, u32 sendLen,
-    u8 *recvData, u32 recvLen)
+    u8 *recvData, u32 recvLen, bool isAsync)
 {
+    if (!isAsync) {
+        // 确保 Socket 连接完成
+        CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
+        // 使用 Socket 同步收发接口
+        for (u32 i = 0; i < sockets.size(); i++) {
+            sockets[i]->Send(sendData, sendLen);
+            sockets[i]->Recv(recvData + i * recvLen, recvLen);
+        }
+        return HCCL_SUCCESS;
+    }
+
     CHK_RET(WaitAllAsyncComplete(sockets, remoteRanks));
     // SERVER先Recv/CLIENT先Send
     for (u32 i = 0; i < sockets.size(); i++) {

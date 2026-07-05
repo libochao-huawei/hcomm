@@ -716,7 +716,8 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType != DevType::DEV_TYPE_910B) {
-        CHK_RET(exchangeInfoMgr_.BatchExchangeAndCheckConsistency(channelDescs, hcommDescs, channelNum, newChannels_, collCommConfigConsistency_));;
+        CHK_RET(exchangeInfoMgr_.BatchExchangeAndCheckConsistency(
+            channelDescs, hcommDescs, channelNum, newChannels_, collCommConfigConsistency_, engine));
     }
 
     if (!newChannels_.empty()) {

@@ -26,15 +26,22 @@ public:
         const std::vector<HcommChannelDesc> &hcommDescs,
         uint32_t channelNum,
         const std::vector<std::pair<u32, u32>> &newChannels,
-        CollCommConfigConsistency &collCommConfigConsistency);
+        CollCommConfigConsistency &collCommConfigConsistency,
+        CommEngine engine);
     HcclResult CheckHcommInfo(
         const HcclChannelDesc* channelDescs,
         const std::vector<HcommChannelDesc> &hcommDescs,
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
         const std::vector<HcommSocketRole> &roles,
-        const std::vector<std::pair<u32, u32>> &newChannels);
+        const std::vector<std::pair<u32, u32>> &newChannels,
+        bool isAsync);
     HcclResult ExchangeUserInfo(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<u32> &remoteRanks,
+        const std::vector<HcommSocketRole> &roles,
+        CollCommConfigConsistency &collCommConfigConsistency);
+    HcclResult ExchangeUserInfoAsync(
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
         const std::vector<HcommSocketRole> &roles,
@@ -44,7 +51,7 @@ public:
         const std::vector<u32> &remoteRanks,
         const std::vector<HcommSocketRole> &roles,
         const u8 *sendData, u32 sendLen,
-        u8 *recvData, u32 recvLen);
+        u8 *recvData, u32 recvLen, bool isAsync);
     HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks);
     HcclResult WaitActiveAsyncComplete(

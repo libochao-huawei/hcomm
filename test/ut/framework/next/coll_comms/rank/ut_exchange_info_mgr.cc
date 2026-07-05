@@ -114,7 +114,7 @@ TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Succe
     // mock 超时配置
     MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
         .stubs()
-        .will(returnValue((s32)30));
+        .will(returnValue((s32)1));
     MOCKER_CPP(&RankConsistencyCheckerV2::CompareCheckFrameV2)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
@@ -129,6 +129,63 @@ TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Succe
     ExchangeInfoMgr exchangeInfoMgr;
     std::vector<std::pair<u32, u32>> newChannels;
     newChannels.emplace_back(std::make_pair(0, 1));
-    ret = exchangeInfoMgr.BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, newChannels, collCommConfigConsistency);
+    ret = exchangeInfoMgr.BatchExchangeAndCheckConsistency(
+        channelDescs, hcommDescVec, 1, newChannels, collCommConfigConsistency, COMM_ENGINE_AICPU_TS);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// host 网卡场景，使用 Peer 模式同步收发接口，模拟交换信息成功
+TEST_F(ExchangeInfoMgrTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success_On_Cpu)
+{
+    // 初始化通信域
+    HcclResult ret = HCCL_SUCCESS;
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();
+    ASSERT_EQ(InitCollComm(hcclCommPtr), HCCL_SUCCESS);
+
+    // 添加交换信息
+    hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
+    hccl::MyRank* myRank = collComm->GetMyRank();
+    CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
+    std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
+    ret = collCommConfigConsistency.AddExchangeInfo(localData.data(), localData.size());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // mock socket接口
+    MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
+        .stubs()
+        .will(returnValue(Hccl::SocketStatus(Hccl::SocketStatus::OK)));
+    MOCKER_CPP(&Hccl::Socket::Send)
+        .stubs()
+        .will(returnValue(true));
+    MOCKER_CPP(&Hccl::Socket::Recv)
+        .stubs()
+        .will(returnValue(true));
+    // mock 超时配置
+    MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
+        .stubs()
+        .will(returnValue((s32)1));
+    // mock 比对结果
+    MOCKER_CPP(&RankConsistencyCheckerV2::CompareCheckFrameV2)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    // 构造 hcclDesc
+    HcclChannelDesc channelDescs[1];
+    channelDescs[0].remoteRank = 1;
+    channelDescs[0].localEndpoint.loc.locType = ENDPOINT_LOC_TYPE_HOST; // host 网卡场景
+    // 构造 hcommDescs
+    HcommChannelDesc hcommDesc;
+    hcommDesc.socket = (HcommSocket)0x1;  // 非空socket
+    hcommDesc.role = HCOMM_SOCKET_ROLE_CLIENT;
+    std::vector<HcommChannelDesc> hcommDescVec;
+    hcommDescVec.push_back(hcommDesc);
+    // 构造 channels
+    std::vector<std::pair<u32, u32>> newChannels;
+    newChannels.emplace_back(std::make_pair(0, 1));
+
+    // 交换信息
+    ExchangeInfoMgr exchangeInfoMgr;
+    ret = exchangeInfoMgr.BatchExchangeAndCheckConsistency(
+        channelDescs, hcommDescVec, 1, newChannels, collCommConfigConsistency, COMM_ENGINE_CPU);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
