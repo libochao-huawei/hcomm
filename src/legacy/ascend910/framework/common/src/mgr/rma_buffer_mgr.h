@@ -134,6 +134,15 @@ public:
         return false; 
     }
 
+    bool IsInTree(const KeyType& key)
+    {
+        auto it = intervalTree_.find(key);
+        if (it == intervalTree_.end()) {
+            return false;
+        }
+        return true;
+    }
+
     ConstIterator Begin()
     {
         return intervalTree_.begin();
