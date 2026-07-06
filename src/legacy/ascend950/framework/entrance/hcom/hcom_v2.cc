@@ -21,6 +21,7 @@
 #include "hcom_v2.h"
 #include "param_check_v2.h"
 #include "hccl_common_v2.h"
+#include "task_param.h"
 #include "types.h"
 #include "comm_topo_desc.h"
 
