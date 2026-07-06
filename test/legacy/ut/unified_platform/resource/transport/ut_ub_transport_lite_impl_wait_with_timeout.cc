@@ -27,7 +27,6 @@
 #include "ub_conn_lite_mgr.h"
 #include "ins_to_sqe_rule.h"
 #include "stream_lite.h"
-#include "mem_transport_callback.h"
 #undef private
 
 using namespace Hccl;
@@ -70,13 +69,14 @@ protected:
         return result;
     }
 
-    std::vector<char> GetRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue)
+    std::vector<char> GetRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue, u32 notifyId = 0)
     {
         BinaryStream binaryStream;
         binaryStream << addr;
         binaryStream << size;
         binaryStream << tokenId;
         binaryStream << tokenValue;
+        binaryStream << notifyId;
         std::vector<char> result;
         binaryStream.Dump(result);
         return result;
@@ -84,20 +84,22 @@ protected:
 
     std::vector<char> GetConnUniqueId()
     {
+        // 数据格式需与 UbConnLiteParam 构造函数保持一致:
+        // dieId(u32), funcId(u32), jettyId(u32), jfcPollMode(u32), dwqeCacheLocked(bool),
+        // dbAddr(u64), sqCiAddr(u64), sqVa(u64), sqDepth(u32), tpn(u32), rmtEid.raw, locEid.raw
         u32  dieId           = 0;
         u32  funcId          = 0;
         u32  jettyId         = 0;
         u32  jfcPollMode     = 0;
         bool dwqeCacheLocked = false;
         u64  dbAddr          = 0x100;
+        u64  sqCiAddr        = 0x200;
         u64  sqVa            = 0x100;
         u32  sqDepth         = 100;
         u32  tpn             = 100;
-        u32  cqId            = 1;
-        u32  connVector      = 1;
-        u32  protocolType    = 1;
-        u32  roceVersion     = 2;
-        u32  mtu             = 1;
+        Eid  rmtEid;
+        Eid  locEid;
+
         BinaryStream binaryStream;
         binaryStream << dieId;
         binaryStream << funcId;
@@ -105,14 +107,12 @@ protected:
         binaryStream << jfcPollMode;
         binaryStream << dwqeCacheLocked;
         binaryStream << dbAddr;
+        binaryStream << sqCiAddr;
         binaryStream << sqVa;
         binaryStream << sqDepth;
         binaryStream << tpn;
-        binaryStream << cqId;
-        binaryStream << connVector;
-        binaryStream << protocolType;
-        binaryStream << roceVersion;
-        binaryStream << mtu;
+        binaryStream << rmtEid.raw;
+        binaryStream << locEid.raw;
         std::vector<char> result;
         binaryStream.Dump(result);
         return result;
@@ -130,16 +130,18 @@ protected:
         auto rmtBuffer0 = GetRmtBufferUniqueId(300, 200, 3, 3);
         auto rmtBuffer1 = GetRmtBufferUniqueId(300, 200, 4, 4);
         u32 buffeNum = 2;
+        u32 rmtbufferNum = 2;
 
         auto conn0 = GetConnUniqueId();
         u32  connNum = 1;
-            
+
         BinaryStream binaryStream;
 
         u32 type = (u32)TransportType::UB;
         binaryStream << type;
         binaryStream << notifyNum;
         binaryStream << buffeNum;
+        binaryStream << rmtbufferNum;
         binaryStream << connNum;
 
         std::vector<char> data0;
@@ -176,11 +178,13 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     RmaConnLite rmaConnLite;
     RmaConnLite *connLite =  &rmaConnLite;
     MOCKER_CPP(&UbConnLiteMgr::Get).stubs().will(returnValue(connLite));
-    MOCKER_CPP(static_cast<void (MirrorTaskManager::*)(std::unique_ptr<TaskInfo>&&)>(&MirrorTaskManager::AddTaskInfo)).stubs().with(mockcpp::any());
-    LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
-    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
-    auto transportCallback = MemTransportCallback(linkData, mirrorTaskMgr);
-    MemTransportLite transportLite(liteData, transportCallback);
+
+    auto callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam) {
+        (void)streamId;
+        (void)taskId;
+        (void)taskParam;
+    };
+    MemTransportLite transportLite(liteData, callback);
     auto &ubTransportLite = *(dynamic_cast<UbTransportLiteImpl *>(transportLite.impl.get()));
 
     u32 fakeStreamId = 1;
@@ -208,11 +212,13 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     RmaConnLite rmaConnLite;
     RmaConnLite *connLite =  &rmaConnLite;
     MOCKER_CPP(&UbConnLiteMgr::Get).stubs().will(returnValue(connLite));
-    MOCKER_CPP(static_cast<void (MirrorTaskManager::*)(std::unique_ptr<TaskInfo>&&)>(&MirrorTaskManager::AddTaskInfo)).stubs().with(mockcpp::any());
-    LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
-    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
-    auto transportCallback = MemTransportCallback(linkData, mirrorTaskMgr);
-    MemTransportLite transportLite(liteData, transportCallback);
+
+    auto callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam) {
+        (void)streamId;
+        (void)taskId;
+        (void)taskParam;
+    };
+    MemTransportLite transportLite(liteData, callback);
     auto &ubTransportLite = *(dynamic_cast<UbTransportLiteImpl *>(transportLite.impl.get()));
 
     u32 fakeStreamId = 1;
@@ -240,11 +246,13 @@ TEST_F(UbTransportLiteImplWaitWithTimeoutTest, UbTransportLiteImpl_WaitWithTimeo
     RmaConnLite rmaConnLite;
     RmaConnLite *connLite =  &rmaConnLite;
     MOCKER_CPP(&UbConnLiteMgr::Get).stubs().will(returnValue(connLite));
-    MOCKER_CPP(static_cast<void (MirrorTaskManager::*)(std::unique_ptr<TaskInfo>&&)>(&MirrorTaskManager::AddTaskInfo)).stubs().with(mockcpp::any());
-    LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
-    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
-    auto transportCallback = MemTransportCallback(linkData, mirrorTaskMgr);
-    MemTransportLite transportLite(liteData, transportCallback);
+
+    auto callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam) {
+        (void)streamId;
+        (void)taskId;
+        (void)taskParam;
+    };
+    MemTransportLite transportLite(liteData, callback);
     auto &ubTransportLite = *(dynamic_cast<UbTransportLiteImpl *>(transportLite.impl.get()));
 
     u32 fakeStreamId = 1;

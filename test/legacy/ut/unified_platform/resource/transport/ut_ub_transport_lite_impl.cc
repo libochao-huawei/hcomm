@@ -76,13 +76,14 @@ protected:
         return result;
     }
 
-    std::vector<char> GetRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue)
+    std::vector<char> GetRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue, u32 notifyId = 0)
     {
         BinaryStream binaryStream;
         binaryStream << addr;
         binaryStream << size;
         binaryStream << tokenId;
         binaryStream << tokenValue;
+        binaryStream << notifyId;
         std::vector<char> result;
         binaryStream.Dump(result);
         return result;
@@ -128,20 +129,21 @@ protected:
         auto rmtNotify1 = GetRmtBufferUniqueId(2, 2, 2, 2);
 
         u32 notifyNum = 2;
-
         auto rmtBuffer0 = GetRmtBufferUniqueId(300, 200, 3, 3);
         auto rmtBuffer1 = GetRmtBufferUniqueId(300, 200, 4, 4);
         u32 buffeNum = 2;
+        u32 rmtbufferNum = 2;
 
         auto conn0 = GetConnUniqueId();
         u32  connNum = 1;
-            
+
         BinaryStream binaryStream;
 
         u32 type = (u32)TransportType::UB;
         binaryStream << type;
         binaryStream << notifyNum;
         binaryStream << buffeNum;
+        binaryStream << rmtbufferNum;
         binaryStream << connNum;
 
         std::vector<char> data0;
