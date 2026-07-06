@@ -17,7 +17,6 @@
 #include <atomic>
 #include "hccl/hccl_res.h"
 #include "hccl_independent_common.h"
-#include "reg_mem_manager.h"
 #include "comm_mem_manager.h"
 #include "comm_engine_res_manager.h"
 #include "rank_graph.h"
@@ -78,7 +77,6 @@ private:
     aclrtBinHandle binHandle_ = nullptr;
 
     // 管理器
-    RegMemMgr regMemMgr_;
     CommMemMgr commMemMgr_;
     CommEngineResMgr engineResMgr_;
     ContextManager contextMgr_;

@@ -159,11 +159,8 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/one_sided_service/
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/zero_copy
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/resource_manager
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op
+    ${HCOMM_DIR}/src/coll_communicator_mgr/common
     ${HCOMM_DIR}/src/coll_communicator_mgr/rank_graphs
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
     ${HCOMM_DIR}/src/legacy/ascend910/framework/op_base/src/
 
     # framework/next (拆分到 base_comm 和 coll_communicator_mgr)
@@ -171,6 +168,12 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/coll_communicator_mgr/communicator
     ${HCOMM_DIR}/src/coll_communicator_mgr/communicator/device
     ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/remote/rank_pairs
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/threads
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/notify
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_mems
+    ${HCOMM_DIR}/src/base_comm/resources/comm_engine_res/engine_ctxs
+    ${HCOMM_DIR}/src/base_comm/resources/comm_engine_res/launch
     ${HCOMM_DIR}/src/base_comm/resources/comm_engine_res/threads
     ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/sockets/
     ${HCOMM_DIR}/src/base_comm/resources/endpoints/

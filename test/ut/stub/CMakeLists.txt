@@ -81,7 +81,7 @@ list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 
 list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/legacy/ascend910/platform/legacy/.*")
 
-list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/engine_ctxs/.*")
+list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/engine_ctxs/engine_ctx_mgr.cc")
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/notifys/.*")
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/comm_engine_res.cc")
 list(FILTER BASE_COMM EXCLUDE REGEX ".*src/base_comm/resources/comm_engine_res/comm_engine_res_mgr.cc")
@@ -204,8 +204,15 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/common
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/rank_graphs
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/threads
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/notify
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_mems
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/launch
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/engine_ctxs
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/hcom/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/hcom/gradient_segment
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/op_base/src/

@@ -70,8 +70,14 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/common
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/rank_graphs
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/threads
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/notify
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_mems
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/launch
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/hcom/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/hcom/gradient_segment
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/op_base/src/
@@ -278,6 +284,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/host/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/engine_ctxs
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/ccu
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels

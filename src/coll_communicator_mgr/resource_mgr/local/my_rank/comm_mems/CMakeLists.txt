@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
 comm_mems.cc
+comm_mem_manager.cc
 )
 
 if(TARGET hcomm)
@@ -16,6 +17,12 @@ if(TARGET hcomm)
         ${src_list}
     )
     target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
+if(TARGET ccl_kernel)
+    target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()

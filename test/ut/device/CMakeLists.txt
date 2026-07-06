@@ -48,7 +48,13 @@ target_include_directories(hccl_utest_device PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/device/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/device/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/common/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator/device/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/notify/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_mems/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/launch/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/
 )
@@ -94,9 +100,14 @@ add_executable(hccl_utest_launch_aicpu_fw ${hccl_utest_launch_aicpu_fw_src_list}
 target_include_directories(hccl_utest_launch_aicpu_fw PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/device/
-    ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/device/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/common/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator
     ${HCCL_CODE_ROOT}/src/coll_communicator/communicator/device/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/notify/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_mems/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/launch/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/device/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/comm_engine_res/threads/
 )

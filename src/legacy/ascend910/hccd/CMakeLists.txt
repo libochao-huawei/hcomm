@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -93,16 +93,22 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/one_sided_service
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/zero_copy
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/resource_manager
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op
+    ${HCOMM_DIR}/src/coll_communicator_mgr/common
     ${HCOMM_DIR}/src/coll_communicator_mgr/rank_graphs
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/resource/engine
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel
-    ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
+    ${HCOMM_DIR}/src/coll_communicator_mgr/communicator
+    ${HCOMM_DIR}/src/coll_communicator_mgr/communicator/device
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/threads
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/notify
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_mems
+    ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/remote/rank_pairs
     ${HCOMM_DIR}/src/base_comm/resources/endpoints
     ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/endpoints
     ${HCOMM_DIR}/src/base_comm/resources/reged_mems
     ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs
     ${HCOMM_DIR}/src/base_comm/resources/endpoint_pairs/sockets
+    ${HCOMM_DIR}/src/base_comm/resources/comm_engine_res/engine_ctxs
+    ${HCOMM_DIR}/src/base_comm/resources/comm_engine_res/launch
     ${HCOMM_DIR}/src/base_comm/resources/comm_engine_res/threads
 
     # src/platform 头文件

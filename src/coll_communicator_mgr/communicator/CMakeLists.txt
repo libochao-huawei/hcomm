@@ -10,6 +10,7 @@
 set(src_list
     coll_comm.cc
     coll_comm_mgr.cc
+    independent_op.cc
 )
 
 if(TARGET hcomm)
@@ -17,6 +18,12 @@ if(TARGET hcomm)
         ${src_list}
     )
     target_include_directories(hcomm PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endif()
+
+if(TARGET ccl_kernel)
+    target_include_directories(ccl_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
