@@ -33,6 +33,7 @@ uint32_t (*runAicpuIndOpCommInitPtr)(void *args) = nullptr;
 uint32_t (*runAicpuIndOpThreadInitPtr)(void *args) = nullptr;
 uint32_t (*runAicpuIndOpChannelInitV2Ptr)(void *args) = nullptr;
 uint32_t (*runAicpuDfxOpInfoInitV2Ptr)(void *args) = nullptr;
+uint32_t (*runAicpuThreadSupplementNotifyPtr)(void* args) = nullptr;
 unsigned int (*hcclLaunchAicpuKernelPtr)(OpParam *param) = nullptr;
 
 uint64_t d2hAddr = 0;
@@ -53,7 +54,7 @@ void ExecuteAicpuKernel(uint32_t rankId, const std::string &kernelName, uint64_t
         param->kfcStatusTransferD2HParams.deviceAddr = reinterpret_cast<uint64_t>(GetRealPtrByDevPtr(reinterpret_cast<void *>(param->kfcStatusTransferD2HParams.deviceAddr)));
         d2hAddr = param->kfcStatusTransferD2HParams.deviceAddr;
         runAicpuIndOpCommInitPtr(realPtr);
-    } else if (kernelName == "RunAicpuIndOpThreadInit") {
+    } else if (kernelName == "RunAicpuIndOpThreadInit" || kernelName == "RunAicpuThreadSupplementNotify") {
         uint64_t value = *reinterpret_cast<uint64_t *>(realPtr);
         void *ptr = GetRealPtrByDevPtr(reinterpret_cast<void *>(value));
         ThreadMgrAicpuParam *param = reinterpret_cast<ThreadMgrAicpuParam *>(ptr);
@@ -64,7 +65,13 @@ void ExecuteAicpuKernel(uint32_t rankId, const std::string &kernelName, uint64_t
             AicpuTsThread* thread = reinterpret_cast<AicpuTsThread *>(threadData);
             thread->devId = rankId;
         }
-        runAicpuIndOpThreadInitPtr(&ptr);
+
+        if (kernelName == "RunAicpuIndOpThreadInit") {
+            runAicpuIndOpThreadInitPtr(&ptr);
+        } else {
+            // 资源补充场景
+            runAicpuThreadSupplementNotifyPtr(&ptr);
+        }
     } else if (kernelName == "RunAicpuIndOpChannelInitV2") {
         InitTask *task = reinterpret_cast<InitTask *>(realPtr);
         void *ctxPtr = GetRealPtrByDevPtr(reinterpret_cast<void *>(task->context));
@@ -140,10 +147,16 @@ bool InitKernelFuncHandle()
     runAicpuIndOpThreadInitPtr = reinterpret_cast<uint32_t (*)(void *)>(dlsym(gHcommHandle, "RunAicpuIndOpThreadInit"));
     runAicpuIndOpChannelInitV2Ptr = reinterpret_cast<uint32_t (*)(void *)>(dlsym(gHcommHandle, "RunAicpuIndOpChannelInitV2"));
     runAicpuDfxOpInfoInitV2Ptr = reinterpret_cast<uint32_t (*)(void *)>(dlsym(gHcommHandle, "RunAicpuDfxOpInfoInitV2"));
+    runAicpuThreadSupplementNotifyPtr = reinterpret_cast<uint32_t (*)(void *)>(dlsym(gHcommHandle, "RunAicpuThreadSupplementNotify"));
     hcclLaunchAicpuKernelPtr = reinterpret_cast<unsigned int (*)(OpParam *)>(dlsym(gHcclKerHandle, "HcclLaunchAicpuKernel"));
     if (runAicpuIndOpCommInitPtr == nullptr || runAicpuIndOpThreadInitPtr == nullptr || runAicpuIndOpChannelInitV2Ptr == nullptr ||
-        runAicpuDfxOpInfoInitV2Ptr == nullptr || hcclLaunchAicpuKernelPtr == nullptr) {
-        HCCL_VM_ERROR("Failed to get kernel func handle.");
+        runAicpuDfxOpInfoInitV2Ptr == nullptr || runAicpuThreadSupplementNotifyPtr == nullptr) {
+        HCCL_VM_ERROR("Failed to get kernel func handle in gHcommHandle.");
+        return false;
+    }
+
+    if (hcclLaunchAicpuKernelPtr == nullptr) {
+        HCCL_VM_ERROR("[InitKernelFuncHandle] Failed to get kernel func handle in gHcclKerHandle.");
         return false;
     }
     HCCL_VM_INFO("Load kernel libs and get func handles successfully.");
