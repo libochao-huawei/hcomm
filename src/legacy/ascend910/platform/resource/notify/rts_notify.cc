@@ -9,9 +9,7 @@
  */
 
 #include "rts_notify.h"
-#include "externalinput_pub.h"
 #include "sal_pub.h"
-#include "device_capacity.h"
 
 namespace hccl {
 

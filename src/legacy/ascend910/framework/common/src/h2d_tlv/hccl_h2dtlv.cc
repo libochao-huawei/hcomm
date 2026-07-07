@@ -10,12 +10,7 @@
 
 #include <unistd.h>
 #include <hccl/hccl_types.h>
-#include "device_capacity.h"
 #include "hccl_communicator.h"
-#include "hccl_comm_pub.h"
-#include "sal_pub.h"
-#include "hcom_common.h"
-#include "adapter_rts_common.h"
 #include "adapter_hccp_common.h"
 #include "../nslbdp/hccl_nslbdp_pub.h"
 #include "hccl_h2dtlv.h"

@@ -9,9 +9,6 @@
  */
 #include "typical_mr_manager.h"
 #include "adapter_rts_common.h"
-#include "adapter_hccp_common.h"
-#include "adapter_rts.h"
-#include "network_manager_pub.h"
 #include "rdma_resource_manager.h"
 
 namespace hccl {

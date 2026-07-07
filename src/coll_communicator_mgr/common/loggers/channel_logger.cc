@@ -11,7 +11,6 @@
 #include "channel_logger.h"
 #include "comm_addr_logger.h"
 #include "endpoint_logger.h"
-#include "hccl_comm_pub.h"
 #include "../endpoint_pairs/channels/channel.h"  // ChannelStatus 枚举定义
 
 namespace hcomm {

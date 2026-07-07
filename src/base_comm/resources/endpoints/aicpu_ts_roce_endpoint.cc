@@ -8,8 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aicpu_ts_roce_endpoint.h"
-#include "endpoint_mgr.h"
-#include "hccl_mem_defs.h"
 #include "log.h"
 #include "hccl_net_dev.h"
 #include "aicpu_ts_roce_mem.h"
@@ -17,7 +15,6 @@
 #include "hccl_network.h"
 #include "network_manager_pub.h"
 #include "hccl_socket.h"
-#include "exception_handler.h"
 #include <exception>
 
 namespace hcomm {

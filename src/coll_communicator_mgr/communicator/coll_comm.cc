@@ -14,9 +14,7 @@
 #include "kfc.h"
 #include "dlhal_function.h"
 #include "hcclCommTaskException.h"
-#include "hcom_common.h"
 #include "symmetric_memory/symmetric_memory.h"
-#include "env_config.h"
 
 #include <cstdint>
 #include <exception>

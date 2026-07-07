@@ -9,10 +9,6 @@
  */
 
 #include "scatter_operator.h"
-#include "device_capacity.h"
-#include "rank_consistentcy_checker.h"
-#include "executor_impl.h"
-#include "hccl_alg.h"
 #include "coll_alg_utils.h"
 
 namespace hccl {

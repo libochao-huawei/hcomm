@@ -10,7 +10,6 @@
 #include "channel_manager.h"
 #include "adapter_rts_common.h"
 #include "log.h"
-#include "externalinput.h"
 #include "comm_configer.h"
 #include "launch_aicpu.h"
 #include "comm_engine_utils.h"

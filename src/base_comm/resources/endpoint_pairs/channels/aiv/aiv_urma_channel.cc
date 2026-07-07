@@ -13,13 +13,10 @@
 #include "orion_adpt_utils.h"
 
 #include "hcomm_c_adpt.h"
-#include "exception_handler.h"
 
 // Orion
-#include "coll_alg_param.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
-#include "aicpu_res_package_helper.h"
 #include "makebufs_helper.h"
 #include "orion_adapter_hccp.h"
 #include "acl/acl_rt.h"

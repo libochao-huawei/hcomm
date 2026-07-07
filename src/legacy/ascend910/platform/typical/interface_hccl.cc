@@ -14,10 +14,7 @@
 
 #include "interface_hccl.h"
 #include "typical_param_check.h"
-#include "dltdt_function.h"
-#include "adapter_tdt.h"
 #include "hccl_common.h"
-#include "network_manager_pub.h"
 #include "externalinput.h"
 #include "rdma_resource_manager.h"
 #include "typical_mr_manager.h"

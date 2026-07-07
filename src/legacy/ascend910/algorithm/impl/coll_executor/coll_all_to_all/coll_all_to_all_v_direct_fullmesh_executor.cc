@@ -9,7 +9,6 @@
  */
 
 #include "coll_all_to_all_v_direct_fullmesh_executor.h"
-#include "stream_utils.h"
 
 namespace hccl {
 

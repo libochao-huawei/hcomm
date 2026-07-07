@@ -11,7 +11,6 @@
 #include "hcomm_adapter_runtime.h"
 
 #include "adapter_rts_common.h"
-#include "hccl_common.h"
 
 namespace hcomm {
 

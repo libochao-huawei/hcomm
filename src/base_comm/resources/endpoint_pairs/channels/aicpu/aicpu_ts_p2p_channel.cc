@@ -12,10 +12,7 @@
 #include "endpoint.h"
 #include "orion_adpt_utils.h"
 #include "hcomm_c_adpt.h"
-#include "exception_handler.h"
 
-#include "coll_alg_param.h"
-#include "topo_common_types.h"
 #include "virtual_topo.h"
 #include "p2p_connection.h"
 #include "makebufs_helper.h"

@@ -9,7 +9,6 @@
  */
 
 #include "coll_broadcast_plus_broadcast.h"
-#include "broadcast_operator.h"
 
 namespace hccl {
 CollBroadcastPlusBroadcast::CollBroadcastPlusBroadcast(const HcclDispatcher dispatcher,

@@ -9,7 +9,6 @@
  */
  
 #include "dispatcher_virtural.h"
-#include "externalinput_pub.h"
 #include "hccl_tbe_task.h"
  
 namespace hccl {

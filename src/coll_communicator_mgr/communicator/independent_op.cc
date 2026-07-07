@@ -13,7 +13,6 @@
 #include "manager_common.h"
 #include "comm_configer.h"
 #include "adapter_prof.h"
-#include "hccl_api_data.h"
 #include "hcom_host_profiling.h"
 
 namespace hccl {

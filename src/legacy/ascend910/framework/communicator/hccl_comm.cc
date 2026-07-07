@@ -15,13 +15,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <hccl/hccl_types.h>
-#include "device_capacity.h"
 #include "hccl_communicator.h"
 #include "hccl_comm_pub.h"
-#include "task_abort_handler_pub.h"
 #include "coll_alg_utils.h"
 #include "env_config.h"
-#include "independent_op.h"
 #include "comm_configer.h"
 #include "hccl_group_utils.h"
 #include "hccl_dispatcher_ctx.h"

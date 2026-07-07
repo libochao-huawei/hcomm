@@ -10,7 +10,6 @@
 
 #include "ccu_dev_mgr_imp.h"
 
-#include "hccl_res.h"
 #include "hccl_common.h"
 #include "eid_info_mgr.h"
 
@@ -32,7 +31,6 @@
 // 当前先简化修改
 #include "./ccu_res_specs.h"
 
-#include "adapter_rts.h"
 
 #include "ccu_types.h"
 #include "ccu_log.h"

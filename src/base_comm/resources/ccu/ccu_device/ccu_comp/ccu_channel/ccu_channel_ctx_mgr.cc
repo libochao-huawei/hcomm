@@ -10,7 +10,6 @@
 
 #include "ccu_channel_ctx_mgr.h"
 
-#include "ccu_res_specs.h"
 
 namespace hcomm {
 

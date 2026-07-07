@@ -12,7 +12,6 @@
 
 #include "hccl_comm_pub.h"
 
-#include "env_config.h"
 #include "exception_handler.h"
 
 /**

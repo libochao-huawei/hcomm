@@ -9,7 +9,6 @@
  */
 
 #include <cmath>
-#include "workflow_pub.h"
 #include "stream_utils.h"
 #include "coll_alg_utils.h"
 

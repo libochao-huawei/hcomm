@@ -10,10 +10,7 @@
 
 #include "all_reduce_operator.h"
 #include "device_capacity.h"
-#include "rank_consistentcy_checker.h"
-#include "executor_impl.h"
 #include "coll_alg_utils.h"
-#include "stream_active_manager.h"
 #include "hccl_aiv.h"
 #include "coll_alg_op_registry.h"
 

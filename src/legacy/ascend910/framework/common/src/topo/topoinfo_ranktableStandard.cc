@@ -22,7 +22,6 @@
 
 // ltm指定config路径
 #include "common/src/config.h"
-#include "hccl_comm_pub.h"
 #include "workflow_pub.h"
 
 using namespace std;

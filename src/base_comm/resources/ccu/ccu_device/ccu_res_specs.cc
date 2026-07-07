@@ -10,13 +10,9 @@
 
 #include "ccu_res_specs.h"
 
-#include "hccp.h"
 #include "hccp_ctx.h"
 #include "hccl_common.h"
 
-#include "rt_external.h"
-#include "driver/ascend_hal.h"
-#include "adapter_rts.h"
 
 namespace hcomm {
 

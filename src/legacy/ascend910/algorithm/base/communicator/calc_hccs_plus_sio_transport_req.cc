@@ -10,7 +10,6 @@
 
 
 #include "calc_hccs_plus_sio_transport_req.h"
-#include "dtype_common.h"
 
 namespace hccl {
 CalcHccsPlusSioTransportReq::CalcHccsPlusSioTransportReq(std::vector<std::vector<u32>> &subCommPlaneVector,

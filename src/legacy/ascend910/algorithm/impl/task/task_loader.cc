@@ -9,7 +9,6 @@
  */
 
 #include "log.h"
-#include "comm_base_pub.h"
 #include "transport_pub.h"
 #include "sal_pub.h"
 #include "task_loader.h"

@@ -12,7 +12,6 @@
 
 #include "ccu_log.h"
 #include "hccl_common.h"
-#include "exception_handler.h"
 
 namespace hcomm {
 

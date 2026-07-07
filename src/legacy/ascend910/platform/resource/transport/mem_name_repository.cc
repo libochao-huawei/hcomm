@@ -11,9 +11,7 @@
 #include "adapter_rts.h"
 
 #include "log.h"
-#include "externalinput_pub.h"
 #include "sal_pub.h"
-#include "device_capacity.h"
 #include "mem_name_repository.h"
 
 namespace hccl {

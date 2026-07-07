@@ -11,9 +11,6 @@
 #include "alltoall_operator.h"
 #include <vector>
 #include "device_capacity.h"
-#include "executor_impl.h"
-#include "stream_active_manager.h"
-#include "all_gather_operator.h"
 #include "coll_alg_exec_registry.h"
 #include "coll_alg_op_registry.h"
 #include "coll_all_to_all_executor.h"

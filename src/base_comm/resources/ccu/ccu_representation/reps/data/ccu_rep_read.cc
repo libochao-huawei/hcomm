@@ -7,7 +7,6 @@
 
 #include "ccu_rep_read_v1.h"
 
-#include "ccu_rep_v1.h"
 
 #include "string_util.h"
 #include "exception_util.h"

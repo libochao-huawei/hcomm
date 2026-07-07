@@ -11,7 +11,6 @@
 #include "ccu_jetty_ctx_mgr.h"
 
 #include "../../ccu_res_specs.h"
-#include "hccp.h"
 #include "hccp_ctx.h"
 
 namespace hcomm {

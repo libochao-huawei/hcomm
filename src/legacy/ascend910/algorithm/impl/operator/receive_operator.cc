@@ -9,8 +9,6 @@
  */
 
 #include "receive_operator.h"
-#include "rank_consistentcy_checker.h"
-#include "executor_impl.h"
 
 namespace hccl {
 ReceiveOperator::ReceiveOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,

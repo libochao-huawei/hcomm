@@ -10,7 +10,6 @@
 
 #include "all_gather_v_operator.h"
 #include "device_capacity.h"
-#include "executor_impl.h"
 #include "coll_alg_op_registry.h"
 #include "hccl_aiv.h"
 

@@ -14,12 +14,10 @@
 #include <vector>
 
 #include "hccl/hccl_launch.h"
-#include "coll_alg_utils.h"
 #include "acl/acl_rt.h"
 #include "hccl_group.h"
 #include "hccl_res_expt.h"
 #include "hccl_aicpu_interface.h"
-#include "coll_comm_mgr.h"
 
 #include "hccl_independent_common.h"
 #include "group_schedule_mgr.h"

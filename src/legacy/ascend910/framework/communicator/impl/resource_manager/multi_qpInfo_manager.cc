@@ -13,7 +13,6 @@
 #include <queue>
 #include <cstdlib>
 #include <fstream>
-#include "workflow_pub.h"
 #include "externalinput_pub.h"
 #include "adapter_error_manager_pub.h"
 #include "../../../nslbdp/hccl_nslbdp.h"

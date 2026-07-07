@@ -9,10 +9,6 @@
  */
 
 #include "server_socket_manager.h"
-#include "channel.h"
-#include "orion_adpt_utils.h"
-#include "exception_handler.h"
-#include "adapter_rts.h"
 
 namespace hcomm {
 HcclResult ServerSocketManager::ServerSocketStartListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t devPhyId, uint32_t *port)

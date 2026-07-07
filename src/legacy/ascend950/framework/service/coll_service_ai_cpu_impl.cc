@@ -10,20 +10,15 @@
 #include "coll_service_ai_cpu_impl.h"
 #include <memory>
 #include "communicator_impl.h"
-#include "coll_alg_component_builder.h"
-#include "not_support_exception.h"
 #include "internal_exception.h"
 #include "env_config.h"
 #include "stl_util.h"
-#include "snap_shot_parse.h"
 #include "stream_utils.h"
-#include "runtime_api_exception.h"
 
 #include "aicpu_res_package_helper.h"
 #include "alg_topo_package_helper.h"
 #include "dlprof_function.h"
 #include "task_exception_handler.h"
-#include "aicpu/launch_device.h"
 #include "exception_util.h"
 #include "runtime_api_exception.h"
 

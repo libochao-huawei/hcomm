@@ -24,8 +24,6 @@
 #include "./topo/topoinfo_ranktableHeterog.h"
 #include "./topo/topoinfo_roletableParser.h"
 #include "comm.h"
-#include "externalinput_pub.h"
-#include "comm_configer.h"
 
 using namespace std;
 using namespace hccl;

@@ -12,7 +12,6 @@
 
 #include "profiler_base_pub.h"
 #include "adapter_rts_common.h"
-#include "externalinput_pub.h"
 #include "coll_alg_utils.h"
 
 using namespace hccl;
