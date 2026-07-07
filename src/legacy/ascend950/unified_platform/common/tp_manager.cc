@@ -296,8 +296,9 @@ static HcclResult CommitTpAttrsAfterSlMapping(const uint32_t devLogicId, const u
             __func__, devPhyId, static_cast<int>(isSync), param.locAddr.Describe().c_str());
         return HcclResult::HCCL_E_INTERNAL;
     }
-    // TP / UBOE：将 TP QoS/SL 策略得到的 mapped SL 写回 TP；CTP 不向 TP 写 SL（与 Next TpMgr 一致）
-    if (param.tpProtocol == TpProtocol::TP || param.tpProtocol == TpProtocol::UBOE) {
+    // TP / UBOE / UBG：将 TP QoS/SL 策略得到的 mapped SL 写回 TP；CTP 不向 TP 写 SL（与 Next TpMgr 一致）
+    if (param.tpProtocol == TpProtocol::TP || param.tpProtocol == TpProtocol::UBOE ||
+        param.tpProtocol == TpProtocol::UBG) {
         CHK_RET(CommitMappedSlToTpAttr(isSync, ctxHandle, tpHandle, mappedSl));
     }
     if (param.tpProtocol != TpProtocol::UBOE) {
@@ -371,7 +372,8 @@ bool TpManager::CheckRequestResult(RequestHandle &reqHandle) const
 }
 
 HcclResult CheckTpProtocol(const TpProtocol tpProtocol) {
-    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::TP && tpProtocol != TpProtocol::UBOE) {
+    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::TP &&
+        tpProtocol != TpProtocol::UBOE && tpProtocol != TpProtocol::UBG) {
         HCCL_WARNING("[TpManager][%s] failed, tpProtocol[%d] is not supported.",
             __func__, tpProtocol);
         return HcclResult::HCCL_E_NOT_SUPPORT;
@@ -926,6 +928,8 @@ TpManager::InfoCtxMap& TpManager::GetInfoCtxMap(const TpProtocol tpProtocol)
             return tpInfoMap;
         case TpProtocol::UBOE:
             return uboeInfoMap;
+        case TpProtocol::UBG:
+            return ubgInfoMap;
         default:
             return tpInfoMap;
     }
@@ -940,6 +944,8 @@ TpManager::ReqCtxMap& TpManager::GetReqCtxMap(const TpProtocol tpProtocol)
             return tpReqMap;
         case TpProtocol::UBOE:
             return uboeReqMap;
+        case TpProtocol::UBG:
+            return ubgReqMap;
         default:
             return tpReqMap;
     }
@@ -954,6 +960,8 @@ std::mutex& TpManager::GetInfoCtxMutex(const TpProtocol tpProtocol)
             return tpInfoMutex;
         case TpProtocol::UBOE:
             return uboeInfoMutex;
+        case TpProtocol::UBG:
+            return ubgInfoMutex;
         default:
             return tpInfoMutex;
     }
@@ -968,6 +976,8 @@ std::mutex& TpManager::GetReqCtxMutex(const TpProtocol tpProtocol)
             return tpReqMutex;
         case TpProtocol::UBOE:
             return uboeReqMutex;
+        case TpProtocol::UBG:
+            return ubgReqMutex;
         default:
             return tpReqMutex;
     }

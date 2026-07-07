@@ -212,6 +212,13 @@ public:
                         u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
 };
 
+class DevUbUbgConnection : public DevUbConnection {
+public:
+    DevUbUbgConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                       const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
+                       const IpAddress &locAddrEid = IpAddress(), const IpAddress &rmtAddrEid = IpAddress());
+};
+
 std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);
 
 bool IfNeedUpdatingUbCi(const std::vector<DevUbConnection *> &ubConns);

@@ -18,6 +18,7 @@ typedef enum {
     COMM_PROTOCOL_UB_MEM = 6,     /* UB_MEM协议 */
     COMM_PROTOCOL_UBOE = 7,       /* UBoE协议 */
     COMM_PROTOCOL_HCCS_ONLY = 8,  /* 一卡双DIE使用HCCS */
+    COMM_PROTOCOL_UBG = 9,        /* UBG协议（仅Ascend 950PR/Ascend 950DT支持） */
 } CommProtocol;
 ```
 

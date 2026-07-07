@@ -87,7 +87,17 @@ DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAd
     : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr, qos)
 {
     tpProtocol = TpProtocol::UBOE;
-    jettyTimeOut = 16; // UBoE场景的默认TA配置为16
+    jettyTimeOut = 16; // UBOE Jetty异步创建超时16秒
+}
+
+DevUbUbgConnection::DevUbUbgConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                        const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
+                                        const IpAddress &locAddrEid, const IpAddress &rmtAddrEid)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locAddrEid, rmtAddrEid)
+{
+    tpProtocol = TpProtocol::UBG;
+    // UBG与UBOE同属UB传输，Jetty异步创建超时一致，均为16秒
+    jettyTimeOut = 16;
 }
 
 std::vector<char> DevUbConnection::GetUniqueId() const
@@ -197,10 +207,11 @@ void DevUbConnection::GetTimeOut() // 直接基于环境变量控制
         return;
     }
 
-    if (tpProtocol == TpProtocol::UBOE) {
+    if (tpProtocol == TpProtocol::UBOE || tpProtocol == TpProtocol::UBG) {
         envValue = static_cast<uint8_t>(EnvConfig::GetInstance().GetRdmaConfig().GetUboeTimeOut());
         envTimeOut = TpManager::TaHwValueToMs(envValue);
-        HCCL_INFO("%s [UBoE] Env Value [%u] (%ums).", __func__, envValue, envTimeOut);
+        const char *tag = (tpProtocol == TpProtocol::UBG) ? "[UBG]" : "[UBoE]";
+        HCCL_INFO("%s %s Env Value [%u] (%ums).", __func__, tag, envValue, envTimeOut);
     }
 
     uint32_t tpTimeOut = 0;
@@ -497,7 +508,8 @@ void DevUbConnection::ImportJetty()
     in.jettyImportCfg = jettyImportCfg;
     in.jettyImportCfg.protocol = tpProtocol;
 
-    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::TP && tpProtocol != TpProtocol::UBOE) {
+    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::TP && tpProtocol != TpProtocol::UBOE &&
+        tpProtocol != TpProtocol::UBG) {
         HCCL_ERROR("[DevUbConnection][%s] failed, tp protocol[%s] is not expected, %s.",
             __func__, tpProtocol.Describe().c_str(), Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));

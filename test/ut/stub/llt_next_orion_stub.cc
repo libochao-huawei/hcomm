@@ -517,6 +517,14 @@ DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAd
     tpProtocol = TpProtocol::UBOE;
 }
 
+DevUbUbgConnection::DevUbUbgConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locAddrEid,
+    const IpAddress &rmtAddrEid)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locAddrEid, rmtAddrEid)
+{
+    tpProtocol = TpProtocol::UBG;
+}
+
 std::vector<char> DevUbConnection::GetUniqueId() const
 {
     std::vector<char> result;

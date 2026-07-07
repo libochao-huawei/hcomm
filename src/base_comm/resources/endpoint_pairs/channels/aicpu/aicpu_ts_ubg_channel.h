@@ -7,25 +7,29 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef AICPU_TS_UBOE_CHANNEL_H
-#define AICPU_TS_UBOE_CHANNEL_H
+#ifndef AICPU_TS_UBG_CHANNEL_H
+#define AICPU_TS_UBG_CHANNEL_H
 
 #include "aicpu_ts_uboe_ubg_channel_helper.h"
 
 namespace hcomm {
 
-class AicpuTsUboeChannel : public AicpuTsUboeUbgChannelHelper {
-public:
-    AicpuTsUboeChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
-    ~AicpuTsUboeChannel() override;
+constexpr char_t UBG_FINISH_MSG[FINISH_MSG_SIZE] = "Ubg Comm Pipe ready!";
 
-    HcclResult Init() override;
-    ChannelStatus GetStatus() override;
+class AicpuTsUbgChannel : public AicpuTsUboeUbgChannelHelper {
+public:
+    AicpuTsUbgChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc)
+        : AicpuTsUboeUbgChannelHelper(endpointHandle, channelDesc) {}
+
+    ~AicpuTsUbgChannel() = default;
 
     HcommChannelKind GetChannelKind() const override
     {
-        return HcommChannelKind::AICPU_TS_UBOE;
+        return HcommChannelKind::AICPU_TS_UBG;
     }
+
+    HcclResult Init() override;
+    ChannelStatus GetStatus() override;
 
 protected:
     HcclResult BuildConnection() override;
@@ -33,22 +37,13 @@ protected:
     void RecvFinish() override;
 
 private:
-    void EidPack();
-    void SendEidData();
-    void RecvEidData();
-    void RecvEidDataProcess();
-    void RmtEidUnpackProc(Hccl::IpAddress& rmtAddr);
-    void HandleProcessData();
-    void ProcessUboeState();
+    void ProcessUbgState();
 
-    std::vector<char> sendEidData_{};
-    std::vector<char> recvEidData_{};
-
-    MAKE_ENUM(UboeStatus, INIT, SEND_EID, RECV_EID, PROCESS_EID_DATA, BUILD_CONN, SEND_SIZE, RECV_SIZE, SEND_DATA, 
+    MAKE_ENUM(UbgStatus, INIT, BUILD_CONN, SEND_SIZE, RECV_SIZE, SEND_DATA,
         RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, SET_READY, READY)
-    UboeStatus uboeStatus{UboeStatus::INIT};
+    UbgStatus ubgStatus{UbgStatus::INIT};
 };
 
 } // namespace hcomm
 
-#endif // AICPU_TS_UBOE_CHANNEL_H
+#endif // AICPU_TS_UBG_CHANNEL_H

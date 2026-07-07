@@ -79,7 +79,7 @@ unique_ptr<RmaConnection> RmaConnManager::CreateUbConn(Socket *socket, const std
     IpAddress rmtIpv4Addr = rmtAddr;
     HCCL_INFO("[RmaConnManager][%s] LinkProtocol[%s], locAddr[%s], rmtAddr[%s]", 
         __func__, linkData.GetLinkProtocol().Describe().c_str(), locAddr.Describe().c_str(), rmtAddr.Describe().c_str());
-    if (linkData.GetLinkProtocol() == LinkProtocol::UBOE) {
+    if (linkData.GetLinkProtocol() == LinkProtocol::UBOE || linkData.GetLinkProtocol() == LinkProtocol::UBG) {
         // socket建链状态ok，并交换数据
         WaitUboeSocketReady(socket, linkData);
     }
@@ -89,6 +89,8 @@ unique_ptr<RmaConnection> RmaConnManager::CreateUbConn(Socket *socket, const std
         ubConn = make_unique<DevUbTpConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode);
     } else if (linkData.GetLinkProtocol() == LinkProtocol::UBOE) {
         ubConn = make_unique<DevUbUboeConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr);
+    } else if (linkData.GetLinkProtocol() == LinkProtocol::UBG) {
+        ubConn = make_unique<DevUbUbgConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locAddr, rmtAddr);
     } else {
         ubConn = make_unique<DevUbCtpConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode);
     }
@@ -119,7 +121,7 @@ RmaConnection *RmaConnManager::Create(const std::string &tag, const LinkData &li
         if (linkProtocol == LinkProtocol::ROCE) {
             rmaConn = CreateRdmaConn(socket, tag, linkData);
         } else if (linkProtocol == LinkProtocol::UB_TP || linkProtocol == LinkProtocol::UB_CTP ||
-                   linkProtocol == LinkProtocol::UBOE) {
+                   linkProtocol == LinkProtocol::UBOE || linkProtocol == LinkProtocol::UBG) {
             rmaConn = CreateUbConn(socket, tag, linkData, jfcMode);
         }
     }

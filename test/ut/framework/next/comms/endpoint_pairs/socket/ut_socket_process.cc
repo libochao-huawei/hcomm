@@ -290,7 +290,7 @@ TEST_F(SocketProcessTest, Ut_SocketMgr_GetSocket)
 {
     uint32_t    devicePhyId = 0;
     Hccl::LinkData linkData = BuildDefaultLinkData();
-    HCCL_INFO("[AicpuTsUboeChannel][%s] built linkData: %s", __func__, linkData.Describe().c_str());
+    HCCL_INFO("[AicpuTsUboeChannel::%s] built linkData: %s", __func__, linkData.Describe().c_str());
     std::string socketTag = "UT_SOCKET_TAG";
     bool noRankId = true;
     Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);

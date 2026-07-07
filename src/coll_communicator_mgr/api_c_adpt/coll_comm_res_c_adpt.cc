@@ -131,8 +131,9 @@ HcclResult ProcessUbChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelD
 
     if (channelDesc.channelProtocol != COMM_PROTOCOL_UBC_CTP &&
         channelDesc.channelProtocol != COMM_PROTOCOL_UBC_TP &&
-        channelDesc.channelProtocol != COMM_PROTOCOL_UBOE) {
-        HCCL_ERROR("[%s] unexpected channelProtocol[%d], expect UBC_CTP/UBC_TP/UBOE", __func__,
+        channelDesc.channelProtocol != COMM_PROTOCOL_UBOE &&
+        channelDesc.channelProtocol != COMM_PROTOCOL_UBG) {
+        HCCL_ERROR("[%s] unexpected channelProtocol[%d], expect UBC_CTP/UBC_TP/UBOE/UBG", __func__,
             static_cast<int>(channelDesc.channelProtocol));
         return HCCL_E_PARA;
     }
@@ -162,6 +163,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UBC_TP:
         case COMM_PROTOCOL_UBOE:
+        case COMM_PROTOCOL_UBG:
             return ProcessUbChannelDesc(channelDesc, channelDescFinal, hcclComm);
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
@@ -176,6 +178,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
                     case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
                     case COMM_PROTOCOL_UBC_TP:  return "COMM_PROTOCOL_UBC_TP";
                     case COMM_PROTOCOL_UBOE:    return "COMM_PROTOCOL_UBOE";
+                    case COMM_PROTOCOL_UBG:     return "COMM_PROTOCOL_UBG";
                     case COMM_PROTOCOL_HCCS_ONLY:   return "COMM_PROTOCOL_HCCS_ONLY";
                     default:                    return "UNKNOWN_PROTOCOL";
                 }
@@ -305,7 +308,8 @@ static HcclResult ConvertAivChannelHandlesToDevicePtrs(CommEngine engine, const 
 }
 static bool IsUbUrmaChannelProtocol(CommProtocol protocol)
 {
-    return protocol == COMM_PROTOCOL_UBC_CTP || protocol == COMM_PROTOCOL_UBC_TP || protocol == COMM_PROTOCOL_UBOE;
+    return protocol == COMM_PROTOCOL_UBC_CTP || protocol == COMM_PROTOCOL_UBC_TP || protocol == COMM_PROTOCOL_UBOE
+        || protocol == COMM_PROTOCOL_UBG;
 }
 
 static bool HasUbUrmaChannel(const std::vector<HcclChannelDesc> &channelDescFinals)

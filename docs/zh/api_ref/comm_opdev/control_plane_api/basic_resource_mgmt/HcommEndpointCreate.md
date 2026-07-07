@@ -30,7 +30,7 @@ HcommResult：接口成功返回HCCL_SUCCESS，其他失败。
 ## 约束说明
 
  - 当Endpoint位于HOST侧时，支持的protocol为RoCE、UBC_TP、UBC_CTP。
- - 当Endpoint位于DEVICE侧时，支持的protocol为RoCE、UBC_TP、UBC_CTP、UB_MEM、PCIe、UBoE、HCCS。
+ - 当Endpoint位于DEVICE侧时，支持的protocol为RoCE、UBC_TP、UBC_CTP、UB_MEM、PCIe、UBoE、HCCS、UBG。其中UBG仅Ascend 950PR/Ascend 950DT支持。
 
 ## 调用示例
 

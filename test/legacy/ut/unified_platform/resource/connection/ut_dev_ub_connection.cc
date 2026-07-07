@@ -990,6 +990,21 @@ TEST_F(DevUbConnectionTest, Ut_ImportRmtDto)
     GlobalMockObject::verify();
 }
 
+TEST_F(DevUbConnectionTest, Ut_UbgConnection_Constructor_SetsTpProtocol)
+{
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 0, 1, 0, 1);
+    Hccl::IpAddress locIpv4Addr("10.0.0.1");
+    Hccl::IpAddress rmtIpv4Addr("10.0.0.2");
+
+    DevUbUbgConnection ubgConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(),
+        OpMode::OPBASE, true, HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr);
+
+    EXPECT_EQ(ubgConn.tpProtocol, TpProtocol::UBG);
+    EXPECT_EQ(ubgConn.jettyTimeOut, 16);
+}
+
 static HcclResult StubGetTpInfoWithMappedQos(TpManager *, const RaUbGetTpInfoParam &, TpInfo &tpInfo, bool)
 {
     tpInfo.tpHandle = 0x555ULL;
