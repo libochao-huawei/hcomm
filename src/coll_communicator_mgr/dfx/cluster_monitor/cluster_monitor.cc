@@ -166,10 +166,10 @@ HcclResult ClusterMonitor::GetSocketDescFromRankInfo(HcclComm comm, uint32_t rem
             HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, myRankId);
             return HCCL_E_PARA;
         }
-        socketDesc.listenPort = (uint16_t)listenPort; // socketDesc.port中填监听端口号
+        socketDesc.listenPort = static_cast<uint16_t>(listenPort); // socketDesc.port中填监听端口号
     } else {
         socketDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_CLIENT;
-        socketDesc.listenPort = (uint16_t)rmtPort; // socketDesc.port中填对端端口号(此场景下对端端口号也就是监听端口号)
+        socketDesc.listenPort = static_cast<uint16_t>(rmtPort); // socketDesc.port中填对端端口号(此场景下对端端口号也就是监听端口号)
     }
     // socket建链需要心跳专用的tag，用来区分业务的socket以及心跳的sockt
     std::string tag = FormatConnTag(socketDesc.role, std::make_pair(myRankUID_, remoteUID));

@@ -294,11 +294,11 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
             HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, localRank);
             return HCCL_E_PARA;
         }
-        hcommDesc.port = (uint16_t)listenPort; // HcommChannelDesc.port中填监听端口号
+        hcommDesc.port = static_cast<uint16_t>(listenPort); // HcommChannelDesc.port中填监听端口号
     } else {
         listenPort = rmtPort;
         hcommDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_CLIENT;
-        hcommDesc.port = (uint16_t)rmtPort; // HcommChannelDesc.port中填对端端口号(此场景下对端端口号也就是监听端口号)
+        hcommDesc.port = static_cast<uint16_t>(rmtPort); // HcommChannelDesc.port中填对端端口号(此场景下对端端口号也就是监听端口号)
     }
 
     return HCCL_SUCCESS;

@@ -138,7 +138,7 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
     if (collComm != nullptr) {
         myRank = collComm->GetMyRank();
     }
-    if (collComm != nullptr && hcclComm->GetConnectMode() && myRank != nullptr) {
+    if (collComm != nullptr && hcclComm->GetConnectMode() !=0 && myRank != nullptr) {
         CommMems *commMem = myRank->GetCommMems();
         CHK_PTR_NULL(commMem);
         CHK_RET(commMem->GetHcclBuffer(*buffer, *size));

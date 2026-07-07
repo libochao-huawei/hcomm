@@ -166,10 +166,10 @@ public:
         if (rhs.portGroupSize < portGroupSize) {
             return false;
         }
-        if (fullmesh < rhs.fullmesh) {
+        if (fullmesh == false && rhs.fullmesh == true) {
             return true;
         }
-        if (rhs.fullmesh < fullmesh) {
+        if (rhs.fullmesh == false && fullmesh == true) {
             return false;
         }
         if (localPortId_ < rhs.localPortId_) {

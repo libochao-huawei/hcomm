@@ -544,7 +544,6 @@ std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTo
                     it->second.insert("8080");
                 }
             }
-
         }
     }
 

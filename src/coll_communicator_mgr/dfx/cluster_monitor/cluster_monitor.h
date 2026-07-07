@@ -166,7 +166,7 @@ public:
     HcclResult GetSocketDescFromRankInfo(HcclComm comm, uint32_t remoteRank, uint32_t netLayer, const ClusterUIDType &remoteUID, SocketDesc &socketDesc);
     HcclResult GetSamePlaneRank(HcclComm comm, std::vector<UIDContext> singlePlaneCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
     HcclResult GetConnectRank(HcclComm comm, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank, std::map<uint32_t,
-        std::vector<UIDContext>> uidctxs, std::vector<uint32_t> &netLayersVector);
+        std::vector<UIDContext>> uidCtxs, std::vector<uint32_t> &netLayersVector);
     void CreateHBLinksAsync();
     void SetStatus(ClusterUIDType &crimer, ClusterUIDType &informer, ClusterMonitorStatus status, bool needBroadcast = true);
     void MonitorThread();
@@ -196,7 +196,7 @@ private:
     HcclResult OnConnectionEstablished(const std::string &commId, const ClusterUIDType &rem, ClusterMonitorSocketCtx &needConnectRank);
     HcclResult SendFrameFromBuffer(ClusterUIDType &dst, ClusterMonitorFrame &cmFrame);
 
-    void CreateLinkWithRemotePonit(std::string group, ClusterUIDType rem, ClusterMonitorSocketCtx needConnectRank);
+    void CreateLinkWithRemotePonit(std::string commId, ClusterUIDType rem, ClusterMonitorSocketCtx needConnectRank);
     
     struct FrameStatus { // 专门用来给frame设置对应的状态
         ClusterMonitorStatus status = ClusterMonitorStatus::CLUSTER_MONITOR_OK;

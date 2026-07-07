@@ -99,7 +99,7 @@ HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void *
     if (collComm != nullptr) {
         myRank = collComm->GetMyRank();
     }
-    if (collComm != nullptr && hcclComm->GetConnectMode() && myRank != nullptr) {
+    if (collComm != nullptr && hcclComm->GetConnectMode() != 0 && myRank != nullptr) {
         CHK_RET(myRank->ChannelGetHcclBuffer(channel, buffer, size));
         return HCCL_SUCCESS;
     }

@@ -549,7 +549,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         hccl::CollComm* collComm = hcclComm->GetCollComm();
         if (collComm != nullptr) {
             hccl::MyRank *myRank = collComm->GetMyRank();
-            if (hcclComm->GetConnectMode() && engine == COMM_ENGINE_CPU && myRank != nullptr) {
+            if (hcclComm->GetConnectMode() != 0 && engine == COMM_ENGINE_CPU && myRank != nullptr) {
                 const std::string &commTag = hcclComm->GetIdentifier();
                 ret = myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels);
             } else {

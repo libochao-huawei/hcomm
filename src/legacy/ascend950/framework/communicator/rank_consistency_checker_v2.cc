@@ -82,7 +82,7 @@ HcclResult RankConsistencyCheckerV2::CompareCheckFrameV2(const CheckFrameV2 &loc
     bool isDiff = false;
     // dfx日志处理在下面函数的内部，外部不处理日志
     // 比对ranktable CRC
-    isDiff |= CompareCrcArrayV2(
+    isDiff = isDiff || CompareCrcArrayV2(
         local.rankTableCrcArray, remote.rankTableCrcArray,
         rankTableCrcV2_, "ranktable");
         

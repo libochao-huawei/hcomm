@@ -128,8 +128,8 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     auto opIt = opBindings_.find(memTag);
     if (opIt != opBindings_.end()) {
         HCCL_ERROR("[CommRegMem] memTag[%s] already registered: old addr[%p] size[%llu], new addr[%p] size[%llu].",
-            memTag.c_str(), opIt->second->mem.addr, (unsigned long long)opIt->second->mem.size,
-            mem.addr, (unsigned long long)mem.size);
+            memTag.c_str(), opIt->second->mem.addr, static_cast<unsigned long long>(opIt->second->mem.size),
+            mem.addr, static_cast<unsigned long long>(mem.size));
         return HCCL_E_PARA;
     }
 
@@ -143,7 +143,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
  
     *memHandle = h.get();
     HCCL_INFO("[CommRegMem] ok. tag[%s] memHandle[%p] size[%llu]", memTag.c_str(), *memHandle,
-        (unsigned long long)h->mem.size);
+        static_cast<unsigned long long>(h->mem.size));
     return HCCL_SUCCESS;
 }
  

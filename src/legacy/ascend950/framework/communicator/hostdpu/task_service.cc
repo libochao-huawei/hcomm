@@ -138,7 +138,7 @@ HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *
     }
 
     // copy data
-    uint64_t dataLen = *(size_t *)(ctrlHdr + CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN);
+    uint64_t dataLen = *reinterpret_cast<size_t*>(ctrlHdr + CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN);
     if (dataLen > static_cast<uint64_t>(leftSize_) || dataLen > static_cast<uint64_t>(hostMemSize_)) {
         HCCL_ERROR("[TaskService::%s] dataLen[%llu] larger than leftSize[%d] or hostMemSize[%d]", __func__, dataLen,
             leftSize_, hostMemSize_);
@@ -202,9 +202,9 @@ HcclResult TaskService::ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t
     HCCL_INFO("[TaskService::TaskRun] flag = %u.", TASK_OK);
     HCCL_INFO("[TaskService::TaskRun] Set npu2dpu flag -> %u.", TASK_UNSET);
     CHK_RET(WriteFlag(srcFlagPtr, TASK_UNSET));
-    CHK_RET(ReadTaskType((uint8_t *)ctrlHdr, hdrLen, srcTaskTypePtr, taskTypeStr));
-    CHK_RET(ExecuteTask((uint8_t *)ctrlHdr, hdrLen, srcFlagPtr, taskTypeStr));
-    CHK_RET(SynchronizeControlInfo((uint8_t *)ctrlHdr, hdrLen));
+    CHK_RET(ReadTaskType(reinterpret_cast<uint8_t *>(ctrlHdr), hdrLen, srcTaskTypePtr, taskTypeStr));
+    CHK_RET(ExecuteTask(reinterpret_cast<uint8_t *>(ctrlHdr), hdrLen, srcFlagPtr, taskTypeStr));
+    CHK_RET(SynchronizeControlInfo(reinterpret_cast<uint8_t *>(ctrlHdr), hdrLen));
     return HCCL_SUCCESS;
 }
 
@@ -233,13 +233,13 @@ HcclResult TaskService::TaskRun()
     CHK_RET(WriteFlag(srcFlagPtr, TASK_UNSET)); // 初始化重置flag 为 0
 
     while (true) {
-        CHK_RET(ReadFlag((uint8_t *)ctrlHdr, hdrLen, flag));
+        CHK_RET(ReadFlag(reinterpret_cast<uint8_t *>(ctrlHdr), hdrLen, flag));
         switch (flag) {
             case TASK_UNSET:
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 continue;
             case TASK_OK:
-                CHK_RET(ProcessTaskOk((uint8_t *)ctrlHdr, hdrLen, srcFlagPtr, srcTaskTypePtr));
+                CHK_RET(ProcessTaskOk(reinterpret_cast<uint8_t *>(ctrlHdr), hdrLen, srcFlagPtr, srcTaskTypePtr));
                 continue;
             case TASK_TERMINATE:
                 HCCL_INFO("[TaskService::TaskRun] flag = %u.", flag);
