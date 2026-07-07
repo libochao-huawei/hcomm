@@ -241,6 +241,7 @@ TEST_F(CcuConnTest, Ut_CcuJetty_SetMappedJettyPriority_When_NotCreated_SetsQos)
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
     void *rdmaHandle = reinterpret_cast<void *>(0x300);
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs().will(returnValue(rdmaHandle));
+    MOCKER_CPP(&Hccl::RdmaHandleManager::IsHandleValid).stubs().will(returnValue(true));
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle)
         .stubs()
         .will(returnValue(static_cast<Hccl::JfcHandle>(0x400ULL)));
@@ -269,6 +270,7 @@ TEST_F(CcuConnTest, Ut_CcuJetty_SetMappedJettyPriority_When_Conflict_Expect_Inte
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(0)));
     void *rdmaHandle = reinterpret_cast<void *>(0x300);
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByIp).stubs().will(returnValue(rdmaHandle));
+    MOCKER_CPP(&Hccl::RdmaHandleManager::IsHandleValid).stubs().will(returnValue(true));
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetJfcHandle)
         .stubs()
         .will(returnValue(static_cast<Hccl::JfcHandle>(0x400ULL)));

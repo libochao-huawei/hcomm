@@ -306,3 +306,94 @@ TEST_F(DeviceResetCallbackTest, Ut_When_RdmaHandleManagerDestroyAll_WithDestroye
     mgr.DestroyAll();
     mgr.destroyed.store(false);
 }
+
+TEST_F(DeviceResetCallbackTest, Ut_When_IsHandleValid_NullHandle_Expect_False)
+{
+    EXPECT_FALSE(Hccl::RdmaHandleManager::GetInstance().IsHandleValid(nullptr));
+}
+
+TEST_F(DeviceResetCallbackTest, Ut_When_IsHandleValid_HandleNotInActiveHandles_Expect_False)
+{
+    Hccl::RdmaHandle fakeHandle = (Hccl::RdmaHandle)0x9999;
+    EXPECT_FALSE(Hccl::RdmaHandleManager::GetInstance().IsHandleValid(fakeHandle));
+}
+
+TEST_F(DeviceResetCallbackTest, Ut_When_IsHandleValid_HandleInActiveHandles_Expect_True)
+{
+    auto &mgr = Hccl::RdmaHandleManager::GetInstance();
+    Hccl::RdmaHandle fakeHandle = (Hccl::RdmaHandle)0x8887;
+    mgr.activeHandles_.insert(fakeHandle);
+    EXPECT_TRUE(mgr.IsHandleValid(fakeHandle));
+    mgr.activeHandles_.erase(fakeHandle);
+}
+
+TEST_F(DeviceResetCallbackTest, Ut_When_IsHandleValid_WithDestroyed_Expect_False)
+{
+    auto &mgr = Hccl::RdmaHandleManager::GetInstance();
+    Hccl::RdmaHandle fakeHandle = (Hccl::RdmaHandle)0x8889;
+    mgr.activeHandles_.insert(fakeHandle);
+    EXPECT_TRUE(mgr.IsHandleValid(fakeHandle));
+    mgr.destroyed.store(true);
+    EXPECT_FALSE(mgr.IsHandleValid(fakeHandle));
+    mgr.destroyed.store(false);
+    mgr.activeHandles_.erase(fakeHandle);
+}
+
+TEST_F(DeviceResetCallbackTest, Ut_When_RdmaHandleManagerDeInit_Expect_ActiveHandlesRemovedBeforeDestroy)
+{
+    auto &mgr = Hccl::RdmaHandleManager::GetInstance();
+    u32 devPhyId = 0;
+    Hccl::RdmaHandle fakeUbHandle = (Hccl::RdmaHandle)0xABCD;
+    Hccl::IpAddress ipAddr("7.0.0.0");
+    mgr.rdmaHandleMap[devPhyId][3][ipAddr] = fakeUbHandle;
+    mgr.activeHandles_.insert(fakeUbHandle);
+
+    EXPECT_TRUE(mgr.IsHandleValid(fakeUbHandle));
+
+    mgr.DeInit(devPhyId);
+
+    EXPECT_FALSE(mgr.IsHandleValid(fakeUbHandle));
+    EXPECT_EQ(mgr.activeHandles_.count(fakeUbHandle), 0);
+}
+
+TEST_F(DeviceResetCallbackTest, Ut_When_RdmaHandleManagerDeInit_WithMultipleHandles_Expect_AllRemovedFromActiveHandles)
+{
+    auto &mgr = Hccl::RdmaHandleManager::GetInstance();
+    u32 devPhyId = 3;
+    Hccl::RdmaHandle handle1 = (Hccl::RdmaHandle)0x1111;
+    Hccl::RdmaHandle handle2 = (Hccl::RdmaHandle)0x2222;
+    Hccl::IpAddress ip1("8.0.0.0");
+    Hccl::IpAddress ip2("9.0.0.0");
+    mgr.rdmaHandleMap[devPhyId][3][ip1] = handle1;
+    mgr.rdmaHandleMap[devPhyId][3][ip2] = handle2;
+    mgr.activeHandles_.insert(handle1);
+    mgr.activeHandles_.insert(handle2);
+
+    EXPECT_TRUE(mgr.IsHandleValid(handle1));
+    EXPECT_TRUE(mgr.IsHandleValid(handle2));
+
+    mgr.DeInit(devPhyId);
+
+    EXPECT_FALSE(mgr.IsHandleValid(handle1));
+    EXPECT_FALSE(mgr.IsHandleValid(handle2));
+}
+
+TEST_F(DeviceResetCallbackTest, Ut_When_DeInitDifferentDevPhyId_Expect_OnlyTargetedHandlesRemoved)
+{
+    auto &mgr = Hccl::RdmaHandleManager::GetInstance();
+    Hccl::RdmaHandle handleDev0 = (Hccl::RdmaHandle)0xA0A0;
+    Hccl::RdmaHandle handleDev1 = (Hccl::RdmaHandle)0xB1B1;
+    Hccl::IpAddress ip0("10.0.0.0");
+    Hccl::IpAddress ip1("11.0.0.0");
+    mgr.rdmaHandleMap[0][3][ip0] = handleDev0;
+    mgr.rdmaHandleMap[1][3][ip1] = handleDev1;
+    mgr.activeHandles_.insert(handleDev0);
+    mgr.activeHandles_.insert(handleDev1);
+
+    mgr.DeInit(0);
+
+    EXPECT_FALSE(mgr.IsHandleValid(handleDev0));
+    EXPECT_TRUE(mgr.IsHandleValid(handleDev1));
+    mgr.activeHandles_.erase(handleDev1);
+    mgr.rdmaHandleMap[1][3].erase(ip1);
+}
