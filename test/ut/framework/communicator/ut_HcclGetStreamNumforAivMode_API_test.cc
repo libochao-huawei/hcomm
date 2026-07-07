@@ -184,3 +184,63 @@ TEST_F(HcclGetStreamNumforAivModeTest, UT_GetWorkspaceSubStreamNum_When_Compatib
     HcclResult ret = communicator_.GetWorkspaceSubStreamNum(0, HCCL_DATA_TYPE_FP32, HCCL_REDUCE_SUM, "", streamNum, dataSize, false, opType);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// AICPU 模式：mock HcclSelectAlg 设置 ifAiv=false，验证 streamNum 申请成功
+// AICPU(ifAiv=false)走传统 deviceType 多流分支，streamNum 非零
+TEST_F(HcclGetStreamNumforAivModeTest, UT_HcomGetWorkspaceSubStreamNum_When_AicpuMode_Expect_Success) {
+    // mock HcclGetCommHandle：显式构造非空 comm 出参，使 hcclComm 非空、过 null 检查直达 HcclSelectAlg
+    MOCKER(HcclGetCommHandle)
+        .stubs()
+        .will(invoke(+[](const char *, std::shared_ptr<hccl::hcclComm> &comm) -> HcclResult {
+            comm = std::make_shared<hccl::hcclComm>();
+            return HCCL_SUCCESS;
+        }));
+
+    // mock HcclSelectAlg：第7个出参 ifAiv=false，走 AICPU 分支
+    MOCKER_CPP(&hcclComm::HcclSelectAlg)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
+              mockcpp::any(), mockcpp::any(), outBound(false))
+        .will(returnValue(HCCL_SUCCESS));
+
+    // mock GetWorkspaceSubStreamNum：AICPU 走传统多流分支，第5个出参 streamNum 回写非零值 8
+    MOCKER_CPP(&hcclComm::GetWorkspaceSubStreamNum)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(), outBound(8ULL))
+        .will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = HcomGetWorkspaceSubStreamNum(nullptr, streamNum, dataSize, dataType, aivCoreLimit,
+        reduceOp, count, optype);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(streamNum, 8ULL) << "AICPU 模式走传统多流分支，streamNum 应为非零值 8";
+}
+
+// AIV 模式：mock HcclSelectAlg 设置 ifAiv=true，验证 streamNum 申请成功
+// AIV(Hcom图模式)展开走单流、不需额外从流，streamNum 业务事实上为 0
+TEST_F(HcclGetStreamNumforAivModeTest, UT_HcomGetWorkspaceSubStreamNum_When_AivMode_Expect_Success) {
+    // mock HcclGetCommHandle：显式构造非空 comm 出参，使 hcclComm 非空、过 null 检查直达 HcclSelectAlg
+    MOCKER(HcclGetCommHandle)
+        .stubs()
+        .will(invoke(+[](const char *, std::shared_ptr<hccl::hcclComm> &comm) -> HcclResult {
+            comm = std::make_shared<hccl::hcclComm>();
+            return HCCL_SUCCESS;
+        }));
+
+    // mock HcclSelectAlg：第7个出参 ifAiv=true，走 AIV 分支
+    MOCKER_CPP(&hcclComm::HcclSelectAlg)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
+              mockcpp::any(), mockcpp::any(), outBound(true))
+        .will(returnValue(HCCL_SUCCESS));
+
+    // mock GetWorkspaceSubStreamNum：Hcom图模式+AIV 展开走单流，第5个出参 streamNum 回写 0
+    MOCKER_CPP(&hcclComm::GetWorkspaceSubStreamNum)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(), outBound(0ULL))
+        .will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = HcomGetWorkspaceSubStreamNum(nullptr, streamNum, dataSize, dataType, aivCoreLimit,
+        reduceOp, count, optype);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(streamNum, 0ULL) << "Hcom图模式+AIV 展开走单流，streamNum 应为 0";
+}
