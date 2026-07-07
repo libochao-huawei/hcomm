@@ -23,6 +23,7 @@ set(src_to_test_list
     ut_HcclCombinOpParam_910B_size_check.cc
     ut_HcclCombinOpParam_950_size_check.cc
     ut_HcclOpResParam_size_check.cc
+    ut_HcclTransportRes.cc
 )
 
 add_executable(hccl_utest_framework_resource ${src_to_test_list})
