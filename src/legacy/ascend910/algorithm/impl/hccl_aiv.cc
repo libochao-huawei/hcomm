@@ -17,6 +17,8 @@
 #include <limits>
 #include "mmpa_api.h"
 #include "adapter_rts_common.h"
+#include "workflow_pub.h"
+#include "ccl_buffer_manager.h"
 #include "acl/acl_rt.h"
 #include "launch_device.h"
 #include "hccl_aiv.h"

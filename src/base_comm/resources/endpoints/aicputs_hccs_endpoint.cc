@@ -7,9 +7,12 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include "endpoint_mgr.h"
 #include "hccl_mem_defs.h"
 #include "aicputs_hccs_endpoint.h"
+#include "hccl/hccl_res.h"
 #include "log.h"
+#include "adapter_rts_common.h"
 #include "net_dev/global_net_dev_manager.h"
 #include "hccs_reged_mem_mgr.h"
 

@@ -9,6 +9,7 @@
 
 #include <unordered_map>
 
+#include "log.h"
 #include "string_util.h"
 
 namespace {

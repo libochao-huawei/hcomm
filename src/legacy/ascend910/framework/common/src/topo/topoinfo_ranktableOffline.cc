@@ -20,6 +20,8 @@
 #include <iostream>
 #include <arpa/inet.h>
 
+#include "externalinput_pub.h"
+#include "hccl_comm_pub.h"
 #include "sal_pub.h"
 #include "config.h"
 

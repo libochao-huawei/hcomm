@@ -10,6 +10,8 @@
 
 #include "transport_remote_access.h"
 #include "externalinput_pub.h"
+#include "adapter_rts.h"
+#include "dlra_function.h"
 
 namespace hccl {
 using namespace std;

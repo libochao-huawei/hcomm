@@ -9,6 +9,7 @@
  */
 
 #include "coll_reduce_scatter_ring_zerocopy_exchange_executor.h"
+#include "alg_template_register.h"
 
 namespace hccl {
 

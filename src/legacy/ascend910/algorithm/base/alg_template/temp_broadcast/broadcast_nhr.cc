@@ -9,6 +9,9 @@
  */
 
 #include "broadcast_nhr.h"
+#include "scatter_nhr.h"
+#include "all_gather_nhr.h"
+#include "broadcast_nhr_oneshot.h"
 #include "alg_template_register.h"
 
 namespace hccl {

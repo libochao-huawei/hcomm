@@ -9,7 +9,10 @@
  */
 
 #include "mem_mapping_manager.h"
+#include "private_types.h"
 #include "adapter_hal.h"
+#include "adapter_rts.h"
+#include "dlhal_function.h"
 
 namespace hccl {
 HcclResult MemMappingManager::MapMem(s32 deviceLogicID, void *addr, u64 size, void *&devVA)

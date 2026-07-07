@@ -17,6 +17,7 @@
 
 #include "mem_name_repository_pub.h"
 #include "adapter_rts.h"
+#include "device_capacity.h"
 #include "mem_host_pub.h"
 
 namespace hccl {

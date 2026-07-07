@@ -10,8 +10,11 @@
 
 #include "order_launch.h"
 #include "log.h"
+#include "acl/acl_base.h"
 #include "acl/acl_rt.h"
 #include "config_log.h"
+#include "hccl_communicator.h"
+#include "stream_utils.h"
 #include "hccl_types.h"
 #include "adapter_rts_common.h"
 

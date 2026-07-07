@@ -9,7 +9,9 @@
  */
 
 #include <securec.h>
+#include "command_handle.h"
 #include "profiling_manager.h"
+#include "adapter_prof.h"
 #include "adapter_prof.h"
 #include "task_profiling.h"
 

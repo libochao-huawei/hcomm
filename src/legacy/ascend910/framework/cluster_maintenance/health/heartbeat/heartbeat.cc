@@ -19,6 +19,7 @@
 #include "task_exception_handler_pub.h"
 #include "comm_configer.h"
 #include "snapshot_control.h"
+#include "rt_external.h"
 
 namespace hccl {
 Heartbeat &Heartbeat::GetInstance(s32 deviceLogicID)

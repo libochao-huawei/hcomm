@@ -11,6 +11,7 @@
 #include <dlog_pub.h>
 #include <hccl/hccl_types.h>
 #include "hccl/base.h"
+#include "adapter_rts_common.h"
 #include "adapter_prof.h"
 #include "profiling_manager.h"
 #include "profiler_manager_impl.h"

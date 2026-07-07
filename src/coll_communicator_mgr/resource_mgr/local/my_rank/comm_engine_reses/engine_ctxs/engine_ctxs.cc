@@ -9,7 +9,9 @@
  */
  
 #include "engine_ctxs.h"
+#include "hccl_comm_pub.h"
 #include "log.h"
+#include "adapter_rts_common.h"
 #include "hcomm_c_adpt.h"
 #include "comm_engine_utils.h"
 

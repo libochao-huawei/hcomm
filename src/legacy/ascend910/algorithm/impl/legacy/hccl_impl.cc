@@ -10,8 +10,11 @@
 
 #include <cmath>
 #include <algorithm>
+#include "externalinput_pub.h"
+#include "device_capacity.h"
 #include "stream_active_manager.h"
 #include "profiling_manager_pub.h"
+#include "hccl_alg.h"
 #include "coll_alg_utils.h"
 #include "sal_pub.h"
 #include "hccl_impl.h"

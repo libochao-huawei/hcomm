@@ -15,14 +15,19 @@
 #include <string>
 #include <hccl/hccl_types.h>
 
+#include "aicpu_operator_pub.h"
+#include "coll_alg_param.h"
 #include "hccl/base.h"
+#include "workflow_pub.h"
 #include "param_check_pub.h"
 #include "rank_consistentcy_checker.h"
 #include "externalinput_pub.h"
 #include "env_config.h"
+#include "detect_connect_anomalies.h"
 #include "../common/src/topo/topoinfo_detect.h"
 #include "../common/src/topo/topoinfo_ranktable_partition.h"
 #include "../common/src/state_guard.h"
+#include "../common/src/h2d_tlv/hccl_h2dtlv.h"
 #include "sal_pub.h"
 #include "profiling_manager_pub.h"
 #include "adapter_prof.h"
@@ -32,9 +37,11 @@
 #include "hcom_common.h"
 #include "comm_config_pub.h"
 #include "kernel_tiling/kernel_tiling.h"
+#include "error_codes/rt_error_codes.h"
 #include "mmpa_api.h"
 #include "aicpu_operator_pub.h"
 #include "../nslbdp/hccl_nslbdp.h"
+#include "comm_configer.h"
 #include "hccl_group.h"
 #include "hostdpu/dpu_kernel_entrance.h"
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))

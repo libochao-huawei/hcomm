@@ -9,6 +9,8 @@
  */
 
 #include "aiv_ub_mem_channel.h"
+#include "endpoint.h"
+#include "orion_adpt_utils.h"
 
 
 namespace hcomm {

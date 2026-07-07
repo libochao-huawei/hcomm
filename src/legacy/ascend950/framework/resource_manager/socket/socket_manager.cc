@@ -12,6 +12,7 @@
 #include <algorithm>
 #include "socket_manager.h"
 #include "socket_handle_manager.h"
+#include "host_socket_handle_manager.h"
 #include "communicator_impl.h"
 #include "null_ptr_exception.h"
 #include "exception_util.h"

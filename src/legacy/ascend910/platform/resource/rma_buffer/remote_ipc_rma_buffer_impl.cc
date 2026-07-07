@@ -9,6 +9,9 @@
  */
 
 #include "remote_ipc_rma_buffer_impl.h"
+#include "adapter_rts.h"
+#include "sal.h"
+#include "device_capacity.h"
 #include "hccl_network.h"
 
 namespace hccl {

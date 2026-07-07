@@ -11,6 +11,7 @@
 #include "global_mem_manager.h"
 
 #include <string>
+#include "adapter_pub.h"
 #include "hccl_mem.h"
 
 namespace hccl {

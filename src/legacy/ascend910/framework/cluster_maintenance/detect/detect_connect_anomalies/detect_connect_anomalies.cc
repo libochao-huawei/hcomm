@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <thread>
+#include "hccl_communicator.h"
 #include "hccl_common.h"
 #include "hccl_socket.h"
 #include "env_config.h"

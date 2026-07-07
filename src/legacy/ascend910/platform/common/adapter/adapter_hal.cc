@@ -13,6 +13,7 @@
 #include "dlhal_function.h"
 #include "log.h"
 #include "sal_pub.h"
+#include "rt_external.h"
 #include "aicpu_schedule/aicpu_mc2_maintenance_thread.h"
 
 using namespace hccl;

@@ -13,6 +13,7 @@
 #include "adapter_rts_common.h"
 #include "orion_adapter_hccp.h"
 #include "tp_manager.h"
+#include "transport_status.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
 

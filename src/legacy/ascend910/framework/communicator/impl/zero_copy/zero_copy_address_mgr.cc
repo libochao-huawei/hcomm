@@ -9,6 +9,7 @@
  */
 
 #include "zero_copy_address_mgr.h"
+#include "adapter_rts_common.h"
 
 namespace hccl {
 

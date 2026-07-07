@@ -10,6 +10,7 @@
 
 #include "transport_mem.h"
 #include "log.h"
+#include "network_manager_pub.h"
 #include "transport_ipc_mem.h"
 #include "transport_roce_mem.h"
 #ifdef CCL_KERNEL

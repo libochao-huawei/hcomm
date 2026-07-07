@@ -15,10 +15,13 @@
 #include <vector>
 #include <string>
 #include "hccl/hccl_res.h"
+#include "hccl_mem.h"
 #include "stream_pub.h"
+#include "hccl_communicator.h"
 #include "hccl_comm_pub.h"
 #include "hccl_independent_common.h"
 #include "coll_comm_profiling.h"
+#include "aicpu_operator_pub.h"
 #include "comm_engine_utils.h"
 using namespace hccl;
 constexpr u32 MAX_EXPORT_THREAD_NUM = 40U;

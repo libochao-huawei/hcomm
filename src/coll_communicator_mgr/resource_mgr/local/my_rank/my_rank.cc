@@ -9,6 +9,8 @@
  */
 #include "my_rank.h"
 #include "hcomm_c_adpt.h"
+#include "hcomm_res.h"
+#include "channel.h"
 #include "endpoint_pair.h"
 #include "hccl_res.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器

@@ -10,6 +10,7 @@
 
 #include <cmath>
 #include "all_gather_hd_stage_pub.h"
+#include "all_gather_nhr.h"
 
 namespace hccl {
 namespace {

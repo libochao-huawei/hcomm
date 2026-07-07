@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "alg_template_multi_deter_pipeline.h"
+#include "alg_template_register.h"
 namespace hccl {
 MultiDeterPipeline::MultiDeterPipeline(const HcclDispatcher dispatcher)
     : AlgTemplateBase(dispatcher) {}

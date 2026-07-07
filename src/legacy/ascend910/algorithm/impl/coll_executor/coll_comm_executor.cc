@@ -9,8 +9,11 @@
  */
 
 #include "coll_comm_executor.h"
+#include "executor_impl.h"
 #include "stream_active_manager.h"
 #include "device_capacity.h"
+#include "comm_factory_pub.h"
+#include "externalinput_pub.h"
 
 namespace hccl {
 CollCommExecutor::CollCommExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher)

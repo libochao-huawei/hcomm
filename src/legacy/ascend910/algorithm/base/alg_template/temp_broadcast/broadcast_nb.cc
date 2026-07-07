@@ -9,6 +9,9 @@
  */
 
 #include "broadcast_nb.h"
+#include "scatter_nb.h"
+#include "all_gather_nb.h"
+#include "device_capacity.h"
 #include "alg_template_register.h"
 
 namespace hccl {

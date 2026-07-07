@@ -20,10 +20,13 @@
 #include <memory>
 #include <unordered_set>
 
+#include "adapter_error_manager.h"
 #include "network/hccp_common.h"
 #include "externalinput.h"
 #include "dlra_function.h"
 #include "log.h"
+#include "adapter_hal.h"
+#include "workflow_pub.h"
 #include "../host/transport_ibverbs_pub.h"
 #include "config_plf_log.h"
 

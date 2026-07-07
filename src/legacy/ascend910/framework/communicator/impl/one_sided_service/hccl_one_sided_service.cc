@@ -17,6 +17,7 @@
 #include "adapter_prof.h"
 #include "profiling_manager_pub.h"
 #include "prof_common.h"
+#include "stream_utils.h"
 #include "launch_aicpu.h"
 #include "launch_device.h"
 #include "comm_configer.h"

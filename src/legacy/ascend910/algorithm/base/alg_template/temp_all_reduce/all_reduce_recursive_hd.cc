@@ -9,6 +9,8 @@
  */
 
 #include "alg_template_register.h"
+#include "reduce_scatter_halving_doubling_pub.h"
+#include "all_gather_halving_doubling_pub.h"
 #include "all_reduce_recursive_hd.h"
 
 namespace hccl {

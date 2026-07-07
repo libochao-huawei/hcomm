@@ -12,6 +12,7 @@
 #include "device_capacity.h"
 #include "dispatcher_pub.h"
 #include "adapter_rts.h"
+#include "typical_mr_manager.h"
 #include "externalinput_pub.h"
 
 namespace hccl {

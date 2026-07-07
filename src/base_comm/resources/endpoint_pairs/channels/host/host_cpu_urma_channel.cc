@@ -11,11 +11,15 @@
 #include "host_cpu_urma_channel.h"
 #include "endpoint.h"
 #include "orion_adpt_utils.h"
+#include "hcomm_res.h"
 #include "hcomm_adapter_urma.h"
+#include "urma_api.h"
 
 // Orion
+#include "coll_alg_param.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
+#include "aicpu_res_package_helper.h"
 
 namespace hcomm {
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒

@@ -9,6 +9,7 @@
  */
 
 #include "reduce_scatter_mesh_atomic.h"
+#include "externalinput_pub.h"
 #include "alg_template_register.h"
 
 namespace hccl {

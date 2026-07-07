@@ -15,12 +15,14 @@
 
 #include "hccp_ctx.h"
 #include "hccp_async_ctx.h"
+#include "hccp.h"
 
 #include "hccl_common.h"
 #include "exception_handler.h"
 #include "network_api_exception.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
+#include "adapter_rts.h"
 #include "dev_type.h"
 #include "orion_adapter_rts.h"
 #include "env_config/env_config.h"

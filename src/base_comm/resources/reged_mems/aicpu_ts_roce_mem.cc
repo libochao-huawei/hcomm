@@ -13,7 +13,10 @@
 #include <unordered_map>
 #include "securec.h"
 #include "adapter_hccp.h"
+#include "endpoint_pair.h"
+#include "exception_handler.h"
 #include "hccl_network.h"
+#include "hccl_net_dev_defs.h"
 #include "log.h"
 #include "rma_buffer.h"
 

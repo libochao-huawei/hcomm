@@ -8,6 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "esched_notify.h"
+#include "dlhal_function.h"
+#include "sal_pub.h"
 
 namespace hccl {
 constexpr u32 DEFAULT_NTC_EVENTID = 50;

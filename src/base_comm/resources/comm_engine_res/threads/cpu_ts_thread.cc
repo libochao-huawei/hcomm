@@ -11,6 +11,7 @@
 #include "cpu_ts_thread.h"
 #include "hccl_common.h"
 #include "adapter_rts.h"
+#include "types/dev_type.h"
 
 namespace hccl {
 const std::unordered_map<HcclDataType, aclDataType> hccl2rtDataTypeMap = { 

@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <hccl/hccl_types.h>
+#include "sal_pub.h"
 #include "hccl_nslb_md5.h"
 
 namespace hccl {

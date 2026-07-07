@@ -9,6 +9,7 @@
  */
  
 #include "independent_op_context_manager.h"
+#include "hccl_comm_pub.h"
 #include "log.h"
 #include "adapter_rts_common.h"
 #include "comm_engine_utils.h"

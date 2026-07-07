@@ -16,10 +16,14 @@
 #include "hcom_common.h"
 #include "exception_handler.h"
 #include "eid_info_mgr.h"
+#include "adapter_rts.h"
 
 #include "hccp_ctx.h"
 
+#include "buffer.h"
+#include "local_ub_rma_buffer.h"
 #include "rdma_handle_manager.h"
+#include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
 #include "env_config/env_config.h"
 

@@ -10,7 +10,11 @@
 
 #include "broadcast_operator.h"
 #include "device_capacity.h"
+#include "rank_consistentcy_checker.h"
+#include "executor_impl.h"
+#include "stream_active_manager.h"
 #include "coll_alg_op_registry.h"
+#include "hccl_aiv.h"
 
 namespace hccl {
 constexpr u64 AIV_MAX_DATASIZE = 4ULL * 1024 * 1024 * 1024;

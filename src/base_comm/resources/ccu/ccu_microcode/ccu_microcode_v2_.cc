@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 #include "log.h"
+#include "string_util.h"
 
 namespace {
 constexpr uint16_t LOAD_TYPE = 0x0;

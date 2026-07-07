@@ -25,6 +25,7 @@
 
 #include "ccu_kernel_mgr.h"
 
+#include "adapter_rts.h"
 
 // 支持ccu新老通信域混跑临时添加
 #include "unified_platform/ccu/ccu_device/ccu_res_specs.h"
@@ -32,6 +33,7 @@
 #include "unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "unified_platform/ccu/ccu_context/ccu_context_mgr_imp.h"
 #include "hccp_tlv_hdc_manager.h"
+#include "orion_adapter_hccp.h"
 
 #include "exception_handler.h"
 

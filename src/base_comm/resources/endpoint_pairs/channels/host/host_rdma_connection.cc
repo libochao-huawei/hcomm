@@ -9,8 +9,10 @@
  */
 #include "host_rdma_connection.h"
 #include "dtype_common.h"
+#include "orion_adapter_rts.h"
 #include "exchange_rdma_conn_dto.h"
 #include "hccp.h"
+#include "sal.h"
 
 namespace hcomm {
 constexpr u32 WAIT_US_COUNT = 1000;

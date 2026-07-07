@@ -9,6 +9,7 @@
  */
 
 #include "batch_write_operator.h"
+#include "executor_impl.h"
 
 namespace hccl {
 REGISTER_OP(HcclCMDType::HCCL_CMD_BATCH_WRITE, BatchWrite, BatchWriteOperator);

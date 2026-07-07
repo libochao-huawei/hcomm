@@ -15,6 +15,7 @@
 #include "hccp_ctx.h"
 
 #include "exception_handler.h"
+#include "adapter_rts.h"
 
 // 当前复用orion数据结构
 #include "rdma_handle_manager.h"

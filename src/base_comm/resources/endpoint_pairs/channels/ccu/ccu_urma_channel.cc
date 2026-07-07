@@ -10,6 +10,7 @@
 
 #include "ccu_urma_channel.h"
 
+#include "hcomm_adapter_hccp.h"
 
 #include "hcomm_c_adpt.h"
 

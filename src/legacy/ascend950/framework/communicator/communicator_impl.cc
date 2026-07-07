@@ -34,6 +34,7 @@
 #include "hccl_common_v2.h"
 #include "tp_manager.h"
 #include "hccl_aiv_utils.h"
+#include "comm_manager.h"
 #include "rts_1ton_cnt_notify.h"
 #include "rts_cnt_notify.h"
 #include "stream_utils.h"

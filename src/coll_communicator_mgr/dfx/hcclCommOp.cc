@@ -9,6 +9,7 @@
  */
 
 #include "hcclCommOp.h"
+#include "profiling_handler.h"
 
 namespace hccl {
 

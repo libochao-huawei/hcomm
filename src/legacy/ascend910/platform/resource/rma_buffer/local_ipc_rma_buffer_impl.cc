@@ -9,8 +9,11 @@
  */
 
 #include "local_ipc_rma_buffer_impl.h"
+#include "private_types.h"
+#include "adapter_hccp.h"
 #include "adapter_rts.h"
 #include "hccl_network.h"
+#include "network_manager_pub.h"
 #include "mem_mapping_manager.h"
 
 namespace hccl {

@@ -11,10 +11,14 @@
 #include <arpa/inet.h>
 #include <securec.h>
 #include <string>
+#include "network/hccp.h"
 #include "network/hccp_common.h"
+#include "device_capacity.h"
 #include "network_manager_pub.h"
+#include "adapter_rts.h"
 #include "externalinput_pub.h"
 #include "hccl_network.h"
+#include "externalinput.h"
 #include "transport_direct_npu.h"
 #include "launch_aicpu.h"
 #include "acl/acl_rt.h"

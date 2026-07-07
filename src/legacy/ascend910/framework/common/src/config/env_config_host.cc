@@ -12,7 +12,11 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include "adapter_error_manager_pub.h"
 #include "log.h"
+#include "sal_pub.h"
+#include "mmpa_api.h"
+#include "config_log.h"
 #include "env_config.h"
 
 using namespace hccl;

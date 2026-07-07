@@ -11,6 +11,12 @@
 #include "comm_factory.h"
 #include <sstream>
 #include <algorithm>
+#include "p2p_mgmt_pub.h"
+#include "adapter_pub.h"
+#include "device_capacity.h"
+#include "search_path.h"
+#include "calc_p2p_transport_req.h"
+#include "mmpa_api.h"
 namespace hccl {
 
 CommFactory::CommFactory(const std::string &identifier, const u32 userRank, const u32 userRankSize,

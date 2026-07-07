@@ -12,7 +12,9 @@
 
 #include <random>
 
+#include "../../../../../legacy/ascend950/common/sal.h"
 #include "hccl_common.h"
+#include "adapter_rts.h"
 #include "rdma_handle_manager.h"
 
 #include "eid_info_mgr.h"
@@ -21,8 +23,11 @@
 
 #include "exception_handler.h"
 #include "adapter_rts_common.h"
+#include "ccu_error_info_v1.h"
 #include "env_config.h"
 #include "orion_adapter_hccp.h"
+#include "env_config/env_config.h"
+#include "exception_util.h"
 #include "hcomm_adapter_hccp.h"
 
 namespace hcomm {

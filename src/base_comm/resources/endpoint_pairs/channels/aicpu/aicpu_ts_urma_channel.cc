@@ -12,10 +12,13 @@
 #include "endpoint.h"
 #include "orion_adpt_utils.h"
 #include "hcomm_c_adpt.h"
+#include "exception_handler.h"
+#include "comm_mems.h"
 #include "config_log.h"
 
 // Orion
 #include "adapter_rts_common.h"
+#include "coll_alg_param.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
 #include "aicpu_res_package_helper.h"

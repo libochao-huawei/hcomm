@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <securec.h>
 #include <string>
+#include "network/hccp.h"
 #include "network/hccp_common.h"
 #include "device_capacity.h"
 #include "network_manager_pub.h"

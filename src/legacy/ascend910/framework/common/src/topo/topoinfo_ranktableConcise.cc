@@ -21,6 +21,8 @@
 
 #include "externalinput.h"
 #include "log.h"
+#include "env_config.h"
+#include "hccl_comm_pub.h"
 // ltm指定config路径
 #include "common/src/config.h"
 #include "workflow_pub.h"

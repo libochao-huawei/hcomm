@@ -9,6 +9,9 @@
  */
 
 #include "mem_mapping_manager.h"
+#include "private_types.h"
+#include "adapter_hal.h"
+#include "adapter_rts.h"
 #include "dlhal_function.h"
 
 namespace hccl {

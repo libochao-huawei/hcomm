@@ -9,6 +9,7 @@
  */
 
 #include "ccu_ctx.h"
+#include "ccu_rep.h"
 #include "ccu_context_resource.h"
 #include "ccu_assist.h"
 #include "ccu_microcode.h"
@@ -16,6 +17,7 @@
 #include "exception_util.h"
 #include "ccu_api_exception.h"
 #include "ccu_device_manager.h"
+#include "env_config.h"
 #include "ccu_rep_type.h"
 
 namespace Hccl {

@@ -11,6 +11,7 @@
 #include "ccl_buffer_manager.h"
 #include "log.h"
 #include "externalinput_pub.h"
+#include "workflow_pub.h"
 #include "adapter_rts_common.h"
 #include "share_ccl_buffer_manager.h"
 

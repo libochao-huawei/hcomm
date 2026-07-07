@@ -9,6 +9,7 @@
  */
 
 #include "alltoallv_pairwise.h"
+#include "externalinput_pub.h"
 #include "alg_template_register.h"
 
 

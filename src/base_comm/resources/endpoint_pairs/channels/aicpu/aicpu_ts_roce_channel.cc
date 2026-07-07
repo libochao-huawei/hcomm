@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <securec.h>
+#include "hcomm_c_adpt.h"
 #include "log.h"
 #include "endpoint.h"
 #include "../../../endpoints/aicpu_ts_roce_endpoint.h"
@@ -26,6 +27,7 @@
 #include "adapter_rts_common.h"
 #include "channel_param.h"
 #include "dispatcher_ctx.h"
+#include "exception_handler.h"
 #include "adapter_hccp_common.h"
 #include "hccl_dispatcher_ctx.h"
 #include "hccl_network.h"

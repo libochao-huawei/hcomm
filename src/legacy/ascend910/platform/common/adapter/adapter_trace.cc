@@ -11,6 +11,7 @@
 #include "adapter_trace.h"
 #include "dltrace_function.h"
 #include "log.h"
+#include "atrace_pub.h"
 using namespace hccl;
 
 HcclResult hrtOpenTrace()

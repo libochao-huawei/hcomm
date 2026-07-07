@@ -9,6 +9,7 @@
  */
 
 #include "reduce_operator.h"
+#include "executor_impl.h"
 
 namespace hccl {
 
