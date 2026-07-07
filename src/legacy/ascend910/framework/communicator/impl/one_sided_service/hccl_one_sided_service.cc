@@ -403,6 +403,7 @@ HcclResult HcclOneSidedService::ExchangeMemDesc(RankId remoteRankId, const HcclM
     HcclMemDescs &remoteMemDescs, u32 &actualNumOfRemote, const std::string &commIdentifier, s32 timeoutSec)
 {
     std::shared_ptr<HcclOneSidedConn> tempConn;
+    std::unique_lock oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HcclRankLinkInfo remoteRankInfo;
@@ -428,6 +429,7 @@ void HcclOneSidedService::EnableMemAccess(const HcclMemDesc &remoteMemDesc, Hccl
     HcclResult ret = HCCL_SUCCESS;
     const TransportMem::RmaMemDesc* ptr = reinterpret_cast<const TransportMem::RmaMemDesc*>(remoteMemDesc.desc);
     u32 remoteRank = ptr->localRankId;
+    std::shared_lock oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRank);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclOneSidedService][EnableMemAccess]connection not found, remoteRank[%u], "\
@@ -476,6 +478,7 @@ void HcclOneSidedService::DisableMemAccess(const HcclMemDesc &remoteMemDesc)
 {
     const TransportMem::RmaMemDesc* ptr = reinterpret_cast<const TransportMem::RmaMemDesc*>(remoteMemDesc.desc);
     u32 remoteRank = ptr->localRankId;
+    std::shared_lock oneSidedConnslock(oneSidedConnsMutex_);
     if (oneSidedConns_.find(remoteRank) == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclOneSidedService][DisableMemAccess]connection not found by remoteRankId[%u], "\
             "please exchange mem desc to create connection first.", remoteRank);
@@ -487,6 +490,7 @@ void HcclOneSidedService::DisableMemAccess(const HcclMemDesc &remoteMemDesc)
 void HcclOneSidedService::BatchPut(RankId remoteRankId, const HcclOneSideOpDesc* desc, u32 descNum,
     const rtStream_t &stream)
 {
+    std::shared_lock oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchPut] Can't find oneSidedConn by remoteRank %u", remoteRankId);
@@ -504,6 +508,7 @@ void HcclOneSidedService::BatchPut(RankId remoteRankId, const HcclOneSideOpDesc*
 void HcclOneSidedService::BatchGet(RankId remoteRankId, const HcclOneSideOpDesc* desc, u32 descNum,
     const rtStream_t &stream)
 {
+    std::shared_lock oneSidedConnslock(oneSidedConnsMutex_);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchGet] Can't find oneSidedConn by remoteRank %u", remoteRankId);
@@ -657,19 +662,21 @@ HcclResult HcclOneSidedService::Prepare(const std::string &commIdentifier, const
         auto ret = PrepareFullMesh(commIdentifier, timeoutSec);
         if (ret != HCCL_SUCCESS) {
             u32 rankSize = (rankTable_->rankList).size();
+            std::shared_lock oneSidedConnslock(oneSidedConnsMutex_);
             for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
-                if (remoteRankId >= oneSidedConns_.size()) {
+                auto it = oneSidedConns_.find(remoteRankId);
+                if (it == oneSidedConns_.end()) {
                     // remoteRankId超出oneSidedConns_的范围，直接退出
                     HCCL_ERROR("[HcclOneSidedService][Prepare] remoteRankId[%u] "
- 	                    "is out of range, size[%u].", remoteRankId, oneSidedConns_.size());
+ 	                    "is not found in map oneSidedConns.", remoteRankId);
                     break;
                 }
-                if (remoteRankId == localRankInfo_.userRank || oneSidedConns_[remoteRankId] == nullptr) {
+                if (remoteRankId == localRankInfo_.userRank || oneSidedConns_.at(remoteRankId) == nullptr) {
                     HCCL_INFO("[HcclOneSidedService][CleanSocketResource] remoteRank[%u] skip.", remoteRankId);
                     continue;
                 }
                 HCCL_INFO("[HcclOneSidedService][CleanSocketResource] remote[%u]", remoteRankId);
-                oneSidedConns_[remoteRankId]->CleanSocketResource(commIdentifier);
+                oneSidedConns_.at(remoteRankId)->CleanSocketResource(commIdentifier);
             }
             HCCL_ERROR("[HcclOneSidedService][Prepare] Prepare failed. commIdentifier[%s]", commIdentifier.c_str());
             return ret;
@@ -728,6 +735,7 @@ HcclResult HcclOneSidedService::CreateLinkFullmesh(const std::string &commIdenti
 {
     u32 rankSize = (rankTable_->rankList).size();
 
+    std::unique_lock oneSidedConnslock(oneSidedConnsMutex_);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
         if (remoteRankId == localRankInfo_.userRank) {
             continue;
@@ -749,9 +757,10 @@ HcclResult HcclOneSidedService::CreateLinkFullmesh(const std::string &commIdenti
         }
         linkThreads[remoteRankId].reset(
                     new (std::nothrow) std::thread(&HcclOneSidedService::ConnectByThread, this,
-                    std::ref(oneSidedConns_[remoteRankId]), commIdentifier, timeoutSec, std::ref(linkResult[remoteRankId])));
+                    std::ref(oneSidedConns_.at(remoteRankId)), commIdentifier, timeoutSec, std::ref(linkResult[remoteRankId])));
         CHK_SMART_PTR_NULL(linkThreads[remoteRankId]);
     }
+    oneSidedConnslock.unlock();
 
     for (u32 remoteRankId = 0; remoteRankId < linkThreads.size(); remoteRankId++) {
         if (linkThreads[remoteRankId] == nullptr || !linkThreads[remoteRankId]->joinable()) {
@@ -846,15 +855,17 @@ HcclResult HcclOneSidedService::ExchangeMemDescFullMesh()
     
     hasErrorFlag_ = false;
     ThreadsGuard threadsGuard(exchangeThreads);
+    std::shared_lock oneSidedConnslock(oneSidedConnsMutex_);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
         if (remoteRankId == localRankInfo_.userRank) {
             continue;
         }
         exchangeThreads[remoteRankId].reset(
                     new (std::nothrow) std::thread(&HcclOneSidedService::ExchangeMemDescByThread, this,
-                    std::ref(oneSidedConns_[remoteRankId]), isUsedRdmaMap_[remoteRankId]));
+                    std::ref(oneSidedConns_.at(remoteRankId)), isUsedRdmaMap_[remoteRankId]));
         CHK_SMART_PTR_NULL(exchangeThreads[remoteRankId]);
     }
+    oneSidedConnslock.unlock();
 
     for (u32 remoteRankId = 0; remoteRankId < exchangeThreads.size(); remoteRankId++) {
         if (exchangeThreads[remoteRankId] == nullptr || !exchangeThreads[remoteRankId]->joinable()) {
@@ -908,6 +919,7 @@ HcclResult HcclOneSidedService::EnableMemAccessByThread()
 HcclResult HcclOneSidedService::EnableMemAccess()
 {
     u32 rankSize = (rankTable_->rankList).size();
+    std::shared_lock oneSidedConnslock(oneSidedConnsMutex_);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
         if (remoteRankId == localRankInfo_.userRank) {
             continue;
@@ -920,6 +932,7 @@ HcclResult HcclOneSidedService::EnableMemAccess()
 HcclResult HcclOneSidedService::DisableMemAccess()
 {
     u32 rankSize = (rankTable_->rankList).size();
+    std::shared_lock oneSidedConnslock(oneSidedConnsMutex_);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
         if (remoteRankId == localRankInfo_.userRank) {
             continue;
@@ -932,6 +945,7 @@ HcclResult HcclOneSidedService::DisableMemAccess()
 HcclResult HcclOneSidedService::Grant(HcclBuf& buf)
 {
     u32 rankSize = (rankTable_->rankList).size();
+    std::shared_lock oneSidedConnslock(oneSidedConnsMutex_);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
         if (remoteRankId == localRankInfo_.userRank || isUsedRdmaMap_[remoteRankId] == true) {
             continue;

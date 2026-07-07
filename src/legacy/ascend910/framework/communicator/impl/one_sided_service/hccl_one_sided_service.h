@@ -13,6 +13,7 @@
 
 #include <array>
 #include <set>
+#include <shared_mutex>
 
 #include "i_hccl_one_sided_service.h"
 #include "hccl_one_sided_conn.h"
@@ -143,6 +144,8 @@ private:
         const rtStream_t stream);
 
     std::unordered_map<RankId, std::shared_ptr<HcclOneSidedConn>> oneSidedConns_{};
+    mutable std::shared_mutex oneSidedConnsMutex_;
+
     std::unordered_map<RankId, bool> isUsedRdmaMap_;
     std::unordered_map<std::string, HcclBuf> desc2HcclBufMapIpc_{};
     std::unordered_map<std::string, HcclBuf> desc2HcclBufMapRoce_{};

@@ -36,6 +36,10 @@
 #define HCCL_HDC_TYPE_D2H 0
 #define HCCL_HDC_TYPE_H2D 1
 #include <memory>
+#include <future>
+#include <chrono>
+#include <vector>
+#include <stdexcept>
  
 using namespace Hccl;
  
@@ -295,4 +299,153 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     oneSidedServiceA.DisableMemAccess(MemDescA);
     oneSidedServiceA.DeregMem(MemDescA);
     delete a;
+}
+
+TEST_F(HcclOneSidedServiceTest, Ut_ExchangeMemDesc_When_AccStateNotAicpu_Expect_ReturnNotSupport)
+{
+    CommunicatorImpl com;
+    com.commExecuteConfig.accState = AcceleratorState::CCU_MS;
+    HcclOneSidedService service(com);
+    HcclMemDesc localDesc{};
+    HcclMemDescs localMemDescs{&localDesc, 1};
+    HcclMemDescs remoteMemDescs{nullptr, 0};
+    u32 actualNum = 0;
+    HcclResult ret = service.ExchangeMemDesc(0, localMemDescs, remoteMemDescs, actualNum);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(HcclOneSidedServiceTest, Ut_ExchangeMemDesc_When_CheckLinkFail_Expect_ReturnError)
+{
+    StubCommunicatorImplTransMgr fakeComm;
+    fakeComm.commExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    HcclOneSidedService service(fakeComm);
+    LinkData badLink(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::RDMA), 0, 1, 0, 1);
+    service.linkDataMap_.emplace(1, badLink);
+
+    HcclMemDesc localDesc{};
+    HcclMemDescs localMemDescs{&localDesc, 1};
+    HcclMemDescs remoteMemDescs{nullptr, 0};
+    u32 actualNum = 0;
+    HcclResult ret = service.ExchangeMemDesc(1, localMemDescs, remoteMemDescs, actualNum);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(service.oneSidedConns_.empty(), true);
+}
+
+TEST_F(HcclOneSidedServiceTest, Ut_ExchangeMemDesc_When_CreateConnectionFail_Expect_ReturnError)
+{
+    StubCommunicatorImplTransMgr fakeComm;
+    fakeComm.commExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    HcclOneSidedService service(fakeComm);
+    LinkData goodLink(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
+    service.linkDataMap_.emplace(1, goodLink);
+
+    MOCKER_CPP(&HcclOneSidedService::CreateConnection)
+        .stubs()
+        .will(returnValue(HCCL_E_INTERNAL));
+
+    HcclMemDesc localDesc{};
+    HcclMemDescs localMemDescs{&localDesc, 1};
+    HcclMemDescs remoteMemDescs{nullptr, 0};
+    u32 actualNum = 0;
+    HcclResult ret = service.ExchangeMemDesc(1, localMemDescs, remoteMemDescs, actualNum);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    EXPECT_EQ(service.oneSidedConns_.empty(), true);
+}
+
+TEST_F(HcclOneSidedServiceTest, Ut_ExchangeMemDesc_When_ConnExists_Expect_Reuse)
+{
+    StubCommunicatorImplTransMgr fakeComm;
+    fakeComm.commExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    HcclOneSidedService service(fakeComm);
+    LinkData link(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
+    service.linkDataMap_.emplace(1, link);
+    service.oneSidedConns_.emplace(1, std::make_shared<HcclOneSidedConn>(&fakeComm, link));
+
+    MOCKER_CPP(&HcclOneSidedConn::ExchangeMemDesc)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    HcclMemDesc localDesc{};
+    HcclMemDescs localMemDescs{&localDesc, 1};
+    HcclMemDescs remoteMemDescs{nullptr, 0};
+    u32 actualNum = 0;
+    HcclResult ret = service.ExchangeMemDesc(1, localMemDescs, remoteMemDescs, actualNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(service.oneSidedConns_.size(), 1u);
+}
+
+TEST_F(HcclOneSidedServiceTest, Ut_BatchPut_When_ConnNotFound_Expect_ThrowOutOfRange)
+{
+    CommunicatorImpl com;
+    HcclOneSidedService service(com);
+    HcclOneSideOpDesc opDesc{};
+    rtStream_t stream = nullptr;
+    EXPECT_THROW(service.BatchPut(999, &opDesc, 1, stream), std::out_of_range);
+}
+
+TEST_F(HcclOneSidedServiceTest, Ut_BatchGet_When_ConnNotFound_Expect_ThrowOutOfRange)
+{
+    CommunicatorImpl com;
+    HcclOneSidedService service(com);
+    HcclOneSideOpDesc opDesc{};
+    rtStream_t stream = nullptr;
+    EXPECT_THROW(service.BatchGet(999, &opDesc, 1, stream), std::out_of_range);
+}
+
+TEST_F(HcclOneSidedServiceTest, Ut_ConcurrentReads_When_MultiReadNotFound_Expect_NoDeadlock)
+{
+    auto com = std::make_shared<CommunicatorImpl>();
+    std::shared_ptr<HcclOneSidedService> service = std::make_shared<HcclOneSidedService>(*com);
+
+    std::vector<std::future<void>> readers;
+    for (int t = 0; t < 8; ++t) {
+        readers.emplace_back(std::async(std::launch::async, [service]() {
+            HcclOneSideOpDesc opDesc{};
+            rtStream_t stream = nullptr;
+            for (int i = 0; i < 50; ++i) {
+                try {
+                    service->BatchPut(999, &opDesc, 1, stream);
+                } catch (const std::out_of_range &) {}
+            }
+        }));
+    }
+    for (auto &f : readers) {
+        EXPECT_EQ(f.wait_for(std::chrono::seconds(10)), std::future_status::ready);
+    }
+}
+
+TEST_F(HcclOneSidedServiceTest, Ut_ConcurrentReadWhileExchangeMemDesc_When_MixedReadWrite_Expect_NoDeadlock)
+{
+    auto fakeComm = std::make_shared<StubCommunicatorImplTransMgr>();
+    fakeComm->commExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    std::shared_ptr<HcclOneSidedService> service = std::make_shared<HcclOneSidedService>(*fakeComm);
+    LinkData badLink(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::RDMA), 0, 1, 0, 1);
+    service->linkDataMap_.emplace(1, badLink);
+
+    auto writer = std::async(std::launch::async, [service, fakeComm]() {
+        HcclMemDesc localDesc{};
+        HcclMemDescs localMemDescs{&localDesc, 1};
+        HcclMemDescs remoteMemDescs{nullptr, 0};
+        u32 actualNum = 0;
+        for (int i = 0; i < 50; ++i) {
+            (void)service->ExchangeMemDesc(1, localMemDescs, remoteMemDescs, actualNum);
+        }
+    });
+    std::vector<std::future<void>> readers;
+    for (int t = 0; t < 8; ++t) {
+        readers.emplace_back(std::async(std::launch::async, [service]() {
+            HcclOneSideOpDesc opDesc{};
+            rtStream_t stream = nullptr;
+            for (int i = 0; i < 50; ++i) {
+                try {
+                    service->BatchPut(999, &opDesc, 1, stream);
+                } catch (const std::out_of_range &) {}
+            }
+        }));
+    }
+
+    EXPECT_EQ(writer.wait_for(std::chrono::seconds(10)), std::future_status::ready);
+    for (auto &f : readers) {
+        EXPECT_EQ(f.wait_for(std::chrono::seconds(10)), std::future_status::ready);
+    }
 }
