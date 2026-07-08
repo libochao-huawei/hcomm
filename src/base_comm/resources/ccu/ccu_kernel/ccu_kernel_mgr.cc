@@ -507,8 +507,8 @@ CcuResult CcuKernelMgr::Translate(const std::vector<CcuKernelHandle> &kernelHand
         return CcuResult::CCU_SUCCESS;
     }
 
-    std::unique_lock<std::mutex> lock(translateMutex_);
     std::vector<CcuKernel *> kernels{};
+    std::unique_lock<std::mutex> mapLock(kernelMapMutex_);
     for (const auto kernelHandle : kernelHandles) {
         const auto &iter = kernelMap_.find(kernelHandle);
         if (iter == kernelMap_.end()) {
@@ -519,9 +519,11 @@ CcuResult CcuKernelMgr::Translate(const std::vector<CcuKernelHandle> &kernelHand
 
         kernels.push_back(iter->second.get());
     }
+    mapLock.unlock();
 
     constexpr bool isFuncBlock = false; // 当前不支持MC2
 
+    std::unique_lock<std::mutex> translateLock(translateMutex_);
     CCU_CHK_RET(TransRepResToPhyRes(kernels, devLogicId_));
     CCU_CHK_RET(TransRepSequenceToMicrocode(kernels, isFuncBlock));
 
@@ -729,6 +731,7 @@ HcclResult CcuKernelMgr::TransRepSequenceToMicrocode(
 
 CcuKernel *CcuKernelMgr::GetKernel(const CcuKernelHandle kernelHandle)
 {
+    std::unique_lock<std::mutex> lock(kernelMapMutex_);
     auto it = kernelMap_.find(kernelHandle);
     if (it == kernelMap_.end()) {
         HCCL_ERROR("[CcuKernelMgr][%s] handle[%llx] is not existed.",
