@@ -59,8 +59,8 @@ struct KFCTilingData {
     uint32_t stride;         // 跳写间隔
     uint32_t workspaceOff;   // 使用workspace作为recvbuf时的workspace偏移
     uint32_t notifyOff;      // device notify write/read value偏移
-    uint16_t notifyBeginCnt; // notift write value的使用个数
-    uint16_t notifyEndCnt;   // notift read value的使用个数
+    uint16_t notifyBeginCnt; // notify write value的使用个数
+    uint16_t notifyEndCnt;   // notify read value的使用个数
     uint8_t  useBufferType;  // 是否使用workspace作为recvbuf
     uint8_t  funID;          // function ID
     uint8_t  dataType;       // hccl 数据类型

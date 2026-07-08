@@ -176,8 +176,8 @@ struct AicpuComContext {
 
     u64 workSpaceAddr;
     u32 notifyOff;       // device notify write/read value偏移
-    u16 notifyBeginCnt;  // notift write value的使用个数
-    u16 notifyEndCnt;    // notift read value的使用个数
+    u16 notifyBeginCnt;  // notify write value的使用个数
+    u16 notifyEndCnt;    // notify read value的使用个数
     u8 useBufferType;   // 使用recvbuf类型
     u64 winOffset;
 
