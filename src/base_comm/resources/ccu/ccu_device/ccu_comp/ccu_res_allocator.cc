@@ -27,7 +27,7 @@ HcclResult CcuResIdAllocator::Alloc(const uint32_t num, const bool consecutive,
     // 快速判断是否可以分配
     const uint32_t freeSize = capacity_ - allocatedSize_;
     if (num > freeSize) {
-        HCCL_WARNING("[CcuResIdAllocator][%s] failed, resType[%s], requeste num[%u] exceeds "
+        HCCL_WARNING("[CcuResIdAllocator][%s] failed, resType[%s], requested num[%u] exceeds "
                      "currently free size[%u].",
             __func__, dfxInfo.c_str(), num, freeSize);
         HCCL_RUN_INFO("Insufficient CCU Resource: %s, requestNum[%u], freeNum[%u].", dfxInfo.c_str(), num, freeSize);
