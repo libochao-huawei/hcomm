@@ -62,7 +62,7 @@ struct KFCTilingData {
     uint16_t notifyBeginCnt; // notift write value的使用个数
     uint16_t notifyEndCnt;   // notift read value的使用个数
     uint8_t  useBufferType;  // 是否使用workspace作为recvbuf
-    uint8_t  funID;          // funtion ID
+    uint8_t  funID;          // function ID
     uint8_t  dataType;       // hccl 数据类型
     uint8_t  groupNum;       // groupNum
     uint8_t  reuseMode;      // tiling调试，填msgCnt，内存优化选择复用的内存块个数
