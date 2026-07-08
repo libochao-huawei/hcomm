@@ -241,7 +241,7 @@ struct ccu_version {
 struct ccu_u_info {
     /* set at init proc, and will never change */
     unsigned int uent_num;      /* ccu uent_num */
-    unsigned int ccu_flag;      /* ccu exsit flag */
+    unsigned int ccu_flag;      /* ccu exist flag */
     unsigned int eid;           /* ccu eid */
     unsigned int ms_id;         /* ccu ms id */
     unsigned int missionKey;    /* mission sqe secure key */
