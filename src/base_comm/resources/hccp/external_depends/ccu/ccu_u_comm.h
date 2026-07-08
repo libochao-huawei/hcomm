@@ -244,7 +244,7 @@ struct ccu_u_info {
     unsigned int ccu_flag;      /* ccu exsit flag */
     unsigned int eid;           /* ccu eid */
     unsigned int ms_id;         /* ccu ms id */
-    unsigned int missionKey;    /* mision sqe secure key */
+    unsigned int missionKey;    /* mission sqe secure key */
     void *resourceAddr;         /* ccu resource addr va */
     struct ccu_data_caps caps;  /* ccu caps, get from ccu regs */
     struct ccu_version version;
