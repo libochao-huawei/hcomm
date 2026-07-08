@@ -33,6 +33,7 @@ struct ExtJfcAttr {
 
 STATIC int RsInitJfcAttr(struct RsCtxJfcCb *jfcCb, urma_jfc_cfg_t *jfcCfg, struct ExtJfcAttr *jfcAttr)
 {
+    unsigned int dieId = 0;
     int ret = 0;
 
     ret = RsUrmaAllocJfc(jfcCb->devCb->urmaCtx, jfcCfg, &jfcAttr->jfc);
@@ -43,9 +44,14 @@ STATIC int RsInitJfcAttr(struct RsCtxJfcCb *jfcCb, urma_jfc_cfg_t *jfcCfg, struc
     }
 
     if (jfcCb->jfcType == JFC_MODE_CCU_POLL) {
-        ret = RsCcuGetCqeBaseAddr(jfcCb->devCb->devAttr.ub.dieId, &jfcAttr->cqeBaseAddrVa);
+        if (!jfcCb->ccuExCfg.valid || jfcCb->ccuExCfg.cqeFlag == 0) {
+            dieId = jfcCb->devCb->devAttr.ub.dieId;
+        } else {
+            dieId = (jfcCb->devCb->devAttr.ub.dieId == 0) ? 1 : 0;
+        }
+        ret = RsCcuGetCqeBaseAddr(dieId, &jfcAttr->cqeBaseAddrVa);
         if (ret != 0 || jfcAttr->cqeBaseAddrVa == 0) {
-            hccp_err("rs_ccu_get_cqe_base_addr failed, ret:%d, dieId:%u", ret, jfcCb->devCb->devAttr.ub.dieId);
+            hccp_err("rs_ccu_get_cqe_base_addr failed, ret:%d, dieId:%u", ret, dieId);
             ret = -EOPENSRC;
             goto free_jfc;
         }

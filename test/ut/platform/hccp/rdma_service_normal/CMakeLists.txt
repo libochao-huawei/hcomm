@@ -64,8 +64,8 @@ set(rs_ut_normal_list
     ${CTX_DIR}/rs_ctx.c
     ${CTX_DIR}/rs_esched.c
     ${CTX_DIR}/rs_ping_urma.c
-    ${CTX_DIR}/product/ascend910_96/rs_ub_jetty.c
-    ${CTX_DIR}/product/ascend910_96/rs_ub_jfc.c
+    ${CTX_DIR}/rs_ub_jetty.c
+    ${CTX_DIR}/rs_ub_jfc.c
     main.cc
     ut_test.cc
     ${SRC_DIR}/test/ut/platform/hccp/stub/ut_dispatch.cc
@@ -87,7 +87,6 @@ target_include_directories(rs_ut_normal BEFORE PRIVATE
     ${SRC_DIR}/src/base_comm/resources/hccp/common
     ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/
     ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/tlv
-    ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/ctx/product
     ${SRC_DIR}/src/base_comm/resources/hccp/rdma_service/ctx
     ${SRC_DIR}/src/base_comm/resources/hccp/inc/private/network
     ${SRC_DIR}/src/base_comm/resources/hccp/inc/network

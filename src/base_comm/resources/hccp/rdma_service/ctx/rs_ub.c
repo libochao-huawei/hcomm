@@ -1458,7 +1458,7 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
     jfcCb->jfcAddr = (uint64_t)(uintptr_t)outJfc; // urma_jfc_t *
     RsUbFillJfcInfo(jfcCb, info);
 
-    hccp_info("jfc addr:0x%llx", jfcCb->jfcAddr);
+    hccp_info("jfc addr:0x%llx mode:%d", jfcCb->jfcAddr, jfcCb->jfcType);
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
     jfcCb->devCb->jfcCnt++;
@@ -1635,42 +1635,6 @@ int RsUbCtxRegJettyDb(struct RsCtxJettyCb *jettyCb, struct udma_u_jetty_info *je
     return 0;
 }
 
-STATIC void RsUbCtxExtJettyCreateTaCache(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg)
-{
-    struct udma_u_lock_jetty_cfg jettyExCfgTa = {0};
-    struct udma_u_jetty_info jettyInfo = {0};
-    urma_user_ctl_out_t out = {0};
-    urma_user_ctl_in_t in = {0};
-    int ret;
-
-    jettyExCfgTa.base_cfg = *jettyCfg;
-    jettyExCfgTa.jetty_type = jettyCb->taCacheMode.lockFlag;
-    jettyExCfgTa.buf_idx = jettyCb->taCacheMode.sqeBufIdx;
-    in.len = (uint32_t)sizeof(struct udma_u_lock_jetty_cfg);
-    in.addr = (uint64_t)(uintptr_t)&jettyExCfgTa;
-    in.opcode = UDMA_U_USER_CTL_CREATE_LOCK_BUFFER_JETTY_EX;
-
-    out.addr = (uint64_t)(uintptr_t)&jettyInfo;
-    out.len = sizeof(struct udma_u_jetty_info);
-    ret = RsUrmaUserCtl(jettyCb->devCb->urmaCtx, &in, &out);
-    if (ret != 0) {
-        jettyCb->jetty = NULL;
-        hccp_err("rs_urma_user_ctl create jetty failed, ret:%d, errno:%d", ret, errno);
-        return;
-    }
-
-    jettyCb->jetty = jettyInfo.jetty;
-    jettyCb->dbAddr = (uint64_t)(uintptr_t)jettyInfo.db_addr;
-
-    // ccu jetty reg db addr
-    ret = RsUbCtxRegJettyDb(jettyCb, &jettyInfo);
-    if (ret != 0) {
-        RsUbCtxExtJettyDelete(jettyCb);
-        jettyCb->jetty = NULL;
-        hccp_err("rs_ub_ctx_reg_jetty_db failed, ret:%d", ret);
-    }
-}
-
 STATIC int RsUbCtxDrvJettyCreate(struct RsCtxJettyCb *jettyCb, struct RsCtxJfcCb *sendJfcCb,
     struct RsCtxJfcCb *recvJfcCb)
 {
@@ -1690,8 +1654,6 @@ STATIC int RsUbCtxDrvJettyCreate(struct RsCtxJettyCb *jettyCb, struct RsCtxJfcCb
         if (jettyCb->jetty == NULL) {
             hccp_err("rs_urma_create_jetty failed, errno=%d", errno);
         }
-    } else if (jettyCb->jettyMode == JETTY_MODE_CCU_TA_CACHE) {
-        RsUbCtxExtJettyCreateTaCache(jettyCb, &jettyInitCfg);
     } else {
         RsUbCtxExtJettyCreate(jettyCb, &jettyInitCfg);
     }
@@ -1790,8 +1752,8 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
     devCb->jettyCnt++;
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
 
-    hccp_run_info("[init][rs_ctx]devIndex:0x%x qp_id:%u create success, jettyCnt:%u",
-        devCb->index, info->ub.id, devCb->jettyCnt);
+    hccp_run_info("[init][rs_ctx]devIndex:0x%x qp_id:%u mode:%d create success, jettyCnt:%u",
+        devCb->index, info->ub.id, jettyCb->jettyMode, devCb->jettyCnt);
 
     return 0;
 

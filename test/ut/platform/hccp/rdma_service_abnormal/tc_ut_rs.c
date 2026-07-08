@@ -195,6 +195,7 @@ extern int RsFindWhiteListNode(struct RsWhiteList *rsSocketWhiteList,
 extern int RsServerSendWlistCheckResult(struct RsConnInfo *conn, bool flag);
 extern uint32_t RsGenerateUeInfo(uint32_t dieId, uint32_t funcId);
 extern uint32_t RsGenerateDevIndex(uint32_t devCnt, uint32_t dieId, uint32_t funcId);
+extern uint32_t RsGenerateMmapResId(uint32_t id, uint32_t dieId, uint32_t funcId);
 extern int RsNetAdaptApiInit(void);
 extern int RsConnectHandle(struct RsInitConfig *cfg);
 extern int RsSocketStateReset(unsigned int chipId, struct RsConnInfo *conn, uint32_t sslEnable, struct rs_cb *rscb);

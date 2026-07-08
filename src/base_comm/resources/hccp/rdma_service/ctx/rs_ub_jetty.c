@@ -147,6 +147,28 @@ void RsUbCtxExtJettyDelete(struct RsCtxJettyCb *jettyCb)
     return;
 }
 
+STATIC int RsSetCcuJettyOpt(struct RsCtxJettyCb *jettyCb)
+{
+    uint64_t ccuJettySqBuffVa = 0;
+    int ret = 0;
+
+    if (!RsIsCcuJetty(jettyCb->jettyMode)) {
+        return ret;
+    }
+
+    if (jettyCb->jettyMode == JETTY_MODE_CCU) {
+        ccuJettySqBuffVa = jettyCb->extMode.sq.buffVa;
+    } else if (jettyCb->jettyMode == JETTY_MODE_CCU_TA_CACHE) {
+        ccuJettySqBuffVa = (uint64_t)jettyCb->taCacheMode.sqeBufIdx;
+    }
+
+    ret = RsUrmaSetJettyOpt(jettyCb->jetty, URMA_JFS_SQE_BASE_ADDR, (void *)&ccuJettySqBuffVa, sizeof(uint64_t));
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_set_jetty_opt URMA_JFS_SQE_BASE_ADDR failed, ret:%d, errno:%d",
+        ret, errno), -EOPENSRC);
+
+    return ret;
+}
+
 STATIC int RsSetJettyOpt(struct RsCtxJettyCb *jettyCb)
 {
     uint8_t dbCstm = jettyCb->extMode.cstmFlag.bs.dbCstm;
@@ -164,12 +186,8 @@ STATIC int RsSetJettyOpt(struct RsCtxJettyCb *jettyCb)
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_set_jetty_opt URMA_JFS_PI_TYPE failed, ret:%d, errno:%d",
         ret, errno), -EOPENSRC);
 
-    if (jettyCb->jettyMode == JETTY_MODE_CCU) {
-        ret = RsUrmaSetJettyOpt(jettyCb->jetty, URMA_JFS_SQE_BASE_ADDR,
-            (void *)&jettyCb->extMode.sq.buffVa, sizeof(uint64_t));
-        CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_set_jetty_opt URMA_JFS_SQE_BASE_ADDR failed, ret:%d, errno:%d",
-            ret, errno), -EOPENSRC);
-    }
+    ret = RsSetCcuJettyOpt(jettyCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsSetCcuJettyOpt failed, ret:%d, mode:%d", ret, jettyCb->jettyMode), ret);
 
     return ret;
 }
@@ -216,7 +234,7 @@ STATIC int RsJettyAttrInit(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jetty
 {
     int ret = 0;
 
-    CHK_PRT_RETURN(jettyCb->extMode.cstmFlag.bs.sqCstm == 1 && jettyCb->jettyMode != JETTY_MODE_CCU,
+    CHK_PRT_RETURN(jettyCb->extMode.cstmFlag.bs.sqCstm == 1 && !RsIsCcuJetty(jettyCb->jettyMode),
         hccp_err("Non-CCU jetty cannot be created by specifying va, sqCstm:%u jettyMode:%u",
         jettyCb->extMode.cstmFlag.bs.sqCstm, jettyCb->jettyMode), -EINVAL);
 
@@ -241,8 +259,8 @@ STATIC int RsCcuJettyDbReg(struct RsCtxJettyCb *jettyCb)
     struct udma_u_jetty_info jettyInfo = {0};
     int ret = 0;
 
-    if (jettyCb->jettyMode != JETTY_MODE_CCU) {
-        return 0;
+    if (!RsIsCcuJetty(jettyCb->jettyMode)) {
+        return ret;
     }
 
     // only ccu jetty requires db registration

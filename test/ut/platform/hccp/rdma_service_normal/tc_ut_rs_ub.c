@@ -44,6 +44,7 @@
 
 extern uint32_t RsGenerateUeInfo(uint32_t dieId, uint32_t funcId);
 extern uint32_t RsGenerateDevIndex(uint32_t devCnt, uint32_t dieId, uint32_t funcId);
+extern uint32_t RsGenerateMmapResId(uint32_t id, uint32_t dieId, uint32_t funcId);
 extern int RsUbGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct RsUbDevCb **devCb);
 extern int RsUrmaDeviceApiInit(void);
 extern int RsOpenUrmaSo(void);
@@ -1024,12 +1025,6 @@ void TcRsUbCtxExtJettyCreate()
     jettyCb.jettyMode = JETTY_MODE_USER_CTL_NORMAL;
     RsUbCtxExtJettyCreate(&jettyCb, &jettyCfg);
     RsUbCtxExtJettyDelete(&jettyCb);
-
-    mocker_clean();
-    mocker(RsUbCtxRegJettyDb, 1, 0);
-    jettyCb.jettyMode = JETTY_MODE_CCU_TA_CACHE;
-    RsUbCtxExtJettyCreateTaCache(&jettyCb, &jettyCfg);
-    RsUbCtxExtJettyDelete(&jettyCb);
     mocker_clean();
 }
 
@@ -1121,8 +1116,8 @@ void TcRsUbCtxExtJettyDelete()
 {
     struct RsCtxJettyCb jettyCb = {0};
     struct RsUbDevCb devCb = {0};
-    urma_jetty_t jetty = {0};
-    jettyCb.jetty = &jetty;
+    urma_jetty_t *jetty = (urma_jetty_t *)calloc(1, sizeof(urma_jetty_t));
+    jettyCb.jetty = jetty;
 
     jettyCb.devCb = &devCb;
     mocker(RsUrmaUserCtl, 1, -1);
@@ -1311,9 +1306,11 @@ void TcRsUbCtxJettyDestroyBatch()
 {
     struct JettyDestroyBatchInfo batchInfo = {0};
     struct RsUbDevCb devCb = {0};
+    urma_device_t urmaDev = {0};
     unsigned int jettyIds[1] = {0};
     unsigned int num = 0;
     int ret = 0;
+    devCb.urmaDev = &urmaDev;
 
     ret = RsUbCtxJettyDestroyBatch(&devCb, jettyIds, &num);
     EXPECT_INT_EQ(-EINVAL, ret);
@@ -1371,6 +1368,7 @@ void TcRsUbCtxJettyDestroyBatch()
 
     num = 1;
     jettyCbStub.state = RS_JETTY_STATE_CREATED;
+    jettyCbStub.devCb = &devCb;
     RsListAddTail(&jettyCbStub.list, &devCb.jettyList);
     devCb.jettyCnt++;
     mocker_invoke(RsUbGetJettyCb, RsUbGetJettyCbStub, 1);
@@ -1383,6 +1381,7 @@ void TcRsUbCtxJettyDestroyBatch()
 
     num = 1;
     jettyCbStub.state = RS_JETTY_STATE_CREATED;
+    jettyCbStub.devCb = &devCb;
     RsListAddTail(&jettyCbStub.list, &devCb.jettyList);
     devCb.jettyCnt++;
     mocker_invoke(RsUbGetJettyCb, RsUbGetJettyCbStub, 1);

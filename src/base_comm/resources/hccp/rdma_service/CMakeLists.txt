@@ -36,8 +36,8 @@ set(RS_SOURCE_LIST
     ctx/rs_ub.c
     ctx/rs_ub_dfx.c
     ctx/rs_ub_tp.c
-    ctx/product/ascend910_95/rs_ub_jetty.c
-    ctx/product/ascend910_95/rs_ub_jfc.c
+    ctx/rs_ub_jetty.c
+    ctx/rs_ub_jfc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/dl_hal_function.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/ascend_hal_dl.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/file_opt.c
@@ -112,7 +112,6 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/nda
     # HCCP Legacy
     ${CMAKE_CURRENT_SOURCE_DIR}/ctx
-    ${CMAKE_CURRENT_SOURCE_DIR}/ctx/product
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
     ${URMA_INCLUDE_DIR}
