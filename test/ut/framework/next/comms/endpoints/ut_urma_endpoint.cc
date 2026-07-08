@@ -184,6 +184,14 @@ TEST_F(UrmaEndpointTest, Ut_When_IsCtxHandleValid_InvalidatedHandle_Expect_False
     EXPECT_FALSE(endpoint->IsCtxHandleValid());
 }
 
+TEST_F(UrmaEndpointTest, Ut_When_IsCtxHandleValid_ConstObj_Expect_False)
+{
+    auto endpoint = std::make_unique<UrmaEndpoint>(endpointDesc);
+    endpoint->ctxHandle_ = nullptr;
+    const UrmaEndpoint* constEndpoint = endpoint.get();
+    EXPECT_FALSE(constEndpoint->IsCtxHandleValid());
+}
+
 TEST_F(UrmaEndpointTest, Ut_When_GetAsyncEvents_CtxHandleInvalidated_Expect_HCCL_E_INTERNAL)
 {
     auto endpoint = std::make_unique<UrmaEndpoint>(endpointDesc);
@@ -219,6 +227,27 @@ TEST_F(UrmaEndpointTest, Ut_When_GetAsyncEvents_CtxHandleValid_Expect_RaCtxGetAs
     MOCKER(RaCtxGetAsyncEvents).stubs().will(returnValue(0));
 
     EXPECT_EQ(endpoint->GetAsyncEvents(devPhyId, events, num), HCCL_SUCCESS);
+    Hccl::RdmaHandleManager::GetInstance().activeHandles_.erase(fakeHandle);
+    GlobalMockObject::verify();
+}
+
+TEST_F(UrmaEndpointTest, Ut_When_GetAsyncEvents_Expect_HCCL_E_INTERNAL)
+{
+    auto endpoint = std::make_unique<UrmaEndpoint>(endpointDesc);
+    endpoint->ccuChannelCtxPool_.reset(new (std::nothrow) CcuChannelCtxPool(0));
+    Hccl::RdmaHandle fakeHandle = (Hccl::RdmaHandle)0xDCBA;
+    endpoint->ctxHandle_ = fakeHandle;
+    Hccl::RdmaHandleManager::GetInstance().activeHandles_.insert(fakeHandle);
+
+    u32 devPhyId = 0;
+    struct AsyncEvent events[ASYNC_EVENT_MAX_NUM];
+    u32 num = ASYNC_EVENT_MAX_NUM;
+    u32 interfaceVersion = 2;
+
+    MOCKER(RaGetInterfaceVersion).stubs().with(mockcpp::any(), mockcpp::any(), outBoundP(&interfaceVersion, sizeof(interfaceVersion))).will(returnValue(0));
+    MOCKER(RaCtxGetAsyncEvents).stubs().will(returnValue(4));
+
+    EXPECT_EQ(endpoint->GetAsyncEvents(devPhyId, events, num), HCCL_E_INTERNAL);
     Hccl::RdmaHandleManager::GetInstance().activeHandles_.erase(fakeHandle);
     GlobalMockObject::verify();
 }

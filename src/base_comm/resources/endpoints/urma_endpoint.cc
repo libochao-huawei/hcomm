@@ -229,9 +229,8 @@ HcclResult UrmaEndpoint::GetAsyncEvents(uint32_t devPhyId, struct AsyncEvent eve
 
     ret = RaCtxGetAsyncEvents(ctxHandle_, events, &num);
     if (ret != 0) {
-        HCCL_ERROR("[%s] devPhyId[%u] RaCtxGetAsyncEvents failed, ctxHandle[%p] "
-                   "origRet[%d](0x%x)", __func__, devPhyId,
-            (void *)ctxHandle_, ret, ret);
+        HCCL_ERROR("[%s] devPhyId[%u] RaCtxGetAsyncEvents failed, ctxHandle[%p] ret[%d]", __func__, devPhyId,
+                  (void *)ctxHandle_, ret);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;

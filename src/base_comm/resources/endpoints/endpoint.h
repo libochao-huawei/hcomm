@@ -49,7 +49,7 @@ public:
         return ctxHandle_;
     }
 
-    bool IsCtxHandleValid()
+    bool IsCtxHandleValid() const
     {
         if (ctxHandle_ == nullptr) {
             return false;
