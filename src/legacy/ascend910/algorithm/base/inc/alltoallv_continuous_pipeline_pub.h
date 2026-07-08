@@ -99,7 +99,7 @@ private:
     // 轮询等待某个rank的flag，阻塞函数
     HcclResult WaitValueOfRank(const u32 rank, const HcclUs &startTimeUs, u32& value);
 
-    // 等待counts信息并刷新recive info，阻塞函数
+    // 等待counts信息并刷新receive info，阻塞函数
     HcclResult WaitAndCalReceiveInfo();
 
     // 获取module内某个rank对应的Sdma从流idx
