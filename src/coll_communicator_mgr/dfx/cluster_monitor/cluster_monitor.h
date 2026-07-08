@@ -120,7 +120,7 @@ struct ClusterMonitorSocketCtx { // 原ConnInfo
     bool newConn = false;                         // 是否是新增的连接
     ClusterMonitorSocketCtx() {}
     ClusterMonitorSocketCtx(SocketDesc &socketDesc, bool newConn)
-        : socketDesc(socketDesc), newConn(newConn)
+        : socketDesc(socketDesc), socketHandler(nullptr), newConn(newConn)
     {}
 
     void PrintSocketDesc(std::string tag) const

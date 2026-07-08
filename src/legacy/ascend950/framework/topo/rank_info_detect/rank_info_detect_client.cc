@@ -26,6 +26,7 @@
 #include "preempt_port_manager.h"
 
 namespace Hccl {
+constexpr u32 HOST_CONTROL_PORT_COUNT = 15;
 
 void RankInfoDetectClient::Setup(RankTableInfo &rankTable)
 {
@@ -521,8 +522,8 @@ void RankInfoDetectClient::SetupHostListenPort(u32 devLogicId, u32 devPhyId, con
     if (portRange.empty()) {
         constexpr u32 HOST_CONTROL_BASE_PORT = 60000;    // 控制面起始port
         HCCL_INFO("[RankInfoDetectClient::%s] No port configuration, using default port range[%u, %u]", __func__,
-            HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + 15);
-        SocketPortRange defaultRange = {HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + 15};
+            HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + HOST_CONTROL_PORT_COUNT);
+        SocketPortRange defaultRange = {HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + HOST_CONTROL_PORT_COUNT};
         portRange.push_back(defaultRange);
     }
 

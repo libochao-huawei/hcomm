@@ -29,6 +29,7 @@ constexpr uint8_t sdmaSqeType = 11; // A5 sqeType为11表示SDMA任务
 constexpr uint32_t TASK_CONTEXT_SIZE = 50; // task 执行失败时打印前序task信息的数量
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - TASK_CONTEXT_SIZE; // task 执行失败时打印前序task信息的长度限制
 constexpr u32 MAX_NAME_LEN = 64;
+constexpr u32 TASK_ID_SHIFT_BITS = 16;
 
 HcclCommTaskExceptionLite &HcclCommTaskExceptionLite::GetInstance()
 {
@@ -218,7 +219,7 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
 
 u32 HcclCommTaskExceptionLite::GetSqeId(uint16_t taskId, uint16_t streamId)
 {
-    return (static_cast<u32>(taskId) << 16) | static_cast<u32>(streamId);
+    return (static_cast<u32>(taskId) << TASK_ID_SHIFT_BITS) | static_cast<u32>(streamId);
 }
  	 
 HcclResult HcclCommTaskExceptionLite::ReportErrMsg(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo)

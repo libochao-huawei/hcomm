@@ -196,8 +196,7 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
 
     CommEngine newEngine = ConvertEngineToTsType(engine);
     ThreadType type = THREAD_TYPE_TS;
-    std::unique_ptr<ThreadConfig[]> config;
-    config = std::make_unique<ThreadConfig[]>(threadNum);
+    std::unique_ptr<ThreadConfig[]> config = std::make_unique<ThreadConfig[]>(threadNum);
     CHK_PTR_NULL(config);
     CHK_PRT_RET(ThreadConfigInit(config.get(), threadNum) != 0,
         HCCL_ERROR("[%s] ThreadConfigInit failed", __func__), HCCL_E_INTERNAL);

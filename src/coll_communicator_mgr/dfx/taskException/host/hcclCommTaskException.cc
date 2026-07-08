@@ -166,7 +166,7 @@ HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHa
 
     bool isAuxInfoExisted{false};
     for (u32 i = 0; i < auxInfo.auxInfoNum; i++) {
-        if (auxInfo.auxInfoValues[i]) { // 非零进行打印
+        if (auxInfo.auxInfoValues[i] != 0) { // 非零进行打印
             isAuxInfoExisted = true;
             HCCL_ERROR("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[0x%x]",
  	  	            devLogicId, auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);
@@ -254,7 +254,7 @@ void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* coll
         return;
     }
 
-    Hccl::HcclCommunicator * commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
+    Hccl::HcclCommunicator *commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
     if (commV2 == nullptr) {
         HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]commV2 is nullptr, rankId[%u]", rankid);
         remoteLocalId = INVALID_VALUE_RANKID;
@@ -281,7 +281,7 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
         return;
     }
     
-    Hccl::HcclCommunicator * commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
+    Hccl::HcclCommunicator *commV2 = static_cast<Hccl::HcclCommunicator *>(collComm->GetCommunicatorV2());
     if (commV2 == nullptr) {
         HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]commV2 is nullptr, rankId[%u]", rankid);
         netInstanceId = "";
