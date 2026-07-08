@@ -428,3 +428,191 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetStatusReady_SocketNotNullptr) {
     ch.GetStatus();
     GlobalMockObject::verify();
 }
+
+TEST_F(AicpuTsUboeChannelTest, Ut_CheckSocketStatus_When_SocketOK_Expect_ReturnSuccess)
+{
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    auto fakeSock = new FakeSocket(Hccl::SocketStatus::OK);
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(fakeSock);
+
+    Hccl::SocketStatus okStatus = Hccl::SocketStatus::OK;
+    MOCKER(&Hccl::Socket::GetAsyncStatus).stubs().will(returnValue(okStatus));
+
+    HcclResult ret = ch.CheckSocketStatus("TestOp");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+    delete fakeSock;
+    ch.socket_ = nullptr;
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_CheckSocketStatus_When_SocketNull_Expect_ReturnPtrError)
+{
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    ch.socket_ = nullptr;
+    HcclResult ret = ch.CheckSocketStatus("TestOp");
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_CheckSocketStatus_When_SocketTimeout_Expect_ReturnTimeout)
+{
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    auto fakeSock = new FakeSocket(Hccl::SocketStatus::TIMEOUT);
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(fakeSock);
+
+    Hccl::SocketStatus timeoutStatus = Hccl::SocketStatus::TIMEOUT;
+    MOCKER(&Hccl::Socket::GetAsyncStatus).stubs().will(returnValue(timeoutStatus));
+
+    HcclResult ret = ch.CheckSocketStatus("TestOp");
+    EXPECT_EQ(ret, HCCL_E_TIMEOUT);
+
+    GlobalMockObject::verify();
+    delete fakeSock;
+    ch.socket_ = nullptr;
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_UpdateMemInfo_When_SocketNullAndBufferVecTempEmpty_Expect_ReturnSuccess)
+{
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    MOCKER_CPP(&AicpuTsUboeChannel::Makebufs,
+        HcclResult(AicpuTsUboeChannel::*)(HcommMemHandle*, uint32_t, std::vector<std::shared_ptr<Hccl::Buffer>>&))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsUboeChannel::BuildBuffer,
+        HcclResult(AicpuTsUboeChannel::*)(std::vector<std::shared_ptr<Hccl::Buffer>>&))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    ch.bufferVecTemp_.clear();
+    ch.socket_ = nullptr;
+
+    HcommMemHandle handles[1] = { reinterpret_cast<HcommMemHandle>(0x1) };
+    HcclResult ret = ch.UpdateMemInfo(handles, 1);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_UpdateMemInfo_When_BufferVecTempEmpty_Expect_ReturnSuccess)
+{
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    auto fakeSock = new FakeSocket(Hccl::SocketStatus::OK);
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(fakeSock);
+
+    MOCKER_CPP(&AicpuTsUboeChannel::Makebufs,
+        HcclResult(AicpuTsUboeChannel::*)(HcommMemHandle*, uint32_t, std::vector<std::shared_ptr<Hccl::Buffer>>&))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsUboeChannel::BuildBuffer,
+        HcclResult(AicpuTsUboeChannel::*)(std::vector<std::shared_ptr<Hccl::Buffer>>&))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    ch.bufferVecTemp_.clear();
+
+    HcommMemHandle handles[1] = { reinterpret_cast<HcommMemHandle>(0x1) };
+    HcclResult ret = ch.UpdateMemInfo(handles, 1);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+    delete fakeSock;
+    ch.socket_ = nullptr;
+}
+
+static void StubSendAsync(Hccl::Socket *, const u8 *, u32) {}
+static void StubRecvAsync(Hccl::Socket *, u8 *, u32) {}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_UpdateMemInfo_When_CheckSocketStatusTimeout_Expect_ReturnTimeout)
+{
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    auto fakeSock = new FakeSocket(Hccl::SocketStatus::OK);
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(fakeSock);
+
+    MOCKER_CPP(&AicpuTsUboeChannel::Makebufs,
+        HcclResult(AicpuTsUboeChannel::*)(HcommMemHandle*, uint32_t, std::vector<std::shared_ptr<Hccl::Buffer>>&))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsUboeChannel::BuildBuffer,
+        HcclResult(AicpuTsUboeChannel::*)(std::vector<std::shared_ptr<Hccl::Buffer>>&))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::SendAsync, void(Hccl::Socket::*)(const u8 *, u32))
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any())
+        .will(invoke(StubSendAsync));
+    MOCKER_CPP(&Hccl::Socket::RecvAsync, void(Hccl::Socket::*)(u8 *, u32))
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any())
+        .will(invoke(StubRecvAsync));
+    MOCKER_CPP(&AicpuTsUboeChannel::CheckSocketStatus, HcclResult(AicpuTsUboeChannel::*)(const std::string&))
+        .stubs()
+        .will(returnValue(HCCL_E_TIMEOUT));
+
+    ch.bufferVecTemp_.push_back(nullptr);
+
+    HcommMemHandle handles[1] = { reinterpret_cast<HcommMemHandle>(0x1) };
+    HcclResult ret = ch.UpdateMemInfo(handles, 1);
+    EXPECT_EQ(ret, HCCL_E_TIMEOUT);
+
+    GlobalMockObject::verify();
+    delete fakeSock;
+    ch.socket_ = nullptr;
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_UpdateMemInfo_When_MakebufsFail_Expect_ReturnError)
+{
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    MOCKER_CPP(&AicpuTsUboeChannel::Makebufs,
+        HcclResult(AicpuTsUboeChannel::*)(HcommMemHandle*, uint32_t, std::vector<std::shared_ptr<Hccl::Buffer>>&))
+        .stubs()
+        .will(returnValue(HCCL_E_PARA));
+
+    HcommMemHandle handles[1] = { reinterpret_cast<HcommMemHandle>(0x1) };
+    HcclResult ret = ch.UpdateMemInfo(handles, 1);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(AicpuTsUboeChannelTest, Ut_UpdateMemInfo_When_BuildBufferFail_Expect_ReturnError)
+{
+    HcommChannelDesc desc{};
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
+    AicpuTsUboeChannel ch(ep, desc);
+
+    MOCKER_CPP(&AicpuTsUboeChannel::Makebufs,
+        HcclResult(AicpuTsUboeChannel::*)(HcommMemHandle*, uint32_t, std::vector<std::shared_ptr<Hccl::Buffer>>&))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsUboeChannel::BuildBuffer,
+        HcclResult(AicpuTsUboeChannel::*)(std::vector<std::shared_ptr<Hccl::Buffer>>&))
+        .stubs()
+        .will(returnValue(HCCL_E_INTERNAL));
+
+    HcommMemHandle handles[1] = { reinterpret_cast<HcommMemHandle>(0x1) };
+    HcclResult ret = ch.UpdateMemInfo(handles, 1);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}

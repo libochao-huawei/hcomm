@@ -22,6 +22,8 @@ public:
     HcclResult Init() override;
     ChannelStatus GetStatus() override;
 
+    HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum) override;
+
     HcommChannelKind GetChannelKind() const override
     {
         return HcommChannelKind::AICPU_TS_UBOE;
@@ -40,6 +42,8 @@ private:
     void RmtEidUnpackProc(Hccl::IpAddress& rmtAddr);
     void HandleProcessData();
     void ProcessUboeState();
+
+    HcclResult CheckSocketStatus(const std::string &socketOperator);
 
     std::vector<char> sendEidData_{};
     std::vector<char> recvEidData_{};
