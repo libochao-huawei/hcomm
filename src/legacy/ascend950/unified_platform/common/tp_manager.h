@@ -61,7 +61,7 @@ struct TpInfo {
 };
 
 struct TpAttrInfo {
-    struct TpAttr tpAttr{0};
+    struct TpAttr tpAttr{};
 
     TpAttrInfo() = default;
     TpAttrInfo(const struct TpAttr &attr)
@@ -140,7 +140,7 @@ private:
 
     struct TpAttrRequestCtx {
         RequestHandle handle{0};
-        struct TpAttr tpAttr{0};
+        struct TpAttr tpAttr{};
     };
 
     /// 三级索引：先按本端 IP，再按对端 IP，最后按 QoS 键（`QosKey`：`param.qos & 0xFF`，与 next `TpMgr` 一致）。

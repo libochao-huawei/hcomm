@@ -59,7 +59,7 @@ HostCpuRoceChannel::~HostCpuRoceChannel() {
     
     if (isHybridMode_ && connections_.size() != 0) {
         auto qpInfo = connections_[0]->GetQpInfo();
-        struct MrInfoT mrInfo = {nullptr};
+        struct MrInfoT mrInfo{};
 
         for (uint32_t i = 0; i < hccl::MEM_TYPE_RESERVED; i++) {
             if (localMemMsg_[i].addr == nullptr) {
@@ -320,6 +320,7 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
             }
             rdmaStatus_ = RdmaStatus::QP_MODIFIED;
             // modify完就不需要再轮询状态了，直接向下走准备Rqe的流程。
+            [[fallthrough]];
         case RdmaStatus::QP_MODIFIED:
             // Prepare Rqes
             if (!isHybridMode_) {
@@ -327,6 +328,7 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
                     CHK_RET(IbvPostRecv());
                 }
             }
+            [[fallthrough]];
         default:
             rdmaStatus_ = RdmaStatus::CONN_OK;
             channelStatus_ = ChannelStatus::READY;
@@ -960,6 +962,7 @@ HcclResult HostCpuRoceChannel::ReportWcStatusError(enum ibv_wc_status status)
     Hccl::IpAddress localIp, remoteIp;
     (void)hcomm::CommAddrToIpAddress(localEp_.commAddr, localIp);
     (void)hcomm::CommAddrToIpAddress(remoteEp_.commAddr, remoteIp);
+    HCCL_ERROR("[HostCpuRoceChannel::%s] wc_status[%d].", __func__, status);
     RPT_INPUT_ERR(true, "EI0013", std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp",
         "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
         std::vector<std::string>({std::to_string(localEp_.loc.device.serverIdx), std::to_string(localEp_.loc.device.devPhyId),
@@ -1110,6 +1113,7 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
 void HostCpuRoceChannel::BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len,
                      size_t localIdx, size_t rmtIdx, struct ibv_send_wr &wr, struct ibv_sge &sg) const
 {
+    (void)caller;
     wr.sg_list             = &sg;
     wr.sg_list->addr       = reinterpret_cast<uint64_t>(localAddr);
     wr.sg_list->length     = static_cast<uint32_t>(len);
@@ -1419,7 +1423,7 @@ HcclResult HostCpuRoceChannel::CreateNotifyHybird(hccl::MemType notifyType, uint
         return HCCL_E_MEMORY;
     }
 
-    struct MrInfoT mrInfo = {nullptr};
+    struct MrInfoT mrInfo{};
     mrInfo.addr = ptr;
     mrInfo.size = localNotifySize_;
     mrInfo.access = localNotifyAccess_;
@@ -1530,7 +1534,7 @@ HcclResult HostCpuRoceChannel::ExchangeCapability()
 
 HcclResult HostCpuRoceChannel::RegisterUserMemHybird()
 {
-    struct MrInfoT mrInfo = {nullptr};
+    struct MrInfoT mrInfo{};
     mrInfo.addr = reinterpret_cast<void *>(localRmaBuffers_[0]->GetAddr());
     mrInfo.size = localRmaBuffers_[0]->GetSize();
     mrInfo.access = 7;

@@ -42,7 +42,7 @@ public:
     HcclResult SaveTraceInfo(std::string &logInfo, AtraceOption op);
     HcclResult SavealgtypeTraceInfo(std::string &algtype, const std::string &tag);
     HcclTraceType hcclTraceType_ = HcclTraceType::HostTraceType;
-    UtraceAttr utraceAttr_{0};
+    UtraceAttr utraceAttr_{};
     uint32_t index{0};
     HcclTraHandle handle{0};
 };

@@ -45,6 +45,7 @@ public:
     // 授权
     virtual HcclResult MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo)
     {
+        (void)remoteGrantInfo;
         return HCCL_SUCCESS;
     }
 

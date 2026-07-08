@@ -135,7 +135,7 @@ private:
     u32 piVal{0};
     u32 ciVal{0};
 
-    CqCreateInfo cqInfo_{0};
+    CqCreateInfo cqInfo_{};
 
     bool CheckRequestResult();
     void ThrowAbnormalStatus(std::string funcName);

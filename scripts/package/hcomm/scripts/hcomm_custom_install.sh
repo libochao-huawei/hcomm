@@ -319,6 +319,14 @@ clear_kernel_cache_dir() {
 WHL_INSTALL_DIR_PATH="${common_parse_dir}/python/site-packages"
 PYTHON_HCOMM_WHL="${sourcedir}/lib64/hccl-0.1.0-py3-none-any.whl"
 
+remove_empty_hcomm_plugin_dir() {
+    local plugin_dir="${common_parse_dir}/hcomm_plugin"
+    if [ -d "${plugin_dir}" ] && [ -z "$(ls -A "${plugin_dir}" 2> /dev/null)" ]; then
+        rmdir "${plugin_dir}"
+        log "INFO" "empty hcomm_plugin directory was deleted."
+    fi
+}
+
 custom_install() {
     if [ -z "$common_parse_dir/share/info/hcomm" ]; then
         log "ERROR" "ERR_NO:0x0001;ERR_DES:hcomm directory is empty"
@@ -353,6 +361,7 @@ custom_install() {
         fi
     fi
 
+    remove_empty_hcomm_plugin_dir
     return 0
 }
 

@@ -38,7 +38,8 @@ const HcommNicPluginInfo kPluginInfo = {
     {HCOMM_NIC_PLUGIN_INFO_VERSION, HCOMM_NIC_PLUGIN_INFO_MAGIC_WORD, sizeof(HcommNicPluginInfo), 0},
     "hcomm_cpu_roce",
     1U,
-    {COMM_PROTOCOL_ROCE, COMM_PROTOCOL_HCCS, COMM_PROTOCOL_HCCS, COMM_PROTOCOL_HCCS}
+    {COMM_PROTOCOL_ROCE, COMM_PROTOCOL_HCCS, COMM_PROTOCOL_HCCS, COMM_PROTOCOL_HCCS},
+    {}
 };
 
 HcommNicEndpointOps kEndpointOps = PluginOps::EndpointOps();

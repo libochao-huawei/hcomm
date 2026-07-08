@@ -215,8 +215,9 @@ HcclResult HostCpuUrmaChannel::Init()
 
 HcclResult HostCpuUrmaChannel::GetNotifyNum(uint32_t *notifyNum) const
 {
+    (void)notifyNum;
     HCCL_INFO("[HostCpuUrmaChannel::%s] not supported yet.", __func__);
-    return HCCL_SUCCESS;
+    return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult HostCpuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
@@ -250,18 +251,25 @@ ChannelStatus HostCpuUrmaChannel::GetStatus()
 
 HcclResult HostCpuUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
+    (void)remoteNotifyIdx;
     HCCL_INFO("[HostCpuUrmaChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult HostCpuUrmaChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
 {
+    (void)localNotifyIdx;
+    (void)timeout;
     HCCL_INFO("[HostCpuUrmaChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult HostCpuUrmaChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
 {
+    (void)dst;
+    (void)src;
+    (void)len;
+    (void)remoteNotifyIdx;
     HCCL_INFO("[HostCpuUrmaChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
@@ -344,7 +352,7 @@ HcclResult HostCpuUrmaChannel::UrmaPostJettySendWr(urma_opcode_t opcode, void *d
         urma_jfs_wr_t *badWr = nullptr;
         uint64_t chunkLen = std::min(len - offset, maxJettyWrDataLen);
         // 源地址 数据长度 tseg
-        urma_sge_t srclist = {0};
+        urma_sge_t srclist{};
         urmaWriteWr.rw.src.sge = &srclist;
         urmaWriteWr.rw.src.sge->addr = reinterpret_cast<uint64_t>(static_cast<char *>(const_cast<void *>(src)) + offset);
         urmaWriteWr.rw.src.sge->len = chunkLen;
@@ -352,7 +360,7 @@ HcclResult HostCpuUrmaChannel::UrmaPostJettySendWr(urma_opcode_t opcode, void *d
         urmaWriteWr.rw.src.num_sge = 1;
 
         // 目的地址 数据长度 tseg
-        urma_sge_t dstlist = {0};
+        urma_sge_t dstlist{};
         urmaWriteWr.rw.dst.sge = &dstlist;
         urmaWriteWr.rw.dst.sge->addr = reinterpret_cast<uint64_t>(static_cast<const char *>(dst) + offset); // 远端地址
         urmaWriteWr.rw.dst.sge->len = chunkLen;

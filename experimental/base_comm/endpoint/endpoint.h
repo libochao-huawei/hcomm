@@ -37,9 +37,17 @@ public:
 
     virtual HcclResult ServerSocketListen(const uint32_t port) = 0;
 
-    virtual HcclResult ServerSocketStopListen(const uint32_t port) {return HCCL_E_NOT_SUPPORT;};
+    virtual HcclResult ServerSocketStopListen(const uint32_t port)
+    {
+        (void)port;
+        return HCCL_E_NOT_SUPPORT;
+    }
 
-    virtual HcclResult ServerSocketGetListenPort(uint32_t *port) {return HCCL_E_NOT_SUPPORT;};
+    virtual HcclResult ServerSocketGetListenPort(uint32_t *port)
+    {
+        (void)port;
+        return HCCL_E_NOT_SUPPORT;
+    }
 
     virtual std::shared_ptr<RegedMemMgr> GetRegedMemMgr() 
     {
@@ -75,6 +83,7 @@ public:
 
     virtual HcclResult MemoryGrant(const HcommMemGrantInfo *remoteGrantInfo)
     {
+        (void)remoteGrantInfo;
         return HCCL_SUCCESS;
     }
 

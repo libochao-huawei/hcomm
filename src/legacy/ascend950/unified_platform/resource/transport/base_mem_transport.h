@@ -141,6 +141,7 @@ public:
 
     virtual void SetConnVec(std::vector<RmaConnection *> &connVec)
     {
+        (void)connVec;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
@@ -151,45 +152,73 @@ public:
 
     virtual void Post(u32 index, const Stream &stream)
     {
+        (void)index;
+        (void)stream;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
     virtual void Wait(u32 index, const Stream &stream, u32 timeout)
     {
+        (void)index;
+        (void)stream;
+        (void)timeout;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
     virtual void Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
     {
+        (void)locSlice;
+        (void)rmtSlice;
+        (void)stream;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
     virtual void ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
                             const Stream &stream)
     {
+        (void)locSlice;
+        (void)rmtSlice;
+        (void)reduceIn;
+        (void)stream;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
     virtual void Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream)
     {
+        (void)locSlice;
+        (void)rmtSlice;
+        (void)stream;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
     virtual void WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
                              const ReduceIn &reduceIn, const Stream &stream)
     {
+        (void)locSlice;
+        (void)rmtSlice;
+        (void)reduceIn;
+        (void)stream;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
     virtual void WriteWithNotify(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
                                  const WithNotifyIn &withNotify, const Stream &stream)
     {
+        (void)locSlice;
+        (void)rmtSlice;
+        (void)withNotify;
+        (void)stream;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
     virtual void WriteReduceWithNotify(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
                                        const ReduceIn &reduceIn, const WithNotifyIn &withNotify, const Stream &stream)
     {
+        (void)locSlice;
+        (void)rmtSlice;
+        (void)reduceIn;
+        (void)withNotify;
+        (void)stream;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
