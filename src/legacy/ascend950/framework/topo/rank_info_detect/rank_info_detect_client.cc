@@ -161,7 +161,7 @@ void CheckRootInfoJson(const nlohmann::json &parseJson)
     bool isInvalidPath = (realpath(topoFilePath.c_str(), resolvedPath) == nullptr);
     if (isInvalidPath) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
-            std::vector<std::string>({topoFilePath, "topo_file_path", "vaild path"}));
+            std::vector<std::string>({topoFilePath, "topo_file_path", "valid path"}));
         HCCL_ERROR("[%s] topo_file_path[%s] is not a valid real path", __func__, topoFilePath.c_str());
         THROW<InvalidParamsException>("topo_file_path error");
     }

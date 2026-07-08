@@ -50,7 +50,7 @@ Stream::~Stream()
     } catch (std::exception &e) {
         HCCL_ERROR("%s", e.what());
     } catch (...) {
-        HCCL_ERROR("Unknow Error occurs when destruct stream %d", id);
+        HCCL_ERROR("Unknown Error occurs when destruct stream %d", id);
     }
 }
 
