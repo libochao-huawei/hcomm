@@ -13,6 +13,7 @@
 #include "hccl/hccl_res.h"
 #include "log.h"
 #include "roce_mem.h"
+#include "proc_reged_mem_mgr_cache.h"
 #include "host_socket_handle_manager.h"
 #include "adapter_rts_common.h"
 #include "hccp_peer_manager.h"
@@ -36,6 +37,7 @@ CpuRoceEndpoint::~CpuRoceEndpoint() noexcept
         ServerSocketStopListenImpl(dynamicPort_);
     }
     dynamicPort_ = HCCL_INVALID_PORT;
+    ProcRegedMemMgrCache::GetInstance().Release(cacheKey_);
 }
 
 HcclResult CpuRoceEndpoint::Init()
@@ -63,8 +65,13 @@ HcclResult CpuRoceEndpoint::Init()
         ipAddr.Describe().c_str(),
         ctxHandle_);
 
-    EXCEPTION_CATCH(regedMemMgr_ = std::make_unique<RoceRegedMemMgr>(), return HCCL_E_PARA);
-    this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
+    cacheKey_ = MemMgrCacheKey{devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, LocTypeToPortType(endpointDesc_.loc.locType)};
+    auto &cache = ProcRegedMemMgrCache::GetInstance();
+    EXCEPTION_CATCH(regedMemMgr_ = cache.GetOrCreate(cacheKey_, [this]() {
+        auto m = std::make_shared<RoceRegedMemMgr>();
+        m->rdmaHandle_ = this->ctxHandle_;
+        return m;
+    }), return HCCL_E_PARA);
     return HCCL_SUCCESS;
 }
 
