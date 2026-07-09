@@ -47,17 +47,17 @@ private:
     void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &groupRankContent,
         const Hccl::ErrorMessageReport &errorMessage, rtExceptionInfo_t *exceptionInfo);
 
-    std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
+    std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo) const;
     void ProcessException(rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
-    void PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId);
+    void PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId) const;
     void PrintUbDfxInfo(rtExceptionInfo_t *exceptionInfo, const Hccl::ErrorMessageReport &errorMessage);
-    void PrintGroupErrorMessage(const Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, std::string &groupRankContent, std::string &stageErrInfo);
-    void PrintOpDataErrorMessage(u32 deviceId, const Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo);
-    HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
-    void ClusterMoniterGetAicpuCqeErrInfo(u32 remoteLocalId, u32 locDeviceId, uint16_t status, std::string localEid, std::string remoteEid, std::string remoteInsId);
+    void PrintGroupErrorMessage(const Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, std::string &groupRankContent, std::string &stageErrInfo) const;
+    void PrintOpDataErrorMessage(u32 deviceId, const Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo) const;
+    HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle) const;
+    void ClusterMoniterGetAicpuCqeErrInfo(u32 remoteLocalId, u32 locDeviceId, uint16_t status, std::string localEid, std::string remoteEid, std::string remoteInsId) const;
     void GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo);
-    void GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId);
-    void GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId);
+    void GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId) const;
+    void GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId) const;
 
 private:
     std::mutex taskExceptionMutex_;

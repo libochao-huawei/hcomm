@@ -28,7 +28,7 @@ ClusterMonitor::~ClusterMonitor()
     DeInit();
 }
 
-ClusterUIDType ClusterMonitor::FormatUID(ClusterUIDCxt cxt)
+ClusterUIDType ClusterMonitor::FormatUID(ClusterUIDCxt cxt) const
 {
     ClusterUIDType uid{};
     // 构造唯一的uid: netInstanceId + local_id
@@ -114,7 +114,7 @@ HcclResult ClusterMonitor::GetRemEndpointDescs(HcclComm comm, std::map<uint32_t,
 }
 
 std::string ClusterMonitor::FormatConnTag(HcommSocketRole role,
-    std::pair<ClusterUIDType, ClusterUIDType> uidPair)
+    std::pair<ClusterUIDType, ClusterUIDType> uidPair) const
 {
     std::string tag;
     if (role == HcommSocketRole::HCOMM_SOCKET_ROLE_CLIENT) {
@@ -324,7 +324,7 @@ void ClusterMonitor::CreateHBLinksAsync()
     return;
 }
 
-HcclResult ClusterMonitor::CreateTransportHandle(ClusterMonitorSocketCtx &info)
+HcclResult ClusterMonitor::CreateTransportHandle(ClusterMonitorSocketCtx &info) const
 {
     info.PrintSocketDesc("CreateTransportHandle");
     if (info.socketHandler == nullptr) {
@@ -892,7 +892,7 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t 
 }
 
 
-void ClusterMonitor::MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec)
+void ClusterMonitor::MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec) const
 {
     while (keyEvents.size() > 0) {
         auto &tmp = keyEvents.front();

@@ -410,7 +410,7 @@ uint32_t CollComm::GetMyRankId() const
     return rankId_;
 }
 
-HcclResult CollComm::GetParentRankId(u32& parentRankId)
+HcclResult CollComm::GetParentRankId(u32& parentRankId) const
 {
     Hccl::HcclCommunicator* comV2 = static_cast<Hccl::HcclCommunicator*>(comm_);
     CHK_PTR_NULL(comV2);

@@ -13,7 +13,7 @@
 #include "../../../../legacy/ascend950/framework/dfx/profiling/dlprof_function.h"
 namespace hccl {
 
-HcclResult HcclCommProfiling::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId, bool cachedReq) {
+HcclResult HcclCommProfiling::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId, bool cachedReq) const {
     u64 endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     uint64_t cmdItemId = Hccl::DlProfFunction::GetInstance().dlMsprofStr2Id(kernelName.c_str(), kernelName.length());
     EXCEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeApi(beginTime, endTime, cmdItemId, threadId, cachedReq), return HCCL_E_PTR);
@@ -38,7 +38,7 @@ HcclResult HcclCommProfiling::Init() {
 }
 
 // HcclCommProfiling任务上报
-void HcclCommProfiling::ReportAllTasks(bool cachedReq) {
+void HcclCommProfiling::ReportAllTasks(bool cachedReq) const {
     profilingReporter_->ReportAllTasks(cachedReq);
 }
 

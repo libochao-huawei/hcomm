@@ -71,7 +71,7 @@ public:
     s32 GetDeviceLogicId() const { return deviceLogicId_; }
 
     // 获取Rank数量
-    uint32_t GetRankSize() {
+    uint32_t GetRankSize() const {
         if (rankgraph_ == nullptr) {
             HCCL_ERROR("[CollComm]get ranksize failed");
             return 0;
@@ -98,7 +98,7 @@ public:
     HcclResult GetHDCommunicate(
         HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
     Hccl::ErrorMessageReport GetAicpuTaskException();
-    HcclResult GetParentRankId(u32& parentRankId);
+    HcclResult GetParentRankId(u32& parentRankId) const;
     uint32_t UpdateIndex();
     
     // Todo:在这里做N秒快恢

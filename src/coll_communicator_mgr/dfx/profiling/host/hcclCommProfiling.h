@@ -32,7 +32,7 @@ public:
     HcclResult Init();
     
     // 上报所有任务
-    void ReportAllTasks(bool cachedReq = false);
+    void ReportAllTasks(bool cachedReq = false) const;
     
     // 上报算子信息
     void ReportOp(uint64_t beginTime, bool cachedReq, bool opbased);
@@ -48,7 +48,7 @@ public:
     
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
-    HcclResult ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId, bool cachedReq);
+    HcclResult ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId, bool cachedReq) const;
     
 private:
     Hccl::MirrorTaskManager* mirrorTaskManager_;

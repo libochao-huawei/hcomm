@@ -45,18 +45,18 @@ public:
     HcclResult RecordCannVersionV2(const std::string &version);
     HcclResult GenerateCheckFrameV2(CheckFrameV2 &localFrame);
     HcclResult CompareCheckFrameV2(const CheckFrameV2 &local, const CheckFrameV2 &remote);
-    u64 GetCheckFrameLengthV2();
+    u64 GetCheckFrameLengthV2() const;
 
     void SetInconsistentCheckFirstDone(bool inconsistentCheckFirstDone); // 用于标识env_config中InconsistentCheckModel::FIRST时是否已校验
-    bool GetInconsistentCheckFirstDone();
+    bool GetInconsistentCheckFirstDone() const;
 private:
-    HcclResult CalcRawDataCrc(const void *ptr, u64 length, u32 &crc);
+    HcclResult CalcRawDataCrc(const void *ptr, u64 length, u32 &crc) const;
     bool CompareCrcArrayV2(
         const u32 *localArray,
         const u32 *remoteArray,
         const std::vector<CrcEntryV2> &nameSource,
-        const std::string &categoryLabel);
-    HcclResult CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff);
+        const std::string &categoryLabel) const;
+    HcclResult CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff) const;
     
     // cann 版本号
     char cannVersion_[CANN_VERSION_MAX_LEN + 1] = {0};

@@ -159,9 +159,9 @@ class ClusterMonitor {
 public:
     HcclResult RegisterToClusterMonitor(HcclComm comm);
     HcclResult UnRegisterToClusterMonitor(hccl::CollComm* collComm);
-    ClusterUIDType FormatUID(ClusterUIDCxt cxt);
+    ClusterUIDType FormatUID(ClusterUIDCxt cxt) const;
     std::string GetUID(const ClusterUIDType &uid) const;
-    std::string FormatConnTag(HcommSocketRole role, std::pair<ClusterUIDType, ClusterUIDType> uidPair);
+    std::string FormatConnTag(HcommSocketRole role, std::pair<ClusterUIDType, ClusterUIDType> uidPair) const;
     HcclResult InsertClusterMonitorCtx(HcclComm comm, UIDContext remoteCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
     HcclResult GetSocketDescFromRankInfo(HcclComm comm, uint32_t remoteRank, uint32_t netLayer, const ClusterUIDType &remoteUID, SocketDesc &socketDesc);
     HcclResult GetSamePlaneRank(HcclComm comm, std::vector<UIDContext> singlePlaneCtx, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
@@ -181,7 +181,7 @@ public:
     void GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t status, std::string localEid, std::string remoteEid, std::string remoteInsId);
     std::vector<std::string> GetErrStatusVecFromCluserMonitor();
     std::vector<std::string> PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents);
-    void MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec);
+    void MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec) const;
     ClusterMonitor() = default;
     ~ClusterMonitor();
 
@@ -192,7 +192,7 @@ private:
         const hccl::CollComm* collComm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs, std::set<uint32_t> &rankIdsSet);
 
     HcclResult ProcessConnectRanks(const std::string &commId, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
-    HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info);
+    HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info) const;
     HcclResult OnConnectionEstablished(const std::string &commId, const ClusterUIDType &rem, ClusterMonitorSocketCtx &needConnectRank);
     HcclResult SendFrameFromBuffer(ClusterUIDType &dst, ClusterMonitorFrame &cmFrame);
 

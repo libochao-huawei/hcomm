@@ -37,7 +37,7 @@ void RegisterGetAicpuCqeErrInfoCallBackHcomm(GetAicpuCqeErrInfoCallBackHcomm p1)
     return;
 }
 
-void TaskExceptionHost::ClusterMoniterGetAicpuCqeErrInfo(u32 remoteLocalId, u32 locDeviceId, uint16_t status, string localEid, string remoteEid, string remoteInsId)
+void TaskExceptionHost::ClusterMoniterGetAicpuCqeErrInfo(u32 remoteLocalId, u32 locDeviceId, uint16_t status, string localEid, string remoteEid, string remoteInsId) const
 {
     if (g_getAicpuCqeErrInfoCallBack != nullptr) {
         g_getAicpuCqeErrInfoCallBack(remoteLocalId, locDeviceId, status, localEid, remoteEid, remoteInsId);
@@ -150,7 +150,7 @@ HcclResult TaskExceptionHost::UnRegister(u64 commHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
+HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle) const
 {
     HCCL_INFO("[PrintUbRegister] start, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
     Hccl::AuxInfoIn in;
@@ -234,7 +234,7 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
     }
 }
 
-std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
+std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo) const
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
         HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
@@ -246,7 +246,7 @@ std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
         communicator->GetCommId().c_str(), communicator->GetRankSize(), communicator->GetMyRankId());
 }
 
-void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId)
+void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId) const
 {
     if (collComm == nullptr || rankid == INVALID_VALUE_RANKID) {
         HCCL_ERROR("[GetAicpuCqeErrRemoteLocalIdByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
@@ -273,7 +273,7 @@ void TaskExceptionHost::GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* coll
     return;
 }
 
-void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId)
+void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId) const
 {
     if (collComm == nullptr || rankid == INVALID_VALUE_RANKID) {
         HCCL_ERROR("[GetAicpuCqeErrNetInstanceByRankId]collComm is nullptr or rankId is invalid, rankId[%u]", rankid);
@@ -357,7 +357,7 @@ void TaskExceptionHost::HandleHostErrorReport(rtExceptionInfo_t *exceptionInfo, 
     HCCL_ERROR("[TaskExceptionHost]Task run failed, opData information is %s.", taskInfo.GetIndopDataInfo().c_str());
 }
 
-void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId)
+void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId) const
 {
     Hccl::TaskInfoQueue *queue = nullptr;
     try {
@@ -434,7 +434,7 @@ inline void PrintGroupErrorLog(const std::string &stageErrInfo, const std::strin
 }
 
 void TaskExceptionHost::PrintGroupErrorMessage(const Hccl::ErrorMessageReport &errorMessage, [[maybe_unused]] Hccl::TaskInfo &exceptionTaskInfo,
-    std::string &groupRankContent, std::string &stageErrInfo)
+    std::string &groupRankContent, std::string &stageErrInfo) const
 {
     groupRankContent += "group:[";
     groupRankContent += std::string(errorMessage.group);
@@ -509,7 +509,7 @@ inline std::string GetOpTypeEnumStr(u32 opType)
 }
 
 void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, const Hccl::ErrorMessageReport &errorMessage,
-    std::string &stageErrInfo)
+    std::string &stageErrInfo) const
 {
     std::stringstream opDataStr;
     opDataStr << "src" << "[0x"

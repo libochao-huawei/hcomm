@@ -422,7 +422,7 @@ constexpr uint32_t MEM_HANDLE_NUM_MAX = 256;  // memHandleNum的默认限制最�
 constexpr uint32_t NOTIFY_NUM_MAX = 64; // notifynum 的默认限制最大为64
 
 HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc* channelDesc,
-    uint32_t channelNum)
+    uint32_t channelNum) const
 {
     for (u32 index = 0; index < channelNum; ++index) {
         if (engine == COMM_ENGINE_AIV) {
@@ -670,7 +670,7 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc)
+HcclResult MyRank::ConfigSqDepthByExpansionMode(CommEngine engine, HcommChannelDesc& hcommDesc) const
 {
     constexpr u32 CCU_MS_MODE_DEPTH = 128;
     constexpr u32 CCU_SCHED_MODE_DEPTH = 16;
@@ -814,7 +814,7 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     return HCCL_E_INTERNAL;
 }
 
-HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMem, char ***memTags)
+HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMem, char ***memTags) const
 {
     CHK_PTR_NULL(remoteMem);
     CHK_PTR_NULL(memTags);

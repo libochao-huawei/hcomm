@@ -90,7 +90,7 @@ HcclResult RankConsistencyCheckerV2::CompareCheckFrameV2(const CheckFrameV2 &loc
     return isDiff ? HCCL_E_INTERNAL : HCCL_SUCCESS;
 }
 
-u64 RankConsistencyCheckerV2::GetCheckFrameLengthV2()
+u64 RankConsistencyCheckerV2::GetCheckFrameLengthV2() const
 {
     return sizeof(CheckFrameV2);
 }
@@ -100,7 +100,7 @@ void RankConsistencyCheckerV2::SetInconsistentCheckFirstDone(bool inconsistentCh
     inconsistentCheckFirstDone_ = inconsistentCheckFirstDone;
 }
 
-bool RankConsistencyCheckerV2::GetInconsistentCheckFirstDone()
+bool RankConsistencyCheckerV2::GetInconsistentCheckFirstDone() const
 {
     return inconsistentCheckFirstDone_;
 }
@@ -109,7 +109,7 @@ bool RankConsistencyCheckerV2::GetInconsistentCheckFirstDone()
 bool RankConsistencyCheckerV2::CompareCrcArrayV2(const u32 *localArray,
     const u32 *remoteArray,
     const std::vector<CrcEntryV2> &nameSource,
-    const std::string &categoryLabel)
+    const std::string &categoryLabel) const
 {
     bool isDiff = false;
     u32 count = std::min(static_cast<u32>(nameSource.size()), MAX_CRC_LEN_V2);
@@ -128,7 +128,7 @@ bool RankConsistencyCheckerV2::CompareCrcArrayV2(const u32 *localArray,
     return isDiff;
 }
 
-HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff)
+HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local, const CheckFrameV2 &remote, bool &isDiff) const
 {
     std::string localVer(local.version);
     std::string remoteVer(remote.version);
@@ -147,7 +147,7 @@ HcclResult RankConsistencyCheckerV2::CompareVersionV2(const CheckFrameV2 &local,
     return HCCL_SUCCESS;
 }
 
-HcclResult RankConsistencyCheckerV2::CalcRawDataCrc(const void *ptr, u64 length, u32 &crc)
+HcclResult RankConsistencyCheckerV2::CalcRawDataCrc(const void *ptr, u64 length, u32 &crc) const
 {
     // 计算内存数据块CRC
     Hccl::CheckCrc checkCrc;
