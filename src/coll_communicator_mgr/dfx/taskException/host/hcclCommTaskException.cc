@@ -181,7 +181,7 @@ HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHa
     return HCCL_SUCCESS;
 }
 
-bool IsMC2Exception(rtExceptionInfo_t* exceptionInfo)
+bool IsMC2Exception(const rtExceptionInfo_t* exceptionInfo)
 {
     return exceptionInfo->expandInfo.type == RT_EXCEPTION_FUSION &&
            exceptionInfo->expandInfo.u.fusionInfo.type == RT_FUSION_AICORE_CCU;

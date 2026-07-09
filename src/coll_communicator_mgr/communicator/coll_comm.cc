@@ -211,7 +211,7 @@ HcclResult CollComm::InitFullMode(void* rankGraph, aclrtBinHandle binHandle, Hcc
     return HCCL_SUCCESS;
 }
 
-HcclResult CollComm::InitSymmetricMemory(HcclCommConfig *config)
+HcclResult CollComm::InitSymmetricMemory(const HcclCommConfig *config)
 {
     (void)config;
     uint32_t rankSize = GetRankSize();

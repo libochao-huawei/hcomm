@@ -235,7 +235,7 @@ public:
     HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
     HcclResult CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated);
     HcclResult AllocAndRegKFCWorkSpace(uint64_t size);
-    HcclResult GetKFCWorkSpaceVA(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
+    HcclResult GetKFCWorkSpaceVA(const std::string &memTag, const uint64_t *size, void **addr, bool *newCreated);
     HcclResult DestroyKFCWorkSpaceVA();
 
     bool IsWorldGroup() const;

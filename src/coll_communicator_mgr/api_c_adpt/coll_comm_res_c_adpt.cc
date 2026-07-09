@@ -123,8 +123,8 @@ HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
     return HCCL_SUCCESS;
 }
 
-HcclResult ProcessUbChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
-    hccl::hcclComm *hcclComm)
+HcclResult ProcessUbChannelDesc(const HcclChannelDesc &channelDesc, const HcclChannelDesc &channelDescFinal,
+    const hccl::hcclComm *hcclComm)
 {
     (void)channelDescFinal;
     (void)hcclComm;

@@ -122,7 +122,7 @@ private:
     HcclResult InitKfcAndRegisterCollComm();
     HcclResult GetRankIpPortMap();
     HcclResult ApplyUserCommConfig(HcclCommConfig *config, uint32_t &opExpansionMode);
-    HcclResult InitSymmetricMemory(HcclCommConfig *config);
+    HcclResult InitSymmetricMemory(const HcclCommConfig *config);
     HcclResult RegisterSymmetricMemoryResource(void* ptr, size_t size, SymmetricMemoryResource &resource);
     void UnregisterSymmetricMemoryResource(const SymmetricMemoryResource &resource);
 

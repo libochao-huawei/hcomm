@@ -13,5 +13,5 @@
 
 #include<cstdint>
 using ThreadHandle = uint64_t;
-HcclResult HcclStreamProfilingReport(HcclComm comm, u32 threadNum, u32 *threadId);
+HcclResult HcclStreamProfilingReport(HcclComm comm, u32 threadNum, const u32 *threadId);
 #endif

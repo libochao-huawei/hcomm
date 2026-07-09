@@ -15,7 +15,7 @@
 #include "hccl_comm_pub.h"
 #include "stream_pub.h"
 // 通信域内首次才能上报
-HcclResult HcclStreamProfilingReport(HcclComm comm, u32 threadNum, u32 *threadId)
+HcclResult HcclStreamProfilingReport(HcclComm comm, u32 threadNum, const u32 *threadId)
 {
     HCCL_INFO("[%s] threadNum = [%u]", __func__, threadNum);
     CHK_PTR_NULL(comm);

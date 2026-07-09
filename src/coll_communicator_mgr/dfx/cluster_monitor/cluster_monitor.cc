@@ -43,8 +43,8 @@ std::string ClusterMonitor::GetUID(const ClusterUIDType &uid) const
     return uid.id;
 }
 
-void ClusterMonitor::GetRemEndpointDescsPerLayer(uint32_t netLayer, HcclComm comm, Hccl::RankGraph *rankGraph,
-    hccl::CollComm* collComm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs, std::set<uint32_t> &rankIdsSet)
+void ClusterMonitor::GetRemEndpointDescsPerLayer(uint32_t netLayer, HcclComm comm, const Hccl::RankGraph *rankGraph,
+    const hccl::CollComm* collComm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs, std::set<uint32_t> &rankIdsSet)
 {
     uint32_t *ranksPerLayer = nullptr;
     uint32_t rankNum = 0;

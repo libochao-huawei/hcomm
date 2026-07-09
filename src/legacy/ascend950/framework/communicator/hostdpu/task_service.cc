@@ -88,7 +88,7 @@ HcclResult TaskService::ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t &fla
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ReadTaskType(uint8_t *ctrlHdr, [[maybe_unused]] uint64_t hdrLen, uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const
+HcclResult TaskService::ReadTaskType(const uint8_t *ctrlHdr, [[maybe_unused]] uint64_t hdrLen, const uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const
 {
     CHK_PTR_NULL(srcTaskTypePtr);
     // 读 taskType

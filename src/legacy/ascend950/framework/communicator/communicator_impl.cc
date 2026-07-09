@@ -3419,7 +3419,7 @@ HcclResult CommunicatorImpl::AllocAndRegKFCWorkSpace(uint64_t size)
     return HCCL_SUCCESS;
 }
 
-HcclResult CommunicatorImpl::GetKFCWorkSpaceVA(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
+HcclResult CommunicatorImpl::GetKFCWorkSpaceVA(const std::string &memTag, const uint64_t *size, void **addr, bool *newCreated)
 {
     if (memTag != DPUTAG) {
         HCCL_ERROR("HcclCommunicator::GetKFCWorkSpaceVA, memTag is invalid, memTag: %s", memTag.c_str());

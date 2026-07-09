@@ -48,7 +48,7 @@ public:
 private:
     HcclResult WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const;
     HcclResult ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t &flag) const;
-    HcclResult ReadTaskType(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const;
+    HcclResult ReadTaskType(const uint8_t *ctrlHdr, uint64_t hdrLen, const uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const;
     HcclResult ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr);
     HcclResult SynchronizeControlInfo(uint8_t *ctrlHdr, uint64_t hdrLen);
     HcclResult ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcFlagPtr, uint8_t *srcTaskTypePtr);
