@@ -1334,7 +1334,7 @@ void ProfilingHandler::ReportHcclMC2CommInfoLog(const u32 kfcStreamId,
     uint64_t groupName = GetProfHashId(id.c_str(), id.length());
     uint32_t reportId = 0;
     for (uint32_t streamIndex = 0; streamIndex < aicpuStreamsId.size(); streamIndex++) {
-        HCCL_INFO("streamIndex:[%u], reportId:[%d], streamId:[%u] id [%s] hcclMC2Info.groupName:[%lu]", streamIndex,
+        HCCL_INFO("streamIndex:[%u], reportId:[%u], streamId:[%u] id [%s] hcclMC2Info.groupName:[%lu]", streamIndex,
             reportId, aicpuStreamsId[streamIndex], id.c_str(), groupName);
         reportId++;
     }

@@ -669,3 +669,16 @@ TEST_F(ProfilingHandlerTest, Ut_ReportCcuInfo_When_DfxOpInfoNullptr_Expect_Retur
     TaskInfo taskInfo(0, 0, 0, taskParam, nullptr);
     EXPECT_NO_THROW(handler.ReportCcuInfo(taskInfo));
 }
+
+TEST_F(ProfilingHandlerTest, Ut_ReportHcclMC2CommInfoLog_When_Normal_Expect_Success)
+{
+    ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
+    u32 kfcStreamId = 0;
+    std::vector<u32> aicpuStreamsId = {1, 2, 3};
+    std::string id = "test_comm_group";
+    RankId myRank = 0;
+    u32 rankSize = 4;
+    RankId rankInParentComm = 0;
+    EXPECT_NO_THROW(handler.ReportHcclMC2CommInfoLog(kfcStreamId, aicpuStreamsId, id, myRank, rankSize,
+        rankInParentComm));
+}

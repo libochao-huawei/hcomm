@@ -221,7 +221,7 @@ bool CheckPortGroupSize(u32 netLayer, NetInstance::Link& srcLink, NetInstance::L
         auto localRankId = std::dynamic_pointer_cast<NetInstance::Peer>(srcPeer)->GetRankId();
         auto remoteRankId = std::dynamic_pointer_cast<NetInstance::Peer>(targetPeer)->GetRankId();
         HCCL_WARNING("[GetPaths][CheckPortGroupSize] portGroupSize is not equal => src[%u], target[%u]."
-                "LocatedInfo: NetLayer[%u], localRank[%u], rmtRank[%u], localAddr[%s], rmtAddr[%s]", srcPortGroupSize, tgtPortGroupSize,
+                "LocatedInfo: NetLayer[%u], localRank[%d], rmtRank[%d], localAddr[%s], rmtAddr[%s]", srcPortGroupSize, tgtPortGroupSize,
                 netLayer, localRankId, remoteRankId, localAddr.Describe().c_str(), remoteAddr.Describe().c_str());
         return false;
     }
@@ -246,7 +246,7 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         paths.emplace_back(path);
         HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], from src[%s] to dst[%s] get path.",
                    netLayer, peers.at(srcRankId)->Describe().c_str(), peers.at(dstRankId)->Describe().c_str());
-        HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], srcRankId[%u], dstRankId[%u], path[%s]", netLayer,
+        HCCL_DEBUG("[InnerNetInstance::GetPaths] netLayer[%u], srcRankId[%d], dstRankId[%d], path[%s]", netLayer,
                    srcRankId, dstRankId, path.links[0].Describe().c_str());
     });
 
@@ -299,7 +299,7 @@ vector<NetInstance::Path> ClosNetInstance::GetPaths(const RankId srcRankId, cons
 {
     vector<NetInstance::Path> paths;
     if (peers.count(srcRankId) == 0 || peers.count(dstRankId) == 0) {
-        HCCL_WARNING("[ClosNetInstance::GetPaths] srcRankId[%u] or dstRankId[%u] not exist in netInstance, "
+        HCCL_WARNING("[ClosNetInstance::GetPaths] srcRankId[%d] or dstRankId[%d] not exist in netInstance, "
                      "netLayer[%u], netInstId[%s].", srcRankId, dstRankId, netLayer, netInstId.c_str());
         return paths;
     }

@@ -876,7 +876,7 @@ void ClusterMonitor::GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t 
     char errorLinkLogBuffer[LOG_TMPBUF_SIZE];
 
     s32 stringRet = snprintf_s(errorLinkLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE- 1U,
-        "localInfo{local instanceId[%s], LocalId[%d], localEid[%s]}, remoteInfo{remote instanceId[%s], remoteLocalId[%d], remoteEid[%s]}",
+        "localInfo{local instanceId[%s], LocalId[%d], localEid[%s]}, remoteInfo{remote instanceId[%s], remoteLocalId[%u], remoteEid[%s]}",
         myRankNetInstId_.c_str(), myRankLocalId_,  cqeErrInfo_.cqeLocalEid.c_str(), cqeErrInfo_.cqeRemoteInsId.c_str(), cqeErrInfo_.cqeRemoteLocalId,
         cqeErrInfo_.cqeRemoteEid.c_str());
     CHK_PRT_CONT( stringRet < 0, HCCL_ERROR("[ClusterMonitor][GetCqeErrInfoFromTaskException]snprintf error when log cqe error info") );  

@@ -12,6 +12,7 @@
 #include <mockcpp/mockcpp.hpp>
 #include <mockcpp/MockObject.h>
 #include <algorithm>
+#include <chrono>
 #include <future>
 #include <map>
 #include <fstream>
@@ -2862,4 +2863,29 @@ TEST_F(OpbaseTestV2, Ut_HcclRankGraphGetEndpointInfoV2_When_Valid_Expect_ReturnH
     ret = HcclRankGraphGetEndpointInfoV2(comm, 0, endPointDesc, ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     delete[] endPointDesc;
+}
+
+TEST_F(OpbaseTestV2, Ut_WaitAllCommReady_When_Timeout_Expect_Return_HCCL_E_TIMEOUT)
+{
+    HcclGroupParamsV2 hcclGroupParamsV2;
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    hcclGroupParamsV2.pComm = hcclComm_1;
+    std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{"hccl_world_group", hcclGroupParamsV2}};
+    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+
+    MOCKER(HrtSetDevice).stubs().with(mockcpp::any()).will(ignoreReturnValue());
+    MOCKER_CPP(&HcclCommunicator::IsCommReady).stubs().with().will(returnValue(false));
+    MOCKER_CPP(&std::chrono::steady_clock::now)
+        .stubs()
+        .will(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(0))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(11))));
+
+    HcclResult ret = WaitAllCommReady(0);
+    EXPECT_EQ(ret, HCCL_E_TIMEOUT);
+
+    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap.clear();
+    CommManager::GetInstance(0).GetCommInfoV2().pComm = nullptr;
 }

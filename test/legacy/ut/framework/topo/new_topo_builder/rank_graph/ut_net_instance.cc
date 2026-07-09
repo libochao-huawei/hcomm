@@ -513,7 +513,6 @@ TEST_F(NetInstanceTest, fabGroup_clos_get_paths_v1)
     std::string netInstId = "ClosGroup";
     NetType fabType = NetType::CLOS;
     std::vector<RankId> rankIds = {0, 1, 2, 3, 4, 5, 6};
-    RankId wrongRankId = 27;
     int fabricSize = 4;
     int fabricIdBase = 10;
 
@@ -550,6 +549,25 @@ TEST_F(NetInstanceTest, fabGroup_clos_get_paths_v1)
     }
 }
 
+TEST_F(NetInstanceTest, fabGroup_clos_get_paths_when_rankId_not_exist)
+{
+    u32 level = 1;
+    std::string netInstId = "ClosGroup";
+    NetType fabType = NetType::CLOS;
+    std::vector<RankId> rankIds = {0, 1, 2, 3, 4, 5, 6};
+    RankId wrongRankId = 27;
+
+    std::unique_ptr<NetInstance> fabGroupPtr = InitFullFabGroup(
+        level, netInstId, fabType, rankIds, 0, 0);
+
+    EXPECT_NE(fabGroupPtr, nullptr);
+
+    vector<NetInstance::Path> wrongPaths1 = fabGroupPtr->GetPaths(wrongRankId, rankIds[0]);
+    EXPECT_EQ(wrongPaths1.size(), 0);
+    vector<NetInstance::Path> wrongPaths2 = fabGroupPtr->GetPaths(rankIds[0], wrongRankId);
+    EXPECT_EQ(wrongPaths2.size(), 0);
+}
+
 TEST_F(NetInstanceTest, UT_GetIfacesByLayer_When_Valid_Return_HCCl_SUCCESS)
 {
     s32 rankId = 0;
@@ -570,4 +588,51 @@ TEST_F(NetInstanceTest, UT_GetIfacesByLayer_When_Valid_Return_HCCl_SUCCESS)
     auto ifaces = node->GetIfacesByLayer(0);
     EXPECT_EQ(ifaces.size(), 1);
     EXPECT_EQ(ifaces[0], connInterface);
+}
+
+TEST_F(NetInstanceTest, fabGroup_inner_check_port_group_size_mismatch)
+{
+    u32 level = 0;
+    std::string netInstId = "InnerGroup";
+
+    RankId srcRankId = 0;
+    RankId dstRankId = 1;
+    LocalId srcLocalId = 0;
+    LocalId dstLocalId = 1;
+    constexpr u32 devPort = 60001;
+
+    auto srcPeerPtr = std::make_shared<NetInstance::Peer>(srcRankId, srcLocalId, srcLocalId, srcLocalId, devPort);
+    auto dstPeerPtr = std::make_shared<NetInstance::Peer>(dstRankId, dstLocalId, dstLocalId, dstLocalId, devPort);
+    auto fabricPtr = std::make_shared<NetInstance::Fabric>(0, "planeA");
+
+    InnerNetInstance fabGroup = InnerNetInstance(level, netInstId);
+    fabGroup.AddRankId(srcRankId);
+    fabGroup.AddRankId(dstRankId);
+    fabGroup.AddNode(srcPeerPtr);
+    fabGroup.AddNode(dstPeerPtr);
+    fabGroup.AddNode(fabricPtr);
+
+    IpAddress addr = IpAddress(0);
+    AddrPosition addrPos = AddrPosition::DEVICE;
+    LinkType linkType = LinkType::PEER2PEER;
+    std::set<LinkProtocol> protocols = {LinkProtocol::UB_CTP};
+    LinkDirection direction = LinkDirection::BOTH;
+
+    std::set<std::string> ports1 = {"0/0"};
+    std::set<std::string> ports2 = {"0/0", "0/1"};
+
+    auto srcIface = std::make_shared<NetInstance::ConnInterface>(addr, ports1, addrPos, linkType, protocols);
+    auto fabricIface1 = std::make_shared<NetInstance::ConnInterface>(addr, ports1, addrPos, linkType, protocols);
+    auto srcToFabricLink = std::make_shared<NetInstance::Link>(
+        srcPeerPtr, fabricPtr, srcIface, fabricIface1, linkType, protocols, direction, 1);
+    fabGroup.AddLink(srcToFabricLink);
+
+    auto fabricIface2 = std::make_shared<NetInstance::ConnInterface>(addr, ports1, addrPos, linkType, protocols);
+    auto dstIface = std::make_shared<NetInstance::ConnInterface>(addr, ports2, addrPos, linkType, protocols);
+    auto fabricToDstLink = std::make_shared<NetInstance::Link>(
+        fabricPtr, dstPeerPtr, fabricIface2, dstIface, linkType, protocols, direction, 1);
+    fabGroup.AddLink(fabricToDstLink);
+
+    vector<NetInstance::Path> paths = fabGroup.GetPaths(srcRankId, dstRankId);
+    EXPECT_EQ(paths.size(), 0);
 }

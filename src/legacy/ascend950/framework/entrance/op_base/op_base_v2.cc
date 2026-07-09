@@ -2457,7 +2457,7 @@ HcclResult WaitAllCommReady(s32 deviceLogicId)
 
             // 超时判断
             if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-                HCCL_ERROR("[%s]WaitAllCommReady timeout, deviceLogicId[%u].", __func__, deviceLogicId);
+                HCCL_ERROR("[%s]WaitAllCommReady timeout, deviceLogicId[%d].", __func__, deviceLogicId);
                 return HCCL_E_TIMEOUT;
             }
         }
