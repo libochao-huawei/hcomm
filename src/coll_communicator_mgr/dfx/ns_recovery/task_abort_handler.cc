@@ -11,7 +11,6 @@
 #include <algorithm>
 #include "log.h"
 #include "coll_comm.h"
-#include "ccu_comp.h"
 #include "ccu_device_pub.h"
 
 namespace hccl {

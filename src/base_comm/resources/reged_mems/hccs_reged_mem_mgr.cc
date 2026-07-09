@@ -7,17 +7,9 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "endpoint_pair.h"
-#include "hccl_common.h"
-#include "hccl/hccl_res.h"
 #include "log.h"
-#include "endpoint.h"
-#include "hccl_mem.h"
-#include "hccl_one_sided_data.h"
 #include "hccs_reged_mem_mgr.h"
 // for hccl_network.h
-#include "inner/local_rdma_rma_buffer.h"
-#include "inner/remote_rdma_rma_buffer.h"
 #include "hccl_network.h"
 #include "adapter_rts.h"
 

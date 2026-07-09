@@ -21,7 +21,6 @@
 #include <arpa/inet.h>
 
 #include "externalinput_pub.h"
-#include "hccl_comm_pub.h"
 // ltm指定config路径
 #include "common/src/config.h"
 #include "workflow_pub.h"

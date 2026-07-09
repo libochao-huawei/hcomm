@@ -9,9 +9,6 @@
  */
 #include "ub_mem_endpoint.h"
 #include "log.h"
-#include "hccl_res.h"
-#include "adapter_rts_common.h"
-#include "server_socket_mgr.h"
 #include "ub_mem.h"
  
 namespace hcomm {

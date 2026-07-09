@@ -14,12 +14,9 @@
 #include <fstream>
 #include <unistd.h>
 #include <hccl/hccl_types.h>
-#include "device_capacity.h"
 #include "hccl_communicator.h"
 #include "hccl_comm_pub.h"
 #include "task_abort_handler_pub.h"
-#include "coll_alg_utils.h"
-#include "env_config.h"
 #include "i_hccl_one_sided_service.h"
 #include "comm_configer.h"
 #include "launch_aicpu.h"

@@ -12,17 +12,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <hccl/hccl_types.h>
-#include "device_capacity.h"
-#include "hccl_communicator.h"
-#include "hccl_comm_pub.h"
-#include "task_abort_handler_pub.h"
-#include "coll_alg_utils.h"
 #include "topoinfo_struct.h"
-#include "coll_alg_utils.h"
-#include "sal_pub.h"
-#include "hcom_common.h"
-#include "coll_alg_param.h"
-#include "adapter_rts_common.h"
 #include "adapter_hccp_common.h"
 #include "hccl_nslb_md5.h"
 #include "../common/src/h2d_tlv/hccl_h2dtlv.h"

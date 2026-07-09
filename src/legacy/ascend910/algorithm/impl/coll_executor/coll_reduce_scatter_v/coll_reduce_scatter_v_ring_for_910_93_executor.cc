@@ -10,7 +10,6 @@
 
 #include "coll_reduce_scatter_v_ring_for_910_93_executor.h"
 #include <numeric>
-#include "alg_template_register.h"
 
 namespace hccl {
 

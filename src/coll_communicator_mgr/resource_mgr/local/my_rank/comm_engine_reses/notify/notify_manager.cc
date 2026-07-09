@@ -11,7 +11,6 @@
 #include "notify_manager.h"
 #include "adapter_hal_pub.h"
 #include "device_capacity.h"
-#include "aicpu/aicpu_hccl_sqcq.h"
 #include "aicpu_launch_manager.h"
 
 namespace hccl {

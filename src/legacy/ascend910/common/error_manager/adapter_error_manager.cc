@@ -8,9 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <string>
-#include "adapter_error_manager_pub.h"
 #include "adapter_error_manager.h" 
-#include "base/err_msg.h"
 #include "base/err_mgr.h"
 #include "log.h"
 

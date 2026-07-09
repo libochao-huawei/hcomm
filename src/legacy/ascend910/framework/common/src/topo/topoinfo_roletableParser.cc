@@ -10,8 +10,6 @@
 
 #include "topoinfo_roletableParser.h"
 
-#include "externalinput_pub.h"
-#include "hccl_comm_pub.h"
 
 using namespace std;
 using namespace hccl;

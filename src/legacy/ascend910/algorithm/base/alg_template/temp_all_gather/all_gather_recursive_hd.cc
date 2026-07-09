@@ -9,7 +9,6 @@
  */
 
 #include "all_gather_recursive_hd.h"
-#include "all_gather_halving_doubling_pub.h"
 #include "alg_template_register.h"
 
 namespace hccl {

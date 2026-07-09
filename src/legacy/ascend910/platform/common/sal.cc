@@ -21,7 +21,6 @@
 #include <unistd.h>
 
 #include "adapter_error_manager_pub.h"
-#include "driver/ascend_hal.h"
 #include "adapter_rts.h"
 #include "adapter_hccp_common.h"
 #include "adapter_hal.h"

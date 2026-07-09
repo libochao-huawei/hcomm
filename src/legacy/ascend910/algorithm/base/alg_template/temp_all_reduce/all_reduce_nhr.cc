@@ -10,8 +10,6 @@
 
 #include "all_reduce_nhr.h"
 #include "alg_template_register.h"
-#include "reduce_scatter_nhr.h"
-#include "all_gather_nhr.h"
 
 namespace hccl {
 AllReduceNHR::AllReduceNHR(const HcclDispatcher dispatcher) : NHRBase(dispatcher)

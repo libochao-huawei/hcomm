@@ -10,7 +10,6 @@
 
 #include "transport_ipc_mem.h"
 #include "log.h"
-#include "network_manager_pub.h"
 #include "dispatcher_pub.h"
 #include "hccl_network.h"
 

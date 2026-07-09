@@ -7,14 +7,9 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "endpoint_mgr.h"
-#include "hccl_common.h"
 #include "ub_mem.h"
 #include <algorithm>
 #include "log.h"
-#include "hccl/hccl_res.h"
-#include "hccl_mem_v2.h"
-#include "local_ub_rma_buffer_manager.h"
 
 namespace hcomm {
 

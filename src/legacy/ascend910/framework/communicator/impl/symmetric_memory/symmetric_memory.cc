@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <exception>
 #include <list>      // for SimpleVaAllocator
-#include "hccl_comm.h"
 
 namespace hccl 
 {

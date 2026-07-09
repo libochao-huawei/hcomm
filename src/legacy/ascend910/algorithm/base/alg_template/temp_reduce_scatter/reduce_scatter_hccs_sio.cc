@@ -10,7 +10,6 @@
 
 #include "reduce_scatter_hccs_sio.h"
 #include "alg_template_register.h"
-#include "externalinput_pub.h"
 
 namespace hccl {
 using namespace std;

@@ -16,7 +16,6 @@
 
 // Orion
 #include "adapter_rts_common.h"
-#include "coll_alg_param.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
 #include "rdma_handle_manager.h"

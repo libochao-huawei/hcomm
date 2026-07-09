@@ -10,7 +10,6 @@
 
 #include <climits>
 #include "read_write_lock_base.h"
-#include "log.h"
 
 // CPU 暂停指令定义
 #if defined(__i386__) || defined(__x86_64__)

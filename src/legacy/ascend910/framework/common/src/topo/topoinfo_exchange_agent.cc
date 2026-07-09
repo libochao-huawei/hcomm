@@ -16,8 +16,6 @@
 #include "config.h"
 #include "sal_pub.h"
 #include "device_capacity.h"
-#include "preempt_port_manager.h"
-#include "comm_configer.h"
 
 namespace hccl {
 constexpr s32 DEVICE_LOGIC_ID_LENGTH = 4;

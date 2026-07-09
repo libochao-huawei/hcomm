@@ -9,7 +9,6 @@
  */
 
 #include "all_gather_mesh.h"
-#include "externalinput_pub.h"
 #include "alg_template_register.h"
 
 namespace hccl {

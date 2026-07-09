@@ -15,7 +15,6 @@
 #include "dlra_function.h"
 #include "network_manager_pub.h"
 #include "dlhal_function.h"
-#include "device_capacity.h"
 #include "adapter_hccp_common.h"
 #include "hccl_net_dev_v1.h"
 

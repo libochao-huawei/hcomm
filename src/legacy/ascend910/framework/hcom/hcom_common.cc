@@ -25,15 +25,11 @@
 #include "profiling_manager_pub.h"
 #include "topoinfo_ranktableParser_pub.h"
 #include "stream_pub.h"
-#include "mmpa/mmpa_api.h"
 #include "hcom_common.h"
 #include "comm_configer.h"
 #include "hcom_private_v2.h"
 #include "hcom_common_v2.h"
 
-#include "comm_base_pub.h"
-#include "coll_alg_utils.h"
-#include "json_utils.h"
 #include "hcom_pub.h"
 
 using namespace std;

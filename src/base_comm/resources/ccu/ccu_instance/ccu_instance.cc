@@ -14,9 +14,7 @@
 #include "ccu_log.h"
 
 #include "hcom_common.h"
-#include "exception_handler.h"
 
-#include "ccu_dev_mgr.h"
 #include "ccu_res_pack.h"
 #include "ccu_kernel_mgr.h"
 

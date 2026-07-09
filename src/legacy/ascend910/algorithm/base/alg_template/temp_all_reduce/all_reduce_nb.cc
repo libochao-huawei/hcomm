@@ -10,9 +10,6 @@
 
 #include "all_reduce_nb.h"
 #include "alg_template_register.h"
-#include "reduce_scatter_nb.h"
-#include "all_gather_nb.h"
-#include "device_capacity.h"
 
 namespace hccl {
 AllReduceNB::AllReduceNB(const HcclDispatcher dispatcher) : NBBase(dispatcher)

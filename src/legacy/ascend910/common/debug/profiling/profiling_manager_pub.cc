@@ -12,9 +12,6 @@
 
 #include "profiling_manager.h"
 #include "adapter_prof.h"
-#include "adapter_rts_common.h"
-#include "profiler_base_pub.h"
-#include "workflow_pub.h"
 #include "profiling_manager_pub.h"
 
 namespace hccl {

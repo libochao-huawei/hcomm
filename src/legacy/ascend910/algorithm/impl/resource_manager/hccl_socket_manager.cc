@@ -9,7 +9,6 @@
  */
 
 #include "adapter_hccp_common.h"
-#include "adapter_error_manager_pub.h"
 #include "externalinput_pub.h"
 #include "hccl_socket.h"
 #include "sal_pub.h"

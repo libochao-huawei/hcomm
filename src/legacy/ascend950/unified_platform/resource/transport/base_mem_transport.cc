@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "base_mem_transport.h"
-#include "internal_exception.h"
 #include "coll_operator_check.h"
 
 namespace Hccl {

@@ -12,7 +12,6 @@
 #include "dlhal_function.h"
 #include "dlra_function.h"
 #include "sal_pub.h"
-#include "adapter_rts.h"
 #include "adapter_hccp.h"
 #include "network_manager_pub.h"
 #include "externalinput_pub.h"

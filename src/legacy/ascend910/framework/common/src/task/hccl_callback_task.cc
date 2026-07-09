@@ -9,7 +9,6 @@
  */
 
 #include "externalinput_pub.h"
-#include "workflow_pub.h"
 #include "callback_thread_manager.h"
 #include "device_capacity.h"
 #include "sal_pub.h"

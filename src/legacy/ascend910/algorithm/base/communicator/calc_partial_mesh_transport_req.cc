@@ -10,7 +10,6 @@
 
 
 #include "calc_partial_mesh_transport_req.h"
-#include "dtype_common.h"
 
 namespace hccl {
 CalcPartialMeshTransportReq::CalcPartialMeshTransportReq(std::vector<std::vector<u32>> &subCommPlaneVector,

@@ -9,8 +9,6 @@
  */
  
 #include "comm_configer.h"
-#include "adapter_rts_common.h"
-#include "externalinput.h"
 #include "alg_env_config.h"
  
 namespace hccl {

@@ -17,29 +17,23 @@
 
 #include "ccu_log.h"
 #include "ccu_types.h"
-#include "ccu_kernel_func.h"
 
 #include "hcom_common.h"
-#include "exception_handler.h"
 
 #include "ccu_kernel_mgr.h"
 #include "ccu_instance_mgr.h"
 
 #include "thread.h"
-#include "rt_external.h"
 
 #include "env_config/env_config.h" // 暂时引用orion的环境变量处理模块
 
-#include "ccu_device_pub.h"
 
 #include "hcomm_adapter_rts.h"
 
 #include "task_param.h"
-#include "hcclCommOp.h"
 
 #include "ccu_assist_v1.h"
 
-#include "profiling_handler_lite.h"
 
 CcuResult HcommCcuInsCreate(const void *resDesc, uint32_t descNum, CcuInsHandle *insHandle)
 {

@@ -17,7 +17,6 @@
 #include "device_capacity.h"
 #include "p2p_mgmt_pub.h"
 #include "rank_consistentcy_checker.h"
-#include "coll_alg_param.h"
 
 namespace hccl {
 constexpr s32 HCCL_DEFAULT_INITIAL_VALUE = -1;

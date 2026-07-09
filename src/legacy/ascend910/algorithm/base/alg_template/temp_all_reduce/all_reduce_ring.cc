@@ -9,8 +9,6 @@
  */
 
 #include "alg_template_register.h"
-#include "reduce_scatter_ring_pub.h"
-#include "all_gather_ring_pub.h"
 #include "all_reduce_ring.h"
 
 namespace hccl {

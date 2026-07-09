@@ -16,12 +16,7 @@
 #include "config_log.h"
 #include "config/env_config.h"
 #include "env_config/env_config.h"
-#include "../common/loggers/channel_logger.h"  // 日志记录器
 
-#include "hcom_common.h"
-#include "ccu_kernel.h"
-#include "ccu_kernel_mgr.h"
-#include "rt_external.h"
 #include "coll_comm_mgr.h"
 #include "hcclCommOp.h"
 #include "channel_process.h"

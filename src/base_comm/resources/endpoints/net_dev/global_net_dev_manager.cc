@@ -10,13 +10,8 @@
  
 #include "global_net_dev_manager.h"
 #include <string>
-#include "adapter_pub.h"
 #include "hccl_mem.h"
 // for hccl_network.h
-#include "inner/remote_ipc_rma_buffer.h"
-#include "inner/local_ipc_rma_buffer.h"
-#include "inner/local_rdma_rma_buffer.h"
-#include "inner/remote_rdma_rma_buffer.h"
 #include "hccl_network.h"
 #include "network_manager_pub.h"
 #include "dlhal_function.h"

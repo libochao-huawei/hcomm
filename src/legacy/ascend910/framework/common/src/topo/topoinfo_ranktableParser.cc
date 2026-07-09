@@ -20,11 +20,6 @@
 #include <iostream>
 #include <arpa/inet.h>
 
-#include "hccl_comm_pub.h"
-#include "topoinfo_ranktableStandard.h"
-#include "topoinfo_ranktableConcise.h"
-#include "topoinfo_ranktableHeterog.h"
-#include "config.h"
 #include "adapter_error_manager_pub.h"
 #include "json_utils.h"
 

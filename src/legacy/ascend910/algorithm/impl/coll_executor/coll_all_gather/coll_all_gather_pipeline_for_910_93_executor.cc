@@ -11,8 +11,6 @@
 #include "coll_all_gather_pipeline_for_910_93_executor.h"
 #include "hccl_types.h"
 #include "alg_template_register.h"
-#include "all_gather_nhr_pub.h"
-#include "aligned_all_gather_double_ring_pub.h"
 #include "alg_template_base_pub.h"
 
 namespace hccl {

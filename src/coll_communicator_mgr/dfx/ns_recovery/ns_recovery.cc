@@ -9,7 +9,6 @@
  */
 
 #include "ns_recovery.h"
-#include "env_config/env_config.h"
 #include "channel_process.h"
 #include "log.h"
 #include "comm_engine_utils.h"

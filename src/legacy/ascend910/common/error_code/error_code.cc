@@ -9,7 +9,6 @@
  */
 
 #include "base/err_msg.h"
-#include "log.h"
 #include <string>
 #include <stdio.h>
 namespace {

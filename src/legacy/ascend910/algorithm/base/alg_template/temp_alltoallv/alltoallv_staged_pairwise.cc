@@ -9,7 +9,6 @@
  */
 
 #include "alltoallv_staged_pairwise.h"
-#include "externalinput_pub.h"
 #include "log.h"
 #include "alg_template_register.h"
 
