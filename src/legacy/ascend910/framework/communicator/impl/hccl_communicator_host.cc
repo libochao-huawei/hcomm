@@ -985,7 +985,6 @@ namespace hccl
 
     HcclResult HcclCommunicator::ClearResMap(const std::string &tag, bool &findTag, bool aclGraphDestroyCbk)
     {
-        findTag = false;
         auto resIter = resMap_.find(tag);
         if (resIter != resMap_.end()) {
             findTag = true;
@@ -999,6 +998,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::ClearAclgraphHostLinks(const std::unordered_set<std::string> &tags)
     {
+        std::lock_guard<std::mutex> lock(commResMutex_);
         for (const auto &tag : tags) {
             auto it = tagsRequiringHostCleanup_.find(tag);
             if (it == tagsRequiringHostCleanup_.end()) {
@@ -1027,6 +1027,8 @@ namespace hccl
                 }
                 rankIt.second.erase(tagIt);
             }
+            ibverbsLocalNotify_.erase(tag);
+            ibverbsRemoteNotify_.erase(tag);
             tagsRequiringHostCleanup_.erase(it);
         }
         return HCCL_SUCCESS;
@@ -1034,6 +1036,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::ClearOpResource(const std::string &tag, bool aclGraphDestroyCbk)
     {
+        std::lock_guard<std::mutex> lock(commResMutex_);
         bool findTag = false;
         CHK_RET(ClearResMap(tag, findTag, aclGraphDestroyCbk));
         CHK_RET(ClearResMap(tag + "_host", findTag, aclGraphDestroyCbk));
@@ -4460,6 +4463,7 @@ namespace hccl
             CHK_RET(algOperator->SetAivClearEnable(aivClearEnable_));
         }
 
+        std::unique_lock<std::mutex> lock(commResMutex_);
         ResourceLimit limit;
         limit.ifLimit = true;
         limit.aivCoreLimit = aivCoreLimit;
@@ -4643,6 +4647,7 @@ namespace hccl
             CHK_RET(newalgOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, tempTag));
             CHK_RET(newalgOperator->Orchestrate(algName, opParam, resMap_[newTag]));
         }
+        lock.unlock();
         // 尾计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         CHK_RET(UnRegisterDfxInfo(opParam, resMap_[newTag].slaveStreams));
@@ -4805,6 +4810,7 @@ namespace hccl
             CHK_RET(IsSupportAIVNormalQP(devicePhyId_, opParam.supportRoceDirect));
         }
 
+        std::unique_lock<std::mutex> lock(commResMutex_);
         ResourceLimit limit;
         limit.ifLimit = true;
         limit.aivCoreLimit = aivCoreLimit;
@@ -4998,6 +5004,7 @@ namespace hccl
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
         }
+        lock.unlock();
         // 尾计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         CHK_RET(UnRegisterDfxInfo(opParam, algRes.slaveStreams));
@@ -5827,13 +5834,13 @@ namespace hccl
         DeviceMem localNotifyListMem;
         CHK_RET(CopyVectorToDeviceMem(len, localNotifyListMem, signalInfos));
         linkRoce->localNotifyList = reinterpret_cast<u64>(localNotifyListMem.ptr());
-        ibverbsLocalNotify_.emplace_back(std::move(localNotifyListMem));
+        ibverbsLocalNotify_[tagRemoteRes.tagRemoteResPtr->tag].emplace_back(std::move(localNotifyListMem));
 
         len = notifyAddrKey.size() * sizeof(AddrKey);
         DeviceMem remoteNotifyListMem;
         CHK_RET(CopyVectorToDeviceMem(len, remoteNotifyListMem, notifyAddrKey));
         linkRoce->remoteNotifyList = reinterpret_cast<u64>(remoteNotifyListMem.ptr());
-        ibverbsRemoteNotify_.emplace_back(std::move(remoteNotifyListMem));
+        ibverbsRemoteNotify_[tagRemoteRes.tagRemoteResPtr->tag].emplace_back(std::move(remoteNotifyListMem));
 
         HCCL_DEBUG("[%s] finish set localnotify & remotenotify info, notifyNum[%llu], linkNotifyNum[%llu]",
                    __func__, notifyNum, signalInfos.size());
