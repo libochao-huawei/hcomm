@@ -31,6 +31,18 @@ message(STATUS "ASCENDC_DUMP=${ASCENDC_DUMP}")
 message(STATUS "PRODUCT_SIDE=${PRODUCT_SIDE}")
 
 # 组件间对外头文件目录
+add_library(hcomm_headers INTERFACE)
+target_include_directories(hcomm_headers INTERFACE
+    $<BUILD_INTERFACE:${HCOMM_DIR}/include>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/include/hccl>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/hccl>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/include/hcomm>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/include/hcomm/ccu>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/hcomm>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/hcomm/ccu>
+)
+
 add_library(hccl_headers INTERFACE)
 target_include_directories(hccl_headers INTERFACE
     $<BUILD_INTERFACE:${HCOMM_DIR}/include>
