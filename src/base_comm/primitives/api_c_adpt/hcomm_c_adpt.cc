@@ -381,6 +381,7 @@ HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *en
     }
 #endif
     CHK_RET(CreateBuiltinEndpoint(endpoint, endpointHandle));
+    HcommResMgr::RegisterDeviceResetCallback();
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
