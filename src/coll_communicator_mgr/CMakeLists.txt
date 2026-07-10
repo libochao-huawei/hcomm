@@ -11,7 +11,7 @@
 add_subdirectory(common)
 add_subdirectory(resource_mgr)
 add_subdirectory(api_c_adpt)
-add_subdirectory(rank_graphs)
+add_subdirectory(rank_graph)
 add_subdirectory(dfx)
 add_subdirectory(communicator)
 

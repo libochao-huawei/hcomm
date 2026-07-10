@@ -206,7 +206,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/framework/communicator/impl/independent_op/channel/device
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/common
-    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/rank_graphs
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/rank_graph
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/threads
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/notify

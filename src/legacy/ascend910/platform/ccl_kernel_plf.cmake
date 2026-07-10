@@ -160,7 +160,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/zero_copy
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/resource_manager
     ${HCOMM_DIR}/src/coll_communicator_mgr/common
-    ${HCOMM_DIR}/src/coll_communicator_mgr/rank_graphs
+    ${HCOMM_DIR}/src/coll_communicator_mgr/rank_graph
     ${HCOMM_DIR}/src/legacy/ascend910/framework/op_base/src/
 
     # framework/next (拆分到 base_comm 和 coll_communicator_mgr)

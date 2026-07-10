@@ -164,7 +164,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException
     ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException/aicpu
     ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/dfx/taskException/host
-    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/rank_graphs
+    ${HCOMM_CODE_ROOT}/src/coll_communicator_mgr/rank_graph
     ${HCOMM_CODE_FRAMEWORK}/device/framework
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/slaves
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/endpoint_pairs

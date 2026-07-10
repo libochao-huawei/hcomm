@@ -94,7 +94,7 @@ target_include_directories(hccd PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/zero_copy
     ${HCOMM_DIR}/src/legacy/ascend910/framework/communicator/impl/resource_manager
     ${HCOMM_DIR}/src/coll_communicator_mgr/common
-    ${HCOMM_DIR}/src/coll_communicator_mgr/rank_graphs
+    ${HCOMM_DIR}/src/coll_communicator_mgr/rank_graph
     ${HCOMM_DIR}/src/coll_communicator_mgr/communicator
     ${HCOMM_DIR}/src/coll_communicator_mgr/communicator/device
     ${HCOMM_DIR}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/threads
