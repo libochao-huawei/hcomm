@@ -741,3 +741,41 @@ TEST_F(MyRankTest, Ut_EnvAlgoConfig_When_NoExpansionModeEnv_Expect_DefaultAicpuT
     algoConfig.Parse();
     EXPECT_EQ(algoConfig.GetHcclAccelerator(), Hccl::HcclAccelerator::AICPU_TS);
 }
+
+TEST_F(MyRankTest, Ut_CreateChannels_When_BatchExchangeAndCheckConsistency_Timeout_Expect_HCCL_E_TIMEOUT)
+{
+    MOCKER_CPP(&hccl::MyRank::BatchCreateSockets).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::MyRank::BatchCreateChannels).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
+    MockerFuncs();
+
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(DevType::DEV_TYPE_950)).will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&hccl::ExchangeInfoMgr::BatchExchangeAndCheckConsistency).stubs().with(mockcpp::any()).will(returnValue(HCCL_E_TIMEOUT));
+
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get(), rankIpPortMap);
+
+    HcclMem cclBuffer;
+    CreateCclBuffer(cclBuffer);
+    EXPECT_EQ(myRank.Init(cclBuffer, 2, 2), HCCL_SUCCESS);
+
+    EndpointDesc localEp;
+    CreateEndpointDesc(localEp, COMM_PROTOCOL_UB_MEM, "1.0.0.0");
+    EndpointDesc rmtEp;
+    CreateEndpointDesc(rmtEp, COMM_PROTOCOL_UB_MEM, "2.0.0.0");
+
+    HcclChannelDesc channelDesc[1];
+    channelDesc[0].channelProtocol = COMM_PROTOCOL_UB_MEM;
+    channelDesc[0].remoteRank = 1;
+    channelDesc[0].notifyNum = 2;
+    channelDesc[0].localEndpoint = localEp;
+    channelDesc[0].remoteEndpoint = rmtEp;
+
+    ChannelHandle channelHandles[1];
+    HcclResult ret = myRank.CreateChannels(COMM_ENGINE_AICPU_TS, "test", channelDesc, 1, channelHandles);
+    EXPECT_EQ(ret, HCCL_E_TIMEOUT);
+}
