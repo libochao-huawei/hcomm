@@ -70,6 +70,8 @@ inline const char *HcommChannelKindToString(HcommChannelKind kind)
             return "AICPU_TS_ROCE_V2";
         case HcommChannelKind::AIV_URMA:
             return "AIV_URMA";
+        case HcommChannelKind::AICPU_TS_UBG:
+            return "AICPU_TS_UBG";
         default:
             return "UNKNOWN";
     }

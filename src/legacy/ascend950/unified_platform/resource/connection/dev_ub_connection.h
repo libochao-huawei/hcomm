@@ -89,6 +89,9 @@ public:
     u32          GetCiVal() const;
     u32          GetSqDepth() const;
 
+    void SetMaxReadSize(u32 value);
+    void SetMaxWriteSize(u32 value);
+
 protected:
     TpProtocol     tpProtocol{TpProtocol::INVALID};
     void           GetTimeOut();
@@ -152,6 +155,10 @@ private:
     CqCreateInfo cqInfo_{0};
 
     bool isdevUsed{false};
+
+    // 最大传输size，切片使用
+    u32 maxReadSize{0};
+    u32 maxWriteSize{0};
 
     bool CheckRequestResult();
     void ThrowAbnormalStatus(std::string funcName);

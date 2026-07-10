@@ -119,6 +119,8 @@ std::vector<char> DevUbConnection::GetUniqueId() const
     binaryStream << tpn;
     binaryStream << rmtEid.raw;
     binaryStream << locEid.raw;
+    binaryStream << maxReadSize;
+    binaryStream << maxWriteSize;
 
     std::vector<char> result;
     binaryStream.Dump(result);
@@ -938,10 +940,11 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduceWithNotify(const MemoryB
 
 string DevUbConnection::Describe() const
 {
-    return StringFormat("DevUbConnection[locAddr=%s, rmtAddr=%s, status=%s, dieId=%u, funcId=%u, jettyId=%u, sqBuffVa=%llx, "
-                        "sqDepth=%u, tpn=%u, dbAddr=0x%llx]",
-                        locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), status.Describe().c_str(), dieId,
-                        funcId, jettyId, sqBuffVa, sqDepth, tpn, dbAddr);
+    return StringFormat(
+        "DevUbConnection[locAddr=%s, rmtAddr=%s, status=%s, dieId=%u, funcId=%u, jettyId=%u, sqBuffVa=%llx, "
+        "sqDepth=%u, maxReadSize=%u, maxWriteSize=%u, tpn=%u, dbAddr=0x%llx]",
+        locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), status.Describe().c_str(), dieId, funcId, jettyId,
+        sqBuffVa, sqDepth, maxReadSize, maxWriteSize, tpn, dbAddr);
 }
 
 HcclResult DevUbConnection::Describe(std::string &dfxMsg)
@@ -1071,6 +1074,16 @@ bool IfNeedUpdatingUbCi(const std::vector<DevUbConnection *> &ubConns)
         }
     }
     return false;
+}
+
+void DevUbConnection::SetMaxReadSize(u32 value)
+{
+    maxReadSize = value;
+}
+
+void DevUbConnection::SetMaxWriteSize(u32 value)
+{
+    maxWriteSize = value;
 }
 
 } // namespace Hccl

@@ -219,12 +219,14 @@ HcclResult UrmaEndpoint::GetAsyncEvents(uint32_t devPhyId, struct AsyncEvent eve
     // 对RaCtxGetAsyncEvents接口的版本检验
     ret = RaGetInterfaceVersion(devPhyId, RA_RS_CTX_GET_ASYNC_EVENTS, &interfaceVersion);
     if (ret != 0) {
-        HCCL_ERROR("[%s] devPhyId[%u] RaGetInterfaceVersion failed, ret[%d]", __func__, devPhyId, ret);
+        HCCL_ERROR("[%s] devPhyId[%u] epHandle[%p] RaGetInterfaceVersion failed, ret[%d]",
+            __func__, devPhyId, this, ret);
         return HCCL_E_INTERNAL; 
     }
 
     if (interfaceVersion <= 1) {
-        HCCL_ERROR("[%s] devPhyId[%u] version[%u] not support", __func__, devPhyId, interfaceVersion);
+        HCCL_ERROR("[%s] devPhyId[%u] epHandle[%p] version[%u] not support",
+            __func__, devPhyId, this, interfaceVersion);
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -236,8 +238,8 @@ HcclResult UrmaEndpoint::GetAsyncEvents(uint32_t devPhyId, struct AsyncEvent eve
 
     ret = RaCtxGetAsyncEvents(ctxHandle_, events, &num);
     if (ret != 0) {
-        HCCL_ERROR("[%s] devPhyId[%u] RaCtxGetAsyncEvents failed, ctxHandle[%p] ret[%d]", __func__, devPhyId,
-                   ctxHandle_, ret);
+        HCCL_ERROR("[%s] devPhyId[%u] epHandle[%p] RaCtxGetAsyncEvents failed, ctxHandle[%p] ret[%d]",
+            __func__, devPhyId, this, (void *)ctxHandle_, ret);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;

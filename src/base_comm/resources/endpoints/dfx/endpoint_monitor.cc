@@ -42,7 +42,8 @@ HcclResult EndpointMonitor::RegisterToEndpointMonitor(s32 deviceLogicId, Endpoin
     }
     CHK_PRT_RET(epHandle == nullptr, HCCL_ERROR("[EndpointMonitor][%s] epHandle is null", __func__), HCCL_E_PTR);
 
-    HCCL_INFO("[EndpointMonitor] deviceLogicId[%d] RegisterToEndpointMonitor begin.", deviceLogicId);
+    HCCL_INFO("[EndpointMonitor] deviceLogicId[%d] epHandle[%p] RegisterToEndpointMonitor begin.", deviceLogicId,
+        epHandle);
     u32 devPhyId{0};
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId), devPhyId));
 
@@ -56,13 +57,14 @@ HcclResult EndpointMonitor::RegisterToEndpointMonitor(s32 deviceLogicId, Endpoin
         }
     }
 
-    HCCL_INFO("[EndpointMonitor] deviceLogicId[%d] RegisterToEndpointMonitor Completed.", deviceLogicId);
+    HCCL_INFO("[EndpointMonitor] deviceLogicId[%d] epHandle[%p] RegisterToEndpointMonitor Completed.", deviceLogicId,
+        epHandle);
     return HCCL_SUCCESS;
 }
 
 HcclResult EndpointMonitor::RunMonitorThread()
 {
-    HCCL_INFO("[EndpointMonitor][%s] Start Thread.", __func__);
+    HCCL_INFO("[EndpointMonitor][%s] deviceLogicId[%d] Start Thread.", __func__, deviceLogicId_);
     endpointMonitorThreadFlag_ = true;
     EXCEPTION_CATCH(endpointMonitorThread_ = std::make_unique<std::thread>(&EndpointMonitor::MonitorThread, this),
         return HCCL_E_INTERNAL);
@@ -101,7 +103,8 @@ HcclResult EndpointMonitor::UnRegisterToEndpointMonitor()
     {
         std::lock_guard<std::mutex> lock(threadLock_);
         CHK_PRT_RET(!initialized_,
-            HCCL_WARNING("[EndpointMonitor][%s] hcclUbEventMonitor has been destroyed, or not initialized", __func__),
+            HCCL_WARNING("[EndpointMonitor] deviceId[%d] hcclUbEventMonitor has been destroyed, or not initialized",
+                deviceLogicId),
             HCCL_SUCCESS);
         epHandleSet_.clear();
     }
@@ -143,7 +146,7 @@ HcclResult EndpointMonitor::DeInit(s32 deviceLogicId)
                 endpointMonitorThread_->join();
                 endpointMonitorThread_.reset();
             } catch (const std::exception &e) {
-                HCCL_ERROR("[EndpointMonitor][%s] join failed: %s", __func__, e.what());
+                HCCL_ERROR("[EndpointMonitor][%s] deviceId[%d] join failed: %s", __func__, deviceLogicId, e.what());
                 return HCCL_E_INTERNAL;
             }
         }
@@ -160,14 +163,14 @@ void EndpointMonitor::ProcessUbAsyncEvents()
         HcclResult ret = localEpPtr->GetAsyncEvents(devPhyId_, events_, num);
         if (ret != HCCL_SUCCESS) {
             it = epHandleSet_.erase(it);
-            HCCL_ERROR("[EndpointMonitor][%s] devPhyId[%u] HcommGetAsyncEvents failed ret[%d], "
+            HCCL_ERROR("[EndpointMonitor][%s] deviceId[%d] HcommGetAsyncEvents failed ret[%d], "
                        "epHandle[%p] removed from monitor",
-                __func__, devPhyId_, ret, localEpPtr);
+                __func__, deviceLogicId_, ret, localEpPtr);
             continue;
         }
 
         for (u32 i = 0; i < num; ++i) {
-            PrintUbAsyncEventsContext(devPhyId_, events_[i]);
+            PrintUbAsyncEventsContext(static_cast<void *>(localEpPtr), i, events_[i]);
         }
 
         ++it;
@@ -176,19 +179,21 @@ void EndpointMonitor::ProcessUbAsyncEvents()
 
 constexpr u32 SECOND_LAST_OFFSET  = 2; // 倒数第二个字节偏移
 constexpr u32 LAST_OFFSET         = 3; // 倒数第一个字节偏移
-void EndpointMonitor::PrintUbAsyncEventsContext(u32 devPhyId, const struct AsyncEvent &event)
+void EndpointMonitor::PrintUbAsyncEventsContext(void *epHandle, u32 seq, const struct AsyncEvent &event)
 {
     u32 contextLen = event.len;
     if (contextLen > CONTEXT_MAX_LEN) {
-        HCCL_ERROR("[EndpointMonitor][%s] devPhyId[%u] context len[%u] exceed max[%u]", __func__, devPhyId, contextLen,
-            CONTEXT_MAX_LEN);
+        HCCL_ERROR("[EndpointMonitor][%s] deviceId[%d] epHandle[%p] seq[%u] context len[%u] exceed max[%u]",
+            __func__, deviceLogicId_, epHandle, seq, contextLen, CONTEXT_MAX_LEN);
         return;
     }
 
-    HCCL_ERROR("*************************** ub async event ***************************");
-    HCCL_ERROR("devPhyId[%u] resId[%u] eventType[%u] contextLen[%u]",
-        devPhyId, event.resId, event.eventType, event.len);
-    HCCL_ERROR("  bytes   order  : high -> low");
+    HCCL_ERROR("************************************** ub async event **************************************");
+    HCCL_ERROR("deviceId[%d] epHandle[%p] seq[%u] resId[%u] eventType[%u] contextLen[%u]",
+        deviceLogicId_, epHandle, seq, event.resId, event.eventType, event.len);
+    if (contextLen != 0) {
+        HCCL_ERROR("  bytes   order  : high -> low");
+    }
     constexpr u32 bytesPerLine = 4;
     for (u32 i = 0; i < contextLen; i += bytesPerLine) {
         u32 endIndex = std::min(i + bytesPerLine, contextLen);
@@ -198,7 +203,7 @@ void EndpointMonitor::PrintUbAsyncEventsContext(u32 devPhyId, const struct Async
             (i + 1 < contextLen) ? event.context[i + 1] : 0,
             event.context[i]);
     }
-    HCCL_ERROR("**********************************************************************");
+    HCCL_ERROR("********************************************************************************************");
 }
 
 } // namespace hcomm

@@ -112,6 +112,8 @@ TEST_F(AicpuTsUbgChannelTest, Ut_BuildConnection_Creates_UbgConn) {
     Hccl::IpAddress rmtAddr = fe.GetIpAddress();
     ch.locAddr_ = locAddr;
     ch.rmtAddr_ = rmtAddr;
+    ch.devBaseAttr_.maxReadSize = 256 * 1024 * 1024;
+    ch.devBaseAttr_.maxWriteSize = 256 * 1024 * 1024;
 
     MOCKER_CPP(&Hccl::TpManager::Init).stubs();
     MOCKER(hrtGetDevice).stubs().will(returnValue(HCCL_SUCCESS));

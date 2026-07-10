@@ -743,6 +743,14 @@ void DevUbConnection::UpdateCiVal(u32 ci)
 {
 }
 
+void DevUbConnection::SetMaxReadSize(u32 value)
+{
+}
+
+void DevUbConnection::SetMaxWriteSize(u32 value)
+{
+}
+
 std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns)
 {
     std::vector<DevUbConnection *> ubConns;

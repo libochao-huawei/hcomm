@@ -105,7 +105,7 @@ TEST_F(EndpointMonitorTest, Ut_PrintUbAsyncEventsContext_When_ContextLenExceedMa
     event.len = CONTEXT_MAX_LEN + 1;
     memset(event.context, 0, CONTEXT_MAX_LEN);
 
-    g_monitor.PrintUbAsyncEventsContext(devPhyId, event);
+    g_monitor.PrintUbAsyncEventsContext(nullptr, 0, event);
 }
 
 TEST_F(EndpointMonitorTest, Ut_PrintUbAsyncEventsContext_When_NormalContext_Expect_PrintInfo)
@@ -119,7 +119,7 @@ TEST_F(EndpointMonitorTest, Ut_PrintUbAsyncEventsContext_When_NormalContext_Expe
         event.context[i] = static_cast<uint8_t>(i);
     }
 
-    g_monitor.PrintUbAsyncEventsContext(devPhyId, event);
+    g_monitor.PrintUbAsyncEventsContext(nullptr, 0, event);
 }
 
 TEST_F(EndpointMonitorTest, Ut_ProcessUbAsyncEvents_When_NoEndpointHandle_Expect_Return)

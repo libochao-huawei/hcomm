@@ -25,6 +25,7 @@
 #include "ub_mem_transport.h"
 #include "dev_ub_connection.h"
 #include "ub_local_notify.h"
+#include "hcomm_adapter_hccp.h"
 
 namespace hcomm {
 
@@ -138,6 +139,7 @@ protected:
     std::vector<std::string>     memInfoCopies_;
     std::vector<char*>           memInfoPointers_;
     const Hccl::SocketConfig*    socketConfig_{nullptr};
+    DevBaseAttr devBaseAttr_{};
     uint32_t    devicePhyId_{};
 };
 

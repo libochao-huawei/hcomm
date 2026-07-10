@@ -123,11 +123,19 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     }
     CHK_SMART_PTR_NULL(ubConn);
 
+    if (devBaseAttr_.maxReadSize == 0 || devBaseAttr_.maxWriteSize == 0) {
+        HCCL_ERROR("%s maxReadSize[%u] or maxWriteSize[%u] must not be zero", __func__, devBaseAttr_.maxReadSize,
+            devBaseAttr_.maxWriteSize);
+        return HCCL_E_PARA;
+    }
+    ubConn->SetMaxReadSize(devBaseAttr_.maxReadSize);
+    ubConn->SetMaxWriteSize(devBaseAttr_.maxWriteSize);
+    HCCL_INFO("%s maxReadSize[%u], maxWriteSize[%u]", __func__, devBaseAttr_.maxReadSize, devBaseAttr_.maxWriteSize);
+
     commonRes_.connVec.clear();
     commonRes_.connVec.emplace_back(ubConn.get());
     connections_.clear();
     connections_.push_back(std::move(ubConn));
-
     return HCCL_SUCCESS;
 }
 
@@ -245,13 +253,19 @@ HcclResult AicpuTsUrmaChannel::Init()
     CHK_RET(StartListen());
     CHK_RET(BuildSocket());
     CHK_RET(BuildAttr());
+    /*
+        HccpRaGetDevBaseAttr
+        获取urma read/write 单个wr的最大传输数据大小
+        调用前,rdmaHandle_要在ParseInputParam中被赋值好,之后BuildConnection会使用获取的属性
+    */
+    CHK_RET(HccpRaGetDevBaseAttr(rdmaHandle_, &devBaseAttr_));
     CHK_RET(BuildConnection());
     CHK_RET(BuildNotify());
     localRmaBuffers_.clear();
     commonRes_.bufferVec.clear();
     CHK_RET(BuildBuffer(bufs_));
     CHK_RET(BuildUbMemTransport());
-
+    
     return HCCL_SUCCESS;
 }
 

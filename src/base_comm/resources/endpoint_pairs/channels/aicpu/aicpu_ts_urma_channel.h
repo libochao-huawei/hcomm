@@ -24,6 +24,7 @@
 #include "ub_mem_transport.h"
 #include "dev_ub_connection.h"
 #include "ub_local_notify.h"
+#include "hcomm_adapter_hccp.h"
 
 namespace hcomm {
 
@@ -91,6 +92,7 @@ private:
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_;
     const Hccl::SocketConfig*                                   socketConfig_{nullptr};
+    DevBaseAttr                                                 devBaseAttr_{};
     uint32_t                                                    devicePhyId_{};
 };
 
