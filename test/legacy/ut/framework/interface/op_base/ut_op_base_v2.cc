@@ -788,7 +788,6 @@ TEST_F(OpbaseTestV2, HcclAllocComResourceByTilingV2)
     void *stream = static_cast<void *>(&dd);
     void *mc2Tiling = static_cast<void *>(&dd);
     void *commContext = static_cast<void *>(&dd);
-    MOCKER_CPP(&HcclCommunicator::GetCcuMc2ServerNum).stubs().with().will(returnValue(10));
     MOCKER_CPP(&HcclCommunicator::AllocCommResource).stubs().with(mockcpp::any(), mockcpp::any()).will(returnValue(HCCL_SUCCESS));
     HcclResult ret = HcclAllocComResourceByTilingV2(comm, stream, mc2Tiling, &commContext);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -807,55 +806,11 @@ TEST_F(OpbaseTestV2, HcclAllocComResourceByTilingV2_With_Log)
     void *stream = static_cast<void *>(&dd);
     void *mc2Tiling = static_cast<void *>(&dd);
     void *commContext = static_cast<void *>(&dd);
-    MOCKER_CPP(&HcclCommunicator::GetCcuMc2ServerNum).stubs().with().will(returnValue(10));
     MOCKER_CPP(&HcclCommunicator::AllocCommResource).stubs().with(mockcpp::any(), mockcpp::any()).will(returnValue(HCCL_SUCCESS));
     HcclResult ret = HcclAllocComResourceByTilingV2(comm, stream, mc2Tiling, &commContext);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
-}
-
-TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_server_num_exceed_20_Expect_HCCL_E_NOT_SUPPORT)
-{
-    // 前置条件
-    
-
-    Hccl::CommParams commParams;
-    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
-    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
-    int dd = 0;
-    void *stream = static_cast<void *>(&dd);
-    void *mc2Tiling = static_cast<void *>(&dd);
-    void *commContext = static_cast<void *>(&dd);
-    MOCKER_CPP(&HcclCommunicator::GetCcuMc2ServerNum).stubs().with().will(returnValue(21));
-
-    // 执行测试步骤
-    HcclResult ret = HcclAllocComResourceByTilingV2(comm, stream, mc2Tiling, &commContext);
-
-    // 后置验证
-    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
-}
-
-TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_server_num_is_not_exceed_20_Expect_HCCL_SUCCESS)
-{
-    // 前置条件
-    
-
-    Hccl::CommParams commParams;
-    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
-    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
-    int dd = 0;
-    void *stream = static_cast<void *>(&dd);
-    void *mc2Tiling = static_cast<void *>(&dd);
-    void *commContext = static_cast<void *>(&dd);
-    MOCKER_CPP(&HcclCommunicator::GetCcuMc2ServerNum).stubs().with().will(returnValue(10));
-    MOCKER_CPP(&HcclCommunicator::AllocCommResource).stubs().with(mockcpp::any(), mockcpp::any()).will(returnValue(HCCL_SUCCESS));
-
-    // 执行测试步骤
-    HcclResult ret = HcclAllocComResourceByTilingV2(comm, stream, mc2Tiling, &commContext);
-
-    // 后置验证
-    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(OpbaseTestV2, Ut_HcclCommSuspendV2_When_InputComm_Expect_ReturnHCCL_E_NOT_SUPPORT)

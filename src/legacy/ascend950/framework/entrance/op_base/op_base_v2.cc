@@ -38,7 +38,6 @@
 using namespace std;
 using namespace Hccl;
 std::map<std::string, Hccl::HcclCommunicator *> g_hcclCommunicators[MAX_MODULE_DEVICE_NUM + 1];
-constexpr u32 MAX_CCU_MC2_SERVER_NUM       = 20;
 
 static OpType GetOpTypeV2(std::string opTypeName) {
     HCCL_INFO("GetOpTypeV2 start, opTypeName %s", opTypeName.c_str());
@@ -1374,23 +1373,11 @@ HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2
         communicator->GetTrace().Save(logInfo);
     }
 
-    HcclCommInfoV2 &opbasedCommInfoV2 = GetCommInfoV2();
-
     HcclResult ret = communicator->AllocCommResource(mc2Tiling, commContext);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[HcclAllocComResourceByTilingV2]AllocCommResource fail, errNo[%d], commIdentifier[%s]", ret,
         commIdentifier.c_str()), ret);
 
-    u32 totalServerNum = 0;
-    for (auto hcclGroupMap : opbasedCommInfoV2.hcclGroupMap) {
-        totalServerNum += hcclGroupMap.second.pComm->GetCcuMc2ServerNum(); // 获取通信域的CCU MC2 server数量
-    }
-
-    CHK_PRT_RET(totalServerNum > MAX_CCU_MC2_SERVER_NUM,
-        HCCL_ERROR("[%s] the number of operators is %u, "
-            "which exceeds the maximum operator specification of %u supported by CCU MC2, commIdentifier[%s].",
-            __func__, totalServerNum, MAX_CCU_MC2_SERVER_NUM, commIdentifier.c_str()), HCCL_E_NOT_SUPPORT);
-    
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */

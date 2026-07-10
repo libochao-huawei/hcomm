@@ -24,7 +24,7 @@
 namespace Hccl {
 
 constexpr u32 MAX_DEVICE_NUM      = 65;
-constexpr u32 LINK_PROTO_TYPE_NUM = 4;
+constexpr u32 LINK_PROTO_TYPE_NUM = static_cast<u32>(LinkProtoType::__COUNT__);
 constexpr u32 MAX_PORT_NUM        = 16;
 
 using SocketHandle = void *;
