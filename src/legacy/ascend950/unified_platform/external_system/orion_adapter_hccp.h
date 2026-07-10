@@ -405,7 +405,7 @@ JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo);
 
 void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle);
 
-MAKE_ENUM(HrtTransportMode, RM, RC)
+MAKE_ENUM(HrtTransportMode, RM);
 MAKE_ENUM(TpProtocol, CTP, TP, UBOE, UBG);
 
 // STANDARD: URMA标准CreateJetty
