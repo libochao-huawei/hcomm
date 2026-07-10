@@ -22,6 +22,7 @@
 #include "dlhal_function_v2.h"
 #include "hcclCommTaskException.h"
 #include "rtsq_base.h"
+#include "kernel_entrance.h"
 
 using namespace hccl;
 using namespace hcomm;
@@ -45,10 +46,12 @@ protected:
             return DRV_ERROR_NONE;
         };
         HcclCommTaskExceptionLite::GetInstance().Init(0);
+        g_taskExpDevMemMap.clear();
     }
 
     virtual void TearDown() override
     {
+        g_taskExpDevMemMap.clear();
         GlobalMockObject::verify();
     }
 private:
@@ -178,4 +181,130 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_GetGroupInfo_When_AicpuCommNullptr_Expe
 {
     std::string result = HcclCommTaskExceptionLite::GetInstance().GetGroupInfo(nullptr);
     EXPECT_EQ(result, "");
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_HandleDpuTaskexception_When_CommIdNotInMap_Expect_ReturnSuccess)
+{
+    std::string testCommId = "dpuExpTest";
+    CollCommAicpu aicpuComm;
+    aicpuComm.identifier_ = testCommId;
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().HandleDpuTaskexception(&aicpuComm);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_HandleDpuTaskexception_When_TaskexceptionVaNull_Expect_ReturnSuccess)
+{
+    std::string testCommId = "dpuExpTest";
+    CollCommAicpu aicpuComm;
+    aicpuComm.identifier_ = testCommId;
+    g_taskExpDevMemMap[testCommId] = nullptr;
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().HandleDpuTaskexception(&aicpuComm);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_HandleDpuTaskexception_When_StopFlagIsOne_Expect_ClearFlagAndSetNullptr)
+{
+    std::string testCommId = "dpuExpTest";
+    std::vector<uint8_t> shmem(10, 0);
+    shmem[0] = 1;
+
+    CollCommAicpu aicpuComm;
+    aicpuComm.identifier_ = testCommId;
+    g_taskExpDevMemMap[testCommId] = shmem.data();
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().HandleDpuTaskexception(&aicpuComm);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(shmem[0], 0);
+    EXPECT_EQ(g_taskExpDevMemMap[testCommId], nullptr);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_HandleDpuTaskexception_When_ErrorFlagZero_Expect_ReturnSuccess)
+{
+    std::string testCommId = "dpuExpTest";
+    std::vector<uint8_t> shmem(10, 0);
+    shmem[0] = 0;
+
+    CollCommAicpu aicpuComm;
+    aicpuComm.identifier_ = testCommId;
+    g_taskExpDevMemMap[testCommId] = shmem.data();
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().HandleDpuTaskexception(&aicpuComm);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_HandleDpuTaskexception_When_ErrorFlagNonZeroAndDfxLiteNull_Expect_ReturnPtrNull)
+{
+    std::string testCommId = "dpuExpTest";
+    std::vector<uint8_t> shmem(10, 0);
+    shmem[0] = 0;
+    uint16_t errVal = 1;
+    memcpy(shmem.data() + 1, &errVal, sizeof(uint16_t));
+
+    CollCommAicpu aicpuComm;
+    aicpuComm.identifier_ = testCommId;
+    g_taskExpDevMemMap[testCommId] = shmem.data();
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().HandleDpuTaskexception(&aicpuComm);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_HandleDpuTaskexception_When_ErrorFlagNonZeroAndMirrorTaskMgrNull_Expect_ReturnPtrNull)
+{
+    std::string testCommId = "dpuExpTest";
+    std::vector<uint8_t> shmem(10, 0);
+    shmem[0] = 0;
+    uint16_t errVal = 1;
+    memcpy(shmem.data() + 1, &errVal, sizeof(uint16_t));
+
+    CollCommAicpu aicpuComm;
+    aicpuComm.identifier_ = testCommId;
+    aicpuComm.dfx_ = HcclCommDfxLite();
+    aicpuComm.dfx_.mirrorTaskManagerLite_.reset();
+    g_taskExpDevMemMap[testCommId] = shmem.data();
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().HandleDpuTaskexception(&aicpuComm);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_HandleDpuTaskexception_When_ErrorFlagNonZeroAndDfxOpInfoNull_Expect_ReturnPtrNull)
+{
+    std::string testCommId = "dpuExpTest";
+    std::vector<uint8_t> shmem(10, 0);
+    shmem[0] = 0;
+    uint16_t errVal = 1;
+    memcpy(shmem.data() + 1, &errVal, sizeof(uint16_t));
+
+    CollCommAicpu aicpuComm;
+    aicpuComm.identifier_ = testCommId;
+    aicpuComm.dfx_.Init(0, testCommId, 0);
+    g_taskExpDevMemMap[testCommId] = shmem.data();
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().HandleDpuTaskexception(&aicpuComm);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_HandleDpuTaskexception_When_ErrorFlagNonZero_Expect_SendTaskExceptionAndClearFlag)
+{
+    std::string testCommId = "dpuExpTest";
+    std::vector<uint8_t> shmem(10, 0);
+    shmem[0] = 0;
+    uint16_t errVal = 1;
+    memcpy(shmem.data() + 1, &errVal, sizeof(uint16_t));
+
+    CollCommAicpu aicpuComm;
+    aicpuComm.identifier_ = testCommId;
+    aicpuComm.dfx_.Init(0, testCommId, 0);
+    auto dfxOpInfo = std::make_shared<Hccl::DfxOpInfo>();
+    dfxOpInfo->cpuWaitAicpuNotifyId_ = 10;
+    MOCKER_CPP(&Hccl::MirrorTaskManagerLite::GetCurrDfxOpInfo).stubs().will(returnValue(dfxOpInfo));
+    g_taskExpDevMemMap[testCommId] = shmem.data();
+
+    HcclResult ret = HcclCommTaskExceptionLite::GetInstance().HandleDpuTaskexception(&aicpuComm);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uint16_t clearedFlag = 0xFFFF;
+    memcpy(&clearedFlag, shmem.data() + 1, sizeof(uint16_t));
+    EXPECT_EQ(clearedFlag, 0);
 }

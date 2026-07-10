@@ -55,6 +55,7 @@ public:
     HcclResult RegisterProfCallBack();
     HcclCommDfxLite* GetHcclCommDfxLite() { return &dfx_; };
     ReadWriteLockBase& GetThreadMutex() { return threadMutex_; }
+    u32 GetDevId() { return devId_; }
 
     // h2d - d2h通道信息交互
     HcclResult BackGroundGetCmd(Hccl::KfcCommand &cmd);

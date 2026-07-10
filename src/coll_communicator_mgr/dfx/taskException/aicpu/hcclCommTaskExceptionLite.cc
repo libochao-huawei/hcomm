@@ -15,6 +15,7 @@
 #include "dlhal_function_v2.h"
 #include "read_write_lock.h"
 #include "aicpu_indop_env.h"
+#include "kernel_entrance.h"
 
 namespace hcomm {
 constexpr u32 RT_SDMA_COMPERR = 0x9; // A3 sdma error类型为0x9时，表示写拷贝发生超时代答，或者数据搬移时地址译码错误
@@ -56,6 +57,76 @@ void HcclCommTaskExceptionLite::Call()
     }
 }
 
+HcclResult HcclCommTaskExceptionLite::IsHandleDpuStop(uint8_t *taskexceptionVa, bool &isStop)
+{
+    uint8_t stopSignal = 0;
+    errno_t ret = memcpy_s(&stopSignal, sizeof(stopSignal), taskexceptionVa, sizeof(stopSignal)); // 读标志位,第1字节，存放host侧发送是否停止的信号。
+    if (ret != EOK) {
+        HCCL_ERROR("[HcclCommTaskExceptionLite::%s] memcpy_s failed on flag, return[%d].", __func__, ret);
+        return HCCL_E_MEMORY;
+    }
+    if (stopSignal == 1) {
+        isStop = true;
+        stopSignal = 0;
+        ret = memcpy_s(taskexceptionVa, sizeof(stopSignal), &stopSignal, sizeof(stopSignal)); // 读标志位,第1字节，存放host侧发送是否停止的信号。
+        if (ret != EOK) {
+            HCCL_ERROR("[HcclCommTaskExceptionLite::%s] memcpy_s failed on flag, return[%d].", __func__, ret);
+            return HCCL_E_MEMORY;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommTaskExceptionLite::HandleDpuTaskexception(CollCommAicpu *aicpuComm)
+{
+    // 轮询taskexception共享内存
+    auto commId = aicpuComm->GetIdentifier();
+    std::lock_guard<std::mutex> lock(g_taskExpDevMemMapMutex);
+    auto it = g_taskExpDevMemMap.find(commId);
+    if (it == g_taskExpDevMemMap.end()) {
+        return HCCL_SUCCESS; // 非dpu场景，map为空
+    }
+
+    auto taskexceptionVa = reinterpret_cast<uint8_t *>(it->second);
+    if (taskexceptionVa == nullptr) {
+        return HCCL_SUCCESS;
+    }
+    // 查是否要停止
+    bool isStop = false;
+    CHK_RET(IsHandleDpuStop(taskexceptionVa, isStop));
+    if (isStop) {
+        it->second = nullptr;
+        return HCCL_SUCCESS;
+    }
+    // 查是否有错误
+    uint16_t flag = 0;
+    errno_t ret = memcpy_s(&flag, sizeof(flag), taskexceptionVa + sizeof(uint8_t), sizeof(flag)); // 读标志位,第2-3字节，存放HcclResult。
+    if (ret != EOK) {
+        HCCL_ERROR("[HcclCommTaskExceptionLite::%s] memcpy_s failed on flag, return[%d].", __func__, ret);
+        return HCCL_E_MEMORY;
+    }
+    if (flag != 0) {
+        // 触发taskexception
+        HCCL_ERROR("[HcclCommTaskExceptionLite][DPU] taskexceptionVa[%p], errorCode[%d], devId[%u], commId[%s]", taskexceptionVa, flag, aicpuComm->GetDevId(), commId.c_str());
+        // 1、取notify，并构造rtLogicCqReport_t
+        CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite());
+        CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite());
+        CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite()->GetCurrDfxOpInfo());
+        auto curDfxOpInfo = aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite()->GetCurrDfxOpInfo();
+        u32 notifyId = curDfxOpInfo->cpuWaitAicpuNotifyId_;
+        rtLogicCqReport_t exceptionInfo{};
+        // 2、调用SendTaskExceptionByMBox触发taskexception回调
+        CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
+        // 3、标志位置0
+        ret = memset_s(taskexceptionVa + sizeof(uint8_t), sizeof(uint16_t), 0, sizeof(uint16_t)); // 标志位置0
+        if (ret != EOK) {
+            HCCL_ERROR("[HcclCommTaskExceptionLite::%s] memset_s failed on flag, return[%d].", __func__, ret);
+            return HCCL_E_MEMORY;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
 {
     ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
@@ -72,6 +143,7 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
         if (aicpuComm->GetCommmStatus() == HcclCommStatus::HCCL_COMM_STATUS_INVALID) {
             continue;
         }
+        CHK_RET(HandleDpuTaskexception(aicpuComm)); // dpu taskexception
 
         ReadWriteLockBase &commThreadMutex = aicpuComm->GetThreadMutex();
         ReadWriteLock threadRwlock(commThreadMutex);

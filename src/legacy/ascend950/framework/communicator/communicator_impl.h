@@ -51,6 +51,7 @@
 #include "error_message_v2.h"
 #include "hccp.h"
 #include "aicpu/launch_device.h"
+#include "communicator_dpu_types.h"
 
 namespace Hccl {
 
@@ -234,7 +235,7 @@ public:
     HcclResult GetLocalCclBuffer(void **addr, uint64_t *size);
     HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
     HcclResult CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated);
-    HcclResult AllocAndRegKFCWorkSpace(uint64_t size);
+    HcclResult AllocAndRegKFCWorkSpace(uint64_t size, const std::string &memTag);
     HcclResult GetKFCWorkSpaceVA(const std::string &memTag, const uint64_t *size, void **addr, bool *newCreated);
     HcclResult DestroyKFCWorkSpaceVA();
 
@@ -401,13 +402,6 @@ public:
      
     HcclResult GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap);
     HcclResult SetRankIpPortMap(const RankIpPortMapPtr& rankIpPortMap);
-    struct DpuKernelLaunchParam {
-        u64         memorySize;
-        void       *shareHBM;
-        void       *hostMem;
-        int32_t     deviceId;
-        std::string commId;
-    };
 
 private:
     std::string                                id;
@@ -495,12 +489,9 @@ private:
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>> tagWorkspaceMap_;
     bool isFirstBarrier = true;
     DpuKernelLaunchParam hostArgs;
-    // Dpu Kernel Launch 申请的共享内存
-    void* hostShareBuf{nullptr};
-    void* originVa_{nullptr};
-    void* va_{nullptr};
-    void* accessVA_{nullptr};
-    int64_t connectType_{0};
+    std::unordered_map<std::string, DpuShmem> tagDpuShmemArgsMap_ = {{"DPUTAG", DpuShmem{}},
+                                                                    {"DPUTASKEXCEPTION", DpuShmem{}}};
+    void* hostShareBuf{nullptr}; // 在dpu线程中，从DPUTAG共享内存拷出算法信息的存放地址，作为入参给算法注册的回调
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>> tagWorkspaceVAMap_;
     aclrtStream dpuStream;
     aclrtContext dpuContext;
@@ -577,6 +568,8 @@ private:
     HcclResult DestroyDpuKernelResource();
     HcclResult WaitDpuKernelThreadTerminate();
     HcclResult InitAndLaunchDpuKernel();
+    HcclResult InitAndLaunchAicpuKernel(); // 保存dpu taskexception共享内存到aicpu全局map中
+    HcclResult DestroyDpuTaskexpShmemInDevice();
 
     HcclResult Init(const CommParams &commParams, std::unique_ptr<RankGraph> &inputRankGraph, DevId inputDevLogicId);
     HcclResult Init(const CommParams &commParams, std::unique_ptr<RankGraph> &inputRankGraph,

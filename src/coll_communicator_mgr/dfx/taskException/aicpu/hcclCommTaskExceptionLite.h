@@ -65,6 +65,10 @@ private:
     std::string GetGroupInfo(CollCommAicpu *aicpuComm);
     u32 GetSqeId(uint16_t taskId, uint16_t streamId);
 
+    // dpu相关
+    HcclResult HandleDpuTaskexception(CollCommAicpu *aicpuComm);
+    HcclResult IsHandleDpuStop(uint8_t *taskexceptionVa, bool &isStop);
+
 private:
     bool stopCall_{false}; // 避免taskException失败后刷屏
     u32 devId_{INVALID_UINT};

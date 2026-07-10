@@ -8,35 +8,29 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef DPU_INTERFACE_H
-#define DPU_INTERFACE_H
+#ifndef HCCL_COMMUNICATOR_DPU_TYPES_H
+#define HCCL_COMMUNICATOR_DPU_TYPES_H
 
-#include <cstdint>
 #include <unordered_map>
 #include <string>
-#include <memory>
-#include <mutex>
-#include "task_service.h"
-
-extern std::mutex g_serMapMutex;
-extern std::unordered_map<std::string, std::unordered_map<uint32_t, std::unique_ptr<Hccl::TaskService>>> g_taskServiceMap;
-extern std::unordered_map<std::string, std::unordered_map<uint32_t, void*>> g_taskExpMemMap;
-extern "C" {
-__attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_t args);
-}
-
-namespace Hccl {
-constexpr uint8_t  TASK_TERMINATE_RESPONSE = 3;
+#include <cstdint>
+#include "types.h"
 
 struct DpuKernelLaunchParam {
-    u64         memorySize;
-    void*       deviceMem;
-    void*       hostMem;
-    uint32_t    deviceId;
+    u64         memorySize{0};
+    void       *shareHBM{nullptr};
+    void       *hostMem{nullptr};
+    uint32_t    deviceId{UINT32_MAX};
     std::string commId;
-    void*       taskExpMem;
+    void       *taskexceptionVa{nullptr};
 };
 
-}
+// Dpu Kernel Launch 申请的共享内存
+struct DpuShmem {
+    void* originVa_{nullptr}; // ub场景时申请的原始地址
+    void* va_{nullptr};       // 申请的地址,pcie场景为原始地址,ub场景为4k对齐后的地址
+    void* accessVA_{nullptr}; // 注册后映射的地址
+    int64_t connectType_{0};  // 连接类型
+};
 
-#endif // DPU_INTERFACE_H
+#endif // HCCL_COMMUNICATOR_DPU_TYPES_H

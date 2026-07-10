@@ -118,8 +118,8 @@ void AicpuBinaryHolder::Load()
     LoadCleanupGuard aicpuKernelGuard(*this);
     HCCL_INFO("[AicpuBinaryHolder::%s] LoadBinaryFromFile success [%s]", __func__, jsonPath.c_str());
     //register base Func
-    constexpr std::array<const char *, 2> kernelFunction{
-        "HcclKernelEntrance", "HcclUpdateCommKernelEntrance"};
+    constexpr std::array<const char *, 3> kernelFunction{
+        "HcclKernelEntrance", "HcclUpdateCommKernelEntrance", "HcclDpuTaskexpShmemRestore"};
     for (const auto &kernelName : kernelFunction) {
         if (strlen(kernelName) == 0 ||
             strlen(kernelName) >= KERNEL_PARAM_NAME_SIZE) {

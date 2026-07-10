@@ -10,6 +10,7 @@
 #include "coll_comm_aicpu_destroy_func.h"
 #include "aicpu_indop_process.h"
 #include "read_write_lock.h"
+#include "kernel_entrance.h"
 
 namespace hccl {
 CollCommAicpuDestroyFunc &CollCommAicpuDestroyFunc::GetInstance()
@@ -56,6 +57,15 @@ HcclResult CollCommAicpuDestroyFunc::Process()
         }
         destroyComm.push_back(aicpuComm->GetIdentifier());
         CHK_RET(aicpuComm->BackGroundSetStatus(Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE));
+
+        {
+            std::lock_guard<std::mutex> lock(g_taskExpDevMemMapMutex);
+            auto it = g_taskExpDevMemMap.find(aicpuComm->GetIdentifier());
+            if (it != g_taskExpDevMemMap.end()) {
+                g_taskExpDevMemMap.erase(aicpuComm->GetIdentifier()); // 清理dpu taskexception共享内存
+            }
+        }
+
         HCCL_RUN_INFO("[%s]group[%s] Recv DESTROY_AICPU_COMM cmd and set DESTROY_AICPU_COMM_DONE",
             __func__, aicpuComm->GetIdentifier().c_str());
     }

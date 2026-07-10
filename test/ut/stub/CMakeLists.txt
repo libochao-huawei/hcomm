@@ -34,6 +34,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_ccu_stub.cc
 
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_orion_adapter.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_dpu_kernel_entrance.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/communicator/hostdpu/task_service.cc
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/framework/communicator/hostdpu/dpu_kernel_entrance.cc
 )

@@ -820,7 +820,8 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
 
             if (actualNum > 0 && wc.imm_data == dpuNotifyId) {
                 if (wc.status != IBV_WC_SUCCESS) {
-                    HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_poll_cq return wc.status[%d].", __func__, wc.status);
+                    HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_poll_cq return wc.status[%d], wc.opcode[%d], wc.vendorErr[%u], wc.byteLen[%u], wc.wcFlags[%u], wc.sl[%u], qpInfo[%u].qp->qp_num[%u]",
+                        __func__, wc.status, wc.opcode, wc.vendor_err, wc.byte_len, wc.wc_flags, wc.sl, i, qpInfo[i].qp->qp_num);
                     return ReportWcStatusError(wc.status);
                 }
                 HCCL_INFO("[HostCpuRoceChannel::NotifyWait] poll cq success");
@@ -1223,7 +1224,8 @@ HcclResult HostCpuRoceChannel::WaitForFenceCompletion()
             } else if (actualNum > 0) {
                 for (int j = 0; j < actualNum; j++) {
                     if (wc[j].status != IBV_WC_SUCCESS) {
-                        HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq error. wc[%d] status: %d.", __func__, j, wc[j].status);
+                        HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq error. wc[%d] status[%d], opcode[%d], vendorErr[%u], byteLen[%u], wcFlags[%u], sl[%u]. qpInfo[%d].qp->qp_num[%u]",
+                            __func__, j, wc[j].status, wc[j].opcode, wc[j].vendor_err, wc[j].byte_len, wc[j].wc_flags, wc[j].sl, i, qpInfo[i].qp->qp_num);
                         return HCCL_E_NETWORK;
                     }
                 }

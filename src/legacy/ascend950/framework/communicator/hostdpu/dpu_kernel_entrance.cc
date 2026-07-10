@@ -14,18 +14,12 @@
 
 using namespace Hccl;
 using u64 = unsigned long long;
-std::unordered_map<std::string, std::unordered_map<int32_t, std::unique_ptr<Hccl::TaskService>>> g_taskServiceMap;
+std::unordered_map<std::string, std::unordered_map<uint32_t, std::unique_ptr<Hccl::TaskService>>> g_taskServiceMap;
+std::unordered_map<std::string, std::unordered_map<uint32_t, void*>> g_taskExpMemMap;
+std::mutex g_serMapMutex;
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_t args)
 {
-    struct DpuKernelLaunchParam {
-        u64      memorySize;
-        void*       deviceMem;
-        void*       hostMem;
-        int32_t    deviceId;
-        std::string commId;
-    };
-
     HCCL_INFO("[%s] Launch Dpu Kernel: 0x%lx", __func__, args);
     if (args == 0) {
         HCCL_ERROR("[%s] args is null.", __func__);
@@ -39,21 +33,22 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
     // 解析参数信息
     DpuKernelLaunchParam *params = reinterpret_cast<DpuKernelLaunchParam *>(args);
 
-    HCCL_RUN_INFO("[%s] DpuKernelLaunchParam{commId:%s; memorySize:%lu; deviceMem:%p; hostMem:%p; devId:%d}", __func__,
-                  params->commId.c_str(), params->memorySize, params->deviceMem, params->hostMem, params->deviceId);
+    HCCL_RUN_INFO("[%s] DpuKernelLaunchParam{commId:%s; memorySize:%lu; deviceMem:%p; hostMem:%p, taskExpMem:%p; devId:%u}",
+        __func__, params->commId.c_str(), params->memorySize, params->deviceMem, params->hostMem, params->taskExpMem, params->deviceId);
 
     if (params->memorySize == 0) {
         HCCL_ERROR("[%s] memorySize is 0.", __func__);
         return HCCL_E_PARA;
     }
-    if (params->deviceMem == nullptr || params->hostMem == nullptr) {
-        HCCL_ERROR("[%s] deviceMem[%p] or hostMem[%p] is nullptr.", __func__, params->deviceMem, params->hostMem);
+    if (params->deviceMem == nullptr || params->hostMem == nullptr || params->taskExpMem == nullptr) {
+        HCCL_ERROR("[%s] deviceMem[%p] or hostMem[%p] or taskExpMem[%p] is nullptr.",
+            __func__, params->deviceMem, params->hostMem, params->taskExpMem);
         return HCCL_E_PARA;
     }
 
     // 实例化TaskService
     std::unique_ptr<Hccl::TaskService> taskService = std::make_unique<Hccl::TaskService>(params->deviceMem, params->memorySize,
-                            params->hostMem, params->memorySize);
+                            params->hostMem, params->memorySize, params->commId, params->deviceId);
 
     aclError ret = aclrtSetDevice(params->deviceId);
     if (ret != ACL_SUCCESS) {
@@ -61,13 +56,29 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
         return HCCL_E_RUNTIME;
     }
 
-    // 设置到通信域中保存 map<commId, TaskService>
+    // 设置到通信域中保存 map<commId, map<devid, TaskService>>与map<commId, map<devid,taskExpMem>>
     HCCL_INFO("[%s] save TaskService", __func__);
-    g_taskServiceMap[params->commId][params->deviceId] = std::move(taskService);
+    Hccl::TaskService *svcPtr = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(g_serMapMutex);
+        g_taskServiceMap[params->commId][params->deviceId] = std::move(taskService);
+        g_taskExpMemMap[params->commId][params->deviceId] = params->taskExpMem;
+        svcPtr = g_taskServiceMap[params->commId][params->deviceId].get();
+    }
 
     // Run
     HCCL_INFO("[%s] start to TaskRun", __func__);
-    g_taskServiceMap.at(params->commId).at(params->deviceId)->TaskRun();
-    return HCCL_SUCCESS;
+    HcclResult hcclRet = svcPtr->TaskRun();
+    if (hcclRet != HCCL_SUCCESS) {
+        uint8_t newFlag = TASK_TERMINATE_RESPONSE;
+        errno_t cpyRet = memcpy_s(static_cast<uint8_t *>(params->deviceMem), sizeof(newFlag), &newFlag, sizeof(newFlag));
+        if (cpyRet != EOK) {
+            HCCL_ERROR("set eixt flag failed: %d", cpyRet);
+            return HCCL_E_INTERNAL;
+        }
+    }
+
+    // End
+    return hcclRet;
 }
 }

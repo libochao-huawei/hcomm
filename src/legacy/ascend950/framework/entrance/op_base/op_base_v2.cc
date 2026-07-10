@@ -675,7 +675,6 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
     opbasedCommInfoV2.ccuStatus.RemoveCommId(commId);
     auto iter = opbasedCommInfoV2.hcclGroupMap.find(commId);
     if (iter != opbasedCommInfoV2.hcclGroupMap.end()) {
-        // 这里做的其实是兜底销毁，增加channel与engineCtx部分的销毁，解除依赖，搬家到hcomm中实现，同时优先级降低。
         opbasedCommInfoV2.hcclGroupMap.erase(commId); // 删除通信域实例，在communicatorImpl类的析构函数中有dpu与npu之间共享内存的销毁
         // 通信域销毁，更新ccu使用情况
         opbasedCommInfoV2.ccuStatus.RemoveCommId(commId);

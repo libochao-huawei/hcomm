@@ -10,10 +10,12 @@
 
 #include "task_service.h"
 #include <algorithm>
-#include "log.h"
 #include <thread>
 #include <chrono>
 #include <atomic>
+#include "acl/acl_rt.h"
+#include "log.h"
+#include "dpu_kernel_entrance.h"
 
 namespace Hccl {
 constexpr uint32_t CTRL_HDR_FLAG_LENGTH    = 1;
@@ -25,11 +27,10 @@ constexpr uint32_t CTRL_HDR_DEFAULT_DATA_LEN  = 512;
 constexpr uint8_t  TASK_UNSET              = 0;
 constexpr uint8_t  TASK_OK                 = 1;
 constexpr uint8_t  TASK_TERMINATE          = 2;
-constexpr uint8_t  TASK_TERMINATE_RESPONSE = 3;
 constexpr uint8_t  MEMORY_DEVIDE           = 2;
 
-TaskService::TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize)
-    : npu2dpuMem_(deviceMem), shmemSize_(deviceMemSize / MEMORY_DEVIDE), hostMem_(hostMem), hostMemSize_(hostMemSize)
+TaskService::TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize, std::string commId, uint32_t devId)
+    : npu2dpuMem_(deviceMem), shmemSize_(deviceMemSize / MEMORY_DEVIDE), hostMem_(hostMem), hostMemSize_(hostMemSize), commId_(commId), devId_(devId)
 {
     int32_t controlSize = sizeof(uint8_t) + sizeof(char) * TASKTYPE_ADDR_LENGTH + sizeof(uint32_t) + CTRL_HDR_DATA_SIZE_LEN;
     if (shmemSize_ < controlSize) {
@@ -122,6 +123,54 @@ HcclResult TaskService::ReadTaskType(const uint8_t *ctrlHdr, [[maybe_unused]] ui
     return HCCL_SUCCESS;
 }
 
+// 共享内存排布：|stop flag[1]|hcclret[2]|dstret[2]| 
+// 其中，stop flag为aicpu侧读取是否停止的标志位, hcclret为aicpu背景线程读取是否有错的标志位, dstret为host侧taskexception回调读取是否有错的标志位
+HcclResult TaskService::ExecuteTaskexception(int32_t ret)
+{
+    if (g_taskExpMemMap.find(commId_) == g_taskExpMemMap.end()) {
+        HCCL_ERROR("TaskService::ExecuteTaskexception commId not in g_taskExpMemMap, please check");
+        return HCCL_E_NOT_FOUND;
+    }
+    void *taskexpShmem = g_taskExpMemMap[commId_][devId_];
+    HcclResult hcclRet = static_cast<HcclResult>(ret);
+    if (taskexpShmem != nullptr) {
+        uint8_t *stopFlagPtr = reinterpret_cast<uint8_t *>(taskexpShmem);
+        uint8_t *hcclRetPtr = stopFlagPtr + sizeof(uint8_t);
+        uint8_t *dstRetPtr = hcclRetPtr + sizeof(uint16_t);
+        auto ret = memcpy_s(hcclRetPtr, sizeof(uint16_t), &hcclRet, sizeof(uint16_t)); // aicpu背景线程轮询的标志位
+        if (ret != 0) {
+            HCCL_ERROR("[TaskService::ExecuteTaskexception] memcpy ret for device failed.");
+            return HCCL_E_MEMORY;
+        }
+        ret = memcpy_s(dstRetPtr, sizeof(uint16_t), &hcclRet, sizeof(uint16_t)); // host侧taskexception回调执读出错误码
+        if (ret != 0) {
+            HCCL_ERROR("[TaskService::ExecuteTaskexception] memcpy ret for host failed.");
+            return HCCL_E_MEMORY;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult TaskService::ExecuteTaskClean()
+{
+    errno_t ret = memset_s(hostMem_, hostMemSize_, 0, hostMemSize_);
+    if (ret != EOK) {
+        HCCL_ERROR("memset hostMem failed: %d", ret);
+        return HCCL_E_MEMORY;
+    }
+    ret = memset_s(npu2dpuMem_, shmemSize_, 0, shmemSize_);
+    if (ret != EOK) {
+        HCCL_ERROR("memset npu2dpuMem_ failed: %d", ret);
+        return HCCL_E_MEMORY;
+    }
+    ret = memset_s(dpu2npuMem_, shmemSize_, 0, shmemSize_);
+    if (ret != EOK) {
+        HCCL_ERROR("memset dpu2npuMem_ failed: %d", ret);
+        return HCCL_E_MEMORY;
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr)
 {
     uint64_t beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -146,22 +195,23 @@ HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *
     }
     uint32_t ctrlHdrLen = CTRL_HDR_FLAG_LENGTH + TASKTYPE_ADDR_LENGTH + CTRL_HDR_MSG_ID_LEN + CTRL_HDR_DATA_SIZE_LEN;
     /* ctrlHdr提前从deviceMem copy一定长度，如果长度够，直接从ctrlHdr copy，减少一次aclmemcpy耗时 */
+    uint8_t *dataPtr = nullptr;
     if (hdrLen < ctrlHdrLen + dataLen) {
-        uint8_t *dataPtr = srcPtr + ctrlHdrLen;
-        errno_t ret     = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
-        if (ret != EOK) {
-            HCCL_ERROR("control data memcpy failed: %d", ret);
-            return HCCL_E_INTERNAL;
-        }
+        dataPtr = srcPtr + ctrlHdrLen;
     } else {
-        uint8_t *dataPtr = ctrlHdr + ctrlHdrLen;
-        int ret = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
-        if (ret != EOK) {
-            HCCL_ERROR("control data memcpy failed: %d", ret);
-            return HCCL_E_INTERNAL;
-        }
+        dataPtr = ctrlHdr + ctrlHdrLen;
     }
-    if (itFunc->second(reinterpret_cast<uint64_t>(hostMem_), dataLen) != 0) {
+    errno_t ret     = memcpy_s(hostMem_, leftSize_, dataPtr, dataLen);
+    if (ret != EOK) {
+        HCCL_ERROR("control data memcpy failed: %d", ret);
+        return HCCL_E_MEMORY;
+    }
+    auto callbackRet = itFunc->second(reinterpret_cast<uint64_t>(hostMem_), dataLen);
+    if (callbackRet != 0) {
+        // dpu任务出错，清理DPUTAG共享内存内容
+        CHK_RET(ExecuteTaskClean());
+        // 写DPUTASKEXCEPTION
+        CHK_RET(ExecuteTaskexception(callbackRet));
         return HCCL_E_INTERNAL;
     }
     if (profCallback_ != nullptr) {
@@ -208,6 +258,13 @@ HcclResult TaskService::ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t
     return HCCL_SUCCESS;
 }
 
+HcclResult TaskService::ExecuteExit(uint8_t *srcFlagPtr)
+{
+    CHK_RET(WriteFlag(srcFlagPtr, TASK_TERMINATE_RESPONSE));
+    HCCL_INFO("[TaskService::TaskRun] Exiting.");
+    return HCCL_SUCCESS;
+}
+
 HcclResult TaskService::TaskRun()
 {
     CHK_PTR_NULL(hostMem_);
@@ -244,8 +301,7 @@ HcclResult TaskService::TaskRun()
             case TASK_TERMINATE:
                 HCCL_INFO("[TaskService::TaskRun] flag = %u.", flag);
                 HCCL_INFO("[TaskService::TaskRun] Set npu2dpu flag -> %u. Task Run END.", TASK_TERMINATE_RESPONSE);
-                CHK_RET(WriteFlag(srcFlagPtr, TASK_TERMINATE_RESPONSE));
-                HCCL_INFO("[TaskService::TaskRun] Exiting.");
+                CHK_RET(ExecuteExit(srcFlagPtr));
                 return HCCL_SUCCESS;
             case TASK_TERMINATE_RESPONSE:
                 HCCL_INFO("[TaskService::TaskRun] flag = %u. Exiting.", flag);

@@ -22,6 +22,9 @@
 #include "profiling_command_handle_lite.h"
 #include "aicpu_indop_process.h"
 #endif
+
+std::unordered_map<std::string, void*> g_taskExpDevMemMap;
+std::mutex g_taskExpDevMemMapMutex;
 extern "C" {
 using namespace Hccl;
 
@@ -115,4 +118,40 @@ uint32_t HcclUpdateCommKernelEntrance(void *args)
     HCCL_INFO("[NsRecovery] HcclUpdateCommKernelEntrance success.");
     return 0;
 }
+
+uint32_t HcclDpuTaskexpShmemRestore(void *args)
+{   
+    if (args == nullptr) {
+        HCCL_ERROR("HcclDpuTaskexpShmemRestore Args is null.");
+        return 1;
+    }
+    struct AicpuKernelLaunchParam {
+        char commId[COMM_NAME_MAX_LENGTH];
+        void       *taskexceptionVa;
+        u64         memorySize;
+        uint32_t     deviceId;
+    };
+    auto *kernelParam = reinterpret_cast<AicpuKernelLaunchParam *>(args);
+    if (kernelParam->taskexceptionVa == nullptr) {
+        HCCL_ERROR("taskexceptionVa is nullptr, please check communicatorImpl init");
+        return 1;
+    }
+    errno_t  ret = memset_s(kernelParam->taskexceptionVa, kernelParam->memorySize, 0, kernelParam->memorySize); // 避免背景线程读到脏数据
+    if (ret != EOK) {
+        HCCL_ERROR("kernelParam->taskexceptionVa[%p] set 0 Fail, return[%d]", kernelParam->taskexceptionVa, ret);
+        return 1;
+    }
+    std::string commId = kernelParam->commId;
+    {
+        std::lock_guard<std::mutex> lock(g_taskExpDevMemMapMutex);
+        auto it = g_taskExpDevMemMap.find(commId);
+        if (it == g_taskExpDevMemMap.end()) {
+            g_taskExpDevMemMap.insert({commId, kernelParam->taskexceptionVa});
+        }
+    } // 只在通信域创建时保存一次，通信域销毁时该处会同步销毁，不存在需要更新的场景
+    HCCL_INFO("HcclDpuTaskexpShmemRestore success. commId[%s], deviceId[%u], taskexceptionVa[%p], memorySize[%llu]",
+        commId.c_str(), kernelParam->deviceId, kernelParam->taskexceptionVa, kernelParam->memorySize);
+    return 0;
+}
+
 }

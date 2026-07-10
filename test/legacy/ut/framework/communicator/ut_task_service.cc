@@ -18,7 +18,10 @@
 #include <vector>
 #include <cstdint>
 #include <cstdlib>
+#define private public
 #include "hostdpu/task_service.h"
+#include "hostdpu/dpu_kernel_entrance.h"
+#undef private
 
 using namespace Hccl;
 
@@ -37,16 +40,18 @@ protected:
     virtual void SetUp()
     {
         g_callbackResult = 0;
-        std::cout << "A Test case in TaskServiceTest SetUp" << std::endl;
+        g_taskExpMemMap.clear();
     }
 
     virtual void TearDown()
     {
-        std::cout << "A Test case in TaskServiceTest TearDown" << std::endl;
+        g_taskExpMemMap.clear();
     }
 
 public:
     static int32_t g_callbackResult;
+    std::string commId = "test";
+    uint32_t devId = 0;
 };
 int32_t TaskServiceTest::g_callbackResult = 0;
 
@@ -105,7 +110,7 @@ TEST_F(TaskServiceTest, Ut_TaskRun_When_DataSizeIsZero_Expect_ReturnError) {
     std::vector<uint8_t> deviceMem(deviceMemSize, 0);
     std::vector<uint8_t> hostMem(hostMemSize, 0);
 
-    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize);
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
 
     HcclResult ret = taskService.TaskRun();
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
@@ -121,7 +126,7 @@ TEST_F(TaskServiceTest, Ut_TaskRun_When_DataSizeExceedsHostMemSize_Expect_Return
     void *deviceMem = reinterpret_cast<void *>(0x1234);
     void *hostMem = reinterpret_cast<void *>(0x4321);
     
-    TaskService taskService(deviceMem, deviceMemSize, hostMem, hostMemSize);
+    TaskService taskService(deviceMem, deviceMemSize, hostMem, hostMemSize, commId, devId);
     
     // 调用TaskRun,应该返回HCCL_E_INTERNAL
     HcclResult ret = taskService.TaskRun();
@@ -134,7 +139,7 @@ TEST_F(TaskServiceTest, Ut_TaskRegister_When_Normal_Expect_Success)
 {
     std::vector<uint8_t> deviceMem(1024);
     std::vector<uint8_t> hostMem(512);
-    TaskService taskService(deviceMem.data(), 1024, hostMem.data(), 512);
+    TaskService taskService(deviceMem.data(), 1024, hostMem.data(), 512, commId, devId);
 
     HcclResult ret = taskService.TaskRegister("testTask", TrackingCallback);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -144,7 +149,7 @@ TEST_F(TaskServiceTest, Ut_TaskUnRegister_When_TypeExists_Expect_Success)
 {
     std::vector<uint8_t> deviceMem(1024);
     std::vector<uint8_t> hostMem(512);
-    TaskService taskService(deviceMem.data(), 1024, hostMem.data(), 512);
+    TaskService taskService(deviceMem.data(), 1024, hostMem.data(), 512, commId, devId);
 
     taskService.TaskRegister("testTask", TrackingCallback);
     HcclResult ret = taskService.TaskUnRegister("testTask");
@@ -155,7 +160,7 @@ TEST_F(TaskServiceTest, Ut_TaskUnRegister_When_TypeNotExists_Expect_NotFound)
 {
     std::vector<uint8_t> deviceMem(1024);
     std::vector<uint8_t> hostMem(512);
-    TaskService taskService(deviceMem.data(), 1024, hostMem.data(), 512);
+    TaskService taskService(deviceMem.data(), 1024, hostMem.data(), 512, commId, devId);
 
     HcclResult ret = taskService.TaskUnRegister("nonexistent");
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
@@ -170,7 +175,7 @@ TEST_F(TaskServiceTest, Ut_TaskRun_When_TerminateFlag_Expect_Success)
     std::vector<uint8_t> deviceMem(deviceMemSize, 0xFF);
     std::vector<uint8_t> hostMem(hostMemSize, 0);
 
-    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize);
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
 
     HcclResult result = HCCL_SUCCESS;
     std::thread taskThread([&taskService, &result]() {
@@ -195,7 +200,7 @@ TEST_F(TaskServiceTest, Ut_TaskRun_When_TerminateResponseFlag_Expect_Success)
     std::vector<uint8_t> deviceMem(deviceMemSize, 0xFF);
     std::vector<uint8_t> hostMem(hostMemSize, 0);
 
-    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize);
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
 
     HcclResult result = HCCL_SUCCESS;
     std::thread taskThread([&taskService, &result]() {
@@ -219,7 +224,7 @@ TEST_F(TaskServiceTest, Ut_TaskRun_When_InvalidFlag_Expect_Success)
     std::vector<uint8_t> deviceMem(deviceMemSize, 0xFF);
     std::vector<uint8_t> hostMem(hostMemSize, 0);
 
-    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize);
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
 
     HcclResult result = HCCL_SUCCESS;
     std::thread taskThread([&taskService, &result]() {
@@ -245,7 +250,7 @@ TEST_F(TaskServiceTest, Ut_TaskRun_When_TaskOkCallbackNotFound_Expect_NotFound)
     std::vector<uint8_t> deviceMem(deviceMemSize, 0xFF);
     std::vector<uint8_t> hostMem(hostMemSize, 0);
 
-    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize);
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
     taskService.TaskRegister("existingTask", TrackingCallback);
 
     HcclResult result = HCCL_SUCCESS;
@@ -272,7 +277,7 @@ TEST_F(TaskServiceTest, Ut_TaskRun_When_TaskOkDataTooLarge_Expect_Error)
     std::vector<uint8_t> hostMem(hostMemSize, 0);
     // deviceMemSize=1024 => shmemSize_=512 => leftSize_=512-261=251
 
-    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize);
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
     taskService.TaskRegister("testTask", TrackingCallback);
 
     HcclResult result = HCCL_SUCCESS;
@@ -298,8 +303,10 @@ TEST_F(TaskServiceTest, Ut_TaskRun_When_TaskOkCallbackFails_Expect_Error)
     std::vector<uint8_t> deviceMem(deviceMemSize, 0xFF);
     std::vector<uint8_t> hostMem(hostMemSize, 0);
 
-    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize);
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
     taskService.TaskRegister("testTask", FailingCallback);
+
+    g_taskExpMemMap[commId][devId] = nullptr;
 
     HcclResult result = HCCL_SUCCESS;
     std::thread taskThread([&taskService, &result]() {
@@ -326,7 +333,7 @@ TEST_F(TaskServiceTest, Ut_TaskRun_When_TaskOkFlow_Expect_Success)
 
     uint8_t *dpu2npuMem = deviceMem.data() + deviceMemSize / 2; // second half
 
-    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize);
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
     taskService.TaskRegister("myTask", TrackingCallback);
 
     HcclResult result = HCCL_SUCCESS;
@@ -383,7 +390,7 @@ TEST_F(TaskServiceTest, Ut_TaskProfRegister_When_Normal_Expect_ReturnSuccess)
 {
     void *deviceMem = reinterpret_cast<void *>(0x1234);
     void *hostMem = reinterpret_cast<void *>(0x4321);
-    TaskService taskService(deviceMem, 4096, hostMem, 1024);
+    TaskService taskService(deviceMem, 4096, hostMem, 1024, commId, devId);
     
     // 创建 prof 回调
     Hccl::ProfCallbackTemplate profCallback = [](const Hccl::TaskParam& taskParam, uint64_t handle) -> HcclResult {
@@ -399,7 +406,7 @@ TEST_F(TaskServiceTest, Ut_TaskProfRegister_When_Registered_Expect_CallbackSet)
 {
     void *deviceMem = reinterpret_cast<void *>(0x1234);
     void *hostMem = reinterpret_cast<void *>(0x4321);
-    TaskService taskService(deviceMem, 4096 * 2, hostMem, 1024);
+    TaskService taskService(deviceMem, 4096 * 2, hostMem, 1024, commId, devId);
     
     bool callbackInvoked = false;
     Hccl::ProfCallbackTemplate profCallback = [&callbackInvoked](const Hccl::TaskParam& taskParam, uint64_t handle) -> HcclResult {
@@ -419,7 +426,7 @@ TEST_F(TaskServiceTest, Ut_TaskProfRegister_When_MultipleRegistrations_Expect_La
 {
     void *deviceMem = reinterpret_cast<void *>(0x1234);
     void *hostMem = reinterpret_cast<void *>(0x4321);
-    TaskService taskService(deviceMem, 4096, hostMem, 1024);
+    TaskService taskService(deviceMem, 4096, hostMem, 1024, commId, devId);
     
     // 第一次注册
     Hccl::ProfCallbackTemplate profCallback1 = [](const Hccl::TaskParam& taskParam, uint64_t handle) -> HcclResult {
@@ -441,7 +448,7 @@ TEST_F(TaskServiceTest, Ut_TaskProfRegister_When_EmptyCallback_Expect_ReturnSucc
 {
     void *deviceMem = reinterpret_cast<void *>(0x1234);
     void *hostMem = reinterpret_cast<void *>(0x4321);
-    TaskService taskService(deviceMem, 4096, hostMem, 1024);
+    TaskService taskService(deviceMem, 4096, hostMem, 1024, commId, devId);
     
     // 注册一个空操作的回调
     Hccl::ProfCallbackTemplate profCallback = [](const Hccl::TaskParam& taskParam, uint64_t handle) -> HcclResult {
@@ -450,4 +457,187 @@ TEST_F(TaskServiceTest, Ut_TaskProfRegister_When_EmptyCallback_Expect_ReturnSucc
     
     HcclResult ret = taskService.TaskProfRegister(profCallback);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TaskServiceTest, Ut_ExecuteTaskexception_When_TaskExpShmemNull_Expect_ReturnSuccess)
+{
+    std::vector<uint8_t> deviceMem(1024);
+    std::vector<uint8_t> hostMem(512);
+    TaskService taskService(deviceMem.data(), 1024, hostMem.data(), 512, commId, devId);
+
+    g_taskExpMemMap[commId][devId] = nullptr;
+
+    HcclResult ret = taskService.ExecuteTaskexception(1);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TaskServiceTest, Ut_ExecuteTaskexception_When_TaskExpShmemValid_Expect_WriteBothPositions)
+{
+    std::vector<uint8_t> deviceMem(1024);
+    std::vector<uint8_t> hostMem(512);
+    TaskService taskService(deviceMem.data(), 1024, hostMem.data(), 512, commId, devId);
+
+    std::vector<uint8_t> taskexpShmem(10, 0);
+    g_taskExpMemMap[commId][devId] = taskexpShmem.data();
+
+    int32_t errCode = 1;
+    HcclResult ret = taskService.ExecuteTaskexception(errCode);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uint16_t hcclRetVal = 0;
+    memcpy(&hcclRetVal, taskexpShmem.data() + sizeof(uint8_t), sizeof(uint16_t));
+    EXPECT_EQ(hcclRetVal, static_cast<uint16_t>(errCode));
+
+    uint16_t dstRetVal = 0;
+    memcpy(&dstRetVal, taskexpShmem.data() + sizeof(uint8_t) + sizeof(uint16_t), sizeof(uint16_t));
+    EXPECT_EQ(dstRetVal, static_cast<uint16_t>(errCode));
+}
+
+TEST_F(TaskServiceTest, Ut_ExecuteTaskexception_When_CommIdNotInMap_Expect_InsertAndReturnSuccess)
+{
+    std::vector<uint8_t> deviceMem(1024);
+    std::vector<uint8_t> hostMem(512);
+    std::string uniqueCommId = "notInMap_" + std::to_string(reinterpret_cast<uintptr_t>(this));
+    TaskService taskService(deviceMem.data(), 1024, hostMem.data(), 512, uniqueCommId, devId);
+
+    HcclResult ret = taskService.ExecuteTaskexception(1);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+}
+
+TEST_F(TaskServiceTest, Ut_ExecuteTaskClean_When_Normal_Expect_ReturnSuccess)
+{
+    constexpr int32_t deviceMemSize = 1024;
+    constexpr int32_t hostMemSize = 512;
+    std::vector<uint8_t> deviceMem(deviceMemSize, 0xAA);
+    std::vector<uint8_t> hostMem(hostMemSize, 0xBB);
+
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
+
+    HcclResult ret = taskService.ExecuteTaskClean();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    for (int32_t i = 0; i < hostMemSize; i++) {
+        EXPECT_EQ(hostMem[i], 0);
+    }
+    for (int32_t i = 0; i < deviceMemSize; i++) {
+        EXPECT_EQ(deviceMem[i], 0);
+    }
+}
+
+TEST_F(TaskServiceTest, Ut_ExecuteTask_When_CallbackReturnsNonZero_Expect_CleanAndTaskexception)
+{
+    constexpr int32_t deviceMemSize = 1024;
+    constexpr int32_t hostMemSize = 512;
+    std::vector<uint8_t> deviceMem(deviceMemSize, 0xFF);
+    std::vector<uint8_t> hostMem(hostMemSize, 0);
+
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
+    taskService.TaskRegister("testTask", FailingCallback);
+
+    std::vector<uint8_t> taskexpShmem(10, 0);
+    g_taskExpMemMap[commId][devId] = taskexpShmem.data();
+
+    HcclResult result = HCCL_SUCCESS;
+    std::thread taskThread([&taskService, &result]() {
+        result = taskService.TaskRun();
+    });
+
+    WaitForTaskRunLoop(deviceMem.data());
+    SetupOkTask(deviceMem.data(), "testTask", 42, 16);
+
+    taskThread.join();
+
+    EXPECT_EQ(result, HCCL_E_INTERNAL);
+
+    uint16_t hcclRetVal = 0;
+    memcpy(&hcclRetVal, taskexpShmem.data() + sizeof(uint8_t), sizeof(uint16_t));
+    EXPECT_NE(hcclRetVal, 0);
+}
+
+TEST_F(TaskServiceTest, Ut_TaskRun_When_ProcessTaskOkFails_Expect_WriteTerminateResponseAndReturnError)
+{
+    constexpr int32_t deviceMemSize = 1024;
+    constexpr int32_t hostMemSize = 512;
+    std::vector<uint8_t> deviceMem(deviceMemSize, 0xFF);
+    std::vector<uint8_t> hostMem(hostMemSize, 0);
+
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
+    taskService.TaskRegister("testTask", FailingCallback);
+
+    std::vector<uint8_t> taskexpShmem(10, 0);
+    g_taskExpMemMap[commId][devId] = taskexpShmem.data();
+
+    HcclResult result = HCCL_SUCCESS;
+    std::thread taskThread([&taskService, &result]() {
+        result = taskService.TaskRun();
+    });
+
+    WaitForTaskRunLoop(deviceMem.data());
+    SetupOkTask(deviceMem.data(), "testTask", 42, 16);
+
+    taskThread.join();
+
+    EXPECT_EQ(result, HCCL_E_INTERNAL);
+    EXPECT_EQ(deviceMem[0], 0);
+}
+
+TEST_F(TaskServiceTest, Ut_TaskRun_When_TaskOkCallbackFails_Expect_TaskexceptionShmemWritten)
+{
+    constexpr int32_t deviceMemSize = 1024;
+    constexpr int32_t hostMemSize = 512;
+    std::vector<uint8_t> deviceMem(deviceMemSize, 0xFF);
+    std::vector<uint8_t> hostMem(hostMemSize, 0);
+
+    TaskService taskService(deviceMem.data(), deviceMemSize, hostMem.data(), hostMemSize, commId, devId);
+    taskService.TaskRegister("testTask", FailingCallback);
+
+    std::vector<uint8_t> taskexpShmem(10, 0);
+    g_taskExpMemMap[commId][devId] = taskexpShmem.data();
+
+    HcclResult result = HCCL_SUCCESS;
+    std::thread taskThread([&taskService, &result]() {
+        result = taskService.TaskRun();
+    });
+
+    WaitForTaskRunLoop(deviceMem.data());
+    SetupOkTask(deviceMem.data(), "testTask", 42, 16);
+
+    taskThread.join();
+
+    EXPECT_EQ(result, HCCL_E_INTERNAL);
+
+    uint16_t hcclRetVal = 0;
+    memcpy(&hcclRetVal, taskexpShmem.data() + sizeof(uint8_t), sizeof(uint16_t));
+    EXPECT_NE(hcclRetVal, 0);
+
+    uint16_t dstRetVal = 0;
+    memcpy(&dstRetVal, taskexpShmem.data() + sizeof(uint8_t) + sizeof(uint16_t), sizeof(uint16_t));
+    EXPECT_NE(dstRetVal, 0);
+}
+
+TEST_F(TaskServiceTest, Ut_RunDpuRpcSrvLaunch_When_TaskExpMemNull_Expect_ReturnPara)
+{
+    struct TestDpuKernelLaunchParam {
+        u64      memorySize;
+        void    *deviceMem;
+        void    *hostMem;
+        uint32_t deviceId;
+        std::string commId;
+        void    *taskExpMem;
+    };
+
+    std::vector<uint8_t> deviceMemBuf(1024);
+    std::vector<uint8_t> hostMemBuf(512);
+    std::string testCommId = "runDpuTest_" + std::to_string(reinterpret_cast<uintptr_t>(this));
+
+    TestDpuKernelLaunchParam params;
+    params.memorySize = 1024;
+    params.deviceMem = deviceMemBuf.data();
+    params.hostMem = hostMemBuf.data();
+    params.deviceId = 0;
+    params.commId = testCommId;
+    params.taskExpMem = nullptr;
+
+    uint32_t ret = RunDpuRpcSrvLaunch(reinterpret_cast<uint64_t>(reinterpret_cast<void *>(&params)));
+    EXPECT_EQ(ret, HCCL_E_PARA);
 }

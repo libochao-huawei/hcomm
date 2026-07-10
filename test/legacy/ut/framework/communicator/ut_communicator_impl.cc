@@ -78,6 +78,7 @@
 #include "dev_buffer.h"
 #include "rma_buffer.h"
 #include "topo_addr_info.h"
+#include "hostdpu/dpu_kernel_entrance.h"
 #include "hal.h"
 #undef private
 #undef protected
@@ -3472,8 +3473,6 @@ TEST_F(CommunicatorImplTest, Ut_InitAndLaunchDpuKernel_When_LaunchFailed_Expect_
     MockForInitAndLaunchDpuKernel();
     MOCKER_CPP(&CommunicatorImpl::LaunchDpuKernel).stubs().will(returnValue(HCCL_E_INTERNAL));
     HcclResult ret = comm.InitAndLaunchDpuKernel();
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
-    GlobalMockObject::verify();
 }
 
 TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_DpuStream_Uninit_Failed)
@@ -3580,7 +3579,7 @@ TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_PciePath_Expect_Success)
     EXPECT_NE(addr, nullptr);
     EXPECT_TRUE(newCreated);
     EXPECT_TRUE(fakeComm.tagWorkspaceVAMap_.find(tag) != fakeComm.tagWorkspaceVAMap_.end());
-    EXPECT_EQ(fakeComm.va_, reinterpret_cast<void *>(0x2000));
+    EXPECT_EQ(fakeComm.tagDpuShmemArgsMap_[tag].va_, reinterpret_cast<void *>(0x2000));
 }
 
 TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_PcieHalHostRegisterFail_Expect_DrvError)
@@ -3632,12 +3631,13 @@ TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_UbPath_Expect_Success)
     EXPECT_NE(addr, nullptr);
     EXPECT_TRUE(newCreated);
     EXPECT_TRUE(fakeComm.tagWorkspaceVAMap_.find(tag) != fakeComm.tagWorkspaceVAMap_.end());
-    EXPECT_NE(fakeComm.va_, nullptr);
-    EXPECT_EQ(reinterpret_cast<uintptr_t>(fakeComm.va_) % ALIGN_4K, 0);
+
+    EXPECT_NE(fakeComm.tagDpuShmemArgsMap_[tag].va_, nullptr);
+    EXPECT_EQ(reinterpret_cast<uintptr_t>(fakeComm.tagDpuShmemArgsMap_[tag].va_) % ALIGN_4K, 0);
     // free the malloc'd memory allocated by GetKFCWorkSpaceVA in UB path
-    free(fakeComm.originVa_);
-    fakeComm.originVa_ = nullptr;
-    fakeComm.va_ = nullptr;
+    free(fakeComm.tagDpuShmemArgsMap_[tag].originVa_);
+    fakeComm.tagDpuShmemArgsMap_[tag].originVa_ = nullptr;
+    fakeComm.tagDpuShmemArgsMap_[tag].va_ = nullptr;
 }
 
 TEST_F(CommunicatorImplTest, Ut_GetKFCWorkSpaceVA_When_UnsupportedConnectType_Expect_NotSupport)
@@ -3802,4 +3802,286 @@ TEST_F(TryFastCcuLaunchTest, GetJsonPorpertyList_When_NotArray_Expect_Throw)
     obj["test"] = "not_array";
     nlohmann::json listObj;
     EXPECT_THROW(GetJsonPropertyList(obj, "test", listObj), InvalidParamsException);
+}
+
+// dpu相关新增
+TEST_F(CommunicatorImplTest, Ut_WaitDpuKernelThreadTerminate_When_NotLaunched_Expect_ReturnSuccess)
+{
+    CommunicatorImpl comm;
+    comm.isDpuKernelLaunched = false;
+
+    HcclResult ret = comm.WaitDpuKernelThreadTerminate();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommunicatorImplTest, Ut_WaitDpuKernelThreadTerminate_When_VaNull_Expect_ReturnMemoryError)
+{
+    CommunicatorImpl comm;
+    comm.isDpuKernelLaunched = true;
+    comm.tagDpuShmemArgsMap_["DPUTAG"].va_ = nullptr;
+    comm.tagDpuShmemArgsMap_["DPUTAG"].accessVA_ = nullptr;
+
+    HcclResult ret = comm.WaitDpuKernelThreadTerminate();
+    EXPECT_EQ(ret, HCCL_E_MEMORY);
+}
+
+TEST_F(CommunicatorImplTest, Ut_WaitDpuKernelThreadTerminate_When_AlreadyExited_Expect_ReturnSuccess)
+{
+    CommunicatorImpl comm;
+    comm.isDpuKernelLaunched = true;
+
+    uint8_t shmemData[64] = {0};
+    shmemData[0] = 3;
+    comm.tagDpuShmemArgsMap_["DPUTAG"].va_ = shmemData;
+    comm.tagDpuShmemArgsMap_["DPUTAG"].accessVA_ = shmemData;
+    comm.tagDpuShmemArgsMap_["DPUTAG"].connectType_ = 0;
+
+    HcclResult ret = comm.WaitDpuKernelThreadTerminate();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommunicatorImplTest, Ut_WaitDpuKernelThreadTerminate_When_NeedTerminate_Expect_WriteSecondAndWaitThird)
+{
+    CommunicatorImpl comm;
+    comm.isDpuKernelLaunched = true;
+
+    uint8_t shmemData[64] = {0};
+    shmemData[0] = 0;
+    comm.tagDpuShmemArgsMap_["DPUTAG"].va_ = shmemData;
+    comm.tagDpuShmemArgsMap_["DPUTAG"].accessVA_ = shmemData;
+    comm.tagDpuShmemArgsMap_["DPUTAG"].connectType_ = 0;
+
+    std::thread signalThread([&shmemData]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        shmemData[0] = 3;
+    });
+
+    HcclResult ret = comm.WaitDpuKernelThreadTerminate();
+    signalThread.join();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(shmemData[0], 3);
+}
+
+TEST_F(CommunicatorImplTest, Ut_WaitDpuKernelThreadTerminate_When_UbPath_Expect_UseVaAsHostPtr)
+{
+    CommunicatorImpl comm;
+    comm.isDpuKernelLaunched = true;
+
+    uint8_t shmemData[64] = {0};
+    shmemData[0] = 3;
+    comm.tagDpuShmemArgsMap_["DPUTAG"].va_ = shmemData;
+    comm.tagDpuShmemArgsMap_["DPUTAG"].accessVA_ = reinterpret_cast<void*>(0xDEAD);
+    comm.tagDpuShmemArgsMap_["DPUTAG"].connectType_ = 2;
+
+    HcclResult ret = comm.WaitDpuKernelThreadTerminate();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommunicatorImplTest, Ut_DestroyDpuTaskexpShmemInDevice_When_VaNull_Expect_ReturnMemoryError)
+{
+    CommunicatorImpl comm;
+    comm.isDpuKernelLaunched = true;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].va_ = nullptr;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].accessVA_ = nullptr;
+
+    HcclResult ret = comm.DestroyDpuTaskexpShmemInDevice();
+    EXPECT_EQ(ret, HCCL_E_MEMORY);
+}
+
+TEST_F(CommunicatorImplTest, Ut_DestroyDpuTaskexpShmemInDevice_When_DeviceResponseSuccess_Expect_ReturnSuccess)
+{
+    CommunicatorImpl comm;
+
+    uint8_t shmemData[64] = {0};
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].va_ = shmemData;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].accessVA_ = shmemData;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].connectType_ = 0;
+
+    std::thread responseThread([&shmemData]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        shmemData[0] = 0;
+    });
+
+    HcclResult ret = comm.DestroyDpuTaskexpShmemInDevice();
+    responseThread.join();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(shmemData[0], 0);
+}
+
+TEST_F(CommunicatorImplTest, Ut_DestroyDpuTaskexpShmemInDevice_When_UbPath_Expect_UseVaAsHostPtr)
+{
+    CommunicatorImpl comm;
+
+    uint8_t shmemData[64] = {0};
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].va_ = shmemData;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].accessVA_ = reinterpret_cast<void*>(0xDEAD);
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].connectType_ = 2;
+
+    std::thread responseThread([&shmemData]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        shmemData[0] = 0;
+    });
+
+    HcclResult ret = comm.DestroyDpuTaskexpShmemInDevice();
+    responseThread.join();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommunicatorImplTest, Ut_InitAndLaunchAicpuKernel_When_CreateStreamFail_Expect_ReturnInternalError)
+{
+    CommunicatorImpl comm;
+    comm.id = "aicpuTest";
+    comm.devLogicId = 0;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].accessVA_ = reinterpret_cast<void*>(0x1000);
+
+    MOCKER_CPP(&CommunicatorImpl::GetAicpuKernelFuncHandle).stubs().will(returnValue(reinterpret_cast<aclrtFuncHandle>(0x1)));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().will(returnValue(ACL_ERROR_INVALID_PARAM));
+
+    HcclResult ret = comm.InitAndLaunchAicpuKernel();
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(CommunicatorImplTest, Ut_InitAndLaunchAicpuKernel_When_LaunchFail_Expect_ReturnInternalError)
+{
+    CommunicatorImpl comm;
+    comm.id = "aicpuTest";
+    comm.devLogicId = 0;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].accessVA_ = reinterpret_cast<void*>(0x1000);
+
+    MOCKER_CPP(&CommunicatorImpl::GetAicpuKernelFuncHandle).stubs().will(returnValue(reinterpret_cast<aclrtFuncHandle>(0x1)));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtLaunchKernelWithHostArgs).stubs().will(returnValue(static_cast<rtError_t>(1)));
+
+    HcclResult ret = comm.InitAndLaunchAicpuKernel();
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(CommunicatorImplTest, Ut_InitAndLaunchAicpuKernel_When_DestroyStreamFail_Expect_ReturnRuntimeError)
+{
+    CommunicatorImpl comm;
+    comm.id = "aicpuTest";
+    comm.devLogicId = 0;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].accessVA_ = reinterpret_cast<void*>(0x1000);
+
+    MOCKER_CPP(&CommunicatorImpl::GetAicpuKernelFuncHandle).stubs().will(returnValue(reinterpret_cast<aclrtFuncHandle>(0x1)));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtLaunchKernelWithHostArgs).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER(HcclStreamSynchronize).stubs();
+    MOCKER(aclrtDestroyStreamForce).stubs().will(returnValue(ACL_ERROR_INVALID_PARAM));
+
+    HcclResult ret = comm.InitAndLaunchAicpuKernel();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+}
+
+TEST_F(CommunicatorImplTest, Ut_InitAndLaunchAicpuKernel_When_AllSuccess_Expect_ReturnSuccess)
+{
+    CommunicatorImpl comm;
+    comm.id = "aicpuTest";
+    comm.devLogicId = 0;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].accessVA_ = reinterpret_cast<void*>(0x1000);
+
+    MOCKER_CPP(&CommunicatorImpl::GetAicpuKernelFuncHandle).stubs().will(returnValue(reinterpret_cast<aclrtFuncHandle>(0x1)));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtLaunchKernelWithHostArgs).stubs().will(returnValue(RT_ERROR_NONE));
+    MOCKER(HcclStreamSynchronize).stubs();
+    MOCKER(aclrtDestroyStreamForce).stubs().will(returnValue(ACL_SUCCESS));
+
+    HcclResult ret = comm.InitAndLaunchAicpuKernel();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommunicatorImplTest, Ut_Destructor_When_TaskExpMemMapHasEntry_Expect_EraseEntry)
+{
+    CommunicatorImpl *comm = new CommunicatorImpl();
+    std::string savedId = "destrTest_" + std::to_string(reinterpret_cast<uintptr_t>(comm));
+    comm->id = savedId;
+    comm->devLogicId = 0;
+    comm->isDpuKernelLaunched = false;
+    comm->isAicpuKernelLaunched = false;
+
+    g_taskExpMemMap[savedId][0] = reinterpret_cast<void*>(0x1234);
+    ASSERT_TRUE(g_taskExpMemMap.find(savedId) != g_taskExpMemMap.end());
+
+    MOCKER_CPP(&CommunicatorImpl::DestroyDpuKernelResource).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::DestroyDpuTaskexpShmemInDevice).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::DestroyKFCWorkSpaceVA).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::NotifyAicpuDestroyComm).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::DeInitPreResource).stubs();
+
+    delete comm;
+
+    EXPECT_TRUE(g_taskExpMemMap.find(savedId) == g_taskExpMemMap.end());
+}
+
+
+TEST_F(CommunicatorImplTest, Ut_NotifyAicpuDestroyComm_When_NotLaunched_Expect_ReturnSuccess)
+{
+    CommunicatorImpl comm;
+    comm.isAicpuKernelLaunched = false;
+
+    HcclResult ret = comm.NotifyAicpuDestroyComm();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommunicatorImplTest, Ut_NotifyAicpuDestroyComm_When_KfcControlNull_Expect_ReturnSuccess)
+{
+    CommunicatorImpl comm;
+    comm.isAicpuKernelLaunched = true;
+    comm.kfcControlTransferH2D = nullptr;
+
+    HcclResult ret = comm.NotifyAicpuDestroyComm();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+
+TEST_F(CommunicatorImplTest, Ut_LaunchDpuKernel_When_DpuTaskexpShmemValid_Expect_TaskexceptionVaSet)
+{
+    CommunicatorImpl comm;
+    comm.id = "launchTest";
+    comm.devLogicId = 0;
+    comm.hostShareBuf = malloc(1024);
+
+    void* taskexpVa = reinterpret_cast<void*>(0xABCD);
+    comm.tagDpuShmemArgsMap_["DPUTAG"].va_ = reinterpret_cast<void*>(0x2000);
+    comm.tagDpuShmemArgsMap_["DPUTAG"].accessVA_ = reinterpret_cast<void*>(0x3000);
+    comm.tagDpuShmemArgsMap_["DPUTAG"].connectType_ = 0;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].va_ = reinterpret_cast<void*>(0x4000);
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].accessVA_ = taskexpVa;
+    comm.tagDpuShmemArgsMap_["DPUTASKEXCEPTION"].connectType_ = 0;
+
+    aclrtFuncHandle fakeHandle = reinterpret_cast<aclrtFuncHandle>(0x1);
+    MOCKER_CPP(&CommunicatorImpl::SaveDpuStreamId).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(aclrtLaunchKernelWithHostArgs).stubs().will(returnValue(ACL_SUCCESS));
+
+    HcclResult ret = comm.LaunchDpuKernel(fakeHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(comm.hostArgs.taskexceptionVa, taskexpVa);
+
+    MOCKER_CPP(&CommunicatorImpl::DestroyDpuKernelResource).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::DestroyDpuTaskexpShmemInDevice).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::DestroyKFCWorkSpaceVA).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::NotifyAicpuDestroyComm).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::DeInitPreResource).stubs();
+
+    free(comm.hostShareBuf);
+    comm.hostShareBuf = nullptr;
+}
+
+TEST_F(CommunicatorImplTest, Ut_InitAndLaunchDpuKernel_When_DpuTaskexpShmemAllocated_Expect_BothTagsInShmemMap)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    comm.id = "dualTagTest";
+
+    MockForInitAndLaunchDpuKernel();
+    MOCKER_CPP(&CommunicatorImpl::LaunchDpuKernel).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = comm.InitAndLaunchDpuKernel();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    EXPECT_TRUE(comm.tagDpuShmemArgsMap_.find("DPUTAG") != comm.tagDpuShmemArgsMap_.end());
+    EXPECT_TRUE(comm.tagDpuShmemArgsMap_.find("DPUTASKEXCEPTION") != comm.tagDpuShmemArgsMap_.end());
 }

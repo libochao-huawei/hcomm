@@ -30,6 +30,12 @@ void RegisterGetAicpuCqeErrInfoCallBackHcomm(GetAicpuCqeErrInfoCallBackHcomm p1)
 using AicpuGetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogicID);
 void RegisterAicpuGetErrStatusVecCallBack(AicpuGetErrStatusVecCallBack p1);
 
+struct DpuTaskexceptionParams {
+    HcclResult ret;
+    uint32_t   devId; // todo 好像无用
+    char       commId[COMM_NAME_MAX_LENGTH]; // todo好像无用
+};
+
 class TaskExceptionHost {
 public:
     static TaskExceptionHost* GetInstance(s32 deviceLogicID);
@@ -58,6 +64,7 @@ private:
     void GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo);
     void GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId) const;
     void GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId) const;
+    bool ProcessDpuException(rtExceptionInfo_t* exceptionInfo);
 
 private:
     std::mutex taskExceptionMutex_;

@@ -18,6 +18,7 @@
 #include "task_exception_handler.h"
 #include "ccuTaskException.h"
 #include "hccl_types.h"
+#include "dpu_kernel_entrance.h"
 
 namespace hcomm {
 
@@ -187,6 +188,35 @@ bool IsMC2Exception(const rtExceptionInfo_t* exceptionInfo)
            exceptionInfo->expandInfo.u.fusionInfo.type == RT_FUSION_AICORE_CCU;
 }
 
+bool TaskExceptionHost::ProcessDpuException(rtExceptionInfo_t* exceptionInfo)
+{
+    HCCL_RUN_INFO("[TaskExceptionHost][%s]begin to execute hccl task exception callback function.", __func__);
+    bool isExce = false;
+    errno_t ret = EOK;
+    uint16_t hcclRet = 0;
+    for (auto pairMap : g_taskExpMemMap) {
+        std::string commId = pairMap.first;
+        // 读取共享内存内容并打印
+        ret = memcpy_s(&hcclRet, sizeof(uint16_t), reinterpret_cast<uint8_t *>(pairMap.second[exceptionInfo->deviceid]) + sizeof(uint8_t) + sizeof(uint16_t), sizeof(uint16_t));
+        if (ret != EOK) {
+            HCCL_ERROR("memcpy_s get dpu taskexception failed: %d", ret);
+            return isExce;
+        }
+        if (hcclRet != 0) { // 有dpu任务出错
+            HCCL_ERROR("[TaskExceptionHost][ProcessDpuException] Task from HCCL run failed.");
+            HCCL_ERROR("[TaskExceptionHost][ProcessDpuException] errorCode[%d], devId[%u], commId[%s]", hcclRet, exceptionInfo->deviceid, commId.c_str());
+            ret = memset_s(reinterpret_cast<uint8_t *>(pairMap.second[exceptionInfo->deviceid]) + sizeof(uint8_t) + sizeof(uint16_t), sizeof(uint16_t), 0, sizeof(uint16_t)); // 清空 dpu taskexception共享内存内容
+            if (ret != EOK) {
+                HCCL_ERROR("memset_s clean dpu taskexception failed: %d", ret);
+                return isExce;
+            }
+            isExce = true;
+            break;
+        }
+    }
+    return isExce;
+}
+
 void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 {
     HCCL_RUN_INFO("[TaskExceptionHost][%s], taskid[%u], streamid[%u], tid[%u], deviceid[%u], retcode[%u], type[%d]",
@@ -197,6 +227,12 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
         return;
     }
+
+    // dpu taskexception
+    if (ProcessDpuException(exceptionInfo)) {
+        HCCL_ERROR("[TaskExceptionHost][ProcessDpuException] end.");
+        return;
+    };
 
     Hccl::TaskInfo* curTask = nullptr;
     HcclResult ret = Hccl::GlobalMirrorTasks::Instance().FindTaskInfo(exceptionInfo->deviceid, exceptionInfo->streamid,
