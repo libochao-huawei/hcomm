@@ -30,7 +30,7 @@ namespace hcomm {
 class AicpuTsP2pChannel : public Channel {
 public:
     AicpuTsP2pChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
-    ~AicpuTsP2pChannel();
+    ~AicpuTsP2pChannel() override;
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;

@@ -15,6 +15,8 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include "hccl/hccl_types.h"
+#include "socket_manager.h"
 #include "hcomm_res_defs.h"
 #include "endpoint_pair_mgr.h"
 

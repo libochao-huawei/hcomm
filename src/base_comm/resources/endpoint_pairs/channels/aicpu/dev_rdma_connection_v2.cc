@@ -210,9 +210,9 @@ HcclResult DevRdmaConnectionV2::GetExchangeDto(std::unique_ptr<Hccl::Serializabl
     return HCCL_SUCCESS;
 }
 
-HcclResult DevRdmaConnectionV2::ParseRmtExchangeDto(const Hccl::Serializable &rmtQpAttrSerial)
+HcclResult DevRdmaConnectionV2::ParseRmtExchangeDto(const Hccl::Serializable &rmtDto)
 {
-    auto dto = dynamic_cast<const ExchangeRdmaConnDto &>(rmtQpAttrSerial);
+    auto dto = dynamic_cast<const ExchangeRdmaConnDto &>(rmtDto);
     HCCL_INFO("[DevRdmaConnectionV2][%s] remoteConnDto[%s]", __func__, dto.Describe().c_str());
     rmtQpAttr_.psn = dto.psn_;
     rmtQpAttr_.qpn = dto.qpn_;

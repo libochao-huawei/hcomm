@@ -11,6 +11,8 @@
 #ifndef COMM_RESES_KERNEL_LAUNCH_AICPU_H
 #define COMM_RESES_KERNEL_LAUNCH_AICPU_H
 
+#include "hccl/hccl_types.h"
+
 HcclResult groupLaunchA5();
 
 #endif

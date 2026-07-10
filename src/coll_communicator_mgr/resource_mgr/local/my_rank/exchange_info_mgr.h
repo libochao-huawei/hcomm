@@ -10,6 +10,11 @@
 #ifndef EXCHANGE_INFO_MGR_H
 #define EXCHANGE_INFO_MGR_H
 
+#include <string>
+#include <vector>
+#include "hccl/hccl_types.h"
+#include "hccl/base.h"
+#include "hccl/hccl_res.h"
 #include "hcomm_res_defs.h"
 #include "common.h"
 #include "coll_comm_config_consistency.h"

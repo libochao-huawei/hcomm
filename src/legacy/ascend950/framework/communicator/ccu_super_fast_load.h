@@ -24,7 +24,6 @@
 #include "orion_adapter_rts.h"
 #include "ccu/ccu_task_param.h"
 #include "task_param.h"
-#include "env_config.h"
 #include "ccu_ins.h"
 #include "acl/acl_rt.h"
 

@@ -11,13 +11,18 @@
 #ifndef HCCL_PREEMPT_SOCKET_MANAGER_H
 #define HCCL_PREEMPT_SOCKET_MANAGER_H
 
+#include <cstddef>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
-#include <hccl/hccl_types.h>
+#include "hccl/hccl_types.h"
+#include "hccl/base.h"
+#include "orion_adapter_hccp.h"
+#include "env_func.h"
 #include "socket.h"
-#include "env_config.h"
 #include "referenced.h"
 
 namespace Hccl {

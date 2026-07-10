@@ -10,7 +10,6 @@
 #ifndef GROUP_SCHEDULE_MGR_H
 #define GROUP_SCHEDULE_MGR_H
 
-#include <cstddef>
 #include <deque>
 #include <vector>
 #include <string>

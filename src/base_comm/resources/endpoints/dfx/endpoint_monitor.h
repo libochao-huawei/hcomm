@@ -30,7 +30,7 @@ public:
     ~EndpointMonitor();
 
     static EndpointMonitor &GetInstance(s32 deviceId);
-    HcclResult RegisterToEndpointMonitor(s32 deviceId, EndpointHandle epHandle);
+    HcclResult RegisterToEndpointMonitor(s32 deviceLogicId, EndpointHandle epHandle);
     HcclResult UnRegisterToEndpointMonitor();  
     void RemoveEpHandleFromEndpointMonitor(EndpointHandle epHandle);
 

@@ -152,10 +152,10 @@ public:
     CcuResult VariableAssignVar(CcuVariableHandle var, CcuVariableHandle varA);
     CcuResult VariableAddVarToVar(CcuVariableHandle varHandle,CcuVariableHandle varAHandle, CcuVariableHandle varBHandle);
     CcuResult AddressAssignImm(CcuAddressHandle addr, uint64_t immediate);
-    CcuResult AddressAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
+    CcuResult AddressAssignVar(CcuAddressHandle addrHandle, CcuVariableHandle varHandle);
     CcuResult AddressAssignAddr(CcuAddressHandle dstAddrHandle, CcuAddressHandle srcAddrHandle);
     CcuResult AddressAddVarToAddr(CcuAddressHandle resAddr, CcuAddressHandle lhsAddr, CcuVariableHandle rhsVar);
-    CcuResult AddressAddAddrToAddr(CcuAddressHandle resAddr, CcuAddressHandle addrA, CcuAddressHandle addrB);
+    CcuResult AddressAddAddrToAddr(CcuAddressHandle resAddrHandle, CcuAddressHandle addrAHandle, CcuAddressHandle addrBHandle);
     CcuResult AddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
     CcuResult AddressAddAssignAddr(CcuAddressHandle addrHandle, CcuAddressHandle otherHandle);
 
@@ -199,7 +199,7 @@ public:
     CcuResult LoopGroupCreate(CcuLoopGroup *group, uint32_t maxLoopNum,
         const CcuLoopGroupConfig *config);
     CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group, uint32_t maxLoopNum,
-        CcuVariableHandle parallelVar, CcuVariableHandle offsetVar);
+        CcuVariableHandle parallelVarHandle, CcuVariableHandle offsetVarHandle);
     CcuResult LoopGroupAddLoop(CcuLoopGroup group,
         CcuLoop loop, const CcuLoopConfig *config);
     CcuResult LoopGroupAddLoopFromVar(CcuLoopGroup group,

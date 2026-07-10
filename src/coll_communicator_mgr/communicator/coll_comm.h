@@ -10,10 +10,13 @@
 #ifndef COLL_COMM_H
 #define COLL_COMM_H
 
+#include <cstddef>
+#include <cstdint>
+#include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
-#include <mutex>
 #include "my_rank.h"
 #include "rank_graph.h"
 #include "comm_config_pub.h"
@@ -26,7 +29,6 @@
 #include "error_message_v2.h"
 #include "include/hccl_communicator.h"
 #include "hccl/hccl_res.h"
-#include "acl/acl_rt.h"
 
 namespace hccl {
 class SymmetricMemory;

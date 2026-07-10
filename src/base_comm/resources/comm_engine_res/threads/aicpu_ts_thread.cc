@@ -260,7 +260,7 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) c
 
 template <typename Operation, typename ReportOp>
 HcclResult AicpuTsThread::LocalProcess(
-    void *dst, const void *src, uint64_t sizeByte, Operation &&op, ReportOp &&reportOp) const
+    void *dst, const void *src, uint64_t size, Operation &&op, ReportOp &&reportOp) const
 {
     void *streamLitePtr = GetStreamLitePtr();
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
@@ -271,7 +271,7 @@ HcclResult AicpuTsThread::LocalProcess(
     uint8_t *dstByte = static_cast<uint8_t *>(dst);
     const uint8_t *srcByte = static_cast<const uint8_t *>(src);
 
-    uint64_t remainSize = sizeByte;
+    uint64_t remainSize = size;
     uint64_t doneSize = 0;
 
     while (remainSize > 0) {

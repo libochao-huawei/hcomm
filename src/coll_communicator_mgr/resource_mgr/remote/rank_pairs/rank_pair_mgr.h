@@ -13,6 +13,8 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include "hccl/hccl_types.h"
+#include "socket_manager.h"
 #include "rank_pair.h"
 
 namespace hccl {

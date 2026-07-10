@@ -10,6 +10,7 @@
 
 #include "task_service.h"
 #include <algorithm>
+#include "profiling/dlprof_function.h"
 #include <thread>
 #include <chrono>
 #include <atomic>
@@ -225,7 +226,7 @@ HcclResult TaskService::ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::SynchronizeControlInfo([[maybe_unused]] uint8_t *ctrlHdr, uint64_t hdrLen)
+HcclResult TaskService::SynchronizeControlInfo([[maybe_unused]] uint8_t *ctrlHdr, [[maybe_unused]] uint64_t hdrLen)
 {
     CHK_PTR_NULL(npu2dpuMem_);
     CHK_PTR_NULL(dpu2npuMem_);

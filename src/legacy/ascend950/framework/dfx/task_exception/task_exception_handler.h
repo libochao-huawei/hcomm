@@ -78,7 +78,7 @@ private:
     static std::pair<IpAddress, IpAddress> GetAddrPairByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
     static std::string GetCcuLenErrorMsg(const uint64_t len);
     static std::tuple<std::string, std::string, std::string, std::string> GetCcuErrorIpInfo(uint32_t deviceId,
-        uint16_t status, const TaskInfo& taskInfo);
+        [[maybe_unused]] uint16_t status, const TaskInfo& taskInfo);
 
 private:
     uint32_t devId_; // 当前设备id

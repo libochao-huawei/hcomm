@@ -10,6 +10,7 @@
 #include "ccuTaskException.h"
 #include <memory>
 #include "log.h"
+#include "comm_addr_logger.h"
 #include "coll_comm.h"
 #include "acl/acl_rt.h"
 #include "orion_adapter_hccp.h"
@@ -139,9 +140,9 @@ std::atomic<bool> isGetCqeErrInfo(false); // 是否已获取过CQE错误信息�
 CcuGetErrStatusVecCallBack g_CcuGetErrStatusVecCallBack = nullptr;
 GetCcuCqeErrInfoCallBackHcomm g_getCqeErrInfoCallBack = nullptr;
 
-void RegisterCcuGetErrStatusVecCallBack(CcuGetErrStatusVecCallBack p1)
+void RegisterCcuGetErrStatusVecCallBack(CcuGetErrStatusVecCallBack callback)
 {
-    g_CcuGetErrStatusVecCallBack = p1;
+    g_CcuGetErrStatusVecCallBack = callback;
     return;
 }
 
@@ -184,10 +185,10 @@ void RegisterGetCcuCqeErrInfoCallBackHcomm(GetCcuCqeErrInfoCallBackHcomm p1)
     g_getCqeErrInfoCallBack = p1;
     return;
 }
-void CcuTaskException::ClusterMoniterGetCcuCqeErrInfo(u32 RemoteLocalId, u32 locDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
+void CcuTaskException::ClusterMoniterGetCcuCqeErrInfo(u32 RemoteDeviceId, u32 locDeviceId, uint16_t status, std::string LocalEid, std::string RemoteEid, std::string RemoteInsId)
 {
     if (g_getCqeErrInfoCallBack != nullptr) {
-        g_getCqeErrInfoCallBack(RemoteLocalId, locDeviceId, status, LocalEid, RemoteEid, RemoteInsId);
+        g_getCqeErrInfoCallBack(RemoteDeviceId, locDeviceId, status, LocalEid, RemoteEid, RemoteInsId);
     }
     return;
 }

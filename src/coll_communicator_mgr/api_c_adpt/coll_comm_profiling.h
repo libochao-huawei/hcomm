@@ -12,6 +12,8 @@
 #define ProFILING_H
 
 #include<cstdint>
+#include "hccl/hccl_types.h"
+#include "hccl/base.h"
 using ThreadHandle = uint64_t;
 HcclResult HcclStreamProfilingReport(HcclComm comm, u32 threadNum, const u32 *threadId);
 #endif

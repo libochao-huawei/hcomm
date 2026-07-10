@@ -17,7 +17,6 @@
 #include <cstdint>
 #include "hccl_types.h"
 #include "task_param.h"
-#include "profiling/dlprof_function.h"
 
 namespace Hccl {
 using CallbackTemplate = std::function<int32_t(uint64_t, int32_t)>;
@@ -51,7 +50,7 @@ private:
     HcclResult ReadFlag(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t &flag) const;
     HcclResult ReadTaskType(const uint8_t *ctrlHdr, uint64_t hdrLen, const uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const;
     HcclResult ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr);
-    HcclResult SynchronizeControlInfo(uint8_t *ctrlHdr, uint64_t hdrLen);
+    HcclResult SynchronizeControlInfo(uint8_t *ctrlHdr, [[maybe_unused]] uint64_t hdrLen);
     HcclResult ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcFlagPtr, uint8_t *srcTaskTypePtr);
     HcclResult ExecuteTaskClean();
     HcclResult ExecuteTaskexception(int32_t ret);

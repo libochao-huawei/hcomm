@@ -17,6 +17,12 @@
 #include <utility>
 #include <vector>
 
+#include "hccl/hccl_types.h"
+#include "hccl/base.h"
+#include "hccl/hccl_res.h"
+#include "hccl_mem_defs.h"
+#include "acl/acl_rt.h"
+#include "socket_manager.h"
 #include "hcomm_res_defs.h"
 #include "mem_host_pub.h"
 #include "rank_pair_mgr.h"
