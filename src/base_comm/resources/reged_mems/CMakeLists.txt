@@ -13,7 +13,6 @@ set(src_list
     urma_mem.cc
     ub_mem.cc
     hccs_reged_mem_mgr.cc
-    proc_reged_mem_mgr_cache.cc
 )
 
 if(TARGET hcomm)

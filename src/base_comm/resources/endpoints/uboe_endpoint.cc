@@ -13,7 +13,6 @@
 #include "log.h"
 #include "hccl/hccl_res.h"
 #include "urma_mem.h"
-#include "proc_reged_mem_mgr_cache.h"
 #include "adapter_rts_common.h"
 
 namespace hcomm {
@@ -21,11 +20,6 @@ namespace hcomm {
 UboeEndpoint::UboeEndpoint(const EndpointDesc &endpointDesc)
     : UboeUbgEndpointHelper(endpointDesc)
 {
-}
-
-UboeEndpoint::~UboeEndpoint() noexcept
-{
-    ProcRegedMemMgrCache::GetInstance().Release(cacheKey_);
 }
 
 HcclResult UboeEndpoint::Init()
@@ -51,13 +45,8 @@ HcclResult UboeEndpoint::Init()
     HCCL_INFO("%s success, devId[%u], eidAddress[%s], ctxHandle[%p]",
         __func__, devPhyId, eidAddress.Describe().c_str(), ctxHandle_);
 
-    cacheKey_ = MemMgrCacheKey{devPhyId, Hccl::LinkProtoType::UB, ipAddr, LocTypeToPortType(endpointDesc_.loc.locType)};
-    auto &cache = ProcRegedMemMgrCache::GetInstance();
-    EXCEPTION_CATCH(regedMemMgr_ = cache.GetOrCreate(cacheKey_, [this]() {
-        auto m = std::make_shared<UbRegedMemMgr>();
-        m->rdmaHandle_ = this->ctxHandle_;
-        return m;
-    }), return HCCL_E_INTERNAL);
+    EXCEPTION_CATCH(regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
+    regedMemMgr_->rdmaHandle_ = ctxHandle_;
 
     return HcclResult::HCCL_SUCCESS;
 }

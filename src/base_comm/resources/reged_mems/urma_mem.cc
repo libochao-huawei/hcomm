@@ -30,7 +30,6 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(localUbRmaBufferMgr_);
-    std::lock_guard<std::mutex> lock(memMtx_);
     return RegisterMemoryImpl(mem, memTag, memHandle,
         localUbRmaBufferMgr_, allRegisteredBuffers_, "UbRegedMemMgr",
         [&](auto& bufPtr, auto& parent) {
@@ -45,7 +44,6 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(localUbRmaBufferMgr_);
-    std::lock_guard<std::mutex> lock(memMtx_);
     return UnregisterMemoryImpl(memHandle, localUbRmaBufferMgr_, allRegisteredBuffers_,
         [](auto *b) { return b->GetMemRegOutParam(); },
         [](const void *lhs, const void *rhs) {
@@ -90,7 +88,6 @@ HcclResult UbRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, void *me
     CHK_PTR_NULL(memHandle);
     CHK_PTR_NULL(memDesc);
     CHK_PTR_NULL(memDescLen);
-    std::lock_guard<std::mutex> lock(memMtx_);
 
     Hccl::LocalUbRmaBuffer *localUbRmaBuffer = nullptr;
     CHK_RET(ValidateMemExportHandle(memHandle, allRegisteredBuffers_, localUbRmaBuffer));
@@ -128,8 +125,6 @@ HcclResult UbRegedMemMgr::GetParamsFromMemDesc(const void *memDesc, uint32_t des
 HcclResult UbRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
-    std::lock_guard<std::mutex> lock(memMtx_);
-
     EndpointDesc endpointDesc;
     Hccl::ExchangeUbBufferDto dto;
     CHK_RET(GetParamsFromMemDesc(memDesc, descLen, endpointDesc, dto));
@@ -168,7 +163,6 @@ HcclResult UbRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, Hc
 HcclResult UbRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t descLen)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
-    std::lock_guard<std::mutex> lock(memMtx_);
 
     EndpointDesc endpointDesc;
     Hccl::ExchangeUbBufferDto dto;
@@ -200,7 +194,6 @@ HcclResult UbRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t descLen)
 HcclResult UbRegedMemMgr::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
-    std::lock_guard<std::mutex> lock(memMtx_);
     return GetAllMemHandlesImpl(allRegisteredBuffers_, activeHandles_, memHandles, memHandleNum, "UbRegedMemMgr");
 }
 

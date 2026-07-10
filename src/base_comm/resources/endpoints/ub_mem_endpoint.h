@@ -14,13 +14,12 @@
 #include <vector>
 #include <string>
 #include "endpoint.h"
-#include "proc_reged_mem_mgr_cache.h"
 
 namespace hcomm {
 class UbMemEndpoint : public Endpoint {
 public:
-    explicit UbMemEndpoint(const EndpointDesc &endpointDesc);
-    ~UbMemEndpoint() noexcept;
+    UbMemEndpoint(const EndpointDesc &endpointDesc);
+    ~UbMemEndpoint() = default;
     // 构造函数
     HcclResult Init() override;
     HcclResult ServerSocketListen(const uint32_t port) override;
@@ -33,9 +32,6 @@ public:
     std::shared_ptr<RegedMemMgr> GetRegedMemMgr() override {
         return regedMemMgr_;
     }
-
-private:
-    MemMgrCacheKey cacheKey_{};
 };
 
 }

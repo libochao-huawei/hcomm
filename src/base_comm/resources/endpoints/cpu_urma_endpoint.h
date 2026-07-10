@@ -18,7 +18,6 @@
 
 #include "endpoint.h"
 #include "ccu_channel_ctx_pool.h"
-#include "proc_reged_mem_mgr_cache.h"
 #include "externalinput_pub.h"
 
 namespace hcomm {
@@ -50,7 +49,6 @@ public:
 private:
     std::mutex portMutex_;
     u32 dynamicPort_{HCCL_INVALID_PORT};
-    MemMgrCacheKey cacheKey_{};
 };
 }
 

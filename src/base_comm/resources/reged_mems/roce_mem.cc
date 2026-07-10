@@ -25,7 +25,6 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(localRdmaRmaBufferMgr_);
-    std::lock_guard<std::mutex> lock(memMtx_);
     return RegisterMemoryImpl(mem, memTag, memHandle,
         localRdmaRmaBufferMgr_, allRegisteredBuffers_, "RoceRegedMemMgr",
         [&](auto& bufPtr, auto& parent) {
@@ -41,7 +40,6 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(localRdmaRmaBufferMgr_);
-    std::lock_guard<std::mutex> lock(memMtx_);
     return UnregisterMemoryImpl(memHandle, localRdmaRmaBufferMgr_, allRegisteredBuffers_,
         [](auto* b) { return b->GetLkey(); },
         [](auto a, auto b) { return a == b; });
@@ -83,7 +81,6 @@ HcclResult RoceRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, void *
     CHK_PTR_NULL(memHandle);
     CHK_PTR_NULL(memDesc);
     CHK_PTR_NULL(memDescLen);
-    std::lock_guard<std::mutex> lock(memMtx_);
 
     Hccl::LocalRdmaRmaBuffer *localRdmaRmaBuffer = nullptr;
     CHK_RET(ValidateMemExportHandle(memHandle, allRegisteredBuffers_, localRdmaRmaBuffer));
@@ -123,7 +120,6 @@ HcclResult RoceRegedMemMgr::GetParamsFromMemDesc(const void *memDesc, uint32_t d
 HcclResult RoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
-    std::lock_guard<std::mutex> lock(memMtx_);
 
     EndpointDesc endpointDesc;
     Hccl::ExchangeRdmaBufferDto dto;
@@ -162,7 +158,6 @@ HcclResult RoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, 
 HcclResult RoceRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t descLen)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
-    std::lock_guard<std::mutex> lock(memMtx_);
 
     EndpointDesc endpointDesc;
     Hccl::ExchangeRdmaBufferDto dto;
@@ -194,7 +189,6 @@ HcclResult RoceRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t descLen
 HcclResult RoceRegedMemMgr::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
-    std::lock_guard<std::mutex> lock(memMtx_);
     return GetAllMemHandlesImpl(allRegisteredBuffers_, activeHandles_, memHandles, memHandleNum, "RoceRegedMemMgr");
 }
 

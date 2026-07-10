@@ -22,7 +22,6 @@ HcclResult UbMemRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, vo
 {
     HCCL_INFO("[%s] Begin", __func__);
     CHK_PTR_NULL(localIpcRmaBufferMgr_);
-    std::lock_guard<std::mutex> lock(memMtx_);
     return RegisterMemoryImpl(mem, memTag, memHandle,
         localIpcRmaBufferMgr_, allRegisteredBuffers_, "UbMemRegedMemMgr",
         [&](auto& bufPtr, auto& parent) {
@@ -37,7 +36,6 @@ HcclResult UbMemRegedMemMgr::UnregisterMemory(void* memHandle)
 {
     HCCL_INFO("[%s] Begin", __func__);
     CHK_PTR_NULL(localIpcRmaBufferMgr_);
-    std::lock_guard<std::mutex> lock(memMtx_);
     return UnregisterMemoryImpl(memHandle, localIpcRmaBufferMgr_, allRegisteredBuffers_,
         [](auto* b) { return b->GetIpcPtr(); },
         [](auto a, auto b) { return a == b; });
