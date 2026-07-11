@@ -19,10 +19,7 @@
 #include "securec.h"
 #include "user_log.h"
 #include "dl_urma_function.h"
-#include "dl_net_function.h"
-#include "hccp_common.h"
 #include "ra_rs_err.h"
-#include "ra_rs_comm.h"
 #include "ra_rs_ctx.h"
 #include "rs_inner.h"
 #include "rs_epoll.h"
@@ -1623,7 +1620,7 @@ int RsUbCtxRegJettyDb(struct RsCtxJettyCb *jettyCb, struct udma_u_jetty_info *je
     memAttr.ub.flags.bs.tokenPolicy = URMA_TOKEN_PLAIN_TEXT;
     memAttr.ub.flags.bs.cacheable = URMA_NON_CACHEABLE;
     memAttr.ub.flags.bs.access = MEM_SEG_ACCESS_READ | MEM_SEG_ACCESS_WRITE;
-    memAttr.ub.flags.bs.nonPin = (RaRsHasCapability(RA_CAP_DRV_SHAREPOOL_NON_PIN, 0, RsNetGetApiVersion())) ? 1 : 0;
+    memAttr.ub.flags.bs.nonPin = 1;
     // use user specified token id to register
     if (jettyCb->tokenIdAddr != 0) {
         memAttr.ub.flags.bs.tokenIdValid = URMA_TOKEN_ID_VALID;
