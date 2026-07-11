@@ -12,12 +12,20 @@
 #include <algorithm>
 #include <cstring>
 #include <deque>
+#include <mockcpp/mockcpp.hpp>
 #include <vector>
 
 #include "hccl/hccl_types.h"
 #include "hccl_group.h"
+#include "hccl_comm_pub.h"
+#include "op_base.h"
 
 using namespace hccl;
+
+// thread_local globals from hccl_group.cc
+extern thread_local s32 hcclGroupDepth;
+extern thread_local std::deque<std::shared_ptr<struct hcclAsyncJob>> hcclInitJobs;
+extern thread_local std::vector<HcclComm> hcclGroupCommList;
 
 // ==================== calcOpDataVolume ====================
 
@@ -332,4 +340,140 @@ TEST_F(SortGroupTasksTest, LargeInput_ManyOps) {
     // Last 2 are variants
     ExpectColl(result, 100, HcclCMDType::HCCL_CMD_ALLTOALLV);
     ExpectColl(result, 101, HcclCMDType::HCCL_CMD_ALLGATHER_V);
+}
+
+// ==================== HcclLegacyGroupStart ====================
+
+class HcclLegacyGroupStartTest : public testing::Test {
+protected:
+    void SetUp() override { hcclGroupDepth = 0; }
+};
+
+TEST_F(HcclLegacyGroupStartTest, IncrementsDepth) {
+    EXPECT_EQ(hcclGroupDepth, 0);
+    HcclLegacyGroupStart();
+    EXPECT_EQ(hcclGroupDepth, 1);
+    HcclLegacyGroupStart();
+    EXPECT_EQ(hcclGroupDepth, 2);
+}
+
+// ==================== commInitTaskAppend ====================
+
+class CommInitTaskAppendTest : public testing::Test {
+protected:
+    void SetUp() override { hcclInitJobs.clear(); }
+};
+
+static HcclResult DummyAsyncFunc(struct hcclAsyncJob*) { return HCCL_SUCCESS; }
+
+TEST_F(CommInitTaskAppendTest, NullJobReturnsError) {
+    HcclComm comm = nullptr;
+    HcclResult ret = commInitTaskAppend(nullptr, DummyAsyncFunc, &comm);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(CommInitTaskAppendTest, HappyPath) {
+    auto job = std::make_shared<hcclAsyncJob>();
+    job->state = hcclGroupJobRunning;
+    HcclComm comm = nullptr;
+    HcclResult ret = commInitTaskAppend(job, DummyAsyncFunc, &comm);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(hcclInitJobs.size(), 1ULL);
+    EXPECT_EQ(job->func, DummyAsyncFunc);
+    EXPECT_EQ(job->comm, &comm);
+    EXPECT_EQ(job->state, hcclGroupJobRunning);
+}
+
+// ==================== taskAppend ====================
+
+class TaskAppendTest : public testing::Test {
+protected:
+    void SetUp() override {
+        comm = std::make_unique<hcclComm>();
+        // planner->nTasksP2p defaults to -1; set to 0 so initGroupPlanner is skipped
+        comm->planner->nTasksP2p = 0;
+    }
+    void TearDown() override {
+        comm.reset();
+        hcclGroupCommList.clear();
+    }
+    std::unique_ptr<hcclComm> comm;
+};
+
+TEST_F(TaskAppendTest, CollOp_AppendsToCollQueue) {
+    hcclOpInfo info;
+    memset(&info, 0, sizeof(info));
+    info.coll = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    info.sendCount = 1024;
+    info.sendType = HCCL_DATA_TYPE_FP32;
+    info.stream = reinterpret_cast<HcclRtStream>(0x4000);
+
+    HcclResult ret = taskAppend(comm.get(), info);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(comm->planner->nTasksColl, 0);
+    EXPECT_EQ(comm->planner->collTaskQueue.size(), 1ULL);
+}
+
+TEST_F(TaskAppendTest, SendOp_AppendsToSendRecvInfo) {
+    hcclOpInfo info;
+    memset(&info, 0, sizeof(info));
+    info.coll = HcclCMDType::HCCL_CMD_SEND;
+    info.sendbuff = reinterpret_cast<void*>(0x1000);
+    info.sendCount = 100;
+    info.sendType = HCCL_DATA_TYPE_FP32;
+    info.root = 3;
+    info.stream = reinterpret_cast<HcclRtStream>(0x2000);
+
+    HcclResult ret = taskAppend(comm.get(), info);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ASSERT_EQ(comm->planner->sendRecvInfo.size(), 1ULL);
+    EXPECT_EQ(comm->planner->sendRecvInfo[0].sendRecvType, HcclSendRecvType::HCCL_SEND);
+    EXPECT_EQ(comm->planner->sendRecvInfo[0].remoteRank, 3ULL);
+    EXPECT_EQ(comm->planner->nTasksP2p, 1);
+}
+
+TEST_F(TaskAppendTest, RecvOp_AppendsToSendRecvInfo) {
+    hcclOpInfo info;
+    memset(&info, 0, sizeof(info));
+    info.coll = HcclCMDType::HCCL_CMD_RECEIVE;
+    info.recvbuff = reinterpret_cast<void*>(0x2000);
+    info.recvCount = 200;
+    info.recvType = HCCL_DATA_TYPE_FP16;
+    info.root = 7;
+    info.stream = reinterpret_cast<HcclRtStream>(0x3000);
+
+    HcclResult ret = taskAppend(comm.get(), info);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ASSERT_EQ(comm->planner->sendRecvInfo.size(), 1ULL);
+    EXPECT_EQ(comm->planner->sendRecvInfo[0].sendRecvType, HcclSendRecvType::HCCL_RECV);
+    EXPECT_EQ(comm->planner->sendRecvInfo[0].remoteRank, 7ULL);
+    EXPECT_EQ(comm->planner->nTasksP2p, 1);
+}
+
+// ==================== HcclLegacyGroupEnd / doLaunches ====================
+
+class GroupEndTest : public testing::Test {
+protected:
+    void SetUp() override {
+        comm = std::make_unique<hcclComm>();
+        comm->planner->nTasksP2p = 1;
+        HcclSendRecvItem item;
+        memset(&item, 0, sizeof(item));
+        comm->planner->sendRecvInfo.push_back(item);
+        hcclGroupCommList.push_back(comm.get());
+        hcclGroupDepth = 0;
+    }
+    void TearDown() override {
+        hcclGroupCommList.clear();
+        comm.reset();
+    }
+    std::unique_ptr<hcclComm> comm;
+};
+
+TEST_F(GroupEndTest, ExecutesDoLaunches_CallsHcclBatchSendRecvGroup) {
+    // HcclBatchSendRecvGroup + hcclStreamSynchronize are stubbed in stub_hccl_comm_group.cc
+
+    HcclResult ret = HcclLegacyGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_TRUE(hcclGroupCommList.empty());
 }

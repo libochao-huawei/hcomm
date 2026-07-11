@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_to_test_list
     main.cc
+    stub_hccl_comm_group.cc
     ut_hccl_group_test.cc
 )
 
@@ -42,6 +43,7 @@ target_link_libraries(hccl_utest_framework_group PRIVATE
     $<BUILD_INTERFACE:rdma_core_headers>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
+    -Wl,--allow-multiple-definition
     hccl_llt
     -Wl,--whole-archive
     -Wl,--no-whole-archi
