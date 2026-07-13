@@ -22,7 +22,7 @@ public:
     virtual ~ProfilingReporter();
     HcclResult Init();
     void ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const;
-    void ReportAllTasks(bool cachedReq) const;
+    void ReportAllTasks(bool cachedReq);
     void SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo);
     void UpdateProfStat();
     void CallReportMc2CommInfo(const Stream &kfcStream, const Stream &stream, const std::vector<Stream *> &aicpuStreams,
@@ -42,6 +42,7 @@ private:
     ProfilingHandler*                               profilingHandler_{nullptr};
     s32 deviceLogicId_{0};
     bool initializedFlag_{false};
+    std::vector<TaskInfo*> taskInfoBatch_;
 };
 } // namespace Hccl
  
