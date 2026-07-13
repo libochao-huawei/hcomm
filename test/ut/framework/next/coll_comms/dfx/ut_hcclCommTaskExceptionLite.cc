@@ -308,3 +308,16 @@ TEST_F(hcclCommTaskExceptionLiteTest, Ut_HandleDpuTaskexception_When_ErrorFlagNo
     memcpy(&clearedFlag, shmem.data() + 1, sizeof(uint16_t));
     EXPECT_EQ(clearedFlag, 0);
 }
+
+TEST_F(hcclCommTaskExceptionLiteTest, Ut_Call_ReturnHCCL_SUCCESS_When_CommStatusSuSpending)
+{
+    MOCKER_CPP(&CollCommAicpuMgr::InitAicpuIndOp).stubs().will(returnValue(HCCL_SUCCESS));
+
+    CommAicpuParam commAicpuParam;
+    std::string commName = "taskException_test_group";
+    strncpy(commAicpuParam.hcomId, commName.c_str(), HCOMID_MAX_SIZE - 1);
+    EXPECT_EQ(AicpuIndopProcess::AicpuIndOpCommInit(&commAicpuParam), HCCL_SUCCESS);
+    MOCKER_CPP(&CollCommAicpu::GetCommmStatus).stubs().will(returnValue(HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING));
+    hcomm::HcclCommTaskExceptionLite::GetInstance().Call();
+}
+

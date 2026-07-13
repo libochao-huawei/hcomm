@@ -65,3 +65,10 @@ TEST_F(CollCommAicpuTest, Ut_Resume_CallsProcessUrmaRes_And_ResetsNsRecoveryFlag
     // nsRecovery flags should have been reset
     EXPECT_FALSE(coll.GetNsRecoveryLitePtr()->IsNeedClean());
 }
+
+TEST_F(CollCommAicpuTest, Ut_CheckIndOpExecStatus_Return_HCCL_E_SUSPENDING) {
+    CollCommAicpu coll;
+    coll.SetCommmStatus(HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
+    auto ret = coll.CheckIndOpExecStatus(0);
+    EXPECT_EQ(ret, HCCL_E_SUSPENDING);
+}

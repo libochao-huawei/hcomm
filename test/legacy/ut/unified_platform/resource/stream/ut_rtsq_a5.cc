@@ -346,3 +346,82 @@ TEST_F(RtsqA5Test, Ut_TryLaunchTask_When_HasEnoughSpace_Expect_LaunchTask)
 
     EXPECT_EQ(rtsq.pendingSqeCnt, 0);
 }
+
+TEST_F(RtsqA5Test,
+       UT_CheckLaunchTaskStatus_CallbackReturnSuspending_Expect_PendingSqeCntResetAndNoThrow)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    rtsq.sqTail_ = 8;
+    rtsq.sqHead_ = 16;
+    rtsq.sqDepth_ = AC_SQE_MAX_CNT;
+    rtsq.pendingSqeCnt = 16;
+    rtsq.sqFullTimeout_ = 10;
+
+    auto startTime = std::chrono::steady_clock::now();
+    auto curTime = startTime + std::chrono::seconds(5);
+    rtsq.checkExecStatusCallback_ = [](bool isTimeout) { return HCCL_E_SUSPENDING; };
+
+    EXPECT_NO_THROW(rtsq.CheckLaunchTaskStatus(startTime, curTime));
+    EXPECT_EQ(rtsq.pendingSqeCnt, 0);
+}
+
+TEST_F(RtsqA5Test,
+       UT_CheckLaunchTaskStatus_CallbackReturnSuspendingWithTimeout_Expect_NoThrow)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    rtsq.sqTail_ = 8;
+    rtsq.sqHead_ = 16;
+    rtsq.sqDepth_ = AC_SQE_MAX_CNT;
+    rtsq.pendingSqeCnt = 16;
+    rtsq.sqFullTimeout_ = 1;
+
+    auto startTime = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+    auto curTime = std::chrono::steady_clock::now();
+    rtsq.checkExecStatusCallback_ = [](bool isTimeout) { return HCCL_E_SUSPENDING; };
+
+    EXPECT_NO_THROW(rtsq.CheckLaunchTaskStatus(startTime, curTime));
+    EXPECT_EQ(rtsq.pendingSqeCnt, 0);
+}
+
+TEST_F(RtsqA5Test,
+       UT_CheckLaunchTaskStatus_CallbackReturnSuspendingZeroPending_Expect_NormalReturn)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    rtsq.pendingSqeCnt = 0;
+    rtsq.sqFullTimeout_ = 10;
+
+    auto startTime = std::chrono::steady_clock::now();
+    auto curTime = startTime + std::chrono::seconds(5);
+    rtsq.checkExecStatusCallback_ = [](bool isTimeout) { return HCCL_E_SUSPENDING; };
+
+    EXPECT_NO_THROW(rtsq.CheckLaunchTaskStatus(startTime, curTime));
+    EXPECT_EQ(rtsq.pendingSqeCnt, 0);
+}
+
+TEST_F(RtsqA5Test,
+       UT_CheckLaunchTaskStatus_CallbackReturnErrorWithNoTimeout_Expect_ThrowException)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    rtsq.pendingSqeCnt = 16;
+    rtsq.sqFullTimeout_ = 10;
+
+    auto startTime = std::chrono::steady_clock::now();
+    auto curTime = startTime + std::chrono::seconds(5);
+    rtsq.checkExecStatusCallback_ = [](bool isTimeout) { return HCCL_E_INTERNAL; };
+
+    EXPECT_THROW(rtsq.CheckLaunchTaskStatus(startTime, curTime), Hccl::InternalException);
+}
+
+TEST_F(RtsqA5Test,
+       UT_CheckLaunchTaskStatus_CallbackNullWithTimeout_Expect_ThrowException)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+    rtsq.pendingSqeCnt = 16;
+    rtsq.sqFullTimeout_ = 1;
+    rtsq.checkExecStatusCallback_ = nullptr;
+
+    auto startTime = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+    auto curTime = std::chrono::steady_clock::now();
+
+    EXPECT_THROW(rtsq.CheckLaunchTaskStatus(startTime, curTime), Hccl::InternalException);
+}
