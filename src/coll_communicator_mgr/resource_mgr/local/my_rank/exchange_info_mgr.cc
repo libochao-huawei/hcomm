@@ -58,7 +58,7 @@ HcclResult ExchangeInfoMgr::BatchExchangeAndCheckConsistency(
         GetEnumToString(GetCommEngineStatusStrMap(), engine).c_str());
 
     // host 网卡使用 Socket 同步收发接口
-    if (isHostLoc && engine == COMM_ENGINE_CPU) {
+    if (isHostLoc) {
         // 校验HComm信息
         CHK_RET(CheckHcommInfo(channelDescs, hcommDescs, sockets, remoteRanks, roles, newChannels, false));
         // 交换HCCL算子信息
