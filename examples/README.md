@@ -4,6 +4,6 @@
 
 ## 通信域管理
 
-- [每个进程管理一个 NPU 设备（基于 root 节点信息初始化通信域）](./01_communicators/01_one_device_per_process/)
-- [每个进程管理一个 NPU 设备（基于 rank table 初始化通信域）](./01_communicators/02_one_device_per_process_rank_table/)
-- [每个线程管理一个 NPU 设备（基于 root 节点信息初始化通信域）](./01_communicators/03_one_device_per_pthread/)
+- [每个进程管理一个 NPU 设备（基于 root 节点信息初始化通信域）](./01_communicators/01_one_device_per_process)
+- [每个进程管理一个 NPU 设备（基于 rank table 初始化通信域）](./01_communicators/02_one_device_per_process_rank_table)
+- [每个线程管理一个 NPU 设备（基于 root 节点信息初始化通信域）](./01_communicators/03_one_device_per_pthread)

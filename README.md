@@ -1,6 +1,6 @@
 # HCOMM
 
-## 🔥Latest News
+## 🔥 Latest News
 
 - [2025/11/30] HCOMM项目开源。
 
@@ -67,7 +67,7 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
 └── build.sh                             # 编译构建脚本
 ```
 
-## 📝版本配套
+## 📝 版本配套
 
 本项目源码会跟随CANN软件版本发布，关于CANN软件版本与本项目标签的对应关系请参阅[release仓库](https://gitcode.com/cann/release-management)中的相应版本说明。
 请注意，为确保您的源码定制开发顺利进行，请选择配套的CANN版本与GitCode标签源码，使用master分支可能存在版本不匹配的风险。

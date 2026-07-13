@@ -21,7 +21,7 @@
 
 ## 目录描述
 
-```
+```text
 cluster_monitor/
 ├── CMakeLists.txt          # 构建脚本，仅将 cluster_monitor.cc 加入 hcomm 目标
 ├── cluster_monitor.h       # 类与数据结构定义（ClusterMonitor、Frame、SockCtx、UID 等）

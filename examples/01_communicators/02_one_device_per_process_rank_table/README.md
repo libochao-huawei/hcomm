@@ -43,6 +43,7 @@
 ### 关闭验签
 
 本源码仓编译生成的`cann-hcomm_<version>_linux-<arch>.run`软件包中包含如下tar.gz子包：
+
   - `cann-hcomm-compat.tar.gz`: HCOMM兼容升级包。
   - `cann-hccd-compat.tar.gz`: DataFlow兼容升级包。
   - `aicpu_hcomm.tar.gz`: AI CPU通信基础包。

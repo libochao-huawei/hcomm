@@ -2,9 +2,7 @@
 
 ## 功能简介
 
-HCOMM Experimental NIC Plugin 用于在通用服务器场景下扩展 host 侧网卡通信实现。插件以独立 `.so`
-形式构建和部署，HCOMM 在创建 HOST endpoint/channel 时根据 `EndpointDesc.protocol` 查找已注册插件；
-命中插件协议后走插件实现，未命中时继续走原有内置实现。
+HCOMM Experimental NIC Plugin 用于在通用服务器场景下扩展 host 侧网卡通信实现。插件以独立`.so`形式构建和部署，HCOMM 在创建 HOST endpoint/channel 时根据 `EndpointDesc.protocol` 查找已注册插件；命中插件协议后走插件实现，未命中时继续走原有内置实现。
 
 当前目录提供两个示例插件：
 
@@ -29,8 +27,7 @@ bash build.sh --pkg --experimental
 bash build.sh --pkg --full --experimental
 ```
 
-如果编译环境无法访问网络，可在联网环境下载第三方依赖包后上传到编译环境，并通过
-`--cann_3rd_lib_path` 指定依赖包路径：
+如果编译环境无法访问网络，可在联网环境下载第三方依赖包后上传到编译环境，并通过`--cann_3rd_lib_path` 指定依赖包路径：
 
 ```bash
 bash build.sh --pkg --experimental --cann_3rd_lib_path={your_3rd_party_path}
@@ -63,8 +60,7 @@ ${ASCEND_HOME_PATH}/hcomm_plugin/libhcomm_cpu_ub_plugin.so
 
 ## 验签说明
 
-host-only 插件使用不涉及 device 包验签；如果编译安装 `--full` 包并运行上板测试，关闭验签步骤参考
-`docs/zh/build/build.md`。
+host-only 插件使用不涉及 device 包验签；如果编译安装 `--full` 包并运行上板测试，关闭验签步骤参考`docs/zh/build/build.md`。
 
 ## 运行启用
 
@@ -92,9 +88,7 @@ source ${install_path}/cann/set_env.sh
 export HCOMM_NIC_PLUGIN_SO=/path/to/libhcomm_cpu_roce_plugin.so:/path/to/libhcomm_cpu_ub_plugin.so
 ```
 
-业务代码无需直接调用插件接口。HCOMM 在 `HcommEndpointCreate` 创建 HOST endpoint 时，会根据
-`EndpointDesc.protocol` 查找插件；如果协议由插件注册，则后续 endpoint、channel 和数据面接口会分发到插件
-ops；如果没有匹配插件，则保持原有内置路径。
+业务代码无需直接调用插件接口。HCOMM 在 `HcommEndpointCreate` 创建 HOST endpoint 时，会根据`EndpointDesc.protocol` 查找插件；如果协议由插件注册，则后续 endpoint、channel 和数据面接口会分发到插件`ops`；如果没有匹配插件，则保持原有内置路径。
 
 ## 使用条件和限制
 
@@ -102,8 +96,7 @@ ops；如果没有匹配插件，则保持原有内置路径。
 - 当前示例插件面向通用服务器 host-only 场景。
 - 当前加载器在检测到 runtime device 数量非 0 时会跳过插件加载。
 - 多个插件注册同一协议时，后加载的插件会覆盖先加载插件。
-- 插件 ABI 需要匹配 `HcommNicPluginInfo`、`HcommNicEndpointOps`、`HcommNicChannelOps` 中定义的
-  magic word、version 和 size。
+- 插件 ABI 需要匹配 `HcommNicPluginInfo`、`HcommNicEndpointOps`、`HcommNicChannelOps` 中定义的magic word、version和size。
 
 ## 自定义插件开发入口
 

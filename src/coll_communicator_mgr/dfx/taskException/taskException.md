@@ -8,6 +8,7 @@ taskException 模块是 HCCL 集合通信库中的 **DFX（Design for eXcellence
 - **AICPU 侧**：以守护线程方式定期检测各通信域流上的 CQE（Completion Queue Entry）异常，完成异常 CQE 解析、错误信息组织、通过 HDC 通道上报到 Host 侧、通过 Mailbox 通知 TSFW。
 
 核心能力包括：
+
 1. 向 Runtime 注册/注销异常回调函数
 2. 基于 GlobalMirrorTasks 查找异常 TaskInfo
 3. 通过 HDC 通道从 AICPU 侧读取 ErrorMessageReport
@@ -20,7 +21,7 @@ taskException 模块是 HCCL 集合通信库中的 **DFX（Design for eXcellence
 
 ## 目录描述
 
-```
+```text
 taskException/
 ├── host/                                    # Host 侧异常处理
 │   ├── hcclCommTaskException.h              # TaskExceptionHost / TaskExceptionHostManager 类声明

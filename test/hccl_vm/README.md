@@ -26,7 +26,6 @@ chmod +x Ascend-cann-950-ops_9.1.0_linux-x86_64.run
 ./Ascend-cann-950-ops_9.1.0_linux-x86_64.run --install --install-path=/home/workspace/Ascend
 ```
 
-
 ### 2.2 hccl_test编译
 
 hccl_test是昇腾官方提供的HCCL性能测试工具，详见[HCCL性能测试工具](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/910beta1/devaids/hccltool/HCCLpertest_16_0001.html)，HCCL-VM支持在虚拟环境中运行hccl_test用例。请先参照[hccl_test用例构建](#42-hccl-test用例构建)章节进行用例二进制程序的编译。
@@ -110,7 +109,6 @@ export HCCL_OP_EXPANSION_MODE="CCU_SCHED"
 
 2. 执行
 
-
 ```bash
 # 需要进入到新的bin文件目录下执行hccl-vm
 cd /home/workspace/hcomm/test/hccl_vm/hccl_vm_install/bin
@@ -133,6 +131,7 @@ cd /home/workspace/hcomm/test/hccl_vm/hccl_vm_install/bin
 ```
 
 3. 验证hccl_test用例运行结果
+
 [Runner结果查看](#491-runner插件结果) 
 [Checker结果查看](#492-checker插件结果)
 
@@ -361,7 +360,6 @@ links:
     device_to_switch_links:
       # 如下示例表示：device0到device15都通过die0的port连接到交换机。结合portGroup可知，device0到device15都通过portGroup[0/4, 0/5, 0/6, 0/7]连接到交换机。
       - {die_id: 0, devices_range: [0, 15]}
-
 ```
 
 **字段说明**：
@@ -398,7 +396,6 @@ server_list:
   - {super_pod_id: 1, id_range: [0, 7], soc_version: "Ascend950", server_topo: "ascend950_server_topo_normal.yaml"}
   - {super_pod_id: 2, id_range: [0, 7], soc_version: "Ascend950", server_topo: "ascend950_server_topo_normal.yaml"}
   - {super_pod_id: 3, id_range: [0, 7], soc_version: "Ascend950", server_topo: "ascend950_server_topo_normal.yaml"}
-
 ```
 
 上述配置文件描述了一个包含4个超节点，32个Server，共128个NPU卡的集群拓扑。其中，每个Server/Pod采用ascend950_server_topo_normal拓扑类型。
