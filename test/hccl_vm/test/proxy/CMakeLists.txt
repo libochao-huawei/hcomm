@@ -41,6 +41,8 @@ include_directories(
     ${HCOMM_CODE_ROOT}/include/hccl
     ${HCOMM_CODE_ROOT}/pkg_inc
     ${HCOMM_CODE_ROOT}/pkg_inc/hccl
+    ${HCOMM_CODE_ROOT}/pkg_inc/legacy
+    ${HCOMM_CODE_ROOT}/pkg_inc/legacy/hccl
     ${HCOMM_CODE_ROOT}/src/pub_inc
     ${HCOMM_CODE_ROOT}/src/framework/communicator/impl/independent_op/rank_graph
     ${HCOMM_CODE_ROOT}/src/framework/inc

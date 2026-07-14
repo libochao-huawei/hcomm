@@ -85,6 +85,8 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/include/hccl
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
+    ${HCOMM_DIR}/pkg_inc/legacy
+    ${HCOMM_DIR}/pkg_inc/legacy/hccl
 
     # pub_inc (legacy/ascend910)
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc

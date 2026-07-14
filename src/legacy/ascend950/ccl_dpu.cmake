@@ -61,6 +61,7 @@ target_include_directories(ccl_dpu PRIVATE
     ${HCOMM_DIR}/include
     ${HCOMM_DIR}/include/hccl
     ${HCOMM_DIR}/pkg_inc
+    ${HCOMM_DIR}/pkg_inc/legacy
     ${HCOMM_DIR}/src/common
 
     ${CMAKE_CURRENT_SOURCE_DIR}/common

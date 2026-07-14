@@ -68,6 +68,8 @@ function(hcomm_experimental_plugin_common target_name output_name)
         ${HCOMM_SOURCE_DIR}/include/hccl
         ${HCOMM_SOURCE_DIR}/pkg_inc
         ${HCOMM_SOURCE_DIR}/pkg_inc/hccl
+        ${HCOMM_SOURCE_DIR}/pkg_inc/legacy
+        ${HCOMM_SOURCE_DIR}/pkg_inc/legacy/hccl
         ${HCOMM_SOURCE_DIR}/pkg_inc/hcomm/ccu
         ${HCOMM_SOURCE_DIR}/src/legacy/ascend910/platform/resource/notify
         ${HCOMM_SOURCE_DIR}/src/legacy/ascend910/pub_inc

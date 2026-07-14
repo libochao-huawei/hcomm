@@ -19,6 +19,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
+    ${HCCL_CODE_ROOT}/pkg_inc/legacy
+    ${HCCL_CODE_ROOT}/pkg_inc/legacy/hccl
     ${HCCL_CODE_ROOT}/include/ccu
 
     # src/pub_inc 目录下头文件 (legacy/ascend910)

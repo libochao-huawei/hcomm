@@ -69,6 +69,8 @@ target_include_directories(hccl_plf PRIVATE
     ${HCOMM_DIR}/include/hccl/
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
+    ${HCOMM_DIR}/pkg_inc/legacy
+    ${HCOMM_DIR}/pkg_inc/legacy/hccl
 
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/aicpu/

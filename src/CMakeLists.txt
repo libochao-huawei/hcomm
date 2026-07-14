@@ -41,6 +41,8 @@ target_include_directories(hcomm_headers INTERFACE
     $<BUILD_INTERFACE:${HCOMM_DIR}/include/hcomm/ccu>
     $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/hcomm>
     $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/hcomm/ccu>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/legacy>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/legacy/hccl>
 )
 
 add_library(hccl_headers INTERFACE)
@@ -50,6 +52,8 @@ target_include_directories(hccl_headers INTERFACE
     $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc>
     $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/hccl>
     $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/hcomm>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/legacy>
+    $<BUILD_INTERFACE:${HCOMM_DIR}/pkg_inc/legacy/hccl>
     $<INSTALL_INTERFACE:include>
     $<INSTALL_INTERFACE:include/hccl>
     $<INSTALL_INTERFACE:include/hccl/external>

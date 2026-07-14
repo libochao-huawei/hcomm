@@ -27,6 +27,8 @@ target_include_directories(hcomm PRIVATE
     ${HCOMM_DIR}/include/hccl
     ${HCOMM_DIR}/pkg_inc
     ${HCOMM_DIR}/pkg_inc/hccl
+    ${HCOMM_DIR}/pkg_inc/legacy
+    ${HCOMM_DIR}/pkg_inc/legacy/hccl
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
     ${HCOMM_DIR}/src/legacy/ascend910/common/error_manager 
     ${HCOMM_DIR}/include/ccu

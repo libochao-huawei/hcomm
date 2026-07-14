@@ -211,17 +211,17 @@ elseif(BUILD_OPEN_PROJECT)
     )
 
     set(HCCL_PKG_HEAD
-        pkg_inc/hccl/base.h
-        pkg_inc/hccl/hccl_ex.h
-        pkg_inc/hccl/hccl_one_sided_services.h
         pkg_inc/hccl/hccl_res_expt.h
-        pkg_inc/hccl/hcom.h
         pkg_inc/hccl/hccl_diag.h
         pkg_inc/hccl/hcomm_diag.h
-        pkg_inc/hccl/dtype_common.h
-        pkg_inc/hccl/workflow.h
-        pkg_inc/hccl/hccl_inner.h
-        pkg_inc/hccl/hccl_ctrl_plane.h
+        pkg_inc/legacy/hccl/base.h
+        pkg_inc/legacy/hccl/dtype_common.h
+        pkg_inc/legacy/hccl/hccl_ctrl_plane.h
+        pkg_inc/legacy/hccl/hccl_ex.h
+        pkg_inc/legacy/hccl/hccl_inner.h
+        pkg_inc/legacy/hccl/hccl_one_sided_services.h
+        pkg_inc/legacy/hccl/hcom.h
+        pkg_inc/legacy/hccl/workflow.h
     )
     install(FILES
         ${HCCL_PKG_HEAD}
