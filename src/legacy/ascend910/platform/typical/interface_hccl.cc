@@ -326,7 +326,7 @@ HcclResult hcclModifyAscendVerbsQPEx(AscendVerbsQPInfo* localQPVerbsInfo, Ascend
         remoteQp.gid[i] = remoteQPVerbsInfo->gid[i];
     }
     remoteQp.psn = remoteQPVerbsInfo->psn;
-    CHK_RET(TypicalQpManager::GetInstance().ModifyQp(localQp, remoteQp));
+    CHK_RET(TypicalQpManager::GetInstance().ModifyVerbsQp(localQp, remoteQp));
     return HCCL_SUCCESS;
 }
 
@@ -447,7 +447,7 @@ HcclResult hcclAscendPostSend(AscendVerbsQPInfo* qpInfo, struct AscendSendWr *se
     CHK_PTR_NULL(stream);
 
     QpHandle qpHandle;
-    CHK_RET(TypicalQpManager::GetInstance().GetQpHandleByQpn(qpInfo->qpn, qpHandle));
+    CHK_RET(TypicalQpManager::GetInstance().GetVerbsQpHandleByQpn(qpInfo->qpn, qpHandle));
 
     constexpr u32 MAX_SGLIST_VERBS = 16;
     struct AscendSendWr *curWr = sendWr;
@@ -498,7 +498,7 @@ HcclResult hcclAscendPostRecv(AscendVerbsQPInfo* qpInfo, struct AscendRecvWr *re
     CHK_PTR_NULL(stream);
 
     QpHandle qpHandle;
-    CHK_RET(TypicalQpManager::GetInstance().GetQpHandleByQpn(qpInfo->qpn, qpHandle));
+    CHK_RET(TypicalQpManager::GetInstance().GetVerbsQpHandleByQpn(qpInfo->qpn, qpHandle));
 
     constexpr u32 MAX_SGLIST_RECV = 16;
     struct AscendRecvWr *curWr = recvWr;

@@ -24,6 +24,9 @@
 #include "typical_mr_manager.h"
 #include "rdma_resource_manager.h"
 #include "interface_hccl.h"
+#include "adapter_hccp.h"
+#include "adapter_rts_common.h"
+#include "hccl_common.h"
 #undef private
 #undef protected
 
@@ -110,6 +113,13 @@ static HcclResult stub_GetQpHandleByQpn_success(TypicalQpManager* self, u32 qpn,
     return HCCL_SUCCESS;
 }
 
+/* ===== Stub for TypicalQpManager::GetVerbsQpHandleByQpn ===== */
+static HcclResult stub_GetVerbsQpHandleByQpn_success(TypicalQpManager* self, u32 qpn, QpHandle &qpHandle)
+{
+    qpHandle = reinterpret_cast<QpHandle>(0xBEEF0000 + qpn);
+    return HCCL_SUCCESS;
+}
+
 /* ===== Stub for HrtRaSendWrVerbs ===== */
 static HcclResult stub_HrtRaSendWrVerbs_success(QpHandle handle,
     struct SendWrVerbs *wr, struct SendWrRsp *opRsp)
@@ -133,8 +143,111 @@ static HcclResult stub_HrtRaRecvWrVerbs_success(QpHandle handle,
     return HCCL_SUCCESS;
 }
 
+/* ===== Helpers for TypicalQpManagerTest ===== */
+static void ClearAllMaps(TypicalQpManager& instance)
+{
+    instance.qpMap_.clear();
+    instance.verbsQpMap_.clear();
+    instance.cqMap_.clear();
+}
+
+static void SetRdmaHandle(TypicalQpManager& instance)
+{
+    instance.rdmaHandle_ = reinterpret_cast<RdmaHandle>(0xCAFE0001);
+}
+
+/* ===== Stub for hrtGetDevice ===== */
+static s32 g_deviceLogicId = 0;
+static HcclResult stub_hrtGetDevice_success(s32 *deviceLogicId)
+{
+    *deviceLogicId = g_deviceLogicId;
+    return HCCL_SUCCESS;
+}
+
+/* ===== Stub for GetExternalInputRdmaRetryCnt / GetExternalInputRdmaTimeOut ===== */
+static u32 stub_GetExternalInputRdmaRetryCnt()
+{
+    return 7u;
+}
+
+static u32 stub_GetExternalInputRdmaTimeOut()
+{
+    return 14u;
+}
+
+/* ===== Stub for RdmaResourceManager::GetRdmaHandle ===== */
+static HcclResult stub_GetRdmaHandle_success(RdmaResourceManager* self, RdmaHandle& rdmaHandle)
+{
+    rdmaHandle = reinterpret_cast<RdmaHandle>(0xCAFE0001);
+    return HCCL_SUCCESS;
+}
+
+static HcclResult stub_GetRdmaHandle_fail(RdmaResourceManager* self, RdmaHandle& rdmaHandle)
+{
+    return HCCL_E_INTERNAL;
+}
+
+/* ===== Stub for hrtRaTypicalQpModify ===== */
+static HcclResult stub_hrtRaTypicalQpModify_success(QpHandle qpHandle,
+    struct TypicalQp* localQpInfo, struct TypicalQp* remoteQpInfo)
+{
+    return HCCL_SUCCESS;
+}
+
+static HcclResult stub_hrtRaTypicalQpModify_fail(QpHandle qpHandle,
+    struct TypicalQp* localQpInfo, struct TypicalQp* remoteQpInfo)
+{
+    return HCCL_E_INTERNAL;
+}
+
+/* ===== Stub for HrtRaQpDestroyWithoutCQ ===== */
+static HcclResult stub_HrtRaQpDestroyWithoutCQ_success(QpHandle handle)
+{
+    return HCCL_SUCCESS;
+}
+
+static HcclResult stub_HrtRaQpDestroyWithoutCQ_fail(QpHandle handle)
+{
+    return HCCL_E_INTERNAL;
+}
+
+/* ===== Stub for HrtRaQpDestroy ===== */
+static HcclResult stub_HrtRaQpDestroy_success(QpHandle handle)
+{
+    return HCCL_SUCCESS;
+}
+
+/* ===== Stub for CreateQpWithCQConfig ===== */
+static HcclResult stub_CreateQpWithCQConfig_success(RdmaHandle rdmaHandle, s32 qpMode,
+    const QpConfigWithCQInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo)
+{
+    qpHandle = reinterpret_cast<QpHandle>(0xBEEF0001);
+    qpInfo.qpn = 100;
+    return HCCL_SUCCESS;
+}
+
+static HcclResult stub_CreateQpWithCQConfig_fail(RdmaHandle rdmaHandle, s32 qpMode,
+    const QpConfigWithCQInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo)
+{
+    return HCCL_E_INTERNAL;
+}
+
+/* ===== Stub for DestroyTypicalCq ===== */
+static HcclResult stub_DestroyTypicalCq_success(RdmaHandle rdmaHandle, u32 cqn, void *cqHandle)
+{
+    return HCCL_SUCCESS;
+}
+
+/* ===== Stub for CreateTypicalCq ===== */
+static HcclResult stub_CreateTypicalCq_success(RdmaHandle rdmaHandle, u32 cqDepth, u32 &cqn, void **cqHandle)
+{
+    cqn = 42;
+    *cqHandle = reinterpret_cast<void*>(0xDEAD0001);
+    return HCCL_SUCCESS;
+}
+
 /* ==================================================================
- * Test Fixture
+ * Test Fixture: InterfaceHcclVerbsTest
  * ================================================================== */
 class InterfaceHcclVerbsTest : public testing::Test {
 protected:
@@ -405,7 +518,7 @@ TEST_F(InterfaceHcclVerbsTest, CreateQPWithCQWithAttr_ValidateCqFailure)
 TEST_F(InterfaceHcclVerbsTest, ModifyVerbsQPEx_Success)
 {
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
-    MOCKER_CPP(&TypicalQpManager::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TypicalQpManager::ModifyVerbsQp).stubs().will(returnValue(HCCL_SUCCESS));
 
     AscendVerbsQPInfo localQP{};
     localQP.qpn = 1;
@@ -478,10 +591,12 @@ TEST_F(InterfaceHcclVerbsTest, ModifyVerbsQPEx_TCNotMultipleOf4)
 TEST_F(InterfaceHcclVerbsTest, ModifyVerbsQPEx_ModifyQpFailure)
 {
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
-    MOCKER_CPP(&TypicalQpManager::ModifyQp).stubs().will(returnValue(HCCL_E_INTERNAL));
+    MOCKER_CPP(&TypicalQpManager::ModifyVerbsQp).stubs().will(returnValue(HCCL_E_INTERNAL));
 
     AscendVerbsQPInfo localQP{};
+    localQP.qpn = 1;
     AscendVerbsQPInfo remoteQP{};
+    remoteQP.qpn = 2;
     AscendQPQos qos{};
     qos.sl = 4;
     qos.tc = 4;
@@ -497,7 +612,7 @@ TEST_F(InterfaceHcclVerbsTest, ModifyVerbsQP_Success)
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1u));
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(4u));
-    MOCKER_CPP(&TypicalQpManager::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&TypicalQpManager::ModifyVerbsQp).stubs().will(returnValue(HCCL_SUCCESS));
 
     AscendVerbsQPInfo localQP{};
     localQP.qpn = 1;
@@ -579,7 +694,7 @@ TEST_F(InterfaceHcclVerbsTest, PollAscendCQ_PollFailure)
 TEST_F(InterfaceHcclVerbsTest, PostSend_Success_SingleWR)
 {
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
-    MOCKER_CPP(&TypicalQpManager::GetQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetQpHandleByQpn_success));
+    MOCKER_CPP(&TypicalQpManager::GetVerbsQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetVerbsQpHandleByQpn_success));
     MOCKER(HrtRaSendWrVerbs).stubs().will(invoke(stub_HrtRaSendWrVerbs_success));
     MOCKER(hrtRDMADBSend).stubs().will(invoke(stub_hrtRDMADBSend_success));
 
@@ -608,7 +723,7 @@ TEST_F(InterfaceHcclVerbsTest, PostSend_Success_SingleWR)
 TEST_F(InterfaceHcclVerbsTest, PostSend_Success_LinkedListWRs)
 {
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
-    MOCKER_CPP(&TypicalQpManager::GetQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetQpHandleByQpn_success));
+    MOCKER_CPP(&TypicalQpManager::GetVerbsQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetVerbsQpHandleByQpn_success));
     MOCKER(HrtRaSendWrVerbs).stubs().will(invoke(stub_HrtRaSendWrVerbs_success));
     MOCKER(hrtRDMADBSend).stubs().will(invoke(stub_hrtRDMADBSend_success));
 
@@ -671,7 +786,7 @@ TEST_F(InterfaceHcclVerbsTest, PostSend_StreamNull)
 TEST_F(InterfaceHcclVerbsTest, PostSend_NumSgeExceedsMax)
 {
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
-    MOCKER_CPP(&TypicalQpManager::GetQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetQpHandleByQpn_success));
+    MOCKER_CPP(&TypicalQpManager::GetVerbsQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetVerbsQpHandleByQpn_success));
 
     AscendVerbsQPInfo qpInfo{};
     qpInfo.qpn = 100;
@@ -689,7 +804,7 @@ TEST_F(InterfaceHcclVerbsTest, PostSend_NumSgeExceedsMax)
 TEST_F(InterfaceHcclVerbsTest, PostSend_NullSgList)
 {
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
-    MOCKER_CPP(&TypicalQpManager::GetQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetQpHandleByQpn_success));
+    MOCKER_CPP(&TypicalQpManager::GetVerbsQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetVerbsQpHandleByQpn_success));
 
     AscendVerbsQPInfo qpInfo{};
     qpInfo.qpn = 100;
@@ -710,7 +825,7 @@ TEST_F(InterfaceHcclVerbsTest, PostSend_NullSgList)
 TEST_F(InterfaceHcclVerbsTest, PostRecv_Success_SingleWR)
 {
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
-    MOCKER_CPP(&TypicalQpManager::GetQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetQpHandleByQpn_success));
+    MOCKER_CPP(&TypicalQpManager::GetVerbsQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetVerbsQpHandleByQpn_success));
     MOCKER(HrtRaRecvWrVerbs).stubs().will(invoke(stub_HrtRaRecvWrVerbs_success));
 
     AscendVerbsQPInfo qpInfo{};
@@ -737,7 +852,7 @@ TEST_F(InterfaceHcclVerbsTest, PostRecv_Success_SingleWR)
 TEST_F(InterfaceHcclVerbsTest, PostRecv_Success_LinkedListWRs)
 {
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
-    MOCKER_CPP(&TypicalQpManager::GetQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetQpHandleByQpn_success));
+    MOCKER_CPP(&TypicalQpManager::GetVerbsQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetVerbsQpHandleByQpn_success));
     MOCKER(HrtRaRecvWrVerbs).stubs().will(invoke(stub_HrtRaRecvWrVerbs_success));
 
     AscendVerbsQPInfo qpInfo{};
@@ -799,7 +914,7 @@ TEST_F(InterfaceHcclVerbsTest, PostRecv_StreamNull)
 TEST_F(InterfaceHcclVerbsTest, PostRecv_NumSgeExceedsMax)
 {
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
-    MOCKER_CPP(&TypicalQpManager::GetQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetQpHandleByQpn_success));
+    MOCKER_CPP(&TypicalQpManager::GetVerbsQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetVerbsQpHandleByQpn_success));
 
     AscendVerbsQPInfo qpInfo{};
     qpInfo.qpn = 100;
@@ -817,7 +932,7 @@ TEST_F(InterfaceHcclVerbsTest, PostRecv_NumSgeExceedsMax)
 TEST_F(InterfaceHcclVerbsTest, PostRecv_NullSgList)
 {
     MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(stub_hrtGetDeviceRefresh_success));
-    MOCKER_CPP(&TypicalQpManager::GetQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetQpHandleByQpn_success));
+    MOCKER_CPP(&TypicalQpManager::GetVerbsQpHandleByQpn).stubs().with(mockcpp::any(), mockcpp::any(), mockcpp::any()).will(invoke(stub_GetVerbsQpHandleByQpn_success));
 
     AscendVerbsQPInfo qpInfo{};
     qpInfo.qpn = 100;
@@ -860,4 +975,307 @@ TEST_F(InterfaceHcclVerbsTest, DestroyVerbsQP_DestroyQpFailure)
     qpInfo.qpn = 100;
 
     EXPECT_EQ(hcclDestroyAscendVerbsQP(&qpInfo), HCCL_E_INTERNAL);
+}
+
+/* ==================================================================
+ * Test Fixture: TypicalQpManagerTest
+ * ================================================================== */
+class TypicalQpManagerTest : public testing::Test {
+protected:
+    virtual void SetUp()
+    {
+        std::cout << "TypicalQpManagerTest SetUP" << std::endl;
+    }
+    virtual void TearDown()
+    {
+        TypicalQpManager& instance = TypicalQpManager::GetInstance();
+        ClearAllMaps(instance);
+        GlobalMockObject::verify();
+        std::cout << "TypicalQpManagerTest TearDown" << std::endl;
+    }
+};
+
+/* ==================================================================
+ * 1. GetVerbsQpHandleByQpn Tests
+ * ================================================================== */
+TEST_F(TypicalQpManagerTest, GetVerbsQpHandleByQpn_Success)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+
+    struct TypicalQp qpInfo{};
+    qpInfo.qpn = 42;
+    QpHandle qpHandle = reinterpret_cast<QpHandle>(0xABCD0001);
+    instance.verbsQpMap_[42] = std::make_pair(qpInfo, qpHandle);
+
+    QpHandle result = nullptr;
+    EXPECT_EQ(instance.GetVerbsQpHandleByQpn(42, result), HCCL_SUCCESS);
+    EXPECT_EQ(result, qpHandle);
+}
+
+TEST_F(TypicalQpManagerTest, GetVerbsQpHandleByQpn_QpnNotFound)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+    ClearAllMaps(instance);
+
+    QpHandle result = nullptr;
+    EXPECT_EQ(instance.GetVerbsQpHandleByQpn(999, result), HCCL_E_NOT_FOUND);
+}
+
+TEST_F(TypicalQpManagerTest, GetVerbsQpHandleByQpn_NullQpHandleInMap)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+
+    struct TypicalQp qpInfo{};
+    qpInfo.qpn = 43;
+    instance.verbsQpMap_[43] = std::make_pair(qpInfo, nullptr);
+
+    QpHandle result = nullptr;
+    EXPECT_EQ(instance.GetVerbsQpHandleByQpn(43, result), HCCL_E_NOT_FOUND);
+}
+
+TEST_F(TypicalQpManagerTest, GetVerbsQpHandleByQpn_RdmaHandleFail)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_fail));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    instance.rdmaHandle_ = nullptr;
+
+    QpHandle result = nullptr;
+    EXPECT_NE(instance.GetVerbsQpHandleByQpn(1, result), HCCL_SUCCESS);
+}
+
+/* ==================================================================
+ * 2. ModifyVerbsQp Tests
+ * ================================================================== */
+TEST_F(TypicalQpManagerTest, ModifyVerbsQp_Success)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+    MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(invoke(stub_GetExternalInputRdmaRetryCnt));
+    MOCKER(GetExternalInputRdmaTimeOut).stubs().will(invoke(stub_GetExternalInputRdmaTimeOut));
+    MOCKER(hrtRaTypicalQpModify).stubs().will(invoke(stub_hrtRaTypicalQpModify_success));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+
+    struct TypicalQp qpInfo{};
+    qpInfo.qpn = 1;
+    QpHandle qpHandle = reinterpret_cast<QpHandle>(0xBEEF0001);
+    instance.verbsQpMap_[1] = std::make_pair(qpInfo, qpHandle);
+
+    struct TypicalQp localQp{};
+    localQp.qpn = 1;
+    struct TypicalQp remoteQp{};
+    remoteQp.qpn = 2;
+
+    EXPECT_EQ(instance.ModifyVerbsQp(localQp, remoteQp), HCCL_SUCCESS);
+    EXPECT_EQ(localQp.retryCnt, 7u);
+    EXPECT_EQ(localQp.retryTime, 14u);
+}
+
+TEST_F(TypicalQpManagerTest, ModifyVerbsQp_LocalQpnZero)
+{
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+
+    struct TypicalQp localQp{};
+    localQp.qpn = 0;
+    struct TypicalQp remoteQp{};
+    remoteQp.qpn = 1;
+
+    EXPECT_EQ(instance.ModifyVerbsQp(localQp, remoteQp), HCCL_E_PARA);
+}
+
+TEST_F(TypicalQpManagerTest, ModifyVerbsQp_RemoteQpnZero)
+{
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+
+    struct TypicalQp localQp{};
+    localQp.qpn = 1;
+    struct TypicalQp remoteQp{};
+    remoteQp.qpn = 0;
+
+    EXPECT_EQ(instance.ModifyVerbsQp(localQp, remoteQp), HCCL_E_PARA);
+}
+
+TEST_F(TypicalQpManagerTest, ModifyVerbsQp_GetVerbsQpHandleByQpnFails)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+    ClearAllMaps(instance);
+
+    struct TypicalQp localQp{};
+    localQp.qpn = 42;
+    struct TypicalQp remoteQp{};
+    remoteQp.qpn = 2;
+
+    EXPECT_EQ(instance.ModifyVerbsQp(localQp, remoteQp), HCCL_E_NOT_FOUND);
+}
+
+TEST_F(TypicalQpManagerTest, ModifyVerbsQp_HrtModifyFails)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+    MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(invoke(stub_GetExternalInputRdmaRetryCnt));
+    MOCKER(GetExternalInputRdmaTimeOut).stubs().will(invoke(stub_GetExternalInputRdmaTimeOut));
+    MOCKER(hrtRaTypicalQpModify).stubs().will(invoke(stub_hrtRaTypicalQpModify_fail));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+
+    struct TypicalQp qpInfo{};
+    qpInfo.qpn = 1;
+    QpHandle qpHandle = reinterpret_cast<QpHandle>(0xBEEF0001);
+    instance.verbsQpMap_[1] = std::make_pair(qpInfo, qpHandle);
+
+    struct TypicalQp localQp{};
+    localQp.qpn = 1;
+    struct TypicalQp remoteQp{};
+    remoteQp.qpn = 2;
+
+    EXPECT_EQ(instance.ModifyVerbsQp(localQp, remoteQp), HCCL_E_INTERNAL);
+}
+
+/* ==================================================================
+ * 3. CreateQpWithCQ Tests (verbsQpMap_ insertion)
+ * ================================================================== */
+TEST_F(TypicalQpManagerTest, CreateQpWithCQ_InsertsIntoVerbsQpMap)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+    MOCKER(CreateQpWithCQConfig).stubs().will(invoke(stub_CreateQpWithCQConfig_success));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+    ClearAllMaps(instance);
+
+    struct TypicalQp qpInfo{};
+    QpConfigWithCQInfo qpConfig{};
+
+    EXPECT_EQ(instance.CreateQpWithCQ(qpInfo, qpConfig), HCCL_SUCCESS);
+    EXPECT_EQ(qpInfo.qpn, 100u);
+
+    EXPECT_EQ(instance.verbsQpMap_.size(), 1u);
+    EXPECT_EQ(instance.qpMap_.size(), 0u);
+    EXPECT_NE(instance.verbsQpMap_.find(100), instance.verbsQpMap_.end());
+}
+
+TEST_F(TypicalQpManagerTest, CreateQpWithCQ_CreateFails)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+    MOCKER(CreateQpWithCQConfig).stubs().will(invoke(stub_CreateQpWithCQConfig_fail));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+    ClearAllMaps(instance);
+
+    struct TypicalQp qpInfo{};
+    QpConfigWithCQInfo qpConfig{};
+
+    EXPECT_EQ(instance.CreateQpWithCQ(qpInfo, qpConfig), HCCL_E_INTERNAL);
+    EXPECT_EQ(instance.verbsQpMap_.size(), 0u);
+}
+
+/* ==================================================================
+ * 4. DestroyQpWithoutCQ Tests (verbsQpMap_ erase)
+ * ================================================================== */
+TEST_F(TypicalQpManagerTest, DestroyQpWithoutCQ_Success)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+    MOCKER(HrtRaQpDestroyWithoutCQ).stubs().will(invoke(stub_HrtRaQpDestroyWithoutCQ_success));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+
+    struct TypicalQp qpInfo{};
+    qpInfo.qpn = 100;
+    QpHandle qpHandle = reinterpret_cast<QpHandle>(0xBEEF0001);
+    instance.verbsQpMap_[100] = std::make_pair(qpInfo, qpHandle);
+
+    EXPECT_EQ(instance.verbsQpMap_.size(), 1u);
+
+    EXPECT_EQ(instance.DestroyQpWithoutCQ(qpInfo), HCCL_SUCCESS);
+    EXPECT_EQ(instance.verbsQpMap_.size(), 0u);
+    EXPECT_EQ(instance.verbsQpMap_.find(100), instance.verbsQpMap_.end());
+}
+
+TEST_F(TypicalQpManagerTest, DestroyQpWithoutCQ_QpnZero)
+{
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+
+    struct TypicalQp qpInfo{};
+    qpInfo.qpn = 0;
+
+    EXPECT_EQ(instance.DestroyQpWithoutCQ(qpInfo), HCCL_E_PARA);
+}
+
+TEST_F(TypicalQpManagerTest, DestroyQpWithoutCQ_QpnNotFound)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+    ClearAllMaps(instance);
+
+    struct TypicalQp qpInfo{};
+    qpInfo.qpn = 999;
+
+    EXPECT_EQ(instance.DestroyQpWithoutCQ(qpInfo), HCCL_E_NOT_FOUND);
+}
+
+TEST_F(TypicalQpManagerTest, DestroyQpWithoutCQ_HrtDestroyFails)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+    MOCKER(HrtRaQpDestroyWithoutCQ).stubs().will(invoke(stub_HrtRaQpDestroyWithoutCQ_fail));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+
+    struct TypicalQp qpInfo{};
+    qpInfo.qpn = 100;
+    QpHandle qpHandle = reinterpret_cast<QpHandle>(0xBEEF0001);
+    instance.verbsQpMap_[100] = std::make_pair(qpInfo, qpHandle);
+
+    EXPECT_EQ(instance.DestroyQpWithoutCQ(qpInfo), HCCL_E_INTERNAL);
+    EXPECT_EQ(instance.verbsQpMap_.size(), 1u);
+}
+
+/* ==================================================================
+ * 5. CreateCq Tests
+ * ================================================================== */
+TEST_F(TypicalQpManagerTest, CreateCq_InsertsIntoCqMap)
+{
+    MOCKER(hrtGetDevice).stubs().will(invoke(stub_hrtGetDevice_success));
+    MOCKER_CPP(&RdmaResourceManager::GetRdmaHandle).stubs().will(invoke(stub_GetRdmaHandle_success));
+    MOCKER(CreateTypicalCq).stubs().will(invoke(stub_CreateTypicalCq_success));
+
+    TypicalQpManager& instance = TypicalQpManager::GetInstance();
+    SetRdmaHandle(instance);
+    ClearAllMaps(instance);
+
+    AscendCQInfo cqInfo{};
+    cqInfo.cqDepth = 128;
+
+    EXPECT_EQ(instance.CreateCq(cqInfo), HCCL_SUCCESS);
+    EXPECT_EQ(cqInfo.cqn, 42u);
+    EXPECT_EQ(instance.cqMap_.size(), 1u);
 }
