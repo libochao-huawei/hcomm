@@ -296,7 +296,7 @@ public:
     void operator=(const CcuErrorHandler&) = delete;
 
     static void GetCcuErrorMsg(int32_t deviceId, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo);
-
+    static CcuMissionContext GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId);
 private:
     static void GenStatusInfo(const ErrorInfoBase &baseInfo, std::vector<CcuErrorInfo> &errorInfo);
 
@@ -350,8 +350,6 @@ private:
     // BufReduce
     static void GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase,
                                       std::vector<CcuErrorInfo> &errorInfo);
-
-    static CcuMissionContext GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId);
     static CcuLoopContext    GetCcuLoopContext(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId);
     static uint64_t          GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId);
     static uint64_t          GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId);

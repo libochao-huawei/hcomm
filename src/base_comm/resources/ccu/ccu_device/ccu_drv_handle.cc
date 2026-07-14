@@ -108,7 +108,6 @@ CcuResult CcuDrvHandle::Init()
      * CCU_CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
      */
     CCU_CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
-
     return CcuResult::CCU_SUCCESS;
 }
 
