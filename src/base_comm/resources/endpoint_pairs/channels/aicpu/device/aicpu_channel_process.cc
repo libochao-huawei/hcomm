@@ -14,7 +14,6 @@
 #include "../channel.h"
 
 #include "adapter_rts_common.h"
-#include "exception_handler.h"
 #include "log.h"
 
 #include <securec.h>

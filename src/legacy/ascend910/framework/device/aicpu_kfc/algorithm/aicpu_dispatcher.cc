@@ -12,7 +12,6 @@
 
 #include "common/aicpu_sqe_context.h"
 #include "common/aicpu_hccl_common.h"
-#include "utils/hccl_aicpu_utils.h"
 #include "adapter_hal_pub.h"
 
 using namespace hccl;

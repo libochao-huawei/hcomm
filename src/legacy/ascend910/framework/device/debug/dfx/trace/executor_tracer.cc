@@ -13,12 +13,9 @@
 #include <functional>
 #include <map>
 #include "framework/aicpu_hccl_process.h"
-#include "common/aicpu_hccl_common.h"
 #include "stream_pub.h"
-#include "utils/hccl_aicpu_utils.h"
 #include "framework/aicpu_communicator.h"
 #include "sal_pub.h"
-#include "log_control.h"
 #include "cann_error_reporter.h"
 #include "executor_tracer.h"
 #include "dfx/aicpu_executor_tracer.h"

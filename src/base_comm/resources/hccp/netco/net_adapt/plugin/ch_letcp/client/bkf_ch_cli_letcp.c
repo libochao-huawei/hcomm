@@ -23,7 +23,6 @@
 #include "bkf_ch_cli_letcp_data.h"
 #include "bkf_ch_cli_letcp_disp.h"
 #include "bkf_url.h"
-#include "securec.h"
 #include "vos_base.h"
 #include "vos_errno.h"
 #include "bkf_ch_cli_letcp.h"

@@ -9,13 +9,10 @@
  */
 
 #include <memory>
-#include "config_plf_log.h"
 #include "hccl_common.h"
 #include "stream_pub.h"
-#include "rt_external.h"
 #include "aicpu/aicpu_hccl_sqcqv1.h"
 #include "aicpu/aicpu_hccl_sqcqv2.h"
-#include "sal.h"
 #include "config_plf_log.h"
 #include "dlhal_function.h"
 #include "adapter_hal_pub.h"

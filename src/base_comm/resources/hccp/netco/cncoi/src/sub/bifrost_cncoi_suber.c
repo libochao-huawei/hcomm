@@ -12,8 +12,6 @@
 #include "bifrost_cncoi_suber.h"
 #include "bifrost_cncoi_suber_pri.h"
 #include "bifrost_cncoi_svc.h"
-#include "bifrost_cncoi_slice.h"
-#include "bifrost_cncoi_table.h"
 #include "securec.h"
 
 #if __cplusplus

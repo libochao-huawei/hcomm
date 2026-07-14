@@ -13,7 +13,6 @@
 #define BKF_LOG_CNT_HND ((ch)->argInit.base->logCnt)
 #include "bkf_ch_cli_letcp_data.h"
 #include "bkf_str.h"
-#include "bkf_bas_type_mthd.h"
 #include "securec.h"
 
 #ifdef __cplusplus

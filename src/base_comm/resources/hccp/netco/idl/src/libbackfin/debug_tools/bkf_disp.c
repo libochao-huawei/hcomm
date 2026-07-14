@@ -10,7 +10,6 @@
 
 #include "bkf_disp.h"
 #include "bkf_dl.h"
-#include "bkf_bas_type_mthd.h"
 #include "bkf_str.h"
 #include "bkf_assert.h"
 #include "v_avll.h"

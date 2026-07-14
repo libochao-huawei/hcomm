@@ -13,7 +13,6 @@
 #define BKF_MOD_NAME ((co)->name)
 #include "net_co_sys_log.h"
 #include "net_co_main_data.h"
-#include "vos_assert.h"
 #include "securec.h"
 #include "net_slog.h"
 

@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "aicpu_res_package_helper.h"
 #include "dev_aicpu_ts_hccs_channel.h"
 #include "dispatcher_ctx.h"
 #include "adapter_hal_pub.h"

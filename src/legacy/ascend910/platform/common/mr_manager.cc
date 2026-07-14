@@ -11,10 +11,8 @@
 #include "mr_manager.h"
 #include "adapter_hal.h"
 #include "adapter_hccp.h"
-#include "dlra_function.h"
 #include "network_manager_pub.h"
 #include "../resource/socket/hccl_network.h"
-#include "network/hccp.h"
 
 namespace hccl {
 using namespace std;

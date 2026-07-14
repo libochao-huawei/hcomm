@@ -8,10 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "prof_common.h"
 #include "profiling_manager_device.h"
 #include "profiling_command_handle.h"
-#include "profiling_manager.h"
 namespace hccl {
 int32_t DeviceCommandHandle(uint32_t profType, void *data, uint32_t len) {
     HCCL_INFO("[%s] start", __func__);

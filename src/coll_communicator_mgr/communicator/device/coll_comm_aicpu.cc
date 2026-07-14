@@ -9,13 +9,11 @@
  */
 
 #include "coll_comm_aicpu.h"
-#include "aicpu_operator_pub.h"
 #include "adapter_hal_pub.h"
 #include "aicpu_ts_thread.h"
 #include "aicpu_res_package_helper.h"
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
-#include "aicpu_hccl_def.h"
 #include "ns_recovery/aicpu/ns_recovery_func_lite.h"
 #include "dlhal_function_v2.h"
 #include "profiling_command_handle_lite.h"

@@ -12,8 +12,6 @@
 #include "bifrost_cncoi_puber.h"
 #include "bifrost_cncoi_puber_pri.h"
 #include "bifrost_cncoi_svc.h"
-#include "bifrost_cncoi_slice.h"
-#include "bifrost_cncoi_table.h"
 #include "bkf_puber.h"
 #include "securec.h"
 

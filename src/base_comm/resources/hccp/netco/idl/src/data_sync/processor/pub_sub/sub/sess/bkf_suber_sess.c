@@ -12,7 +12,6 @@
 #include "bkf_suber_conn.h"
 #include "bkf_suber_sess_data.h"
 #include "bkf_suber_sess_fsm.h"
-#include "v_avll.h"
 
 #ifdef __cplusplus
 #if __cplusplus

@@ -28,7 +28,6 @@
 #include "hcom_common.h"
 #include "comm_configer.h"
 #include "hcom_private_v2.h"
-#include "hcom_common_v2.h"
 
 #include "hcom_pub.h"
 

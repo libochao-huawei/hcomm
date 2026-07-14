@@ -11,7 +11,6 @@
 #include "bkf_job.h"
 #include "bkf_str.h"
 #include "bkf_assert.h"
-#include "v_stringlib.h"
 #include "securec.h"
 
 #ifdef __cplusplus

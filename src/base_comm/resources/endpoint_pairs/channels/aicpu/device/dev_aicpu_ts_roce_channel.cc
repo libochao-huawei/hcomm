@@ -18,7 +18,6 @@
 #include "adapter_hal_pub.h"
 #include "adapter_rts_common.h"
 #include "dispatcher_ctx.h"
-#include "externalinput_pub.h"
 #include "hccl_dispatcher_ctx.h"
 #include "log.h"
 #include "transport_pub.h"

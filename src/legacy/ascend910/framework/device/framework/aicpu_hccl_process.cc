@@ -13,29 +13,16 @@
 #include <dlog_pub.h>
 #include <hccl/hccl_types.h>
 #include "log.h"
-#include "log_control.h"
 #include "securec.h"
 #include "aicpu_communicator.h"
-#include "aicpu_hccl_sqcqv1.h"
-#include "aicpu_hccl_sqcqv2.h"
-#include "algorithm/aicpu_allgather.h"
-#include "algorithm/task_orchestrator.h"
-#include "algorithm/aicpu_reduce_scatter.h"
-#include "algorithm/aicpu_dmy_cal_allreduce.h"
-#include "algorithm/aicpu_allreduce.h"
-#include "algorithm/aicpu_alltoall.h"
 #include "common/aicpu_hccl_common.h"
 #include "common/aicpu_sqe_context.h"
-#include "profiling_extend_info.h"
 #include "executor_tracer.h"
-#include "dfx/mc2_trace_utils.h"
 #include "utils/hccl_aicpu_utils.h"
-#include "utils/aicpu_hdc_utils.h"
 #include "hccl_types.h"
 #include "framework/aicpu_hccl_process.h"
 #include "dtype_common.h"
 #include "aicpu_one_side_service.h"
-#include "coll_batch_write_executor.h"
 
 using namespace hccl;
 using namespace HcclApi;

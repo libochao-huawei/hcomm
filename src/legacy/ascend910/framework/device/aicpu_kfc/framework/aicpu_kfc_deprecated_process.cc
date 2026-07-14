@@ -10,7 +10,6 @@
 
 #include "aicpu_kfc_deprecated_process.h"
 
-#include "framework/aicpu_communicator.h"
 #include "dfx/dfx_extend_info.h"
 #include "aicpu_kfc_process.h"
 #include "algorithm/task_orchestrator.h"

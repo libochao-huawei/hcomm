@@ -9,15 +9,10 @@
  */
 
 #include "aicpu_ts_ubg_channel.h"
-#include "endpoint.h"
 #include "orion_adpt_utils.h"
-#include "hcomm_c_adpt.h"
-#include "exception_handler.h"
 
 // Orion
-#include "coll_alg_param.h"
 #include "topo_common_types.h"
-#include "virtual_topo.h"
 #include "tp_manager.h"
 
 namespace hcomm {

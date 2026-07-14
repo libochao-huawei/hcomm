@@ -11,7 +11,6 @@
 #include <sys/prctl.h>
 #include "securec.h"
 #include "user_log.h"
-#include "dl_hal_function.h"
 #include "ra_hdc_async.h"
 #include "ra_rs_comm.h"
 #include "ra_rs_err.h"

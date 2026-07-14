@@ -10,7 +10,6 @@
 
 
 #include "bifrost_cncoi_table.h"
-#include "bkf_bas_type_mthd.h"
 #include "v_stringlib.h"
 
 #if __cplusplus

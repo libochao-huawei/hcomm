@@ -15,7 +15,6 @@
 #include "securec.h"
 #include "user_log.h"
 #include "dl_netco_function.h"
-#include "hccp_tlv.h"
 #include "file_opt.h"
 #include "ra_rs_err.h"
 #include "network_comm.h"

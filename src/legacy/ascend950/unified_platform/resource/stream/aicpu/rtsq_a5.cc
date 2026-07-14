@@ -17,7 +17,6 @@
 #include "sqe.h"
 #ifdef CCL_KERNEL_AICPU
 #include "aicpu_ts_primitives_c_adpt.h"
-#include "aicpu_indop_env.h"
 #endif
 
 namespace Hccl {

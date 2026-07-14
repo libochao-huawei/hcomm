@@ -10,12 +10,7 @@
 
 #include "uboe_ubg_endpoint_helper.h"
 #include <algorithm>
-#include "endpoint_mgr.h"
 #include "log.h"
-#include "hccl/hccl_res.h"
-#include "urma_mem.h"
-#include "adapter_rts_common.h"
-#include "server_socket_manager.h"
 
 namespace hcomm {
 

@@ -12,7 +12,6 @@
 #include "bkf_suber_conn_data.h"
 #include "bkf_suber_sess.h"
 #include "bkf_disp.h"
-#include "securec.h"
 
 #ifdef __cplusplus
 extern "C" {

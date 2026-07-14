@@ -9,7 +9,6 @@
  */
 
 #include "hccl_api_data.h"
-#include "dispatcher.h"
 #include "new/hccl_primitive_local.h"
 #include "new/hccl_primitive_remote.h"
 #include "thread.h"
@@ -20,8 +19,6 @@
 #include "coll_comm_aicpu_mgr.h"
 #include "aicpu_indop_process.h"
 #include "aicpu_indop_env.h"
-#include "hcclCommDfxLite.h"
-#include "hcclCommProfilingLite.h"
 #include "profiling_handler_lite.h"
 #include "hcclCommOp.h"
 #include "hcomm_diag.h"

@@ -8,8 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "v_stringlib.h"
-#include "securec.h"
 #include "vos_typdef.h"
 #include "bkf_suber_data.h"
 #include "bkf_suber_conn.h"

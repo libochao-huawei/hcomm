@@ -9,7 +9,6 @@
  */
 
 #include "dev_aicpu_ts_roce_channel_v2.h"
-#include "adapter_rts_common.h"
 #include "log.h"
 #include "aicpu_res_package_helper.h"
 

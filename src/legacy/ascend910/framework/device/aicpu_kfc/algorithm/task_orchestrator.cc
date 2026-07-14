@@ -19,7 +19,6 @@
 #include "log.h"
 #include "utils/aicpu_hdc_utils.h"
 #include "aicpu_operator_pub.h"
-#include "sal_pub.h"
 #include "hccl_types.h"
 #include "aicpu_allgather.h"
 #include "aicpu_reduce_scatter.h"

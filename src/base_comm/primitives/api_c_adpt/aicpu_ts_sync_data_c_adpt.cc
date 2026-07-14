@@ -13,7 +13,6 @@
 #include <thread>
 
 #include "log.h"
-#include "ascend_hal.h"
 #include "thread.h"
 #include "aicpu_ts_thread.h"
 

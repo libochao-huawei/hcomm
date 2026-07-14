@@ -42,8 +42,6 @@
 #include "exception_handler.h"
 #include "hcclCommDfx.h"
 #include "hcclCommOp.h"
-#include "exception_handler.h"
-#include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
 #include "endpoint_monitor.h"

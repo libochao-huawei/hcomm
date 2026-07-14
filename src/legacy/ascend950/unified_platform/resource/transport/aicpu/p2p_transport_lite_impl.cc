@@ -12,7 +12,6 @@
 #include "p2p_transport_lite_impl.h"
 #include "binary_stream.h"
 #include "exception_util.h"
-#include "sal.h"
 #include "communicator_impl_lite_manager.h"
 
 namespace Hccl {

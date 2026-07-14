@@ -9,9 +9,6 @@
  */
 
 #include <vector>
-#include "aicpu_ts_urma_channel_kernel.h"
-#include "framework/aicpu_hccl_process.h"
-#include "channel_param.h"
 #include "aicpu_indop_process.h"
 
 extern "C" {

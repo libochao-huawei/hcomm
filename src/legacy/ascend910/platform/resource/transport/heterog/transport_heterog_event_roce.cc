@@ -10,8 +10,6 @@
 #include "transport_heterog_event_roce.h"
 
 #include "log.h"
-#include "externalinput_pub.h"
-#include "mr_manager.h"
 #include "adapter_hal.h"
 #include "dlhal_function.h"
 

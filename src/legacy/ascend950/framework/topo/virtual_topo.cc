@@ -13,7 +13,6 @@
 #include <string>
 #include <unordered_map>
 #include "internal_exception.h"
-#include "orion_adapter_hccp.h"
 
 namespace Hccl {
 

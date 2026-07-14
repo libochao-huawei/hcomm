@@ -10,7 +10,6 @@
 
 
 #include "net_vo_tbl_demo.h"
-#include "bkf_bas_type_mthd.h"
 
 #ifdef __cplusplus
 extern "C" {

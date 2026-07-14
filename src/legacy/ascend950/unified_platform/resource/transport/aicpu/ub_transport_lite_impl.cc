@@ -13,7 +13,6 @@
 #include "ub_conn_lite_mgr.h"
 #include "exception_util.h"
 #include "internal_exception.h"
-#include "sal.h"
 #include "communicator_impl_lite_manager.h"
 #include "profiling_handler_lite.h"
 

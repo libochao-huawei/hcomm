@@ -16,8 +16,6 @@
 #include "bkf_puber_sess_fsm.h"
 #include "bkf_puber_sess_utils.h"
 #include "bkf_dc.h"
-#include "securec.h"
-#include "v_stringlib.h"
 
 #ifdef __cplusplus
 extern "C" {

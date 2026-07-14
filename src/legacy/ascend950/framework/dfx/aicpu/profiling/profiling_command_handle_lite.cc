@@ -9,7 +9,6 @@
  */
 #include "profiling_command_handle_lite.h"
 #include "log.h"
-#include "prof_common.h"
 #include "profiling_handler_lite.h"
 
  

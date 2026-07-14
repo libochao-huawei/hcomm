@@ -15,10 +15,6 @@
 #include "suspending_exception.h"
 #include "exception_util.h"
 #include "task_info.h"
-#ifdef CCL_KERNEL_AICPU
-#include "dlprof_function.h"
-#include "profiling_command_handle_lite.h"
-#endif
 namespace Hccl {
 
 constexpr int KERNEL_SUCCESS_CODE = 0;

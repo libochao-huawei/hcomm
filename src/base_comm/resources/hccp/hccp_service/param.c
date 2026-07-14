@@ -10,9 +10,6 @@
 
 #include <getopt.h>
 #include <errno.h>
-#ifndef CONFIG_HCCP_LLT
-#include "dlog_pub.h"
-#endif
 #include "user_log.h"
 #include "securec.h"
 #include "dl_hal_function.h"

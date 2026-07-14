@@ -11,7 +11,6 @@
 #include "bkf_suber_private.h"
 #include "bkf_suber_data.h"
 #include "bkf_subscriber.h"
-#include "v_avll.h"
 #include "securec.h"
 #include "vos_base.h"
 #include "bkf_suber_disp.h"

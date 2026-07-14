@@ -11,7 +11,6 @@
 
 #include <sys/time.h>
 #include "vos_base.h"
-#include "vos_typdef.h"
 #include "vos_errno.h"
 
 #ifdef __cplusplus

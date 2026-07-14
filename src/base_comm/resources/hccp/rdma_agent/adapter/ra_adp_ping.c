@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "hccp_ping.h"
 #include "ra_hdc_ping.h"
 #include "ra_hdc.h"
 #include "ra_adp.h"

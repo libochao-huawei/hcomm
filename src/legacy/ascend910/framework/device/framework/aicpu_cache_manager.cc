@@ -10,7 +10,6 @@
 
 #include "aicpu_cache_manager.h"
 
-#include "alltoall_utils_pub.h"
 #include "comm_utils.h"
 #include "transport_pub.h"
 #include "dispatcher.h"

@@ -9,8 +9,6 @@
  */
 
 #include "hccl_comm_conn_mgr.h"
-#include "network_manager_pub.h"
-#include "externalinput.h"
 
 using namespace std;
 

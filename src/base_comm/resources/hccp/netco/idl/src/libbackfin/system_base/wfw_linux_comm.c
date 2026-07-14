@@ -11,7 +11,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <execinfo.h>
-#include "securec.h"
 #include "wfw_linux_comm.h"
 
 #ifdef __cplusplus

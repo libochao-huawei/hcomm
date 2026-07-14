@@ -15,7 +15,6 @@
 #include "rank_info_types.h"
 #include "hal.h"
 #include "topo.h"
-#include "host_rdma.h"
 #include "eid_util.h"
 
 #define PRODUCT_CARD_ROCE_LEVEL (3)

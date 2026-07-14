@@ -12,14 +12,10 @@
 #include <securec.h>
 #include <chrono>
 #include <memory>
-#include "network/hccp.h"
 #include "network/hccp_common.h"
 #include "device_capacity.h"
-#include "network_manager_pub.h"
-#include "adapter_rts.h"
 #include "dlhns_function.h"
 #include "adapter_verbs.h"
-#include "adapter_hal.h"
 #include "transport_device_ibverbs.h"
 #include "new/hccl_dispatcher_ctx.h"
 

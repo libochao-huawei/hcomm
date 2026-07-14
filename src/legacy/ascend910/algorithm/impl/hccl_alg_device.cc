@@ -9,12 +9,7 @@
  */
 
 #include "hccl_alg.h"
-#include "alltoall_operator.h"
-#include "all_reduce_operator.h"
-#include "coll_alg_op_registry.h"
 #include "topo_matcher.h"
-#include "topo_info_extractor.h"
-#include "alg_configurator.h"
 
 namespace hccl
 {

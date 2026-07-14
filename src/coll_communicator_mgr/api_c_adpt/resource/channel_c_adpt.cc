@@ -9,7 +9,6 @@
  */
 
 #include "hccl/hccl_res.h"
-#include "channel_manager.h"
 #include "log.h"
 #include "hccl_comm_pub.h"
 #include "independent_op.h"

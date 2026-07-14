@@ -11,7 +11,6 @@
 #include "ccu_kernel.h"
 #include "ccu_rep_v1.h"
 #include "ccu_kernel_resource.h"
-#include "ccu_assist_v1.h"
 #include "ccu_microcode_v1.h"
 
 #include "ccu_types.h"

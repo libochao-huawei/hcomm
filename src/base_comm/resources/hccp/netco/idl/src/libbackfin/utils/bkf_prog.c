@@ -9,7 +9,6 @@
  */
 
 #include "bkf_prog.h"
-#include "v_stringlib.h"
 
 #ifdef __cplusplus
 #if __cplusplus

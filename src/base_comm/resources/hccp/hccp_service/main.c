@@ -21,7 +21,6 @@
 #include "param.h"
 #include "ra_adp.h"
 #include "securec.h"
-#include "dl_ibverbs_function.h"
 #include "dl_hal_function.h"
 
 typedef void (*SighandlerT)(int);

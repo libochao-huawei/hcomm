@@ -13,7 +13,6 @@
 #include "bifrost_cncoi_svc.h"
 #include "bifrost_cncoi_table.h"
 #include "bifrost_cncoi_puber_pri.h"
-#include "v_stringlib.h"
 #include "vos_assert.h"
 #include "bifrost_cncoi_reader.h"
 #if __cplusplus

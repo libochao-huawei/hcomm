@@ -10,7 +10,6 @@
 
 #include <stdlib.h>
 #include <errno.h>
-#include "securec.h"
 #include "ra_hdc_tlv.h"
 #include "ra_rs_err.h"
 #include "rs_tlv.h"

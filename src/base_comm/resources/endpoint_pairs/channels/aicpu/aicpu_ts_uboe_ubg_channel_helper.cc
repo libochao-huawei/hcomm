@@ -11,13 +11,8 @@
 #include "aicpu_ts_uboe_ubg_channel_helper.h"
 #include "endpoint.h"
 #include "orion_adpt_utils.h"
-#include "exception_handler.h"
-#include "user_remote_mem_getter.h"
 
 // Orion
-#include "adapter_rts_common.h"
-#include "coll_alg_param.h"
-#include "topo_common_types.h"
 #include "virtual_topo.h"
 #include "aicpu_res_package_helper.h"
 #include "exchange_ub_buffer_dto.h"
