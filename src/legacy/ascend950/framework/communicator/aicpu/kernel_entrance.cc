@@ -153,5 +153,4 @@ uint32_t HcclDpuTaskexpShmemRestore(void *args)
         commId.c_str(), kernelParam->deviceId, kernelParam->taskexceptionVa, kernelParam->memorySize);
     return 0;
 }
-
 }

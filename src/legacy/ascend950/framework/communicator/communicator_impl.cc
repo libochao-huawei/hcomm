@@ -3577,7 +3577,6 @@ HcclResult CommunicatorImpl::DestroyKFCWorkSpaceVA()
             return HCCL_E_RUNTIME;
         }
 
-
         // 必须先halHostUnregister解除映射，再释放设备内存，否则HrtFree会因内存被pin住而异常
         if (tmpShmem.second.accessVA_ != nullptr) {
             HcclResult ret = HrtHalHostUnregister(tmpShmem.second.accessVA_, deviceLogicId);
