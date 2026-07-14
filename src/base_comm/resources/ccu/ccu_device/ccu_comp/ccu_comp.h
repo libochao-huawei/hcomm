@@ -101,6 +101,7 @@ private:
 
     HcclResult SetProcess(CcuOpcodeType opCode) const;
     HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId);
+    void PrintCcuMissionStatus(int32_t devLogicId) const;
 
 private:
     std::mutex innerMutex_;
