@@ -18,6 +18,11 @@
 #define NET_PHY_ID_MAX 16
 #define BUF_LEN 256
 
+static inline int DlRetConvert(int ret)
+{
+    return ret > 0 ? -ret : ret;
+}
+
 int NetCommGetSelfHome(char *homePath, unsigned int pathLen);
 int NetGetGatewayAddress(unsigned int phyId, unsigned int *gtwAddr);
 

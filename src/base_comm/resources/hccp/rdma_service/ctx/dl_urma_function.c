@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <urma_api.h>
 #include "hccp_dl.h"
+#include "network_comm.h"
 #include "dl_urma_function.h"
 
 static pthread_mutex_t gUrmaApiLock = PTHREAD_MUTEX_INITIALIZER;
@@ -482,7 +483,7 @@ int RsUrmaInit(urma_init_attr_t *conf)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaInit(conf);
+    return DlRetConvert(gUrmaOps.rsUrmaInit(conf));
 }
 
 int RsUrmaUninit(void)
@@ -493,7 +494,7 @@ int RsUrmaUninit(void)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaUninit();
+    return DlRetConvert(gUrmaOps.rsUrmaUninit());
 }
 
 urma_device_t **RsUrmaGetDeviceList(int *numDevices)
@@ -559,7 +560,7 @@ int RsUrmaQueryDevice(urma_device_t *dev, urma_device_attr_t *devAttr)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaQueryDevice(dev, devAttr);
+    return DlRetConvert(gUrmaOps.rsUrmaQueryDevice(dev, devAttr));
 }
 
 int RsUrmaGetEidByIp(const urma_context_t *ctx, const urma_net_addr_t *netAddr, urma_eid_t *eid)
@@ -570,7 +571,7 @@ int RsUrmaGetEidByIp(const urma_context_t *ctx, const urma_net_addr_t *netAddr, 
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaGetEidByIp(ctx, netAddr, eid);
+    return DlRetConvert(gUrmaOps.rsUrmaGetEidByIp(ctx, netAddr, eid));
 }
 
 int RsUrmaGetSmac(const urma_context_t *ctx, uint8_t *mac)
@@ -581,7 +582,7 @@ int RsUrmaGetSmac(const urma_context_t *ctx, uint8_t *mac)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaGetSmac(ctx, mac);
+    return DlRetConvert(gUrmaOps.rsUrmaGetSmac(ctx, mac));
 }
 
 int RsUrmaGetDmac(const urma_context_t *ctx, const urma_net_addr_t *netaddr, uint8_t *mac)
@@ -592,7 +593,7 @@ int RsUrmaGetDmac(const urma_context_t *ctx, const urma_net_addr_t *netaddr, uin
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaGetDmac(ctx, netaddr, mac);
+    return DlRetConvert(gUrmaOps.rsUrmaGetDmac(ctx, netaddr, mac));
 }
 
 urma_context_t *RsUrmaCreateContext(urma_device_t *dev, uint32_t eidIndex)
@@ -614,7 +615,7 @@ int RsUrmaDeleteContext(urma_context_t *ctx)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaDeleteContext(ctx);
+    return DlRetConvert(gUrmaOps.rsUrmaDeleteContext(ctx));
 }
 
 urma_jfr_t *RsUrmaCreateJfr(urma_context_t *ctx, urma_jfr_cfg_t *jfrCfg)
@@ -636,7 +637,7 @@ int RsUrmaDeleteJfr(urma_jfr_t *jfr)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaDeleteJfr(jfr);
+    return DlRetConvert(gUrmaOps.rsUrmaDeleteJfr(jfr));
 }
 
 urma_jfc_t *RsUrmaCreateJfc(urma_context_t *ctx, urma_jfc_cfg_t *jfcCfg)
@@ -658,7 +659,7 @@ int RsUrmaModifyJfc(urma_jfc_t *jfc, urma_jfc_attr_t *attr)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaModifyJfc(jfc, attr);
+    return DlRetConvert(gUrmaOps.rsUrmaModifyJfc(jfc, attr));
 }
 
 int RsUrmaDeleteJfc(urma_jfc_t *jfc)
@@ -669,7 +670,7 @@ int RsUrmaDeleteJfc(urma_jfc_t *jfc)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaDeleteJfc(jfc);
+    return DlRetConvert(gUrmaOps.rsUrmaDeleteJfc(jfc));
 }
 
 urma_jetty_t *RsUrmaCreateJetty(urma_context_t *ctx, urma_jetty_cfg_t *jettyCfg)
@@ -691,7 +692,7 @@ int RsUrmaModifyJetty(urma_jetty_t *jetty, urma_jetty_attr_t *attr)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaModifyJetty(jetty, attr);
+    return DlRetConvert(gUrmaOps.rsUrmaModifyJetty(jetty, attr));
 }
 
 int RsUrmaQueryJetty(urma_jetty_t *jetty, urma_jetty_cfg_t *cfg, urma_jetty_attr_t *attr)
@@ -702,7 +703,7 @@ int RsUrmaQueryJetty(urma_jetty_t *jetty, urma_jetty_cfg_t *cfg, urma_jetty_attr
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaQueryJetty(jetty, cfg, attr);
+    return DlRetConvert(gUrmaOps.rsUrmaQueryJetty(jetty, cfg, attr));
 }
 
 int RsUrmaDeleteJetty(urma_jetty_t *jetty)
@@ -713,7 +714,7 @@ int RsUrmaDeleteJetty(urma_jetty_t *jetty)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaDeleteJetty(jetty);
+    return DlRetConvert(gUrmaOps.rsUrmaDeleteJetty(jetty));
 }
 
 urma_target_jetty_t *RsUrmaImportJetty(urma_context_t *ctx, urma_rjetty_t *rjetty,
@@ -736,7 +737,7 @@ int RsUrmaUnimportJetty(urma_target_jetty_t *tjetty)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaUnimportJetty(tjetty);
+    return DlRetConvert(gUrmaOps.rsUrmaUnimportJetty(tjetty));
 }
 
 int RsUrmaBindJetty(urma_jetty_t *jetty, urma_target_jetty_t *tjetty)
@@ -747,7 +748,7 @@ int RsUrmaBindJetty(urma_jetty_t *jetty, urma_target_jetty_t *tjetty)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaBindJetty(jetty, tjetty);
+    return DlRetConvert(gUrmaOps.rsUrmaBindJetty(jetty, tjetty));
 }
 
 int RsUrmaUnbindJetty(urma_jetty_t *jetty)
@@ -758,7 +759,7 @@ int RsUrmaUnbindJetty(urma_jetty_t *jetty)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaUnbindJetty(jetty);
+    return DlRetConvert(gUrmaOps.rsUrmaUnbindJetty(jetty));
 }
 
 int RsUrmaFlushJetty(urma_jetty_t *jetty, int crCnt, urma_cr_t *cr)
@@ -791,7 +792,7 @@ int RsUrmaDeleteJfce(urma_jfce_t *jfce)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaDeleteJfce(jfce);
+    return DlRetConvert(gUrmaOps.rsUrmaDeleteJfce(jfce));
 }
 
 int RsUrmaGetAsyncEvent(urma_context_t *ctx, urma_async_event_t *event)
@@ -802,7 +803,7 @@ int RsUrmaGetAsyncEvent(urma_context_t *ctx, urma_async_event_t *event)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaGetAsyncEvent(ctx, event);
+    return DlRetConvert(gUrmaOps.rsUrmaGetAsyncEvent(ctx, event));
 }
 
 void RsUrmaAckAsyncEvent(urma_async_event_t *event)
@@ -835,7 +836,7 @@ int RsUrmaFreeTokenId(urma_token_id_t *tokenId)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaFreeTokenId(tokenId);
+    return DlRetConvert(gUrmaOps.rsUrmaFreeTokenId(tokenId));
 }
 
 urma_target_seg_t *RsUrmaRegisterSeg(urma_context_t *ctx, urma_seg_cfg_t *segCfg)
@@ -857,7 +858,7 @@ int RsUrmaUnregisterSeg(urma_target_seg_t *targetSeg)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaUnregisterSeg(targetSeg);
+    return DlRetConvert(gUrmaOps.rsUrmaUnregisterSeg(targetSeg));
 }
 
 urma_target_seg_t *RsUrmaImportSeg(urma_context_t *ctx, urma_seg_t *seg, urma_token_t *tokenValue,
@@ -880,7 +881,7 @@ int RsUrmaUnimportSeg(urma_target_seg_t *tseg)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaUnimportSeg(tseg);
+    return DlRetConvert(gUrmaOps.rsUrmaUnimportSeg(tseg));
 }
 
 int RsUrmaPostJettySendWr(urma_jetty_t *jetty, urma_jfs_wr_t *wr, urma_jfs_wr_t **badWr)
@@ -891,7 +892,7 @@ int RsUrmaPostJettySendWr(urma_jetty_t *jetty, urma_jfs_wr_t *wr, urma_jfs_wr_t 
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaPostJettySendWr(jetty, wr, badWr);
+    return DlRetConvert(gUrmaOps.rsUrmaPostJettySendWr(jetty, wr, badWr));
 }
 
 int RsUrmaPostJettyRecvWr(urma_jetty_t *jetty, urma_jfr_wr_t *wr, urma_jfr_wr_t **badWr)
@@ -902,7 +903,7 @@ int RsUrmaPostJettyRecvWr(urma_jetty_t *jetty, urma_jfr_wr_t *wr, urma_jfr_wr_t 
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaPostJettyRecvWr(jetty, wr, badWr);
+    return DlRetConvert(gUrmaOps.rsUrmaPostJettyRecvWr(jetty, wr, badWr));
 }
 
 int RsUrmaPollJfc(urma_jfc_t *jfc, int crCnt, urma_cr_t *cr)
@@ -924,7 +925,7 @@ int RsUrmaRearmJfc(urma_jfc_t *jfc, bool solicitedOnly)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaRearmJfc(jfc, solicitedOnly);
+    return DlRetConvert(gUrmaOps.rsUrmaRearmJfc(jfc, solicitedOnly));
 }
 
 int RsUrmaWaitJfc(urma_jfce_t *jfce, uint32_t jfcCnt, int timeOut, urma_jfc_t *jfc[])
@@ -957,7 +958,7 @@ int RsUrmaUserCtl(urma_context_t *ctx, urma_user_ctl_in_t *in, urma_user_ctl_out
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaUserCtl(ctx, in, out);
+    return DlRetConvert(gUrmaOps.rsUrmaUserCtl(ctx, in, out));
 }
 
 int RsUrmaGetTpList(urma_context_t *ctx, urma_get_tp_cfg_t *cfg, uint32_t *tpCnt, urma_tp_info_t *tpList)
@@ -968,7 +969,7 @@ int RsUrmaGetTpList(urma_context_t *ctx, urma_get_tp_cfg_t *cfg, uint32_t *tpCnt
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaGetTpList(ctx, cfg, tpCnt, tpList);
+    return DlRetConvert(gUrmaOps.rsUrmaGetTpList(ctx, cfg, tpCnt, tpList));
 }
 
 int RsUrmaGetTpAttr(const urma_context_t *ctx, const uint64_t tpHandle, uint8_t *tpAttrCnt,
@@ -980,7 +981,7 @@ int RsUrmaGetTpAttr(const urma_context_t *ctx, const uint64_t tpHandle, uint8_t 
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaGetTpAttr(ctx, tpHandle, tpAttrCnt, tpAttrBitmap, tpAttr);
+    return DlRetConvert(gUrmaOps.rsUrmaGetTpAttr(ctx, tpHandle, tpAttrCnt, tpAttrBitmap, tpAttr));
 }
 
 int RsUrmaSetTpAttr(const urma_context_t *ctx, const uint64_t tpHandle, const uint8_t tpAttrCnt,
@@ -992,7 +993,7 @@ int RsUrmaSetTpAttr(const urma_context_t *ctx, const uint64_t tpHandle, const ui
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaSetTpAttr(ctx, tpHandle, tpAttrCnt, tpAttrBitmap, tpAttr);
+    return DlRetConvert(gUrmaOps.rsUrmaSetTpAttr(ctx, tpHandle, tpAttrCnt, tpAttrBitmap, tpAttr));
 }
 
 urma_target_jetty_t *RsUrmaImportJettyEx(urma_context_t *ctx, urma_rjetty_t *rjetty, urma_token_t *tokenValue,
@@ -1015,7 +1016,7 @@ int RsUrmaDeleteJettyBatch(urma_jetty_t **jettyArr, int jettyNum, urma_jetty_t *
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaDeleteJettyBatch(jettyArr, jettyNum, badJetty);
+    return DlRetConvert(gUrmaOps.rsUrmaDeleteJettyBatch(jettyArr, jettyNum, badJetty));
 }
 
 int RsUrmaDeleteJfrBatch(urma_jfr_t **jfrArr, int jfrNum, urma_jfr_t **badJfr)
@@ -1026,7 +1027,7 @@ int RsUrmaDeleteJfrBatch(urma_jfr_t **jfrArr, int jfrNum, urma_jfr_t **badJfr)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaDeleteJfrBatch(jfrArr, jfrNum, badJfr);
+    return DlRetConvert(gUrmaOps.rsUrmaDeleteJfrBatch(jfrArr, jfrNum, badJfr));
 }
 
 int RsUrmaAllocJetty(urma_context_t *urmaCtx, urma_jetty_cfg_t *cfg, urma_jetty_t **jetty)
@@ -1037,7 +1038,7 @@ int RsUrmaAllocJetty(urma_context_t *urmaCtx, urma_jetty_cfg_t *cfg, urma_jetty_
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaAllocJetty(urmaCtx, cfg, jetty);
+    return DlRetConvert(gUrmaOps.rsUrmaAllocJetty(urmaCtx, cfg, jetty));
 }
 
 int RsUrmaSetJettyOpt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len)
@@ -1048,7 +1049,7 @@ int RsUrmaSetJettyOpt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaSetJettyOpt(jetty, opt, buf, len);
+    return DlRetConvert(gUrmaOps.rsUrmaSetJettyOpt(jetty, opt, buf, len));
 }
 
 int RsUrmaActiveJetty(urma_jetty_t *jetty)
@@ -1059,7 +1060,7 @@ int RsUrmaActiveJetty(urma_jetty_t *jetty)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaActiveJetty(jetty);
+    return DlRetConvert(gUrmaOps.rsUrmaActiveJetty(jetty));
 }
 
 int RsUrmaGetJettyOpt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len)
@@ -1070,7 +1071,7 @@ int RsUrmaGetJettyOpt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaGetJettyOpt(jetty, opt, buf, len);
+    return DlRetConvert(gUrmaOps.rsUrmaGetJettyOpt(jetty, opt, buf, len));
 }
 
 int RsUrmaDeactiveJetty(urma_jetty_t *jetty)
@@ -1081,7 +1082,7 @@ int RsUrmaDeactiveJetty(urma_jetty_t *jetty)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaDeactiveJetty(jetty);
+    return DlRetConvert(gUrmaOps.rsUrmaDeactiveJetty(jetty));
 }
 
 int RsUrmaFreeJetty(urma_jetty_t *jetty)
@@ -1092,7 +1093,7 @@ int RsUrmaFreeJetty(urma_jetty_t *jetty)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaFreeJetty(jetty);
+    return DlRetConvert(gUrmaOps.rsUrmaFreeJetty(jetty));
 }
 
 int RsUrmaAllocJfc(urma_context_t *urmaCtx, urma_jfc_cfg_t *cfg, urma_jfc_t **jfc)
@@ -1103,7 +1104,7 @@ int RsUrmaAllocJfc(urma_context_t *urmaCtx, urma_jfc_cfg_t *cfg, urma_jfc_t **jf
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaAllocJfc(urmaCtx, cfg, jfc);
+    return DlRetConvert(gUrmaOps.rsUrmaAllocJfc(urmaCtx, cfg, jfc));
 }
 
 int RsUrmaSetJfcOpt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len)
@@ -1114,7 +1115,7 @@ int RsUrmaSetJfcOpt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaSetJfcOpt(jfc, opt, buf, len);
+    return DlRetConvert(gUrmaOps.rsUrmaSetJfcOpt(jfc, opt, buf, len));
 }
 
 int RsUrmaActiveJfc(urma_jfc_t *jfc)
@@ -1125,7 +1126,7 @@ int RsUrmaActiveJfc(urma_jfc_t *jfc)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaActiveJfc(jfc);
+    return DlRetConvert(gUrmaOps.rsUrmaActiveJfc(jfc));
 }
 
 int RsUrmaGetJfcOpt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len)
@@ -1136,7 +1137,7 @@ int RsUrmaGetJfcOpt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaGetJfcOpt(jfc, opt, buf, len);
+    return DlRetConvert(gUrmaOps.rsUrmaGetJfcOpt(jfc, opt, buf, len));
 }
 
 int RsUrmaDeactiveJfc(urma_jfc_t *jfc)
@@ -1147,7 +1148,7 @@ int RsUrmaDeactiveJfc(urma_jfc_t *jfc)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaDeactiveJfc(jfc);
+    return DlRetConvert(gUrmaOps.rsUrmaDeactiveJfc(jfc));
 }
 
 int RsUrmaFreeJfc(urma_jfc_t *jfc)
@@ -1158,5 +1159,5 @@ int RsUrmaFreeJfc(urma_jfc_t *jfc)
         return -EINVAL;
 #endif
     }
-    return gUrmaOps.rsUrmaFreeJfc(jfc);
+    return DlRetConvert(gUrmaOps.rsUrmaFreeJfc(jfc));
 }

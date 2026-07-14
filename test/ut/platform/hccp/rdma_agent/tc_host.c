@@ -858,17 +858,17 @@ void TcHost()
     mocker_clean();
 
 	unsigned long long *notifyVa = NULL;
-    mocker(drvDeviceGetIndexByPhyId, 10 , -1);
+    mocker(drvDeviceGetIndexByPhyId, 10 , 1);
     ret = RaHdcNotifyBaseAddrInit(NOTIFY, 0, &notifyVa);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    mocker(halNotifyGetInfo, 10 , -1);
+    mocker(halNotifyGetInfo, 10 , 1);
     ret = RaHdcNotifyBaseAddrInit(NOTIFY, 0, &notifyVa);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    mocker(halMemAlloc, 10 , -1);
+    mocker(halMemAlloc, 10 , 1);
     ret = RaHdcNotifyBaseAddrInit(NOTIFY, 0, &notifyVa);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();

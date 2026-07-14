@@ -720,7 +720,7 @@ void TcHostNotifyBaseAddrInit001()
 	mocker(drvDeviceGetIndexByPhyId, 1, 1);
     ret = HostNotifyBaseAddrInit(0);
 	mocker_clean();
-    EXPECT_INT_EQ(1, ret);
+    EXPECT_INT_EQ(-1, ret);
 }
 
 void TcHostNotifyBaseAddrInit002()
@@ -732,7 +732,7 @@ void TcHostNotifyBaseAddrInit002()
 	mocker(RsNotifyCfgSet, 1, 0);
     ret = HostNotifyBaseAddrInit(0);
 	mocker_clean();
-    EXPECT_INT_EQ(2, ret);
+    EXPECT_INT_EQ(-2, ret);
 }
 
 void TcHostNotifyBaseAddrInit003()
@@ -832,7 +832,7 @@ void TcHostNotifyBaseAddrUninit002()
 mocker(drvDeviceGetIndexByPhyId, 1, 1);
     ret = HostNotifyBaseAddrUninit(0);
 	mocker_clean();
-    EXPECT_INT_EQ(1, ret);
+    EXPECT_INT_EQ(-1, ret);
 }
 
 void TcHostNotifyBaseAddrUninit003()

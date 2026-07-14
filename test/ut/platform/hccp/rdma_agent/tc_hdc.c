@@ -446,7 +446,7 @@ void TcHdcSocketSend()
 
     mocker((stub_fn_t)drvHdcAddMsgBuffer, 10, 10);
     ret = RaHdcSocketSend(gDevid, &socketInfo, sendBuf, sizeof(sendBuf));
-    EXPECT_INT_EQ(ret, -EINVAL);
+    EXPECT_INT_EQ(ret, -10);
 	mocker((stub_fn_t)RaHdcSessionClose, 10, 0);
     TcHdcTestEnvDeinit();
 
@@ -863,7 +863,7 @@ void TcHdcSocketInit()
     EXPECT_INT_EQ(ret, -ESAFEFUNC);
     mocker_clean();
 
-    mocker((stub_fn_t)drvGetDevNum, 1, -1);
+    mocker((stub_fn_t)drvGetDevNum, 1, 1);
     ret = RaHdcSocketInit(rdevInfo);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
@@ -1049,9 +1049,9 @@ void TcHdcRdevDeinit()
 
 	mocker((stub_fn_t)RaHdcProcessMsg, 1, 0);
 	mocker((stub_fn_t)RaHdcNotifyCfgGet, 1, 0);
-	mocker((stub_fn_t)halMemFree, 1, -2);
-	ret = RaHdcRdevDeinit(&rdmaHandle, NOTIFY);
-	EXPECT_INT_EQ(ret, -2);
+    mocker((stub_fn_t)halMemFree, 1, 2);
+    ret = RaHdcRdevDeinit(&rdmaHandle, NOTIFY);
+    EXPECT_INT_EQ(ret, -2);
 	mocker_clean();
 }
 
@@ -1220,33 +1220,33 @@ void TcHdcMessageProcessFail()
     EXPECT_INT_EQ(ret, -ESAFEFUNC);
 
     mocker_clean();
-    mocker((stub_fn_t)drvHdcAllocMsg, 1, -10);
+    mocker((stub_fn_t)drvHdcAllocMsg, 1, 10);
     ret = RaHdcGetIfaddrs(0, infos, &num);
     EXPECT_INT_EQ(ret, -10);
 
     mocker_clean();
-    mocker((stub_fn_t)drvHdcAddMsgBuffer, 1, -10);
+    mocker((stub_fn_t)drvHdcAddMsgBuffer, 1, 10);
     ret = RaHdcGetIfaddrs(0, infos, &num);
     EXPECT_INT_EQ(ret, -10);
 
     mocker_clean();
-    mocker((stub_fn_t)halHdcSend, 1, -10);
+    mocker((stub_fn_t)halHdcSend, 1, 10);
     ret = RaHdcGetIfaddrs(0, infos, &num);
     EXPECT_INT_EQ(ret, -10);
 
     mocker_clean();
-    mocker((stub_fn_t)drvHdcReuseMsg, 1, -10);
+    mocker((stub_fn_t)drvHdcReuseMsg, 1, 10);
     ret = RaHdcGetIfaddrs(0, infos, &num);
     EXPECT_INT_EQ(ret, -10);
 
     mocker_clean();
-    mocker((stub_fn_t)halHdcRecv, 1, -10);
+    mocker((stub_fn_t)halHdcRecv, 1, 10);
     ret = RaHdcGetIfaddrs(0, infos, &num);
     EXPECT_INT_EQ(ret, -10);
 
     mocker_clean();
     mocker((stub_fn_t)halHdcRecv, 1, 0);
-    mocker((stub_fn_t)drvHdcGetMsgBuffer, 1, -10);
+    mocker((stub_fn_t)drvHdcGetMsgBuffer, 1, 10);
     ret = RaHdcGetIfaddrs(0, infos, &num);
     EXPECT_INT_EQ(ret, -10);
 
@@ -1277,7 +1277,7 @@ void TcHdcSocketRecvFail()
 
     mocker((stub_fn_t)drvHdcAddMsgBuffer, 10, 10);
     ret = RaHdcSocketRecv(gDevid, &socketInfo, sendBuf, sizeof(sendBuf));
-    EXPECT_INT_EQ(ret, -EINVAL);
+    EXPECT_INT_EQ(ret, -10);
 	mocker((stub_fn_t)RaHdcSessionClose, 10, 0);
     TcHdcTestEnvDeinit();
 }

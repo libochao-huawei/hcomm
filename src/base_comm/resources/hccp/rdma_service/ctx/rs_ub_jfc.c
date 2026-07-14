@@ -118,7 +118,6 @@ STATIC int RsJfcResAddrMunmap(struct RsCtxJfcCb *jfcCb, struct UdmaVaInfo *vaInf
     resInfoIn.priv_len = sizeof(struct UdmaVaInfo);
     resInfoIn.priv = (void *)vaInfo;
     ret = DlHalResAddrUnmapV2(jfcCb->devCb->rscb->logicId, &resInfoIn);
-    ret = ret > 0 ? -ret : ret;
     CHK_PRT_RETURN(ret != 0, hccp_err("DlHalResAddrUnmapV2 failed, res_type:%d ret:%d, errno:%d",
         resInfoIn.res_type, ret, errno), ret);
 
@@ -138,7 +137,6 @@ STATIC int RsJfcResAddrMmap(struct RsCtxJfcCb *jfcCb, struct UdmaVaInfo *vaInfo,
     resInfoIn.priv_len = sizeof(struct UdmaVaInfo);
     resInfoIn.priv = (void *)vaInfo;
     ret = DlHalResAddrMapV2(jfcCb->devCb->rscb->logicId, &resInfoIn, resInfoOut);
-    ret = ret > 0 ? -ret : ret;
     CHK_PRT_RETURN(ret != 0, hccp_err("DlHalResAddrMapV2 failed, res_type:%d ret:%d, errno:%d",
         resInfoIn.res_type, ret, errno), ret);
 

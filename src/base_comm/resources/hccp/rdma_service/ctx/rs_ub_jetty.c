@@ -38,7 +38,7 @@ STATIC int RsResAddrMunmap(struct RsCtxJettyCb *jettyCb, struct UdmaVaInfo *vaIn
     resInfoIn.priv = (void *)vaInfo;
     ret = DlHalResAddrUnmapV2(jettyCb->devCb->rscb->logicId, &resInfoIn);
     CHK_PRT_RETURN(ret != 0, hccp_err("DlHalResAddrUnmapV2 failed, res_type:%d ret:%d, errno:%d",
-        resInfoIn.res_type, ret, errno), -ret);
+        resInfoIn.res_type, ret, errno), ret);
 
     return ret;
 }
@@ -57,7 +57,7 @@ STATIC int RsResAddrMmap(struct RsCtxJettyCb *jettyCb, struct UdmaVaInfo *vaInfo
     resInfoIn.priv = (void *)vaInfo;
     ret = DlHalResAddrMapV2(jettyCb->devCb->rscb->logicId, &resInfoIn, resInfoOut);
     CHK_PRT_RETURN(ret != 0, hccp_err("DlHalResAddrMapV2 failed, res_type:%d ret:%d, errno:%d",
-        resInfoIn.res_type, ret, errno), -ret);
+        resInfoIn.res_type, ret, errno), ret);
 
     return ret;
 }
