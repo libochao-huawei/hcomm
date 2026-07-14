@@ -117,6 +117,10 @@ int RaSocketWhiteListAdd(void *socket_handle, struct SocketWlistInfoT white_list
 
 int RaTlvInit(struct TlvInitInfo *init_info, unsigned int *buffer_size, void **tlv_handle)
 {
+    static char fakeTlvHandle;
+    if (tlv_handle != nullptr) {
+        *tlv_handle = &fakeTlvHandle;
+    }
     return 0;
 }
 int RaTlvRequest(void *tlv_handle, unsigned int module_type, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)
@@ -306,11 +310,6 @@ int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEidInfo info_list[], u
 }
 
 int RaGetDevBaseAttr(void *ctx_handle, struct DevBaseAttr *attr)
-{
-    return 0;
-}
-
-int RaCustomChannel(struct RaInfo info, struct CustomChanInfoIn *in, struct CustomChanInfoOut *out)
 {
     return 0;
 }

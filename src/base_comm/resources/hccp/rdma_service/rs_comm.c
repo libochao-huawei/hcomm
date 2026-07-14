@@ -91,6 +91,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_TLV_INIT, 1},
     {RA_RS_TLV_DEINIT, 1},
     {RA_RS_TLV_REQUEST, 1},
+    {RA_RS_TLV_REQUEST_V2, 1},
 #endif
     {RA_RS_GET_TLS_ENABLE, 1},
     {RA_RS_GET_SEC_RANDOM, 1},
@@ -124,7 +125,6 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_CTX_QP_BIND, 1},
     {RA_RS_CTX_QP_UNBIND, 1},
     {RA_RS_CTX_BATCH_SEND_WR, 1},
-    {RA_RS_CUSTOM_CHANNEL, 1},
     {RA_RS_CTX_UPDATE_CI, 1},
     {RA_RS_CTX_GET_AUX_INFO, 1},
     {RA_RS_CTX_GET_CR_ERR_INFO_LIST, 1},

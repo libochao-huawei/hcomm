@@ -22,6 +22,7 @@ struct RsCcuOps gCcuOps = {
     .rsCcuCustomChannel = ccu_custom_channel,
     .rsCcuGetCqeBaseAddr = ccu_get_cqe_base_addr,
     .rsCcuGetMemInfo = ccu_get_mem_info,
+    .rsCcuTlvRequest = ccu_tlv_request,
 };
 #endif
 
@@ -44,7 +45,11 @@ STATIC int RsCcuDeviceApiInit(void)
 
     gCcuOps.rsCcuGetMemInfo = (int (*)(unsigned int dieId, unsigned long long memTypeBitmap,
         struct ccu_mem_rsp *rsp)) HccpDlsym(gCcuApiHandle, "ccu_get_mem_info");
-    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuGetCqeBaseAddr, "ccu_get_mem_info");
+    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuGetMemInfo, "ccu_get_mem_info");
+
+    gCcuOps.rsCcuTlvRequest = (int (*)(struct ccu_tlv_request_info *tlvRequestInfo)) 
+        HccpDlsym(gCcuApiHandle, "ccu_tlv_request");
+    DL_API_RET_IS_NULL_INFO(gCcuOps.rsCcuTlvRequest, "ccu_tlv_request");
 #endif
     return 0;
 }
@@ -158,4 +163,27 @@ int RsCcuGetMemInfo(char *dataIn, char* dataOut, unsigned int *bufferSize)
     }
     *bufferSize = sizeof(struct ccu_mem_rsp);
     return gCcuOps.rsCcuGetMemInfo(memReq->udieIdx, memReq->memTypeBitmap, rsp);
+}
+
+bool isCcuTlvReqExist() {
+    if (gCcuApiHandle == NULL || gCcuOps.rsCcuTlvRequest == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_info("g_ccu_api_handle is NULL or rsCcuTlvRequest is NULL");
+        return false;
+#endif
+    }
+    return true;
+}
+
+int RsCcuTlvRequest(unsigned int type, char *dataIn, char *dataOut, unsigned int dataInlength, unsigned int *dataOutLength) {
+    int ret = 0;
+    struct ccu_tlv_request_info tlvRequestInfo = {
+        .ccuMsg = type,
+        .dataIn = dataIn,
+        .dataInLength = dataInlength,
+        .dataOut = dataOut,
+    };
+    ret = gCcuOps.rsCcuTlvRequest(&tlvRequestInfo);
+    *dataOutLength = tlvRequestInfo.dataOutLength;
+    return ret;
 }

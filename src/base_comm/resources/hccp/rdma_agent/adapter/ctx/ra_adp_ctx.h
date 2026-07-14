@@ -55,7 +55,6 @@ struct RsCtxOps {
     int (*ctxBatchSendWr)(struct WrlistBaseInfo *baseInfo, struct BatchSendWrData *wrData,
         struct SendWrResp *wrResp, struct WrlistSendCompleteNum *wrlistNum);
     int (*ctxUpdateCi)(struct RaRsDevInfo *devInfo, unsigned int qpId, uint16_t ci);
-    int (*ccuCustomChannel)(const struct CustomChanInfoIn *in, struct CustomChanInfoOut *out);
     int (*ctxQpQueryBatch)(struct RaRsDevInfo *devInfo, unsigned int ids[], struct JettyAttr attr[],
         unsigned int *num);
     int (*ctxGetAuxInfo)(struct RaRsDevInfo *devInfo, struct HccpAuxInfoIn *infoIn,
@@ -94,7 +93,6 @@ int RaRsCtxQpBind(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 int RaRsCtxQpUnbind(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 int RaRsCtxUpdateCi(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 int RaRsCtxBatchSendWr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
-int RaRsCustomChannel(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 int RaRsCtxGetAuxInfo(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 int RaRsCtxGetCrErrInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 int RaRsCtxGetUbContext(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);

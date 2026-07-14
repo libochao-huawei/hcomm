@@ -20,7 +20,7 @@
 struct RsTlvOps {
     int (*tlvInit)(unsigned int phyId, unsigned int *bufferSize);
     int (*tlvDeinit)(unsigned int phyId);
-    int (*tlvRequest)(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut, unsigned int *bufferSize);
+    int (*tlvRequest)(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut, unsigned int *bufferSize, unsigned int dataMaxLength);
 };
 
 struct RsTlvOps gRaRsTlvOps = {
@@ -74,11 +74,29 @@ int RaRsTlvRequest(char *inBuf, char *outBuf, int *outLen, int *opResult, int rc
     HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTlvRequestData), sizeof(struct MsgHead), rcvBufLen, opResult);
 
     *opResult = gRaRsTlvOps.tlvRequest(&dataIn->txData.head, dataIn->txData.data, dataOut->rxData.recvData,
-            &dataOut->rxData.recvBytes);
+            &dataOut->rxData.recvBytes, MAX_TLV_MSG_DATA_LEN);
 
     CHK_PRT_RETURN(*opResult == -EUSERS || *opResult == -ENOTSUPP, hccp_warn("tlv request unsuccessful"), 0);
     if (*opResult != 0) {
         hccp_err("tlv_request failed ret[%d]", *opResult);
+    }
+
+    return 0;
+}
+
+int RaRsTlvRequestV2(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpTlvRequestDataV2 *dataOut = (union OpTlvRequestDataV2 *)(outBuf + sizeof(struct MsgHead));
+    union OpTlvRequestDataV2 *dataIn = (union OpTlvRequestDataV2 *)(inBuf + sizeof(struct MsgHead));
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTlvRequestDataV2), sizeof(struct MsgHead), rcvBufLen, opResult);
+
+    *opResult = gRaRsTlvOps.tlvRequest(&dataIn->txData.head, dataIn->txData.data, dataOut->rxData.recvData,
+            &dataOut->rxData.recvBytes, MAX_TLV_MSG_DATA_LEN_V2);
+
+    CHK_PRT_RETURN(*opResult == -EUSERS || *opResult == -ENOTSUPP, hccp_warn("tlv request v2 unsuccessful"), 0);
+    if (*opResult != 0) {
+        hccp_err("tlv_request_v2 failed ret[%d]", *opResult);
     }
 
     return 0;

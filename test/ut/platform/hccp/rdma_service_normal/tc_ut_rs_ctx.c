@@ -20,7 +20,6 @@
 #include "rs_ub_dfx.h"
 #include "rs_ub.h"
 #include "rs_ctx.h"
-#include "rs_ccu.h"
 #include "rs_esched.h"
 #include "tc_ut_rs_ctx.h"
 #include "ascend_hal_dl.h"
@@ -406,18 +405,6 @@ void TcRsCtxUpdateCi()
     mocker_clean();
 }
 
-void TcRsCtxCustomChannel()
-{
-    struct CustomChanInfoOut out = {0};
-    struct CustomChanInfoIn in = {0};
-    int ret = 0;
-
-    mocker_clean();
-    mocker(RsCtxCcuCustomChannel, 1, 0);
-    ret = RsCtxCustomChannel(&in, &out);
-    mocker_clean();
-}
-
 void TcRsCtxEsched()
 {
     TsCcuTaskReportT ccuTaskInfo = {0};
@@ -431,7 +418,6 @@ void TcRsCtxEsched()
     int ret = 0;
 
     mocker_clean();
-    mocker(RsCtxCcuCustomChannel, 10, 0);
     mocker(RsUbFreeJettyCbList, 10, 0);
     mocker(pthread_mutex_lock, 10, 0);
     mocker(pthread_mutex_unlock, 10, 0);
@@ -466,12 +452,6 @@ void TcRsCtxEsched()
     EXPECT_INT_EQ(ret, 0);
 
     hccpMsg->isAppExit = 0;
-    hccpMsg->cmdType = 1;
-    hccpMsg->u.ccuTaskInfo = ccuTaskInfo;
-    ret = RsEschedProcessEvent(&rscb, &event);
-    EXPECT_INT_EQ(ret, 0);
-
-    hccpMsg->isAppExit = 0;
     hccpMsg->cmdType = 2;
     ret = RsEschedProcessEvent(&rscb, &event);
     EXPECT_INT_EQ(ret, -EINVAL);
@@ -486,7 +466,6 @@ void TcRsCtxEsched()
     mocker_clean();
 
     mocker(DlHalEschedWaitEvent, 10, 0);
-    mocker(RsCtxCcuCustomChannel, 10, 0);
     mocker(RsUbFreeJettyCbList, 10, 0);
     mocker(pthread_mutex_lock, 10, 0);
     mocker(pthread_mutex_unlock, 10, 0);

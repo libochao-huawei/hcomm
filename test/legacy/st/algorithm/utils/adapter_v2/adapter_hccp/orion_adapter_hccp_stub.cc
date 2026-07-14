@@ -17,7 +17,7 @@ void HrtRaUbDestroyJetty(JettyHandle jettyHandle)
     ;
 }
 
-void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
+void HrtRaTlvRequestForCustomChannel(void *tlvHandle, u32 msgType, void *customIn, void *customOut)
 {
     CustomChannelInfoIn *input = reinterpret_cast<CustomChannelInfoIn *>(customIn);
     CustomChannelInfoOut *output = reinterpret_cast<CustomChannelInfoOut *>(customOut);

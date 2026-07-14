@@ -192,9 +192,9 @@ TEST_F(CcuPfeTest, GetPfeJettyStrategy)
     inBuff.data.dataInfo.dataLen = 512;
     inBuff.data.dataInfo.dataArraySize = 64;
 
-    MOCKER(HrtRaCustomChannel)
+    MOCKER(HrtRaTlvRequestForCustomChannel)
         .stubs()
-        .with(mockcpp::any(), outBoundP(reinterpret_cast<void *>(&inBuff), sizeof(inBuff)), outBoundP(reinterpret_cast<void *>(&inBuff), sizeof(inBuff)));
+        .with(mockcpp::any(), mockcpp::any(), outBoundP(reinterpret_cast<void *>(&inBuff), sizeof(inBuff)), outBoundP(reinterpret_cast<void *>(&inBuff), sizeof(inBuff)));
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
         .with(mockcpp::any())

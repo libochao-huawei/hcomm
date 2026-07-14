@@ -19,6 +19,7 @@ struct RsCcuOps {
     int (*rsCcuCustomChannel)(const struct channel_info_in *in, struct channel_info_out *out);
     unsigned long long (*rsCcuGetCqeBaseAddr)(unsigned int dieId);
     int (*rsCcuGetMemInfo)(unsigned int dieId, unsigned long long memTypeBitmap, struct ccu_mem_rsp *rsp);
+    int (*rsCcuTlvRequest)(struct ccu_tlv_request_info *tlvRequestInfo);
 };
 
 int RsCcuApiInit(void);
@@ -29,4 +30,6 @@ int RsCcuUninit(void);
 int RsCcuCustomChannel(const struct channel_info_in *in, struct channel_info_out *out);
 int RsCcuGetCqeBaseAddr(unsigned int dieId, unsigned long long *cqeBaseAddr);
 int RsCcuGetMemInfo(char *dataIn, char *dataOut, unsigned int *bufferSize);
+int RsCcuTlvRequest(unsigned int type, char *dataIn, char *dataOut, unsigned int dataInlength, unsigned int *dataOutLength); 
+bool isCcuTlvReqExist();
 #endif // DL_CCU_FUNCTION_H

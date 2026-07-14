@@ -1613,6 +1613,7 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_TLV_INIT, RaRsTlvInit, sizeof(union OpTlvInitData)},
     {RA_RS_TLV_DEINIT, RaRsTlvDeinit, sizeof(union OpTlvDeinitData)},
     {RA_RS_TLV_REQUEST, RaRsTlvRequest, sizeof(union OpTlvRequestData)},
+    {RA_RS_TLV_REQUEST_V2, RaRsTlvRequestV2, sizeof(union OpTlvRequestDataV2)},
 #endif
     {RA_RS_GET_TLS_ENABLE, RaRsGetTlsEnable, sizeof(union OpGetTlsEnableData)},
     {RA_RS_GET_SEC_RANDOM, RaRsGetSecRandom, sizeof(union OpGetSecRandomData)},
@@ -1647,7 +1648,6 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_CTX_QP_BIND, RaRsCtxQpBind, sizeof(union OpCtxQpBindData)},
     {RA_RS_CTX_QP_UNBIND, RaRsCtxQpUnbind, sizeof(union OpCtxQpUnbindData)},
     {RA_RS_CTX_BATCH_SEND_WR, RaRsCtxBatchSendWr, sizeof(union OpCtxBatchSendWrData)},
-    {RA_RS_CUSTOM_CHANNEL, RaRsCustomChannel, sizeof(union OpCustomChannelData)},
     {RA_RS_CTX_UPDATE_CI, RaRsCtxUpdateCi, sizeof(union OpCtxUpdateCiData)},
     {RA_RS_CTX_GET_AUX_INFO, RaRsCtxGetAuxInfo, sizeof(union OpCtxGetAuxInfoData)},
     {RA_RS_CTX_GET_CR_ERR_INFO_LIST, RaRsCtxGetCrErrInfoList, sizeof(union OpCtxGetCrErrInfoListData)},

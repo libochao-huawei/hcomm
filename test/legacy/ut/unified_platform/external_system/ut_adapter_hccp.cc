@@ -16,6 +16,7 @@
 #include "hccp_common.h"
 #include "orion_adapter_hccp.h"
 #include "network_api_exception.h"
+#include "null_ptr_exception.h"
 #include "internal_exception.h"
 #include "hccp_async.h"
 #include "ub_memory_transport.h"
@@ -155,6 +156,69 @@ TEST_F(AdapterHccpTest, RaTlvRequest_nok)
 
     // then
     EXPECT_THROW(HrtRaTlvRequest(tlv_handle, 1, 1), NetworkApiException);
+}
+
+TEST_F(AdapterHccpTest, RaTlvRequestForCustomChannel_ok)
+{
+    // Given
+    MOCKER(RaTlvRequest).stubs().will(returnValue(0));
+    void* tlv_handle = reinterpret_cast<void*>(0x1234);
+    char inBuff[8] = {0};
+    char outBuff[8] = {0};
+
+    // when
+    HrtRaTlvRequestForCustomChannel(tlv_handle, MSG_TYPE_CCU_DISPATCH_CMD, inBuff, outBuff);
+    // then
+}
+
+TEST_F(AdapterHccpTest, RaTlvRequestForCustomChannel_tlvHandleNull)
+{
+    // Given
+    char inBuff[8] = {0};
+    char outBuff[8] = {0};
+
+    // when
+
+    // then
+    EXPECT_THROW(HrtRaTlvRequestForCustomChannel(nullptr, MSG_TYPE_CCU_DISPATCH_CMD, inBuff, outBuff), NullPtrException);
+}
+
+TEST_F(AdapterHccpTest, RaTlvRequestForCustomChannel_customInNull)
+{
+    // Given
+    void* tlv_handle = reinterpret_cast<void*>(0x1234);
+    char outBuff[8] = {0};
+
+    // when
+
+    // then
+    EXPECT_THROW(HrtRaTlvRequestForCustomChannel(tlv_handle, MSG_TYPE_CCU_DISPATCH_CMD, nullptr, outBuff), NullPtrException);
+}
+
+TEST_F(AdapterHccpTest, RaTlvRequestForCustomChannel_customOutNull)
+{
+    // Given
+    void* tlv_handle = reinterpret_cast<void*>(0x1234);
+    char inBuff[8] = {0};
+
+    // when
+
+    // then
+    EXPECT_THROW(HrtRaTlvRequestForCustomChannel(tlv_handle, MSG_TYPE_CCU_DISPATCH_CMD, inBuff, nullptr), NullPtrException);
+}
+
+TEST_F(AdapterHccpTest, RaTlvRequestForCustomChannel_nok)
+{
+    // Given
+    MOCKER(RaTlvRequest).stubs().will(returnValue(1));
+    void* tlv_handle = reinterpret_cast<void*>(0x1234);
+    char inBuff[8] = {0};
+    char outBuff[8] = {0};
+
+    // when
+
+    // then
+    EXPECT_THROW(HrtRaTlvRequestForCustomChannel(tlv_handle, MSG_TYPE_CCU_DISPATCH_CMD, inBuff, outBuff), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, RaTlvDeInit_ok)

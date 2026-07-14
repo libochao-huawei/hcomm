@@ -744,7 +744,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_ccu)
     MOCKER(CcuCleanDieCkes).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuComponent::Init).stubs();
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(0)));
-    MOCKER(HrtRaCustomChannel).stubs();
+    MOCKER(HrtRaTlvRequestForCustomChannel).stubs();
 
     // 调用 TaskExceptionHandler::Process() 打印异常DFX信息
     MOCKER(TaskExceptionHandler::PrintAicpuErrorMessage).stubs();
@@ -830,7 +830,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_mc2)
     MOCKER(CcuCleanDieCkes).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuComponent::Init).stubs();
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(0));
-    MOCKER(HrtRaCustomChannel).stubs();
+    MOCKER(HrtRaTlvRequestForCustomChannel).stubs();
 
     TaskExceptionHandler::Process(&exceptionInfo);
 }

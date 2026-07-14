@@ -745,22 +745,6 @@ int RaHdcCtxUpdateCi(struct RaCtxQpHandle *qpHandle, uint16_t ci)
     return 0;
 }
 
-int RaHdcCustomChannel(unsigned int phyId, struct CustomChanInfoIn *in, struct CustomChanInfoOut *out)
-{
-    union OpCustomChannelData opData = {0};
-    int ret;
-
-    opData.txData.phyId = phyId;
-    (void)memcpy_s(&opData.txData.info, sizeof(struct CustomChanInfoIn), in, sizeof(struct CustomChanInfoIn));
-
-    ret = RaHdcProcessMsg(RA_RS_CUSTOM_CHANNEL, phyId, (char *)&opData, sizeof(union OpCustomChannelData));
-    CHK_PRT_RETURN(ret != 0, hccp_err("[custom]hdc message process failed ret[%d], phyId[%u]", ret, phyId), ret);
-
-    (void)memcpy_s(out, sizeof(struct CustomChanInfoOut), &opData.rxData.info,
-        sizeof(struct CustomChanInfoOut));
-    return 0;
-}
-
 int RaHdcCtxQpQueryBatch(unsigned int phyId, unsigned int devIndex, unsigned int ids[],
     struct JettyAttr attr[], unsigned int *num)
 {

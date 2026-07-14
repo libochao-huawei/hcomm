@@ -564,11 +564,6 @@ int RaGetDevBaseAttr(void *ctx_handle, struct DevBaseAttr *attr)
     return 0;
 }
 
-int RaCustomChannel(struct RaInfo info, struct CustomChanInfoIn *in, struct CustomChanInfoOut *out)
-{
-    return 0;
-}
-
 int RaCtxUpdateCi(void *qp_handle, uint16_t ci)
 {
     return 0;

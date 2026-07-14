@@ -456,21 +456,6 @@ void TcRaCtxUpdateCi()
     mocker_clean();
 }
 
-void TcRaCustomChannel()
-{
-    struct CustomChanInfoOut out = {0};
-    struct CustomChanInfoIn in = {0};
-    struct RaInfo info = {0};
-    int ret = 0;
-
-    mocker_clean();
-    mocker(RaHdcProcessMsg, 1, 0);
-    info.mode = NETWORK_OFFLINE;
-    ret = RaCustomChannel(info, &in, &out);
-    EXPECT_INT_EQ(0, ret);
-    mocker_clean();
-}
-
 void TcRaGetTpInfoListAsync()
 {
     struct HccpTpInfo infoList[HCCP_MAX_TPID_INFO_NUM] = {0};

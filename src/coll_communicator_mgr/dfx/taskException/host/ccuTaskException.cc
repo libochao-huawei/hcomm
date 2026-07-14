@@ -23,6 +23,7 @@
 #include "../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"
 #include "orion_adpt_utils.h"
 #include "hcomm_adapter_hccp.h"
+#include "hccp_tlv_hdc_manager.h"
 #include "adapter_rts_common.h"
 #include "ccu_rep_loopgroup_bundle_v1.h"
 #include "ccu_rep_type_v1.h"
@@ -283,10 +284,9 @@ CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint3
 {
     CcuMissionContext missionCtx{};
 
-    u32 devicePhyId = 0;
-    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceId);
+    CHK_PRT_RET(tlvHandle == nullptr,
+        HCCL_ERROR("[%s]tlvHandle is null, deviceId[%d]", __func__, deviceId), missionCtx);
 
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
@@ -297,9 +297,9 @@ CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint3
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个MissionContext
     inBuff.data.dataInfo.dataLen       = sizeof(CcuMissionContext) * inBuff.data.dataInfo.dataArraySize;
 
-    ret = HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
+    HcclResult ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
 
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", __func__, ret), missionCtx);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaTlvRequestForCustomChannel fail, ret[%d]", __func__, ret), missionCtx);
     auto sret = memcpy_s(&missionCtx, sizeof(missionCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), missionCtx);
     return missionCtx;
@@ -361,10 +361,9 @@ uint16_t CcuTaskException::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint
 {
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
-    u32 devicePhyId = 0;
-    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%u]", __func__, deviceId), INVALID_U16);
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceId);
+    CHK_PRT_RET(tlvHandle == nullptr,
+        HCCL_ERROR("[%s]tlvHandle is null, deviceId[%d]", __func__, deviceId), INVALID_U16);
 
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_CKE;
     inBuff.data.dataInfo.udieIdx       = dieId;
@@ -372,8 +371,8 @@ uint16_t CcuTaskException::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个CKE
     inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
 
-    ret = HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", __func__, ret), INVALID_U16);
+    HcclResult ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaTlvRequestForCustomChannel fail, ret[%d]", __func__, ret), INVALID_U16);
 
     uint64_t ckeVal{0};
     s32 sret = memcpy_s(&ckeVal, sizeof(ckeVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
@@ -430,10 +429,9 @@ uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint
 {
     uint64_t gsaVal{0};
 
-    u32 devicePhyId = 0;
-    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), INVALID_U64);
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceId);
+    CHK_PRT_RET(tlvHandle == nullptr,
+        HCCL_ERROR("[%s]tlvHandle is null, deviceId[%d]", __func__, deviceId), INVALID_U64);
 
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
@@ -444,8 +442,8 @@ uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个GSA
     inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
 
-    ret = HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", __func__, ret), INVALID_U64);
+    HcclResult ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaTlvRequestForCustomChannel fail, ret[%d]", __func__, ret), INVALID_U64);
 
     auto sret = memcpy_s(&gsaVal, sizeof(gsaVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), INVALID_U64);
@@ -454,11 +452,10 @@ uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint
 
 uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId)
 {
-    u32 devicePhyId = 0;
-    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceId);
+    CHK_PRT_RET(tlvHandle == nullptr,
+        HCCL_ERROR("[%s]tlvHandle is null, deviceId[%d]", __func__, deviceId), INVALID_U64);
     uint64_t xnVal{0};
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), INVALID_U64);
 
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
@@ -469,9 +466,9 @@ uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint3
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个Xn
     inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
 
-    ret = HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
+    HcclResult ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
 
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", __func__, ret), INVALID_U64);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaTlvRequestForCustomChannel fail, ret[%d]", __func__, ret), INVALID_U64);
 
     auto sret = memcpy_s(&xnVal, sizeof(xnVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), INVALID_U64);
@@ -778,10 +775,9 @@ CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t di
 {
     CcuLoopContext loopCtx{};
 
-    u32 devicePhyId = 0;
-    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s],ret[%d]", __func__, deviceId, ret), loopCtx);
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(deviceId);
+    CHK_PRT_RET(tlvHandle == nullptr,
+        HCCL_ERROR("[%s]tlvHandle is null, deviceId[%d]", __func__, deviceId), loopCtx);
 
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
@@ -792,8 +788,8 @@ CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t di
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个LoopContext
     inBuff.data.dataInfo.dataLen       = sizeof(CcuLoopContext) * inBuff.data.dataInfo.dataArraySize;
 
-    ret = HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", __func__, ret), loopCtx);
+    HcclResult ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, static_cast<void*>(&inBuff), static_cast<void*>(&outBuff));
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaTlvRequestForCustomChannel fail, ret[%d]", __func__, ret), loopCtx);
     auto sret = memcpy_s(&loopCtx, sizeof(loopCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), loopCtx);
     return loopCtx;

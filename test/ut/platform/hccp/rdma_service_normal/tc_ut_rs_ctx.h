@@ -38,7 +38,6 @@ void TcRsCtxQpBind();
 void TcRsCtxQpUnbind();
 void TcRsCtxBatchSendWr();
 void TcRsCtxUpdateCi();
-void TcRsCtxCustomChannel();
 void TcRsCtxEsched();
 void TcDlCcuApiInit();
 void TcRsGetTpInfoList();

@@ -28,7 +28,6 @@
 #include "rs_ub_tp.h"
 #include "rs_ub_dfx.h"
 #include "rs_ub.h"
-#include "rs_ccu.h"
 #include "rs_ctx.h"
 #include "rs_common_inner.h"
 #include "rs_inner.h"

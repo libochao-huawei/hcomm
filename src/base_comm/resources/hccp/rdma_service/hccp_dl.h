@@ -25,6 +25,12 @@
     } \
 } while (0)
 
+#define DL_API_RET_IS_NULL_INFO(p, str) do { \
+    if ((p) == NULL) { \
+        hccp_info("ptr is NULL!, [%s]", (str)); \
+    } \
+} while (0)
+
 void *HccpDlopen(const char *libName, int mode);
 void *HccpDlsym(void *handle, const char *funcName);
 int HccpDlclose(void *handle);

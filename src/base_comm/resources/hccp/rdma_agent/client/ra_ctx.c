@@ -941,28 +941,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxUpdateCi(void *qpHandle, uint16_t ci)
     return ConverReturnCode(RDMA_OP, ret);
 }
 
-HCCP_ATTRI_VISI_DEF int RaCustomChannel(struct RaInfo info, struct CustomChanInfoIn *in,
-    struct CustomChanInfoOut *out)
-{
-    int ret = 0;
-
-    CHK_PRT_RETURN(info.phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[custom]phy_id(%u) must smaller than %u",
-        info.phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
-    CHK_PRT_RETURN(in == NULL || out == NULL, hccp_err("[custom]in or out is NULL"),
-        ConverReturnCode(RDMA_OP, -EINVAL));
-
-    if (info.mode == NETWORK_OFFLINE) {
-        ret = RaHdcCustomChannel(info.phyId, in, out);
-        CHK_PRT_RETURN(ret != 0, hccp_err("[custom]ra_hdc_custom_channel failed, ret(%d) phyId(%u)",
-            ret, info.phyId), ConverReturnCode(RDMA_OP, ret));
-    } else {
-        hccp_err("[custom]mode(%d) do not support, phyId(%u)", info.mode, info.phyId);
-        return ConverReturnCode(RDMA_OP, -EINVAL);
-    }
-
-    return ret;
-}
-
 HCCP_ATTRI_VISI_DEF int RaCtxGetAuxInfo(void *ctxHandle, struct HccpAuxInfoIn *in, struct HccpAuxInfoOut *out)
 {
     struct RaCtxHandle *ctxHandleTmp = NULL;

@@ -12,8 +12,11 @@
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 #include "hcomm_adapter_hccp.h"
+#include "hccp_common.h"
+#include "hccp_tlv.h"
 
 using namespace hcomm;
+using namespace Hccl;
 
 class HcommAdapterHccpTest : public testing::Test {
 protected:
@@ -97,5 +100,64 @@ TEST_F(HcommAdapterHccpTest, ut_HccpCheckUboeSupported_When_DevFeatureBitNotSet_
     devFeature = 0xFFFFFFFF & ~(1 << UBOE_DEV_FLAG_RIGHT_SHIFT);
     result = HccpCheckUboeSupported(devFeature);
     EXPECT_FALSE(result);
+}
+
+// ========== HccpRaTlvRequestForCustomChannel 测试 ==========
+
+TEST_F(HcommAdapterHccpTest, ut_HccpRaTlvRequestForCustomChannel_When_RaTlvRequestOk_Expect_ReturnHCCL_SUCCESS)
+{
+    void *tlvHandle = reinterpret_cast<void *>(0x1234);
+    char inBuff[8] = {0};
+    char outBuff[8] = {0};
+
+    MOCKER(RaTlvRequest)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(0));
+
+    HcclResult ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, inBuff, outBuff);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcommAdapterHccpTest, ut_HccpRaTlvRequestForCustomChannel_When_TlvHandleNull_Expect_ReturnHCCL_E_PTR)
+{
+    char inBuff[8] = {0};
+    char outBuff[8] = {0};
+
+    HcclResult ret = HccpRaTlvRequestForCustomChannel(nullptr, MSG_TYPE_CCU_DISPATCH_CMD, inBuff, outBuff);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcommAdapterHccpTest, ut_HccpRaTlvRequestForCustomChannel_When_CustomInNull_Expect_ReturnHCCL_E_PTR)
+{
+    void *tlvHandle = reinterpret_cast<void *>(0x1234);
+    char outBuff[8] = {0};
+
+    HcclResult ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, nullptr, outBuff);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcommAdapterHccpTest, ut_HccpRaTlvRequestForCustomChannel_When_CustomOutNull_Expect_ReturnHCCL_E_PTR)
+{
+    void *tlvHandle = reinterpret_cast<void *>(0x1234);
+    char inBuff[8] = {0};
+
+    HcclResult ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, inBuff, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcommAdapterHccpTest, ut_HccpRaTlvRequestForCustomChannel_When_RaTlvRequestFail_Expect_ReturnHCCL_E_NETWORK)
+{
+    void *tlvHandle = reinterpret_cast<void *>(0x1234);
+    char inBuff[8] = {0};
+    char outBuff[8] = {0};
+
+    MOCKER(RaTlvRequest)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(-1));
+
+    HcclResult ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, inBuff, outBuff);
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
 }
 

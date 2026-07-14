@@ -163,14 +163,8 @@ TEST_F(CcuTaskExceptionTest, PrintPaniclogInfo) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_Normal) {
-    // 模拟hrtGetDevicePhyIdByIndex
-    MOCKER(hrtGetDevicePhyIdByIndex)
-        .stubs()
-        .with(mockcpp::any(), mockcpp::any())
-        .will(returnValue(HCCL_SUCCESS));
-
-    // 模拟HccpRaCustomChannel
-    MOCKER(HccpRaCustomChannel)
+    // 模拟HccpRaTlvRequestForCustomChannel
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
@@ -180,9 +174,9 @@ TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_Normal) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_GetDevicePhyIdFail) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
-        .with(mockcpp::any(), mockcpp::any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     uint16_t result = CcuTaskException::GetCcuCKEValue(0, 0, 0);
@@ -190,11 +184,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_GetDevicePhyIdFail) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_CustomChannelFail) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
-        .stubs()
-        .with(mockcpp::any(), mockcpp::any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HccpRaCustomChannel)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
@@ -204,11 +194,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_CustomChannelFail) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetMissContectF) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
-        .stubs()
-        .with(mockcpp::any(), mockcpp::any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HccpRaCustomChannel)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
@@ -218,9 +204,9 @@ TEST_F(CcuTaskExceptionTest, GetMissContectF) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetDevidFail) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
-        .with(mockcpp::any(), mockcpp::any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
@@ -228,11 +214,7 @@ TEST_F(CcuTaskExceptionTest, GetDevidFail) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetMissContectFail) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
-        .stubs()
-        .with(mockcpp::any(), mockcpp::any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HccpRaCustomChannel)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
@@ -243,11 +225,7 @@ TEST_F(CcuTaskExceptionTest, GetMissContectFail) {
 
 constexpr uint64_t INVALID_U64_VAL = 18446744073709551615ULL;
 TEST_F(CcuTaskExceptionTest, GetCcuGSAValue) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
-        .stubs()
-        .with(mockcpp::any(), mockcpp::any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HccpRaCustomChannel)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
@@ -257,9 +235,9 @@ TEST_F(CcuTaskExceptionTest, GetCcuGSAValue) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuGSAValuegetdevidfailed) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
-        .with(mockcpp::any(), mockcpp::any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     uint64_t result = CcuTaskException::GetCcuGSAValue(0, 0, 0);
@@ -267,11 +245,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuGSAValuegetdevidfailed) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuGSAValuechannelfail) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
-        .stubs()
-        .with(mockcpp::any(), mockcpp::any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HccpRaCustomChannel)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
@@ -281,11 +255,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuGSAValuechannelfail) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuXnValue) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
-        .stubs()
-        .with(mockcpp::any(), mockcpp::any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HccpRaCustomChannel)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
@@ -295,9 +265,9 @@ TEST_F(CcuTaskExceptionTest, GetCcuXnValue) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuXnValuedevidfailed) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
-        .with(mockcpp::any(), mockcpp::any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
 
     uint64_t result = CcuTaskException::GetCcuXnValue(0, 0, 0);
@@ -305,11 +275,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuXnValuedevidfailed) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuXnValuechannelfail) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
-        .stubs()
-        .with(mockcpp::any(), mockcpp::any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HccpRaCustomChannel)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
@@ -342,11 +308,7 @@ TEST_F(CcuTaskExceptionTest, GetCcuErrorMsgMission) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_Normal) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
-        .stubs()
-        .with(mockcpp::any(), mockcpp::any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(HccpRaCustomChannel)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
@@ -356,9 +318,9 @@ TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_Normal) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_GetDevicePhyIdFail) {
-    MOCKER(hrtGetDevicePhyIdByIndex)
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
-        .with(mockcpp::any(), mockcpp::any())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_PARA));
     CcuLoopContext result = CcuTaskException::GetCcuLoopContext(0, 0, 0);
     EXPECT_EQ(result.part0.value, 0u);

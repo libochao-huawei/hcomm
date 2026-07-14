@@ -130,11 +130,6 @@ int RsCtxBatchSendWr(struct WrlistBaseInfo *baseInfo, struct BatchSendWrData *wr
     return 0;
 }
 
-int RsCtxCustomChannel(const struct ChannelInfoIn *in, struct ChannelInfoOut *out)
-{
-    return 0;
-}
-
 int RsCtxUpdateCi(struct RaRsDevInfo *devInfo, unsigned int qpId, uint16_t ci)
 {
     return 0;

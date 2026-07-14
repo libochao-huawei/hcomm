@@ -133,9 +133,10 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
     return HcclResult::HCCL_SUCCESS;
 }
 
-void* HrtRaTlvInit(HRaTlvInitConfig  &cfg) 
+void* HrtRaTlvInit(HRaTlvInitConfig  &cfg)
 {
-    return nullptr; 
+    static char fakeTlvHandle;
+    return &fakeTlvHandle;
 }
 
 void HrtRaTlvDeInit(void* tlv_handle)

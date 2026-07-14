@@ -116,3 +116,35 @@ void TcRaRsTlvRequest()
     free(outBuf);
     outBuf = NULL;
 }
+
+void TcRaRsTlvRequestV2()
+{
+    union OpTlvRequestDataV2 dataIn;
+    union OpTlvRequestDataV2 dataOut;
+    int rcvBufLen = 0;
+    int opResult = 0;
+    int outLen = 0;
+    int ret;
+
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvRequestDataV2));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvRequestDataV2));
+
+    dataIn.txData.head.moduleType = TLV_MODULE_TYPE_CCU;
+    dataIn.txData.head.phyId = 0;
+    mocker((stub_fn_t)RsTlvRequest, 1, 0);
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpTlvRequestDataV2),
+        &dataIn, sizeof(union OpTlvRequestDataV2));
+    ret = RaRsTlvRequest(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(ret, 0);
+    mocker_clean();
+
+    mocker((stub_fn_t)RsTlvRequest, 1, -1);
+    ret = RaRsTlvRequest(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(ret, 0);
+    mocker_clean();
+
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
+}

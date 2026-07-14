@@ -147,9 +147,12 @@ int RaGetHccnCfg(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned
 
 } // extern "C"
  
-int RaCustomChannel(struct RaInfo info, struct CustomChanInfoIn *in,
-    struct CustomChanInfoOut *out)
+int RaTlvRequest(void *tlvHandle, unsigned int moduleType, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg)
 {
+    if (recvMsg != nullptr && sendMsg != nullptr) {
+        recvMsg->type = sendMsg->type;
+        recvMsg->length = sendMsg->length;
+    }
     return 0;
 }
  
@@ -213,11 +216,6 @@ HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
     (void)info;
     tlsStatus = TlsStatus::DISABLE;
     return HCCL_SUCCESS;
-}
-
-void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
-{
-    return;
 }
 
 void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args, const std::string& name)

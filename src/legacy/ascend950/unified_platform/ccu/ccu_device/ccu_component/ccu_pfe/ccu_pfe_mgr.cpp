@@ -13,6 +13,7 @@
 #include "ccu_res_specs.h"
 #include "orion_adapter_hccp.h"
 #include "ccu_pfe_cfg_generator.h"
+#include "hccp_tlv_hdc_manager.h"
 
 namespace Hccl {
 
@@ -40,10 +41,12 @@ inline PfeJettyStrategy BuildStrategy(const PfeJettyCtxCfg &cfg)
     return pfeJettyStrategy;
 }
 
-static void ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, const uint32_t feId,
+static void ConfigPfeTable(const int32_t devLogicId, const uint32_t devPhyId, const uint8_t dieId, const uint32_t feId,
     const uint32_t pfeReservedNum, const PfeCtx &pfeCtx)
 {
-    const HRaInfo info(HrtNetworkMode::HDC, devPhyId);
+    auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    CHECK_NULLPTR(tlvHandle, StringFormat("[CcuPfeMgr][%s] tlvHandle is nullptr, devLogicId[%d]", __func__, devLogicId));
+
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
     (void)memset_s(inBuff.data.raw, sizeof(inBuff.data.raw), 0, sizeof(inBuff.data.raw));
@@ -65,7 +68,7 @@ static void ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, const u
  
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen, &pfeCtx,
         inBuff.data.dataInfo.dataLen);
-    HrtRaCustomChannel(info, reinterpret_cast<void *>(&inBuff), reinterpret_cast<void *>(&outBuff));
+    HrtRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
 }
 
 CcuPfeMgr::CcuPfeMgr(const int32_t devLogicId, const uint8_t dieId, const uint32_t devPhyId)
@@ -97,7 +100,7 @@ CcuPfeMgr::CcuPfeMgr(const int32_t devLogicId, const uint8_t dieId, const uint32
         pfeMap[feId] = BuildStrategy(cfg);
 
         const auto &pfeCtx = BuildPfeCtx(cfg);
-        ConfigPfeTable(devPhyId, dieId, feId, pfeReservedNum, pfeCtx);
+        ConfigPfeTable(devLogicId, devPhyId, dieId, feId, pfeReservedNum, pfeCtx);
         HCCL_INFO("[CcuPfeMgr] config pfe table end, devLogicId[%d] dieId[%u] feId[%u]",
                 devLogicId, dieId, feId);
     }

@@ -16,7 +16,6 @@
 #include "hccp_common.h"
 #include "ra_rs_err.h"
 #include "rs_ub.h"
-#include "rs_ccu.h"
 #include "rs_esched.h"
 
 struct RsEschedInfo gRsEschedInfo = {0};
@@ -43,23 +42,6 @@ STATIC void RsEschedJettyDestroy(struct rs_cb *rscb, TsUbTaskReportT *taskInfo)
     return;
 }
 
-STATIC void RsEschedCcuMissionKill(unsigned int logicId, TsCcuTaskReportT *taskInfo)
-{
-    int ret, i;
-
-    for (i = 0; i < taskInfo->num; i++) {
-        ret = RsCtxCcuMissionKill(taskInfo->array[i].udieId);
-        if (ret != 0) {
-            hccp_run_warn("ccu set task_kill unsuccessful, ret[%d] task_index[%d] logicId[%u] udieId[%u]",
-                ret, i, logicId, taskInfo->array[i].udieId);
-            continue;
-        }
-        hccp_info("ccu set task_kill success, task_index[%d] logicId[%u] udieId[%u]", i, logicId,
-            taskInfo->array[i].udieId);
-    }
-    return;
-}
-
 STATIC int RsEschedExecByCmdType(struct rs_cb *rscb, struct TagTsHccpMsg *msg)
 {
     int ret = 0;
@@ -67,9 +49,6 @@ STATIC int RsEschedExecByCmdType(struct rs_cb *rscb, struct TagTsHccpMsg *msg)
     switch (msg->cmdType) {
         case 0: // UB force kill
             RsEschedJettyDestroy(rscb, &msg->u.ubTaskInfo);
-            break;
-        case 1: // CCU force kill
-            RsEschedCcuMissionKill(rscb->logicId, &msg->u.ccuTaskInfo);
             break;
         default:
             hccp_run_warn("tag_ts_hccp_msg unsupported cmd type[%u]", msg->cmdType);
@@ -83,7 +62,6 @@ STATIC void RsEschedCleanAllResource(struct rs_cb *rscb)
 {
     struct RsUbDevCb *devCbCurr = NULL;
     struct RsUbDevCb *devCbNext = NULL;
-    int ret;
 
     RS_PTHREAD_MUTEX_LOCK(&rscb->mutex);
 
@@ -93,17 +71,6 @@ STATIC void RsEschedCleanAllResource(struct rs_cb *rscb)
          devCbNext = list_entry(devCbNext->list.next, struct RsUbDevCb, list)) {
         hccp_info("logicId[%u] devIndex[%u] start clean", rscb->logicId, devCbCurr->index);
         RsUbFreeJettyCbList(devCbCurr, &devCbCurr->jettyList, &devCbCurr->rjettyList);
-
-        ret = RsCtxCcuMissionKill(devCbCurr->devAttr.ub.dieId);
-        if (ret != 0) {
-            hccp_run_warn("ccu set task_kill unsuccessful, ret[%d] devIndex[%u]", ret, devCbCurr->index);
-            continue;
-        }
-
-        ret = RsCtxCcuMissionDone(devCbCurr->devAttr.ub.dieId);
-        if (ret != 0) {
-            hccp_run_warn("ccu clean task_kill status unsuccessful, ret[%d] devIndex[%u]", ret, devCbCurr->index);
-        }
     }
 
     RS_PTHREAD_MUTEX_ULOCK(&rscb->mutex);

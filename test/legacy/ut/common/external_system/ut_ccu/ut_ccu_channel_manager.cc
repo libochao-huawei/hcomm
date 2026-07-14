@@ -151,7 +151,6 @@ TEST(ChannelManagerTest, ConfigChannelDataTest) {
     // 调用待测试函数 channelManager.ConfigChannelData(cfg);
 
     // 验证结果
-    // 这里我们假设HrtRaCustomChannel函数会改变channelData_的值
 
 }
 

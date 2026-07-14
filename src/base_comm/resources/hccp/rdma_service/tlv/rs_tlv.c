@@ -15,6 +15,7 @@
 #include "rs_adp_nslb.h"
 #include "rs_inner.h"
 #include "dl_ccu_function.h"
+#include "rs_ctx.h"
 #include "rs_tlv.h"
 
 STATIC int RsGetTlvCb(uint32_t phyId, struct RsTlvCb **tlvCb)
@@ -85,7 +86,7 @@ RS_ATTRI_VISI_DEF int RsTlvDeinit(unsigned int phyId)
 }
 
 STATIC int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMsgHead *head, char *data,
-    bool *isSendFinish)
+    bool *isSendFinish, unsigned int dataMaxLength)
 {
     int ret = 0;
 
@@ -93,9 +94,9 @@ STATIC int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMs
     CHK_PRT_RETURN(head->offset >= bufInfo->bufferSize,
         hccp_err("[recv][rs_tlv]param error, offset(%u) >= bufferSize(%u), phyId(%u)",
         head->offset, bufInfo->bufferSize, head->phyId), -EINVAL);
-    CHK_PRT_RETURN(head->sendBytes > MAX_TLV_MSG_DATA_LEN,
+    CHK_PRT_RETURN(head->sendBytes > dataMaxLength,
         hccp_err("[recv][rs_tlv]param error, sendBytes(%u) >= data size(%u), phyId(%u)",
-        head->sendBytes, MAX_TLV_MSG_DATA_LEN, head->phyId), -EINVAL);
+        head->sendBytes, dataMaxLength, head->phyId), -EINVAL);
     CHK_PRT_RETURN((head->offset + head->sendBytes) > head->totalBytes,
         hccp_err("[recv][rs_tlv]data overflow, offset(%u) + sendBytes(%u) > totalBytes(%u), phyId(%u)",
         head->offset, head->sendBytes, head->totalBytes, head->phyId), -EINVAL);
@@ -118,6 +119,14 @@ STATIC int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMs
 STATIC int RsCcuRequest(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut, unsigned int *bufferSize)
 {
     int ret = 0;
+    if (isCcuTlvReqExist()) {
+        ret = RsCcuTlvRequest(head->type, dataIn, dataOut, head->totalBytes, bufferSize);
+        CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_tlv_request failed, ret(%d) msg_type(%u) phy_id(%u)",
+                ret, head->type, head->phyId), ret);
+        CHK_PRT_RETURN(*bufferSize > MAX_TLV_MSG_DATA_LEN_V2, hccp_err("rs_ccu_tlv_request rsp length exceeds limit, ret(%d) msg_type(%u) phy_id(%u)",
+                ret, head->type, head->phyId), -EINVAL);
+        return 0;
+    }
 
     switch (head->type) {
         case MSG_TYPE_CCU_INIT:
@@ -135,6 +144,12 @@ STATIC int RsCcuRequest(struct TlvRequestMsgHead *head, char *dataIn, char *data
             CHK_PRT_RETURN(ret != 0, hccp_err("RsCcuGetMemInfo failed, ret(%d) module_type(%u) msg_type(%u) phyId(%u)",
                 ret, head->moduleType, head->type, head->phyId), ret);
             break;
+        case MSG_TYPE_CCU_DISPATCH_CMD:
+            ret = RsCcuCustomChannel((struct channel_info_in *)dataIn, (struct channel_info_out *)dataOut);
+            *bufferSize = sizeof(struct channel_info_out);
+            CHK_PRT_RETURN(ret != 0, hccp_err("RsCcuDispatchCmd failed, ret(%d) module_type(%u) msg_type(%u) phyId(%u)",
+                ret, head->moduleType, head->type, head->phyId), ret);
+            break;            
         default:
             hccp_err("[request][rs_ccu]msg type error, module_type(%u) msg_type(%u) phyId(%u)",
                 head->moduleType, head->type, head->phyId);
@@ -145,7 +160,7 @@ STATIC int RsCcuRequest(struct TlvRequestMsgHead *head, char *dataIn, char *data
 }
 
 RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut,
-    unsigned int *bufferSize)
+    unsigned int *bufferSize, unsigned int dataMaxLength)
 {
     struct RsTlvCb *tlvCb = NULL;
     bool isSendFinish = false;
@@ -160,7 +175,7 @@ RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *dataIn,
         hccp_err("rs_tlv buf not initialized, phyId(%u)", head->phyId), -EINVAL);
 
     RS_PTHREAD_MUTEX_LOCK(&tlvCb->mutex);
-    ret = RsTlvAssembleSendData(&tlvCb->bufInfo, head, dataIn, &isSendFinish);
+    ret = RsTlvAssembleSendData(&tlvCb->bufInfo, head, dataIn, &isSendFinish, dataMaxLength);
     if (ret != 0) {
         hccp_err("rs_tlv_assemble_send_data failed, ret(%d) phyId(%u)", ret, tlvCb->phyId);
         goto tlv_request_release_lock;
@@ -176,7 +191,7 @@ RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *dataIn,
                     head->type, tlvCb->bufInfo.buf, head->totalBytes);
             break;
         case TLV_MODULE_TYPE_CCU:
-            ret = RsCcuRequest(head, dataIn, dataOut, bufferSize);
+            ret = RsCcuRequest(head, tlvCb->bufInfo.buf, dataOut, bufferSize);
             break;
         default:
             hccp_err("[request][rs_tlv]module type error, moduleType(%u) phyId(%u)", head->moduleType, head->phyId);

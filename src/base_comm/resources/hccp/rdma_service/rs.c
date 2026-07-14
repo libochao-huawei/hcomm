@@ -44,7 +44,6 @@
 #include "rs_tlv.h"
 #endif
 #include "ra_rs_ctx.h"
-#include "rs_ccu.h"
 #include "rs_ctx.h"
 #include "rs_esched.h"
 #include "dl_net_function.h"

@@ -1224,11 +1224,6 @@ void TcRaRsTestCtxOps()
     TcCommonTest();
 
     TcAdpEnvInit();
-    mocker((stub_fn_t)gRaRsCtxOps.ccuCustomChannel, 1, 0);
-    AddTestMsg(RA_RS_CUSTOM_CHANNEL, sizeof(union OpCustomChannelData));
-    TcCommonTest();
-
-    TcAdpEnvInit();
     mocker((stub_fn_t)gRaRsCtxOps.ctxQpDestroyBatch, 1, 0);
     AddTestMsg(RA_RS_CTX_QP_DESTROY_BATCH, sizeof(union OpCtxQpDestroyBatchData));
     TcCommonTest();

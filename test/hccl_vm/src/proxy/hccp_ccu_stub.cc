@@ -431,33 +431,6 @@ int GetCcuVersion(channel_info_out* output, uint32_t deviceId)
     return 0;
 }
 
-int RaCustomChannel(struct RaInfo info, struct CustomChanInfoIn *in, struct CustomChanInfoOut *out)
-{
-    channel_info_in *input = reinterpret_cast<channel_info_in *>(in);
-    channel_info_out *output = reinterpret_cast<channel_info_out *>(out);
-    uint8_t  dieId = input->data.data_info.udie_idx;
-    uint32_t devId = info.phyId;
-
-    switch (input->op) {
-        case ccu_u_opcode_t::CCU_U_OP_GET_DIE_WORKING:
-            return GetEnableCcuDie(output, dieId);
-        case ccu_u_opcode_t::CCU_U_OP_GET_BASIC_INFO:
-            return SetCcuResourceBasicInfo(output, dieId, devId);
-        case ccu_u_opcode_t::CCU_U_OP_SET_INSTRUCTION:
-            return LoadMicrocodeInstructionStub(devId, dieId, input);
-        case ccu_u_opcode_t::CCU_U_OP_SET_CHANNEL:
-            return ConfigChannelInfo(input, devId);
-        case ccu_u_opcode_t::CCU_U_OP_SET_JETTY_CTX:
-            return ConfigJettyInfo(input, devId);
-        case ccu_u_opcode_t::CCU_U_OP_GET_VERSION:
-            return GetCcuVersion(output, devId);
-        default:
-            break;
-    }
-
-    return 0;
-}
-
 int RaCtxGetAsyncEvents(void *ctxHandle, struct AsyncEvent events[], unsigned int *num)
 {
     sleep(1);

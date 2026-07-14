@@ -172,7 +172,7 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle,
     const HccpUbJettyImportedInParam &in, std::vector<char> &out,
     void *&remQpHandle, RequestHandle &reqHandle);
 
-HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut);
+HcclResult HccpRaTlvRequestForCustomChannel(void *tlvHandle, unsigned int msgType, void *customIn, void *customOut);
 
 HcclResult HccpRaGetDevBaseAttr(void *ctxHandle, struct DevBaseAttr *attr);
 

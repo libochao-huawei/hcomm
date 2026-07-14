@@ -31,12 +31,22 @@ struct ccu_mem_rsp {
     struct ccu_mem_info list[64U];
 };
 
+struct ccu_tlv_request_info {
+    unsigned int ccuMsg;
+    char* dataIn;
+    char* dataOut;
+    unsigned int dataInLength;
+    unsigned int dataOutLength;
+    unsigned int resv[8];
+};
+
 CCU_ATTRI_VISI_DEF int ccu_init(void);
 CCU_ATTRI_VISI_DEF int ccu_uninit(void);
 CCU_ATTRI_VISI_DEF unsigned long long ccu_get_cqe_base_addr(unsigned int die_id);
 CCU_ATTRI_VISI_DEF int ccu_custom_channel(const struct channel_info_in *in, struct channel_info_out *out);
 CCU_ATTRI_VISI_DEF int ccu_get_mem_info(unsigned int die_id, unsigned long long mem_type_bitmap,
     struct ccu_mem_rsp *rsp);
+CCU_ATTRI_VISI_DEF int ccu_tlv_request(struct ccu_tlv_request_info *tlvRequestInfo);
 int get_ccu_u_info(unsigned int die_id, struct ccu_u_info *info);
 int get_region_by_op(ccu_u_opcode_t op, struct ccu_region **region);
 

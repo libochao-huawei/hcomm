@@ -19,7 +19,6 @@
 #include "ra_rs_err.h"
 #include "rs_inner.h"
 #include "rs_ctx_inner.h"
-#include "rs_ccu.h"
 #include "rs_ub.h"
 #include "rs_ub_tp.h"
 #include "rs_ub_dfx.h"
@@ -702,28 +701,6 @@ RS_ATTRI_VISI_DEF int RsCtxUpdateCi(struct RaRsDevInfo *devInfo, unsigned int qp
             return -EINVAL;
     }
     return ret;
-}
-
-RS_ATTRI_VISI_DEF int RsCtxCustomChannel(const struct CustomChanInfoIn *in, struct CustomChanInfoOut *out)
-{
-    struct channel_info_out chanOut = {0};
-    struct channel_info_in chanIn = {0};
-    int ret;
-
-    RS_CHECK_POINTER_NULL_RETURN_INT(in);
-    RS_CHECK_POINTER_NULL_RETURN_INT(out);
-
-    ret = memcpy_s(&chanIn, sizeof(struct channel_info_in), in, sizeof(struct CustomChanInfoIn));
-    CHK_PRT_RETURN(ret != 0, hccp_err("[ccu]memcpy_s in failed, ret[%d]", ret), -ESAFEFUNC);
-
-    ret = RsCtxCcuCustomChannel(&chanIn, &chanOut);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[ccu]rs_ctx_ccu_custom_channel failed, ret[%d]", ret), ret);
-
-    // prepare output data
-    ret = memcpy_s(out, sizeof(struct CustomChanInfoOut), &chanOut, sizeof(struct channel_info_out));
-    CHK_PRT_RETURN(ret != 0, hccp_err("[ccu]memcpy_s out failed, ret[%d]", ret), -ESAFEFUNC);
-
-    return 0;
 }
 
 RS_ATTRI_VISI_DEF int RsCtxQpDestroyBatch(struct RaRsDevInfo *devInfo, unsigned int ids[], unsigned int *num)

@@ -2322,6 +2322,8 @@ void TcRaHdcTlvRequest()
     sendMsg.length = 0;
     sendMsg.type = 0;
     mocker(RaHdcProcessMsg, 100, 0);
+    gInterfaceVersion = 1;
+    mocker_invoke(RaHdcGetInterfaceVersion, StubRaGetInterfaceVersion, 10);
     ret = RaHdcTlvRequest(&tlvHandleTmp, moduleType, &sendMsg, &recvMsg);
     EXPECT_INT_EQ(ret, 0);
 
@@ -2336,6 +2338,8 @@ void TcRaHdcTlvRequest()
     }
 
     mocker(RaHdcProcessMsg, 100, 0);
+    gInterfaceVersion = 1;
+    mocker_invoke(RaHdcGetInterfaceVersion, StubRaGetInterfaceVersion, 10);
     ret = RaHdcTlvRequest(&tlvHandleTmp, moduleType, &sendMsg, &recvMsg);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();

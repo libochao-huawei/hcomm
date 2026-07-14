@@ -12,6 +12,8 @@
 
 #include "log.h"
 #include "orion_adpt_utils.h"
+#include "hccp_tlv.h"
+#include "hccp_common.h"
 
 #include "hccp_async.h"
 #include "hccp_async_ctx.h"
@@ -445,30 +447,28 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle, const HccpUbJetty
         cfg, mode, in.jettyImportCfg.protocol, reqHandle);
 }
 
-HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut)
+HcclResult HccpRaTlvRequestForCustomChannel(void *tlvHandle, unsigned int msgType, void *customIn, void *customOut)
 {
-    HCCL_INFO("[%s]mode[%s], phyId[%u], customIn[%p], customOut[%p]",
-        __func__, mode.Describe().c_str(), phyId, customIn, customOut);
+    CHK_PTR_NULL(tlvHandle);
     CHK_PTR_NULL(customIn);
     CHK_PTR_NULL(customOut);
-    struct RaInfo info {};
 
-    static std::unordered_map<HrtNetworkMode, NetworkMode, std::EnumClassHash> HRT_NETWORK_MODE_MAP = {
-        {HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE},
-        {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
+    struct TlvMsg sendMsg {};
+    sendMsg.type = msgType;
+    sendMsg.length = sizeof(CustomChanInfoIn);
+    sendMsg.data = static_cast<char *>(customIn);
 
-    auto it = HRT_NETWORK_MODE_MAP.find(mode);
-    CHK_PRT_RET(it == HRT_NETWORK_MODE_MAP.end(),
-        HCCL_ERROR("[%s]fail, mode[%s] is invalid", __func__, mode.Describe().c_str()), HCCL_E_PARA);
-    info.mode = it->second;
-    info.phyId = phyId;
-    
-    struct CustomChanInfoIn  *in  = reinterpret_cast<struct CustomChanInfoIn *>(customIn);
-    struct CustomChanInfoOut *out = reinterpret_cast<struct CustomChanInfoOut *>(customOut);
+    struct TlvMsg recvMsg {};
+    recvMsg.type = msgType;
+    recvMsg.length = sizeof(CustomChanInfoOut);
+    recvMsg.data = static_cast<char *>(customOut);
 
-    int ret = RaCustomChannel(info, in, out);
-    CHK_PRT_RET(ret != 0, HCCL_ERROR("[%s]RaCustomChannel fail, mode[%s], phyId[%u], customIn[%p], customOut[%p]",
-        __func__, mode.Describe().c_str(), phyId, customIn, customOut), HCCL_E_NETWORK);
+    int ret = RaTlvRequest(tlvHandle, TLV_MODULE_TYPE_CCU, &sendMsg, &recvMsg);
+    if (ret != 0) {
+        HCCL_ERROR("[%s] RaTlvRequest fail, tlvHandle[%p], ret[%d]",
+            __func__, tlvHandle, ret);
+        return HCCL_E_NETWORK;
+    }
     return HCCL_SUCCESS;
 }
 

@@ -346,19 +346,6 @@ union OpCtxUpdateCiData {
     } rxData;
 };
 
-union OpCustomChannelData {
-    struct {
-        unsigned int phyId;
-        struct CustomChanInfoIn info;
-        unsigned int rsvd[64U];
-    } txData;
-
-    struct {
-        struct CustomChanInfoOut info;
-        unsigned int rsvd[64U];
-    } rxData;
-};
-
 union OpCtxQpQueryBatchData {
     struct {
         unsigned int phyId;
@@ -461,7 +448,6 @@ int RaHdcCtxQpUnbind(struct RaCtxQpHandle *qpHandle);
 int RaHdcCtxBatchSendWr(struct RaCtxQpHandle *qpHandle, struct SendWrData wrList[],
     struct SendWrResp opResp[], unsigned int sendNum, unsigned int *completeNum);
 int RaHdcCtxUpdateCi(struct RaCtxQpHandle *qpHandle, uint16_t ci);
-int RaHdcCustomChannel(unsigned int phyId, struct CustomChanInfoIn *in, struct CustomChanInfoOut *out);
 int RaHdcCtxGetAuxInfo(struct RaCtxHandle *ctxHandle, struct HccpAuxInfoIn *in, struct HccpAuxInfoOut *out);
 int RaHdcCtxGetCrErrInfoList(struct RaCtxHandle *ctxHandle, struct CrErrInfo *infoList, unsigned int *num);
 int RaHdcCtxGetJettyContext(struct RaCtxQpHandle *qpHandle, uint8_t context[], unsigned int *len);

@@ -30,7 +30,6 @@ set(RS_SOURCE_LIST
     ctx/dl_ccu_function.c
     ctx/dl_urma_function.c
     ctx/rs_ping_urma.c
-    ctx/rs_ccu.c
     ctx/rs_ctx.c
     ctx/rs_esched.c
     ctx/rs_ub.c

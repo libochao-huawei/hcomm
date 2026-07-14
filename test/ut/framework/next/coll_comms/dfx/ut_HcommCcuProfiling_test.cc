@@ -525,7 +525,7 @@ public:
             .stubs()
             .with(mockcpp::any(), mockcpp::any())
             .will(returnValue(HCCL_SUCCESS));
-        MOCKER(HccpRaCustomChannel)
+        MOCKER(HccpRaTlvRequestForCustomChannel)
             .stubs()
             .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
             .will(returnValue(HCCL_SUCCESS));
@@ -1088,27 +1088,6 @@ TEST_F(CcuRepContextTest, AddProfilingchannelNumMuch_Normal) {
     EXPECT_EQ(HCCL_SUCCESS,ret);
 }
 
-namespace {
-
-class MockHccpRaCustomChannel {
-public:
-    static uint32_t dieId_;
-    static uint32_t callCount_;
-    static uint32_t lastOpCode_;
-
-    static void Setup() {
-        callCount_ = 0;
-        lastOpCode_ = 0;
-    }
-};
-
-uint32_t MockHccpRaCustomChannel::dieId_ = 0;
-uint32_t MockHccpRaCustomChannel::callCount_ = 0;
-uint32_t MockHccpRaCustomChannel::lastOpCode_ = 0;
-
-}
-
-
 
 class CcuComponentTest : public ::testing::Test {
 protected:
@@ -1135,8 +1114,8 @@ TEST_F(CcuComponentTest, CleanDieCkes_InvalidDieId) {
 
 TEST_F(CcuComponentTest, CcuComponentTestSetProcess) {
     CcuOpcodeType opCode = CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE;
-    // 模拟HccpRaCustomChannel
-    MOCKER(HccpRaCustomChannel)
+    // 模拟HccpRaTlvRequestForCustomChannel
+    MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
@@ -1167,7 +1146,7 @@ TEST_F(CcuComponentTest, CleanDiId) {
         .stubs()
         .with(mockcpp::any(),outBound(ckeNum))
         .will(returnValue(HCCL_SUCCESS));
-     MOCKER(HccpRaCustomChannel)
+     MOCKER(HccpRaTlvRequestForCustomChannel)
         .stubs()
         .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));

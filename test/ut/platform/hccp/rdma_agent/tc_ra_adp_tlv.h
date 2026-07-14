@@ -14,5 +14,6 @@
 void TcRaRsTlvInit();
 void TcRaRsTlvDeinit();
 void TcRaRsTlvRequest();
+void TcRaRsTlvRequestV2();
 
 #endif

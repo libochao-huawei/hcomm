@@ -39,3 +39,7 @@ int ccu_get_mem_info(unsigned int die_id, unsigned long long mem_type_bitmap, st
 {
     return 0;
 }
+
+int ccu_tlv_request(struct ccu_tlv_request_info *tlvRequestInfo) {
+    return 0;
+}

@@ -906,18 +906,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxQpUnbind(void *qpHandle);
 
 /**
  * @ingroup libudma
- * @brief custom channel
- * @param info [IN] see RaInfo
- * @param in [IN] see custom_chan_info_in
- * @param out [OUT] see custom_chan_info_out
- * @retval #zero Success
- * @retval #non-zero Failure
-*/
-HCCP_ATTRI_VISI_DEF int RaCustomChannel(struct RaInfo info, struct CustomChanInfoIn *in,
-    struct CustomChanInfoOut *out);
-
-/**
- * @ingroup libudma
  * @brief get aux info
  * @param ctx_handle [IN] ctx handle
  * @param in [IN] see struct aux_info_in

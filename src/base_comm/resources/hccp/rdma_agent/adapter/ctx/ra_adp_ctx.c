@@ -48,7 +48,6 @@ struct RsCtxOps gRaRsCtxOps = {
     .ctxQpBind = RsCtxQpBind,
     .ctxQpUnbind = RsCtxQpUnbind,
     .ctxBatchSendWr = RsCtxBatchSendWr,
-    .ccuCustomChannel = RsCtxCustomChannel,
     .ctxUpdateCi = RsCtxUpdateCi,
     .ctxGetAuxInfo = RsCtxGetAuxInfo,
     .ctxGetCrErrInfoList = RsCtxGetCrErrInfoList,
@@ -609,22 +608,6 @@ int RaRsCtxUpdateCi(char *inBuf, char *outBuf, int *outLen, int *opResult, int r
     if (*opResult != 0) {
         hccp_err("[update_ci][ra_rs_ctx]update ci failed, ret[%d] phyId[%u] devIndex[0x%x] qpId[%u]",
             *opResult, devInfo.phyId, devInfo.devIndex, opData->txData.jettyId);
-    }
-
-    return 0;
-}
-
-int RaRsCustomChannel(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
-{
-    union OpCustomChannelData *opDataOut = (union OpCustomChannelData *)(outBuf + sizeof(struct MsgHead));
-    union OpCustomChannelData *opData = (union OpCustomChannelData *)(inBuf + sizeof(struct MsgHead));
-
-    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpCustomChannelData), sizeof(struct MsgHead), rcvBufLen,
-        opResult);
-
-    *opResult = gRaRsCtxOps.ccuCustomChannel(&opData->txData.info, &opDataOut->rxData.info);
-    if (*opResult != 0) {
-        hccp_err("[ccu]custom channel failed, ret[%d], phyId[%u]", *opResult, opData->txData.phyId);
     }
 
     return 0;

@@ -157,6 +157,29 @@ HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_ms
     return HCCL_SUCCESS;
 }
 
+void HrtRaTlvRequestForCustomChannel(void* tlvHandle, u32 msgType, void *customIn, void *customOut)
+{
+    CHECK_NULLPTR(tlvHandle, "[HrtRaTlvRequestForCustomChannel] tlvHandle is nullptr!");
+    CHECK_NULLPTR(customIn, "[HrtRaTlvRequestForCustomChannel] customIn is nullptr!");
+    CHECK_NULLPTR(customOut, "[HrtRaTlvRequestForCustomChannel] customOut is nullptr!");
+
+    struct TlvMsg sendMsg {};
+    sendMsg.type = msgType;
+    sendMsg.length = sizeof(CustomChanInfoIn);
+    sendMsg.data = static_cast<char *>(customIn);
+
+    struct TlvMsg recvMsg {};
+    recvMsg.type = msgType;
+    recvMsg.length = sizeof(CustomChanInfoOut);
+    recvMsg.data = static_cast<char *>(customOut);
+
+    s32 ret = RaTlvRequest(tlvHandle, TLV_MODULE_TYPE_CCU, &sendMsg, &recvMsg);
+    if (ret != 0) {
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] RaTlvRequest fail, ret[%d]",
+            __func__, ret));
+    }
+}
+
 void HrtRaTlvDeInit(void* tlv_handle)
 {
     CHECK_NULLPTR(tlv_handle, "[HrtRaTlvDeInit] tlv_handle is nullptr!");
@@ -1823,23 +1846,6 @@ bool HraGetRtpEnable(RdmaHandle handle)
     return false;
 }
 
-void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
-{
-    CHECK_NULLPTR(customIn, "[HrtRaCustomChannel] customIn is nullptr!");
-    CHECK_NULLPTR(customOut, "[HrtRaCustomChannel] customOut is nullptr!");
-    struct RaInfo info {};
-    info.mode   = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
-    info.phyId = raInfo.phyId;
-
-    struct CustomChanInfoIn  *in  = reinterpret_cast<struct CustomChanInfoIn *>(customIn);
-    struct CustomChanInfoOut *out = reinterpret_cast<struct CustomChanInfoOut *>(customOut);
-
-    int ret = RaCustomChannel(info, in, out);
-    if (ret != 0) {
-        MACRO_THROW(NetworkApiException, StringFormat("call ra_custom_channel failed, error code =%d.", ret));
-    }
-}
-
 void HrtRaUbPostNops(JettyHandle jettyHandle, JettyHandle remoteJettyHandle, const u32 numNop)
 {
     HCCL_INFO("HrtRaUbPostNops: jettyHandle[0x%llx], remoteJettyHandle[0x%llx], numNop[%u]", jettyHandle, remoteJettyHandle, numNop);
@@ -2625,32 +2631,6 @@ HcclResult HrtRaNdaCqDestroy(RdmaHandle rdmaHandle, CqHandle cqHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
-{
-    HccpAuxInfoIn in;
-    in.type = static_cast<HccpAuxInfoInType>(static_cast<int>(auxInfoIn.auxInfoInType));
-    if (auxInfoIn.auxInfoInType == AuxInfoInType::AUX_INFO_IN_TYPE_CQE) {
-        in.cqe.status = auxInfoIn.cqe.status;
-        in.cqe.sR = auxInfoIn.cqe.sR;
-    } else if (auxInfoIn.auxInfoInType == AuxInfoInType::AUX_INFO_IN_TYPE_AE) {
-        in.ae.eventType = auxInfoIn.ae.eventType;
-    }
-
-    HccpAuxInfoOut out;
-    auto ret = RaCtxGetAuxInfo(rdmaHandle, &in, &out);
-    if (ret != 0) {
-        HCCL_ERROR("RaGetAuxInfo failed.");
-        return HCCL_E_NETWORK;
-    }
-
-    auxInfoOut.auxInfoNum = out.auxInfoNum;
-    for (uint32_t i = 0; i < out.auxInfoNum; i++) {
-        auxInfoOut.auxInfoTypes[i] = out.auxInfoType[i];
-        auxInfoOut.auxInfoValues[i] = out.auxInfoValue[i];
-    }
-    return HCCL_SUCCESS;
-}
-
 HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num)
 {
     if (jettyHandles.size() != num) {
@@ -2675,6 +2655,32 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
     for (u32 i = 0; i < num; i++) {
         JettyStatus jettyStatus = static_cast<JettyStatus::Value>(static_cast<int>(raJettyAttrs[i].state));
         jettyAttrs.push_back(jettyStatus);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
+{
+    HccpAuxInfoIn in;
+    in.type = static_cast<HccpAuxInfoInType>(static_cast<int>(auxInfoIn.auxInfoInType));
+    if (auxInfoIn.auxInfoInType == AuxInfoInType::AUX_INFO_IN_TYPE_CQE) {
+        in.cqe.status = auxInfoIn.cqe.status;
+        in.cqe.sR = auxInfoIn.cqe.sR;
+    } else if (auxInfoIn.auxInfoInType == AuxInfoInType::AUX_INFO_IN_TYPE_AE) {
+        in.ae.eventType = auxInfoIn.ae.eventType;
+    }
+
+    HccpAuxInfoOut out;
+    auto ret = RaCtxGetAuxInfo(rdmaHandle, &in, &out);
+    if (ret != 0) {
+        HCCL_ERROR("RaGetAuxInfo failed.");
+        return HCCL_E_NETWORK;
+    }
+
+    auxInfoOut.auxInfoNum = out.auxInfoNum;
+    for (uint32_t i = 0; i < out.auxInfoNum; i++) {
+        auxInfoOut.auxInfoTypes[i] = out.auxInfoType[i];
+        auxInfoOut.auxInfoValues[i] = out.auxInfoValue[i];
     }
     return HCCL_SUCCESS;
 }
