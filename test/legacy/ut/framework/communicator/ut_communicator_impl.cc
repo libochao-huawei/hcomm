@@ -3999,7 +3999,7 @@ TEST_F(CommunicatorImplTest, Ut_Destructor_When_TaskExpMemMapHasEntry_Expect_Era
     std::string savedId = "destrTest_" + std::to_string(reinterpret_cast<uintptr_t>(comm));
     comm->id = savedId;
     comm->devLogicId = 0;
-    comm->isDpuKernelLaunched = false;
+    comm->isDpuKernelLaunched = true;
     comm->isAicpuKernelLaunched = false;
 
     g_taskExpMemMap[savedId][0] = reinterpret_cast<void*>(0x1234);

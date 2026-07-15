@@ -2398,6 +2398,18 @@ MirrorTaskManager &CommunicatorImpl::GetMirrorTaskManager() const
 CommunicatorImpl::~CommunicatorImpl()
 {
     HCCL_INFO("[~CommunicatorImpl] start CommunicatorImpl destroy, commId[%s]", id.c_str());
+    if (isDpuKernelLaunched) { // 如果仍有dpu资源，进行销毁，避免多次调用
+        (void)DeinitDpuKernel();
+    }
+    (void)NotifyAicpuDestroyComm();
+    ccuDrvHandle = nullptr;
+
+    DeInitPreResource();
+    HCCL_RUN_INFO("[~CommunicatorImpl] cclBuffer free, commId[%s] ", id.c_str());
+}
+
+HcclResult CommunicatorImpl::DeinitDpuKernel()
+{
     (void)DestroyDpuKernelResource();
     (void)DestroyDpuTaskexpShmemInDevice();
     (void)DestroyKFCWorkSpaceVA();
@@ -2414,11 +2426,8 @@ CommunicatorImpl::~CommunicatorImpl()
         }
     }
     g_taskExpMemMap.erase(id);
-    (void)NotifyAicpuDestroyComm();
-    ccuDrvHandle = nullptr;
-
-    DeInitPreResource();
-    HCCL_RUN_INFO("[~CommunicatorImpl] cclBuffer free, commId[%s] ", id.c_str());
+    isDpuKernelLaunched = false;
+    return HCCL_SUCCESS;
 }
 
 HcclResult CommunicatorImpl::DestroyDpuKernelResource()
@@ -3578,14 +3587,12 @@ HcclResult CommunicatorImpl::DestroyKFCWorkSpaceVA()
         }
 
         // 必须先halHostUnregister解除映射，再释放设备内存，否则HrtFree会因内存被pin住而异常
-        if (tmpShmem.second.accessVA_ != nullptr) {
-            HcclResult ret = HrtHalHostUnregister(tmpShmem.second.accessVA_, deviceLogicId);
+        if (tmpShmem.second.va_ != nullptr) {
+            HcclResult ret = HrtHalHostUnregister(tmpShmem.second.va_, deviceLogicId);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[CommunicatorImpl::%s] HrtHalHostUnregister failed, ret[%d]", __func__, ret);
             }
-        }
 
-        if (tmpShmem.second.va_ != nullptr) {
             if (tmpShmem.second.connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) {
                 DECTOR_TRY_CATCH("CommunicatorImpl", HrtFree(tmpShmem.second.va_));
             } else if (tmpShmem.second.connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {

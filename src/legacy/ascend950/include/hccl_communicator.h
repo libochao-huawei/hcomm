@@ -139,6 +139,8 @@ public:
     HcclResult GetStreamId(u32 &streamId);
     HcclResult GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap);
 
+    HcclResult DeinitDpuKernel();
+
 private:
     CommParams                        commParams;
     HcclCommConfig                    config{};
