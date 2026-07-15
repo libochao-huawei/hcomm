@@ -38,12 +38,20 @@ typedef struct HcclCommConfigDef {
 
 ## 参数说明
 
-- **hcclBufferSize**：共享数据的缓存区大小，取值需大于等于1，单位为MByte。
+- **hcclBufferSize**：共享数据的缓存区大小，需要配置为整数，取值需大于等于1，单位为MB。取值范围和针对不同产品类型的使用约束请参见环境变量[HCCL_BUFFSIZE](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_BUFFSIZE.md)。
+
+  需要注意：
+
+  - 该配置项优先级高于HCCL_BUFFSIZE环境变量配置。
+  - 该配置项申请的内存为HCCL独占，不可与其他业务内存复用。
+  - 基于该配置项创建的通信域，会独占“2\*hcclBufferSize”大小的内存，保证多通信域并发算子互不影响。
+  - 针对集合通信算子，当数据量超过该配置值时，可能会出现性能下降的情况，建议hcclBufferSize配置值大于数据量。
+
 - **hcclDeterministic**：确定性计算开关，支持如下型号：
 
   下面分别列出不同AI处理器支持的取值及含义，未列出的代表不支持配置。
 
-  - Ascend 950PR/Ascend 950DT：仅支持配置为“1”或不配置，代表开启归约类通信算子的确定性计算，支持通信算子AllReduce、ReduceScatter、Reduce、ReduceScatterV。
+  - Ascend 950PR/Ascend 950DT：不支持此配置，可通过HCCL_DETERMINISTIC环境变量配置全局确定性计算开关。
   - Atlas A3 训练系列产品/Atlas A3 推理系列产品，支持的取值及含义如下：
     - 0（默认值）：代表关闭确定性计算。
     - 1：开启归约类通信算子的确定性计算，支持通信算子AllReduce和ReduceScatter。
@@ -73,14 +81,13 @@ typedef struct HcclCommConfigDef {
   **针对Ascend 950PR/Ascend 950DT，支持的取值及含义如下：**
 
   - 0：使用默认算子展开模式，针对**Ascend 950PR/Ascend 950DT**，通信算子默认在AI CPU计算单元展开。
-  - 2：通信算子在AI CPU计算单元展开。
+  - 2：通信算子在AI CPU计算单元展开，使用STARS调度器调度运行。
 
     该配置项支持Broadcast、Reduce、AllReduce、Scatter、ReduceScatter、ReduceScatterV、AllGather、AllGatherV、AlltoAll、AlltoAllV、AlltoAllVC、Send、Recv、BatchSendRecv算子。
 
     图模式（Ascend IR）或者图捕获（aclgraph）场景，当通信算法采用AI CPU模式时，单卡上的并发图数量不能超过6个，否则可能会因AI CPU核被占满而导致通信阻塞。
 
   - 3：通信算子在Device侧的Vector Core计算单元展开。
-    - Ascend 950PR不支持此配置。
     - 该配置仅支持对称组网、推理特性。
     - 该配置下，若数据量不满足在“Vector Core”上的运行要求，部分算子会自动切换到默认模式。
     - 该配置项仅支持Broadcast、Reduce、AllReduce、ReduceScatter、Scatter、AllGather、AlltoAll、AlltoAllV算子，当前仅支持单机场景。
@@ -90,7 +97,6 @@ typedef struct HcclCommConfigDef {
     - 该配置项下，AllReduce、ReduceScatter、AllGather、AlltoAll算子支持控核能力，建议业务根据实际使用场景中计算算子与通信算子的并发情况进行Vector Core核数的配置。
 
   - 4：代表通信算子在Device侧的Vector Core计算单元展开，但不会随着数据量的变化进行模式切换，始终使用Vector Core计算，如果不满足Vector Core的运行条件，会报错退出。
-    - Ascend 950PR不支持此配置。
     - 该配置仅支持对称组网、推理特性。
     - 该配置项支持的算子及约束限制参见配置“3”。
 
@@ -197,15 +203,28 @@ typedef struct HcclCommConfigDef {
 
 - **hcclExecTimeOut**：不同设备进程在分布式训练或推理过程中存在卡间执行任务不一致的场景（如仅特定进程会保存checkpoint数据），通过该参数可控制设备间执行时同步等待的时间，在该配置时间内各设备进程等待其他设备执行通信同步。单位为s，取值范围和针对不同产品类型的使用约束请参见环境变量[HCCL_EXEC_TIMEOUT](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_EXEC_TIMEOUT.md)。
 
+  **配置示例：**
+
+    ```text
+    # 整数秒配置，配置为1800s
+    hcclExecTimeOut = 1800
+    # 十毫秒级精度配置，配置为50ms
+    hcclExecTimeOut = 0.05
+    ```
+
   **注意事项：**
 
   0xFFFFFFFF被用作优先级判断标识，当配置为0xFFFFFFFF时，此通信域配置无效，会按照优先级取环境变量配置或默认值1836。
 
 - **hcclAlgo**：用于配置集合通信Server间通信算法以及超节点间通信算法，支持全局配置算法类型与按算子配置算法类型两种配置方式。需注意，HCCL提供自适应算法选择功能，默认会根据产品形态、数据量和Server个数选择合适的算法，一般情况下用户无需手工指定。若通过此参数指定了Server间通信算法，则自适应算法选择功能不再生效。
 
+  **注意事项：**
+
+  Ascend 950PR/Ascend 910DT不支持此配置，可通过HCCL_ALGO环境变量配置全局通信算法。
+
   配置方式的参数信息及针对不同产品类型支持的算法类型请参见环境变量[HCCL_ALGO](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_ALGO.md)，配置方式如下：
 
-  - 全局配置算法类型：`hcclAlgo = "level0:NA;level1:<algo>;level2:<algo>"`，  示例：
+  - 通信域配置算法类型：`hcclAlgo = "level0:NA;level1:<algo>;level2:<algo>"`，  示例：
 
     ```text
     hcclAlgo = "level0:NA;level1:H-D_R"
