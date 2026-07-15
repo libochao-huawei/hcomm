@@ -96,7 +96,7 @@ void DumpJettyCtxData(const LocalJettyCtxData &tmp)
         tmp.startWqeBasicBlockIdxLow, tmp.startWqeBasicBlockIdxHigh, tmp.doorbellSendState);
 }
 
-void ConfigJettyCtxData(const int32_t devLogicId, const uint8_t dieId, const uint32_t devPhyId,
+void ConfigJettyCtxData(const int32_t devLogicId, const uint8_t dieId,
     const uint16_t startJettyCtxId, std::vector<LocalJettyCtxData>& jettyCtxData)
 {
     const uint32_t jettyNum = jettyCtxData.size(); // 分配与配置前校验已保证不为0

@@ -64,7 +64,7 @@ static CcuVersion CheckCcuVersion()
     return CcuVersion::CCU_V1; // CCU驱动未更新前临时使用
 }
 
-static bool CheckDieEnable(const int32_t devLogicId, const uint32_t devPhyId, const uint8_t dieId)
+static bool CheckDieEnable(const int32_t devLogicId, const uint8_t dieId)
 {
     auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
     CHECK_NULLPTR(tlvHandle, StringFormat("[%s] tlvHandle is nullptr, devLogicId[%d]", __func__, devLogicId));
@@ -123,7 +123,7 @@ static CcuResSpecInfo ParseOutBuffToResSpecInfo(const CcuVersion ccuVersion, con
     return ccuResSpecInfo;
 }
 
-static CcuResSpecInfo CheckResSpecifications(const int32_t devLogicId, const uint32_t devPhyId,
+static CcuResSpecInfo CheckResSpecifications(const int32_t devLogicId,
     const uint8_t dieId, const CcuVersion ccuVersion)
 {
     auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
@@ -147,12 +147,12 @@ HcclResult CcuResSpecifications::Init_()
         auto memTypeBitmap = GetCombinedMemTypeBitmap();
         auto count = GetMemTypeVector().size();
         for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
-            dieEnableFlags[dieId] = CheckDieEnable(devLogicId, devPhyId, dieId);
+            dieEnableFlags[dieId] = CheckDieEnable(devLogicId, dieId);
             if (!dieEnableFlags[dieId]) {
                 resSpecs[dieId] = CcuResSpecInfo{};
                 continue;
             }
-            resSpecs[dieId] = CheckResSpecifications(devLogicId, devPhyId, dieId, ccuVersion);
+            resSpecs[dieId] = CheckResSpecifications(devLogicId, dieId, ccuVersion);
             HrtGetCcuMemInfo(tlvHandle, dieId, memTypeBitmap, resSpecs[dieId].memInfoList.data(), count);
         }
         HcclMainboardId hcclMainboardId;
