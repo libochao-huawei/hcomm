@@ -81,7 +81,23 @@ TEST_F(CommandHandleTest, ut_command_handle_subscribe)
     rtError_t ret = CommandHandle(RT_PROF_CTRL_SWITCH, static_cast<void *>(&handle), 0);
     EXPECT_EQ(ret, SUCCESS);
 }
+TEST_F(CommandHandleTest, ut_command_handle_unexpected_type)
+{
+    struct rtProfCommandHandle handle = {};
+    handle.type = 999;
 
+    rtError_t ret = CommandHandle(RT_PROF_CTRL_SWITCH, static_cast<void *>(&handle), 0);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+TEST_F(CommandHandleTest, ut_es_command_handle_unexpected_type)
+{
+    struct rtProfCommandHandle handle = {};
+    handle.type = 999;
+
+    rtError_t ret = EsCommandHandle(RT_PROF_CTRL_SWITCH, static_cast<void *>(&handle), 0);
+    EXPECT_EQ(ret, SUCCESS);
+}
 TEST_F(CommandHandleTest, ut_command_handle_unsubscribe)
 {
     struct rtProfCommandHandle handle;
