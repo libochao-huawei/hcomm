@@ -18,10 +18,10 @@
 
 namespace hcomm {
 
-inline HcclResult MakebufsFromLocalRmaBuffer(HcommMemHandle *memHandles, uint32_t memHandleNum,
-    std::vector<std::shared_ptr<Hccl::Buffer>> &bufs, const char *channelName)
+inline HcclResult MakeRmaBufferVecFromMemHandles(HcommMemHandle *memHandles, uint32_t memHandleNum,
+    std::vector<Hccl::LocalRmaBuffer *> &bufferVec, const char *channelName)
 {
-    bufs.clear();
+    bufferVec.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
         auto localRmaBuffer = reinterpret_cast<Hccl::LocalRmaBuffer *>(memHandles[i]);
         CHK_PTR_NULL(localRmaBuffer);
@@ -32,9 +32,7 @@ inline HcclResult MakebufsFromLocalRmaBuffer(HcommMemHandle *memHandles, uint32_
             static_cast<unsigned long long>(localRmaBuffer->GetAddr()),
             static_cast<unsigned long long>(localRmaBuffer->GetSize()),
             static_cast<int>(buf->GetMemType()), buf->GetMemInfo().c_str());
-        bufs.emplace_back(std::make_shared<Hccl::Buffer>(
-            localRmaBuffer->GetAddr(), localRmaBuffer->GetSize(),
-            buf->GetMemType(), buf->GetMemInfo().c_str()));
+        bufferVec.push_back(localRmaBuffer);
     }
     return HCCL_SUCCESS;
 }

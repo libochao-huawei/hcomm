@@ -51,7 +51,6 @@ private:
     HcclResult StartListen();
     HcclResult BuildSocket();
     HcclResult BuildConnection();
-    HcclResult BuildBuffer();
     HcclResult BuildUbMemTransport();
     HcclResult GetLocSeg(const void *addr, const size_t size, u64 *seg);
     HcclResult UrmaPostJettySendWr(urma_opcode_t opcode, void *dst, const void *src, uint64_t len);
@@ -66,7 +65,6 @@ private:
     // --------------------- 转换参数 ---------------------
     EndpointDesc                                                localEp_{};
     EndpointDesc                                                remoteEp_{};
-    std::vector<std::shared_ptr<Hccl::Buffer>>                  bufs_{};
 
     // --------------------- 具体成员 ---------------------
     Hccl::Socket*                                               socket_{nullptr};
@@ -76,7 +74,6 @@ private:
     Hccl::BaseMemTransport::Attribution                         attr_{};
     Hccl::BaseMemTransport::CommonLocRes                        commonRes_{};
     std::vector<std::unique_ptr<Hccl::HostUbConnection>>        connections_{};
-    std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_{nullptr};
 
     urma_jfc_t jfc_{};

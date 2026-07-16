@@ -195,10 +195,6 @@ TEST_F(AivUrmaChannelTest, Ut_Init_WhenBuildsMocked_Returns_SUCCESS)
         .stubs()
         .with(mockcpp::any())
         .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&AivUrmaChannel::BuildBuffer,
-        HcclResult(AivUrmaChannel::*)(std::vector<std::shared_ptr<Hccl::Buffer>> &))
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&AivUrmaChannel::BuildAivUrmaTransport, HcclResult(AivUrmaChannel::*)())
         .stubs()
         .with(mockcpp::any())
@@ -271,17 +267,6 @@ TEST_F(AivUrmaChannelTest, Ut_PutSocketIfNeeded_WhenCalledTwice_OnlyKeepsSocketN
     EXPECT_EQ(ch.socket_, nullptr);
 }
 
-TEST_F(AivUrmaChannelTest, Ut_BuildBuffer_WhenEmpty_Returns_SUCCESS)
-{
-    EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
-    AivUrmaChannel ch(ep, MakeDefaultDesc());
-    std::vector<std::shared_ptr<Hccl::Buffer>> bufs;
-
-    EXPECT_EQ(ch.BuildBuffer(bufs), HCCL_SUCCESS);
-    EXPECT_TRUE(ch.commonRes_.bufferVec.empty());
-    EXPECT_TRUE(ch.localRmaBuffers_.empty());
-}
-
 TEST_F(AivUrmaChannelTest, Ut_UnsupportedDataApis_WhenCalled_Return_NOT_SUPPORT)
 {
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
@@ -318,7 +303,7 @@ TEST_F(AivUrmaChannelTest, Ut_ParseInputParam_WhenExchangeAllMemsGetFailed_Retur
         .will(invoke(StubHcommMemGetAllMemHandlesFail));
 
     EXPECT_EQ(ch.ParseInputParam(), HCCL_E_INTERNAL);
-    EXPECT_TRUE(ch.bufs_.empty());
+    EXPECT_TRUE(ch.commonRes_.bufferVec.empty());
 }
 
 TEST_F(AivUrmaChannelTest, Ut_ParseInputParam_WhenExchangeAllMemsEmpty_ReturnsSuccess)
@@ -335,11 +320,11 @@ TEST_F(AivUrmaChannelTest, Ut_ParseInputParam_WhenExchangeAllMemsEmpty_ReturnsSu
         .will(invoke(StubHcommMemGetAllMemHandlesEmpty));
 
     EXPECT_EQ(ch.ParseInputParam(), HCCL_SUCCESS);
-    EXPECT_TRUE(ch.bufs_.empty());
+    EXPECT_TRUE(ch.commonRes_.bufferVec.empty());
     EXPECT_EQ(ch.devicePhyId_, 3);
 }
 
-TEST_F(AivUrmaChannelTest, Ut_ParseInputParam_WhenExchangeAllMemsOneHandle_FillsBufs)
+TEST_F(AivUrmaChannelTest, UT_ParseInputParam_When_ExchangeAllMemsHasOneHandle_Expect_FillCommonRes)
 {
     EndpointDesc local{};
     local.loc.device.devPhyId = 3;
@@ -353,10 +338,30 @@ TEST_F(AivUrmaChannelTest, Ut_ParseInputParam_WhenExchangeAllMemsOneHandle_Fills
         .will(invoke(StubHcommMemGetAllMemHandlesOne));
 
     EXPECT_EQ(ch.ParseInputParam(), HCCL_SUCCESS);
-    ASSERT_EQ(ch.bufs_.size(), 1);
-    EXPECT_EQ(ch.bufs_[0]->GetAddr(), 0x12340000U);
-    EXPECT_EQ(ch.bufs_[0]->GetSize(), 0x2000U);
-    EXPECT_FALSE(ch.bufs_[0]->GetMemInfo().empty());
+    ASSERT_EQ(ch.commonRes_.bufferVec.size(), 1U);
+    ASSERT_NE(ch.commonRes_.bufferVec[0], nullptr);
+    EXPECT_EQ(ch.commonRes_.bufferVec[0]->GetAddr(), 0x12340000U);
+    EXPECT_EQ(ch.commonRes_.bufferVec[0]->GetSize(), 0x2000U);
+    EXPECT_FALSE(ch.commonRes_.bufferVec[0]->GetBuf()->GetMemInfo().empty());
+}
+
+TEST_F(AivUrmaChannelTest, UT_ParseInputParam_When_ExchangeAllMemsFalse_Expect_FillCommonRes)
+{
+    EndpointDesc local{};
+    local.loc.device.devPhyId = 3;
+    StubEndpointForAivUrmaChannel endpoint(local, reinterpret_cast<void *>(0x1));
+    auto buffer = std::make_shared<Hccl::Buffer>(0x22340000U, 0x1000U, "aiv_urma_desc");
+    auto localBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer);
+    HcommMemHandle memHandles[1] = { reinterpret_cast<HcommMemHandle>(localBuffer.get()) };
+    HcommChannelDesc desc = MakeDefaultDesc();
+    desc.exchangeAllMems = false;
+    desc.memHandles = memHandles;
+    desc.memHandleNum = 1;
+    AivUrmaChannel ch(reinterpret_cast<EndpointHandle>(&endpoint), desc);
+
+    EXPECT_EQ(ch.ParseInputParam(), HCCL_SUCCESS);
+    ASSERT_EQ(ch.commonRes_.bufferVec.size(), 1U);
+    EXPECT_EQ(ch.commonRes_.bufferVec[0], localBuffer.get());
 }
 
 TEST_F(AivUrmaChannelTest, Ut_BuildChannelEntityToDevice_WhenDevPtrNull_Returns_E_PTR)

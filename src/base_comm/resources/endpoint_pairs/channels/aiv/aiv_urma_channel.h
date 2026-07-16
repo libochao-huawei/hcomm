@@ -43,14 +43,11 @@ public:
     HcclResult ChannelFence() override;
 
 private:
-    HcclResult Makebufs(
-        HcommMemHandle *memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult ParseInputParam();
+    HcclResult BuildSocket();
     HcclResult BuildAttr();
     HcclResult BuildConnection();
-    HcclResult BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult BuildAivUrmaTransport();
-    HcclResult BuildSocket();
     void PutSocketIfNeeded();
     void ReleaseDeviceChannelEntity();
 
@@ -63,7 +60,6 @@ private:
     EndpointHandle endpointHandle_;
     CommEngine engine_{COMM_ENGINE_RESERVED};
     HcommChannelDesc channelDesc_;
-    std::vector<std::shared_ptr<Hccl::Buffer>> bufs_{};
 
     // --------------------- 具体成员 ---------------------
     Hccl::Socket *socket_{nullptr};
@@ -76,7 +72,6 @@ private:
     void *devChannelEntitySlab_{nullptr};
     size_t devChannelEntitySlabSize_{0};
     std::vector<hccl::DeviceMem> deviceMemories_{};
-    std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>> localRmaBuffers_{};
     std::unique_ptr<Hccl::Socket> serverSocket_;
     std::unique_ptr<Hccl::SocketConfig> socketConfigHolder_{nullptr};
     const Hccl::SocketConfig* socketConfig_{nullptr};

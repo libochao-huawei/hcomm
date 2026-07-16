@@ -45,6 +45,7 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
     // 2. 从 channelDesc_，获得 remoteEp_, socket_ 和 notifyNum
     remoteEp_ = channelDesc_.remoteEndpoint;
     socket_ = reinterpret_cast<Hccl::Socket*>(channelDesc_.socket);
+    commonRes_.bufferVec.clear();
 
     if (channelDesc_.exchangeAllMems) {
         // 3. Get memHandles from endpoint
@@ -61,9 +62,7 @@ HcclResult HostCpuUrmaChannel::ParseInputParam()
                 static_cast<unsigned long long>(localUbRmaBuffer->GetSize()),
                 static_cast<int>(localUbRmaBuffer->GetBuf()->GetMemType()),
                 localUbRmaBuffer->GetBuf()->GetMemInfo().c_str());
-            bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemInfo().c_str())
-            ));
+            commonRes_.bufferVec.push_back(localUbRmaBuffer.get());
         }
     } else {
         // 3. 从 channelDesc 的 memHandle，获得 bufs_
@@ -149,22 +148,6 @@ HcclResult HostCpuUrmaChannel::BuildConnection()
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuUrmaChannel::BuildBuffer()
-{
-    localRmaBuffers_.clear();
-    commonRes_.bufferVec.clear();
-    for (size_t i = 0; i < bufs_.size(); i++) {
-        std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
-        EXCEPTION_CATCH(
-            bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs_[i], rdmaHandle_),
-            return HCCL_E_PTR
-        );
-        commonRes_.bufferVec.push_back(bufferPtr.get());
-        localRmaBuffers_.push_back(std::move(bufferPtr));
-    }
-    return HCCL_SUCCESS;
-}
-
 HcclResult HostCpuUrmaChannel::BuildUbMemTransport()
 {
     Hccl::BaseMemTransport::LocCntNotifyRes locCntNotifyRes{};
@@ -195,7 +178,6 @@ HcclResult HostCpuUrmaChannel::Init()
     }
     CHK_RET(BuildSocket());
     CHK_RET(BuildConnection());
-    CHK_RET(BuildBuffer());
     CHK_RET(BuildUbMemTransport());
     // urma函数初始化
     CHK_RET(DlUrmaFunction::GetInstance().DlUrmaFunctionInit());
@@ -243,23 +225,26 @@ HcclResult hcomm::HostCpuUrmaChannel::WriteWithNotify(void *dst, const void *src
 
 HcclResult HostCpuUrmaChannel::GetLocSeg(const void *addr, const size_t size, u64 *seg)
 {
-    if (localRmaBuffers_.empty()) {
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] localRmaBuffers is empty.", __func__);
+    if (commonRes_.bufferVec.empty()) {
+        HCCL_ERROR("[HostCpuUrmaChannel::%s] commonRes_.bufferVec is empty.", __func__);
         return HCCL_E_INTERNAL;
     }
 
     bool isAddrInRange = false;
-    for (auto &it : localRmaBuffers_) {
-        Hccl::Buffer iterBuf(it->GetBufferInfo().first, it->GetBufferInfo().second);
+    for (auto &it : commonRes_.bufferVec) {
+        CHK_PTR_NULL(it);
+        Hccl::Buffer iterBuf(it->GetAddr(), it->GetSize());
         if (iterBuf.Contains(reinterpret_cast<uintptr_t>(addr), size)) {
-            *seg = it->GetTargetSeg();
+            auto localUbRmaBuffer = dynamic_cast<Hccl::LocalUbRmaBuffer *>(it);
+            CHK_PTR_NULL(localUbRmaBuffer);
+            *seg = localUbRmaBuffer->GetTargetSeg();
             isAddrInRange = true;
             break;
         }
     }
 
     if (!isAddrInRange) {
-        HCCL_ERROR("GetLocSeg addr[%p] size[%llu] is not in localRmaBuffers_", addr, size);
+        HCCL_ERROR("GetLocSeg addr[%p] size[%llu] is not in commonRes_.bufferVec", addr, size);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;

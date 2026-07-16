@@ -11,6 +11,7 @@
 #include "aicpu_ts_uboe_channel.h"
 #include "orion_adpt_utils.h"
 #include "env_config/env_config.h"
+#include "makebufs_helper.h"
 
 // Orion
 #include "adapter_rts_common.h"
@@ -32,9 +33,6 @@ HcclResult AicpuTsUboeChannel::Init()
     CHK_RET(ParseInputParam());
     CHK_RET(BuildSocket());
     CHK_RET(BuildNotify());
-    localRmaBuffers_.clear();
-    commonRes_.bufferVec.clear();
-    CHK_RET(BuildBuffer(bufs_));
     /*
         HccpRaGetDevBaseAttr
         获取urma read/write 单个wr的最大传输数据大小
@@ -220,19 +218,19 @@ HcclResult AicpuTsUboeChannel::CheckSocketStatus(const std::string &socketOperat
 
 HcclResult AicpuTsUboeChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
 {
-    CHK_RET(Makebufs(memHandles, memHandleNum, bufsTemp));
-    CHK_RET(BuildBuffer(bufsTemp));
-    bufs_.insert(bufs_.end(), bufsTemp.begin(), bufsTemp.end());
+    std::vector<Hccl::LocalRmaBuffer *> bufferVecTemp;
+    CHK_RET(MakeRmaBufferVecFromMemHandles(memHandles, memHandleNum, bufferVecTemp, "AicpuTsUboeChannel"));
 
-    if (bufferVecTemp_.size() == 0) {
+    if (bufferVecTemp.size() == 0) {
         HCCL_WARNING("[AicpuTsUboeChannel][%s] bufferNum is 0.", __func__);
         return HCCL_SUCCESS;
     }
-    HCCL_INFO("[AicpuTsUboeChannel][%s] bufferNum[%zu]", __func__, bufferVecTemp_.size());
+    CHK_PTR_NULL(socket_);
+    HCCL_INFO("[AicpuTsUboeChannel][%s] bufferNum[%zu]", __func__, bufferVecTemp.size());
 
     std::vector<char> localSendData;
     Hccl::BinaryStream sendStream;
-    BufferVecPack(sendStream, bufferVecTemp_);
+    BufferVecPack(sendStream, bufferVecTemp);
     sendStream.Dump(localSendData);
 
     u32 sendSize = localSendData.size();
@@ -256,10 +254,11 @@ HcclResult AicpuTsUboeChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_
 
     std::vector<std::unique_ptr<Hccl::RemoteUbRmaBuffer>> rmtBufferTemp{};
     Hccl::BinaryStream recvStream(localRecvData);
-    RmtBufferVecUnpackProc(static_cast<u32>(bufferVecTemp_.size()), recvStream, rmtBufferTemp, UboeRmtBufType::BUFFER);
+    RmtBufferVecUnpackProc(static_cast<u32>(bufferVecTemp.size()), recvStream, rmtBufferTemp, UboeRmtBufType::BUFFER);
 
     rmtBufferVec_.insert(rmtBufferVec_.end(), std::make_move_iterator(rmtBufferTemp.begin()),
         std::make_move_iterator(rmtBufferTemp.end()));
+    commonRes_.bufferVec.insert(commonRes_.bufferVec.end(), bufferVecTemp.begin(), bufferVecTemp.end());
     cacheValid_ = false;
     return HCCL_SUCCESS;
 }

@@ -39,12 +39,6 @@ AicpuTsUboeUbgChannelHelper::~AicpuTsUboeUbgChannelHelper()
     }
 }
 
-HcclResult AicpuTsUboeUbgChannelHelper::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
-    std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
-{
-    return MakebufsFromLocalRmaBuffer(memHandles, memHandleNum, bufs, "AicpuTsUboeUbgChannelHelper");
-}
-
 HcclResult AicpuTsUboeUbgChannelHelper::ParseInputParam()
 {
     // 1. 从 endpointHandle_，获得 localEp_ 和 rdmaHandle_
@@ -59,6 +53,7 @@ HcclResult AicpuTsUboeUbgChannelHelper::ParseInputParam()
     remoteEp_ = channelDesc_.remoteEndpoint;
     socket_ = reinterpret_cast<Hccl::Socket*>(channelDesc_.socket);
     notifyNum_ = channelDesc_.notifyNum;
+    commonRes_.bufferVec.clear();
 
     if (channelDesc_.exchangeAllMems) {
         // 3. Get memHandles from endpoint
@@ -78,15 +73,14 @@ HcclResult AicpuTsUboeUbgChannelHelper::ParseInputParam()
                 __func__, i, static_cast<unsigned long long>(localUbRmaBuffer->GetAddr()),
                 static_cast<unsigned long long>(localUbRmaBuffer->GetSize()), static_cast<int>(buf->GetMemType()),
                 buf->GetMemInfo().c_str());
-            bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                buf->GetMemType(), buf->GetMemInfo().c_str())
-            ));
+            commonRes_.bufferVec.push_back(localUbRmaBuffer.get());
         }
     } else {
-        // 3. 从 channelDesc 的 memHandle，获得 bufs_
+        // 3. 从 channelDesc 的 memHandle 填充 commonRes_.bufferVec
         HCCL_INFO("[AicpuTsUboeUbgChannelHelper][%s] exchangeAllMems == false. Get memHandles from channelDesc.", __func__);
-        CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
+        CHK_RET(MakeRmaBufferVecFromMemHandles(
+            channelDesc_.memHandles, channelDesc_.memHandleNum, commonRes_.bufferVec,
+            "AicpuTsUboeUbgChannelHelper"));
     }
 
     return HCCL_SUCCESS;
@@ -113,23 +107,6 @@ HcclResult AicpuTsUboeUbgChannelHelper::BuildNotify()
         commonRes_.notifyVec.push_back(notifyPtr.get());
         localNotifies_.push_back(std::move(notifyPtr));
     }
-    return HCCL_SUCCESS;
-}
-
-HcclResult AicpuTsUboeUbgChannelHelper::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
-{
-    bufferVecTemp_.clear();
-    for (size_t i = 0; i < bufs.size(); i++) {
-        std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
-        EXCEPTION_CATCH(
-            bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_),
-            return HCCL_E_PTR
-        );
-        bufferVecTemp_.push_back(bufferPtr.get());
-        commonRes_.bufferVec.push_back(bufferPtr.get());
-        localRmaBuffers_.push_back(std::move(bufferPtr));
-    }
-
     return HCCL_SUCCESS;
 }
 

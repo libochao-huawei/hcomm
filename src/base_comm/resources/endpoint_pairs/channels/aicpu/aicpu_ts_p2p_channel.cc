@@ -30,12 +30,6 @@ AicpuTsP2pChannel::~AicpuTsP2pChannel()
     }
 }
 
-HcclResult AicpuTsP2pChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
-    std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
-{
-    return MakebufsFromLocalRmaBuffer(memHandles, memHandleNum, bufs, "AicpuTsP2pChannel");
-}
-
 HcclResult AicpuTsP2pChannel::ParseInputParam()
 {
     Endpoint* localEpPtr = reinterpret_cast<Endpoint*>(endpointHandle_);
@@ -47,6 +41,7 @@ HcclResult AicpuTsP2pChannel::ParseInputParam()
     remoteEp_ = channelDesc_.remoteEndpoint;
     socket_ = reinterpret_cast<Hccl::Socket*>(channelDesc_.socket);
     notifyNum_ = channelDesc_.notifyNum;
+    commonRes_.bufferVec.clear();
 
     if (channelDesc_.exchangeAllMems) {
         HCCL_INFO("[AicpuTsP2pChannel][%s] exchangeAllMems == True. Get memHandles from endpoint.", __func__);
@@ -65,13 +60,12 @@ HcclResult AicpuTsP2pChannel::ParseInputParam()
                 __func__, i, static_cast<unsigned long long>(buf->GetAddr()),
                 static_cast<unsigned long long>(buf->GetSize()), static_cast<int>(buf->GetMemType()),
                 buf->GetMemInfo().c_str());
-            bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                buf->GetAddr(), buf->GetSize(), buf->GetMemType(), buf->GetMemInfo().c_str())
-            ));
+            commonRes_.bufferVec.push_back(localIpcRmaBuffer.get());
         }
     } else {
         HCCL_INFO("[AicpuTsP2pChannel][%s] exchangeAllMems == false. Get memHandles from channelDesc.", __func__);
-        CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
+        CHK_RET(MakeRmaBufferVecFromMemHandles(
+            channelDesc_.memHandles, channelDesc_.memHandleNum, commonRes_.bufferVec, "AicpuTsP2pChannel"));
     }
 
     return HCCL_SUCCESS;
@@ -116,22 +110,6 @@ HcclResult AicpuTsP2pChannel::BuildNotify()
         );
         commonRes_.notifyVec.push_back(notifyPtr.get());
         localNotifies_.push_back(std::move(notifyPtr));
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult AicpuTsP2pChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
-{
-    bufferVecTemp_.clear();
-    for (size_t i = 0; i < bufs.size(); i++) {
-        std::unique_ptr<Hccl::LocalIpcRmaBuffer> bufferPtr = nullptr;
-        EXCEPTION_CATCH(
-            bufferPtr = std::make_unique<Hccl::LocalIpcRmaBuffer>(bufs[i]),
-            return HCCL_E_PTR
-        );
-        bufferVecTemp_.push_back(bufferPtr.get());
-        commonRes_.bufferVec.push_back(bufferPtr.get());
-        localRmaBuffers_.push_back(std::move(bufferPtr));
     }
     return HCCL_SUCCESS;
 }
@@ -191,9 +169,6 @@ HcclResult AicpuTsP2pChannel::Init()
     CHK_RET(BuildAttr());
     CHK_RET(BuildConnection());
     CHK_RET(BuildNotify());
-    localRmaBuffers_.clear();
-    commonRes_.bufferVec.clear();
-    CHK_RET(BuildBuffer(bufs_));
     CHK_RET(BuildP2pMemTransport());
     
     return HCCL_SUCCESS;

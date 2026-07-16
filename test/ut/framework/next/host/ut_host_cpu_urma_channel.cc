@@ -21,6 +21,39 @@
 
 using namespace hcomm;
 
+namespace {
+std::shared_ptr<Hccl::LocalUbRmaBuffer> MakeHostLocalBuffer(uintptr_t addr, u64 size, const char *tag)
+{
+    auto buffer = std::make_shared<Hccl::Buffer>(addr, size, HCCL_MEM_TYPE_DEVICE, tag);
+    return std::make_shared<Hccl::LocalUbRmaBuffer>(buffer);
+}
+
+class NonUbRmaBuffer : public Hccl::LocalRmaBuffer {
+public:
+    explicit NonUbRmaBuffer(std::shared_ptr<Hccl::Buffer> buffer)
+        : Hccl::LocalRmaBuffer(buffer, Hccl::RmaType::RDMA)
+    {
+    }
+
+    std::string Describe() const override
+    {
+        return "NonUbRmaBuffer";
+    }
+};
+
+HcommResult StubHostGetAllMemHandlesOne(EndpointHandle, void **memHandles, uint32_t *memHandleNum)
+{
+    static std::shared_ptr<Hccl::Buffer> buffer =
+        std::make_shared<Hccl::Buffer>(0x730000U, 0x1000U, HCCL_MEM_TYPE_DEVICE, "host_all");
+    static std::shared_ptr<Hccl::LocalUbRmaBuffer> localBuffer =
+        std::make_shared<Hccl::LocalUbRmaBuffer>(buffer);
+    static std::shared_ptr<Hccl::LocalUbRmaBuffer> localBuffers[1] = {localBuffer};
+    *memHandles = localBuffers;
+    *memHandleNum = 1;
+    return HCCL_SUCCESS;
+}
+} // namespace
+
 class HostCpuUrmaChannelTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -196,10 +229,47 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_GetLocSeg_EmptyBuffers_Expect_Error)
     auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
     ASSERT_EQ(impl->Init(), HCCL_SUCCESS);
 
-    // localRmaBuffers_ is empty after Init with exchangeAllMems = false
+    // commonRes_.bufferVec is empty after Init with exchangeAllMems = false
     u64 seg = 0;
     void* addr = reinterpret_cast<void*>(0x1000);
     EXPECT_EQ(impl->GetLocSeg(addr, 1024, &seg), HCCL_E_INTERNAL);
+}
+
+TEST_F(HostCpuUrmaChannelTest, UT_GetLocSeg_When_BufferMatches_Expect_ReturnHCCL_SUCCESS)
+{
+    auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
+    auto localBuffer = MakeHostLocalBuffer(0x710000U, 0x2000U, "host_match");
+    impl->commonRes_.bufferVec.push_back(localBuffer.get());
+
+    u64 seg = 0;
+    void* addr = reinterpret_cast<void*>(0x710100U);
+    EXPECT_EQ(impl->GetLocSeg(addr, 0x100, &seg), HCCL_SUCCESS);
+    EXPECT_EQ(seg, localBuffer->GetTargetSeg());
+}
+
+TEST_F(HostCpuUrmaChannelTest, UT_GetLocSeg_When_BufferDoesNotMatch_Expect_ReturnHCCL_E_INTERNAL)
+{
+    auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
+    auto localBuffer = MakeHostLocalBuffer(0x720000U, 0x1000U, "host_not_match");
+    impl->commonRes_.bufferVec.push_back(localBuffer.get());
+
+    u64 seg = 0xFF;
+    void* addr = reinterpret_cast<void*>(0x721100U);
+    EXPECT_EQ(impl->GetLocSeg(addr, 0x100, &seg), HCCL_E_INTERNAL);
+    EXPECT_EQ(seg, 0xFFU);
+}
+
+TEST_F(HostCpuUrmaChannelTest, UT_GetLocSeg_When_MatchedBufferIsNotUb_Expect_ReturnHCCL_E_PTR)
+{
+    auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
+    auto buffer = std::make_shared<Hccl::Buffer>(0x725000U, 0x1000U, HCCL_MEM_TYPE_DEVICE, "host_non_ub");
+    NonUbRmaBuffer nonUbBuffer(buffer);
+    impl->commonRes_.bufferVec.push_back(&nonUbBuffer);
+
+    u64 seg = 0xFF;
+    void* addr = reinterpret_cast<void*>(0x725100U);
+    EXPECT_EQ(impl->GetLocSeg(addr, 0x100, &seg), HCCL_E_PTR);
+    EXPECT_EQ(seg, 0xFFU);
 }
 
 TEST_F(HostCpuUrmaChannelTest, Ut_When_ChannelFence_NoWqe_Expect_Success)
@@ -221,8 +291,12 @@ TEST_F(HostCpuUrmaChannelTest, Ut_When_Init_WithExchangeAllMems_Expect_Success)
     MOCKER(HcommEndpointStartListen).stubs().will(returnValue(static_cast<HcommResult>(HCCL_SUCCESS)));
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle_));
     MOCKER(RaSocketSetWhiteListStatus).stubs().will(returnValue(0));
-    MOCKER(HcommMemGetAllMemHandles).stubs().will(returnValue(static_cast<HcommResult>(HCCL_SUCCESS)));
+    MOCKER(HcommMemGetAllMemHandles)
+        .stubs()
+        .will(invoke(StubHostGetAllMemHandlesOne));
 
     auto impl = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc);
-    EXPECT_NO_THROW(impl->Init());
+    ASSERT_EQ(impl->Init(), HCCL_SUCCESS);
+    ASSERT_EQ(impl->commonRes_.bufferVec.size(), 1U);
+    EXPECT_EQ(impl->commonRes_.bufferVec[0]->GetAddr(), 0x730000U);
 }

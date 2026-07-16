@@ -310,12 +310,6 @@ void AivUrmaChannel::ReleaseDeviceChannelEntity()
     devChannelEntity_ = nullptr;
 }
 
-HcclResult AivUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
-    std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
-{
-    return MakebufsFromLocalRmaBuffer(memHandles, memHandleNum, bufs, "AivUrmaChannel");
-}
-
 HcclResult AivUrmaChannel::ParseInputParam() 
 {
     // 1. 从 endpointHandle_，获得 localEp_ 和 rdmaHandle_
@@ -328,26 +322,24 @@ HcclResult AivUrmaChannel::ParseInputParam()
     socket_ = reinterpret_cast<Hccl::Socket *>(channelDesc_.socket);
     remoteEp_ = channelDesc_.remoteEndpoint;
     notifyNum_ = channelDesc_.notifyNum;
-    // 3. 从 channelDesc 的 memHandle，获得 bufs_
+    commonRes_.bufferVec.clear();
     if (channelDesc_.exchangeAllMems) {
         HCCL_INFO("[AivUrmaChannel][%s] exchangeAllMems == true. Get memHandles from endpoint.", __func__);
         std::shared_ptr<Hccl::LocalUbRmaBuffer> *memHandles = nullptr;
         uint32_t memHandleNum = 0;
         CHK_RET(GetAllMemHandles(endpointHandle_, reinterpret_cast<void **>(&memHandles), &memHandleNum));
         HCCL_INFO("[AivUrmaChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
-        bufs_.clear();
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];
             HCCL_INFO("[AivUrmaChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memInfo[%s].",
                 __func__, i, localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
                 localUbRmaBuffer->GetBuf()->GetMemInfo().c_str());
-            bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize(),
-                localUbRmaBuffer->GetBuf()->GetMemInfo().c_str())));
+            commonRes_.bufferVec.push_back(localUbRmaBuffer.get());
         }
     } else {
         HCCL_INFO("[AivUrmaChannel][%s] exchangeAllMems == false. Get memHandles from channelDesc.", __func__);
-        CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
+        CHK_RET(MakeRmaBufferVecFromMemHandles(
+            channelDesc_.memHandles, channelDesc_.memHandleNum, commonRes_.bufferVec, "AivUrmaChannel"));
     }
 
     return HCCL_SUCCESS;
@@ -427,18 +419,6 @@ HcclResult AivUrmaChannel::BuildConnection()
     commonRes_.connVec.emplace_back(ubConn.get());
     connections_.push_back(std::move(ubConn));
 
-    return HCCL_SUCCESS;
-}
-
-HcclResult AivUrmaChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
-{
-    HCCL_INFO("AivUrmaChannel BuildBuffer start size[%u].", bufs.size());
-    for (size_t i = 0; i < bufs.size(); i++) {
-        std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
-        EXCEPTION_CATCH(bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_), return HCCL_E_PTR);
-        commonRes_.bufferVec.push_back(bufferPtr.get());
-        localRmaBuffers_.push_back(std::move(bufferPtr));
-    }
     return HCCL_SUCCESS;
 }
 
@@ -573,9 +553,6 @@ HcclResult AivUrmaChannel::Init()
     CHK_RET(BuildSocket());
     CHK_RET(BuildAttr());
     CHK_RET(BuildConnection());
-    localRmaBuffers_.clear();
-    commonRes_.bufferVec.clear();
-    CHK_RET(BuildBuffer(bufs_));
     CHK_RET(BuildAivUrmaTransport());
     return HCCL_SUCCESS;
 }

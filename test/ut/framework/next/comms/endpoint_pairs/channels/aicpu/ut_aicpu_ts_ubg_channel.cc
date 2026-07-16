@@ -12,6 +12,7 @@
 #include <mockcpp/mockcpp.hpp>
 
 #include "aicpu/aicpu_ts_ubg_channel.h"
+#include "endpoint.h"
 
 #define private public
 #define protected public
@@ -21,12 +22,77 @@ class AicpuTsUbgChannelTest : public testing::Test {
 protected:
     static void SetUpTestCase() {}
     static void TearDownTestCase() {}
-    void SetUp() override {}
-    void TearDown() override {
+    void SetUp() override
+    {
+        const char *dfsConfig = std::getenv("HCCL_DFS_CONFIG");
+        if (dfsConfig != nullptr) {
+            savedDfsConfig_ = dfsConfig;
+            hadDfsConfig_ = true;
+        }
+        (void)setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
+    }
+
+    void TearDown() override
+    {
         GlobalMockObject::verify();
         GlobalMockObject::reset();
+        if (hadDfsConfig_) {
+            (void)setenv("HCCL_DFS_CONFIG", savedDfsConfig_.c_str(), 1);
+        } else {
+            (void)unsetenv("HCCL_DFS_CONFIG");
+        }
     }
+
+private:
+    std::string savedDfsConfig_;
+    bool hadDfsConfig_{false};
 };
+
+namespace {
+EndpointDesc MakeUbgEndpointDesc()
+{
+    EndpointDesc desc{};
+    Hccl::IpAddress localIp("127.0.0.1");
+    desc.protocol = COMM_PROTOCOL_UBG;
+    desc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    desc.commAddr.addr = localIp.GetBinaryAddress().addr;
+    desc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    return desc;
+}
+
+class FakeParseEndpoint : public Endpoint {
+public:
+    FakeParseEndpoint() : Endpoint(MakeUbgEndpointDesc())
+    {
+        ctxHandle_ = reinterpret_cast<void *>(0xDEADBEEF);
+    }
+
+    HcclResult Init() override { return HCCL_SUCCESS; }
+    HcclResult ServerSocketListen(const uint32_t) override { return HCCL_SUCCESS; }
+    HcclResult RegisterMemory(HcommMem, const char *, void **) override { return HCCL_SUCCESS; }
+    HcclResult UnregisterMemory(void *) override { return HCCL_SUCCESS; }
+    HcclResult MemoryExport(void *, void **, uint32_t *) override { return HCCL_SUCCESS; }
+    HcclResult MemoryImport(const void *, uint32_t, HcommMem *) override { return HCCL_SUCCESS; }
+    HcclResult MemoryUnimport(const void *, uint32_t) override { return HCCL_SUCCESS; }
+    HcclResult GetAllMemHandles(void **, uint32_t *) override { return HCCL_SUCCESS; }
+};
+
+std::shared_ptr<Hccl::LocalUbRmaBuffer> MakeUbgLocalBuffer(uintptr_t addr, u64 size, const char *tag)
+{
+    auto buffer = std::make_shared<Hccl::Buffer>(addr, size, HCCL_MEM_TYPE_DEVICE, tag);
+    return std::make_shared<Hccl::LocalUbRmaBuffer>(buffer);
+}
+
+HcommResult StubUbgGetAllMemHandlesOne(EndpointHandle, void **memHandles, uint32_t *memHandleNum)
+{
+    static std::shared_ptr<Hccl::LocalUbRmaBuffer> localBuffer =
+        MakeUbgLocalBuffer(0x620000U, 0x1000U, "ubg_all");
+    static std::shared_ptr<Hccl::LocalUbRmaBuffer> localBuffers[1] = {localBuffer};
+    *memHandles = localBuffers;
+    *memHandleNum = 1;
+    return HCCL_SUCCESS;
+}
+} // namespace
 
 struct FakeEndpoint {
     EndpointDesc desc;
@@ -96,6 +162,35 @@ TEST_F(AicpuTsUbgChannelTest, Ut_GetChannelKind_Returns_AICPU_TS_UBG) {
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(0x1);
     AicpuTsUbgChannel ch(ep, desc);
     EXPECT_EQ(ch.GetChannelKind(), HcommChannelKind::AICPU_TS_UBG);
+}
+
+TEST_F(AicpuTsUbgChannelTest, UT_ParseInputParam_When_ExchangeAllMemsFalse_Expect_FillCommonRes)
+{
+    FakeParseEndpoint endpoint;
+    auto localBuffer = MakeUbgLocalBuffer(0x610000U, 0x1000U, "ubg_desc");
+    HcommMemHandle memHandles[1] = {reinterpret_cast<HcommMemHandle>(localBuffer.get())};
+    HcommChannelDesc desc{};
+    desc.exchangeAllMems = false;
+    desc.memHandles = memHandles;
+    desc.memHandleNum = 1;
+    AicpuTsUbgChannel channel(reinterpret_cast<EndpointHandle>(&endpoint), desc);
+
+    ASSERT_EQ(channel.ParseInputParam(), HCCL_SUCCESS);
+    ASSERT_EQ(channel.commonRes_.bufferVec.size(), 1U);
+    EXPECT_EQ(channel.commonRes_.bufferVec[0], localBuffer.get());
+}
+
+TEST_F(AicpuTsUbgChannelTest, UT_ParseInputParam_When_ExchangeAllMemsTrue_Expect_FillCommonRes)
+{
+    FakeParseEndpoint endpoint;
+    HcommChannelDesc desc{};
+    desc.exchangeAllMems = true;
+    AicpuTsUbgChannel channel(reinterpret_cast<EndpointHandle>(&endpoint), desc);
+    MOCKER(HcommMemGetAllMemHandles).stubs().will(invoke(StubUbgGetAllMemHandlesOne));
+
+    ASSERT_EQ(channel.ParseInputParam(), HCCL_SUCCESS);
+    ASSERT_EQ(channel.commonRes_.bufferVec.size(), 1U);
+    EXPECT_EQ(channel.commonRes_.bufferVec[0]->GetAddr(), 0x620000U);
 }
 
 TEST_F(AicpuTsUbgChannelTest, Ut_BuildConnection_Creates_UbgConn) {
