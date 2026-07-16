@@ -402,7 +402,6 @@ public:
      
     HcclResult GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap);
     HcclResult SetRankIpPortMap(const RankIpPortMapPtr& rankIpPortMap);
-    HcclResult DeinitDpuKernel();
 
 private:
     std::string                                id;

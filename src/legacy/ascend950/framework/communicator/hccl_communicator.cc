@@ -557,9 +557,4 @@ HcclResult HcclCommunicator::GetRankIpPortMap(RankIpPortMapPtr& rankIpPortMap)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommunicator::DeinitDpuKernel()
-{
-    return pimpl->DeinitDpuKernel();
-}
-
 } // namespace Hccl

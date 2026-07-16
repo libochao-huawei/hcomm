@@ -203,7 +203,6 @@ HcclResult __attribute__((weak)) HcclTaskUnRegisterV2(HcclComm comm, const char 
 HcclResult __attribute__((weak)) HcclTaskRegisterProfV2(HcclComm comm, Hccl::ProfCallback profCallback);
 HcclResult __attribute__((weak)) HcclGetDpuSteamIdV2(HcclComm comm, u32 &dpuStreamId);
 HcclResult __attribute__((weak)) HcclCheckTaskServiceExist(const std::string &commId, s32 deviceId);
-HcclResult __attribute__((weak)) HcclDeinitDpuKernel(HcclComm comm);
 #endif
 #ifdef __cplusplus
 }

@@ -506,14 +506,6 @@ HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag)
     return g_taskServiceMap[commId][deviceId]->TaskUnRegister(msgTag);
 }
 
-HcclResult HcclDeinitDpuKernel(HcclComm comm)
-{
-    HCCL_RUN_INFO("[HcclDeinitDpuKernel] start to deinit dpu kernel");
-    CHK_PTR_NULL(comm);
-    Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
-    return communicator->DeinitDpuKernel();
-}
-
 HcclResult HcclGetRootInfoV2(HcclRootInfo *rootInfo)
 {
     HCCL_RUN_INFO("Entry-HcclGetRootInfo V950");
