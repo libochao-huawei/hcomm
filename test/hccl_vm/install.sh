@@ -71,7 +71,8 @@ warn() {
 # 检查命令是否存在
 check_command() {
     if ! command -v $1 &> /dev/null; then
-        error "命令 $1 未找到，请先安装"
+        #error "命令 $1 未找到，请先安装"
+        apt install -y $1
     fi
 }
 

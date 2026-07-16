@@ -25,7 +25,6 @@ include_directories(
     ${CMAKE_BINARY_DIR}/_deps/yaml-cpp-src/include
     ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
     $ENV{HCOMM_CODE_HOME}/pkg_inc
-    $ENV{HCOMM_CODE_HOME}/pkg_inc/legacy
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
     ${ASCEND_CANN_PACKAGE_PATH}/include
 )

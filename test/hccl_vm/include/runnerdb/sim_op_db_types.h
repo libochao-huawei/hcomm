@@ -50,11 +50,11 @@ struct OpMemInfoTab {
     uint32_t id;            // PK (自增)
     uint32_t opDetailId;  // FK，关联 OpDetailTab
     uint64_t inputAddr;
-    uint32_t inputSize;
+    uint64_t inputSize;
     uint64_t outputAddr;
-    uint32_t outputSize;
+    uint64_t outputSize;
     uint64_t cclAddr;
-    uint32_t cclSize;
+    uint64_t cclSize;
 };
 
 struct SyncRecordTab {

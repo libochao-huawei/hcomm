@@ -87,8 +87,8 @@ namespace {
 
     int RecordOpDbInfo(HcclCMDType cmdType,
         uint32_t rankId, uint64_t streamId,
-        const void* inputBuf, uint32_t inputSize,
-        const void* outputBuf, uint32_t outputSize,
+        const void* inputBuf, uint64_t inputSize,
+        const void* outputBuf, uint64_t outputSize,
         const std::vector<uint8_t>& details,
         uint32_t root,
         uint32_t rankSize,
@@ -183,8 +183,8 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
     if (sim::GetDataTypeSize(recvType, outDataSize) != HcclResult::HCCL_SUCCESS) {
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    uint32_t inputSize = static_cast<uint32_t>(inDataSize * sendCount * rankSize);
-    uint32_t outputSize = static_cast<uint32_t>(outDataSize * recvCount * rankSize);
+    uint64_t inputSize = static_cast<uint64_t>(inDataSize) * sendCount * rankSize;
+    uint64_t outputSize = static_cast<uint64_t>(outDataSize) * recvCount * rankSize;
 
     // Use BuildOpDetailsV2 for AlltoAll
     auto alltoallDetails = BuildOpDetailsV2(
@@ -240,14 +240,14 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     if (sim::GetDataTypeSize(recvType, outDataSize) != HcclResult::HCCL_SUCCESS) {
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    uint32_t inCountTotal = 0;
-    uint32_t outCountTotal = 0;
+    uint64_t inCountTotal = 0;
+    uint64_t outCountTotal = 0;
     for (uint32_t rank = 0; rank < rankSize; rank++) {
         inCountTotal += ((uint64_t*)sendCounts)[rank];
         outCountTotal += ((uint64_t*)recvCounts)[rank];
     }
-    uint32_t inputSize = static_cast<uint32_t>(inDataSize * inCountTotal);
-    uint32_t outputSize = static_cast<uint32_t>(outDataSize * outCountTotal);
+    uint64_t inputSize = static_cast<uint64_t>(inDataSize) * inCountTotal;
+    uint64_t outputSize = static_cast<uint64_t>(outDataSize) * outCountTotal;
 
     auto alltoallvDetails = BuildOpDetailsV2(
         static_cast<uint64_t>(inCountTotal), sendType, static_cast<uint64_t>(outCountTotal), recvType, 0,
@@ -315,8 +315,8 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
     if (sim::GetDataTypeSize(dataType, dataSize) != HcclResult::HCCL_SUCCESS) {
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    uint32_t inputSize = static_cast<uint32_t>(dataSize * sendCount);
-    uint32_t outputSize = static_cast<uint32_t>(dataSize * sendCount * rankSize);
+    uint64_t inputSize = static_cast<uint64_t>(dataSize) * sendCount;
+    uint64_t outputSize = static_cast<uint64_t>(dataSize) * sendCount * rankSize;
 
     // Use BuildOpDetailsV1 for AllGather
     auto allGatherDetails = BuildOpDetailsV1(
@@ -359,7 +359,7 @@ HcclResult HcclBroadcast(
     if (sim::GetDataTypeSize(dataType, dataSize) != HcclResult::HCCL_SUCCESS) {
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    uint32_t size = static_cast<uint32_t>(dataSize * count);
+    uint64_t size = static_cast<uint64_t>(dataSize) * count;
 
     // Use BuildOpDetailsV1 for Broadcast
     auto broadcastDetails = BuildOpDetailsV1(
@@ -403,7 +403,7 @@ HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataT
     if (sim::GetDataTypeSize(dataType, dataSize) != HcclResult::HCCL_SUCCESS) {
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    uint32_t size = static_cast<uint32_t>(dataSize * count);
+    uint64_t size = static_cast<uint64_t>(dataSize) * count;
     // Use BuildOpDetailsV1 for AllReduce
     auto allReduceDetails = BuildOpDetailsV1(
         count, dataType, static_cast<uint32_t>(op), static_cast<uint32_t>(op), HcclCMDType::HCCL_CMD_ALLREDUCE);
@@ -445,11 +445,11 @@ HcclResult HcclScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDat
     if (sim::GetDataTypeSize(dataType, dataSize) != HcclResult::HCCL_SUCCESS) {
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    uint32_t inputValueSize = 0;
+    uint64_t inputValueSize = 0;
     if (curRank == root) {
-        inputValueSize = static_cast<uint32_t>(dataSize * recvCount * rankSize);
+        inputValueSize = static_cast<uint64_t>(dataSize) * recvCount * rankSize;
     }
-    uint32_t outputValueSize = static_cast<uint32_t>(dataSize * recvCount);
+    uint64_t outputValueSize = static_cast<uint64_t>(dataSize) * recvCount;
  
     const void* inputPtr = (curRank == root) ? sendBuf : nullptr;
     // Use BuildOpDetailsV1 for Scatter
@@ -513,7 +513,7 @@ HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType
     if (sim::GetDataTypeSize(dataType, dataSize) != HcclResult::HCCL_SUCCESS) {
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    uint32_t size = static_cast<uint32_t>(dataSize * count);
+    uint64_t size = static_cast<uint64_t>(dataSize) * count;
 
     // Use BuildOpDetailsV1 for Reduce
     auto reduceDetails = BuildOpDetailsV1(
@@ -557,8 +557,8 @@ HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, H
     if (sim::GetDataTypeSize(dataType, dataSize) != HcclResult::HCCL_SUCCESS) {
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    uint32_t inputSize = static_cast<uint32_t>(dataSize * recvCount * rankSize);
-    uint32_t outputSize = static_cast<uint32_t>(dataSize * recvCount);
+    uint64_t inputSize = static_cast<uint64_t>(dataSize) * recvCount * rankSize;
+    uint64_t outputSize = static_cast<uint64_t>(dataSize) * recvCount;
 
     // Use BuildOpDetailsV1 for ReduceScatter
     auto reduceScatterDetails = BuildOpDetailsV1(

@@ -35,7 +35,7 @@ bool InsertRunner(uint64_t serverKey)
     try {
         auto curServer = RunnerDB::GetById<sim::Server>(serverKey);
         if (!curServer.has_value()) {
-            HCCL_VM_ERROR("[{}] can not get server by key: {:d}", __func__, serverKey);
+            HCCL_VM_ERROR("can not get server by key: {:d}", serverKey);
             return false;
         }
 
@@ -43,8 +43,8 @@ bool InsertRunner(uint64_t serverKey)
             return d.server_id == serverKey;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[{}] cannot find host by server key: {:d}", __func__, serverKey);
-            return HCCL_SIM_E_NOT_FOUND;
+            HCCL_VM_ERROR("cannot find host by server key: {:d}", serverKey);
+            return false;
         }
         auto hostKey = ret.first.id;
 
@@ -123,14 +123,14 @@ uint64_t GetCurrRankId()
     auto currCtx = RunnerDB::GetById<sim::Context>(g_runner.current_ctx_id);
     if (!currCtx.has_value()) {
         // not find
-        HCCL_VM_ERROR("[{}] can not get CurrContext: {:d}", __func__, g_runner.current_ctx_id);
+        HCCL_VM_ERROR("can not get CurrContext: {:d}", g_runner.current_ctx_id);
         return 0;
     }
 
     auto dev = RunnerDB::GetById<sim::Device>(currCtx->device_id);
     if (!dev.has_value()) {
         // not find
-        HCCL_VM_ERROR("[{}] can not get device: {:d}", __func__, currCtx->device_id);
+        HCCL_VM_ERROR("can not get device: {:d}", currCtx->device_id);
         return 0;
     }
 
@@ -151,7 +151,7 @@ uint64_t GetCurrDeviceKey()
     auto currCtx = RunnerDB::GetById<sim::Context>(g_runner.current_ctx_id);
     if (!currCtx.has_value()) {
         // not find
-        HCCL_VM_ERROR("[{}] can not get CurrContext: {:d}", __func__, g_runner.current_ctx_id);
+        HCCL_VM_ERROR("can not get CurrContext: {:d}", g_runner.current_ctx_id);
         return 0;
     }
 
@@ -163,14 +163,14 @@ uint64_t GetRankIdByCtxId(uint64_t ctxId)
     auto currCtx = RunnerDB::GetById<sim::Context>(ctxId);
     if (!currCtx.has_value()) {
         // not find
-        HCCL_VM_ERROR("[{}] can not get CurrContext: {:d}", __func__, ctxId);
+        HCCL_VM_ERROR("can not get CurrContext: {:d}", ctxId);
         return 0;
     }
 
     auto dev = RunnerDB::GetById<sim::Device>(currCtx->device_id);
     if (!dev.has_value()) {
         // not find
-        HCCL_VM_ERROR("[{}] can not get device: {:d}", __func__, currCtx->device_id);
+        HCCL_VM_ERROR("can not get device: {:d}", currCtx->device_id);
         return 0;
     }
 

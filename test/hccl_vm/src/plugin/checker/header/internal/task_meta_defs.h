@@ -65,11 +65,11 @@ typedef struct {
     uint64_t commId;
     uint64_t streamId;
     uint64_t inputAddr;
-    uint32_t inputSize;
+    uint64_t inputSize;
     uint64_t outputAddr;
-    uint32_t outputSize;
+    uint64_t outputSize;
     uint64_t cclAddr;
-    uint32_t cclSize;
+    uint64_t cclSize;
 } OpStartTask;
 
 typedef struct {

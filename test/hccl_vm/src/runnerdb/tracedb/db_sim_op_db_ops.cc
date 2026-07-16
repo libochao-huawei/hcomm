@@ -318,11 +318,11 @@ int QueryCurrentOpMemInfoByRank(uint32_t rankId, OpMemInfoTab& out)
     out.id = std::stoul(row[0]);
     out.opDetailId = std::stoul(row[1]);
     out.inputAddr = std::stoull(row[2]);
-    out.inputSize = std::stoul(row[3]);
+    out.inputSize = std::stoull(row[3]);
     out.outputAddr = std::stoull(row[4]);
-    out.outputSize = std::stoul(row[5]);
+    out.outputSize = std::stoull(row[5]);
     out.cclAddr = std::stoull(row[6]);
-    out.cclSize = std::stoul(row[7]);
+    out.cclSize = std::stoull(row[7]);
     return 0;
 }
 
@@ -433,11 +433,11 @@ int QueryCompositeOpDetailBySyncIter(uint32_t syncIter, std::map<uint32_t, std::
                 comp.memInfo.id         = std::stoul(mr[MEM_ID]);
                 comp.memInfo.opDetailId = std::stoul(mr[MEM_OP_DETAIL_ID]);
                 comp.memInfo.inputAddr  = std::stoull(mr[MEM_INPUT_ADDR]);
-                comp.memInfo.inputSize  = std::stoul(mr[MEM_INPUT_SIZE]);
+                comp.memInfo.inputSize  = std::stoull(mr[MEM_INPUT_SIZE]);
                 comp.memInfo.outputAddr = std::stoull(mr[MEM_OUTPUT_ADDR]);
-                comp.memInfo.outputSize = std::stoul(mr[MEM_OUTPUT_SIZE]);
+                comp.memInfo.outputSize = std::stoull(mr[MEM_OUTPUT_SIZE]);
                 comp.memInfo.cclAddr    = std::stoull(mr[MEM_CCL_ADDR]);
-                comp.memInfo.cclSize    = std::stoul(mr[MEM_CCL_SIZE]);
+                comp.memInfo.cclSize    = std::stoull(mr[MEM_CCL_SIZE]);
             }
         }
 

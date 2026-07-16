@@ -142,7 +142,7 @@ HcclVmResult AscendClusterTopoParser::ParseRanktableAndInitCommDomain(const std:
 
     TopoMeta topoMeta;
     if (ParseRanktable(ranktablePath, topoMeta) != HcclVmResult::HCCL_SIM_SUCCESS) {
-        HCCL_VM_ERROR("[{}] parse rank table failed", __func__);
+        HCCL_VM_ERROR("parse rank table failed");
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
     return InitCommunicationDomain(topoMeta, true);
@@ -181,7 +181,7 @@ HcclVmResult AscendClusterTopoParser::InitCommunicationDomain(const TopoMeta& to
     if (status_ == HvmClusterStatus::COMM_DOMAIN_UNINIT && !withRanktable) {
         // 根据topoMeta生成ranktable.json文件
         if (CreateRankTableFile(topoMeta) != HcclVmResult::HCCL_SIM_SUCCESS) {
-            HCCL_VM_ERROR("[{}] create rank table file failed", __func__);
+            HCCL_VM_ERROR("create rank table file failed");
             return HcclVmResult::HCCL_SIM_E_INTERNAL;
         }
     }
@@ -198,7 +198,7 @@ HcclVmResult AscendClusterTopoParser::InitDynamicModelData(uint64_t serverKey, u
         return d.physical_id == phyDevId && d.server_id == serverKey;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find device by physical id {:d}", __func__, phyDevId);
+        HCCL_VM_ERROR("cannot find device by physical id {:d}", phyDevId);
         return HCCL_SIM_E_NOT_FOUND;
     }
     auto deviceKey = ret.first.id;
@@ -206,7 +206,7 @@ HcclVmResult AscendClusterTopoParser::InitDynamicModelData(uint64_t serverKey, u
     // 查找serverKey
     HCCL_VM_DEBUG("Update one Device: {}, serverKey= {}, logicDevId= {}, phyDevId= {}", deviceKey, serverKey, logicDevId, phyDevId);
     if (sim::UpdateDeviceLogicId(serverKey, phyDevId, logicDevId) != ACL_SUCCESS) {
-        HCCL_VM_ERROR("[{}] update device logic id by serverKey {:d} failed", __func__, serverKey);
+        HCCL_VM_ERROR("update device logic id by serverKey {:d} failed", serverKey);
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
     // 初始化Rank表
@@ -221,7 +221,7 @@ HcclVmResult AscendClusterTopoParser::InitDynamicModelData(uint64_t serverKey, u
         return d.device_id == deviceKey;
     });
     if (deviceAllCcu.empty()) {
-        HCCL_VM_ERROR("[{}] get device all ccu failed", __func__);
+        HCCL_VM_ERROR("get device all ccu failed");
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
 
@@ -239,8 +239,8 @@ HcclVmResult AscendClusterTopoParser::BuildLevelList(const Server &server, int s
 {
     const Device* device = server.GetDevice(srcDevPhyId);
     if (!device) {
-        HCCL_VM_ERROR("[{}] cannot find device by phyDevId {:d} in superpod{:d}/server{:d}",
-                      __func__, srcDevPhyId, spIdx, srvIdx);
+        HCCL_VM_ERROR("cannot find device by phyDevId {:d} in superpod{:d}/server{:d}",
+                      srcDevPhyId, spIdx, srvIdx);
         return HCCL_SIM_E_NOT_FOUND;
     }
 
@@ -393,7 +393,7 @@ HcclVmResult AscendClusterTopoParser::CreateRankTableFile(const TopoMeta &topoMe
 
     for (uint32_t spIdx = 0; spIdx < topoMeta.size(); ++spIdx) {
         if (spIdx >= network_.superPods.size()) {
-            HCCL_VM_ERROR("[{}] superpod index {:d} out of range", __func__, spIdx);
+            HCCL_VM_ERROR("superpod index {:d} out of range", spIdx);
             return HCCL_SIM_E_NOT_FOUND;
         }
         const SuperPod& superPod = network_.superPods[spIdx];
@@ -401,7 +401,7 @@ HcclVmResult AscendClusterTopoParser::CreateRankTableFile(const TopoMeta &topoMe
 
         for (uint32_t srvIdx = 0; srvIdx < superPodMeta.size(); ++srvIdx) {
             if (srvIdx >= superPod.servers.size()) {
-                HCCL_VM_ERROR("[{}] server index {:d} out of range in superpod {:d}", __func__, srvIdx, spIdx);
+                HCCL_VM_ERROR("server index {:d} out of range in superpod {:d}", srvIdx, spIdx);
                 return HCCL_SIM_E_NOT_FOUND;
             }
             const Server& server = superPod.servers[srvIdx];
@@ -423,7 +423,7 @@ HcclVmResult AscendClusterTopoParser::CreateRankTableFile(const TopoMeta &topoMe
     std::string outputPath = (dataDir / "ranktable.json").string();
     std::ofstream ofs(outputPath);
     if (!ofs.is_open()) {
-        HCCL_VM_ERROR("[{}] failed to open ranktable.json for writing", __func__);
+        HCCL_VM_ERROR("failed to open ranktable.json for writing");
         return HcclVmResult::HCCL_SIM_E_OPEN_FILE_FAILURE;
     }
 
@@ -432,7 +432,7 @@ HcclVmResult AscendClusterTopoParser::CreateRankTableFile(const TopoMeta &topoMe
 
     setenv("RANK_TABLE_FILE", outputPath.c_str(), 1);
 
-    HCCL_VM_DEBUG("[{}] ranktable.json generated with {:d} ranks", __func__, rankId);
+    HCCL_VM_DEBUG("ranktable.json generated with {:d} ranks", rankId);
     return HcclVmResult::HCCL_SIM_SUCCESS;
 }
 
@@ -441,7 +441,7 @@ HcclVmResult AscendClusterTopoParser::InitClusterStaticTopoData()
     for (const auto& superPod : network_.superPods) {
         for (const auto& server : superPod.servers) {
             if (server.hostEid.empty()) {
-                HCCL_VM_ERROR("[{}] server host eid is empty", __func__);
+                HCCL_VM_ERROR("server host eid is empty");
                 return HcclVmResult::HCCL_SIM_E_INTERNAL;
             }
             auto serverKey = InitServer(superPod.superPodId, server);
@@ -554,7 +554,7 @@ HcclVmResult AscendClusterTopoParser::AddLinkInfo(const LinkPortRef *srcPort, co
             return strcmp(d.ip_addr, srcIp.c_str()) == 0;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[{}] cannot find endPoint by ip {}", __func__, srcIp);
+            HCCL_VM_ERROR("cannot find endPoint by ip {}", srcIp);
             return HCCL_SIM_E_NOT_FOUND;
         }
         srcEndPointId = ret.first.id;
@@ -569,7 +569,7 @@ HcclVmResult AscendClusterTopoParser::AddLinkInfo(const LinkPortRef *srcPort, co
             return strcmp(d.ip_addr, dstIp.c_str()) == 0;
         });
         if (!ret.second) {
-            HCCL_VM_ERROR("[{}] cannot find endPoint by ip {}", __func__, dstIp);
+            HCCL_VM_ERROR("cannot find endPoint by ip {}", dstIp);
             return HCCL_SIM_E_NOT_FOUND;
         }
         dstEndPointId = ret.first.id;
@@ -591,7 +591,7 @@ HcclVmResult AscendClusterTopoParser::ParseRanktable(const std::string &ranktabl
 {
     std::ifstream ifs(ranktablePath);
     if (!ifs.is_open()) {
-        HCCL_VM_ERROR("[{}] failed to open ranktable file: {}", __func__, ranktablePath);
+        HCCL_VM_ERROR("failed to open ranktable file: {}", ranktablePath);
         return HcclVmResult::HCCL_SIM_E_OPEN_FILE_FAILURE;
     }
 
@@ -599,13 +599,13 @@ HcclVmResult AscendClusterTopoParser::ParseRanktable(const std::string &ranktabl
     try {
         rankTable = json::parse(ifs);
     } catch (const json::exception& e) {
-        HCCL_VM_ERROR("[{}] failed to parse ranktable json: {}", __func__, e.what());
+        HCCL_VM_ERROR("failed to parse ranktable json: {}", e.what());
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
     ifs.close();
 
     if (!rankTable.contains("rank_list") || !rankTable["rank_list"].is_array()) {
-        HCCL_VM_ERROR("[{}] rank_list not found or not array in ranktable", __func__);
+        HCCL_VM_ERROR("rank_list not found or not array in ranktable");
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
 
@@ -647,7 +647,7 @@ HcclVmResult AscendClusterTopoParser::ParseRanktable(const std::string &ranktabl
         }
 
         if (!found) {
-            HCCL_VM_WARN("[{}] rank local_id={} cannot determine superpod/server, skip", __func__, localId);
+            HCCL_VM_WARN("rank local_id={} cannot determine superpod/server, skip", localId);
             continue;
         }
 
@@ -656,7 +656,7 @@ HcclVmResult AscendClusterTopoParser::ParseRanktable(const std::string &ranktabl
 
     topoMeta.clear();
     if (spSrvDevices.empty()) {
-        HCCL_VM_ERROR("[{}] no valid device found in ranktable", __func__);
+        HCCL_VM_ERROR("no valid device found in ranktable");
         return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
 
@@ -680,9 +680,10 @@ HcclVmResult AscendClusterTopoParser::ParseRanktable(const std::string &ranktabl
 
     if (!network_.superPods.empty() && !network_.superPods[0].servers.empty() &&
         !network_.superPods[0].servers[0].devices.empty()) {
+        HCCL_VM_ERROR("network superpord is error");
+        return HcclVmResult::HCCL_SIM_E_INTERNAL;
     }
 
-    HCCL_VM_DEBUG("[{}] parsed ranktable: topoMetaSize={}",
-                 __func__, topoMeta.size());
+    HCCL_VM_DEBUG("parsed ranktable: topoMetaSize={}", topoMeta.size());
     return HcclVmResult::HCCL_SIM_SUCCESS;
 }

@@ -122,6 +122,7 @@ endif()
 target_compile_options(device PRIVATE
     -O0
     -g
+    -rdynamic
     -D_GLIBCXX_USE_CXX11_ABI=0
     -DCANN_VERSION_NUM=${HCCL_CANN_VERSION_NUM}
     -DNO_YAML_CONFIG

@@ -704,6 +704,7 @@ aclError aclrtDevicePeerAccessStatus(int32_t deviceId, int32_t peerDeviceId, int
 
 aclError aclInit(const char *configPath)
 {
+    HCCL_VM_INFO("-----[acl start]----------");
     (void) configPath;
     return ACL_SUCCESS;
 }
@@ -713,6 +714,8 @@ aclError aclFinalize()
     if (g_devicePid != 0) {
         kill(g_devicePid, SIGKILL);
     }
+    HCCL_VM_INFO("-----[acl finalize]----------");
+    FlushLog();
     return ACL_SUCCESS;
 }
 

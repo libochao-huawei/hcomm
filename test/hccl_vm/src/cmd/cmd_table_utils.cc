@@ -443,6 +443,11 @@ void CmdTableShow(std::string &tableName)
                 std::to_string(tmp.user_ctx) + " | " + std::to_string(tmp.status) + " | " +
                 std::to_string(tmp.opcode) + " | " + std::to_string(tmp.byte_len) + " |";
         });
+    }  else if (tableName == "RaTlv") {
+        auto tables = RunnerDB::GetByPred<sim::RaTlv>([](const sim::RaTlv &) { return true; });
+        PrintTable<sim::RaTlv>("| id | physical_id |", tables, [](const sim::RaTlv &tmp) {
+            return "| " + std::to_string(tmp.id) + " | " + std::to_string(tmp.physical_id) + " |";
+        });
     } else {
         HCCL_VM_ERROR("undefine table {}", tableName);
     }

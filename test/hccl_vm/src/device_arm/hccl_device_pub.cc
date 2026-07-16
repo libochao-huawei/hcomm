@@ -16,6 +16,8 @@
 #include <cstdlib>
 #include <dlfcn.h>
 #include <execinfo.h>
+#include <fcntl.h>
+#include <link.h>
 #include <map>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -30,6 +32,8 @@ extern "C" {
 #endif  // __cplusplus
 
 uint32_t g_rankId = 0;
+
+char g_crash_file_name[64] = "crash_default.log";
 
 HcclVmResult SetCurRankId(uint32_t rankId)
 {
@@ -176,55 +180,108 @@ void UpdataKfcStatus(uint64_t d2hAddr)
     HCCL_VM_INFO("update kfc status success.");
 }
 
+static int DumpModuleMap(struct dl_phdr_info *info, size_t size, void *data)
+{
+    int fd = *(int *)data;
+    char buf[512];
+    const char *name = info->dlpi_name[0] ? info->dlpi_name : "[main]";
+
+    uint64_t vaddr_min = (uint64_t)-1;
+    uint64_t vaddr_max = 0;
+    for (int i = 0; i < info->dlpi_phnum; i++) {
+        if (info->dlpi_phdr[i].p_type != PT_LOAD) {
+            continue;
+        }
+        uint64_t seg_start = info->dlpi_addr + info->dlpi_phdr[i].p_vaddr;
+        uint64_t seg_end = seg_start + info->dlpi_phdr[i].p_memsz;
+        if (seg_start < vaddr_min) {
+            vaddr_min = seg_start;
+        }
+        if (seg_end > vaddr_max) {
+            vaddr_max = seg_end;
+        }
+    }
+
+    int len = snprintf(buf, sizeof(buf), "  0x%016lx-0x%016lx  base=0x%016lx  %s\n",
+                       vaddr_min, vaddr_max, (uint64_t)info->dlpi_addr, name);
+    if (len > 0) {
+        write(fd, buf, len);
+    }
+    return 0;
+}
+
+static void DumpCallSites(int fd, void *const *stack_pointers, int nptrs)
+{
+    char buf[768];
+    int len;
+
+    len = snprintf(buf, sizeof(buf),
+                   "\n---- [Call Sites] (call_site = ret_addr - 4, aarch64 instruction size) ----\n"
+                   "     (addr2line -e <binary> -f -C -p <file_offset>)\n");
+    if (len > 0) {
+        write(fd, buf, len);
+    }
+
+    for (int i = 2; i < nptrs; i++) {
+        uint64_t ret_addr = (uint64_t)stack_pointers[i];
+        uint64_t call_addr = ret_addr - 4;
+
+        Dl_info info;
+        uint64_t base = 0;
+        const char *module = "??";
+        if (dladdr((void *)call_addr, &info) && info.dli_fname) {
+            base = (uint64_t)info.dli_fbase;
+            module = info.dli_fname;
+        }
+
+        uint64_t call_offset = call_addr - base;
+
+        len = snprintf(buf, sizeof(buf),
+                       "  #%02d  call_site=0x%016lx  file_offset=0x%lx  base=0x%016lx  %s\n",
+                       i, call_addr, call_offset, base, module);
+        if (len > 0) {
+            write(fd, buf, len);
+        }
+    }
+}
+
 // 信号处理函数
 void SignalHandler(int signum)
 {
     const int MAX_STACK_FRAMES = 64;
     void* stack_pointers[MAX_STACK_FRAMES];
 
-    // 1. 获取调用栈地址
-    int count = backtrace(stack_pointers, MAX_STACK_FRAMES);
-    
-    // 2. 打印基本错误信息
-    HCCL_VM_ERROR("device process crash captured.");
-    HCCL_VM_INFO("========================================");
-    HCCL_VM_INFO("  ERROR CRASH DETECTED! Signal: {}", signum);
-    HCCL_VM_INFO("========================================");
-    
-    // 3. 将地址转换为符号信息（函数名+ELF内偏移，供addr2line解析行号）
-    for (int i = 0; i < count; ++i) {
-        Dl_info info;
-        if (dladdr(stack_pointers[i], &info) && info.dli_fname != nullptr) {
-            ptrdiff_t elfOffset = reinterpret_cast<char*>(stack_pointers[i])
-                - reinterpret_cast<char*>(info.dli_fbase);
-            if (info.dli_sname != nullptr) {
-                ptrdiff_t symOff = reinterpret_cast<char*>(stack_pointers[i])
-                    - reinterpret_cast<char*>(info.dli_saddr);
-                HCCL_VM_INFO(" [{:02d}] {}({}+{:#x}) [addr: {:#x}]", i,
-                    info.dli_fname, info.dli_sname, symOff, elfOffset);
-            } else {
-                HCCL_VM_INFO(" [{:02d}] {}(?""?) [addr: {:#x}]", i, info.dli_fname, elfOffset);
-            }
-        } else {
-            HCCL_VM_INFO(" [{:02d}] {} (dladdr failed)", i, stack_pointers[i]);
-        }
+    int fd = open(g_crash_file_name, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    if (fd < 0) {
+        _exit(1);
     }
-    
-    HCCL_VM_INFO("========================================");
-    HCCL_VM_INFO("Resolve: aarch64-linux-gnu-addr2line -e ./bin/device -C -f <addr>");
-    HCCL_VM_INFO("========================================");
+    char msg[512] = {0};
+    int len = snprintf(msg, sizeof(msg), "\n---- [Crash] Received signal:%d ----\n", signum);
+    if (len > 0) {
+        write(fd, msg, len);
+    }
 
-    // 4. 刷新缓冲区，确保信息在进程退出前输出
-    fflush(stdout);
+    int nptrs = backtrace(stack_pointers, MAX_STACK_FRAMES);
+    backtrace_symbols_fd(stack_pointers, nptrs, fd);
 
-    // 5. 恢复默认处理并退出
+    DumpCallSites(fd, stack_pointers, nptrs);
+
+    len = snprintf(msg, sizeof(msg), "\n---- [Module Map] (file_offset = runtime_addr - base) ----\n");
+    if (len > 0) {
+        write(fd, msg, len);
+    }
+    dl_iterate_phdr(DumpModuleMap, &fd);
+
+    close(fd);
     signal(signum, SIG_DFL);
-    exit(signum);
+    _exit(signum);
 }
 
 // 注册所有崩溃相关的信号
 void RegisterSignalHandler()
 {
+    pid_t pid = getpid();
+    sprintf(g_crash_file_name, "crash_%d.log", pid);
     signal(SIGSEGV, SignalHandler); // 段错误
     signal(SIGABRT, SignalHandler); // Abort (如 assert 失败)
     signal(SIGFPE,  SignalHandler); // 算术溢出/除零

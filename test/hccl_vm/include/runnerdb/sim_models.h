@@ -518,5 +518,10 @@ typedef struct {
     uint32_t opcode; 
     uint64_t byte_len;
 } RaCr;
+
+typedef struct {
+    uint64_t id;         // PK
+    uint32_t physical_id;
+} RaTlv;
 }
 #endif

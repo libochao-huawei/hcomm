@@ -30,6 +30,7 @@
 #include "sim_yaml_config.h"
 #include "hccp_common.h"
 #include "hccp_ctx.h"
+#include "hccp_tlv.h"
 #include "sim_ip_address.h"
 #include "rt_external_kernel.h"
 #include "db_sim_op_db_ops.h"
@@ -428,6 +429,42 @@ int GetCcuVersion(channel_info_out* output, uint32_t deviceId)
         HCCL_VM_ERROR("unknown soc version: {}", locDevice.soc_version);
         return -1;
     }
+    return 0;
+}
+
+int SimRaCustomChannel(void *tlvHandle, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg)
+{
+    HCCL_VM_INFO("Enter into custom channel...");
+    auto in = reinterpret_cast<struct channel_info_in *>(sendMsg->data);
+    auto out = reinterpret_cast<struct channel_info_out *>(recvMsg->data);
+
+    auto tlvId = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(tlvHandle));
+    auto curTlv = RunnerDB::GetById<sim::RaTlv>(tlvId);
+    if (!curTlv.has_value()) {
+        HCCL_VM_ERROR("tlv id not found:{:d}", tlvId);
+        return ACL_ERROR_INVALID_PARAM;
+    }
+
+    uint8_t  dieId = in->data.data_info.udie_idx;
+    uint32_t devId = curTlv->physical_id;
+
+    switch (in->op) {
+        case ccu_u_opcode_t::CCU_U_OP_GET_DIE_WORKING:
+            return GetEnableCcuDie(out, dieId);
+        case ccu_u_opcode_t::CCU_U_OP_GET_BASIC_INFO:
+            return SetCcuResourceBasicInfo(out, dieId, devId);
+        case ccu_u_opcode_t::CCU_U_OP_SET_INSTRUCTION:
+            return LoadMicrocodeInstructionStub(devId, dieId, in);
+        case ccu_u_opcode_t::CCU_U_OP_SET_CHANNEL:
+            return ConfigChannelInfo(in, devId);
+        case ccu_u_opcode_t::CCU_U_OP_SET_JETTY_CTX:
+            return ConfigJettyInfo(in, devId);
+        case ccu_u_opcode_t::CCU_U_OP_GET_VERSION:
+            return GetCcuVersion(out, devId);
+        default:
+            break;
+    }
+
     return 0;
 }
 

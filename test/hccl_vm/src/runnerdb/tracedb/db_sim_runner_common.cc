@@ -24,7 +24,7 @@ aclError GetDeviceByLogicId(uint32_t deviceId, sim::Device &device)
         return d.server_id == g_cur_server_key && d.logic_id == deviceId;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find device by logical id {:d}", __func__, deviceId);
+        HCCL_VM_ERROR("cannot find device by logical id {:d}", deviceId);
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -40,7 +40,7 @@ aclError GetDeviceByRankId(uint32_t rankId, sim::Device &device)
         return d.rank_id == rankId;
     });
     if (!rankRet.second) {
-        HCCL_VM_ERROR("[{}] cannot find rank by rank id {:d}", __func__, rankId);
+        HCCL_VM_ERROR("cannot find rank by rank id {:d}", rankId);
         return ACL_ERROR_INVALID_PARAM;
     }
     auto deviceKey = rankRet.first.device_id;
@@ -48,7 +48,7 @@ aclError GetDeviceByRankId(uint32_t rankId, sim::Device &device)
     auto deviceRet = RunnerDB::GetById<sim::Device>(deviceKey);
     if (!deviceRet.has_value()) {
         // not find
-        HCCL_VM_ERROR("[{}] can not find device by rank id {:d}", __func__, rankId);
+        HCCL_VM_ERROR("can not find device by rank id {:d}", rankId);
         return ACL_ERROR_INVALID_PARAM;
     }
     device = *deviceRet;
@@ -62,7 +62,7 @@ aclError GetDeviceByPhysicalId(uint32_t deviceId, sim::Device &device)
         return d.server_id == g_cur_server_key && d.physical_id == deviceId;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find device by physical id {:d}", __func__, deviceId);
+        HCCL_VM_ERROR("cannot find device by physical id {:d}", deviceId);
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -76,7 +76,7 @@ aclError GetServerByKey(uint64_t serverKey, sim::Server &server)
         return d.id == serverKey;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find server by key {:d}", __func__, serverKey);
+        HCCL_VM_ERROR("cannot find server by key {:d}", serverKey);
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -90,7 +90,7 @@ aclError GetDeviceByServerKeyAndPhysicalId(uint64_t serverKey, uint32_t deviceId
         return d.server_id == serverKey && d.physical_id == deviceId;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find device by server key {:d}, physical id {:d}", __func__, serverKey, deviceId);
+        HCCL_VM_ERROR("cannot find device by server key {:d}, physical id {:d}", serverKey, deviceId);
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -120,7 +120,7 @@ bool ResetAllDeviceLogicId()
         return true;
     });
     if (allDevices.empty()) {
-        HCCL_VM_ERROR("[{}] cannot find any device", __func__);
+        HCCL_VM_ERROR("cannot find any device");
         return false;
     }
 
@@ -156,7 +156,7 @@ aclError GetCcuFromDeviceByDieId(uint64_t deviceKey, uint8_t dieId, sim::Ccu &cc
         return c.device_id == deviceKey && c.die_id == dieId;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find ccu from device {:d} by die {:d}", __func__, deviceKey, static_cast<uint32_t>(dieId));
+        HCCL_VM_ERROR("cannot find ccu from device {:d} by die {:d}", deviceKey, static_cast<uint32_t>(dieId));
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -170,7 +170,7 @@ aclError GetCcuResourceByCcu(uint64_t ccuKey, sim::CcuResource &ccuRes)
         return cr.ccu_id == ccuKey;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find ccu resource from ccu {:d}", __func__, ccuKey);
+        HCCL_VM_ERROR("cannot find ccu resource from ccu {:d}", ccuKey);
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -184,7 +184,7 @@ aclError GetContextByDevId(uint32_t deviceId, sim::Context &context)
         return ctx.device_id == deviceId && ctx.is_default == 1;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find context by logical device id {:d}", __func__, deviceId);
+        HCCL_VM_ERROR("cannot find context by logical device id {:d}", deviceId);
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -197,7 +197,7 @@ aclError GetPortByName(uint64_t serverKey, uint32_t phyDevId, const std::string 
     sim::Device device{};
     auto ret1 = GetDeviceByServerKeyAndPhysicalId(serverKey, phyDevId, device);
     if (ret1 != ACL_SUCCESS) {
-        HCCL_VM_ERROR("[{}] get device by physical device id({:d}) failed", __func__, phyDevId);
+        HCCL_VM_ERROR("get device by physical device id({:d}) failed", phyDevId);
         return ret1;
     }
 
@@ -233,7 +233,7 @@ aclError GetPortById(uint64_t portId, sim::Port &port)
         return portId == p.id;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find port by id: {:d}", __func__, portId);
+        HCCL_VM_ERROR("cannot find port by id: {:d}", portId);
         return ACL_ERROR_INVALID_PARAM;
     }
 
@@ -261,7 +261,7 @@ uint32_t GetAICpuCount(uint64_t deviceId)
         return d.logic_id == deviceId;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find device by physical id {:d}", __func__, deviceId);
+        HCCL_VM_ERROR("cannot find device by physical id {:d}", deviceId);
         return 0;
     }
 
@@ -281,7 +281,7 @@ uint32_t GetAICoreCount(uint64_t deviceId)
         return d.logic_id == deviceId;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find device by physical id {:d}", __func__, deviceId);
+        HCCL_VM_ERROR("cannot find device by physical id {:d}", deviceId);
         return 0;
     }
 
@@ -301,7 +301,7 @@ uint32_t GetVectorCoreCount(uint64_t deviceId)
         return d.logic_id == deviceId;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find device by physical id {:d}", __func__, deviceId);
+        HCCL_VM_ERROR("cannot find device by physical id {:d}", deviceId);
         return 0;
     }
 
@@ -329,7 +329,7 @@ uint32_t GetCubeCoreCount(uint64_t deviceId)
         return d.logic_id == deviceId;
     });
     if (!ret.second) {
-        HCCL_VM_ERROR("[{}] cannot find device by physical id {:d}", __func__, deviceId);
+        HCCL_VM_ERROR("cannot find device by physical id {:d}", deviceId);
         return 0;
     }
 

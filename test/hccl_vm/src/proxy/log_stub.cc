@@ -15,9 +15,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdio>
-#include <map>
 #include <mutex>
-#include <string>
 
 #include "sim_log.h"
 
@@ -37,7 +35,7 @@ int32_t CheckLogLevel(int32_t moduleId, int32_t logLevel)
     return static_cast<int32_t>(true);
 }
 
-void DlogPrintStub(int level, const char *msgBuffer)
+void DlogPrintStub(int level, int moduleId, const char *msgBuffer)
 {
     std::call_once(log_initialized_flag, []() {
         if (g_logger != nullptr) {
@@ -49,46 +47,42 @@ void DlogPrintStub(int level, const char *msgBuffer)
 
     switch (level) {
     case 0:
-        HCCL_VM_DEBUG("{}", msgBuffer);
+        HCCL_VM_DEBUG("[{}]{}", moduleId & 0xFF, msgBuffer);
         break;
     case 1:
-        HCCL_VM_INFO("{}", msgBuffer);
+        HCCL_VM_INFO("[{}]{}", moduleId & 0xFF, msgBuffer);
         break;
     case 2:
-        HCCL_VM_WARN("{}", msgBuffer);
+        HCCL_VM_WARN("[{}]{}", moduleId & 0xFF, msgBuffer);
         break;
     case 3:
-        HCCL_VM_ERROR("{}", msgBuffer);
+        HCCL_VM_ERROR("[{}]{}", moduleId & 0xFF, msgBuffer);
         break;
     default:
-        HCCL_VM_TRACE("{}", msgBuffer);
+        HCCL_VM_TRACE("[{}]{}", moduleId & 0xFF, msgBuffer);
     }
 }
 
 void DlogRecord(int moduleId, int level, const char *fmt, ...)
 {
-    (void) moduleId;
-    // 定义一个缓冲区，用于存储格式化后的字符串
     char buffer[LOG_MSG_BUFFER_SIZE] = {0};
     va_list args;
     va_start(args, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, args); 
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
 
-    DlogPrintStub(level, buffer);
+    DlogPrintStub(level, moduleId, buffer);
 }
 
 void _Z10DlogRecordiiPKcz(int moduleId, int level, const char *fmt, ...)
 {
-    (void) moduleId;
-    // 定义一个缓冲区，用于存储格式化后的字符串
     char buffer[LOG_MSG_BUFFER_SIZE] = {0};
     va_list args;
     va_start(args, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, args); 
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
 
-    DlogPrintStub(level, buffer);
+    DlogPrintStub(level, moduleId, buffer);
 }
 
 #ifdef __cplusplus

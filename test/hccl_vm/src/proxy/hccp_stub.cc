@@ -46,6 +46,8 @@
 extern "C" {
 #endif  // __cplusplus
 
+int SimRaCustomChannel(void *tlvHandle, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg);
+
 //////////////////////RDMA/////////////////////////////
 
 int RaSocketGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[], unsigned int num,
@@ -920,6 +922,14 @@ int RaGetDevBaseAttr(void *ctxHandle, struct DevBaseAttr *attr)
         priorityInfo.tpType.bs.rtp = 1;
     }
 
+    attr->sqMaxDepth = 1024;
+    attr->rqMaxDepth = 1024;
+    attr->sqMaxSge = 8;
+    attr->rqMaxSge = 8;
+    attr->maxReadSize = 1024 * 1024;
+    attr->maxWriteSize = 1024 * 1024;
+    attr->maxMsgSize = 2ULL * 1024 * 1024 * 1024;
+
     return 0;
 }
 
@@ -1319,14 +1329,18 @@ int RaGetIfaddrs(struct RaGetIfattr *config, struct InterfaceInfo interfaceInfos
 
 int RaTlvInit(struct TlvInitInfo *initInfo, unsigned int *bufferSize, void **tlvHandle)
 {
-    HCCL_VM_INFO("stub");
-    *tlvHandle = reinterpret_cast<void *>(static_cast<uintptr_t>(0x123456U));
+    auto phyId = initInfo->phyId;
+    sim::RaTlv raTlv{};
+    raTlv.physical_id = phyId;
+    auto tlvId = RunnerDB::Add<sim::RaTlv>(raTlv);
+    *tlvHandle = reinterpret_cast<void *>(static_cast<uintptr_t>(tlvId));
     return 0;
 }
 
 int RaTlvDeinit(void *tlvHandle)
 {
-    HCCL_VM_INFO("stub");
+    auto tlvId = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(tlvHandle));
+    RunnerDB::Delete<sim::RaTlv>(tlvId);
     return 0;
 }
 
@@ -1466,7 +1480,7 @@ int GetCcuMemInfo(struct TlvMsg *sendMsg, struct TlvMsg *recvMsg)
 
 int RaTlvRequest(void *tlvHandle, unsigned int moduleType, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg)
 {
-    HCCL_VM_INFO("stub");
+    HCCL_VM_INFO("Enter into tlv request...module: {}, msg:{}", moduleType, static_cast<int>(sendMsg->type));
     switch (sendMsg->type) {
         case TlvCcuMsgType::MSG_TYPE_CCU_INIT:
             HCCL_VM_WARN("not support CCU_INIT");
@@ -1476,6 +1490,9 @@ int RaTlvRequest(void *tlvHandle, unsigned int moduleType, struct TlvMsg *sendMs
             return 0;
         case TlvCcuMsgType::MSG_TYPE_CCU_GET_MEM_INFO:
             GetCcuMemInfo(sendMsg, recvMsg);
+            break;
+        case TlvCcuMsgType::MSG_TYPE_CCU_DISPATCH_CMD:
+            SimRaCustomChannel(tlvHandle, sendMsg, recvMsg);
             break;
         default:
             break;

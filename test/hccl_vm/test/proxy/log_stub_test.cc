@@ -17,7 +17,7 @@
 
 extern "C" {
     int32_t CheckLogLevel(int32_t moduleId, int32_t logLevel);
-    void DlogPrintStub(int level, const char *msgBuffer);
+    void DlogPrintStub(int level, int moduleId, const char *msgBuffer);
     void DlogRecord(int moduleId, int level, const char *fmt, ...);
 }
 
@@ -44,37 +44,37 @@ TEST_F(LogStubLevel2Test, CheckLogLevel_DifferentModules) {
 }
 
 TEST_F(LogStubLevel2Test, DlogPrintStub_DebugLevel) {
-    EXPECT_NO_THROW(DlogPrintStub(0, "Debug message"));
+    EXPECT_NO_THROW(DlogPrintStub(0, 3, "Debug message"));
 }
 
 TEST_F(LogStubLevel2Test, DlogPrintStub_InfoLevel) {
-    EXPECT_NO_THROW(DlogPrintStub(1, "Info message"));
+    EXPECT_NO_THROW(DlogPrintStub(1, 3, "Info message"));
 }
 
 TEST_F(LogStubLevel2Test, DlogPrintStub_WarningLevel) {
-    EXPECT_NO_THROW(DlogPrintStub(2, "Warning message"));
+    EXPECT_NO_THROW(DlogPrintStub(2, 3, "Warning message"));
 }
 
 TEST_F(LogStubLevel2Test, DlogPrintStub_ErrorLevel) {
-    EXPECT_NO_THROW(DlogPrintStub(3, "Error message"));
+    EXPECT_NO_THROW(DlogPrintStub(3, 3, "Error message"));
 }
 
 TEST_F(LogStubLevel2Test, DlogPrintStub_TraceLevel) {
-    EXPECT_NO_THROW(DlogPrintStub(4, "Trace message"));
+    EXPECT_NO_THROW(DlogPrintStub(4, 3, "Trace message"));
 }
 
 TEST_F(LogStubLevel2Test, DlogPrintStub_EmptyMessage) {
-    EXPECT_NO_THROW(DlogPrintStub(1, ""));
+    EXPECT_NO_THROW(DlogPrintStub(1, 3, ""));
 }
 
 TEST_F(LogStubLevel2Test, DlogPrintStub_LongMessage) {
     std::string longMsg(500, 'a');
-    EXPECT_NO_THROW(DlogPrintStub(1, longMsg.c_str()));
+    EXPECT_NO_THROW(DlogPrintStub(1, 3, longMsg.c_str()));
 }
 
 TEST_F(LogStubLevel2Test, DlogPrintStub_MultipleCalls) {
     for (int i = 0; i < 10; i++) {
-        EXPECT_NO_THROW(DlogPrintStub(i % 5, "Test message"));
+        EXPECT_NO_THROW(DlogPrintStub(i % 5, 3, "Test message"));
     }
 }
 

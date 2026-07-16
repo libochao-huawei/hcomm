@@ -34,6 +34,7 @@ include_directories(
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hccl
+    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base
 )
 
