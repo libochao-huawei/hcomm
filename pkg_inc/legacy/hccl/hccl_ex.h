@@ -103,10 +103,10 @@ extern HcclResult HcclRawForceClose(HcclConn conn);
 
 /**
  * @ingroup raw communication
- * @brief bind a communiocation address for the handle
+ * @brief bind a communication address for the handle
  * @param [in] conn    connection handle
  * @param [in] bindAddr    hccl address to which the handle will be bind
- * @return HCCL_SUCCESS for connect suncess
+ * @return HCCL_SUCCESS for connect success
  * @return HCCL_E_AGAIN for need retry
  * @return HCCL_E_PARA for error input
  */
@@ -117,7 +117,7 @@ extern HcclResult HcclRawBind(HcclConn conn, HcclAddr* bindAddr);
  * @brief try to connect to remote as client role
  * @param [in] conn    handle that try to connect
  * @param [in] connectionAddr    remote hccl address.
- * @return HCCL_SUCCESS for connect suncess
+ * @return HCCL_SUCCESS for connect success
  * @return HCCL_E_AGAIN for need retry
  * @return HCCL_E_PARA for error input
  */
@@ -125,9 +125,9 @@ extern HcclResult HcclRawConnect(HcclConn conn, HcclAddr* connectAddr);
 
 /**
  * @ingroup raw communication
- * @brief listen communiocation peer for the handle with a pre-bind HCCL address.
+ * @brief listen communication peer for the handle with a pre-bind HCCL address.
  * @param [in] conn    connection handle
- * @param [in] bakLog    max peer can be queued in parallel when listening
+ * @param [in] backLog    max peer can be queued in parallel when listening
  * @return HCCL_SUCCESS for listen OK
  * @return HCCL_E_PARA for error input
  */
@@ -135,7 +135,7 @@ extern HcclResult HcclRawListen(HcclConn conn, int backLog);
 
 /**
  * @ingroup raw communication
- * @brief accept communiocation peer for the handle with a listend handle
+ * @brief accept communication peer for the handle with a listening handle
  * @param [in] listenConn    connection handle
  * @param [out] acceptAddr   peer address that accepted
  * @param [out] acceptConn   handle for peer communication
