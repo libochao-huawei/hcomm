@@ -60,10 +60,18 @@ private:
         hccl::DeviceMem remoteAlloc{};
     };
 
+    enum class RoceStatus {
+        INIT,               // 初始状态
+        SOCKET_CONNECTING,  // Socket正在连接
+        SOCKET_OK,          // Socket建立连接
+        READY,              // Dispatcher + Transport初始化完成
+        FAILED              // 建链失败
+    };
+
     HcclResult ParseInputParam();
     HcclResult BuildDataSocket();
-    HcclResult BuildClientDataSocket(HcclNetDevCtx netDevCtx, const hccl::HcclIpAddress &remoteIp, uint32_t port,
-        const std::string &socketTag);
+    HcclResult BuildClientDataSocket(
+        HcclNetDevCtx netDevCtx, const hccl::HcclIpAddress &remoteIp, uint32_t port, const std::string &socketTag);
     HcclResult BuildServerDataSocket(AicpuTsRoceEndpoint *roceEp, const hccl::HcclIpAddress &remoteIp, uint32_t port,
         const std::string &socketTag);
     HcclResult BuildDispatcherAndTransport();
@@ -105,6 +113,7 @@ private:
     std::unique_ptr<hccl::Transport> transport_{};
 
     bool inited_{false};
+    RoceStatus roceStatus_{RoceStatus::INIT};
 };
 
 } // namespace hcomm
