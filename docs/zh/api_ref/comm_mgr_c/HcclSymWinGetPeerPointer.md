@@ -22,7 +22,9 @@
 
 根据对称内存窗口资源句柄和偏移，获取指定rank ID的对称内存窗口中该偏移对应的地址指针。
 
+<!-- npu="A3" id6 -->
 针对Atlas A3 训练系列产品/Atlas A3 推理系列产品，本接口支持HCCS链路通信场景；针对Ascend 950PR/Ascend 950DT，本接口支持URMA场景。
+<!-- end id6 -->
 
 ## 函数原型
 
@@ -45,12 +47,18 @@ HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, 
 
 ## 约束说明
 
-- 针对Atlas A3 训练系列产品/Atlas A3 推理系列产品，仅支持HCCS链路通信场景；针对Ascend 950PR/Ascend 950DT，仅支持URMA场景。
-- 仅支持通信算子展开模式为AI CPU的场景。
+<!-- npu="950" id7 -->
+- 针对Ascend 950PR/Ascend 950DT，仅支持URMA场景。该场景下：
+  - 调用该接口前需确保对称内存窗口已完成注册，且相关UB/URMA通信通道已完成建链和远端内存信息更新。
+
+    使用集合通信接口时，相关通道创建和远端内存信息更新由集合通信内部完成；使用独立通信通道资源接口时，需在通道创建成功后再调用该接口。
+  - 传入的winHandle必须为已注册的有效对称内存窗口句柄。若通过[HcclCommSymWinGet](HcclCommSymWinGet.md)获取窗口句柄时未命中，返回的winHandle为空，不能继续传入本接口；若对应peerRank的远端内存信息尚未完成更新，本接口将返回错误。
+<!-- end id7 -->
+<!-- npu="A3" id8 -->
+- 针对Atlas A3 训练系列产品/Atlas A3 推理系列产品，仅支持HCCS链路通信场景。
+<!-- end id8 -->
+- 该接口仅支持通信算子展开模式为AI CPU的场景。
 - 该接口仅支持在Device侧调用。
-- Ascend 950PR/Ascend 950DT的URMA场景下，调用该接口前需确保对称内存窗口已完成注册，且相关UB/URMA通信通道已完成建链和远端内存信息更新。
-  使用集合通信接口时，相关通道创建和远端内存信息更新由集合通信内部完成；使用独立通信通道资源接口时，需在通道创建成功后再调用该接口。
-- Ascend 950PR/Ascend 950DT的URMA场景下，传入的winHandle必须为已注册的有效对称内存窗口句柄。若通过[HcclCommSymWinGet](HcclCommSymWinGet.md)获取窗口句柄时未命中，返回的winHandle为空，不能继续传入本接口；若对应peerRank的远端内存信息尚未完成更新，本接口将返回错误。
 
 ## 调用示例
 

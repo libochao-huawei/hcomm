@@ -2,9 +2,21 @@
 
 ## 产品支持情况
 
+<!-- npu="950" id1 -->
 - Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
+<!-- end id3 -->
+<!-- npu="910" id4 -->
+- Atlas 训练系列产品：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品：不支持
+<!-- end id5 -->
 
 ## 功能说明
 
@@ -29,10 +41,13 @@ int32_t：接口成功返回0，其他失败。
 
 ## 约束说明
 
-- 针对Ascend 950PR/Ascend 950DT，支持AICPU侧和Host CPU侧调用。
+<!-- npu="950" id6 -->
+针对Ascend 950PR/Ascend 950DT，支持AICPU侧和Host CPU侧调用。
+
 - AICPU侧调用时，通信引擎为AICPU_TS，支持通信协议UBC_TP、UBC_CTP、UBoE。
 - Host CPU侧调用时，调用[HcommChannelCreate](../../../control_plane_api/basic_resource_mgmt/HcommChannelCreate.md)或[HcclChannelAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelAcquire.md)申请入参channel时，需传入`engine = COMM_ENGINE_CPU`，且`channelDesc.remoteEndpoint.protocol`需为`COMM_PROTOCOL_ROCE`、`COMM_PROTOCOL_UBC_TP`或`COMM_PROTOCOL_UBC_CTP`。
 - Host CPU侧调用时，`thread`参数无作用，可传入0。
+<!-- end id6 -->
 
 ## 调用示例
 

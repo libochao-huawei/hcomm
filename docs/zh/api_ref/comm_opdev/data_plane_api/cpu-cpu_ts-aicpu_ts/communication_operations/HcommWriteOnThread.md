@@ -2,9 +2,21 @@
 
 ## 产品支持情况
 
+<!-- npu="950" id1 -->
 - Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+<!-- end id3 -->
+<!-- npu="910" id4 -->
+- Atlas 训练系列产品：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品：不支持
+<!-- end id5 -->
 
 ## 功能说明
 
@@ -30,9 +42,11 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
 
 int32_t：接口成功返回0，其他失败。
 
+<!-- npu="950" id6 -->
 ## 约束说明
 
 针对Ascend 950PR/Ascend 950DT，仅支持通信协议UBC_TP、UBC_CTP、UBoE。
+<!-- end id6 -->
 
 ## 调用示例
 

@@ -2,9 +2,21 @@
 
 ## 产品支持情况
 
+<!-- npu="950" id1 -->
 - Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+<!-- end id3 -->
+<!-- npu="910" id4 -->
+- Atlas 训练系列产品：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品：不支持
+<!-- end id5 -->
 
 ## 功能说明
 
@@ -32,7 +44,9 @@ int32_t：接口成功返回0，其他失败。
 
 该接口需要配合[HcommThreadNotifyWaitOnThread](HcommThreadNotifyWaitOnThread.md)使用。
 
+<!-- npu="950" id6 -->
 在Ascend 950PR/Ascend 950DT上，仅支持AICPU_TS模式下、在Device侧调用该接口。
+<!-- end id6 -->
 
 ## 调用示例
 
@@ -54,6 +68,7 @@ uint32_t timeout = 1;
 HcommThreadNotifyWaitOnThread(threads[1], notifyIdx, timeout);
 ```
 
+<!-- npu="950" id7 -->
 在Ascend 950PR/Ascend 950DT上，该函数需要编译到Device侧使用：
 
 ```c
@@ -75,3 +90,4 @@ uint32_t timeout = 1;
 // 等待同步信号
 HcommThreadNotifyWaitOnThread(threads[1], notifyIdx, timeout);
 ```
+<!-- end id7 -->

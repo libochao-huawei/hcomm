@@ -2,9 +2,21 @@
 
 ## 产品支持情况
 
+<!-- npu="950" id1 -->
 - Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
+<!-- end id3 -->
+<!-- npu="910" id4 -->
+- Atlas 训练系列产品：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品：不支持
+<!-- end id5 -->
 
 ## 功能说明
 
@@ -32,7 +44,9 @@ int32_t：接口成功返回0，其他失败。
 
 ## 约束说明
 
+<!-- npu="950" id6 -->
 - 针对Ascend 950PR/Ascend 950DT，本接口仅支持在Host CPU上调用。调用[HcommChannelCreate](../../../control_plane_api/basic_resource_mgmt/HcommChannelCreate.md)或[HcclChannelAcquire](../../../control_plane_api/comms_domain_resource_mgmt/HcclChannelAcquire.md)申请入参channel时，需传入`engine = COMM_ENGINE_CPU`，且`channelDesc.remoteEndpoint.protocol`需为`COMM_PROTOCOL_ROCE`、`COMM_PROTOCOL_UBC_TP`或`COMM_PROTOCOL_UBC_CTP`。其中，NBI读接口（HcommReadNbiOnThread）和NBI写接口（HcommWriteNbiOnThread）仅支持RoCE协议（需配置DPU/1825网卡），不支持UBC_CTP和UBC_TP协议。
+<!-- end id6 -->
 - Host CPU侧调用时，`thread`参数无作用，可传入0。
 - `[src, src + len)`必须落在本端已注册或获取的内存范围内，`[dst, dst + len)`必须落在对端已导入或获取的内存范围内。
 - 该接口返回成功仅表示写请求提交成功。如需确认写操作完成，调用方应调用[HcommChannelFenceOnThread](HcommChannelFenceOnThread.md)等待通道上已提交的写操作完成。

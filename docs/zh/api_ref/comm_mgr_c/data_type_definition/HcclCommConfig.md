@@ -51,12 +51,17 @@ typedef struct HcclCommConfigDef {
 
   下面分别列出不同AI处理器支持的取值及含义，未列出的代表不支持配置。
 
+  <!-- npu="950" id1 -->
   - Ascend 950PR/Ascend 950DT：不支持此配置，可通过HCCL_DETERMINISTIC环境变量配置全局确定性计算开关。
+  <!-- end id1 -->
+  <!-- npu="A3" id2 -->
   - Atlas A3 训练系列产品/Atlas A3 推理系列产品，支持的取值及含义如下：
     - 0（默认值）：代表关闭确定性计算。
     - 1：开启归约类通信算子的确定性计算，支持通信算子AllReduce和ReduceScatter。
     - 2：单算子模式下配置为“2“时与配置为“1“的功能保持一致；静态图模式下暂不支持配置为“2”。
+  <!-- end id2 -->
 
+  <!-- npu="910b" id3 -->
   - Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持的取值及含义如下：
     - 0（默认值）：代表关闭确定性计算。
     - 1：开启归约类通信算子的确定性计算，支持通信算子AllReduce、ReduceScatter、Reduce、ReduceScatterV。
@@ -64,6 +69,7 @@ typedef struct HcclCommConfigDef {
       - 仅支持多机对称分布场景，不支持非对称分布的场景。
       - 开启保序时，不支持饱和模式，仅支持INF/NaN模式。
       - 相较于确定性计算，开启保序功能后会产生一定的性能下降，建议在推理场景下使用该功能。
+  <!-- end id3 -->
 
     > [!NOTE]说明
     > 在不开启确定性计算的场景下，多次执行的结果可能不同。这个差异的来源，一般是因为在算子实现中存在异步的多线程执行，会导致浮点数累加的顺序变化。当开启确定性计算后，算子在相同的硬件和输入下，多次执行将产生相同的输出。
@@ -78,6 +84,7 @@ typedef struct HcclCommConfigDef {
 
   下面分别列出不同AI处理器支持的取值及含义，未列出的代表不支持配置。
 
+  <!-- npu="950" id4 -->
   **针对Ascend 950PR/Ascend 950DT，支持的取值及含义如下：**
 
   - 0：使用默认算子展开模式，针对**Ascend 950PR/Ascend 950DT**，通信算子默认在AI CPU计算单元展开。
@@ -111,7 +118,9 @@ typedef struct HcclCommConfigDef {
     针对单机通信场景的AllReduce、ReduceScatter、Reduce算子，当数据量超过一定值时，为防止性能下降，系统会自动切换为“2：AI_CPU模式”（该阈值并非固定，会根据算子运行模式及网络规模等因素有所调整）。
 
     当CCU资源不足时，系统会自动切换为“2：AI CPU模式”。
+  <!-- end id4 -->
 
+  <!-- npu="A3" id5 -->
   **针对Atlas A3 训练系列产品/Atlas A3 推理系列产品，支持的取值及含义如下：**
 
   - 0：使用默认算子展开模式，Atlas A3 训练系列产品/Atlas A3 推理系列产品默认使用Device侧的AI CPU计算单元。
@@ -138,7 +147,9 @@ typedef struct HcclCommConfigDef {
     - 该配置仅支持对称组网、推理特性。
     - 该配置项支持AllReduce、ReduceScatter、AllGather、AlltoAll、AlltoAllV、AlltoAllVC算子。相关算子支持的数据类型及场景限制参见配置“3”。
     - 该配置项下，集合通信支持控核能力，不同算子的Vector Core核数要求与配置“3”相同。
+  <!-- end id5 -->
 
+  <!-- npu="910b" id6 -->
    **针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，支持的取值及含义如下：**
 
   - 0：使用默认算子展开模式，Atlas A2 训练系列产品/Atlas A2 推理系列产品默认使用Host侧CPU。
@@ -172,12 +183,17 @@ typedef struct HcclCommConfigDef {
     - 该配置仅支持对称组网、推理特性。
     - 该配置项仅支持AllReduce、AlltoAll、AlltoAllV、AlltoAllVC、AllGather、ReduceScatter算子。相关算子支持的数据类型及场景限制参见配置“3”。
     - 该配置项下，集合通信支持控核能力，不同算子的Vector Core核数要求与配置“3”相同。
+  <!-- end id6 -->
 
     > [!NOTE]说明
     > - 多通信域并行场景下，不支持多个通信域同时配置为“3”或“4”（AIV Only模式）。
+    > <!-- npu="910b" id7 -->
     > - 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，通信算子展开模式设置为“3”或“4”时，同时设置hcclDeterministic配置为“1”（开启确定性计算），在单机的单算子和图模式场景下，当数据量≤8MB时，仅AllReduce和ReduceScatter算子的确定性计算生效，其他场景和算子则以hcclDeterministic配置为准。
     > - 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，若hcclDeterministic配置为“2”（开启保序功能），hcclOpExpansionMode不支持配置为“3”或“4”，以保序功能为准。
+    > <!-- end id7 -->
+    > <!-- npu="A3" id8 -->
     > - 针对Atlas A3 训练系列产品/Atlas A3 推理系列产品，通信算子展开模式设置为“3”或“4”时，若同时设置hcclDeterministic为“1”（开启确定性计算）或“2”（开启保序功能），当数据量＜8MB时，仅AllReduce和ReduceScatter算子的确定性计算生效，其他场景和算子则以hcclDeterministic配置为准。
+    > <!-- end id8 -->
 
 - **hcclRdmaTrafficClass**：配置RDMA网卡的traffic class，取值范围为\[0,255\]，需要配置为4的整数倍。
 
@@ -278,7 +294,7 @@ typedef struct HcclCommConfigDef {
 | --- | --- |
 | hcclBufferSize | 配置项hcclBufferSize（通信域粒度配置）> 环境变量[HCCL_BUFFSIZE](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_BUFFSIZE.md)（全局配置）> 默认值200。 |
 | hcclDeterministic | 配置项hcclDeterministic（通信域粒度配置）> 环境变量[HCCL_DETERMINISTIC](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_DETERMINISTIC.md)（全局配置）> 默认值0（关闭确定性计算）。 |
-| hcclOpExpansionMode | 配置项hcclOpExpansionMode（通信域粒度配置）> 环境变量[HCCL_OP_EXPANSION_MODE](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_OP_EXPANSION_MODE.md)（全局配置）> 默认算子展开模式。<br>Ascend 950PR/Ascend 950DT：AICPU_TS<br>Atlas A3 训练系列产品/Atlas A3 推理系列产品：AI_CPU<br>Atlas A2 训练系列产品/Atlas A2 推理系列产品：HOST |
+| hcclOpExpansionMode | 配置项hcclOpExpansionMode（通信域粒度配置）> 环境变量[HCCL_OP_EXPANSION_MODE](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_OP_EXPANSION_MODE.md)（全局配置）> 默认算子展开模式（同环境变量HCCL_OP_EXPANSION_MODE默认值）。|
 | hcclRdmaTrafficClass | 配置项hcclRdmaTrafficClass（通信域粒度配置） > 环境变量[HCCL_RDMA_TC](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_RDMA_TC.md)（全局配置）> 默认值132。 |
 | hcclRdmaServiceLevel | 配置项hcclRdmaServiceLevel（通信域粒度配置）> 环境变量[HCCL_RDMA_SL](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_RDMA_SL.md)（全局配置）> 默认值4。 |
 | hcclExecTimeOut | 配置项hcclExecTimeOut（通信域粒度配置）> 环境变量[HCCL_EXEC_TIMEOUT](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_EXEC_TIMEOUT.md)（全局配置）> 默认值1836。 |

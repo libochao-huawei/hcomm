@@ -22,7 +22,12 @@
 
 根据已注册对称内存的地址指针，返回对应的窗口资源句柄及其在窗口内的偏移量。
 
-针对Atlas A3 训练系列产品/Atlas A3 推理系列产品，本接口支持HCCS链路通信场景；针对Ascend 950PR/Ascend 950DT，本接口支持URMA场景。
+<!-- npu="950" id6 -->
+- 针对Ascend 950PR/Ascend 950DT，本接口支持URMA场景。
+<!-- end id6 -->
+<!-- npu="A3" id7 -->
+- 针对Atlas A3 训练系列产品/Atlas A3 推理系列产品，本接口支持HCCS链路通信场景。
+<!-- end id7 -->
 
 ## 函数原型
 
@@ -46,11 +51,61 @@ HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymW
 
 ## 约束说明
 
-- 针对Atlas A3 训练系列产品/Atlas A3 推理系列产品，仅支持HCCS链路通信场景；针对Ascend 950PR/Ascend 950DT，仅支持URMA场景。
+<!-- npu="950" id8 -->
+- 针对Ascend 950PR/Ascend 950DT，仅支持URMA场景。
+<!-- end id8 -->
+<!-- npu="A3" id9 -->
+- 针对Atlas A3 训练系列产品/Atlas A3 推理系列产品，仅支持HCCS链路通信场景。
+<!-- end id9 -->
 - 仅支持通信算子展开模式为AI CPU的场景。
 
 ## 调用示例
 
+<!-- npu="950" id10 -->
+### Ascend 950PR/Ascend 950DT URMA场景
+
+```c
+// 创建并初始化通信域配置项
+HcclCommConfig config;
+HcclCommConfigInit(&config);
+
+// 获取通信域参数
+uint32_t rankSize = 4;
+uint32_t rankId = 0;
+HcclRootInfo rootInfo;
+HCCLCHECK(HcclGetRootInfo(&rootInfo));
+
+// 初始化集合通信域
+HcclComm hcclComm;
+HCCLCHECK(HcclCommInitRootInfoConfig(rankSize, &rootInfo, rankId, &config, &hcclComm));
+
+size_t memSize = 2 * 1024 * 1024;
+
+// 申请Device内存
+void *devPtr = nullptr;
+ACLCHECK(aclrtMalloc(&devPtr, memSize, ACL_MEM_MALLOC_HUGE_FIRST));
+
+HcclCommSymWindow symWin;
+// 注册对称内存
+HCCLCHECK(HcclCommSymWinRegister(hcclComm, devPtr, memSize, &symWin, 1));
+
+// 使用HcclCommSymWinGet获取对称内存资源
+HcclCommSymWindow tempWin;
+size_t offset = 0;
+HCCLCHECK(HcclCommSymWinGet(hcclComm, devPtr, memSize, &tempWin, &offset));
+
+// 解注册对称内存
+HCCLCHECK(HcclCommSymWinDeregister(symWin));
+
+// 释放内存
+ACLCHECK(aclrtFree(devPtr));
+
+// 销毁通信域
+HCCLCHECK(HcclCommDestroy(hcclComm));
+```
+<!-- end id10 -->
+
+<!-- npu="A3" id11 -->
 ### Atlas A3 训练系列产品/Atlas A3 推理系列产品HCCS场景
 
 ```c
@@ -128,44 +183,4 @@ ACLCHECK(aclrtDestroyStream(stream));
 HCCLCHECK(HcclCommDestroy(hcclComm));
 ```
 
-### Ascend 950PR/Ascend 950DT URMA场景
-
-```c
-// 创建并初始化通信域配置项
-HcclCommConfig config;
-HcclCommConfigInit(&config);
-
-// 获取通信域参数
-uint32_t rankSize = 4;
-uint32_t rankId = 0;
-HcclRootInfo rootInfo;
-HCCLCHECK(HcclGetRootInfo(&rootInfo));
-
-// 初始化集合通信域
-HcclComm hcclComm;
-HCCLCHECK(HcclCommInitRootInfoConfig(rankSize, &rootInfo, rankId, &config, &hcclComm));
-
-size_t memSize = 2 * 1024 * 1024;
-
-// 申请Device内存
-void *devPtr = nullptr;
-ACLCHECK(aclrtMalloc(&devPtr, memSize, ACL_MEM_MALLOC_HUGE_FIRST));
-
-HcclCommSymWindow symWin;
-// 注册对称内存
-HCCLCHECK(HcclCommSymWinRegister(hcclComm, devPtr, memSize, &symWin, 1));
-
-// 使用HcclCommSymWinGet获取对称内存资源
-HcclCommSymWindow tempWin;
-size_t offset = 0;
-HCCLCHECK(HcclCommSymWinGet(hcclComm, devPtr, memSize, &tempWin, &offset));
-
-// 解注册对称内存
-HCCLCHECK(HcclCommSymWinDeregister(symWin));
-
-// 释放内存
-ACLCHECK(aclrtFree(devPtr));
-
-// 销毁通信域
-HCCLCHECK(HcclCommDestroy(hcclComm));
-```
+<!-- end id11 -->

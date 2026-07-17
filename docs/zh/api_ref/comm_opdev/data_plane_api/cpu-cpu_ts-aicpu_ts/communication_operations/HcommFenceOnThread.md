@@ -2,9 +2,21 @@
 
 ## 产品支持情况
 
+<!-- npu="950" id1 -->
 - Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
+<!-- end id3 -->
+<!-- npu="910" id4 -->
+- Atlas 训练系列产品：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品：不支持
+<!-- end id5 -->
 
 ## 功能说明
 
@@ -30,7 +42,9 @@ int32_t：接口成功返回0，其他失败。
 
 ## 约束说明
 
+<!-- npu="950" id6 -->
 - 针对Ascend 950PR/Ascend 950DT，仅支持Host CPU侧调用。
+<!-- end id6 -->
 - Host CPU侧调用时，通信引擎为CPU，支持通信协议RoCE，`thread`参数无作用，可传入0。
 - 该接口用于Host CPU侧数据面Flush，不等待指定通信通道上的读写操作完成。如需等待通道上已提交的读写操作完成，应先调用[HcommChannelFenceOnThread](HcommChannelFenceOnThread.md)。
 - 当前没有需要执行Flush的内部资源时，接口返回成功。

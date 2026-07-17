@@ -53,8 +53,11 @@ def create_group(group, rank_num, rank_ids)
 - 调用该接口的rank必须在当前接口入参group定义的范围内，不在此范围内的rank调用该接口会失败。
 - 针对rank_ids参数，在不同单板类型上，有不同的限制。
 
+  <!-- npu="A3" id8 -->
   **针对Atlas A3 训练系列产品/Atlas A3 推理系列产品**：建议每个超节点中的Server数量一致，每个Server中的rank数量一致，若不一致，会造成性能劣化。
+  <!-- end id8 -->
 
+  <!-- npu="910b" id9 -->
   **针对Atlas A2 训练系列产品/Atlas A2 推理系列产品：**
   - 对于Server单机场景，rank_ids无限制条件。
   - 对于Server集群场景，rank_ids需满足如下条件：
@@ -78,9 +81,9 @@ def create_group(group, rank_num, rank_ids)
     rank_ids=[1,2,9,10,17,18]
         
     rank_ids=[4,5,6,7,12,13,14,15,20,21,22,23]
+  <!-- end id9 -->
   
   <!-- npu="910" id6 -->
-
   **针对Atlas 训练系列产品：**
   - 对于Server单机场景，rank_ids需满足如下条件：
   

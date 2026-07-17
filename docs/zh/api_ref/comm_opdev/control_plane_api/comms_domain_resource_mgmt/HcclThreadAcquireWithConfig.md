@@ -2,9 +2,21 @@
 
 ## 产品支持情况
 
+<!-- npu="950" id1 -->
 - Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+<!-- end id3 -->
+<!-- npu="910" id4 -->
+- Atlas 训练系列产品：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品：不支持
+<!-- end id5 -->
 
 ## 功能说明
 
@@ -46,17 +58,23 @@ HcclResult HcclThreadAcquireWithConfig(HcclComm comm, CommEngine engine, uint32_
 
 3. 当前各产品形态支持的CommEngine范围：
 
+  <!-- npu="950" id6 -->
   - Ascend 950PR/Ascend 950DT：
     - COMM_ENGINE_CPU
     - COMM_ENGINE_AICPU
+  <!-- end id6 -->
 
+  <!-- npu="A3" id7 -->
   - Atlas A3 训练系列产品/Atlas A3 推理系列产品：
     - COMM_ENGINE_CPU
     - COMM_ENGINE_AICPU
+  <!-- end id7 -->
 
+  <!-- npu="910b" id8 -->
   - Atlas A2 训练系列产品/Atlas A2 推理系列产品：
     - COMM_ENGINE_CPU
     - COMM_ENGINE_AICPU
+  <!-- end id8 -->
 
 4. 该接口不支持COMM_ENGINE_CPU_TS和COMM_ENGINE_AICPU_TS通信引擎，如需TS类型线程，请使用COMM_ENGINE_CPU或COMM_ENGINE_AICPU引擎配合THREAD_TYPE_TS线程类型。
 

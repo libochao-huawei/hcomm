@@ -2,9 +2,21 @@
 
 ## 产品支持情况
 
+<!-- npu="950" id1 -->
 - Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+<!-- end id3 -->
+<!-- npu="910" id4 -->
+- Atlas 训练系列产品：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品：不支持
+<!-- end id5 -->
 
 ## 功能说明
 
@@ -44,9 +56,13 @@ int32_t：接口成功返回0，其他失败。
 ## 约束说明
 
 - 该接口需要配合[HcommThreadNotifyRecordOnThread](./HcommThreadNotifyRecordOnThread.md)使用。
+<!-- npu="950" id6 -->
 - 在Ascend 950PR/Ascend 950DT上，支持AICPU_TS模式在Device侧调用，也支持在Host CPU侧调用。
+<!-- end id6 -->
 - AICPU_TS模式下，在Host侧和Device侧调用该接口前，如需设置超时时间，需要各自调用[HcommSetNotifyWaitTimeOut](../communication_operations/HcommSetNotifyWaitTimeOut.md)设置，不调用设置接口则默认超时时间为1836秒（Host侧默认为1836+50秒）。
+<!-- npu="950" id7 -->
 - 针对Ascend 950PR/Ascend 950DT的AICPU_TS模式，`notifyIdx`必须小于本端Thread的Notify数量，且Thread创建时的`notifyNumPerThread`需大于0。
+<!-- end id7 -->
 
 ## 调用示例
 
@@ -71,7 +87,7 @@ HcommThreadNotifyRecordOnThread(threads[0], threads[1], notifyIdx);
 // 使用默认超时时间等待同步信号（无需手动传入超时参数）
 HcommThreadNotifyWaitOnThreadWithDefaultTimeout(threads[1], notifyIdx);
 ```
-
+<!-- npu="950" id8 -->
 在Ascend 950PR/Ascend 950DT上，该函数需要编译到Device侧使用：
 
 ```c
@@ -96,6 +112,7 @@ HcommThreadNotifyRecordOnThread(threads[0], threads[1], notifyIdx);
 // 使用默认超时时间等待同步信号（无需手动传入超时参数）
 HcommThreadNotifyWaitOnThreadWithDefaultTimeout(threads[1], notifyIdx);
 ```
+<!-- end id8 -->
 
 ## 相关接口
 

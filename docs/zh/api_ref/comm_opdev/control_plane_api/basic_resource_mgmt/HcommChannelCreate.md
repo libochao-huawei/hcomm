@@ -2,9 +2,21 @@
 
 ## 产品支持情况
 
+<!-- npu="950" id1 -->
 - Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
 - Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
 - Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
+<!-- end id3 -->
+<!-- npu="910" id4 -->
+- Atlas 训练系列产品：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品：不支持
+<!-- end id5 -->
 
 ## 功能说明
 
@@ -39,6 +51,7 @@ HcommResult：接口成功返回0，其他失败。
 - 当前CommEngine配置为CCU时，不支持外部配置NotifyNum，默认为8个CCU Notify。
 - 当前各CommEngine支持的通信协议与芯片型号有关，具体如下：
 
+  <!-- npu="950" id6 -->
   针对Ascend 950PR/Ascend 950DT，各通信引擎支持的通信协议如下：
 
   - COMM_ENGINE_CPU
@@ -58,6 +71,7 @@ HcommResult：接口成功返回0，其他失败。
   - COMM_ENGINE_CCU
     - COMM_PROTOCOL_UBC_CTP
     - COMM_PROTOCOL_UBC_TP
+  <!-- end id6 -->
 
 ## 调用示例
 
