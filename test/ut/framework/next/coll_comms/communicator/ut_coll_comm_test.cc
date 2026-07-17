@@ -283,8 +283,8 @@ TEST_F(TestCollComm, Ut_UpdateSymmetricRemoteMem_When_ChannelReturnsRemoteMem_Ex
     remoteMem.type = COMM_MEM_TYPE_DEVICE;
     remoteMem.addr = reinterpret_cast<void*>(0x9200000);
     remoteMem.size = winSize;
-    char *memTags[] = {const_cast<char*>(resource.memTag.c_str())};
-    EXPECT_EQ(coll.UpdateSymmetricRemoteMem(1, &remoteMem, memTags, 1), HCCL_SUCCESS);
+    std::vector<std::string> memTags = {resource.memTag};
+    EXPECT_EQ(coll.UpdateSymmetricRemoteMem(1, &remoteMem, memTags), HCCL_SUCCESS);
 
     auto remoteMemIt = coll.symmetricMemory_->remoteMemMap_.find(win);
     ASSERT_NE(remoteMemIt, coll.symmetricMemory_->remoteMemMap_.end());

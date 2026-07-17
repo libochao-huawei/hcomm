@@ -354,13 +354,13 @@ HcclResult CollComm::RegisterPendingSymmetricMemHandles(std::vector<HcclMemHandl
     return HCCL_SUCCESS;
 }
 
-HcclResult CollComm::UpdateSymmetricRemoteMem(uint32_t remoteRank, const CommMem *remoteMems, char **memTags,
-    uint32_t memNum)
+HcclResult CollComm::UpdateSymmetricRemoteMem(uint32_t remoteRank, const CommMem *remoteMems,
+    const std::vector<std::string> &memTags)
 {
     if (symmetricMemory_ == nullptr) {
         return HCCL_SUCCESS;
     }
-    return symmetricMemory_->UpdateRemoteMem(remoteRank, remoteMems, memTags, memNum);
+    return symmetricMemory_->UpdateRemoteMem(remoteRank, remoteMems, memTags);
 }
 
 HcclResult CollComm::InitKfcAndRegisterCollComm()

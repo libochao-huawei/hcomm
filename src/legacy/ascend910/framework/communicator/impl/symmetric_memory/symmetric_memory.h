@@ -125,7 +125,7 @@ public:
     HcclResult SetRegisteredMemoryResource(void* devWin, const SymmetricMemoryResource &resource);
     HcclResult GetRegisteredMemoryResource(void* devWin, SymmetricMemoryResource &resource) const;
     void RemoveRegisteredMemoryResource(void* devWin);
-    HcclResult UpdateRemoteMem(uint32_t remoteRank, const CommMem *remoteMems, char **memTags, uint32_t memNum);
+    HcclResult UpdateRemoteMem(uint32_t remoteRank, const CommMem *remoteMems, const std::vector<std::string> &memTags);
 
 private:
     HcclResult Init();

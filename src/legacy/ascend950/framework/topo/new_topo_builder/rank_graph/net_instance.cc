@@ -232,7 +232,7 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
 {
     vector<NetInstance::Path> paths;
     if (peers.count(srcRankId) == 0 || peers.count(dstRankId) == 0) {
-        HCCL_WARNING("[InnerNetInstance::GetPaths] srcRankId[%u] or dstRankId[%u] not exist in netInstance, "
+        HCCL_WARNING("[InnerNetInstance::GetPaths] srcRankId[%d] or dstRankId[%d] not exist in netInstance, "
                      "netLayer[%u], netInstId[%s]", srcRankId, dstRankId, netLayer, netInstId.c_str());
         return paths;
     }
@@ -280,7 +280,7 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
                 }
             }
         } else {
-            HCCL_WARNING("[NetInstance::GetPaths] netLayer[%u], srcRankId[%u], dstRankId[%u], netInstId[%s], "
+            HCCL_WARNING("[NetInstance::GetPaths] netLayer[%u], srcRankId[%d], dstRankId[%d], netInstId[%s], "
                          "from src[%s] to dst[%s] link via fabric[%s] not found.", netLayer, srcRankId, dstRankId,
                          netInstId.c_str(), peers.at(srcRankId)->Describe().c_str(),
                          peers.at(dstRankId)->Describe().c_str(), fabric->Describe().c_str());

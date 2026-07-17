@@ -431,14 +431,14 @@ static HcclResult UpdateSymmetricRemoteMems(hccl::CollComm *collComm, hccl::MyRa
             continue;
         }
         CommMem *remoteMems = nullptr;
-        char **memTags = nullptr;
         uint32_t memNum = 0;
+        std::vector<std::string> memTags;
         // CreateChannels完成后，从channel取回交换到的remoteMem/memTag并回填window。
-        CHK_RET(myRank->ChannelGetRemoteMems(channels[idx], &memNum, &remoteMems, &memTags));
+        CHK_RET(myRank->ChannelGetRemoteMems(channels[idx], &memNum, &remoteMems, memTags));
         if (memNum == 0) {
             continue;
         }
-        CHK_RET(collComm->UpdateSymmetricRemoteMem(channelDesc.remoteRank, remoteMems, memTags, memNum));
+        CHK_RET(collComm->UpdateSymmetricRemoteMem(channelDesc.remoteRank, remoteMems, memTags));
     }
     return HCCL_SUCCESS;
 }

@@ -834,6 +834,26 @@ HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum,
     return HCCL_SUCCESS;
 }
 
+HcclResult MyRank::ChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMem,
+    std::vector<std::string> &memTags) const
+{
+    CHK_PTR_NULL(remoteMem);
+    CHK_PTR_NULL(memNum);
+    char **rawTags = nullptr;
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, memNum, remoteMem, &rawTags)));
+    // 添加空指针检查，防止返回的指针为空
+    if (*memNum > 0) {
+        CHK_PTR_NULL(*remoteMem);
+        CHK_PTR_NULL(rawTags);
+        memTags.reserve(*memNum);
+        for (uint32_t i = 0; i < *memNum; ++i) {
+            memTags.emplace_back(rawTags[i] == nullptr ? "" : rawTags[i]);
+        }
+    }
+    HCCL_INFO("[%s] success. memNum[%u]", __func__, *memNum);
+    return HCCL_SUCCESS;
+}
+
 std::vector<ChannelHandle> MyRank::GetAllChannelList()
 {
     ChannelTable channelTable = rankPairMgr_->GetChannelTable();

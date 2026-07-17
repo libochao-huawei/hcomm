@@ -1091,14 +1091,13 @@ HcclResult SymmetricMemory::CheckAllRemoteMemMatched(uint32_t remoteRank,
     return HCCL_SUCCESS;
 }
 
-HcclResult SymmetricMemory::UpdateRemoteMem(uint32_t remoteRank, const CommMem *remoteMems, char **memTags,
-    uint32_t memNum)
+HcclResult SymmetricMemory::UpdateRemoteMem(uint32_t remoteRank, const CommMem *remoteMems,
+    const std::vector<std::string> &memTags)
 {
     if (mode_ != SymmetricMemoryMode::URMA || memoryResourceMap_.empty()) {
         return HCCL_SUCCESS;
     }
     CHK_PTR_NULL(remoteMems);
-    CHK_PTR_NULL(memTags);
     CHK_PRT_RET(remoteRank >= rankSize_,
         HCCL_ERROR("[SymmetricMemory][UpdateRemoteMem] invalid remoteRank[%u], rankSize[%u].",
             remoteRank, rankSize_), HCCL_E_PARA);
@@ -1111,11 +1110,11 @@ HcclResult SymmetricMemory::UpdateRemoteMem(uint32_t remoteRank, const CommMem *
     BuildRemoteMemTagIndex(tagIndex);
     std::vector<void*> dirtyResources;
 
-    for (uint32_t memIdx = 0; memIdx < memNum; ++memIdx) {
-        if (memTags[memIdx] == nullptr) {
+    for (size_t memIdx = 0; memIdx < memTags.size(); ++memIdx) {
+        if (memTags[memIdx].empty()) {
             continue;
         }
-        CHK_RET(UpdateRemoteMemByTag(remoteRank, remoteMems[memIdx], memTags[memIdx], tagIndex,
+        CHK_RET(UpdateRemoteMemByTag(remoteRank, remoteMems[memIdx], memTags[memIdx].c_str(), tagIndex,
             matchedResources, dirtyResources));
     }
     CHK_RET(SyncDirtyRemoteMems(dirtyResources));
