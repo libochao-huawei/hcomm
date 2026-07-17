@@ -623,7 +623,7 @@ classDiagram
 | `PrintCommTaskException(CollCommAicpu*)` | 公有 | [in] aicpuComm | `HcclResult` | 打印指定通信域所有线程的 Task 异常信息 |
 | `PrintTaskExceptionBySqeId(CollCommAicpu*, u32, u32)` | 私有 | [in] aicpuComm, [in] sqId, [in] sqeId | `HcclResult` | 打印指定 sqId/sqeId 的 Task 异常信息：BaseInfo/ParaInfo、EID、GroupInfo、OpData/TaskContext |
 | `PrintTaskContextInfo(CollCommAicpu*, u32, u32)` | 私有 | [in] aicpuComm, [in] sqId, [in] taskId | `HcclResult` | 打印异常 task 前最多 50 条前序 task 上下文信息（按 opIndex 分段打印） |
-| `CollectTaskContext(CollCommAicpu*, u32, u32, vector<shared_ptr<TaskInfo>>&)` | 私有 | [in] aicpuComm, [in] sqId, [in] taskId, [out] taskContext | `HcclResult` | 从 MirrorTaskManagerLite 的队列中收集异常 task 前最多 50 条 task 信息 |
+| `CollectTaskContext(CollCommAicpu*, u32, u32, vector<TaskInfo*>&)` | 私有 | [in] aicpuComm, [in] sqId, [in] taskId, [out] taskContext | `HcclResult` | 从 MirrorTaskManagerLite 的队列中收集异常 task 前最多 50 条 task 信息 |
 | `PrintEid(const TaskInfo&)` | 私有 | [in] taskInfo | void | UB 类型任务打印 localEid 和 remoteEid |
 | `GetGroupInfo(CollCommAicpu*)` | 私有 | [in] aicpuComm | string | 获取通信域的 group/rankSize/localRank 信息 |
 | `GetSqeId(uint16_t, uint16_t)` | 私有 | [in] taskId, [in] streamId | `u32` | 将 taskId 和 streamId 组合为 sqeId |

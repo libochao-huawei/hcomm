@@ -623,7 +623,7 @@ classDiagram
 | `PrintCommTaskException(CollCommAicpu*)` | Public | [in] aicpuComm | `HcclResult` | Prints Task exception information for all threads in the specified communication domain. |
 | `PrintTaskExceptionBySqeId(CollCommAicpu*, u32, u32)` | Private | [in] aicpuComm, [in] sqId, [in] sqeId | `HcclResult` | Prints Task exception information for the specified sqId/sqeId: BaseInfo/ParaInfo, EID, GroupInfo, OpData/TaskContext. |
 | `PrintTaskContextInfo(CollCommAicpu*, u32, u32)` | Private | [in] aicpuComm, [in] sqId, [in] taskId | `HcclResult` | Prints up to 50 preceding task context entries before the exception task (printed in segments by opIndex). |
-| `CollectTaskContext(CollCommAicpu*, u32, u32, vector<shared_ptr<TaskInfo>>&)` | Private | [in] aicpuComm, [in] sqId, [in] taskId, [out] taskContext | `HcclResult` | Collects up to 50 task entries before the exception task from the MirrorTaskManagerLite queue. |
+| `CollectTaskContext(CollCommAicpu*, u32, u32, vector<TaskInfo*>&)` | Private | [in] aicpuComm, [in] sqId, [in] taskId, [out] taskContext | `HcclResult` | Collects up to 50 task entries before the exception task from the MirrorTaskManagerLite queue. |
 | `PrintEid(const TaskInfo&)` | Private | [in] taskInfo | void | Prints localEid and remoteEid for UB type tasks. |
 | `GetGroupInfo(CollCommAicpu*)` | Private | [in] aicpuComm | string | Gets the group/rankSize/localRank information of the communication domain. |
 | `GetSqeId(uint16_t, uint16_t)` | Private | [in] taskId, [in] streamId | `u32` | Combines taskId and streamId into sqeId. |
