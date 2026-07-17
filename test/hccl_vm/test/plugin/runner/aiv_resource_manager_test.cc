@@ -14,9 +14,12 @@
 
 #include "aiv_resource_manager.h"
 #include "sim_op_db_types.h"
+#include "sim_common_defs.h"
 
 namespace {
-constexpr uint64_t EXPECTED_FLAG_BUFFER_SIZE = 33ULL * 1024ULL * 1024ULL - 40ULL * 1024ULL;
+constexpr uint64_t EXPECTED_AIV_COMM_INFO_SIZE = 33ULL * 1024ULL * 1024ULL;
+static_assert(AivCommInfoLayout::SIZE_BYTES == EXPECTED_AIV_COMM_INFO_SIZE,
+    "AIV commInfo size must match the non-pingpong HCCL protocol.");
 
 sim::OpMemInfoTab EmptyOpMemInfo()
 {
@@ -147,8 +150,8 @@ TEST_F(AivResourceManagerTest, RankResource_DefaultValues_AfterInit)
     EXPECT_EQ(resource->outputBuffer.size, 0);
     EXPECT_EQ(resource->cclBuffer.realAddr, nullptr);
     EXPECT_EQ(resource->cclBuffer.size, 0);
-    EXPECT_NE(resource->flagBuffer.realAddr, nullptr);
-    EXPECT_EQ(resource->flagBuffer.size, EXPECTED_FLAG_BUFFER_SIZE);
+    EXPECT_NE(resource->aivCommInfoBuffer.realAddr, nullptr);
+    EXPECT_EQ(resource->aivCommInfoBuffer.size, EXPECTED_AIV_COMM_INFO_SIZE);
 }
 
 TEST_F(AivResourceManagerTest, Init_IncompleteBufferInfo_SkipsAndSucceeds)
@@ -251,15 +254,15 @@ TEST_F(AivResourceManagerTest, Init_LargeRankSize_Success)
     EXPECT_EQ(resources.size(), 8);
 }
 
-TEST_F(AivResourceManagerTest, Init_FlagBufferAllocatedForEachRank)
+TEST_F(AivResourceManagerTest, Init_AivCommInfoBufferAllocatedForEachRank)
 {
     AivResourceManager::GetInstance().Init(0, EmptyOpMemInfo(), 3);
 
     for (uint32_t i = 0; i < 3; ++i) {
         const AivRankResource *resource = AivResourceManager::GetInstance().GetRankResource(i);
         ASSERT_NE(resource, nullptr);
-        EXPECT_NE(resource->flagBuffer.realAddr, nullptr);
-        EXPECT_EQ(resource->flagBuffer.size, EXPECTED_FLAG_BUFFER_SIZE);
+        EXPECT_NE(resource->aivCommInfoBuffer.realAddr, nullptr);
+        EXPECT_EQ(resource->aivCommInfoBuffer.size, EXPECTED_AIV_COMM_INFO_SIZE);
     }
 }
 
@@ -272,7 +275,7 @@ TEST_F(AivResourceManagerTest, Init_RankResourcesIndependent)
 
     ASSERT_NE(resource0, nullptr);
     ASSERT_NE(resource1, nullptr);
-    EXPECT_NE(resource0->flagBuffer.realAddr, resource1->flagBuffer.realAddr);
+    EXPECT_NE(resource0->aivCommInfoBuffer.realAddr, resource1->aivCommInfoBuffer.realAddr);
 }
 
 TEST_F(AivResourceManagerTest, Init_EmptyMemInfo_BufferDefaults)
@@ -287,6 +290,6 @@ TEST_F(AivResourceManagerTest, Init_EmptyMemInfo_BufferDefaults)
     EXPECT_EQ(resource->outputBuffer.size, 0);
     EXPECT_EQ(resource->cclBuffer.realAddr, nullptr);
     EXPECT_EQ(resource->cclBuffer.size, 0);
-    EXPECT_NE(resource->flagBuffer.realAddr, nullptr);
-    EXPECT_EQ(resource->flagBuffer.size, EXPECTED_FLAG_BUFFER_SIZE);
+    EXPECT_NE(resource->aivCommInfoBuffer.realAddr, nullptr);
+    EXPECT_EQ(resource->aivCommInfoBuffer.size, EXPECTED_AIV_COMM_INFO_SIZE);
 }

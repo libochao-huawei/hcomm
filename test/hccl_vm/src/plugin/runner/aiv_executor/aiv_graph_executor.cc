@@ -19,28 +19,26 @@
 #include "aiv_resource_manager.h"
 #include "hccl_types.h"
 #include "sim_log.h"
+#include "sim_common_defs.h"
 
 using HcclSim::HcclVmResult;
 
-static constexpr uint64_t HCCL_AIV_FLAG_SLOT_BYTES = 128ULL;
-
-static AivSim::flag_t* GetFlagSlotPtr(const AivBufferResource& flagBuffer, uint64_t flagSlotOffset, uint32_t taskId)
+static AivSim::flag_t* GetCommInfoCellPtr(
+    const AivBufferResource& aivCommInfoBuffer, uint64_t commInfoOffset, uint32_t taskId)
 {
-    if (flagBuffer.realAddr == nullptr || flagBuffer.size < sizeof(AivSim::flag_t)) {
-        HCCL_VM_ERROR("Flag buffer invalid, taskId={:d}, flagBufferSize={:d}", taskId, flagBuffer.size);
+    if (aivCommInfoBuffer.realAddr == nullptr || aivCommInfoBuffer.size < sizeof(AivSim::flag_t)) {
+        HCCL_VM_ERROR("AIV commInfo buffer invalid, taskId={:d}, aivCommInfoSize={:d}", taskId,
+            aivCommInfoBuffer.size);
         return nullptr;
     }
-
-    const uint64_t maxSlotOffset = (flagBuffer.size - sizeof(AivSim::flag_t)) / HCCL_AIV_FLAG_SLOT_BYTES;
-    if (flagSlotOffset > maxSlotOffset) {
-        HCCL_VM_ERROR("Flag offset out-of-bounds, taskId={:d}, flagSlotOffset={:d}, flagBufferSize={:d}",
-            taskId, flagSlotOffset, flagBuffer.size);
+    if (commInfoOffset % AivCommInfoLayout::SYNC_CELL_BYTES != 0 ||
+        commInfoOffset > aivCommInfoBuffer.size - sizeof(AivSim::flag_t)) {
+        HCCL_VM_ERROR("AIV commInfo cell offset invalid, taskId={:d}, commInfoOffset={:d}, aivCommInfoSize={:d}",
+            taskId, commInfoOffset, aivCommInfoBuffer.size);
         return nullptr;
     }
-
-    const uint64_t flagByteOffset = flagSlotOffset * HCCL_AIV_FLAG_SLOT_BYTES;
-    auto* flagBufferBytes = static_cast<uint8_t*>(flagBuffer.realAddr);
-    return reinterpret_cast<AivSim::flag_t*>(flagBufferBytes + flagByteOffset);
+    auto* commInfoBytes = static_cast<uint8_t*>(aivCommInfoBuffer.realAddr);
+    return reinterpret_cast<AivSim::flag_t*>(commInfoBytes + commInfoOffset);
 }
 
 static void AppendPipeTasksToQueue(
@@ -254,8 +252,8 @@ void* AivGraphExecutor::GetMemPtr(std::shared_ptr<T> task, bool isSrc) {
             rankMem = &rankResource->outputBuffer;
         } else if (slice.GetType() == AivSim::AivBufferType::CCL) {
             rankMem = &rankResource->cclBuffer;
-        } else if (slice.GetType() == AivSim::AivBufferType::FLAG) {
-            rankMem = &rankResource->flagBuffer;
+        } else if (slice.GetType() == AivSim::AivBufferType::AIV_COMM) {
+            rankMem = &rankResource->aivCommInfoBuffer;
         } else {
             HCCL_VM_ERROR("Mem type invalid, taskId={:d} sliceType={:d}", task->GetTaskId(), static_cast<uint32_t>(slice.GetType()));
             return nullptr;
@@ -407,7 +405,7 @@ HcclVmResult AivGraphExecutor::ExecuteTask(std::shared_ptr<AivSim::AivTaskSendFl
         return HcclVmResult::HCCL_SIM_VRT_ERROR_CMD;
     }
 
-    auto* flagPtr = GetFlagSlotPtr(rankResource->flagBuffer, task->GetFlagOffset(), task->GetTaskId());
+    auto* flagPtr = GetCommInfoCellPtr(rankResource->aivCommInfoBuffer, task->GetCommInfoOffset(), task->GetTaskId());
     if (flagPtr == nullptr) {
         return HcclVmResult::HCCL_SIM_VRT_ERROR_CMD;
     }
@@ -425,7 +423,7 @@ HcclVmResult AivGraphExecutor::ExecuteTask(std::shared_ptr<AivSim::AivTaskRecvFl
         return HcclVmResult::HCCL_SIM_VRT_ERROR_CMD;
     }
 
-    auto* flagPtr = GetFlagSlotPtr(rankResource->flagBuffer, task->GetFlagOffset(), task->GetTaskId());
+    auto* flagPtr = GetCommInfoCellPtr(rankResource->aivCommInfoBuffer, task->GetCommInfoOffset(), task->GetTaskId());
     if (flagPtr == nullptr) {
         return HcclVmResult::HCCL_SIM_VRT_ERROR_CMD;
     }

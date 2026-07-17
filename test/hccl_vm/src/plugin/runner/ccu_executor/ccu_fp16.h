@@ -12,6 +12,7 @@
 #ifndef HCCL_SIM_CCU_FP16_H
 #define HCCL_SIM_CCU_FP16_H
 #include <cmath>
+#include <ostream>
 #include <string>
 
 #include "hccl/base.h"

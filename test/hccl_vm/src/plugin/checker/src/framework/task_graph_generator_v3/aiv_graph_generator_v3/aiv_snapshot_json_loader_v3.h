@@ -38,7 +38,7 @@ enum class AivBufferTypeV3 : uint32_t {
     OUTPUT,
     CCL,
     UB,
-    FLAG,
+    AIV_COMM,
     INVALID,
 };
 
@@ -71,7 +71,7 @@ struct AivRuntimeTaskV3 {
     uint32_t syncRound{0};
 
     RankId flagOwnerRank{INVALID_RANK_ID};
-    uint64_t flagOffset{0};
+    uint64_t commInfoOffset{0};
     int32_t flagValue{0};
 };
 
@@ -89,7 +89,7 @@ struct AivRuntimeTaskSnapshotV3 {
     uint64_t inBufferSize{0};
     uint64_t outBufferSize{0};
     uint64_t cclBufferSize{0};
-    uint64_t flagBufferSize{0};
+    uint64_t aivCommInfoSize{0};
     uint64_t ubBufferSize{0};
     std::string filePath;
     std::vector<AivRuntimeBlockSnapshotV3> blocks;

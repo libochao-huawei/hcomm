@@ -17,7 +17,7 @@
 namespace HcclSim {
 namespace TaskGraphGeneratorV3 {
 uint64_t g_checkerAivUbBufferSize = 0;
-uint64_t g_checkerAivFlagBufferSize = 0;
+uint64_t g_checkerAivCommInfoSize = 0;
 
 namespace {
 const char *ToString(MemType type)
@@ -29,10 +29,10 @@ const char *ToString(MemType type)
             return "OUTPUT";
         case MemType::CCL:
             return "CCL";
-        case MemType::UB_AIV:
-            return "UB_AIV";
-        case MemType::FLAG_AIV:
-            return "FLAG_AIV";
+        case MemType::AIV_UB:
+            return "AIV_UB";
+        case MemType::AIV_COMM:
+            return "AIV_COMM";
         case MemType::MS_CCU:
             return "MS_CCU";
         default:
@@ -198,6 +198,15 @@ std::string TaskTransMem::Describe() const
     return os.str();
 }
 
+std::string TaskTransMem::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskTransMem] node=" << nodeId_ << "\n" << DescribePosition(loc_) << "\n"
+       << ", src=" << DescribeMemSlice(src_) << "\n"
+       << "dst=" << DescribeMemSlice(dst_);
+    return os.str();
+}
+
 std::string TaskBatchTransMem::Describe() const
 {
     std::ostringstream os;
@@ -213,6 +222,19 @@ std::string TaskBatchTransMem::Describe() const
     }
     if (HasCcuTrace()) {
         os << DescribeCcuTrace(GetCcuTrace());
+    }
+    return os.str();
+}
+
+std::string TaskBatchTransMem::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskBatchTransMem] node=" << nodeId_ << "\n" << DescribePosition(loc_) << "\n";
+    if (!srcs_.empty()) {
+        os << ", src0=" << DescribeMemSlice(srcs_.front())  << "\n";
+    }
+    if (!dsts_.empty()) {
+        os << ", dst0=" << DescribeMemSlice(dsts_.front())  << "\n";
     }
     return os.str();
 }
@@ -242,6 +264,20 @@ std::string TaskReduce::Describe() const
     return os.str();
 }
 
+std::string TaskReduce::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskReduce] node=" << nodeId_ << "\n" << DescribePosition(loc_) << "\n";
+    if (srcs_.size() <= 1U) {
+        os << ", src=" << DescribeMemSlice(src_) << "\n";
+    } else {
+        os << ", srcCount=" << srcs_.size()
+           << ", src0=" << DescribeMemSlice(srcs_.front())  << "\n";
+    }
+    os << ", dst=" << DescribeMemSlice(dst_);
+    return os.str();
+}
+
 std::string TaskBatchReduce::Describe() const
 {
     std::ostringstream os;
@@ -259,6 +295,19 @@ std::string TaskBatchReduce::Describe() const
     }
     if (HasCcuTrace()) {
         os << DescribeCcuTrace(GetCcuTrace());
+    }
+    return os.str();
+}
+
+std::string TaskBatchReduce::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskBatchReduce] node=" << nodeId_ << "\n" << DescribePosition(loc_) << "\n";
+    if (!srcs_.empty() && !srcs_.front().empty()) {
+        os << ", src0=" << DescribeMemSlice(srcs_.front().front())<< "\n";
+    }
+    if (!dsts_.empty()) {
+        os << ", dst0=" << DescribeMemSlice(dsts_.front());
     }
     return os.str();
 }
@@ -335,6 +384,13 @@ std::string TaskAivGraph::Describe() const
     return os.str();
 }
 
+std::string TaskAivGraph::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskAivGraph] node=" << nodeId_ << "\n" << DescribePosition(loc_);
+    return os.str();
+}
+
 std::string TaskAivSetFlag::Describe() const
 {
     std::ostringstream os;
@@ -342,6 +398,14 @@ std::string TaskAivSetFlag::Describe() const
        << ", rank=" << event_.rankId << ", launch=" << event_.launchIdx << ", block=" << event_.blockId
        << ", taskId=" << event_.taskId << ", curPipe=" << event_.curPipe << ", srcPipe=" << event_.srcPipe
        << ", dstPipe=" << event_.dstPipe << ", eventId=" << event_.eventId;
+    return os.str();
+}
+std::string TaskAivSetFlag::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskAivSetFlag] node=" << nodeId_ << "\n" << DescribePosition(loc_) << "\n"
+       << "srcPipe=" << event_.srcPipe << ", dstPipe=" << event_.dstPipe  << "\n"
+       << "eventId=" << event_.eventId;
     return os.str();
 }
 
@@ -354,6 +418,14 @@ std::string TaskAivWaitFlag::Describe() const
        << ", dstPipe=" << event_.dstPipe << ", eventId=" << event_.eventId;
     return os.str();
 }
+std::string TaskAivWaitFlag::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskAivWaitFlag] node=" << nodeId_ << "\n" << DescribePosition(loc_) << "\n"
+       <<"srcPipe=" << event_.srcPipe << ", dstPipe=" << event_.dstPipe << "\n"
+       << "eventId=" << event_.eventId;
+    return os.str();
+}
 
 std::string TaskAivPipeBarrier::Describe() const
 {
@@ -361,6 +433,13 @@ std::string TaskAivPipeBarrier::Describe() const
     os << "[TaskAivPipeBarrier] node=" << nodeId_ << ", " << DescribePosition(loc_)
        << ", " << DescribeAivLocation(info_.taskLoc) << ", pipeType=" << info_.pipeType
        << ", merged=" << info_.merged << ", memberTaskIds=" << DescribeTaskIds(info_.memberTaskIds);
+    return os.str();
+}
+std::string TaskAivPipeBarrier::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskAivPipeBarrier] node=" << nodeId_ << "\n" << DescribePosition(loc_) << "\n"
+       << "memberTaskIds=" << DescribeTaskIds(info_.memberTaskIds);
     return os.str();
 }
 
@@ -372,6 +451,14 @@ std::string TaskAivSyncAll::Describe() const
        << ", merged=" << info_.merged << ", memberTaskIds=" << DescribeTaskIds(info_.memberTaskIds);
     return os.str();
 }
+std::string TaskAivSyncAll::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskAivSyncAll] node=" << nodeId_ << "\n " << DescribePosition(loc_) << "\n"
+       << "syncRound=" << info_.syncRound << "\n"
+       << "memberTaskIds=" << DescribeTaskIds(info_.memberTaskIds);
+    return os.str();
+}
 
 std::string TaskAivSendFlag::Describe() const
 {
@@ -379,7 +466,16 @@ std::string TaskAivSendFlag::Describe() const
     os << "[TaskAivSendFlag] node=" << nodeId_ << ", " << DescribePosition(loc_)
        << ", currentRank=" << flag_.currentRank << ", flagOwnerRank=" << flag_.flagOwnerRank
        << ", launch=" << flag_.launchIdx << ", block=" << flag_.blockId << ", pipe=" << flag_.curPipe
-       << ", taskId=" << flag_.taskId << ", flagOffset=" << flag_.flagOffset << ", value=" << flag_.value;
+       << ", taskId=" << flag_.taskId << ", commInfoOffset=" << flag_.commInfoOffset
+       << ", value=" << flag_.value;
+    return os.str();
+}
+std::string TaskAivSendFlag::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskAivSendFlag] node=" << nodeId_ << "\n" << DescribePosition(loc_) << "\n"
+       << "flagOwnerRank=" << flag_.flagOwnerRank << "\n"
+       << "commInfoOffset=" << flag_.commInfoOffset << ", value=" << flag_.value;
     return os.str();
 }
 
@@ -389,7 +485,16 @@ std::string TaskAivRecvFlag::Describe() const
     os << "[TaskAivRecvFlag] node=" << nodeId_ << ", " << DescribePosition(loc_)
        << ", currentRank=" << flag_.currentRank << ", flagOwnerRank=" << flag_.flagOwnerRank
        << ", launch=" << flag_.launchIdx << ", block=" << flag_.blockId << ", pipe=" << flag_.curPipe
-       << ", taskId=" << flag_.taskId << ", flagOffset=" << flag_.flagOffset << ", value=" << flag_.value;
+       << ", taskId=" << flag_.taskId << ", commInfoOffset=" << flag_.commInfoOffset
+       << ", value=" << flag_.value;
+    return os.str();
+}
+std::string TaskAivRecvFlag::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskAivRecvFlag] node=" << nodeId_ << "\n" << DescribePosition(loc_) << "\n"
+       << "flagOwnerRank=" << flag_.flagOwnerRank << "\n"
+       << "commInfoOffset=" << flag_.commInfoOffset << ", value=" << flag_.value;
     return os.str();
 }
 
@@ -404,6 +509,13 @@ std::string TaskStart::Describe() const
     return os.str();
 }
 
+std::string TaskStart::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskStart] boundary=" << ToString(boundaryType_);
+    return os.str();
+}
+
 std::string TaskEnd::Describe() const
 {
     std::ostringstream os;
@@ -412,6 +524,13 @@ std::string TaskEnd::Describe() const
     if (HasCcuTrace()) {
         os << DescribeCcuTrace(GetCcuTrace());
     }
+    return os.str();
+}
+
+std::string TaskEnd::DescribeShort() const
+{
+    std::ostringstream os;
+    os << "[TaskEnd] boundary=" << ToString(boundaryType_);
     return os.str();
 }
 } // namespace TaskGraphGeneratorV3

@@ -16,6 +16,7 @@
 
 #include "sim_log.h"
 #include "sim_op_db_types.h"
+#include "sim_common_defs.h"
 
 using HcclSim::HcclVmResult;
 
@@ -23,10 +24,6 @@ namespace {
 constexpr uint8_t INPUT_BUFFER_TYPE = 0;
 constexpr uint8_t OUTPUT_BUFFER_TYPE = 1;
 constexpr uint8_t CCL_BUFFER_TYPE = 2;
-constexpr uint64_t AIV_COMM_INFO_SIZE = 65ULL * 1024ULL * 1024ULL;
-constexpr uint64_t AIV_FLAG1_OFFSET = 1ULL * 1024ULL * 1024ULL;
-constexpr uint64_t AIV_FLAG_BUFFER_SIZE = AIV_COMM_INFO_SIZE - AIV_FLAG1_OFFSET;
-
 const char *GetBufferTypeName(uint8_t bufferType)
 {
     switch (bufferType) {
@@ -110,7 +107,7 @@ void AivResourceManager::Reset()
         sim::ReleaseInNoHostProcess(phyMem);
     }
     acquiredPhyMemBlocks_.clear();
-    flagBufferOwners_.clear();
+    aivCommInfoBufferOwners_.clear();
     rankResources_.clear();
 }
 
@@ -136,7 +133,7 @@ HcclVmResult AivResourceManager::EnsureInitialized(uint32_t rankSize)
 
     if (rankResources_.empty()) {
         rankResources_.resize(rankSize);
-        auto ret = InitFlagBuffers(rankSize);
+        auto ret = InitAivCommInfoBuffers(rankSize);
         if (ret != HcclVmResult::HCCL_SIM_SUCCESS) {
             Reset();
             return ret;
@@ -217,25 +214,25 @@ HcclVmResult AivResourceManager::MapOpMemBuffer(
     return MapBuffer(rankSize, rankId, bufferType, startAddr, size, true);
 }
 
-HcclVmResult AivResourceManager::InitFlagBuffers(uint32_t rankSize)
+HcclVmResult AivResourceManager::InitAivCommInfoBuffers(uint32_t rankSize)
 {
-    flagBufferOwners_.resize(rankSize);
+    aivCommInfoBufferOwners_.resize(rankSize);
     for (uint32_t rankId = 0; rankId < rankSize; ++rankId) {
-        auto flagBuffer = std::make_unique<uint8_t[]>(AIV_FLAG_BUFFER_SIZE);
-        if (flagBuffer == nullptr) {
-            HCCL_VM_ERROR("alloc flag buffer failed, rankId={}, size={}",
-                rankId, AIV_FLAG_BUFFER_SIZE);
+        auto aivCommInfoBuffer = std::make_unique<uint8_t[]>(AivCommInfoLayout::SIZE_BYTES);
+        if (aivCommInfoBuffer == nullptr) {
+            HCCL_VM_ERROR("alloc AIV commInfo buffer failed, rankId={}, size={}",
+                rankId, AivCommInfoLayout::SIZE_BYTES);
             return HcclVmResult::HCCL_SIM_E_INTERNAL;
         }
 
-        rankResources_[rankId].flagBuffer.realAddr = flagBuffer.get();
-        rankResources_[rankId].flagBuffer.size = AIV_FLAG_BUFFER_SIZE;
-        flagBufferOwners_[rankId] = std::move(flagBuffer);
+        rankResources_[rankId].aivCommInfoBuffer.realAddr = aivCommInfoBuffer.get();
+        rankResources_[rankId].aivCommInfoBuffer.size = AivCommInfoLayout::SIZE_BYTES;
+        aivCommInfoBufferOwners_[rankId] = std::move(aivCommInfoBuffer);
 
-        HCCL_VM_DEBUG("rankId={}, realAddr={}, size={}",
+        HCCL_VM_DEBUG("AIV commInfo rankId={}, realAddr={}, size={}",
             rankId,
-            rankResources_[rankId].flagBuffer.realAddr,
-            rankResources_[rankId].flagBuffer.size);
+            rankResources_[rankId].aivCommInfoBuffer.realAddr,
+            rankResources_[rankId].aivCommInfoBuffer.size);
     }
     return HcclVmResult::HCCL_SIM_SUCCESS;
 }

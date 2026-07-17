@@ -173,13 +173,13 @@ static bool ParseRuntimeTaskArray(
             case AivSim::AivTaskType::SEND_FLAG:
                 task = std::make_shared<AivSim::AivTaskSendFlag>(
                     payload.value("rank", UINT32_MAX),
-                    payload.value("flagOffset", 0ULL),
+                    payload.value("commInfoOffset", 0ULL),
                     payload.value("flagValue", 0));
                 break;
             case AivSim::AivTaskType::RECV_FLAG:
                 task = std::make_shared<AivSim::AivTaskRecvFlag>(
                     payload.value("rank", UINT32_MAX),
-                    payload.value("flagOffset", 0ULL),
+                    payload.value("commInfoOffset", 0ULL),
                     payload.value("targetValue", 0));
                 break;
             default:

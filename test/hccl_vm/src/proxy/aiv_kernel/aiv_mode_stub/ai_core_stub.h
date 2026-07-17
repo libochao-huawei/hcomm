@@ -81,7 +81,7 @@ public:
     uint64_t GetInputGlobalOffsetBase() const { return inputGlobalOffsetBase_; }
     uint64_t GetOutputGlobalOffsetBase() const { return outputGlobalOffsetBase_; }
     Mem GetCclBuffer(RankId rankId) const { return rankId < MAX_RANK_NUM ? cclBuffer_[rankId] : Mem{}; }
-    Mem GetFlagBuffer(RankId rankId) const { return rankId < MAX_RANK_NUM ? flagBuffer_[rankId] : Mem{}; }
+    Mem GetAivCommInfoBuffer(RankId rankId) const { return rankId < MAX_RANK_NUM ? aivCommInfoBuffer_[rankId] : Mem{}; }
     uint64_t GetUbBufferSize() const { return AIV_UB_SIZE; }
     void SetCurOp(const AivOpParam& opParam) { curOp_ = opParam; }
     void SetIoBuffer(
@@ -94,8 +94,8 @@ public:
     void SetCommBuffer(RankId rankId,
         uint64_t cclBuffer,
         uint64_t cclBufferSize,
-        uint64_t flagBuffer,
-        uint64_t flagBufferSize);
+        uint64_t aivCommInfoBuffer,
+        uint64_t aivCommInfoBufferSize);
     AivDataSlice ResolveGlobalDataSlice(uint64_t addr, uint64_t size, RankId *rankId = nullptr) const;
 
     void DumpAllTasks() const;
@@ -115,7 +115,7 @@ private:
     uint64_t inputGlobalOffsetBase_{0};
     uint64_t outputGlobalOffsetBase_{0};
     Mem cclBuffer_[MAX_RANK_NUM]{};
-    Mem flagBuffer_[MAX_RANK_NUM]{};
+    Mem aivCommInfoBuffer_[MAX_RANK_NUM]{};
 };
 }
 

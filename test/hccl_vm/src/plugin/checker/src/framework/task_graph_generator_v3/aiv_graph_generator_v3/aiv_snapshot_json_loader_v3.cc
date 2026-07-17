@@ -142,12 +142,12 @@ bool ParseRuntimeTask(const Json &taskJson, AivRuntimeTaskV3 &task, std::string 
             return true;
         case AivRuntimeTaskTypeV3::SEND_FLAG:
             task.flagOwnerRank = payload.value("rank", INVALID_RANK_ID);
-            task.flagOffset = payload.value("flagOffset", 0ULL);
+            task.commInfoOffset = payload.value("commInfoOffset", 0ULL);
             task.flagValue = payload.value("flagValue", 0);
             return true;
         case AivRuntimeTaskTypeV3::RECV_FLAG:
             task.flagOwnerRank = payload.value("rank", INVALID_RANK_ID);
-            task.flagOffset = payload.value("flagOffset", 0ULL);
+            task.commInfoOffset = payload.value("commInfoOffset", 0ULL);
             task.flagValue = payload.value("targetValue", 0);
             return true;
         default:
@@ -191,7 +191,7 @@ bool ParseSnapshot(const Json &rankJson, AivRuntimeTaskSnapshotV3 &snapshot, std
     snapshot.inBufferSize = rankJson.value("inBufferSize", 0ULL);
     snapshot.outBufferSize = rankJson.value("outBufferSize", 0ULL);
     snapshot.cclBufferSize = rankJson.value("cclBufferSize", 0ULL);
-    snapshot.flagBufferSize = rankJson.value("flagBufferSize", 0ULL);
+    snapshot.aivCommInfoSize = rankJson.value("aivCommInfoSize", 0ULL);
     snapshot.ubBufferSize = rankJson.value("ubBufferSize", 0ULL);
     snapshot.blocks.clear();
 

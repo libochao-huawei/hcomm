@@ -30,6 +30,21 @@
 #include "framework/task_graph_generator_v3/task_graph_generator_v3.h"
 #include "framework/task_graph_generator_v3/task_graph_mem_conflict_v3.h"
 #include "framework/task_graph_generator_v3/task_graph_single_task_check_v3.h"
+// sim_common_defs.h and checker-internal sim_common.h both define these global
+// types. This test only needs AivCommInfoLayout from sim_common_defs.h.
+#define BufferType AivStLayoutBufferType
+#define DataSlice AivStLayoutDataSlice
+#define INPUT AivStLayoutInput
+#define OUTPUT AivStLayoutOutput
+#define CCL AivStLayoutCcl
+#define RESERVED AivStLayoutReserved
+#include "sim_common_defs.h"
+#undef RESERVED
+#undef CCL
+#undef OUTPUT
+#undef INPUT
+#undef DataSlice
+#undef BufferType
 #include "storage_manager.h"
 
 std::map<RankId, std::map<u32, HcclSim::ChannelsPerDie>> g_allRankChannelInfo;
@@ -50,11 +65,19 @@ constexpr uint32_t BUFFER_OUTPUT = 1;
 constexpr uint32_t BUFFER_INPUT = 0;
 constexpr uint32_t BUFFER_CCL = 2;
 constexpr uint32_t BUFFER_UB = 3;
-constexpr uint32_t BUFFER_FLAG = 4;
+constexpr uint32_t BUFFER_AIV_COMM_INFO = 4;
 constexpr uint32_t PIPE_MTE2 = 1;
 constexpr uint32_t PIPE_MTE3 = 2;
 constexpr uint32_t PIPE_ALL = 3;
 constexpr uint64_t DEFAULT_BUFFER_SIZE = 1ULL << 20;
+constexpr uint64_t AIV_COMM_INFO_SIZE = AivCommInfoLayout::SIZE_BYTES;
+constexpr uint64_t AIV_COMM_INFO_FLAG_ADDR_OFFSET = AivCommInfoLayout::FLAG_ADDR_OFFSET;
+constexpr uint64_t AIV_COMM_INFO_SYNC_CELL_BYTES = AivCommInfoLayout::SYNC_CELL_BYTES;
+
+uint64_t AivCommInfoFlagOffset(uint64_t cellIndex)
+{
+    return AIV_COMM_INFO_FLAG_ADDR_OFFSET + cellIndex * AIV_COMM_INFO_SYNC_CELL_BYTES;
+}
 
 void EnsureDir(const std::string &path)
 {
@@ -135,6 +158,12 @@ public:
             "_task.json";
     }
 
+    void ClearData()
+    {
+        RemoveTree(dataDir_);
+        EnsureDir(dataDir_);
+    }
+
 private:
     std::string root_;
     std::string dataDir_;
@@ -213,14 +242,14 @@ Json SendFlag(uint32_t taskId, uint32_t rank, uint32_t block, uint32_t pipe, uin
     int32_t value)
 {
     return RuntimeTask(TASK_SEND_FLAG, "SendFlag", taskId, rank, block, pipe,
-        Json{{"rank", ownerRank}, {"flagOffset", offset}, {"flagValue", value}});
+        Json{{"rank", ownerRank}, {"commInfoOffset", offset}, {"flagValue", value}});
 }
 
 Json RecvFlag(uint32_t taskId, uint32_t rank, uint32_t block, uint32_t pipe, uint32_t ownerRank, uint64_t offset,
     int32_t value)
 {
     return RuntimeTask(TASK_RECV_FLAG, "RecvFlag", taskId, rank, block, pipe,
-        Json{{"rank", ownerRank}, {"flagOffset", offset}, {"targetValue", value}});
+        Json{{"rank", ownerRank}, {"commInfoOffset", offset}, {"targetValue", value}});
 }
 
 Json Block(uint32_t blockIdx, std::vector<Json> pipe0, std::vector<Json> pipe1, std::vector<Json> pipe2)
@@ -239,7 +268,7 @@ Json Snapshot(uint32_t rank, uint32_t rankSize, uint64_t launch, std::vector<Jso
         {"inBufferSize", DEFAULT_BUFFER_SIZE},
         {"outBufferSize", DEFAULT_BUFFER_SIZE},
         {"cclBufferSize", DEFAULT_BUFFER_SIZE},
-        {"flagBufferSize", DEFAULT_BUFFER_SIZE},
+        {"aivCommInfoSize", AIV_COMM_INFO_SIZE},
         {"ubBufferSize", DEFAULT_BUFFER_SIZE},
         {"aivCores", std::move(blocks)}};
 }
@@ -395,12 +424,14 @@ Json SendRecvSnapshot(uint32_t rank, uint32_t rankSize, uint64_t launch)
 {
     if (rank == 0) {
         return Snapshot(rank, rankSize, launch,
-            {Block(0, {SendFlag(50, rank, 0, 0, 1, 0, 1), SendFlag(51, rank, 0, 0, 2, 0, 1),
-                          SendFlag(52, rank, 0, 0, 3, 0, 1)},
+            {Block(0, {SendFlag(50, rank, 0, 0, 1, AivCommInfoFlagOffset(1), 1),
+                          SendFlag(51, rank, 0, 0, 2, AivCommInfoFlagOffset(2), 1),
+                          SendFlag(52, rank, 0, 0, 3, AivCommInfoFlagOffset(3), 1)},
                 {NormalTask(11, rank, 0, 1)}, {NormalTask(12, rank, 0, 2)})});
     }
     return Snapshot(rank, rankSize, launch,
-        {Block(0, {RecvFlag(50 + rank, rank, 0, 0, rank, 0, 1)}, {NormalTask(11, rank, 0, 1)},
+        {Block(0, {RecvFlag(50 + rank, rank, 0, 0, rank, AivCommInfoFlagOffset(rank), 1)},
+            {NormalTask(11, rank, 0, 1)},
             {NormalTask(12, rank, 0, 2)})});
 }
 
@@ -410,11 +441,13 @@ Json CpGm2GMSnapshot(uint32_t rank, uint32_t rankSize, uint64_t launch, uint32_t
     std::vector<Json> mte2;
     std::vector<Json> mte3;
     const uint64_t sliceSize = 64;
-    const uint32_t extSrcType = flagMem ? BUFFER_FLAG : BUFFER_INPUT;
-    const uint32_t extDstType = flagMem ? BUFFER_FLAG : BUFFER_OUTPUT;
+    const uint32_t extSrcType = flagMem ? BUFFER_AIV_COMM_INFO : BUFFER_INPUT;
+    const uint32_t extDstType = flagMem ? BUFFER_AIV_COMM_INFO : BUFFER_OUTPUT;
+    const uint64_t externalOffsetBase = flagMem ? AIV_COMM_INFO_FLAG_ADDR_OFFSET : 0;
     for (uint32_t index = 0; index < iterationCount; ++index) {
         const uint32_t base = 100 + index * 6;
-        const uint64_t offset = static_cast<uint64_t>(index) * (sliceSize + (externalGap ? sliceSize : 0));
+        const uint64_t offset = externalOffsetBase +
+            static_cast<uint64_t>(index) * (sliceSize + (externalGap ? sliceSize : 0));
         mte2.push_back(MemCopy(base + 0, rank, 0, PIPE_MTE2, rank, rank, extSrcType, offset, BUFFER_UB, 0,
             sliceSize));
         mte2.push_back(SetFlag(base + 1, rank, 0, PIPE_MTE2, PIPE_MTE2, PIPE_MTE3, 0));
@@ -474,13 +507,14 @@ struct RunResult {
 RunResult RunAivCase(const CaseConfig &config, bool runMemConflict = false)
 {
     HcclSim::StorageManager::GetInstance().Reset();
-    TempAivInstallDir install(config.name);
+    static auto install = std::make_unique<TempAivInstallDir>("all_cases");
+    install->ClearData();
     for (uint32_t rank = 0; rank < config.rankSize; ++rank) {
         for (uint64_t launch : config.launches) {
             if (config.missingSnapshots.count({rank, launch}) != 0) {
                 continue;
             }
-            WriteJson(install.TaskJsonPath(rank, launch), config.snapshotFactory(rank, launch));
+            WriteJson(install->TaskJsonPath(rank, launch), config.snapshotFactory(rank, launch));
         }
     }
 

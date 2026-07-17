@@ -136,10 +136,9 @@ bool InitKernelFuncHandle()
     }
     std::string libDir = InstallPath::ResolveToInstallRoot("lib/" + GetArchStr()) + "/";
     gSlogHandle = LoadLibrary(libDir, "libslog.so");
-    gCsecHandle = LoadLibrary(libDir, "libc_sec.so");
     gHcclKerHandle = LoadLibrary(libDir, "libscatter_aicpu_kernel.so");
     gHcommHandle = LoadLibrary(libDir, "libccl_kernel.so");
-    if (gHcclKerHandle == nullptr || gHcommHandle == nullptr || gSlogHandle == nullptr || gCsecHandle == nullptr) {
+    if (gHcclKerHandle == nullptr || gHcommHandle == nullptr || gSlogHandle == nullptr) {
         HCCL_VM_ERROR("Failed to load kernel libs.");
         return false;
     }

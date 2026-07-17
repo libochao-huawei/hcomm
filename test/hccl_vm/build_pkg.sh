@@ -180,37 +180,14 @@ else
 fi
 
 # ==========================================
-# 第四步：拷贝驱动依赖库文件
-# ==========================================
-echo "正在拷贝驱动依赖库文件..."
-
-# 1.定义源路径和目标路径
-SOURCE_DIR="$ASCEND_INSTALL_PATH/cann/x86_64-linux/devlib/device"
-TARGET_DIR="$HCCL_VM_PATH/hccl_vm_install/lib/aarch64"
-
-# 2.检查目标目录是否存在，不存在则创建
-if [ ! -d "$TARGET_DIR" ]; then
-    echo "目录 $TARGET_DIR 不存在，正在创建..."
-    mkdir -p "$TARGET_DIR"
-fi
-
-# 3.拷贝指定的动态库文件 (libascend_hal.so, libc_sec.so, libmmpa.so)
-# 使用 -f 确保覆盖，-v 显示拷贝过程
-if [ -d "$SOURCE_DIR" ]; then
-    cp -fv "$SOURCE_DIR/libascend_hal.so" "$SOURCE_DIR/libc_sec.so" "$SOURCE_DIR/libmmpa.so" "$TARGET_DIR/"
-else
-    echo "错误: 源目录 $SOURCE_DIR 不存在，请检查 CANN 是否正确安装。"
-    exit 1
-fi
-
-# ==========================================
-# 第五步：拷贝并解压 aicpu 相关的 tar.gz 包
+# 第四步：拷贝并解压 aicpu 相关的 tar.gz 包
 # ==========================================
 echo "正在处理 aicpu 相关的构建产物..."
 
-# 1. 定义源文件路径
+# 1. 定义源文件路径和目标文件夹路径
 HCCL_AICPU_TAR=$(find "$HCCL_CODE_HOME" -name "aicpu_hccl.tar.gz" -type f | head -n 1)
 HCOMM_AICPU_TAR=$(find "$HCOMM_CODE_HOME" -name "aicpu_hcomm.tar.gz" -type f | head -n 1)
+TARGET_DIR="$HCCL_VM_PATH/hccl_vm_install/lib/aarch64"
 
 # 2.确保目标目录存在
 mkdir -p "$TARGET_DIR"

@@ -47,7 +47,7 @@ MemType ConvertMemType(BufferType inputType)
         case ::OUTPUT_AIV:
         case ::AIV_COMMINFO:
         case ::USERBUF_AIV:
-            return MemType::UB_AIV;
+            return MemType::AIV_UB;
         default:
             return MemType::INVALID;
     }

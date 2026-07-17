@@ -71,12 +71,12 @@ protected:
         return {{"pipeType", pipeType}, {"barrierGroupTaskIds", barrierGroupTaskIds}};
     }
 
-    static json MakeSendFlagPayload(uint32_t rank, uint64_t flagOffset, int32_t flagValue) {
-        return {{"rank", rank}, {"flagOffset", flagOffset}, {"flagValue", flagValue}};
+    static json MakeSendFlagPayload(uint32_t rank, uint64_t commInfoOffset, int32_t flagValue) {
+        return {{"rank", rank}, {"commInfoOffset", commInfoOffset}, {"flagValue", flagValue}};
     }
 
-    static json MakeRecvFlagPayload(uint32_t rank, uint64_t flagOffset, int32_t targetValue) {
-        return {{"rank", rank}, {"flagOffset", flagOffset}, {"targetValue", targetValue}};
+    static json MakeRecvFlagPayload(uint32_t rank, uint64_t commInfoOffset, int32_t targetValue) {
+        return {{"rank", rank}, {"commInfoOffset", commInfoOffset}, {"targetValue", targetValue}};
     }
 
     static json MakeTaskJson(uint32_t taskType, uint32_t taskId, uint32_t rankId,
@@ -206,7 +206,7 @@ TEST_F(AivTaskSnapshotLoaderTest, LoadByLaunchDirect_PipeBarrier_Success) {
 
 TEST_F(AivTaskSnapshotLoaderTest, LoadByLaunchDirect_SendFlag_Success) {
     auto payload = MakeSendFlagPayload(3, 0x1000, 1);
-    auto task = MakeTaskJson(8, 6, 1, 0, 0, payload);
+    auto task = MakeTaskJson(6, 6, 1, 0, 0, payload);
     auto block = MakeBlockJson(0, json::array({task}));
     json content = {{"rank", 1}, {"rankSize", 4}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -220,7 +220,7 @@ TEST_F(AivTaskSnapshotLoaderTest, LoadByLaunchDirect_SendFlag_Success) {
 
 TEST_F(AivTaskSnapshotLoaderTest, LoadByLaunchDirect_RecvFlag_Success) {
     auto payload = MakeRecvFlagPayload(2, 0x2000, 1);
-    auto task = MakeTaskJson(9, 7, 0, 1, 0, payload);
+    auto task = MakeTaskJson(7, 7, 0, 1, 0, payload);
     auto block = MakeBlockJson(1, json::array(), json::array(), json::array({task}));
     json content = {{"rank", 0}, {"rankSize", 3}, {"launchIndex", 2},
                     {"aivCores", json::array({block})}};
@@ -239,8 +239,8 @@ TEST_F(AivTaskSnapshotLoaderTest, LoadByLaunchDirect_AllTaskTypes_Success) {
     auto setFlag = MakeTaskJson(2, 3, 0, 0, 0, MakeSetFlagPayload(0, 1, 0));
     auto waitFlag = MakeTaskJson(3, 4, 0, 0, 0, MakeWaitFlagPayload(0, 1, 0));
     auto barrier = MakeTaskJson(4, 5, 0, 0, 0, MakePipeBarrierPayload(0, {5}));
-    auto sendFlag = MakeTaskJson(8, 6, 0, 0, 0, MakeSendFlagPayload(1, 0, 0));
-    auto recvFlag = MakeTaskJson(9, 7, 0, 0, 0, MakeRecvFlagPayload(2, 0, 0));
+    auto sendFlag = MakeTaskJson(6, 6, 0, 0, 0, MakeSendFlagPayload(1, 0, 0));
+    auto recvFlag = MakeTaskJson(7, 7, 0, 0, 0, MakeRecvFlagPayload(2, 0, 0));
     auto block = MakeBlockJson(0, json::array({memCopy, setFlag, waitFlag, barrier, sendFlag, recvFlag}),
                                json::array({reduce}), json::array());
     json content = {{"rank", 0}, {"rankSize", 8}, {"launchIndex", 0},

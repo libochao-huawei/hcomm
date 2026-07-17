@@ -30,7 +30,6 @@
 using namespace ops_hccl;
 
 extern bool gLibsLoaded;
-extern void *gCsecHandle;
 extern void *gSlogHandle;
 extern void *gHcommHandle;
 extern void *gHcclKerHandle;
@@ -146,7 +145,6 @@ void SetupTestData()
 void ResetGlobalState()
 {
     gLibsLoaded = false;
-    gCsecHandle = nullptr;
     gSlogHandle = nullptr;
     gHcommHandle = nullptr;
     gHcclKerHandle = nullptr;
@@ -165,7 +163,6 @@ void ResetGlobalState()
 void SetMockFuncHandles()
 {
     gLibsLoaded = true;
-    gCsecHandle = reinterpret_cast<void *>(0x1);
     gSlogHandle = reinterpret_cast<void *>(0x2);
     gHcommHandle = reinterpret_cast<void *>(0x3);
     gHcclKerHandle = reinterpret_cast<void *>(0x4);

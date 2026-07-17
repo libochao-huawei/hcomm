@@ -360,7 +360,7 @@ void TaskGraphGeneratorV3::Reset()
     aivExpandStats_ = AivExpandStats {};
     ccuExpandStats_ = CcuExpandStats {};
     g_checkerAivUbBufferSize = 0;
-    g_checkerAivFlagBufferSize = 0;
+    g_checkerAivCommInfoSize = 0;
 }
 
 HcclResult TaskGraphGeneratorV3::GenGraph(std::vector<std::unique_ptr<TaskNode>> translatedNodes,
@@ -500,13 +500,13 @@ HcclResult TaskGraphGeneratorV3::ExpandAivSubGraphs()
         "  tasks: taskJsonTotalTaskCount={}, dagNodeCountBeforeCpGmMerge={}, dagNodeCountAfterCpGmMerge={}\n"
         "  merge: cpGmLoopMergeCount={}, cpGmMergedIterationCount={}, cpGmMergedOriginalNodeCount={}\n"
         "  nodes: cpGmGeneratedNodeCount={}, cpGmInactiveNodeCount={}\n"
-        "  buf: ubBufferSize={}, flagBufferSize={}\n"
+        "  buf: ubBufferSize={}, aivCommInfoSize={}\n"
         "  time: expandTotalMs={}", stats.graphCount, stats.internalNodeCount,
         stats.setWaitEdgeCount, stats.pipeBarrierMergeCount, stats.syncAllMergeCount, stats.sendRecvEdgeCount,
         stats.taskJsonTotalTaskCount, stats.dagNodeCountBeforeCpGmMerge, stats.dagNodeCountAfterCpGmMerge,
         stats.cpGmLoopMergeCount, stats.cpGmMergedIterationCount, stats.cpGmMergedOriginalNodeCount,
         stats.cpGmGeneratedNodeCount, stats.cpGmInactiveNodeCount, g_checkerAivUbBufferSize,
-        g_checkerAivFlagBufferSize, stats.totalExpandNs / 1000000ULL);
+        g_checkerAivCommInfoSize, stats.totalExpandNs / 1000000ULL);
     return HCCL_SUCCESS;
 }
 

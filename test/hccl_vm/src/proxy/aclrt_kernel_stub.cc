@@ -448,6 +448,12 @@ void ForkAndStartAicpuProcess(int32_t rankId, uint8_t* devState)
     std::string args = std::to_string(rankId);
     std::string devicePath = InstallPath::ResolveToInstallRoot("bin/device");
     std::string libPath = InstallPath::ResolveToInstallRoot("lib/aarch64");
+    const char* ascendHomePath = std::getenv("ASCEND_HOME_PATH");
+    if (ascendHomePath != nullptr) {
+        libPath += ":";
+        libPath += ascendHomePath;
+        libPath += "/x86_64-linux/devlib/device";
+    }
     std::string preloadPath = InstallPath::ResolveToInstallRoot("lib/aarch64/libhccl_device_proxy.so");
     if (pid == 0) {
         g_logger = nullptr;
@@ -554,20 +560,17 @@ thread_local bool g_currentAivContextActive = false;
 
 namespace ops_hccl {
 constexpr uint32_t AIV_STUB_MAX_RANK_SIZE = 512;
-constexpr uint32_t AIV_STUB_MAX_RANK_SIZE_V = 64;
+constexpr uint32_t AIV_STUB_MAX_RANK_SIZE_V = 56;
 constexpr uint32_t AIV_STUB_MAX_NUM_BLOCKS = 48;
 constexpr int32_t AIV_STUB_TOPO_LEN = AIV_STUB_MAX_RANK_SIZE;
-constexpr uint64_t AIV_STUB_GM_IN_TABLE_OFFSET = 0;
-constexpr uint64_t AIV_STUB_GM_OUT_TABLE_OFFSET = 16 * 1024;
+constexpr uint64_t AIV_STUB_GM_IN_TABLE_OFFSET = AivCommInfoLayout::GM_IN_TABLE_OFFSET;
+constexpr uint64_t AIV_STUB_GM_OUT_TABLE_OFFSET = AivCommInfoLayout::GM_OUT_TABLE_OFFSET;
 constexpr uint64_t AIV_STUB_TOPO_OFFSET = 32 * 1024;
-constexpr uint64_t AIV_STUB_FLAG1_OFFSET = 1 * 1024 * 1024;
-constexpr uint64_t AIV_STUB_FLAG2_OFFSET = 5 * 1024 * 1024;
-constexpr uint64_t AIV_STUB_TAG_CLEAR_OFFSET = 512 * 1024;
-constexpr uint64_t AIV_STUB_BASE_FLAG_OFFSET = 9 * 1024 * 1024;
-constexpr uint64_t AIV_STUB_FLAG_EMPTY_OFFSET = 10 * 1024 * 1024;
-constexpr uint64_t AIV_STUB_GM_OUT_PING_OFFSET = 18 * 1024 * 1024;
-constexpr uint64_t AIV_STUB_GM_OUT_PONG_OFFSET = 34 * 1024 * 1024;
-constexpr uint64_t AIV_STUB_COMM_INFO_SIZE = 65 * 1024 * 1024;
+constexpr uint64_t AIV_STUB_FLAG_ADDR_OFFSET = AivCommInfoLayout::FLAG_ADDR_OFFSET;
+constexpr uint64_t AIV_STUB_TAG_CLEAR_OFFSET = AivCommInfoLayout::TAG_OFFSET;
+constexpr uint64_t AIV_STUB_BASE_FLAG_OFFSET = (AIV_STUB_TAG_CLEAR_OFFSET - AIV_STUB_FLAG_ADDR_OFFSET) - AIV_STUB_MAX_RANK_SIZE * 128ULL;
+constexpr uint64_t AIV_STUB_FLAG_EMPTY_OFFSET = AivCommInfoLayout::EMPTY_CLEAR_OFFSET;
+constexpr uint64_t AIV_STUB_COMM_INFO_SIZE = AivCommInfoLayout::SIZE_BYTES;
 constexpr uint64_t AIV_STUB_UB_ALIGN_SIZE = 32;
 constexpr uint64_t AIV_STUB_FLAG_SLOT_SIZE = 128;
 constexpr uint32_t AIV_STUB_FLAG_SLOT_PRINT_NUM = 16;
@@ -792,7 +795,7 @@ using AivEnvInitFunc = void (*)(
     uint64_t inputGlobalOffsetBase,
     uint64_t outputGlobalOffsetBase,
     uint64_t cclBufferSize,
-    uint64_t flagBufferSize,
+    uint64_t aivCommInfoSize,
     AivSim::AivOpParam opParam);
 using AivSetBlockIdxFunc = void (*)(int64_t blockIdx);
 using AivDumpTasksFunc = void (*)(uint32_t launchIndex);
@@ -962,10 +965,10 @@ static void DumpBuffersInParsedDeviceView(const void *buffersInDev, uint32_t ran
     const auto *gmInTable = reinterpret_cast<const uint64_t *>(buffersInHost + AIV_STUB_GM_IN_TABLE_OFFSET);
     const auto *gmOutTable = reinterpret_cast<const uint64_t *>(buffersInHost + AIV_STUB_GM_OUT_TABLE_OFFSET);
     const auto *topoTable = reinterpret_cast<const uint64_t *>(buffersInHost + AIV_STUB_TOPO_OFFSET);
-    const auto *flag1Base = buffersInHost + AIV_STUB_FLAG1_OFFSET;
+    const auto *flagBase = buffersInHost + AIV_STUB_FLAG_ADDR_OFFSET;
     const auto *tagTable = reinterpret_cast<const int32_t *>(buffersInHost + AIV_STUB_TAG_CLEAR_OFFSET);
     const auto *emptyClearTable = reinterpret_cast<const int32_t *>(buffersInHost + AIV_STUB_FLAG_EMPTY_OFFSET);
-    const uint64_t nonPingpongBaseFlagOffset = AIV_STUB_BASE_FLAG_OFFSET - AIV_STUB_FLAG1_OFFSET;
+    const uint64_t absoluteBaseFlagOffset = AIV_STUB_FLAG_ADDR_OFFSET + AIV_STUB_BASE_FLAG_OFFSET;
 
     oss << "  [buffersIn-parse] device-side parsed results from buffersIn (not a raw buffersIn pointer dump):\n";
     oss << "    AIV comm layout: commInfoSize=0x" << std::hex
@@ -973,20 +976,11 @@ static void DumpBuffersInParsedDeviceView(const void *buffersInDev, uint32_t ran
         << ", GM_OUT_TABLE=0x" << static_cast<unsigned long long>(AIV_STUB_GM_OUT_TABLE_OFFSET)
         << ", TOPO=0x" << static_cast<unsigned long long>(AIV_STUB_TOPO_OFFSET)
         << ", TAG/CLEAR=0x" << static_cast<unsigned long long>(AIV_STUB_TAG_CLEAR_OFFSET)
-        << ", FLAG1=0x" << static_cast<unsigned long long>(AIV_STUB_FLAG1_OFFSET)
-        << ", FLAG2=0x" << static_cast<unsigned long long>(AIV_STUB_FLAG2_OFFSET)
-        << ", BASE_FLAG=0x" << static_cast<unsigned long long>(AIV_STUB_BASE_FLAG_OFFSET)
+        << ", FLAG=0x" << static_cast<unsigned long long>(AIV_STUB_FLAG_ADDR_OFFSET)
+        << ", BASE_FLAG(relative GM_OUT)=0x" << static_cast<unsigned long long>(AIV_STUB_BASE_FLAG_OFFSET)
         << ", EMPTY_CLEAR=0x" << static_cast<unsigned long long>(AIV_STUB_FLAG_EMPTY_OFFSET)
-        << ", PING=0x" << static_cast<unsigned long long>(AIV_STUB_GM_OUT_PING_OFFSET)
-        << ", PONG=0x" << static_cast<unsigned long long>(AIV_STUB_GM_OUT_PONG_OFFSET)
         << std::dec << '\n';
-    oss << "    Compatibility note: not support pingpong yet; AllGather pingpong data"
-        << " slots are dumped for layout visibility only.\n";
-    oss << "    Legacy host DFX flag offset remains 0x" << std::hex
-        << static_cast<unsigned long long>(40 * 1024)
-        << ", but device-side non-pingpong GM_OUT uses FLAG1_OFFSET(0x"
-        << static_cast<unsigned long long>(AIV_STUB_FLAG1_OFFSET) << ").\n"
-        << std::dec;
+    oss << "    Checker AIV mode models the complete per-rank aivCommInfo region.\n";
     oss << "    GM_IN parsed entries count=" << parsedRankSize
         << " from +0x" << std::hex << static_cast<unsigned long long>(AIV_STUB_GM_IN_TABLE_OFFSET) << std::dec
         << '\n';
@@ -1000,11 +994,11 @@ static void DumpBuffersInParsedDeviceView(const void *buffersInDev, uint32_t ran
 
     oss << "    GM_OUT parsed entries count=" << parsedRankSize
         << " from (+0x" << std::hex << static_cast<unsigned long long>(AIV_STUB_GM_OUT_TABLE_OFFSET)
-        << " table) + FLAG1_OFFSET(0x" << static_cast<unsigned long long>(AIV_STUB_FLAG1_OFFSET) << ')'
+        << " table) + FLAG_ADDR_OFFSET(0x" << static_cast<unsigned long long>(AIV_STUB_FLAG_ADDR_OFFSET) << ')'
         << std::dec << '\n';
     for (uint32_t i = 0; i < parsedRankSize; ++i) {
         const uint64_t commInfoDev = gmOutTable[i];
-        const uint64_t flagDev = (commInfoDev == 0) ? 0 : (commInfoDev + AIV_STUB_FLAG1_OFFSET);
+        const uint64_t flagDev = (commInfoDev == 0) ? 0 : (commInfoDev + AIV_STUB_FLAG_ADDR_OFFSET);
         oss << "      GM_OUT[" << i << "] dev=0x" << std::hex << static_cast<unsigned long long>(flagDev)
             << " (src commInfoDev=0x" << std::hex << static_cast<unsigned long long>(commInfoDev)
             << std::dec << ")\n";
@@ -1022,28 +1016,24 @@ static void DumpBuffersInParsedDeviceView(const void *buffersInDev, uint32_t ran
     const uint32_t barrierSlotPrintNum =
         (rankSize < AIV_STUB_MAX_RANK_SIZE) ? rankSize : AIV_STUB_MAX_RANK_SIZE;
     oss << "  [buffersIn-parse] follow-up work areas derived from the same base:\n";
-    oss << "    FLAG1 non-pingpong GM_OUT @ +0x" << std::hex
-        << static_cast<unsigned long long>(AIV_STUB_FLAG1_OFFSET)
+    oss << "    Non-pingpong GM_OUT flag base @ +0x" << std::hex
+        << static_cast<unsigned long long>(AIV_STUB_FLAG_ADDR_OFFSET)
         << ", flagSlotSize=" << std::dec << AIV_STUB_FLAG_SLOT_SIZE
         << ", baseFlagOffset relative to GM_OUT=0x" << std::hex
-        << static_cast<unsigned long long>(nonPingpongBaseFlagOffset)
-        << ", absoluteBaseFlag=0x" << static_cast<unsigned long long>(AIV_STUB_BASE_FLAG_OFFSET)
+        << static_cast<unsigned long long>(AIV_STUB_BASE_FLAG_OFFSET)
+        << ", absoluteBaseFlag=0x" << static_cast<unsigned long long>(absoluteBaseFlagOffset)
         << std::dec << '\n';
-    oss << "    FLAG2 pingpong alt @ +0x" << std::hex << static_cast<unsigned long long>(AIV_STUB_FLAG2_OFFSET)
-        << ", PING data @ +0x" << static_cast<unsigned long long>(AIV_STUB_GM_OUT_PING_OFFSET)
-        << ", PONG data @ +0x" << static_cast<unsigned long long>(AIV_STUB_GM_OUT_PONG_OFFSET)
-        << std::dec << '\n';
-    oss << "    FLAG1 bytes=[0x0, 0x"
-        << std::hex << static_cast<unsigned long long>(AIV_STUB_FLAG_EMPTY_OFFSET - AIV_STUB_FLAG1_OFFSET) << ')'
+    oss << "    GM_OUT flag region bytes=[0x0, 0x"
+        << std::hex << static_cast<unsigned long long>(AIV_STUB_TAG_CLEAR_OFFSET - AIV_STUB_FLAG_ADDR_OFFSET) << ')'
         << ", flagSlotSize=" << std::dec << AIV_STUB_FLAG_SLOT_SIZE
         << std::dec << '\n';
-    DumpFlagSlots(oss, flag1Base, 0, AIV_STUB_FLAG_SLOT_PRINT_NUM, "FLAG1 operator slots[0..15]");
-    DumpFlagSlots(oss, flag1Base, nonPingpongBaseFlagOffset, barrierSlotPrintNum,
-        "BASE_FLAG_OFFSET - FLAG1_OFFSET barrier slots");
+    DumpFlagSlots(oss, flagBase, 0, AIV_STUB_FLAG_SLOT_PRINT_NUM, "operator flag slots[0..15]");
+    DumpFlagSlots(oss, flagBase, AIV_STUB_BASE_FLAG_OFFSET, barrierSlotPrintNum,
+        "BASE_FLAG_OFFSET barrier slots");
 
     oss << "    TAG/CLEAR ints[0.." << (AIV_STUB_TAG_PRINT_NUM - 1)
         << "] @ +0x" << std::hex << static_cast<unsigned long long>(AIV_STUB_TAG_CLEAR_OFFSET) << std::dec << '\n';
-    oss << "      non-pingpong model currently keeps tag_ fixed at 1; real HCCL reads/writes this slot.\n";
+    oss << "      Non-pingpong mode reads this tag, increments it, and resets 1000 to 1.\n";
     for (uint32_t i = 0; i < AIV_STUB_TAG_PRINT_NUM; ++i) {
         oss << "      TAG_CLEAR[" << i << "] = " << tagTable[i] << '\n';
     }
@@ -1724,7 +1714,7 @@ static void ResolveVirtualAivBufferSizes(const std::string &kernelName,
     uint64_t &inputGlobalOffsetBase,
     uint64_t &outputGlobalOffsetBase,
     uint64_t &cclBufferSize,
-    uint64_t &flagBufferSize)
+    uint64_t &aivCommInfoSize)
 {
     inputGlobalOffsetBase = 0;
     outputGlobalOffsetBase = 0;
@@ -1781,7 +1771,7 @@ static void ResolveVirtualAivBufferSizes(const std::string &kernelName,
     }
 
     cclBufferSize = 0;
-    flagBufferSize = AIV_STUB_COMM_INFO_SIZE - AIV_STUB_FLAG1_OFFSET;
+    aivCommInfoSize = AIV_STUB_COMM_INFO_SIZE;
 
     if (resolvedArgs.args.buffersIn == nullptr) {
         return;
@@ -2035,7 +2025,7 @@ static aclError VirtualExecuteAivKernel(
     uint64_t inputGlobalOffsetBase = 0;
     uint64_t outputGlobalOffsetBase = 0;
     uint64_t cclBufferSize = 0;
-    uint64_t flagBufferSize = 0;
+    uint64_t aivCommInfoSize = 0;
     ResolveVirtualAivBufferSizes(
         kernelName,
         resolvedArgs,
@@ -2044,7 +2034,7 @@ static aclError VirtualExecuteAivKernel(
         inputGlobalOffsetBase,
         outputGlobalOffsetBase,
         cclBufferSize,
-        flagBufferSize);
+        aivCommInfoSize);
     DumpVirtualKernelFuncArgs(kernelName, numBlocks, rawArgs, resolvedArgs);
     if (inputSize == INVALID_MEMORY_LAYOUT_SIZE ||
         outputSize == INVALID_MEMORY_LAYOUT_SIZE ||
@@ -2085,7 +2075,7 @@ static aclError VirtualExecuteAivKernel(
         "  inputGlobalOffsetBase = {}\n"
         "  outputGlobalOffsetBase = {}\n"
         "  cclBufferSize = {}\n"
-        "  flagBufferSize = {}\n"
+        "  aivCommInfoSize = {}\n"
         "  curOp.dataType = {}\n"
         "  curOp.len = {}\n"
         "  curOp.reduceOp = {}\n"
@@ -2105,7 +2095,7 @@ static aclError VirtualExecuteAivKernel(
         static_cast<unsigned long long>(inputGlobalOffsetBase),
         static_cast<unsigned long long>(outputGlobalOffsetBase),
         static_cast<unsigned long long>(cclBufferSize),
-        static_cast<unsigned long long>(flagBufferSize),
+        static_cast<unsigned long long>(aivCommInfoSize),
         curOpParam.dataType,
         static_cast<unsigned long long>(curOpParam.len),
         curOpParam.reduceOp,
@@ -2126,7 +2116,7 @@ static aclError VirtualExecuteAivKernel(
         inputGlobalOffsetBase,
         outputGlobalOffsetBase,
         cclBufferSize,
-        flagBufferSize,
+        aivCommInfoSize,
         curOpParam);
 
     if (numBlocks == 0) {

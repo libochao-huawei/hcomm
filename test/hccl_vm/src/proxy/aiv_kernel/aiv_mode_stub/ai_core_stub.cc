@@ -44,7 +44,7 @@ void AivKernelExecutor::Reset() {
     inputGlobalOffsetBase_ = 0;
     outputGlobalOffsetBase_ = 0;
     std::fill(std::begin(cclBuffer_), std::end(cclBuffer_), Mem {});
-    std::fill(std::begin(flagBuffer_), std::end(flagBuffer_), Mem {});
+    std::fill(std::begin(aivCommInfoBuffer_), std::end(aivCommInfoBuffer_), Mem {});
 }
 
 std::shared_ptr<AivCore> AivKernelExecutor::GetAivCore(int64_t blockIdx) {
@@ -69,15 +69,15 @@ void AivKernelExecutor::SetCommBuffer(
     RankId rankId,
     uint64_t cclBuffer,
     uint64_t cclBufferSize,
-    uint64_t flagBuffer,
-    uint64_t flagBufferSize)
+    uint64_t aivCommInfoBuffer,
+    uint64_t aivCommInfoBufferSize)
 {
     if (rankId >= MAX_RANK_NUM) {
         HCCL_VM_WARN("SetCommBuffer rankId={} out of range", rankId);
         return;
     }
     cclBuffer_[rankId] = {cclBuffer, cclBufferSize};
-    flagBuffer_[rankId] = {flagBuffer, flagBufferSize};
+    aivCommInfoBuffer_[rankId] = {aivCommInfoBuffer, aivCommInfoBufferSize};
 }
 
 bool AivBufferContains(const Mem &buffer, uint64_t addr, uint64_t size)
@@ -131,7 +131,8 @@ AivDataSlice AivKernelExecutor::ResolveGlobalDataSlice(uint64_t addr, uint64_t s
         if (AivBufferMatch(addr, size, cclBuffer_[i], AivBufferType::CCL, i, matchedSlice, rankId)) {
             return matchedSlice;
         }
-        if (AivBufferMatch(addr, size, flagBuffer_[i], AivBufferType::FLAG, i, matchedSlice, rankId)) {
+        if (AivBufferMatch(addr, size, aivCommInfoBuffer_[i], AivBufferType::AIV_COMM, i, matchedSlice,
+            rankId)) {
             return matchedSlice;
         }
     }

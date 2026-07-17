@@ -68,24 +68,24 @@ inline void pipe_barrier(pipe_t pipe) {
     }
 }
 
-inline void send_flag(uint32_t targetRank, uint64_t flagOffset, int32_t curTag) {
+inline void send_flag(uint32_t targetRank, uint64_t commInfoOffset, int32_t curTag) {
     auto curBlockIdx = GetBlockIdx();
     auto aiv = AivSim::AivKernelExecutor::GetInstance().GetAivCore(curBlockIdx);
     if (aiv == nullptr) {
         HCCL_VM_ERROR("Get AIV core failed, curBlockIdx={:d}", curBlockIdx);
         return;
     }
-    aiv->AppendScalar(std::make_shared<AivSim::AivTaskSendFlag>(targetRank, flagOffset, curTag));
+    aiv->AppendScalar(std::make_shared<AivSim::AivTaskSendFlag>(targetRank, commInfoOffset, curTag));
 }
 
-inline void recv_flag(uint32_t targetRank, uint64_t flagOffset, int32_t curTag) {
+inline void recv_flag(uint32_t targetRank, uint64_t commInfoOffset, int32_t curTag) {
     auto curBlockIdx = GetBlockIdx();
     auto aiv = AivSim::AivKernelExecutor::GetInstance().GetAivCore(curBlockIdx);
     if (aiv == nullptr) {
         HCCL_VM_ERROR("Get AIV core failed, curBlockIdx={:d}", curBlockIdx);
         return;
     }
-    aiv->AppendScalar(std::make_shared<AivSim::AivTaskRecvFlag>(targetRank, flagOffset, curTag));
+    aiv->AppendScalar(std::make_shared<AivSim::AivTaskRecvFlag>(targetRank, commInfoOffset, curTag));
 }
 
 template <pipe_t pipe>

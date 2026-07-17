@@ -747,10 +747,10 @@ TEST_F(DeviceSqeParseTest, ParseDataTypeDavid_Uint32) {
     EXPECT_EQ(type, HcclDataType::HCCL_DATA_TYPE_UINT32);
 }
 
-TEST_F(DeviceSqeParseTest, ParseDataTypeDavid_Bfp16) {
+TEST_F(DeviceSqeParseTest, ParseDataTypeDavid_Fp16) {
     uint8_t result = 0x60;
     HcclDataType type = ParseDataTypeDavid(result);
-    EXPECT_EQ(type, HcclDataType::HCCL_DATA_TYPE_BFP16);
+    EXPECT_EQ(type, HcclDataType::HCCL_DATA_TYPE_FP16);
 }
 
 TEST_F(DeviceSqeParseTest, ParseDataTypeDavid_Bfp16Alt) {

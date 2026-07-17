@@ -32,7 +32,7 @@ struct AivRankResource {
     AivBufferResource inputBuffer;
     AivBufferResource outputBuffer;
     AivBufferResource cclBuffer;
-    AivBufferResource flagBuffer;
+    AivBufferResource aivCommInfoBuffer;
 };
 
 class AivResourceManager {
@@ -59,11 +59,11 @@ private:
         bool allowDuplicateSame = false);
     HcclSim::HcclVmResult MapOpMemBuffer(
         uint32_t rankSize, uint32_t rankId, uint8_t bufferType, uint64_t startAddr, uint64_t size);
-    HcclSim::HcclVmResult InitFlagBuffers(uint32_t rankSize);
+    HcclSim::HcclVmResult InitAivCommInfoBuffers(uint32_t rankSize);
 
     std::vector<AivRankResource> rankResources_;
     std::vector<sim::PhyMemBlock> acquiredPhyMemBlocks_;
-    std::vector<std::unique_ptr<uint8_t[]>> flagBufferOwners_;
+    std::vector<std::unique_ptr<uint8_t[]>> aivCommInfoBufferOwners_;
 };
 
 #endif // AIV_RESOURCE_MANAGER_H

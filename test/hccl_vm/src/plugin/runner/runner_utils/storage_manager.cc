@@ -392,7 +392,6 @@ void StorageManager::DumpAllRankInputOutput(std::vector<std::map<uint32_t, sim::
         }
         std::vector<BufferInfo> allRankInput(rankSize);
         std::vector<BufferInfo> allRankOutput(rankSize);
-        std::vector<BufferInfo> allRankCCL(rankSize);
         for (auto& it : rankTask) {
             auto& memInfo = it.second.memInfo;
             if (memInfo.inputAddr != 0 && memInfo.inputSize > 0) {
@@ -428,23 +427,6 @@ void StorageManager::DumpAllRankInputOutput(std::vector<std::map<uint32_t, sim::
                 HCCL_VM_INFO("opIdx={}, rankId={}, outputAddr={:x}, size={}",
                              opIdx, it.first, memInfo.outputAddr, memInfo.outputSize);
             }
-
-            if (memInfo.cclAddr != 0 && memInfo.cclSize > 0) {
-                sim::PhyMemBlock srcPhyMem{};
-                auto startAddr = sim::AcquireDevPtrInNoHostProcess((void*)(memInfo.cclAddr), srcPhyMem);
-                if (startAddr == nullptr) {
-                    HCCL_VM_ERROR("fail addr(type={}, addr={:x})!",
-                                  static_cast<int>(BufferType::CCL),
-                                  memInfo.cclAddr);
-                    return;
-                }
-                m_allPhyMem.push_back(srcPhyMem);
-                allRankCCL[it.first].virtualAddr = memInfo.cclAddr;
-                allRankCCL[it.first].phyAddr = (char*)startAddr;
-                allRankCCL[it.first].size = memInfo.cclSize;
-                HCCL_VM_INFO("opIdx={}, rankId={}, cclAddr={:x}, size={}",
-                             opIdx, it.first, memInfo.cclAddr, memInfo.cclSize);
-            }
         }
 
         const auto& firstComp = rankTask.begin()->second;
@@ -470,7 +452,7 @@ void StorageManager::DumpAllRankInputOutput(std::vector<std::map<uint32_t, sim::
             case HcclCMDType::HCCL_CMD_REDUCE_SCATTER:
             case HcclCMDType::HCCL_CMD_ALLTOALL:
             case HcclCMDType::HCCL_CMD_ALLTOALLV:
-                PrintOpData2(ofs, allRankInput, allRankOutput, allRankCCL);
+                PrintOpData2(ofs, allRankInput, allRankOutput);
                 break;
         }
     }
@@ -509,8 +491,7 @@ void StorageManager::PrintOpData1(std::ofstream &ofs, const std::vector<BufferIn
 
 void StorageManager::PrintOpData2(std::ofstream &ofs,
                                   const std::vector<BufferInfo> &allRankInput,
-                                  const std::vector<BufferInfo> &allRankOutput,
-                                  const std::vector<BufferInfo> &allRankCCL)
+                                  const std::vector<BufferInfo> &allRankOutput)
 {
     auto rankSize = GetRankSize();
     for (uint32_t idx = 0; idx < rankSize; idx++) {
@@ -519,10 +500,7 @@ void StorageManager::PrintOpData2(std::ofstream &ofs,
         ofs << std::endl;
         ofs << std::dec << "Rank " << idx << " Output: " << (uint64_t)(void*)allRankOutput[idx].virtualAddr << ", size=" << allRankOutput[idx].size << std::endl;
         FlexiblePrintData(ofs, allRankOutput[idx]);
-        ofs << std::endl;
-        ofs << std::dec << "Rank " << idx << " CCL: " << (uint64_t)(void*)allRankCCL[idx].virtualAddr << ", size=" << allRankCCL[idx].size << std::endl;
-        FlexiblePrintData(ofs, allRankCCL[idx]);
-        ofs << std::endl;
+        ofs << "\n" << std::endl;
     }
 }
 }   

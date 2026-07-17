@@ -21,6 +21,7 @@
 #include "aiv_task_snapshot_loader.h"
 #include "aiv_resource_manager.h"
 #include "ascendc_base_stub.h"
+#include "sim_common_defs.h"
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -32,11 +33,13 @@ protected:
         fs::create_directories(testDir_ / "data");
         setenv("HCCL_VM_INSTALL_ROOT", testDir_.c_str(), 1);
         AivResourceManager::GetInstance().Reset();
+        ownedBuffers_.clear();
     }
 
     void TearDown() override {
         unsetenv("HCCL_VM_INSTALL_ROOT");
         AivResourceManager::GetInstance().Reset();
+        ownedBuffers_.clear();
         fs::remove_all(testDir_);
     }
 
@@ -78,12 +81,12 @@ protected:
         return {{"pipeType", pipeType}, {"barrierGroupTaskIds", barrierGroupTaskIds}};
     }
 
-    static json MakeSendFlagPayload(uint32_t rank, uint64_t flagOffset, int32_t flagValue) {
-        return {{"rank", rank}, {"flagOffset", flagOffset}, {"flagValue", flagValue}};
+    static json MakeSendFlagPayload(uint32_t rank, uint64_t commInfoOffset, int32_t flagValue) {
+        return {{"rank", rank}, {"commInfoOffset", commInfoOffset}, {"flagValue", flagValue}};
     }
 
-    static json MakeRecvFlagPayload(uint32_t rank, uint64_t flagOffset, int32_t targetValue) {
-        return {{"rank", rank}, {"flagOffset", flagOffset}, {"targetValue", targetValue}};
+    static json MakeRecvFlagPayload(uint32_t rank, uint64_t commInfoOffset, int32_t targetValue) {
+        return {{"rank", rank}, {"commInfoOffset", commInfoOffset}, {"targetValue", targetValue}};
     }
 
     static json MakeTaskJson(uint32_t taskType, uint32_t taskId, uint32_t rankId,
@@ -109,7 +112,7 @@ protected:
         auto inputBuf = std::make_unique<uint8_t[]>(inputSize);
         auto outputBuf = std::make_unique<uint8_t[]>(outputSize);
         auto cclBuf = std::make_unique<uint8_t[]>(cclSize);
-        auto flagBuf = std::make_unique<uint8_t[]>(1000 * 1024);
+        auto aivCommInfoBuf = std::make_unique<uint8_t[]>(AivCommInfoLayout::SIZE_BYTES);
 
         resources[rankId].inputBuffer.realAddr = inputBuf.get();
         resources[rankId].inputBuffer.size = inputSize;
@@ -117,16 +120,17 @@ protected:
         resources[rankId].outputBuffer.size = outputSize;
         resources[rankId].cclBuffer.realAddr = cclBuf.get();
         resources[rankId].cclBuffer.size = cclSize;
-        resources[rankId].flagBuffer.realAddr = flagBuf.get();
-        resources[rankId].flagBuffer.size = 1000 * 1024;
+        resources[rankId].aivCommInfoBuffer.realAddr = aivCommInfoBuf.get();
+        resources[rankId].aivCommInfoBuffer.size = AivCommInfoLayout::SIZE_BYTES;
 
-        inputBuf.release();
-        outputBuf.release();
-        cclBuf.release();
-        flagBuf.release();
+        ownedBuffers_.emplace_back(std::move(inputBuf));
+        ownedBuffers_.emplace_back(std::move(outputBuf));
+        ownedBuffers_.emplace_back(std::move(cclBuf));
+        ownedBuffers_.emplace_back(std::move(aivCommInfoBuf));
     }
 
     fs::path testDir_;
+    std::vector<std::unique_ptr<uint8_t[]>> ownedBuffers_;
 };
 
 TEST_F(AivGraphExecutorTest, Constructor_Default_NotInitialized) {
@@ -247,10 +251,15 @@ TEST_F(AivGraphExecutorTest, Execute_MemCopyRankResourceNull_ReturnsError) {
     EXPECT_EQ(executor.Execute(), HcclSim::HcclVmResult::HCCL_SIM_VRT_ERROR_CMD);
 }
 
-TEST_F(AivGraphExecutorTest, Execute_MemCopyInvalidBufferType_ReturnsError) {
+TEST_F(AivGraphExecutorTest, Execute_MemCopyAivCommInfo_Success) {
     SetupRankResource(0, 4096, 4096, 4096);
-    auto srcDs = MakeDataSlice(4, 0, 128);
-    auto dstDs = MakeDataSlice(1, 0, 128);
+    auto *resource = const_cast<AivRankResource*>(AivResourceManager::GetInstance().GetRankResource(0));
+    ASSERT_NE(resource, nullptr);
+    auto *commInfo = static_cast<uint8_t*>(resource->aivCommInfoBuffer.realAddr);
+    constexpr uint64_t tagOffset = AivCommInfoLayout::TAG_OFFSET;
+    commInfo[tagOffset] = 0x5a;
+    auto srcDs = MakeDataSlice(4, tagOffset, 1);
+    auto dstDs = MakeDataSlice(1, 0, 1);
     auto task = MakeTaskJson(0, 1, 0, 0, 0, MakeMemCopyPayload(0, 0, srcDs, dstDs));
     auto block = MakeBlockJson(0, json::array({task}));
     json content = {{"rank", 0}, {"rankSize", 1}, {"launchIndex", 0},
@@ -259,7 +268,8 @@ TEST_F(AivGraphExecutorTest, Execute_MemCopyInvalidBufferType_ReturnsError) {
 
     AivGraphExecutor executor(0);
     ASSERT_TRUE(executor.Init(0, 0));
-    EXPECT_EQ(executor.Execute(), HcclSim::HcclVmResult::HCCL_SIM_VRT_ERROR_CMD);
+    EXPECT_EQ(executor.Execute(), HcclSim::HcclVmResult::HCCL_SIM_SUCCESS);
+    EXPECT_EQ(static_cast<uint8_t*>(resource->outputBuffer.realAddr)[0], 0x5a);
 }
 
 TEST_F(AivGraphExecutorTest, Execute_MemCopyRankMemOutOfBounds_ReturnsError) {
@@ -586,7 +596,7 @@ TEST_F(AivGraphExecutorTest, Execute_PipeBarrierSingleTask_Success) {
 
 TEST_F(AivGraphExecutorTest, Execute_SendFlagSuccess) {
     SetupRankResource(0, 4096, 4096, 4096);
-    auto sendFlag = MakeTaskJson(8, 1, 0, 0, 0, MakeSendFlagPayload(0, 0, 42));
+    auto sendFlag = MakeTaskJson(6, 1, 0, 0, 0, MakeSendFlagPayload(0, 0, 42));
     auto block = MakeBlockJson(0, json::array({sendFlag}));
     json content = {{"rank", 0}, {"rankSize", 1}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -598,7 +608,7 @@ TEST_F(AivGraphExecutorTest, Execute_SendFlagSuccess) {
 }
 
 TEST_F(AivGraphExecutorTest, Execute_SendFlagRankNotExist_ReturnsError) {
-    auto sendFlag = MakeTaskJson(8, 1, 0, 0, 0, MakeSendFlagPayload(99, 0, 1));
+    auto sendFlag = MakeTaskJson(6, 1, 0, 0, 0, MakeSendFlagPayload(99, 0, 1));
     auto block = MakeBlockJson(0, json::array({sendFlag}));
     json content = {{"rank", 0}, {"rankSize", 1}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -611,7 +621,8 @@ TEST_F(AivGraphExecutorTest, Execute_SendFlagRankNotExist_ReturnsError) {
 
 TEST_F(AivGraphExecutorTest, Execute_SendFlagOffsetOutOfBounds_ReturnsError) {
     SetupRankResource(0, 4096, 4096, 4096);
-    auto sendFlag = MakeTaskJson(8, 1, 0, 0, 0, MakeSendFlagPayload(0, 999999, 1));
+    auto sendFlag = MakeTaskJson(6, 1, 0, 0, 0,
+        MakeSendFlagPayload(0, AivCommInfoLayout::SIZE_BYTES, 1));
     auto block = MakeBlockJson(0, json::array({sendFlag}));
     json content = {{"rank", 0}, {"rankSize", 1}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -624,8 +635,8 @@ TEST_F(AivGraphExecutorTest, Execute_SendFlagOffsetOutOfBounds_ReturnsError) {
 
 TEST_F(AivGraphExecutorTest, Execute_RecvFlagMatchSuccess) {
     SetupRankResource(0, 4096, 4096, 4096);
-    auto sendFlag = MakeTaskJson(8, 1, 0, 0, 0, MakeSendFlagPayload(0, 0, 7));
-    auto recvFlag = MakeTaskJson(9, 2, 0, 0, 0, MakeRecvFlagPayload(0, 0, 7));
+    auto sendFlag = MakeTaskJson(6, 1, 0, 0, 0, MakeSendFlagPayload(0, 0, 7));
+    auto recvFlag = MakeTaskJson(7, 2, 0, 0, 0, MakeRecvFlagPayload(0, 0, 7));
     auto block = MakeBlockJson(0, json::array({sendFlag, recvFlag}));
     json content = {{"rank", 0}, {"rankSize", 1}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -638,8 +649,8 @@ TEST_F(AivGraphExecutorTest, Execute_RecvFlagMatchSuccess) {
 
 TEST_F(AivGraphExecutorTest, DISABLED_Execute_RecvFlagNotMatch_ReturnsHold) {
     SetupRankResource(0, 4096, 4096, 4096);
-    auto sendFlag = MakeTaskJson(8, 1, 0, 0, 0, MakeSendFlagPayload(0, 0, 7));
-    auto recvFlag = MakeTaskJson(9, 2, 0, 0, 0, MakeRecvFlagPayload(0, 0, 99));
+    auto sendFlag = MakeTaskJson(6, 1, 0, 0, 0, MakeSendFlagPayload(0, 0, 7));
+    auto recvFlag = MakeTaskJson(7, 2, 0, 0, 0, MakeRecvFlagPayload(0, 0, 99));
     auto block = MakeBlockJson(0, json::array({sendFlag, recvFlag}));
     json content = {{"rank", 0}, {"rankSize", 1}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -694,7 +705,7 @@ TEST_F(AivGraphExecutorTest, Init_TaskWithWaitFlag_AppendPipe) {
 TEST_F(AivGraphExecutorTest, Execute_SendRecvFlag_Hold) {
     SetupRankResource(0, 4096, 4096, 4096);
     SetupRankResource(1, 4096, 4096, 4096);
-    auto recvTask = MakeTaskJson(9, 1, 0, 0, 0, MakeRecvFlagPayload(1, 0, -1));
+    auto recvTask = MakeTaskJson(7, 1, 0, 0, 0, MakeRecvFlagPayload(1, 0, -1));
     auto block = MakeBlockJson(0, json::array(), json::array({recvTask}));
     json content = {{"rank", 0}, {"rankSize", 2}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -721,7 +732,7 @@ TEST_F(AivGraphExecutorTest, Execute_MixedTasks_LengthOtherThan255) {
 }
 
 TEST_F(AivGraphExecutorTest, Execute_RecvFlagRankNotExist_ReturnsError) {
-    auto recvFlag = MakeTaskJson(9, 1, 0, 0, 0, MakeRecvFlagPayload(99, 0, 1));
+    auto recvFlag = MakeTaskJson(7, 1, 0, 0, 0, MakeRecvFlagPayload(99, 0, 1));
     auto block = MakeBlockJson(0, json::array({recvFlag}));
     json content = {{"rank", 0}, {"rankSize", 1}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -734,7 +745,8 @@ TEST_F(AivGraphExecutorTest, Execute_RecvFlagRankNotExist_ReturnsError) {
 
 TEST_F(AivGraphExecutorTest, Execute_RecvFlagOffsetOutOfBounds_ReturnsError) {
     SetupRankResource(0, 4096, 4096, 4096);
-    auto recvFlag = MakeTaskJson(9, 1, 0, 0, 0, MakeRecvFlagPayload(0, 999999, 1));
+    auto recvFlag = MakeTaskJson(7, 1, 0, 0, 0,
+        MakeRecvFlagPayload(0, AivCommInfoLayout::SIZE_BYTES, 1));
     auto block = MakeBlockJson(0, json::array({recvFlag}));
     json content = {{"rank", 0}, {"rankSize", 1}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -763,8 +775,8 @@ TEST_F(AivGraphExecutorTest, Execute_MixedTasks_Success) {
     auto memCopy = MakeTaskJson(0, 1, 0, 0, 0, MakeMemCopyPayload(0, 0, ds, ds));
     auto setFlag = MakeTaskJson(2, 2, 0, 0, 0, MakeSetFlagPayload(0, 1, 0));
     auto waitFlag = MakeTaskJson(3, 3, 0, 0, 0, MakeWaitFlagPayload(1, 2, 0));
-    auto sendFlag = MakeTaskJson(8, 4, 0, 0, 0, MakeSendFlagPayload(0, 0, 1));
-    auto recvFlag = MakeTaskJson(9, 5, 0, 0, 0, MakeRecvFlagPayload(0, 0, 1));
+    auto sendFlag = MakeTaskJson(6, 4, 0, 0, 0, MakeSendFlagPayload(0, 0, 1));
+    auto recvFlag = MakeTaskJson(7, 5, 0, 0, 0, MakeRecvFlagPayload(0, 0, 1));
     auto block = MakeBlockJson(0, json::array({memCopy, setFlag, waitFlag, sendFlag, recvFlag}));
     json content = {{"rank", 0}, {"rankSize", 1}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -930,11 +942,13 @@ TEST_F(AivGraphExecutorTest, Execute_ReduceMinVerifyData) {
 
 TEST_F(AivGraphExecutorTest, Execute_SendRecvFlagVerify) {
     SetupRankResource(0, 4096, 4096, 4096);
-    auto* flagBuf = static_cast<AivSim::flag_t*>(
-        const_cast<AivRankResource*>(AivResourceManager::GetInstance().GetRankResource(0))->flagBuffer.realAddr);
+    auto* commInfoBytes = static_cast<uint8_t*>(
+        const_cast<AivRankResource*>(AivResourceManager::GetInstance().GetRankResource(0))->aivCommInfoBuffer.realAddr);
+    constexpr uint64_t commInfoOffset = AivCommInfoLayout::FLAG_ADDR_OFFSET +
+        5ULL * AivCommInfoLayout::SYNC_CELL_BYTES;
 
-    auto sendFlag = MakeTaskJson(8, 1, 0, 0, 0, MakeSendFlagPayload(0, 5, 42));
-    auto recvFlag = MakeTaskJson(9, 2, 0, 0, 0, MakeRecvFlagPayload(0, 5, 42));
+    auto sendFlag = MakeTaskJson(6, 1, 0, 0, 0, MakeSendFlagPayload(0, commInfoOffset, 42));
+    auto recvFlag = MakeTaskJson(7, 2, 0, 0, 0, MakeRecvFlagPayload(0, commInfoOffset, 42));
     auto block = MakeBlockJson(0, json::array({sendFlag, recvFlag}));
     json content = {{"rank", 0}, {"rankSize", 1}, {"launchIndex", 0},
                     {"aivCores", json::array({block})}};
@@ -943,7 +957,7 @@ TEST_F(AivGraphExecutorTest, Execute_SendRecvFlagVerify) {
     AivGraphExecutor executor(0);
     ASSERT_TRUE(executor.Init(0, 0));
     EXPECT_EQ(executor.Execute(), HcclSim::HcclVmResult::HCCL_SIM_SUCCESS);
-    EXPECT_EQ(flagBuf[5], 42);
+    EXPECT_EQ(*reinterpret_cast<AivSim::flag_t*>(commInfoBytes + commInfoOffset), 42);
 }
 
 TEST_F(AivGraphExecutorTest, Execute_MemCopyDstNull_ReturnsError) {

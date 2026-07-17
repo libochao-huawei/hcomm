@@ -29,7 +29,7 @@
 namespace HcclSim {
 namespace TaskGraphGeneratorV3 {
 namespace {
-constexpr uint64_t AIV_FLAG_SLOT_BYTES = 128ULL;
+constexpr uint64_t AIV_COMM_INFO_SYNC_CELL_BYTES = 128ULL;
 
 const TaskNode *GetQueueNode(const std::vector<std::unique_ptr<TaskNode>> &nodes, NodeId nodeId)
 {
@@ -192,11 +192,11 @@ bool IsSameMemoryType(const MemSlice &lhs, const MemSlice &rhs)
 
 uint64_t GetAivSliceBoundSize(MemType memType)
 {
-    if (memType == MemType::UB_AIV) {
+    if (memType == MemType::AIV_UB) {
         return g_checkerAivUbBufferSize;
     }
-    if (memType == MemType::FLAG_AIV) {
-        return g_checkerAivFlagBufferSize;
+    if (memType == MemType::AIV_COMM) {
+        return g_checkerAivCommInfoSize;
     }
     return 0;
 }
@@ -517,7 +517,7 @@ HcclResult CheckSingleSlice(const TaskNode *node, const MemSlice &slice)
         return HCCL_E_PARA;
     }
 
-    if (slice.memType == MemType::UB_AIV || slice.memType == MemType::FLAG_AIV) {
+    if (slice.memType == MemType::AIV_UB || slice.memType == MemType::AIV_COMM) {
         const uint64_t boundSize = GetAivSliceBoundSize(slice.memType);
         if (boundSize != 0 && slice.offset + slice.len > boundSize) {
             HCCL_VM_ERROR("{} One AIV memory slice goes past the valid AIV buffer boundary, "
@@ -589,7 +589,7 @@ HcclResult CheckTwoSliceOverlap(const TaskNode *node, const MemSlice &lhs, const
     return HCCL_SUCCESS;
 }
 
-HcclResult CheckAivFlagNodeMem(const TaskNode *node)
+HcclResult CheckAivCommInfoSyncNodeMem(const TaskNode *node)
 {
     if (node == nullptr) {
         return HCCL_E_PTR;
@@ -611,19 +611,19 @@ HcclResult CheckAivFlagNodeMem(const TaskNode *node)
     if (flag == nullptr) {
         return HCCL_SUCCESS;
     }
-    if (flag->flagOffset > (std::numeric_limits<uint64_t>::max() - sizeof(int32_t)) / AIV_FLAG_SLOT_BYTES) {
-        HCCL_VM_ERROR("{} AIV flag address overflowed while calculating its byte offset, "
-            "task={}, flagOffset={}", MakeErrorCodeText(ErrorCode::SINGLETASK_SLICE_INVALID), node->Describe(),
-            flag->flagOffset);
+    if (flag->commInfoOffset % AIV_COMM_INFO_SYNC_CELL_BYTES != 0) {
+        HCCL_VM_ERROR("{} AIV commInfo synchronization address is not cell aligned, "
+            "task={}, commInfoOffset={}, cellSize={}", MakeErrorCodeText(ErrorCode::SINGLETASK_SLICE_INVALID),
+            node->Describe(), flag->commInfoOffset, AIV_COMM_INFO_SYNC_CELL_BYTES);
         return HCCL_E_PARA;
     }
-    const uint64_t flagByteOffset = flag->flagOffset * AIV_FLAG_SLOT_BYTES;
-    const uint64_t flagBufferSize = GetAivSliceBoundSize(MemType::FLAG_AIV);
-    if (flagBufferSize != 0 && flagByteOffset + sizeof(int32_t) > flagBufferSize) {
-        HCCL_VM_ERROR("{} AIV flag address goes past the valid flag buffer boundary, task={}, "
-            "flagByteOffset={}, flagBufferSize={}",
-            MakeErrorCodeText(ErrorCode::SINGLETASK_SLICE_INVALID), node->Describe(), flagByteOffset,
-            flagBufferSize);
+    const uint64_t aivCommInfoSize = GetAivSliceBoundSize(MemType::AIV_COMM);
+    if (aivCommInfoSize != 0 && (aivCommInfoSize < sizeof(int32_t) ||
+        flag->commInfoOffset > aivCommInfoSize - sizeof(int32_t))) {
+        HCCL_VM_ERROR("{} AIV commInfo synchronization address goes past the valid buffer boundary, task={}, "
+            "commInfoOffset={}, aivCommInfoSize={}",
+            MakeErrorCodeText(ErrorCode::SINGLETASK_SLICE_INVALID), node->Describe(), flag->commInfoOffset,
+            aivCommInfoSize);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
@@ -708,7 +708,7 @@ HcclResult CheckDataMoveTaskMem(const TaskNode *node)
 
     HcclResult ret = HCCL_SUCCESS;
     if (node->GetType() == TaskType::AIV_SEND_FLAG || node->GetType() == TaskType::AIV_RECV_FLAG) {
-        ret = CheckAivFlagNodeMem(node);
+        ret = CheckAivCommInfoSyncNodeMem(node);
     }
     return ret;
 }

@@ -36,7 +36,7 @@ extern nlohmann::json SerializeOpParam(const AivOpParam &opParam);
 extern std::string SerializeKernelName(const AivOpParam &opParam);
 extern uint64_t ResolveSerializedDataSliceOffset(const AivKernelExecutor &executor,
                                                   const AivDataSlice &slice);
-extern uint64_t ResolveCommBufferSize(const AivKernelExecutor &executor, bool useCclBuffer);
+extern uint64_t ResolveBufferSize(const AivKernelExecutor &executor, bool useCclBuffer);
 extern bool ResolveExecutorJsonFilePath(const AivKernelExecutor &executor, uint32_t launchIndex,
                                          std::string &filePath);
 extern bool WriteJsonAtomically(const nlohmann::json &content, const std::string &filePath);
@@ -289,7 +289,7 @@ TEST_F(AivTaskJsonTest, DynamicType_SendFlag) {
     json j = SerializeTaskByDynamicType(executor, task);
     EXPECT_EQ(j["taskTypeName"], "SendFlag");
     EXPECT_EQ(j["payload"]["rank"], 1);
-    EXPECT_EQ(j["payload"]["flagOffset"], 0x200);
+    EXPECT_EQ(j["payload"]["commInfoOffset"], 0x200);
     EXPECT_EQ(j["payload"]["flagValue"], 99);
 }
 
@@ -300,7 +300,7 @@ TEST_F(AivTaskJsonTest, DynamicType_RecvFlag) {
     json j = SerializeTaskByDynamicType(executor, task);
     EXPECT_EQ(j["taskTypeName"], "RecvFlag");
     EXPECT_EQ(j["payload"]["rank"], 2);
-    EXPECT_EQ(j["payload"]["flagOffset"], 0x300);
+    EXPECT_EQ(j["payload"]["commInfoOffset"], 0x300);
     EXPECT_EQ(j["payload"]["targetValue"], 88);
 }
 
@@ -363,35 +363,35 @@ TEST_F(AivTaskJsonTest, SerializeCore_NoTasks) {
     EXPECT_EQ(j["mte3Tasks"].size(), 0);
 }
 
-// ========== ResolveCommBufferSize ==========
+// ========== ResolveBufferSize ==========
 
-TEST_F(AivTaskJsonTest, ResolveCommBufferSize_CclFound) {
+TEST_F(AivTaskJsonTest, ResolveBufferSize_CclFound) {
     auto &executor = AivKernelExecutor::GetInstance();
-    uint64_t size = ResolveCommBufferSize(executor, true);
+    uint64_t size = ResolveBufferSize(executor, true);
     EXPECT_EQ(size, 0x400);
 }
 
-TEST_F(AivTaskJsonTest, ResolveCommBufferSize_FlagFound) {
+TEST_F(AivTaskJsonTest, ResolveBufferSize_AivCommInfoFound) {
     auto &executor = AivKernelExecutor::GetInstance();
-    uint64_t size = ResolveCommBufferSize(executor, false);
+    uint64_t size = ResolveBufferSize(executor, false);
     EXPECT_EQ(size, 0x100);
 }
 
-TEST_F(AivTaskJsonTest, ResolveCommBufferSize_CclZero) {
+TEST_F(AivTaskJsonTest, ResolveBufferSize_CclZero) {
     auto &executor = AivKernelExecutor::GetInstance();
     executor.Reset();
     executor.Init(1, 1, 1);
     executor.SetCommBuffer(0, 0, 0, 0, 0);
-    uint64_t size = ResolveCommBufferSize(executor, true);
+    uint64_t size = ResolveBufferSize(executor, true);
     EXPECT_EQ(size, 0);
 }
 
-TEST_F(AivTaskJsonTest, ResolveCommBufferSize_FlagZero) {
+TEST_F(AivTaskJsonTest, ResolveBufferSize_AivCommInfoZero) {
     auto &executor = AivKernelExecutor::GetInstance();
     executor.Reset();
     executor.Init(0, 1, 1);
     executor.SetCommBuffer(0, 0x1000, 0, 0x1000, 0);
-    uint64_t size = ResolveCommBufferSize(executor, false);
+    uint64_t size = ResolveBufferSize(executor, false);
     EXPECT_EQ(size, 0);
 }
 
@@ -409,7 +409,7 @@ TEST_F(AivTaskJsonTest, SerializeExecutor_Basic) {
     EXPECT_EQ(j["inBufferSize"], 0x100);
     EXPECT_EQ(j["outBufferSize"], 0x200);
     EXPECT_EQ(j["cclBufferSize"], 0x400);
-    EXPECT_EQ(j["flagBufferSize"], 0x100);
+    EXPECT_EQ(j["aivCommInfoSize"], 0x100);
     EXPECT_EQ(j["ubBufferSize"], 190 * 1024);
     EXPECT_EQ(j["curOp"]["kernelName"], "test_kernel");
     EXPECT_EQ(j["aivCores"].size(), 2);
@@ -508,18 +508,18 @@ TEST_F(AivTaskJsonTest, WriteJsonAtomically_RenameFallback) {
 
 TEST_F(AivTaskJsonTest, DumpExecutorToJsonFile_Success) {
     std::error_code ec;
-    setenv("HCCL_VM_INSTALL_ROOT", "/tmp/hccl_dump_test", 1);
-    fs::remove_all("/tmp/hccl_dump_test", ec);
-
     auto &executor = AivKernelExecutor::GetInstance();
     auto core = executor.GetAivCore(0);
     ASSERT_NE(core, nullptr);
     core->AppendScalar(std::make_shared<AivTaskSetFlag>(AscendC::PIPE_S, AscendC::PIPE_MTE2, 42));
 
+    std::string expectedPath;
+    ASSERT_TRUE(ResolveExecutorJsonFilePath(executor, 0, expectedPath));
+    fs::remove(expectedPath, ec);
+
     bool result = DumpExecutorToJsonFile(executor, 0);
     EXPECT_TRUE(result);
 
-    std::string expectedPath = "/tmp/hccl_dump_test/data/hcclvm_aiv_rank0_launch0_task.json";
     EXPECT_TRUE(fs::exists(expectedPath));
 
     std::ifstream ifs(expectedPath);
@@ -528,8 +528,7 @@ TEST_F(AivTaskJsonTest, DumpExecutorToJsonFile_Success) {
     EXPECT_NE(content.find("\"mode\""), std::string::npos);
     EXPECT_NE(content.find("\"aiv\""), std::string::npos);
 
-    fs::remove_all("/tmp/hccl_dump_test", ec);
-    unsetenv("HCCL_VM_INSTALL_ROOT");
+    fs::remove(expectedPath, ec);
 }
 
 // ========== aiv_task.h coverage: AivTask base ==========
@@ -655,9 +654,9 @@ TEST_F(AivTaskJsonTest, Reduce_SetSrcRank) {
 TEST_F(AivTaskJsonTest, Reduce_SetSrc) {
     AivDataSlice src, dst;
     AivTaskReduce task(0, src, 0, dst, 0, 0);
-    AivDataSlice newSrc(AivBufferType::FLAG, 0x500, 0x10);
+    AivDataSlice newSrc(AivBufferType::AIV_COMM, 0x500, 0x10);
     task.SetSrc(newSrc);
-    EXPECT_EQ(task.GetSrc().GetType(), AivBufferType::FLAG);
+    EXPECT_EQ(task.GetSrc().GetType(), AivBufferType::AIV_COMM);
 }
 
 TEST_F(AivTaskJsonTest, Reduce_SetDstRank) {
@@ -801,7 +800,7 @@ TEST_F(AivTaskJsonTest, SendFlag_Describe) {
     std::string desc = task.Describe();
     EXPECT_NE(desc.find("[SendFlag]"), std::string::npos);
     EXPECT_NE(desc.find("Rank=2"), std::string::npos);
-    EXPECT_NE(desc.find("Offset=1024"), std::string::npos);
+    EXPECT_NE(desc.find("CommInfoOffset=1024"), std::string::npos);
     EXPECT_NE(desc.find("Value=-1"), std::string::npos);
 }
 
@@ -811,10 +810,10 @@ TEST_F(AivTaskJsonTest, SendFlag_SetRank) {
     EXPECT_EQ(task.GetRank(), 4);
 }
 
-TEST_F(AivTaskJsonTest, SendFlag_SetFlagOffset) {
+TEST_F(AivTaskJsonTest, SendFlag_SetCommInfoOffset) {
     AivTaskSendFlag task(0, 0, 0);
-    task.SetFlagOffset(0x800);
-    EXPECT_EQ(task.GetFlagOffset(), 0x800);
+    task.SetCommInfoOffset(0x800);
+    EXPECT_EQ(task.GetCommInfoOffset(), 0x800);
 }
 
 TEST_F(AivTaskJsonTest, SendFlag_SetFlagValue) {
@@ -831,7 +830,7 @@ TEST_F(AivTaskJsonTest, RecvFlag_Describe) {
     std::string desc = task.Describe();
     EXPECT_NE(desc.find("[RecvFlag]"), std::string::npos);
     EXPECT_NE(desc.find("Rank=3"), std::string::npos);
-    EXPECT_NE(desc.find("Offset=1536"), std::string::npos);
+    EXPECT_NE(desc.find("CommInfoOffset=1536"), std::string::npos);
     EXPECT_NE(desc.find("Value=77"), std::string::npos);
 }
 
@@ -841,10 +840,10 @@ TEST_F(AivTaskJsonTest, RecvFlag_SetRank) {
     EXPECT_EQ(task.GetRank(), 5);
 }
 
-TEST_F(AivTaskJsonTest, RecvFlag_SetFlagOffset) {
+TEST_F(AivTaskJsonTest, RecvFlag_SetCommInfoOffset) {
     AivTaskRecvFlag task(0, 0, 0);
-    task.SetFlagOffset(0x900);
-    EXPECT_EQ(task.GetFlagOffset(), 0x900);
+    task.SetCommInfoOffset(0x900);
+    EXPECT_EQ(task.GetCommInfoOffset(), 0x900);
 }
 
 TEST_F(AivTaskJsonTest, RecvFlag_SetTargetValue) {

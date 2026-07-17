@@ -10,6 +10,7 @@
 
 #include "hccl_task_reduce_process.h"
 #include <cstdint>
+#include "ccu_fp16.h"
 
 // 本地任务定义
 namespace VirtualRunTime {
@@ -72,6 +73,8 @@ void MemReduceSum(void* src, void* dst, uint32_t length, HcclDataType dataType)
             return MemReduceSumTemplate<uint32_t>(dst, src, length);
         case HcclDataType::HCCL_DATA_TYPE_UINT64:
             return MemReduceSumTemplate<uint64_t>(dst, src, length);
+        case HcclDataType::HCCL_DATA_TYPE_FP16:
+            return MemReduceSumTemplate<FP16>(dst, src, length);
         case HcclDataType::HCCL_DATA_TYPE_FP32:
             return MemReduceSumTemplate<float>(dst, src, length);
         default: {
@@ -99,6 +102,8 @@ void MemReduceMin(void* src, void* dst, uint32_t length, HcclDataType dataType)
             return MemReduceMinTemplate<uint32_t>(dst, src, length);
         case HcclDataType::HCCL_DATA_TYPE_UINT64:
             return MemReduceMinTemplate<uint64_t>(dst, src, length);
+        case HcclDataType::HCCL_DATA_TYPE_FP16:
+            return MemReduceMinTemplate<FP16>(dst, src, length);
         case HcclDataType::HCCL_DATA_TYPE_FP32:
             return MemReduceMinTemplate<float>(dst, src, length);
         default: {
@@ -126,6 +131,8 @@ void MemReduceMax(void* src, void* dst, uint32_t length, HcclDataType dataType)
             return MemReduceMaxTemplate<uint32_t>(dst, src, length);
         case HcclDataType::HCCL_DATA_TYPE_UINT64:
             return MemReduceMaxTemplate<uint64_t>(dst, src, length);
+        case HcclDataType::HCCL_DATA_TYPE_FP16:
+            return MemReduceMaxTemplate<FP16>(dst, src, length);
         case HcclDataType::HCCL_DATA_TYPE_FP32:
             return MemReduceMaxTemplate<float>(dst, src, length);
         default: {

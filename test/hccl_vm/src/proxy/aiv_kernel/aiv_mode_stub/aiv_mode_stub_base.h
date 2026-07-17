@@ -37,7 +37,7 @@ enum class AivBufferType :uint32_t {
     OUTPUT,
     CCL,
     UB,
-    FLAG,
+    AIV_COMM,
 };
 
 std::string inline GetAivBufferTypeName(AivBufferType bufferType) {
@@ -50,8 +50,8 @@ std::string inline GetAivBufferTypeName(AivBufferType bufferType) {
             return "CCL";
         case AivBufferType::UB:
             return "UB";
-        case AivBufferType::FLAG:
-            return "FLAG";
+        case AivBufferType::AIV_COMM:
+            return "AIV_COMM";
         default:
             return "UNKNOWN";
     }

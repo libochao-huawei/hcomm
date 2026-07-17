@@ -113,7 +113,7 @@ aclError aclrtUnuseStreamResInCurrentThread(aclrtStream stream)
 aclError aclrtGetResInCurrentThread(aclrtDevResLimitType type, uint32_t *value)
 {
     (void)type;
-    *value = 48;
+    *value = 64;
     return ACL_SUCCESS;
 }
 

@@ -135,11 +135,11 @@ json SerializeTaskByDynamicType(const AivKernelExecutor &executor, const std::sh
         payload["syncRound"] = syncAllTask->GetSyncRound();
     } else if (const auto *sendFlagTask = dynamic_cast<const AivTaskSendFlag *>(task.get()); sendFlagTask != nullptr) {
         payload["rank"] = sendFlagTask->GetRank();
-        payload["flagOffset"] = sendFlagTask->GetFlagOffset();
+        payload["commInfoOffset"] = sendFlagTask->GetCommInfoOffset();
         payload["flagValue"] = sendFlagTask->GetFlagValue();
     } else if (const auto *recvFlagTask = dynamic_cast<const AivTaskRecvFlag *>(task.get()); recvFlagTask != nullptr) {
         payload["rank"] = recvFlagTask->GetRank();
-        payload["flagOffset"] = recvFlagTask->GetFlagOffset();
+        payload["commInfoOffset"] = recvFlagTask->GetCommInfoOffset();
         payload["targetValue"] = recvFlagTask->GetTargetValue();
     }
 
@@ -166,10 +166,10 @@ json SerializeCore(const AivKernelExecutor &executor, const AivCore &core)
     };
 }
 
-uint64_t ResolveCommBufferSize(const AivKernelExecutor &executor, bool useCclBuffer)
+uint64_t ResolveBufferSize(const AivKernelExecutor &executor, bool useCclBuffer)
 {
     for (uint32_t rank = 0; rank < executor.GetRankSize(); ++rank) {
-        const Mem buffer = useCclBuffer ? executor.GetCclBuffer(rank) : executor.GetFlagBuffer(rank);
+        const Mem buffer = useCclBuffer ? executor.GetCclBuffer(rank) : executor.GetAivCommInfoBuffer(rank);
         if (buffer.size != 0) {
             return buffer.size;
         }
@@ -228,8 +228,8 @@ json SerializeExecutor(const AivKernelExecutor &executor, uint32_t launchIndex)
     rankJson["outputGlobalOffsetBase"] = executor.GetOutputGlobalOffsetBase();
     rankJson["inBufferSize"] = executor.GetInBuffer().size;
     rankJson["outBufferSize"] = executor.GetOutBuffer().size;
-    rankJson["cclBufferSize"] = ResolveCommBufferSize(executor, true);
-    rankJson["flagBufferSize"] = ResolveCommBufferSize(executor, false);
+    rankJson["cclBufferSize"] = ResolveBufferSize(executor, true);
+    rankJson["aivCommInfoSize"] = ResolveBufferSize(executor, false);
     rankJson["ubBufferSize"] = executor.GetUbBufferSize();
     rankJson["curOp"] = SerializeOpParam(executor.GetCurOp());
 

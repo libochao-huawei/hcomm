@@ -141,6 +141,18 @@ enum CcuVersion {
 
 }   // namespace HcclSim
 
+// AIV communication information buffer layout shared by the proxy, runner and checker.
+namespace AivCommInfoLayout {
+constexpr uint64_t SIZE_BYTES = 33ULL * 1024ULL * 1024ULL;
+constexpr uint64_t GM_IN_TABLE_OFFSET = 0;
+constexpr uint64_t GM_OUT_TABLE_OFFSET = 16ULL * 1024ULL;
+constexpr uint64_t FLAG_ADDR_OFFSET = 40ULL * 1024ULL;
+constexpr uint64_t TAG_OFFSET = 16ULL * 1024ULL * 1024ULL;
+constexpr uint64_t EMPTY_CLEAR_OFFSET = 17ULL * 1024ULL * 1024ULL;
+constexpr uint64_t SYNC_CELL_BYTES = 128ULL;
+constexpr uint32_t FIXED_TAG = 1;
+} // namespace AivCommInfoLayout
+
 using PhyDeviceId = uint32_t;
 using ServerMeta = std::vector<PhyDeviceId>;
 using SuperPodMeta = std::vector<ServerMeta>;

@@ -26,7 +26,7 @@ extern "C" void aiv_env_init(
     uint64_t inputGlobalOffsetBase,
     uint64_t outputGlobalOffsetBase,
     uint64_t cclBufferSize,
-    uint64_t flagBufferSize,
+    uint64_t aivCommInfoSize,
     AivSim::AivOpParam opParam);
 
 extern "C" void aiv_set_block_idx(int64_t blockIdx);

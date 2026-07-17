@@ -161,10 +161,10 @@ std::string ToString(MemType type)
             return "OUTPUT";
         case MemType::CCL:
             return "CCL";
-        case MemType::UB_AIV:
-            return "UB_AIV";
-        case MemType::FLAG_AIV:
-            return "FLAG_AIV";
+        case MemType::AIV_UB:
+            return "AIV_UB";
+        case MemType::AIV_COMM:
+            return "AIV_COMM";
         case MemType::MS_CCU:
             return "MS_CCU";
         default:

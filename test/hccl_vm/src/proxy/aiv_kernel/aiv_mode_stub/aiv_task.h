@@ -278,8 +278,8 @@ private:
 
 class AivTaskSendFlag : public AivTask {
 public:
-    AivTaskSendFlag(uint32_t rank, uint64_t flagOffset, flag_t flagValue)
-        : AivTask(AivTaskType::SEND_FLAG), rank_(rank), flagOffset_(flagOffset), flagValue_(flagValue) {}
+    AivTaskSendFlag(uint32_t rank, uint64_t commInfoOffset, flag_t flagValue)
+        : AivTask(AivTaskType::SEND_FLAG), rank_(rank), commInfoOffset_(commInfoOffset), flagValue_(flagValue) {}
     ~AivTaskSendFlag() override {}
     AivTaskSendFlag(const AivTaskSendFlag&) = delete;
     AivTaskSendFlag& operator=(const AivTaskSendFlag&) = delete;
@@ -288,28 +288,28 @@ public:
         std::stringstream ss;
         ss << AivTask::Describe()
            << ", Rank=" << rank_
-           << ", Offset=" << flagOffset_
+           << ", CommInfoOffset=" << commInfoOffset_
            << ", Value=" << flagValue_;
         return ss.str();
     }
 
     uint32_t GetRank() const { return rank_; }
     void SetRank(uint32_t rank) { rank_ = rank; }
-    uint64_t GetFlagOffset() const { return flagOffset_; }
-    void SetFlagOffset(uint64_t flagOffset) { flagOffset_ = flagOffset; }
+    uint64_t GetCommInfoOffset() const { return commInfoOffset_; }
+    void SetCommInfoOffset(uint64_t commInfoOffset) { commInfoOffset_ = commInfoOffset; }
     flag_t GetFlagValue() const { return flagValue_; }
     void SetFlagValue(flag_t flagValue) { flagValue_ = flagValue; }
 
 private:
     uint32_t rank_{UINT32_MAX};
-    uint64_t flagOffset_{0};
+    uint64_t commInfoOffset_{0};
     flag_t flagValue_{0};
 };
 
 class AivTaskRecvFlag : public AivTask {
 public:
-    AivTaskRecvFlag(uint32_t rank, uint64_t flagOffset, flag_t targetValue)
-        : AivTask(AivTaskType::RECV_FLAG), rank_(rank), flagOffset_(flagOffset), targetValue_(targetValue) {}
+    AivTaskRecvFlag(uint32_t rank, uint64_t commInfoOffset, flag_t targetValue)
+        : AivTask(AivTaskType::RECV_FLAG), rank_(rank), commInfoOffset_(commInfoOffset), targetValue_(targetValue) {}
     ~AivTaskRecvFlag() override {}
     AivTaskRecvFlag(const AivTaskRecvFlag&) = delete;
     AivTaskRecvFlag& operator=(const AivTaskRecvFlag&) = delete;
@@ -318,21 +318,21 @@ public:
         std::stringstream ss;
         ss << AivTask::Describe()
            << ", Rank=" << rank_
-           << ", Offset=" << flagOffset_
+           << ", CommInfoOffset=" << commInfoOffset_
            << ", Value=" << targetValue_;
         return ss.str();
     }
 
     uint32_t GetRank() const { return rank_; }
     void SetRank(uint32_t rank) { rank_ = rank; }
-    uint64_t GetFlagOffset() const { return flagOffset_; }
-    void SetFlagOffset(uint64_t flagOffset) { flagOffset_ = flagOffset; }
+    uint64_t GetCommInfoOffset() const { return commInfoOffset_; }
+    void SetCommInfoOffset(uint64_t commInfoOffset) { commInfoOffset_ = commInfoOffset; }
     flag_t GetTargetValue() const { return targetValue_; }
     void SetTargetValue(flag_t targetValue) { targetValue_ = targetValue; }
 
 private:
     uint32_t rank_{UINT32_MAX};
-    uint64_t flagOffset_{0};
+    uint64_t commInfoOffset_{0};
     flag_t targetValue_{0};
 };
 }

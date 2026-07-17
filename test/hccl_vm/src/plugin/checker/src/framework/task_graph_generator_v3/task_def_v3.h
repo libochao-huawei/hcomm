@@ -43,14 +43,14 @@ constexpr uint16_t INVALID_CCU_CKE_MASK = std::numeric_limits<uint16_t>::max();
 constexpr uint32_t CCU_SQE_ARGS_LEN = 13;
 
 extern uint64_t g_checkerAivUbBufferSize;
-extern uint64_t g_checkerAivFlagBufferSize;
+extern uint64_t g_checkerAivCommInfoSize;
 
 enum class MemType : uint8_t {
     INPUT = 0,
     OUTPUT,
     CCL,
-    UB_AIV,
-    FLAG_AIV,
+    AIV_UB,
+    AIV_COMM,
     MS_CCU,
     INVALID = UINT8_MAX,
 };
@@ -64,10 +64,10 @@ inline const char *DescribeMemType(MemType memType)
             return "OUTPUT";
         case MemType::CCL:
             return "CCL";
-        case MemType::UB_AIV:
-            return "UB_AIV";
-        case MemType::FLAG_AIV:
-            return "FLAG_AIV";
+        case MemType::AIV_UB:
+            return "AIV_UB";
+        case MemType::AIV_COMM:
+            return "AIV_COMM";
         case MemType::MS_CCU:
             return "MS_CCU";
         default:
@@ -147,7 +147,7 @@ struct AivFlagSync {
     uint32_t blockId{std::numeric_limits<uint32_t>::max()};
     uint32_t curPipe{std::numeric_limits<uint32_t>::max()};
     uint32_t taskId{std::numeric_limits<uint32_t>::max()};
-    uint64_t flagOffset{0};
+    uint64_t commInfoOffset{0};
     int32_t value{0};
 };
 
@@ -239,6 +239,7 @@ public:
     TaskNode &operator=(const TaskNode &) = delete;
 
     virtual std::string Describe() const = 0;
+    virtual std::string DescribeShort() const { return Describe(); }
 
     TaskType GetType() const { return type_; }
     NodeId GetNodeId() const { return nodeId_; }
@@ -318,6 +319,7 @@ public:
 
     ~TaskTransMem() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
 
     const MemSlice &GetSrc() const { return src_; }
     const MemSlice &GetDst() const { return dst_; }
@@ -337,6 +339,7 @@ public:
 
     ~TaskBatchTransMem() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
 
     const std::vector<MemSlice> &GetSrcs() const { return srcs_; }
     const std::vector<MemSlice> &GetDsts() const { return dsts_; }
@@ -381,6 +384,7 @@ public:
 
     ~TaskReduce() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
 
     const MemSlice &GetSrc() const { return src_; }
     const std::vector<MemSlice> &GetSrcs() const { return srcs_; }
@@ -406,6 +410,7 @@ public:
 
     ~TaskBatchReduce() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
 
     const std::vector<std::vector<MemSlice>> &GetSrcs() const { return srcs_; }
     const std::vector<MemSlice> &GetDsts() const { return dsts_; }
@@ -577,6 +582,7 @@ public:
     {}
     ~TaskAivGraph() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
 
     RankId GetRankId() const { return rankId_; }
     uint64_t GetLaunchIdx() const { return launchIdx_; }
@@ -593,6 +599,7 @@ public:
     explicit TaskAivSetFlag(const AivPipeEvent &event) : TaskNode(TaskType::AIV_SET_FLAG), event_(event) {}
     ~TaskAivSetFlag() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
     const AivPipeEvent &GetEvent() const { return event_; }
 
 private:
@@ -604,6 +611,7 @@ public:
     explicit TaskAivWaitFlag(const AivPipeEvent &event) : TaskNode(TaskType::AIV_WAIT_FLAG), event_(event) {}
     ~TaskAivWaitFlag() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
     const AivPipeEvent &GetEvent() const { return event_; }
 
 private:
@@ -616,6 +624,7 @@ public:
         info_(std::move(info)) {}
     ~TaskAivPipeBarrier() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
     const AivBarrierInfo &GetInfo() const { return info_; }
 
 private:
@@ -627,6 +636,7 @@ public:
     explicit TaskAivSyncAll(AivSyncAllInfo info) : TaskNode(TaskType::AIV_SYNC_ALL), info_(std::move(info)) {}
     ~TaskAivSyncAll() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
     const AivSyncAllInfo &GetInfo() const { return info_; }
 
 private:
@@ -638,6 +648,7 @@ public:
     explicit TaskAivSendFlag(const AivFlagSync &flag) : TaskNode(TaskType::AIV_SEND_FLAG), flag_(flag) {}
     ~TaskAivSendFlag() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
     const AivFlagSync &GetFlag() const { return flag_; }
 
 private:
@@ -649,6 +660,7 @@ public:
     explicit TaskAivRecvFlag(const AivFlagSync &flag) : TaskNode(TaskType::AIV_RECV_FLAG), flag_(flag) {}
     ~TaskAivRecvFlag() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
     const AivFlagSync &GetFlag() const { return flag_; }
 
 private:
@@ -660,6 +672,7 @@ public:
     explicit TaskStart(BoundaryType boundaryType) : TaskNode(TaskType::START), boundaryType_(boundaryType) {}
     ~TaskStart() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
 
     BoundaryType GetBoundaryType() const { return boundaryType_; }
 
@@ -672,6 +685,7 @@ public:
     explicit TaskEnd(BoundaryType boundaryType) : TaskNode(TaskType::END), boundaryType_(boundaryType) {}
     ~TaskEnd() override = default;
     std::string Describe() const override;
+    std::string DescribeShort() const override;
 
     BoundaryType GetBoundaryType() const { return boundaryType_; }
 

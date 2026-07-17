@@ -16,6 +16,7 @@
 #include "ccu_microcode_common_v1.h"
 #include "sim_log.h"
 #include "ccu_simulator_base.h"
+#include "ccu_fp16.h"
 
 using namespace std;
 
@@ -69,6 +70,8 @@ const std::map<TransMemReduceDataTypeV1, std::function<void(const void *, void *
         [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceAdd<uint16_t>(srcBuf, dstBuf, length); }},
     {TransMemReduceDataTypeV1::UINT32_V1,
         [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceAdd<uint32_t>(srcBuf, dstBuf, length); }},
+    {TransMemReduceDataTypeV1::FP16_NORMAL_V1,
+        [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceAdd<FP16>(srcBuf, dstBuf, length); }},
     {TransMemReduceDataTypeV1::FP32_V1,
         [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceAdd<float>(srcBuf, dstBuf, length); }}
 };
@@ -87,6 +90,8 @@ const std::map<TransMemReduceDataTypeV1, std::function<void(const void *, void *
         [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceMax<uint16_t>(srcBuf, dstBuf, length); }},
     {TransMemReduceDataTypeV1::UINT32_V1,
         [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceMax<uint32_t>(srcBuf, dstBuf, length); }},
+    {TransMemReduceDataTypeV1::FP16_NORMAL_V1,
+        [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceMax<FP16>(srcBuf, dstBuf, length); }},
     {TransMemReduceDataTypeV1::FP32_V1,
         [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceMax<float>(srcBuf, dstBuf, length); }}
 };
@@ -105,6 +110,8 @@ const std::map<TransMemReduceDataTypeV1, std::function<void(const void *, void *
         [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceMin<uint16_t>(srcBuf, dstBuf, length); }},
     {TransMemReduceDataTypeV1::UINT32_V1,
         [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceMin<uint32_t>(srcBuf, dstBuf, length); }},
+    {TransMemReduceDataTypeV1::FP16_NORMAL_V1,
+        [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceMin<FP16>(srcBuf, dstBuf, length); }},
     {TransMemReduceDataTypeV1::FP32_V1,
         [](const void *srcBuf, void *dstBuf, uint64_t length) { ReduceMin<float>(srcBuf, dstBuf, length); }}
 };

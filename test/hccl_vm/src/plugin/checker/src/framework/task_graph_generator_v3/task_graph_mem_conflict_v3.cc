@@ -218,7 +218,7 @@ std::string DescribeKey(const MemoryKey &key)
         os << key.rankId;
     }
     os << ", " << DescribeMemType(key.memType);
-    if (key.memType == MemType::UB_AIV) {
+    if (key.memType == MemType::AIV_UB) {
         os << ",(aivBlockIndex=" << key.aivUbIdx << ")";
     }
     return os.str();
@@ -310,7 +310,7 @@ uint64_t MakeAivUbIdx(const TaskPosition &position)
 
 uint64_t GetAivUbIdx(const MemSlice &slice, const TaskNode *node)
 {
-    if (slice.memType != MemType::UB_AIV || node == nullptr) {
+    if (slice.memType != MemType::AIV_UB || node == nullptr) {
         return 0;
     }
     return MakeAivUbIdx(node->GetPosition());

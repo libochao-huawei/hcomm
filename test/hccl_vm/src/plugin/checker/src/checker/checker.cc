@@ -414,9 +414,9 @@ HcclResult CheckGraphV3TaskMem(const V3TaskNode *start)
     extraInfo << "nodeCount=" << stats.nodeCount
               << ", dataTaskNodeCount=" << stats.dataTaskNodeCount;
     if (TaskGraphGeneratorV3::g_checkerAivUbBufferSize != 0 ||
-        TaskGraphGeneratorV3::g_checkerAivFlagBufferSize != 0) {
+        TaskGraphGeneratorV3::g_checkerAivCommInfoSize != 0) {
         extraInfo << ", aivUbBufferSize=" << TaskGraphGeneratorV3::g_checkerAivUbBufferSize
-                  << ", aivFlagBufferSize=" << TaskGraphGeneratorV3::g_checkerAivFlagBufferSize;
+                  << ", aivCommInfoSize=" << TaskGraphGeneratorV3::g_checkerAivCommInfoSize;
     }
     timer.SetExtraInfo(extraInfo.str());
     timer.SetStatus(ret == HCCL_SUCCESS ? "success" : "failed");

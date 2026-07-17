@@ -117,8 +117,7 @@ private:
     void PrintOpData1(std::ofstream &ofs, const std::vector<BufferInfo> &allRankInput);
     void PrintOpData2(std::ofstream &ofs,
                       const std::vector<BufferInfo> &allRankInput,
-                      const std::vector<BufferInfo> &allRankOutput,
-                      const std::vector<BufferInfo> &allRankCCL);
+                      const std::vector<BufferInfo> &allRankOutput);
 
     std::string FindRootPath();
     bool IsDirExists(const std::string& path);

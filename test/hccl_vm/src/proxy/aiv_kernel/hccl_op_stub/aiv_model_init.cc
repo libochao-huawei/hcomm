@@ -15,9 +15,7 @@
 
 #include "aiv_task_json.h"
 #include "sim_log.h"
-
-constexpr uint64_t BUFFER_OUT_ADDR_OFFSET = 16 * 1024;
-constexpr uint64_t FLAG1_OFFSET = 1 * 1024 * 1024;
+#include "sim_common_defs.h"
 
 void aiv_env_init(uint32_t rankId,
     size_t blockNum,
@@ -30,7 +28,7 @@ void aiv_env_init(uint32_t rankId,
     uint64_t inputGlobalOffsetBase,
     uint64_t outputGlobalOffsetBase,
     uint64_t cclBufferSize,
-    uint64_t flagBufferSize,
+    uint64_t aivCommInfoSize,
     AivSim::AivOpParam opParam) {
     AscendC::block_num = blockNum;
     auto &executor = AivSim::AivKernelExecutor::GetInstance();
@@ -47,13 +45,13 @@ void aiv_env_init(uint32_t rankId,
         rankSize);
     HCCL_VM_DEBUG(
         "input={}, output={}, "
-        "inputGlobalOffsetBase={}, outputGlobalOffsetBase={}, cclBufferSize={}, flagBufferSize={}",
+        "inputGlobalOffsetBase={}, outputGlobalOffsetBase={}, cclBufferSize={}, aivCommInfoSize={}",
         inputMemDesc,
         outputMemDesc,
         inputGlobalOffsetBase,
         outputGlobalOffsetBase,
         cclBufferSize,
-        flagBufferSize);
+        aivCommInfoSize);
     HCCL_VM_DEBUG(
         "curOp: dataType={}, len={}, reduceOp={}, root={}, sliceId={}, inputStride={}, "
         "outputStride={}, kernelName={}",
@@ -81,24 +79,24 @@ void aiv_env_init(uint32_t rankId,
     }
 
     const auto *cclBufferTable = static_cast<const uint64_t *>(buffIn);
-    const auto *flagBufferTable = reinterpret_cast<const uint64_t *>(
-        static_cast<const uint8_t *>(buffIn) + BUFFER_OUT_ADDR_OFFSET);
+    const auto *aivCommInfoTable = reinterpret_cast<const uint64_t *>(
+        static_cast<const uint8_t *>(buffIn) + AivCommInfoLayout::GM_OUT_TABLE_OFFSET);
     for (uint32_t i = 0; i < rankSize; ++i) {
         const uint64_t cclBuffer = cclBufferTable[i];
-        const uint64_t flagBuffer = flagBufferTable[i] + FLAG1_OFFSET;
+        const uint64_t aivCommInfoBuffer = aivCommInfoTable[i];
         const std::string cclMemDesc = AivSim::Mem{cclBuffer, cclBufferSize}.Describe();
-        const std::string flagMemDesc = AivSim::Mem{flagBuffer, flagBufferSize}.Describe();
+        const std::string aivCommInfoMemDesc = AivSim::Mem{aivCommInfoBuffer, aivCommInfoSize}.Describe();
         HCCL_VM_DEBUG(
-            "SetCommBuffer rank={}, cclBuffer={}, flagBuffer={}",
+            "SetCommBuffer rank={}, cclBuffer={}, aivCommInfoBuffer={}",
             i,
             cclMemDesc,
-            flagMemDesc);
+            aivCommInfoMemDesc);
         executor.SetCommBuffer(
             i,
             cclBuffer,
             cclBufferSize,
-            flagBuffer,
-            flagBufferSize);
+            aivCommInfoBuffer,
+            aivCommInfoSize);
     }
 }
 

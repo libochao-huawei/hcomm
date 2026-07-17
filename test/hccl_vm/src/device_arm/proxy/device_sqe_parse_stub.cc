@@ -359,7 +359,7 @@ std::map<uint32_t, HcclDataType> DavidDataTypeMap = {
     {0x30, HcclDataType::HCCL_DATA_TYPE_UINT8},
     {0x40, HcclDataType::HCCL_DATA_TYPE_UINT16},
     {0x50, HcclDataType::HCCL_DATA_TYPE_UINT32},
-    {0x60, HcclDataType::HCCL_DATA_TYPE_BFP16},
+    {0x60, HcclDataType::HCCL_DATA_TYPE_FP16},
     {0x70, HcclDataType::HCCL_DATA_TYPE_FP32},
     {0x80, HcclDataType::HCCL_DATA_TYPE_BFP16}
 };

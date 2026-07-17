@@ -200,8 +200,8 @@ bool IsSupportedSemanticMemType(MemType memType)
         case MemType::OUTPUT:
         case MemType::CCL:
         case MemType::MS_CCU:
-        case MemType::UB_AIV:
-        case MemType::FLAG_AIV:
+        case MemType::AIV_UB:
+        case MemType::AIV_COMM:
             return true;
         default:
             return false;
@@ -230,10 +230,10 @@ u64 MakeAivUbIdx(const TaskPosition &position)
 AivMemoryKey MakeAivMemoryKey(RankId rankId, MemType memType, const TaskPosition &position, u64 batchIndex,
     bool isBatchUB)
 {
-    if (memType == MemType::FLAG_AIV) {
+    if (memType == MemType::AIV_COMM) {
         return AivMemoryKey{rankId, memType, 0U, 0U, false};
     }
-    const bool effectiveIsBatchUB = memType == MemType::UB_AIV && isBatchUB;
+    const bool effectiveIsBatchUB = memType == MemType::AIV_UB && isBatchUB;
     return AivMemoryKey{rankId, memType, MakeAivUbIdx(position), effectiveIsBatchUB ? batchIndex : 0U,
         effectiveIsBatchUB};
 }
@@ -246,7 +246,7 @@ InternalBufferSemanticMap &GetBufferSemanticMap(SemanticState &state, RankId ran
     if (memType == MemType::MS_CCU) {
         return state.ms[MakeMsKey(rankId, offset, index)];
     }
-    if (memType == MemType::UB_AIV || memType == MemType::FLAG_AIV) {
+    if (memType == MemType::AIV_UB || memType == MemType::AIV_COMM) {
         return state.AivDevMem[MakeAivMemoryKey(rankId, memType, position, index, useBatchIndex)];
     }
     return state.mem[rankId][ConvertMemTypeToBufferType(memType)];
@@ -260,7 +260,7 @@ const InternalBufferSemanticMap &GetBufferSemanticMap(const SemanticState &state
         const auto iter = state.ms.find(MakeMsKey(rankId, offset, index));
         return iter == state.ms.end() ? empty : iter->second;
     }
-    if (memType == MemType::UB_AIV || memType == MemType::FLAG_AIV) {
+    if (memType == MemType::AIV_UB || memType == MemType::AIV_COMM) {
         const auto iter = state.AivDevMem.find(MakeAivMemoryKey(rankId, memType, position, index, useBatchIndex));
         return iter == state.AivDevMem.end() ? empty : iter->second;
     }

@@ -34,6 +34,7 @@ include_directories(
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include
+    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/include/adv_api
     ${ASCEND_TOOLKIT_HOME}/x86_64-linux/include
     ${HCOMM_CODE_ROOT}/test/ut/depends/include

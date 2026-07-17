@@ -102,7 +102,7 @@ struct SetWaitKey {
 struct FlagCellKey {
     RankId flagOwnerRank{INVALID_RANK_ID};
     uint64_t launchIdx{0};
-    uint64_t flagOffset{0};
+    uint64_t commInfoOffset{0};
 
     bool operator<(const FlagCellKey &rhs) const
     {
@@ -112,7 +112,7 @@ struct FlagCellKey {
         if (launchIdx != rhs.launchIdx) {
             return launchIdx < rhs.launchIdx;
         }
-        return flagOffset < rhs.flagOffset;
+        return commInfoOffset < rhs.commInfoOffset;
     }
 };
 
@@ -175,9 +175,9 @@ MemType ConvertAivMemType(AivBufferTypeV3 bufferType)
         case AivBufferTypeV3::CCL:
             return MemType::CCL;
         case AivBufferTypeV3::UB:
-            return MemType::UB_AIV;
-        case AivBufferTypeV3::FLAG:
-            return MemType::FLAG_AIV;
+            return MemType::AIV_UB;
+        case AivBufferTypeV3::AIV_COMM:
+            return MemType::AIV_COMM;
         default:
             return MemType::INVALID;
     }
@@ -205,7 +205,7 @@ SetWaitKey MakeSetWaitKey(const AivPipeEvent &event)
 
 FlagCellKey MakeFlagCellKey(const AivFlagSync &flag)
 {
-    return FlagCellKey{flag.flagOwnerRank, flag.launchIdx, flag.flagOffset};
+    return FlagCellKey{flag.flagOwnerRank, flag.launchIdx, flag.commInfoOffset};
 }
 
 std::unique_ptr<TaskNode> TranslateAivRuntimeTask(const AivRuntimeTaskV3 &task, uint64_t launchIdx)
@@ -268,7 +268,7 @@ std::unique_ptr<TaskNode> TranslateAivRuntimeTask(const AivRuntimeTaskV3 &task, 
             flag.blockId = task.blockId;
             flag.curPipe = task.curPipe;
             flag.taskId = task.taskId;
-            flag.flagOffset = task.flagOffset;
+            flag.commInfoOffset = task.commInfoOffset;
             flag.value = task.flagValue;
             return std::make_unique<TaskAivSendFlag>(flag);
         }
@@ -280,7 +280,7 @@ std::unique_ptr<TaskNode> TranslateAivRuntimeTask(const AivRuntimeTaskV3 &task, 
             flag.blockId = task.blockId;
             flag.curPipe = task.curPipe;
             flag.taskId = task.taskId;
-            flag.flagOffset = task.flagOffset;
+            flag.commInfoOffset = task.commInfoOffset;
             flag.value = task.flagValue;
             return std::make_unique<TaskAivRecvFlag>(flag);
         }
@@ -676,7 +676,7 @@ size_t CountReachableActiveInternalNodes(const AivLaunchContext &ctx)
 bool IsCpGmExternalMemType(MemType memType)
 {
     return memType == MemType::INPUT || memType == MemType::CCL || memType == MemType::OUTPUT ||
-        memType == MemType::FLAG_AIV;
+        memType == MemType::AIV_COMM;
 }
 
 bool SameSliceIdentity(const MemSlice &lhs, const MemSlice &rhs)
@@ -801,7 +801,7 @@ bool IsValidCpGmDataNode(const TaskNode *node, uint32_t pipe, bool ubAsDst)
     }
     const MemSlice &ubSlice = ubAsDst ? dst : src;
     const MemSlice &externalSlice = ubAsDst ? src : dst;
-    return ubSlice.memType == MemType::UB_AIV && IsCpGmExternalMemType(externalSlice.memType);
+    return ubSlice.memType == MemType::AIV_UB && IsCpGmExternalMemType(externalSlice.memType);
 }
 
 bool MatchPipeEventNode(const TaskNode *node, TaskType type, uint32_t curPipe, uint32_t srcPipe, uint32_t dstPipe)
@@ -901,7 +901,7 @@ bool DataSliceShapeValid(const CpGmIter &iter)
         !GetDataSlices(iter[3], t3Src, t3Dst, dataType, reduceOp)) {
         return false;
     }
-    if (t0Dst.memType != MemType::UB_AIV || t3Src.memType != MemType::UB_AIV) {
+    if (t0Dst.memType != MemType::AIV_UB || t3Src.memType != MemType::AIV_UB) {
         return false;
     }
     if (!IsCpGmExternalMemType(t0Src.memType) || !IsCpGmExternalMemType(t3Dst.memType)) {
@@ -1300,8 +1300,8 @@ std::unique_ptr<TaskNode> BuildBatchNodeForColumn(const CpGmLoopGather &gather, 
 
     std::vector<MemSlice> mergedSrcs;
     std::vector<MemSlice> mergedDsts;
-    const bool srcIsUb = !srcs.empty() && srcs.front().memType == MemType::UB_AIV;
-    const bool dstIsUb = !dsts.empty() && dsts.front().memType == MemType::UB_AIV;
+    const bool srcIsUb = !srcs.empty() && srcs.front().memType == MemType::AIV_UB;
+    const bool dstIsUb = !dsts.empty() && dsts.front().memType == MemType::AIV_UB;
     if (srcIsUb) {
         mergedSrcs = MergeMemSliceIntervals(srcs);
     } else if (!BuildContinuousMergedSlices(srcs, mergedSrcs)) {
@@ -2025,7 +2025,7 @@ HcclResult ExpandOneAivGraph(TaskGraphGeneratorV3 *graph, StorageManager *storag
     if (ret != HCCL_SUCCESS) {
         return ret;
     }
-    ret = UpdateAivBufferSize(ctx.snapshot.flagBufferSize, "flagBufferSize", ctx, g_checkerAivFlagBufferSize);
+    ret = UpdateAivBufferSize(ctx.snapshot.aivCommInfoSize, "aivCommInfoSize", ctx, g_checkerAivCommInfoSize);
     if (ret != HCCL_SUCCESS) {
         return ret;
     }
