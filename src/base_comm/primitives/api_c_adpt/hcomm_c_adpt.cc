@@ -698,7 +698,6 @@ HcommResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t lis
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
-;
 }
 
 HcommResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum)

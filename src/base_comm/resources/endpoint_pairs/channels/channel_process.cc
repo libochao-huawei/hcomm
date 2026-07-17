@@ -613,7 +613,8 @@ HcclResult ChannelProcess::LaunchCommonChannelKernel(ChannelHandle *channelHandl
     ChannelHandle *hostChannelHandles, uint32_t listNum, HcommChannelKind channelKind, aclrtBinHandle binHandle)
 {
     HCCL_RUN_INFO("[%s] listNum[%u] HcommChannelRes path", __func__, listNum);
-
+    CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]", __func__, listNum), HCCL_E_PARA);
+    
     KHost host;
     CHK_RET(PackHost(hostChannelHandles, listNum, channelKind, host));
     KDev dev;

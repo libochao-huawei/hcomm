@@ -38,13 +38,11 @@ HcclResult AivChannelHelper::FillDevEntities(const ChannelHandle *channelList, u
 
         if (protocol == COMM_PROTOCOL_ROCE) {
             auto *roceChannel = static_cast<AicpuTsRoceChannelV2 *>(channelPtr);
-            CHK_PTR_NULL(roceChannel);
             CHK_RET(roceChannel->FillDevChannelEntity());
         } 
         
         if (protocol == COMM_PROTOCOL_UBC_CTP || protocol == COMM_PROTOCOL_UBC_TP) {
             auto *aivChannel = static_cast<AivUrmaChannel *>(channelPtr);
-            CHK_PTR_NULL(aivChannel);
             CHK_RET(aivChannel->FillChannelEntityToDevice());
         } 
         
