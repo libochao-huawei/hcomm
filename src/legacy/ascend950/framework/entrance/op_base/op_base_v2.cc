@@ -1346,7 +1346,7 @@ HcclResult HcclCommSuspendV2(HcclComm comm)
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2Tiling, void **commContext)
+HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, const void *stream, void *mc2Tiling, void **commContext)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(stream);
@@ -2824,7 +2824,7 @@ HcclResult HcclGetConfigV2(HcclConfig config, HcclConfigValue *configValue)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
+HcclResult HcclGetRankGraphV2(const HcclComm *comm, void **rankGraph)
 {
     Hccl::HcclCommunicator* communicatorV2 = (static_cast<Hccl::HcclCommunicator*>(*comm));
     communicatorV2->GetRankGraphV2(*rankGraph);
@@ -3020,7 +3020,7 @@ HcclResult HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const 
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks)
+HcclResult HcclCommWorkingDevNicSetV2(const HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks)
 {
     (void) comm;
     (void) ranks;
@@ -3030,7 +3030,7 @@ HcclResult HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useB
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HcclCommSetMemoryRangeV2(HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags)
+HcclResult HcclCommSetMemoryRangeV2(const HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags)
 {
     (void) comm;
     (void) baseVirPtr;
@@ -3041,7 +3041,7 @@ HcclResult HcclCommSetMemoryRangeV2(HcclComm comm, void *baseVirPtr, size_t size
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HcclCommUnsetMemoryRangeV2(HcclComm comm, void *baseVirPtr)
+HcclResult HcclCommUnsetMemoryRangeV2(const HcclComm comm, void *baseVirPtr)
 {
     (void) comm;
     (void) baseVirPtr;
@@ -3049,7 +3049,7 @@ HcclResult HcclCommUnsetMemoryRangeV2(HcclComm comm, void *baseVirPtr)
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags)
+HcclResult HcclCommActivateCommMemoryV2(const HcclComm comm, void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags)
 {
     (void) comm;
     (void) virPtr;
@@ -3061,7 +3061,7 @@ HcclResult HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr)
+HcclResult HcclCommDeactivateCommMemoryV2(const HcclComm comm, void *virPtr)
 {
     (void) comm;
     (void) virPtr;

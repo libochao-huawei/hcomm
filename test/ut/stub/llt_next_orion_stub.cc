@@ -2717,7 +2717,7 @@ HcclResult HcclGetCclBuffer(
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
+HcclResult HcclGetRankGraphV2(const HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }

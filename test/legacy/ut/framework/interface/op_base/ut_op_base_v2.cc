@@ -2844,3 +2844,117 @@ TEST_F(OpbaseTestV2, Ut_WaitAllCommReady_When_Timeout_Expect_Return_HCCL_E_TIMEO
     CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap.clear();
     CommManager::GetInstance(0).GetCommInfoV2().pComm = nullptr;
 }
+
+TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_CommIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    int dd = 0;
+    void *stream = static_cast<void *>(&dd);
+    void *mc2Tiling = static_cast<void *>(&dd);
+    void *commContext = static_cast<void *>(&dd);
+    HcclResult ret = HcclAllocComResourceByTilingV2(nullptr, stream, mc2Tiling, &commContext);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_StreamIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int dd = 0;
+    void *mc2Tiling = static_cast<void *>(&dd);
+    void *commContext = static_cast<void *>(&dd);
+    HcclResult ret = HcclAllocComResourceByTilingV2(comm, nullptr, mc2Tiling, &commContext);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_Mc2TilingIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int dd = 0;
+    void *stream = static_cast<void *>(&dd);
+    void *commContext = static_cast<void *>(&dd);
+    HcclResult ret = HcclAllocComResourceByTilingV2(comm, stream, nullptr, &commContext);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_CommContextIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int dd = 0;
+    void *stream = static_cast<void *>(&dd);
+    void *mc2Tiling = static_cast<void *>(&dd);
+    HcclResult ret = HcclAllocComResourceByTilingV2(comm, stream, mc2Tiling, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclGetRankGraphV2_When_RankGraphIsValid_Expect_ReturnHCCL_SUCCESS)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    hcclComm->pimpl->rankGraph = std::make_shared<Hccl::RankGraph>(0);
+    void *rankGraph = nullptr;
+    HcclResult ret = HcclGetRankGraphV2(&comm, &rankGraph);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(rankGraph, nullptr);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclCommWorkingDevNicSetV2_When_Call_Expect_ReturnHCCL_E_NOT_SUPPORT)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    uint32_t ranks = 0;
+    bool useBackup = false;
+    HcclResult ret = HcclCommWorkingDevNicSetV2(comm, &ranks, &useBackup, 1);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclCommSetMemoryRangeV2_When_Call_Expect_ReturnHCCL_E_NOT_SUPPORT)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int dd = 0;
+    void *baseVirPtr = static_cast<void *>(&dd);
+    HcclResult ret = HcclCommSetMemoryRangeV2(comm, baseVirPtr, 1024, 64, 0);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclCommUnsetMemoryRangeV2_When_Call_Expect_ReturnHCCL_E_NOT_SUPPORT)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int dd = 0;
+    void *baseVirPtr = static_cast<void *>(&dd);
+    HcclResult ret = HcclCommUnsetMemoryRangeV2(comm, baseVirPtr);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclCommActivateCommMemoryV2_When_Call_Expect_ReturnHCCL_E_NOT_SUPPORT)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int dd = 0;
+    void *virPtr = static_cast<void *>(&dd);
+    void *handle = static_cast<void *>(&dd);
+    HcclResult ret = HcclCommActivateCommMemoryV2(comm, virPtr, 1024, 0, handle, 0);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclCommDeactivateCommMemoryV2_When_Call_Expect_ReturnHCCL_E_NOT_SUPPORT)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int dd = 0;
+    void *virPtr = static_cast<void *>(&dd);
+    HcclResult ret = HcclCommDeactivateCommMemoryV2(comm, virPtr);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}

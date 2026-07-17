@@ -105,7 +105,7 @@ HcclResult __attribute__((weak)) HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvI
 
 HcclResult __attribute__((weak)) HcclGetRankSizeV2(HcclComm comm, uint32_t *rankSize);
 
-HcclResult __attribute__((weak)) HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2Tiling, void **commContext);
+HcclResult __attribute__((weak)) HcclAllocComResourceByTilingV2(HcclComm comm, const void *stream, void *mc2Tiling, void **commContext);
 
 HcclResult __attribute__((weak)) HcclCommSuspendV2(HcclComm comm);
 
@@ -125,19 +125,19 @@ HcclResult __attribute__((weak)) HcclBarrierV2(HcclComm comm, aclrtStream stream
 
 HcclResult __attribute__((weak)) HcclGetHeterogModeV2(HcclComm comm, HcclHeterogMode *mode);
 
-HcclResult __attribute__((weak)) HcclGetRankGraphV2(HcclComm *comm, void **rankGraph);
+HcclResult __attribute__((weak)) HcclGetRankGraphV2(const HcclComm *comm, void **rankGraph);
 
 HcclResult __attribute__((weak)) HcclGetCclBuffer(HcclComm comm, uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType);
 
-HcclResult __attribute__((weak)) HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);
+HcclResult __attribute__((weak)) HcclCommWorkingDevNicSetV2(const HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);
  
-HcclResult __attribute__((weak)) HcclCommSetMemoryRangeV2(HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags);
+HcclResult __attribute__((weak)) HcclCommSetMemoryRangeV2(const HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags);
  
-HcclResult __attribute__((weak)) HcclCommUnsetMemoryRangeV2(HcclComm comm, void *baseVirPtr);
+HcclResult __attribute__((weak)) HcclCommUnsetMemoryRangeV2(const HcclComm comm, void *baseVirPtr);
  
-HcclResult __attribute__((weak)) HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
+HcclResult __attribute__((weak)) HcclCommActivateCommMemoryV2(const HcclComm comm, void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
  
-HcclResult __attribute__((weak)) HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr);
+HcclResult __attribute__((weak)) HcclCommDeactivateCommMemoryV2(const HcclComm comm, void *virPtr);
 
 HcclResult __attribute__((weak)) HcommFlushV2();
 

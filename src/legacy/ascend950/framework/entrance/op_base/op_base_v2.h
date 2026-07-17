@@ -101,7 +101,7 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
 
 HcclResult HcclGetRankSizeV2(HcclComm comm, uint32_t *rankSize);
 
-HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2Tiling, void **commContext);
+HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, const void *stream, void *mc2Tiling, void **commContext);
 
 HcclResult HcclGetOpArgsV2(void **opArgs);
  
@@ -149,7 +149,7 @@ HcclResult HcclGetCommAsyncErrorV2();
 HcclResult HcclSetConfigV2(HcclConfig config, HcclConfigValue configValue);
 HcclResult HcclGetConfigV2(HcclConfig config, HcclConfigValue *configValue);
 
-HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph);
+HcclResult HcclGetRankGraphV2(const HcclComm *comm, void **rankGraph);
 
 HcclResult HcclBarrierV2(HcclComm comm, aclrtStream stream);
 HcclResult HcclGetHeterogModeV2(HcclComm comm, HcclHeterogMode *mode);
@@ -184,15 +184,15 @@ HcclResult HcclGetDpuSteamIdV2(HcclComm comm, u32 &dpuStreamId);
 HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag);
 HcclResult HcclCheckTaskServiceExist(const std::string &commId, s32 deviceId);
 
-HcclResult HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);
+HcclResult HcclCommWorkingDevNicSetV2(const HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);
 
-HcclResult HcclCommSetMemoryRangeV2(HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags);
+HcclResult HcclCommSetMemoryRangeV2(const HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags);
 
-HcclResult HcclCommUnsetMemoryRangeV2(HcclComm comm, void *baseVirPtr);
+HcclResult HcclCommUnsetMemoryRangeV2(const HcclComm comm, void *baseVirPtr);
 
-HcclResult HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
+HcclResult HcclCommActivateCommMemoryV2(const HcclComm comm, void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
 
-HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr);
+HcclResult HcclCommDeactivateCommMemoryV2(const HcclComm comm, void *virPtr);
 
 uint32_t HcclGetCommConfigCapabilityV2();
 
