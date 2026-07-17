@@ -105,7 +105,7 @@ struct udma_u_jfc_cfg_ex {
 struct udma_u_lock_jetty_cfg {
 	urma_jetty_cfg_t base_cfg;
 	bool jetty_type; /* 1:wqe lock buffer jetty, 0:normal jetty, default: 1 */
-	uint32_t buf_idx; /* buf offset addres idx */
+	uint32_t buf_idx; /* buf offset address idx */
 };
 
 struct udma_u_jfc_ccu_cfg {
