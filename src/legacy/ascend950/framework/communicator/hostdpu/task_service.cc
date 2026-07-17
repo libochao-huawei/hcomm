@@ -152,7 +152,7 @@ HcclResult TaskService::ExecuteTaskexception(int32_t ret)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ExecuteTaskClean()
+HcclResult TaskService::ExecuteTaskClean() const
 {
     errno_t ret = memset_s(hostMem_, hostMemSize_, 0, hostMemSize_);
     if (ret != EOK) {
@@ -259,7 +259,7 @@ HcclResult TaskService::ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ExecuteExit(uint8_t *srcFlagPtr)
+HcclResult TaskService::ExecuteExit(uint8_t *srcFlagPtr) const
 {
     CHK_RET(WriteFlag(srcFlagPtr, TASK_TERMINATE_RESPONSE));
     HCCL_INFO("[TaskService::TaskRun] Exiting.");

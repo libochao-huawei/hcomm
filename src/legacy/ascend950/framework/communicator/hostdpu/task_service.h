@@ -52,9 +52,9 @@ private:
     HcclResult ExecuteTask(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcPtr, std::string taskTypeStr);
     HcclResult SynchronizeControlInfo(uint8_t *ctrlHdr, [[maybe_unused]] uint64_t hdrLen);
     HcclResult ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t *srcFlagPtr, uint8_t *srcTaskTypePtr);
-    HcclResult ExecuteTaskClean();
+    HcclResult ExecuteTaskClean() const;
     HcclResult ExecuteTaskexception(int32_t ret);
-    HcclResult ExecuteExit(uint8_t *srcFlagPtr);
+    HcclResult ExecuteExit(uint8_t *srcFlagPtr) const;
 private:
     std::unordered_map<std::string, CallbackTemplate> callbacks_;
     ProfCallbackTemplate profCallback_{nullptr};

@@ -12,7 +12,6 @@
 #define RANK_CONSISTENCY_CHECKER_V2_H
 
 #include <string>
-#include <cstdint>
 #include <mutex>
 #include <vector>
 #include <unordered_map>

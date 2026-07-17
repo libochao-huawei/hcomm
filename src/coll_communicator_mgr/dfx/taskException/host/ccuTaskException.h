@@ -28,7 +28,7 @@ using GetCcuCqeErrInfoCallBackHcomm = void (*)(u32 RemoteLocalId, u32 locDeviceI
 void RegisterGetCcuCqeErrInfoCallBackHcomm(GetCcuCqeErrInfoCallBackHcomm p1); // 注册获取远端rankId的回调函数
 
 using CcuGetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogicID);
-void RegisterCcuGetErrStatusVecCallBack(CcuGetErrStatusVecCallBack p1);
+void RegisterCcuGetErrStatusVecCallBack(CcuGetErrStatusVecCallBack callback);
 
 class CcuTaskException {
 public:

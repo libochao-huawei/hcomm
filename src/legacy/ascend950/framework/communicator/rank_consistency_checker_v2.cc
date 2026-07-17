@@ -11,7 +11,6 @@
 #include "adapter_pub.h"
 #include "adapter_error_manager_pub.h"
 #include "checkcrc.h"
-#include "log.h"
 using namespace Hccl;
 
 namespace hccl {
