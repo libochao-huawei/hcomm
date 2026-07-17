@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "../channel.h"
+#include "aicpu_ts_channel_helper.h"
 #include "../../sockets/socket_mgr.h"
 
 #include "../../../../../../legacy/ascend950/unified_platform/resource/socket/socket.h"
@@ -37,7 +38,7 @@ public:
     HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos) override;
     ChannelStatus GetStatus() override;
     HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum) override;
-
+    const HcommChannelDesc& GetChannelDesc() const override { return channelDesc_; }
     HcclResult H2DResPack(std::vector<char>& buffer);
 
     virtual HcclResult Clean() override;
@@ -51,7 +52,10 @@ public:
     HcclResult Read(void *dst, const void *src, uint64_t len) override;
     HcclResult ChannelFence() override;
 
+    AicpuTsChannelHelper *GetAicpuTsHelper() override { return &aicpuTsHelper_; }
+
 private:
+    AicpuTsChannelHelper aicpuTsHelper_;
     HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name);
     HcclResult ParseInputParam();
     HcclResult BuildAttr();

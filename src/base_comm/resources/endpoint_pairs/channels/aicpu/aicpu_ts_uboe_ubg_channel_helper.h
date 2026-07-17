@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "channel.h"
+#include "aicpu_ts_channel_helper.h"
 #include "socket_mgr.h"
 
 // Orion
@@ -41,7 +42,7 @@ public:
     HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos) override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
-
+    const HcommChannelDesc& GetChannelDesc() const override { return channelDesc_; }
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
 
@@ -53,7 +54,10 @@ public:
     HcclResult Read(void *dst, const void *src, uint64_t len) override;
     HcclResult ChannelFence() override;
 
+    AicpuTsChannelHelper *GetAicpuTsHelper() override { return &aicpuTsHelper_; }
+
 protected:
+
     MAKE_ENUM(UboeRmtBufType, NOTIFY, BUFFER)
     using RemoteBufferVec = std::vector<std::unique_ptr<Hccl::RemoteUbRmaBuffer>>;
     using LocalBufferVec = std::vector<Hccl::LocalUbRmaBuffer *>;
@@ -134,6 +138,8 @@ protected:
     const Hccl::SocketConfig*    socketConfig_{nullptr};
     DevBaseAttr devBaseAttr_{};
     uint32_t    devicePhyId_{};
+private:
+    AicpuTsChannelHelper aicpuTsHelper_;
 };
 
 } // namespace hcomm

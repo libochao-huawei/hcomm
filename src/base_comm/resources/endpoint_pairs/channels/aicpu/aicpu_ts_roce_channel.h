@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include "../channel.h"
+#include "aicpu_ts_channel_helper.h"
 #include "hccl_dispatcher_ctx.h"
 #include "hccl_socket.h"
 #include "transport_pub.h"
@@ -36,6 +37,7 @@ public:
     ChannelStatus GetStatus() override;
     HcclResult Serialize(std::shared_ptr<hccl::DeviceMem> &out) override;
     HcommChannelKind GetChannelKind() const override;
+    const HcommChannelDesc& GetChannelDesc() const override { return channelDesc_; }
     HcclResult Clean() override;
     HcclResult Resume() override;
 
@@ -47,7 +49,10 @@ public:
     HcclResult Read(void *dst, const void *src, uint64_t len) override;
     HcclResult ChannelFence() override;
 
+    AicpuTsChannelHelper *GetAicpuTsHelper() override { return &aicpuTsHelper_; }
+
 private:
+    AicpuTsChannelHelper aicpuTsHelper_;
     /** Owns res / local+remote RoceMemDetails arrays as separate device allocations for AICPU kernel blob. */
     struct AicpuTsRoceChannelMem {
         hccl::DeviceMem resAlloc{};
