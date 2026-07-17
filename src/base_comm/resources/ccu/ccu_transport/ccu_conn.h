@@ -44,6 +44,9 @@ public:
     uint32_t GetChannelId() const;
     uint32_t GetDieId() const;
     int32_t  GetDevLogicId() const;
+    uint64_t GetRmtCcuBufAddr() const;
+    uint32_t GetRmtCcuBufTokenId() const;
+    uint32_t GetRmtCcuBufTokenValue() const;
     HcclResult Describe(std::string &dfxMsg);
 
 protected:

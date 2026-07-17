@@ -71,8 +71,8 @@ HcclResult LaunchContext::HandleClear()
 
     DevType devType = DevType::DEV_TYPE_COUNT;
     hrtGetDeviceType(devType);
-    if (devType == DevType::DEV_TYPE_950) {
-        HCCL_INFO("[%s] Running on A5, HcclTaskClear skipped.", __func__);
+    if (devType == DevType::DEV_TYPE_950 || devType == DevType::DEV_TYPE_960) {
+        HCCL_INFO("[%s] Running on A5/A6, HcclTaskClear skipped.", __func__);
         return HCCL_SUCCESS;
     }
     return HcclTaskClear(launchTag_);
@@ -152,7 +152,7 @@ HcclResult LaunchContext::SetLaunchMode(const char* launchTag, HcommLaunchMode m
         case HCOMM_LAUNCH_MODE_BATCH:
 #ifndef CCL_KERNEL_AICPU
             hrtGetDeviceType(devType);
-            if (devType == DevType::DEV_TYPE_950) {
+            if (devType == DevType::DEV_TYPE_950 || devType == DevType::DEV_TYPE_960) {
                 HCCL_INFO("[%s] Running on A5, CommTaskPrepare skipped.", __func__);
                 return HCCL_SUCCESS;
             }

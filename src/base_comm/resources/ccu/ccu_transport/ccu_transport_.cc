@@ -88,8 +88,7 @@ CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> 
 CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection,
     const std::vector<CclBufferInfo> &bufferInfos)
     : socket_(socket), ccuConnection_(std::move(connection)), locBufferInfos_(bufferInfos)
-{
-}
+{}
 
 HcclResult CcuTransport::Init()
 {
@@ -169,6 +168,23 @@ HcclResult CcuTransport::AppendXns(uint32_t xnsNum)
         }
     }
     xnsRes_.push_back(resInfo);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::AppendCntXns()
+{
+    for (auto& cntXns : locRes_.cntXns) {
+        if (cntXns.second == INVALID_UINT) {
+            uint32_t wishCntXnId = 0;
+            auto ret = CcuDevMgrImp::AllocWishCntXn(devLogicId_, dieId_, cntXns.first, wishCntXnId);
+            CHK_PRT_RET(ret == HcclResult::HCCL_E_UNAVAIL,
+                HCCL_ERROR("[CcuTransport][%s] failed, the resource is not enough.",
+                    __func__),
+                ret);
+            CHK_RET(ret);
+            cntXns.second = wishCntXnId;
+        }
+    }
     return HCCL_SUCCESS;
 }
 
@@ -383,7 +399,21 @@ HcclResult CcuTransport::TransResPack(Hccl::BinaryStream &binaryStream)
     for (uint32_t i = 0; i < locRes_.xns.size(); i++) {
         binaryStream << locRes_.xns[i];
     }
+
     HCCL_INFO("Send ckesSize[%u], xnsSize[%u]", locCkesSize, locXnsSize);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::TransCntXnResPack(Hccl::BinaryStream &binaryStream)
+{
+    const uint32_t locCntXnsSize = locRes_.cntXns.size();
+    binaryStream << locCntXnsSize;
+    for (auto &cntXns : locRes_.cntXns) {
+        binaryStream << cntXns.first << cntXns.second;
+        HCCL_INFO("Send resGroupTag[%s], wishCntXn[%u]", cntXns.first.c_str(),
+            cntXns.second);
+    }
+
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -415,7 +445,8 @@ HcclResult CcuTransport::ConnInfoUnpackProc(Hccl::BinaryStream &binaryStream) co
     std::vector<char> dtoData{};
     binaryStream >> dtoData;
     CHK_RET(ccuConnection_->Deserialize(dtoData));
-    HCCL_INFO("[CcuTransport][%s] start unpack connInfo, dtoData.size[%zu]", __func__, dtoData.size());
+    HCCL_INFO("[CcuTransport][%s] start unpack connInfo, dtoData.size[%zu]",
+        __func__, dtoData.size());
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -439,6 +470,34 @@ HcclResult CcuTransport::TransResUnpackProc(Hccl::BinaryStream &binaryStream)
         rmtRes_.xns.push_back(xn);
     }
     HCCL_INFO("Recv xnsSize[%u]", resSize);
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::TransCntXnResUnpackProc(Hccl::BinaryStream &binaryStream)
+{
+    uint32_t resSize{0};
+    binaryStream >> resSize;
+    HCCL_INFO("Recv resGroupTagSize[%u]", resSize);
+    for (uint32_t num = 0; num < resSize; num++) {
+        std::string resGroupTag;
+        uint32_t wishCntXn = 0;
+        binaryStream >> resGroupTag >> wishCntXn;
+        HCCL_INFO("Recv resGroupTag[%s], wishCntXn[%u], locRes_.cntXns size[%zu]", resGroupTag.c_str(),
+            wishCntXn, locRes_.cntXns.size());
+        if (locRes_.cntXns.find(resGroupTag) == locRes_.cntXns.end()) {
+            HCCL_ERROR("Recv resGroupTag[%s] not in locRes.", resGroupTag.c_str());
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        auto iter = rmtRes_.cntXns.find(resGroupTag);
+        if (iter == rmtRes_.cntXns.end()) {
+            rmtRes_.cntXns.insert(std::make_pair(resGroupTag, wishCntXn));
+        } else if (iter->second != wishCntXn) {
+            HCCL_ERROR("Recv resGroupTag[%s], current rmt cnt xn[%u] is not equal to recv cnt xn[%u].",
+                resGroupTag.c_str(), iter->second, wishCntXn);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+    }
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -599,6 +658,20 @@ HcclResult CcuTransport::GetRmtXnByIndex(const uint32_t index, uint32_t &rmtXnId
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult CcuTransport::GetRmtWishCntXnAddr(const std::string &resGroupTag, uint64_t &wishCntXnAddr) const
+{
+    auto iter = rmtRes_.cntXns.find(resGroupTag);
+    if (iter == rmtRes_.cntXns.end()) {
+        HCCL_ERROR("[CcuTransport][%s] failed, resGroupTag[%s] is not found.", __func__, resGroupTag.c_str());
+        return HCCL_E_NOT_FOUND;
+    }
+
+    const uint32_t wishCntXn = iter->second;
+    CHK_RET(GetRmtVarAddrByXnId(wishCntXn, wishCntXnAddr));
+    HCCL_DEBUG("[CcuTransport][%s] resGroupTag[%s], wishCntXnAddr[%u][0x%llx]", __func__, resGroupTag.c_str(), wishCntXn, wishCntXnAddr);
+    return HCCL_SUCCESS;
+}
+
 HcclResult CcuTransport::GetLocBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const
 {
     (void)bufNum;
@@ -616,6 +689,61 @@ HcclResult CcuTransport::GetRmtBuffer(CclBufferInfo &bufferInfo, const uint32_t 
 HcclResult CcuTransport::GetCkeNum(uint32_t &ckeNum) const
 {
     ckeNum = locRes_.ckes.size();
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::GetRmtSignalAddrByIndex(uint32_t index, uint64_t &rmtCkeAddr) const
+{
+    uint32_t rmtCkeId{0};
+    uint64_t ckeOffsetCcumAddr{0};
+    CHK_RET(GetRmtCkeByIndex(index, rmtCkeId));
+    CHK_PRT_RET(CcuDevMgrImp::GetCkeOffsetCcumAddrById(devLogicId_, dieId_, rmtCkeId, ckeOffsetCcumAddr),
+        HCCL_ERROR("[CcuTransport][%s]Failed to get cke offset address. devLogicId = %d, dieId = %u.",
+            __func__, devLogicId_, dieId_), HCCL_E_INTERNAL);
+    uint64_t rmtResourceAddr = ccuConnection_->GetRmtCcuBufAddr();
+    HCCL_DEBUG("[CcuTransport][%s] index[%u] rmtCcuBufAddr[0x%llx], ckeAddr[%u][0x%llx]",
+        __func__, index, rmtResourceAddr, rmtCkeId, ckeOffsetCcumAddr);
+    if (ckeOffsetCcumAddr > UINT64_MAX - rmtResourceAddr) {
+        HCCL_ERROR("[CcuTransport][%s] failed, rmtResourceAddr[%llx] + ckeOffsetCcumAddr[%llx] is overflow.",
+            __func__, rmtResourceAddr, ckeOffsetCcumAddr);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    rmtCkeAddr = rmtResourceAddr + ckeOffsetCcumAddr;
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::GetRmtVarAddrByIndex(uint32_t index, uint64_t &rmtXnAddr) const
+{
+    uint32_t rmtXnId{0};
+    CHK_RET(GetRmtXnByIndex(index, rmtXnId));
+    CHK_RET(GetRmtVarAddrByXnId(rmtXnId, rmtXnAddr));
+    HCCL_DEBUG("[CcuTransport][%s] index[%u], xnAddr[%u][0x%llx]", __func__, index, rmtXnId, rmtXnAddr);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::GetRmtVarAddrByXnId(const uint32_t rmtXnId, uint64_t &rmtXnAddr) const
+{
+    uint64_t xnOffsetCcumAddr = 0;
+    CHK_PRT_RET(CcuDevMgrImp::GetXnOffsetCcumAddrById(devLogicId_, dieId_, rmtXnId, xnOffsetCcumAddr),
+        HCCL_ERROR("[CcuTransport][%s]Failed to get xn offset address. devLogicId = %d, dieId = %u.",
+            __func__, devLogicId_, dieId_), HCCL_E_INTERNAL);
+    const uint64_t  rmtResourceAddr = ccuConnection_->GetRmtCcuBufAddr();
+    HCCL_DEBUG("[CcuTransport][%s]rmtCcuBufAddr[0x%llx], xnAddr[%u][0x%llx]",
+        __func__, rmtResourceAddr, rmtXnId, xnOffsetCcumAddr);
+    if (rmtResourceAddr > UINT64_MAX - xnOffsetCcumAddr) {
+        HCCL_ERROR("[CcuTransport][%s] failed, CCU resource base address[%llu] is "
+            "greater than expected, ccu xn offset[%llu], their sum will exceed the range "
+            "of uint64_t.", __func__, rmtResourceAddr, xnOffsetCcumAddr);
+        return HCCL_E_INTERNAL;
+    }
+    rmtXnAddr = rmtResourceAddr + xnOffsetCcumAddr;
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::GetRmtCcuBufferTokenInfo(uint32_t &rmtTokenId, uint32_t &rmtTokenValue) const
+{
+    rmtTokenId = ccuConnection_->GetRmtCcuBufTokenId();
+    rmtTokenValue = ccuConnection_->GetRmtCcuBufTokenValue();
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -725,6 +853,36 @@ HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> 
     locBufferInfos_.insert(locBufferInfos_.end(), bufferVecTemp.begin(), bufferVecTemp.end());
     // 流程中已有新增内存数量判断，故执行到此位置一定存在新增内存，需要将标识置位false，使得再次调用GetRemoteMems时重新构造缓存
     cacheValid_ = false;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::ResUpdate(std::vector<std::string> &resGroupTags)
+{
+    if (resGroupTags.size() == 0) {
+        return HCCL_SUCCESS;
+    }
+
+    for (auto &resGroupTag : resGroupTags) {
+        if (locRes_.cntXns.find(resGroupTag) == locRes_.cntXns.end()) {
+            locRes_.cntXns.insert(std::make_pair(resGroupTag, INVALID_UINT));
+        }
+    }
+
+    CHK_RET(AppendCntXns());
+
+    switch (transStatus_) {
+        case CcuTransport::TransStatus::INIT:
+            break;
+        case CcuTransport::TransStatus::READY:
+            transStatus_ = CcuTransport::TransStatus::SEND_TRANS_RES;
+            break;
+        default:
+            HCCL_ERROR("[CcuTransport][%s] failed, error status[%s].",
+                __func__, transStatus_.Describe().c_str());
+            transStatus_ = CcuTransport::TransStatus::CONNECT_FAILED;
+            break;
+    }
+
     return HcclResult::HCCL_SUCCESS;
 }
 } // namespace hcomm

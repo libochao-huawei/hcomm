@@ -10,12 +10,18 @@
 
 #include "ccu_jetty_ctx_mgr.h"
 
-#include "../../ccu_res_specs.h"
+#include "ccu_res_specs.h"
+
 #include "hccp_ctx.h"
+
 #include "hcomm_adapter_hccp.h"
-#include "hccp_tlv_hdc_manager.h"
 
 namespace hcomm {
+
+CcuJettyCtxMgr::CcuJettyCtxMgr(const int32_t devLogicId, const uint8_t dieId, const uint32_t devPhyId)
+    : devLogicId_(devLogicId), dieId_(dieId), devPhyId_(devPhyId), pfeMgr_(devLogicId, dieId, devPhyId)
+{
+}
 
 // 对一个数求以2为底的对数，num已保证不为0
 inline uint16_t Log2OfPowerOfTwo(uint32_t num)
@@ -100,8 +106,6 @@ HcclResult ConfigJettyCtxData(const int32_t devLogicId, const uint8_t dieId, con
     const uint16_t startJettyCtxId, std::vector<LocalJettyCtxData>& jettyCtxData)
 {
     const uint32_t jettyNum = jettyCtxData.size(); // 分配与配置前校验已保证不为0
-    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
-    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 
@@ -110,7 +114,8 @@ HcclResult ConfigJettyCtxData(const int32_t devLogicId, const uint8_t dieId, con
     inBuff.data.dataInfo.udieIdx       = dieId;
     inBuff.data.dataInfo.dataArraySize = jettyNum;
 
-    // 设置数据长度，目前设备管理最多使用5个JettyCtx，需要长度上限为 32 * 5 = 160B
+    // 设置数据长度，目前设备管理A5最多使用5个JettyCtx，需要长度上限为 32 * 5 = 160B
+    // A6 依据配比关系，最大长度为 32 * 8 = 256B，当前业务仅使用 32 * 1 = 32B
     inBuff.data.dataInfo.dataLen =
         sizeof(struct LocalJettyCtxData) * inBuff.data.dataInfo.dataArraySize;
     inBuff.offsetStartIdx = startJettyCtxId; // 设置起始Jetty上下文ID，注意应从0开始，非TaJettyId
@@ -125,27 +130,15 @@ HcclResult ConfigJettyCtxData(const int32_t devLogicId, const uint8_t dieId, con
             &jettyCtxData[i], sizeof(struct LocalJettyCtxData));
     }
 
-    auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD,
-        static_cast<void *>(&inBuff),
-        static_cast<void *>(&outBuff));
+    auto ret = HccpRaTlvCcuCustomChannel(devLogicId,
+        static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+        HCCL_ERROR("[CcuJettyCtxMgr][%s] failed to call ccu driver, "
             "devLogicId[%d] devPhyId[%u] dieId[%d] op[%s] ret[%d].", __func__, devLogicId, devPhyId, dieId,
             "SET_JETTY_CTX", ret);
         return ret;
     }
 
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuJettyCtxMgr::Init()
-{
-    // 获取失败或为0场景，分配将按资源不足操作
-    (void)CcuResSpecifications::GetInstance(devLogicId_).GetJettyNum(dieId_, jettySpecNum_);
-    // 获取地址为0在使用处校验
-    (void)CcuResSpecifications::GetInstance(devLogicId_).GetResourceAddr(dieId_, ccuResBaseVa_);
-    CHK_RET(wqeBBMgr_.Init());
-    CHK_RET(pfeMgr_.Init());
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -172,9 +165,9 @@ static HcclResult GetSqeBuffVa(const uint64_t ccuResBaseVa, const uint32_t jetty
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuJettyCtxMgr::TryAllocWqeBBResource(const uint32_t sqSize,
-    const uint32_t jettyCtxStartId, const uint32_t taJettyStartId,
-    const CcuJettyType jettyType, std::vector<JettyInfo> &jettyInfos)
+HcclResult CcuJettyCtxMgr::TryAllocWqeBBResource(uint32_t sqSize,
+    uint32_t jettyCtxStartId, uint32_t taJettyStartId,
+    CcuJettyType jettyType, std::vector<JettyInfo> &jettyInfos)
 {
     const uint32_t jettyNum = jettyInfos.size();
     if (jettyNum == 0) {
@@ -191,7 +184,10 @@ HcclResult CcuJettyCtxMgr::TryAllocWqeBBResource(const uint32_t sqSize,
 
     for (uint32_t i = 0; i < jettyNum; i++) {
         ResInfo wqeBBInfo(0, 0);
-        HcclResult ret = wqeBBMgr_.Alloc(sqSize, wqeBBInfo);
+        // a5/a6 wqebb分配策略不同，保留根据jettyCtxId决策wqebb分配的能力
+        // 当前a5仅使用sqSize，a6 每个jetty ctx平均占用32个wqebb
+        const WqeBBReq wqeBBReq{sqSize, jettyCtxStartId};
+        HcclResult ret = wqeBBMgr_->Alloc(wqeBBReq, wqeBBInfo);
         if (ret == HcclResult::HCCL_E_UNAVAIL) {
             HCCL_WARNING("[CcuJettyCtxMgr][%s] failed to alloc wqe basic block resource, "
                 "left resources are not enough, devLogicId[%d], dieId[%u].",
@@ -229,7 +225,7 @@ HcclResult CcuJettyCtxMgr::ReleaseWqeBBResource(const std::vector<JettyInfo> &je
         // jettyInfo 为内部数据，分配保证不会溢出
         uint32_t wqeBBNum = jettyInfo.sqDepth * CCU_WQE_NUM_PER_SQE;
         const auto resInfo = ResInfo(wqeBBIdx, wqeBBNum);
-        CHK_RET(wqeBBMgr_.Release(resInfo));
+        CHK_RET(wqeBBMgr_->Release(resInfo));
     }
     return HcclResult::HCCL_SUCCESS;
 }

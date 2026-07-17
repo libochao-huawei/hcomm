@@ -31,7 +31,7 @@ struct CcuChannelPara {
     }
 };
 
-MAKE_ENUM(CcuJettyType, CCUM_CACHED_JETTY, INVALID_JETTY);
+MAKE_ENUM(CcuJettyType, CCUM_CACHED_JETTY, TA_CACHED_JETTY, INVALID_JETTY);
 
 struct CcuJettyInfo {
     CcuJettyType jettyType{CcuJettyType::INVALID_JETTY};

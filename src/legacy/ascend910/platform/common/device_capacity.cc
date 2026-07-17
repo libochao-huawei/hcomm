@@ -255,6 +255,7 @@ HcclResult GetMaxDevNum(u32& MaxDevNum)
                 cachedMaxDevNum = MAX_DEVICE_NUM_THIRTY_TWO;
                 break;
             case DevType::DEV_TYPE_950:
+            case DevType::DEV_TYPE_960:
                 cachedMaxDevNum = MAX_DEVICE_NUM_SIXTY_FIVE;
                 break;
             default:

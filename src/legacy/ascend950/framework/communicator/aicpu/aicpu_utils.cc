@@ -469,7 +469,7 @@ HcclResult AicpuUtils::ExecuteOp(CommunicatorImplLite *communicatorImplLite)
     CHK_PTR_NULL(insQueue);
 
     // 执行算子指令队列&&报告任务信息&&报告算子信息
-    HCCL_INFO("[%s]DevType is DEV_TYPE_950.", __func__);
+    HCCL_INFO("[%s]DevType is DEV_TYPE_950 or DEV_TYPE_960.", __func__);
     auto *executor = communicatorImplLite->GetInsExecutor();
     CHK_PTR_NULL(executor);
     executor->ExecuteV82(*insQueue, true);

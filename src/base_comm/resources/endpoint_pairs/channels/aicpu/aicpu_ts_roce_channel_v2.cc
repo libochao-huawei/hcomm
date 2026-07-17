@@ -19,6 +19,7 @@
 // Orion
 #include "exchange_rdma_buffer_dto.h"
 #include "dev_capability.h"
+#include "orion_adapter_rts.h"
 #include "aicpu_ts_roce_channel_v2.h"
 #include "../../../../common/orion_adpt_utils.h"
 #include "../../sockets/socket_mgr.h"
@@ -360,7 +361,7 @@ HcclResult AicpuTsRoceChannelV2::BuildNotifyValueBuffer()
         return HCCL_SUCCESS;
     }
 
-    Hccl::DevCapability::GetInstance().Init(Hccl::DevType::DEV_TYPE_950);
+    Hccl::DevCapability::GetInstance().Init(Hccl::HrtGetDeviceType());
     u32 notifysize = Hccl::DevCapability::GetInstance().GetNotifySize();
     notifysize = 4096; // 临时规避，待ubdevmem适配后修改
     EXCEPTION_CATCH((notifyValueMem_ = std::make_shared<Hccl::DevBuffer>(notifysize)),

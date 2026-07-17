@@ -48,7 +48,7 @@ struct CcuChannelPara {
 using CcuJettyType = Hccl::CcuJettyType;
 /* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
  * 暂时改用legacy数据结构，避免反向依赖
- * MAKE_ENUM(CcuJettyType, CCUM_CACHED_JETTY, INVALID_JETTY);
+ * MAKE_ENUM(CcuJettyType, CCUM_CACHED_JETTY, TA_CACHED_JETTY, INVALID_JETTY);
  */
 
 using CcuJettyInfo = Hccl::CcuJettyInfo;

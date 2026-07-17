@@ -20,7 +20,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *ar
     ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(devAddr);
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
+    if (devType == DevType::DEV_TYPE_950 || devType == DevType::DEV_TYPE_960) {
         HCCL_INFO("[RunAicpuIndOpThreadInit] group[%s], threadNum[%u], deviceType[%u]",
                 param->hcomId, param->threadNum, devType);
         return AicpuIndopProcess::AicpuIndOpThreadInit(param);
@@ -35,7 +35,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
     NotifyMgrAicpuParam* param = reinterpret_cast<NotifyMgrAicpuParam*>(devAddr);
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
+    if (devType == DevType::DEV_TYPE_950 || devType == DevType::DEV_TYPE_960) {
         HCCL_INFO("[RunAicpuIndOpNotify] group[%s], notifyNum[%u], deviceType[%u]",
         param->hcomId, param->notifyNum, devType);
         return AicpuIndopProcess::AicpuIndOpNotifyInit(param);

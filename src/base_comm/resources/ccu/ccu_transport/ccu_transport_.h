@@ -88,7 +88,8 @@ public:
     };
 
     CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection, const CclBufferInfo &locCclBufInfo);
-    CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection, const std::vector<CclBufferInfo> &bufferInfos);
+    CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection,
+        const std::vector<CclBufferInfo> &bufferInfos);
     CcuTransport(const CcuTransport &that)             = delete;
     CcuTransport &operator=(const CcuTransport &other) = delete;
     ~CcuTransport();
@@ -98,6 +99,7 @@ public:
     HcclResult GetRemoteMems(uint32_t *memNum, CommMem **remoteMem, char ***memInfos);
     HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp);
+    HcclResult ResUpdate(std::vector<std::string> &resGroupTags);
 
     // 下面接口为平台层接口，不能在框架层使用
     uint32_t    GetDieId() const;
@@ -106,12 +108,15 @@ public:
     HcclResult  GetLocXnByIndex(const uint32_t index, uint32_t &locXnId) const;
     HcclResult  GetRmtCkeByIndex(const uint32_t index, uint32_t &rmtCkeId) const;
     HcclResult  GetRmtXnByIndex(const uint32_t index, uint32_t &rmtXnId) const;
+    HcclResult  GetRmtWishCntXnAddr(const std::string &resGroupTag, uint64_t &wishCntXnAddr) const;
     HcclResult  GetLocBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const;
     HcclResult  GetRmtBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const;
     HcclResult  GetCkeNum(uint32_t &ckeNum) const;
-
+    HcclResult  GetRmtVarAddrByIndex(uint32_t index, uint64_t &rmtXnAddr) const;
+    HcclResult  GetRmtSignalAddrByIndex(uint32_t index, uint64_t &rmtCkeAddr) const;
+    HcclResult  GetRmtCcuBufferTokenInfo(uint32_t &rmtTokenId, uint32_t &rmtTokenValue) const;
     std::string Describe() const;
-    HcclResult Describe(std::string &dfxMsg);
+    HcclResult  Describe(std::string &dfxMsg);
 
 public:
     struct Attribution {
@@ -144,6 +149,7 @@ private:
     HcclResult StatusMachine();
     HcclResult AppendCkes(uint32_t ckesNum);
     HcclResult AppendXns(uint32_t xnsNum);
+    HcclResult AppendCntXns();
     HcclResult SendFinish();
     HcclResult RecvFinish();
     HcclResult CheckFinish();
@@ -159,11 +165,14 @@ private:
     HcclResult HandshakeMsgPack(Hccl::BinaryStream &binaryStream);
     HcclResult ConnInfoPack(Hccl::BinaryStream &binaryStream) const;
     HcclResult TransResPack(Hccl::BinaryStream &binaryStream);
+    HcclResult TransCntXnResPack(Hccl::BinaryStream &binaryStream);
     HcclResult BufferInfoPack(Hccl::BinaryStream &binaryStream, std::vector<CclBufferInfo> &bufferVec) const;
     HcclResult HandshakeMsgUnpack(Hccl::BinaryStream &binaryStream);
     HcclResult ConnInfoUnpackProc(Hccl::BinaryStream &binaryStream) const;
     HcclResult TransResUnpackProc(Hccl::BinaryStream &binaryStream);
+    HcclResult TransCntXnResUnpackProc(Hccl::BinaryStream &binaryStream);
     HcclResult BufferInfoUnpack(Hccl::BinaryStream &binaryStream);
+    HcclResult GetRmtVarAddrByXnId(const uint32_t rmtXnId, uint64_t &rmtXnAddr) const;
 
     HcclResult ReturnErrorStatus(const std::string &funcName);
 
@@ -172,6 +181,7 @@ private:
     struct TransRes {
         std::vector<uint32_t> ckes{};
         std::vector<uint32_t> xns{};
+        std::map<std::string, uint32_t> cntXns{};    // {groupTag, wishCntXn}
     };
     
     uint32_t                                 dieId_{0};
@@ -195,7 +205,7 @@ private:
     std::vector<char>                        sendTrans_{};
     std::vector<char>                        recvFinishMsg_{};
     std::vector<char>                        sendFinishMsg_{};
-    bool                                     cacheValid_ = false; // 当前缓存是否有效
+    bool                                     cacheValid_ = false; // GetUserRemoteMem 的缓存标识
     std::mutex                               remoteMemsMutex_;    // 远端内存列表互斥锁
     std::vector<CommMem>                     remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>                 memInfoCopies_;          // 储存 Tag 字符串副本

@@ -40,7 +40,7 @@ HcclResult MockCcuResourcesDefault(int32_t devLogicId, hcomm::CcuVersion ccuVers
     auto &ccuResSpecs = hcomm::CcuResSpecifications::GetInstance(devLogicId);
     ccuResSpecs.initFlag_ = true;
     ccuResSpecs.ccuVersion_ = ccuVersion;
-    ccuResSpecs.armX86Flag_ = false;
+    ccuResSpecs.serveMode_ = hcomm::ServeMode::NORMAL;
     for (uint8_t dieId = 0; dieId < hcomm::CCU_MAX_IODIE_NUM; dieId++) {
         ccuResSpecs.dieEnableFlags_[dieId] = true;
 

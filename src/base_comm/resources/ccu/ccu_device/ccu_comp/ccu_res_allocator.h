@@ -26,8 +26,8 @@ public:
     explicit CcuResIdAllocator(const uint32_t capacity) : capacity_(capacity) {};
     CcuResIdAllocator() = default;
 
-    HcclResult Alloc(const uint32_t num, const bool consecutive, std::vector<ResInfo> &allocatedResInfos,
-        const std::string &dfxInfo = "");
+    HcclResult Alloc(const uint32_t num, const bool consecutive,
+        std::vector<ResInfo> &allocatedResInfos, const std::string &dfxInfo = "");
     HcclResult Release(const uint32_t startId, const uint32_t num);
 
     std::string Describe() const;
@@ -54,11 +54,19 @@ public:
         std::vector<ResInfo>& resInfos);
     HcclResult Release(const ResType resType, const uint32_t startId, const uint32_t num);
 
+    // 0.5rtt专用
+    HcclResult AllocCountXn(const uint32_t num, ResInfo &resInfo);
+    HcclResult ReleaseCountXn(const uint32_t startId, const uint32_t num);
+
     std::string Describe() const;
 
 private:
     int32_t devLogicId_{0};
     uint8_t dieId_{0};
+
+    // ccu v2新增countXn管理
+    uint32_t xnSpecNum_{0};
+    uint32_t countXnSpecNum_{0};
     std::unordered_map<uint8_t, std::unique_ptr<CcuResIdAllocator>> idAllocatorMap_;
 };
 

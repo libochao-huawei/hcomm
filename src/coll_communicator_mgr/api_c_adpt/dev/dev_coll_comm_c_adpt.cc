@@ -20,7 +20,7 @@ HcclResult HcclCommGetStatus(const char * commId, HcclCommStatus *status)
     *status = HcclCommStatus::HCCL_COMM_STATUS_READY;
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
-    if (deviceType == DevType::DEV_TYPE_950) {
+    if (deviceType == DevType::DEV_TYPE_950 || deviceType == DevType::DEV_TYPE_960) {
         CollCommAicpuMgr *hcclComm = AicpuIndopProcess::AicpuGetComm(commId);
         CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommMgrbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
         CollCommAicpu* collCommAicpu = hcclComm->GetCollCommAicpu();

@@ -28,8 +28,8 @@ using ChannelPara = Hccl::ChannelPara;
 
 /* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
  * 暂时改用legacy数据结构，避免反向依赖
- * MAKE_ENUM(CcuVersion, CCU_V1, CCU_INVALID);
- * MAKE_ENUM(ResType, LOOP, MS, CKE, XN, GSA, INS, MISSION);
+ * MAKE_ENUM(CcuVersion, CCU_V1, CCU_V2, CCU_INVALID);
+ * MAKE_ENUM(ResType, LOOP, MS, CKE, XN, COUNT_XN, GSA, INS, MISSION);
  * struct ChannelPara {
  *     uint32_t feId;
  *     uint32_t jettyNum;
@@ -82,7 +82,10 @@ using CcuOpcodeType = Hccl::CcuOpcodeType;
  *     CCU_U_OP_CLEAN_TASKKILL_STATE = 55, // 清除taskkill任务
  *     CCU_U_OP_CLEAN_TIF_TABLE      = 56, // 清除TIF表项
  *     CCU_U_OP_K_MAX = 100, // 定义需要向内核发送请求的造作最大值
-
+ *
+ *     CCU_U_OP_SET_TIF_SPLIT_SIZE = 127, // 配置0.5RTT特性中的count计数单位
+ *     CCU_U_OP_SET_XN_TOTAL_CNT   = 128, // 配置比较寄存器
+ *
  *     // 以下为操作CCU映射到用户态资源空间的操作码
  *     CCU_U_OP_IN_RS_MIN       = 200, // 定义一个在RS空间操作的最小值
  *     CCU_U_OP_GET_INSTRUCTION = 201, // 设置INS指令
@@ -153,6 +156,15 @@ using CcuDieInfo = Hccl::CcuDieInfo;
  * };
  */
 
+using CcuVersionEnum = Hccl::CcuVersionEnum;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * enum class CcuVersionEnum {
+ *     CCU_V1 = 0,
+ *     CCU_V2 = 1,
+* };
+*/
+
 using CcuDataCaps = Hccl::CcuDataCaps;
 /* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
  * 暂时改用legacy数据结构，避免反向依赖
@@ -191,6 +203,10 @@ using CcuDataTypeUnion = Hccl::CcuDataTypeUnion;
  *     struct CcuBaseInfoData baseinfo;
  *     struct CcuInstrInfo    insinfo;
  *     struct CcuDieInfo      dieinfo;
+ *     CcuVersionEnum         ccuVersion;
+ *     struct CcuTifSplitSize tifSplitSize;
+ *     struct CcuTotalCntXn   xnTotalCnt;
+ *     // struct CcuHighPerfXn   highPerfXn;
  * };
  */
 
@@ -282,10 +298,21 @@ public:
     static HcclResult AllocXn(const int32_t deviceLogicId, const uint8_t dieId, const uint32_t num,
         std::vector<ResInfo>& xnInfos);
     static HcclResult ReleaseXn(const int32_t deviceLogicId, const uint8_t dieId, const std::vector<ResInfo> &xnInfos);
+    static HcclResult AllocWishCntXn(const int32_t deviceLogicId, const uint8_t dieId, const std::string &resGroupTag,
+        uint32_t &wishCntXn);
+    static HcclResult ReleaseWishCntXn(const int32_t deviceLogicId, const uint8_t dieId, const std::string &resGroupTag,
+        uint32_t wishCntXn);
+    static HcclResult GetCntXnBlock(const int32_t deviceLogicId, const uint8_t dieId,
+        const std::string &resGroupTag, std::pair<uint32_t, uint32_t> &cntXnPair);
+    static HcclResult GetTotalCntXn(const int32_t deviceLogicId, const uint8_t dieId,
+        const std::string &resGroupTag, uint32_t &totalCntXn);
 
     static HcclResult GetMissionKey(const int32_t deviceLogicId, const uint8_t dieId, uint32_t &missionKey);
     static HcclResult GetInstructionNum(const int32_t deviceLogicId, const uint8_t dieId, uint32_t &instrNum);
-    static HcclResult GetXnBaseAddr(const uint32_t devLogicId, const uint8_t dieId, uint64_t &xnBaseAddr);
+    static HcclResult GetXnBaseAddr(const int32_t devLogicId, const uint8_t dieId, uint64_t &xnBaseAddr);
+    static HcclResult GetCkeBaseAddr(const int32_t devLogicId, const uint8_t dieId, uint64_t &ckeBaseAddr);
+    static HcclResult GetXnOffsetCcumAddrById(const int32_t devLogicId, const uint8_t dieId, uint16_t id, uint64_t& xnAddr);
+    static HcclResult GetCkeOffsetCcumAddrById(const int32_t devLogicId, const uint8_t dieId, uint16_t id, uint64_t& ckeAddr);
 };
 
 HcclResult CheckDieValid(const char *funcName, const int32_t devLogicId, const uint8_t dieId,

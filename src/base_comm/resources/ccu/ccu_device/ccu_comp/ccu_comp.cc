@@ -16,43 +16,31 @@
 #include "rdma_handle_manager.h"
 
 #include "eid_info_mgr.h"
-#include "../../../ccu_res_specs.h"
+#include "ccu_res_specs.h"
 #include "ccu_channel_ctx_mgr_v1.h"
+#include "ccu_channel_ctx_mgr_v2.h"
 
 #include "exception_handler.h"
 #include "adapter_rts_common.h"
 #include "env_config.h"
 #include "orion_adapter_hccp.h"
 #include "hcomm_adapter_hccp.h"
-#include "hccp_tlv_hdc_manager.h"
 
 namespace hcomm {
 
 constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::RTP; // 环回使用RTP避免被环境link down阻塞
 constexpr uint8_t CCU_MAX_MISSION_NUM = 16;
 
-static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr)
-{
-    GetTpInfoParam param;
-    param.locAddr = commAddr;
-    param.rmtAddr = commAddr;
-    param.tpProtocol = LOOP_JETTY_PROTOCOL;
-    param.qos = 0U; // CCU 环回与通信域 hcclQos 解耦；SL 仅由 RaGetTpAttr.slBitmap + loopFirstTpLowestSl 决定
-    param.slLevelCount = 0;
-    param.loopFirstTpLowestSl = true;
-    param.ccuLoopbackGetTpInfo = true;
-    return param;
-}
-
 // 设置为0，分配数量由channelCtxMgr决定，v1 默认1个
 constexpr uint32_t LOOP_CHANNEL_USE_JETTY  = 0;
-constexpr uint32_t LOOP_CHANNEL_USE_SQSIZE = 16;
+constexpr uint32_t LOOP_CHANNEL_USE_SQSIZE_V1 = 16;
+constexpr uint32_t LOOP_CHANNEL_USE_SQSIZE_V2 = 32;
 
 // 环回获取TP信息超时等待10s
 constexpr uint32_t LOOP_CHANNEL_WAIT_TIMEOUT_MS = 10000;
 
-// 环境是ARM+X86时，配置 die0 的 MS 交织粒度为 1<<6 = 64
-constexpr uint32_t MSID_CONFIG_ARMX86_MAINBOARD = 6;
+// 环境是ARM+X86时，配置 die0 的 MS 交织粒度为 1<<7 = 128
+constexpr uint32_t MSID_CONFIG_ARMX86_MAINBOARD = 7;
 // 设计支持的最大IOdie数量
 constexpr uint8_t MAX_CCU_IODIE_NUM = 2;
 // 清理CKE批量申请大小
@@ -72,23 +60,6 @@ CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
     return ccuComponent[devLogicId];
 }
 
-void CcuComponent::PrintCcuMissionStatus(int32_t devLogicId) const
-{
-    uint16_t status = 0;
-    for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
-        if (!dieEnableFlags_[dieId]) {
-            HCCL_WARNING("[%s]devLogicId[%d], dieId[%u] is not enable, skip." , __func__, devLogicId, dieId);
-            continue;
-        }
-        std::string missionStatus;
-        for (uint8_t missionId = 0; missionId < CCU_MAX_MISSION_NUM; missionId++) {
-            status = CcuTaskException::GetCcuMissionContext(devLogicId, dieId, missionId).GetStatus();
-            missionStatus += "missionId[" + std::to_string(missionId) + "]=status[" + std::to_string(status) + "]";
-        }
-        HCCL_RUN_INFO("Init devLogicId[%d], dieId[%d], content[%s]", devLogicId, dieId, missionStatus.c_str());
-    }
-}
-
 HcclResult CcuComponent::Init()
 {
     std::lock_guard<std::mutex> _lock(innerMutex_);
@@ -103,12 +74,6 @@ HcclResult CcuComponent::Init()
     CHK_RET(CreateResourceManagers());
     CHK_RET(CreateLoopChannels());
     CHK_RET(ConfigMsIdToken());
-    // 打印最初的mission状态
-    PrintCcuMissionStatus(devLogicId_);
-    CHK_RET(SetTaskKill());
-    CHK_RET(SetTaskKillDone());
-    // 打印taskKill恢复后的mission状态
-    PrintCcuMissionStatus(devLogicId_);
     initFlag_ = true;
     return HcclResult::HCCL_SUCCESS;
 }
@@ -197,7 +162,7 @@ static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devP
     EXCEPTION_HANDLE_BEGIN
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     for (auto &eidInfo : eidInfos) {
-        // 如果是UBOE设备，则跳过
+        // 如果是UBOE设备或非本die，则跳过
         if (HccpCheckUboeSupported(eidInfo.devFeature) || (eidInfo.dieId != dieId)) {
             continue;
         }
@@ -324,6 +289,10 @@ static HcclResult CreateChannelCtxMgrByVersion(const CcuVersion version,
             channelCtxMgr.reset(
                 new (std::nothrow) CcuChannelCtxMgrV1(devLogicId, dieId, devPhyId));
             break;
+         case CcuVersion::CCU_V2:
+            channelCtxMgr.reset(
+                new (std::nothrow) CcuChannelCtxMgrV2(devLogicId, dieId, devPhyId));
+            break;
         default:
             HCCL_ERROR("[CcuComponent][%s] failed, ccu driver version[%s] is not expected, "
                 "devLogicId[%d] dieId[%u].", __func__, version.Describe().c_str(),
@@ -400,9 +369,10 @@ HcclResult CcuComponent::CreateLoopChannel(const uint8_t dieId, uint32_t &channe
             "devLogicId[%d].", __func__, dieId, devLogicId_);
         return HcclResult::HCCL_SUCCESS;
     }
-
+    const uint32_t loopChannelSqsize = (ccuVersion_ == CcuVersion::CCU_V1 ?
+        LOOP_CHANNEL_USE_SQSIZE_V1 : LOOP_CHANNEL_USE_SQSIZE_V2);
     std::vector<ChannelInfo> channelInfos; // 按jetty组分配
-    const ChannelPara channelPara{feId, LOOP_CHANNEL_USE_JETTY, LOOP_CHANNEL_USE_SQSIZE};
+    const ChannelPara channelPara{feId, LOOP_CHANNEL_USE_JETTY, loopChannelSqsize};
     auto ret = channelCtxMgrs_[dieId]->Alloc(channelPara, channelInfos);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_WARNING("[CcuComponent][%s] failed to alloc channel, "
@@ -455,7 +425,7 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
 
     const auto &rmaBufferIter = ccuRmaBufferMap_.find(dieId);
     CHK_PRT_RET(rmaBufferIter == ccuRmaBufferMap_.end(),
-        HCCL_WARNING("[CcuComponent][%s] failed, ccu rma buffer of die[%u] is not existed, "
+        HCCL_RUN_WARNING("[CcuComponent][%s] failed, ccu rma buffer of die[%u] is not existed, "
             "devLogicId[%d].", __func__, dieId, devLogicId_),
         HcclResult::HCCL_E_NOT_FOUND);
 
@@ -477,18 +447,20 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     const uint8_t errTimeout = TpMgr::CalcTaTimeout(tpAttrInfo);
 
     for (const auto &jettyInfo : jettyInfos) {
-        const auto psn = GetNewPsn();
-        const auto jettyImportCfg = GetJettyImportCfg(loopTpInfo, psn);
-
-        const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-        HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue, tokenIdHandle, jettyMode,
-            jettyInfo.taJettyId, jettyInfo.sqBufVa, jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth,
+        const auto jettyMode = jettyInfo.jettyType == CcuJettyType::CCUM_CACHED_JETTY ?
+            HrtJettyMode::CCU_CCUM_CACHE : HrtJettyMode::CCU_TA_CACHE;
+        HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
+            tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
+            jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth,
             errTimeout};
         req.qos = loopJettyQos;
 
         HrtRaUbJettyCreatedOutParam createdOutParam{};
         CHK_RET(HccpUbCreateJetty(ctxHandle, req, createdOutParam));
         createdVec.emplace_back(createdOutParam);
+
+        const auto psn = GetNewPsn();
+        const auto &jettyImportCfg = GetJettyImportCfg(loopTpInfo, psn);
 
         HrtRaUbJettyImportedOutParam importedOutParam{};
         CHK_RET(HccpUbTpImportJetty(ctxHandle, createdOutParam.key,
@@ -499,18 +471,32 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuComponent::RequestNewLoopTpInfo(const CommAddr &commAddr, TpInfo &tpInfo)
+static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr)
+{
+    GetTpInfoParam param;
+    param.locAddr = commAddr;
+    param.rmtAddr = commAddr;
+    param.tpProtocol = LOOP_JETTY_PROTOCOL;
+    param.qos = 0U; // CCU 环回与通信域 hcclQos 解耦；SL 仅由 RaGetTpAttr.slBitmap + loopFirstTpLowestSl 决定
+    param.slLevelCount = 0;
+    param.loopFirstTpLowestSl = true;
+    param.ccuLoopbackGetTpInfo = true;
+    return param;
+}
+
+static HcclResult RequestNewLoopTpInfo(const uint32_t devPhyId,
+    const CommAddr &commAddr, TpInfo &tpInfo)
 {
     constexpr auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
     const auto startTime = std::chrono::steady_clock::now();
 
-    auto &tpMgr = TpMgr::GetInstance(devPhyId_);
-    const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr);
+    auto &tpMgr = TpMgr::GetInstance(devPhyId);
+    const GetTpInfoParam &tpParam = MakeLoopGetTpInfoParam(commAddr);
     HcclResult ret = HcclResult::HCCL_SUCCESS;
     do {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             HCCL_ERROR("[CcuComponent][%s] failed, get tp info "
-                "timeout[%d ms], devPhyId[%u].", __func__, timeout, devPhyId_);
+                "timeout[%d ms], devPhyId[%u].", __func__, timeout, devPhyId);
             return HcclResult::HCCL_E_TIMEOUT;
         }
 
@@ -528,7 +514,7 @@ HcclResult CcuComponent::GetLoopTpInfo(const uint8_t dieId,
     // 优先使用已经创建过的tpHandle
     if (srcIter == tpInfoMap_.end()) {
         TpInfo newTpInfo{};
-        CHK_RET(RequestNewLoopTpInfo(commAddr, newTpInfo));
+        CHK_RET(RequestNewLoopTpInfo(devPhyId_, commAddr, newTpInfo));
         tpInfoMap_[dieId] = std::move(newTpInfo);
     }
 
@@ -642,9 +628,7 @@ HcclResult CcuComponent::ConfigLoopChannel(const uint8_t dieId, const CommAddr &
 
 HcclResult CcuComponent::ConfigMsIdToken()
 {
-    const bool armX86Flag = CcuResSpecifications::GetInstance(devLogicId_).GetArmX86Flag();
-    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
-    CHK_PTR_NULL(tlvHandle);
+    const auto serveMode = CcuResSpecifications::GetInstance(devLogicId_).GetServeMode();
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
@@ -657,8 +641,11 @@ HcclResult CcuComponent::ConfigMsIdToken()
         const auto &ccuRmaBuffer = dieIter->second;
         const uint32_t tokenId = ccuRmaBuffer->GetTokenId();
         const uint32_t tokenValue = ccuRmaBuffer->GetTokenValue();
-        uint32_t msId = MSID_CONFIG_ARMX86_MAINBOARD;
-        if (!armX86Flag || dieId != 0) { // 非A+X环境 die 0，采用默认交织粒度
+        uint32_t msId = 0;
+        // 非A+X, 非die 0，采用默认交织粒度
+        if (serveMode == ServeMode::ARMX86 && dieId == 0) {
+            msId = MSID_CONFIG_ARMX86_MAINBOARD;
+        } else {
             CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).GetMsId(dieId, msId));
         }
 
@@ -669,10 +656,10 @@ HcclResult CcuComponent::ConfigMsIdToken()
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenId    = tokenId;
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenValue = tokenValue;
 
-        auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD,
-            static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
+        auto ret = HccpRaTlvCcuCustomChannel(devLogicId_,
+        static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+            HCCL_ERROR("[CcuComponent][%s] failed to call ccu driver, "
                 "devLogicId[%d] dieId[%d] op[%s] ret[%d].", __func__, devLogicId_, dieId,
                 "SET_MSID_TOKEN", ret);
             return ret;
@@ -916,6 +903,285 @@ HcclResult CcuComponent::ReleaseXn(const uint8_t dieId, const std::vector<ResInf
     return HcclResult::HCCL_SUCCESS;
 }
 
+constexpr u32 WISH_COUNT_XN_NUM = 511;
+constexpr u32 TOTAL_COUNT_XN_NUM = 1;
+
+HcclResult CcuComponent::SetSplitUnit(uint8_t dieId, uint32_t splitPktUnit) const
+{
+    CHK_PRT_RET(dieId >= MAX_CCU_IODIE_NUM,
+        HCCL_ERROR("[CcuComponent][%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
+            __func__, dieId, MAX_CCU_IODIE_NUM, devLogicId_),
+        HcclResult::HCCL_E_PARA);
+
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
+
+    inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_TIF_SPLIT_SIZE;
+    inBuff.data.dataInfo.udieIdx       = dieId;
+    inBuff.data.dataInfo.dataArraySize = 1;
+    inBuff.data.dataInfo.dataLen       = sizeof(CcuDataTypeUnion) * inBuff.data.dataInfo.dataArraySize;
+
+    inBuff.data.dataInfo.dataArray[0].tifSplitSize.splitPktUnit = splitPktUnit & 0b1;
+    inBuff.data.dataInfo.dataArray[0].tifSplitSize.tpSplitSize  = 0x2;    // 0x2:TP模式的拆包size为4KB
+    inBuff.data.dataInfo.dataArray[0].tifSplitSize.ctpSplitSize = 0x1;    // 0x1:CTP模式的拆包size为4KB
+
+    auto ret = HccpRaTlvCcuCustomChannel(devLogicId_,
+        static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
+    if (ret != 0) {
+        HCCL_ERROR("[CcuComponent][%s] failed to call ccu driver, "
+            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId_, dieId,
+            "CCU_U_OP_SET_TIF_SPLIT_SIZE");
+        return HcclResult::HCCL_E_NETWORK;
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::GetAvailableTotalCntXnIndex(uint32_t& index) const
+{
+    for (uint32_t i = 0; i < CCU_V2_RESOURCE_TOTAL_CNT_XNS_NUM; ++i) {
+        if (!usedTotalCntXnFlags_[i]) {
+            index = i;
+            return HcclResult::HCCL_SUCCESS;
+        }
+    }
+
+    HCCL_ERROR("[CcuComponent][%s] failed, no available TotalCnt Xns.", __func__);
+    return HcclResult::HCCL_E_UNAVAIL;
+}
+
+HcclResult CcuComponent::SetTotalCntXn(uint8_t dieId, uint32_t fromId, uint32_t toId, uint32_t totalId, uint32_t index)
+{
+    CHK_PRT_RET(fromId > toId,
+        HCCL_ERROR("[CcuComponent][%s] failed, fromId or toId invalid, fromId[%u] > toId[%u].", __func__, fromId, toId),
+        HcclResult::HCCL_E_PARA);
+
+    CHK_PRT_RET(fromId <= totalId && totalId <= toId,
+        HCCL_ERROR("[CcuComponent][%s] failed, totalId[%u] invalid, should not be in [fromId[%u], toId[%u]].",
+            __func__, totalId, fromId, toId),
+        HcclResult::HCCL_E_PARA);
+
+    HcclResult ret = SetTotalCntXnProcess(dieId, index, fromId, toId, totalId);
+    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+        HCCL_ERROR("[CcuComponent][%s] failed, dieId[%u], index[%u], devLogicId[%d].",
+            __func__, dieId, index, devLogicId_),
+        ret);
+
+    usedTotalCntXnFlags_[index] = true;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::ResetTotalCntXn(uint8_t dieId, uint32_t index)
+{
+    if (index >= CCU_V2_RESOURCE_TOTAL_CNT_XNS_NUM || !usedTotalCntXnFlags_[index]) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    static constexpr uint32_t fromIdDefault = 0xFFFF;   // from默认值
+    static constexpr uint32_t toIdDefault   = 0x0000;   // to默认值
+    static constexpr uint32_t totalIdDefault[CCU_V2_RESOURCE_TOTAL_CNT_XNS_NUM] {0x3FFC, 0x3FFD, 0x3FFE, 0x3FFF};   // total默认值
+
+    auto ret = SetTotalCntXnProcess(dieId, index, fromIdDefault, toIdDefault, totalIdDefault[index]);
+    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+        HCCL_ERROR("[CcuComponent][%s] failed, dieId[%u], index[%u], devLogicId[%d].",
+            __func__, dieId, index, devLogicId_),
+        ret);
+
+    usedTotalCntXnFlags_[index] = false;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::SetTotalCntXnProcess(uint8_t dieId, uint32_t index, uint32_t fromId, uint32_t toId, uint32_t totalId) const
+{
+    CHK_PRT_RET(dieId >= MAX_CCU_IODIE_NUM,
+        HCCL_ERROR("[CcuComponent][%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
+            __func__, dieId, MAX_CCU_IODIE_NUM, devLogicId_),
+        HcclResult::HCCL_E_PARA);
+
+    CHK_PRT_RET(index >= CCU_V2_RESOURCE_TOTAL_CNT_XNS_NUM,
+        HCCL_ERROR("[CcuComponent][%s] failed, index[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
+            __func__, index, CCU_V2_RESOURCE_TOTAL_CNT_XNS_NUM, devLogicId_),
+        HcclResult::HCCL_E_PARA);
+
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
+
+    inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_XN_TOTAL_CNT;
+    inBuff.data.dataInfo.udieIdx       = dieId;
+    inBuff.data.dataInfo.dataArraySize = 1;
+    inBuff.data.dataInfo.dataLen       = sizeof(CcuDataTypeUnion) * inBuff.data.dataInfo.dataArraySize;
+
+    inBuff.data.dataInfo.dataArray[0].xnTotalCnt.cntIndex     = index & 0b11;    // range: [0, 3]
+    inBuff.data.dataInfo.dataArray[0].xnTotalCnt.flagFromAddr = fromId;
+    inBuff.data.dataInfo.dataArray[0].xnTotalCnt.flagToAddr   = toId;
+    inBuff.data.dataInfo.dataArray[0].xnTotalCnt.totalAddr    = totalId;
+    auto ret = HccpRaTlvCcuCustomChannel(devLogicId_,
+        static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
+    if (ret != 0) {
+        HCCL_ERROR("[CcuComponent][%s] failed to call ccu driver, "
+            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId_, dieId,
+            "CCU_U_OP_SET_XN_TOTAL_CNT");
+        return HcclResult::HCCL_E_NETWORK;
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::ConfirmCntXns(const uint8_t dieId, const std::string &resGroupTag,
+    const ResInfo &cntXnInfos)
+{
+    struct CntXnBlock cntXnBlock;
+    uint32_t totalCntXnId = cntXnInfos.startId + cntXnInfos.num - TOTAL_COUNT_XN_NUM;
+    uint32_t wishCntXnIdBegin = cntXnInfos.startId;
+    uint32_t wishCntXnIdEnd = totalCntXnId - 1;
+    uint32_t blockIdx = CCU_V2_RESOURCE_TOTAL_CNT_XNS_NUM;  // invalid value
+
+    HCCL_INFO("Set TotalCntXn, wishCntXnIdBegin[%u] wishCntXnIdEnd[%u] totalCntXnId[%u]",
+        wishCntXnIdBegin, wishCntXnIdEnd, totalCntXnId);
+
+    auto ret = GetAvailableTotalCntXnIndex(blockIdx);
+    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+        HCCL_ERROR("[CcuComponent][%s] failed, no available TotalCnt Xns, dieId[%u], devLogicId[%d].",
+            __func__, dieId, devLogicId_),
+        ret);
+    CHK_RET(SetTotalCntXn(dieId, wishCntXnIdBegin, wishCntXnIdEnd, totalCntXnId, blockIdx));
+    HCCL_INFO("Set TotalCntXn success, index[%u]", blockIdx);
+
+    ret = SetSplitUnit(dieId, 0);  //0表示stomic store add value的单位是byte。1表示以包为单位
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuComponent][%s] SetSplitUnit failed, dieId[%u], devLogicId[%d].",
+        __func__, dieId, devLogicId_);
+        CHK_RET(ResetTotalCntXn(dieId, blockIdx));
+        return ret;
+    }
+
+    for (u32 idx = wishCntXnIdBegin; idx <= wishCntXnIdEnd; idx++) {
+        cntXnBlock.wishCntXns.push(idx);
+    }
+    cntXnBlock.resInfo = cntXnInfos;
+    cntXnBlock.totalCntXn = totalCntXnId;
+    cntXnBlock.blockIdx = blockIdx;
+    cntXnBlocks_[dieId].insert(std::make_pair(resGroupTag, cntXnBlock));
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::AllocWishCntXn(const uint8_t dieId, const std::string &resGroupTag,
+    uint32_t &wishCntXn)
+{
+    CHK_PRT_RET((ccuVersion_ != CcuVersion::CCU_V2),
+        HCCL_ERROR("[CcuComponent][%s] failed, ccuVersion[%d] does not support this interface.",
+            __func__, ccuVersion_), HCCL_E_NOT_SUPPORT);
+    CHK_RET(CheckDieValid(__func__, devLogicId_, dieId, dieEnableFlags_));
+
+    std::unique_lock<std::mutex> lock(cntXnBlockMutex_);
+    auto &cntXnBlocks = cntXnBlocks_[dieId];
+    auto iter = cntXnBlocks.find(resGroupTag);
+    if (iter != cntXnBlocks.end()) {
+        CHK_PRT_RET((iter->second.wishCntXns.size() == 0),
+            HCCL_ERROR("[CcuComponent][%s] failed, wishCntXn is not enough, resGroupTag[%s], devLogicId[%d], "
+                "dieId[%u].", __func__, resGroupTag.c_str(), devLogicId_, dieId), HCCL_E_UNAVAIL);
+    } else {
+        CHK_PRT_RET((cntXnBlocks.size() == CCU_V2_RESOURCE_TOTAL_CNT_XNS_NUM),
+            HCCL_ERROR("[CcuComponent][%s] failed, cntXnBlock is not enough, resGroupTag[%s], "
+                "devLogicId[%d], dieId[%u].", __func__, resGroupTag.c_str(), devLogicId_, dieId), HCCL_E_UNAVAIL);
+        ResInfo countXnInfo;
+        // 申请511 + 1个cntXn，前511个为wishCntXn，最后一个为totalCntXn
+        auto ret = resAllocators_[dieId]->AllocCountXn(WISH_COUNT_XN_NUM + TOTAL_COUNT_XN_NUM, countXnInfo);
+        CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[CcuComponent][%s] failed, num[%u], resGroupTag[%s], devLogicId[%d], dieId[%u].",
+                __func__, (WISH_COUNT_XN_NUM + TOTAL_COUNT_XN_NUM), resGroupTag.c_str(), devLogicId_, dieId), ret);
+        // 配置cntXn
+        ret = ConfirmCntXns(dieId, resGroupTag, countXnInfo);
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            HCCL_ERROR("[CcuComponent][%s] failed[%d] to confirm cnt xns, "
+                "try to release new allocated cnt xns, dieId[%u] resGroupTag[%s].",
+                __func__, ret, dieId, resGroupTag.c_str());
+            CHK_RET(resAllocators_[dieId]->ReleaseCountXn(countXnInfo.startId, countXnInfo.num));
+            return ret;
+        }
+    }
+    auto &xnBlock = cntXnBlocks_[dieId][resGroupTag];
+    HCCL_INFO("resGroupTag[%s]stack size[%u]", resGroupTag.c_str(), xnBlock.wishCntXns.size());
+    wishCntXn = xnBlock.wishCntXns.top();
+    xnBlock.wishCntXns.pop();
+    uint32_t totalCntXn = xnBlock.totalCntXn;
+    HCCL_INFO("[CcuComponent][%s] success, resGroupTag[%s], devLogicId[%d], dieId[%u], wishCntXn[%u], totalCntXn[%u].",
+        __func__, resGroupTag.c_str(), devLogicId_, dieId, wishCntXn, totalCntXn);
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+
+HcclResult CcuComponent::ReleaseWishCntXn(const uint8_t dieId, const std::string &resGroupTag, uint32_t wishCntXn)
+{
+    CHK_RET(CheckDieValid(__func__, devLogicId_, dieId, dieEnableFlags_));
+
+    std::unique_lock<std::mutex> lock(cntXnBlockMutex_);
+    if (cntXnBlocks_[dieId].find(resGroupTag) == cntXnBlocks_[dieId].end()) {
+        HCCL_ERROR("[CcuComponent][%s] failed, resGroupTag[%s] is not found, devLogicId[%d], dieId[%u].",
+            __func__, resGroupTag.c_str(), devLogicId_, dieId);
+        return HCCL_E_NOT_FOUND;
+    }
+
+    auto &xnBlock = cntXnBlocks_[dieId][resGroupTag];
+    xnBlock.wishCntXns.push(wishCntXn);
+    if (xnBlock.wishCntXns.size() != WISH_COUNT_XN_NUM) {
+        HCCL_INFO("[CcuComponent][%s] success, resGroupTag[%s], devLogicId[%d], dieId[%u], wishCntXn[%u], available "
+            "wishCntXn num[%u].",
+            __func__, resGroupTag.c_str(), devLogicId_, dieId, wishCntXn, xnBlock.wishCntXns.size());
+        return HCCL_SUCCESS;
+    }
+
+    // 所有wishCnt都已经release，释放资源
+    CHK_RET(ResetTotalCntXn(dieId, xnBlock.blockIdx));
+
+    auto ret = resAllocators_[dieId]->ReleaseCountXn(xnBlock.resInfo.startId,
+        xnBlock.resInfo.num);
+    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+        HCCL_ERROR("[CcuComponent][%s] failed, resGroupTag[%s], resInfo[%s], devLogicId[%d], dieId[%u].",
+            __func__, resGroupTag.c_str(), xnBlock.resInfo.Describe().c_str(), devLogicId_, dieId),
+        ret);
+    cntXnBlocks_[dieId].erase(resGroupTag);
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::GetCntXnBlock(const uint8_t dieId, const std::string &resGroupTag,
+    std::pair<uint32_t, uint32_t> &cntXnPair)
+{
+    CHK_RET(CheckDieValid(__func__, devLogicId_, dieId, dieEnableFlags_));
+
+    std::unique_lock<std::mutex> lock(cntXnBlockMutex_);
+    auto iter = cntXnBlocks_[dieId].find(resGroupTag);
+    if (iter == cntXnBlocks_[dieId].end()) {
+        HCCL_ERROR("[CcuComponent][%s] failed, resGroupTag[%s] is not found, devLogicId[%d], dieId[%u].",
+            __func__, resGroupTag.c_str(), devLogicId_, dieId);
+        return HCCL_E_NOT_FOUND;
+    }
+
+    cntXnPair = std::make_pair(iter->second.resInfo.startId,
+        iter->second.totalCntXn);
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::GetTotalCntXn(const uint8_t dieId,
+    const std::string &resGroupTag, uint32_t &totalCntXn)
+{
+    CHK_RET(CheckDieValid(__func__, devLogicId_, dieId, dieEnableFlags_));
+
+    std::unique_lock<std::mutex> lock(cntXnBlockMutex_);
+    auto iter = cntXnBlocks_[dieId].find(resGroupTag);
+    if (iter == cntXnBlocks_[dieId].end()) {
+        HCCL_ERROR("[CcuComponent][%s] failed, resGroupTag[%s] is not found, devLogicId[%d], dieId[%u].",
+            __func__, resGroupTag.c_str(), devLogicId_, dieId);
+        return HCCL_E_NOT_FOUND;
+    }
+
+    totalCntXn = iter->second.totalCntXn;
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
 const std::array<bool, CCU_MAX_IODIE_NUM> &CcuComponent::GetDieEnableFlags() const
 {
     return dieEnableFlags_;
@@ -964,7 +1230,6 @@ HcclResult CcuComponent::ReleaseAllTpInfos()
         }
     }
     tpAttrInfoMap_.clear();
-
     for (auto &item : tpInfoMap_) {
         const auto &dieId = item.first;
         const auto &tpInfo = item.second;
@@ -980,7 +1245,7 @@ HcclResult CcuComponent::ReleaseAllTpInfos()
             return HcclResult::HCCL_E_NOT_FOUND;
         }
         const auto &commAddr = dieIdIter->second.second;
-        const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr);
+        const GetTpInfoParam &tpParam = MakeLoopGetTpInfoParam(commAddr);
         (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(tpParam, tpInfo);
         item.second.tpHandle = 0; // 清理handle，避免重复释放
     }
@@ -1010,8 +1275,6 @@ HcclResult CcuComponent::DestroyAllJettys()
 
 HcclResult CcuComponent::SetProcess(CcuOpcodeType opCode) const
 {
-    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
-    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff;
     CustomChannelInfoOut outBuff;
 
@@ -1023,7 +1286,7 @@ HcclResult CcuComponent::SetProcess(CcuOpcodeType opCode) const
         }
         HCCL_INFO("[%s]devLogicId[%d], dieId[%u] start.", __func__, devLogicId_, dieId);
         inBuff.data.dataInfo.udieIdx = dieId;
-        auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD,
+        auto ret = HccpRaTlvCcuCustomChannel(devLogicId_,
             static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to call ccu driver, devLogicId[%d] dieId[%u] op[%u] ret[%d].",
@@ -1123,8 +1386,6 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
         return HcclResult::HCCL_SUCCESS;
     }
 
-    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
-    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 
@@ -1141,7 +1402,7 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
         inBuff.data.dataInfo.dataArraySize = std::min(ckeNum - startIdx, MAX_CKE_DATA_ARRAY_SIZE);
         inBuff.data.dataInfo.dataLen       = sizeof(CcuDataByte8) * inBuff.data.dataInfo.dataArraySize;
         inBuff.offsetStartIdx              = startIdx;
-        auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD,
+        auto ret = HccpRaTlvCcuCustomChannel(devLogicId_,
             static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to call ccu driver, devLogicId[%d] dieId[%u] op[%s] ret[%d].",

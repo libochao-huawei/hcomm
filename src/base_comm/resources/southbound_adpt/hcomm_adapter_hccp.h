@@ -17,10 +17,9 @@
 #include "hccp.h"
 #include "hccp_ctx.h"
 
-#include "enum_factory.h"
 #include "env_config.h"
+#include "enum_factory.h"
 #include "hccl_rank_graph.h"
-
 // orion 暂时复用
 #include "ip_address.h"
 
@@ -72,7 +71,8 @@ MAKE_ENUM(HrtTransportMode, RM);
 // DEV_USED: 在Dev的APICPU展开算子，STARS不能使用UB DirectWQE的task，可以使用UB DbSend task，不需要指定sqeBbNum
 // CACHE_LOCK_DWQE: 该模式下，      STARS仅能使用UB DirectWQE的task，不能使用UB DbSend task,，需要指定sqeBbNum
 // CCU_CCUM_CACHE: 不需要指定sqeBbNum
-MAKE_ENUM(HrtJettyMode, STANDARD, HOST_OFFLOAD, HOST_OPBASE, DEV_USED, CACHE_LOCK_DWQE, CCU_CCUM_CACHE);
+// CCU_TA_CACHE: A6 CCU专用
+MAKE_ENUM(HrtJettyMode, STANDARD, HOST_OFFLOAD, HOST_OPBASE, DEV_USED, CACHE_LOCK_DWQE, CCU_CCUM_CACHE, CCU_TA_CACHE);
 MAKE_ENUM(HrtUbJfcMode, NORMAL, STARS_POLL, CCU_POLL, USER_CTL);
 using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     JfcHandle sjfcHandle{nullptr};
@@ -171,6 +171,8 @@ using HccpUbJettyImportedInParam = struct HccpUbJettyImportedInParamDef {
 HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle,
     const HccpUbJettyImportedInParam &in, std::vector<char> &out,
     void *&remQpHandle, RequestHandle &reqHandle);
+
+HcclResult HccpRaTlvCcuCustomChannel(int32_t devLogicId, void *customIn, void *customOut);
 
 HcclResult HccpRaTlvRequestForCustomChannel(void *tlvHandle, unsigned int msgType, void *customIn, void *customOut);
 

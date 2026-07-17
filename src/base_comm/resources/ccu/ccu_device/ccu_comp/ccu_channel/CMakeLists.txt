@@ -10,9 +10,9 @@
 
 add_subdirectory(ccu_pfe)
 add_subdirectory(ccu_channel_ctx_v1)
+add_subdirectory(ccu_channel_ctx_v2)
 
 set(src_list
-    ccu_wqebb_mgr.cc
     ccu_jetty_ctx_mgr.cc
     ccu_channel_ctx_mgr.cc
 )

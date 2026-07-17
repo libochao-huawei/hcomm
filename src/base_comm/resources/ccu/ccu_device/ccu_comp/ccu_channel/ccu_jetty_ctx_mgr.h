@@ -95,9 +95,7 @@ void DumpJettyCtxData(const LocalJettyCtxData &tmp);
 
 class CcuJettyCtxMgr {
 public:
-    CcuJettyCtxMgr(const int32_t devLogicId, const uint8_t dieId, const uint32_t devPhyId)
-        : devLogicId_(devLogicId), dieId_(dieId), devPhyId_(devPhyId),
-          wqeBBMgr_(devLogicId, dieId), pfeMgr_(devLogicId, dieId, devPhyId) {};
+    CcuJettyCtxMgr(const int32_t devLogicId, const uint8_t dieId, const uint32_t devPhyId);
     CcuJettyCtxMgr() = default;
     virtual ~CcuJettyCtxMgr() = default;
     virtual HcclResult Init() = 0;
@@ -116,7 +114,7 @@ protected:
     uint32_t jettySpecNum_{0};
     uint64_t ccuResBaseVa_{0};
 
-    CcuWqeBBMgr wqeBBMgr_{};
+    std::unique_ptr<CcuWqeBBMgr> wqeBBMgr_{nullptr};
     CcuPfeMgr   pfeMgr_{};
 
     HcclResult TryAllocWqeBBResource(const uint32_t sqSize, const uint32_t jettyCtxStartId,

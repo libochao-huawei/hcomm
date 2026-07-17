@@ -25,9 +25,9 @@ namespace Hccl {
 
 using CcuResHandle = void *;
 
-MAKE_ENUM(CcuVersion, CCU_V1, CCU_INVALID);
+MAKE_ENUM(CcuVersion, CCU_V1, CCU_V2, CCU_INVALID);
 
-MAKE_ENUM(ResType, LOOP, MS, CKE, XN, GSA, INS, MISSION);
+MAKE_ENUM(ResType, LOOP, MS, CKE, XN, COUNT_XN, GSA, INS, MISSION);
 
 // 使用对外头文件的数据结构
 using MissionReqType = hcomm::MissionReqType;
@@ -80,6 +80,8 @@ enum class CcuOpcodeType {
     CCU_U_OP_CLEAN_TIF_TABLE      = 56, /* 清除TIF表项 */
 
     CCU_U_OP_K_MAX = 100, /* 定义需要向内核发送请求的造作最大值 */
+    CCU_U_OP_SET_TIF_SPLIT_SIZE = 127, /* 配置0.5RTT特性中的count计数单位 */
+    CCU_U_OP_SET_XN_TOTAL_CNT   = 128, /* 配置比较寄存器 */
 
     /* 以下为操作CCU映射到用户态资源空间的操作码 */
     CCU_U_OP_IN_RS_MIN       = 200, /* 定义一个在RS空间操作的最小值 */
@@ -128,6 +130,25 @@ struct CcuDieInfo {
     uint32_t enableFlag;
 };
 
+enum class CcuVersionEnum {
+    CCU_V1 = 0,
+    CCU_V2 = 1,
+};
+
+struct CcuTifSplitSize {
+    uint32_t splitPktUnit;
+    uint32_t tpSplitSize;
+    uint32_t ctpSplitSize;
+};
+
+struct CcuTotalCntXn {
+    uint32_t cntIndex;
+    uint32_t totalValue;
+    uint32_t totalAddr;
+    uint32_t flagFromAddr;
+    uint32_t flagToAddr;
+};
+
 struct CcuDataCaps {
     uint32_t cap0;
     uint32_t cap1;
@@ -155,6 +176,10 @@ union CcuDataTypeUnion {
     struct CcuBaseInfoData baseinfo;
     struct CcuInstrInfo    insinfo;
     struct CcuDieInfo      dieinfo;
+    CcuVersionEnum         ccuVersion;
+    struct CcuTifSplitSize tifSplitSize;
+    struct CcuTotalCntXn   xnTotalCnt;
+    // struct CcuHighPerfXn   highPerfXn;
 };
 
 struct CcuData {

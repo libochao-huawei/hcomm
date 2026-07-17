@@ -68,7 +68,7 @@ HcclResult CpuTsThread::Init()
             notifys_[idx].reset(new (std::nothrow) LocalNotify());
             CHK_SMART_PTR_NULL(notifys_[idx]);
             CHK_RET(notifys_[idx]->Init(notifyLoadType_));
-            if (devType_ != DevType::DEV_TYPE_950) {
+            if (devType_ != DevType::DEV_TYPE_950 && devType_ != DevType::DEV_TYPE_960) {
                 CHK_RET(notifys_[idx]->SetIpc());
             }
         }
@@ -176,7 +176,7 @@ LocalNotify *CpuTsThread::GetNotify(uint32_t index) const
 
 bool CpuTsThread::IsDeviceA5() const
 {
-    return devType_ == DevType::DEV_TYPE_950;
+    return devType_ == DevType::DEV_TYPE_950 || devType_ == DevType::DEV_TYPE_960;
 }
 
 // A3 Stream
@@ -339,7 +339,7 @@ HcclResult CpuTsThread::SupplementNotify(uint32_t notifyNum)
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
         CHK_RET(notifys_[idx]->Init(notifyLoadType_));
-        if (devType_ != DevType::DEV_TYPE_950) {
+        if (devType_ != DevType::DEV_TYPE_950 && devType_ != DevType::DEV_TYPE_960) {
             CHK_RET(notifys_[idx]->SetIpc());
         }
     }

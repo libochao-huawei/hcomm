@@ -8,9 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ccu_wqebb_mgr.h"
+#include "ccu_wqebb_mgr_v1.h"
 
-#include "../../ccu_res_specs.h"
+#include <vector>
+
+#include "ccu_res_specs.h"
 
 namespace hcomm {
 
@@ -54,41 +56,40 @@ static uint32_t GetWqeBBReqSizeBySqSize(uint32_t sqSize)
     return wqeBBReqNum;
 }
 
-HcclResult CcuWqeBBMgr::Init()
+HcclResult CcuWqeBBMgrV1::Init()
 {
     uint32_t wqeBBNum = 0; // 获取失败或为0场景，分配将按资源不足操作
     (void)CcuResSpecifications::GetInstance(devLogicId_).GetWqeBBNum(dieId_, wqeBBNum);
-    idAllocator_.reset(new (std::nothrow) CcuResIdAllocator(wqeBBNum));
+    idAllocator_.reset(new (std::nothrow) CcuResIdAllocator(wqeBBNum)); 
     CHK_PTR_NULL(idAllocator_);
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuWqeBBMgr::Alloc(const uint32_t sqSize, ResInfo &wqeBBInfo)
+HcclResult CcuWqeBBMgrV1::Alloc(const WqeBBReq& wqeBBReq, ResInfo &wqeBBInfo)
 {
-    uint32_t wqeBBReqSize = GetWqeBBReqSizeBySqSize(sqSize);
+    uint32_t wqeBBReqSize = GetWqeBBReqSizeBySqSize(wqeBBReq.sqSize);
     std::vector<ResInfo> resInfo;
-    // 成员变量认为调用时已初始化，wqebb资源要求连续
     auto ret = idAllocator_->Alloc(wqeBBReqSize, true, resInfo, "ResType::WqeBB"); // wqebb资源要求连续
-    if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("[CcuWqeBBMgr][%s] failed, left resources are enough, "
-            "sqSize[%u], wqeBBSize[%u]", __func__, sqSize, wqeBBReqSize);
-        return ret;
-    }
+    if (ret == HcclResult::HCCL_E_UNAVAIL) { 
+        HCCL_WARNING("[CcuWqeBBMgrV1][%s] failed, left resources are not enough, " 
+            "wqeBBReq.sqSize[%u], wqeBBSize[%u]", __func__,
+            wqeBBReq.sqSize, wqeBBReqSize); 
+        return ret; 
+    } 
     CHK_RET(ret);
 
-    wqeBBInfo = resInfo[0]; // 分配连续资源仅包含1个元素
+    wqeBBInfo = resInfo[0]; // 分配连续资源包含1个元素
     return ret;
 }
 
-HcclResult CcuWqeBBMgr::Release(const ResInfo &wqeBBInfo)
+HcclResult CcuWqeBBMgrV1::Release(const ResInfo &wqeBBInfo)
 {
     auto ret = idAllocator_->Release(wqeBBInfo.startId, wqeBBInfo.num);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
-        HCCL_ERROR("[CcuWqeBBMgr][%s] failed, wqe basic block resource info[%s]",
+        HCCL_ERROR("[CcuWqeBBMgrV1][%s] failed, wqe basic block resource info[%s]",
             __func__, wqeBBInfo.Describe().c_str()),
         ret);
 
     return HcclResult::HCCL_SUCCESS;
 }
-
 }; // namespace hcomm

@@ -34,7 +34,7 @@ public:
     // A3 Stream & A5 Stream
     inline bool IsDeviceA5() const override
     {
-        return devType_ == DevType::DEV_TYPE_950;
+        return devType_ == DevType::DEV_TYPE_950 || devType_ == DevType::DEV_TYPE_960;
     }
 
     Stream *GetStream() const override;

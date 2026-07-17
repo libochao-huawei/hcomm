@@ -33,7 +33,7 @@ HcclResult HostRdmaConnection::Init()
     int qpMode = 0;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
+    if (devType == DevType::DEV_TYPE_950 || devType == DevType::DEV_TYPE_960) {
         qpMode = Hccl::OPBASE_QP_MODE;
     } else if (devType == DevType::DEV_TYPE_910B) {
         qpMode = Hccl::QP_FLAG_RC;

@@ -12,10 +12,9 @@
 
 #include "hccp_ctx.h"
 
-#include "../../../ccu_res_specs.h"
+#include "ccu_res_specs.h"
 #include "ccu_pfe_cfg_mgr.h"
 #include "hcomm_adapter_hccp.h"
-#include "hccp_tlv_hdc_manager.h"
 
 namespace hcomm {
 
@@ -48,15 +47,13 @@ static HcclResult ConfigPfeTable(const int32_t devLogicId, const uint32_t devPhy
 {
     if (UNLIKELY(feId > UINT32_MAX - static_cast<uint32_t>(dieId) * pfeReservedNum)) {
         HCCL_ERROR("[CcuPfeMgr][%s] failed, feId[%u] is greater than expected, "
-            "pfeReservedNum[%u], will exceeds the range of uint32_t, devLogicId[%d] devPhyId[%u], "
+            "pfeReservedNum[%u], will exceed the range of uint32_t, devLogicId[%d] devPhyId[%u], "
             "dieId[%u].", __func__, feId, pfeReservedNum, devLogicId, devPhyId, dieId);
         return HcclResult::HCCL_E_INTERNAL;
     }
     // die1 使用后半部分pfe表项，故根据pfe预留数量偏移
     const uint32_t pfeTableOffset = static_cast<uint32_t>(dieId) * pfeReservedNum + feId;
 
-    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
-    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_PFE;
@@ -68,11 +65,10 @@ static HcclResult ConfigPfeTable(const int32_t devLogicId, const uint32_t devPhy
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen, &pfeCtx,
         inBuff.data.dataInfo.dataLen);
 
-    auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD,
-        static_cast<void *>(&inBuff),
-        static_cast<void *>(&outBuff));
+    auto ret = HccpRaTlvCcuCustomChannel(devLogicId,
+        static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+        HCCL_ERROR("[CcuPfeMgr][%s] failed to call ccu driver, "
             "devLogicId[%d] devPhyId[%u] dieId[%d] op[%s] ret[%d].", __func__, devLogicId, devPhyId, dieId,
             "SET_PFE", ret);
         return ret;

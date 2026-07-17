@@ -28,8 +28,8 @@ HcclResult UbgEndpoint::Init()
 
     DevType deviceType = DevType::DEV_TYPE_COUNT;
     CHK_RET(hrtGetDeviceType(deviceType));
-    if (deviceType != DevType::DEV_TYPE_950) {
-        HCCL_ERROR("[%s] UBG protocol only support DEV_TYPE_950, current deviceType=%d",
+    if (deviceType != DevType::DEV_TYPE_950 && deviceType != DevType::DEV_TYPE_960) {
+        HCCL_ERROR("[%s] UBG protocol only support DEV_TYPE_950/960, current deviceType=%d",
             __func__, static_cast<int>(deviceType));
         return HCCL_E_NOT_SUPPORT;
     }

@@ -1,12 +1,18 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- * Description: ccu device jetty context manager v1
- * Create: 2025-02-20
- */
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "ccu_jetty_ctx_mgr_v1.h"
 
-#include "../../../ccu_res_specs.h"
+#include "ccu_res_specs.h"
+
+#include "ccu_wqebb_mgr_v1.h"
 
 namespace hcomm {
 
@@ -16,7 +22,10 @@ HcclResult CcuJettyCtxMgrV1::Init()
     (void)CcuResSpecifications::GetInstance(devLogicId_).GetJettyNum(dieId_, jettySpecNum_);
     // 获取地址为0在使用处校验
     (void)CcuResSpecifications::GetInstance(devLogicId_).GetResourceAddr(dieId_, ccuResBaseVa_);
-    CHK_RET(wqeBBMgr_.Init());
+    
+    wqeBBMgr_.reset(new (std::nothrow) CcuWqeBBMgrV1(devLogicId_, dieId_));
+    CHK_PTR_NULL(wqeBBMgr_);
+    CHK_RET(wqeBBMgr_->Init());
     CHK_RET(pfeMgr_.Init());
     return HcclResult::HCCL_SUCCESS;
 }

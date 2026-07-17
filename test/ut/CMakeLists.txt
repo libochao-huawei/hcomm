@@ -325,6 +325,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/dfx/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_representation/reps/common/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/ccu_component/
     ${HCCL_CODE_ROOT}/src/legacy/ascend950/unified_platform/ccu/ccu_device/ccu_component/ccu_channel/
@@ -347,19 +348,26 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v2/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_transport/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/ccu/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/endpoint_pairs/channels/aiv/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_kernel/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_instance/
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/interface
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/context
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/arithmetic
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/common
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/control
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/data
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/logical
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/loop
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/shift
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/sync
     ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/translator
-    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_representation/reps/arithmetic/
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/common/loggers/
 )
 

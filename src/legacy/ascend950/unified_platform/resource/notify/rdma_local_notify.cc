@@ -19,6 +19,7 @@ namespace Hccl {
 RdmaLocalNotify::RdmaLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
     : BaseLocalNotify(RmaType::RDMA, devUsed), rdmaHandle(rdmaHandle)
 {
+    auto devType = HrtGetDeviceType(); // 先查询，避免后续失败资源泄露
     HrtDevResInfo devResInfo;
     devResInfo.dieId            = 0;
     devResInfo.procType         = HrtDevResProcType::PROCESS_CP1;
@@ -27,7 +28,7 @@ RdmaLocalNotify::RdmaLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
     devResInfo.flag             = HRT_DEV_RES_FLAG_USE_UNIQUE_VA;
     auto resAddrInfo            = HrtGetDevResAddress(devResInfo);
     addr                        = resAddrInfo.address;
-    DevCapability::GetInstance().Init(DevType::DEV_TYPE_950); // 单例初始化
+    DevCapability::GetInstance().Init(devType); // 单例初始化
     size                        = DevCapability::GetInstance().GetNotifySize();
     // 注册内存
     struct MrInfoT mrInfo;

@@ -465,5 +465,9 @@ HcclResult HcclParseRanktable(const std::string &rankTableM, const std::string &
 
 bool IsSupportHCCLV2(const char *socNamePtr)
 {
-    return strstr(socNamePtr, "Ascend950") != nullptr;
+    auto ascend950Comp = strstr(socNamePtr, "Ascend950") != nullptr;
+    auto ascend910_96Comp = strstr(socNamePtr, "Ascend910_96") != nullptr;
+    auto ascend960Comp = strstr(socNamePtr, "Ascend960") != nullptr;
+    auto ascend960Comp_1 = strstr(socNamePtr, "ascend960") != nullptr;
+    return ascend950Comp || ascend910_96Comp || ascend960Comp || ascend960Comp_1;
 }

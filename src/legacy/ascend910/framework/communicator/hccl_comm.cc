@@ -1466,7 +1466,7 @@ HcclResult hcclComm::GetKFCWorkSpace(void **addr, uint64_t *size)
 
 bool hcclComm::IsCommunicatorV2()
 {
-    if (devType_ == DevType::DEV_TYPE_950) {
+    if (devType_ == DevType::DEV_TYPE_950 || devType_ == DevType::DEV_TYPE_960) {
         return true;
     }
     return false;

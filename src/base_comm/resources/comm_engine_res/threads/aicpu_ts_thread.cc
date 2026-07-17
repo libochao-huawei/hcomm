@@ -334,13 +334,13 @@ HcclResult AicpuTsThread::HostInit()
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
         CHK_RET(notifys_[idx]->Init(notifyLoadType_));
-        if (devType_ != DevType::DEV_TYPE_950) {
+        if (devType_ != DevType::DEV_TYPE_950 && devType_ != DevType::DEV_TYPE_960) {
             CHK_RET(notifys_[idx]->SetIpc());
         }
     }
 
     // A5 aicpu场景thread多申请一个host类型notify，用于host&device同步
-    if (devType_ == DevType::DEV_TYPE_950) {
+    if (devType_ == DevType::DEV_TYPE_950 || devType_ == DevType::DEV_TYPE_960) {
         notifys_.emplace_back(nullptr);
         notifys_[notifyNum_].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[notifyNum_]);
@@ -348,7 +348,8 @@ HcclResult AicpuTsThread::HostInit()
         notifyNum_ += 1;
     }
 
-    if (streamType_ == StreamType::STREAM_TYPE_DEVICE && devType_ != DevType::DEV_TYPE_950) {
+    if (streamType_ == StreamType::STREAM_TYPE_DEVICE && devType_ != DevType::DEV_TYPE_950 &&
+        devType_ != DevType::DEV_TYPE_960) {
         uint64_t size = sizeof(SqCqeContext);
         sqCqeContext_ = DeviceMem::alloc(size);
         CHK_PTR_NULL(sqCqeContext_.ptr());
@@ -373,7 +374,7 @@ HcclResult AicpuTsThread::DeviceInit()
     HcclStreamParam streamParam;
     iss.read(reinterpret_cast<char_t *>(&streamParam), sizeof(streamParam));
     // 91095初始化streamlite，初始化rtsq接口
-    if (devType_ == DevType::DEV_TYPE_950) {
+    if (devType_ == DevType::DEV_TYPE_950 || devType_ == DevType::DEV_TYPE_960) {
         CHK_RET(InitStreamLite(streamParam.streamInfo, hostPhyId));
     } else {
         CHK_RET(InitStream(streamParam));
@@ -387,7 +388,7 @@ HcclResult AicpuTsThread::DeviceInit()
         iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
-        if (devType_ == DevType::DEV_TYPE_950) {
+        if (devType_ == DevType::DEV_TYPE_950 || devType_ == DevType::DEV_TYPE_960) {
             CHK_RET(notifys_[idx]->InitNotifyLite(notifyInfo));
             HCCL_INFO("[AicpuTsThread][Init]local notifyLite init success, resId[%u], devId[%u]", notifyInfo.resId,
                 notifyInfo.devId);
@@ -431,7 +432,7 @@ HcclResult AicpuTsThread::SupplementNotify(uint32_t notifyNum)
     u32 allNotifyNum = notifyNum_ + notifyNum;
     u32 endIdx = allNotifyNum - 1;
     notifys_.resize(allNotifyNum);
-    if (devType_ == DevType::DEV_TYPE_950) {
+    if ((devType_ == DevType::DEV_TYPE_950 || devType_ == DevType::DEV_TYPE_960) && notifyNum_ > 0) {
         beginIdx--;
         CHK_SMART_PTR_NULL(notifys_[beginIdx]);
         notifys_[endIdx] = std::move(notifys_[beginIdx]);
@@ -441,7 +442,7 @@ HcclResult AicpuTsThread::SupplementNotify(uint32_t notifyNum)
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
         CHK_RET(notifys_[idx]->Init(notifyLoadType_));
-        if (devType_ != DevType::DEV_TYPE_950) {
+        if (devType_ != DevType::DEV_TYPE_950 && devType_ != DevType::DEV_TYPE_960) {
             CHK_RET(notifys_[idx]->SetIpc());
         }
         notifyNum_++;
@@ -494,7 +495,7 @@ HcclResult AicpuTsThread::SupplementNotify(u32 notifyNum, const std::string &not
     u32 beginIdx = notifyNum_;
     u32 endIdx = notifyNum - 1;
     notifys_.resize(notifyNum);
-    if (devType_ == DevType::DEV_TYPE_950 && notifyNum_ > 0) {
+    if ((devType_ == DevType::DEV_TYPE_950 || devType_ == DevType::DEV_TYPE_960) && notifyNum_ > 0) {
         beginIdx--;
         CHK_SMART_PTR_NULL(notifys_[beginIdx]);
         notifys_[endIdx] = std::move(notifys_[beginIdx]);
@@ -513,7 +514,7 @@ HcclResult AicpuTsThread::SupplementNotify(u32 notifyNum, const std::string &not
         iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
-        if (devType_ == DevType::DEV_TYPE_950) {
+        if (devType_ == DevType::DEV_TYPE_950 || devType_ == DevType::DEV_TYPE_960) {
             CHK_RET(notifys_[idx]->InitNotifyLite(notifyInfo));
             HCCL_INFO("[AicpuTsThread][SupplementNotify]local notifyLite init success, resId[%u], devId[%u]",
                 notifyInfo.resId, notifyInfo.devId);

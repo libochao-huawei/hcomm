@@ -19,6 +19,9 @@
 #include "hccp_async_ctx.h"
 #include "enum_factory.h"
 
+#include "hccp_tlv_hdc_manager.h"
+#include "exception_handler.h"
+
 namespace hcomm {
 
 HcclResult IpAddressToHccpEid(const Hccl::IpAddress &ipAddr, Eid &eid)
@@ -146,12 +149,13 @@ RequestResult HccpGetAsyncReqResult(RequestHandle &reqHandle)
 const std::map<HrtTransportMode, TransportModeT> HRT_TRANSPORT_MODE_MAP
     = {{HrtTransportMode::RM, TransportModeT::CONN_RM}};
 const std::map<HrtJettyMode, JettyMode> HRT_JETTY_MODE_MAP
-    = {{HrtJettyMode::STANDARD, JettyMode::JETTY_MODE_URMA_NORMAL},
-       {HrtJettyMode::HOST_OFFLOAD, JettyMode::JETTY_MODE_USER_CTL_NORMAL},
-       {HrtJettyMode::HOST_OPBASE, JettyMode::JETTY_MODE_USER_CTL_NORMAL},
-       {HrtJettyMode::DEV_USED, JettyMode::JETTY_MODE_USER_CTL_NORMAL},
-       {HrtJettyMode::CACHE_LOCK_DWQE, JettyMode::JETTY_MODE_CACHE_LOCK_DWQE},
-       {HrtJettyMode::CCU_CCUM_CACHE, JettyMode::JETTY_MODE_CCU}};
+    =  {{HrtJettyMode::STANDARD, JettyMode::JETTY_MODE_URMA_NORMAL},
+        {HrtJettyMode::HOST_OFFLOAD, JettyMode::JETTY_MODE_USER_CTL_NORMAL},
+        {HrtJettyMode::HOST_OPBASE, JettyMode::JETTY_MODE_USER_CTL_NORMAL},
+        {HrtJettyMode::DEV_USED, JettyMode::JETTY_MODE_USER_CTL_NORMAL},
+        {HrtJettyMode::CACHE_LOCK_DWQE, JettyMode::JETTY_MODE_CACHE_LOCK_DWQE},
+        {HrtJettyMode::CCU_CCUM_CACHE, JettyMode::JETTY_MODE_CCU},
+        {HrtJettyMode::CCU_TA_CACHE, JettyMode::JETTY_MODE_CCU_TA_CACHE}};
 
 constexpr uint8_t  RNR_RETRY = 7;
 constexpr uint32_t RQ_DEPTH  = 256;
@@ -185,12 +189,19 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
     // jfs_flag 的 error_suspend 设置为 1，
     attr.ub.jfsFlag.bs.errorSuspend = 1;
 
-    attr.ub.extMode.sqebbNum = in.sqDepth;
+    if (in.jettyMode == HrtJettyMode::CCU_TA_CACHE) {
+        attr.ub.tokenValue                = in.tokenValue;
+        attr.ub.taCacheMode.lockFlag      = true;
+        attr.ub.taCacheMode.sqeBufIdx     = in.sqeBufIndex;
+    } else {
+        attr.ub.extMode.sqebbNum = in.sqDepth;
+    }
+
     if (in.jettyMode == HrtJettyMode::HOST_OFFLOAD) {
         attr.ub.extMode.piType = 1;
     } else if (in.jettyMode == HrtJettyMode::CCU_CCUM_CACHE) {
-        attr.ub.tokenValue                   = in.tokenValue;
-        attr.ub.extMode.cstmFlag.bs.sqCstm = 1;
+        attr.ub.tokenValue                  = in.tokenValue;
+        attr.ub.extMode.cstmFlag.bs.sqCstm  = 1;
         attr.ub.extMode.sq.buffSize         = in.sqBufSize;
         attr.ub.extMode.sq.buffVa           = in.sqBufVa;
     } else if (in.jettyMode == HrtJettyMode::DEV_USED) {
@@ -203,10 +214,12 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
         "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
         "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u], timeout[%u].",
+        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], "
+        "attr.ub.priority[%u], timeout[%u], attr.ub.taCacheMode.sqeBufIdx[%u].",
         attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode,
         attr.ub.mode, attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa,
-        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType, attr.ub.priority, attr.ub.errTimeout);
+        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType,
+        attr.ub.priority, attr.ub.errTimeout, attr.ub.taCacheMode.sqeBufIdx);
 
     struct QpCreateInfo info {};
     void *qpHandle = nullptr;
@@ -272,28 +285,37 @@ HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreate
     // jfs_flag 的 error_suspend 设置为 1，
     attr.ub.jfsFlag.bs.errorSuspend = 1;
 
-    attr.ub.extMode.sqebbNum = in.sqDepth;
+    if (in.jettyMode == HrtJettyMode::CCU_TA_CACHE) {
+        attr.ub.tokenValue            = in.tokenValue;
+        attr.ub.taCacheMode.lockFlag  = true;
+        attr.ub.taCacheMode.sqeBufIdx = in.sqeBufIndex;
+    } else {
+        attr.ub.extMode.sqebbNum = in.sqDepth;
+    }
+
     if (in.jettyMode == HrtJettyMode::HOST_OFFLOAD) {
         attr.ub.extMode.piType = 1;
     } else if (in.jettyMode == HrtJettyMode::CCU_CCUM_CACHE) {
-        attr.ub.tokenValue                   = in.tokenValue;
+        attr.ub.tokenValue                 = in.tokenValue;
         attr.ub.extMode.cstmFlag.bs.sqCstm = 1;
-        attr.ub.extMode.sq.buffSize         = in.sqBufSize;
-        attr.ub.extMode.sq.buffVa           = in.sqBufVa;
+        attr.ub.extMode.sq.buffSize        = in.sqBufSize;
+        attr.ub.extMode.sq.buffVa          = in.sqBufVa;
     } else if (in.jettyMode == HrtJettyMode::DEV_USED) {
         attr.ub.extMode.cstmFlag.bs.sqCstm = 1;
-        attr.ub.extMode.sq.buffSize         = in.sqBufSize;
-        attr.ub.extMode.sq.buffVa           = in.sqBufVa;
+        attr.ub.extMode.sq.buffSize        = in.sqBufSize;
+        attr.ub.extMode.sq.buffVa          = in.sqBufVa;
     }
 
     // 其他Mode暂时不需要额外更新特定字段
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
               "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
               "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u], timeout[%u].",
+              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], "
+              "attr.ub.priority[%u], timeout[%u], attr.ub.taCacheMode.sqeBufIdx[%u].",
               attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode, attr.ub.mode,
               attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa, attr.ub.extMode.sq.buffSize,
-              attr.ub.extMode.piType, attr.ub.priority, attr.ub.errTimeout);
+              attr.ub.extMode.piType, attr.ub.priority, attr.ub.errTimeout,
+              attr.ub.taCacheMode.sqeBufIdx);
 
     void *raReqHandle = nullptr;
     out.resize(sizeof(QpCreateInfo));
@@ -445,6 +467,16 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle, const HccpUbJetty
     const auto mode = JettyImportMode::JETTY_IMPORT_MODE_EXP;
     return ImportJettyAsync(ctxHandle, in, out, remQpHandle,
         cfg, mode, in.jettyImportCfg.protocol, reqHandle);
+}
+
+HcclResult HccpRaTlvCcuCustomChannel(int32_t devLogicId, void *customIn, void *customOut)
+{
+    // 当前复用legacy流程单例，后续需整改
+    EXCEPTION_HANDLE_BEGIN
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+    CHK_RET(HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD, customIn, customOut));
+    EXCEPTION_HANDLE_END
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult HccpRaTlvRequestForCustomChannel(void *tlvHandle, unsigned int msgType, void *customIn, void *customOut)

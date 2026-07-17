@@ -28,6 +28,7 @@ constexpr uint32_t BLOCK_RES_TYPE_NUM = 3;
 constexpr uint32_t CONS_RES_TYPE_NUM = 1;
 constexpr uint32_t DISCRETE_RES_TYPE_NUM = 5;
 constexpr uint32_t NON_BLOCK_TYPE_NUM = CONS_RES_TYPE_NUM + DISCRETE_RES_TYPE_NUM;
+constexpr uint32_t BLOCK_SIZE_MS_AX_DIE0 = 128;
 constexpr uint32_t CCUA_NUM = 4;
 
 CcuResBatchAllocator &CcuResBatchAllocator::GetInstance(const int32_t deviceLogicId)
@@ -123,7 +124,7 @@ static CcuResBlockNum GetPreAllocatedMaxBlockNum(const uint32_t devLogicId, cons
 HcclResult CcuResBatchAllocator::PreAllocBlockRes()
 {
     CcuComponent &ccuComponent = CcuComponent::GetInstance(devLogicId_);
-    const bool armX86Flag = CcuResSpecifications::GetInstance(devLogicId_).GetArmX86Flag();
+    const auto serveMode = CcuResSpecifications::GetInstance(devLogicId_).GetServeMode();
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
         if (!dieEnableFlags_[dieId]) {
             HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d] dieId[%u] is not enable, "
@@ -160,8 +161,7 @@ HcclResult CcuResBatchAllocator::PreAllocBlockRes()
             }
             CHK_RET(ret);
 
-            const bool avoidCcu0Flag = (armX86Flag && dieId == 0 && resType == ResType::MS);
-
+            const bool avoidCcu0Flag = (serveMode == ServeMode::ARMX86 && dieId == 0 && resType == ResType::MS);
             std::vector<BlockInfo> tempBlocks;
             const uint32_t startId = tempResInfos[0].startId;
             for (uint32_t k = 0; k < blockNum; k++) {
@@ -171,7 +171,7 @@ HcclResult CcuResBatchAllocator::PreAllocBlockRes()
                 blockInfo.num       = blockSize;
                 // A+X形态，PCIE连接到IOdie0，导致IOdie0上连接PCIE的CCUA0无法使用，分配MS资源时需要跳过CCUA0
                 // 给要分给CCUA0的块，设置成已分配过，防止后续分给算法使用
-                blockInfo.allocated = avoidCcu0Flag ? (k % CCUA_NUM == 0) : false;
+                blockInfo.allocated = avoidCcu0Flag ? k % CCUA_NUM == 0 : false;
                 blockInfo.handle    = 0;
                 tempBlocks.emplace_back(blockInfo);
             }

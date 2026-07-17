@@ -626,6 +626,21 @@ int32_t CcuConnection::GetDevLogicId() const
     return devLogicId_;
 }
 
+uint64_t CcuConnection::GetRmtCcuBufAddr() const
+{
+    return rmtCcuBufAddr_;
+}
+
+uint32_t CcuConnection::GetRmtCcuBufTokenId() const
+{
+    return rmtCcuBufTokenId_;
+}
+
+uint32_t CcuConnection::GetRmtCcuBufTokenValue() const
+{
+    return rmtCcuBufTokenValue_;
+}
+
 HcclResult CcuConnection::Clean()
 {
     status_ = CcuConnStatus::INIT;

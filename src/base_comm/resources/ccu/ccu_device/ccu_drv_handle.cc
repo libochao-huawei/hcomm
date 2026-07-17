@@ -15,14 +15,10 @@
 #include "hccp_tlv.h"
 #include "hccp_tlv_hdc_mgr.h"
 
-/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
- * 暂时改用legacy数据结构，避免反向依赖
- * #include "ccu_res_specs.h"
- * #include "ccu_pfe_cfg_mgr.h"
- * #include "ccu_comp.h"
- * #include "ccu_res_batch_allocator.h"
-*/
-
+#include "ccu_res_specs.h"
+#include "ccu_pfe_cfg_mgr.h"
+#include "ccu_comp.h"
+#include "ccu_res_batch_allocator.h"
 #include "ccu_kernel_mgr.h"
 
 
@@ -36,6 +32,14 @@
 #include "exception_handler.h"
 
 namespace hcomm {
+
+inline bool CheckCcuOpenSourceEnable()
+{
+    // A6 不支持legacy ccu mc2，可以完全切换至开源流程
+    auto devType = DevType::DEV_TYPE_COUNT;
+    (void)hrtGetDeviceType(devType);
+    return devType == DevType::DEV_TYPE_960;
+}
 
 static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
     const u32 tlvModuleType, const u32 tlvCcuMsgType)
@@ -95,19 +99,22 @@ CcuResult CcuDrvHandle::Init()
         return CcuResult::CCU_E_DRV_INIT_FAILED;
     }
 
-    Hccl::CcuResSpecifications::GetInstance(devLogicId_).Init();
-    Hccl::CcuComponent::GetInstance(devLogicId_).Init();
-    Hccl::CcuResBatchAllocator::GetInstance(devLogicId_).Init();
-    Hccl::CtxMgrImp::GetInstance(devLogicId_).Init();
+    if (!CheckCcuOpenSourceEnable()) {
+        Hccl::CcuResSpecifications::GetInstance(devLogicId_).Init();
+        Hccl::CcuComponent::GetInstance(devLogicId_).Init();
+        Hccl::CcuResBatchAllocator::GetInstance(devLogicId_).Init();
+        Hccl::CtxMgrImp::GetInstance(devLogicId_).Init();
+    } else {
+        CCU_CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).Init());
+        CCU_CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());
+        CCU_CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());
+        CCU_CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
+    }
+
+    CCU_CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
+
     CCU_EXCEPTION_HANDLE_END
 
-    /* 为了支持ccu新老通信域混跑，暂时不启用开源数据结构
-     * CCU_CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).Init());
-     * CCU_CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());
-     * CCU_CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());
-     * CCU_CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
-     */
-    CCU_CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
     return CcuResult::CCU_SUCCESS;
 }
 
@@ -130,14 +137,16 @@ CcuResult CcuDrvHandle::Deinit()
     // 释放有时序要求
     HCCL_RUN_INFO("[CcuDrvHandle] start to deinit ccu driver, deviceLogicId[%d].", devLogicId_);
     (void)CcuKernelMgr::GetInstance(devLogicId_).Deinit();
-    /* 为了支持ccu新老通信域混跑，暂时不启用开源数据结构
-     * (void)CcuResBatchAllocator::GetInstance(devLogicId_).Deinit();
-     * (void)CcuComponent::GetInstance(devLogicId_).Deinit();
-     * (void)CcuPfeCfgMgr::GetInstance(devLogicId_).Deinit();
-     * (void)CcuResSpecifications::GetInstance(devLogicId_).Deinit();
-     */
 
-    (void)CcuLegacyMgrDeinit(devLogicId_);
+    if (!CheckCcuOpenSourceEnable()) {
+        (void)CcuLegacyMgrDeinit(devLogicId_);
+    } else {
+        (void)CcuResBatchAllocator::GetInstance(devLogicId_).Deinit();
+        (void)CcuComponent::GetInstance(devLogicId_).Deinit();
+        (void)CcuPfeCfgMgr::GetInstance(devLogicId_).Deinit();
+        (void)CcuResSpecifications::GetInstance(devLogicId_).Deinit();
+    }
+
     if (tlvHandle_ != 0) {
         (void)HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_UNINIT);
         tlvHandle_ = 0;

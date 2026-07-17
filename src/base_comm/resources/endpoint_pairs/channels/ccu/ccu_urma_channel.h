@@ -48,12 +48,16 @@ public:
 public:
     uint32_t GetDieId() const;
     uint32_t GetChannelId() const;
-
+    HcclResult GetRmtSignalAddrByIndex(uint32_t index, uint64_t &rmtCkeAddr) const;
+    HcclResult GetRmtCcuBufferTokenInfo(uint32_t &rmtTokenId, uint32_t &rmtTokenValue) const;
+    HcclResult GetRmtVarAddrByIndex(uint32_t index, uint64_t &rmtXnAddr) const;
     HcclResult GetLocCkeByIndex(const uint32_t index, uint32_t &locCkeId) const;
     HcclResult GetLocXnByIndex(const uint32_t index, uint32_t &locXnId) const;
 
     HcclResult GetRmtCkeByIndex(const uint32_t index, uint32_t &rmtCkeId) const;
     HcclResult GetRmtXnByIndex(const uint32_t index, uint32_t &rmtXnId) const;
+
+    HcclResult GetRmtWishCntXnAddr(const std::string &resGroupTag, uint64_t &wishCntXnAddr) const;
 
     HcclResult GetRmtBuffer(uint64_t &addr, uint32_t &size, uint32_t &tokenId, uint32_t &tokenValue) const;
 

@@ -139,8 +139,8 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
     if (insQueue == nullptr) {
         THROW<NullPtrException>(StringFormat("CommunicatorImplLite::UnfoldOpBase insQueue is nullptr."));
     }
-    if (devType == DevType::DEV_TYPE_950) {
-        HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_950.");
+    if (devType == DevType::DEV_TYPE_950 || devType == DevType::DEV_TYPE_960) {
+        HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_950 or DEV_TYPE_960.");
         insExecutor->ExecuteV82(*insQueue);
         profilingReporterLite->ReportAllTasks();
         ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgrLite->GetCurrDfxOpInfo());

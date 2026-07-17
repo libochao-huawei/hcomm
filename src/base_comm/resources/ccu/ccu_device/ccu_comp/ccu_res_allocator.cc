@@ -12,7 +12,7 @@
 
 #include <climits>
 
-#include "../../../ccu_res_specs.h"
+#include "ccu_res_specs.h"
 
 namespace hcomm {
 
@@ -209,15 +209,20 @@ HcclResult CcuResAllocator::Init()
     auto& ccuResSpecs = CcuResSpecifications::GetInstance(devLogicId_);
     // 获取静态定义的资源规格查询函数列表，遍历构造
     uint32_t capacity = 0;
-    for (const auto &pair : GET_RES_SPEC_FUNC_ARRAY) {
+    for (const auto &pair : CcuResSpecifications::GET_RES_SPEC_FUNC_ARRAY) {
         const ResType resType = pair.first;
-        const GetResSpecFunc getFunc = pair.second;
+        const CcuResSpecifications::GetResSpecFunc getFunc = pair.second;
         (void)(ccuResSpecs.*getFunc)(dieId_, capacity); // 获取失败时容量为 0，后续分配按资源不足处理
         std::unique_ptr<CcuResIdAllocator> allocatorPtr = nullptr;
+        HCCL_RUN_INFO("[CcuResAllocator][%s] resType[%s], capacity[%u]",
+            __func__, resType.Describe().c_str(), capacity);
         allocatorPtr.reset((new (std::nothrow) CcuResIdAllocator(capacity)));
         CHK_PTR_NULL(allocatorPtr);
         idAllocatorMap_[static_cast<uint8_t>(resType)] = std::move(allocatorPtr);
     }
+
+    (void)ccuResSpecs.GetXnNum(dieId_, xnSpecNum_);
+    (void)ccuResSpecs.GetCountXnNum(dieId_, countXnSpecNum_);
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -257,4 +262,49 @@ std::string CcuResAllocator::Describe() const
         "idAllocatorSize=[%u]]", devLogicId_, dieId_, idAllocatorMap_.size());
 }
 
+
+HcclResult CcuResAllocator::AllocCountXn(const uint32_t num, ResInfo &resInfo)
+{
+    constexpr ResType resType = ResType::COUNT_XN;
+    auto resTypeIter = idAllocatorMap_.find(static_cast<uint8_t>(resType));
+    if (resTypeIter == idAllocatorMap_.end()) {
+        HCCL_ERROR("[CcuResAllocator][%s] failed, invalid resource type[%s].",
+            __func__, resType.Describe().c_str());
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    std::vector<ResInfo> resInfos;
+    auto ret = resTypeIter->second->Alloc(num, true, resInfos);
+    if (ret == HcclResult::HCCL_E_UNAVAIL) {
+        HCCL_WARNING("[CcuResAllocator][%s] failed, count xn resources are unavailable, ",
+            "retry to allocate with normal xn resources, num[%u], devLogicId[%d].",
+            __func__, num, devLogicId_);
+        ret = Alloc(ResType::XN, num, true, resInfos);
+        if (ret == HcclResult::HCCL_SUCCESS) {
+            resInfo = resInfos[0]; // 连续分配成功时，一定只有一个元素
+        }
+        return ret;
+    }
+    CHK_RET(ret);
+    // CountXn编号切换为全局Xn编号
+    resInfo.startId = resInfos[0].startId + xnSpecNum_;
+    resInfo.num = resInfos[0].num;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuResAllocator::ReleaseCountXn(const uint32_t startId, const uint32_t num)
+{
+    if (startId < xnSpecNum_) { // 未超过Xn规格则为普通Xn
+        return Release(ResType::XN, startId, num);
+    }
+ 
+    constexpr ResType resType = ResType::COUNT_XN;
+    auto resTypeIter = idAllocatorMap_.find(static_cast<uint8_t>(resType));
+    if (resTypeIter == idAllocatorMap_.end()) {
+        HCCL_ERROR("[CcuResAllocator][%s] failed, invalid resource type[%s].",
+            __func__, resType.Describe().c_str());
+        return HcclResult::HCCL_E_PARA;
+    }
+    return resTypeIter->second->Release(startId - xnSpecNum_, num);
+}
 } // namespace hcomm

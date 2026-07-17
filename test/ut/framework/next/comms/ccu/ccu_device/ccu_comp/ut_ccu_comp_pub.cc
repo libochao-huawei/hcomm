@@ -267,7 +267,7 @@ TEST_F(CcuCompPubTest, Ut_RequestNewLoopTpInfo_When_Called_Expect_LoopGetTpInfoP
 
     const CommAddr commAddr = MakeLoopCommAddr("10.0.0.8");
     TpInfo tpInfo{};
-    EXPECT_EQ(comp.RequestNewLoopTpInfo(commAddr, tpInfo), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(comp.GetLoopTpInfo(1, commAddr, tpInfo), HcclResult::HCCL_SUCCESS);
     EXPECT_TRUE(gCapturedLoopTpParam.loopFirstTpLowestSl);
     EXPECT_TRUE(gCapturedLoopTpParam.ccuLoopbackGetTpInfo);
     EXPECT_EQ(gCapturedLoopTpParam.tpProtocol, TpProtocol::RTP);

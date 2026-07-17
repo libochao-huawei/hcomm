@@ -160,8 +160,8 @@ HcclResult CcuUrmaChannel::Init()
     }
     CHK_PTR_NULL(channelDesc_.memHandles);
 
-    // 当前建链不支持资源扩容，CCU资源默认固定为16
-    HCCL_WARNING("[CcuUrmaChannel][%s] now only support notify num is 16.",
+    // 当前建链不支持资源扩容，CCU资源默认固定为8
+    HCCL_WARNING("[CcuUrmaChannel][%s] now only support notify num is 8.",
         __func__);
     HCCL_WARNING("[CcuUrmaChannel][%s] now only support to exchange hccl buffer.",
         __func__);
@@ -230,9 +230,30 @@ uint32_t CcuUrmaChannel::GetDieId() const
 uint32_t CcuUrmaChannel::GetChannelId() const
 {
     if (!impl_) {
-        return UINT32_MAX; 
+        return UINT32_MAX;
     }
     return impl_->GetChannelId();
+}
+
+HcclResult CcuUrmaChannel::GetRmtSignalAddrByIndex(uint32_t index, uint64_t &rmtCkeAddr) const
+{
+    CHK_PTR_NULL(impl_);
+    CHK_RET(impl_->GetRmtSignalAddrByIndex(index, rmtCkeAddr));
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuUrmaChannel::GetRmtVarAddrByIndex(uint32_t index, uint64_t &rmtXnAddr) const
+{
+    CHK_PTR_NULL(impl_);
+    CHK_RET(impl_->GetRmtVarAddrByIndex(index, rmtXnAddr));
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuUrmaChannel::GetRmtCcuBufferTokenInfo(uint32_t &rmtTokenId, uint32_t &rmtTokenValue) const
+{
+    CHK_PTR_NULL(impl_);
+    CHK_RET(impl_->GetRmtCcuBufferTokenInfo(rmtTokenId, rmtTokenValue));
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuUrmaChannel::GetLocCkeByIndex(const uint32_t index, uint32_t &locCkeId) const
@@ -260,6 +281,13 @@ HcclResult CcuUrmaChannel::GetRmtXnByIndex(const uint32_t index, uint32_t &rmtXn
 {
     CHK_PTR_NULL(impl_);
     CHK_RET(impl_->GetRmtXnByIndex(index, rmtXnId));
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuUrmaChannel::GetRmtWishCntXnAddr(const std::string &resGroupTag, uint64_t &wishCntXnAddr) const
+{
+    CHK_PTR_NULL(impl_);
+    CHK_RET(impl_->GetRmtWishCntXnAddr(resGroupTag, wishCntXnAddr));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -345,4 +373,5 @@ HcclResult CcuUrmaChannel::ChannelFence()
     HCCL_INFO("[CcuUrmaChannel::%s] not supported yet.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
+
 }  // namespace hcomm

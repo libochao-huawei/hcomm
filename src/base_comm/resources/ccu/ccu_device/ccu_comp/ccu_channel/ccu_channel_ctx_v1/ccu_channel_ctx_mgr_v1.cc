@@ -13,9 +13,8 @@
 #include <vector>
 #include <string>
 
-#include "../../../ccu_res_specs.h"
+#include "ccu_res_specs.h"
 #include "hcomm_adapter_hccp.h"
-#include "hccp_tlv_hdc_manager.h"
 
 namespace hcomm {
 
@@ -154,8 +153,6 @@ static void DumpChannelCtxDataV1(const struct ChannelCtxDataV1 &data)
 static HcclResult ConfigChannelCtxDataV1(const int32_t devLogicId, const uint32_t devPhyId, const uint8_t dieId,
     const uint32_t channelId, const ChannelCtxDataV1 &channelCtxData)
 {
-    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
-    CHK_PTR_NULL(tlvHandle);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 
@@ -174,11 +171,10 @@ static HcclResult ConfigChannelCtxDataV1(const int32_t devLogicId, const uint32_
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, sizeof(struct ChannelCtxDataV1), &channelCtxData,
                    sizeof(struct ChannelCtxDataV1));
     
-    auto ret = HccpRaTlvRequestForCustomChannel(tlvHandle, MSG_TYPE_CCU_DISPATCH_CMD,
-        static_cast<void *>(&inBuff),
-        static_cast<void *>(&outBuff));
+    auto ret = HccpRaTlvCcuCustomChannel(devLogicId,
+        static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+        HCCL_ERROR("[CcuChannelCtxMgrV1][%s] failed to call ccu driver, "
             "devLogicId[%d] devPhyId[%u] dieId[%d] op[%s] ret[%d].", __func__, devLogicId, devPhyId, dieId,
             "SET_CHANNEL", ret);
         return ret;

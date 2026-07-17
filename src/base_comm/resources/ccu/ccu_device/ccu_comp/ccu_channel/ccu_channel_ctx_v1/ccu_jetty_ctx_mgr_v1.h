@@ -26,15 +26,15 @@ public:
         : CcuJettyCtxMgr(devLogicId, dieId, devPhyId) {};
 
     CcuJettyCtxMgrV1() = default;
-    ~CcuJettyCtxMgrV1() override = default;
+    ~CcuJettyCtxMgrV1() override final = default;
 
-    HcclResult Init() override;
+    HcclResult Init() override final;
 
     HcclResult Alloc(const uint32_t feId, const uint32_t jettyNum, const uint32_t sqSize,
-        std::vector<JettyInfo>& jettyInfos) override;
+        std::vector<JettyInfo>& jettyInfos) override final;
     HcclResult Config(const uint32_t feId, const std::vector<JettyInfo> &jettyInfos,
-        const std::vector<JettyCfg>& jettyCfgs) override;
-    HcclResult Release(const uint32_t feId, const std::vector<JettyInfo> &jettyInfos) override;
+        const std::vector<JettyCfg>& jettyCfgs) override final;
+    HcclResult Release(const uint32_t feId, const std::vector<JettyInfo> &jettyInfos) override final;
 
 private:
     struct JettyAllocator {

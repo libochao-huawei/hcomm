@@ -53,7 +53,7 @@ static void ConfigPfeTable(const int32_t devLogicId, const uint32_t devPhyId, co
 
     if (UNLIKELY(feId > UINT32_MAX - static_cast<uint32_t>(dieId) * pfeReservedNum)) {
         THROW<InvalidParamsException>("[CcuPfeMgr][%s] failed, feId[%u] is greater than expected, "
-            "pfeReservedNum[%u], will exceeds the range of uint32_t, devPhyId[%u], "
+            "pfeReservedNum[%u], will exceed the range of uint32_t, devPhyId[%u], "
             "dieId[%u].", __func__, feId, pfeReservedNum, devPhyId, dieId);
     }
 

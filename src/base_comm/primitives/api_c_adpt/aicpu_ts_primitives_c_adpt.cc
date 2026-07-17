@@ -948,7 +948,7 @@ int32_t HcommAcquireComm(const char* commId)
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
     HCCL_INFO("[%s]comId[%s], devType[%d]", __func__, commId, deviceType);
-    if (deviceType != DevType::DEV_TYPE_950) {
+    if (deviceType != DevType::DEV_TYPE_950 && deviceType != DevType::DEV_TYPE_960) {
         HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
         CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
         CHK_RET(hcclComm->SetDispatcherCtxOnThread());
@@ -991,7 +991,7 @@ int32_t HcommReleaseComm(const char* commId)
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
     HCCL_INFO("[%s]comId[%s], devType[%d]", __func__, commId, deviceType);
-    if (deviceType != DevType::DEV_TYPE_950) {
+    if (deviceType != DevType::DEV_TYPE_950 && deviceType != DevType::DEV_TYPE_960) {
         AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
     } else {
         AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(commId);
@@ -1111,7 +1111,7 @@ HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
 
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
-    if (deviceType != DevType::DEV_TYPE_950) {
+    if (deviceType != DevType::DEV_TYPE_950 && deviceType != DevType::DEV_TYPE_960) {
         return HCCL_SUCCESS;
     }
 
@@ -1127,7 +1127,7 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
 
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
-    if (deviceType != DevType::DEV_TYPE_950) {
+    if (deviceType != DevType::DEV_TYPE_950 && deviceType != DevType::DEV_TYPE_960) {
         return HCCL_SUCCESS;
     }
     CHK_PTR_NULL(groupname);
@@ -1154,7 +1154,7 @@ HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupn
 
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
-    if (deviceType != DevType::DEV_TYPE_950) {
+    if (deviceType != DevType::DEV_TYPE_950 && deviceType != DevType::DEV_TYPE_960) {
         return HCCL_SUCCESS;
     }
 

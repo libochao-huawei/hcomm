@@ -11,6 +11,7 @@
 set(src_list
     ccu_jetty_ctx_mgr_v1.cc
     ccu_channel_ctx_mgr_v1.cc
+    ccu_wqebb_mgr_v1.cc
 )
 
 if(TARGET hcomm)

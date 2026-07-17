@@ -112,7 +112,7 @@ extern uint64_t HcommGetProfilingSysCycleTime()
 {
     DevType devType = DevType::DEV_TYPE_COUNT;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType != DevType::DEV_TYPE_950) {
+    if (devType != DevType::DEV_TYPE_950 && devType != DevType::DEV_TYPE_960) {
         return hrtMsprofSysCycleTime();
     }
     return Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();

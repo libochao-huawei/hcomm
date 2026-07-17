@@ -26,12 +26,28 @@ set(src_to_test_list
     ./ccu_representation/interface/ut_ccu_interface_assist.cc
     ./ccu_device/ut_ccu_res_batch_allocator.cc
     ./ccu_device/ccu_comp/ccu_channel/ccu_pfe/ut_ccu_pfe_cfg_mgr.cc
+    ./ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v2/ut_ccu_wqebb_mgr_v2.cc
+    ./ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v2/ut_ccu_jetty_ctx_mgr_v2.cc
+    ./ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v2/ut_ccu_channel_ctx_mgr_v2.cc
+    ./ccu_device/ccu_comp/ut_ccu_res_allocator.cc
+    ./ccu_device/ut_ccu_res_specs.cc
+    ./ut_ccu_transport_test.cc
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
 
 #头文件搜索路径
+# base_comm 的 ccu_channel 等路径需置于 legacy 之前，避免同名头文件（ccu_wqebb_mgr.h/ccu_jetty_ctx_mgr.h）被 legacy 版本覆盖
 target_include_directories(hccl_utest_comms_ccu_features PRIVATE
+    BEFORE
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/pub_inc/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v2/
+    ${HCCL_CODE_ROOT}/src/base_comm/resources/ccu/ccu_transport/
     ${UT_COMMON_INCLUDE_LIST}
     ${HCOMM_DIR}/pkg_inc/hcomm/ccu
 )
