@@ -52,7 +52,7 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
 
     aclError ret = aclrtSetDevice(params->deviceId);
     if (ret != ACL_SUCCESS) {
-        HCCL_ERROR("[%s] set device fail. DeviceId: %d.", __func__, params->deviceId);
+        HCCL_ERROR("[%s] set device fail. DeviceId: %u.", __func__, params->deviceId);
         return HCCL_E_RUNTIME;
     }
 

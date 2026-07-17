@@ -186,7 +186,7 @@ std::vector<hcclOpInfo> sortGroupTasks(const std::deque<hcclOpInfo>& tasks)
                op.coll == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V;
     };
     auto itV = std::stable_partition(sorted.begin(), sorted.end(),
-        [&](const hcclOpInfo& op) { return !isVariant(op); });
+        [&isVariant](const hcclOpInfo& op) { return !isVariant(op); });
     std::stable_sort(sorted.begin(), itV,
         [](const hcclOpInfo& a, const hcclOpInfo& b) {
             return calcOpDataVolume(a) > calcOpDataVolume(b);

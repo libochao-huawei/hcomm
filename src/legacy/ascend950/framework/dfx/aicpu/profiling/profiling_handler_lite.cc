@@ -280,7 +280,7 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo *it, MsprofAicpuHcc
     taskDetailsInfos.workFlowMode      = static_cast<uint32_t>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
 }
 
-void ProfilingHandlerLite::DumpTaskDetails(const MsprofAicpuHcclTaskInfo &taskDetailsInfos, const TaskInfo *taskInfo) const
+void ProfilingHandlerLite::DumpTaskDetails([[maybe_unused]] const MsprofAicpuHcclTaskInfo &taskDetailsInfos, const TaskInfo *taskInfo) const
 {
     HCCL_INFO("[ProfilingHandlerLite] DumpTaskDetails %s", taskInfo->Describe().c_str());
 }

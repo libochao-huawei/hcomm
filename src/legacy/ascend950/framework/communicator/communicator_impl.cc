@@ -511,12 +511,11 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
         (void)memcpy_s(&ccuParams[0].args[1], sizeof(ccuParams[0].args[1]), &opParams.recvBuf,
                     sizeof(ccuParams[0].args[1]));
     }
+
     auto vector_zero_count = params.count[0];
-
     auto &opbaseStream = GetStreamManager().opbase;
-    auto  mStream      = params.isSlave ? opbaseStream->GetSlave(slaveIndex)->GetPtr() : stream;
-    u32   streamNum    = params.count.size();
-
+    auto mStream = params.isSlave ? opbaseStream->GetSlave(slaveIndex)->GetPtr() : stream;
+    u32 streamNum = params.count.size();
     if (streamNum > 1) {
         timeout = notifyTimeoutCfg.GetNotifyTimeout();
         mStreamId = params.isSlave ? opbaseStream->GetSlave(slaveIndex++)->GetId() : HrtGetStreamId(mStream);
@@ -3492,7 +3491,7 @@ HcclResult CommunicatorImpl::AllocAndRegKFCWorkSpace(uint64_t size, const std::s
     int32_t deviceLogicId = 0;
     aclError aclRet = aclrtGetLogicDevIdByUserDevId(devLogicId, &deviceLogicId);  // userDevId 转 logicDevId
     if (aclRet != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] aclrtGetLogicDevIdByUserDevId failed, devLogicId: %d, ret: %d", __func__, devLogicId, aclRet);
+        HCCL_ERROR("[CommunicatorImpl::%s] aclrtGetLogicDevIdByUserDevId failed, devLogicId: %u, ret: %d", __func__, devLogicId, aclRet);
         return HCCL_E_RUNTIME;
     }
     CHK_RET(HrtHalGetDeviceInfo(deviceLogicId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, it->second.connectType_));
@@ -3528,7 +3527,7 @@ HcclResult CommunicatorImpl::AllocAndRegKFCWorkSpace(uint64_t size, const std::s
         it->second.accessVA_ = nullptr;
         return ret;
     }
-    HCCL_INFO("CommunicatorImpl::AllocAndRegKFCWorkSpace va_[0x%llx], accessVA_[0x%llx]", it->second.va_, it->second.accessVA_);
+    HCCL_INFO("CommunicatorImpl::AllocAndRegKFCWorkSpace va_[%p], accessVA_[%p]", it->second.va_, it->second.accessVA_);
     return HCCL_SUCCESS;
 }
 
@@ -3573,7 +3572,7 @@ HcclResult CommunicatorImpl::DestroyKFCWorkSpaceVA()
         int32_t deviceLogicId = 0;
         aclError aclRet = aclrtGetLogicDevIdByUserDevId(devLogicId, &deviceLogicId); // userDevId 转 logicDevId
         if (aclRet != ACL_SUCCESS) {
-            HCCL_ERROR("[CommunicatorImpl::%s] aclrtGetLogicDevIdByUserDevId failed, devLogicId: %d, ret: %d", __func__, devLogicId, aclRet);
+            HCCL_ERROR("[CommunicatorImpl::%s] aclrtGetLogicDevIdByUserDevId failed, devLogicId: %u, ret: %d", __func__, devLogicId, aclRet);
             return HCCL_E_RUNTIME;
         }
 
