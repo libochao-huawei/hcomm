@@ -115,7 +115,7 @@ public:
     FakeSocket(Hccl::SocketStatus status = Hccl::SocketStatus::OK) :
         Hccl::Socket(nullptr, Hccl::IpAddress(), 0, Hccl::IpAddress(), "fake", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE),
         status_(status) {}
-    void SendAsync(const u8 *sendBuf, u32 size) { sent_.insert(sent_.end(), sendBuf, sendBuf + size); }
+    void SendAsync(const void *sendBuf, u32 size) { auto *p = static_cast<const u8 *>(sendBuf); sent_.insert(sent_.end(), p, p + size); }
     void RecvAsync(u8 *recvBuf, u32 size) {
         if (recvBuf && size) {
             if (!sent_.empty()) {
@@ -221,12 +221,13 @@ TEST_F(AicpuTsUbgChannelTest, Ut_BuildConnection_Creates_UbgConn) {
     ASSERT_NE(conn, nullptr);
 }
 
-static void stub_Socket_SendAsync(Hccl::Socket *self, const u8 *sendBuf, u32 size)
+static void stub_Socket_SendAsync(Hccl::Socket *self, const void *sendBuf, u32 size)
 {
     if (!self || !sendBuf || size == 0) return;
     auto *fs = dynamic_cast<FakeSocket *>(self);
     if (fs) {
-        fs->sent_.insert(fs->sent_.end(), sendBuf, sendBuf + size);
+        auto *p = static_cast<const u8 *>(sendBuf);
+        fs->sent_.insert(fs->sent_.end(), p, p + size);
     }
 }
 
@@ -251,7 +252,7 @@ TEST_F(AicpuTsUbgChannelTest, Ut_ProcessUbgState_AllStates_Transitions) {
     EndpointHandle ep = reinterpret_cast<EndpointHandle>(&fe);
     auto fakeSock = std::make_unique<FakeSocket>();
 
-    MOCKER_CPP(&Hccl::Socket::SendAsync, void(Hccl::Socket::*)(const u8 *, u32))
+    MOCKER_CPP(&Hccl::Socket::SendAsync, void(Hccl::Socket::*)(const void *, u32))
         .stubs()
         .with(any(), any())
         .will(invoke(stub_Socket_SendAsync));
@@ -305,7 +306,7 @@ TEST_F(AicpuTsUbgChannelTest, Ut_SendFinish_RecvFinish_NoCrash) {
     auto fakeSock = std::make_unique<FakeSocket>();
     HcommChannelDesc desc = MakeFakeChannelDesc(fakeSock.get());
 
-    MOCKER_CPP(&Hccl::Socket::SendAsync, void(Hccl::Socket::*)(const u8 *, u32))
+    MOCKER_CPP(&Hccl::Socket::SendAsync, void(Hccl::Socket::*)(const void *, u32))
         .stubs()
         .with(any(), any())
         .will(invoke(stub_Socket_SendAsync));

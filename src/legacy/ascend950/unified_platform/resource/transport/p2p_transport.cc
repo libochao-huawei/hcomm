@@ -187,7 +187,7 @@ void P2PTransport::SendPid()
     std::vector<char> data;
     binaryStream.Dump(data);
     pidMsgSize = data.size();
-    socket->SendAsync(reinterpret_cast<u8 *>(&data[0]), data.size());
+    socket->SendAsync(&data[0], data.size());
 
     HCCL_INFO("send pid %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), data.size(),
                Bytes2hex(data.data(), data.size()).c_str());
@@ -228,7 +228,7 @@ void P2PTransport::PrepareSendData()
     sendData.clear();
     binaryStream.Dump(sendData);
     exchangeDataSize = sendData.size();
-    socket->SendAsync(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
+    socket->SendAsync(&exchangeDataSize, sizeof(exchangeDataSize));
 
     HCCL_INFO("send datasize %s, size=%u", GetLinkDescInfo().c_str(), exchangeDataSize);
 }
@@ -241,7 +241,7 @@ void P2PTransport::RecvDataSize()
 
 void P2PTransport::SendExchangeData()
 {
-    socket->SendAsync(reinterpret_cast<u8 *>(&sendData[0]), sendData.size());
+    socket->SendAsync(&sendData[0], sendData.size());
     HCCL_INFO("send data %s, size=%llu, data=0x%s", GetLinkDescInfo().c_str(), sendData.size(),
                Bytes2hex(sendData.data(), sendData.size()).c_str());
 }

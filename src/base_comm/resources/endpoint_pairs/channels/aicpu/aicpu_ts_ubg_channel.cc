@@ -84,7 +84,7 @@ void AicpuTsUbgChannel::SendFinish()
 {
     HCCL_INFO("start send Finish Msg [%s]", UBG_FINISH_MSG);
     sendFinishMsg_ = std::vector<char>(UBG_FINISH_MSG, UBG_FINISH_MSG + FINISH_MSG_SIZE);
-    socket_->SendAsync(reinterpret_cast<u8 *>(sendFinishMsg_.data()), FINISH_MSG_SIZE);
+    socket_->SendAsync(sendFinishMsg_.data(), FINISH_MSG_SIZE);
     HCCL_INFO("end send Finish Msg [%s]", UBG_FINISH_MSG);
 }
 

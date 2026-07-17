@@ -277,7 +277,7 @@ void AicpuTsUboeUbgChannelHelper::SendDataSize()
     u32 sendSize = sendData_.size();
 
     // 发送数据包尺寸
-    socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    socket_->SendAsync(&sendSize, sizeof(sendSize));
     HCCL_INFO("[AicpuTsUboeUbgChannelHelper::%s] Send size[%u] of data success. [%zu] bytes sent.",
         __func__, sendSize, sizeof(sendSize));
 }
@@ -291,7 +291,7 @@ void AicpuTsUboeUbgChannelHelper::RecvDataSize()
 
 void AicpuTsUboeUbgChannelHelper::SendExchangeData()
 {
-    socket_->SendAsync(reinterpret_cast<u8 *>(sendData_.data()), sendData_.size());
+    socket_->SendAsync(sendData_.data(), sendData_.size());
     HCCL_INFO("[AicpuTsUboeUbgChannelHelper::%s] send data, size=%llu", __func__, sendData_.size());
 }
 
