@@ -188,7 +188,7 @@ bool IsMC2Exception(const rtExceptionInfo_t* exceptionInfo)
            exceptionInfo->expandInfo.u.fusionInfo.type == RT_FUSION_AICORE_CCU;
 }
 
-bool TaskExceptionHost::ProcessDpuException(rtExceptionInfo_t* exceptionInfo)
+bool TaskExceptionHost::ProcessDpuException(const rtExceptionInfo_t* exceptionInfo) const
 {
     HCCL_RUN_INFO("[TaskExceptionHost][%s]begin to execute hccl task exception callback function.", __func__);
     bool isExce = false;

@@ -64,7 +64,7 @@ private:
     void GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo);
     void GetAicpuCqeErrRemoteLocalIdByRankId(hccl::CollComm* collComm, uint32_t rankid, u32 &remoteLocalId) const;
     void GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collComm, uint32_t rankid, std::string &netInstanceId) const;
-    bool ProcessDpuException(rtExceptionInfo_t* exceptionInfo);
+    bool ProcessDpuException(const rtExceptionInfo_t* exceptionInfo) const;
 
 private:
     std::mutex taskExceptionMutex_;
