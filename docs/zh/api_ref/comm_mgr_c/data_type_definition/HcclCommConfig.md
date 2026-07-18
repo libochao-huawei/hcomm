@@ -201,7 +201,7 @@ typedef struct HcclCommConfigDef {
 
   **注意事项：**
 
-  0xFFFFFFFF被用作优先级判断标识，当配置为0xFFFFFFFF时，此通信域配置无效，会按照优先级取环境变量配置或默认值132。
+  - 0xFFFFFFFF被用作优先级判断标识，当配置为0xFFFFFFFF时，此通信域配置无效，会按照优先级取环境变量配置或默认值132。
 
 - **hcclRdmaServiceLevel**：配置RDMA网卡的service level，取值需要和网卡配置的PFC优先级保持一致，若配置不一致可能导致性能劣化。
 
@@ -209,13 +209,17 @@ typedef struct HcclCommConfigDef {
 
   **注意事项：**
 
-  0xFFFFFFFF被用作优先级判断标识，当配置为0xFFFFFFFF时，此通信域配置无效，会按照优先级取环境变量配置或默认值4。
+  - 0xFFFFFFFF被用作优先级判断标识，当配置为0xFFFFFFFF时，此通信域配置无效，会按照优先级取环境变量配置或默认值4。
 
 - **hcclWorldRankID**：NSLB-DP（Network Scale Load Balance-Data Plane：数据面网络级负载均衡）场景使用字段，代表当前进程在AI框架（如Pytorch）中的全局rank ID。
-- **hcclJobID：**NSLB-DP场景使用字段，代表当前分布式业务的唯一标识，由AI框架生成。
+- **hcclJobID**：NSLB-DP场景使用字段，代表当前分布式业务的唯一标识，由AI框架生成。
 - **aclGraphZeroCopyEnable**：该参数仅在图捕获模式（aclgraph）下对Reduce类算子生效，用于控制其是否开启零拷贝功能。
   - 0（默认值）：关闭零拷贝功能。
   - 1：开启零拷贝功能。
+
+  **注意事项：**
+
+  - Ascend 950PR/Ascend 950DT不支持此配置。
 
 - **hcclExecTimeOut**：不同设备进程在分布式训练或推理过程中存在卡间执行任务不一致的场景（如仅特定进程会保存checkpoint数据），通过该参数可控制设备间执行时同步等待的时间，在该配置时间内各设备进程等待其他设备执行通信同步。单位为s，取值范围和针对不同产品类型的使用约束请参见环境变量[HCCL_EXEC_TIMEOUT](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_EXEC_TIMEOUT.md)。
 
@@ -230,13 +234,10 @@ typedef struct HcclCommConfigDef {
 
   **注意事项：**
 
-  0xFFFFFFFF被用作优先级判断标识，当配置为0xFFFFFFFF时，此通信域配置无效，会按照优先级取环境变量配置或默认值1836。
+  - 0xFFFFFFFF被用作优先级判断标识，当配置为0xFFFFFFFF时，此通信域配置无效，会按照优先级取环境变量配置或默认值1836。
+  - Ascend 950PR/Ascend 950DT不支持此配置，可通过HCCL_EXEC_TIMEOUT环境变量配置全局超时时间。
 
 - **hcclAlgo**：用于配置集合通信Server间通信算法以及超节点间通信算法，支持全局配置算法类型与按算子配置算法类型两种配置方式。需注意，HCCL提供自适应算法选择功能，默认会根据产品形态、数据量和Server个数选择合适的算法，一般情况下用户无需手工指定。若通过此参数指定了Server间通信算法，则自适应算法选择功能不再生效。
-
-  **注意事项：**
-
-  Ascend 950PR/Ascend 910DT不支持此配置，可通过HCCL_ALGO环境变量配置全局通信算法。
 
   配置方式的参数信息及针对不同产品类型支持的算法类型请参见环境变量[HCCL_ALGO](https://gitcode.com/cann/hccl/blob/master/docs/zh/user_guide/hccl_env/HCCL_ALGO.md)，配置方式如下：
 
@@ -252,6 +253,10 @@ typedef struct HcclCommConfigDef {
     # AllReduce算子使用Ring算法，AllGather算子使用RHD算法，其他算子根据产品形态、节点数以及数据量自动选择通信算法。
     hcclAlgo = "allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R"
     ```
+
+  **注意事项：**
+
+  - Ascend 950PR/Ascend 950DT不支持此配置，可通过HCCL_ALGO环境变量配置全局通信算法。
 
 - **hcclRetryEnable**：用于配置是否开启HCCL算子的重执行特性。重执行是指当通信算子执行报SDMA或者RDMA CQE类型的错误时，HCCL会尝试重新执行此通信算子。**仅支持在Atlas A3 训练系列产品/Atlas A3 推理系列产品上使用。**
 
@@ -269,6 +274,11 @@ typedef struct HcclCommConfigDef {
   - IntervalTime：同一个通信算子两次重执行的间隔时间，uint32类型，取值范围\[0,60000\]，默认值为1000，单位ms。
 
 - **hcclBufferName**：CCLBuffer名称，多通信域使用同一Buffer名称，共享同一片CCLBuffer，不指定时默认不共享，最大长度为128。需注意，传入同一CCLBuffer名称的通信域，需将算子下发到同一条Stream上。
+
+  **注意事项：**
+
+  - Ascend 950PR/Ascend 950DT不支持此配置。
+
 - **hcclQos**：用于配置超平面QoS的级别，取值范围：0\~7，默认值6。
 - **hcclSymWinMaxMemSizePerRank**：Atlas A3 训练系列产品/Atlas A3 推理系列产品的HCCS场景下，为当前通信域中每个rank预留的对称内存大小，单位GB，取值范围：\[1, 当前环境中允许分配的物理内存最大值\]，默认值16。该参数仅在Atlas A3 训练系列产品/Atlas A3 推理系列产品的HCCS场景下生效。Ascend 950PR/Ascend 950DT的URMA场景使用已申请的Device内存注册对称内存窗口，不依赖该参数配置预留的对称内存大小。
 
