@@ -228,7 +228,7 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
                 "notifyId=%u.", ret, userStreamId, notifyId);
         return HCCL_E_DRV;
     }
-    HCCL_RUN_INFO("[SendTaskExceptionByMBox]Send msg async to ts fininsh. streamId=%d, notifyId=%u, msg_size=%u, "
+    HCCL_RUN_INFO("[SendTaskExceptionByMBox]Send msg async to ts finished. streamId=%d, notifyId=%u, msg_size=%u, "
         "hostpid=%u, vf_id=%u, errCode=%u.", userStreamId, notifyId,
         static_cast<uint32_t>(sizeof(ts_aicpu_msg_info_t)),  hostpid, vf_id, exceptionInfo->errorCode);
     return HCCL_SUCCESS;

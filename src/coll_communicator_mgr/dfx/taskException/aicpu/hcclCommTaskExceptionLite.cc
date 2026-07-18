@@ -522,7 +522,7 @@ HcclResult HcclCommTaskExceptionLite::SendTaskExceptionByMBox(const u32 notifyId
             __func__, ret, notifyId, hostpid, vfId, tsId);
         return HCCL_E_DRV;
     }
-    HCCL_RUN_INFO("[%s]fininsh, notifyId=%u, hostpid=%u, vfId=%u, tsId=%u, errorType=%u, errorCode=%u, ret_code=%u",
+    HCCL_RUN_INFO("[%s]finished, notifyId=%u, hostpid=%u, vfId=%u, tsId=%u, errorType=%u, errorCode=%u, ret_code=%u",
         __func__, notifyId, hostpid, vfId, tsId, exceptionInfo.errorType, exceptionInfo.errorCode,
         aicpuSqe.u.aicpu_record.ret_code);
     return HCCL_SUCCESS;

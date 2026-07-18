@@ -187,7 +187,7 @@ HcclResult MyRank::TryInitCcuInstance()
         // 其余模式资源不足回退至aicpu ts
         opExpansionMode_ = AICPU_TS_MODE;
         ccuInsHandle_ = 0;
-        HCCL_RUN_WARNING("[MyRank][%s] ccu resouces are unavailable, "
+        HCCL_RUN_WARNING("[MyRank][%s] ccu resources are unavailable, "
             "fallback to aicpu, rankId[%u].", __func__, rankId_);
         return HcclResult::HCCL_SUCCESS;
     }

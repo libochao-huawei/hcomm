@@ -145,7 +145,7 @@ HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
     } else {
         bool hasFound = DeleteCommIdByDispatcherCtx(ctx);
         if (!hasFound) {
-            HCCL_WARNING("[DestroyCtx] ctx[%p] not found by commId[%s], it may have be destroied", ctx, commId);
+            HCCL_WARNING("[DestroyCtx] ctx[%p] not found by commId[%s], it may have been destroyed", ctx, commId);
             return HCCL_SUCCESS;
         }
         HCCL_WARNING("[DestroyCtx] ctx[%p] not found by commId[%s], just destroy", ctx, commId);
