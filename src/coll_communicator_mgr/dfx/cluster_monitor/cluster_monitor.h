@@ -180,7 +180,7 @@ public:
     static ClusterMonitor& GetInstance(u32 deviceId);
     void GetCqeErrInfoFromTaskException(u32 remoteLocalId, uint16_t status, std::string localEid, std::string remoteEid, std::string remoteInsId);
     std::vector<std::string> GetErrStatusVecFromCluserMonitor();
-    std::vector<std::string> PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents);
+    std::vector<std::string> PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents) const;
     void MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std::vector<std::string> &errStatusVec) const;
     ClusterMonitor() = default;
     ~ClusterMonitor();

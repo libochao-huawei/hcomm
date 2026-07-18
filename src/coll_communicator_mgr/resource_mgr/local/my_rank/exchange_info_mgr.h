@@ -45,7 +45,7 @@ public:
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
         const std::vector<HcommSocketRole> &roles,
-        CollCommConfigConsistency &collCommConfigConsistency);
+        CollCommConfigConsistency &collCommConfigConsistency) const;
     HcclResult ExchangeUserInfoAsync(
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,
@@ -56,7 +56,7 @@ public:
         const std::vector<u32> &remoteRanks,
         const std::vector<HcommSocketRole> &roles,
         const u8 *sendData, u32 sendLen,
-        u8 *recvData, u32 recvLen, bool isAsync);
+        u8 *recvData, u32 recvLen, bool isAsync) const;
     HcclResult WaitAllAsyncComplete(const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks) const;
     HcclResult WaitActiveAsyncComplete(
@@ -65,7 +65,7 @@ public:
         const std::vector<HcommSocketRole> &roles,
         const std::vector<u32> &remoteExchangeInfoLens,
         u32 localExchangeInfoLen,
-        bool isFirstPass);
+        bool isFirstPass) const;
 };
 } // namespace hccl
 

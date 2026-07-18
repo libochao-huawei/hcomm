@@ -58,7 +58,7 @@ static int32_t MsprofReportApiStub(uint32_t agingFlag, const MsprofApi *api)
     return 0;
 }
  
-static int32_t MsprofReportCompactInfoStub(uint32_t agingFlag, const VOID_PTR data, uint32_t length)
+static int32_t MsprofReportCompactInfoStub(uint32_t agingFlag, const void *data, uint32_t length)
 {
     UNUSED(agingFlag);
     UNUSED(data);
@@ -67,7 +67,7 @@ static int32_t MsprofReportCompactInfoStub(uint32_t agingFlag, const VOID_PTR da
     return 0;
 }
  
-static int32_t MsprofReportAdditionalInfoStub(uint32_t agingFlag, const VOID_PTR data, uint32_t length)
+static int32_t MsprofReportAdditionalInfoStub(uint32_t agingFlag, const void *data, uint32_t length)
 {
     UNUSED(agingFlag);
     UNUSED(data);
@@ -76,7 +76,7 @@ static int32_t MsprofReportAdditionalInfoStub(uint32_t agingFlag, const VOID_PTR
     return 0;
 }
 
-static int32_t MsprofReportBatchAdditionalInfoStub(uint32_t agingFlag, const VOID_PTR data, uint32_t length)
+static int32_t MsprofReportBatchAdditionalInfoStub(uint32_t agingFlag, const void *data, uint32_t length)
 {
     UNUSED(agingFlag);
     UNUSED(data);
@@ -104,9 +104,9 @@ void DlProfFunction::DlProfFunctionStubInit()
     dlMsprofRegisterCallback = static_cast<int32_t(*)(uint32_t, ProfCommandHandle)>(MsprofRegisterCallbackStub);
     dlMsprofRegTypeInfo = static_cast<int32_t(*)(uint16_t, uint32_t, const char *)>(MsprofRegTypeInfoStub);
     dlMsprofReportApi = static_cast<int32_t(*)(uint32_t, const MsprofApi *)>(MsprofReportApiStub);
-    dlMsprofReportCompactInfo = static_cast<int32_t(*)(uint32_t, const VOID_PTR, uint32_t)>(MsprofReportCompactInfoStub);
-    dlMsprofReportAdditionalInfo = static_cast<int32_t(*)(uint32_t, const VOID_PTR, uint32_t)>(MsprofReportAdditionalInfoStub);
-    dlMsprofReportBatchAdditionalInfo = static_cast<int32_t(*)(uint32_t, const VOID_PTR, uint32_t)>(MsprofReportBatchAdditionalInfoStub);
+    dlMsprofReportCompactInfo = static_cast<int32_t(*)(uint32_t, const void *, uint32_t)>(MsprofReportCompactInfoStub);
+    dlMsprofReportAdditionalInfo = static_cast<int32_t(*)(uint32_t, const void *, uint32_t)>(MsprofReportAdditionalInfoStub);
+    dlMsprofReportBatchAdditionalInfo = static_cast<int32_t(*)(uint32_t, const void *, uint32_t)>(MsprofReportBatchAdditionalInfoStub);
     dlMsprofStr2Id = static_cast<uint64_t(*)(const char *, uint32_t)>(MsprofStr2IdStub);
     dlMsprofSysCycleTime = static_cast<uint64_t(*)(void)>(MsprofSysCycleTimeStub);
 }

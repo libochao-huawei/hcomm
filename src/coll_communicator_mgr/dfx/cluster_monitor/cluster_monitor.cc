@@ -930,7 +930,7 @@ void ClusterMonitor::MakeErrMsg(std::queue<ClusterMonitorFrame> &keyEvents, std:
     }
 }
 
-std::vector<std::string> ClusterMonitor::PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents)
+std::vector<std::string> ClusterMonitor::PrintEvents(std::map<ClusterMonitorStatus, std::queue<ClusterMonitorFrame>> &keyEvents) const
 {
     std::vector<std::string> errStatusVec;
     // 打印优先级 opretry not support > error cqe > stuck > lost

@@ -144,7 +144,7 @@ HcclResult ExchangeInfoMgr::ExchangeUserInfo(
     const std::vector<Hccl::Socket*> &sockets,
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
-    hccl::CollCommConfigConsistency &collCommConfigConsistency)
+    hccl::CollCommConfigConsistency &collCommConfigConsistency) const
 {
     (void)roles;
 
@@ -249,7 +249,7 @@ HcclResult ExchangeInfoMgr::BatchExchangeFixedData(
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
     const u8 *sendData, u32 sendLen,
-    u8 *recvData, u32 recvLen, bool isAsync)
+    u8 *recvData, u32 recvLen, bool isAsync) const
 {
     if (!isAsync) {
         // 确保 Socket 连接完成
@@ -341,7 +341,7 @@ HcclResult ExchangeInfoMgr::WaitActiveAsyncComplete(
     const std::vector<HcommSocketRole> &roles,
     const std::vector<u32> &remoteExchangeInfoLens,
     u32 localExchangeInfoLen,
-    bool isFirstPass)
+    bool isFirstPass) const
 {
     std::vector<Hccl::Socket*> activeSockets;
     std::vector<u32> activeRanks;

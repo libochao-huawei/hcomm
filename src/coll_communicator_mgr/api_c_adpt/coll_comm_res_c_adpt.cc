@@ -419,7 +419,7 @@ static HcclResult AppendSymmetricMemHandles(hccl::CollComm *collComm,
     return HCCL_SUCCESS;
 }
 
-static HcclResult UpdateSymmetricRemoteMems(hccl::CollComm *collComm, hccl::MyRank *myRank,
+static HcclResult UpdateSymmetricRemoteMems(hccl::CollComm *collComm, const hccl::MyRank *myRank,
     const std::vector<HcclChannelDesc> &channelDescFinals, const ChannelHandle *channels, uint32_t channelNum)
 {
     CHK_PTR_NULL(collComm);

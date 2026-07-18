@@ -3608,8 +3608,8 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLTOALL;
-        info.sendbuff = sendBuf;
-        info.recvbuff = recvBuf;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
         info.sendCount = sendCount;
         info.recvCount = recvCount;
         info.sendType = sendType;
@@ -3725,8 +3725,8 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLTOALLV;
-        info.sendbuff = sendBuf;
-        info.recvbuff = recvBuf;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
         info.sendCounts = sendCounts;
         info.recvCounts = recvCounts;
         info.sdispls = sdispls;
@@ -3852,8 +3852,8 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLTOALLVC;
-        info.sendbuff = sendBuf;
-        info.recvbuff = recvBuf;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
         info.sendCounts = sendCountMatrix;
         info.sendType = sendType;
         info.recvType = recvType;
@@ -3987,8 +3987,8 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_REDUCE;
-        info.sendbuff = sendBuf;
-        info.recvbuff = recvBuf;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
         info.sendCount = count;
         info.sendType = dataType;
         info.recvType = dataType;

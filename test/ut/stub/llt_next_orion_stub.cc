@@ -2047,7 +2047,7 @@ HcclResult ProfilingReporter::Init()
     return HCCL_SUCCESS;
 }
 
-void ProfilingReporter::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
+void ProfilingReporter::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo) const
 {
 }
 

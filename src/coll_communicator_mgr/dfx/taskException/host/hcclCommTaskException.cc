@@ -151,7 +151,7 @@ HcclResult TaskExceptionHost::UnRegister(u64 commHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle) const
+HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, const RdmaHandle rdmaHandle) const
 {
     HCCL_INFO("[PrintUbRegister] start, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
     Hccl::AuxInfoIn in;
@@ -342,7 +342,7 @@ void TaskExceptionHost::GetAicpuCqeErrNetInstanceByRankId(hccl::CollComm* collCo
     return;
 }
 
-void TaskExceptionHost::GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo)
+void TaskExceptionHost::GetAicpuCqeErrInfo(rtExceptionInfo_t* exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo& taskInfo) const
 {
     hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     u32 remoteLocalId = INVALID_VALUE_RANKID;
@@ -370,7 +370,7 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
     }
 }
 
-void TaskExceptionHost::HandleHostErrorReport(rtExceptionInfo_t *exceptionInfo, const Hccl::TaskInfo &taskInfo)
+void TaskExceptionHost::HandleHostErrorReport(rtExceptionInfo_t *exceptionInfo, const Hccl::TaskInfo &taskInfo) const
 {
     HCCL_ERROR("[TaskExceptionHost][%s]Task from HCCL run failed.", __func__);
     if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
@@ -469,7 +469,7 @@ inline void PrintGroupErrorLog(const std::string &stageErrInfo, const std::strin
     HCCL_ERROR("%sTask run failed, groupRank information is %s.", stageErrInfo.c_str(), groupRankContent.c_str());
 }
 
-void TaskExceptionHost::PrintGroupErrorMessage(const Hccl::ErrorMessageReport &errorMessage, [[maybe_unused]] Hccl::TaskInfo &exceptionTaskInfo,
+void TaskExceptionHost::PrintGroupErrorMessage(const Hccl::ErrorMessageReport &errorMessage, [[maybe_unused]] const Hccl::TaskInfo &exceptionTaskInfo,
     std::string &groupRankContent, std::string &stageErrInfo) const
 {
     groupRankContent += "group:[";
@@ -578,7 +578,7 @@ void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, const Hccl::ErrorM
 }
 
 void TaskExceptionHost::ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, [[maybe_unused]] const std::string &groupRankContent,
-    const Hccl::ErrorMessageReport &errorMessage, rtExceptionInfo_t *exceptionInfo)
+    const Hccl::ErrorMessageReport &errorMessage, rtExceptionInfo_t *exceptionInfo) const
 {
     HCCL_RUN_INFO("[ReportErrorMsg] start, taskType[%d]", exceptionTaskInfo.taskParam_.taskType);
 
@@ -706,7 +706,7 @@ void TaskExceptionHost::HandleAicpuErrorReport(rtExceptionInfo_t *exceptionInfo,
     }
 }
 
-void TaskExceptionHost::PrintUbDfxInfo(rtExceptionInfo_t *exceptionInfo, const Hccl::ErrorMessageReport &errorMessage)
+void TaskExceptionHost::PrintUbDfxInfo(rtExceptionInfo_t *exceptionInfo, const Hccl::ErrorMessageReport &errorMessage) const
 {
     if (errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY ||
         errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY ||
