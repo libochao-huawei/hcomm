@@ -7,10 +7,31 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "host_rdma.h"
-#include "pcie_nic.h"
 
-int GetNpuHostRdmaIp(int npu_id, char* ip_addr, size_t ip_addr_len)
-{
-    return GetNpuRoceIp(npu_id, ip_addr, ip_addr_len);
+#ifndef NPU_NIC_AFFINITY_H
+#define NPU_NIC_AFFINITY_H
+
+#include <stddef.h>
+#include "topo_addr_info_err.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * 从 virtualTopology.xml 获取指定 NPU 的 RoCE IP。
+ *
+ * 解析 XML → 构建 NPU-NIC 亲和矩阵 → 轮询匹配 → HCA名 → eth → getifaddrs → IP
+ *
+ * @param npuId  NPU 物理 ID
+ * @param ip     输出 IP 字符串
+ * @param ipLen  缓冲区大小
+ * @return HCCL_SUCCESS=成功, 其他=错误码
+ */
+TopoAddrResult GetRoceIpFromXml(int npuId, char *ip, size_t ipLen);
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* NPU_NIC_AFFINITY_H */

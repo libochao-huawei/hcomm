@@ -14,14 +14,15 @@ project(topoaddrinfo VERSION 1.0.0 DESCRIPTION "topo addr info generator")
 add_library(topoaddrinfo SHARED
     src/hal.c
     src/topo.c
-    src/host_rdma.c
-    src/pcie_nic.c
     src/eid_util.c
     src/rank_info_types.c
     src/topo_addr_info.c
     src/product_card.c
     src/product_server.c
     src/product_pod.c
+    src/npu_nic_affinity.c
+    src/xml_parser.c
+    src/topo_addr_info_log.c
 )
 
 target_compile_options(topoaddrinfo PRIVATE

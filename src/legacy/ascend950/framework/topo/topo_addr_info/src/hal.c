@@ -323,6 +323,14 @@ int hal_get_logicid_from_phyid(unsigned int phyId, unsigned int* logicId)
     return 0;
 }
 
+int hal_get_userdevid_by_phyid(int phyId, int *userDevId)
+{
+    if (load_dcmi() != 0) {
+        return -1;
+    }
+    return aclrtGetUserDevIdByPhyDevId(phyId, userDevId);
+}
+
 // 去除字符串首尾的空白字符
 static char* trim_whitespace(char *str) {
     char *end;

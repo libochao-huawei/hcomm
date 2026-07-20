@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include "hal.h"
 #include "topo.h"
+#include "topo_addr_info_perf.h"
 #include "product_card.h"
 #include "product_server.h"
 #include "product_pod.h"
@@ -148,17 +149,22 @@ static int PassThrough(char *rankInfo, size_t *bufSize)
 
 int TopoAddrInfoGet(int phyId, char* rankInfo, size_t *bufSize)
 {
+    TopoLogInit();  /* 懒初始化日志，全部下游共用 */
+    TOPO_PERF_BEGIN(TopoAddrInfoGet);
     if (rankInfo == NULL || bufSize == NULL) {
+        TOPO_PERF_END(TopoAddrInfoGet);
         return -1;
     }
     // 优先读取/etc/hccl_rootinfo.json中内容
     if (PassThrough(rankInfo, bufSize) == 0) {
+        TOPO_PERF_END(TopoAddrInfoGet);
         return 0;
     }
     // 若/etc/hccl_rootinfo.json中无内容，根据mainboard_id生成rootinfo
     uint32_t mainboard_id = 0;
     int ret = hal_get_mainboard_id(phyId, &mainboard_id);
     if (ret != 0) {
+        TOPO_PERF_END(TopoAddrInfoGet);
         return ret;
     }
 
@@ -169,5 +175,6 @@ int TopoAddrInfoGet(int phyId, char* rankInfo, size_t *bufSize)
             break;
         }
     }
+    TOPO_PERF_END(TopoAddrInfoGet);
     return ret;
 }

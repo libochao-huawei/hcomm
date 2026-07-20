@@ -101,6 +101,8 @@ int hal_get_npu_count();
 
 int hal_get_logicid_from_phyid(unsigned int phyId, unsigned int* logicId);
 
+int hal_get_userdevid_by_phyid(int phyId, int *userDevId);
+
 int get_server_id(char* server_id, size_t buf_size);
 
 int hal_get_driver_install_path(char *value_buf, size_t buf_size);

@@ -10,7 +10,6 @@
 #include <dlfcn.h>
 #include "securec.h"
 #include "topo_addr_info.h"
-#include "pcie_nic.h"
 #include "hal.h"
 #include "hal.h"
 
