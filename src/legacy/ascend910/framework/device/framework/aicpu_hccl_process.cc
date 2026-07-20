@@ -28,7 +28,7 @@ using namespace hccl;
 using namespace HcclApi;
 namespace {
 struct hcclCommAicpuInfo {
-    ReadWriteLockBase commAicpuMapMutex;  // 读写锁单例，维护全局的读写信息
+    std::shared_mutex commAicpuMapMutex;  // 维护全局的读写信息
     std::unordered_map<std::string, std::pair<std::shared_ptr<hccl::HcclCommAicpu>, std::atomic_bool>> commMap;
 };
 hcclCommAicpuInfo g_commAicpuInfo;
@@ -192,31 +192,27 @@ u32 AicpuHcclProcess::AicpuRpcResInitV2(HcclOpResParam *commParam, bool isCustom
 
 HcclResult AicpuHcclProcess::AcquireAicpuComm(const std::string &group, HcclCommAicpu **aicpuCommPtr)
 {
-    ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMapMutex);
-    rwlock.writeLock();
-    
+    std::unique_lock<std::shared_mutex> rwlock(g_commAicpuInfo.commAicpuMapMutex);
+
     // 查找是否已存在该group的通信实例
     auto iter = g_commAicpuInfo.commMap.find(group);
     if (iter != g_commAicpuInfo.commMap.end()) {
         *aicpuCommPtr = iter->second.first.get();
         HCCL_INFO("[%s]Reuse existing comm group [%s]", __func__, group.c_str());
-        rwlock.writeUnlock();
         return HCCL_SUCCESS;
     }
-    
+
     // 未找到则创建新实例
     std::shared_ptr<HcclCommAicpu> aicpuComm;
     try {
         aicpuComm = std::make_shared<HcclCommAicpu>();
     } catch (std::exception& e) {
         HCCL_ERROR("[%s]Failed, exception caught:%s", __func__, e.what());
-        rwlock.writeUnlock();
         return HCCL_E_PTR;
     }
-    
+
     if (UNLIKELY(!aicpuComm)) {
         HCCL_ERROR("[%s]errNo[0x%016llx] aicpuComm is nullptr", __func__, HCCL_ERROR_CODE(HCCL_E_PTR));
-        rwlock.writeUnlock();
         return HCCL_E_PTR;
     }
 
@@ -226,7 +222,6 @@ HcclResult AicpuHcclProcess::AcquireAicpuComm(const std::string &group, HcclComm
     entry.second.store(false);
     *aicpuCommPtr = aicpuComm.get();
     HCCL_INFO("[%s]Created new comm group [%s]", __func__, group.c_str());
-    rwlock.writeUnlock();
     return HCCL_SUCCESS;
 }
 
@@ -261,7 +256,7 @@ HcclResult AicpuHcclProcess::AicpuRegOpTaskException(HcommGetOpInfoCallback call
     return HCCL_SUCCESS;
 }
 
-ReadWriteLockBase& AicpuHcclProcess::AicpuGetCommMutex()
+std::shared_mutex& AicpuHcclProcess::AicpuGetCommMutex()
 {
     return g_commAicpuInfo.commAicpuMapMutex;
 }
@@ -272,11 +267,10 @@ hccl::HcclCommAicpu *AicpuHcclProcess::AicpuGetCommbyGroup(const std::string &gr
     constexpr u32 pollIntervalUs = 10; // 轮询间隔10us
     constexpr u32 pollTimeoutMs = 10; // 轮询超时时间10ms
     auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
-    ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMapMutex);
 
     while (true) {
+        std::shared_lock<std::shared_mutex> rwlock(g_commAicpuInfo.commAicpuMapMutex);
         bool expectedStatus = false;
-        rwlock.readLock();
         auto iter = g_commAicpuInfo.commMap.find(group);
         if (iter == g_commAicpuInfo.commMap.end()) {
             HCCL_ERROR("[AicpuHcclProcess] exist group size is [%u]", g_commAicpuInfo.commMap.size());
@@ -286,26 +280,22 @@ hccl::HcclCommAicpu *AicpuHcclProcess::AicpuGetCommbyGroup(const std::string &gr
                 HCCL_ERROR("[AicpuHcclProcess] exist group idx is [%d] key[%s] value", i, curIter->first.c_str());
                 curIter++;
             }
-            rwlock.readUnlock();
             return nullptr;
         }
         if (!iter->second.second.compare_exchange_strong(expectedStatus, true)) {
             if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
                 HCCL_ERROR("[AicpuGetCommbyGroup]poll timeout, comm group [%s] has been used, last executed op: %s",
                     group.c_str(), iter->second.first->GetExcuteOp().c_str());
-                rwlock.readUnlock();
                 return nullptr;
             }
 
             HCCL_WARNING("[AicpuGetCommbyGroup]comm group [%s] has been used, last executed op: %s",
                 group.c_str(), iter->second.first->GetExcuteOp().c_str());
-            rwlock.readUnlock();
-
+            rwlock.unlock();
             usleep(pollIntervalUs);
             continue;
         }
         g_hcclComm = iter->second.first.get();
-        rwlock.readUnlock();
         return iter->second.first.get();
     }
     return nullptr;
@@ -322,16 +312,13 @@ bool AicpuHcclProcess::GetCommExecStatus(const std::string &group)
 
 void AicpuHcclProcess::AicpuReleaseCommbyGroup(const std::string &group)
 {
-    ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(g_commAicpuInfo.commAicpuMapMutex);
     auto iter = g_commAicpuInfo.commMap.find(group);
     if (iter == g_commAicpuInfo.commMap.end()) {
-        rwlock.readUnlock();
         return;
     }
     g_hcclComm = nullptr;
     iter->second.second.store(false);
-    rwlock.readUnlock();
 }
 
 u32 AicpuHcclProcess::AicpuRpcClearOpRes(const struct HcclKfcClearOpResTilingData *tilingData)

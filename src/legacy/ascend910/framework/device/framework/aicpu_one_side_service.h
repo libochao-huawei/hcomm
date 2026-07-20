@@ -22,7 +22,7 @@
 #include "transport_mem.h"
 #include "dispatcher.h"
 #include "aicpu_operator_pub.h"
-#include "read_write_lock.h"
+#include <shared_mutex>
 
 namespace hccl {
 class HcclOneSideServiceAicpu {
@@ -67,7 +67,7 @@ private:
     void HandleCqeMessage(bool isReadClear);
     void PollCqeException(Stream &stream, bool isReadClear, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
 
-    static ReadWriteLockBase serviceMapMutex_;
+    static std::shared_mutex serviceMapMutex_;
     static std::unordered_map<std::string, std::shared_ptr<HcclOneSideServiceAicpu>> services_;
 
     bool isInited_{false};

@@ -34,7 +34,7 @@
 #include "cann_error_reporter.h"
 #include "hccl_trace_info.h"
 #include "aicpu_share_data_manager.h"
-#include "read_write_lock.h"
+#include <shared_mutex>
 #include "hccl/hccl_res.h"
 #include "channel_param.h"
 #include "aicpu_launch_manager.h"
@@ -544,7 +544,7 @@ private:
     //通用的通道
     std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
-    ReadWriteLockBase threadAicpuMutex_;
+    std::shared_mutex threadAicpuMutex_;
     DfxExtendInfo dfxExtendInfo_;
     std::vector<SendRecvInfo> allMeshAggregationSendRecvInfo_;
     std::shared_ptr<AicpuZeroCopyExchanger> ZeroCopyExchanger_{nullptr};

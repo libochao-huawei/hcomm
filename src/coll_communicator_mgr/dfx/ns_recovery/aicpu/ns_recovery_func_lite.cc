@@ -22,15 +22,12 @@ NsRecoveryFuncLite &NsRecoveryFuncLite::GetInstance()
 
 void NsRecoveryFuncLite::Call()
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuIndopProcess::AicpuGetCommMutex());
 
     std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
     auto ret = AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[NsRecovery][BackGround] AicpuGetCommAll failed, errNo[0x%016llx]", ret);
-        rwlock.readUnlock();
         return;
     }
     for (auto &commInfo : aicpuCommInfo) {
@@ -41,8 +38,6 @@ void NsRecoveryFuncLite::Call()
         HandleStopLaunch(deviceComm);
         HandleClean(deviceComm);
     }
-
-    rwlock.readUnlock();
 }
 
 void NsRecoveryFuncLite::HandleStopLaunch(CollCommAicpu *deviceComm) const

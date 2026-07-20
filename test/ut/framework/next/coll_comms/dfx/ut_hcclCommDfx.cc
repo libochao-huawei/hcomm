@@ -219,3 +219,106 @@ TEST_F(HcclCommDfxTest, Ut_IsOpBase_When_OpModeIsOffload_Expect_ReturnFalse)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_FALSE(isOpBase);
 }
+
+// 测试 GetChannelRemoteRankId（非Lite版）- 正常查找命中 shared_lock 读路径
+TEST_F(HcclCommDfxTest, Ut_GetChannelRemoteRankId_When_Exist_Expect_ReturnSuccess)
+{
+    std::string commTag = "test_comm";
+    u64 channelHandle = 0x8888;
+    u32 remoteRankId = 7;
+
+    // 先通过 AddChannelRemoteRankId 写入（覆盖 unique_lock 写路径）
+    HcclCommDfx::AddChannelRemoteRankId(commTag, channelHandle, remoteRankId);
+
+    // 查找已存在的 commTag+handle（覆盖 shared_lock 读路径）
+    u32 result = INVALID_UINT;
+    HcclResult ret = HcclCommDfx::GetChannelRemoteRankId(commTag, channelHandle, result);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(result, remoteRankId);
+
+    // 清理静态 map，避免影响其他用例
+    HcclCommDfx::channelRemoteRankId_.clear();
+}
+
+// 测试 GetChannelRemoteRankId - commTag 不存在
+TEST_F(HcclCommDfxTest, Ut_GetChannelRemoteRankId_When_CommTagNotFound_Expect_ReturnParaError)
+{
+    u32 result = INVALID_UINT;
+    HcclResult ret = HcclCommDfx::GetChannelRemoteRankId("non_exist_comm", 0x1234, result);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(result, INVALID_UINT);
+}
+
+// 测试 GetChannelRemoteRankId - commTag 存在但 handle 不存在
+TEST_F(HcclCommDfxTest, Ut_GetChannelRemoteRankId_When_HandleNotFound_Expect_ReturnParaError)
+{
+    std::string commTag = "test_comm_handle";
+    HcclCommDfx::AddChannelRemoteRankId(commTag, 0x1111, 1);
+
+    u32 result = INVALID_UINT;
+    HcclResult ret = HcclCommDfx::GetChannelRemoteRankId(commTag, 0x2222, result);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(result, INVALID_UINT);
+
+    HcclCommDfx::channelRemoteRankId_.clear();
+}
+
+// 测试 AddTaskInfoCallback - CCU 批量查找路径，覆盖 shared_lock 读路径(L91)
+TEST_F(HcclCommDfxTest, Ut_AddTaskInfoCallback_When_CcuTaskAndHandleExist_Expect_Success)
+{
+    std::string commTag = "test_comm";
+    u64 channelHandle = 0x7777;
+    u32 remoteRankId = 5;
+
+    // 写入 channelRemoteRankId_ 映射
+    HcclCommDfx::AddChannelRemoteRankId(commTag, channelHandle, remoteRankId);
+
+    // 构造 CCU 类型 TaskParam
+    Hccl::TaskParam taskParam{};
+    taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
+    auto ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>();
+    Hccl::CcuProfilingInfo profInfo{};
+    profInfo.channelId[0] = 0; // 非 INVALID_VALUE_CHANNELID，进入查找
+    profInfo.channelHandle[0] = channelHandle;
+    ccuDetailInfo->push_back(profInfo);
+    taskParam.ccuDetailInfo = ccuDetailInfo;
+
+    // mock MirrorTaskManager
+    auto opInfo = std::make_shared<Hccl::DfxOpInfo>();
+    MOCKER_CPP(&Hccl::MirrorTaskManager::GetCurrDfxOpInfo,
+        std::shared_ptr<Hccl::DfxOpInfo>(Hccl::MirrorTaskManager::*)() const)
+        .stubs()
+        .will(returnValue(opInfo));
+    MOCKER_CPP(&Hccl::MirrorTaskManager::AddTaskInfo,
+        HcclResult(Hccl::MirrorTaskManager::*)(u32, u32, u32, const Hccl::TaskParam&,
+            std::shared_ptr<Hccl::DfxOpInfo>, bool))
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
+            mockcpp::any(), mockcpp::any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = dfx_->AddTaskInfoCallback(1, 1, taskParam, channelHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+    HcclCommDfx::channelRemoteRankId_.clear();
+}
+
+// 测试 AddTaskInfoCallback - CCU 路径但 commTag 不存在，覆盖 shared_lock 读路径的提前返回
+TEST_F(HcclCommDfxTest, Ut_AddTaskInfoCallback_When_CcuTaskAndCommTagNotFound_Expect_ParaError)
+{
+    Hccl::TaskParam taskParam{};
+    taskParam.taskType = Hccl::TaskParamType::TASK_CCU;
+    auto ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>();
+    Hccl::CcuProfilingInfo profInfo{};
+    profInfo.channelId[0] = 0;
+    profInfo.channelHandle[0] = 0x9999;
+    ccuDetailInfo->push_back(profInfo);
+    taskParam.ccuDetailInfo = ccuDetailInfo;
+
+    // 不添加任何 channelRemoteRankId_ 映射，commTag 查找失败
+    HcclResult ret = dfx_->AddTaskInfoCallback(1, 1, taskParam, INVALID_U64);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    HcclCommDfx::channelRemoteRankId_.clear();
+}

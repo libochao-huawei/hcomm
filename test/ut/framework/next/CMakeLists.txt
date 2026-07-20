@@ -82,6 +82,7 @@ set(src_to_test_list
     coll_comms/rank_pairs/ut_rank_pair.cc
     coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
     coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
+    coll_comms/communicator/aicpu/ut_coll_comm_aicpu_destroy_func.cc
     coll_comms/communicator/ns_recovery/ut_ns_recovery.cc
     comms/adpt/ut_hcomm_adapter_hccp_test.cc
     comms/endpoints/dfx/ut_endpoint_monitor.cc

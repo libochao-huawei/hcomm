@@ -3334,9 +3334,7 @@ HcclResult HcclCommAicpu::PrintTaskExceptionAllThreads()
 
 void HcclCommAicpu::PrintTaskExceptionAllComm()
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
 
     // 先打印本通信域的taskException
     (void)PrintTaskExceptionAllStreams();
@@ -3353,14 +3351,11 @@ void HcclCommAicpu::PrintTaskExceptionAllComm()
         (void)hcclAicpu->PrintTaskExceptionAllThreads();
         (void)hcclAicpu->PrintTaskExceptionAllStreams();
     }
-    rwlock.readUnlock();
 }
 
 void HcclCommAicpu::PrintAicpuCommExecStatus()
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
 
     // 记录通信域占核情况
     int64_t inExecGroupNum = 0;
@@ -3389,7 +3384,6 @@ void HcclCommAicpu::PrintAicpuCommExecStatus()
             "Aicpu core being fully utilized may cause tasks to get stuck, and it is necessary to reduce the num of comm.",
             inExecGroupNum, aicpuCommInfo.size(), aicpuCoreNum);
     }
-    rwlock.readUnlock();
 }
 
 HcclResult HcclCommAicpu::PrintTaskExceptionAllStreams()
@@ -4944,8 +4938,7 @@ HcclResult HcclCommAicpu::SendTaskExceptionByMBox(const uint16_t &rsErrorCode)
 void HcclCommAicpu::HandleIndOpCqe()
 {
     std::unique_lock<std::mutex> lock(queryCqeMutex_);
-    ReadWriteLock rwLock(threadAicpuMutex_);
-    rwLock.readLock();
+    std::shared_lock<std::shared_mutex> rwLock(threadAicpuMutex_);
     for (auto &thread : threads_) {
         if (thread == nullptr) {
             continue;
@@ -4970,7 +4963,6 @@ void HcclCommAicpu::HandleIndOpCqe()
         }
         ReportIndOpCqe(stream, cqeException, cqeStatus);
     }
-    rwLock.readUnlock();
 }
 
 void HcclCommAicpu::ReportIndOpCqe(hccl::Stream &stream, const rtLogicCqReport_t &cqeException, CqeStatus cqeStatus)
@@ -5375,11 +5367,9 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
         threadArray[i] = reinterpret_cast<ThreadHandle>(outThreads[i].get());  // 拷贝裸指针
         HCCL_INFO("[HcclCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
     }
-    ReadWriteLock rwLock(threadAicpuMutex_);
-    rwLock.writeLock();
+    std::unique_lock<std::shared_mutex> rwLock(threadAicpuMutex_);
     threads_.insert(threads_.end(), std::make_move_iterator(outThreads.begin()),
         std::make_move_iterator(outThreads.end()));
-    rwLock.writeUnlock();
     HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     // 为上报翻转初始化资源

@@ -9,6 +9,7 @@
  */
 
 #include <mutex>
+#include <shared_mutex>
 #include <iterator>
 #include <functional>
 #include <map>
@@ -57,54 +58,49 @@ void ExecutorTracer::BackGroundDfx(void *info)
 
 void ExecutorTracer::HandleDestroyComm(AicpuComContext *const ctx)
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
-    std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
     std::vector<std::string> destroyGroupName;
-    (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
-    KfcCommand cmd = KfcCommand::kNone;
-    for (auto &commInfo : aicpuCommInfo) {
-        hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
-        if (hcclAicpu->GetCommInfoStatus() || hcclAicpu->GetIsInitIndOp()) {
-            (void) hcclAicpu->GetKfcCommand(cmd);
-            if (cmd == KfcCommand::kDestroyComm) {
-                auto groupName = hcclAicpu->GetGroupName();
-                HCCL_RUN_INFO("[ExecutorTracer][%s]Recv kDestroyComm cmd, group name[%s]", __func__, groupName.c_str());
-                hcclAicpu->FlushUtraceInfo();
-                KfcExecStatus responseStatus;
-                responseStatus.execStatus.kfcStatus = KfcStatus::kDestroyComm;
-                // 需要在销毁通信域前返回 kfc status到host，销毁通信域会释放TransferD2H
-                s32 ret = hcclAicpu->ResponseBackGroundStatus(responseStatus);
-                CHK_PRT_CONT(ret, HCCL_ERROR("[ExecutorTracer][%s]ResponseBackGroundStatus failed, group[%s], ret[%d]",
-                    __func__, groupName.c_str(), ret));
-                AicpuExecutorTracer::StopKfcThread(ctx, aicpuCommInfo);
-                destroyGroupName.push_back(groupName);
-                cmd = KfcCommand::kNone;
+    {
+        std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
+        std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
+        (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
+        KfcCommand cmd = KfcCommand::kNone;
+        for (auto &commInfo : aicpuCommInfo) {
+            hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
+            if (hcclAicpu->GetCommInfoStatus() || hcclAicpu->GetIsInitIndOp()) {
+                (void) hcclAicpu->GetKfcCommand(cmd);
+                if (cmd == KfcCommand::kDestroyComm) {
+                    auto groupName = hcclAicpu->GetGroupName();
+                    HCCL_RUN_INFO("[ExecutorTracer][%s]Recv kDestroyComm cmd, group name[%s]", __func__, groupName.c_str());
+                    hcclAicpu->FlushUtraceInfo();
+                    KfcExecStatus responseStatus;
+                    responseStatus.execStatus.kfcStatus = KfcStatus::kDestroyComm;
+                    // 需要在销毁通信域前返回 kfc status到host，销毁通信域会释放TransferD2H
+                    s32 ret = hcclAicpu->ResponseBackGroundStatus(responseStatus);
+                    CHK_PRT_CONT(ret, HCCL_ERROR("[ExecutorTracer][%s]ResponseBackGroundStatus failed, group[%s], ret[%d]",
+                        __func__, groupName.c_str(), ret));
+                    AicpuExecutorTracer::StopKfcThread(ctx, aicpuCommInfo);
+                    destroyGroupName.push_back(groupName);
+                    cmd = KfcCommand::kNone;
+                }
             }
         }
     }
-    rwlock.readUnlock();
 
     for (auto &groupName : destroyGroupName) {
-        rwlock.writeLock();
+        std::unique_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
         AicpuHcclProcess::AicpuDestoryCommbyGroup(groupName);
-        rwlock.writeUnlock();
     }
 }
 
 void ExecutorTracer::TaskMonitor(void)
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
     std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commInfo : aicpuCommInfo) {
         hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
         (void)hcclAicpu->StreamTaskMonitor();
     }
-    rwlock.readUnlock();
 }
 
 void ExecutorTracer::HandleBackGround(AicpuComContext *const ctx)
@@ -118,9 +114,7 @@ void ExecutorTracer::StopBackGround(AicpuComContext *const ctx, bool &isNotStop)
     if (ctx->commOpenStatus) {
         isNotStop = true;
     } else {
-        ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-        ReadWriteLock rwlock(commAicpuMapMutex);
-        rwlock.readLock();
+        std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
         std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
         (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
         for (auto &commInfo : aicpuCommInfo) {
@@ -129,7 +123,6 @@ void ExecutorTracer::StopBackGround(AicpuComContext *const ctx, bool &isNotStop)
                 isNotStop = true;
             }
         }
-        rwlock.readUnlock();
     }
 
     if (!hccl::HcclOneSideServiceAicpu::isAllDestroy()) {
@@ -149,9 +142,7 @@ void ExecutorTracer::StopBackGroundDfx(void *info)
 void ExecutorTracer::StopLaunchCommandHandle(AicpuComContext *const ctx)
 {
     AicpuExecutorTracer::StopLaunchCommandHandle(ctx);
-    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
     std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
     KfcCommand cmd = KfcCommand::kNone;
@@ -173,16 +164,13 @@ void ExecutorTracer::StopLaunchCommandHandle(AicpuComContext *const ctx)
             }
         }
     }
-    rwlock.readUnlock();
 }
 
 // handle StopExec and Clean Command
 void ExecutorTracer::KfcCommandHandle(AicpuComContext *const ctx)
 {
     AicpuExecutorTracer::KfcCommandHandle(ctx);
-    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
     std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commItem : aicpuCommInfo) {
@@ -193,15 +181,12 @@ void ExecutorTracer::KfcCommandHandle(AicpuComContext *const ctx)
             }
         }
     }
-    rwlock.readUnlock();
 }
 
 // handle switch nic command
 void ExecutorTracer::HandleSwitchNic(AicpuComContext *const ctx)
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
     std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commItem : aicpuCommInfo) {
@@ -228,14 +213,11 @@ void ExecutorTracer::HandleSwitchNic(AicpuComContext *const ctx)
             }
         }
     }
-    rwlock.readUnlock();
 }
 
 void ExecutorTracer::HandleResumeChangeLink(AicpuComContext *const ctx) 
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
     std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commItem : aicpuCommInfo) {
@@ -265,14 +247,11 @@ void ExecutorTracer::HandleResumeChangeLink(AicpuComContext *const ctx)
             }
         }
     }
-    rwlock.readUnlock();
 }
 
 void ExecutorTracer::HandleCqeStatusInComm()
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
     std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
 
@@ -298,14 +277,11 @@ void ExecutorTracer::HandleCqeStatusInComm()
             hcclAicpu->HandleCqeException(stream, false);
         }
     }
-    rwlock.readUnlock();
 }
 
 void ExecutorTracer::HandleReportStatusInComm()
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuHcclProcess::AicpuGetCommMutex());
     std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
 
@@ -333,7 +309,6 @@ void ExecutorTracer::HandleReportStatusInComm()
             reportStatusQueue.pop();
         }
     }
-    rwlock.readUnlock();
 }
 
 void ExecutorTracer::HandleCqeStatus(AicpuComContext *const ctx)

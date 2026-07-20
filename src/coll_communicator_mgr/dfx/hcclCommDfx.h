@@ -14,7 +14,7 @@
 #include "mirror_task_manager.h"
 #include "hcclCommProfiling.h"
 #include "global_mirror_tasks.h"
-#include "read_write_lock.h"
+#include <shared_mutex>
 #include "hccl_common.h"
 #include <unordered_map>
 #include <mutex>
@@ -67,8 +67,7 @@ private:
     std::unique_ptr<HcclCommProfiling> profiling_{nullptr};
     static std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankId_;
     static std::unordered_map<u32, u32> streamIdToTaskId_;
-    static ReadWriteLockBase baseLock_;
-    static ReadWriteLock rwLock_;
+    static std::shared_mutex baseLock_;
     static std::mutex taskIdMutex_;
     std::string commTag_{};
     u32 deviceId_{0};

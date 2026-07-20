@@ -26,13 +26,11 @@ constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
 CollCommAicpu::~CollCommAicpu()
 {
-    ReadWriteLock rwLock(threadMutex_);
-    rwLock.writeLock();
+    std::unique_lock<std::shared_mutex> rwLock(threadMutex_);
     for (auto& thread : threads_) {
         HcommThreadRegisterCheckExecStatus(reinterpret_cast<ThreadHandle>(thread.get()), nullptr);
     }
     threads_.clear();
-    rwLock.writeUnlock();
     HCCL_RUN_INFO("[CollCommAicpu][%s]Group[%s] destroy success", __func__, identifier_.c_str());
 }
 
@@ -142,11 +140,9 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
         HCCL_INFO("[CollCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
         CHK_RET(RegisterThreadAddDfxTaskInfo(threadArray[i]));
     }
-    ReadWriteLock rwLock(threadMutex_);
-    rwLock.writeLock();
+    std::unique_lock<std::shared_mutex> rwLock(threadMutex_);
     threads_.insert(threads_.end(), std::make_move_iterator(outThreads.begin()),
         std::make_move_iterator(outThreads.end()));
-    rwLock.writeUnlock();
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     return HCCL_SUCCESS;

@@ -28,7 +28,7 @@
 #include "common/aicpu_kfc_tiling_utils.h"
 #include "coll_batch_write_executor.h"
 #include "dfx/aicpu_profiling_manager.h"
-#include "read_write_lock.h"
+#include <shared_mutex>
 
 using namespace hccl;
 using namespace HcclApi;
@@ -91,28 +91,25 @@ struct CommInstMgr {
 };
 
 struct KfcGroupIndexInfo {
-    ReadWriteLockBase mutex;
+    std::shared_mutex mutex;
     u32 nextId{0U};
     std::unordered_map<std::string, int32_t> groupNameToId{};
     std::unordered_map<int32_t, CommInstMgr> instMap{};
 } g_commIdMap;
 
 int32_t InsertComIdMap(const std::string &group) {
-    ReadWriteLock rwlock(g_commIdMap.mutex);
-    rwlock.writeLock();
+    std::unique_lock<std::shared_mutex> rwlock(g_commIdMap.mutex);
     if (g_commIdMap.groupNameToId.find(group) == g_commIdMap.groupNameToId.end()) {
         HCCL_INFO("Insert group %s at index %u.", group.c_str(), g_commIdMap.nextId);
         g_commIdMap.groupNameToId[group] = g_commIdMap.nextId++;
     } else {
         HCCL_INFO("Group %s is already at index %u.", group.c_str(), g_commIdMap.groupNameToId[group]);
     }
-    rwlock.writeUnlock();
     return g_commIdMap.groupNameToId[group];
 }
 
 int32_t GetComGroupIdx(const std::string &group) {
-    ReadWriteLock rwlock(g_commIdMap.mutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(g_commIdMap.mutex);
     int32_t idx;
     if (g_commIdMap.groupNameToId.find(group) == g_commIdMap.groupNameToId.end()) {
         HCCL_ERROR("Failed to find group %s in index map.", group.c_str());
@@ -120,7 +117,6 @@ int32_t GetComGroupIdx(const std::string &group) {
     } else {
         idx = g_commIdMap.groupNameToId[group];
     }
-    rwlock.readUnlock();
     return idx;
 }
 
@@ -172,35 +168,29 @@ struct CommInfoCtx {
     std::string tag;
 };
 static std::unordered_map<std::string, std::unordered_map<u8, CommInfoCtx>> g_commTypeInfoMap;
-static ReadWriteLockBase g_mutexForTypeInfoMap;
+static std::shared_mutex g_mutexForTypeInfoMap;
 void SetCommInfoCtx(const std::string &groupName, u8 commType, const CommInfoCtx &ctx)
 {
-    ReadWriteLock rwlock(g_mutexForTypeInfoMap);
-    rwlock.writeLock();
+    std::unique_lock<std::shared_mutex> rwlock(g_mutexForTypeInfoMap);
     g_commTypeInfoMap[groupName][commType] = ctx;
-    rwlock.writeUnlock();
 }
 
 HcclResult GetCommInfoCtx(const std::string &commName, u8 commType, CommInfoCtx &ctx)
 {
-    ReadWriteLock rwlock(g_mutexForTypeInfoMap);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(g_mutexForTypeInfoMap);
     const auto groupIter = g_commTypeInfoMap.find(commName);
     if (groupIter == g_commTypeInfoMap.end()) {
         HCCL_ERROR("Failed to find group %s in type info map.", commName.c_str());
-        rwlock.readUnlock();
         return HCCL_E_INTERNAL;
     }
 
     const auto commIter = groupIter->second.find(commType);
     if (commIter == groupIter->second.end()) {
         HCCL_ERROR("Failed to find type %u in map for group %s.", static_cast<u32>(commType), commName.c_str());
-        rwlock.readUnlock();
         return HCCL_E_INTERNAL;
     }
 
     ctx = commIter->second;
-    rwlock.readUnlock();
     return HCCL_SUCCESS;
 }
 

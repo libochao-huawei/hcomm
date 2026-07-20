@@ -3,6 +3,8 @@
 #include <mockcpp/mockcpp.hpp>
 
 #include "ns_recovery/aicpu/ns_recovery_func_lite.h"
+#include "aicpu_indop_process.h"
+#include "coll_comm_aicpu_mgr.h"
 
 using namespace hccl;
 
@@ -110,5 +112,30 @@ TEST_F(NsRecoveryFuncLiteTest, Ut_DeviceQueryWhenAckCountMismatchExpectHcclEDrv)
     SetUpHalTsdrvCtlStub(0, true);
     auto ret = NsRecoveryFuncLite::GetInstance().DeviceQuery(0, 0, 0);
     EXPECT_EQ(ret, HcclResult::HCCL_E_DRV);
+    GlobalMockObject::verify();
+}
+
+// 测试 Call() - 无通信域时不报错，覆盖 shared_lock 读路径(L25)
+TEST_F(NsRecoveryFuncLiteTest, Ut_Call_When_NoComm_Expect_NoException)
+{
+    // Call() 内部获取 shared_lock 并调用 AicpuGetCommAll，无通信域时直接返回
+    NsRecoveryFuncLite::GetInstance().Call();
+    GlobalMockObject::verify();
+}
+
+// 测试 Call() - 有通信域但状态为 INVALID，覆盖 shared_lock + continue 分支
+TEST_F(NsRecoveryFuncLiteTest, Ut_Call_When_CommStatusInvalid_Expect_SkipComm)
+{
+    MOCKER_CPP(&CollCommAicpuMgr::InitAicpuIndOp).stubs().will(returnValue(HCCL_SUCCESS));
+
+    CommAicpuParam commAicpuParam;
+    std::string commName = "ns_recovery_test_group";
+    strncpy(commAicpuParam.hcomId, commName.c_str(), HCOMID_MAX_SIZE - 1);
+    EXPECT_EQ(AicpuIndopProcess::AicpuIndOpCommInit(&commAicpuParam), HCCL_SUCCESS);
+
+    // Call() 获取 shared_lock 后遍历通信域，状态为 INVALID 则 continue
+    NsRecoveryFuncLite::GetInstance().Call();
+
+    EXPECT_EQ(AicpuIndopProcess::AicpuDestroyCommbyGroup(commAicpuParam.hcomId), HCCL_SUCCESS);
     GlobalMockObject::verify();
 }

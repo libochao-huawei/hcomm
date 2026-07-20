@@ -9,7 +9,7 @@
  */
 #include "coll_comm_aicpu_destroy_func.h"
 #include "aicpu_indop_process.h"
-#include "read_write_lock.h"
+#include <shared_mutex>
 #include "kernel_entrance.h"
 
 namespace hccl {
@@ -34,42 +34,41 @@ void CollCommAicpuDestroyFunc::Call()
 
 HcclResult CollCommAicpuDestroyFunc::Process()
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
-
-    std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
-    CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
     std::vector<std::string> destroyComm;
+    {
+        std::shared_lock<std::shared_mutex> rwlock(AicpuIndopProcess::AicpuGetCommMutex());
 
-    for (auto &commInfo : aicpuCommInfo) {
-        CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
-        CHK_PTR_NULL(aicpuComm);
+        std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
+        CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
 
-        if (aicpuComm->GetCommmStatus() == HcclCommStatus::HCCL_COMM_STATUS_INVALID) {
-            continue;
-        }
+        for (auto &commInfo : aicpuCommInfo) {
+            CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
+            CHK_PTR_NULL(aicpuComm);
 
-        Hccl::KfcCommand cmd = Hccl::KfcCommand::NONE;
-        CHK_RET(aicpuComm->BackGroundGetCmd(cmd));
-        if (cmd != Hccl::KfcCommand::DESTROY_AICPU_COMM) {
-            continue;
-        }
-        destroyComm.push_back(aicpuComm->GetIdentifier());
-        CHK_RET(aicpuComm->BackGroundSetStatus(Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE));
-
-        {
-            std::lock_guard<std::mutex> lock(g_taskExpDevMemMapMutex);
-            auto it = g_taskExpDevMemMap.find(aicpuComm->GetIdentifier());
-            if (it != g_taskExpDevMemMap.end()) {
-                g_taskExpDevMemMap.erase(aicpuComm->GetIdentifier()); // 清理dpu taskexception共享内存
+            if (aicpuComm->GetCommmStatus() == HcclCommStatus::HCCL_COMM_STATUS_INVALID) {
+                continue;
             }
-        }
 
-        HCCL_RUN_INFO("[%s]group[%s] Recv DESTROY_AICPU_COMM cmd and set DESTROY_AICPU_COMM_DONE",
-            __func__, aicpuComm->GetIdentifier().c_str());
+            Hccl::KfcCommand cmd = Hccl::KfcCommand::NONE;
+            CHK_RET(aicpuComm->BackGroundGetCmd(cmd));
+            if (cmd != Hccl::KfcCommand::DESTROY_AICPU_COMM) {
+                continue;
+            }
+            destroyComm.push_back(aicpuComm->GetIdentifier());
+            CHK_RET(aicpuComm->BackGroundSetStatus(Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE));
+
+            {
+                std::lock_guard<std::mutex> lock(g_taskExpDevMemMapMutex);
+                auto it = g_taskExpDevMemMap.find(aicpuComm->GetIdentifier());
+                if (it != g_taskExpDevMemMap.end()) {
+                    g_taskExpDevMemMap.erase(aicpuComm->GetIdentifier()); // 清理dpu taskexception共享内存
+                }
+            }
+
+            HCCL_RUN_INFO("[%s]group[%s] Recv DESTROY_AICPU_COMM cmd and set DESTROY_AICPU_COMM_DONE",
+                __func__, aicpuComm->GetIdentifier().c_str());
+        }
     }
-    rwlock.readUnlock();
 
     for (std::string& groupName : destroyComm) {
         (void)(AicpuIndopProcess::AicpuDestroyCommbyGroup(groupName));

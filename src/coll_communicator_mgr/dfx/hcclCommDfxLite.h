@@ -11,7 +11,6 @@
 #define HCCL_COMM_DFX_LITE_H
 #include "mirror_task_manager_lite.h"
 #include "hcclCommProfilingLite.h"
-#include "read_write_lock.h"
 #include "hccl_common.h"
 #include "buffer.h"
 #include "common.h"

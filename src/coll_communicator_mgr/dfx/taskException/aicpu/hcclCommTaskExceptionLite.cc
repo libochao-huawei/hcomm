@@ -12,7 +12,7 @@
 #include "hcomm_task_scheduler_error.h"
 #include "task_struct_v2.h"
 #include "dlhal_function_v2.h"
-#include "read_write_lock.h"
+#include <shared_mutex>
 #include "aicpu_indop_env.h"
 #include "kernel_entrance.h"
 
@@ -128,9 +128,7 @@ HcclResult HcclCommTaskExceptionLite::HandleDpuTaskexception(CollCommAicpu *aicp
 
 HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuIndopProcess::AicpuGetCommMutex());
 
     std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
     CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
@@ -145,9 +143,7 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
         }
         CHK_RET(HandleDpuTaskexception(aicpuComm)); // dpu taskexception
 
-        ReadWriteLockBase &commThreadMutex = aicpuComm->GetThreadMutex();
-        ReadWriteLock threadRwlock(commThreadMutex);
-        threadRwlock.readLock();
+        std::shared_lock<std::shared_mutex> threadRwlock(aicpuComm->GetThreadMutex());
         const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
         for (auto thread : threads) {
             rtLogicCqReport_t cqeException;
@@ -163,17 +159,13 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]ProcessCqe fail, aicpuComm[%s], streamId[%u], "
                 "cqeStatus[%d]", __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId(), cqeStatus), ret);
         }
-        threadRwlock.readUnlock();
     }
-    rwlock.readUnlock();
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommTaskExceptionLite::PrintAllCommTaskException()
 {
-    ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
-    ReadWriteLock rwlock(commAicpuMapMutex);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(AicpuIndopProcess::AicpuGetCommMutex());
 
     std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
     CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
@@ -188,7 +180,6 @@ HcclResult HcclCommTaskExceptionLite::PrintAllCommTaskException()
         ret = (pRet != HCCL_SUCCESS) ? pRet : ret;
     }
     HCCL_RUN_INFO("[TaskException][AICPU]%s end, ret[%d]", __func__, ret);
-    rwlock.readUnlock();
     return ret;
 }
 
@@ -197,9 +188,7 @@ HcclResult HcclCommTaskExceptionLite::PrintCommTaskException(CollCommAicpu *aicp
     CHK_PTR_NULL(aicpuComm);
     HcclResult ret = HCCL_SUCCESS;
     HCCL_RUN_INFO("[TaskException][AICPU]%s comm[%s] start", __func__, aicpuComm->GetIdentifier().c_str());
-    ReadWriteLockBase &commThreadMutex = aicpuComm->GetThreadMutex();
-    ReadWriteLock threadRwlock(commThreadMutex);
-    threadRwlock.readLock();
+    std::shared_lock<std::shared_mutex> threadRwlock(aicpuComm->GetThreadMutex());
     const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
     for (auto thread : threads) {
         CHK_SMART_PTR_NULL(thread);
@@ -223,7 +212,6 @@ HcclResult HcclCommTaskExceptionLite::PrintCommTaskException(CollCommAicpu *aicp
             aicpuComm->GetIdentifier().c_str(), streamLite->GetSqId(), sqeId));
         ret = (pRet != HCCL_SUCCESS) ? pRet : ret;
     }
-    threadRwlock.readUnlock();
     HCCL_RUN_INFO("[TaskException][AICPU]%s comm[%s] end, ret[%d]", __func__, aicpuComm->GetIdentifier().c_str(), ret);
     return ret;
 }

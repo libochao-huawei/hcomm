@@ -13,10 +13,10 @@
 
 #include <mutex>
 #include <memory>
+#include <shared_mutex>
 #include "hccl/base.h"
 #include "mem_device_pub.h"
 #include "mem_host_pub.h"
-#include "read_write_lock.h"
 
 #define HCCL_HDC_TYPE_D2H 0
 #define HCCL_HDC_TYPE_H2D 1
@@ -72,7 +72,7 @@ private:
     u32 *devTailCntAddr_{ nullptr };
     bool isHost_{ true };
     bool supportDevMemReg_{ true };
-    ReadWriteLockBase lock_;
+    std::shared_mutex lock_;
 };
 
 }

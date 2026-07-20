@@ -12,8 +12,7 @@
 
 namespace hccl {
 
-ReadWriteLockBase HcclCommDfx::baseLock_;
-ReadWriteLock HcclCommDfx::rwLock_(HcclCommDfx::baseLock_);
+std::shared_mutex HcclCommDfx::baseLock_;
 std::mutex HcclCommDfx::taskIdMutex_;
 std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfx::channelRemoteRankId_;
 std::unordered_map<u32, u32> HcclCommDfx::streamIdToTaskId_;
@@ -89,10 +88,9 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
         CHK_RET(GetChannelRemoteRankId(commTag_, handle, remoteRankId));
     }
     if (taskParam.taskType == Hccl::TaskParamType::TASK_CCU && taskParam.ccuDetailInfo != nullptr) {
-        rwLock_.readLock();
+        std::shared_lock<std::shared_mutex> rwLock(baseLock_);
         auto commIt = channelRemoteRankId_.find(commTag_);
         if (commIt == channelRemoteRankId_.end()) {
-            rwLock_.readUnlock();
             HCCL_ERROR("[%s] commTag:[%s] not found in CCU batch lookup", __func__, commTag_.c_str());
             return HCCL_E_PARA;
         }
@@ -106,7 +104,6 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
                 }
                 auto handleIt = handleMap.find(profInfo.channelHandle[idx]);
                 if (handleIt == handleMap.end()) {
-                    rwLock_.readUnlock();
                     HCCL_ERROR("[%s] Failed to get remote rank for channelHandle[0x%llx]",
                         __func__, profInfo.channelHandle[idx]);
                     return HCCL_E_PARA;
@@ -114,7 +111,6 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
                 profInfo.remoteRankId[idx] = handleIt->second;
             }
         }
-        rwLock_.readUnlock();
     }
     HcclResult ret = mirrorTaskManager_->AddTaskInfo(streamId, taskId,
         remoteRankId, taskParam, mirrorTaskManager_->GetCurrDfxOpInfo(), taskParam.isMaster);
@@ -165,29 +161,25 @@ Hccl::MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
 
 // 将remoteRankId添加到channelRemoteRankId_表中
 void HcclCommDfx::AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId) {
-    rwLock_.writeLock();
+    std::unique_lock<std::shared_mutex> rwLock(baseLock_);
     HCCL_INFO("[HcclCommDfx][AddChannelRemoteRankId] commTag:[%s], handle:[%lu], remoteRankId:[%u]", commTag.c_str(), handle, remoteRankId);
     channelRemoteRankId_[commTag][handle] = remoteRankId;
-    rwLock_.writeUnlock();
 }
 
 // 在channelRemoteRankId_表中对remoteRankId进行查找（原有逻辑补充返回值）
 HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
-    rwLock_.readLock();
+    std::shared_lock<std::shared_mutex> rwLock(baseLock_);
     auto commIt = channelRemoteRankId_.find(commTag);
     if (commIt == channelRemoteRankId_.end()) {
-        rwLock_.readUnlock();
         HCCL_ERROR("[HcclCommDfx]commTag:[%s] not found", commTag.c_str());
         return HCCL_E_PARA;
     }
     auto handleIt = commIt->second.find(handle);
     if (handleIt == commIt->second.end()) {
         HCCL_ERROR("[HcclCommDfx]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handle);
-        rwLock_.readUnlock();
         return HCCL_E_PARA;
     }
     remoteRankId = handleIt->second;
-    rwLock_.readUnlock();
     return HCCL_SUCCESS; // 查找成功补充返回成功码
 }
 

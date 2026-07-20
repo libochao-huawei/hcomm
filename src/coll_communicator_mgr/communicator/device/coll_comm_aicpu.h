@@ -54,7 +54,7 @@ public:
     HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo);
     HcclResult RegisterProfCallBack();
     HcclCommDfxLite* GetHcclCommDfxLite() { return &dfx_; };
-    ReadWriteLockBase& GetThreadMutex() { return threadMutex_; }
+    std::shared_mutex& GetThreadMutex() { return threadMutex_; }
     u32 GetDevId() { return devId_; }
 
     // h2d - d2h通道信息交互
@@ -93,7 +93,7 @@ private:
     std::string identifier_;
     HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
     HcclTopoInfo topoInfo_;
-    ReadWriteLockBase threadMutex_;
+    std::shared_mutex threadMutex_;
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     // A5 独立算子

@@ -21,7 +21,7 @@
 namespace hccl {
 constexpr u64 MAX_RDMA_WQE_SIZE = 2ULL * 1024 * 1024 * 1024;    // RDMA最大WQE限制是2GB
 
-ReadWriteLockBase HcclOneSideServiceAicpu::serviceMapMutex_;
+std::shared_mutex HcclOneSideServiceAicpu::serviceMapMutex_;
 std::unordered_map<std::string, std::shared_ptr<HcclOneSideServiceAicpu>> HcclOneSideServiceAicpu::services_;
 
 HcclOneSideServiceAicpu::HcclOneSideServiceAicpu()
@@ -51,11 +51,9 @@ HcclResult HcclOneSideServiceAicpu::Process(const OpTilingData *tilingData)
             "OpTilingOneSideCommDataDes[%llu]", tilingData->length, sizeof(OpTilingOneSideCommDataDes)), HCCL_E_PARA);
     const auto *vDataPtr = reinterpret_cast<const OpTilingOneSideCommDataDes *>(dynamicDataPtr);
     if (vDataPtr->finalize) {
-        ReadWriteLock rwlock(serviceMapMutex_);
-        rwlock.writeLock();
+        std::unique_lock<std::shared_mutex> rwlock(serviceMapMutex_);
         services_.erase(tag);
         HCCL_INFO("[Finalize] tag[%s], services[%u]", tag.c_str(), services_.size());
-        rwlock.writeUnlock();
         return HCCL_SUCCESS;
     }
 
@@ -67,25 +65,25 @@ HcclResult HcclOneSideServiceAicpu::Process(const OpTilingData *tilingData)
 std::shared_ptr<HcclOneSideServiceAicpu> HcclOneSideServiceAicpu::GetService(const std::string &tag,
     const OpTilingData *tilingData)
 {
-    ReadWriteLock rwlock(serviceMapMutex_);
-    rwlock.readLock();
-    auto serviceIter = services_.find(tag);
-    if (serviceIter == services_.cend()) {
-        rwlock.readUnlock();
-        std::shared_ptr<HcclOneSideServiceAicpu> service;
-        EXCEPTION_CATCH(service = std::make_shared<HcclOneSideServiceAicpu>(), return nullptr);
-        CHK_PRT_RET(service == nullptr, HCCL_ERROR("[GetService] Alloc failed, tag[%s].", tag.c_str()), nullptr);
-        HcclResult ret = service->Init(tag, tilingData);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[GetService] Init failed, tag[%s].", tag.c_str()), nullptr);
-        rwlock.writeLock();
-        services_[tag] = service;
-        rwlock.writeUnlock();
-        AicpuComContext *ctx = AicpuGetComContext();
-        AicpuHcclProcess::CallMC2MaintenanceThread(ctx);
-        return service;
+    {
+        std::shared_lock<std::shared_mutex> rwlock(serviceMapMutex_);
+        auto serviceIter = services_.find(tag);
+        if (serviceIter != services_.cend()) {
+            return serviceIter->second;
+        }
     }
-    rwlock.readUnlock();
-    return serviceIter->second;
+    std::shared_ptr<HcclOneSideServiceAicpu> service;
+    EXCEPTION_CATCH(service = std::make_shared<HcclOneSideServiceAicpu>(), return nullptr);
+    CHK_PRT_RET(service == nullptr, HCCL_ERROR("[GetService] Alloc failed, tag[%s].", tag.c_str()), nullptr);
+    HcclResult ret = service->Init(tag, tilingData);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[GetService] Init failed, tag[%s].", tag.c_str()), nullptr);
+    {
+        std::unique_lock<std::shared_mutex> rwlock(serviceMapMutex_);
+        services_[tag] = service;
+    }
+    AicpuComContext *ctx = AicpuGetComContext();
+    AicpuHcclProcess::CallMC2MaintenanceThread(ctx);
+    return service;
 }
 
 HcclResult HcclOneSideServiceAicpu::Init(const std::string &tag, const OpTilingData *tilingData)
@@ -439,16 +437,13 @@ HcclResult HcclOneSideServiceAicpu::CleanStreamFunc()
 HcclResult HcclOneSideServiceAicpu::CleanAllStreamFunc()
 {
     HCCL_INFO("Entry HcclOneSideServiceAicpu::CleanAllStreamFunc");
-    ReadWriteLock rwlock(serviceMapMutex_);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(serviceMapMutex_);
     for (auto &serviceIter : services_) {
         HcclResult ret = serviceIter.second->CleanStreamFunc();
         if (ret != HCCL_SUCCESS) {
-            rwlock.readUnlock();
             return ret;
         }
     }
-    rwlock.readUnlock();
     return HCCL_SUCCESS;
 }
 
@@ -462,16 +457,13 @@ HcclResult HcclOneSideServiceAicpu::DisableStreamFunc()
 HcclResult HcclOneSideServiceAicpu::DisableAllStreamFunc()
 {
     HCCL_INFO("Entry HcclOneSideServiceAicpu::DisableAllStreamFunc");
-    ReadWriteLock rwlock(serviceMapMutex_);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(serviceMapMutex_);
     for (auto &serviceIter : services_) {
         HcclResult ret = serviceIter.second->DisableStreamFunc();
         if (ret != HCCL_SUCCESS) {
-            rwlock.readUnlock();
             return ret;
         }
     }
-    rwlock.readUnlock();
     return HCCL_SUCCESS;
 }
 
@@ -500,12 +492,10 @@ HcclResult HcclOneSideServiceAicpu::UpdateSqStatus(Stream &stream)
 
 HcclResult HcclOneSideServiceAicpu::HandleErrCqe()
 {
-    ReadWriteLock rwlock(serviceMapMutex_);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(serviceMapMutex_);
     for (auto &serviceIter : services_) {
         serviceIter.second->HandleCqeMessage(true);
     }
-    rwlock.readUnlock();
     return HCCL_SUCCESS;
 }
 
@@ -533,10 +523,8 @@ void HcclOneSideServiceAicpu::PollCqeException(Stream &stream, bool isReadClear,
 
 bool HcclOneSideServiceAicpu::isAllDestroy()
 {
-    ReadWriteLock rwlock(serviceMapMutex_);
-    rwlock.readLock();
+    std::shared_lock<std::shared_mutex> rwlock(serviceMapMutex_);
     bool isEmpty = services_.empty();
-    rwlock.readUnlock();
     return isEmpty;
 }
 }
