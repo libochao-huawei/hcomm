@@ -75,6 +75,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/common
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/rank_graph
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/communicator
+    ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/config_mgr
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/threads
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses/notify
     ${HCCL_CODE_ROOT}/src/coll_communicator_mgr/resource_mgr/local/my_rank/comm_engine_reses
