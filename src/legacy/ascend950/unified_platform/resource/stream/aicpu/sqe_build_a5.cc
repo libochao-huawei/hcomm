@@ -174,10 +174,7 @@ void BuildA5SqeRdmaDbSend(u32 streamId, u32 taskId, u64 dbAddr, u64 dbValue, uin
     sqe->writeValuePart[0]          = static_cast<uint32_t>(dbValue & MASK_32_BIT);                         // low  32 bit
     sqe->writeValuePart[1]          = static_cast<uint32_t>((dbValue >> UINT32_BIT_NUM) & MASK_32_BIT);     // high 32 bit
 
-    sqe->va                         = 0U;
-
-    HCCL_INFO("[SQE]RdmaDbSend streamId %u, taskId %u, dbAddr 0x%llx, dbValue %llu",
-        streamId, taskId, dbAddr, dbValue);
+    sqe->va                         = 1U;
 }
 
 } // namespace Hccl

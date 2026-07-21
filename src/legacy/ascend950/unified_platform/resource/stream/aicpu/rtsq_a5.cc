@@ -368,8 +368,8 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
 void RtsqA5::RdmaDbSend(const uint64_t &dbAddr, const uint64_t &dbValue)
 {
     BuildA5SqeRdmaDbSend(streamId_, taskId_, dbAddr, dbValue, GetCurrSqeBuffer());
-    HCCL_INFO("RtsqA5::RdmaDbSend: RdmaDbSend Sqe: %s, dbValue(dbValue):%llx, SqTail(Rtsq Pi):%u",
-        Bytes2hex(GetCurrSqeBuffer(), RTSQ_SQE_SIZE).c_str(), dbAddr, sqTail_);
+    HCCL_INFO("RtsqA5::RdmaDbSend: RdmaDbSend Sqe: %s, dbAddr:0x%llx, dbValue:0x%llx, SqTail(Rtsq Pi):%u",
+        Bytes2hex(GetCurrSqeBuffer(), RTSQ_SQE_SIZE).c_str(), dbAddr, dbValue, sqTail_);
     RefreshInfo();
 }
 

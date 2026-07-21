@@ -28,25 +28,56 @@ public:
     std::string Describe() override;
 
     // 把基类的同名重载暴露到派生类作用域，避免被隐藏
+    using RmaConnLite::Read;
     using RmaConnLite::Write;
+    using RmaConnLite::WriteReduce;
     using RmaConnLite::WriteWithNotify;
+    using RmaConnLite::WriteReduceWithNotify;
 
     // ========== 厂商初始化接口 ==========
     void GetVendorOps();
     void CheckVendorOp();
 
     // ========== 数据面：RMA 数据传输 ==========
+    void Read(const RmaBufSliceLite    &loc,
+              const RmtRmaBufSliceLite &rmt,
+              const SqeConfigLite      &cfg,
+              u64                      &dbAddr,
+              u64                      &dbValue);
+
     void Write(const RmaBufSliceLite    &loc,
                const RmtRmaBufSliceLite &rmt,
+               const SqeConfigLite      &cfg,
                u64                      &dbAddr,
                u64                      &dbValue);
+
+    void WriteReduce(const RmaBufSliceLite    &loc,
+                     const RmtRmaBufSliceLite &rmt,
+                     const SqeConfigLite      &cfg,
+                     DataType                 dataType,
+                     ReduceOp                 reduceOp,
+                     u64                      &dbAddr,
+                     u64                      &dbValue);
 
     void WriteWithNotify(const RmaBufSliceLite      &loc,
                          const RmtRmaBufSliceLite   &rmt,
                          const RmaBufSliceLite      &locNotify,
                          const RmtRmaBufSliceLite   &notify,
+                         const SqeConfigLite        &cfg,
                          u64                        &dbAddr,
                          u64                        &dbValue);
+
+    void WriteReduceWithNotify(const RmaBufSliceLite      &loc,
+                               const RmtRmaBufSliceLite   &rmt,
+                               const RmaBufSliceLite      &locNotify,
+                               const RmtRmaBufSliceLite   &notify,
+                               const SqeConfigLite        &cfg,
+                               DataType                   dataType,
+                               ReduceOp                   reduceOp,
+                               u64                        &dbAddr,
+                               u64                        &dbValue);
+    
+    HcclResult PollCq(int32_t numEntries, int32_t timeOut, std::vector<int32_t> &errList, u64 &dbAddr, u64 &dbValue);
 
 private:
     void ParseSqContext(std::vector<char>& data);
@@ -60,7 +91,8 @@ private:
     std::unique_ptr<RdmaBaseOps> rdmaOps_ = nullptr;
 
     // ========== 辅助分片写入函数 ==========
-    void DoSliceWrite(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt);
+    void DoSlice(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, 
+                 const std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &)> &op);
 };
 
 } // namespace Hccl

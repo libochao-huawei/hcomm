@@ -497,15 +497,31 @@ TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_Write)
     StreamLite stream(uniqueId);
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(mockcpp::any()).will(returnValue(1));
     MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(mockcpp::any()).will(returnValue(1));
-    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(static_cast<void(RdmaConnLiteV2::*)(
         const RmaBufSliceLite&,
         const RmtRmaBufSliceLite&,
+        const SqeConfigLite&,
         unsigned long long&,
-        unsigned long long&)>(&RdmaConnLiteV2::Write)).stubs();
+        unsigned long long&)>(&RdmaConnLiteV2::Write)).expects(once());
+    MOCKER_CPP(&RdmaConnLiteV2::PollCq)
+        .expects(once())
+        .with(eq(1), eq(5), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    u32 reportCount = 0;
+    ASSERT_EQ(transport.SetAddTaskInfoCallback(
+        [&reportCount](u32, u32, const TaskParam &taskParam, u64) {
+            EXPECT_EQ(taskParam.taskType, TaskParamType::TASK_RDMA);
+            EXPECT_EQ(taskParam.taskPara.DMA.dmaOp, DmaOp::HCCL_DMA_WRITE);
+            EXPECT_EQ(taskParam.taskPara.DMA.linkType, DfxLinkType::ROCE);
+            EXPECT_EQ(taskParam.taskPara.DMA.size, 2048u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.DMA.src), 0x4000u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.DMA.dst), 0x5000u);
+            ++reportCount;
+            return HCCL_SUCCESS;
+        }), HCCL_SUCCESS);
     EXPECT_NO_THROW(transport.Write(locBuf, rmtBuf, stream));
+    EXPECT_EQ(reportCount, 1u);
     
     std::cout << "End Ut_RoceTransportLite_Write" << std::endl;
 }
@@ -527,17 +543,32 @@ TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_WriteWithNotify)
     StreamLite stream(uniqueId);
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(mockcpp::any()).will(returnValue(1));
     MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(mockcpp::any()).will(returnValue(1));
-    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(static_cast<void(RdmaConnLiteV2::*)(
         const RmaBufSliceLite&,
         const RmtRmaBufSliceLite&,
         const RmaBufSliceLite&,
         const RmtRmaBufSliceLite&,
+        const SqeConfigLite&,
         unsigned long long&,
-        unsigned long long&)>(&RdmaConnLiteV2::WriteWithNotify)).stubs();
+        unsigned long long&)>(&RdmaConnLiteV2::WriteWithNotify)).expects(once());
+    MOCKER_CPP(&RdmaConnLiteV2::PollCq)
+        .expects(once())
+        .with(eq(2), eq(5), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    u32 reportCount = 0;
+    ASSERT_EQ(transport.SetAddTaskInfoCallback(
+        [&reportCount](u32, u32, const TaskParam &taskParam, u64) {
+            EXPECT_EQ(taskParam.taskType, TaskParamType::TASK_WRITE_WITH_NOTIFY);
+            EXPECT_EQ(taskParam.taskPara.DMA.notifyID, static_cast<u64>(UINT32_MAX));
+            EXPECT_EQ(taskParam.taskPara.DMA.notifyValue, 1u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.DMA.src), 0x4000u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.DMA.dst), 0x5000u);
+            ++reportCount;
+            return HCCL_SUCCESS;
+        }), HCCL_SUCCESS);
     EXPECT_NO_THROW(transport.WriteWithNotify(locBuf, rmtBuf, withNotify, stream));
+    EXPECT_EQ(reportCount, 1u);
     
     std::cout << "End Ut_RoceTransportLite_WriteWithNotify" << std::endl;
 }
@@ -556,15 +587,198 @@ TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_Post)
     StreamLite stream(uniqueId);
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(mockcpp::any()).will(returnValue(1));
     MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(mockcpp::any()).will(returnValue(1));
-    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(static_cast<void(RdmaConnLiteV2::*)(
         const RmaBufSliceLite&,
         const RmtRmaBufSliceLite&,
+        const SqeConfigLite&,
         unsigned long long&,
-        unsigned long long&)>(&RdmaConnLiteV2::Write)).stubs();
+        unsigned long long&)>(&RdmaConnLiteV2::Write)).expects(once());
+    MOCKER_CPP(&RdmaConnLiteV2::PollCq)
+        .expects(once())
+        .with(eq(1), eq(5), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    u32 reportCount = 0;
+    ASSERT_EQ(transport.SetAddTaskInfoCallback(
+        [&reportCount](u32, u32, const TaskParam &taskParam, u64) {
+            EXPECT_EQ(taskParam.taskType, TaskParamType::TASK_RDMA);
+            EXPECT_EQ(taskParam.taskPara.DMA.notifyID, static_cast<u64>(UINT32_MAX));
+            EXPECT_EQ(taskParam.taskPara.DMA.notifyValue, 1u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.DMA.src), 0x3000u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.DMA.dst), 0x2000u);
+            ++reportCount;
+            return HCCL_SUCCESS;
+        }), HCCL_SUCCESS);
     EXPECT_NO_THROW(transport.Post(remoteNotifyIdx, stream));
+    EXPECT_EQ(reportCount, 1u);
     
     std::cout << "End Ut_RoceTransportLite_Post" << std::endl;
+}
+
+TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_Fence)
+{
+    std::cout << "Start Ut_RoceTransportLite_Fence" << std::endl;
+
+    RoceTransportLiteImpl transport(uniqueId_);
+
+    EXPECT_FALSE(transport.fence_);
+    EXPECT_EQ(transport.Fence(), HCCL_SUCCESS);
+    EXPECT_TRUE(transport.fence_);
+
+    std::cout << "End Ut_RoceTransportLite_Fence" << std::endl;
+}
+
+TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_Read)
+{
+    RoceTransportLiteImpl transport(uniqueId_);
+    RmaBufferLite locBuf(0x4000, 0x200, 0x400, 0);
+    Hccl::Buffer rmtBuf{0x5000, 0x200};
+    std::vector<char> uniqueId{};
+    StreamLite stream(uniqueId);
+
+    MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(mockcpp::any()).will(returnValue(1));
+    MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(mockcpp::any()).will(returnValue(1));
+    MOCKER_CPP(static_cast<void(RdmaConnLiteV2::*)(
+        const RmaBufSliceLite&,
+        const RmtRmaBufSliceLite&,
+        const SqeConfigLite&,
+        unsigned long long&,
+        unsigned long long&)>(&RdmaConnLiteV2::Read)).expects(once());
+    MOCKER_CPP(&RdmaConnLiteV2::PollCq)
+        .expects(once())
+        .with(eq(1), eq(5), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    u32 reportCount = 0;
+    ASSERT_EQ(transport.SetAddTaskInfoCallback(
+        [&reportCount](u32, u32, const TaskParam &taskParam, u64) {
+            EXPECT_EQ(taskParam.taskType, TaskParamType::TASK_RDMA);
+            EXPECT_EQ(taskParam.taskPara.DMA.dmaOp, DmaOp::HCCL_DMA_READ);
+            EXPECT_EQ(taskParam.taskPara.DMA.notifyID, INVALID_VALUE_NOTIFYID);
+            EXPECT_EQ(taskParam.taskPara.DMA.size, 0x200u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.DMA.src), 0x4000u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.DMA.dst), 0x5000u);
+            ++reportCount;
+            return HCCL_SUCCESS;
+        }), HCCL_SUCCESS);
+
+    EXPECT_NO_THROW(transport.Read(locBuf, rmtBuf, stream));
+    EXPECT_EQ(reportCount, 1u);
+}
+
+TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_WriteReduce)
+{
+    RoceTransportLiteImpl transport(uniqueId_);
+    RmaBufferLite locBuf(0x4000, 0x200, 0x400, 0);
+    Hccl::Buffer rmtBuf{0x5000, 0x200};
+    ReduceIn reduceIn(DataType::FP32, ReduceOp::SUM);
+    std::vector<char> uniqueId{};
+    StreamLite stream(uniqueId);
+
+    MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(mockcpp::any()).will(returnValue(1));
+    MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(mockcpp::any()).will(returnValue(1));
+    MOCKER_CPP(static_cast<void(RdmaConnLiteV2::*)(
+        const RmaBufSliceLite&,
+        const RmtRmaBufSliceLite&,
+        const SqeConfigLite&,
+        DataType,
+        ReduceOp,
+        unsigned long long&,
+        unsigned long long&)>(&RdmaConnLiteV2::WriteReduce))
+        .expects(once())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
+              mockcpp::any(), mockcpp::any());
+    MOCKER_CPP(&RdmaConnLiteV2::PollCq)
+        .expects(once())
+        .with(eq(1), eq(5), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    u32 reportCount = 0;
+    ASSERT_EQ(transport.SetAddTaskInfoCallback(
+        [&reportCount](u32, u32, const TaskParam &taskParam, u64) {
+            EXPECT_EQ(taskParam.taskType, TaskParamType::TASK_REDUCE_INLINE);
+            EXPECT_EQ(taskParam.taskPara.Reduce.notifyID, INVALID_VALUE_NOTIFYID);
+            EXPECT_EQ(taskParam.taskPara.Reduce.linkType, DfxLinkType::ROCE);
+            EXPECT_EQ(taskParam.taskPara.Reduce.size, 0x200u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.Reduce.src), 0x4000u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.Reduce.dst), 0x5000u);
+            ++reportCount;
+            return HCCL_SUCCESS;
+        }), HCCL_SUCCESS);
+
+    EXPECT_NO_THROW(transport.WriteReduce(locBuf, rmtBuf, reduceIn, stream));
+    EXPECT_EQ(reportCount, 1u);
+}
+
+TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_WriteReduceWithNotify)
+{
+    RoceTransportLiteImpl transport(uniqueId_);
+    RmaBufferLite locBuf(0x4000, 0x200, 0x400, 0);
+    Hccl::Buffer rmtBuf{0x5000, 0x200};
+    ReduceIn reduceIn(DataType::FP32, ReduceOp::MAX);
+    Hccl::WithNotifyIn withNotify{Hccl::TransportNotifyType::NORMAL, 0};
+    std::vector<char> uniqueId{};
+    StreamLite stream(uniqueId);
+
+    MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(mockcpp::any()).will(returnValue(1));
+    MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(mockcpp::any()).will(returnValue(1));
+    MOCKER_CPP(static_cast<void(RdmaConnLiteV2::*)(
+        const RmaBufSliceLite&,
+        const RmtRmaBufSliceLite&,
+        const RmaBufSliceLite&,
+        const RmtRmaBufSliceLite&,
+        const SqeConfigLite&,
+        DataType,
+        ReduceOp,
+        unsigned long long&,
+        unsigned long long&)>(&RdmaConnLiteV2::WriteReduceWithNotify))
+        .expects(once())
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any(),
+              mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any());
+    MOCKER_CPP(&RdmaConnLiteV2::PollCq)
+        .expects(once())
+        .with(eq(2), eq(5), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    u32 reportCount = 0;
+    ASSERT_EQ(transport.SetAddTaskInfoCallback(
+        [&reportCount](u32, u32, const TaskParam &taskParam, u64) {
+            EXPECT_EQ(taskParam.taskType, TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY);
+            EXPECT_EQ(taskParam.taskPara.Reduce.notifyID, static_cast<u64>(UINT32_MAX));
+            EXPECT_EQ(taskParam.taskPara.Reduce.notifyValue, 1u);
+            EXPECT_EQ(taskParam.taskPara.Reduce.size, 0x200u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.Reduce.src), 0x4000u);
+            EXPECT_EQ(reinterpret_cast<uintptr_t>(taskParam.taskPara.Reduce.dst), 0x5000u);
+            ++reportCount;
+            return HCCL_SUCCESS;
+        }), HCCL_SUCCESS);
+
+    EXPECT_NO_THROW(transport.WriteReduceWithNotify(locBuf, rmtBuf, reduceIn, withNotify, stream));
+    EXPECT_EQ(reportCount, 1u);
+}
+
+TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_PollCq_Expect_ResultPropagated)
+{
+    RoceTransportLiteImpl transport(uniqueId_);
+    std::vector<char> uniqueId{};
+    StreamLite stream(uniqueId);
+    std::vector<int32_t> errList;
+
+    MOCKER_CPP(&RdmaConnLiteV2::PollCq)
+        .expects(once())
+        .with(eq(1), eq(5), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(HCCL_E_REMOTE));
+    EXPECT_EQ(transport.PollCq(1, 5, errList, stream), HCCL_E_REMOTE);
+}
+
+TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_WaitWithTimeout)
+{
+    RoceTransportLiteImpl transport(uniqueId_);
+    std::vector<char> uniqueId{};
+    StreamLite stream(uniqueId);
+
+    MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(mockcpp::any()).will(returnValue(1));
+    MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(mockcpp::any()).will(returnValue(1));
+
+    EXPECT_NO_THROW(transport.WaitWithTimeout(0, stream, 1800));
 }

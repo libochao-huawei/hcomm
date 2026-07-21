@@ -13,6 +13,7 @@
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 #include "rdma_conn_lite_v2.h"
+#include "rdma_vendor_1825_ops.h"
 #include "binary_stream.h"
 
 #define private public
@@ -294,7 +295,8 @@ TEST_F(RdmaConnLiteV2Test, Ut_When_Write_SmallSize_Expect_SingleSlice)
     MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
-    EXPECT_NO_THROW(connLite.Write(loc, rmt, dbAddr, dbValue));
+    SqeConfigLite cfg;
+    EXPECT_NO_THROW(connLite.Write(loc, rmt, cfg, dbAddr, dbValue));
 
     std::cout << "End Ut_When_Write_SmallSize_Expect_SingleSlice" << std::endl;
 }
@@ -316,7 +318,8 @@ TEST_F(RdmaConnLiteV2Test, Ut_When_Write_LargeSize_Expect_MultiSlice)
     MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
-    EXPECT_NO_THROW(connLite.Write(loc, rmt, dbAddr, dbValue));
+    SqeConfigLite cfg;
+    EXPECT_NO_THROW(connLite.Write(loc, rmt, cfg, dbAddr, dbValue));
 
     // 校验上下文未被破坏（Describe 仍可正常输出）
     EXPECT_FALSE(connLite.Describe().empty());
@@ -346,7 +349,8 @@ TEST_F(RdmaConnLiteV2Test, Ut_When_WriteWithNotify_Expect_Success)
     MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
-    EXPECT_NO_THROW(connLite.WriteWithNotify(loc, rmt, locNotify, notify, dbAddr, dbValue));
+    SqeConfigLite cfg;
+    EXPECT_NO_THROW(connLite.WriteWithNotify(loc, rmt, locNotify, notify, cfg, dbAddr, dbValue));
 
     std::cout << "End Ut_When_WriteWithNotify_Expect_Success" << std::endl;
 }
@@ -366,4 +370,185 @@ TEST_F(RdmaConnLiteV2Test, Ut_When_GetVendorOpsCalledTwice_Expect_NoRecreate)
     EXPECT_EQ(connLite.rdmaOps_.get(), firstPtr);
 
     std::cout << "End Ut_When_GetVendorOpsCalledTwice_Expect_NoRecreate" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_CheckVendorOpWithUnsupportedDmaMode_Expect_InternalException)
+{
+    std::cout << "Start Ut_When_CheckVendorOpWithUnsupportedDmaMode_Expect_InternalException" << std::endl;
+
+    RdmaConnLiteV2 connLite(uniqueId_);
+
+    EXPECT_EQ(connLite.rdmaOps_.get(), nullptr);
+    EXPECT_THROW(connLite.CheckVendorOp(), InternalException);
+
+    std::cout << "End Ut_When_CheckVendorOpWithUnsupportedDmaMode_Expect_InternalException" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_Read_SmallSize_Expect_Success)
+{
+    std::cout << "Start Ut_When_Read_SmallSize_Expect_Success" << std::endl;
+
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    RmaBufSliceLite loc(0x1000, 4096, 0x11, 0);
+    RmtRmaBufSliceLite rmt(0x2000, 4096, 0x22, 0, 0, UINT32_MAX);
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
+    SqeConfigLite cfg;
+    EXPECT_NO_THROW(connLite.Read(loc, rmt, cfg, dbAddr, dbValue));
+    EXPECT_EQ(dbAddr, sqCtx_.dbHwVa);
+
+    std::cout << "End Ut_When_Read_SmallSize_Expect_Success" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_Read_LargeSize_Expect_MultiSlice)
+{
+    std::cout << "Start Ut_When_Read_LargeSize_Expect_MultiSlice" << std::endl;
+
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    u64 totalSize = 0x80000000ULL + 0x1000ULL;
+    RmaBufSliceLite loc(0x100000, totalSize, 0x11, 0);
+    RmtRmaBufSliceLite rmt(0x200000, totalSize, 0x22, 0, 0, UINT32_MAX);
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
+    SqeConfigLite cfg;
+    EXPECT_NO_THROW(connLite.Read(loc, rmt, cfg, dbAddr, dbValue));
+    EXPECT_EQ(dbAddr, sqCtx_.dbHwVa);
+    EXPECT_FALSE(connLite.Describe().empty());
+
+    std::cout << "End Ut_When_Read_LargeSize_Expect_MultiSlice" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_WriteReduce_Expect_Success)
+{
+    std::cout << "Start Ut_When_WriteReduce_Expect_Success" << std::endl;
+
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    RmaBufSliceLite loc(0x1000, 4096, 0x11, 0);
+    RmtRmaBufSliceLite rmt(0x2000, 4096, 0x22, 0, 0, UINT32_MAX);
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
+    SqeConfigLite cfg;
+    EXPECT_NO_THROW(connLite.WriteReduce(loc, rmt, cfg, DataType::FP32, ReduceOp::SUM, dbAddr, dbValue));
+    EXPECT_EQ(dbAddr, sqCtx_.dbHwVa);
+
+    std::cout << "End Ut_When_WriteReduce_Expect_Success" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_WriteReduceWithNotify_Expect_Success)
+{
+    std::cout << "Start Ut_When_WriteReduceWithNotify_Expect_Success" << std::endl;
+
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    RmaBufSliceLite loc(0x1000, 4096, 0x11, 0);
+    RmtRmaBufSliceLite rmt(0x2000, 4096, 0x22, 0, 0, UINT32_MAX);
+    RmaBufSliceLite locNotify(0x3000, 64, 0x33, 0);
+    RmtRmaBufSliceLite notify(0x4000, 64, 0x44, 0, 0, UINT32_MAX);
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    MOCKER_CPP(&RdmaBaseOps::WaitSqFree).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::UpdateSqPI).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&RdmaBaseOps::CommitWqe).stubs().will(returnValue(HCCL_SUCCESS));
+    SqeConfigLite cfg;
+    EXPECT_NO_THROW(connLite.WriteReduceWithNotify(
+        loc, rmt, locNotify, notify, cfg, DataType::FP32, ReduceOp::SUM, dbAddr, dbValue));
+    EXPECT_EQ(dbAddr, sqCtx_.dbHwVa);
+
+    std::cout << "End Ut_When_WriteReduceWithNotify_Expect_Success" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_PollCqSuccess_Expect_Success)
+{
+    std::cout << "Start Ut_When_PollCqSuccess_Expect_Success" << std::endl;
+
+    u32 cqDb = 0;
+    cqCtx_.dbSwVa = reinterpret_cast<u64>(&cqDb);
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    std::vector<int32_t> errList;
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    MOCKER_CPP(&Rdma1825Ops::PollOne)
+        .stubs()
+        .with(mockcpp::any())
+        .will(returnValue(static_cast<int32_t>(CQ_POLL_SUCCESS)));
+    EXPECT_EQ(connLite.PollCq(1, 1, errList, dbAddr, dbValue), HCCL_SUCCESS);
+    EXPECT_TRUE(errList.empty());
+    EXPECT_EQ(dbAddr, cqCtx_.dbSwVa);
+    EXPECT_EQ(dbValue, static_cast<u64>(Htonl32(1)));
+    EXPECT_EQ(cqDb, Htonl32(1));
+
+    std::cout << "End Ut_When_PollCqSuccess_Expect_Success" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_PollCqEmpty_Expect_TimeoutWithoutDoorbell)
+{
+    std::cout << "Start Ut_When_PollCqEmpty_Expect_TimeoutWithoutDoorbell" << std::endl;
+
+    u32 cqDb = 0;
+    cqCtx_.dbSwVa = reinterpret_cast<u64>(&cqDb);
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    std::vector<int32_t> errList;
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    MOCKER_CPP(&Rdma1825Ops::PollOne)
+        .stubs()
+        .with(mockcpp::any())
+        .will(returnValue(static_cast<int32_t>(CQ_EMPTY)));
+    EXPECT_EQ(connLite.PollCq(1, 0, errList, dbAddr, dbValue), HCCL_E_TIMEOUT);
+    EXPECT_TRUE(errList.empty());
+    EXPECT_EQ(dbAddr, 0ULL);
+    EXPECT_EQ(dbValue, 0ULL);
+
+    std::cout << "End Ut_When_PollCqEmpty_Expect_TimeoutWithoutDoorbell" << std::endl;
+}
+
+TEST_F(RdmaConnLiteV2Test, Ut_When_PollCqFail_Expect_ReturnError)
+{
+    std::cout << "Start Ut_When_PollCqFail_Expect_ReturnError" << std::endl;
+
+    u32 cqDb = 0;
+    cqCtx_.dbSwVa = reinterpret_cast<u64>(&cqDb);
+    std::vector<char> testId = BuildRdmaConnLiteV2UniqueId(1, sqCtx_, cqCtx_);
+    RdmaConnLiteV2 connLite(testId);
+
+    std::vector<int32_t> errList;
+    u64 dbAddr = 0;
+    u64 dbValue = 0;
+
+    MOCKER_CPP(&Rdma1825Ops::PollOne)
+        .stubs()
+        .with(mockcpp::any())
+        .will(returnValue(static_cast<int32_t>(CQ_POLL_ERROR)));
+    EXPECT_EQ(connLite.PollCq(1, 1, errList, dbAddr, dbValue), HCCL_E_REMOTE);
+    EXPECT_EQ(dbAddr, cqCtx_.dbSwVa);
+    EXPECT_EQ(dbValue, 0ULL);
+    EXPECT_EQ(cqDb, 0u);
+
+    std::cout << "End Ut_When_PollCqFail_Expect_ReturnError" << std::endl;
 }

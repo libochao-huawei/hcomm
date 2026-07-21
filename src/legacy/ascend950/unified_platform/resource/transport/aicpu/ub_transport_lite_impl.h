@@ -79,7 +79,7 @@ public:
     void Drain(const StreamLite &stream) override;
     
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
-    HcclResult Fence();
+    HcclResult Fence() override;
 
     HcclResult Clean();
     HcclResult Resume(std::vector<char> &uniqueId);
