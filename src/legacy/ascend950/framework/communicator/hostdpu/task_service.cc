@@ -253,9 +253,9 @@ HcclResult TaskService::ProcessTaskOk(uint8_t *ctrlHdr, uint64_t hdrLen, uint8_t
     HCCL_INFO("[TaskService::TaskRun] flag = %u.", TASK_OK);
     HCCL_INFO("[TaskService::TaskRun] Set npu2dpu flag -> %u.", TASK_UNSET);
     CHK_RET(WriteFlag(srcFlagPtr, TASK_UNSET));
-    CHK_RET(ReadTaskType(reinterpret_cast<uint8_t *>(ctrlHdr), hdrLen, srcTaskTypePtr, taskTypeStr));
-    CHK_RET(ExecuteTask(reinterpret_cast<uint8_t *>(ctrlHdr), hdrLen, srcFlagPtr, taskTypeStr));
-    CHK_RET(SynchronizeControlInfo(reinterpret_cast<uint8_t *>(ctrlHdr), hdrLen));
+    CHK_RET(ReadTaskType(ctrlHdr, hdrLen, srcTaskTypePtr, taskTypeStr));
+    CHK_RET(ExecuteTask(ctrlHdr, hdrLen, srcFlagPtr, taskTypeStr));
+    CHK_RET(SynchronizeControlInfo(ctrlHdr, hdrLen));
     return HCCL_SUCCESS;
 }
 
@@ -291,13 +291,13 @@ HcclResult TaskService::TaskRun()
     CHK_RET(WriteFlag(srcFlagPtr, TASK_UNSET)); // 初始化重置flag 为 0
 
     while (true) {
-        CHK_RET(ReadFlag(reinterpret_cast<uint8_t *>(ctrlHdr), hdrLen, flag));
+        CHK_RET(ReadFlag(ctrlHdr, hdrLen, flag));
         switch (flag) {
             case TASK_UNSET:
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 continue;
             case TASK_OK:
-                CHK_RET(ProcessTaskOk(reinterpret_cast<uint8_t *>(ctrlHdr), hdrLen, srcFlagPtr, srcTaskTypePtr));
+                CHK_RET(ProcessTaskOk(ctrlHdr, hdrLen, srcFlagPtr, srcTaskTypePtr));
                 continue;
             case TASK_TERMINATE:
                 HCCL_INFO("[TaskService::TaskRun] flag = %u.", flag);

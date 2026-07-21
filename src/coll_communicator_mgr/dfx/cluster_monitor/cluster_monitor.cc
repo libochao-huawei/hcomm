@@ -435,10 +435,9 @@ HcclResult ClusterMonitor::SendFrameFromBuffer(ClusterUIDType &dst, ClusterMonit
     while (uid2SocketRefMap_[dst].sendBuffer.size() > 0) {
         ClusterMonitorFrame hbf = uid2SocketRefMap_[dst].sendBuffer.front();
         u64 sendDis = sizeof(ClusterMonitorFrame) - uid2SocketRefMap_[dst].restSize;
-        u64 compSize = 0;
+        uint64_t compSize = 0;
         HcclResult ret = SocketSendNb(uid2SocketRefMap_[dst].socketHandler,
-            (reinterpret_cast<char *>(&hbf) + sendDis), uid2SocketRefMap_[dst].restSize,
-            (reinterpret_cast<uint64_t *>(&compSize)));
+            (reinterpret_cast<char *>(&hbf) + sendDis), uid2SocketRefMap_[dst].restSize, &compSize);
         if (ret != HCCL_SUCCESS) {
             HCCL_WARNING("[CreateTransportHandle] SocketSendNb failed, ret[%d]", ret);
             return ret;
@@ -465,10 +464,10 @@ HcclResult ClusterMonitor::SendFrame(
         HcclResult ret = SendFrameFromBuffer(dst, cmFrame);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_WARNING("[SendFrameFromBuffer] failed, ret[%d]", ret), ret);
     } else {
-        u64 compSize = 0;
-        u64 expectSize = sizeof(ClusterMonitorFrame);
+        uint64_t compSize = 0;
+        uint64_t expectSize = sizeof(ClusterMonitorFrame);
         HcclResult ret = SocketSendNb(
-            uid2SocketRefMap_[dst].socketHandler, &cmFrame, expectSize, (reinterpret_cast<uint64_t *>(&compSize)));
+            uid2SocketRefMap_[dst].socketHandler, &cmFrame, expectSize, &compSize);
         if (ret != HCCL_SUCCESS) {
             HCCL_WARNING("[CreateTransportHandle] SocketSendNb failed, ret[%d]", ret);
             return ret;

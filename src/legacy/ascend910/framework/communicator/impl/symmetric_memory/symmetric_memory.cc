@@ -896,7 +896,7 @@ HcclResult SymmetricMemory::FindSymmetricWindow(void* ptr, size_t size, void** w
     return HCCL_E_NOT_FOUND;
 }
 
-HcclResult SymmetricMemory::FindUrmaSymmetricWindow(void* ptr, size_t size, void** win, u64 *offset)
+HcclResult SymmetricMemory::FindUrmaSymmetricWindow(void* ptr, size_t size, void** win, size_t *offset)
 {
     CHK_PTR_NULL(ptr);
     CHK_PTR_NULL(win);

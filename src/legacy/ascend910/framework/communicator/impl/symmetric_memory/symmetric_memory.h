@@ -120,7 +120,7 @@ public:
     HcclResult DeregisterSymmetricMem(void* devWin);
     HcclResult DeregisterUrmaSymmetricMem(void* devWin);
     HcclResult FindSymmetricWindow(void* ptr, size_t size, void** win, u64 *offset);
-    HcclResult FindUrmaSymmetricWindow(void* ptr, size_t size, void** win, u64 *offset);
+    HcclResult FindUrmaSymmetricWindow(void* ptr, size_t size, void** win, size_t *offset);
     HcclResult GetPendingRegisterInfos(std::vector<SymmetricMemoryRegisterInfo> &registerInfos) const;
     HcclResult SetRegisteredMemoryResource(void* devWin, const SymmetricMemoryResource &resource);
     HcclResult GetRegisteredMemoryResource(void* devWin, SymmetricMemoryResource &resource) const;

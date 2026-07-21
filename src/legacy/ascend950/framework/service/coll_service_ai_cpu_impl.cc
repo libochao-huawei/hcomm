@@ -382,7 +382,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
 	cfg.attrs = &attr;
     TRY_CATCH_THROW(InternalException, std::string("HrtMemcpy kernelParamBuf failed"),
         HrtMemcpy(reinterpret_cast<void *>(kernelParamBuf_.get()->GetAddr()), sizeof(HcclKernelParamLite), 
-            reinterpret_cast<void *>(&param), sizeof(HcclKernelParamLite), RT_MEMCPY_HOST_TO_HOST));
+            &param, sizeof(HcclKernelParamLite), RT_MEMCPY_HOST_TO_HOST));
     
     HCCL_INFO("[CollServiceAiCpuImpl][%s] args timeout[%u]s", __func__, attr.value.timeout);
 

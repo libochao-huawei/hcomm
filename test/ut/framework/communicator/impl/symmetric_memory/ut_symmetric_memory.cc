@@ -1351,7 +1351,7 @@ TEST_F(SymmetricMemoryTest, ut_RegisterUrmaSymmetricMem_When_SubsetRegister_Expe
     EXPECT_EQ(symmetricMemory.remoteMemMap_.size(), 1U);
 
     void* foundWin = nullptr;
-    u64 offset = 0;
+    size_t offset = 0;
     ret = symmetricMemory.FindUrmaSymmetricWindow(subsetPtr, 0x1000, &foundWin, &offset);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(foundWin, parentWin);

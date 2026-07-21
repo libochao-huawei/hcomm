@@ -240,7 +240,7 @@ HcclResult CollComm::DeregisterWindow(HcclCommSymWindow winHandle)
 HcclResult CollComm::GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset)
 {
     CHK_SMART_PTR_NULL(symmetricMemory_);
-    return symmetricMemory_->FindUrmaSymmetricWindow(ptr, size, winHandle, reinterpret_cast<u64*>(offset));
+    return symmetricMemory_->FindUrmaSymmetricWindow(ptr, size, winHandle, offset);
 }
 
 HcclResult CollComm::RegisterPendingSymmetricMemHandles(std::vector<HcclMemHandle> &memHandles)
