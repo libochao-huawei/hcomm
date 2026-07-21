@@ -23,7 +23,7 @@ private:
 public:
     class Iterator : public Queue<T>::Iterator {
     private:
-        VectorQueue *queue_{nullptr};
+        const VectorQueue *queue_{nullptr};
         u32          index_ = 0;
 
     protected:
@@ -35,10 +35,10 @@ public:
         }
 
     public:
-        using pointer   = T *;
-        using reference = T &;
+        using pointer   = const T *;
+        using reference = const T &;
 
-        Iterator(VectorQueue *queue, u32 index) : queue_(queue), index_(index)
+        Iterator(const VectorQueue *queue, u32 index) : queue_(queue), index_(index)
         {
             check();
         }
@@ -157,12 +157,12 @@ public:
         return std::make_shared<Iterator>(this, static_cast<u32>(this->size_));
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> Begin() override
+    std::shared_ptr<typename Queue<T>::Iterator> Begin() const override
     {
         return std::make_shared<Iterator>(this, 0);
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> Tail() override
+    std::shared_ptr<typename Queue<T>::Iterator> Tail() const override
     {
         if (this->IsEmpty()) {
             HCCL_WARNING("[VectorQueue][Tail] Queue is empty!");
@@ -171,7 +171,7 @@ public:
         return std::make_shared<Iterator>(this, static_cast<u32>(this->size_ - 1));
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> End() override
+    std::shared_ptr<typename Queue<T>::Iterator> End() const override
     {
         return std::make_shared<Iterator>(this, static_cast<u32>(this->size_));
     }

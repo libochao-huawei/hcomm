@@ -288,7 +288,7 @@ HcclResult HcclAicpuKernelLaunch(HcclComm comm, const HcclOpDesc *opInfo, const 
     return AicpuKernelLaunchDirect(comm, funcInfo, aicpuThreadHandle, opInfo->p2p.unfoldStream, userStream);
 }
 
-static HcclResult GetStreams(CollComm *collComm, const std::vector<HcclP2pTask> &sortedSendQue,
+static HcclResult GetStreams(const CollComm *collComm, const std::vector<HcclP2pTask> &sortedSendQue,
     const std::vector<HcclP2pTask> &sortedRecvQue, aclrtStream &unfoldStream, const aclrtStream &usrStream)
 {
     if (!sortedSendQue.empty()) {

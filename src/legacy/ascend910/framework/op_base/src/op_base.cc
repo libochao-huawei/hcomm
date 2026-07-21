@@ -2103,7 +2103,7 @@ HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, 
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_BROADCAST;
-        info.sendbuff = static_cast<const void *>(buf);
+        info.sendbuff = buf;
         info.sendCount = count;
         info.sendType = dataType;
         info.recvType = dataType;
@@ -2236,8 +2236,8 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_REDUCE_SCATTER;
-        info.sendbuff = static_cast<const void *>(sendBuf);
-        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
         info.recvCount = recvCount;
         info.sendType = dataType;
         info.recvType = dataType;
@@ -2362,8 +2362,8 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V;
-        info.sendbuff = static_cast<const void *>(sendBuf);
-        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
         info.sendCounts = sendCounts;
         info.sdispls = sendDispls;
         info.recvCount = recvCount;
@@ -2523,8 +2523,8 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_SCATTER;
-        info.sendbuff = static_cast<const void *>(sendBuf);
-        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
         info.recvCount = recvCount;
         info.sendType = dataType;
         info.recvType = dataType;
@@ -2666,8 +2666,8 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLGATHER;
-        info.sendbuff = static_cast<const void *>(sendBuf);
-        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
         info.sendCount = sendCount;
         info.sendType = dataType;
         info.recvType = dataType;
@@ -2781,8 +2781,8 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLGATHER_V;
-        info.sendbuff = static_cast<const void *>(sendBuf);
-        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
         info.sendCount = sendCount;
         info.recvCounts = recvCounts;
         info.rdispls = recvDispls;
@@ -3608,12 +3608,10 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLTOALL;
-        info.sendbuff = static_cast<const void *>(sendBuf);
-        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendbuff = const_cast<void *>(sendBuf);
+        info.recvbuff = const_cast<void *>(recvBuf);
         info.sendCount = sendCount;
         info.recvCount = recvCount;
-        info.sendType = sendType;
-        info.recvType = recvType;
         info.comm = comm;
         info.stream = stream;
         CHK_RET(taskAppend(comm, info));
@@ -3725,8 +3723,8 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLTOALLV;
-        info.sendbuff = static_cast<const void *>(sendBuf);
-        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendbuff = const_cast<void *>(sendBuf);
+        info.recvbuff = const_cast<void *>(recvBuf);
         info.sendCounts = sendCounts;
         info.recvCounts = recvCounts;
         info.sdispls = sdispls;
@@ -3852,8 +3850,8 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLTOALLVC;
-        info.sendbuff = static_cast<const void *>(sendBuf);
-        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendbuff = const_cast<void *>(sendBuf);
+        info.recvbuff = const_cast<void *>(recvBuf);
         info.sendCounts = sendCountMatrix;
         info.sendType = sendType;
         info.recvType = recvType;
@@ -3987,8 +3985,8 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_REDUCE;
-        info.sendbuff = static_cast<const void *>(sendBuf);
-        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
         info.sendCount = count;
         info.sendType = dataType;
         info.recvType = dataType;

@@ -24,7 +24,7 @@ private:
 public:
     class Iterator : public Queue<T>::Iterator {
     private:
-        CircularQueue *queue_{nullptr};
+        const CircularQueue *queue_{nullptr};
 
     protected:
         void check() override
@@ -53,7 +53,7 @@ public:
         }
 
     public:
-        Iterator(typename std::vector<T>::iterator it, CircularQueue *queue) : Queue<T>::Iterator(it), queue_(queue)
+        Iterator(typename std::vector<T>::const_iterator it, const CircularQueue *queue) : Queue<T>::Iterator(it), queue_(queue)
         {
             if (queue_ == nullptr) {
                 THROW<InternalException>(StringFormat("CircularQueue::Iterator queue_ is nullptr"));
@@ -190,7 +190,7 @@ public:
         return std::make_shared<Iterator>(elems_.begin() + tail_, this);
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> Begin() override
+    std::shared_ptr<typename Queue<T>::Iterator> Begin() const override
     {
         if (this->IsEmpty()) {
             HCCL_WARNING("[CircularQueue][Begin] Queue is empty!");
@@ -199,7 +199,7 @@ public:
         return std::make_shared<Iterator>(elems_.begin() + head_, this);
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> Tail() override
+    std::shared_ptr<typename Queue<T>::Iterator> Tail() const override
     {
         if (this->IsEmpty()) {
             HCCL_WARNING("[CircularQueue][Tail] Queue is empty!");
@@ -208,7 +208,7 @@ public:
         return std::make_shared<Iterator>(elems_.begin() + (tail_ - 1 + capacity_) % capacity_, this);
     }
 
-    std::shared_ptr<typename Queue<T>::Iterator> End() override
+    std::shared_ptr<typename Queue<T>::Iterator> End() const override
     {
         return std::make_shared<Iterator>(elems_.begin() + tail_, this);
     }

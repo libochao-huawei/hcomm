@@ -24,7 +24,7 @@ template <typename T> class Queue {
 public:
     class Iterator {
     protected:
-        typename std::vector<T>::iterator it_;
+        typename std::vector<T>::const_iterator it_;
 
     protected:
         virtual void check()
@@ -33,10 +33,10 @@ public:
         }
 
     public:
-        using pointer   = T *;
-        using reference = T &;
+        using pointer   = const T *;
+        using reference = const T &;
 
-        explicit Iterator(typename std::vector<T>::iterator it) : it_(it)
+        explicit Iterator(typename std::vector<T>::const_iterator it) : it_(it)
         {
         }
 
@@ -105,9 +105,9 @@ public:
     virtual bool                      IsFull() const                                  = 0;
     virtual size_t                    Capacity() const                                = 0;
     virtual std::shared_ptr<Iterator> Find(std::function<bool(const T &)> cond)       = 0;
-    virtual std::shared_ptr<Iterator> Begin()                                         = 0;
-    virtual std::shared_ptr<Iterator> Tail()                                          = 0;
-    virtual std::shared_ptr<Iterator> End()                                           = 0;
+    virtual std::shared_ptr<Iterator> Begin() const                                     = 0;
+    virtual std::shared_ptr<Iterator> Tail() const                                      = 0;
+    virtual std::shared_ptr<Iterator> End() const                                       = 0;
     virtual void                      PopFront()
     {
         THROW<InternalException>(StringFormat("Queue<T>::PopFront () is not supported"));

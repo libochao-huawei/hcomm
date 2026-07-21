@@ -76,8 +76,8 @@ struct hcclCommDestroyAsyncJob : public hcclAsyncJob {
 
 struct hcclOpInfo {/*用于保存算子的入参。所有算子用同个结构体保存info */
     HcclCMDType coll;
-    const void* sendbuff;
-    const void* recvbuff;
+    void* sendbuff;
+    void* recvbuff;
     u64 sendCount; // for non-V operators
     u64 recvCount; // for non-V operators
     const void *sendCounts;
