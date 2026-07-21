@@ -45,3 +45,30 @@ TEST_F(HcclCommResumeTest, Ut_HcclCommResume_When_CommIsOk_Expect_ReturnIsHCCL_S
 
     Ut_Comm_Destroy(comm);
 }
+
+class HcclCommResumeRealLogTest : public BaseInit {
+public:
+    void SetUp() override {
+        BaseInit::SetUp();
+        UT_USE_1SERVER_1RANK_AS_DEFAULT;
+    }
+    void TearDown() override {
+        BaseInit::TearDown();
+        GlobalMockObject::verify();
+    }
+};
+
+TEST_F(HcclCommResumeRealLogTest, Ut_HcclCommResume_RealCall_CoverBeginLog)
+{
+    UT_COMM_CREATE_DEFAULT(comm);
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclCommunicator *communicator = hcclComm->GetHcclCommunicator();
+    ASSERT_NE(communicator, nullptr);
+    communicator->identifier_ = "ut_test_comm";
+
+    HcclResult ret = hcclComm->Resume();
+    (void)ret;
+
+    Ut_Comm_Destroy(comm);
+}

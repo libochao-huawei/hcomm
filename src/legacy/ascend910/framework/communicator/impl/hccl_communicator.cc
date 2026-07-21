@@ -1230,7 +1230,7 @@ bool HcclCommunicator::IsEnableRoce()
             if (opInfo.execStatus.kfcStatus == KfcStatus::kStoplaunch)
             {
                 KfcCommand opCmd = KfcCommand::NsStopExec;
-                HCCL_RUN_INFO("[NsRecovery][SetOpExecCmd]set KfcCommand [%d]", opCmd);
+                HCCL_RUN_INFO("[NsRecovery][SetOpExecCmd]set KfcCommand [%d], group[%s]", opCmd, identifier_.c_str());
                 CHK_RET(controlH2D->Put(0, sizeof(KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
                 auto waitStopExecCmdTimeoutMs = HcclGetCmdTimeout();
                 auto waitStopExecCmdTimeout = std::chrono::milliseconds(waitStopExecCmdTimeoutMs);
@@ -1293,7 +1293,7 @@ bool HcclCommunicator::IsEnableRoce()
             if (opInfo.execStatus.kfcStatus == KfcStatus::kStopExec || opInfo.execStatus.kfcStatus == KfcStatus::kEnd)
             {
                 KfcCommand opCmd = KfcCommand::NsClear;
-                HCCL_RUN_INFO("[NsRecovery][SetOpExecCmd]set KfcCommand [%d]", opCmd);
+                HCCL_RUN_INFO("[NsRecovery][SetOpExecCmd]set KfcCommand [%d], group[%s]", opCmd, identifier_.c_str());
                 CHK_RET(controlH2D->Put(0, sizeof(KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
                 auto waitStopExecCmdTimeoutMs = HcclGetCmdTimeout();
                 auto waitStopExecCmdTimeout = std::chrono::milliseconds(waitStopExecCmdTimeoutMs);
@@ -2403,7 +2403,7 @@ bool HcclCommunicator::IsEnableRoce()
     {
         HcclUs startut = TIME_NOW();
         bool isChangedLink = false;
-        HCCL_DEBUG("HcclCommunicator Resume begin.");
+        HCCL_RUN_INFO("HcclCommunicator Resume begin, group[%s].", identifier_.c_str());
         // 发生N秒快恢, 头尾计数可能不对，需要将头尾计数清零
         CHK_RET(ClearOpCounterMem());
         for (auto &it : tagCommInfo_)
@@ -2437,8 +2437,8 @@ bool HcclCommunicator::IsEnableRoce()
         isSuspending = false;
 
         HcclUs endut = TIME_NOW();
-        HCCL_RUN_INFO("HcclCommunicator::Resume, Resume take time:[%lld]us",
-                      DURATION_US(endut - startut).count());
+        HCCL_RUN_INFO("HcclCommunicator::Resume, Resume take time:[%lld]us, group[%s]",
+                      DURATION_US(endut - startut).count(), identifier_.c_str());
 
         return HCCL_SUCCESS;
     }

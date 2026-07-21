@@ -120,3 +120,34 @@ TEST_F(RetryTest, ut_retry_ServerCheckOp_When_CheckFail_Expect_RetryErrTrue)
 
     GlobalMockObject::verify();
 }
+
+TEST_F(RetryTest, ut_retry_ResumeServer_WaitAgentCheckLinkResult_RecvSuccess_Log)
+{
+    HcclIpAddress localIp = HcclIpAddress("192.168.100.110");
+    std::shared_ptr<HcclSocket> serverSocket1(new (std::nothrow)HcclSocket(
+        "RetryServer1", nullptr, localIp, 16666, HcclSocketRole::SOCKET_ROLE_CLIENT));
+
+    std::map<u32, std::shared_ptr<HcclSocket>> serverSockets;
+    serverSockets.insert(std::make_pair(1, serverSocket1));
+
+    HcclIpAddress deviceIP = HcclIpAddress("10.21.78.208");
+    s32 deviceLogicId = 0;
+    OpRetryAgentInfo agentInfo = {0, deviceLogicId, localIp, deviceIP};
+
+    std::shared_ptr<ResumeServerCheckAllLink> resumeServer =
+        std::make_shared<ResumeServerCheckAllLink>();
+    RetryContext context(serverSockets, resumeServer, agentInfo);
+    context.group_ = "ut_test_group";
+
+    MOCKER_CPP(&OpRetryBase::WaitLinkPortCheckResult)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    context.serverSockets_[1].linkPortStatus.rankList[0] = 7;
+
+    HcclResult ret = resumeServer->WaitAgentCheckLinkResult(&context);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}

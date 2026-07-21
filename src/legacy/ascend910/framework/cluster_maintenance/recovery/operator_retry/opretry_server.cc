@@ -901,7 +901,7 @@ HcclResult ResumeServerCheckAllLink::WaitAgentCheckLinkResult(RetryContext *retr
                 HCCL_ERROR("[OpRetry][Server][Resume]WaitAgentCheckLinkResult WaitLinkPortCheckResult Failed"), ret);
             if (ret == HCCL_SUCCESS) {
                 recvVaild.insert(agentId);
-                HCCL_RUN_INFO("[OpRetry][Server][Resume]WaitAgentCheckLinkResult recv valid from agentId[%u], group[%s],remoteRank[%d]", agentId, retryCtx->group_.c_str(), rank.second.linkPortStatus.rankList[0]);
+                HCCL_RUN_INFO("[OpRetry][Server][Resume]WaitAgentCheckLinkResult recv valid from agentId[%u], group[%s],remoteRank[%u]", agentId, retryCtx->group_.c_str(), rank.second.linkPortStatus.rankList[0]);
             }
         }
     }
@@ -939,7 +939,7 @@ HcclResult ResumeServerCheckAllLink::CheckAllLink(RetryContext *retryCtx, RetryS
                 nextState = RETRY_STATE_SERVER_RETRY_FAIL;
                 return HCCL_SUCCESS;
             }
-            HCCL_RUN_INFO("[OpRetry][Server][Resume]CheckAllLink remoteRank[%d], changeLinkInfo remoteRankList[%d], linkPortStatus rankList[%d]", remoteRank, retryCtx->serverSockets_[rank].changeLinkInfo.remoteRankList[0],  linkPortStatus.rankList[0]);
+            HCCL_RUN_INFO("[OpRetry][Server][Resume]CheckAllLink remoteRank[%u], changeLinkInfo remoteRankList[%u], linkPortStatus rankList[%u]", remoteRank, retryCtx->serverSockets_[rank].changeLinkInfo.remoteRankList[0],  linkPortStatus.rankList[0]);
             remoteRankIndex++;
         }
         retryCtx->serverSockets_[rank].changeLinkInfo.remoteRankNum = remoteRankIndex;
