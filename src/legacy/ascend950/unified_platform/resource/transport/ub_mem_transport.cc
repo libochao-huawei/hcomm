@@ -12,6 +12,8 @@
 #include "exchange_ub_buffer_dto.h"
 #include "exchange_ub_conn_dto.h"
 #include "local_ub_rma_buffer.h"
+#include "dev_capability.h"
+#include "dev_buffer.h"
 #include "../../common/dlprof_func.h"
 #include "user_remote_mem_getter.h"
 #include "exception_util.h"
@@ -48,6 +50,39 @@ std::string UbMemTransport::Describe() const
     msg += StringFormat("exchangeDataSize=%u, ", exchangeDataSize);
     msg += StringFormat("rmtNotifyNum=%zu, rmtCntNotifyVecNum=%zu]", rmtNotifyVec.size(), rmtCntNotifyVec.size());
     return msg;
+}
+
+HcclResult UbMemTransport::BuildDrainResource()
+{
+    // notify作为read的落点
+    if (drainNotify_ == nullptr) {
+        bool devUsed = true;
+        EXCEPTION_CATCH(
+            drainNotify_ = std::make_unique<Hccl::UbLocalNotify>(rdmaHandle, devUsed),
+            return HCCL_E_PTR
+        );
+        HCCL_INFO("[UbMemTransport][%s] drain notify created: %s", __func__, drainNotify_->Describe().c_str());
+    }
+
+    // 常量1内存供远端读取
+    if (drainBuffer_ == nullptr) {
+        u32 notifySize = Hccl::DevCapability::GetInstance().GetNotifySize();
+
+        std::shared_ptr<Hccl::DevBuffer> constMem;
+        EXCEPTION_CATCH(constMem = std::make_shared<Hccl::DevBuffer>(notifySize), return HCCL_E_PTR);
+
+        Hccl::HrtMemcpy(reinterpret_cast<void *>(constMem->GetAddr()), constMem->GetSize(),
+            &NORMAL_NOTIFY_VAL, sizeof(NORMAL_NOTIFY_VAL), RT_MEMCPY_HOST_TO_DEVICE);
+
+        EXCEPTION_CATCH(
+            drainBuffer_ = std::make_unique<Hccl::LocalUbRmaBuffer>(constMem, rdmaHandle),
+            return HCCL_E_PTR
+        );
+        HCCL_INFO("[UbMemTransport][%s] drain buffer created: addr[0x%llx], size[%zu]",
+            __func__, static_cast<unsigned long long>(drainBuffer_->GetAddr()), drainBuffer_->GetSize());
+    }
+
+    return HCCL_SUCCESS;
 }
 
 HcclResult UbMemTransport::Describe(std::string &dfxMsg)
@@ -559,6 +594,7 @@ HcclResult UbMemTransport::SendAll()
     BufferVecPack(binaryStream, commonLocRes.bufferVec);
     CntNotifyVecPack(binaryStream);
     CntNotifyDescPack(binaryStream);
+    CHK_RET(DrainBufPack(binaryStream));
     ConnVecPack(binaryStream);
 
     sendDataPack_.resize(sizeof(u32));
@@ -673,6 +709,12 @@ HcclResult UbMemTransport::RecvDataProcess(bool &needSendFinish)
         HCCL_ERROR("[UbMemTransport::RecvDataProcess] CntNotifyDescUnpack failed, ret=%d", ret);
         return ret;
     }
+
+    ret = DrainBufUnpack(binaryStream);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[UbMemTransport::RecvDataProcess] DrainBufUnpack failed, ret=%d", ret);
+        return ret;
+    }
     
     ret = ConnVecUnpackProc(binaryStream, needSendFinish);
     if (ret != HCCL_SUCCESS) {
@@ -726,6 +768,44 @@ void UbMemTransport::CntNotifyDescPack(BinaryStream &binaryStream)
         binaryStream << it;
     }
 }
+
+HcclResult UbMemTransport::DrainBufPack(BinaryStream &binaryStream)
+{
+    // 打包交换信息前，进行资源创建
+    CHK_RET(BuildDrainResource());
+
+    // 只需交换 常量buffer信息 供远端读
+    HCCL_INFO("start pack drain buffer");
+    if (drainBuffer_ != nullptr) { // 非空的buffer，从buffer中获取 dto
+        std::unique_ptr<Serializable> dto = drainBuffer_->GetExchangeDto();
+        dto->Serialize(binaryStream);
+        HCCL_INFO("pack drain buffer dto %s", dto->Describe().c_str());
+    } else { // 空的buffer，dto所有字段为0(size=0)
+        ExchangeUbBufferDto exchangeDto;
+        exchangeDto.Serialize(binaryStream);
+        HCCL_INFO("pack drain buffer, dto is null %s", exchangeDto.Describe().c_str());
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::DrainBufUnpack(BinaryStream &binaryStream)
+{
+    HCCL_INFO("start unpack drain buffer");
+    ExchangeUbBufferDto dto;
+    dto.Deserialize(binaryStream);
+
+    if (dto.size == 0) {
+        rmtDrainBuffer_ = nullptr;
+        HCCL_WARNING("unpack drain buffer dto is null");
+    } else {
+        rmtDrainBuffer_ = std::make_unique<RemoteUbRmaBuffer>(rdmaHandle, dto);
+        HCCL_INFO("unpack drain buffer rmtDrainBuffer=%s", rmtDrainBuffer_->Describe().c_str());
+    }
+    
+    return HCCL_SUCCESS;
+}
+
 HcclResult UbMemTransport::CntNotifyDescUnpack(BinaryStream &binaryStream)
 {
     u32 descSize;
@@ -918,6 +998,9 @@ std::vector<char> UbMemTransport::GetUniqueIdV2()
  
     auto rmtBufferUniqueIds = GetRmtBufferUniqueIds(rmtBufferVec, UbRmtBufType::BUFFER);
     binaryStream << rmtBufferUniqueIds;
+
+    auto drainUniqueIds = GetDrainUniqueIds();
+    binaryStream << drainUniqueIds;
  
     auto connUniqueIds = GetConnUniqueIds();
     binaryStream << connUniqueIds;
@@ -970,6 +1053,38 @@ std::vector<char> UbMemTransport::GetNotifyUniqueIds()
         auto uniqueId = it->GetUniqueId();
         result.insert(result.end(), uniqueId.begin(), uniqueId.end());
     }
+    return result;
+}
+
+std::vector<char> UbMemTransport::GetDrainUniqueIds() const
+{
+    HCCL_INFO("start packing drain resources uniqueIds");
+    std::vector<char> result(0);
+    std::vector<char> uniqueId;
+
+    // pack drain notify
+    if (drainNotify_ != nullptr) {
+        auto dto = drainNotify_->GetExchangeDto();
+        ExchangeUbBufferDto* rawDto = static_cast<ExchangeUbBufferDto*>(dto.get());
+        uniqueId = GetSingleRmtBufferUniqueId(rawDto->addr, rawDto->size, rawDto->tokenId, rawDto->tokenValue, rawDto->notifyId);
+        HCCL_INFO("UbMemTransport::GetDrainUniqueIds, %s", drainNotify_->Describe().c_str());
+    } else {
+        uniqueId = GetSingleRmtBufferUniqueId(0, 0, 0, 0, UINT32_MAX); // 填充一个空的buffer
+        HCCL_INFO("UbMemTransport::GetDrainUniqueIds, drainNotify_ null buffer");
+    }
+    result.insert(result.end(), uniqueId.begin(), uniqueId.end());
+
+    // pack drain rmtMem
+    if (rmtDrainBuffer_ != nullptr) {
+        uniqueId = GetSingleRmtBufferUniqueId(rmtDrainBuffer_->GetAddr(), rmtDrainBuffer_->GetSize(),
+            rmtDrainBuffer_->GetTokenId(), rmtDrainBuffer_->GetTokenValue(), rmtDrainBuffer_->GetNotifyId());
+        HCCL_INFO("UbMemTransport::GetDrainUniqueIds, %s", rmtDrainBuffer_->Describe().c_str());
+    } else {
+        uniqueId = GetSingleRmtBufferUniqueId(0, 0, 0, 0, UINT32_MAX); // 填充一个空的buffer
+        HCCL_INFO("UbMemTransport::GetDrainUniqueIds, rmtDrainBuffer_ null buffer");
+    }
+    result.insert(result.end(), uniqueId.begin(), uniqueId.end());
+
     return result;
 }
 
@@ -1121,6 +1236,7 @@ HcclResult UbMemTransport::Init()
     for (auto& ubConn : commonLocRes.connVec) {
         TRY_CATCH_RETURN(ubConn->Connect());
     }
+
     return HCCL_SUCCESS;
 }
  

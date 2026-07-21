@@ -14,6 +14,7 @@
 #include "local_ub_rma_buffer.h"
 #include "task_param.h"
 #include "virtual_topo.h"
+#include "ub_local_notify.h"
 
 namespace Hccl {
 
@@ -116,6 +117,11 @@ private:
     std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>     memInfoCopies_;          // 储存 Tag 字符串副本
     std::vector<char*>           memInfoPointers_;        // Tag 缓存
+    std::unique_ptr<Hccl::BaseLocalNotify>                      drainNotify_;       // 本端drain notify
+    std::unique_ptr<Hccl::LocalUbRmaBuffer>                     drainBuffer_;       // 本端常量1 buffer
+    std::unique_ptr<Hccl::RemoteUbRmaBuffer>                    rmtDrainBuffer_;    // 对端常量1 buffer
+
+    HcclResult BuildDrainResource();
 
     HcclResult SendAll();
     HcclResult RecvDataSize();
@@ -127,6 +133,9 @@ private:
 
     void BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec);
     void CntNotifyVecPack(BinaryStream &binaryStream);
+
+    HcclResult DrainBufPack(BinaryStream &binaryStream);
+    HcclResult DrainBufUnpack(BinaryStream &binaryStream);
 
     void CntNotifyDescPack(BinaryStream &binaryStream);
     HcclResult CntNotifyDescUnpack(BinaryStream &binaryStream);
@@ -150,6 +159,7 @@ private:
     std::vector<char> GetRmtBufferUniqueIds(RemoteBufferVec &bufferVec, UbRmtBufType type) const;
     std::vector<char> GetLocBufferUniqueIds(LocalBufferVec &bufferVec, UbRmtBufType type) const;
     std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue, u32 notifyId) const;
+    std::vector<char> GetDrainUniqueIds() const;
     std::vector<char> GetConnUniqueIds();
 
     bool IsResReady();

@@ -84,6 +84,11 @@ void UbTransportLiteImpl::Init(std::vector<char> &uniqueId)
     binaryStream >> rmtBufferUniqueIds;
     ParseRmtBufferVec(rmtBufferUniqueIds, RmaUbBufType::BUFFER);
 
+    // 解析drain相关的资源信息
+    std::vector<char> drainBufferUniqueIds;
+    binaryStream >> drainBufferUniqueIds;
+    ParseDrainResource(drainBufferUniqueIds);
+
     std::vector<char> connUniqueIds;
     binaryStream >> connUniqueIds;
     ParseConnVec(connUniqueIds);
@@ -206,6 +211,29 @@ void UbTransportLiteImpl::ParseLocBufferMap(std::vector<char> &data)
         HCCL_INFO("idx=%u, LocBuffer %s", idx, ubBufLite.Describe().c_str());
         locBufferMap[static_cast<uintptr_t>(ubBufLite.addr)] = ubBufLite;
     }
+}
+
+void UbTransportLiteImpl::ParseDrainResource(std::vector<char> &data)
+{
+    if (data.size() == 0) {
+        HCCL_WARNING("UbTransportLiteImpl::ParseDrainResource is null");
+        return;
+    }
+
+    BinaryStream binaryStream(data);
+    binaryStream >> drainNotify_.addr;
+    binaryStream >> drainNotify_.size;
+    binaryStream >> drainNotify_.tokenId;
+    binaryStream >> drainNotify_.tokenValue;
+    binaryStream >> drainNotify_.notifyId;
+    HCCL_INFO("drain notify %s", drainNotify_.Describe().c_str());
+
+    binaryStream >> rmtDrainBuffer_.addr;
+    binaryStream >> rmtDrainBuffer_.size;
+    binaryStream >> rmtDrainBuffer_.tokenId;
+    binaryStream >> rmtDrainBuffer_.tokenValue;
+    binaryStream >> rmtDrainBuffer_.notifyId;
+    HCCL_INFO("drain remote buffer %s", rmtDrainBuffer_.Describe().c_str());
 }
 
 void UbTransportLiteImpl::ParseConnVec(std::vector<char> &data)
@@ -886,6 +914,29 @@ void UbTransportLiteImpl::BatchTransferAll(const std::vector<RmaBufferLite> &loc
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi); // 约束使用一批wqe的个数不会导致反压
 
     ExecProfilingAll(loc, rmt, transferOp, stream, taskId, notifyIdxs);
+}
+
+void UbTransportLiteImpl::Drain(const StreamLite &stream)
+{
+    std::lock_guard<std::mutex> lock(drainMtx_);
+    if (drainNotify_.size == 0 || rmtDrainBuffer_.size == 0) {
+        HCCL_WARNING("[UbTransportLiteImpl::%s] drain resource is null skip", __func__);
+        return;
+    }
+    
+    SqeConfigLite cfg;
+    Fence();
+    SetFenceConfig(cfg);
+
+    // 当前使用1个connection,下标为0
+    auto drainNotifyBufSlice = RmaBufSliceLite(drainNotify_.addr, drainNotify_.size, 0,
+        drainNotify_.tokenId);
+    auto drainConstBufSlice = RmtRmaBufSliceLite(rmtDrainBuffer_.addr, rmtDrainBuffer_.size, 0,
+        rmtDrainBuffer_.tokenId, rmtDrainBuffer_.tokenValue, UINT32_MAX);
+    connVec[0]->Read(drainNotifyBufSlice, drainConstBufSlice, cfg, stream, connOut);
+    BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+
+    BuildNotifyWaitTask(stream, drainNotify_.notifyId);
 }
 
 void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const WithNotifyIn &withNotify,

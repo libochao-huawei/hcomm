@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <unordered_map>
+#include <mutex>
 #include "base_transport_lite_impl.h"
 #include "notify_lite.h"
 #include "task_param.h"
@@ -75,6 +76,8 @@ public:
     void BatchTransferAll(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
                         const std::vector<TransferOp> &transferOp, const std::vector<uint32_t> &notifyIdxs, const StreamLite &stream);
 
+    void Drain(const StreamLite &stream) override;
+    
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
     HcclResult Fence();
 
@@ -104,7 +107,7 @@ private:
         }
     };
 
-     struct LocUbBufLite {
+    struct LocUbBufLite {
         u64         addr;
         u64         size;
         u32         tokenId;
@@ -112,6 +115,18 @@ private:
         std::string Describe() const
         {
             return StringFormat("LocUbBufLite[addr=0x%llx, size=%llu]", addr, size);
+        }
+    };
+
+    struct DrainNotify {
+        u64         addr;
+        u64         size;
+        u32         tokenId;
+        u32         tokenValue;
+        u32         notifyId;
+        std::string Describe() const
+        {
+            return StringFormat("DrainNotify[addr=0x%llx, size=0x%llx, notifyId=%u]", addr, size, notifyId);
         }
     };
 
@@ -136,6 +151,10 @@ private:
     RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const RmaBufferLite &lite) const;
 
     std::vector<std::unique_ptr<NotifyLite>> locNotifyVec;
+    
+    std::mutex drainMtx_;
+    DrainNotify drainNotify_{};
+    RmtUbBufLite rmtDrainBuffer_{};
 
     // N秒快恢需要清理的两个资源
     std::vector<std::vector<char>> connUniqueIdVec;
@@ -154,6 +173,8 @@ private:
     void ParseRmtBufferVec(std::vector<char> &data, RmaUbBufType rmtType);
  
     void ParseLocBufferMap(std::vector<char> &data);
+
+    void ParseDrainResource(std::vector<char> &data);
 
     void ParseConnVec(std::vector<char> &data);
 

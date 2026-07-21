@@ -368,6 +368,8 @@ TEST_F(AicpuTsUboeChannelTest, Ut_H2DResPack_Packs_Data) {
     auto rmtBufPtr = std::make_unique<Hccl::RemoteUbRmaBuffer>(fe.GetRdmaHandle());
     ch.rmtBufferVec_.push_back(std::move(rmtBufPtr));
 
+    ch.rmtDrainBuffer_ = std::make_unique<Hccl::RemoteUbRmaBuffer>(fe.GetRdmaHandle());
+
     Hccl::IpAddress ipAddress = fe.GetIpAddress();
     Hccl::DevUbUboeConnection uboeConn(fe.GetRdmaHandle(), ipAddress, ipAddress, Hccl::OpMode::OPBASE, true,
         Hccl::HrtUbJfcMode::STARS_POLL, ipAddress, ipAddress);

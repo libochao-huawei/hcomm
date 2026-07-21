@@ -57,6 +57,7 @@ public:
     AicpuTsChannelHelper *GetAicpuTsHelper() override { return &aicpuTsHelper_; }
 
 protected:
+    static constexpr u64 NORMAL_NOTIFY_VAL = 1;
 
     MAKE_ENUM(UboeRmtBufType, NOTIFY, BUFFER)
     using RemoteBufferVec = std::vector<std::unique_ptr<Hccl::RemoteUbRmaBuffer>>;
@@ -68,6 +69,7 @@ protected:
 
     HcclResult ParseInputParam();
     HcclResult BuildNotify();
+    HcclResult BuildDrainResource();
     HcclResult BuildSocket();
     void BuildConn();
 
@@ -82,9 +84,11 @@ protected:
 
     void NotifyVecPack(Hccl::BinaryStream &binaryStream);
     void BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec);
+    void DrainBufferPack(Hccl::BinaryStream &binaryStream);
     void ConnVecPack(Hccl::BinaryStream &binaryStream);
     void RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &binaryStream,
         RemoteBufferVec &bufferVec, UboeRmtBufType type);
+    void RmtDrainBufferUnpackProc(Hccl::BinaryStream &binaryStream);
     bool ConnVecUnpackProc(Hccl::BinaryStream &binaryStream);
 
     std::vector<char> GetUniqueIdV2();
@@ -92,6 +96,7 @@ protected:
     std::vector<char> GetRmtBufferUniqueIds(RemoteBufferVec &bufferVec, UboeRmtBufType type) const;
     std::vector<char> GetLocBufferUniqueIds(LocalBufferVec &bufferVec, UboeRmtBufType type) const;
     std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue, u32 notifyId) const;
+    std::vector<char> GetDrainUniqueIds() const;
     std::vector<char> GetConnUniqueIds();
 
     // --------------------- 入参 ---------------------
@@ -111,6 +116,10 @@ protected:
     std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
     std::unique_ptr<Hccl::Socket>                               serverSocket_;
+
+    std::unique_ptr<Hccl::UbLocalNotify>                        drainNotify_;       // 本端drain notify
+    std::unique_ptr<Hccl::LocalUbRmaBuffer>                     drainBuffer_;       // 本端常量1 buffer
+    std::unique_ptr<Hccl::RemoteUbRmaBuffer>                    rmtDrainBuffer_;    // 对端常量1 buffer
 
     ChannelStatus                                               channelStatus{ChannelStatus::INIT};
 

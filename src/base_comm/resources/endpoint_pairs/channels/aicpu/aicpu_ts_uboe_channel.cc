@@ -33,6 +33,7 @@ HcclResult AicpuTsUboeChannel::Init()
     CHK_RET(ParseInputParam());
     CHK_RET(BuildSocket());
     CHK_RET(BuildNotify());
+    CHK_RET(BuildDrainResource());
     /*
         HccpRaGetDevBaseAttr
         获取urma read/write 单个wr的最大传输数据大小

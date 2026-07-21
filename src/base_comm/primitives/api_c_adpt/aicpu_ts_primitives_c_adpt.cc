@@ -1093,7 +1093,19 @@ int32_t HcommChannelDrainOnThread(ThreadHandle thread, ChannelHandle channel)
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
 
-    HcclResult ret = HcclRemoteDrain(stream, reinterpret_cast<void *>(channel));
+    HcclResult ret = HCCL_SUCCESS;
+    if (threadPtr->IsDeviceA5()) {
+        HCCL_DEBUG("[%s] Running on A5.", __func__);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLitePtr);
+
+        EXCEPTION_CATCH(transportLitePtr->Drain(*streamLitePtr), ret = HCCL_E_INTERNAL);
+        return ret;
+    }
+
+    ret = HcclRemoteDrain(stream, reinterpret_cast<void *>(channel));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] Run FAIL. thread[0x%llx], channel[0x%llx].", __func__, thread, channel), ret);
 
