@@ -64,6 +64,7 @@
         <file value="ccu_primitives.hpp"/>
         <file value="ccu_remote_addr.hpp"/>
         <file value="ccu_res.h"/>
+        <file value="ccu_res_defs.h"/>
         <file value="ccu_types.h"/>
         <file value="ccu_utils.hpp"/>
         <file value="ccu_variable.hpp"/>

@@ -108,7 +108,7 @@ MyRank::~MyRank()
     rankPairMgr_ = nullptr; // 内部会销毁channel，可能需要返还endpoint与ccu资源
     endpointMgr_ = nullptr; // 内部会销毁endpoint，可能需要返回ccu资源
     if (ccuInsHandle_ != 0) {  // 内部清理CCU资源，关闭CCU通道
-        (void)HcommCcuInsDestroy(ccuInsHandle_, devLogicId_);
+        (void)HcommCcuInsDestroyLegacy(ccuInsHandle_, devLogicId_);
         ccuInsHandle_ = 0;
     }
 
@@ -163,7 +163,7 @@ HcclResult MyRank::TryInitCcuInstance()
     resDesc.dieId = CCU_ALL_IODIE;
     resDesc.insType = ccuInsType;
     constexpr uint32_t descNum = 1;
-    auto ccuInitRet = HcommCcuInsCreate(static_cast<void *>(&resDesc),
+    auto ccuInitRet = HcommCcuInsCreateLegacy(static_cast<void *>(&resDesc),
         descNum, &ccuInsHandle_);
     // ccu驱动拉起失败，直接回退至aicpu ts
     if (ccuInitRet == CcuResult::CCU_E_DRV_BUSY) {

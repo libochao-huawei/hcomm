@@ -241,6 +241,7 @@ elseif(BUILD_OPEN_PROJECT)
         include/ccu/ccu_primitives.hpp
         include/ccu/ccu_remote_addr.hpp
         include/ccu/ccu_res.h
+        include/ccu/ccu_res_defs.h
         include/ccu/ccu_types.h
         include/ccu/ccu_utils.hpp
         include/ccu/ccu_variable.hpp

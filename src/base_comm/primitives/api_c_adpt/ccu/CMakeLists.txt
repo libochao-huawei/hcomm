@@ -11,6 +11,7 @@
 set(src_list
     ccu_launch.cc
     ccu_primitives_impl.cc
+    ccu_res_c_adpt.cc
 )
 
 if(TARGET hcomm)

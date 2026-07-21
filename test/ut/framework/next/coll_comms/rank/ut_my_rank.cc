@@ -67,7 +67,7 @@ protected:
         MOCKER_CPP(&Hccl::SocketManager::GetConnectedSocket).stubs().with(mockcpp::any()).will(returnValue((Hccl::Socket*)0xab));
         MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
-        MOCKER(HcommCcuInsCreate).stubs().with(mockcpp::any()).will(returnValue(CcuResult::CCU_SUCCESS));
+        MOCKER(HcommCcuInsCreateLegacy).stubs().with(mockcpp::any()).will(returnValue(CcuResult::CCU_SUCCESS));
         MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
@@ -221,7 +221,7 @@ TEST_F(MyRankTest, Ut_Init_When_Default_Mode_Expect_Set_By_Env)
 TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
 {
     setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
-    MOCKER(HcommCcuInsCreate).stubs().will(returnValue(CcuResult::CCU_E_DRV_BUSY));
+    MOCKER(HcommCcuInsCreateLegacy).stubs().will(returnValue(CcuResult::CCU_E_DRV_BUSY));
 
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
@@ -236,7 +236,7 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
 TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
 {
     setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
-    MOCKER(HcommCcuInsCreate).stubs()
+    MOCKER(HcommCcuInsCreateLegacy).stubs()
         .will(returnValue(CcuResult::CCU_E_UNAVAIL))
         .then(returnValue(CcuResult::CCU_SUCCESS));
 
@@ -253,7 +253,7 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
 TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Aicpu)
 {
     setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
-    MOCKER(HcommCcuInsCreate).stubs().will(returnValue(CcuResult::CCU_E_UNAVAIL));
+    MOCKER(HcommCcuInsCreateLegacy).stubs().will(returnValue(CcuResult::CCU_E_UNAVAIL));
 
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);
@@ -268,7 +268,7 @@ TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Ai
 TEST_F(MyRankTest, Ut_Init_When_Resource_Fail_Expect_Fail)
 {
     setenv("HCCL_CCU_CUSTOM_OP_MODE", "1", 1);
-    MOCKER(HcommCcuInsCreate).stubs().will(returnValue(CcuResult::CCU_E_PARA));
+    MOCKER(HcommCcuInsCreateLegacy).stubs().will(returnValue(CcuResult::CCU_E_PARA));
 
     HcclMem cclBuffer;
     CreateCclBuffer(cclBuffer);

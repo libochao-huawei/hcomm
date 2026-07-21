@@ -17,6 +17,11 @@
 /**
  * @note 职责：集合通信的通信域CCU管理的C接口的C到C++适配
  */
+HcclResult HcclCommAssignCcuIns(HcclComm, CcuInsHandle)
+{
+    return HcclResult::HCCL_E_NOT_SUPPORT;
+}
+
 HcclResult HcclCommQueryCcuIns(HcclComm comm,
     CcuInsHandle *insHandles, uint32_t *insNum)
 {

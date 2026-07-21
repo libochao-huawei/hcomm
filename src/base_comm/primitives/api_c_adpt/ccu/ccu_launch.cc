@@ -36,7 +36,7 @@
 #include "ccu_assist_v1.h"
 
 
-CcuResult HcommCcuInsCreate(const void *resDesc, uint32_t descNum, CcuInsHandle *insHandle)
+CcuResult HcommCcuInsCreateLegacy(const void *resDesc, uint32_t descNum, CcuInsHandle *insHandle)
 {
     CCU_CHK_PTR_NULL(resDesc);
     CCU_CHK_PTR_NULL(insHandle);
@@ -58,14 +58,34 @@ CcuResult HcommCcuInsCreate(const void *resDesc, uint32_t descNum, CcuInsHandle 
     return CcuResult::CCU_SUCCESS;
 }
 
+CcuResult HcommCcuInsCreate(const HcommCcuResDescHandle *, uint32_t, CcuInsHandle *)
+{
+    return CcuResult::CCU_E_NOT_SUPPORT;
+}
+
+CcuResult HcommCcuInsCreateDefault(const uint32_t *, uint32_t, CcuInsHandle *)
+{
+    return CcuResult::CCU_E_NOT_SUPPORT;
+}
+
+CcuResult HcommCcuInsDestroy(CcuInsHandle)
+{
+    return CcuResult::CCU_E_NOT_SUPPORT;
+}
+
+CcuResult HcommCcuInsQueryResDesc(CcuInsHandle, HcommCcuResDescHandle)
+{
+    return CcuResult::CCU_E_NOT_SUPPORT;
+}
+
 /**
  * @brief 关闭CCU特性，解初始化CCU平台层
  *
- * @param deviceLogicId 设备逻辑ID
- * @return HcclResult 返回HcclResult类型的结果
- * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
+ * @param insHandle CCU实例句柄
+ * @param curDeviceLogicId 当前设备逻辑ID
+ * @return CcuResult 执行结果状态码，CCU_SUCCESS表示成功，其他值表示失败
  */
-CcuResult HcommCcuInsDestroy(CcuInsHandle insHandle, int32_t curDeviceLogicId)
+CcuResult HcommCcuInsDestroyLegacy(CcuInsHandle insHandle, int32_t curDeviceLogicId)
 {
     // 获取当前线程的 DeviceId（线程变量）
     const int32_t threadDevId = HcclGetThreadDeviceId();

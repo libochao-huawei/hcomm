@@ -32,25 +32,24 @@ struct CcuResDesc {
     CcuInstanceType insType;
 };
 
-//todo: 注释待修改
 /**
  * @brief 启用CCU特性，初始化CCU平台层
  *
- * @param deviceLogicId 设备逻辑ID
- * @param ccuDrvHandle CCU驱动句柄
- * @return HcclResult 返回HcclResult类型的结果
- * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
+ * @param resDesc CCU资源描述
+ * @param descNum CCU资源描述数量
+ * @param insHandle CCU实例句柄
+ * @return CcuResult 执行结果状态码，CCU_SUCCESS表示成功，其他值表示失败
  */
-extern CcuResult HcommCcuInsCreate(const void *resDesc, uint32_t descNum, CcuInsHandle *insHandle);
+extern CcuResult HcommCcuInsCreateLegacy(const void *resDesc, uint32_t descNum, CcuInsHandle *insHandle);
 
 /**
  * @brief 关闭CCU特性，解初始化CCU平台层
  *
- * @param deviceLogicId 设备逻辑ID
- * @return HcclResult 返回HcclResult类型的结果
- * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
+ * @param insHandle CCU实例句柄
+ * @param curDeviceLogicId 当前设备逻辑ID
+ * @return CcuResult 执行结果状态码，CCU_SUCCESS表示成功，其他值表示失败
  */
-extern CcuResult HcommCcuInsDestroy(CcuInsHandle insHandle, int32_t curDeviceLogicId);
+extern CcuResult HcommCcuInsDestroyLegacy(CcuInsHandle insHandle, int32_t curDeviceLogicId);
 
 #ifdef __cplusplus
 }
