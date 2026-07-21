@@ -5344,7 +5344,7 @@ HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymW
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     }
 #endif
-    HCCL_RUN_INFO("[%s]GetCommSymWin success, group[%s], handle ptr[%p], offset[%llu], size[%llu]", __func__,
+    HCCL_DEBUG("[%s]GetCommSymWin success, group[%s], handle ptr[%p], offset[%llu], size[%llu]", __func__,
         hcclComm->GetIdentifier().c_str(), *winHandle, *offset, size);
     return HCCL_SUCCESS;
 }

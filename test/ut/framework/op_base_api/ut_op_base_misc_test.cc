@@ -38,3 +38,21 @@ TEST_F(OpBaseMiscTest, Ut_HcclConfigGetInfo_When_CollCommIsNotInit_Expect_Return
     EXPECT_EQ(ret, HCCL_E_PTR);
     Ut_Comm_Destroy(comm);
 }
+
+TEST_F(OpBaseMiscTest, Ut_HcclCommSymWinGet_When_GetCommSymWinSucceeds_Expect_ReturnIsHCCL_SUCCESS)
+{
+    UT_COMM_CREATE_DEFAULT(comm);
+    MOCKER_CPP(&hcclComm::IsCommunicatorV2).stubs().will(returnValue(false));
+    MOCKER_CPP(&hcclComm::GetCommSymWin)
+        .stubs()
+        .with(mockcpp::any(), mockcpp::any(), mockcpp::any(), mockcpp::any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    u8 buffer = 0;
+    HcclCommSymWindow winHandle = nullptr;
+    size_t offset = 0;
+    HcclResult ret = HcclCommSymWinGet(comm, &buffer, sizeof(buffer), &winHandle, &offset);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    Ut_Comm_Destroy(comm);
+}
