@@ -175,13 +175,15 @@ bool isCcuTlvReqExist() {
     return true;
 }
 
-int RsCcuTlvRequest(unsigned int type, char *dataIn, char *dataOut, unsigned int dataInlength, unsigned int *dataOutLength) {
+int RsCcuTlvRequest(unsigned int type, char *dataIn, char *dataOut, unsigned int dataInlength, unsigned int *dataOutLength, 
+    unsigned int dataOutMaxLength) {
     int ret = 0;
     struct ccu_tlv_request_info tlvRequestInfo = {
         .ccuMsg = type,
         .dataIn = dataIn,
         .dataInLength = dataInlength,
         .dataOut = dataOut,
+        .dataOutMaxLength = dataOutMaxLength,
     };
     ret = gCcuOps.rsCcuTlvRequest(&tlvRequestInfo);
     *dataOutLength = tlvRequestInfo.dataOutLength;

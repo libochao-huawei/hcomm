@@ -37,6 +37,7 @@ struct ccu_tlv_request_info {
     char* dataOut;
     unsigned int dataInLength;
     unsigned int dataOutLength;
+    unsigned int dataOutMaxLength;
     unsigned int resv[8];
 };
 

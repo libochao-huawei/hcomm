@@ -120,7 +120,7 @@ STATIC int RsCcuRequest(struct TlvRequestMsgHead *head, char *dataIn, char *data
 {
     int ret = 0;
     if (isCcuTlvReqExist()) {
-        ret = RsCcuTlvRequest(head->type, dataIn, dataOut, head->totalBytes, bufferSize);
+        ret = RsCcuTlvRequest(head->type, dataIn, dataOut, head->totalBytes, bufferSize, MAX_TLV_MSG_DATA_LEN_V2);
         CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_tlv_request failed, ret(%d) msg_type(%u) phy_id(%u)",
                 ret, head->type, head->phyId), ret);
         CHK_PRT_RETURN(*bufferSize > MAX_TLV_MSG_DATA_LEN_V2, hccp_err("rs_ccu_tlv_request rsp length exceeds limit, ret(%d) msg_type(%u) phy_id(%u)",

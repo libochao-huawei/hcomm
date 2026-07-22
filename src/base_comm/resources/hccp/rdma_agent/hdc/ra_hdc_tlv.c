@@ -72,8 +72,8 @@ STATIC void RaHdcTlvRequestHeadInit(struct RaTlvHandle *tlvHandle, unsigned int 
 STATIC int RaHdTlvRequestForSendNullMsg(unsigned int phyId, union OpTlvRequestDataCommon opTlvCommon,
     struct TlvRequestMsgHead *head, struct TlvMsg *recvMsg)
 {
-    int ret = 0;
     void *tlvData = opTlvCommon.txData.tlvData;
+    int ret = 0;
     
     (void)memcpy_s(opTlvCommon.txData.head, sizeof(struct TlvRequestMsgHead), head, sizeof(struct TlvRequestMsgHead));
 
@@ -91,8 +91,9 @@ STATIC int RaHdTlvRequestForSendNullMsg(unsigned int phyId, union OpTlvRequestDa
 
 STATIC int RaTlvRequestGetTlvMsg(struct TlvRequestMsgHead *head, union OpTlvRequestDataCommon opTlvCommon, struct TlvMsg *recvMsg)
 {
-    int ret = 0;
     void *tlvData = opTlvCommon.txData.tlvData;
+    int ret = 0;
+
     TLV_SETUP_RX(opTlvCommon.txData.opcode == RA_RS_TLV_REQUEST, tlvData, opTlvCommon);
     
     if (recvMsg->data == NULL || recvMsg->length == 0) {
@@ -118,11 +119,11 @@ int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
     struct TlvMsg *sendMsg, struct TlvMsg *recvMsg)
 {
     unsigned int phyId = tlvHandle->initInfo.phyId;
-    void *tlvData;
-    struct TlvRequestMsgHead head = { 0 };
-    int ret = 0;
-    unsigned int interfaceVersion;
     union OpTlvRequestDataCommon opTlvCommon = {0};
+    struct TlvRequestMsgHead head = { 0 };
+    unsigned int interfaceVersion;
+    void *tlvData;
+    int ret = 0;
 
     RaHdcGetInterfaceVersion(phyId, RA_RS_TLV_REQUEST_V2, &interfaceVersion);
     tlvData = calloc(1, (interfaceVersion == 0) ? sizeof(union OpTlvRequestData) : sizeof(union OpTlvRequestDataV2));
