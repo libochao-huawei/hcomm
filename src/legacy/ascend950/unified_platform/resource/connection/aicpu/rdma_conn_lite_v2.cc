@@ -200,8 +200,9 @@ void RdmaConnLiteV2::WriteReduceWithNotify(
     HCCL_INFO("[RdmaConnLiteV2::%s] WriteReduceWithNotify end, dbAddr = %llu, dbValue = %llu, conn[%s]", __func__, dbAddr, dbValue, Describe().c_str());
 }
 
-void RdmaConnLiteV2::DoSlice(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, 
-                                  const std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &)> &op)
+void RdmaConnLiteV2::DoSlice(
+    const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
+    const std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &)> &op) const
 {
     const u64 len = loc.GetSize();
     const u32 fullSlices = static_cast<u32>(len / RDMA_DMA_MAX_SIZE);

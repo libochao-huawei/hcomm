@@ -92,7 +92,7 @@ private:
 
     // ========== 辅助分片写入函数 ==========
     void DoSlice(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, 
-                 const std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &)> &op);
+                 const std::function<void(const RmaBufSliceLite &, const RmtRmaBufSliceLite &)> &op) const;
 };
 
 } // namespace Hccl

@@ -760,15 +760,13 @@ TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_WriteReduceWithNotify)
 TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_PollCq_Expect_ResultPropagated)
 {
     RoceTransportLiteImpl transport(uniqueId_);
-    std::vector<char> uniqueId{};
-    StreamLite stream(uniqueId);
     std::vector<int32_t> errList;
 
     MOCKER_CPP(&RdmaConnLiteV2::PollCq)
         .expects(once())
         .with(eq(1), eq(5), mockcpp::any(), mockcpp::any(), mockcpp::any())
         .will(returnValue(HCCL_E_REMOTE));
-    EXPECT_EQ(transport.PollCq(1, 5, errList, stream), HCCL_E_REMOTE);
+    EXPECT_EQ(transport.PollCq(1, 5, errList), HCCL_E_REMOTE);
 }
 
 TEST_F(RoceTransportLiteImplTest, Ut_RoceTransportLite_WaitWithTimeout)

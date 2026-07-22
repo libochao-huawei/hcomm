@@ -321,8 +321,10 @@ void RoceTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, co
         taskId, TaskParamType::TASK_RDMA, DmaOp::HCCL_DMA_READ, INVALID_VALUE_NOTIFYID, UINT32_MAX, __func__);
 
     // Poll Cq
+    constexpr int32_t POLL_NUM = 1;         // poll cqe num
+    constexpr int32_t POLL_TIMEOUT = 5;     // 5 ms
     std::vector<int32_t> errList = {};
-    connVec_[0]->PollCq(1, 5, errList, dbAddr, dbValue);
+    connVec_[0]->PollCq(POLL_NUM, POLL_TIMEOUT, errList, dbAddr, dbValue);
 }
 
 void RoceTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
@@ -351,8 +353,10 @@ void RoceTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, c
         taskId, TaskParamType::TASK_RDMA, DmaOp::HCCL_DMA_WRITE, INVALID_VALUE_NOTIFYID, UINT32_MAX, __func__);
 
     // Poll Cq
+    constexpr int32_t POLL_NUM = 1;         // poll cqe num
+    constexpr int32_t POLL_TIMEOUT = 5;     // 5 ms
     std::vector<int32_t> errList = {};
-    connVec_[0]->PollCq(1, 5, errList, dbAddr, dbValue);
+    connVec_[0]->PollCq(POLL_NUM, POLL_TIMEOUT, errList, dbAddr, dbValue);
 }
 
 void RoceTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
@@ -381,8 +385,10 @@ void RoceTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &
         taskId, TaskParamType::TASK_REDUCE_INLINE, INVALID_VALUE_NOTIFYID, UINT32_MAX, __func__);
 
     // Poll Cq
+    constexpr int32_t POLL_NUM = 1;         // poll cqe num
+    constexpr int32_t POLL_TIMEOUT = 5;     // 5 ms
     std::vector<int32_t> errList = {};
-    connVec_[0]->PollCq(1, 5, errList, dbAddr, dbValue);
+    connVec_[0]->PollCq(POLL_NUM, POLL_TIMEOUT, errList, dbAddr, dbValue);
 }
 
 void RoceTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt,
@@ -413,8 +419,10 @@ void RoceTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buff
         TaskParamType::TASK_WRITE_WITH_NOTIFY, DmaOp::HCCL_DMA_WRITE, rmtNotifySliceLite.GetNotifyId(), 1, __func__);
 
     // Poll Cq
+    constexpr int32_t POLL_NUM = 2;         // poll cqe num
+    constexpr int32_t POLL_TIMEOUT = 5;     // 5 ms
     std::vector<int32_t> errList = {};
-    connVec_[0]->PollCq(2, 5, errList, dbAddr, dbValue);
+    connVec_[0]->PollCq(POLL_NUM, POLL_TIMEOUT, errList, dbAddr, dbValue);
 }
 
 void RoceTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
@@ -445,8 +453,10 @@ void RoceTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, cons
         taskId, TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY, rmtNotifySliceLite.GetNotifyId(), 1, __func__);
 
     // Poll Cq
+    constexpr int32_t POLL_NUM = 2;         // poll cqe num
+    constexpr int32_t POLL_TIMEOUT = 5;     // 5 ms
     std::vector<int32_t> errList = {};
-    connVec_[0]->PollCq(2, 5, errList, dbAddr, dbValue);
+    connVec_[0]->PollCq(POLL_NUM, POLL_TIMEOUT, errList, dbAddr, dbValue);
 }
 
 HcclResult RoceTransportLiteImpl::Fence()
@@ -480,12 +490,14 @@ void RoceTransportLiteImpl::Post(u32 index, const StreamLite &stream)
         TaskParamType::TASK_RDMA, DmaOp::HCCL_DMA_WRITE, rmtNotifySliceLite.GetNotifyId(), 1, __func__);
 
     // Poll Cq
+    constexpr int32_t POLL_NUM = 1;         // poll cqe num
+    constexpr int32_t POLL_TIMEOUT = 5;     // 5 ms
     std::vector<int32_t> errList = {};
-    connVec_[0]->PollCq(1, 5, errList, dbAddr, dbValue);
+    connVec_[0]->PollCq(POLL_NUM, POLL_TIMEOUT, errList, dbAddr, dbValue);
 }
 
 HcclResult RoceTransportLiteImpl::PollCq(
-    int32_t numEntries, int32_t timeOut, std::vector<int32_t> &errList, const StreamLite &stream)
+    int32_t numEntries, int32_t timeOut, std::vector<int32_t> &errList)
 {
     u64 dbAddr = 0;
     u64 cqDbValue = 0;

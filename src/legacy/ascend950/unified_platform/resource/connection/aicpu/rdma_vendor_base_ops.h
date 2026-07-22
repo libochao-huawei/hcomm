@@ -12,15 +12,23 @@
 #ifndef RDMA_BASE_VENDOR_OPS_H
 #define RDMA_BASE_VENDOR_OPS_H
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <chrono>
+#include <vector>
+#include <securec.h>
+
+#include "exception_util.h"
+#include "internal_exception.h"
+#include "log.h"
 #include "rma_buf_slice_lite.h"      // RmaBufSliceLite
 #include "rmt_rma_buf_slice_lite.h"  // RmtRmaBufSliceLite
 #include "data_type.h"               // DataType
 #include "reduce_op.h"               // ReduceOp
 
 namespace Hccl {
+
+struct SqeConfigLite;
 
 struct RdmaSqContextLite {
     uint32_t qpn;
@@ -72,12 +80,12 @@ inline uint64_t Htonll64(uint64_t x) {
             ((x & 0xff00000000000000ULL) >> BITS_7BYTE);
 }
 
-enum {
-    CQ_POLL_SUCCESS = 0,    /* indicate poll once cqe successfully; */
-    CQ_EMPTY        = -1,   /* indicate the cq is empty when poll cq; */
-    CQ_POLL_ERROR   = -2,   /* indicate the error when poll cq; */
-    CQ_REROLL       = -3,   /* 返回到repoll标识 */
-    CQ_CONTINUE     = 1,    /* indicate continue the process */
+enum class CqPollStatus : int32_t {
+    SUCCESS  = 0,   /* indicate poll once cqe successfully; */
+    EMPTY    = -1,  /* indicate the cq is empty when poll cq; */
+    ERROR    = -2,  /* indicate the error when poll cq; */
+    REROLL   = -3,  /* 返回到repoll标识 */
+    CONTINUE = 1,   /* indicate continue the process */
 };
 
 class RdmaBaseOps {
@@ -143,8 +151,7 @@ public:
         while (totalPollNum < numEntries) {
             // 逐一Poll Cq，并处理cqe
             ret = PollCqImpl(numEntries - totalPollNum, errList);
-
-            if (ret == CQ_POLL_ERROR) {
+            if (ret == static_cast<int32_t>(CqPollStatus::ERROR)) {
                 HCCL_ERROR("[RdmaBaseOps::%s][Poll cq] Poll Cq Error.", __func__);
                 return HCCL_E_REMOTE;
             }
@@ -292,7 +299,8 @@ protected:
         HCCL_INFO("[RdmaBaseOps][Wqe Write] write soft PI, sqHead host[%u], dbSwVa[0x%llx]", 
                 sqHead_, static_cast<unsigned long long>(sqContext_->dbSwVa));
 
-        auto status = memcpy_sp(reinterpret_cast<void *>(sqContext_->dbSwVa), sizeof(uint32_t), &sqHeadNum, sizeof(uint32_t));
+        auto status = memcpy_sp(reinterpret_cast<void *>(sqContext_->dbSwVa), sizeof(uint32_t), &sqHeadNum,
+                                sizeof(uint32_t));
         if (UNLIKELY(status != 0)) {
             THROW<InternalException>(StringFormat("[RdmaBaseOps::%s] Ring Sw DB failed, ret = %d", __func__, status));
         }

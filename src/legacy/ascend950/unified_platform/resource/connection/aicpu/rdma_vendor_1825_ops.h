@@ -11,7 +11,9 @@
 #ifndef RDMA_VENDOR_1825_OPS_H
 #define RDMA_VENDOR_1825_OPS_H
 
+#include "rma_conn_lite.h"
 #include "rdma_vendor_base_ops.h"
+
 namespace Hccl {
 
 // 先默认所有WQE都只占一个WQEBB
@@ -119,10 +121,10 @@ constexpr uint32_t ROCE_CQE_MAX_GEN_NUM = 1024;
 constexpr uint32_t ROCE_CQE_OWNERBIT_SHIFT = 31;
 constexpr uint32_t ROCE_CQE_QPN_MASK = 0xfffff;
 
-enum {
-    ROCE_CQE_ERR        = 0x1e,     /* indicate the cqe is an error cqe */
-    ROCE_CQE_RESIZE     = 0x16,     /* indicate the cqe is an resize type cqe */
-    ROCE_CQE_INVALID    = 0x1f
+enum class RoceCqeType : uint32_t {
+    ERROR   = 0x1e,  /* indicate the cqe is an error cqe */
+    RESIZE  = 0x16,  /* indicate the cqe is an resize type cqe */
+    INVALID = 0x1f
 };
 
 struct Roce3CqeEntry{
@@ -314,16 +316,17 @@ protected:
         return HCCL_SUCCESS;
     }
 
-    int32_t PollCqImpl(int32_t numEntries, std::vector<int32_t> &errList)
+    int32_t PollCqImpl(int32_t numEntries, std::vector<int32_t> &errList) override
     {
         int32_t pollNum = 0;
-        int32_t ret = CQ_POLL_ERROR;
+        CqPollStatus ret = CqPollStatus::ERROR;
 
         while (pollNum < numEntries) {
             ret = PollOne(errList);
-            if (ret != CQ_POLL_SUCCESS) {
-                if (ret != CQ_EMPTY && ret != CQ_POLL_ERROR) {
-                    HCCL_ERROR("[Rdma1825Ops::%s][Poll cq] Poll CQ error, ret: %d", __func__, ret);
+            if (ret != CqPollStatus::SUCCESS) {
+                if (ret != CqPollStatus::EMPTY && ret != CqPollStatus::ERROR) {
+                    HCCL_ERROR("[Rdma1825Ops::%s][Poll cq] Poll CQ error, ret: %d", __func__,
+                               static_cast<int32_t>(ret));
                 }
                 break;
             }
@@ -334,12 +337,12 @@ protected:
             ++pollNum;
         }
 
-        if ((pollNum != 0) || (ret == CQ_POLL_ERROR)) {
+        if ((pollNum != 0) || (ret == CqPollStatus::ERROR)) {
             // Need to flush Cq DB
             cqDbFlush_ = true;
         }
 
-        return (ret == CQ_POLL_ERROR) ? ret : pollNum;
+        return (ret == CqPollStatus::ERROR) ? static_cast<int32_t>(ret) : pollNum;
     }
 
 private:
@@ -411,7 +414,7 @@ private:
 
         // Reduce data
         uint32_t mptIndex       = params.loc.GetLkey() & 0xffff;
-        uint32_t reduceOpInfo   = (reduceOpType << ROCE_WQE_TASK_REDUCE_OP_OFFSET | reduceDataType);
+        uint32_t reduceOpInfo   = ((reduceOpType << ROCE_WQE_TASK_REDUCE_OP_OFFSET) | reduceDataType);
 
         // ----- Task Reduce Seg -----
         wqe->task.ulp = Htonl32(mptIndex | reduceOpInfo);
@@ -429,23 +432,24 @@ private:
         return HCCL_SUCCESS;
     }
 
-    int32_t PollOne(std::vector<int32_t> &errList)
+    CqPollStatus PollOne(std::vector<int32_t> &errList)
     {
         bool need_poll = true;
         while (need_poll) {
-            Roce3CqeEntry *rcqe = NULL;
+            Roce3CqeEntry *rcqe = nullptr;
             rcqe = Roce3GetOneCqe(cqHead_);
-            if (rcqe == NULL) {
-                return CQ_EMPTY;
+            if (rcqe == nullptr) {
+                return CqPollStatus::EMPTY;
             }
 
             ++cqHead_;
 
             uint32_t syndrome = static_cast<uint32_t>(rcqe->syndrome);
             uint32_t ownerIdQpn = static_cast<uint32_t>(rcqe->owner_id_qpn);
-            uint32_t cqe_type = (rcqe->op_sr_wqebb >> ROCE_CQE_OPCODE_SHIFT) & ROCE_CQE_OPCODE_MASK;
+            auto cqeType = static_cast<RoceCqeType>(
+                (rcqe->op_sr_wqebb >> ROCE_CQE_OPCODE_SHIFT) & ROCE_CQE_OPCODE_MASK);
             // 存在错误
-            if (cqe_type == ROCE_CQE_ERR) {
+            if (cqeType == RoceCqeType::ERROR) {
                 const uint32_t cqeErrCode = (ownerIdQpn >> 20U) & 0xfU;
 
                 HCCL_ERROR("[Rdma1825Ops::%s][Poll cq] CQE error, qpn[%u], syndrome[%u], cqeErrCode[%u], "
@@ -456,7 +460,7 @@ private:
                 // 后续优化为具体ErrorCode
                 int32_t ERROR_CODE = 1;
                 errList.push_back(ERROR_CODE);
-                return CQ_POLL_ERROR;
+                return CqPollStatus::ERROR;
             }
 
             HCCL_INFO("[Rdma1825Ops::%s][Poll cq] CQE completed, cqHead[%u], qpn[%u], syndrome[%u], "
@@ -466,7 +470,7 @@ private:
             need_poll = false;
         }
 
-        return CQ_POLL_SUCCESS;
+        return CqPollStatus::SUCCESS;
     }
 
     Roce3CqeEntry* Roce3GetOneCqe(uint32_t consIndex)
@@ -489,11 +493,11 @@ private:
         // Cqe Details Parse
         uint32_t opSrWqebb = cqeReadback_.op_sr_wqebb;
         uint32_t ownerIdQpn = cqeReadback_.owner_id_qpn;
-        uint32_t cqeType = (opSrWqebb >> ROCE_CQE_OPCODE_SHIFT) & ROCE_CQE_OPCODE_MASK;
-        if (cqeType == ROCE_CQE_INVALID) {
+        auto cqeType = static_cast<RoceCqeType>((opSrWqebb >> ROCE_CQE_OPCODE_SHIFT) & ROCE_CQE_OPCODE_MASK);
+        if (cqeType == RoceCqeType::INVALID) {
             HCCL_INFO("[Rdma1825Ops::%s][Poll cq] CQE invalid, consIndex[%u], slot[%u]", __func__, consIndex,
                        cqeSlot);
-            return NULL;
+            return nullptr;
         }
 
         // Judge Owner bit
@@ -503,7 +507,7 @@ private:
             HCCL_INFO("[Rdma1825Ops::%s][Poll cq] CQE owner not ready, consIndex[%u], slot[%u], "
                        "calHwOwner[%u], curCqeOwner[%u]",
                        __func__, consIndex, cqeSlot, calHwOwner, curCqeOwner);
-            return NULL;
+            return nullptr;
         }
 
         return &cqeReadback_;

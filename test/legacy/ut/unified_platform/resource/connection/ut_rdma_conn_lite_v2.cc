@@ -493,7 +493,7 @@ TEST_F(RdmaConnLiteV2Test, Ut_When_PollCqSuccess_Expect_Success)
     MOCKER_CPP(&Rdma1825Ops::PollOne)
         .stubs()
         .with(mockcpp::any())
-        .will(returnValue(static_cast<int32_t>(CQ_POLL_SUCCESS)));
+        .will(returnValue(CqPollStatus::SUCCESS));
     EXPECT_EQ(connLite.PollCq(1, 1, errList, dbAddr, dbValue), HCCL_SUCCESS);
     EXPECT_TRUE(errList.empty());
     EXPECT_EQ(dbAddr, cqCtx_.dbSwVa);
@@ -519,7 +519,7 @@ TEST_F(RdmaConnLiteV2Test, Ut_When_PollCqEmpty_Expect_TimeoutWithoutDoorbell)
     MOCKER_CPP(&Rdma1825Ops::PollOne)
         .stubs()
         .with(mockcpp::any())
-        .will(returnValue(static_cast<int32_t>(CQ_EMPTY)));
+        .will(returnValue(CqPollStatus::EMPTY));
     EXPECT_EQ(connLite.PollCq(1, 0, errList, dbAddr, dbValue), HCCL_E_TIMEOUT);
     EXPECT_TRUE(errList.empty());
     EXPECT_EQ(dbAddr, 0ULL);
@@ -544,7 +544,7 @@ TEST_F(RdmaConnLiteV2Test, Ut_When_PollCqFail_Expect_ReturnError)
     MOCKER_CPP(&Rdma1825Ops::PollOne)
         .stubs()
         .with(mockcpp::any())
-        .will(returnValue(static_cast<int32_t>(CQ_POLL_ERROR)));
+        .will(returnValue(CqPollStatus::ERROR));
     EXPECT_EQ(connLite.PollCq(1, 1, errList, dbAddr, dbValue), HCCL_E_REMOTE);
     EXPECT_EQ(dbAddr, cqCtx_.dbSwVa);
     EXPECT_EQ(dbValue, 0ULL);

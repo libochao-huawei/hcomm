@@ -49,7 +49,7 @@ public:
     void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
 
     // ========== 错误上报 接口 ==========
-    HcclResult PollCq(int32_t numEntries, int32_t timeOut, std::vector<int32_t> &errList, const StreamLite &stream);
+    HcclResult PollCq(int32_t numEntries, int32_t timeOut, std::vector<int32_t> &errList);
 
     // 设置TaskException开关
     void SetTaskExceptionEnable(bool flag) { taskExceptionEnable_ = flag; }
