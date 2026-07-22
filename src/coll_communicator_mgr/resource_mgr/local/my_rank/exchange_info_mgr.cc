@@ -81,7 +81,7 @@ HcclResult ExchangeInfoMgr::CheckHcommInfo(
     const std::vector<u32> &remoteRanks,
     const std::vector<HcommSocketRole> &roles,
     const std::vector<std::pair<u32, u32>> &newChannels,
-    bool isAsync)
+    bool isAsync) const
 {
     s32 deviceLogicId = 0;
     (void)hrtGetDeviceRefresh(&deviceLogicId);

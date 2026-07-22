@@ -40,7 +40,7 @@ public:
         const std::vector<u32> &remoteRanks,
         const std::vector<HcommSocketRole> &roles,
         const std::vector<std::pair<u32, u32>> &newChannels,
-        bool isAsync);
+        bool isAsync) const;
     HcclResult ExchangeUserInfo(
         const std::vector<Hccl::Socket*> &sockets,
         const std::vector<u32> &remoteRanks,

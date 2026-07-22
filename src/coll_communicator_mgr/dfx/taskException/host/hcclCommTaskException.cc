@@ -674,7 +674,7 @@ void GetTaskParam(Hccl::TaskParam &taskParam, const Hccl::ErrorMessageReport &er
 }
 
 void TaskExceptionHost::HandleAicpuErrorReport(rtExceptionInfo_t *exceptionInfo,
- 	const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo &taskInfo)
+ 	const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo &taskInfo) const
 {
     std::string groupRankContent;
     u32 streamId = static_cast<u32>(errorMessage.streamId);

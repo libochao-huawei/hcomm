@@ -48,7 +48,7 @@ public:
 
 private:
     void Process(rtExceptionInfo_t *exceptionInfo);
-    void HandleAicpuErrorReport(rtExceptionInfo_t *exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo &taskInfo);
+    void HandleAicpuErrorReport(rtExceptionInfo_t *exceptionInfo, const Hccl::ErrorMessageReport &errorMessage, const Hccl::TaskInfo &taskInfo) const;
     void HandleHostErrorReport(rtExceptionInfo_t *exceptionInfo, const Hccl::TaskInfo &taskInfo) const;
     void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &groupRankContent,
         const Hccl::ErrorMessageReport &errorMessage, rtExceptionInfo_t *exceptionInfo) const;

@@ -768,7 +768,7 @@ HcclResult ClusterMonitor::DeInit()
     return HCCL_SUCCESS;
 }
 
-HcclResult ClusterMonitor::UnRegisterToClusterMonitor(hccl::CollComm* collComm)
+HcclResult ClusterMonitor::UnRegisterToClusterMonitor(const hccl::CollComm* collComm)
 {
     CHK_PRT_RET(initialized_ == false, HCCL_WARNING("Heartbeat has been destroyed, or not initialized"), HCCL_SUCCESS);
     std::set<ClusterUIDType> remInQueue;

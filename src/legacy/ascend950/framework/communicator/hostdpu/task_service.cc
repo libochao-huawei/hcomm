@@ -135,7 +135,7 @@ HcclResult TaskService::ExecuteTaskexception(int32_t ret)
     void *taskexpShmem = g_taskExpMemMap[commId_][devId_];
     HcclResult hcclRet = static_cast<HcclResult>(ret);
     if (taskexpShmem != nullptr) {
-        uint8_t *stopFlagPtr = reinterpret_cast<uint8_t *>(taskexpShmem);
+        uint8_t *stopFlagPtr = static_cast<uint8_t *>(taskexpShmem);
         uint8_t *hcclRetPtr = stopFlagPtr + sizeof(uint8_t);
         uint8_t *dstRetPtr = hcclRetPtr + sizeof(uint16_t);
         auto ret = memcpy_s(hcclRetPtr, sizeof(uint16_t), &hcclRet, sizeof(uint16_t)); // aicpu背景线程轮询的标志位

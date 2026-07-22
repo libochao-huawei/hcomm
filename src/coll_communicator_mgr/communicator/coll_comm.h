@@ -27,6 +27,7 @@
 #include "hcclCommDfx.h"
 #include "rank_graph_v2.h"
 #include "error_message_v2.h"
+#include "manager_common.h"
 #include "include/hccl_communicator.h"
 #include "hccl/hccl_res.h"
 

@@ -158,7 +158,7 @@ struct ClusterUIDCxt {
 class ClusterMonitor {
 public:
     HcclResult RegisterToClusterMonitor(HcclComm comm);
-    HcclResult UnRegisterToClusterMonitor(hccl::CollComm* collComm);
+    HcclResult UnRegisterToClusterMonitor(const hccl::CollComm* collComm);
     ClusterUIDType FormatUID(ClusterUIDCxt cxt) const;
     std::string GetUID(const ClusterUIDType &uid) const;
     std::string FormatConnTag(HcommSocketRole role, std::pair<ClusterUIDType, ClusterUIDType> uidPair) const;
