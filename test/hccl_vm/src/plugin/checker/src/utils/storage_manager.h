@@ -31,6 +31,13 @@ struct MemBlock {
     uint64_t globalOffset; // 该类型总偏移
 };
 
+// Raw V-operator parameters reported by one rank in the current op group.
+struct VRankParam {
+    uint64_t localCount = 0;
+    std::vector<uint64_t> counts;
+    std::vector<uint64_t> displs;
+};
+
 struct CheckerParam {
     HcclCMDType cmdType = static_cast<HcclCMDType>(0);
     uint32_t rankSize = 0;
@@ -44,6 +51,7 @@ struct CheckerParam {
     uint32_t root = 0;
 
     VDataDesTagInner vDataDes;
+    std::vector<VRankParam> vRankParams;
     All2AllDataDesTagInner all2AllDataDes;
 };
 
@@ -84,7 +92,6 @@ public:
     HcclResult LoadHcclVmTaskMetaData(std::vector<std::vector<sim::OpTaskTab>>& allTasks);
     void Reset();
     uint64_t GetBlockSize(uint32_t rankId, BufferType bufferType);
-    DataSlice GetDataSlice(uint32_t rankId, uint64_t addr, uint64_t size);
     HcclResult GetSlice(uint64_t addr, uint64_t len, DataSlice& dataSlice, uint32_t* rank = nullptr);
     uint32_t GetRankSize() const;
 
@@ -96,6 +103,8 @@ public:
     HcclResult Trans2CheckerParam(sim::OpDetailTab& detailTab, ::OpDetails& detail);
     HcclVmTaskMetaData GetHvmTaskMetaData() const;
     void InitCcuInfo(DevType &devType, std::vector<uint64_t> &resourceBaseAddr);
+    void BeginOpGroup();
+    HcclResult FinalizeOpGroup();
     void MergeAll2AllVSendCountMatrix();
 
 private:

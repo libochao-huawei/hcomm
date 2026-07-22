@@ -8,7 +8,5 @@
 
 target_sources(checker
         PRIVATE
-        # ccu_dfx.cc
-        # ccu_error_handler.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/dag_graphviz_dump.cc
 )

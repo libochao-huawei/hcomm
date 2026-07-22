@@ -31,7 +31,6 @@ using namespace HcclSim;
 namespace HcclSim {
 LinkProtoStub GetLinkProto(uint8_t commProtocol);
 uint64_t CalcDataSize(HcclDataType dataType, uint64_t dataCount);
-std::shared_ptr<TaskStub> ConvertTask(const HcclSim::StorageManager& storage, HcclTaskMetaData hcclTask, std::vector<HcclSim::TaskStubCcuGraph> &ccuParams);
 extern std::map<uint32_t, std::map<uint8_t, std::map<uint8_t, std::shared_ptr<TaskStubCcuGraph>>>> g_missionTask;
 }
 
@@ -119,8 +118,8 @@ TEST_F(TaskUtilsTest, ConvertTask_NotifyWait_Local)
     task.rankId = 0;
     task.taskData.notify.srcRankId = 0;
     task.taskData.notify.notifyId = 100;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::LOCAL_WAIT_FROM);
 }
@@ -134,8 +133,8 @@ TEST_F(TaskUtilsTest, ConvertTask_NotifyWait_Remote)
     task.taskData.notify.srcRankId = 1;
     task.taskData.notify.notifyId = 200;
     task.taskData.notify.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::WAIT);
     EXPECT_EQ(result->GetLinkType(), LinkProtoStub::RDMA);
@@ -150,8 +149,8 @@ TEST_F(TaskUtilsTest, ConvertTask_NotifyWait_Remote_SDMA)
     task.taskData.notify.srcRankId = 2;
     task.taskData.notify.notifyId = 300;
     task.taskData.notify.protocol = CommProtocol::COMM_PROTOCOL_HCCS;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::WAIT);
     EXPECT_EQ(result->GetLinkType(), LinkProtoStub::SDMA);
@@ -165,8 +164,8 @@ TEST_F(TaskUtilsTest, ConvertTask_NotifyRecord_Local)
     task.rankId = 0;
     task.taskData.notify.dstRankId = 0;
     task.taskData.notify.notifyId = 400;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::LOCAL_POST_TO);
 }
@@ -180,8 +179,8 @@ TEST_F(TaskUtilsTest, ConvertTask_NotifyRecord_Remote)
     task.taskData.notify.dstRankId = 1;
     task.taskData.notify.notifyId = 500;
     task.taskData.notify.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::POST);
     EXPECT_EQ(result->GetLinkType(), LinkProtoStub::RDMA);
@@ -198,8 +197,8 @@ TEST_F(TaskUtilsTest, ConvertTask_MemCpy_Local)
     task.taskData.transMem.srcOffset = 0x1000;
     task.taskData.transMem.dstOffset = 0x2000;
     task.taskData.transMem.len = 1024;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::LOCAL_COPY);
 }
@@ -216,8 +215,8 @@ TEST_F(TaskUtilsTest, ConvertTask_MemCpy_Write)
     task.taskData.transMem.dstOffset = 0x2000;
     task.taskData.transMem.len = 512;
     task.taskData.transMem.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::WRITE);
     EXPECT_EQ(result->GetLinkType(), LinkProtoStub::RDMA);
@@ -235,8 +234,8 @@ TEST_F(TaskUtilsTest, ConvertTask_MemCpy_Read)
     task.taskData.transMem.dstOffset = 0x2000;
     task.taskData.transMem.len = 256;
     task.taskData.transMem.protocol = CommProtocol::COMM_PROTOCOL_HCCS;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::READ);
     EXPECT_EQ(result->GetLinkType(), LinkProtoStub::SDMA);
@@ -253,8 +252,8 @@ TEST_F(TaskUtilsTest, ConvertTask_MemCpy_NoMatch)
     task.taskData.transMem.srcOffset = 0x1000;
     task.taskData.transMem.dstOffset = 0x2000;
     task.taskData.transMem.len = 128;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     EXPECT_EQ(result, nullptr);
 }
 
@@ -271,8 +270,8 @@ TEST_F(TaskUtilsTest, ConvertTask_Reduce_Local)
     task.taskData.reduce.dataCount = 100;
     task.taskData.reduce.dataType = HCCL_DATA_TYPE_FP32;
     task.taskData.reduce.reduceOp = HCCL_REDUCE_SUM;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::LOCAL_REDUCE);
 }
@@ -291,8 +290,8 @@ TEST_F(TaskUtilsTest, ConvertTask_Reduce_Write)
     task.taskData.reduce.dataType = HCCL_DATA_TYPE_FP32;
     task.taskData.reduce.reduceOp = HCCL_REDUCE_SUM;
     task.taskData.transMem.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::WRITE_REDUCE);
     EXPECT_EQ(result->GetLinkType(), LinkProtoStub::RDMA);
@@ -312,8 +311,8 @@ TEST_F(TaskUtilsTest, ConvertTask_Reduce_Read)
     task.taskData.reduce.dataType = HCCL_DATA_TYPE_FP32;
     task.taskData.reduce.reduceOp = HCCL_REDUCE_SUM;
     task.taskData.transMem.protocol = CommProtocol::COMM_PROTOCOL_HCCS;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::READ_REDUCE);
     EXPECT_EQ(result->GetLinkType(), LinkProtoStub::SDMA);
@@ -332,8 +331,8 @@ TEST_F(TaskUtilsTest, ConvertTask_Reduce_NoMatch)
     task.taskData.reduce.dataCount = 10;
     task.taskData.reduce.dataType = HCCL_DATA_TYPE_FP32;
     task.taskData.reduce.reduceOp = HCCL_REDUCE_SUM;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     EXPECT_EQ(result, nullptr);
 }
 
@@ -343,15 +342,15 @@ TEST_F(TaskUtilsTest, ConvertTask_DefaultUnknown)
     HcclTaskMetaData task{};
     task.taskType = static_cast<HccLTaskMetaType>(99);
     task.rankId = 0;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     EXPECT_EQ(result, nullptr);
 }
 
 TEST_F(TaskUtilsTest, ConvertTaskQueue_Empty)
 {
     AllRankTaskQueues allRankTaskQueues;
-    EXPECT_NO_THROW(ConvertTaskQueue(allRankTaskQueues));
+    EXPECT_EQ(ConvertTaskQueue(allRankTaskQueues), HCCL_SUCCESS);
 }
 
 TEST_F(TaskUtilsTest, ConvertTask_NotifyWait_Remote_SDMA_MultipleRanks)
@@ -364,8 +363,8 @@ TEST_F(TaskUtilsTest, ConvertTask_NotifyWait_Remote_SDMA_MultipleRanks)
         task.taskData.notify.srcRankId = rank + 1;
         task.taskData.notify.notifyId = rank * 100;
         task.taskData.notify.protocol = CommProtocol::COMM_PROTOCOL_HCCS;
-        std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-        auto result = ConvertTask(storage, task, ccuParams);
+        std::shared_ptr<TaskStub> result;
+        ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
         ASSERT_NE(result, nullptr);
         EXPECT_EQ(result->GetType(), TaskTypeStub::WAIT);
     }
@@ -383,8 +382,8 @@ TEST_F(TaskUtilsTest, ConvertTask_MemCpy_Write_ROCE)
     task.taskData.transMem.dstOffset = 0;
     task.taskData.transMem.len = 4096;
     task.taskData.transMem.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::WRITE);
     EXPECT_EQ(result->GetLinkType(), LinkProtoStub::RDMA);
@@ -402,8 +401,8 @@ TEST_F(TaskUtilsTest, ConvertTask_MemCpy_Read_ROCE)
     task.taskData.transMem.dstOffset = 0;
     task.taskData.transMem.len = 2048;
     task.taskData.transMem.protocol = CommProtocol::COMM_PROTOCOL_ROCE;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::READ);
     EXPECT_EQ(result->GetLinkType(), LinkProtoStub::RDMA);
@@ -418,8 +417,8 @@ TEST_F(TaskUtilsTest, ConvertTask_NotifyRecord_Remote_SDMA)
     task.taskData.notify.dstRankId = 3;
     task.taskData.notify.notifyId = 600;
     task.taskData.notify.protocol = CommProtocol::COMM_PROTOCOL_HCCS;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->GetType(), TaskTypeStub::POST);
     EXPECT_EQ(result->GetLinkType(), LinkProtoStub::SDMA);
@@ -437,13 +436,12 @@ TEST_F(TaskUtilsTest, ConvertTask_CCU_Graph_Basic) {
     task.taskData.ccu.argSize = 0;
     task.taskData.ccu.key = 1;
     task.taskData.ccu.timeout = 5000;
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
-    auto result = ConvertTask(storage, task, ccuParams);
+    std::shared_ptr<TaskStub> result;
+    ASSERT_EQ(ConvertTask(storage, task, result), HCCL_SUCCESS);
     EXPECT_EQ(result, nullptr);
 }
 
 TEST_F(TaskUtilsTest, ConvertTaskQueue_Empty_AlreadyCovered) {
     AllRankTaskQueues q;
-    ConvertTaskQueue(q);
-    SUCCEED();
+    EXPECT_EQ(ConvertTaskQueue(q), HCCL_SUCCESS);
 }

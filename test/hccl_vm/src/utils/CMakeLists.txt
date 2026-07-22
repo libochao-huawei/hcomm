@@ -54,8 +54,6 @@ target_compile_options(loader PRIVATE
 )
 
 target_include_directories(loader PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/runnerdb
     ${PROJECT_SOURCE_DIR}/include/store
@@ -75,6 +73,8 @@ target_include_directories(loader PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts
+
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 
 target_link_libraries(loader PRIVATE

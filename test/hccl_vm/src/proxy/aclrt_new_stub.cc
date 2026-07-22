@@ -24,7 +24,6 @@
 #include "dtype_common.h"
 #include "sim_log.h"
 #include "hccp_common.h"
-#include "mem.h"
 #include "rts_device.h"
 #include "sim_models.h"
 #include "db_sim_runner_common.h"

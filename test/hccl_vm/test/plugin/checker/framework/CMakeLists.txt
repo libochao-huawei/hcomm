@@ -31,11 +31,11 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
     ${CMAKE_SOURCE_DIR}/third_party/spdlog
     ${CMAKE_SOURCE_DIR}/third_party/spdlog/include
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base
+
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 
 set(CHECKER_LOG_SRC ${CMAKE_SOURCE_DIR}/src/plugin/checker/src/log/log_stub.cc)
@@ -174,7 +174,6 @@ target_include_directories(test_singletask_check BEFORE PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external/nlohmann
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
 )
 get_target_property(_singletask_includes test_singletask_check INCLUDE_DIRECTORIES)
 list(FILTER _singletask_includes EXCLUDE REGEX "^${CMAKE_SOURCE_DIR}/include$")
@@ -215,7 +214,6 @@ target_include_directories(test_check_rank_mem BEFORE PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external/nlohmann
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
 )
 get_target_property(_check_rank_mem_includes test_check_rank_mem INCLUDE_DIRECTORIES)
 list(FILTER _check_rank_mem_includes EXCLUDE REGEX "^${CMAKE_SOURCE_DIR}/include$")
@@ -265,7 +263,6 @@ target_include_directories(test_task_graph_revamp_base PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external/nlohmann
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
 )
 target_link_libraries(test_task_graph_revamp_base PRIVATE
     ${CHECKER_LIBC_SEC}
@@ -289,7 +286,6 @@ target_include_directories(test_task_graph_revamp PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external/nlohmann
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
 )
 target_link_libraries(test_task_graph_revamp PRIVATE
     ${CHECKER_LIBC_SEC}
@@ -313,7 +309,6 @@ target_include_directories(test_task_graph_revamp_parallel PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external/nlohmann
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
 )
 target_link_libraries(test_task_graph_revamp_parallel PRIVATE
     ${CHECKER_LIBC_SEC}
@@ -363,7 +358,6 @@ target_include_directories(test_task_graph_generator BEFORE PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external/nlohmann
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
 )
 target_link_libraries(test_task_graph_generator PRIVATE
     ${CHECKER_LIBC_SEC}

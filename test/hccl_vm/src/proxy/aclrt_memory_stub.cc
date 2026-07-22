@@ -1218,8 +1218,8 @@ aclError aclrtReduceAsync(void *dst, const void *src, uint64_t count, aclrtReduc
     taskMetaData.commId   = 0;
     taskMetaData.rankId   = curRank;
     taskMetaData.streamId = streamId;
-    taskMetaData.taskData.reduce.srcRankId = sim::GetRankIdByCtxId(srcCtxId);
-    taskMetaData.taskData.reduce.dstRankId = sim::GetRankIdByCtxId(dstCtxId);
+    taskMetaData.taskData.reduce.srcRankId = GetRankIdByVirAddr(src);
+    taskMetaData.taskData.reduce.dstRankId = GetRankIdByVirAddr(dst);
     taskMetaData.taskData.reduce.srcOffset = (uint64_t)(uintptr_t)src;
     taskMetaData.taskData.reduce.dstOffset = (uint64_t)(uintptr_t)dst;
     taskMetaData.taskData.reduce.dataType  = static_cast<uint8_t>(dataType);

@@ -151,15 +151,15 @@ typedef struct {
 
 #pragma pack(push, 1)
 typedef struct {
-    uint32_t count;
+    uint64_t count;
     uint16_t dataType;
     uint32_t reduceOpType;
 } OpInfoV1;
 
 typedef struct {
-    uint32_t sendCount;
+    uint64_t sendCount;
     uint16_t sendDataType;
-    uint32_t recvCount;
+    uint64_t recvCount;
     uint16_t recvDataType;
     uint16_t extInfo;
 } OpInfoV2;

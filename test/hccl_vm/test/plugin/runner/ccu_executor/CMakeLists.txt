@@ -39,8 +39,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_GLIBCXX_USE_CXX11_ABI=0")
 
 include_directories(
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
+
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor/control_executor
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor/load_executor

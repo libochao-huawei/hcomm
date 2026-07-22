@@ -19,8 +19,6 @@ target_compile_options(store PRIVATE
 
 # 设置头文件包含路径（改为绝对路径，基于项目根目录）
 target_include_directories(store PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/runnerdb
     ${PROJECT_SOURCE_DIR}/include/store
@@ -43,6 +41,8 @@ target_include_directories(store PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts
+
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 
 target_link_libraries(store PUBLIC log loader)

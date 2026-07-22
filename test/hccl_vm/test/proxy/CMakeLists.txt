@@ -59,7 +59,6 @@ include_directories(
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/profiling
     ${HCOMM_CODE_ROOT}/src/platform/hccp/inc/network
     ${HCOMM_CODE_ROOT}/src/legacy/common
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
     ${ASCEND_CANN_PACKAGE_PATH}/include
 
     ${HCOMM_CODE_ROOT}/src/base_comm/resources/hccp

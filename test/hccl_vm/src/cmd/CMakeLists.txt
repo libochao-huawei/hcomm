@@ -14,8 +14,6 @@ file(GLOB HCCL_CMD_SOURCES CONFIGURE_DEPENDS
 add_library(cmd OBJECT ${HCCL_CMD_SOURCES})
 
 target_include_directories(cmd PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hcomm/ccu
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
         ${CMAKE_CURRENT_SOURCE_DIR}/..
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/subcmd
@@ -35,6 +33,8 @@ target_include_directories(cmd PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
         ${ASCEND_CANN_PACKAGE_PATH}/include
         ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
+
+        ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 
 target_compile_options(cmd PRIVATE

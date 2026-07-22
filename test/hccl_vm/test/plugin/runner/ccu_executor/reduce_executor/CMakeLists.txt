@@ -13,7 +13,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_GLIBCXX_USE_CXX11_ABI=0")
 
 include_directories(
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor/reduce_executor
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/runner_utils
@@ -25,7 +24,6 @@ include_directories(
     ${CMAKE_BINARY_DIR}/_deps/yaml-cpp-src/include
     ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
     $ENV{HCOMM_CODE_HOME}/pkg_inc
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
     ${ASCEND_CANN_PACKAGE_PATH}/include
 )
 

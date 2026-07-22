@@ -80,6 +80,71 @@ protected:
         fclose(fp);
         ASSERT_EQ(ret, HcclResult::HCCL_SUCCESS);
     }
+
+    template <typename T>
+    static void AppendVParamField(std::vector<uint8_t>& payload, const T& value) {
+        const size_t offset = payload.size();
+        payload.resize(offset + sizeof(T));
+        std::memcpy(payload.data() + offset, &value, sizeof(T));
+    }
+
+    static std::vector<uint8_t> BuildVParamPayload(uint64_t localCount,
+                                                    const std::vector<uint64_t>& counts,
+                                                    const std::vector<uint64_t>& displs) {
+        std::vector<uint8_t> payload;
+        payload.reserve(sizeof(localCount) + (counts.size() + displs.size()) * sizeof(uint64_t));
+        AppendVParamField(payload, localCount);
+        for (uint64_t count : counts) {
+            AppendVParamField(payload, count);
+        }
+        for (uint64_t displ : displs) {
+            AppendVParamField(payload, displ);
+        }
+        return payload;
+    }
+
+    HcclResult ReportVRank(HcclCMDType cmdType, uint32_t rankId, uint32_t rankSize,
+                           uint64_t localCount, const std::vector<uint64_t>& counts,
+                           const std::vector<uint64_t>& displs,
+                           HcclDataType dataType = HCCL_DATA_TYPE_INT32,
+                           HcclReduceOp reduceType = HCCL_REDUCE_SUM) {
+        sim::OpDetailTab detailTab{};
+        detailTab.rankId = rankId;
+        detailTab.rankSize = rankSize;
+        detailTab.opExtInfo = BuildVParamPayload(localCount, counts, displs);
+
+        ::OpDetails detail{};
+        detail.opType = static_cast<uint16_t>(cmdType);
+        detail.dataType = static_cast<uint16_t>(dataType);
+        detail.reduceType = static_cast<uint16_t>(reduceType);
+        detail.opV1.count = localCount;
+        return StorageManager::GetInstance().Trans2CheckerParam(detailTab, detail);
+    }
+
+    static std::vector<uint8_t> BuildMatrixPayload(const std::vector<uint64_t>& matrix) {
+        const uint32_t count = static_cast<uint32_t>(matrix.size());
+        std::vector<uint8_t> payload(sizeof(count) + matrix.size() * sizeof(uint64_t));
+        std::memcpy(payload.data(), &count, sizeof(count));
+        if (!matrix.empty()) {
+            std::memcpy(payload.data() + sizeof(count), matrix.data(), matrix.size() * sizeof(uint64_t));
+        }
+        return payload;
+    }
+
+    HcclResult ReportAll2AllMatrix(HcclCMDType cmdType, uint32_t rankId, uint32_t rankSize,
+                                   const std::vector<uint64_t>& matrix) {
+        sim::OpDetailTab detailTab{};
+        detailTab.rankId = rankId;
+        detailTab.rankSize = rankSize;
+        detailTab.opExtInfo = BuildMatrixPayload(matrix);
+
+        ::OpDetails detail{};
+        detail.opType = static_cast<uint16_t>(cmdType);
+        detail.dataType = static_cast<uint16_t>(HCCL_DATA_TYPE_INT32);
+        detail.opV2.sendDataType = static_cast<uint16_t>(HCCL_DATA_TYPE_INT32);
+        detail.opV2.recvDataType = static_cast<uint16_t>(HCCL_DATA_TYPE_INT32);
+        return StorageManager::GetInstance().Trans2CheckerParam(detailTab, detail);
+    }
 };
 
 TEST_F(StorageManagerCheckerTest, GetInstance_Singleton) {
@@ -198,21 +263,21 @@ TEST_F(StorageManagerCheckerTest, GetBlockSize_NonExistentBufferType) {
     EXPECT_EQ(size, 0);
 }
 
-TEST_F(StorageManagerCheckerTest, GetDataSlice_NonExistentRank) {
-    DataSlice slice = StorageManager::GetInstance().GetDataSlice(999, 0x1000, 1024);
-    EXPECT_EQ(slice.GetSize(), 1024);
-    EXPECT_EQ(slice.GetOffset(), 0);
-    EXPECT_EQ(slice.GetType(), BufferType::INPUT);
+TEST_F(StorageManagerCheckerTest, GetSlice_NonExistentRank) {
+    DataSlice slice;
+    uint32_t rank = 999;
+    HcclResult ret = StorageManager::GetInstance().GetSlice(0x1000, 1024, slice, &rank);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
 }
 
-TEST_F(StorageManagerCheckerTest, GetDataSlice_DefaultConstruction) {
+TEST_F(StorageManagerCheckerTest, DataSlice_DefaultConstruction) {
     DataSlice slice;
     EXPECT_EQ(slice.GetSize(), 0);
     EXPECT_EQ(slice.GetOffset(), 0);
     EXPECT_EQ(slice.GetType(), BufferType::INPUT);
 }
 
-TEST_F(StorageManagerCheckerTest, GetDataSlice_CustomConstruction) {
+TEST_F(StorageManagerCheckerTest, DataSlice_CustomConstruction) {
     DataSlice slice(BufferType::OUTPUT, 0x1000, 2048);
     EXPECT_EQ(slice.GetType(), BufferType::OUTPUT);
     EXPECT_EQ(slice.GetOffset(), 0x1000);
@@ -270,6 +335,213 @@ TEST_F(StorageManagerCheckerTest, Trans2CheckerParam_Default) {
     CheckerParam param = StorageManager::GetInstance().GetCheckerParam();
     EXPECT_EQ(param.rankSize, 0);
     EXPECT_EQ(param.dataCount, 0);
+}
+
+TEST_F(StorageManagerCheckerTest, FinalizeOpGroup_AllGatherVBuildsCanonicalDataDescriptor) {
+    constexpr uint32_t kRankSize = 4;
+    const std::vector<uint64_t> counts = {2, 0, 3, 1};
+    const std::vector<uint64_t> displs = {0, 2, 2, 5};
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    for (uint32_t rankId = 0; rankId < kRankSize; ++rankId) {
+        ASSERT_EQ(ReportVRank(HcclCMDType::HCCL_CMD_ALLGATHER_V, rankId, kRankSize,
+                              counts[rankId], counts, displs), HcclResult::HCCL_SUCCESS);
+    }
+
+    ASSERT_EQ(storage.FinalizeOpGroup(), HcclResult::HCCL_SUCCESS);
+    const CheckerParam param = storage.GetCheckerParam();
+    EXPECT_EQ(param.vDataDes.dataType, static_cast<uint16_t>(HCCL_DATA_TYPE_INT32));
+    EXPECT_EQ(param.vDataDes.count, kRankSize);
+    EXPECT_EQ(param.vDataDes.counts, counts);
+    EXPECT_EQ(param.vDataDes.displs, displs);
+}
+
+TEST_F(StorageManagerCheckerTest, FinalizeOpGroup_AllGatherVRejectsCountMismatch) {
+    constexpr uint32_t kRankSize = 4;
+    const std::vector<uint64_t> counts = {2, 0, 3, 1};
+    const std::vector<uint64_t> displs = {0, 2, 2, 5};
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    for (uint32_t rankId = 0; rankId < kRankSize; ++rankId) {
+        std::vector<uint64_t> recvCounts = counts;
+        if (rankId == 2) {
+            recvCounts[0] = 9;
+        }
+        ASSERT_EQ(ReportVRank(HcclCMDType::HCCL_CMD_ALLGATHER_V, rankId, kRankSize,
+                              counts[rankId], recvCounts, displs), HcclResult::HCCL_SUCCESS);
+    }
+
+    EXPECT_EQ(storage.FinalizeOpGroup(), HcclResult::HCCL_E_PARA);
+}
+
+TEST_F(StorageManagerCheckerTest, FinalizeOpGroup_AllGatherVAcceptsAllZeroCounts) {
+    constexpr uint32_t kRankSize = 3;
+    const std::vector<uint64_t> counts = {0, 0, 0};
+    const std::vector<uint64_t> displs = {0, 0, 0};
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    for (uint32_t rankId = 0; rankId < kRankSize; ++rankId) {
+        ASSERT_EQ(ReportVRank(HcclCMDType::HCCL_CMD_ALLGATHER_V, rankId, kRankSize,
+                              0, counts, displs), HcclResult::HCCL_SUCCESS);
+    }
+
+    ASSERT_EQ(storage.FinalizeOpGroup(), HcclResult::HCCL_SUCCESS);
+    const CheckerParam param = storage.GetCheckerParam();
+    EXPECT_EQ(param.vDataDes.counts, counts);
+    EXPECT_EQ(param.vDataDes.displs, displs);
+}
+
+TEST_F(StorageManagerCheckerTest, FinalizeOpGroup_ReduceScatterVBuildsCanonicalDataDescriptor) {
+    constexpr uint32_t kRankSize = 4;
+    const std::vector<uint64_t> counts = {2, 0, 3, 1};
+    const std::vector<uint64_t> displs = {0, 2, 2, 5};
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    for (uint32_t rankId = 0; rankId < kRankSize; ++rankId) {
+        ASSERT_EQ(ReportVRank(HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, rankId, kRankSize,
+                              counts[rankId], counts, displs), HcclResult::HCCL_SUCCESS);
+    }
+
+    ASSERT_EQ(storage.FinalizeOpGroup(), HcclResult::HCCL_SUCCESS);
+    const CheckerParam param = storage.GetCheckerParam();
+    EXPECT_EQ(param.vDataDes.dataType, static_cast<uint16_t>(HCCL_DATA_TYPE_INT32));
+    EXPECT_EQ(param.vDataDes.count, kRankSize);
+    EXPECT_EQ(param.vDataDes.counts, counts);
+    EXPECT_EQ(param.vDataDes.displs, displs);
+}
+
+TEST_F(StorageManagerCheckerTest, FinalizeOpGroup_ReduceScatterVRejectsCountMismatch) {
+    constexpr uint32_t kRankSize = 4;
+    const std::vector<uint64_t> counts = {2, 0, 3, 1};
+    const std::vector<uint64_t> displs = {0, 2, 2, 5};
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    for (uint32_t rankId = 0; rankId < kRankSize; ++rankId) {
+        std::vector<uint64_t> sendCounts = counts;
+        if (rankId == 3) {
+            sendCounts[0] = 9;
+        }
+        ASSERT_EQ(ReportVRank(HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, rankId, kRankSize,
+                              counts[rankId], sendCounts, displs), HcclResult::HCCL_SUCCESS);
+    }
+
+    EXPECT_EQ(storage.FinalizeOpGroup(), HcclResult::HCCL_E_PARA);
+}
+
+TEST_F(StorageManagerCheckerTest, FinalizeOpGroup_RejectsMissingVRankReport) {
+    constexpr uint32_t kRankSize = 4;
+    const std::vector<uint64_t> counts = {2, 0, 3, 1};
+    const std::vector<uint64_t> displs = {0, 2, 2, 5};
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    for (uint32_t rankId = 0; rankId < kRankSize - 1; ++rankId) {
+        ASSERT_EQ(ReportVRank(HcclCMDType::HCCL_CMD_ALLGATHER_V, rankId, kRankSize,
+                              counts[rankId], counts, displs), HcclResult::HCCL_SUCCESS);
+    }
+
+    EXPECT_EQ(storage.FinalizeOpGroup(), HcclResult::HCCL_E_PARA);
+}
+
+TEST_F(StorageManagerCheckerTest, Trans2CheckerParam_RejectsDuplicateVRankReport) {
+    constexpr uint32_t kRankSize = 2;
+    const std::vector<uint64_t> counts = {1, 2};
+    const std::vector<uint64_t> displs = {0, 1};
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    ASSERT_EQ(ReportVRank(HcclCMDType::HCCL_CMD_ALLGATHER_V, 0, kRankSize,
+                          counts[0], counts, displs), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(ReportVRank(HcclCMDType::HCCL_CMD_ALLGATHER_V, 0, kRankSize,
+                          counts[0], counts, displs), HcclResult::HCCL_E_PARA);
+}
+
+TEST_F(StorageManagerCheckerTest, BeginOpGroup_ClearsCompletedVRankParameters) {
+    constexpr uint32_t kFirstRankSize = 4;
+    const std::vector<uint64_t> firstCounts = {2, 0, 3, 1};
+    const std::vector<uint64_t> firstDispls = {0, 2, 2, 5};
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    for (uint32_t rankId = 0; rankId < kFirstRankSize; ++rankId) {
+        ASSERT_EQ(ReportVRank(HcclCMDType::HCCL_CMD_ALLGATHER_V, rankId, kFirstRankSize,
+                              firstCounts[rankId], firstCounts, firstDispls), HcclResult::HCCL_SUCCESS);
+    }
+    ASSERT_EQ(storage.FinalizeOpGroup(), HcclResult::HCCL_SUCCESS);
+
+    constexpr uint32_t kSecondRankSize = 2;
+    const std::vector<uint64_t> secondCounts = {5, 7};
+    const std::vector<uint64_t> secondDispls = {0, 5};
+    storage.BeginOpGroup();
+    for (uint32_t rankId = 0; rankId < kSecondRankSize; ++rankId) {
+        ASSERT_EQ(ReportVRank(HcclCMDType::HCCL_CMD_ALLGATHER_V, rankId, kSecondRankSize,
+                              secondCounts[rankId], secondCounts, secondDispls), HcclResult::HCCL_SUCCESS);
+    }
+    ASSERT_EQ(storage.FinalizeOpGroup(), HcclResult::HCCL_SUCCESS);
+
+    const CheckerParam param = storage.GetCheckerParam();
+    EXPECT_EQ(param.vDataDes.count, kSecondRankSize);
+    EXPECT_EQ(param.vDataDes.counts, secondCounts);
+    EXPECT_EQ(param.vDataDes.displs, secondDispls);
+}
+
+TEST_F(StorageManagerCheckerTest, Trans2CheckerParam_RejectsMalformedVParamPayload) {
+    constexpr uint32_t kRankSize = 2;
+    const std::vector<uint64_t> counts = {1, 2};
+    const std::vector<uint64_t> displs = {0, 1};
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    sim::OpDetailTab detailTab{};
+    detailTab.rankId = 0;
+    detailTab.rankSize = kRankSize;
+    detailTab.opExtInfo = BuildVParamPayload(counts[0], counts, displs);
+    detailTab.opExtInfo.pop_back();
+
+    ::OpDetails detail{};
+    detail.opType = static_cast<uint16_t>(HcclCMDType::HCCL_CMD_ALLGATHER_V);
+    detail.dataType = static_cast<uint16_t>(HCCL_DATA_TYPE_INT32);
+    EXPECT_EQ(storage.Trans2CheckerParam(detailTab, detail), HcclResult::HCCL_E_PARA);
+}
+
+TEST_F(StorageManagerCheckerTest, Trans2CheckerParam_RejectsVLocalCountMismatch) {
+    constexpr uint32_t kRankSize = 2;
+    const std::vector<uint64_t> counts = {1, 2};
+    const std::vector<uint64_t> displs = {0, 1};
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    sim::OpDetailTab detailTab{};
+    detailTab.rankId = 0;
+    detailTab.rankSize = kRankSize;
+    detailTab.opExtInfo = BuildVParamPayload(counts[0], counts, displs);
+
+    ::OpDetails detail{};
+    detail.opType = static_cast<uint16_t>(HcclCMDType::HCCL_CMD_ALLGATHER_V);
+    detail.dataType = static_cast<uint16_t>(HCCL_DATA_TYPE_INT32);
+    detail.opV1.count = counts[0] + 1;
+    EXPECT_EQ(storage.Trans2CheckerParam(detailTab, detail), HcclResult::HCCL_E_PARA);
+}
+
+TEST_F(StorageManagerCheckerTest, MergeAll2AllVSendCountMatrix_PreservesExistingOrMerge) {
+    constexpr uint32_t kRankSize = 2;
+    StorageManager& storage = StorageManager::GetInstance();
+
+    storage.BeginOpGroup();
+    ASSERT_EQ(ReportAll2AllMatrix(HcclCMDType::HCCL_CMD_ALLTOALLVC, 0, kRankSize, {1, 2, 0, 4}),
+              HcclResult::HCCL_SUCCESS);
+    ASSERT_EQ(ReportAll2AllMatrix(HcclCMDType::HCCL_CMD_ALLTOALLVC, 1, kRankSize, {0, 8, 16, 0}),
+              HcclResult::HCCL_SUCCESS);
+
+    storage.MergeAll2AllVSendCountMatrix();
+    const CheckerParam param = storage.GetCheckerParam();
+    EXPECT_EQ(param.all2AllDataDes.count, 4u);
+    EXPECT_EQ(param.all2AllDataDes.sendCountMatrix, (std::vector<uint64_t>{1, 10, 16, 4}));
 }
 
 TEST_F(StorageManagerCheckerTest, Trans2CheckerParam_WithSynData) {
@@ -432,7 +704,7 @@ TEST_F(StorageManagerCheckerTest, LoadMemLayout_WithFile) {
     RemoveDir(tmpDir);
 }
 
-TEST_F(StorageManagerCheckerTest, GetDataSlice_WithMemLayout) {
+TEST_F(StorageManagerCheckerTest, GetSlice_WithMemLayout_ByRank) {
     std::string tmpDir = CreateTempDir();
     std::string dataId = "test_dataslice";
     std::string dataDir = CreateTestDataDir(tmpDir, dataId);
@@ -448,16 +720,28 @@ TEST_F(StorageManagerCheckerTest, GetDataSlice_WithMemLayout) {
 
     StorageManager::GetInstance().SetDataId(dataId);
 
-    DataSlice slice = StorageManager::GetInstance().GetDataSlice(0, 1024, 100);
+    DataSlice slice;
+    uint32_t rank = 999;
+    HcclResult ret = StorageManager::GetInstance().GetSlice(1024, 100, slice, &rank);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(rank, 0);
     EXPECT_EQ(slice.GetSize(), 100);
     EXPECT_EQ(slice.GetType(), BufferType::INPUT);
     EXPECT_EQ(slice.GetOffset(), 0);
 
-    DataSlice slice2 = StorageManager::GetInstance().GetDataSlice(0, 2048, 100);
+    DataSlice slice2;
+    uint32_t rank2 = 999;
+    ret = StorageManager::GetInstance().GetSlice(2048, 100, slice2, &rank2);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(rank2, 0);
     EXPECT_EQ(slice2.GetType(), BufferType::INPUT);
     EXPECT_EQ(slice2.GetOffset(), 1024);
 
-    DataSlice slice3 = StorageManager::GetInstance().GetDataSlice(0, 8192, 100);
+    DataSlice slice3;
+    uint32_t rank3 = 999;
+    ret = StorageManager::GetInstance().GetSlice(8192, 100, slice3, &rank3);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(rank3, 0);
     EXPECT_EQ(slice3.GetType(), BufferType::OUTPUT);
     EXPECT_EQ(slice3.GetOffset(), 0);
 
@@ -465,7 +749,7 @@ TEST_F(StorageManagerCheckerTest, GetDataSlice_WithMemLayout) {
     RemoveDir(tmpDir);
 }
 
-TEST_F(StorageManagerCheckerTest, GetDataSlice_AddrNotInAnyBlock) {
+TEST_F(StorageManagerCheckerTest, GetSlice_AddrNotInAnyBlock) {
     std::string tmpDir = CreateTempDir();
     std::string dataId = "test_noblock";
     std::string dataDir = CreateTestDataDir(tmpDir, dataId);
@@ -482,13 +766,15 @@ TEST_F(StorageManagerCheckerTest, GetDataSlice_AddrNotInAnyBlock) {
 
     StorageManager::GetInstance().SetDataId(dataId);
 
-    DataSlice slice = StorageManager::GetInstance().GetDataSlice(0, 0, 100);
-    EXPECT_EQ(slice.GetSize(), 100);
-    EXPECT_EQ(slice.GetOffset(), 0);
+    DataSlice slice;
+    uint32_t rank = 999;
+    HcclResult ret = StorageManager::GetInstance().GetSlice(0, 100, slice, &rank);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
 
-    DataSlice slice2 = StorageManager::GetInstance().GetDataSlice(0, 5000, 100);
-    EXPECT_EQ(slice2.GetSize(), 100);
-    EXPECT_EQ(slice2.GetOffset(), 0);
+    DataSlice slice2;
+    uint32_t rank2 = 999;
+    ret = StorageManager::GetInstance().GetSlice(5000, 100, slice2, &rank2);
+    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
 
     chdir(savedCwd);
     RemoveDir(tmpDir);

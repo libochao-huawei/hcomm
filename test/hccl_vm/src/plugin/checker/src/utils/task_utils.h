@@ -24,8 +24,9 @@ std::string BuildDerivedTaskId(const std::string &baseTaskId, uint64_t subIndex)
 void AssignTaskId(TaskStub *task, const std::string &taskId);
 void EnsureTaskNodeIdsAssigned(TaskNode *dummyStart);
 
-std::shared_ptr<TaskStub> ConvertTask(const HcclSim::StorageManager& storage, HcclTaskMetaData hcclTask);
-void ConvertTaskQueue(AllRankTaskQueues& allRankTaskQueues);
+HcclResult ConvertTask(const HcclSim::StorageManager& storage, HcclTaskMetaData hcclTask,
+    std::shared_ptr<TaskStub> &task);
+HcclResult ConvertTaskQueue(AllRankTaskQueues& allRankTaskQueues);
 } // namespace HcclSim
 
 #endif

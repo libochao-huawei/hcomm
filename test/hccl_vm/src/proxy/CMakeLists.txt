@@ -48,10 +48,11 @@ target_include_directories(hccl_proxy_level2 PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/tsd
+
+        ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
+        ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/pub_inc
 
         # hccl_vm头文件
         ${HCOMM_VM_ROOT_PATH}/include

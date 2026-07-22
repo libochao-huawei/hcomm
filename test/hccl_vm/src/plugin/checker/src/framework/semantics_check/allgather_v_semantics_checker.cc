@@ -46,11 +46,17 @@ HcclResult TaskCheckAllGatherVSemantics(std::map<RankId, RankMemorySemantics> &a
         RankId curRankId   = 0;
         u64    curDataSize = 0;
         for (auto &ele : allRankMemSemantics[rankId][BufferType::OUTPUT]) {
-            u64 inputSize = vDataDes.counts[curRankId] * CHECK_SIZE_TABLE[vDataDes.dataType];
-            while (!inputSize) {
-                curRankId++;
-                inputSize = vDataDes.counts[curRankId] * CHECK_SIZE_TABLE[vDataDes.dataType];
+            while (curRankId < rankSize && vDataDes.counts[curRankId] == 0) {
+                ++curRankId;
             }
+            if (curRankId >= rankSize) {
+                HCCL_VM_ERROR("{} AllGatherV output for rank {} contains unexpected data after all "
+                              "expected source ranks have been consumed."
+                              "\nCurrent result range detail:\n{}",
+                              MakeErrorCodeText(ErrorCode::SEMANTIC_FINAL_SIZE_ERROR), rankId, ele.Describe());
+                return HcclResult::HCCL_E_PARA;
+            }
+            const u64 inputSize = vDataDes.counts[curRankId] * CHECK_SIZE_TABLE[vDataDes.dataType];
             const u64 rangeEnd = ele.startAddr + ele.size;
 
             if (ele.startAddr != totalSize) {

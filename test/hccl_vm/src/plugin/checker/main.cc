@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -298,6 +299,7 @@ static HcclResult ProcessOneOpGroup(
     bool isAivOp = false;
 
     HCCL_VM_INFO("Start checking one op group, opGroupSize={}", opGroup.size());
+    storage.BeginOpGroup();
     std::vector<std::vector<sim::OpTaskTab>> allTasks;
     for (auto& entry : opGroup) {
         uint32_t rankId = entry.first;
@@ -311,9 +313,6 @@ static HcclResult ProcessOneOpGroup(
                 HcclSim::MakeErrorCodeText(HcclSim::ErrorCode::CHECKER_RUNTIME_ERROR), opIdx, rankId);
             return ret;
         }
-        if (dumpManager.IsEnabled()) {
-            HcclSim::DumpRunManifest::GetInstance().SetOpParam(BuildOpParamSummaryJson(storage.GetCheckerParam()));
-        }
     }
 
     if (!enableNewChecker && !enableOldChecker) {
@@ -324,10 +323,21 @@ static HcclResult ProcessOneOpGroup(
         return HcclResult::HCCL_SUCCESS;
     }
 
-    // alltoallv alltoallvc需要进行矩阵合并
+    HcclResult ret = storage.FinalizeOpGroup();
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_VM_ERROR("{} Failed to finalize operator parameters for this op group, opIndex={}",
+                      HcclSim::MakeErrorCodeText(HcclSim::ErrorCode::CHECKER_RUNTIME_ERROR), opIdx);
+        return ret;
+    }
+
+    // AllToAll family continues to use the existing matrix merge path.
     storage.MergeAll2AllVSendCountMatrix();
 
-    auto ret = storage.LoadHcclVmTaskMetaData(allTasks);
+    if (dumpManager.IsEnabled()) {
+        HcclSim::DumpRunManifest::GetInstance().SetOpParam(BuildOpParamSummaryJson(storage.GetCheckerParam()));
+    }
+
+    ret = storage.LoadHcclVmTaskMetaData(allTasks);
     if (ret != HcclResult::HCCL_SUCCESS) {
         HCCL_VM_ERROR("{} Failed to load V3 task metadata for this op group",
                       HcclSim::MakeErrorCodeText(HcclSim::ErrorCode::CHECKER_RUNTIME_ERROR));
@@ -380,9 +390,15 @@ static HcclResult ProcessOneOpGroup(
         HCCL_VM_INFO("Start running the old checker, opIndex={}, dataId={}", opIdx,
             storage.GetDataId());
         HcclSim::AllRankTaskQueues taskQueues;
-        HcclSim::ConvertTaskQueue(taskQueues);
-        auto checkerParam = storage.GetCheckerParam();
-        oldCheckerRet = DispatchCheckByCmdType(taskQueues, checkerParam);
+        const HcclResult convertRet = HcclSim::ConvertTaskQueue(taskQueues);
+        if (convertRet != HcclResult::HCCL_SUCCESS) {
+            HCCL_VM_ERROR("{} Failed to convert tasks, opIndex={}",
+                HcclSim::MakeErrorCodeText(HcclSim::ErrorCode::CHECKER_RUNTIME_ERROR), opIdx);
+            oldCheckerRet = convertRet;
+        } else {
+            auto checkerParam = storage.GetCheckerParam();
+            oldCheckerRet = DispatchCheckByCmdType(taskQueues, checkerParam);
+        }
         HCCL_VM_INFO("----------[Old Checker Finished]----------");
         HCCL_VM_INFO("Old checker finished for this op, opIndex={}", opIdx);
     } else {
@@ -433,6 +449,8 @@ json BuildOpParamSummaryJson(const HcclSim::CheckerParam &param)
         vDataDesJson["rank_count"] = param.vDataDes.count;
         vDataDesJson["counts_size"] = param.vDataDes.counts.size();
         vDataDesJson["displs_size"] = param.vDataDes.displs.size();
+        vDataDesJson["counts"] = param.vDataDes.counts;
+        vDataDesJson["displs"] = param.vDataDes.displs;
         opParamJson["v_data_des"] = std::move(vDataDesJson);
     }
 

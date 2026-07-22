@@ -18,6 +18,7 @@
 #include "ccu_instr_info.h"
 #include "checker_def.h"
 #include "data_slice.h"
+#include "error_codes.h"
 #include "hccl_types.h"
 #include "sim_log.h"
 #include "log.h"
@@ -253,32 +254,49 @@ uint64_t CalcDataSize(HcclDataType dataType, uint64_t dataCount)
 // rankId, dieId, missionId
 std::map<uint32_t, std::map<uint8_t, std::map<uint8_t, std::shared_ptr<HcclSim::TaskStubCcuGraph>>>> g_missionTask;
 
-std::shared_ptr<TaskStub> ConvertTask(const HcclSim::StorageManager& storage, HcclTaskMetaData hcclTask, std::vector<HcclSim::TaskStubCcuGraph> &ccuParams)
+static HcclResult GetTaskDataSlice(uint32_t rankId, uint64_t addr, uint64_t size, DataSlice &dataSlice)
 {
+    uint32_t actualRank = 0;
+    HcclResult ret = StorageManager::GetInstance().GetSlice(addr, size, dataSlice, &actualRank);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
+    }
+    if (actualRank != rankId) {
+        HCCL_VM_ERROR("{} Resolved data slice rank mismatch, expectedRank={}, actualRank={}, addr={}, size={}",
+            MakeErrorCodeText(ErrorCode::GRAPH_ADDRESS_INVALID), rankId, actualRank, addr, size);
+        return HCCL_E_MEMORY;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult ConvertTask(const HcclSim::StorageManager& storage, HcclTaskMetaData hcclTask,
+    std::shared_ptr<TaskStub> &task)
+{
+    task.reset();
     switch (hcclTask.taskType) {
         case HccLTaskMetaType::NOTIFY_WAIT: {
             RankId remoteRank = hcclTask.taskData.notify.srcRankId;
             if (remoteRank == hcclTask.rankId) {
                 // Local
-                return std::make_shared<HcclSim::TaskStubLocalWaitFrom>(hcclTask.taskData.notify.notifyId);
+                task = std::make_shared<HcclSim::TaskStubLocalWaitFrom>(hcclTask.taskData.notify.notifyId);
             } else {
                 LinkProtoStub linkType = GetLinkProto(hcclTask.taskData.notify.protocol);
                 HcclSim::LinkInfo link(linkType);
-                return std::make_shared<HcclSim::TaskStubWait>(remoteRank, link, hcclTask.taskData.notify.notifyId);
+                task = std::make_shared<HcclSim::TaskStubWait>(remoteRank, link, hcclTask.taskData.notify.notifyId);
             }
-            break;
+            return HCCL_SUCCESS;
         }
         case HccLTaskMetaType::NOTIFY_RECORD: {
             RankId remoteRank = hcclTask.taskData.notify.dstRankId;
             if (remoteRank == hcclTask.rankId) {
                 // Local
-                return std::make_shared<HcclSim::TaskStubLocalPostTo>(hcclTask.taskData.notify.notifyId);
+                task = std::make_shared<HcclSim::TaskStubLocalPostTo>(hcclTask.taskData.notify.notifyId);
             } else {
                 LinkProtoStub linkType = GetLinkProto(hcclTask.taskData.notify.protocol);
                 HcclSim::LinkInfo link(linkType);
-                return std::make_shared<HcclSim::TaskStubPost>(remoteRank, link, hcclTask.taskData.notify.notifyId);
+                task = std::make_shared<HcclSim::TaskStubPost>(remoteRank, link, hcclTask.taskData.notify.notifyId);
             }
-            break;
+            return HCCL_SUCCESS;
         }
         case HccLTaskMetaType::REDUCE: {
             RankId srcRank = hcclTask.taskData.reduce.srcRankId;
@@ -287,28 +305,36 @@ std::shared_ptr<TaskStub> ConvertTask(const HcclSim::StorageManager& storage, Hc
             uint64_t rankDstOffset = hcclTask.taskData.reduce.dstOffset;
             HcclDataType dataType = static_cast<HcclDataType>(hcclTask.taskData.reduce.dataType);
             uint64_t dataCount = hcclTask.taskData.reduce.dataCount;
-            uint64_t size = CalcDataSize(dataType, dataCount);
             HcclReduceOp reduceOp = static_cast<HcclReduceOp>(hcclTask.taskData.reduce.reduceOp);
-            
-            DataSlice srcDataSlice = StorageManager::GetInstance().GetDataSlice(srcRank, rankSrcOffset, dataCount);
-            DataSlice dstDataSlice = StorageManager::GetInstance().GetDataSlice(dstRank, rankDstOffset, dataCount);
+
+            DataSlice srcDataSlice;
+            HcclResult ret = GetTaskDataSlice(srcRank, rankSrcOffset, dataCount, srcDataSlice);
+            if (ret != HCCL_SUCCESS) {
+                return ret;
+            }
+            DataSlice dstDataSlice;
+            ret = GetTaskDataSlice(dstRank, rankDstOffset, dataCount, dstDataSlice);
+            if (ret != HCCL_SUCCESS) {
+                return ret;
+            }
 
             if (srcRank == dstRank) {
                 // Local
-                return std::make_shared<HcclSim::TaskStubLocalReduce>(srcDataSlice, dstDataSlice, dataType, reduceOp);
+                task = std::make_shared<HcclSim::TaskStubLocalReduce>(srcDataSlice, dstDataSlice, dataType, reduceOp);
             } else if (srcRank == hcclTask.rankId) {
                 // Write
                 LinkProtoStub linkType = GetLinkProto(hcclTask.taskData.transMem.protocol);
                 HcclSim::LinkInfo link(linkType);
-                return std::make_shared<HcclSim::TaskStubWriteReduce>(dstRank, link, srcDataSlice, dstDataSlice, dataType, reduceOp);
+                task = std::make_shared<HcclSim::TaskStubWriteReduce>(dstRank, link, srcDataSlice, dstDataSlice,
+                    dataType, reduceOp);
             } else if (dstRank == hcclTask.rankId) {
                 // Read
                 LinkProtoStub linkType = GetLinkProto(hcclTask.taskData.transMem.protocol);
                 HcclSim::LinkInfo link(linkType);
-                return std::make_shared<HcclSim::TaskStubReadReduce>(srcRank, link, dstDataSlice, srcDataSlice, dataType, reduceOp);
+                task = std::make_shared<HcclSim::TaskStubReadReduce>(srcRank, link, dstDataSlice, srcDataSlice,
+                    dataType, reduceOp);
             }
-
-            break;
+            return HCCL_SUCCESS;
         }
         case HccLTaskMetaType::MEM_CPY: {
             RankId srcRank = hcclTask.taskData.transMem.srcRankId;
@@ -317,24 +343,32 @@ std::shared_ptr<TaskStub> ConvertTask(const HcclSim::StorageManager& storage, Hc
             uint64_t rankDstOffset = hcclTask.taskData.transMem.dstOffset;
             uint64_t size = hcclTask.taskData.transMem.len;
 
-            DataSlice srcDataSlice = StorageManager::GetInstance().GetDataSlice(srcRank, rankSrcOffset, size);
-            DataSlice dstDataSlice = StorageManager::GetInstance().GetDataSlice(dstRank, rankDstOffset, size);
-            
+            DataSlice srcDataSlice;
+            HcclResult ret = GetTaskDataSlice(srcRank, rankSrcOffset, size, srcDataSlice);
+            if (ret != HCCL_SUCCESS) {
+                return ret;
+            }
+            DataSlice dstDataSlice;
+            ret = GetTaskDataSlice(dstRank, rankDstOffset, size, dstDataSlice);
+            if (ret != HCCL_SUCCESS) {
+                return ret;
+            }
+
             if (srcRank == dstRank) {
                 // Local
-                return std::make_shared<HcclSim::TaskStubLocalCopy>(srcDataSlice, dstDataSlice);
+                task = std::make_shared<HcclSim::TaskStubLocalCopy>(srcDataSlice, dstDataSlice);
             } else if (srcRank == hcclTask.rankId) {
                 // Write
                 LinkProtoStub linkType = GetLinkProto(hcclTask.taskData.transMem.protocol);
                 HcclSim::LinkInfo link(linkType);
-                return std::make_shared<HcclSim::TaskStubWrite>(dstRank, link, srcDataSlice, dstDataSlice);
+                task = std::make_shared<HcclSim::TaskStubWrite>(dstRank, link, srcDataSlice, dstDataSlice);
             } else if (dstRank == hcclTask.rankId) {
                 // Read
                 LinkProtoStub linkType = GetLinkProto(hcclTask.taskData.transMem.protocol);
                 HcclSim::LinkInfo link(linkType);
-                return std::make_shared<HcclSim::TaskStubRead>(srcRank, link, dstDataSlice, srcDataSlice);
+                task = std::make_shared<HcclSim::TaskStubRead>(srcRank, link, dstDataSlice, srcDataSlice);
             }
-            break;
+            return HCCL_SUCCESS;
         }
         case HccLTaskMetaType::CCU_GRAPH: {
             auto dieId = hcclTask.taskData.ccu.dieId;
@@ -362,7 +396,7 @@ std::shared_ptr<TaskStub> ConvertTask(const HcclSim::StorageManager& storage, Hc
                     if (dieMap.find(missionId) != dieMap.end()) {
                         if (dieMap[missionId]->IsSameCcuGraph(ccuParam.instStartId) == true) {
                             dieMap[missionId]->AddCcuParams(ccuParam);
-                            return nullptr;
+                            return HCCL_SUCCESS;
                         } else {
                             g_missionTask[hcclTask.rankId][dieId].erase(missionId);
                         }
@@ -382,7 +416,8 @@ std::shared_ptr<TaskStub> ConvertTask(const HcclSim::StorageManager& storage, Hc
                     ccuInstr.desc.rank_id, static_cast<uint32_t>(ccuInstr.desc.die_id), static_cast<uint32_t>(dieId));
                 auto taskPtr = std::make_shared<HcclSim::TaskStubCcuGraph>(ccuInstrInfo, missionParam, ccuInstr.desc.rank_id);
                 g_missionTask[hcclTask.rankId][dieId][missionId] = taskPtr;
-                return taskPtr;
+                task = taskPtr;
+                return HCCL_SUCCESS;
             }
             break;
         }
@@ -391,10 +426,10 @@ std::shared_ptr<TaskStub> ConvertTask(const HcclSim::StorageManager& storage, Hc
             break;
         }
     }
-    return nullptr;
+    return HCCL_SUCCESS;
 }
 
-void ConvertTaskQueue(AllRankTaskQueues& allRankTaskQueues)
+HcclResult ConvertTaskQueue(AllRankTaskQueues& allRankTaskQueues)
 {
     HcclSim::StorageManager& storage = HcclSim::StorageManager::GetInstance();
     g_missionTask.clear(); // 每次转换前清理之前的状态，防止重复数据干扰转换逻辑
@@ -402,10 +437,16 @@ void ConvertTaskQueue(AllRankTaskQueues& allRankTaskQueues)
     uint32_t size = taskMetaVec.size();
     uint32_t outputInterval = std::max(1u, size / 10); // 十分之一数据量
     outputInterval = std::min(outputInterval, 100000u); // 不超过10万条
-    std::vector<HcclSim::TaskStubCcuGraph> ccuParams;
     std::map<RankId, uint64_t> rankNodeCounters;
     for (uint32_t i = 0; i < size; i++) {
-        auto task = ConvertTask(storage, taskMetaVec[i], ccuParams);
+        std::shared_ptr<TaskStub> task;
+        HcclResult ret = ConvertTask(storage, taskMetaVec[i], task);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_VM_ERROR("Failed to convert checker task metadata, taskIndex={}, rankId={}, ret={}",
+                i, taskMetaVec[i].rankId, static_cast<uint32_t>(ret));
+            g_missionTask.clear();
+            return ret;
+        }
         if (task == nullptr) {
             continue;
         }
@@ -433,5 +474,6 @@ void ConvertTaskQueue(AllRankTaskQueues& allRankTaskQueues)
             allRankTaskQueues[rankId][streamId].push_back(graphSeparate);
         }
     }
+    return HCCL_SUCCESS;
 }
 }  // namespace HcclSim

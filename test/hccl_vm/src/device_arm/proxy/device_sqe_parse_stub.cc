@@ -188,6 +188,12 @@ void ParseDavidUDMASqe(uint32_t streamId, void *sqeBuf)
         HCCL_VM_ERROR("aicpuData is nullptr.");
         return;
     }
+
+    if (jettyId >= HcclSim::AICPU_JETTY_NUM_MAX) {
+        HCCL_VM_ERROR("jettyId[{}] >= AICPU_JETTY_NUM_MAX[{}]", jettyId, HcclSim::AICPU_JETTY_NUM_MAX);
+        return;
+    }
+
     uint64_t wqeAddrDev = aicpuData->common.jettyId2WqeBufMap[jettyId];
     uint64_t wqeBuffer = reinterpret_cast<uint64_t>(GetRealPtrByDevPtr(reinterpret_cast<void *>(wqeAddrDev)));
     if (wqeBuffer == 0) {

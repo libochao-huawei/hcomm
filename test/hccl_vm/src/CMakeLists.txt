@@ -23,8 +23,6 @@ add_executable(hccl-vm
 
 message(STATUS "ASCEND_CANN_PACKAGE_PATH12 = ${ASCEND_CANN_PACKAGE_PATH}")
 target_include_directories(hccl-vm PUBLIC
-    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
     # hccl vm头文件
     ${HCOMM_VM_ROOT_PATH}/include
     ${HCOMM_VM_ROOT_PATH}/include/runnerdb
@@ -35,6 +33,8 @@ target_include_directories(hccl-vm PUBLIC
     ${HCOMM_VM_ROOT_PATH}/src/host/hccl_plugin
     ${HCOMM_VM_ROOT_PATH}/src/runnerdb
     ${HCOMM_VM_ROOT_PATH}/src/cmd
+
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 
     ${HCCL_VM_SRC}/store
 

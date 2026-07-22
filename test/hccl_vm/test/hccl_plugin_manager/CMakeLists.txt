@@ -26,11 +26,11 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/common
     ${CMAKE_SOURCE_DIR}/src/plugin
     ${CMAKE_SOURCE_DIR}/src/plugin/checker/header/external
-    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
     ${HOME}
     ${CMAKE_BINARY_DIR}/_deps/yaml-cpp-src/include
     ${CMAKE_SOURCE_DIR}/third_party
+
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 
 link_directories(

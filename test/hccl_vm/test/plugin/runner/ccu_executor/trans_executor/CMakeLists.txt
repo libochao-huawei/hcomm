@@ -13,7 +13,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_GLIBCXX_USE_CXX11_ABI=0")
 
 include_directories(
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor/trans_executor
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor/reduce_executor

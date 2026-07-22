@@ -102,7 +102,11 @@ HcclVmResult StorageManager::Trans2CheckerParam(sim::OpDetailTab& detailTab, ::O
     m_checker_param.all2AllDataDes.sendCount = detail.opV2.sendCount;
     m_checker_param.all2AllDataDes.recvCount = detail.opV2.recvCount;
     m_checker_param.all2AllDataDes.count = 0;
-    if (detailTab.opExtInfo.size() >= sizeof(uint32_t)) {
+    const HcclCMDType cmdType = static_cast<HcclCMDType>(detail.opType);
+    const bool isAll2AllOp = cmdType == HcclCMDType::HCCL_CMD_ALLTOALL ||
+                             cmdType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
+                             cmdType == HcclCMDType::HCCL_CMD_ALLTOALLVC;
+    if (isAll2AllOp && detailTab.opExtInfo.size() >= sizeof(uint32_t)) {
         uint32_t count = 0;
         std::memcpy(&count, detailTab.opExtInfo.data(), sizeof(uint32_t));
         m_checker_param.all2AllDataDes.count = count;

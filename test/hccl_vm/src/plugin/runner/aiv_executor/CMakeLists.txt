@@ -28,8 +28,6 @@ target_compile_options(aiv_executor PRIVATE
 
 target_include_directories(aiv_executor
     PUBLIC
-        ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hcomm/ccu
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${HCCL_VM_SRC}
         ${PROJECT_SOURCE_DIR}/include
@@ -39,6 +37,7 @@ target_include_directories(aiv_executor
         ${PROJECT_SOURCE_DIR}/src/proxy/aiv_kernel/ascendc_stub
 
         ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
+        ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
     PRIVATE
         ${HCCL_VM_SRC}/store
         ${ASCEND_CANN_PACKAGE_PATH}/include

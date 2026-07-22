@@ -39,8 +39,9 @@ target_include_directories(runner PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hccl
-    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
+    
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
+
     ${HCCL_VM_SRC}
     ${HCCL_VM_SRC}/store
     ${HCCL_VM_SRC}/store

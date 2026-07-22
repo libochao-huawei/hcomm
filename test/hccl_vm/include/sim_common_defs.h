@@ -48,6 +48,8 @@ using SimEid = std::array<uint8_t, URMA_EID_LEN>;
 constexpr uint8_t DEVICE_WAIT = 0;
 constexpr uint8_t DEVICE_RUN = 1;
 
+constexpr uint32_t AICPU_JETTY_NUM_MAX = 40960;  // 暂定扩大至40960个
+
 typedef struct {
     uint8_t dieId;
     uint8_t missionId;
@@ -201,15 +203,15 @@ union HcclTaskCid {
 #pragma pack(push, 1)
 
 typedef struct {
-    uint32_t count;
+    uint64_t count;
     uint16_t dataType;
     uint32_t reduceOpType;
 } OpInfoV1;
 
 typedef struct {
-    uint32_t sendCount;
+    uint64_t sendCount;
     uint16_t sendDataType;
-    uint32_t recvCount;
+    uint64_t recvCount;
     uint16_t recvDataType;
     uint16_t extInfo;
 } OpInfoV2;
@@ -329,7 +331,7 @@ typedef struct {
 
 typedef struct {
     uint32_t jettyIdGen;
-    uint64_t jettyId2WqeBufMap[1024];  // 最大1024个jetty
+    uint64_t jettyId2WqeBufMap[HcclSim::AICPU_JETTY_NUM_MAX];
 } HcclAicpuCommon;
 
 typedef struct {

@@ -24,10 +24,10 @@
 
 #include "acl/acl_rt.h"
 #include "dtype_common.h"
+#include "hccl/hccl.h"
 #include "hccl/hccl_types.h"
 #include "sim_common_defs.h"
 #include "hccl_proxy_common.h"
-#include "hccl_rank_graph.h"
 #include "sim_log.h"
 #include "store_sim_memory_manager.h"
 #include "db_sim_op_db_ops.h"
@@ -37,6 +37,29 @@
 extern "C" uint8_t GetOpExpansionMode();
 
 namespace {
+    static std::vector<uint8_t> BuildVOpExtInfo(uint32_t rankSize, uint64_t localCount,
+        const uint64_t *counts, const uint64_t *displs)
+    {
+        const size_t arrayByteSize = static_cast<size_t>(rankSize) * sizeof(uint64_t);
+        std::vector<uint8_t> extInfo(sizeof(localCount) + arrayByteSize * 2);
+        size_t offset = 0;
+        std::memcpy(extInfo.data() + offset, &localCount, sizeof(localCount));
+        offset += sizeof(localCount);
+        std::memcpy(extInfo.data() + offset, counts, arrayByteSize);
+        offset += arrayByteSize;
+        std::memcpy(extInfo.data() + offset, displs, arrayByteSize);
+        return extInfo;
+    }
+
+    static std::vector<uint8_t> BuildMatrixExtInfo(const uint64_t *matrix, uint32_t matrixElementCount)
+    {
+        const size_t matrixByteSize = static_cast<size_t>(matrixElementCount) * sizeof(uint64_t);
+        std::vector<uint8_t> extInfo(sizeof(matrixElementCount) + matrixByteSize);
+        std::memcpy(extInfo.data(), &matrixElementCount, sizeof(matrixElementCount));
+        std::memcpy(extInfo.data() + sizeof(matrixElementCount), matrix, matrixByteSize);
+        return extInfo;
+    }
+
     static std::vector<uint8_t> BuildOpDetailsV1(uint64_t count,
                                              uint16_t dataType, uint32_t reduceOpType, uint32_t reduceOp,
                                              HcclCMDType opType) {
@@ -214,6 +237,70 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 }
+
+HcclResult HcclAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, HcclDataType sendType,
+    const void *recvBuf, HcclDataType recvType, HcclComm comm, aclrtStream stream)
+{
+    HCCL_VM_INFO("HcclAlltoAllVC called with parameters:");
+    HCCL_VM_INFO("sendBuf = {:p}", sendBuf);
+    HCCL_VM_INFO("sendCountMatrix = {:p}", sendCountMatrix);
+    HCCL_VM_INFO("recvBuf = {:p}", recvBuf);
+    HCCL_VM_INFO("sendType = {}", static_cast<int>(sendType));
+    HCCL_VM_INFO("recvType = {}", static_cast<int>(recvType));
+    HCCL_VM_INFO("comm = {:p}", comm);
+    HCCL_VM_INFO("stream = {:p}", stream);
+
+    const uint32_t curRank = static_cast<uint32_t>(sim::GetCurrRankId());
+    const uint32_t rankSize = sim::GetRankSize();
+    if (rankSize == 0 || curRank >= rankSize || sendCountMatrix == nullptr) {
+        HCCL_VM_ERROR("invalid AlltoAllVC rank information: rankId = {}, rankSize = {}", curRank, rankSize);
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    const auto *matrix = static_cast<const uint64_t *>(sendCountMatrix);
+    uint64_t inputCount = 0;
+    uint64_t outputCount = 0;
+    const size_t rowOffset = static_cast<size_t>(curRank) * static_cast<size_t>(rankSize);
+    for (uint32_t peerRank = 0; peerRank < rankSize; ++peerRank) {
+        inputCount += matrix[rowOffset + peerRank];
+        outputCount += matrix[static_cast<size_t>(peerRank) * rankSize + curRank];
+    }
+
+    uint32_t sendDataSize = 0;
+    if (sim::GetDataTypeSize(sendType, sendDataSize) != HcclResult::HCCL_SUCCESS) {
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
+    uint32_t recvDataSize = 0;
+    if (sim::GetDataTypeSize(recvType, recvDataSize) != HcclResult::HCCL_SUCCESS) {
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
+
+    const uint64_t inputSize = inputCount * sendDataSize;
+    const uint64_t outputSize = outputCount * recvDataSize;
+
+    const auto alltoallvcDetails = BuildOpDetailsV2(
+        inputCount, sendType, outputCount, recvType, 0, HcclCMDType::HCCL_CMD_ALLTOALLVC, sendType, 0);
+    const uint32_t matrixElementCount = rankSize * rankSize;
+    const auto alltoallvcExtInfo = BuildMatrixExtInfo(matrix, matrixElementCount);
+    if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_ALLTOALLVC, curRank, reinterpret_cast<uint64_t>(stream),
+            sendBuf, inputSize, recvBuf, outputSize, alltoallvcDetails,
+            0, rankSize, curRank, curRank, alltoallvcExtInfo) != 0) {
+        HCCL_VM_ERROR("record op db info failed");
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    HCCL_VM_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
+
+    using HcclAlltoAllVCFunc = HcclResult (*)(
+        const void *, const void *, HcclDataType, const void *, HcclDataType, HcclComm, aclrtStream);
+    const auto hcclAlltoAllVCFunc = reinterpret_cast<HcclAlltoAllVCFunc>(dlsym(RTLD_NEXT, __func__));
+    if (hcclAlltoAllVCFunc != nullptr) {
+        return hcclAlltoAllVCFunc(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, comm, stream);
+    }
+
+    HCCL_VM_ERROR("dlsym failed");
+    return HcclResult::HCCL_E_NOT_SUPPORT;
+}
  
 HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
                          const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
@@ -338,6 +425,69 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
         HCCL_VM_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
+}
+
+HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
+    const void *recvCounts, const void *recvDispls, HcclDataType dataType, HcclComm comm, aclrtStream stream)
+{
+    HCCL_VM_INFO("HcclAllGatherV called with parameters:");
+    HCCL_VM_INFO("sendBuf = {:p}", sendBuf);
+    HCCL_VM_INFO("sendCount = {}", sendCount);
+    HCCL_VM_INFO("recvBuf = {:p}", recvBuf);
+    HCCL_VM_INFO("recvCounts = {:p}", recvCounts);
+    HCCL_VM_INFO("recvDispls = {:p}", recvDispls);
+    HCCL_VM_INFO("dataType = {}", static_cast<int>(dataType));
+    HCCL_VM_INFO("comm = {:p}", comm);
+    HCCL_VM_INFO("stream = {:p}", stream);
+
+    const uint32_t curRank = static_cast<uint32_t>(sim::GetCurrRankId());
+    const uint32_t rankSize = sim::GetRankSize();
+    if (rankSize == 0 || curRank >= rankSize) {
+        HCCL_VM_ERROR("invalid AllGatherV rank information: rankId = {}, rankSize = {}", curRank, rankSize);
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    if (recvCounts == nullptr || recvDispls == nullptr) {
+        HCCL_VM_ERROR("invalid AllGatherV count or displacement array");
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    const auto *recvCountValues = static_cast<const uint64_t *>(recvCounts);
+    const auto *recvDisplValues = static_cast<const uint64_t *>(recvDispls);
+    uint64_t totalRecvCount = 0;
+    for (uint32_t rank = 0; rank < rankSize; ++rank) {
+        totalRecvCount += recvCountValues[rank];
+    }
+
+    uint32_t dataSize = 0;
+    if (sim::GetDataTypeSize(dataType, dataSize) != HcclResult::HCCL_SUCCESS) {
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
+    const uint64_t inputSize = sendCount * dataSize;
+    const uint64_t outputSize = totalRecvCount * dataSize;
+
+    const auto allGatherVExtInfo = BuildVOpExtInfo(rankSize, sendCount, recvCountValues, recvDisplValues);
+    const auto allGatherVDetails = BuildOpDetailsV1(
+        sendCount, dataType, 0, 0, HcclCMDType::HCCL_CMD_ALLGATHER_V);
+    if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_ALLGATHER_V, curRank, reinterpret_cast<uint64_t>(stream),
+            sendBuf, inputSize, recvBuf, outputSize, allGatherVDetails,
+            0, rankSize, curRank, curRank, allGatherVExtInfo) != 0) {
+        HCCL_VM_ERROR("record op db info failed");
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    HCCL_VM_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
+
+    using HcclAllGatherVFunc = HcclResult (*)(
+        void *, uint64_t, void *, const void *, const void *, HcclDataType, HcclComm, aclrtStream);
+    const auto hcclAllGatherVFunc = reinterpret_cast<HcclAllGatherVFunc>(dlsym(RTLD_NEXT, __func__));
+    if (hcclAllGatherVFunc != nullptr) {
+        return hcclAllGatherVFunc(
+            sendBuf, sendCount, recvBuf, recvCounts, recvDispls, dataType, comm, stream);
+    }
+
+    HCCL_VM_ERROR("dlsym failed");
+    return HcclResult::HCCL_E_NOT_SUPPORT;
 }
  
 HcclResult HcclBroadcast(
@@ -580,6 +730,70 @@ HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, H
         HCCL_VM_ERROR("dlsym failed");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
+}
+
+HcclResult HcclReduceScatterV(void *sendBuf, const void *sendCounts, const void *sendDispls,
+    void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op, HcclComm comm, aclrtStream stream)
+{
+    HCCL_VM_INFO("HcclReduceScatterV called with parameters:");
+    HCCL_VM_INFO("sendBuf = {:p}", sendBuf);
+    HCCL_VM_INFO("sendCounts = {:p}", sendCounts);
+    HCCL_VM_INFO("sendDispls = {:p}", sendDispls);
+    HCCL_VM_INFO("recvBuf = {:p}", recvBuf);
+    HCCL_VM_INFO("recvCount = {}", recvCount);
+    HCCL_VM_INFO("dataType = {}", static_cast<int>(dataType));
+    HCCL_VM_INFO("reduce op = {}", static_cast<int>(op));
+    HCCL_VM_INFO("comm = {:p}", comm);
+    HCCL_VM_INFO("stream = {:p}", stream);
+
+    const uint32_t curRank = static_cast<uint32_t>(sim::GetCurrRankId());
+    const uint32_t rankSize = sim::GetRankSize();
+    if (rankSize == 0 || curRank >= rankSize) {
+        HCCL_VM_ERROR("invalid ReduceScatterV rank information: rankId = {}, rankSize = {}", curRank, rankSize);
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    if (sendCounts == nullptr || sendDispls == nullptr) {
+        HCCL_VM_ERROR("invalid ReduceScatterV count or displacement array");
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    const auto *sendCountValues = static_cast<const uint64_t *>(sendCounts);
+    const auto *sendDisplValues = static_cast<const uint64_t *>(sendDispls);
+    uint64_t totalSendCount = 0;
+    for (uint32_t rank = 0; rank < rankSize; ++rank) {
+        totalSendCount += sendCountValues[rank];
+    }
+
+    uint32_t dataSize = 0;
+    if (sim::GetDataTypeSize(dataType, dataSize) != HcclResult::HCCL_SUCCESS) {
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
+    const uint64_t inputSize = totalSendCount * dataSize;
+    const uint64_t outputSize = recvCount * dataSize;
+
+    const auto reduceScatterVExtInfo = BuildVOpExtInfo(rankSize, recvCount, sendCountValues, sendDisplValues);
+    const auto reduceScatterVDetails = BuildOpDetailsV1(
+        recvCount, dataType, 0, op, HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V);
+    if (RecordOpDbInfo(HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, curRank, reinterpret_cast<uint64_t>(stream),
+            sendBuf, inputSize, recvBuf, outputSize, reduceScatterVDetails,
+            0, rankSize, curRank, curRank, reduceScatterVExtInfo) != 0) {
+        HCCL_VM_ERROR("record op db info failed");
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    HCCL_VM_INFO("get op info: allRank= {}, curRank= {}.", rankSize, curRank);
+
+    using HcclReduceScatterVFunc = HcclResult (*)(void *, const void *, const void *, void *, uint64_t,
+        HcclDataType, HcclReduceOp, HcclComm, aclrtStream);
+    const auto hcclReduceScatterVFunc = reinterpret_cast<HcclReduceScatterVFunc>(dlsym(RTLD_NEXT, __func__));
+    if (hcclReduceScatterVFunc != nullptr) {
+        return hcclReduceScatterVFunc(
+            sendBuf, sendCounts, sendDispls, recvBuf, recvCount, dataType, op, comm, stream);
+    }
+
+    HCCL_VM_ERROR("dlsym failed");
+    return HcclResult::HCCL_E_NOT_SUPPORT;
 }
  
 HcclResult _Z18GetRunSideIsDeviceRb(bool &isDeviceSide)

@@ -1002,7 +1002,12 @@ int RaCtxQpCreate(void *ctxHandle, struct QpCreateAttr *attr, struct QpCreateInf
             wqeAddr = reinterpret_cast<uint64_t>(wqeBuf);
         }
 
-        aicpuData->common.jettyId2WqeBufMap[jettyId] = wqeAddr;
+        if (jettyId >= HcclSim::AICPU_JETTY_NUM_MAX) {
+            HCCL_VM_ERROR("jettyId[{}] >= AICPU_JETTY_NUM_MAX[{}]", jettyId, HcclSim::AICPU_JETTY_NUM_MAX);
+        } else {
+            aicpuData->common.jettyId2WqeBufMap[jettyId] = wqeAddr;
+        }
+
         HCCL_VM_INFO("jettyId[{}], wqeAddr[{}].", jettyId, wqeAddr);
     }
 

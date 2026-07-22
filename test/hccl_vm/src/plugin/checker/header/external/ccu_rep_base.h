@@ -16,7 +16,6 @@
 #include <string>
 
 #include "ccu_microcode_v1.h"
-#include "ccu_rep_type.h"
 
 namespace hcomm {
 namespace CcuRep {

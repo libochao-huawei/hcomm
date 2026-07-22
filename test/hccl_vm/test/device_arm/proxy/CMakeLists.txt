@@ -31,10 +31,10 @@ set(COMMON_INCLUDE_DIRS
     $ENV{ASCEND_TOOLKIT_HOME}/x86_64-linux/pkg_inc
     $ENV{ASCEND_TOOLKIT_HOME}/x86_64-linux/pkg_inc/hccl
     $ENV{ASCEND_TOOLKIT_HOME}/x86_64-linux/pkg_inc/base
-    $ENV{ASCEND_TOOLKIT_HOME}/x86_64-linux/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
     $ENV{ASCEND_TOOLKIT_HOME}/x86_64-linux/include
     $ENV{ASCEND_TOOLKIT_HOME}/x86_64-linux/include/hccl
+
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 
 set(COMMON_SOURCES

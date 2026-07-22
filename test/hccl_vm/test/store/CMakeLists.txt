@@ -25,8 +25,8 @@ else()
 endif()
 
 include_directories(
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
+
     ${CMAKE_SOURCE_DIR}/src/store
     ${CMAKE_SOURCE_DIR}/include/store
     ${CMAKE_SOURCE_DIR}/include
@@ -42,16 +42,16 @@ include_directories(
 
 if(DEFINED HCOMM_CODE_ROOT)
     include_directories(
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
+        ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
+
         ${HCOMM_CODE_ROOT}/include
         ${HCOMM_CODE_ROOT}/include/hccl
     )
 endif()
 if(DEFINED ASCEND_TOOLKIT_ROOT)
     include_directories(
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
+        ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
+
         ${ASCEND_TOOLKIT_ROOT}/x86_64-linux/include
         ${ASCEND_TOOLKIT_ROOT}/x86_64-linux/include/hccl
     )

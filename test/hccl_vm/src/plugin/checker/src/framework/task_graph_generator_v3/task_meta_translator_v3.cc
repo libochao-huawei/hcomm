@@ -187,6 +187,22 @@ bool IsContiguousCcuSqe(const TaskCcuGraph &missionNode, const CcuSqeParam &sqe)
 
     return sqe.instStartId == lastSqe.instStartId + lastSqe.instCnt;
 }
+
+HcclResult GetTaskDataSlice(StorageManager &storage, RankId expectedRank, uint64_t addr, uint64_t size,
+    DataSlice &dataSlice)
+{
+    RankId actualRank = 0;
+    HcclResult ret = storage.GetSlice(addr, size, dataSlice, &actualRank);
+    if (ret != HCCL_SUCCESS) {
+        return ret;
+    }
+    if (actualRank != expectedRank) {
+        HCCL_VM_ERROR("{} Resolved data slice rank mismatch, expectedRank={}, actualRank={}, addr={}, size={}",
+            MakeErrorCodeText(ErrorCode::GRAPH_ADDRESS_INVALID), expectedRank, actualRank, addr, size);
+        return HCCL_E_MEMORY;
+    }
+    return HCCL_SUCCESS;
+}
 } // namespace
 
 void TaskMetaTranslatorV3::Reset()
@@ -280,8 +296,16 @@ HcclResult TaskMetaTranslatorV3::TranslateOneTaskMeta(const HcclTaskMetaData &ta
             const auto &transMem = taskMeta.taskData.transMem;
             const RankId srcRank = transMem.srcRankId;
             const RankId dstRank = transMem.dstRankId;
-            const DataSlice srcSlice = storage.GetDataSlice(srcRank, transMem.srcOffset, transMem.len);
-            const DataSlice dstSlice = storage.GetDataSlice(dstRank, transMem.dstOffset, transMem.len);
+            DataSlice srcSlice;
+            ret = GetTaskDataSlice(storage, srcRank, transMem.srcOffset, transMem.len, srcSlice);
+            if (ret != HCCL_SUCCESS) {
+                return ret;
+            }
+            DataSlice dstSlice;
+            ret = GetTaskDataSlice(storage, dstRank, transMem.dstOffset, transMem.len, dstSlice);
+            if (ret != HCCL_SUCCESS) {
+                return ret;
+            }
 
             const ProtocolType protocol = (srcRank == dstRank) ? ProtocolType::SDMA : ConvertProtocol(transMem.protocol);
             auto node = std::make_unique<TaskTransMem>(
@@ -293,8 +317,16 @@ HcclResult TaskMetaTranslatorV3::TranslateOneTaskMeta(const HcclTaskMetaData &ta
             const RankId srcRank = reduce.srcRankId;
             const RankId dstRank = reduce.dstRankId;
             // 此处的 datacount 实际为 size
-            const DataSlice srcSlice = storage.GetDataSlice(srcRank, reduce.srcOffset, reduce.dataCount);
-            const DataSlice dstSlice = storage.GetDataSlice(dstRank, reduce.dstOffset, reduce.dataCount);
+            DataSlice srcSlice;
+            ret = GetTaskDataSlice(storage, srcRank, reduce.srcOffset, reduce.dataCount, srcSlice);
+            if (ret != HCCL_SUCCESS) {
+                return ret;
+            }
+            DataSlice dstSlice;
+            ret = GetTaskDataSlice(storage, dstRank, reduce.dstOffset, reduce.dataCount, dstSlice);
+            if (ret != HCCL_SUCCESS) {
+                return ret;
+            }
             const ProtocolType protocol = (srcRank == dstRank) ? ProtocolType::SDMA :
                 ConvertProtocol(taskMeta.taskData.transMem.protocol);
             auto node = std::make_unique<TaskReduce>(MakeMemSlice(srcRank, srcSlice),

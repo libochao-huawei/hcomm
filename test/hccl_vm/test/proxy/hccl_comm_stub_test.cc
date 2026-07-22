@@ -12,6 +12,8 @@
 #include <gtest/gtest.h>
 
 #include "hccl/hccl.h"
+#include "acl/acl_base.h"
+#include "acl/acl_rt.h"
 
 extern "C" {
     HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo);
@@ -21,6 +23,9 @@ extern "C" {
     HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclComm *comm);
     HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
         HcclCommConfig *config, HcclComm *comm);
+    HcclResult HcclCommDestroy(HcclComm comm);
+    aclError aclrtSetDevice(int32_t deviceId);
+    aclError aclrtResetDevice(int32_t deviceId);
 }
 
 HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclComm *comm)
@@ -32,6 +37,21 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     HcclCommConfig *config, HcclComm *comm)
 {
     return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommDestroy(HcclComm comm)
+{
+    return HCCL_SUCCESS;
+}
+
+aclError aclrtSetDevice(int32_t deviceId)
+{
+    return ACL_SUCCESS;
+}
+
+aclError aclrtResetDevice(int32_t deviceId)
+{
+    return ACL_SUCCESS;
 }
 
 class HcclCommStubTest : public testing::Test {

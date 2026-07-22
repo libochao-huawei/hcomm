@@ -29,8 +29,8 @@ include_directories(BEFORE
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hccl
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
+    
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 
 add_executable(test_checker checker_test.cc main.cc)
@@ -116,8 +116,8 @@ target_include_directories(test_checker BEFORE PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hccl
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
+    
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 get_target_property(_checker_includes test_checker INCLUDE_DIRECTORIES)
 list(FILTER _checker_includes EXCLUDE REGEX "^${CMAKE_SOURCE_DIR}/include$")
@@ -189,8 +189,8 @@ target_include_directories(test_storage_manager_checker BEFORE PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hccl
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
+    
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 get_target_property(_storage_mgr_includes test_storage_manager_checker INCLUDE_DIRECTORIES)
 list(FILTER _storage_mgr_includes EXCLUDE REGEX "^${CMAKE_SOURCE_DIR}/include$")
@@ -243,8 +243,8 @@ target_include_directories(test_task_utils BEFORE PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/runner/ccu_executor
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hccl
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
+   
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 get_target_property(_task_utils_includes test_task_utils INCLUDE_DIRECTORIES)
 list(FILTER _task_utils_includes EXCLUDE REGEX "^${CMAKE_SOURCE_DIR}/include$")

@@ -25,6 +25,7 @@
 
 #include "binary_data_operator.h"
 #include "ccu_all_rank_param_recorder.h"
+#include "error_codes.h"
 #include "sim_log.h"
 
 extern std::map<RankId, std::map<u32, HcclSim::ChannelsPerDie>> g_allRankChannelInfo;
@@ -40,6 +41,112 @@ static const std::string HCCLVM_TASK_DATA_FILE = "/%s_hcclvm_task_data.bin";
 static const std::string HCCLVM_SYN_DATA_FILE = "/%s_hcclvm_syn_data.bin";
 static const std::string HCCLVM_INSTR_DATA_FILE = "/%s_hcclvm_instr_data.bin";
 
+namespace {
+template <typename T>
+bool ReadExtValue(const std::vector<uint8_t> &data, size_t &offset, T &value)
+{
+    if (offset > data.size() || data.size() - offset < sizeof(T)) {
+        return false;
+    }
+    std::memcpy(&value, data.data() + offset, sizeof(T));
+    offset += sizeof(T);
+    return true;
+}
+
+bool ReadVParamExtInfo(const std::vector<uint8_t> &data, uint32_t rankSize, VRankParam &param)
+{
+    if (rankSize == 0) {
+        return false;
+    }
+
+    constexpr size_t fixedSize = sizeof(uint64_t);
+    const uint64_t valueCount = static_cast<uint64_t>(rankSize) * 2U;
+    if (valueCount > (std::numeric_limits<size_t>::max() - fixedSize) / sizeof(uint64_t)) {
+        return false;
+    }
+    const size_t expectedSize = fixedSize + static_cast<size_t>(valueCount) * sizeof(uint64_t);
+    if (data.size() != expectedSize) {
+        return false;
+    }
+
+    VRankParam parsed;
+    parsed.counts.resize(rankSize);
+    parsed.displs.resize(rankSize);
+    size_t offset = 0;
+    if (!ReadExtValue(data, offset, parsed.localCount)) {
+        return false;
+    }
+    for (uint32_t i = 0; i < rankSize; ++i) {
+        if (!ReadExtValue(data, offset, parsed.counts[i])) {
+            return false;
+        }
+    }
+    for (uint32_t i = 0; i < rankSize; ++i) {
+        if (!ReadExtValue(data, offset, parsed.displs[i])) {
+            return false;
+        }
+    }
+    param = std::move(parsed);
+    return true;
+}
+
+HcclResult FinalizeVDataDes(CheckerParam &checkerParam, bool isAllGatherV)
+{
+    const uint32_t rankSize = checkerParam.rankSize;
+    if (rankSize == 0 || checkerParam.vRankParams.size() < rankSize) {
+        HCCL_VM_ERROR("Invalid V operator rank parameters, rankSize={}, reportedRanks={}", rankSize,
+                      checkerParam.vRankParams.size());
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    std::vector<uint64_t> finalCounts(rankSize, 0);
+    for (uint32_t rankId = 0; rankId < rankSize; ++rankId) {
+        const VRankParam &param = checkerParam.vRankParams[rankId];
+        if (param.counts.size() != rankSize || param.displs.size() != rankSize) {
+            HCCL_VM_ERROR("Invalid V operator parameters reported by rank {}, countsSize={}, "
+                          "displsSize={}, rankSize={}",
+                          rankId, param.counts.size(), param.displs.size(), rankSize);
+            return HcclResult::HCCL_E_PARA;
+        }
+        finalCounts[rankId] = param.localCount;
+    }
+
+    for (uint32_t sourceRank = 0; sourceRank < rankSize; ++sourceRank) {
+        for (uint32_t targetRank = 0; targetRank < rankSize; ++targetRank) {
+            const uint64_t reportedCount = isAllGatherV
+                ? checkerParam.vRankParams[targetRank].counts[sourceRank]
+                : checkerParam.vRankParams[sourceRank].counts[targetRank];
+            if (reportedCount != finalCounts[isAllGatherV ? sourceRank : targetRank]) {
+                HCCL_VM_ERROR("{} V count mismatch, sourceRank={}, targetRank={}, reportedCount={}, "
+                              "expectedCount={}",
+                              isAllGatherV ? "AllGather" : "ReduceScatter", sourceRank, targetRank,
+                              reportedCount, finalCounts[isAllGatherV ? sourceRank : targetRank]);
+                return HcclResult::HCCL_E_PARA;
+            }
+        }
+    }
+
+    std::vector<uint64_t> displs;
+    displs.reserve(rankSize);
+    uint64_t offset = 0;
+    for (uint64_t count : finalCounts) {
+        displs.push_back(offset);
+        if (count > std::numeric_limits<uint64_t>::max() - offset) {
+            HCCL_VM_ERROR("{} V count prefix sum overflows uint64", isAllGatherV ? "AllGather" : "ReduceScatter");
+            return HcclResult::HCCL_E_PARA;
+        }
+        offset += count;
+    }
+
+    checkerParam.vDataDes = VDataDesTagInner{};
+    checkerParam.vDataDes.dataType = static_cast<uint16_t>(checkerParam.dataType);
+    checkerParam.vDataDes.count = rankSize;
+    checkerParam.vDataDes.counts = std::move(finalCounts);
+    checkerParam.vDataDes.displs = std::move(displs);
+    return HcclResult::HCCL_SUCCESS;
+}
+} // namespace
+
 void StorageManager::Reset()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -54,11 +161,19 @@ void StorageManager::Reset()
     g_allRankChannelInfo.clear();
 }
 
+void StorageManager::BeginOpGroup()
+{
+    m_checker_param = CheckerParam{};
+    m_all2AllvSendMatrices.clear();
+}
+
 HcclResult StorageManager::Trans2CheckerParam(sim::OpDetailTab& detailTab, ::OpDetails& detail)
 {
     devType_ = static_cast<DevType>(detailTab.devType);
     AllRankParamRecorder::Global()->devType_ = devType_;
+    auto vRankParams = std::move(m_checker_param.vRankParams);
     m_checker_param = CheckerParam{};
+    m_checker_param.vRankParams = std::move(vRankParams);
     m_checker_param.cmdType = static_cast<HcclCMDType>(detail.opType);
     m_checker_param.rankSize = detailTab.rankSize;
     m_checker_param.dataType = static_cast<HcclDataType>(detail.dataType);
@@ -72,7 +187,39 @@ HcclResult StorageManager::Trans2CheckerParam(sim::OpDetailTab& detailTab, ::OpD
     m_checker_param.all2AllDataDes.sendCount = detail.opV2.sendCount;
     m_checker_param.all2AllDataDes.recvCount = detail.opV2.recvCount;
     m_checker_param.all2AllDataDes.count = 0;
-    if (detailTab.opExtInfo.size() >= sizeof(uint32_t)) {
+
+    HcclCMDType curCmdType = static_cast<HcclCMDType>(detail.opType);
+    const bool isVOp = curCmdType == HcclCMDType::HCCL_CMD_ALLGATHER_V ||
+                       curCmdType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V;
+    if (isVOp) {
+        if (detailTab.rankId >= detailTab.rankSize) {
+            HCCL_VM_ERROR("Invalid V operator rank id {}, rankSize={}", detailTab.rankId, detailTab.rankSize);
+            return HcclResult::HCCL_E_PARA;
+        }
+        if (m_checker_param.vRankParams.size() < detailTab.rankSize) {
+            m_checker_param.vRankParams.resize(detailTab.rankSize);
+        }
+        VRankParam &rankParam = m_checker_param.vRankParams[detailTab.rankId];
+        if (!rankParam.counts.empty()) {
+            HCCL_VM_ERROR("Duplicate V operator parameter report from rank {}", detailTab.rankId);
+            return HcclResult::HCCL_E_PARA;
+        }
+        if (!ReadVParamExtInfo(detailTab.opExtInfo, detailTab.rankSize, rankParam)) {
+            HCCL_VM_ERROR("Invalid V operator opExtInfo, opType={}, rankId={}, rankSize={}, payloadSize={}",
+                          static_cast<uint32_t>(curCmdType), detailTab.rankId, detailTab.rankSize,
+                          detailTab.opExtInfo.size());
+            return HcclResult::HCCL_E_PARA;
+        }
+        if (detail.opV1.count != rankParam.localCount) {
+            HCCL_VM_ERROR("V operator local count mismatch, opType={}, rankId={}, detailCount={}, extInfoCount={}",
+                          static_cast<uint32_t>(curCmdType), detailTab.rankId, detail.opV1.count,
+                          rankParam.localCount);
+            return HcclResult::HCCL_E_PARA;
+        }
+    } else if ((curCmdType == HcclCMDType::HCCL_CMD_ALLTOALL ||
+                curCmdType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
+                curCmdType == HcclCMDType::HCCL_CMD_ALLTOALLVC) &&
+               detailTab.opExtInfo.size() >= sizeof(uint32_t)) {
         uint32_t count = 0;
         std::memcpy(&count, detailTab.opExtInfo.data(), sizeof(uint32_t));
         m_checker_param.all2AllDataDes.count = count;
@@ -87,8 +234,8 @@ HcclResult StorageManager::Trans2CheckerParam(sim::OpDetailTab& detailTab, ::OpD
             currentMatrix.push_back(val);
         }
 
-        HcclCMDType curCmdType = static_cast<HcclCMDType>(detail.opType);
-        bool needMerge = (curCmdType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
+        bool needMerge = (curCmdType == HcclCMDType::HCCL_CMD_ALLTOALL ||
+                          curCmdType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
                           curCmdType == HcclCMDType::HCCL_CMD_ALLTOALLVC);
 
         if (needMerge) {
@@ -99,6 +246,18 @@ HcclResult StorageManager::Trans2CheckerParam(sim::OpDetailTab& detailTab, ::OpD
 
     HCCL_VM_INFO("opIter={}, rankId={}", detailTab.opIter, detailTab.rankId);
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult StorageManager::FinalizeOpGroup()
+{
+    switch (m_checker_param.cmdType) {
+        case HcclCMDType::HCCL_CMD_ALLGATHER_V:
+            return FinalizeVDataDes(m_checker_param, true);
+        case HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V:
+            return FinalizeVDataDes(m_checker_param, false);
+        default:
+            return HcclResult::HCCL_SUCCESS;
+    }
 }
 
 void StorageManager::MergeAll2AllVSendCountMatrix()
@@ -294,48 +453,6 @@ uint64_t StorageManager::GetBlockSize(uint32_t rankId, BufferType bufferType) {
     return lastBlock.globalOffset + lastBlock.size;
 }
 
-DataSlice StorageManager::GetDataSlice(uint32_t rankId, uint64_t addr, uint64_t size)
-{
-    DataSlice slice;
-    slice.SetSize(size);
-
-    // 1. 定位该 Rank 的内存布局
-    auto rankIter = m_mem_layout.find(rankId);
-    if (rankIter == m_mem_layout.end()) {
-        HCCL_VM_ERROR("Cannot find rank {} from memory layout.", rankId);
-        return slice;
-    }
-
-    // 2. 遍历该 Rank 下的所有 Buffer 类型 (INPUT, OUTPUT, CCL...)
-    // typeEntry.first 是 BufferType, typeEntry.second 是 addrMap
-    for (auto const& typeEntry : rankIter->second) {
-        const auto& addrMap = typeEntry.second;
-
-        // 3. 使用 upper_bound 在当前类型的地址图中快速查找
-        // 找到第一个起始地址大于 addr 的块，那么目标块就是它的前一个
-        auto it = addrMap.upper_bound(addr);
-        
-        if (it != addrMap.begin()) {
-            --it;
-            const MemBlock& block = it->second;
-
-            // 4. 边界检查：确认物理地址 addr 是否落在该块 [start, start + size) 内
-            if (addr >= block.startAddr && addr < (block.startAddr + block.size)) {
-                // 校验区间完整性（可选）：确保整个 size 都在这个块内
-                // 如果允许跨块，逻辑会更复杂，这里按单块逻辑处理
-                
-                slice.SetBufferType(block.bufferType);
-                // 核心转换公式：逻辑基址 + (物理地址 - 物理块基址)
-                slice.SetOffset(block.globalOffset + (addr - block.startAddr));
-                
-                return slice; // 找到即返回
-            }
-        }
-    }
-    HCCL_VM_ERROR("Cannot find rank {}, addr {}, size {} from memory layout.", rankId, addr, size);
-    return slice; // 未找到匹配的物理区间
-}
-
 HcclResult StorageManager::GetSlice(uint64_t addr, uint64_t len, DataSlice& dataSlice, uint32_t* rank)
 {
     dataSlice.SetSize(len);
@@ -371,7 +488,8 @@ HcclResult StorageManager::GetSlice(uint64_t addr, uint64_t len, DataSlice& data
         }
     }
 
-    HCCL_VM_ERROR("Cannot find addr...:addr= {}, len={}", addr, len);
+    HCCL_VM_ERROR("{} Failed to resolve data slice from memory layout, addr=0x{:X}, len=0x{:X}",
+        MakeErrorCodeText(ErrorCode::GRAPH_ADDRESS_INVALID), addr, len);
     return HcclResult::HCCL_E_MEMORY;
 }
 

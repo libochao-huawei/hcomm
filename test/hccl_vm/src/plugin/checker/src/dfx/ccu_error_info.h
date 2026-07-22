@@ -15,8 +15,6 @@
 
 #include <cstdint>
 
-#include "ccu_rep_type.h"
-
 using namespace hcomm;
 
 namespace Hccl {

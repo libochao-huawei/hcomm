@@ -20,8 +20,6 @@ target_compile_options(ccu_executor PRIVATE
 
 # 设置头文件包含路径（改为绝对路径，基于项目根目录）
 target_include_directories(ccu_executor PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/pkg_inc/hcomm/ccu
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/hcomm/pkg_inc/hcomm/ccu
     ${HCCL_VM_INCLUDE}
     ${HCCL_VM_SRC}
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -36,6 +34,8 @@ target_include_directories(ccu_executor PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
+
+    ${HCOMM_CODE_ROOT}/src/base_comm/resources/ccu/ccu_microcode
 )
 
 target_link_libraries(ccu_executor PRIVATE

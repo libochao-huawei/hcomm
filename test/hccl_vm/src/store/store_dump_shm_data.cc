@@ -385,7 +385,11 @@ HcclVmResult CreateSimSynData(HcclVmSynData &hvmSynData)
     hvmSynData.model_info.all2AllDataDes.recvCount = opDetails.opV2.recvCount;
     // opExtInfo 解析 count + sendCountMatrix
     hvmSynData.model_info.all2AllDataDes.count = 0;
-    if (opTab.opExtInfo.size() >= sizeof(uint32_t)) {
+    const HcclCMDType cmdType = static_cast<HcclCMDType>(opDetails.opType);
+    const bool isAll2AllOp = cmdType == HcclCMDType::HCCL_CMD_ALLTOALL ||
+                             cmdType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
+                             cmdType == HcclCMDType::HCCL_CMD_ALLTOALLVC;
+    if (isAll2AllOp && opTab.opExtInfo.size() >= sizeof(uint32_t)) {
         uint32_t cnt = 0;
         std::memcpy(&cnt, opTab.opExtInfo.data(), sizeof(uint32_t));
         hvmSynData.model_info.all2AllDataDes.count = cnt;

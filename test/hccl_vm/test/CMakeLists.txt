@@ -26,7 +26,6 @@ add_subdirectory(utils)
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/stub_headers
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc

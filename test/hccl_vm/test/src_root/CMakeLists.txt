@@ -37,7 +37,6 @@ include_directories(
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include
     ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
 )
 
 link_libraries(

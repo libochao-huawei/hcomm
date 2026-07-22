@@ -38,6 +38,16 @@ extern HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo
 extern HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclComm *comm);
 extern HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     HcclCommConfig *config, HcclComm *comm);
+extern HcclResult HcclCommDestroy(HcclComm comm);
+
+void SimimSetThreadName(const std::string &threadStr)
+{
+    // 线程名应限制在15个字符内，防止被截断
+    s32 sRet = pthread_setname_np(pthread_self(), threadStr.c_str());
+    if (sRet != 0) {
+        HCCL_VM_WARN("err[{}] link[{}] threadNameSet failed.", sRet, threadStr.c_str());
+    }
+}
 
 HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo)
 {
@@ -67,6 +77,90 @@ HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo *rootI
     const char* clusterInfo = getenv("RANK_TABLE_FILE");
     HcclCommConfig *cfg = const_cast<HcclCommConfig *>(config);
     return HcclCommInitClusterInfoConfig(clusterInfo, rank, cfg, comm);
+}
+
+HcclResult SimGetDeviceComm(uint32_t ndev, const uint32_t rank, const uint32_t logicDeviceId, HcclComm &comm)
+{
+    HCCL_VM_INFO("rank[{}] Get device comm...", rank);
+    //给当前线程添加名字
+    SimimSetThreadName("Hccl_GetDevComm");
+
+    if (aclrtSetDevice(logicDeviceId) != ACL_SUCCESS) {
+        HCCL_VM_ERROR("set fail logicDeviceId[{}].", logicDeviceId);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    const char* clusterInfo = std::getenv("RANK_TABLE_FILE");
+    if (!clusterInfo) {
+        HCCL_VM_ERROR("RANK_TABLE_FILE env not set, please check your config.");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    auto ret = HcclCommInitClusterInfo(clusterInfo, rank, &comm);
+    if (ret != HCCL_SUCCESS || comm == nullptr) {
+        comm = nullptr;
+        HCCL_VM_ERROR("rank[{}] Get device comm failed!", rank);
+        if (aclrtResetDevice(logicDeviceId) != ACL_SUCCESS) {
+            HCCL_VM_ERROR("reset fail logicDeviceId[{}].", logicDeviceId);
+            return ret;
+        }
+        return ret;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
+{
+    HCCL_VM_INFO("Init all comm...");
+    SimimSetThreadName("Hccl_GetCommAll");
+
+    if (aclrtSetDevice(devices[0]) != ACL_SUCCESS) {
+        HCCL_VM_ERROR("set fail devices[0][{}].", devices[0]);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    // 获取通信域之前, 先把所有通信域设置为空
+    for (uint32_t i = 0; i < ndev; i++) {
+        comms[i] = nullptr;
+    }
+
+    std::vector<std::unique_ptr<std::thread>> threads(ndev);
+    for (uint32_t rankId = 0; rankId < ndev; rankId++) {
+        threads[rankId].reset(new (std::nothrow) std::thread(&SimGetDeviceComm, ndev, rankId,
+            devices[rankId], std::ref(comms[rankId])));
+        if (!threads[rankId]) {
+            HCCL_VM_ERROR("threads[{}] start failed ", rankId);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+    }
+    for (uint32_t i = 0; i < ndev; i++) {
+        threads[i]->join();
+    }
+
+    // 如果任何一个通信域初始化失败，将所有已经成功创建的通信域销毁
+    bool isFailed = false;
+    for (uint32_t i = 0; i < ndev; ++i) {
+        if (comms[i] == nullptr) {
+            HCCL_VM_ERROR("rank[{}] get comm failed!", i);
+            isFailed = true;
+            break;
+        }
+    }
+    if (isFailed) {
+        for (uint32_t i = 0; i < ndev; ++i) {
+            if (comms[i] != nullptr) {
+                (void)HcclCommDestroy(comms[i]);
+            }
+        }
+        return HCCL_E_INTERNAL;
+    }
+
+    if (aclrtResetDevice(devices[0]) != ACL_SUCCESS) {
+        HCCL_VM_ERROR("reset fail devices[0][{}].", devices[0]);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    return HCCL_SUCCESS;
 }
 
 #ifdef __cplusplus
