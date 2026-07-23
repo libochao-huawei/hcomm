@@ -135,6 +135,18 @@ static std::vector<AivKernelInfo> g_broadcastAivKernelInfoList = {
     {"aiv_broadcast_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64},
     {"aiv_broadcast_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64},
     {"aiv_broadcast_double", HcclDataType::HCCL_DATA_TYPE_FP64},
+    {"aiv_broadcast_cn_half", HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_int16_t", HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_uint16_t", HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_float", HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_int32_t", HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_uint32_t", HcclDataType::HCCL_DATA_TYPE_UINT32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_int8_t", HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_uint8_t", HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_bfloat16_t", HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_int64_t", HcclDataType::HCCL_DATA_TYPE_INT64, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_uint64_t", HcclDataType::HCCL_DATA_TYPE_UINT64, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_broadcast_cn_double", HcclDataType::HCCL_DATA_TYPE_FP64, KernelArgsType::ARGS_TYPE_SIMPLE},
 };
 static std::string g_broadcastAivBinaryName = "hccl_aiv_broadcast_op.o";
 

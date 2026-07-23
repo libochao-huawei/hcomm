@@ -201,6 +201,10 @@ public:
     __aicore__ inline void WaitSyncFlag(int32_t value, GM_ADDR waitAddr, 
         int32_t offAddr, int32_t waitBlock, bool ifPingpong=false);
 
+    __aicore__ inline void CountRecord(uint64_t count, int32_t index);
+ 
+    __aicore__ inline void CountWaitGE(GM_ADDR waitAddr, uint64_t count, int32_t index);
+
     __aicore__ inline void IntraSync(int32_t curTag, int32_t offset, int32_t blockIdx, bool ifPingpong = false);
 
     __aicore__ inline int32_t GetLogLevel();
@@ -259,6 +263,7 @@ public:
     LocalTensor<int32_t> localSetTensor;
     LocalTensor<int32_t> localCheckTensor;
     LocalTensor<int32_t> localClearTensor;
+    LocalTensor<int32_t> localCheckGETensor;
     TBuf<> bufferArgsBuf;
     LocalTensor<uint64_t> bufferArgsTensor; // buffer地址GM-UB
     TBuf<> offsetArgsBuf;
@@ -398,6 +403,7 @@ __aicore__ inline void AivCrossNode91093Base::InitSetCheckClearArgsTensor()
     localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, 0);
     localCheckTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, UB_FLAG_SIZE);
     localClearTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, UB_FLAG_SIZE * IDX_2);
+    localCheckGETensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, UB_FLAG_SIZE * IDX_3);
     localClearTensor.SetValue(0, 0);
     pipe.InitBuffer(bufferArgsBuf, UB_FLAG_SIZE * MAX_TARGET_NUM);
     bufferArgsTensor = bufferArgsBuf.Get<uint64_t>();
@@ -896,7 +902,7 @@ __aicore__ inline void AivCrossNode91093Base::Barrier(GM_ADDR* buffersOut, int32
     GlobalTensor<int32_t> globalTag;
     SyncFunc<HardEvent::S_MTE3>();
     for (uint32_t i = 0; i < numTargets; i++) {
-        GM_ADDR flagAddrOther = buffersOut[i];
+        GM_ADDR flagAddrOther = buffersOut[i]; 
         globalTag.SetGlobalBuffer((__gm__ int32_t *)(flagAddrOther + flagOffset + rank_ * FLAG_SIZE),
             UB_FLAG_PAD_COUNT);
         DataCopy(globalTag, localSetTensor, UB_FLAG_PAD_COUNT);
@@ -940,13 +946,13 @@ __aicore__ inline void AivCrossNode91093Base::ClearCycle()
     if (blockIdxInGroup == 0) {
         Barrier(buffersOut, 1);
         pipe_barrier(PIPE_ALL);
-        SyncAllCycle(AivNotifyType::ClearACK, blockGroup_, blockIdx_==0);
+        SyncAllCycle(AivNotifyType::ClearACK, blockGroup_, blockIdx_ == 0);
         pipe_barrier(PIPE_ALL);
         ClearGM();
         Barrier(buffersOut, IDX_2);
         pipe_barrier(PIPE_ALL);
     }
-    SyncAllCycle(AivNotifyType::ClearDataSingal, numBlocks_, blockIdx_==0);
+    SyncAllCycle(AivNotifyType::ClearDataSingal, numBlocks_, blockIdx_ == 0);
     pipe_barrier(PIPE_ALL);
 }
 
@@ -969,9 +975,22 @@ __aicore__ inline void AivCrossNode91093Base::GetTargetBuffer(bool isOpBase)
         buffersIn[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx));
         buffersOut[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx + 1));
     }
+
     if (!isOpBase) {
        PipeBarrier<PIPE_ALL>(); 
     }
+}
+
+__aicore__ inline void AivCrossNode91093Base::CountRecord(uint64_t count, int32_t index)
+{
+    __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(flagAddrSelf_+ countOffset + index * FLAG_SIZE);
+    SetSignalValue(ctrlFlagGM, localSetTensor, count);
+}
+ 
+__aicore__ inline void AivCrossNode91093Base::CountWaitGE(GM_ADDR waitAddr, uint64_t count, int32_t index)
+{
+    __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(waitAddr + countOffset + index * FLAG_SIZE);
+    WaitSignalGEValue(ctrlFlagGM, localCheckGETensor, count);
 }
 
 #endif  /* AIV_CROSSNODE_91093_BASE_H */

@@ -15,6 +15,7 @@
 
 #include "aiv_broadcast_910b_bigdata.h"
 #include "aiv_broadcast_910b_smalldata.h"
+#include "aiv_broadcast_crossnode_91093.h"
 
 #define AIV_BROADCAST_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_broadcast_##type(KERNEL_ARGS_DEF) \
@@ -28,7 +29,15 @@ extern "C" __global__ __aicore__ void aiv_broadcast_##type(KERNEL_ARGS_DEF) \
 } \
 EXPORT_AIV_META_INFO(aiv_broadcast_##type)
 
+//aiv broadcast
+#define AIV_BROADCAST_KERNEL_BATCH_DEF_A3(type) \
+extern "C" __global__ __aicore__ void aiv_broadcast_cn_##type(KERNEL_ARGS_DEF_A3) { \
+    return aiv_broadcast_crossnode_91093<type>(KERNEL_ARGS_CALL_A3); \
+} \
+EXPORT_AIV_META_INFO(aiv_broadcast_cn_##type)
+
 // 定义算子各数据类型Kernel入口
 AIV_COPY_DATA_TYPE_DEF(AIV_BROADCAST_KERNEL_BATCH_DEF);
+AIV_COPY_DATA_TYPE_DEF(AIV_BROADCAST_KERNEL_BATCH_DEF_A3);
 
 #endif  /* AIV_BROADCAST_OP_H */

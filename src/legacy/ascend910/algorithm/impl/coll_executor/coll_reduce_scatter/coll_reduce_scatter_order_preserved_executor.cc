@@ -168,7 +168,7 @@ HcclResult CollReduceScatterOrderPreservedExecutor::RunReduceScatterLevel0(const
         HCCL_INFO("[%s] single rank per module, skip L0 AllToAll and LocalReduce, tag[%s]",
             __func__, tag_.c_str());
         CHK_RET(RunReduceScatterLevel0SingleRank(param, execMem, level0CommInfo));
-	return HCCL_SUCCESS;
+	    return HCCL_SUCCESS;
     }
 
     CHK_RET(ActiveSlaveStreams(param.stream));

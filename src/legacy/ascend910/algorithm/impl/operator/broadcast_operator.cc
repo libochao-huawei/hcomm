@@ -196,14 +196,19 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool isCCLBufferGE16M = commInputSize >= HCCL_MID_COUNT_16_MB && commOutputSize >= HCCL_MID_COUNT_16_MB;
     bool isOpbase = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
 
-    // 单机仅支持单算子
-    bool isAivSingleNode = (serverNum_ == 1) && isSingleMeshAggregation_ && isOpbase 
-        && isCCLBufferGE16M && dataSize <= AIV_MAX_DATASIZE;
     bool isOnlyAiv = topoMatcher_->GetIsOnlyAivConfig();
+    bool hasEnoughCCLBuffer = isSingleMeshAggregation_ && isOpbase && isCCLBufferGE16M && dataSize <= AIV_MAX_DATASIZE;
+    bool hasSmallDataOrOnlyAiv = !isOpbase && (isOnlyAiv || dataSize <= HCCL_MID_COUNT_16_MB);
+    bool isSatisfyDataSize = (userRankSize_ <= DEVICE_EIGHT && dataSize <= HCCL_SMALL_COUNT_512_KB ) ||
+                             (userRankSize_ > DEVICE_EIGHT && dataSize <= HCCL_SMALL_COUNT_1_MB);
+
+    bool isAivSingleNode = serverNum_ == 1 && (hasEnoughCCLBuffer || hasSmallDataOrOnlyAiv);
+    bool isAivCrossNode  = (superPodNum_ == 1) && (serverNum_ > 1) && !GetExternalInputInterHccsDisable()
+        && ((isOpbase && isCCLBufferGE16M && isSatisfyDataSize) || hasSmallDataOrOnlyAiv);
+    
     isAivMode_ = topoMatcher_->GetAivModeConfig()
             && IsSupportAIVCopy(param.DataDes.dataType)
-            && (isAivSingleNode || (serverNum_ == 1 && !isOpbase 
-                && (isOnlyAiv || (dataSize <= HCCL_MID_COUNT_16_MB))));
+            && (isAivSingleNode || isAivCrossNode);
 
     bool smallCountOptimSingleServer =
         (serverNum_ == 1) &&
@@ -220,7 +225,11 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool isBack2BackFor91093 = is2Pod2ServerTopo && (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; 
     if (isAivMode_) {
-        algName = "BroadcastMeshAivExecutor";
+        if(isAivSingleNode) {
+            algName = "BroadcastMeshAivExecutor";
+        } else {
+            algName = "BroadcastMeshAivFor91093Executor";
+        }
     } else if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_) {
         algName = "BroadCastComm";
     } else if (smallCountOptimMultiServer || smallCountOptimMultiPod) {
