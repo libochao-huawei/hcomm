@@ -133,7 +133,7 @@ STATIC void RsEschedHandleEvent(struct rs_cb *rscb)
     int ret;
 
     ret = DlHalEschedWaitEvent(rscb->logicId, ESCHED_GRP_TS_HCCP, ESCHED_THREAD_ID_TS_HCCP, 0, &event);
-    if (ret == DRV_ERROR_SCHED_WAIT_TIMEOUT || ret == DRV_ERROR_NO_EVENT) {
+    if (ret == -DRV_ERROR_SCHED_WAIT_TIMEOUT || ret == -DRV_ERROR_NO_EVENT) {
         return;
     }
 

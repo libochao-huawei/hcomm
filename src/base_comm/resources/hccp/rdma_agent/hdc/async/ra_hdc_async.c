@@ -221,7 +221,7 @@ int RaHdcSendMsgAsync(unsigned int opcode, unsigned int phyId, char *data, unsig
     }
 
     CHK_PRT_RETURN(RaHdcIsBroken(gRaHdcAsync[phyId].lastRecvStatus),
-        hccp_err("[async][ra_hdc_send]HDC broken, phyId(%u)", phyId), -gRaHdcAsync[phyId].lastRecvStatus);
+        hccp_err("[async][ra_hdc_send]HDC broken, phyId(%u)", phyId), gRaHdcAsync[phyId].lastRecvStatus);
     opHandleTmp = RaHdcIsAsyncOp(opcode);
     CHK_PRT_RETURN(opHandleTmp == NULL, hccp_err("[async][ra_hdc_send]opcode[%u] invalid", opcode), -EINVAL);
 
@@ -554,7 +554,7 @@ STATIC void HdcAsyncHandleRecvBroken(struct HdcAsyncInfo *asyncInfo)
     for (; (&reqCurr->list) != &asyncInfo->reqList;
         reqCurr = reqNext, reqNext = list_entry(reqNext->list.next, struct RaRequestHandle, list)) {
         RaListDel(&reqCurr->list);
-        HdcAsyncSetReqDone(reqCurr, reqCurr->phyId, -asyncInfo->lastRecvStatus);
+        HdcAsyncSetReqDone(reqCurr, reqCurr->phyId, asyncInfo->lastRecvStatus);
     }
     RA_PTHREAD_MUTEX_UNLOCK(&asyncInfo->reqMutex);
 }

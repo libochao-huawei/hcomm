@@ -314,7 +314,7 @@ static int HdcSendRecvPktRecv(HDC_SESSION session, unsigned int phyId, struct dr
         RA_HDC_OPS.recv(session, pMsgRcv, MAX_HDC_DATA, RA_HDC_WAIT_TIMEOUT, &recvBufCnt, RA_HDC_RECV_SEND_TIMEOUT);
 #ifndef HNS_ROCE_LLT
     /* if timeout, start retry */
-    if (gRaHdc[phyId].startDeinit == 0 && ret == DRV_ERROR_WAIT_TIMEOUT) {
+    if (gRaHdc[phyId].startDeinit == 0 && ret == -DRV_ERROR_WAIT_TIMEOUT) {
         hccp_run_info("[recv][hdc_send_recv_pkt_recv]HDC recv timeout, start retry");
         ret = RaHdcSendRetryMsg(phyId, &pRetryRcv);
         CHK_PRT_RETURN(
@@ -399,8 +399,8 @@ STATIC int HdcSendRecvPkt(unsigned int phyId, void *sendRcvBuf, unsigned int inB
     }
 
     // check last recv status
-    if (gRaHdc[phyId].lastRecvStatus == DRV_ERROR_WAIT_TIMEOUT) {
-        ret = DRV_ERROR_WAIT_TIMEOUT;
+    if (gRaHdc[phyId].lastRecvStatus == -DRV_ERROR_WAIT_TIMEOUT) {
+        ret = -DRV_ERROR_WAIT_TIMEOUT;
         goto alloc_msg_err;
     }
 
@@ -415,9 +415,9 @@ STATIC int HdcSendRecvPkt(unsigned int phyId, void *sendRcvBuf, unsigned int inB
         goto msg_err;
     }
     ret = HdcSendRecvPktRecv(session, phyId, pMsgRcv, &recvBuf, &rcvBufLen);
-    if (ret == DRV_ERROR_WAIT_TIMEOUT) {
+    if (ret == -DRV_ERROR_WAIT_TIMEOUT) {
         hccp_err("[send_recv][pkt]HDC broken, pkt recv err ret(%d) phyId(%u)", ret, phyId);
-        gRaHdc[phyId].lastRecvStatus = DRV_ERROR_WAIT_TIMEOUT;
+        gRaHdc[phyId].lastRecvStatus = ret;
         goto msg_err;
     }
     if (ret) {
@@ -599,7 +599,7 @@ int HdcAsyncRecvPkt(struct HdcAsyncInfo *asyncInfo, unsigned int phyId, void *re
     ret = RA_HDC_OPS.recv(session, pMsgRcv, MAX_HDC_DATA, RA_HDC_WAIT_TIMEOUT, &recvBufCnt,
         RA_HDC_RECV_SEND_TIMEOUT);
     // occur hdc time out when async session was closed before async request done
-    if (ret == DRV_ERROR_WAIT_TIMEOUT) {
+    if (ret == -DRV_ERROR_WAIT_TIMEOUT) {
         hccp_run_warn("[async][recv_pkt]HDC recv timeout, phyId(%u)", phyId);
         goto msg_err;
     }

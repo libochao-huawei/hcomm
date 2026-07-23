@@ -217,7 +217,7 @@ struct HdcOps {
 
 static inline bool RaHdcIsBroken(int lastRecvStatus)
 {
-    return lastRecvStatus == DRV_ERROR_SOCKET_CLOSE;
+    return lastRecvStatus == -DRV_ERROR_SOCKET_CLOSE;
 }
 
 int RaHdcInit(struct RaInitConfig *cfg, struct ProcessRaSign pRaSign);

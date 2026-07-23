@@ -725,14 +725,14 @@ void TcHdcAsyncRecvPkt()
     mocker_clean();
     mocker(pthread_mutex_lock, 10, 0);
     mocker(DlDrvHdcAllocMsg, 10, 0);
-    mocker(DlHalHdcRecv, 10, 25);
+    mocker(DlHalHdcRecv, 10, -25);
     mocker(DlDrvHdcGetMsgBuffer, 10, 0);
     mocker(pthread_mutex_unlock, 10, 0);
     mocker(memcpy_s, 10, 0);
     mocker(DlDrvHdcFreeMsg, 10, 0);
     mocker(HdcAsyncSetReqDone, 10, (void*)0);
     ret = HdcAsyncRecvPkt(&asyncInfo, 0, recvBuf, &recvLen);
-    EXPECT_INT_EQ(ret, 25);
+    EXPECT_INT_EQ(ret, -25);
     HdcAsyncHandleRecvBroken(&asyncInfo);
 
     mocker_clean();
@@ -744,10 +744,10 @@ void TcHdcAsyncRecvPkt()
     mocker(memcpy_s, 10, 0);
     mocker(DlDrvHdcFreeMsg, 10, 0);
     ret = HdcAsyncRecvPkt(&asyncInfo, 0, recvBuf, &recvLen);
-    EXPECT_INT_EQ(ret, 25);
+    EXPECT_INT_EQ(ret, -25);
     HdcAsyncHandleRecvBroken(&asyncInfo);
 
-    EXPECT_INT_EQ(asyncInfo.lastRecvStatus, 25);
+    EXPECT_INT_EQ(asyncInfo.lastRecvStatus, -25);
     ret = RaHdcSendMsgAsync(4, 0, NULL, 0, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
