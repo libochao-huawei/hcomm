@@ -165,7 +165,7 @@ int RsCcuGetMemInfo(char *dataIn, char* dataOut, unsigned int *bufferSize)
     return gCcuOps.rsCcuGetMemInfo(memReq->udieIdx, memReq->memTypeBitmap, rsp);
 }
 
-bool isCcuTlvReqExist() {
+bool isCcuTlvReqExist(void) {
     if (gCcuApiHandle == NULL || gCcuOps.rsCcuTlvRequest == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_info("g_ccu_api_handle is NULL or rsCcuTlvRequest is NULL");

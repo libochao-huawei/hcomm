@@ -32,5 +32,5 @@ int RsCcuGetCqeBaseAddr(unsigned int dieId, unsigned long long *cqeBaseAddr);
 int RsCcuGetMemInfo(char *dataIn, char *dataOut, unsigned int *bufferSize);
 int RsCcuTlvRequest(unsigned int type, char *dataIn, char *dataOut, unsigned int dataInlength, unsigned int *dataOutLength, 
     unsigned int dataOutMaxLength); 
-bool isCcuTlvReqExist();
+bool isCcuTlvReqExist(void);
 #endif // DL_CCU_FUNCTION_H
