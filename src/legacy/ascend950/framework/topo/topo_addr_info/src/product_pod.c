@@ -148,11 +148,11 @@ static int ProcessLayerClos(
     for (unsigned int i = 0; i < ueList->ueNum; ++i) {
         int fe = UBEntityGetId(&ueList->ueList[i]);
         int portGroupIdx = UBEntityGetPortGroupIdx(&ueList->ueList[i]);
-        int die = UrmaEidGetDieId(&ueList->ueList[i].eidList[portGroupIdx].eid);
         if (portGroupIdx < 0) {
             continue;
         }
-        const UBEntityRule *rule = GetUBRule((npu_id % NPU_NUM), PRODUCT_CLOS_LEVEL, mainBoardId, die, fe);
+        int die = UrmaEidGetDieId(&ueList->ueList[i].eidList[portGroupIdx].eid);
+        const UBEntityRule *rule =  GetUBRule((npu_id % NPU_NUM), PRODUCT_CLOS_LEVEL, mainBoardId, die, fe);
         if (rule == NULL) {
             continue;
         }

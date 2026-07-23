@@ -66,6 +66,17 @@ public:
         const std::vector<u32> &remoteExchangeInfoLens,
         u32 localExchangeInfoLen,
         bool isFirstPass) const;
+
+private:
+    HcclResult ExchangeAsyncDataPhase(
+        const std::vector<Hccl::Socket*> &sockets,
+        const std::vector<HcommSocketRole> &roles,
+        const std::vector<u32> &remoteRanks,
+        std::vector<std::vector<u8>> &remoteUserDatas,
+        const std::vector<u32> &remoteExchangeInfoLens,
+        u32 localExchangeInfoLen,
+        CollCommConfigConsistency &collCommConfigConsistency,
+        bool isServerRecv);
 };
 } // namespace hccl
 

@@ -202,33 +202,16 @@ HcclResult ExchangeInfoMgr::ExchangeUserInfoAsync(
         reinterpret_cast<const u8*>(&localExchangeInfoLen), sizeof(u32),
         reinterpret_cast<u8*>(remoteExchangeInfoLens.data()), sizeof(u32), true));
 
-    // 交换info数据（长度可能不同，需逐个收发）
+    // 交换info数据（两阶段异步收发，防死锁）
     std::vector<std::vector<u8>> remoteUserDatas(sockets.size());
-    // SERVER先Recv/CLIENT先Send
-    for (u32 i = 0; i < sockets.size(); i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
-            sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
-        } else {
-            std::vector<u8> exchangeBuf;
-            collCommConfigConsistency.GetExchangeInfoBuf(exchangeBuf);
-            sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
-        }
-    }
+    // 第一阶段：SERVER先Recv/CLIENT先Send
+    CHK_RET(ExchangeAsyncDataPhase(sockets, roles, remoteRanks, remoteUserDatas,
+        remoteExchangeInfoLens, localExchangeInfoLen, collCommConfigConsistency, true));
     CHK_RET(WaitActiveAsyncComplete(sockets, remoteRanks, roles,
         remoteExchangeInfoLens, localExchangeInfoLen, true));
-
-    // SERVER再Send/CLIENT再Recv
-    for (u32 i = 0; i < sockets.size(); i++) {
-        if (roles[i] == HCOMM_SOCKET_ROLE_SERVER) {
-            std::vector<u8> exchangeBuf;
-            collCommConfigConsistency.GetExchangeInfoBuf(exchangeBuf);
-            sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
-        } else {
-            remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
-            sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
-        }
-    }
+    // 第二阶段：SERVER再Send/CLIENT再Recv
+    CHK_RET(ExchangeAsyncDataPhase(sockets, roles, remoteRanks, remoteUserDatas,
+        remoteExchangeInfoLens, localExchangeInfoLen, collCommConfigConsistency, false));
     CHK_RET(WaitActiveAsyncComplete(sockets, remoteRanks, roles,
         remoteExchangeInfoLens, localExchangeInfoLen, false));
 
@@ -240,6 +223,36 @@ HcclResult ExchangeInfoMgr::ExchangeUserInfoAsync(
     }
 
     HCCL_INFO("[ExchangeUserInfoAsync] suc.");
+    return HCCL_SUCCESS;
+}
+
+// 异步交换info数据的一个阶段（isServerRecv=true: SERVER先Recv; false: SERVER先Send）
+HcclResult ExchangeInfoMgr::ExchangeAsyncDataPhase(
+    const std::vector<Hccl::Socket*> &sockets,
+    const std::vector<HcommSocketRole> &roles,
+    const std::vector<u32> &remoteRanks,
+    std::vector<std::vector<u8>> &remoteUserDatas,
+    const std::vector<u32> &remoteExchangeInfoLens,
+    u32 localExchangeInfoLen,
+    CollCommConfigConsistency &collCommConfigConsistency,
+    bool isServerRecv)
+{
+    for (u32 i = 0; i < sockets.size(); i++) {
+        bool shouldRecv = (roles[i] == HCOMM_SOCKET_ROLE_SERVER) == isServerRecv;
+        if (shouldRecv) {
+            CHK_PRT_RET(remoteExchangeInfoLens[i] > HCCL_EXCHANGE_INFO_LEN,
+                HCCL_ERROR("[ExchangeUserInfoAsync] remoteExchangeInfoLen[%u] for remoteRank[%u] "
+                           "exceeds max allowed [%u].", remoteExchangeInfoLens[i], remoteRanks[i],
+                           HCCL_EXCHANGE_INFO_LEN),
+                HCCL_E_PARA);
+            remoteUserDatas[i].resize(remoteExchangeInfoLens[i], 0);
+            sockets[i]->RecvAsync(remoteUserDatas[i].data(), remoteExchangeInfoLens[i]);
+        } else {
+            std::vector<u8> exchangeBuf;
+            collCommConfigConsistency.GetExchangeInfoBuf(exchangeBuf);
+            sockets[i]->SendAsync(exchangeBuf.data(), localExchangeInfoLen);
+        }
+    }
     return HCCL_SUCCESS;
 }
 
