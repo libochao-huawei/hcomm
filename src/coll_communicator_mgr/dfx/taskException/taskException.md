@@ -404,12 +404,13 @@ sequenceDiagram
     alt LOOPGROUP
         CcuTaskException->>CcuTaskException: GenErrorInfoLoopGroup
         Note right of CcuTaskException: 解析LoopGroup→遍历Loop→GenErrorInfoLoop
-    else LOC_WAIT_EVENT/LOC_WAIT_NOTIFY
+    else LOC_WAIT_EVENT
         CcuTaskException->>CcuTaskException: GenErrorInfoByRepType
-        Note right of CcuTaskException: 检查CKE期望值vs实际值
-    else 其他Rep
+        CcuTaskException->>CcuTaskException: 按mask位回溯依赖Rep
+        Note right of CcuTaskException: 检查CKE期望值vs实际值<br/>按未置位bit回溯依赖Rep
+    else 其他Rep(含LOC_WAIT_NOTIFY)
         CcuTaskException->>CcuTaskException: GenErrorInfoByRepType
-        Note right of CcuTaskException: HANDLER_MAP分派到<br/>Read/Write等处理
+        Note right of CcuTaskException: HANDLER_MAP分派到<br/>Read/Write/Notify等处理
     end
 
     CcuTaskException->>CcuTaskException: PrintCcuErrorLog

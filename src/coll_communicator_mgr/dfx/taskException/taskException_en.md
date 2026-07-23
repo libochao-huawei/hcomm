@@ -404,12 +404,13 @@ sequenceDiagram
     alt LOOPGROUP
         CcuTaskException->>CcuTaskException: GenErrorInfoLoopGroup
         Note right of CcuTaskException: Parse LoopGroup→traverse Loop→GenErrorInfoLoop
-    else LOC_WAIT_EVENT/LOC_WAIT_NOTIFY
+    else LOC_WAIT_EVENT
         CcuTaskException->>CcuTaskException: GenErrorInfoByRepType
-        Note right of CcuTaskException: Check CKE expected value vs actual value
-    else Other Rep
+        CcuTaskException->>CcuTaskException: Backtrack dependency Rep by mask bit
+        Note right of CcuTaskException: Check CKE expected value vs actual value<br/>backtrack dependency Rep by unset bit
+    else Other Rep (incl. LOC_WAIT_NOTIFY)
         CcuTaskException->>CcuTaskException: GenErrorInfoByRepType
-        Note right of CcuTaskException: HANDLER_MAP dispatches to Read/Write and other handlers
+        Note right of CcuTaskException: HANDLER_MAP dispatches to Read/Write/Notify and other handlers
     end
 
     CcuTaskException->>CcuTaskException: PrintCcuErrorLog

@@ -58,12 +58,13 @@ std::vector<T> CcuKernel::CreateBlockResAssist(
     const uint32_t count,
     std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord)
 {
+    constexpr uint16_t CCU_BLOCK_RES_ID_BASE = 0x1000; // block 批量分配资源 id 基址，与单资源 id 区间隔离便于 DFX 定位
     std::vector<T> block;
     block.reserve(count);
     constexpr uint32_t dieId = 0; // 先填个预留的dieId，后续分配
     for (size_t i = 0; i < count; i++) {
         block.emplace_back(this);
-        block.back().Reset(resRecord[dieId].size() + i, dieId);
+        block.back().Reset(static_cast<uint16_t>(CCU_BLOCK_RES_ID_BASE + resRecord[dieId].size() + i), dieId);
     }
     resRecord[dieId].insert(resRecord[dieId].end(), block.begin(), block.end());
     return block;
@@ -1346,7 +1347,9 @@ HcclResult CcuKernel::RecordEvent(CcuRep::CompletedEvent event, uint32_t mask)
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 
-    Append(std::make_shared<CcuRep::CcuRepLocRecordEvent>(event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepLocRecordEvent>(event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
@@ -1357,7 +1360,9 @@ HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event, uint32_t mask)
     if (isProfiling) {
         CHK_RET(static_cast<HcclResult>(AddProfiling("WaitEvent", rep->GetMask())));
     }
- 	Append(rep);
+    rep->SetDependencyInfo(GetDependencyInfo(event.Id()));
+    EraseDependencyInfo(event.Id());
+  	Append(rep);
     return HCCL_SUCCESS;
 }
 
@@ -1385,7 +1390,9 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::CcuBuf &
                       const CcuRep::Variable &len, CcuRep::CompletedEvent event, uint32_t mask)
 {
     channels_.insert(channel);
-    Append(std::make_shared<CcuRep::CcuRepBufRead>(channel, rem, loc, len, event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepBufRead>(channel, rem, loc, len, event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
@@ -1394,7 +1401,9 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event, uint32_t mask)
 {
     channels_.insert(channel);
-    Append(std::make_shared<CcuRep::CcuRepBufWrite>(channel, loc, rem, len, event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepBufWrite>(channel, loc, rem, len, event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
@@ -1480,9 +1489,10 @@ HcclResult CcuKernel::LocalReduceNb(const CcuRep::CcuBuf *bufs, uint32_t count, 
         ccuBufs[i] = bufs[i];
     }
 
-    Append(std::make_shared<CcuRep::CcuRepBufReduce>(ccuBufs, count, CcuRep::GetCcuDataType(dataType_, opType_),
-                                                     CcuRep::GetCcuDataType(outputDataType_, opType_),
-                                                     CcuRep::GetCcuReduceType(opType_), event, len, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepBufReduce>(ccuBufs, count, CcuRep::GetCcuDataType(dataType_, opType_),
+        CcuRep::GetCcuDataType(outputDataType_, opType_), CcuRep::GetCcuReduceType(opType_), event, len, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
@@ -1491,7 +1501,9 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::LocalAdd
                       const CcuRep::Variable &len, CcuRep::CompletedEvent event, uint32_t mask)
 {
     channels_.insert(channel);
-    Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
@@ -1504,8 +1516,10 @@ HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::Lo
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
-    Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, CcuRep::GetUBDataType(dataType_),
-                                                CcuRep::GetUBReduceType(opType_), event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, CcuRep::GetUBDataType(dataType_),
+                                                CcuRep::GetUBReduceType(opType_), event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
@@ -1514,7 +1528,9 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event, uint32_t mask)
 {
     channels_.insert(channel);
-    Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
@@ -1526,8 +1542,10 @@ HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::R
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
-    Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, CcuRep::GetUBDataType(dataType_),
-                                                 CcuRep::GetUBReduceType(opType_), event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepWrite>(
+        channel, rem, loc, len, CcuRep::GetUBDataType(dataType_), CcuRep::GetUBReduceType(opType_), event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
@@ -1539,21 +1557,27 @@ CcuResult CcuKernel::GetBufferByHandle(CcuBufferHandle bufferHandle, CcuRep::Ccu
 HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
                            CcuRep::CompletedEvent event, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::LocalCopyNb(const CcuRep::CcuBuf &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
                            CcuRep::CompletedEvent event, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepBufLocRead>(src, dst, len, event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepBufLocRead>(src, dst, len, event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::CcuBuf &src, const CcuRep::Variable &len,
                            CcuRep::CompletedEvent event, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepBufLocWrite>(src, dst, len, event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepBufLocWrite>(src, dst, len, event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
@@ -1563,8 +1587,10 @@ HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
-    Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, CcuRep::GetUBDataType(dataType_), CcuRep::GetUBReduceType(opType_),
-                                                  event, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, CcuRep::GetUBDataType(dataType_), CcuRep::GetUBReduceType(opType_),
+                                                  event, mask);
+    Append(rep);
+    SetDependencyInfo(event.Id(), mask, rep);
     return HCCL_SUCCESS;
 }
 
