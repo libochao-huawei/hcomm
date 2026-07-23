@@ -72,7 +72,6 @@ private:
     bool IsProfSwitchOn(ProfilingLevel level);
     bool IsL1fromOffToOn();
 
-    
     void DumpTaskDetails(const MsprofAicpuHcclTaskInfo& taskDetailsInfos, const TaskInfo *taskInfo) const;
     void GetTaskDetailInfos(const TaskInfo *it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const;
     void FillTaskParamDetails(const TaskInfo *it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const;

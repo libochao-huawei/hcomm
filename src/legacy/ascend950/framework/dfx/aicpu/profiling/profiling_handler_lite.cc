@@ -309,12 +309,13 @@ void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo
     reporterData.threadId  = cachedTid_;
     reporterData.dataLen   = sizeof(MsprofAicpuHcclMainStreamTask);
     reporterData.timeStamp = ProfGetCurCpuTimestamp();
+    constexpr uint32_t UINT16_BIT_WIDTH = std::numeric_limits<uint16_t>::digits;
     auto *flagtask         = reinterpret_cast<MsprofAicpuHcclMainStreamTask *>(reporterData.data);
-    flagtask->taskId       = static_cast<uint16_t>(flagTaskInfo.taskId >> 16);
+    flagtask->taskId       = static_cast<uint16_t>(flagTaskInfo.taskId >> UINT16_BIT_WIDTH);
     flagtask->streamId     = static_cast<uint16_t>(flagTaskInfo.taskId);
     flagtask->type         = flagTaskInfo.type;
     uint32_t aicpuKernelTaskIdLow32 = static_cast<uint32_t>(aicpuKernelTaskId);
-    flagtask->aicpuTaskId   = static_cast<uint16_t>(aicpuKernelTaskIdLow32 >> 16);
+    flagtask->aicpuTaskId   = static_cast<uint16_t>(aicpuKernelTaskIdLow32 >> UINT16_BIT_WIDTH);
     flagtask->aicpuStreamId = static_cast<uint16_t>(aicpuKernelTaskIdLow32);
     HCCL_INFO("[ProfilingHandlerLite][ReportMainStreamTask] streamId:%u, taskId:%u, type:%u,"
               "aicpuStreamId:%u, aicpuTaskId:%u",
