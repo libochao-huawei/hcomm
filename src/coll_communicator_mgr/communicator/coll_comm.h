@@ -30,7 +30,9 @@
 #include "manager_common.h"
 #include "include/hccl_communicator.h"
 #include "hccl/hccl_res.h"
-
+namespace Hccl {
+class DevBuffer;
+}  // namespace Hccl
 namespace hccl {
 class SymmetricMemory;
 struct SymmetricMemoryResource;
@@ -151,6 +153,9 @@ private:
     ManagerCallbacks callbacks_; 
     s32 deviceLogicId_{0};
     uint32_t index_{0};
+
+    // 持有CommunicatorImpl中cclBuffer的shared_ptr拷贝，延长其生命周期
+    std::shared_ptr<Hccl::DevBuffer> cclBuffer_{nullptr};
 
     RankGraph* rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};

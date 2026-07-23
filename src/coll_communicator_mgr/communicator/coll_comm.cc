@@ -62,6 +62,7 @@ CollComm::~CollComm()
         DECTOR_TRY_CATCH("CollComm", hcclCommDfx_->ReportAllTasks(false));
     }
     (void)DestroyAicpuComm();
+    HCCL_RUN_INFO("[CollComm][~CollComm] cclBuffer free, commId[%s].", commId_.c_str());
 }
 
 HcclResult CollComm::Init(void *rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, uint32_t opExpansionMode)
@@ -143,6 +144,10 @@ HcclResult CollComm::InitFullMode(void* rankGraph, aclrtBinHandle binHandle, Hcc
     CHK_RET(InitTaskExceptionHandler());
 
     CHK_RET(InitKfcAndRegisterCollComm());
+
+    Hccl::HcclCommunicator* comV2 = static_cast<Hccl::HcclCommunicator*>(comm_);
+    CHK_PTR_NULL(comV2);
+    CHK_RET(comV2->GetCclBufferSharedPtr(cclBuffer_));
 
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
