@@ -49,7 +49,7 @@ void SetHcclP2pTaskNums(int32_t targetP2pTaskNums);
 
 class GroupScheduleMgr {
 public:
-    GroupScheduleMgr() : serverNum_(0), nTasksP2p_(-1), usrStream_(nullptr) {};
+    GroupScheduleMgr() : userRank_(0), serverNum_(0), nTasksP2p_(-1), usrStream_(nullptr) {};
     ~GroupScheduleMgr();
 
     HcclResult GetUsrStream(aclrtStream &usrStream);
