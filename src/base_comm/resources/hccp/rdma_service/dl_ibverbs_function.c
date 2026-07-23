@@ -10,7 +10,7 @@
 
 #include <pthread.h>
 #include "ra_rs_err.h"
-#include "dl_nda_function.h"
+#include "dl_ibv_extend_function.h"
 #include "dl_ibverbs_function.h"
 
 static pthread_mutex_t gRoceUserApiLock = PTHREAD_MUTEX_INITIALIZER;
@@ -549,7 +549,7 @@ DL_ATTRI_VISI_DEF int RsApiInit(void)
         RsCloseIbverbsSo();
         return ret;
     }
-    ret = RsNdaApiInit();
+    ret = RsIbvExtendApiInit();
     if (ret != 0) {
         hccp_err("RsHrnApiInit failed! ret=[%d]", ret);
         RsCloseHrnSo();
@@ -562,7 +562,7 @@ DL_ATTRI_VISI_DEF int RsApiInit(void)
         hccp_err("rs_roce_user_api_init failed! ret=[%d]", ret);
         RsCloseHrnSo();
         RsCloseIbverbsSo();
-        RsNdaApiDeinit();
+        RsIbvExtendApiDeinit();
         return ret;
     }
 #endif
@@ -574,7 +574,7 @@ DL_ATTRI_VISI_DEF void RsApiDeinit(void)
 {
     RsCloseIbverbsSo();
     RsCloseHrnSo();
-    RsNdaApiDeinit();
+    RsIbvExtendApiDeinit();
     RsCloseRoceUserSo();
     return;
 }

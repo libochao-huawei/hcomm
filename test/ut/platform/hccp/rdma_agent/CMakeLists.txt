@@ -105,7 +105,7 @@ target_include_directories(rdma_agent_utest BEFORE PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/driver/
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/host_lite
-    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/nda
+    ${SRC_DIR}/src/base_comm/resources/hccp/external_depends/ibv_extend
 )
 
 target_compile_options(rdma_agent_utest PRIVATE
