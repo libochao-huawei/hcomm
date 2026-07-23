@@ -235,7 +235,7 @@ HcclResult ExchangeInfoMgr::ExchangeAsyncDataPhase(
     const std::vector<u32> &remoteExchangeInfoLens,
     u32 localExchangeInfoLen,
     CollCommConfigConsistency &collCommConfigConsistency,
-    bool isServerRecv)
+    bool isServerRecv) const
 {
     for (u32 i = 0; i < sockets.size(); i++) {
         bool shouldRecv = (roles[i] == HCOMM_SOCKET_ROLE_SERVER) == isServerRecv;

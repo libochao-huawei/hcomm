@@ -76,7 +76,7 @@ private:
         const std::vector<u32> &remoteExchangeInfoLens,
         u32 localExchangeInfoLen,
         CollCommConfigConsistency &collCommConfigConsistency,
-        bool isServerRecv);
+        bool isServerRecv) const;
 };
 } // namespace hccl
 
