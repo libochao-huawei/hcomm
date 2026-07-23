@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCP_TP_H
-#define HCCP_TP_H
+#ifndef HCCP_CTX_TP_H
+#define HCCP_CTX_TP_H
 
 #include "hccp_common.h"
 
@@ -21,10 +21,6 @@ extern "C" {
 #define TP_ATTR_DIP_MASK 0x8
 #define TP_ATTR_SMAC_MASK 0x10
 #define TP_ATTR_DMAC_MASK 0x20
-
-enum TransportModeT {
-    CONN_RM = 1, /**< only for UB, Reliable Message */
-};
 
 union GetTpCfgFlag {
     struct {
@@ -39,6 +35,20 @@ union GetTpCfgFlag {
         uint32_t reserved : 6;
     } bs;
     uint32_t value;
+};
+
+struct GetTpCfg {
+    union GetTpCfgFlag flag;
+    enum TransportModeT transMode;
+    union HccpEid localEid;
+    union HccpEid peerEid;
+};
+
+#define HCCP_MAX_TPID_INFO_NUM 128
+
+struct HccpTpInfo {
+    uint64_t tpHandle;
+    uint32_t resv;
 };
 
 #pragma pack(1)
@@ -68,15 +78,8 @@ struct TpAttr {
 };
 #pragma pack()
 
-struct GetTpCfg {
-    union GetTpCfgFlag flag;
-    enum TransportModeT transMode;
-    union HccpEid localEid;
-    union HccpEid peerEid;
-};
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif // HCCP_TP_H
+#endif // HCCP_CTX_TP_H

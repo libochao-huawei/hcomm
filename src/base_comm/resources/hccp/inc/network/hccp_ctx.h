@@ -13,7 +13,8 @@
 
 #include "hccp_common.h"
 #include "hccp_ctx_data_plane.h"
-#include "hccp_tp.h"
+#include "hccp_ctx_tp.h"
+#include "hccp_ctx_dfx.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -457,13 +458,6 @@ enum JettyImportMode {
     JETTY_IMPORT_MODE_MAX
 };
 
-#define HCCP_MAX_TPID_INFO_NUM 128
-
-struct HccpTpInfo {
-    uint64_t tpHandle;
-    uint32_t resv;
-};
-
 struct JettyImportExpCfg {
     uint64_t tpHandle;
     uint64_t peerTpHandle;
@@ -504,20 +498,6 @@ struct QpImportInfoT {
     struct QpImportInfo out;
 };
 
-#define CUSTOM_CHAN_DATA_MAX_SIZE 2048
-
-struct CustomChanInfoIn {
-    char data[CUSTOM_CHAN_DATA_MAX_SIZE];
-    unsigned int offsetStart;
-    unsigned int op;
-};
-
-struct CustomChanInfoOut {
-    char data[CUSTOM_CHAN_DATA_MAX_SIZE];
-    unsigned int offsetNext;
-    int opRet;
-};
-
 enum JettyAttrMask {
     JETTY_ATTR_RX_THRESHOLD = 0x1,
     JETTY_ATTR_STATE = 0x1 << 1
@@ -539,54 +519,6 @@ struct JettyAttr {
 
 #define HCCP_MAX_QP_QUERY_NUM 128U
 #define HCCP_MAX_QP_DESTROY_BATCH_NUM 768U
-
-enum HccpAuxInfoInType {
-    AUX_INFO_IN_TYPE_CQE = 0,
-    AUX_INFO_IN_TYPE_AE = 1,
-    AUX_INFO_IN_TYPE_MAX,
-};
-
-struct HccpAuxInfoIn {
-    enum HccpAuxInfoInType type;
-    union {
-        struct {
-            uint32_t status;
-            uint8_t sR;
-        } cqe;
-        struct {
-            uint32_t eventType;
-        } ae;
-    };
-    uint8_t resv[7U];
-};
-
-#define AUX_INFO_NUM_MAX 256U
-
-struct HccpAuxInfoOut {
-    uint32_t auxInfoType[AUX_INFO_NUM_MAX];
-    uint32_t auxInfoValue[AUX_INFO_NUM_MAX];
-    uint32_t auxInfoNum;
-};
-
-#define CR_ERR_INFO_MAX_NUM 96U
-
-struct CrErrInfo {
-    uint32_t status;
-    uint32_t jettyId;
-    struct timeval time;
-    uint32_t resv[2U];
-};
-
-#define CONTEXT_MAX_LEN 512U
-
-struct AsyncEvent {
-    uint32_t resId;
-    uint32_t eventType;
-    uint8_t context[CONTEXT_MAX_LEN];
-    unsigned int len;
-};
-
-#define ASYNC_EVENT_MAX_NUM 4U
 
 /**
  * @ingroup libudma
@@ -633,17 +565,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxInit(struct CtxInitCfg *cfg, struct CtxInitAttr *at
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaGetDevBaseAttr(void *ctxHandle, struct DevBaseAttr *attr);
-
-/**
- * @ingroup libudma
- * @brief get async event
- * @param ctx_handle [IN] ctx handle
- * @param events [IN/OUT] see struct async_event
- * @param num [IN/OUT] num of events, max num is ASYNC_EVENT_MAX_NUM
- * @retval #zero Success
- * @retval #non-zero Failure
-*/
-HCCP_ATTRI_VISI_DEF int RaCtxGetAsyncEvents(void *ctxHandle, struct AsyncEvent events[], unsigned int *num);
 
 /**
  * @ingroup libudma
@@ -903,6 +824,17 @@ HCCP_ATTRI_VISI_DEF int RaCtxQpBind(void *qpHandle, void *remQpHandle);
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaCtxQpUnbind(void *qpHandle);
+
+/**
+ * @ingroup libudma
+ * @brief get async event
+ * @param ctx_handle [IN] ctx handle
+ * @param events [IN/OUT] see struct async_event
+ * @param num [IN/OUT] num of events, max num is ASYNC_EVENT_MAX_NUM
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxGetAsyncEvents(void *ctxHandle, struct AsyncEvent events[], unsigned int *num);
 
 /**
  * @ingroup libudma

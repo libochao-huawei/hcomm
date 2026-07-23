@@ -19,7 +19,7 @@
 
 #include "hccl_types.h"
 #include "hcomm_adapter_hccp.h"
-#include "hccp_tp.h"
+#include "hccp_ctx_tp.h"
 #include "orion_adpt_utils.h"
 
 namespace hcomm {

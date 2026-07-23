@@ -44,6 +44,20 @@ struct TlvMsg {
     char *data;
 };
 
+#define CUSTOM_CHAN_DATA_MAX_SIZE 2048
+
+struct CustomChanInfoIn {
+    char data[CUSTOM_CHAN_DATA_MAX_SIZE];
+    unsigned int offsetStart;
+    unsigned int op;
+};
+
+struct CustomChanInfoOut {
+    char data[CUSTOM_CHAN_DATA_MAX_SIZE];
+    unsigned int offsetNext;
+    int opRet;
+};
+
 struct CcuMemReq {
     unsigned int udieIdx;
     unsigned int reserved;

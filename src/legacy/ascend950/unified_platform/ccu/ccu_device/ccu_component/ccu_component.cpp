@@ -24,7 +24,7 @@
 
 #include "ccu_channel_mgr_v1.h"
 #include "env_config.h"
-#include "hccp_tp.h"
+#include "hccp_ctx_tp.h"
 #include "hccp_tlv_hdc_manager.h"
 
 namespace Hccl {

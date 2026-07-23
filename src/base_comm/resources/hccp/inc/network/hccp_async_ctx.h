@@ -124,22 +124,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxQpUnimportAsync(void *remQpHandle, void **reqHandle
 
 /**
  * @ingroup libudma
- * @brief get tp info list
- * @param ctx_handle [IN] ctx handle
- * @param cfg [IN] get tp cfg
- * @param info_list [IN/OUT] corresponding tp info list
- * @param num [IN/OUT] size of info_list, max num is HCCP_MAX_TPID_INFO_NUM
- * @param req_handle [OUT] async request handle
- * @see ra_ctx_init
- * @see ra_get_async_req_result
- * @retval #zero Success
- * @retval #non-zero Failure
-*/
-HCCP_ATTRI_VISI_DEF int RaGetTpInfoListAsync(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
-    unsigned int *num, void **reqHandle);
-
-/**
- * @ingroup libudma
  * @brief get corresponding eid by ip async
  * @param ctx_handle [IN] ctx handle
  * @param ip [IN] ip array, see struct IpInfo
@@ -152,6 +136,22 @@ HCCP_ATTRI_VISI_DEF int RaGetTpInfoListAsync(void *ctxHandle, struct GetTpCfg *c
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaGetEidByIpAsync(void *ctxHandle, struct IpInfo ip[], union HccpEid eid[],
+    unsigned int *num, void **reqHandle);
+
+/**
+ * @ingroup libudma
+ * @brief get tp info list
+ * @param ctx_handle [IN] ctx handle
+ * @param cfg [IN] get tp cfg
+ * @param info_list [IN/OUT] corresponding tp info list
+ * @param num [IN/OUT] size of info_list, max num is HCCP_MAX_TPID_INFO_NUM
+ * @param req_handle [OUT] async request handle
+ * @see ra_ctx_init
+ * @see ra_get_async_req_result
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaGetTpInfoListAsync(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
     unsigned int *num, void **reqHandle);
 
 /**

@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <arpa/inet.h>
 #include <infiniband/verbs.h>
+#include "hccp_opcode.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,43 +60,6 @@ enum WhiteListStatus {
 #define REMAP_MR_MAX_NUM 128U
 
 /**
- * @ingroup libcommon
- * others module error code conversion
- */
-#define OTHERS_EAGAIN    128301   /* EAGAIN:try again */
-#define OTHERS_ENOTSUPP  528302   /* ENOTSUPP: operation not supported */
-#define OTHERS_EUSERS    128308
-
-/**
- * @ingroup libsocket
- * socket module error code conversion
- */
-#define SOCK_EAGAIN    128201   /* EAGAIN:no data received by socket */
-#define SOCK_CLOSE   128203 /* EINVAL:device异常关闭时作为心跳返回值返回给hccl*/
-#define SOCK_ENOENT    228200   /* ENOENT:SOCK_ENOENT means mr async not success right now,revoke the function again */
-#define SOCK_EADDRINUSE    128205   /* EADDRINUSE：check if IP has been listened when SOCK_EADDRINUSE is returned */
-#define SOCK_EADDRNOTAVAIL 128206   /* EADDRNOTAVAIL：check if IP exist when SOCK_EADDRNOTAVAIL is returned */
-#define SOCK_ESOCKCLOSED   128207   /* ESOCKCLOSED：socket has been closed */
-#define SOCK_ENODEV   228202 /* socket 设备不存在 */
-
-/**
- * @ingroup libinit
- * init module error code conversion
- */
-#define HCCP_EAGAIN        128001   /* EAGAIN:try again */
-#define HCCP_EINVALIDIPS   328008   /* ranktable中ip和物理网卡的ip不一致 */
-#define HCCP_ELINKDOWN     328004   /* 网口down */
-
-/**
- * @ingroup librdma
- * rdma module error code conversion
- */
-#define ROCE_EAGAIN    128101   /* EAGAIN:try again */
-#define ROCE_ENOMEM    328100   /* ENOMEM: roce module has ENOMEM error */
-#define ROCE_EOPENSRC  528101   /* EOPENSRC: open source verbs error */
-#define ROCE_ENOENT    228100   /* ENOENT: means mr async not success right now, revoke the function again */
-
-/**
  * @ingroup libinit
  * hccp operating environment
  */
@@ -103,11 +67,6 @@ enum NetworkMode {
     NETWORK_PEER_ONLINE = 0, /**< Third-party online mode */
     NETWORK_OFFLINE, /**< offline mode */
     NETWORK_ONLINE, /**< online mode */
-};
-
-enum {
-    RA_CAP_DRV_SHAREPOOL_NON_PIN = 0,
-    RA_CAP_INVALID,
 };
 
 /**
@@ -118,6 +77,10 @@ enum ProtocolTypeT {
     PROTOCOL_RDMA = 0,
     PROTOCOL_UDMA,
     PROTOCOL_UNSUPPORT,
+};
+
+enum TransportModeT {
+    CONN_RM = 1, /**< only for UB, Reliable Message */
 };
 
 /**
@@ -156,15 +119,6 @@ union HccpEid {
 struct RaInfo {
     int mode; /**< reference to network_mode */
     unsigned int phyId; /**< physical device id */
-};
-
-enum HccnCfgKey {
-    HCCN_CFG_UDP_PORT_MODE = 0,
-    HCCN_CFG_MULTI_QP_COUNT = 1,
-    HCCN_CFG_MULTI_QP_UDP_PORTS = 2,
-    HCCN_CFG_RESV_MEM_INFO = 3,
-    HCCN_CFG_QOS_DSCP = 4,
-    HCCN_CFG_KEY_INVALID
 };
 
 /**
