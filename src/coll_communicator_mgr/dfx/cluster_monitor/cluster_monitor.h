@@ -192,6 +192,8 @@ private:
         const hccl::CollComm* collComm, std::map<uint32_t, std::vector<UIDContext>> &uidCtxs, std::set<uint32_t> &rankIdsSet);
 
     HcclResult ProcessConnectRanks(const std::string &commId, std::map<ClusterUIDType, ClusterMonitorSocketCtx> &needConnectRank);
+    void ClearClusterLinkContext(const std::string &commId, std::set<ClusterUIDType> &remInQueue);
+    bool UnregisterCommIdFromMaps(const std::string &commId, const std::set<ClusterUIDType> &remInQueue);
     HcclResult CreateTransportHandle(ClusterMonitorSocketCtx &info) const;
     HcclResult OnConnectionEstablished(const std::string &commId, const ClusterUIDType &rem, ClusterMonitorSocketCtx &needConnectRank);
     HcclResult SendFrameFromBuffer(ClusterUIDType &dst, ClusterMonitorFrame &cmFrame);
@@ -247,6 +249,9 @@ private:
     
     // uid与thread的维护关系，不同的remote起不同的异步建链线程，原linkThreadMap_
     std::map<ClusterUIDType, std::unique_ptr<std::thread>> linkThreadMap_{};
+
+    // UnRegister 摘下、延后到 DeInit(join 之后) 再 SocketDestroy 的句柄
+    std::vector<SocketHandle> pendingDestroySockets_;
     
     // 保存错误的节点
     std::queue<ClusterUIDType> errRankQueue_;
